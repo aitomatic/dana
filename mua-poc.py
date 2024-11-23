@@ -1,5 +1,4 @@
 import openai
-import time
 from anthropic import AnthropicBedrock, AsyncAnthropicBedrock
 import os
 from dotenv import load_dotenv  # Import load_dotenv from dotenv
@@ -9,9 +8,8 @@ from dotenv import load_dotenv  # Import load_dotenv from dotenv
 load_dotenv()  # Add this line
 
 # Set your OpenAI API key
-api_key = ''
-
-aClient = openai.AsyncOpenAI(api_key=api_key, base_url="https://api.openai.com/v1")
+API_KEY = os.getenv('OPENAI_API_KEY')
+aClient = openai.AsyncOpenAI(api_key=API_KEY, base_url="https://api.openai.com/v1")
 aModel = "gpt-4o"
 
 # Initialize the AnthropicBedrock and AsyncAnthropicBedrock clients
@@ -165,3 +163,4 @@ aLLM_system_instructions = "You are an expert problem solver. You have access to
 tLLM_system_instrcutions = "You are an expert in mathematics."
 import asyncio
 asyncio.run(ooda_loop(problem_statement))
+
