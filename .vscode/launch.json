@@ -1,0 +1,19 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Math Solver",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/examples/math_solver.py",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}",
+                "OPENAI_API_KEY": "${env:OPENAI_API_KEY}"
+            },
+            "envFile": "${workspaceFolder}/.env",
+            "purpose": ["debug-in-terminal"]
+        }
+    ]
+} 

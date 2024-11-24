@@ -1,20 +1,18 @@
 """LLM resource implementation."""
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 import asyncio
-from dxa.core.resources.base import (
-    BaseResource,
-    ResourceError,
-    ResourceUnavailableError,
-    ResourceAccessError
-)
+import json
+import logging
+from datetime import datetime
+from dxa.core.resources.base import BaseResource, ResourceError
 
 class LLMError(ResourceError):
     """Error in LLM interaction."""
     pass
 
 class LLMResource(BaseResource):
-    """Resource for interacting with a Language Model."""
+    """Resource for interacting with a Language Model as an external resource."""
     
     def __init__(
         self,
@@ -24,24 +22,43 @@ class LLMResource(BaseResource):
         max_retries: int = 3,
         retry_delay: float = 1.0
     ):
-        """Initialize LLM resource.
-        
-        Args:
-            name: Name of this LLM resource
-            llm_config: Configuration for the LLM
-            system_prompt: Optional system prompt
-            max_retries: Maximum number of retry attempts
-            retry_delay: Delay between retries in seconds
-        """
+        """Initialize LLM resource."""
         super().__init__(
             name=name,
-            description=f"LLM resource using {llm_config.get('model', 'unknown model')}",
+            description=f"External LLM resource using {llm_config.get('model', 'unknown model')}",
             config=llm_config
         )
         self.system_prompt = system_prompt
         self.max_retries = max_retries
         self.retry_delay = retry_delay
         self._llm = None
+        
+        # Set up external LLM-specific logger
+        self.llm_logger = logging.getLogger('dxa.llm.external')
+
+    async def _log_interaction(
+        self,
+        interaction_type: str,
+        messages: List[Dict[str, str]],
+        response: Optional[Dict] = None,
+        error: Optional[Exception] = None
+    ):
+        """Log an external LLM interaction."""
+        log_entry = {
+            "timestamp": datetime.now().isoformat(),
+            "interaction_type": interaction_type,
+            "llm_type": "external_resource",
+            "llm_name": self.name,
+            "model": self.config.get('model', 'unknown'),
+            "messages": messages
+        }
+
+        if response:
+            log_entry["response"] = response
+        if error:
+            log_entry["error"] = str(error)
+
+        self.llm_logger.info(json.dumps(log_entry))
 
     async def initialize(self) -> None:
         """Initialize the LLM client."""
@@ -53,32 +70,14 @@ class LLMResource(BaseResource):
         except Exception as e:
             self._is_available = False
             self.logger.error("Failed to initialize LLM resource: %s", str(e))
-            raise ResourceUnavailableError(f"LLM initialization failed: {str(e)}")
+            raise LLMError(f"LLM initialization failed: {str(e)}")
 
     async def query(
         self,
         request: Dict[str, Any],
         **kwargs
     ) -> Dict[str, Any]:
-        """Query the LLM.
-        
-        Args:
-            request: The request containing:
-                - prompt: The prompt to send
-                - system_prompt: Optional override for system prompt
-                - temperature: Optional temperature setting
-                - max_tokens: Optional max tokens setting
-            **kwargs: Additional arguments for the LLM
-            
-        Returns:
-            Dict containing LLM response
-            
-        Raises:
-            ResourceUnavailableError: If LLM is not available
-            ResourceAccessError: If LLM query fails
-        """
-        await super().query(request)  # Check availability
-        
+        """Query the LLM."""
         prompt = request.get('prompt')
         if not prompt:
             raise ValueError("No prompt provided in request")
@@ -90,6 +89,12 @@ class LLMResource(BaseResource):
             messages.append({"role": "system", "content": system_prompt})
         messages.append({"role": "user", "content": prompt})
 
+        # Log the request
+        await self._log_interaction(
+            interaction_type="request",
+            messages=messages
+        )
+
         for attempt in range(self.max_retries):
             try:
                 response = await self._llm.chat.completions.create(
@@ -100,14 +105,39 @@ class LLMResource(BaseResource):
                     **kwargs
                 )
                 
-                return {
+                # Convert usage to dict safely
+                usage = None
+                if hasattr(response, 'usage'):
+                    usage = {
+                        'prompt_tokens': response.usage.prompt_tokens,
+                        'completion_tokens': response.usage.completion_tokens,
+                        'total_tokens': response.usage.total_tokens
+                    }
+                
+                result = {
                     "success": True,
                     "content": response.choices[0].message.content,
-                    "usage": response.usage._asdict() if hasattr(response, 'usage') else None,
+                    "usage": usage,
                     "model": response.model
                 }
+
+                # Log the successful response
+                await self._log_interaction(
+                    interaction_type="response",
+                    messages=messages,
+                    response=result
+                )
+                
+                return result
                 
             except Exception as e:
+                # Log the error
+                await self._log_interaction(
+                    interaction_type="error",
+                    messages=messages,
+                    error=e
+                )
+                
                 self.logger.warning(
                     "LLM query attempt %d/%d failed: %s",
                     attempt + 1,
@@ -117,17 +147,10 @@ class LLMResource(BaseResource):
                 if attempt < self.max_retries - 1:
                     await asyncio.sleep(self.retry_delay * (attempt + 1))
                     continue
-                raise ResourceAccessError(f"LLM query failed: {str(e)}")
+                raise LLMError(f"LLM query failed: {str(e)}")
 
     def can_handle(self, request: Dict[str, Any]) -> bool:
-        """Check if this LLM can handle the request.
-        
-        Args:
-            request: Request to check
-            
-        Returns:
-            True if this LLM can handle the request, False otherwise
-        """
+        """Check if this LLM can handle the request."""
         # Check if request has required fields
         if 'prompt' not in request:
             return False

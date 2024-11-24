@@ -29,62 +29,101 @@ class ChainOfThoughtReasoning(BaseReasoning):
         # Build the CoT prompt
         prompt = self.get_reasoning_prompt(context, query)
         
-        # Get response from LLM using parent class method
-        response = await super()._query_llm(prompt)
-        
-        # Parse the response into steps
-        steps = self._parse_cot_response(response)
-        
-        # Record each reasoning step
-        for i, step in enumerate(steps):
-            self.state_manager.add_observation(
-                content=step,
-                source="reasoning",
-                metadata={
-                    "type": "reasoning_step",
-                    "step_number": i + 1
-                }
-            )
-        
-        result = {
-            "reasoning": response,
-            "steps": steps,
-            "final_answer": steps[-1] if steps else None
+        # Format proper LLM request
+        llm_request = {
+            "prompt": prompt,
+            "temperature": kwargs.get('temperature', 0.7),
+            "max_tokens": kwargs.get('max_tokens', None)
         }
         
-        # Record the reasoning result
-        self.state_manager.add_observation(
-            content=result,
-            source="reasoning",
-            metadata={"type": "reasoning_complete"}
-        )
-        
-        return result
+        try:
+            # Get initial analysis from internal LLM
+            llm_response = await self._query_llm(llm_request)
+            initial_analysis = llm_response["content"]
+            
+            # Check if we need expert help
+            if "need expert help" in initial_analysis.lower():
+                expert_prompt = (
+                    f"Please help with this math problem: {query}\n\n"
+                    f"My current analysis: {initial_analysis}"
+                )
+                # Signal that we need to use the math expert resource
+                return {
+                    "needs_resource": True,
+                    "resource_request": {
+                        "resource_name": "math_expert",
+                        "request": {
+                            "prompt": expert_prompt
+                        }
+                    },
+                    "interaction_complete": False
+                }
+            
+            # Parse the response into steps
+            steps = self._parse_cot_response(initial_analysis)
+            
+            # Record each reasoning step
+            for i, step in enumerate(steps):
+                self.state_manager.add_observation(
+                    content=step,
+                    source="reasoning",
+                    metadata={
+                        "type": "reasoning_step",
+                        "step_number": i + 1
+                    }
+                )
+            
+            # Check if we need user input
+            if "need more information" in initial_analysis.lower():
+                return {
+                    "needs_user_input": True,
+                    "user_prompt": "I need more information. Could you please clarify?",
+                    "interaction_complete": False
+                }
+            
+            # If we have a complete solution
+            result = {
+                "reasoning": initial_analysis,
+                "steps": steps,
+                "final_answer": steps[-1] if steps else None,
+                "interaction_complete": True
+            }
+            
+            # Record the reasoning result
+            self.state_manager.add_observation(
+                content=result,
+                source="reasoning",
+                metadata={"type": "reasoning_complete"}
+            )
+            
+            return result
+            
+        except Exception as e:
+            self.logger.error("Reasoning failed: %s", str(e))
+            raise
 
     def get_reasoning_prompt(self, context: Dict[str, Any], query: str) -> str:
         """Get the prompt template for Chain of Thought reasoning."""
-        # Get recent observations for context
-        recent_obs = self.state_manager.get_recent_observations()
-        obs_context = "\n".join(
-            f"Previous observation: {obs.content}"
-            for obs in recent_obs
-        )
-        
+        # Include any resource responses in the context
+        resource_context = ""
+        if 'resource_response' in context:
+            resource_context = f"\nExpert input: {context['resource_response']}"
+            
         return f"""Let's solve this step by step:
 
 Problem: {query}
 
 Context:
 {self._format_context(context)}
-
-Previous observations:
-{obs_context}
+{resource_context}
 
 Think through this carefully:
 1. First, understand what's being asked
 2. Break down the problem into parts
-3. Solve each part systematically
-4. Verify your solution
+3. If you need expert help, say "need expert help"
+4. If you need more information, say "need more information"
+5. Solve each part systematically
+6. Verify your solution
 
 Show your complete reasoning process."""
 

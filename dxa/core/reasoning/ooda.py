@@ -58,26 +58,52 @@ class OODALoopReasoning(BaseReasoning):
         # Get phase-specific prompt
         prompt = self.get_reasoning_prompt(context, query)
         
-        # Get response from LLM
-        response = await self._query_llm(prompt)
+        # Format proper LLM request
+        llm_request = {
+            "prompt": prompt,
+            "temperature": kwargs.get('temperature', 0.7),
+            "max_tokens": kwargs.get('max_tokens', None),
+            "system_prompt": kwargs.get('system_prompt', None)
+        }
         
-        # Record the response
-        self.state_manager.add_observation(
-            content=response,
-            source="ooda_reasoning",
-            metadata={
-                "phase": self.current_phase,
-                "type": "llm_response"
-            }
-        )
-        
-        # Process response based on phase
-        result = self._process_phase_response(response)
-        
-        # Advance to next phase
-        self._advance_phase()
-        
-        return result
+        try:
+            # Get response from LLM
+            llm_response = await self._query_llm(llm_request)
+            response = llm_response["content"]  # Extract content from response
+            
+            # Record the response
+            self.state_manager.add_observation(
+                content=response,
+                source="ooda_reasoning",
+                metadata={
+                    "phase": self.current_phase,
+                    "type": "llm_response"
+                }
+            )
+            
+            # Process response based on phase
+            result = self._process_phase_response(response)
+            
+            # Advance to next phase
+            self._advance_phase()
+            
+            return result
+            
+        except Exception as e:
+            self.logger.error(
+                "Error in %s phase: %s",
+                self.current_phase,
+                str(e)
+            )
+            self.state_manager.add_observation(
+                content=str(e),
+                source="ooda_reasoning",
+                metadata={
+                    "phase": self.current_phase,
+                    "type": "error"
+                }
+            )
+            raise
 
     def _advance_phase(self):
         """Advance to the next phase in the OODA loop."""

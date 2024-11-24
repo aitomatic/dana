@@ -2,9 +2,13 @@
 
 from typing import Dict, Any, Optional
 import asyncio
-from dxa.core.resources.base import BaseResource
+from dxa.core.resources.base import BaseResource, ResourceError
 from dxa.core.io.base import BaseIO
-from dxa.core.io.console import ConsoleIO  # Default to console
+from dxa.core.io.console import ConsoleIO
+
+class HumanError(ResourceError):
+    """Error in human interaction."""
+    pass
 
 class HumanUserResource(BaseResource):
     """Resource for interacting with human users."""
@@ -14,8 +18,8 @@ class HumanUserResource(BaseResource):
         name: str,
         role: str,
         permissions: Optional[Dict[str, bool]] = None,
-        timeout: float = 300.0,
-        io: Optional[BaseIO] = None  # Add I/O parameter
+        io: Optional[BaseIO] = None,
+        timeout: float = 300.0  # 5 minutes default timeout
     ):
         """Initialize human user resource."""
         super().__init__(
@@ -26,17 +30,18 @@ class HumanUserResource(BaseResource):
         self.role = role
         self.permissions = permissions or {}
         self.timeout = timeout
-        self.io = io or ConsoleIO()  # Default to console I/O
+        self.io = io or ConsoleIO()
 
     async def initialize(self) -> None:
-        """Initialize the resource."""
-        await self.io.initialize()
-        self._is_available = True
-
-    async def cleanup(self) -> None:
-        """Clean up the resource."""
-        await self.io.cleanup()
-        self._is_available = False
+        """Initialize the I/O handler."""
+        try:
+            await self.io.initialize()
+            self._is_available = True
+            self.logger.info("Human user resource initialized successfully")
+        except Exception as e:
+            self._is_available = False
+            self.logger.error("Failed to initialize I/O: %s", str(e))
+            raise HumanError(f"I/O initialization failed: {str(e)}")
 
     async def query(
         self,
@@ -44,8 +49,6 @@ class HumanUserResource(BaseResource):
         **kwargs
     ) -> Dict[str, Any]:
         """Query the human user."""
-        await super().query(request)
-        
         message = request.get('message')
         if not message:
             raise ValueError("No message provided in request")
@@ -72,7 +75,7 @@ class HumanUserResource(BaseResource):
                     await self.io.send_message(
                         f"Response timed out after {timeout} seconds"
                     )
-                    raise
+                    raise HumanError("Response timeout")
             else:
                 return {
                     "success": True,
@@ -81,8 +84,8 @@ class HumanUserResource(BaseResource):
                 }
                 
         except Exception as e:
-            self.logger.error("Error in human user interaction: %s", str(e))
-            raise
+            self.logger.error("Error in human interaction: %s", str(e))
+            raise HumanError(f"Interaction failed: {str(e)}")
 
     def can_handle(self, request: Dict[str, Any]) -> bool:
         """Check if this user can handle the request."""
@@ -92,7 +95,15 @@ class HumanUserResource(BaseResource):
             
         # Check if user has required permissions
         required_permission = request.get('required_permission')
-        if required_permission:
-            return self.permissions.get(required_permission, False)
+        if required_permission and not self.permissions.get(required_permission, False):
+            return False
             
         return True
+
+    async def cleanup(self) -> None:
+        """Clean up I/O resources."""
+        try:
+            await self.io.cleanup()
+        finally:
+            self._is_available = False
+            self.logger.info("Human user resource cleaned up")

@@ -25,13 +25,7 @@ class BaseResource(ABC):
         description: Optional[str] = None,
         config: Optional[Dict[str, Any]] = None
     ):
-        """Initialize resource.
-        
-        Args:
-            name: Name of the resource
-            description: Optional description of what the resource provides
-            config: Optional configuration for the resource
-        """
+        """Initialize resource."""
         self.name = name
         self.description = description or "No description provided"
         self.config = config or {}
@@ -44,17 +38,11 @@ class BaseResource(ABC):
         return self._is_available
 
     async def initialize(self) -> None:
-        """Initialize the resource.
-        
-        Override this method to perform any necessary setup.
-        """
+        """Initialize the resource."""
         pass
 
     async def cleanup(self) -> None:
-        """Clean up the resource.
-        
-        Override this method to perform any necessary cleanup.
-        """
+        """Clean up the resource."""
         pass
 
     @abstractmethod
@@ -73,24 +61,13 @@ class BaseResource(ABC):
             Dict containing resource response
             
         Raises:
-            ResourceUnavailableError: If resource is not available
             ResourceAccessError: If resource access fails
         """
-        if not self.is_available:
-            raise ResourceUnavailableError(
-                f"Resource {self.name} is not available"
-            )
+        pass
 
     @abstractmethod
     def can_handle(self, request: Dict[str, Any]) -> bool:
-        """Check if this resource can handle the given request.
-        
-        Args:
-            request: Request to check
-            
-        Returns:
-            True if this resource can handle the request, False otherwise
-        """
+        """Check if this resource can handle the given request."""
         pass
 
     async def __aenter__(self):
