@@ -1,68 +1,40 @@
-"""Core types and enums for the MUA system."""
+"""Core types and data structures for DXA."""
 
 from dataclasses import dataclass, field
-from enum import Enum
-from typing import Dict, List
+from typing import Dict, Any, List
 from datetime import datetime
+from enum import Enum
 
-class OODAPhase(Enum):
-    """Enumeration of phases in the OODA loop decision cycle."""
-    OBSERVE = "observe"
-    ORIENT = "orient"
-    DECIDE = "decide"
-    ACT = "act"
+class AgentState(Enum):
+    """Possible states of an agent."""
+    INITIALIZING = "initializing"
+    READY = "ready"
+    RUNNING = "running"
+    PAUSED = "paused"
+    ERROR = "error"
+    STOPPED = "stopped"
 
 @dataclass
-class ChatHistory:
-    """Manages the conversation history."""
-    messages: List[Dict] = field(default_factory=list)
-
-    def add_message(self, role: str, content: str):
-        """Add a new message to the history."""
-        self.messages.append({
-            "role": role,
-            "content": content,
-            "timestamp": datetime.now().timestamp()
-        })
+class Message:
+    """A message in the agent's communication."""
+    content: str
+    sender: str
+    receiver: str
+    timestamp: float = field(default_factory=lambda: datetime.now().timestamp())
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
 @dataclass
 class Observation:
-    """Class representing a single observation with timestamp and associated data."""
-    data: Dict
+    """An observation made by the agent."""
+    content: Any
     source: str
     timestamp: float = field(default_factory=lambda: datetime.now().timestamp())
+    metadata: Dict[str, Any] = field(default_factory=dict)
 
 @dataclass
-class ExpertResponse:
-    """Structured response from a domain expert."""
-    confidence: float
-    analysis: Dict
-    recommendations: List[Dict]
-    follow_up: List[str]
-    metadata: Dict = field(default_factory=dict)
-
-    @classmethod
-    def create_fallback(cls, content: str, error: str = "Response format error") -> 'ExpertResponse':
-        """Create a fallback response when parsing fails."""
-        return cls(
-            confidence=0.0,
-            analysis={
-                'main_points': [],
-                'details': content,
-                'assumptions': [],
-                'limitations': [error]
-            },
-            recommendations=[],
-            follow_up=["Please provide response in the correct format"],
-            metadata={'error': error}
-        )
-
-@dataclass
-class AgentState:
-    """Class representing the current state of the Model-Using Agent in the OODA loop."""
-    current_phase: OODAPhase
-    observations: List[Observation]
-    context_window: List[Dict]
-    problem_statement: str
-    working_memory: Dict
-    agent_history: ChatHistory = field(default_factory=ChatHistory)
+class ExecutionContext:
+    """Context for agent execution."""
+    state: AgentState
+    observations: List[Observation] = field(default_factory=list)
+    messages: List[Message] = field(default_factory=list)
+    working_memory: Dict[str, Any] = field(default_factory=dict)

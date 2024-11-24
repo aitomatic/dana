@@ -1,12 +1,6 @@
-"""Core module for MUA."""
-from .types import OODAPhase, AgentState, Observation, ExpertResponse, ChatHistory
-from .ooda_agent import OODAAgent
+"""Core DXA functionality."""
 
-__all__ = [
-    'OODAPhase',
-    'AgentState',
-    'Observation',
-    'ExpertResponse',
-    'ChatHistory',
-    'OODAAgent'
-]
+from dxa.core.types import AgentState
+from dxa.core.state import StateManager
+
+__all__ = ['AgentState', 'StateManager']

@@ -1,10 +1,6 @@
-"""Agent implementations for MUA."""
-from ..core.agent_with_experts import AgentWithExperts
-from .console import ConsoleModelUsingAgent
-from .websocket import WebSocketModelUsingAgent
+"""DXA agent implementations."""
 
-__all__ = [
-    'AgentWithExperts',
-    'ConsoleModelUsingAgent',
-    'WebSocketModelUsingAgent'
-]
+from dxa.agents.console import ConsoleAgent
+from dxa.agents.websocket import WebSocketAgent
+
+__all__ = ['ConsoleAgent', 'WebSocketAgent']

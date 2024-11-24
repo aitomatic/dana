@@ -1,188 +1,143 @@
 """WebSocket-based agent implementation."""
 
-import asyncio
-import json
-import aiohttp
-from typing import Dict, Optional, List
-from datetime import datetime
-from dxa.core.ooda_agent_with_experts import OODAAgentWithExperts
-from dxa.perts.domain import DomainExpertLLM
-from dxa.users.roles import User
+from typing import Dict, Any, Optional
+from dxa.agents.base import BaseAgent
+from dxa.core.io.websocket import WebSocketIO, WebSocketError
+from dxa.core.reasoning.base import BaseReasoning
+from dxa.core.state import StateManager
 
-class WebSocketModelUsingAgent(ooda_agent_with_experts):
-    """WebSocket implementation of Model-Using OODA agent."""
+class WebSocketAgent(BaseAgent):
+    """Agent that interacts through WebSocket I/O."""
     
     def __init__(
         self,
-        agent_llm_config: Dict,
-        domain_experts: List[DomainExpertLLM],
-        users: List[User],
+        name: str,
+        llm_config: Dict[str, Any],
+        reasoning: BaseReasoning,
         websocket_url: str,
-        session_id: str,
-        agent_system_prompt: Optional[str] = None,
-        heartbeat_interval: float = 30.0,  # Heartbeat every 30 seconds
-        max_retries: int = 3,  # Maximum reconnection attempts
-        retry_delay: float = 5.0  # Delay between retries in seconds
+        system_prompt: Optional[str] = None,
+        description: Optional[str] = None,
+        reconnect_attempts: int = 3,
+        reconnect_delay: float = 1.0
     ):
-        """Initialize WebSocket-based agent."""
-        super().__init__(agent_llm_config, domain_experts, users, agent_system_prompt)
-        self.websocket_url = websocket_url
-        self.session_id = session_id
-        self.ws = None
-        self._connected = False
-        self._heartbeat_task = None
-        self.heartbeat_interval = heartbeat_interval
-        self.max_retries = max_retries
-        self.retry_delay = retry_delay
+        """Initialize WebSocket agent."""
+        super().__init__(
+            name=name,
+            llm_config=llm_config,
+            reasoning=reasoning,
+            system_prompt=system_prompt,
+            description=description
+        )
+        self.io = WebSocketIO(
+            websocket_url=websocket_url,
+            reconnect_attempts=reconnect_attempts,
+            reconnect_delay=reconnect_delay
+        )
+        self.state_manager = StateManager()
 
-    async def _heartbeat(self):
-        """Send periodic heartbeat messages to keep connection alive."""
-        while self._connected:
-            try:
-                await self._send_message({
-                    "type": "heartbeat",
-                    "timestamp": datetime.now().timestamp()
-                })
-                await asyncio.sleep(self.heartbeat_interval)
-            except Exception as e:
-                self.logger.warning("Heartbeat failed: %s", str(e))
-                if self._connected:  # Only try to reconnect if we haven't explicitly disconnected
-                    await self._try_reconnect()
-
-    async def _try_reconnect(self):
-        """Attempt to reconnect to WebSocket server."""
-        for attempt in range(self.max_retries):
-            try:
-                self.logger.info(
-                    "Attempting to reconnect (attempt %d/%d)...",
-                    attempt + 1,
-                    self.max_retries
-                )
-                await self.connect()
-                self.logger.info("Reconnection successful")
-                return True
-            except Exception as e:
-                self.logger.error(
-                    "Reconnection attempt %d failed: %s",
-                    attempt + 1,
-                    str(e)
-                )
-                if attempt < self.max_retries - 1:
-                    await asyncio.sleep(self.retry_delay)
-        
-        self.logger.error("Failed to reconnect after %d attempts", self.max_retries)
-        return False
-
-    async def connect(self):
-        """Establish WebSocket connection with retry logic."""
-        if self._connected:
-            return
-
+    async def initialize(self) -> None:
+        """Initialize agent resources."""
         try:
-            self.ws = await aiohttp.ClientSession().ws_connect(
-                self.websocket_url,
-                heartbeat=self.heartbeat_interval
+            await super().initialize()
+            await self.io.initialize()
+            self.state_manager.add_observation(
+                content="WebSocket agent initialized",
+                source="websocket_agent"
             )
-            self._connected = True
-            self.logger.info("WebSocket connection established")
-            
-            # Start heartbeat task
-            self._heartbeat_task = asyncio.create_task(self._heartbeat())
-            
-            # Send initial connection message
-            await self._send_message({
-                "type": "connect",
-                "session_id": self.session_id,
-                "agent_info": {
-                    "experts": list(self.domain_experts.keys()),
-                    "users": list(self.users.keys())
-                }
-            })
-            
-        except Exception as e:
-            self.logger.error("WebSocket connection failed: %s", str(e))
+            self.logger.info("WebSocket agent initialized")
+        except WebSocketError as e:
+            self.state_manager.add_observation(
+                content=f"Initialization failed: {str(e)}",
+                source="websocket_agent",
+                metadata={"error": str(e)}
+            )
             raise
 
-    async def _send_message(self, data: Dict):
-        """Send message through WebSocket with retry logic."""
-        if not self._connected:
-            if not await self._try_reconnect():
-                raise ConnectionError("Not connected and reconnection failed")
-        
+    async def cleanup(self) -> None:
+        """Clean up agent resources."""
         try:
-            data['session_id'] = self.session_id
-            data['timestamp'] = datetime.now().timestamp()
-            await self.ws.send_json(data)
-            
+            await self.io.cleanup()
+            await super().cleanup()
+            self.state_manager.add_observation(
+                content="WebSocket agent cleaned up",
+                source="websocket_agent"
+            )
+            self.logger.info("WebSocket agent cleaned up")
         except Exception as e:
-            self.logger.error("Error sending WebSocket message: %s", str(e))
-            self._connected = False
-            if not await self._try_reconnect():
-                raise
-
-    async def _receive_message(self) -> Dict:
-        """Receive message from WebSocket with retry logic."""
-        if not self._connected:
-            if not await self._try_reconnect():
-                raise ConnectionError("Not connected and reconnection failed")
-        
-        try:
-            msg = await self.ws.receive()
-            
-            if msg.type == aiohttp.WSMsgType.TEXT:
-                return json.loads(msg.data)
-            elif msg.type == aiohttp.WSMsgType.CLOSED:
-                self.logger.warning("WebSocket connection closed")
-                self._connected = False
-                if await self._try_reconnect():
-                    return await self._receive_message()
-                raise ConnectionError("WebSocket closed and reconnection failed")
-            elif msg.type == aiohttp.WSMsgType.ERROR:
-                self.logger.error("WebSocket error: %s", str(msg.data))
-                self._connected = False
-                if await self._try_reconnect():
-                    return await self._receive_message()
-                raise ConnectionError(f"WebSocket error: {msg.data}")
-                
-        except Exception as e:
-            self.logger.error("Error receiving WebSocket message: %s", str(e))
-            self._connected = False
-            if await self._try_reconnect():
-                return await self._receive_message()
+            self.state_manager.add_observation(
+                content=f"Cleanup error: {str(e)}",
+                source="websocket_agent",
+                metadata={"error": str(e)}
+            )
             raise
 
-    async def disconnect(self):
-        """Close WebSocket connection gracefully."""
-        if self._connected and self.ws:
-            try:
-                # Cancel heartbeat task
-                if self._heartbeat_task:
-                    self._heartbeat_task.cancel()
-                    try:
-                        await self._heartbeat_task
-                    except asyncio.CancelledError:
-                        pass
-                
-                # Send disconnect message
-                await self._send_message({
-                    "type": "disconnect",
-                    "message": "Agent disconnecting"
-                })
-                
-                # Close connection
-                await self.ws.close()
-                
-            except Exception as e:
-                self.logger.error("Error during disconnect: %s", str(e))
-            finally:
-                self._connected = False
-                self.logger.info("WebSocket connection closed")
+    async def run(self, context: Dict[str, Any]) -> Dict[str, Any]:
+        """Run the agent's main loop."""
+        try:
+            # Get initial input if needed
+            if 'initial_input' not in context:
+                response = await self.io.get_input(
+                    "How can I help you today?"
+                )
+                context['initial_input'] = response
+                self.state_manager.add_observation(
+                    content=response,
+                    source="user_input",
+                    metadata={"type": "initial_input"}
+                )
 
-    async def __aenter__(self):
-        """Async context manager entry."""
-        await self.connect()
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Async context manager exit."""
-        await self.disconnect()
+            # Main interaction loop
+            while True:
+                # Run reasoning cycle
+                result = await self.reasoning.reason(context, "Process user interaction")
+                
+                # Record reasoning result
+                self.state_manager.add_observation(
+                    content=result,
+                    source="reasoning",
+                    metadata={"type": "reasoning_result"}
+                )
+                
+                # Check if we need user input
+                if result.get("needs_user_input"):
+                    response = await self.io.get_input(result["user_prompt"])
+                    context['user_input'] = response
+                    self.state_manager.add_observation(
+                        content=response,
+                        source="user_input",
+                        metadata={"type": "follow_up_input"}
+                    )
+                
+                # Check if we're done
+                if result.get("interaction_complete"):
+                    await self.io.send_message("Interaction complete. Goodbye!")
+                    break
+            
+            return {
+                "success": True,
+                "results": result,
+                "state_history": self.state_manager.get_state_history()
+            }
+            
+        except WebSocketError as e:
+            self.state_manager.add_observation(
+                content=f"WebSocket error: {str(e)}",
+                source="websocket_agent",
+                metadata={"error": str(e)}
+            )
+            return {
+                "success": False,
+                "error": str(e),
+                "state_history": self.state_manager.get_state_history()
+            }
+        except Exception as e:
+            self.state_manager.add_observation(
+                content=f"Runtime error: {str(e)}",
+                source="websocket_agent",
+                metadata={"error": str(e)}
+            )
+            return {
+                "success": False,
+                "error": str(e),
+                "state_history": self.state_manager.get_state_history()
+            } 
