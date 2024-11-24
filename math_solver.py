@@ -2,7 +2,12 @@
 
 import asyncio
 import os
-from mua2 import ConsoleModelUsingAgent, DomainExpertLLM, User, configure_logging
+from dxa import (
+    ConsoleModelUsingAgent,
+    DomainExpertLLM,
+    User,
+    configure_logging
+)
 
 async def main():
     """Initialize and start a math-focused console agent session."""

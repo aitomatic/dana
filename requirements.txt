@@ -3,3 +3,4 @@ anthropic
 botocore
 boto3
 python-dotenv
+aiohttp>=3.8.0
