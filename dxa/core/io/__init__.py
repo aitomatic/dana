@@ -1,6 +1,6 @@
 """I/O implementations for DXA."""
 
-from dxa.core.io.base import BaseIO
+from dxa.core.io.base_io import BaseIO
 from dxa.core.io.console import ConsoleIO
 from dxa.core.io.websocket import WebSocketIO
 

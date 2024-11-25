@@ -2,8 +2,8 @@
 
 from typing import Dict, Any, Optional
 import asyncio
-from dxa.core.resources.base import BaseResource, ResourceError
-from dxa.core.io.base import BaseIO
+from dxa.core.resources.base_resource import BaseResource, ResourceError
+from dxa.core.io.base_io import BaseIO
 from dxa.core.io.console import ConsoleIO
 
 class HumanError(ResourceError):

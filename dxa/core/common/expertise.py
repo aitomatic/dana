@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from typing import List, Dict, Any
-from dxa.core.resources.base import BaseResource
+from dxa.core.resources.base_resource import BaseResource
 
 @dataclass
 class DomainExpertise:

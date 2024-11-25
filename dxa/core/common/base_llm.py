@@ -68,9 +68,6 @@ class BaseLLM:
         if not self._client:
             await self.initialize()
 
-        if self.system_prompt and messages[0]['role'] != 'system':
-            messages.insert(0, {"role": "system", "content": self.system_prompt})
-
         for attempt in range(self.max_retries):
             try:
                 response = await self._client.chat.completions.create(
@@ -89,3 +86,9 @@ class BaseLLM:
                 if attempt + 1 == self.max_retries:
                     raise LLMError(f"LLM query failed after {self.max_retries} attempts: {str(e)}") from e
                 await asyncio.sleep(self.retry_delay)
+
+    async def cleanup(self) -> None:
+        """Clean up any resources used by the LLM."""
+        if self._client:
+            await self._client.close()
+            self._client = None

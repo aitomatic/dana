@@ -20,68 +20,11 @@ class OODALoopReasoning(BaseReasoning):
         self.current_phase = OODAPhase.OBSERVE
         self.state_manager = StateManager(self.__class__.__name__)
 
-    async def reason(
-        self,
-        context: Dict[str, Any],
-        query: str,
-        **kwargs
-    ) -> Dict[str, Any]:
-        """Execute OODA loop reasoning process."""
-        # Record the start of reasoning
-        self.state_manager.add_observation(
-            content=f"Starting {self.current_phase} phase",
-            source="ooda_reasoning",
-            metadata={"phase": self.current_phase}
-        )
-        
-        # Get phase-specific prompt
-        prompt = self.get_reasoning_prompt(context, query)
-        
-        # Format proper LLM request
-        llm_request = {
-            "prompt": prompt,
-            "temperature": kwargs.get('temperature', 0.7),
-            "max_tokens": kwargs.get('max_tokens', None)
-        }
-        
-        try:
-            # Get response from LLM
-            llm_response = await self._query_llm(llm_request)
-            response = llm_response["content"]
-            
-            # Record the response
-            self.state_manager.add_observation(
-                content=response,
-                source="ooda_reasoning",
-                metadata={
-                    "phase": self.current_phase,
-                    "type": "llm_response"
-                }
-            )
-            
-            # Process response based on phase
-            result = self._process_phase_response(response)
-            
-            # Advance to next phase
-            self._advance_phase()
-            
-            return result
-            
-        except Exception as e:
-            self.logger.error(
-                "Error in %s phase: %s",
-                self.current_phase,
-                str(e)
-            )
-            self.state_manager.add_observation(
-                content=str(e),
-                source="ooda_reasoning",
-                metadata={
-                    "phase": self.current_phase,
-                    "type": "error"
-                }
-            )
-            raise
+    def reason_post_process(self, response: str) -> Dict[str, Any]:
+        """Post-process the response from the LLM."""
+        result = self._process_phase_response(response)
+        self._advance_phase()
+        return result
 
     def get_reasoning_prompt(self, context: Dict[str, Any], query: str) -> str:
         """Get the prompt template for the current OODA phase."""

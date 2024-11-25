@@ -1,7 +1,7 @@
 """Domain expertise capability for DXA."""
 
 from typing import Dict, Any, Optional, List
-from dxa.core.capabilities.base import BaseCapability
+from dxa.core.capabilities.base_capability import BaseCapability
 
 class DomainExpertiseCapability(BaseCapability):
     """Capability to reason within a specific domain."""

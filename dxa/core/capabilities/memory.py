@@ -3,7 +3,7 @@
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 from dataclasses import dataclass, field
-from dxa.core.capabilities.base import BaseCapability
+from dxa.core.capabilities.base_capability import BaseCapability
 
 @dataclass
 class MemoryEntry:

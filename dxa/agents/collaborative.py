@@ -2,7 +2,7 @@
 
 from typing import Dict, Any, Optional
 import asyncio
-from dxa.agents.base import BaseAgent
+from dxa.agents.base_agent import BaseAgent
 from dxa.core.reasoning.base_reasoning import BaseReasoning
 from dxa.core.resources.agents import AgentResource
 
@@ -15,7 +15,6 @@ class CollaborativeAgent(BaseAgent):
         llm_config: Dict[str, Any],
         reasoning: BaseReasoning,
         agent_registry: Dict[str, BaseAgent],
-        system_prompt: Optional[str] = None,
         description: Optional[str] = None
     ):
         """Initialize collaborative agent.
@@ -25,14 +24,12 @@ class CollaborativeAgent(BaseAgent):
             llm_config: Configuration for the agent's LLM
             reasoning: Reasoning pattern to use
             agent_registry: Dictionary of available agents
-            system_prompt: Optional system prompt for the LLM
             description: Optional description of this agent
         """
         super().__init__(
             name=name,
             llm_config=llm_config,
             reasoning=reasoning,
-            system_prompt=system_prompt,
             description=description
         )
         

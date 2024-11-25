@@ -1,140 +1,141 @@
-"""Interactive agent implementation."""
+"""Console-based agent implementation."""
 
 from typing import Dict, Any, Optional
-from dxa.agents.base import BaseAgent
-from dxa.core.io.base import BaseIO
+from dxa.agents.base_agent import BaseAgent
+from dxa.core.io.base_io import BaseIO
 from dxa.core.io.console import ConsoleIO
-from dxa.core.resources.human import HumanUserResource
-from dxa.core.reasoning.base_reasoning import BaseReasoning
+from dxa.core.reasoning.base_reasoning import BaseReasoning, ReasoningStatus
+from dxa.core.resources.base_resource import BaseResource
+from dxa.core.common.exceptions import (
+    DXAError,
+    ReasoningError,
+    ResourceError,
+    ConfigurationError
+)
 
 class InteractiveAgent(BaseAgent):
-    """Base class for agents that interact with users."""
+    """Agent that interacts through console I/O."""
     
     def __init__(
         self,
         name: str,
-        llm_config: Dict[str, Any],
         reasoning: BaseReasoning,
-        io: Optional[BaseIO] = None,
-        system_prompt: Optional[str] = None,
-        description: Optional[str] = None
+        llm_config: Dict[str, Any],
+        resources: Optional[Dict[str, BaseResource]] = None,
+        agent_prompt: Optional[str] = None,
+        description: Optional[str] = None,
+        io: Optional[BaseIO] = ConsoleIO()
     ):
-        """Initialize interactive agent.
-        
-        Args:
-            name: Name of this agent
-            llm_config: Configuration for the agent's LLM
-            reasoning: Reasoning pattern to use
-            io: Optional I/O handler (defaults to ConsoleIO)
-            system_prompt: Optional system prompt for the LLM
-            description: Optional description of this agent
-        """
+        """Initialize console agent."""
         super().__init__(
             name=name,
             reasoning=reasoning,
-            system_prompt=system_prompt,
-            description=description,
-            internal_llm_config=llm_config
+            llm_config=llm_config,
+            resources=resources,
+            agent_prompt=agent_prompt,
+            description=description
         )
-        
-        # Set up I/O
-        self.io = io or ConsoleIO()
-        
-        # Create user resource
-        self.user = HumanUserResource(
-            name=f"{name}_user",
-            role="user",
-            permissions={
-                "interact": True,
-                "provide_input": True,
-                "receive_output": True
-            },
-            io=self.io
-        )
+        self.io = io
 
     async def initialize(self) -> None:
         """Initialize agent resources."""
         await super().initialize()
         await self.io.initialize()
-        self.logger.info("Interactive agent initialized")
+        self.logger.info("Console agent initialized")
 
     async def cleanup(self) -> None:
         """Clean up agent resources."""
-        await self.io.cleanup()
         await super().cleanup()
-        self.logger.info("Interactive agent cleaned up")
+        await self.io.cleanup()
+        self.logger.info("Console agent cleaned up")
 
     async def run(self, context: Dict[str, Any]) -> Dict[str, Any]:
-        """Run the interactive agent's main loop.
+        """Run the agent's main loop.
         
         Args:
-            context: Initial context for the agent
-            
-        Returns:
-            Dict containing results of agent's operation
+            context: Must contain either:
+                - task_spec: The problem/task specification
+                - or domain and parameters for the task
         """
         try:
-            # Get initial input if needed
-            if 'initial_input' not in context:
-                response = await self.user.query({
-                    "message": "How can I help you today?",
-                    "require_response": True
-                })
-                if response["success"]:
-                    context['initial_input'] = response["response"]
-                else:
-                    raise RuntimeError("Failed to get initial input")
+            # Get task specification if not provided
+            if 'task_spec' not in context:
+                task_spec = await self.io.get_input(
+                    "What would you like help with?"
+                )
+                context['task_spec'] = task_spec
 
             # Main interaction loop
-            while self._is_running:
+            while True:
                 # Run reasoning cycle
-                result = await self.reasoning.reason(context, "Process user interaction")
+                result = await self.reasoning.reason(context, context['task_spec'])
                 
-                # Check if we need user input
-                if result.get("needs_user_input"):
-                    response = await self.user.query({
-                        "message": result["user_prompt"],
-                        "require_response": True
-                    })
-                    if response["success"]:
-                        context['user_input'] = response["response"]
-                    else:
-                        self.logger.warning("Failed to get user input")
-                
-                # Check if we're done
-                if result.get("interaction_complete"):
-                    await self.user.query({
-                        "message": "Interaction complete. Goodbye!",
-                        "require_response": False
-                    })
-                    break
+                # Handle result based on status
+                match result.status:
+                    case ReasoningStatus.NEED_INFO:
+                        if result.user_context:
+                            await self.io.send_message(result.user_context)
+                        response = await self.io.get_input(result.user_prompt)
+                        context['user_input'] = response
+                    
+                    case ReasoningStatus.NEED_EXPERT:
+                        expert_response = await self.use_expert(
+                            result.expert_domain,
+                            result.expert_request
+                        )
+                        context['expert_response'] = expert_response
+                    
+                    case ReasoningStatus.COMPLETE:
+                        message = result.final_answer or "No explicit answer provided"
+                        if result.explanation:
+                            message = f"{message}\n\nExplanation: {result.explanation}"
+                        
+                        await self.io.send_message(message)
+                        await self.io.send_message("Task completed. Goodbye!")
+                        break
+                    
+                    case ReasoningStatus.ERROR:
+                        error_msg = result.reason or "An unknown error occurred"
+                        if result.suggestion:
+                            error_msg = f"{error_msg}\n\nSuggestion: {result.suggestion}"
+                        
+                        await self.io.send_message(error_msg)
+                        break
+                    
+                    case _:
+                        await self.io.send_message(
+                            "I encountered an unexpected situation and need to stop. "
+                            "Please try again with a different request."
+                        )
+                        break
             
             return {
-                "success": True,
-                "results": result
+                "success": result.status == ReasoningStatus.COMPLETE,
+                "status": result.status,
+                "result": result
             }
             
-        except KeyboardInterrupt:
-            self.logger.info("Interaction interrupted by user")
+        except (ConfigurationError, ReasoningError, ResourceError, DXAError) as e:
+            error_msg = f"{type(e).__name__} error: {str(e)}"
+            await self.io.send_message(error_msg)
+            self.logger.error(error_msg)
             return {
                 "success": False,
-                "error": "Interrupted by user"
-            }
-        except Exception as e:
-            await self.handle_error(e)
-            return {
-                "success": False,
+                "status": ReasoningStatus.ERROR,
                 "error": str(e)
-            } 
+            }
 
-    async def handle_error(self, error: Exception) -> None:
-        """Handle agent errors by logging them and notifying the user.
-        
-        Args:
-            error: The exception that occurred
-        """
-        self.logger.error("Error during interaction: %s", error)
-        await self.user.query({
-            "message": f"An error occurred: {error}",
-            "require_response": False
-        }) 
+    async def __aenter__(self):
+        """Async context manager entry."""
+        await self.initialize()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit."""
+        await self.cleanup() 
+
+class ConsoleAgent(InteractiveAgent):
+    """Agent that interacts through console I/O."""
+    def __init__(self, *args, **kwargs):
+        """Initialize console agent."""
+        super().__init__(*args, io=ConsoleIO(), **kwargs)

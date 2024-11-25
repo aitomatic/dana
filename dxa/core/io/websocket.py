@@ -7,7 +7,7 @@ from aiohttp import (
     ClientWebSocketResponse,
     WSMsgType
 )
-from dxa.core.io.base import BaseIO
+from dxa.core.io.base_io import BaseIO
 
 class WebSocketError(Exception):
     """WebSocket-specific errors."""

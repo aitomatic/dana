@@ -4,13 +4,13 @@ This LLM is used internally by agents, not to be confused with the LLMs
 that are external resources.
 """
 
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from dxa.core.common.base_llm import BaseLLM
 
 class AgentLLM(BaseLLM):
     """Internal agent LLM implementation."""
     
-    def __init__(self, config: Dict[str, Any], name: str = None, **kwargs):
+    def __init__(self, config: Dict[str, Any], agent_prompt: Optional[str] = None, name: str = None, **kwargs):
         """Initialize an agent's internal LLM.
         
         Args:
@@ -19,9 +19,9 @@ class AgentLLM(BaseLLM):
             **kwargs: Additional arguments passed to BaseLLM
         """
         super().__init__(name=name, config=config, **kwargs)
-        self.config = config
-
-    async def cleanup(self) -> None:
-        """Clean up any resources used by the agent's LLM."""
-        if hasattr(self, 'client'):
-            await self.client.close()
+        self.agent_prompt = agent_prompt
+    
+    # pylint: disable=unused-argument
+    def get_system_prompt(self, context: Dict[str, Any], query: str) -> str:
+        """Get the system prompt for the agent LLM."""
+        return self.agent_prompt

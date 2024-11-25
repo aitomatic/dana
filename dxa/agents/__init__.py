@@ -1,6 +1,6 @@
 """DXA agent implementations."""
 
-from dxa.agents.console import ConsoleAgent
+from dxa.agents.interactive import ConsoleAgent
 from dxa.agents.state import (
     StateManager,
     Observation,

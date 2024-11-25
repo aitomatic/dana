@@ -2,7 +2,7 @@
 
 import asyncio
 import os
-from dxa.agents.console import ConsoleAgent
+from dxa.agents.interactive import ConsoleAgent
 from dxa.agents.websocket import WebSocketAgent
 from dxa.core.reasoning.cot import ChainOfThoughtReasoning
 from dxa.core.reasoning.ooda import OODALoopReasoning

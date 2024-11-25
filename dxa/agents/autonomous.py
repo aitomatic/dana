@@ -1,7 +1,7 @@
 """Autonomous agent implementation."""
 
 from typing import Dict, Any, Optional
-from dxa.agents.base import BaseAgent
+from dxa.agents.base_agent import BaseAgent
 from dxa.core.reasoning.base_reasoning import BaseReasoning
 
 class AutonomousAgent(BaseAgent):
@@ -12,7 +12,6 @@ class AutonomousAgent(BaseAgent):
         name: str,
         llm_config: Dict[str, Any],
         reasoning: BaseReasoning,
-        system_prompt: Optional[str] = None,
         description: Optional[str] = None,
         max_iterations: Optional[int] = None
     ):
@@ -22,7 +21,6 @@ class AutonomousAgent(BaseAgent):
             name: Name of this agent
             llm_config: Configuration for the agent's LLM
             reasoning: Reasoning pattern to use
-            system_prompt: Optional system prompt for the LLM
             description: Optional description of this agent
             max_iterations: Optional maximum number of iterations
         """
@@ -30,7 +28,6 @@ class AutonomousAgent(BaseAgent):
             name=name,
             llm_config=llm_config,
             reasoning=reasoning,
-            system_prompt=system_prompt,
             description=description
         )
         self.max_iterations = max_iterations

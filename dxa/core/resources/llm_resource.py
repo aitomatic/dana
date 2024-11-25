@@ -1,7 +1,7 @@
 """LLM resource implementation."""
 
 from typing import Dict, Any, Optional
-from dxa.core.resources.base import BaseResource, ResourceError
+from dxa.core.resources.base_resource import BaseResource, ResourceError
 
 class LLMError(ResourceError):
     """Error in LLM interaction."""

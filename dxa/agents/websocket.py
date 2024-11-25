@@ -1,10 +1,10 @@
 """WebSocket-based agent implementation."""
 
 from typing import Dict, Any, Optional
-from dxa.agents.base import BaseAgent
+from dxa.agents.base_agent import BaseAgent
 from dxa.core.io.websocket import WebSocketIO, WebSocketError
 from dxa.core.reasoning.base_reasoning import BaseReasoning
-from dxa.core.state import StateManager
+from dxa.agents.state import StateManager
 
 class WebSocketAgent(BaseAgent):
     """Agent that interacts through WebSocket I/O."""

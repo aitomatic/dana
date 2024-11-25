@@ -2,7 +2,7 @@
 
 from typing import Dict, Any
 import asyncio
-from dxa.core.resources.base import BaseResource, ResourceError
+from dxa.core.resources.base_resource import BaseResource, ResourceError
 from typing import Optional, List
 
 class AgentError(ResourceError):

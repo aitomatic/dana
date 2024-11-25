@@ -1,7 +1,7 @@
 """Console I/O implementation."""
 
 from typing import Optional
-from dxa.core.io.base import BaseIO
+from dxa.core.io.base_io import BaseIO
 
 class ConsoleIO(BaseIO):
     """Console-based I/O implementation."""

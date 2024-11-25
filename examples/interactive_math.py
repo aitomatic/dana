@@ -2,9 +2,8 @@
 
 import asyncio
 import os
-from dxa.agents.interactive import InteractiveAgent
+from dxa.agents.interactive import ConsoleAgent
 from dxa.core.reasoning.cot import ChainOfThoughtReasoning
-from dxa.core.io.console import ConsoleIO
 
 async def main():
     """Run interactive math solver example."""
@@ -17,11 +16,10 @@ async def main():
     await reasoning.initialize()  # Initialize before use
 
     # Create interactive agent
-    agent = InteractiveAgent(
+    agent = ConsoleAgent(
         name="math_solver",
         llm_config={"api_key": api_key},
         reasoning=reasoning,  # Pass initialized reasoning
-        io=ConsoleIO(),
         system_prompt="""You are a helpful math tutor. Break down problems 
         step by step and explain your reasoning clearly."""
     )

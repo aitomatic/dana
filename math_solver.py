@@ -2,7 +2,7 @@
 
 import asyncio
 import os
-from dxa.agents.console import ConsoleAgent
+from dxa.agents.interactive import ConsoleAgent
 from dxa.core.reasoning.cot import ChainOfThoughtReasoning
 from dxa.experts.math import create_math_expert
 from dxa.utils.logging import configure_logging
@@ -32,7 +32,7 @@ async def main() -> None:
         await reasoning.initialize()
 
         # Create interactive agent with math expert
-        agent = ConsoleAgent(
+        agent = InteractiveAgent(
             name="math_solver",
             reasoning=reasoning,
             internal_llm_config={
