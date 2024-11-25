@@ -103,7 +103,8 @@ async def ooda_loop(problem_statement):
 
     async def orient(observation, extra_info=""):
         # prompt = f"Based on the observation: '{observation}', what a specific query should we send to an external model to gather more information? Only one query."
-        gen_query_prompt = "what a specific query should we send to an external model to gather more information? Only one query."
+        # gen_query_prompt = "what a specific query should we send to an external model to gather more information? Only one query."
+        gen_query_prompt = "what a specific query should we send to an external model to resolve problem? Only one query."
         if extra_info:
             prompt = f"Based on the observation: '{observation}' and the extra information from user:{extra_info}, {gen_query_prompt}"
         else:
@@ -156,8 +157,8 @@ async def ooda_loop(problem_statement):
         response_from_tLLM = await decide(query)
         check_query_prompt = (
             "You are an AI reasoning expert. Please verify the query from user and the answer that need to more information from user. "
-            f"\nQuery:{query}.\nAnswer:{response_from_tLLM}. PLease evaluate concise and response good query for user in JSON format "
-            "with field 'ask_more' is true or false and 'query' to ask user. Only one query:"
+            f"\nQuery:{query}.\nAnswer:{response_from_tLLM}. PLease evaluate concise and responsein JSON format "
+            "with field 'ask_more' is true or false and 'query' to ask user to get more information. Only one query:"
         )
         actions = await interact_with_aLLM(check_query_prompt)
         print(actions)
@@ -190,9 +191,7 @@ async def ooda_loop(problem_statement):
         #     break
 
         if stop_loop:
-            stop_loop = input('Do it resolve your problem?[y/n]:') == 'y'
-            if stop_loop:
-                break
+            break
         query = await orient(response_from_tLLM, extra_info)
 
 
