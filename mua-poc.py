@@ -9,7 +9,7 @@ from dotenv import load_dotenv  # Import load_dotenv from dotenv
 load_dotenv()  # Add this line
 
 # Set your OpenAI API key
-api_key = ''
+api_key = os.getenv("OPENAI_API_KEY")
 
 aClient = openai.AsyncOpenAI(api_key=api_key, base_url="https://api.openai.com/v1")
 aModel = "gpt-4o"
