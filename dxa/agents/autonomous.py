@@ -2,7 +2,7 @@
 
 from typing import Dict, Any, Optional
 from dxa.agents.base import BaseAgent
-from dxa.core.reasoning.base import BaseReasoning
+from dxa.core.reasoning.base_reasoning import BaseReasoning
 
 class AutonomousAgent(BaseAgent):
     """Base class for agents that operate independently."""

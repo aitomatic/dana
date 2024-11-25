@@ -101,7 +101,7 @@ class AutomationAgent(AutonomousAgent):
                 "workflow_state": workflow_state
             }
             
-        except Exception as e:
+        except (ValueError, RuntimeError, KeyError, AttributeError) as e:
             await self.handle_error(e)
             return {
                 "success": False,
@@ -213,3 +213,11 @@ class AutomationAgent(AutonomousAgent):
                 "success": False,
                 "error": f"Validation error: {str(e)}"
             } 
+
+    async def handle_error(self, error: Exception) -> None:
+        """Handle workflow execution errors.
+        
+        Args:
+            error: The exception that was raised
+        """
+        self.logger.error("Workflow error: %s", str(error)) 

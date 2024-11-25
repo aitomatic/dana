@@ -19,13 +19,12 @@ class HumanUserResource(BaseResource):
         role: str,
         permissions: Optional[Dict[str, bool]] = None,
         io: Optional[BaseIO] = None,
-        timeout: float = 300.0  # 5 minutes default timeout
+        timeout: float = 300.0
     ):
         """Initialize human user resource."""
         super().__init__(
             name=name,
-            description=f"Human user with role: {role}",
-            config={"role": role, "timeout": timeout}
+            description=f"Human user with role: {role}"
         )
         self.role = role
         self.permissions = permissions or {}
@@ -41,7 +40,7 @@ class HumanUserResource(BaseResource):
         except Exception as e:
             self._is_available = False
             self.logger.error("Failed to initialize I/O: %s", str(e))
-            raise HumanError(f"I/O initialization failed: {str(e)}")
+            raise HumanError(f"I/O initialization failed: {str(e)}") from e
 
     async def query(
         self,

@@ -1,8 +1,8 @@
 """OODA (Observe, Orient, Decide, Act) loop reasoning pattern."""
 
 from typing import Dict, Any
-from dxa.core.reasoning.base import BaseReasoning
-from dxa.core.state import StateManager
+from dxa.core.reasoning.base_reasoning import BaseReasoning
+from dxa.agents.state import StateManager
 
 class OODAPhase:
     """OODA loop phases."""
@@ -17,29 +17,8 @@ class OODALoopReasoning(BaseReasoning):
     def __init__(self):
         """Initialize OODA loop reasoning."""
         super().__init__()
-        self.state_manager = StateManager()
         self.current_phase = OODAPhase.OBSERVE
-
-    async def initialize(self) -> None:
-        """Initialize the reasoning pattern."""
-        self.state_manager = StateManager()
-        self.current_phase = OODAPhase.OBSERVE
-        self.logger.info("OODA loop reasoning initialized")
-
-    async def cleanup(self) -> None:
-        """Clean up resources."""
-        self.state_manager.clear_history()
-        self.logger.info("OODA loop reasoning cleaned up")
-
-    def get_reasoning_prompt(self, context: Dict[str, Any], query: str) -> str:
-        """Get the prompt template for the current OODA phase."""
-        prompts = {
-            OODAPhase.OBSERVE: self._get_observe_prompt,
-            OODAPhase.ORIENT: self._get_orient_prompt,
-            OODAPhase.DECIDE: self._get_decide_prompt,
-            OODAPhase.ACT: self._get_act_prompt
-        }
-        return prompts[self.current_phase](context, query)
+        self.state_manager = StateManager(self.__class__.__name__)
 
     async def reason(
         self,
@@ -62,14 +41,13 @@ class OODALoopReasoning(BaseReasoning):
         llm_request = {
             "prompt": prompt,
             "temperature": kwargs.get('temperature', 0.7),
-            "max_tokens": kwargs.get('max_tokens', None),
-            "system_prompt": kwargs.get('system_prompt', None)
+            "max_tokens": kwargs.get('max_tokens', None)
         }
         
         try:
             # Get response from LLM
             llm_response = await self._query_llm(llm_request)
-            response = llm_response["content"]  # Extract content from response
+            response = llm_response["content"]
             
             # Record the response
             self.state_manager.add_observation(
@@ -104,6 +82,16 @@ class OODALoopReasoning(BaseReasoning):
                 }
             )
             raise
+
+    def get_reasoning_prompt(self, context: Dict[str, Any], query: str) -> str:
+        """Get the prompt template for the current OODA phase."""
+        prompts = {
+            OODAPhase.OBSERVE: self._get_observe_prompt,
+            OODAPhase.ORIENT: self._get_orient_prompt,
+            OODAPhase.DECIDE: self._get_decide_prompt,
+            OODAPhase.ACT: self._get_act_prompt
+        }
+        return prompts[self.current_phase](context, query)
 
     def _advance_phase(self):
         """Advance to the next phase in the OODA loop."""

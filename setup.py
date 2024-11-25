@@ -1,6 +1,9 @@
 """Setup file for DXA package."""
 
-from setuptools import setup, find_packages
+try:
+    from setuptools import setup, find_packages
+except ImportError:
+    from distutils.core import setup, find_packages
 
 setup(
     name="dxa",
@@ -21,6 +24,7 @@ setup(
             "pytest-asyncio>=0.21.0",
             "black>=23.0.0",
             "mypy>=1.0.0",
+            "setuptools>=65.0.0",
         ]
     },
     python_requires=">=3.8",

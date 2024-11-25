@@ -1,10 +1,16 @@
 """Console-based agent implementation."""
 
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional
 from dxa.agents.base import BaseAgent
 from dxa.core.io.console import ConsoleIO
-from dxa.core.reasoning.base import BaseReasoning
-from dxa.core.expertise import ExpertResource
+from dxa.core.reasoning.base_reasoning import BaseReasoning, ReasoningStatus
+from dxa.core.resources.base import BaseResource
+from dxa.core.common.exceptions import (
+    DXAError,
+    ReasoningError,
+    ResourceError,
+    ConfigurationError
+)
 
 class ConsoleAgent(BaseAgent):
     """Agent that interacts through console I/O."""
@@ -14,7 +20,7 @@ class ConsoleAgent(BaseAgent):
         name: str,
         reasoning: BaseReasoning,
         internal_llm_config: Dict[str, Any],
-        expert_resources: Optional[List[ExpertResource]] = None,
+        resources: Optional[Dict[str, BaseResource]] = None,
         system_prompt: Optional[str] = None,
         description: Optional[str] = None
     ):
@@ -23,7 +29,7 @@ class ConsoleAgent(BaseAgent):
             name=name,
             reasoning=reasoning,
             internal_llm_config=internal_llm_config,
-            expert_resources=expert_resources,
+            resources=resources,
             system_prompt=system_prompt,
             description=description
         )
@@ -42,48 +48,114 @@ class ConsoleAgent(BaseAgent):
         self.logger.info("Console agent cleaned up")
 
     async def run(self, context: Dict[str, Any]) -> Dict[str, Any]:
-        """Run the agent's main loop."""
+        """Run the agent's main loop.
+        
+        Args:
+            context: Must contain either:
+                - task_spec: The problem/task specification
+                - or domain and parameters for the task
+        """
         try:
-            # Get initial input if needed
-            if 'initial_input' not in context:
-                response = await self.io.get_input(
-                    "How can I help you today?"
+            # Get task specification if not provided
+            if 'task_spec' not in context:
+                task_spec = await self.io.get_input(
+                    "What would you like help with?"
                 )
-                context['initial_input'] = response
+                context['task_spec'] = task_spec
 
             # Main interaction loop
             while True:
                 # Run reasoning cycle
-                result = await self.reasoning.reason(context, context['initial_input'])
+                result = await self.reasoning.reason(context, context['task_spec'])
                 
-                # Check if we need user input
-                if result.get("needs_user_input"):
-                    response = await self.io.get_input(result["user_prompt"])
-                    context['user_input'] = response
-                
-                # Check if we need to use any experts
-                if result.get("needs_expert"):
-                    expert_request = result["expert_request"]
-                    expert_response = await self.use_expert(
-                        expert_request["domain"],
-                        expert_request["request"]
-                    )
-                    context['expert_response'] = expert_response
-                
-                # Check if we're done
-                if result.get("interaction_complete"):
-                    await self.io.send_message("Interaction complete. Goodbye!")
-                    break
+                # Handle result based on status
+                match result.status:
+                    case ReasoningStatus.NEED_INFO:
+                        if result.user_context:
+                            await self.io.send_message(result.user_context)
+                        response = await self.io.get_input(result.user_prompt)
+                        context['user_input'] = response
+                    
+                    case ReasoningStatus.NEED_EXPERT:
+                        expert_response = await self.use_expert(
+                            result.expert_domain,
+                            result.expert_request
+                        )
+                        context['expert_response'] = expert_response
+                    
+                    case ReasoningStatus.COMPLETE:
+                        message = result.final_answer or "No explicit answer provided"
+                        if result.explanation:
+                            message = f"{message}\n\nExplanation: {result.explanation}"
+                        
+                        await self.io.send_message(message)
+                        await self.io.send_message("Task completed. Goodbye!")
+                        break
+                    
+                    case ReasoningStatus.ERROR:
+                        error_msg = result.reason or "An unknown error occurred"
+                        if result.suggestion:
+                            error_msg = f"{error_msg}\n\nSuggestion: {result.suggestion}"
+                        
+                        await self.io.send_message(error_msg)
+                        break
+                    
+                    case _:
+                        await self.io.send_message(
+                            "I encountered an unexpected situation and need to stop. "
+                            "Please try again with a different request."
+                        )
+                        break
             
             return {
-                "success": True,
-                "results": result
+                "success": result.status == ReasoningStatus.COMPLETE,
+                "status": result.status,
+                "result": result
             }
             
-        except Exception as e:
-            self.logger.error("Error in console agent: %s", str(e))
+        except ConfigurationError as e:
+            error_msg = f"Configuration error: {str(e)}"
+            await self.io.send_message(error_msg)
+            self.logger.error(error_msg)
             return {
                 "success": False,
+                "status": ReasoningStatus.ERROR,
+                "error": str(e)
+            }
+        except ReasoningError as e:
+            error_msg = f"Reasoning error: {str(e)}"
+            await self.io.send_message(error_msg)
+            self.logger.error(error_msg)
+            return {
+                "success": False,
+                "status": ReasoningStatus.ERROR,
+                "error": str(e)
+            }
+        except ResourceError as e:
+            error_msg = f"Resource error: {str(e)}"
+            await self.io.send_message(error_msg)
+            self.logger.error(error_msg)
+            return {
+                "success": False,
+                "status": ReasoningStatus.ERROR,
+                "error": str(e)
+            }
+        except DXAError as e:
+            error_msg = f"Agent error: {str(e)}"
+            await self.io.send_message(error_msg)
+            self.logger.error(error_msg)
+            return {
+                "success": False,
+                "status": ReasoningStatus.ERROR,
+                "error": str(e)
+            }
+        except Exception as e:
+            error_msg = f"Unexpected error: {str(e)}"
+            await self.io.send_message(error_msg)
+            self.logger.error(error_msg)
+            return {
+                "success": False,
+                "status": ReasoningStatus.ERROR,
                 "error": str(e)
             }
 

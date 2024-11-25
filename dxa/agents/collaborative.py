@@ -3,7 +3,7 @@
 from typing import Dict, Any, Optional
 import asyncio
 from dxa.agents.base import BaseAgent
-from dxa.core.reasoning.base import BaseReasoning
+from dxa.core.reasoning.base_reasoning import BaseReasoning
 from dxa.core.resources.agents import AgentResource
 
 class CollaborativeAgent(BaseAgent):

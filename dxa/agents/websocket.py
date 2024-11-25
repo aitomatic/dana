@@ -3,7 +3,7 @@
 from typing import Dict, Any, Optional
 from dxa.agents.base import BaseAgent
 from dxa.core.io.websocket import WebSocketIO, WebSocketError
-from dxa.core.reasoning.base import BaseReasoning
+from dxa.core.reasoning.base_reasoning import BaseReasoning
 from dxa.core.state import StateManager
 
 class WebSocketAgent(BaseAgent):

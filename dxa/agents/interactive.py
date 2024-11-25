@@ -5,7 +5,7 @@ from dxa.agents.base import BaseAgent
 from dxa.core.io.base import BaseIO
 from dxa.core.io.console import ConsoleIO
 from dxa.core.resources.human import HumanUserResource
-from dxa.core.reasoning.base import BaseReasoning
+from dxa.core.reasoning.base_reasoning import BaseReasoning
 
 class InteractiveAgent(BaseAgent):
     """Base class for agents that interact with users."""
@@ -31,10 +31,10 @@ class InteractiveAgent(BaseAgent):
         """
         super().__init__(
             name=name,
-            llm_config=llm_config,
             reasoning=reasoning,
             system_prompt=system_prompt,
-            description=description
+            description=description,
+            internal_llm_config=llm_config
         )
         
         # Set up I/O
@@ -126,3 +126,15 @@ class InteractiveAgent(BaseAgent):
                 "success": False,
                 "error": str(e)
             } 
+
+    async def handle_error(self, error: Exception) -> None:
+        """Handle agent errors by logging them and notifying the user.
+        
+        Args:
+            error: The exception that occurred
+        """
+        self.logger.error("Error during interaction: %s", error)
+        await self.user.query({
+            "message": f"An error occurred: {error}",
+            "require_response": False
+        }) 

@@ -1,6 +1,20 @@
 """DXA agent implementations."""
 
 from dxa.agents.console import ConsoleAgent
-from dxa.agents.websocket import WebSocketAgent
+from dxa.agents.state import (
+    StateManager,
+    Observation,
+    AgentState,
+    Message
+)
 
-__all__ = ['ConsoleAgent', 'WebSocketAgent']
+__all__ = [
+    # Agent implementations
+    'ConsoleAgent',
+    
+    # State management
+    'StateManager',
+    'Observation',
+    'AgentState',
+    'Message'
+]

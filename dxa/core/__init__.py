@@ -1,6 +1,12 @@
 """Core DXA functionality."""
 
-from dxa.core.types import AgentState
-from dxa.core.state import StateManager
+from dxa.core.resources.expert import DomainExpertise, ExpertResource
+from dxa.core.resources.base import BaseResource
+from dxa.core.reasoning.base_reasoning import BaseReasoning
 
-__all__ = ['AgentState', 'StateManager']
+__all__ = [
+    'DomainExpertise',
+    'ExpertResource',
+    'BaseResource',
+    'BaseReasoning'
+]
