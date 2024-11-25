@@ -3,6 +3,7 @@ import time
 from anthropic import AnthropicBedrock, AsyncAnthropicBedrock
 import os
 from dotenv import load_dotenv  # Import load_dotenv from dotenv
+import json
 # ... existing code ...
 
 # Load environment variables from .env file
@@ -100,9 +101,13 @@ async def ooda_loop(problem_statement):
         context["aggregated_results"]["observations"].append(observation)
         return observation
 
-    async def orient(observation):
+    async def orient(observation, extra_info=""):
         # prompt = f"Based on the observation: '{observation}', what a specific query should we send to an external model to gather more information? Only one query."
-        prompt = f"Based on the observation: '{observation}', what should we do?"
+        gen_query_prompt = "what a specific query should we send to an external model to gather more information? Only one query."
+        if extra_info:
+            prompt = f"Based on the observation: '{observation}' and the extra information from user:{extra_info}, {gen_query_prompt}"
+        else:
+            prompt = f"Based on the observation: '{observation}', {gen_query_prompt}"
         query = await interact_with_aLLM(prompt)
         print(f"----aLLM query:{query}")
         context["steps"].append({"step": "Orient", "response": query})
@@ -113,11 +118,11 @@ async def ooda_loop(problem_statement):
         response_from_tLLM = await interact_with_tLLM(query)
         print(f"----tLLM response----:{response_from_tLLM}\n\n")
         print(f"--------------\n")
-        response_from_aLLM = await interact_with_aLLM(query)
-        print(f"----aLLM response----:{response_from_aLLM}\n\n\n\n\n")
+        # response_from_aLLM = await interact_with_aLLM(query)
+        # print(f"----aLLM response----:{response_from_aLLM}\n\n\n\n\n")
         print(f"----------------------------------------\n")
         context["steps"].append({"step": "Decide", "response": response_from_tLLM})
-        context["aggregated_results"]["answers"].append(response_from_aLLM)
+        # context["aggregated_results"]["answers"].append(response_from_aLLM)
         return response_from_tLLM
 
     def act(observation, response_from_tLLM):
@@ -149,19 +154,52 @@ async def ooda_loop(problem_statement):
     print('\n--------------------------\n\n\n')
     while query:
         response_from_tLLM = await decide(query)
-        prompt = ORIENT_PROMPT_TEMPLATE.format(question=query, n_words=200, observations=response_from_tLLM)
-        res = await interact_with_tLLM(prompt=prompt)
-        print(f"Evaluate query and response to stop loop:{res}")
-        print(f"\n-------------------\n\n\n")
-        if '[CONFIDENT]' in res:
-            break
-        query = await orient(response_from_tLLM)
+        check_query_prompt = (
+            "You are an AI reasoning expert. Please verify the query from user and the answer that need to more information from user. "
+            f"\nQuery:{query}.\nAnswer:{response_from_tLLM}. PLease evaluate concise and response good query for user in JSON format "
+            "with field 'ask_more' is true or false and 'query' to ask user. Only one query:"
+        )
+        actions = await interact_with_aLLM(check_query_prompt)
+        print(actions)
+
+        # Remove any unwanted prefix or postfix
+        actions = actions.strip()  # Remove leading/trailing whitespace
+        if actions.startswith('```json') and actions.endswith('```'):
+            actions = actions[7:-3].strip()  # Remove the '```json' prefix and '```' postfix
+
+        extra_info = ""
+        
+        # Check if actions is a JSON string and parse it
+        try:
+            actions = json.loads(actions)  # Parse the JSON string into a dictionary
+        except json.JSONDecodeError:
+            print("Failed to decode JSON, received:", actions)
+            return  # Exit or handle the error appropriately
+
+        stop_loop = True
+        # Ensure actions is a dictionary before accessing its keys
+        if isinstance(actions, dict) and actions.get("ask_more"):  # Use .get() to safely access the key
+            extra_info = input(actions.get("query", "Please provide more information: "))  # Provide a default message if 'query' is not found
+            stop_loop = False
+
+        # prompt = ORIENT_PROMPT_TEMPLATE.format(question=query, n_words=200, observations=response_from_tLLM)
+        # res = await interact_with_tLLM(prompt=prompt)
+        # print(f"Evaluate query and response to stop loop:{res}")
+        # print(f"\n-------------------\n\n\n")
+        # if '[CONFIDENT]' in res:
+        #     break
+
+        if stop_loop:
+            stop_loop = input('Do it resolve your problem?[y/n]:') == 'y'
+            if stop_loop:
+                break
+        query = await orient(response_from_tLLM, extra_info)
 
 
 # Example usage with a problem statement
-# problem_statement = "We need to explain recursion to a beginner in computer science. What information should we gather to proceed?"
-problem_statement = "solve fermats last theorem."
+problem_statement = "Fridge is running but not cool."
+# problem_statement = "solve fermats last theorem."
 aLLM_system_instructions = "You are an expert problem solver. You have access to an external domain expert LLM."
-tLLM_system_instrcutions = "You are an expert in mathematics."
+tLLM_system_instrcutions = "You are an expert in fridge."
 import asyncio
 asyncio.run(ooda_loop(problem_statement))
