@@ -153,6 +153,7 @@ async def ooda_loop(problem_statement):
     print('\n--------------------------\n\n\n')
     query = await orient(observation)
     print('\n--------------------------\n\n\n')
+    count = 0
     while query:
         response_from_tLLM = await decide(query)
         check_query_prompt = (
@@ -191,6 +192,12 @@ async def ooda_loop(problem_statement):
         #     break
 
         if stop_loop:
+            print(f"\n\n------------\n\n Final response to user:{response_from_tLLM}.\n----------------")
+            break
+        
+        count += 1
+        if count > 5:
+            print(f"\n\n------------\n\n Max request more information from user reach. Last response to user:{response_from_tLLM}.\n----------------")
             break
         query = await orient(response_from_tLLM, extra_info)
 
