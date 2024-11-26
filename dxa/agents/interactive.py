@@ -64,6 +64,8 @@ class InteractiveAgent(BaseAgent):
                     "What would you like help with?"
                 )
                 context['task_spec'] = task_spec
+            if 'resources' not in context:
+                context['resources'] = self.resources
 
             # Main interaction loop
             while True:

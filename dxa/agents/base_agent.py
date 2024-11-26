@@ -84,9 +84,9 @@ class BaseAgent(ABC):
         Raises:
             ValueError: If no expert is found for the given domain
         """
-        experts: Dict[str, ExpertResource] = self.resources.get_by_type(ExpertResource)
+        experts: Dict[str, ExpertResource] = {k: v for k, v in self.resources.items() if isinstance(v, ExpertResource)}
         expert = next(
-            (e for e in experts.values() if e.expertise.name.lower() == domain.lower()),
+            (e for name, e in experts.items() if name.lower() == domain.lower()),
             None
         )
         
