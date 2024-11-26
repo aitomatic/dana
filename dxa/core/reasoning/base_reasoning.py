@@ -155,28 +155,39 @@ class BaseReasoning(ABC):
     def get_reasoning_prompt(self, context: Dict[str, Any], query: str) -> str:
         """Get the reasoning prompt."""
 
-    # pylint: disable=unused-argument
+    @abstractmethod
     def get_reasoning_system_prompt(self, context: Dict[str, Any], query: str) -> str:
         """Get the reasoning system prompt."""
-        return ""
 
     def get_system_prompt(self, context: Dict[str, Any], query: str) -> str:
         """Get the system prompt by combining agent and reasoning system prompts."""
-        reasoning_system_prompt = self.get_reasoning_system_prompt(context, query)
-        if self.agent_llm and hasattr(self.agent_llm, 'get_system_prompt'): 
+        system_prompt = ""
+
+        if self.agent_llm and hasattr(self.agent_llm, 'get_system_prompt'):
             agent_system_prompt = self.agent_llm.get_system_prompt(context, query)
-            return f"{agent_system_prompt}\n\n{reasoning_system_prompt}"
-        else:
-            return reasoning_system_prompt
+            if agent_system_prompt:
+                system_prompt = agent_system_prompt
+        
+        reasoning_system_prompt = self.get_reasoning_system_prompt(context, query)
+        if reasoning_system_prompt:
+            system_prompt = f"{system_prompt}\n\n{reasoning_system_prompt}"
+
+        return system_prompt
 
     def get_prompt(self, context: Dict[str, Any], query: str) -> str:
         """Get the prompt by combining agent and reasoning prompts."""
+        prompt = ""
+
+        if self.agent_llm and hasattr(self.agent_llm, 'get_user_prompt'):
+            agent_prompt = self.agent_llm.get_user_prompt(context, query)
+            if agent_prompt:
+                prompt = agent_prompt
+
         reasoning_prompt = self.get_reasoning_prompt(context, query)
-        if self.agent_llm and hasattr(self.agent_llm, 'get_prompt'):
-            agent_prompt = self.agent_llm.get_prompt(context, query)
-            return f"{agent_prompt}\n\n{reasoning_prompt}"
-        else:
-            return reasoning_prompt
+        if reasoning_prompt:
+            prompt = f"{prompt}\n\n{reasoning_prompt}"
+
+        return prompt
 
     def set_available_resources(self, resources: Dict[str, BaseResource]) -> None:
         """Inform reasoning about available resources."""

@@ -17,7 +17,7 @@ class BaseAgent(ABC):
         reasoning: BaseReasoning,
         llm_config: Dict[str, Any],
         resources: Optional[Dict[str, BaseResource]] = None,
-        agent_prompt: Optional[str] = None,
+        agent_prompts: Optional[Dict[str, str]] = None,
         description: Optional[str] = None
     ):
         """Initialize base agent."""
@@ -31,7 +31,7 @@ class BaseAgent(ABC):
         # Set up agent's LLM
         self.agent_llm = AgentLLM(
             name=f"{name}_llm",
-            agent_prompt=agent_prompt,
+            agent_prompts=agent_prompts,
             config=llm_config
         )
         
