@@ -13,10 +13,10 @@ from typing import Dict, Any, Type, AsyncIterator
 import logging
 from dxa.core.reasoning.base_reasoning import BaseReasoning, ReasoningConfig
 from dxa.core.resources.expert import ExpertResource
-from dxa.agents.agent_llm import AgentLLM
+from dxa.agent.agent_llm import AgentLLM
 from dxa.core.reasoning.cot import ChainOfThoughtReasoning
 from dxa.core.reasoning.ooda import OODAReasoning
-from dxa.agents.progress import AgentProgress
+from dxa.agent.progress import AgentProgress
 from dxa.common.errors import (
     ReasoningError, 
     ConfigurationError, 

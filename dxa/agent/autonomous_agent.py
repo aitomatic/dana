@@ -28,7 +28,7 @@ Example:
 """
 
 from typing import Dict, Any, Optional
-from dxa.agents.base_agent import BaseAgent
+from dxa.agent.base_agent import BaseAgent
 from dxa.core.reasoning.base_reasoning import BaseReasoning
 from dxa.common.errors import DXAError
 

@@ -37,7 +37,7 @@ Example:
 """
 
 from typing import Dict, Any, Optional
-from dxa.agents.autonomous import AutonomousAgent
+from dxa.agent.autonomous_agent import AutonomousAgent
 from dxa.core.reasoning.ooda import OODAReasoning
 
 class AutomationAgent(AutonomousAgent):

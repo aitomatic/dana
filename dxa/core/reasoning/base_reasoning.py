@@ -5,11 +5,11 @@ from typing import Dict, Any, Optional
 from enum import Enum
 from dataclasses import dataclass
 import logging
-from dxa.agents.state import StateManager
+from dxa.agent.state import StateManager
 from dxa.core.resources.base_resource import BaseResource
 from dxa.core.resources.expert import ExpertResource
 from dxa.core.resources.human import HumanResource
-from dxa.agents.agent_llm import AgentLLM
+from dxa.agent.agent_llm import AgentLLM
 
 class ReasoningStatus(str, Enum):
     """Possible statuses from reasoning."""

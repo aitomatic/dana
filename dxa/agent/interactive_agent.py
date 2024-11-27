@@ -31,11 +31,11 @@ Example:
 """
 
 from typing import Optional, Dict, Any
-from dxa.agents.base_agent import BaseAgent
+from dxa.agent.base_agent import BaseAgent
 from dxa.core.io.base_io import BaseIO
 from dxa.core.io.console import ConsoleIO
 from dxa.core.reasoning.base_reasoning import BaseReasoning
-from dxa.agents.config import AgentConfig
+from dxa.agent.config import AgentConfig
 from dxa.common.errors import ReasoningError, ConfigurationError, DXAConnectionError
 
 class InteractiveAgent(BaseAgent):

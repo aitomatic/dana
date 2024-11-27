@@ -20,7 +20,7 @@ Example:
 from abc import ABC, abstractmethod
 from typing import Optional
 import logging
-from dxa.agents.state import StateManager
+from dxa.agent.state import StateManager
 
 class BaseIO(ABC):
     """Base class for I/O implementations.

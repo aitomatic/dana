@@ -2,7 +2,7 @@
 
 import asyncio
 import os
-from dxa.agents.automation import AutomationAgent
+from dxa.agent.automation_agent import AutomationAgent
 
 # Define the workflow steps
 SCRAPING_WORKFLOW = {

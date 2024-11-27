@@ -27,11 +27,11 @@ Example:
 """
 
 from typing import Dict, Any
-from dxa.agents.base_agent import BaseAgent
+from dxa.agent.base_agent import BaseAgent
 from dxa.core.io.websocket import WebSocketIO
 from dxa.common.errors import WebSocketError, DXAConnectionError
 from dxa.core.reasoning import BaseReasoning
-from dxa.agents.state import StateManager
+from dxa.agent.state import StateManager
 
 class WebSocketAgent(BaseAgent):
     """Agent that interacts through WebSocket I/O.

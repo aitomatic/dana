@@ -33,7 +33,7 @@ Example:
 """
 
 from typing import Dict, Any, Optional
-from dxa.agents.autonomous import AutonomousAgent
+from dxa.agent.autonomous_agent import AutonomousAgent
 from dxa.core.reasoning.base_reasoning import BaseReasoning
 from dxa.core.resources.agents import AgentResource
 from dxa.common.errors import ReasoningError, ConfigurationError, AgentError

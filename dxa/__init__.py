@@ -23,7 +23,7 @@ Example:
     ... )
 """
 
-from dxa.agents.state import StateManager
+from dxa.agent.state import StateManager
 from dxa.core.capabilities.expertise import DomainExpertise
 from dxa.core.resources.expert import ExpertResource
 from dxa.core.reasoning.cot import ChainOfThoughtReasoning
