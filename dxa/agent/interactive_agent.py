@@ -109,7 +109,7 @@ class InteractiveAgent(BaseAgent):
             context['initial_input'] = response
 
             # Run reasoning cycle
-            result = await self.reasoning.reason(context)
+            result = await self.reasoning.reason(context, response)
             
             # Check if we need user input
             if result.get("needs_user_input"):
