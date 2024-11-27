@@ -19,7 +19,7 @@ from dxa.agent.base_agent import BaseAgent
 from dxa.agent.interactive_agent import InteractiveAgent
 from dxa.agent.websocket_agent import WebSocketAgent
 from dxa.agent.automation_agent import AutomationAgent
-from dxa.agent.collaborative import CollaborativeAgent
+from dxa.agent.collaborative_agent import CollaborativeAgent
 from dxa.agent.autonomous_agent import AutonomousAgent
 from dxa.agent.state import (
     StateManager,

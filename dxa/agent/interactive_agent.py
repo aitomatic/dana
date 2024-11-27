@@ -1,32 +1,24 @@
 """Interactive console-based agent implementation.
 
-This module provides an agent implementation that interacts through the console,
-enabling direct user interaction and feedback. It supports both autonomous operation
-and interactive dialogue.
+This module provides an agent that interacts through the console, enabling
+direct user interaction and feedback. The agent handles its own input/output
+through a console interface and uses a reasoning system to process user requests.
 
 Example:
     ```python
-    from dxa.agents.interactive import InteractiveAgent
-    from dxa.agents.config import AgentConfig, LLMConfig
-    from dxa.core.reasoning import ChainOfThoughtReasoning
-    
-    config = AgentConfig(
-        name="math_tutor",
-        llm_config=LLMConfig(
-            model_name="gpt-4",
-            temperature=0.7
-        )
-    )
+    config = {
+        "name": "math_tutor",
+        "model": "gpt-4",
+        "temperature": 0.7,
+        "system_prompt": "You are a helpful math tutor..."
+    }
     
     agent = InteractiveAgent(
         config=config,
         reasoning=ChainOfThoughtReasoning()
     )
     
-    result = await agent.run({
-        "task": "solve_equation",
-        "equation": "2x + 5 = 13"
-    })
+    result = await agent.run()  # Starts interactive session
     ```
 """
 
@@ -35,91 +27,89 @@ from dxa.agent.base_agent import BaseAgent
 from dxa.core.io.base_io import BaseIO
 from dxa.core.io.console import ConsoleIO
 from dxa.core.reasoning.base_reasoning import BaseReasoning
-from dxa.agent.config import AgentConfig
 from dxa.common.errors import ReasoningError, ConfigurationError, DXAConnectionError
 
 class InteractiveAgent(BaseAgent):
     """Agent that interacts through console I/O.
     
-    This agent type provides interactive capabilities through console input/output.
-    It can engage in dialogue with users, request clarification, and provide
-    step-by-step explanations of its reasoning.
+    This agent handles interactive dialogue through console input/output.
+    It manages its own interaction flow, prompting the user for input
+    and providing responses through the configured I/O interface.
+    
+    The agent uses a reasoning system to process user input and generate
+    appropriate responses. It can maintain context across multiple
+    interactions in a session.
     
     Attributes:
-        reasoning: Reasoning system instance
-        io: I/O interface for user interaction
+        reasoning: System for processing user input and generating responses
+        io: Interface for user interaction (defaults to console)
         
     Args:
-        config: Agent configuration
-        reasoning: Reasoning system instance
+        config: Dictionary containing:
+            - name: Agent identifier
+            - model: Name of the LLM model to use
+            - temperature: Model temperature setting
+            - system_prompt: Instructions for the agent's behavior
+            - Additional LLM configuration parameters
+        reasoning: System for processing inputs and generating responses
         io: Optional custom I/O interface (defaults to ConsoleIO)
         
     Example:
         ```python
         agent = InteractiveAgent(
-            config=AgentConfig(...),
-            reasoning=ChainOfThoughtReasoning(),
-            io=CustomIO()  # Optional custom I/O
+            config={
+                "name": "helper",
+                "model": "gpt-4",
+                "system_prompt": "You are a helpful assistant"
+            },
+            reasoning=ChainOfThoughtReasoning()
         )
         ```
     """
     
     def __init__(
         self,
-        config: AgentConfig,
+        config: Dict[str, Any],
         reasoning: BaseReasoning,
         io: Optional[BaseIO] = None
     ):
         """Initialize interactive agent."""
         super().__init__(
-            name=config.name,
-            config=config.llm_config.__dict__,
+            name=config["name"],
+            config=config,
             mode="interactive"
         )
         self.reasoning = reasoning
         self.io = io or ConsoleIO()
 
-    async def run(self, task: str) -> Dict[str, Any]:
-        """Run the interactive agent's main loop.
+    async def run(self) -> Dict[str, Any]:
+        """Start an interactive session with the user.
         
-        This method manages the agent's interaction cycle, including getting user
-        input, applying reasoning, and providing responses.
+        Manages the interaction loop:
+        1. Prompts user for input
+        2. Processes input through reasoning system
+        3. Provides response to user
+        4. Continues interaction if needed
         
-        Args:
-            task: The task/query to process
-            
         Returns:
             Dict containing:
-                - success: Whether the task completed successfully
-                - results: Results from reasoning system
-                - context: Interaction context and history
+                - success: Whether the session completed successfully
+                - results: Final results from reasoning system
+                - context: Session context and interaction history
                 
         Raises:
             ReasoningError: If reasoning system fails
             ConfigurationError: If agent is misconfigured
             DXAConnectionError: If I/O operations fail
-            ValueError: If task is invalid
-            
-        Example:
-            ```python
-            result = await agent.run({
-                "task": "explain_concept",
-                "concept": "neural networks",
-                "style": "beginner"
-            })
-            ```
         """
-        context = {"task": task}
+        context = {}
         try:
-            # Get initial input if needed
-            if 'initial_input' not in context:
-                response = await self.io.get_input(
-                    "How can I help you today?"
-                )
-                context['initial_input'] = response
+            # Get initial input
+            response = await self.io.get_input("How can I help you today?")
+            context['initial_input'] = response
 
             # Run reasoning cycle
-            result = await self.reasoning.reason(context, task)
+            result = await self.reasoning.reason(context)
             
             # Check if we need user input
             if result.get("needs_user_input"):
@@ -132,7 +122,7 @@ class InteractiveAgent(BaseAgent):
                 "context": context
             }
             
-        except (ReasoningError, ConfigurationError, ValueError, DXAConnectionError) as e:
+        except (ReasoningError, ConfigurationError, DXAConnectionError) as e:
             self.logger.error("Interactive agent error: %s", str(e))
             return {
                 "success": False,
