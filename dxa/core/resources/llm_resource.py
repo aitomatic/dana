@@ -2,6 +2,7 @@
 
 from typing import Dict, Any, Optional
 from dxa.core.resources.base_resource import BaseResource, ResourceError
+from openai import AsyncOpenAI
 
 class LLMError(ResourceError):
     """Error in LLM interaction."""
@@ -37,14 +38,13 @@ class LLMResource(BaseResource):
     async def initialize(self) -> None:
         """Initialize the LLM client."""
         try:
-            from openai import AsyncOpenAI
             self._client = AsyncOpenAI(api_key=self.config['api_key'])
             self._is_available = True
             self.logger.info("LLM resource initialized successfully")
         except Exception as e:
             self._is_available = False
             self.logger.error("Failed to initialize LLM resource: %s", str(e))
-            raise LLMError(f"LLM initialization failed: {str(e)}")
+            raise LLMError(f"LLM initialization failed: {str(e)}") from e
 
     async def cleanup(self) -> None:
         """Clean up any resources used by the LLM resource."""
@@ -123,4 +123,4 @@ class LLMResource(BaseResource):
             }
             
         except Exception as e:
-            raise LLMError(f"LLM query failed: {str(e)}") 
+            raise LLMError(f"LLM query failed: {str(e)}") from e

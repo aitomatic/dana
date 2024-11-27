@@ -22,7 +22,7 @@ class LLMInteractionAnalyzer:
                 "Install it with: pip install pandas"
             )
         self.log_dir = Path(log_dir)
-        self.llm_logs = self.log_dir / 'llm' / 'llm_interactions.log'
+        self.log_file = self.log_dir / 'dxa.log'
 
     def _safe_get_usage(self, row: Dict) -> int:
         """Safely extract token usage from a log entry."""
@@ -32,7 +32,7 @@ class LLMInteractionAnalyzer:
                 if isinstance(usage, dict):
                     return usage.get('total_tokens', 0)
             return 0
-        except Exception:
+        except (KeyError, ValueError):
             return 0
 
     def load_interactions(self) -> pd.DataFrame:
@@ -40,7 +40,7 @@ class LLMInteractionAnalyzer:
         interactions = []
         
         try:
-            with open(self.llm_logs) as f:
+            with open(self.log_file, encoding='utf-8') as f:
                 for line in f:
                     try:
                         log = json.loads(line)
@@ -78,7 +78,7 @@ class LLMInteractionAnalyzer:
             return df
             
         except FileNotFoundError:
-            print(f"Log file not found: {self.llm_logs}")
+            print(f"Log file not found: {self.log_file}")
             # Return empty DataFrame with correct columns
             return pd.DataFrame(columns=[
                 'timestamp',
@@ -119,7 +119,7 @@ class LLMInteractionAnalyzer:
                 (df['error'].notna())
             ]['error'].value_counts().head()
             stats["most_common_errors"] = error_counts.to_dict()
-        except Exception:
+        except (KeyError, ValueError):
             stats["most_common_errors"] = {}
             
         # Safely get phase counts
@@ -128,7 +128,7 @@ class LLMInteractionAnalyzer:
                 lambda x: x.get('phase', 'unknown') if isinstance(x, dict) else 'unknown'
             ).value_counts()
             stats["interactions_by_phase"] = phase_counts.to_dict()
-        except Exception:
+        except (KeyError, ValueError):
             stats["interactions_by_phase"] = {}
         
         return stats
@@ -207,5 +207,5 @@ class LLMInteractionAnalyzer:
             "prompt_patterns": patterns
         }
         
-        with open(output_file, 'w') as f:
+        with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(report, f, indent=2, default=str) 

@@ -3,6 +3,7 @@
 from typing import Dict, Any, Optional
 from dxa.agents.base_agent import BaseAgent
 from dxa.core.reasoning.base_reasoning import BaseReasoning
+from dxa.common.errors import DXAError
 
 class AutonomousAgent(BaseAgent):
     """Base class for agents that operate independently."""
@@ -15,35 +16,36 @@ class AutonomousAgent(BaseAgent):
         description: Optional[str] = None,
         max_iterations: Optional[int] = None
     ):
-        """Initialize autonomous agent.
+        """Initialize autonomous agent."""
+        config = {
+            "llm": llm_config,
+            "description": description,
+            "mode": "autonomous"
+        }
         
-        Args:
-            name: Name of this agent
-            llm_config: Configuration for the agent's LLM
-            reasoning: Reasoning pattern to use
-            description: Optional description of this agent
-            max_iterations: Optional maximum number of iterations
-        """
-        super().__init__(
-            name=name,
-            llm_config=llm_config,
-            reasoning=reasoning,
-            description=description
-        )
+        super().__init__(name=name, config=config)
+        
+        self.reasoning = reasoning
         self.max_iterations = max_iterations
         self.iteration_count = 0
 
-    async def run(self, context: Dict[str, Any]) -> Dict[str, Any]:
-        """Run the autonomous agent's main loop."""
+    async def run(self, task: str) -> Dict[str, Any]:
+        """Run the autonomous agent's main loop.
+        
+        Args:
+            task: The task/query to process
+            
+        Returns:
+            Dict containing results of agent's operation
+        """
+        context = {"task": task}
         try:
             self.iteration_count = 0
             
             while self._is_running:
                 # Check iteration limit
-                if (
-                    self.max_iterations is not None 
-                    and self.iteration_count >= self.max_iterations
-                ):
+                # flake8: noqa: E712
+                if (self.max_iterations is not None and self.iteration_count >= self.max_iterations):
                     self.logger.info("Reached maximum iterations")
                     break
                 
@@ -57,7 +59,7 @@ class AutonomousAgent(BaseAgent):
                 
                 result = await self.reasoning.reason(
                     context,
-                    f"Autonomous iteration {self.iteration_count}"
+                    task
                 )
                 
                 # Update context with results
@@ -79,7 +81,7 @@ class AutonomousAgent(BaseAgent):
                 "results": result
             }
             
-        except Exception as e:
+        except DXAError as e:  # More specific exceptions
             await self.handle_error(e)
             return {
                 "success": False,

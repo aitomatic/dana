@@ -5,32 +5,11 @@ from typing import Dict, Any, Optional
 from enum import Enum
 from dataclasses import dataclass
 import logging
-from openai.types.chat import ChatCompletion
 from dxa.agents.state import StateManager
 from dxa.core.resources.base_resource import BaseResource
 from dxa.core.resources.expert import ExpertResource
 from dxa.core.resources.human import HumanUserResource
 from dxa.agents.agent_llm import AgentLLM
-
-class DuplicateReasoningStatus(str, Enum):
-    """Possible statuses from reasoning."""
-    NEED_EXPERT = "NEED_EXPERT"
-    NEED_INFO = "NEED_INFO"
-    COMPLETE = "COMPLETE"
-    ERROR = "ERROR"
-
-@dataclass
-class DuplicateReasoningResult:
-    """Standard structure for reasoning results."""
-    status: DuplicateReasoningStatus
-    steps: list[str]
-    expert_domain: Optional[str] = None
-    expert_request: Optional[Dict[str, Any]] = None
-    user_prompt: Optional[str] = None
-    final_answer: Optional[str] = None
-    explanation: Optional[str] = None
-    reason: Optional[str] = None
-    suggestion: Optional[str] = None
 
 class ReasoningStatus(str, Enum):
     """Possible statuses from reasoning."""
@@ -67,86 +46,40 @@ class ReasoningResult:
     # For all
     raw_content: Optional[str] = None
 
+@dataclass
+class ReasoningConfig:
+    """Configuration for reasoning engine."""
+    strategy: str = "cot"
+    temperature: float = 0.7
+    max_tokens: int = 1000
+    # ... other config parameters
+
 class BaseReasoning(ABC):
     """Base class for reasoning patterns."""
     
-    def __init__(self):
-        """Initialize base reasoning."""
+    def __init__(self, config: Optional[ReasoningConfig] = None):
+        self.config = config or ReasoningConfig()
+        self.strategy = self.config.strategy
         self.agent_llm = None
-        self.logger = logging.getLogger(self.__class__.__name__)
         self.state_manager = StateManager(agent_name=self.__class__.__name__)
         self.available_resources: Dict[str, BaseResource] = {}
-        self.current_phase: Optional[str] = "basic reasoning"
+        self.logger = logging.getLogger(self.__class__.__name__)
 
+    @abstractmethod
     async def initialize(self) -> None:
-        """Initialize the reasoning pattern."""
-        if not self.agent_llm:
-            raise ValueError("Agent LLM must be set before initialization")
-        # ... rest of initialization ...
+        """Initialize reasoning system."""
+        pass
 
-    async def reason(
-        self,
-        context: Dict[str, Any],
-        query: str,
-        **kwargs
-    ) -> Dict[str, Any]:
-        """Execute reasoning loop."""
+    @abstractmethod
+    async def reason(self, context: Dict[str, Any], query: str) -> Dict[str, Any]:
+        """Run reasoning cycle."""
+        pass
 
-        # Record the start of reasoning
-        observation = {
-            "context": context,
-            "query": query
-        }
-        
-        self.state_manager.add_observation(
-            content=observation,
-            source=self.__class__.__name__,
-            metadata=f"starting {self.current_phase} phase"
-        )
-        
-        # Get phase-specific prompt
-        system_prompt = self.get_system_prompt(context, query)
-        prompt = self.get_reasoning_prompt(context, query)
-        
-        # Format proper LLM request
-        llm_request = {
-            "system_prompt": system_prompt,
-            "prompt": prompt,
-            "temperature": kwargs.get('temperature', 0.7),
-            "max_tokens": kwargs.get('max_tokens', None)
-        }
-        
-        try:
-            # Get response from Agent LLM
-            llm_response = await self._query_agent_llm(llm_request)
-            response = llm_response
-            if isinstance(llm_response, ChatCompletion):
-                response = llm_response.choices[0].message.content
-            
-            self.state_manager.add_observation(
-                content=response,
-                source=self.__class__.__name__,
-                metadata=f"ending {self.current_phase} phase"
-            )
-            
-            return self.reason_post_process(response)
-            
-        except Exception as e:
-            self.logger.error(
-                "Error in %s phase: %s",
-                self.current_phase,
-                str(e)
-            )
-            self.state_manager.add_observation(
-                content=str(e),
-                source="ooda_reasoning",
-                metadata={
-                    "phase": self.current_phase,
-                    "type": "error"
-                }
-            )
-            raise
-    
+    @abstractmethod
+    async def cleanup(self) -> None:
+        """Clean up reasoning system."""
+        pass
+
     @abstractmethod
     def reason_post_process(self, response: str) -> Dict[str, Any]:
         """Post-process the response from the LLM and return a standardized result."""
@@ -191,6 +124,12 @@ class BaseReasoning(ABC):
 
     def set_available_resources(self, resources: Dict[str, BaseResource]) -> None:
         """Inform reasoning about available resources."""
+        if not isinstance(resources, dict):
+            raise TypeError("Resources must be provided as a dictionary")
+        
+        if not all(isinstance(r, BaseResource) for r in resources.values()):
+            raise TypeError("All resources must inherit from BaseResource")
+            
         self.available_resources = resources
         
         # Log available resources by type
@@ -305,7 +244,8 @@ class BaseReasoning(ABC):
 
         return await self.agent_llm.query(messages)
 
-    async def cleanup(self) -> None:    
-        """Clean up resources used by the reasoning instance."""
-        # Add any necessary cleanup logic here
-        pass
+    async def __aenter__(self):
+        return self
+        
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.cleanup()

@@ -1,4 +1,4 @@
-"""User roles and permissions for the MUA system."""
+"""User roles and permissions for the DXA system."""
 
 from dataclasses import dataclass
 from typing import List

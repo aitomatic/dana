@@ -8,3 +8,4 @@ pytest-asyncio>=0.21.0
 black>=23.0.0
 mypy>=1.0.0
 setuptools>=65.0.0
+websockets>=10.0

@@ -33,7 +33,11 @@ class StateManager:
     """Manages agent state and execution context."""
     
     def __init__(self, agent_name: str):
-        """Initialize state manager."""
+        """Initialize state manager.
+        
+        Args:
+            agent_name: Name of the agent this manages state for
+        """
         self.agent_name = agent_name
         self.state = AgentState(
             name=agent_name,
@@ -43,8 +47,13 @@ class StateManager:
         self.messages: List[Message] = []
         self.working_memory: Dict[str, Any] = {}
 
-    def update_state(self, status: str, metadata: Optional[Dict[str, Any]] = None):
-        """Update agent state."""
+    def update_state(self, status: str, metadata: Optional[Dict[str, Any]] = None) -> None:
+        """Update agent state.
+        
+        Args:
+            status: New status string
+            metadata: Optional metadata dictionary
+        """
         self.state = AgentState(
             name=self.agent_name,
             status=status,
@@ -56,8 +65,14 @@ class StateManager:
         content: Any,
         source: str,
         metadata: Optional[Dict[str, Any]] = None
-    ):
-        """Add an observation."""
+    ) -> None:
+        """Add an observation.
+        
+        Args:
+            content: Observation content
+            source: Source of the observation
+            metadata: Optional metadata
+        """
         self.observations.append(
             Observation(
                 content=content,
@@ -72,8 +87,15 @@ class StateManager:
         sender: str,
         receiver: str,
         metadata: Optional[Dict[str, Any]] = None
-    ):
-        """Add a message."""
+    ) -> None:
+        """Add a message.
+        
+        Args:
+            content: Message content
+            sender: Message sender
+            receiver: Message receiver
+            metadata: Optional metadata
+        """
         self.messages.append(
             Message(
                 content=content,
@@ -84,14 +106,28 @@ class StateManager:
         )
 
     def get_recent_observations(self, n: int = 5) -> List[Observation]:
-        """Get n most recent observations."""
+        """Get n most recent observations.
+        
+        Args:
+            n: Number of observations to return
+            
+        Returns:
+            List of most recent observations
+        """
         return self.observations[-n:]
 
     def get_recent_messages(self, n: int = 5) -> List[Message]:
-        """Get n most recent messages."""
+        """Get n most recent messages.
+        
+        Args:
+            n: Number of messages to return
+            
+        Returns:
+            List of most recent messages
+        """
         return self.messages[-n:]
 
-    def clear_history(self):
+    def clear_history(self) -> None:
         """Clear historical data."""
         self.observations.clear()
         self.messages.clear()

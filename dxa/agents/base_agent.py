@@ -1,55 +1,84 @@
 """Base agent implementation."""
 
-from abc import ABC
-from typing import Dict, Any, Optional
+from abc import ABC, abstractmethod
+from typing import Dict, Any, Type
 import logging
-from dxa.core.reasoning.base_reasoning import BaseReasoning
-from dxa.core.resources.base_resource import BaseResource
+from dxa.core.reasoning.base_reasoning import BaseReasoning, ReasoningConfig
 from dxa.core.resources.expert import ExpertResource
 from dxa.agents.agent_llm import AgentLLM
+from dxa.core.reasoning.cot import ChainOfThoughtReasoning
+from dxa.core.reasoning.ooda import OODAReasoning
 
 class BaseAgent(ABC):
-    """Base class for all agents."""
+    """Base agent with common functionality"""
+    
+    # Map strategy names to reasoning classes
+    REASONING_STRATEGIES: Dict[str, Type[BaseReasoning]] = {
+        "ooda": OODAReasoning,
+        "cot": ChainOfThoughtReasoning
+    }
     
     def __init__(
         self,
         name: str,
-        reasoning: BaseReasoning,
-        llm_config: Dict[str, Any],
-        resources: Optional[Dict[str, BaseResource]] = None,
-        agent_prompts: Optional[Dict[str, str]] = None,
-        description: Optional[str] = None
+        config: Dict[str, Any],
+        mode: str = "autonomous"
     ):
-        """Initialize base agent."""
+        """Initialize base agent.
+        
+        Args:
+            name: Name of this agent
+            config: Configuration dictionary
+            mode: Operating mode (default: autonomous)
+        """
         self.name = name
-        self.description = description or f"Agent: {name}"
-        self.logger = logging.getLogger(f"Agent:{name}")
-        
-        # Set up resources
-        self.resources = resources or {}
-        
-        # Set up agent's LLM
-        self.agent_llm = AgentLLM(
-            name=f"{name}_llm",
-            agent_prompts=agent_prompts,
-            config=llm_config
-        )
-        
-        # Set up reasoning with agent's LLM
-        reasoning.set_agent_llm(self.agent_llm)
-        reasoning.set_available_resources(self.resources)
-        self.reasoning = reasoning
+        self.mode = mode
+        self.llm = AgentLLM(name=f"{name}_llm", config=config)
+        self.reasoning = self._create_reasoning(config.get("reasoning", {}))
+        self.resources: Dict[str, Any] = {}
+        self.logger = logging.getLogger(f"dxa.agent.{name}")
+        self._is_running = False
 
-        # Initialize running state
-        self._is_running = True
+    def _create_reasoning(self, config: Dict[str, Any]) -> BaseReasoning:
+        """Create reasoning system based on config.
+        
+        Args:
+            config: Reasoning configuration dictionary
+            
+        Returns:
+            Initialized reasoning system
+            
+        Raises:
+            ValueError: If strategy is unknown
+        """
+        strategy = config.get("strategy", "cot")
+        
+        # Get reasoning class
+        reasoning_class = self.REASONING_STRATEGIES.get(strategy)
+        if not reasoning_class:
+            raise ValueError(
+                f"Unknown reasoning strategy: {strategy}. "
+                f"Valid strategies are: {list(self.REASONING_STRATEGIES.keys())}"
+            )
+        
+        # Create reasoning config
+        reasoning_config = ReasoningConfig(**config)
+        
+        # Initialize reasoning system
+        reasoning = reasoning_class()
+        reasoning.config = reasoning_config
+        return reasoning
+
+    @abstractmethod
+    async def run(self, task: str) -> Dict[str, Any]:
+        """Run the agent on a task"""
+        raise NotImplementedError
 
     async def initialize(self) -> None:
         """Initialize agent and resources."""
-        # Initialize agent's LLM first
-        await self.agent_llm.initialize()
+        await self.llm.initialize()
         await self.reasoning.initialize()
 
-        # Initialize other resources
         for resource in self.resources.values():
             if callable(getattr(resource, "initialize", None)):
                 await resource.initialize()
@@ -61,30 +90,22 @@ class BaseAgent(ABC):
 
     async def cleanup(self) -> None:
         """Clean up agent and resources."""
-        # Clean up resources
         for resource in self.resources.values():
             if callable(getattr(resource, "cleanup", None)):
                 await resource.cleanup()
         
         await self.reasoning.cleanup()
-        await self.agent_llm.cleanup()
+        await self.llm.cleanup()
         
-        self.logger.info("Agent cleaned up") 
+        self.logger.info("Agent cleaned up")
 
     async def use_expert(self, domain: str, request: str) -> str:
-        """Use expert for specialized domain knowledge.
+        """Use expert for specialized domain knowledge."""
+        experts = {
+            name: resource for name, resource in self.resources.items()
+            if isinstance(resource, ExpertResource)
+        }
         
-        Args:
-            domain: The domain of expertise needed
-            request: The specific request for the expert
-            
-        Returns:
-            Expert's response as a string
-            
-        Raises:
-            ValueError: If no expert is found for the given domain
-        """
-        experts: Dict[str, ExpertResource] = self.resources.get_by_type(ExpertResource)
         expert = next(
             (e for e in experts.values() if e.expertise.name.lower() == domain.lower()),
             None
@@ -95,40 +116,7 @@ class BaseAgent(ABC):
             
         response = await expert.query({"prompt": request})
         return response["response"]
-    
-    def get_system_prompt(self) -> str:
-        """Get the default system prompt for the agent that will go
-        before the reasoning system prompt. Defaults to empty string."""
 
-        return ""
-    
-    # pylint: disable=unused-argument
-    def get_prompt(self, context: Dict[str, Any], query: str) -> str:
-        """Get the default prompt for the agent that will go
-        before the reasoning prompt. Defaults to empty string."""
-        return ""
-
-    async def query_llm(self, llm_request: Dict[str, Any]) -> Dict[str, Any]:
-        """Query the agent's LLM.
-        
-        Args:
-            llm_request: Dictionary containing the LLM request parameters
-            including system_prompt and prompt, temperature, and max_tokens, etc.
-        
-        Returns:
-            Dictionary containing the LLM response
-        """
-        messages = []
-        if "system_prompt" in llm_request:
-            messages.append({"role": "system", "content": llm_request["system_prompt"]})
-        if "prompt" in llm_request:
-            messages.append({"role": "user", "content": llm_request["prompt"]})
-
-        return await self.agent_llm.query(
-            messages, 
-            **{k: v for k, v in llm_request.items() if k not in ["system_prompt", "prompt"]}
-        )
-
-    async def query(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """Query the agent, which will run the reasoning loop."""
-        return await self.reasoning.reason(request)
+    async def handle_error(self, error: Exception) -> None:
+        """Handle errors during agent execution."""
+        self.logger.error("Agent error: %s", str(error))

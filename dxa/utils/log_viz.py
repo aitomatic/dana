@@ -12,18 +12,25 @@ try:
 except ImportError:
     VIZ_AVAILABLE = False
 
-class LLMInteractionVisualizer:
-    """Visualize LLM interaction patterns."""
-    
-    def __init__(self, log_dir: str):
-        """Initialize visualizer."""
+def require_viz(func):
+    """Decorator to check if visualization dependencies are available."""
+    def wrapper(*args, **kwargs):
         if not VIZ_AVAILABLE:
             raise ImportError(
                 "matplotlib, seaborn, and pandas are required for visualization. "
                 "Install them with: pip install matplotlib seaborn pandas"
             )
+        return func(*args, **kwargs)
+    return wrapper
+
+class LLMInteractionVisualizer:
+    """Visualize LLM interaction patterns."""
+    
+    def __init__(self, log_dir: str):
+        """Initialize visualizer."""
         self.analyzer = LLMInteractionAnalyzer(log_dir)
 
+    @require_viz
     def plot_token_usage(
         self,
         save_path: Optional[str] = None

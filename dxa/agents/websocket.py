@@ -1,9 +1,10 @@
 """WebSocket-based agent implementation."""
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from dxa.agents.base_agent import BaseAgent
-from dxa.core.io.websocket import WebSocketIO, WebSocketError
-from dxa.core.reasoning.base_reasoning import BaseReasoning
+from dxa.core.io.websocket import WebSocketIO
+from dxa.common.errors import WebSocketError, DXAConnectionError
+from dxa.core.reasoning import BaseReasoning
 from dxa.agents.state import StateManager
 
 class WebSocketAgent(BaseAgent):
@@ -12,28 +13,26 @@ class WebSocketAgent(BaseAgent):
     def __init__(
         self,
         name: str,
-        llm_config: Dict[str, Any],
+        config: Dict[str, Any],
         reasoning: BaseReasoning,
         websocket_url: str,
-        system_prompt: Optional[str] = None,
-        description: Optional[str] = None,
         reconnect_attempts: int = 3,
         reconnect_delay: float = 1.0
     ):
         """Initialize WebSocket agent."""
         super().__init__(
             name=name,
-            llm_config=llm_config,
-            reasoning=reasoning,
-            system_prompt=system_prompt,
-            description=description
+            config=config,
+            mode="websocket"
         )
+        
+        self.reasoning = reasoning
         self.io = WebSocketIO(
-            websocket_url=websocket_url,
-            reconnect_attempts=reconnect_attempts,
-            reconnect_delay=reconnect_delay
+            url=websocket_url,
+            max_retries=reconnect_attempts,
+            retry_delay=reconnect_delay
         )
-        self.state_manager = StateManager()
+        self.state_manager = StateManager(name)
 
     async def initialize(self) -> None:
         """Initialize agent resources."""
@@ -45,7 +44,8 @@ class WebSocketAgent(BaseAgent):
                 source="websocket_agent"
             )
             self.logger.info("WebSocket agent initialized")
-        except WebSocketError as e:
+        except (WebSocketError, DXAConnectionError) as e:
+            self.logger.error("WebSocket initialization failed: %s", str(e))
             self.state_manager.add_observation(
                 content=f"Initialization failed: {str(e)}",
                 source="websocket_agent",
@@ -63,7 +63,8 @@ class WebSocketAgent(BaseAgent):
                 source="websocket_agent"
             )
             self.logger.info("WebSocket agent cleaned up")
-        except Exception as e:
+        except (WebSocketError, DXAConnectionError, ValueError) as e:
+            self.logger.error("WebSocket cleanup failed: %s", str(e))
             self.state_manager.add_observation(
                 content=f"Cleanup error: {str(e)}",
                 source="websocket_agent",
@@ -71,8 +72,16 @@ class WebSocketAgent(BaseAgent):
             )
             raise
 
-    async def run(self, context: Dict[str, Any]) -> Dict[str, Any]:
-        """Run the agent's main loop."""
+    async def run(self, task: str) -> Dict[str, Any]:
+        """Run the agent's main loop.
+        
+        Args:
+            task: The task/query to process
+            
+        Returns:
+            Dict containing results of agent's operation
+        """
+        context = {"task": task}
         try:
             # Get initial input if needed
             if 'initial_input' not in context:
@@ -89,7 +98,7 @@ class WebSocketAgent(BaseAgent):
             # Main interaction loop
             while True:
                 # Run reasoning cycle
-                result = await self.reasoning.reason(context, "Process user interaction")
+                result = await self.reasoning.reason(context, task)
                 
                 # Record reasoning result
                 self.state_manager.add_observation(
@@ -116,10 +125,14 @@ class WebSocketAgent(BaseAgent):
             return {
                 "success": True,
                 "results": result,
-                "state_history": self.state_manager.get_state_history()
+                "state_history": {
+                    "observations": self.state_manager.observations,
+                    "messages": self.state_manager.messages
+                }
             }
             
-        except WebSocketError as e:
+        except (WebSocketError, DXAConnectionError) as e:
+            self.logger.error("WebSocket error during run: %s", str(e))
             self.state_manager.add_observation(
                 content=f"WebSocket error: {str(e)}",
                 source="websocket_agent",
@@ -128,16 +141,8 @@ class WebSocketAgent(BaseAgent):
             return {
                 "success": False,
                 "error": str(e),
-                "state_history": self.state_manager.get_state_history()
-            }
-        except Exception as e:
-            self.state_manager.add_observation(
-                content=f"Runtime error: {str(e)}",
-                source="websocket_agent",
-                metadata={"error": str(e)}
-            )
-            return {
-                "success": False,
-                "error": str(e),
-                "state_history": self.state_manager.get_state_history()
+                "state_history": {
+                    "observations": self.state_manager.observations,
+                    "messages": self.state_manager.messages
+                }
             } 

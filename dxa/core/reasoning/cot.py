@@ -1,164 +1,62 @@
 """Chain of Thought reasoning implementation."""
 
 from typing import Dict, Any
-from dxa.core.reasoning.base_reasoning import BaseReasoning, ReasoningResult, ReasoningStatus
+from dxa.core.reasoning.base_reasoning import BaseReasoning
 
 class ChainOfThoughtReasoning(BaseReasoning):
     """Chain of Thought reasoning pattern."""
     
+    def __init__(self):
+        """Initialize Chain of Thought reasoning."""
+        super().__init__()
+    
+    async def initialize(self) -> None:
+        """Initialize reasoning system."""
+        if self.agent_llm:
+            await self.agent_llm.initialize()
+    
+    async def cleanup(self) -> None:
+        """Clean up reasoning system."""
+        if self.agent_llm:
+            await self.agent_llm.cleanup()
+    
+    async def reason(self, context: Dict[str, Any], query: str) -> Dict[str, Any]:
+        """Run reasoning cycle."""
+        # Get prompts
+        system_prompt = self.get_system_prompt(context, query)
+        user_prompt = self.get_prompt(context, query)
+        
+        # Query LLM
+        response = await self._query_agent_llm({
+            "system_prompt": system_prompt,
+            "prompt": user_prompt,
+            "temperature": self.config.temperature,
+            "max_tokens": self.config.max_tokens
+        })
+        
+        # Process response
+        return self.reason_post_process(response["content"])
+    
     def get_reasoning_system_prompt(self, context: Dict[str, Any], query: str) -> str:
         """Get system prompt for Chain of Thought reasoning."""
         return """You are executing one step in a chain of thought reasoning process.
-Always respond in exactly this YAML format:
-
-state: <must be one of>
-  - ANALYZE    # Initial analysis of the problem
-  - PLAN      # Planning solution steps
-  - EXECUTE   # Executing current step
-  - VERIFY    # Verifying a result
-  - REFLECT   # Evaluating if approach is working
-  - BACKTRACK # Need to go back and try different approach
-  - AWAIT     # Waiting for resource response
-  - DONE      # Solution complete
-  - ERROR     # Cannot proceed, explain in error_message
-
-response:
-  thought: detailed analysis of current situation
-  action: specific action being taken
-  result: outcome of the action
-  latex: mathematical notation if applicable
-  
-resource_request:
-  needed: true/false
-  requests:
-    - type: [agent|llm|user|knowledge]
-      resource: specific resource name
-      purpose: why this resource is needed
-      query: specific question or request
-      context: relevant context from current solution
-  
-next:
-  state: which state to transition to
-  reason: why this state transition is needed
-  error_message: required if state is ERROR
-  
-context:
-  previous_states: [list of states we've been through]
-  attempted_approaches: [list of approaches tried if any]
-  current_approach: description of current solution method
-  resource_responses: [previous resource interactions if any]"""
+        Always show your work step by step."""
 
     def get_reasoning_prompt(self, context: Dict[str, Any], query: str) -> str:
         """Get prompt for Chain of Thought reasoning."""
-        return """Current situation: {situation description}
-Previous steps: {summary of previous steps if any}
-Current state: {current_state}
-Resource responses: {if any resource responses received}
-Think about the next step:"""
+        return f"""Let's solve this step by step:
+        Query: {query}
+        Context: {context}
+        
+        1. First, let's understand what we're trying to do
+        2. Then, break down the problem into steps
+        3. Finally, solve each step methodically
+        
+        Please show your reasoning for each step."""
 
     def reason_post_process(self, response: str) -> Dict[str, Any]:
-        """Post-process the response from the LLM."""
-
-        # Parse the response
-        result = self._parse_response(response)
-        return result
-
-    def _parse_response(self, response: str) -> ReasoningResult:
-        """Parse the structured response from the LLM.
-        
-        Args:
-            response: Raw response from LLM
-            
-        Returns:
-            ReasoningResult containing parsed response
-        """
-        # Initialize with default values
-        steps = []
-        status = ReasoningStatus.ERROR  # Default to ERROR
-        expert_domain = None
-        expert_request = None
-        user_prompt = None
-        final_answer = None
-        explanation = None
-        reason = "Failed to parse response"
-        suggestion = None
-        
-        try:
-            # Split response into sections
-            sections = response.split('\n\n')
-            
-            # Parse STEPS section
-            for section in sections:
-                if section.startswith('STEPS:'):
-                    steps = [
-                        s.strip('123456789. ')
-                        for s in section[6:].strip().split('\n')
-                        if s.strip()
-                    ]
-                    
-                elif section.startswith('STATUS:'):
-                    status_line = section[7:].strip().lower()
-                    if 'need_expert:' in status_line:
-                        status = ReasoningStatus.NEED_EXPERT
-                    elif 'need_info:' in status_line:
-                        status = ReasoningStatus.NEED_INFO
-                    elif 'complete:' in status_line:
-                        status = ReasoningStatus.COMPLETE
-                    elif 'error:' in status_line:
-                        status = ReasoningStatus.ERROR
-                
-                elif section.startswith('NEXT_ACTION:'):
-                    action = section[12:].strip()
-                    for line in action.split('\n'):
-                        line = line.strip()
-                        if line.startswith('EXPERT:'):
-                            expert_domain = line[7:].strip()
-                        elif line.startswith('QUERY:'):
-                            if status == ReasoningStatus.NEED_EXPERT:
-                                expert_request = {
-                                    "domain": expert_domain,
-                                    "request": {"prompt": line[6:].strip()}
-                                }
-                            else:
-                                user_prompt = line[6:].strip()
-                        elif line.startswith('FINAL_ANSWER:'):
-                            final_answer = line[13:].strip()
-                        elif line.startswith('EXPLANATION:'):
-                            explanation = line[12:].strip()
-                        elif line.startswith('REASON:'):
-                            reason = line[7:].strip()
-                        elif line.startswith('SUGGESTION:'):
-                            suggestion = line[11:].strip()
-            
-            # If no steps were found but we have content
-            if not steps and response.strip():
-                steps = [response.strip()]
-            
-            # Validate parsed result
-            if status == ReasoningStatus.COMPLETE and not final_answer:
-                status = ReasoningStatus.ERROR
-                reason = "No final answer provided"
-            elif status == ReasoningStatus.NEED_EXPERT and not expert_request:
-                status = ReasoningStatus.ERROR
-                reason = "No expert request provided"
-            elif status == ReasoningStatus.NEED_INFO and not user_prompt:
-                status = ReasoningStatus.ERROR
-                reason = "No user prompt provided"
-            
-        except Exception as e:
-            self.logger.error("Failed to parse LLM response: %s", str(e))
-            steps = [str(e)]
-            status = ReasoningStatus.ERROR
-            reason = f"Failed to parse response: {str(e)}"
-        
-        return ReasoningResult(
-            status=status,
-            steps=steps,
-            expert_domain=expert_domain,
-            expert_request=expert_request,
-            user_prompt=user_prompt,
-            final_answer=final_answer,
-            explanation=explanation,
-            reason=reason,
-            suggestion=suggestion
-        )
+        """Process the chain of thought response."""
+        return {
+            "response": response,
+            "reasoning_type": "chain_of_thought"
+        }

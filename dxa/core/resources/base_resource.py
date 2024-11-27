@@ -17,7 +17,7 @@ class ResourceAccessError(ResourceError):
     pass
 
 class BaseResource(ABC):
-    """Base class for agent resources."""
+    """Base class for managing resources with clear lifecycle"""
     
     def __init__(
         self,
@@ -37,44 +37,19 @@ class BaseResource(ABC):
         """Check if resource is currently available."""
         return self._is_available
 
+    @abstractmethod
     async def initialize(self) -> None:
-        """Initialize the resource."""
+        """Initialize the resource"""
         pass
-
-    async def cleanup(self) -> None:
-        """Clean up the resource."""
-        pass
-
-    @abstractmethod
-    async def query(
-        self,
-        request: Dict[str, Any],
-        **kwargs
-    ) -> Dict[str, Any]:
-        """Query this resource.
         
-        Args:
-            request: The request to send to the resource
-            **kwargs: Additional arguments for specific resources
-            
-        Returns:
-            Dict containing resource response
-            
-        Raises:
-            ResourceAccessError: If resource access fails
-        """
-        pass
-
     @abstractmethod
-    def can_handle(self, request: Dict[str, Any]) -> bool:
-        """Check if this resource can handle the given request."""
+    async def cleanup(self) -> None:
+        """Cleanup the resource"""
         pass
-
-    async def __aenter__(self):
-        """Async context manager entry."""
+        
+    async def __aenter__(self) -> 'BaseResource':
         await self.initialize()
         return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Async context manager exit."""
+        
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.cleanup() 

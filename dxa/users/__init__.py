@@ -1,4 +1,4 @@
-"""User role definitions for MUA."""
+"""User role definitions for DXA."""
 from .roles import User
 
 __all__ = ['User']

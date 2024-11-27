@@ -23,6 +23,7 @@ class BaseLLM:
         """Initialize the LLM.
         
         Args:
+            name: Name identifier for this LLM instance
             config: Configuration dictionary containing api_key and other settings
             system_prompt: Optional system prompt to use for all queries
             max_retries: Maximum number of retries for failed requests
