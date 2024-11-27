@@ -34,8 +34,8 @@ Example:
 """
 
 from typing import Dict, Any, Optional
-from dxa.core.resources.llm_resource import LLMResource, LLMError
-from dxa.core.capabilities.expertise import DomainExpertise
+from dxa.core.resource.llm_resource import LLMResource, LLMError
+from dxa.core.capability.expertise import DomainExpertise
 
 class ExpertResource(LLMResource):
     """A domain-expert LLM resource."""

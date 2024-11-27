@@ -24,7 +24,7 @@ Notes:
     - Uses GPT-4 as the default model for complex mathematical reasoning
 """
 
-from dxa.core.resources.expert import DomainExpertise, ExpertResource
+from dxa.core.resource.expert import DomainExpertise, ExpertResource
 
 def create_math_expert(api_key: str) -> ExpertResource:
     """Create a mathematics expert resource."""

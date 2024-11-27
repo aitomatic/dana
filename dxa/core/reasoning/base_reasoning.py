@@ -6,9 +6,9 @@ from enum import Enum
 from dataclasses import dataclass
 import logging
 from dxa.agent.state import StateManager
-from dxa.core.resources.base_resource import BaseResource
-from dxa.core.resources.expert import ExpertResource
-from dxa.core.resources.human import HumanResource
+from dxa.core.resource.base_resource import BaseResource
+from dxa.core.resource.expert import ExpertResource
+from dxa.core.resource.human import HumanResource
 from dxa.agent.agent_llm import AgentLLM
 
 class ReasoningStatus(str, Enum):

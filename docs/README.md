@@ -12,9 +12,9 @@ An Agent in DXA is composed of two primary components:
 graph TD
     A[dxa.agent.BaseAgent] --> B[dxa.core.reasoning.BaseReasoning]
     A --> C[dxa.agent.AgentLLM]
-    A --> D[dxa.core.capabilities.BaseCapability]
+    A --> D[dxa.core.capability.BaseCapability]
     A --> E[dxa.core.io.BaseIO]
-    A --> F[dxa.core.resources.BaseResource]
+    A --> F[dxa.core.resource.BaseResource]
     
     F --> G[Databases]
     F --> H[Search Engines]
@@ -48,7 +48,7 @@ Additional components in the `dxa.agent` module:
 - `AgentConfig` and `LLMConfig`: For configuration management
 - `StateManager`: Manages agent state, observations, and messages
 
-### Capabilities (`dxa.core.capabilities`)
+### Capabilities (`dxa.core.capability`)
 Capabilities are modular features that can be added to any agent to extend its functionality:
 - Memory management: Handles storage and retrieval of agent experiences and knowledge
 - Expertise domains: Defines areas of specialized knowledge and skills
@@ -62,7 +62,7 @@ I/O handlers manage all communication between the agent and its environment:
 - File system operations: For reading and writing files
 - Custom I/O handlers: For specialized communication needs
 
-### Resources (`dxa.core.resources`)
+### Resources (`dxa.core.resource`)
 Resources provide access to external tools and services:
 - Database connections: For persistent storage
 - Search engine integrations: For accessing external knowledge
@@ -133,10 +133,10 @@ dxa/
 │   ├── config.py
 │   └── state.py
 ├── core/
-│   ├── capabilities/
+│   ├── capability/
 │   ├── io/
 │   ├── reasoning/
-│   └── resources/
+│   └── resource/
 └── examples/
     ├── __init__.py
     ├── collaborative_research.py
