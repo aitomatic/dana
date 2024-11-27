@@ -1,4 +1,21 @@
-"""Log analysis utilities for DXA."""
+"""Log analysis utilities for the DXA system.
+
+This module provides tools for analyzing LLM interaction logs, including:
+- Loading and parsing log files
+- Computing interaction statistics
+- Analyzing token usage patterns
+- Identifying common patterns in prompts
+- Generating analysis reports
+
+The LLMInteractionAnalyzer class serves as the main entry point for all
+log analysis operations. It requires pandas for data manipulation and
+analysis capabilities.
+
+Example:
+    analyzer = LLMInteractionAnalyzer("/path/to/logs")
+    stats = analyzer.get_interaction_stats()
+    analyzer.export_report("analysis_report.json")
+"""
 
 from typing import Dict, List
 from datetime import datetime

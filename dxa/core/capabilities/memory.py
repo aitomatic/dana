@@ -1,9 +1,30 @@
-"""Memory and state management capability for DXA."""
+"""Memory and state management capability for DXA.
+
+This module provides memory management functionality for DXA agents, including:
+- Long-term memory storage with importance-based retention
+- Working memory for temporary state
+- Memory decay over time
+- Importance-based memory filtering
+- Context-aware memory retrieval
+
+Classes:
+    MemoryEntry: A single memory entry with content, metadata, and importance
+    MemoryCapability: Main memory management capability implementation
+
+Example:
+    >>> memory = MemoryCapability(max_size=1000, decay_rate=0.1)
+    >>> await memory.use({
+    ...     "operation": "store",
+    ...     "content": "Important observation",
+    ...     "importance": 0.8
+    ... })
+"""
 
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 from dataclasses import dataclass, field
 from dxa.core.capabilities.base_capability import BaseCapability
+from dxa.common.exceptions import DXAError, DXAMemoryError
 
 @dataclass
 class MemoryEntry:
@@ -118,11 +139,13 @@ class MemoryCapability(BaseCapability):
                 "stored_at": entry.timestamp
             }
             
-        except Exception as e:
+        except DXAError as e:
             return {
                 "success": False,
                 "error": str(e)
             }
+        except Exception as e:
+            raise DXAMemoryError(f"Failed to store memory: {str(e)}") from e
 
     async def _retrieve_memories(
         self,
@@ -160,11 +183,13 @@ class MemoryCapability(BaseCapability):
                 ]
             }
             
-        except Exception as e:
+        except DXAError as e:
             return {
                 "success": False,
                 "error": str(e)
             }
+        except Exception as e:
+            raise DXAMemoryError(f"Failed to retrieve memories: {str(e)}") from e
 
     async def _update_working_memory(
         self,
@@ -177,11 +202,13 @@ class MemoryCapability(BaseCapability):
                 "success": True,
                 "working_memory": self._working_memory
             }
-        except Exception as e:
+        except DXAError as e:
             return {
                 "success": False,
                 "error": str(e)
             }
+        except Exception as e:
+            raise DXAMemoryError(f"Failed to update working memory: {str(e)}") from e
 
     async def _clear_memories(
         self,
@@ -198,11 +225,13 @@ class MemoryCapability(BaseCapability):
                 "success": True,
                 "cleared_count": initial_count - len(self._memories)
             }
-        except Exception as e:
+        except DXAError as e:
             return {
                 "success": False,
                 "error": str(e)
             }
+        except Exception as e:
+            raise DXAMemoryError(f"Failed to clear memories: {str(e)}") from e
 
     def _cleanup_memories(self):
         """Clean up memories based on importance and size limits."""

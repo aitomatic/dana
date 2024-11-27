@@ -1,4 +1,24 @@
-"""OODA (Observe, Orient, Decide, Act) loop reasoning pattern."""
+"""OODA (Observe, Orient, Decide, Act) loop reasoning pattern.
+
+This module implements the OODA loop decision-making process:
+- Observe: Gather information and identify key data points
+- Orient: Analyze and interpret the situation
+- Decide: Determine the best course of action
+- Act: Execute the chosen action
+
+The OODA loop provides a structured approach to decision-making that continuously
+adapts to new information and changing circumstances.
+
+Classes:
+    OODAPhase: Enumeration of OODA loop phases
+    OODAReasoning: Implementation of OODA loop reasoning pattern
+
+Example:
+    >>> reasoning = OODAReasoning()
+    >>> result = await reasoning.reason(
+    ...     context={"situation": "market volatility"},
+    ...     query="How should we adjust our portfolio?"
+    ... )"""
 
 from typing import Dict, Any
 from dxa.core.reasoning.base_reasoning import BaseReasoning

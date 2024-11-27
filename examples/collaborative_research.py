@@ -2,10 +2,13 @@
 
 import asyncio
 import os
-from dxa.agents.interactive import ConsoleAgent
-from dxa.agents.websocket import WebSocketAgent
-from dxa.core.reasoning.cot import ChainOfThoughtReasoning
-from dxa.core.reasoning.ooda import OODALoopReasoning
+from dxa.core.factory import create_agent
+from dxa.common.errors import (
+    ConfigurationError,
+    ResourceError,
+    AgentError,
+    ReasoningError
+)
 
 async def main():
     """Run collaborative research example."""
@@ -16,46 +19,42 @@ async def main():
             "Both OPENAI_API_KEY and WEBSOCKET_URL environment variables are required"
         )
 
-    # Initialize reasoning patterns
-    researcher_reasoning = ChainOfThoughtReasoning()
-    analyst_reasoning = ChainOfThoughtReasoning()
-    coordinator_reasoning = OODALoopReasoning()
-    
-    await researcher_reasoning.initialize()
-    await analyst_reasoning.initialize()
-    await coordinator_reasoning.initialize()
-
     try:
-        # Create specialized research agents
-        researcher = ConsoleAgent(
-            name="researcher",
-            llm_config={"api_key": api_key},
-            reasoning=researcher_reasoning,
-            system_prompt="""You are a research specialist. 
+        researcher_config = {
+            "name": "researcher",
+            "api_key": api_key,
+            "model": "gpt-4",
+            "reasoning": "chain-of-thought",
+            "system_prompt": """You are a research specialist. 
             Analyze information systematically and draw well-supported conclusions."""
-        )
+        }
 
-        analyst = WebSocketAgent(
-            name="analyst",
-            llm_config={"api_key": api_key},
-            reasoning=analyst_reasoning,
-            websocket_url=websocket_url,
-            system_prompt="""You are a data analyst.
+        analyst_config = {
+            "name": "analyst",
+            "api_key": api_key,
+            "model": "gpt-4",
+            "websocket_url": websocket_url,
+            "reasoning": "chain-of-thought",
+            "system_prompt": """You are a data analyst.
             Process and analyze data to extract meaningful insights."""
-        )
+        }
 
-        # Create coordinator agent
-        coordinator = ConsoleAgent(
-            name="research_coordinator",
-            llm_config={"api_key": api_key},
-            reasoning=coordinator_reasoning,
-            system_prompt="""You are a research coordinator.
+        coordinator_config = {
+            "name": "coordinator",
+            "api_key": api_key,
+            "model": "gpt-4",
+            "reasoning": "ooda-loop",
+            "system_prompt": """You are a research coordinator.
             Coordinate between researchers and analysts to complete research tasks.
             Break down complex problems and delegate effectively."""
-        )
+        }
 
-        # Initialize all agents
-        async with researcher, analyst, coordinator:
+        # Create specialized research agents using context managers
+        async with \
+                create_agent("console", researcher_config) as researcher, \
+                create_agent("websocket", analyst_config) as analyst, \
+                create_agent("console", coordinator_config) as coordinator:
+
             # Run the collaborative research task
             result = await coordinator.run({
                 "research_topic": "Impact of AI on job markets",
@@ -81,11 +80,18 @@ async def main():
             else:
                 print(f"Research failed: {result.get('error')}")
 
-    finally:
-        # Clean up reasoning patterns
-        await researcher_reasoning.cleanup()
-        await analyst_reasoning.cleanup()
-        await coordinator_reasoning.cleanup()
+    except ValueError as e:
+        print(f"Configuration error: {str(e)}")
+    except ConfigurationError as e:
+        print(f"Agent configuration error: {str(e)}")
+    except ResourceError as e:
+        print(f"Resource error: {str(e)}")
+    except ReasoningError as e:
+        print(f"Reasoning error: {str(e)}")
+    except AgentError as e:
+        print(f"Agent error: {str(e)}")
+    except KeyError as e:
+        print(f"Missing required configuration key: {str(e)}")
 
 if __name__ == "__main__":
     asyncio.run(main()) 

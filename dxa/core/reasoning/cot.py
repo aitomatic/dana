@@ -1,4 +1,24 @@
-"""Chain of Thought reasoning implementation."""
+"""Chain of Thought reasoning implementation.
+
+This module implements the Chain of Thought (CoT) reasoning pattern, which:
+- Breaks down complex problems into logical steps
+- Shows explicit reasoning for each step
+- Maintains transparency in decision-making
+- Enables verification of reasoning process
+
+The CoT approach helps agents explain their thinking and validate their
+conclusions through step-by-step analysis.
+
+Classes:
+    ChainOfThoughtReasoning: Implementation of Chain of Thought reasoning
+
+Example:
+    >>> reasoning = ChainOfThoughtReasoning()
+    >>> result = await reasoning.reason(
+    ...     context={"problem": "complex math equation"},
+    ...     query="Solve x^2 + 2x + 1 = 0"
+    ... )
+"""
 
 from typing import Dict, Any
 from dxa.core.reasoning.base_reasoning import BaseReasoning

@@ -1,8 +1,25 @@
-"""Visualization utilities for DXA."""
+"""Visualization utilities for DXA log analysis.
+
+This module provides visualization tools for analyzing LLM interaction patterns
+and system performance. It offers various plotting capabilities including:
+- Token usage over time
+- Response time distributions
+- Success rates by phase
+- Error type distributions
+- Comprehensive dashboards
+
+The module requires matplotlib, seaborn, and pandas for visualization
+capabilities. These dependencies are optional and must be installed separately.
+
+Example:
+    visualizer = LLMInteractionVisualizer("/path/to/logs")
+    visualizer.plot_token_usage("token_usage.png")
+    visualizer.create_dashboard("dashboard/")
+"""
 
 from typing import Optional
 from pathlib import Path
-from dxa.utils.log_analysis import LLMInteractionAnalyzer
+from dxa.common.utils.log_analysis import LLMInteractionAnalyzer
 
 try:
     import matplotlib.pyplot as plt

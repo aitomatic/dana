@@ -1,4 +1,25 @@
-"""Base resource for DXA."""
+"""Base resource implementation for DXA.
+
+This module provides the foundational resource class that defines the interface
+and common functionality for all DXA resources. Resources are managed entities
+that provide specific capabilities to the system.
+
+Classes:
+    ResourceError: Base exception class for resource-related errors
+    ResourceUnavailableError: Error raised when a resource cannot be accessed
+    ResourceAccessError: Error raised when resource access is denied
+    BaseResource: Abstract base class for all resources
+
+Example:
+    class CustomResource(BaseResource):
+        async def initialize(self):
+            # Resource-specific initialization
+            pass
+
+        async def cleanup(self):
+            # Resource-specific cleanup
+            pass
+"""
 
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional

@@ -1,4 +1,15 @@
-"""Base LLM implementation shared across the system."""
+"""Base LLM (Large Language Model) implementation for the DXA system.
+
+This module provides the foundational LLM interface used throughout the DXA system.
+It handles common LLM operations including:
+- Asynchronous initialization and cleanup
+- Retry logic for failed requests
+- Standardized error handling
+- Configuration management
+
+The BaseLLM class can be extended to support different LLM providers while
+maintaining consistent behavior across the system.
+"""
 
 from typing import Dict, Any, Optional, List
 import asyncio

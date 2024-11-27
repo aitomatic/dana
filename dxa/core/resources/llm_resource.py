@@ -1,4 +1,35 @@
-"""LLM resource implementation."""
+"""LLM resource implementation for DXA.
+
+This module provides a wrapper for Large Language Model interactions,
+specifically designed for OpenAI's GPT models. It handles API communication,
+prompt management, and response processing.
+
+Classes:
+    LLMError: Exception class for LLM-related errors
+    LLMResource: Base resource class for LLM interactions
+
+Features:
+    - Async API communication
+    - System prompt management
+    - Token limit handling
+    - Usage tracking
+    - Error handling
+
+Example:
+    llm = LLMResource(
+        name="gpt4",
+        config={
+            "api_key": "your-api-key",
+            "model": "gpt-4"
+        },
+        system_prompt="You are a helpful assistant."
+    )
+    
+    response = await llm.query({
+        "prompt": "Explain quantum computing",
+        "temperature": 0.7
+    })
+"""
 
 from typing import Dict, Any, Optional
 from dxa.core.resources.base_resource import BaseResource, ResourceError

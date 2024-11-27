@@ -8,7 +8,7 @@ import logging
 from dxa.agents.state import StateManager
 from dxa.core.resources.base_resource import BaseResource
 from dxa.core.resources.expert import ExpertResource
-from dxa.core.resources.human import HumanUserResource
+from dxa.core.resources.human import HumanResource
 from dxa.agents.agent_llm import AgentLLM
 
 class ReasoningStatus(str, Enum):
@@ -134,10 +134,10 @@ class BaseReasoning(ABC):
         
         # Log available resources by type
         experts = [r for r in resources.values() if isinstance(r, ExpertResource)]
-        humans = [r for r in resources.values() if isinstance(r, HumanUserResource)]
+        humans = [r for r in resources.values() if isinstance(r, HumanResource)]
         others = [
             r for r in resources.values()
-            if not isinstance(r, (ExpertResource, HumanUserResource))
+            if not isinstance(r, (ExpertResource, HumanResource))
         ]
         
         if experts:
@@ -167,11 +167,11 @@ class BaseReasoning(ABC):
         ]
         humans = [
             r for r in self.available_resources.values()
-            if isinstance(r, HumanUserResource)
+            if isinstance(r, HumanResource)
         ]
         others = [
             r for r in self.available_resources.values()
-            if not isinstance(r, (ExpertResource, HumanUserResource))
+            if not isinstance(r, (ExpertResource, HumanResource))
         ]
         
         # Add expert descriptions

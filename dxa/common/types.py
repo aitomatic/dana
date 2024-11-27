@@ -1,4 +1,14 @@
-"""Common type definitions used across the system."""
+"""Common type definitions used across the DXA system.
+
+This module defines fundamental type aliases and custom types that are used
+throughout the DXA codebase. These types provide consistent type hints for:
+- JSON-compatible data structures
+- Common data interchange formats
+- System-wide data structures
+
+The types defined here should be used instead of raw type annotations to ensure
+consistency and maintainability.
+"""
 
 from typing import Dict, Union, List
 

@@ -1,4 +1,15 @@
-"""WebSocket I/O implementation."""
+"""WebSocket I/O implementation for DXA.
+
+This module provides a WebSocket-based implementation of the BaseIO interface,
+enabling real-time bidirectional communication over WebSocket connections.
+
+Example:
+    ```python
+    async with WebSocketIO("ws://localhost:8765") as ws:
+        await ws.send_message("Hello, WebSocket!")
+        response = await ws.get_input()
+    ```
+"""
 
 from typing import Optional
 import asyncio
@@ -9,7 +20,25 @@ from dxa.core.io.base_io import BaseIO
 from dxa.common.errors import WebSocketError
 
 class WebSocketIO(BaseIO):
-    """WebSocket-based I/O implementation."""
+    """WebSocket-based I/O implementation.
+    
+    This class implements the BaseIO interface using WebSocket connections,
+    providing real-time bidirectional communication capabilities.
+
+    Args:
+        url: The WebSocket URL to connect to (e.g., "ws://localhost:8765")
+        max_retries: Maximum number of connection retry attempts
+        retry_delay: Delay in seconds between retry attempts
+
+    Attributes:
+        host: The WebSocket server hostname
+        port: The WebSocket server port
+        max_retries: Maximum number of connection retry attempts
+        retry_delay: Delay between retry attempts
+        _server: The WebSocket server instance
+        _current_connection: The current active WebSocket connection
+        _message_queue: Queue for handling incoming messages
+    """
     
     def __init__(self, url: str, max_retries: int = 3, retry_delay: float = 1.0):
         super().__init__()

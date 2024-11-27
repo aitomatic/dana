@@ -1,10 +1,28 @@
-"""Console I/O implementation."""
+"""Console I/O implementation for DXA.
+
+This module provides a console-based implementation of the BaseIO interface,
+allowing interaction through standard input/output streams.
+
+Example:
+    ```python
+    async with ConsoleIO() as console:
+        await console.send_message("Hello, world!")
+        user_input = await console.get_input("Enter something: ")
+    ```
+"""
 
 from typing import Optional
 from dxa.core.io.base_io import BaseIO
 
 class ConsoleIO(BaseIO):
-    """Console-based I/O implementation."""
+    """Console-based I/O implementation.
+    
+    This class implements the BaseIO interface for console-based interaction,
+    using standard input/output streams.
+
+    Attributes:
+        _buffer (list[str]): A list storing sent messages for testing purposes.
+    """
     
     def __init__(self):
         super().__init__()  # Call the __init__ method of the base class

@@ -1,4 +1,25 @@
-"""Common error types for DXA."""
+"""Common error types for the DXA system.
+
+This module defines the error hierarchy used throughout DXA. The error classes
+are organized in a logical hierarchy to allow for both specific and general
+error handling:
+
+Error Hierarchy:
+- DXAError (base)
+  |- DXAConnectionError
+  |- ResourceError
+  |- NetworkError
+     |- WebSocketError
+  |- ReasoningError
+  |- ConfigurationError
+  |- AgentError
+  |- CommunicationError
+  |- ValidationError
+  |- StateError
+
+Each error type represents a specific category of failures that can occur
+during system operation.
+"""
 
 class DXAError(Exception):
     """Base class for all DXA errors."""

@@ -1,4 +1,31 @@
-"""Finance domain expert."""
+"""Finance domain expert.
+
+This module provides functionality to create a specialized financial expert
+resource capable of performing financial analysis, valuations, and investment
+assessments. The expert combines quantitative analysis with qualitative insights
+to provide comprehensive financial advice.
+
+The finance expert can:
+- Analyze financial statements and metrics
+- Perform valuation calculations (DCF, multiples)
+- Evaluate investment opportunities
+- Assess risk-return profiles
+- Model cash flows and projections
+- Calculate key financial ratios and indicators
+
+Example:
+    >>> from dxa.experts import create_finance_expert
+    >>> expert = create_finance_expert(api_key="your-api-key")
+    >>> result = expert.analyze("Calculate the NPV for cash flows: -1000, 200, 300, 400")
+    >>> print(result)
+    Step 1: Let's use a discount rate of 10% for this calculation...
+
+Notes:
+    - Requires a valid API key for the underlying LLM service
+    - Uses GPT-4 as the default model for complex financial analysis
+    - Confidence threshold set to 0.7 to ensure reliable advice
+    - Considers both quantitative data and market context
+"""
 
 from dxa.core.resources.expert import DomainExpertise, ExpertResource
 

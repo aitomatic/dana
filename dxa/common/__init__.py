@@ -1,34 +1,20 @@
-"""Common utilities and base classes for DXA."""
+"""Common utilities and shared functionality for DXA."""
 
-from dxa.common.base_llm import BaseLLM
 from dxa.common.errors import (
-    DXAError,
-    DXAConnectionError,
-    ResourceError,
-    NetworkError,
-    WebSocketError,
-    ReasoningError,
     ConfigurationError,
+    ResourceError,
     AgentError,
-    CommunicationError,
-    ValidationError,
-    StateError
+    ReasoningError
 )
-from dxa.common.expertise import DomainExpertise, ExpertResource
+from dxa.common.utils.config import load_agent_config
 
 __all__ = [
-    'BaseLLM',
-    'DXAError',
-    'DXAConnectionError',
-    'ResourceError',
-    'NetworkError',
-    'WebSocketError',
-    'ReasoningError',
+    # Errors
     'ConfigurationError',
+    'ResourceError',
     'AgentError',
-    'CommunicationError',
-    'ValidationError',
-    'StateError',
-    'DomainExpertise',
-    'ExpertResource'
+    'ReasoningError',
+    
+    # Utils
+    'load_agent_config'
 ]

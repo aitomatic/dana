@@ -2,8 +2,13 @@
 
 import asyncio
 import os
-from dxa.agents.websocket import WebSocketAgent
-from dxa.core.reasoning.ooda import OODALoopReasoning
+from dxa.core.factory import create_agent
+from dxa.common.errors import (
+    ConfigurationError,
+    ResourceError,
+    AgentError,
+    ReasoningError
+)
 
 async def main():
     """Run WebSocket-based solver example."""
@@ -14,39 +19,50 @@ async def main():
             "Both OPENAI_API_KEY and WEBSOCKET_URL environment variables are required"
         )
 
-    # Initialize reasoning pattern
-    reasoning = OODALoopReasoning()
-    await reasoning.initialize()
-
     try:
-        # Create WebSocket agent
-        agent = WebSocketAgent(
-            name="websocket_solver",
-            llm_config={"api_key": api_key},
-            reasoning=reasoning,
-            websocket_url=websocket_url,
-            system_prompt="""You are a problem-solving agent that communicates through WebSocket.
-            Break down problems systematically and explain your reasoning clearly."""
-        )
-
-        async with agent:  # Uses context manager for cleanup
-            result = await agent.run({
+        # Create and run WebSocket agent
+        async with create_agent("websocket", {
+            "name": "websocket_solver",
+            "api_key": api_key,
+            "websocket_url": websocket_url,
+            "model": "gpt-4",
+            "system_prompt": """You are a problem-solving agent that communicates through WebSocket.
+            Break down problems systematically and explain your reasoning clearly.
+            
+            Key principles:
+            - Observe: Gather all relevant information
+            - Orient: Analyze the context and constraints
+            - Decide: Choose the best approach
+            - Act: Execute the solution systematically"""
+        }) as agent:
+            
+            # Run with progress updates
+            async for progress in agent.run_with_progress({
                 "domain": "general",
                 "style": "systematic"
-            })
-            
-            if result["success"]:
-                print("Session completed successfully")
-                print("\nState History:")
-                for state in result["state_history"]:
-                    print(f"\nTimestamp: {state['timestamp']}")
-                    print(f"State: {state['new_state']}")
-                    print(f"Reason: {state['reason']}")
-            else:
-                print(f"Session failed: {result.get('error')}")
+            }):
+                if progress.is_progress:
+                    print(f"Progress: {progress.percent}% - {progress.message}")
+                elif progress.is_result:
+                    result = progress.result
+                    if result["success"]:
+                        print("Session completed successfully")
+                        print(f"Final result: {result['output']}")
+                    else:
+                        print(f"Session failed: {result['error']}")
 
-    finally:
-        await reasoning.cleanup()
+    except ValueError as e:
+        print(f"Configuration error: {str(e)}")
+    except ConfigurationError as e:
+        print(f"Agent configuration error: {str(e)}")
+    except ResourceError as e:
+        print(f"Resource error: {str(e)}")
+    except ReasoningError as e:
+        print(f"Reasoning error: {str(e)}")
+    except AgentError as e:
+        print(f"Agent error: {str(e)}")
+    except KeyError as e:
+        print(f"Missing required configuration key: {str(e)}")
 
 if __name__ == "__main__":
     asyncio.run(main()) 

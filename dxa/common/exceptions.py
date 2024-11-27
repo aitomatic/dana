@@ -16,6 +16,10 @@ class ExpertError(ResourceError):
     """Error in expert resource interaction."""
     pass
 
+class DXAMemoryError(ResourceError):
+    """Exception raised for memory-related errors."""
+    pass
+
 class ReasoningError(DXAError):
     """Error in reasoning process."""
     pass
@@ -36,6 +40,26 @@ class AgentError(DXAError):
     """Error in agent operation."""
     pass
 
-class ExpertiseError(Exception):
+class ExpertiseError(DXAError):
     """Exception raised for expertise-related errors."""
+    pass
+
+class DXAConnectionError(DXAError):
+    """Error in establishing connections."""
+    pass
+
+class NetworkError(DXAConnectionError):
+    """Network-related errors."""
+    pass
+
+class WebSocketError(NetworkError):
+    """WebSocket-specific errors."""
+    pass
+
+class CommunicationError(DXAError):
+    """Error in communication between components."""
+    pass
+
+class StateError(DXAError):
+    """Error in state management."""
     pass 

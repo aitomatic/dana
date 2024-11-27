@@ -1,192 +1,79 @@
 """Agent resource implementation."""
 
 from typing import Dict, Any
-import asyncio
-from dxa.core.resources.base_resource import BaseResource, ResourceError
-from typing import Optional, List
-
-class AgentError(ResourceError):
-    """Error in agent interaction."""
-    pass
+from dxa.core.resources.base_resource import BaseResource
+from dxa.common.errors import ResourceError, ConfigurationError, AgentError
 
 class AgentResource(BaseResource):
-    """Resource for interacting with other agents."""
+    """Resource for accessing other agents."""
     
-    def __init__(
-        self,
-        name: str,
-        agent_registry: Dict[str, Any],
-        timeout: float = 60.0  # 1 minute default timeout
-    ):
-        """Initialize agent resource."""
-        super().__init__(
-            name=name,
-            description="Resource for inter-agent communication",
-            config={"timeout": timeout}
-        )
+    def __init__(self, name: str, agent_registry: Dict[str, Any]):
+        """Initialize agent resource.
+        
+        Args:
+            name: Resource identifier
+            agent_registry: Dictionary mapping agent IDs to agent instances
+        """
+        super().__init__(name)
+        if not agent_registry:
+            raise ConfigurationError("Agent registry cannot be empty")
         self.agent_registry = agent_registry
-        self.timeout = timeout
+
+    async def query(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Query an agent from the registry.
+        
+        Args:
+            request: Query parameters including agent_id and query
+            
+        Returns:
+            Response from the agent
+            
+        Raises:
+            ResourceError: If agent query fails
+            ConfigurationError: If agent_id is invalid
+            AgentError: If agent execution fails
+        """
+        agent_id = request.get("agent_id")
+        if not agent_id:
+            raise ConfigurationError("agent_id is required")
+            
+        agent = self.agent_registry.get(agent_id)
+        if not agent:
+            raise ConfigurationError(f"Agent not found: {agent_id}")
+        
+        try:    
+            response = await agent.run(request.get("query", {}))
+            return {"response": response, "success": True}
+        except AgentError as e:
+            raise ResourceError(f"Agent {agent_id} execution failed") from e
+        except (ValueError, KeyError) as e:
+            raise ConfigurationError(f"Invalid query format for agent {agent_id}") from e
 
     async def initialize(self) -> None:
-        """Initialize agent resource."""
-        if not self.agent_registry:
-            self._is_available = False
-            raise AgentError("No agents registered")
-        self._is_available = True
-        self.logger.info("Agent resource initialized with %d agents", len(self.agent_registry))
-
-    async def query(
-        self,
-        request: Dict[str, Any],
-        **kwargs
-    ) -> Dict[str, Any]:
-        """Query another agent."""
-        agent_id = request.get('agent_id')
-        if not agent_id:
-            raise ValueError("No agent_id provided in request")
-            
-        if agent_id not in self.agent_registry:
-            raise AgentError(f"Unknown agent: {agent_id}")
-            
-        query = request.get('query')
-        if not query:
-            raise ValueError("No query provided in request")
-
-        timeout = request.get('timeout', self.timeout)
+        """Initialize all agents in registry.
         
-        try:
-            # Get target agent
-            agent = self.agent_registry[agent_id]
-            
-            # Query agent with timeout
-            response = await asyncio.wait_for(
-                agent.handle_query(query),
-                timeout=timeout
-            )
-            
-            return {
-                "success": True,
-                "agent_id": agent_id,
-                "response": response
-            }
-            
-        except asyncio.TimeoutError:
-            self.logger.error(
-                "Query to agent %s timed out after %s seconds",
-                agent_id,
-                timeout
-            )
-            raise AgentError(f"Query to agent {agent_id} timed out")
-        except Exception as e:
-            self.logger.error(
-                "Error querying agent %s: %s",
-                agent_id,
-                str(e)
-            )
-            raise AgentError(f"Query to agent {agent_id} failed: {str(e)}")
-
-    def can_handle(self, request: Dict[str, Any]) -> bool:
-        """Check if this resource can handle the request."""
-        # Check if request has required fields
-        if not all(k in request for k in ['agent_id', 'query']):
-            return False
-            
-        # Check if target agent exists
-        return request['agent_id'] in self.agent_registry
+        Raises:
+            ResourceError: If initialization fails
+            AgentError: If agent initialization fails
+        """
+        for agent_id, agent in self.agent_registry.items():
+            try:
+                await agent.initialize()
+            except (AgentError, ValueError) as e:
+                raise ResourceError(f"Failed to initialize agent {agent_id}") from e
 
     async def cleanup(self) -> None:
-        """Clean up agent resource."""
-        self.agent_registry.clear()
-        self._is_available = False
-        self.logger.info("Agent resource cleaned up")
-
-    async def broadcast(
-        self,
-        query: Dict[str, Any],
-        timeout: Optional[float] = None
-    ) -> Dict[str, Any]:
-        """Broadcast query to all agents."""
-        results = {}
-        timeout = timeout or self.timeout
+        """Clean up all agents in registry.
         
-        try:
-            tasks = [
-                asyncio.create_task(
-                    self.query({
-                        "agent_id": agent_id,
-                        "query": query,
-                        "timeout": timeout
-                    })
-                )
-                for agent_id in self.agent_registry
-            ]
-            
-            done, pending = await asyncio.wait(
-                tasks,
-                timeout=timeout,
-                return_when=asyncio.ALL_COMPLETED
-            )
-            
-            # Cancel any pending tasks
-            for task in pending:
-                task.cancel()
-            
-            # Collect results
-            for task in done:
-                try:
-                    result = await task
-                    results[result["agent_id"]] = result["response"]
-                except Exception as e:
-                    self.logger.error("Task failed: %s", str(e))
-            
-            return {
-                "success": True,
-                "responses": results
-            }
-            
-        except Exception as e:
-            self.logger.error("Broadcast failed: %s", str(e))
-            raise AgentError(f"Broadcast failed: {str(e)}")
-
-    async def query_with_fallback(
-        self,
-        primary_agent: str,
-        fallback_agents: List[str],
-        query: Dict[str, Any],
-        timeout: Optional[float] = None
-    ) -> Dict[str, Any]:
-        """Query primary agent with fallbacks if it fails."""
-        timeout = timeout or self.timeout
-        
-        try:
-            # Try primary agent first
+        Raises:
+            ResourceError: If cleanup fails for any agent
+        """
+        errors = []
+        for agent_id, agent in self.agent_registry.items():
             try:
-                result = await self.query({
-                    "agent_id": primary_agent,
-                    "query": query,
-                    "timeout": timeout
-                })
-                return result
-            except AgentError:
-                self.logger.warning(
-                    "Primary agent %s failed, trying fallbacks",
-                    primary_agent
-                )
-            
-            # Try fallback agents
-            for agent_id in fallback_agents:
-                try:
-                    result = await self.query({
-                        "agent_id": agent_id,
-                        "query": query,
-                        "timeout": timeout
-                    })
-                    return result
-                except AgentError:
-                    continue
-            
-            raise AgentError("All agents failed")
-            
-        except Exception as e:
-            self.logger.error("Query with fallback failed: %s", str(e))
-            raise AgentError(f"Query with fallback failed: {str(e)}") 
+                await agent.cleanup()
+            except (AgentError, ValueError) as e:
+                errors.append(f"Failed to cleanup agent {agent_id}: {str(e)}")
+        
+        if errors:
+            raise ResourceError("\n".join(errors)) 

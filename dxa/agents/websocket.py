@@ -1,4 +1,30 @@
-"""WebSocket-based agent implementation."""
+"""WebSocket-based agent implementation.
+
+This module provides an agent implementation that communicates through WebSocket
+connections. It enables real-time bidirectional communication and maintains
+connection state.
+
+Example:
+    ```python
+    from dxa.agents.websocket import WebSocketAgent
+    from dxa.core.reasoning import ChainOfThoughtReasoning
+    
+    agent = WebSocketAgent(
+        name="remote_solver",
+        config={
+            "model": "gpt-4",
+            "api_key": "your-key"
+        },
+        reasoning=ChainOfThoughtReasoning(),
+        websocket_url="wss://your-server.com/agent"
+    )
+    
+    result = await agent.run({
+        "task": "solve_problem",
+        "data": {"problem": "..."}
+    })
+    ```
+"""
 
 from typing import Dict, Any
 from dxa.agents.base_agent import BaseAgent
@@ -8,7 +34,35 @@ from dxa.core.reasoning import BaseReasoning
 from dxa.agents.state import StateManager
 
 class WebSocketAgent(BaseAgent):
-    """Agent that interacts through WebSocket I/O."""
+    """Agent that interacts through WebSocket I/O.
+    
+    This agent type provides real-time communication capabilities through WebSocket
+    connections. It handles connection management, reconnection attempts, and
+    maintains state across interactions.
+    
+    Attributes:
+        reasoning: Reasoning system instance
+        io: WebSocket I/O interface
+        state_manager: State tracking manager
+        
+    Args:
+        name: Agent identifier
+        config: Configuration dictionary
+        reasoning: Reasoning system instance
+        websocket_url: WebSocket server URL
+        reconnect_attempts: Max reconnection attempts (default: 3)
+        reconnect_delay: Seconds between attempts (default: 1.0)
+        
+    Example:
+        ```python
+        agent = WebSocketAgent(
+            name="remote_agent",
+            config={"model": "gpt-4"},
+            reasoning=ChainOfThoughtReasoning(),
+            websocket_url="wss://server.com/agent"
+        )
+        ```
+    """
     
     def __init__(
         self,
@@ -35,7 +89,14 @@ class WebSocketAgent(BaseAgent):
         self.state_manager = StateManager(name)
 
     async def initialize(self) -> None:
-        """Initialize agent resources."""
+        """Initialize agent resources.
+        
+        Sets up WebSocket connection and initializes resources.
+        
+        Raises:
+            WebSocketError: If WebSocket connection fails
+            DXAConnectionError: If connection setup fails
+        """
         try:
             await super().initialize()
             await self.io.initialize()
@@ -54,7 +115,14 @@ class WebSocketAgent(BaseAgent):
             raise
 
     async def cleanup(self) -> None:
-        """Clean up agent resources."""
+        """Clean up agent resources.
+        
+        Closes WebSocket connection and cleans up resources.
+        
+        Raises:
+            WebSocketError: If WebSocket cleanup fails
+            DXAConnectionError: If connection cleanup fails
+        """
         try:
             await self.io.cleanup()
             await super().cleanup()
@@ -75,11 +143,28 @@ class WebSocketAgent(BaseAgent):
     async def run(self, task: str) -> Dict[str, Any]:
         """Run the agent's main loop.
         
+        Manages WebSocket communication and task execution.
+        
         Args:
             task: The task/query to process
             
         Returns:
-            Dict containing results of agent's operation
+            Dict containing:
+                - success: Whether the task completed successfully
+                - results: Results from reasoning system
+                - state_history: History of observations and messages
+                
+        Raises:
+            WebSocketError: If WebSocket communication fails
+            DXAConnectionError: If connection is lost
+            
+        Example:
+            ```python
+            result = await agent.run({
+                "task": "process_data",
+                "data": {"values": [1, 2, 3]}
+            })
+            ```
         """
         context = {"task": task}
         try:

@@ -1,16 +1,50 @@
-"""Base agent implementation."""
+"""Base implementation for DXA agents.
+
+This module provides the foundational BaseAgent class that all other agent types
+inherit from. It implements core functionality like initialization, resource
+management, and error handling.
+
+Classes:
+    BaseAgent: Abstract base class for all DXA agents
+"""
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Type
+from typing import Dict, Any, Type, AsyncIterator
 import logging
 from dxa.core.reasoning.base_reasoning import BaseReasoning, ReasoningConfig
 from dxa.core.resources.expert import ExpertResource
 from dxa.agents.agent_llm import AgentLLM
 from dxa.core.reasoning.cot import ChainOfThoughtReasoning
 from dxa.core.reasoning.ooda import OODAReasoning
+from dxa.agents.progress import AgentProgress
+from dxa.common.errors import (
+    ReasoningError, 
+    ConfigurationError, 
+    AgentError,
+    ResourceError,
+    DXAConnectionError
+)
 
 class BaseAgent(ABC):
-    """Base agent with common functionality"""
+    """Base class providing common agent functionality.
+    
+    This abstract class defines the interface and common functionality that all
+    DXA agents must implement. It handles resource initialization, reasoning
+    system setup, and provides helper methods for expert consultation.
+    
+    Attributes:
+        name: Agent identifier
+        mode: Operating mode ("autonomous", "interactive", etc.)
+        llm: Internal LLM instance for agent processing
+        reasoning: Reasoning system instance
+        resources: Dictionary of available resources
+        logger: Logger instance for this agent
+        
+    Args:
+        name: Name of this agent
+        config: Configuration dictionary
+        mode: Operating mode (default: "autonomous")
+    """
     
     # Map strategy names to reasoning classes
     REASONING_STRATEGIES: Dict[str, Type[BaseReasoning]] = {
@@ -100,7 +134,28 @@ class BaseAgent(ABC):
         self.logger.info("Agent cleaned up")
 
     async def use_expert(self, domain: str, request: str) -> str:
-        """Use expert for specialized domain knowledge."""
+        """Use expert for specialized domain knowledge.
+        
+        Finds and queries an expert resource for domain-specific knowledge.
+        
+        Args:
+            domain: Domain of expertise required (e.g., "mathematics", "physics")
+            request: Query/request for the expert
+            
+        Returns:
+            Expert's response as string
+            
+        Raises:
+            ValueError: If no expert is found for the specified domain
+            
+        Example:
+            ```python
+            response = await agent.use_expert(
+                domain="mathematics",
+                request="Solve: 2x + 5 = 13"
+            )
+            ```
+        """
         experts = {
             name: resource for name, resource in self.resources.items()
             if isinstance(resource, ExpertResource)
@@ -120,3 +175,58 @@ class BaseAgent(ABC):
     async def handle_error(self, error: Exception) -> None:
         """Handle errors during agent execution."""
         self.logger.error("Agent error: %s", str(error))
+
+    async def run_with_progress(self, task: Dict[str, Any]) -> AsyncIterator[AgentProgress]:
+        """Run a task with progress updates.
+        
+        Args:
+            task: Task configuration dictionary
+            
+        Yields:
+            AgentProgress objects containing progress or result information
+            
+        Raises:
+            ReasoningError: If reasoning system fails
+            ConfigurationError: If agent is misconfigured
+            AgentError: If agent operations fail
+            ResourceError: If resource operations fail
+            DXAConnectionError: If connections fail
+            ValueError: If task parameters are invalid
+        """
+        try:
+            # Initial progress
+            yield AgentProgress(
+                type="progress",
+                message="Starting task",
+                percent=0
+            )
+            
+            # Run the task with intermediate updates
+            result = await self.run(task)
+            
+            # Final progress with result
+            yield AgentProgress(
+                type="result",
+                message="Task completed",
+                percent=100,
+                result=result
+            )
+            
+        except (
+            ReasoningError,
+            ConfigurationError,
+            AgentError,
+            ResourceError,
+            DXAConnectionError,
+            ValueError
+        ) as e:
+            # Error progress with specific error information
+            yield AgentProgress(
+                type="result",
+                message=f"Task failed: {str(e)}",
+                result={
+                    "success": False,
+                    "error": str(e),
+                    "error_type": e.__class__.__name__
+                }
+            )

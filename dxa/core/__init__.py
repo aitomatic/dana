@@ -1,6 +1,18 @@
-"""Core DXA functionality."""
+"""Core DXA functionality.
 
-from dxa.core.resources.expert import DomainExpertise, ExpertResource
+This package provides the fundamental building blocks of the DXA framework:
+- Capabilities: Core definitions of agent capabilities
+- Resources: Implementation of various agent resources
+- Reasoning: Different reasoning patterns for agents
+
+The core package maintains a clean separation between:
+- Capability definitions (what agents can do)
+- Resource implementations (how agents do it)
+- Reasoning patterns (how agents think about it)
+"""
+
+from dxa.core.capabilities.expertise import DomainExpertise
+from dxa.core.resources.expert import ExpertResource
 from dxa.core.resources.base_resource import BaseResource
 from dxa.core.reasoning.base_reasoning import BaseReasoning
 
