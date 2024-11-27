@@ -11,9 +11,9 @@ The core package maintains a clean separation between:
 - Reasoning patterns (how agents think about it)
 """
 
-from dxa.core.capabilities.expertise import DomainExpertise
-from dxa.core.resources.expert import ExpertResource
-from dxa.core.resources.base_resource import BaseResource
+from dxa.core.capability.expertise import DomainExpertise
+from dxa.core.resource.expert import ExpertResource
+from dxa.core.resource.base_resource import BaseResource
 from dxa.core.reasoning.base_reasoning import BaseReasoning
 
 __all__ = [

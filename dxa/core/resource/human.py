@@ -1,7 +1,7 @@
 """Human resource implementation."""
 
 from typing import Dict, Any
-from dxa.core.resources.base_resource import BaseResource
+from dxa.core.resource.base_resource import BaseResource
 from dxa.common.errors import ResourceError
 
 class HumanResource(BaseResource):

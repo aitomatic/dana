@@ -2,6 +2,8 @@
 
 A prototype implementation of DXA (Domain-Expert Agents) - an AI-powered system for domain-specific expert agents.
 
+For detailed documentation and architecture overview, please see the [DXA Documentation](docs/README.md).
+
 ## Prerequisites
 
 - Python 3.x
@@ -39,8 +41,25 @@ The application requires the following configuration:
 ## Notes
 
 - Make sure all dependencies are properly installed before running the application
-- For any issues, please check the troubleshooting section or create an issue
+- For any issues, please check the troubleshooting section or contact the development team
 
 ## About DXA
 
 Domain-Expert Agents (DXA) is a system designed to create and manage AI agents that specialize in specific domains or areas of expertise. These agents can provide domain-specific knowledge, answer questions, and assist with tasks within their area of specialization.
+
+## Contributing
+
+DXA is proprietary software developed by Aitomatic, Inc. Contributions are limited to authorized Aitomatic employees and contractors. If you're an authorized contributor:
+
+1. Please ensure you have signed the necessary Confidentiality and IP agreements
+2. Follow the internal development guidelines
+3. Submit your changes through the company's approved development workflow
+4. Contact the project maintainers for access to the internal Contributing Guide
+
+For external users or organizations interested in collaborating with Aitomatic on DXA development, please contact our business development team.
+
+## License
+
+This software is proprietary and confidential. Copyright © 2024 Aitomatic, Inc. All rights reserved.
+
+Unauthorized copying, transfer, or reproduction of this software, via any medium, is strictly prohibited. This software is protected by copyright law and international treaties.

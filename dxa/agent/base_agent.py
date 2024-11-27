@@ -6,13 +6,40 @@ management, and error handling.
 
 Classes:
     BaseAgent: Abstract base class for all DXA agents
+
+TODO:
+    - Integrate core capabilities system:
+        - Add capability registration/management
+        - Implement standard capabilities (memory, expertise)
+        - Add capability dependency resolution
+    
+    - Implement I/O system integration:
+        - Add I/O handler registration
+        - Support multiple I/O channels
+        - Add I/O routing/multiplexing
+    
+    - Enhance resource management:
+        - Add resource discovery
+        - Implement resource lifecycle management
+        - Add resource access controls
+        - Support dynamic resource loading
+    
+    - Add state management:
+        - Implement agent state persistence
+        - Add state recovery mechanisms
+        - Support state synchronization
+    
+    - Improve error handling:
+        - Add more granular error types
+        - Implement recovery strategies
+        - Add error reporting system
 """
 
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Type, AsyncIterator
 import logging
 from dxa.core.reasoning.base_reasoning import BaseReasoning, ReasoningConfig
-from dxa.core.resources.expert import ExpertResource
+from dxa.core.resource.expert import ExpertResource
 from dxa.agent.agent_llm import AgentLLM
 from dxa.core.reasoning.cot import ChainOfThoughtReasoning
 from dxa.core.reasoning.ooda import OODAReasoning
