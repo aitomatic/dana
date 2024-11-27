@@ -104,8 +104,12 @@ class BaseAgent(ABC):
         return reasoning
 
     @abstractmethod
-    async def run(self, task: str) -> Dict[str, Any]:
-        """Run the agent on a task"""
+    async def run(self) -> Dict[str, Any]:
+        """Run the agent.
+        
+        Returns:
+            Dict containing results of the agent's execution
+        """
         raise NotImplementedError
 
     async def initialize(self) -> None:
@@ -202,7 +206,7 @@ class BaseAgent(ABC):
             )
             
             # Run the task with intermediate updates
-            result = await self.run(task)
+            result = await self.run()
             
             # Final progress with result
             yield AgentProgress(
