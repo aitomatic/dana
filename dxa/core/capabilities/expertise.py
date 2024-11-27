@@ -56,7 +56,6 @@ class DomainExpertiseCapability(BaseCapability):
             
             # Generate recommendations
             recommendations = self._generate_recommendations(
-                context,
                 analysis,
                 insights
             )
@@ -69,7 +68,7 @@ class DomainExpertiseCapability(BaseCapability):
                 "recommendations": recommendations
             }
             
-        except Exception as e:
+        except (ValueError, KeyError) as e:  # Catch specific exceptions
             return {
                 "success": False,
                 "error": str(e)
@@ -118,7 +117,6 @@ class DomainExpertiseCapability(BaseCapability):
 
     def _generate_recommendations(
         self,
-        context: Dict[str, Any],
         analysis: List[Dict],
         insights: List[Dict]
     ) -> List[Dict]:
