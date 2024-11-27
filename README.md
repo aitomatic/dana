@@ -1,8 +1,12 @@
+<p align="center">
+  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
+</p>
+
 # DXA Prototype
 
 A prototype implementation of DXA (Domain-Expert Agents) - an AI-powered system for domain-specific expert agents.
 
-For detailed documentation and architecture overview, please see the [DXA Documentation](docs/README.md).
+For detailed architecture documentation (Product-Engineering perspective), see [DXA Architecture](dxa/README.md). For usage examples (AI Solution Engineering perspective), check out our [Examples](examples/README.md).
 
 ## Prerequisites
 
