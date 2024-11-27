@@ -1,7 +1,39 @@
-"""LLM resource implementation."""
+"""LLM resource implementation for DXA.
+
+This module provides a wrapper for Large Language Model interactions,
+specifically designed for OpenAI's GPT models. It handles API communication,
+prompt management, and response processing.
+
+Classes:
+    LLMError: Exception class for LLM-related errors
+    LLMResource: Base resource class for LLM interactions
+
+Features:
+    - Async API communication
+    - System prompt management
+    - Token limit handling
+    - Usage tracking
+    - Error handling
+
+Example:
+    llm = LLMResource(
+        name="gpt4",
+        config={
+            "api_key": "your-api-key",
+            "model": "gpt-4"
+        },
+        system_prompt="You are a helpful assistant."
+    )
+    
+    response = await llm.query({
+        "prompt": "Explain quantum computing",
+        "temperature": 0.7
+    })
+"""
 
 from typing import Dict, Any, Optional
 from dxa.core.resources.base_resource import BaseResource, ResourceError
+from openai import AsyncOpenAI
 
 class LLMError(ResourceError):
     """Error in LLM interaction."""
@@ -37,14 +69,13 @@ class LLMResource(BaseResource):
     async def initialize(self) -> None:
         """Initialize the LLM client."""
         try:
-            from openai import AsyncOpenAI
             self._client = AsyncOpenAI(api_key=self.config['api_key'])
             self._is_available = True
             self.logger.info("LLM resource initialized successfully")
         except Exception as e:
             self._is_available = False
             self.logger.error("Failed to initialize LLM resource: %s", str(e))
-            raise LLMError(f"LLM initialization failed: {str(e)}")
+            raise LLMError(f"LLM initialization failed: {str(e)}") from e
 
     async def cleanup(self) -> None:
         """Clean up any resources used by the LLM resource."""
@@ -123,4 +154,4 @@ class LLMResource(BaseResource):
             }
             
         except Exception as e:
-            raise LLMError(f"LLM query failed: {str(e)}") 
+            raise LLMError(f"LLM query failed: {str(e)}") from e

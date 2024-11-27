@@ -1,4 +1,25 @@
-"""Base resource for DXA."""
+"""Base resource implementation for DXA.
+
+This module provides the foundational resource class that defines the interface
+and common functionality for all DXA resources. Resources are managed entities
+that provide specific capabilities to the system.
+
+Classes:
+    ResourceError: Base exception class for resource-related errors
+    ResourceUnavailableError: Error raised when a resource cannot be accessed
+    ResourceAccessError: Error raised when resource access is denied
+    BaseResource: Abstract base class for all resources
+
+Example:
+    class CustomResource(BaseResource):
+        async def initialize(self):
+            # Resource-specific initialization
+            pass
+
+        async def cleanup(self):
+            # Resource-specific cleanup
+            pass
+"""
 
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional
@@ -17,7 +38,7 @@ class ResourceAccessError(ResourceError):
     pass
 
 class BaseResource(ABC):
-    """Base class for agent resources."""
+    """Base class for managing resources with clear lifecycle"""
     
     def __init__(
         self,
@@ -37,44 +58,19 @@ class BaseResource(ABC):
         """Check if resource is currently available."""
         return self._is_available
 
+    @abstractmethod
     async def initialize(self) -> None:
-        """Initialize the resource."""
+        """Initialize the resource"""
         pass
-
-    async def cleanup(self) -> None:
-        """Clean up the resource."""
-        pass
-
-    @abstractmethod
-    async def query(
-        self,
-        request: Dict[str, Any],
-        **kwargs
-    ) -> Dict[str, Any]:
-        """Query this resource.
         
-        Args:
-            request: The request to send to the resource
-            **kwargs: Additional arguments for specific resources
-            
-        Returns:
-            Dict containing resource response
-            
-        Raises:
-            ResourceAccessError: If resource access fails
-        """
-        pass
-
     @abstractmethod
-    def can_handle(self, request: Dict[str, Any]) -> bool:
-        """Check if this resource can handle the given request."""
+    async def cleanup(self) -> None:
+        """Cleanup the resource"""
         pass
-
-    async def __aenter__(self):
-        """Async context manager entry."""
+        
+    async def __aenter__(self) -> 'BaseResource':
         await self.initialize()
         return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Async context manager exit."""
+        
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.cleanup() 

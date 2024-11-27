@@ -2,7 +2,7 @@
 
 import asyncio
 import os
-from dxa.agents.automation import AutomationAgent
+from dxa.agent.automation_agent import AutomationAgent
 
 # Define the workflow steps
 SCRAPING_WORKFLOW = {
@@ -46,14 +46,22 @@ async def main():
     # Create automation agent
     agent = AutomationAgent(
         name="web_scraper",
-        llm_config={"api_key": api_key},
+        llm_config={
+            "api_key": api_key,
+            "model": "gpt-4",
+            "system_prompt": """You are a web scraping automation agent.
+            Follow the workflow steps carefully and handle errors appropriately.
+            Validate each step before proceeding."""
+        },
         workflow=SCRAPING_WORKFLOW,
-        system_prompt="""You are a web scraping automation agent.
-        Follow the workflow steps carefully and handle errors appropriately.
-        Validate each step before proceeding."""
+        description="Web scraping automation agent"
     )
 
-    async with agent:  # Uses context manager for cleanup
+    # Initialize agent
+    await agent.initialize()
+
+    try:
+        # Run the workflow
         result = await agent.run({
             "target_url": "https://example.com",
             "data_requirements": ["title", "description", "price"],
@@ -65,6 +73,9 @@ async def main():
             print(f"Data saved: {result['workflow_state']['step_results'][-1]}")
         else:
             print(f"Scraping failed: {result.get('error')}")
+    finally:
+        # Clean up resources
+        await agent.cleanup()
 
 if __name__ == "__main__":
     asyncio.run(main()) 

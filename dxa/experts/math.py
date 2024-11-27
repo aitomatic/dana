@@ -1,4 +1,28 @@
-"""Mathematics domain expert."""
+"""Mathematics domain expert.
+
+This module provides functionality to create a specialized mathematics expert
+resource capable of solving various mathematical problems including algebra,
+calculus, geometry, and statistics.
+
+The math expert can:
+- Solve algebraic equations and systems
+- Perform calculus operations (derivatives, integrals)
+- Analyze geometric problems and proofs
+- Handle statistical analysis and probability calculations
+- Process numerical computations with step-by-step explanations
+
+Example:
+    >>> from dxa.experts import create_math_expert
+    >>> expert = create_math_expert(api_key="your-api-key")
+    >>> result = expert.analyze("Solve the equation: x² + 5x + 6 = 0")
+    >>> print(result)
+    Step 1: Identify this as a quadratic equation...
+
+Notes:
+    - The expert requires a valid API key for the underlying LLM service
+    - Confidence threshold is set to 0.7 by default
+    - Uses GPT-4 as the default model for complex mathematical reasoning
+"""
 
 from dxa.core.resources.expert import DomainExpertise, ExpertResource
 

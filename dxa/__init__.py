@@ -1,16 +1,36 @@
-"""Domain-Expert Agent (DXA) framework."""
+"""Domain-Expert Agent (DXA) framework.
 
-from dxa.agents.state import StateManager
-from dxa.agents.interactive import ConsoleAgent
+DXA is a framework for building domain-expert agents that combine:
+- Domain-specific expertise
+- LLM-powered reasoning
+- Interactive capabilities
+
+Key Components:
+- StateManager: Manages agent state and conversation history
+- DomainExpertise: Defines areas of expertise and capabilities
+- ExpertResource: Implements domain-expert behavior
+- ChainOfThoughtReasoning: Provides step-by-step reasoning patterns
+
+Example:
+    >>> from dxa import DomainExpertise, ExpertResource
+    >>> expertise = DomainExpertise(
+    ...     name="mathematics",
+    ...     description="Expert in algebra and calculus",
+    ...     capabilities=["equation solving", "differentiation"],
+    ...     keywords=["solve", "calculate", "equation"],
+    ...     requirements=["mathematical expression"],
+    ...     example_queries=["solve x^2 + 2x + 1 = 0"]
+    ... )
+"""
+
+from dxa.agent.state import StateManager
+from dxa.core.capabilities.expertise import DomainExpertise
+from dxa.core.resources.expert import ExpertResource
 from dxa.core.reasoning.cot import ChainOfThoughtReasoning
-from dxa.core.reasoning.ooda import OODALoopReasoning
-from dxa.core.resources.expert import DomainExpertise, ExpertResource
 
 __all__ = [
     'StateManager',
-    'ConsoleAgent',
-    'ChainOfThoughtReasoning',
-    'OODALoopReasoning',
     'DomainExpertise',
-    'ExpertResource'
+    'ExpertResource',
+    'ChainOfThoughtReasoning'
 ]

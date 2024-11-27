@@ -1,18 +1,41 @@
-"""Expert resource implementation."""
+"""Expert resource implementation for DXA.
 
-from typing import Dict, Any, Optional, List
-from dataclasses import dataclass
+This module implements domain-expert behavior using Large Language Models (LLMs).
+It combines domain expertise definitions with LLM capabilities to create
+specialized agents that can handle domain-specific queries with high competency.
+
+Classes:
+    ExpertResource: LLM-powered domain expert resource
+
+Features:
+    - Domain-specific expertise configuration
+    - Confidence-based query handling
+    - Enhanced prompting with domain context
+    - Automatic system prompt generation
+
+Example:
+    from dxa.core.capabilities.expertise import DomainExpertise
+    
+    expertise = DomainExpertise(
+        name="Mathematics",
+        capabilities=["algebra", "calculus"],
+        keywords=["solve", "equation", "derivative"]
+    )
+    
+    expert = ExpertResource(
+        name="math_expert",
+        expertise=expertise,
+        config={"model": "gpt-4"}
+    )
+    
+    response = await expert.query({
+        "prompt": "Solve the equation x^2 + 2x + 1 = 0"
+    })
+"""
+
+from typing import Dict, Any, Optional
 from dxa.core.resources.llm_resource import LLMResource, LLMError
-
-@dataclass
-class DomainExpertise:
-    """Definition of a domain of expertise."""
-    name: str
-    description: str
-    capabilities: List[str]
-    keywords: List[str]
-    requirements: List[str]
-    example_queries: List[str]
+from dxa.core.capabilities.expertise import DomainExpertise
 
 class ExpertResource(LLMResource):
     """A domain-expert LLM resource."""
@@ -37,11 +60,23 @@ class ExpertResource(LLMResource):
         super().__init__(
             name=name,
             config=config,
-            system_prompt=system_prompt
+            system_prompt=system_prompt or self._generate_system_prompt(expertise)
         )
         self.expertise = expertise
         self.confidence_threshold = confidence_threshold
         self.description = f"Expert in {expertise.name}"
+
+    def _generate_system_prompt(self, expertise: DomainExpertise) -> str:
+        """Generate a system prompt from expertise definition."""
+        capabilities_str = "\n".join(f"- {cap}" for cap in expertise.capabilities)
+        return f"""You are an expert in {expertise.name}.
+        
+        Your expertise includes:
+        {capabilities_str}
+        
+        Description: {expertise.description}
+        
+        Always provide detailed explanations and show your work step by step."""
 
     def can_handle(self, request: Dict[str, Any]) -> bool:
         """Check if this expert can handle the request.
@@ -85,6 +120,16 @@ class ExpertResource(LLMResource):
         """Query the expert.
         
         Adds domain context to the request before querying.
+        
+        Args:
+            request: Query request containing prompt and parameters
+            **kwargs: Additional query parameters
+            
+        Returns:
+            Dict containing query response
+            
+        Raises:
+            LLMError: If request cannot be handled by this expert
         """
         if not self.can_handle(request):
             raise LLMError(
