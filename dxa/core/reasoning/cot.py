@@ -20,15 +20,15 @@ Example:
     ... )
 """
 
-from typing import Dict, Any
-from dxa.core.reasoning.base_reasoning import BaseReasoning
+from typing import Dict, Any, Optional
+from dxa.core.reasoning.base_reasoning import BaseReasoning, ReasoningConfig
 
 class ChainOfThoughtReasoning(BaseReasoning):
     """Chain of Thought reasoning pattern."""
     
-    def __init__(self):
+    def __init__(self, config: Optional[ReasoningConfig] = None):
         """Initialize Chain of Thought reasoning."""
-        super().__init__()
+        super().__init__(config=config)
     
     async def initialize(self) -> None:
         """Initialize reasoning system."""
@@ -45,17 +45,18 @@ class ChainOfThoughtReasoning(BaseReasoning):
         # Get prompts
         system_prompt = self.get_system_prompt(context, query)
         user_prompt = self.get_prompt(context, query)
+        llm_config = self.config.llm_config;
         
         # Query LLM
         response = await self._query_agent_llm({
             "system_prompt": system_prompt,
             "prompt": user_prompt,
-            "temperature": self.config.temperature,
-            "max_tokens": self.config.max_tokens
+            "temperature": llm_config["temperature"],
+            "max_tokens": llm_config["max_tokens"]
         })
         
         # Process response
-        return self.reason_post_process(response["content"])
+        return self.reason_post_process(response.choices[0].message.content)
     
     def get_reasoning_system_prompt(self, context: Dict[str, Any], query: str) -> str:
         """Get system prompt for Chain of Thought reasoning."""

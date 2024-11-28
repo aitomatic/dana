@@ -1,6 +1,8 @@
 """Base reasoning pattern for DXA."""
 
 from abc import ABC, abstractmethod
+import copy
+import dataclasses
 from typing import Dict, Any, Optional
 from enum import Enum
 from dataclasses import dataclass
@@ -50,8 +52,12 @@ class ReasoningResult:
 class ReasoningConfig:
     """Configuration for reasoning engine."""
     strategy: str = "cot"
-    temperature: float = 0.7
-    max_tokens: int = 1000
+    llm_config: Dict[str, Any] = dataclasses.field(default_factory=lambda: {
+        "model": "gpt-4",
+        "api_key": "",
+        "temperature": 0.7,
+        "max_tokens": 1000
+    })
     # ... other config parameters
 
 class BaseReasoning(ABC):
@@ -60,7 +66,8 @@ class BaseReasoning(ABC):
     def __init__(self, config: Optional[ReasoningConfig] = None):
         self.config = config or ReasoningConfig()
         self.strategy = self.config.strategy
-        self.agent_llm = None
+        llm_config = copy.deepcopy(config.llm_config)
+        self.agent_llm = AgentLLM(name=f"{self.__class__}_llm", config=llm_config)
         self.state_manager = StateManager(agent_name=self.__class__.__name__)
         self.available_resources: Dict[str, BaseResource] = {}
         self.logger = logging.getLogger(self.__class__.__name__)

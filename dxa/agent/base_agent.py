@@ -112,7 +112,9 @@ class BaseAgent(ABC):
         Raises:
             ValueError: If strategy is unknown
         """
-        strategy = config.get("strategy", "cot")
+        strategy = "cot"
+        if config.strategy:
+            strategy = config.strategy
         
         # Get reasoning class
         reasoning_class = self.REASONING_STRATEGIES.get(strategy)
@@ -122,12 +124,14 @@ class BaseAgent(ABC):
                 f"Valid strategies are: {list(self.REASONING_STRATEGIES.keys())}"
             )
         
-        # Create reasoning config
-        reasoning_config = ReasoningConfig(**config)
+        # Ensure config is a dictionary
+        if isinstance(config, ReasoningConfig):
+            reasoning_config = config  # Use the instance directly
+        else:
+            reasoning_config = ReasoningConfig(**config)  # Unpack if it's a dictionary
         
         # Initialize reasoning system
-        reasoning = reasoning_class()
-        reasoning.config = reasoning_config
+        reasoning = reasoning_class(config=reasoning_config)
         return reasoning
 
     @abstractmethod

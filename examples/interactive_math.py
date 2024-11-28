@@ -2,8 +2,12 @@
 
 import asyncio
 import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from dxa.agent.interactive_agent import InteractiveAgent
 from dxa.core.reasoning import ChainOfThoughtReasoning
+from dxa.core.reasoning.base_reasoning import ReasoningConfig
 
 def create_math_tutor(api_key: str = None) -> InteractiveAgent:
     """Create a math tutor agent with sensible defaults."""
@@ -12,6 +16,15 @@ def create_math_tutor(api_key: str = None) -> InteractiveAgent:
         if not api_key:
             raise ValueError("OPENAI_API_KEY environment variable is required")
 
+    reasoning_config = ReasoningConfig(
+        strategy="cot",
+        llm_config={
+            "model": "gpt-4",
+            "api_key": api_key,
+            "temperature": 0.7,
+            "max_tokens": 1000
+        }
+    )
     agent_config = {
         "name": "math_tutor",
         "model": "gpt-4",
@@ -23,14 +36,12 @@ def create_math_tutor(api_key: str = None) -> InteractiveAgent:
         3. Explain mathematical concepts clearly using examples
         4. Verify solutions and check for errors
         5. Encourage students to think through problems""",
-        "reasoning": {
-            "strategy": "cot"
-        }
+        "reasoning": reasoning_config,
     }
 
     return InteractiveAgent(
         config=agent_config,
-        reasoning=ChainOfThoughtReasoning()
+        reasoning=ChainOfThoughtReasoning(config=reasoning_config)
     )
 
 async def main():
@@ -46,6 +57,8 @@ async def main():
     
     if not result['success']:
         print("Error:", result.get('error'))
+    response = result["results"]
+    print(response["response"])
 
 if __name__ == "__main__":
     asyncio.run(main()) 
