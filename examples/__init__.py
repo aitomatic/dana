@@ -10,8 +10,8 @@ Examples:
     4. Collaborative Research: Multi-agent coordination
 """
 
-from examples.interactive_math import main as run_math_solver
-from examples.automation_web import main as run_web_scraper
+from examples.math_tutor import main as run_math_solver
+from examples.web_scraper import main as run_web_scraper
 from examples.websocket_solver import main as run_websocket_solver
 from examples.collaborative_research import main as run_collaborative_research
 
