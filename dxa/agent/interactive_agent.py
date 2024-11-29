@@ -49,7 +49,7 @@ class InteractiveAgent(BaseAgent):
         
     Args:
         name: Agent identifier
-        llm_config: LLM configuration dictionary
+        config: Configuration dictionary
         reasoning: Optional reasoning system instance
         description: Optional agent description
         max_iterations: Optional maximum iterations
@@ -59,18 +59,22 @@ class InteractiveAgent(BaseAgent):
     def __init__(
         self,
         name: str,
-        llm_config: Dict[str, Any],
+        config: Dict[str, Any],
         reasoning: Optional[BaseReasoning] = None,
         description: Optional[str] = None,
         max_iterations: Optional[int] = None,
         io_handler: Optional[Any] = None
     ):
-        """Initialize interactive agent."""
-        config = {
-            "llm": llm_config,
-            "description": description
-        }
+        """Initialize interactive agent.
         
+        Args:
+            name: Agent identifier
+            config: Configuration dictionary
+            reasoning: Optional reasoning system instance
+            description: Optional agent description
+            max_iterations: Optional maximum iterations
+            io_handler: Optional custom IO handler
+        """
         super().__init__(
             name=name,
             config=config,
@@ -88,13 +92,13 @@ class InteractiveAgent(BaseAgent):
         Args:
             context: Initial execution context
         """
-        await self.io.output(
+        await self.io.send_message(
             f"Starting interactive session for task: {context.get('objective', 'No objective specified')}"
         )
         
         # Get initial user input if needed
         if 'user_input' not in context:
-            user_input = await self.io.input("Initial input: ")
+            user_input = await self.io.get_input("Initial input: ")
             context['user_input'] = user_input
 
     async def _post_execute(self, result: Dict[str, Any]) -> Dict[str, Any]:
@@ -106,8 +110,8 @@ class InteractiveAgent(BaseAgent):
         Returns:
             Processed results with user feedback
         """
-        await self.io.output(f"Final result: {result}")
-        feedback = await self.io.input("Any final comments? ")
+        await self.io.send_message(f"Final result: {result}")
+        feedback = await self.io.get_input("Any final comments? ")
         
         result.update({
             "agent_type": "interactive",
@@ -126,19 +130,19 @@ class InteractiveAgent(BaseAgent):
             True if user wants to continue, False otherwise
         """
         # Show intermediate results
-        await self.io.output(f"Iteration result: {result}")
+        await self.io.send_message(f"Iteration result: {result}")
         
         # Check completion conditions
         if result.get("task_complete"):
-            await self.io.output("Task appears to be complete.")
+            await self.io.send_message("Task appears to be complete.")
             return False
             
         if result.get("is_stuck"):
-            await self.io.output(f"Agent is stuck: {result.get('stuck_reason')}")
+            await self.io.send_message(f"Agent is stuck: {result.get('stuck_reason')}")
             return False
         
         # Get user decision
-        response = await self.io.input("Continue to next iteration? (y/n): ")
+        response = await self.io.get_input("Continue to next iteration? (y/n): ")
         return response.lower() == 'y'
 
     async def _reasoning_step(self, context: Dict[str, Any]) -> Dict[str, Any]:
@@ -151,13 +155,39 @@ class InteractiveAgent(BaseAgent):
             Dict containing reasoning results and user input
         """
         # Show current context
-        await self.io.output(f"Current context: {context}")
+        await self.io.send_message(f"Current context: {context}")
         
-        # Run reasoning
-        result = await self.reasoning.reason(context)
+        # Extract query from context or use objective as fallback
+        query = context.get("query") or context.get("objective", "")
+        
+        # Run reasoning with both context and query
+        step_result = await self.reasoning.reason(context, query)
         
         # Get user feedback
-        feedback = await self.io.input("Feedback for this step: ")
-        result["user_feedback"] = feedback
+        feedback = await self.io.get_input("Feedback for this step: ")
         
-        return result
+        # Convert StepResult to dict and add feedback
+        result_dict = {
+            "status": step_result.status,
+            "content": step_result.content,
+            "next_step": step_result.next_step,
+            "resource_request": step_result.resource_request,
+            "final_answer": step_result.final_answer,
+            "error_message": step_result.error_message,
+            "user_feedback": feedback
+        }
+        
+        return result_dict
+
+    def get_agent_system_prompt(self) -> str:
+        return """You are an interactive agent that works collaboratively with users.
+        You should:
+        - Explain your thinking clearly
+        - Ask for clarification when needed
+        - Provide step-by-step explanations
+        - Confirm important decisions with the user
+        """
+
+    def get_agent_user_prompt(self) -> str:
+        return """Let's work through this together. I'll explain my thinking and
+        ask for your input when needed."""

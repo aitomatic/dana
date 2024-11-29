@@ -39,8 +39,8 @@ Classes:
     BaseAgent: Abstract base class for all DXA agents
 """
 
-from abc import ABC
-from typing import Dict, Any, AsyncIterator, Optional
+from abc import ABC, abstractmethod
+from typing import Dict, Any, AsyncIterator, Optional, Callable
 from dxa.core.reasoning.base_reasoning import BaseReasoning
 from dxa.core.reasoning.cot_reasoning import ChainOfThoughtReasoning
 from dxa.core.resource.expert_resource import ExpertResource
@@ -51,34 +51,7 @@ from dxa.agent.agent_runtime import AgentRuntime
 from dxa.agent.agent_state import StateManager
 
 class BaseAgent(ABC):
-    """Base class providing common agent functionality.
-    
-    This abstract class defines the interface and common functionality that all
-    DXA agents must implement. It handles resource initialization, reasoning
-    system setup, and provides helper methods for expert consultation.
-    
-    By default, agents use Chain of Thought reasoning (ChainOfThoughtReasoning).
-    This can be overridden by:
-    1. Passing a different reasoning system in the constructor
-    2. Specialized agent classes providing their own defaults
-       (e.g., WorkAutomationAgent uses OODA reasoning by default)
-    
-    Attributes:
-        name: Agent identifier
-        mode: Operating mode ("autonomous", "interactive", etc.)
-        llm: Internal LLM instance for agent processing
-        reasoning: Reasoning system instance (defaults to ChainOfThoughtReasoning)
-        resources: Dictionary of available resources
-        logger: Logger instance for this agent
-        runtime: Runtime manager for agent execution
-        
-    Args:
-        name: Name of this agent
-        config: Configuration dictionary
-        reasoning: Optional reasoning system (defaults to ChainOfThoughtReasoning)
-        mode: Operating mode (default: autonomous)
-        max_iterations: Optional maximum iterations (default: None)
-    """
+    """Base class providing common agent functionality."""
     
     def __init__(
         self,
@@ -88,14 +61,39 @@ class BaseAgent(ABC):
         mode: str = "autonomous",
         max_iterations: Optional[int] = None
     ):
-        """Initialize base agent."""
+        """Initialize base agent.
+        
+        Args:
+            name: Name of this agent
+            config: Configuration dictionary
+            reasoning: Optional reasoning system (defaults to ChainOfThoughtReasoning)
+            mode: Operating mode (default: autonomous)
+            max_iterations: Optional maximum iterations
+        """
         self.name = name
         self.mode = mode
-        self.llm = AgentLLM(name=f"{name}_llm", config=config)
-        self.reasoning = reasoning or ChainOfThoughtReasoning()
+        
+        # Define agent-specific prompts
+        agent_prompts = {
+            "system_prompt": self.get_agent_system_prompt(),
+            "user_prompt": self.get_agent_user_prompt()
+        }
+        
+        # Create our LLM with agent prompts
+        self._llm = AgentLLM(
+            name=f"{name}_llm", 
+            config=config,
+            agent_prompts=agent_prompts
+        )
+        
+        # Set up reasoning with our LLM
+        self._reasoning = reasoning if reasoning is not None else ChainOfThoughtReasoning()
+        self._reasoning.agent_llm = self._llm
+
+        # Initialize resources
         self.resources: Dict[str, Any] = {}
         
-        # Get logging config from main config, with defaults
+        # Set up logging
         log_config = config.get("logging", {})
         self.logger = DXALogger(
             log_dir=log_config.get("dir", "logs"),
@@ -105,9 +103,51 @@ class BaseAgent(ABC):
             console_output=log_config.get("console_output", True)
         )
         
+        # Set up runtime
         self.runtime = AgentRuntime(
             state_manager=StateManager(name),
             max_iterations=max_iterations
+        )
+
+    @property
+    def reasoning(self) -> BaseReasoning:
+        """Get the reasoning system."""
+        return self._reasoning
+
+    async def initialize(self) -> None:
+        """Initialize agent and resources."""
+        # Initialize our LLM first
+        await self._llm.initialize()
+        
+        # Initialize reasoning (it already has our LLM)
+        await self._reasoning.initialize()
+        
+        # Initialize resources
+        for resource in self.resources.values():
+            if callable(getattr(resource, "initialize", None)):
+                await resource.initialize()
+            
+        self.logger.log_completion(
+            prompt=f"Initializing agent {self.name}",
+            response="Agent initialized with resources: " + ", ".join(self.resources.keys()),
+            tokens=0,
+            success=True
+        )
+
+    async def cleanup(self) -> None:
+        """Clean up agent and resources."""
+        for resource in self.resources.values():
+            if callable(getattr(resource, "cleanup", None)):
+                await resource.cleanup()
+        
+        await self._reasoning.cleanup()
+        await self._llm.cleanup()
+        
+        self.logger.log_completion(
+            prompt=f"Cleaning up agent {self.name}",
+            response="Agent cleaned up",
+            tokens=0,
+            success=True
         )
 
     async def run(self, task: Dict[str, Any]) -> Dict[str, Any]:
@@ -190,52 +230,6 @@ class BaseAgent(ABC):
         # Specialized agents can override this to check result contents
         return True
 
-    async def initialize(self) -> None:
-        """Initialize agent and resources.
-        
-        Initializes the LLM, reasoning system, and all registered resources.
-        Logs initialization status.
-        
-        Returns:
-            None
-        """
-        await self.llm.initialize()
-        await self.reasoning.initialize()
-
-        for resource in self.resources.values():
-            if callable(getattr(resource, "initialize", None)):
-                await resource.initialize()
-            
-        self.logger.log_completion(
-            prompt=f"Initializing agent {self.name}",
-            response="Agent initialized with resources: " + ", ".join(self.resources.keys()),
-            tokens=0,
-            success=True
-        )
-
-    async def cleanup(self) -> None:
-        """Clean up agent and resources.
-        
-        Cleans up all resources, reasoning system, and LLM.
-        Logs cleanup status.
-        
-        Returns:
-            None
-        """
-        for resource in self.resources.values():
-            if callable(getattr(resource, "cleanup", None)):
-                await resource.cleanup()
-        
-        await self.reasoning.cleanup()
-        await self.llm.cleanup()
-        
-        self.logger.log_completion(
-            prompt=f"Cleaning up agent {self.name}",
-            response="Agent cleaned up",
-            tokens=0,
-            success=True
-        )
-
     async def use_expert(self, domain: str, request: str) -> str:
         """Use expert for specialized domain knowledge.
         
@@ -306,3 +300,21 @@ class BaseAgent(ABC):
             should_continue=self._should_continue
         ):
             yield progress
+
+    @abstractmethod
+    def get_agent_system_prompt(self) -> str:
+        """Get the agent-specific system prompt.
+        
+        This defines the agent's core behavior and capabilities.
+        Subclasses must implement this to define their specific behavior.
+        """
+        pass
+
+    @abstractmethod
+    def get_agent_user_prompt(self) -> str:
+        """Get the agent-specific user prompt.
+        
+        This defines how the agent processes user inputs.
+        Subclasses must implement this to define their specific interaction style.
+        """
+        pass

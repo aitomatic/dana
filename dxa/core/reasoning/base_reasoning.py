@@ -130,14 +130,37 @@ class BaseReasoning(ABC):
     """
     
     def __init__(self, config: Optional[ReasoningConfig] = None):
+        """Initialize reasoning system.
+        
+        Args:
+            config: Optional configuration for the reasoning system
+        """
         self.config = config or ReasoningConfig()
         self.strategy = self.config.strategy
-        self.agent_llm = None
+        self._agent_llm = None  # Will be set by Agent
         self.state_manager = StateManager(agent_name=self.__class__.__name__)
         self.available_resources: Dict[str, BaseResource] = {}
         self.logger = logging.getLogger(self.__class__.__name__)
         self.current_step = self.get_initial_step()
         self.previous_steps = []
+
+    @property
+    def agent_llm(self) -> Optional[AgentLLM]:
+        """Get the LLM instance."""
+        if self._agent_llm is None:
+            raise ValueError(
+                "No LLM configured for reasoning. The Agent must set its LLM on "
+                "the reasoning system before use."
+            )
+        return self._agent_llm
+
+    @agent_llm.setter
+    def agent_llm(self, llm: AgentLLM):
+        """Set the LLM instance.
+        
+        This will be called by the Agent to set its LLM on the reasoning system.
+        """
+        self._agent_llm = llm
 
     @property
     @abstractmethod
@@ -193,76 +216,26 @@ class BaseReasoning(ABC):
         pass
 
     def get_system_prompt(self, context: Dict[str, Any], query: str) -> str:
-        """Get the complete system prompt for LLM interaction.
+        """Get the reasoning-specific system prompt.
         
-        Combines the agent's system prompt with reasoning-specific instructions.
-        This sets up the overall context and rules for the LLM.
-        
-        Args:
-            context (Dict[str, Any]): Current context for reasoning
-            query (str): User's original query
-            
-        Returns:
-            str: Combined system prompt
+        This provides instructions specific to the reasoning strategy (e.g., CoT, OODA).
+        The AgentLLM will combine this with the agent's system prompt.
         """
-        system_prompt = ""
+        return self.get_reasoning_system_prompt(context, query)
 
-        if self.agent_llm and hasattr(self.agent_llm, 'get_system_prompt'):
-            agent_system_prompt = self.agent_llm.get_system_prompt(context, query)
-            if agent_system_prompt:
-                system_prompt = agent_system_prompt
+    def get_user_prompt(self, context: Dict[str, Any], query: str) -> str:
+        """Get the reasoning-specific user prompt.
         
-        reasoning_system_prompt = self.get_reasoning_system_prompt(context, query)
-        if reasoning_system_prompt:
-            system_prompt = f"{system_prompt}\n\n{reasoning_system_prompt}"
-
-        return system_prompt
-
-    def get_prompt(self, context: Dict[str, Any], query: str) -> str:
-        """Get the complete user prompt for LLM interaction.
-        
-        Combines the agent's user prompt with reasoning-specific prompts.
-        This forms the actual query sent to the LLM.
-        
-        Args:
-            context (Dict[str, Any]): Current context for reasoning
-            query (str): User's original query
-            
-        Returns:
-            str: Combined user prompt
+        This provides the reasoning-specific part of the prompt (e.g., step instructions).
+        The AgentLLM will combine this with the agent's user prompt.
         """
-        prompt = ""
-
-        if self.agent_llm and hasattr(self.agent_llm, 'get_user_prompt'):
-            agent_prompt = self.agent_llm.get_user_prompt(context, query)
-            if agent_prompt:
-                prompt = agent_prompt
-
-        reasoning_prompt = self.get_reasoning_prompt(context, query)
-        if reasoning_prompt:
-            prompt = f"{prompt}\n\n{reasoning_prompt}"
-
-        return prompt
+        return self.get_reasoning_prompt(context, query)
 
     async def reason(self, context: Dict[str, Any], query: str) -> Dict[str, Any]:
-        """Run a single reasoning cycle.
-        
-        This method executes one step in the reasoning process by:
-        1. Generating appropriate prompts
-        2. Querying the LLM
-        3. Processing the response
-        4. Determining the next step
-        
-        Args:
-            context (Dict[str, Any]): Current context for reasoning
-            query (str): User's original query
-            
-        Returns:
-            Dict[str, Any]: Result of the reasoning step
-        """
+        """Run a single reasoning cycle."""
         # Get prompts
         system_prompt = self.get_system_prompt(context, query)
-        user_prompt = self.get_prompt(context, query)
+        user_prompt = self.get_user_prompt(context, query)
         
         # Query LLM
         response = await self._query_agent_llm({
@@ -272,8 +245,8 @@ class BaseReasoning(ABC):
             "max_tokens": self.config.max_tokens
         })
         
-        # Process response
-        step_result = self.reason_post_process(response["content"])
+        # Process response - note we access response["response"] here
+        step_result = self.reason_post_process(response["response"])
         
         # Store step result
         self.previous_steps.append({
@@ -477,47 +450,31 @@ class BaseReasoning(ABC):
         """
         return resource_name in self.available_resources
 
-    def set_agent_llm(self, agent_llm: AgentLLM) -> None:
-        """Set the LLM agent for this reasoning engine.
-        
-        The LLM agent handles the actual interaction with the language model.
-        
-        Args:
-            agent_llm (AgentLLM): LLM agent instance to use
-        """
-        self.agent_llm = agent_llm
-
     async def _query_agent_llm(self, llm_request: Dict[str, Any]) -> Dict[str, str]:
-        """Query the LLM agent with the given request.
+        """Query the LLM agent with the given request."""
+        if not self.agent_llm:
+            raise ValueError(
+                "No LLM configured for reasoning. Ensure reasoning is initialized "
+                "with an AgentLLM instance."
+            )
         
-        Internal method to handle LLM interaction. Formats messages and
-        handles basic error checking.
-        
-        Args:
-            llm_request (Dict[str, Any]): Request parameters including
-                prompts and configuration
-                
-        Returns:
-            Dict[str, str]: LLM response
-            
-        Raises:
-            AttributeError: If LLM agent is not properly initialized
-        """
-        if not hasattr(self, 'agent_llm'):
-            raise AttributeError("Agent LLM not initialized. Ensure 'agent_llm' is set during initialization.")
-        if not hasattr(self.agent_llm, 'query'):
-            raise AttributeError("Agent LLM does not have a 'query' method.")
-
+        # Let AgentLLM handle the prompt combination
         messages = []
         if "system_prompt" in llm_request:
-            messages.append({"role": "system", "content": llm_request["system_prompt"]})
+            messages.append({
+                "role": "system", 
+                "content": llm_request["system_prompt"],
+                "source": "reasoning"  # Mark this as coming from reasoning
+            })
         if "prompt" in llm_request:
-            messages.append({"role": "user", "content": llm_request["prompt"]})
+            messages.append({
+                "role": "user", 
+                "content": llm_request["prompt"],
+                "source": "reasoning"  # Mark this as coming from reasoning
+            })
 
         response = await self.agent_llm.query(messages)
-        
-        # AgentLLM.query() now returns a dict with 'content' key
-        return response  # Just return the response as-is since it's already in the right format
+        return {"response": response["content"]}
 
     async def __aenter__(self):
         """Context manager entry."""

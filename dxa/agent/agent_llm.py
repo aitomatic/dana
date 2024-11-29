@@ -53,62 +53,72 @@ class AgentLLM(BaseLLM):
         self.agent_prompts = agent_prompts or {}
     
     async def query(self, messages: List[Dict[str, str]], **kwargs) -> Dict[str, Any]:
-        """Query the LLM with combined agent and reasoning prompts.
-        
-        Combines agent-specific prompts with reasoning-specific prompts,
-        manages the interaction context, and formats the response.
-        
-        Args:
-            messages: List of message dictionaries with 'role' and 'content'
-            **kwargs: Additional arguments to pass to the chat completion
-            
-        Returns:
-            Dict containing the processed response content and any additional metadata
-            
-        Example:
-            ```python
-            # Agent prompts (set during initialization):
-            # system_prompt: "You are an expert in {domain}..."
-            # user_prompt: "Analyze: {query}"
-            
-            # Reasoning provides additional prompts:
-            response = await llm.query([
-                {"role": "system", "content": "Use step-by-step reasoning..."},
-                {"role": "user", "content": "Solve this problem..."}
-            ])
-            
-            # Prompts are combined and response is formatted
-            print(response["content"])
-            ```
-        """
-        # Combine agent-specific prompts with provided messages
+        """Query the LLM with combined agent and reasoning prompts."""
         combined_messages = []
         
-        # Add agent system prompt if it exists
-        agent_system = self.get_system_prompt({}, "")
-        if agent_system:
-            combined_messages.append({"role": "system", "content": agent_system})
+        # Separate messages by source
+        agent_messages = []
+        reasoning_messages = []
         
-        # Add provided messages
-        combined_messages.extend(messages)
-        
-        # Add agent user prompt if it exists
-        agent_user = self.get_user_prompt({}, "")
-        if agent_user:
-            # Append to last user message or add new one
-            for msg in reversed(combined_messages):
-                if msg["role"] == "user":
-                    msg["content"] = f"{msg['content']}\n\n{agent_user}"
-                    break
+        for msg in messages:
+            if msg.get("source") == "reasoning":
+                reasoning_messages.append(msg)
             else:
-                combined_messages.append({"role": "user", "content": agent_user})
+                agent_messages.append(msg)
+        
+        # Handle system messages
+        system_content = []
+        
+        # Add agent system prompt first (if exists)
+        if self.agent_prompts.get("system_prompt"):
+            system_content.append(self.agent_prompts["system_prompt"])
+            
+        # Add reasoning system prompts
+        system_content.extend(
+            m["content"] for m in reasoning_messages 
+            if m["role"] == "system"
+        )
+        
+        # Add other system prompts
+        system_content.extend(
+            m["content"] for m in agent_messages 
+            if m["role"] == "system"
+        )
+        
+        if system_content:
+            combined_messages.append({
+                "role": "system",
+                "content": "\n\n".join(system_content)
+            })
+        
+        # Handle user messages
+        user_content = []
+        
+        # Add agent user prompt first (if exists)
+        if self.agent_prompts.get("user_prompt"):
+            user_content.append(self.agent_prompts["user_prompt"])
+            
+        # Add reasoning user prompts
+        user_content.extend(
+            m["content"] for m in reasoning_messages 
+            if m["role"] == "user"
+        )
+        
+        # Add other user prompts
+        user_content.extend(
+            m["content"] for m in agent_messages 
+            if m["role"] == "user"
+        )
+        
+        if user_content:
+            combined_messages.append({
+                "role": "user",
+                "content": "\n\n".join(user_content)
+            })
         
         # Query the base LLM with combined prompts
         response = await super().query(combined_messages, **kwargs)
-        
-        # Format the response
-        content = response.choices[0].message.content if response.choices else ""
-        return {"content": content}
+        return {"content": response.choices[0].message.content if response.choices else ""}
     
     def get_system_prompt(self, context: Dict[str, Any], query: str) -> str:
         """Get the system prompt for the agent LLM.

@@ -12,7 +12,7 @@ def create_math_tutor(api_key: str = None) -> InteractiveAgent:
         if not api_key:
             raise ValueError("OPENAI_API_KEY environment variable is required")
 
-    llm_config = {
+    config = {
         "model": "gpt-4",
         "temperature": 0.7,
         "api_key": api_key,
@@ -21,14 +21,14 @@ def create_math_tutor(api_key: str = None) -> InteractiveAgent:
         2. Guide them through step-by-step solutions
         3. Explain mathematical concepts clearly using examples
         4. Verify solutions and check for errors
-        5. Encourage students to think through problems"""
+        5. Encourage students to think through problems""",
+        "description": "Interactive math tutor agent"
     }
 
     return InteractiveAgent(
         name="math_tutor",
-        llm_config=llm_config,
-        reasoning=ChainOfThoughtReasoning(),
-        description="Interactive math tutor agent"
+        config=config,
+        reasoning=ChainOfThoughtReasoning()  # No config needed, CoT is the default strategy
     )
 
 async def main():

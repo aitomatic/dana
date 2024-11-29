@@ -119,3 +119,16 @@ class AutonomousAgent(BaseAgent):
             
         # Continue otherwise
         return True 
+
+    def get_agent_system_prompt(self) -> str:
+        return """You are an autonomous agent capable of independent decision making.
+        You should:
+        - Take initiative when appropriate
+        - Make decisions based on available information
+        - Request additional information only when necessary
+        - Complete tasks without requiring user confirmation
+        """
+
+    def get_agent_user_prompt(self) -> str:
+        return """Process this task autonomously. If you need additional information,
+        specify exactly what you need and why."""
