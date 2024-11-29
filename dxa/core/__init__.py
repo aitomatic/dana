@@ -12,7 +12,7 @@ The core package maintains a clean separation between:
 """
 
 from dxa.core.capability.expertise import DomainExpertise
-from dxa.core.resource.expert import ExpertResource
+from dxa.core.resource.expert_resource import ExpertResource
 from dxa.core.resource.base_resource import BaseResource
 from dxa.core.reasoning.base_reasoning import BaseReasoning
 
