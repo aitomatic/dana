@@ -41,7 +41,7 @@ from typing import Dict, Any, AsyncIterator
 import logging
 from dxa.agent.interactive_agent import InteractiveAgent
 from dxa.agent.websocket_agent import WebSocketAgent
-from dxa.agent.automation_agent import AutomationAgent
+from dxa.agent.work_automation_agent import AutomationAgent
 from dxa.core.reasoning.cot import ChainOfThoughtReasoning
 from dxa.experts.math import create_math_expert
 from dxa.agent.base_agent import BaseAgent

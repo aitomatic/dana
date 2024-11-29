@@ -73,24 +73,25 @@ class AutonomousAgent(BaseAgent):
         """Initialize autonomous agent."""
         config = {
             "llm": llm_config,
-            "description": description,
-            "mode": "autonomous"
+            "description": description
         }
         
-        super().__init__(name=name, config=config)
+        super().__init__(
+            name=name,
+            config=config,
+            max_iterations=max_iterations
+        )
         
         self.reasoning = reasoning
-        self.max_iterations = max_iterations
-        self.iteration_count = 0
 
-    async def run(self, task: str) -> Dict[str, Any]:
+    async def run(self, task: Dict[str, Any]) -> Dict[str, Any]:
         """Run the autonomous agent's main loop.
         
         This method executes the agent's reasoning cycle repeatedly until the task
         is complete, the iteration limit is reached, or the agent gets stuck.
         
         Args:
-            task: The task/query to process
+            task: Dictionary containing task configuration and parameters
             
         Returns:
             Dict containing:
@@ -110,9 +111,9 @@ class AutonomousAgent(BaseAgent):
             })
             ```
         """
-        context = {"task": task}
         try:
             self.iteration_count = 0
+            context = task.copy()  # Use task dict as initial context
             
             while self._is_running:
                 # Check iteration limit

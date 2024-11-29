@@ -52,7 +52,7 @@ class AgentLLM(BaseLLM):
         super().__init__(name=name, config=config, **kwargs)
         self.agent_prompts = agent_prompts or {}
     
-    async def query(self, messages: List[Dict[str, str]], **kwargs) -> Dict[str, str]:
+    async def query(self, messages: List[Dict[str, str]], **kwargs) -> Dict[str, Any]:
         """Query the LLM with combined agent and reasoning prompts.
         
         Combines agent-specific prompts with reasoning-specific prompts,
@@ -63,7 +63,7 @@ class AgentLLM(BaseLLM):
             **kwargs: Additional arguments to pass to the chat completion
             
         Returns:
-            Dict containing the processed response content
+            Dict containing the processed response content and any additional metadata
             
         Example:
             ```python
@@ -110,48 +110,32 @@ class AgentLLM(BaseLLM):
         content = response.choices[0].message.content if response.choices else ""
         return {"content": content}
     
-    def get_system_prompt(self, context: Dict[str, Any], query: str) -> Optional[str]:
+    def get_system_prompt(self, context: Dict[str, Any], query: str) -> str:
         """Get the system prompt for the agent LLM.
         
-        Retrieves the system prompt from agent_prompts, optionally formatting
-        it with context and query.
-        
         Args:
-            context: Current execution context
-            query: Current query being processed
+            context: Current execution context for prompt formatting
+            query: Current query for prompt formatting
             
         Returns:
-            Formatted system prompt if defined, None otherwise
-            
-        Example:
-            ```python
-            prompt = llm.get_system_prompt(
-                context={"mode": "analysis"},
-                query="Analyze this data"
-            )
-            ```
+            Formatted system prompt if defined, empty string otherwise
         """
-        return self.agent_prompts.get("system_prompt")
+        system_prompt = self.agent_prompts.get("system_prompt", "")
+        if system_prompt:
+            return system_prompt.format(context=context, query=query)
+        return ""
     
-    def get_user_prompt(self, context: Dict[str, Any], query: str) -> Optional[str]:
+    def get_user_prompt(self, context: Dict[str, Any], query: str) -> str:
         """Get the user prompt for the agent LLM.
         
-        Retrieves the user prompt from agent_prompts, optionally formatting
-        it with context and query.
-        
         Args:
-            context: Current execution context
-            query: Current query being processed
+            context: Current execution context for prompt formatting
+            query: Current query for prompt formatting
             
         Returns:
-            Formatted user prompt if defined, None otherwise
-            
-        Example:
-            ```python
-            prompt = llm.get_user_prompt(
-                context={"style": "detailed"},
-                query="Explain neural networks"
-            )
-            ```
+            Formatted user prompt if defined, empty string otherwise
         """
-        return self.agent_prompts.get("user_prompt")
+        user_prompt = self.agent_prompts.get("user_prompt", "")
+        if user_prompt:
+            return user_prompt.format(context=context, query=query)
+        return ""

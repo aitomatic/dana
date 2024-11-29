@@ -4,6 +4,37 @@ This module provides the foundational BaseAgent class that all other agent types
 inherit from. It implements core functionality like initialization, resource
 management, and error handling.
 
+Class Hierarchy:
+    The DXA agent system follows this inheritance structure:
+    
+    BaseAgent
+    ├── AutonomousAgent
+    ├── InteractiveAgent       # Specialized for user interaction
+    ├── WebSocketAgent        # Specialized for network communication
+    ├── WorkAutomationAgent   # Specialized for workflow automation
+    └── CollaborativeAgent    # Specialized for multi-agent coordination
+    
+    Each specialized agent type extends BaseAgent with specific capabilities:
+    - AutonomousAgent: Adds independent operation capabilities
+    - InteractiveAgent: Adds user interaction capabilities
+    - WebSocketAgent: Adds network communication
+    - WorkAutomationAgent: Adds workflow management (uses OODA reasoning)
+    - CollaborativeAgent: Adds agent coordination capabilities
+
+The base agent provides a default Chain of Thought reasoning system which can be
+overridden by specialized agents or client code. For example:
+    ```python
+    # Use default Chain of Thought reasoning
+    agent = MyAgent(name="agent1", config={...})
+    
+    # Override with custom reasoning
+    agent = MyAgent(
+        name="agent2", 
+        config={...},
+        reasoning=CustomReasoning()
+    )
+    ```
+
 Classes:
     BaseAgent: Abstract base class for all DXA agents
 
@@ -36,14 +67,13 @@ TODO:
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Type, AsyncIterator
-import logging
-from dxa.core.reasoning.base_reasoning import BaseReasoning, ReasoningConfig
+from typing import Dict, Any, AsyncIterator, Optional
+from dxa.core.reasoning.base_reasoning import BaseReasoning
+from dxa.core.reasoning.cot import ChainOfThoughtReasoning
 from dxa.core.resource.expert import ExpertResource
 from dxa.agent.agent_llm import AgentLLM
-from dxa.core.reasoning.cot import ChainOfThoughtReasoning
-from dxa.core.reasoning.ooda import OODAReasoning
 from dxa.agent.progress import AgentProgress
+from dxa.common.utils.logging import DXALogger
 from dxa.common.errors import (
     ReasoningError, 
     ConfigurationError, 
@@ -59,81 +89,88 @@ class BaseAgent(ABC):
     DXA agents must implement. It handles resource initialization, reasoning
     system setup, and provides helper methods for expert consultation.
     
+    By default, agents use Chain of Thought reasoning (ChainOfThoughtReasoning).
+    This can be overridden by:
+    1. Passing a different reasoning system in the constructor
+    2. Specialized agent classes providing their own defaults
+       (e.g., WorkAutomationAgent uses OODA reasoning by default)
+    
     Attributes:
         name: Agent identifier
         mode: Operating mode ("autonomous", "interactive", etc.)
         llm: Internal LLM instance for agent processing
-        reasoning: Reasoning system instance
+        reasoning: Reasoning system instance (defaults to ChainOfThoughtReasoning)
         resources: Dictionary of available resources
         logger: Logger instance for this agent
         
     Args:
         name: Name of this agent
         config: Configuration dictionary
-        mode: Operating mode (default: "autonomous")
+        reasoning: Optional reasoning system (defaults to ChainOfThoughtReasoning)
+        mode: Operating mode (default: autonomous)
+        max_iterations: Optional maximum iterations (default: None)
+        
+    Example:
+        ```python
+        # Using default reasoning
+        agent = MyAgent(
+            name="default_agent",
+            config={...}
+        )
+        
+        # Using custom reasoning
+        agent = MyAgent(
+            name="custom_agent",
+            config={...},
+            reasoning=CustomReasoning()
+        )
+        ```
     """
-    
-    # Map strategy names to reasoning classes
-    REASONING_STRATEGIES: Dict[str, Type[BaseReasoning]] = {
-        "ooda": OODAReasoning,
-        "cot": ChainOfThoughtReasoning
-    }
     
     def __init__(
         self,
         name: str,
         config: Dict[str, Any],
-        mode: str = "autonomous"
+        reasoning: Optional[BaseReasoning] = None,
+        mode: str = "autonomous",
+        max_iterations: Optional[int] = None
     ):
         """Initialize base agent.
         
         Args:
             name: Name of this agent
             config: Configuration dictionary
+            reasoning: Optional reasoning system (defaults to ChainOfThoughtReasoning)
             mode: Operating mode (default: autonomous)
+            max_iterations: Optional maximum iterations (default: None)
         """
         self.name = name
         self.mode = mode
         self.llm = AgentLLM(name=f"{name}_llm", config=config)
-        self.reasoning = self._create_reasoning(config.get("reasoning", {}))
+        self.reasoning = reasoning or ChainOfThoughtReasoning()
         self.resources: Dict[str, Any] = {}
-        self.logger = logging.getLogger(f"dxa.agent.{name}")
+        
+        # Get logging config from main config, with defaults
+        log_config = config.get("logging", {})
+        self.logger = DXALogger(
+            log_dir=log_config.get("dir", "logs"),
+            log_level=log_config.get("level", "INFO"),
+            max_history=log_config.get("max_history", 1000),
+            json_format=log_config.get("json_format", False),
+            console_output=log_config.get("console_output", True)
+        )
+        
         self._is_running = False
-
-    def _create_reasoning(self, config: Dict[str, Any]) -> BaseReasoning:
-        """Create reasoning system based on config.
-        
-        Args:
-            config: Reasoning configuration dictionary
-            
-        Returns:
-            Initialized reasoning system
-            
-        Raises:
-            ValueError: If strategy is unknown
-        """
-        strategy = config.get("strategy", "cot")
-        
-        # Get reasoning class
-        reasoning_class = self.REASONING_STRATEGIES.get(strategy)
-        if not reasoning_class:
-            raise ValueError(
-                f"Unknown reasoning strategy: {strategy}. "
-                f"Valid strategies are: {list(self.REASONING_STRATEGIES.keys())}"
-            )
-        
-        # Create reasoning config
-        reasoning_config = ReasoningConfig(**config)
-        
-        # Initialize reasoning system
-        reasoning = reasoning_class()
-        reasoning.config = reasoning_config
-        return reasoning
+        self.max_iterations = max_iterations
+        self.iteration_count = 0
 
     @abstractmethod
-    async def run(self) -> Dict[str, Any]:
+    async def run(self, task: Dict[str, Any]) -> Dict[str, Any]:
         """Run the agent.
         
+        Args:
+            task: Dictionary containing task configuration and parameters
+            
         Returns:
             Dict containing results of the agent's execution
         """
@@ -148,9 +185,11 @@ class BaseAgent(ABC):
             if callable(getattr(resource, "initialize", None)):
                 await resource.initialize()
             
-        self.logger.info(
-            "Agent initialized with resources: %s",
-            list(self.resources.keys())
+        self.logger.log_completion(
+            prompt=f"Initializing agent {self.name}",
+            response="Agent initialized with resources: " + ", ".join(self.resources.keys()),
+            tokens=0,
+            success=True
         )
 
     async def cleanup(self) -> None:
@@ -162,7 +201,12 @@ class BaseAgent(ABC):
         await self.reasoning.cleanup()
         await self.llm.cleanup()
         
-        self.logger.info("Agent cleaned up")
+        self.logger.log_completion(
+            prompt=f"Cleaning up agent {self.name}",
+            response="Agent cleaned up",
+            tokens=0,
+            success=True
+        )
 
     async def use_expert(self, domain: str, request: str) -> str:
         """Use expert for specialized domain knowledge.
@@ -198,6 +242,10 @@ class BaseAgent(ABC):
         )
         
         if not expert:
+            self.logger.log_error(
+                error_type="expert_not_found",
+                message=f"No expert found for domain: {domain}"
+            )
             raise ValueError(f"No expert found for domain: {domain}")
             
         response = await expert.query({"prompt": request})
@@ -205,7 +253,10 @@ class BaseAgent(ABC):
 
     async def handle_error(self, error: Exception) -> None:
         """Handle errors during agent execution."""
-        self.logger.error("Agent error: %s", str(error))
+        self.logger.log_error(
+            error_type=error.__class__.__name__,
+            message=f"Agent error: {str(error)}"
+        )
 
     async def run_with_progress(self, task: Dict[str, Any]) -> AsyncIterator[AgentProgress]:
         """Run a task with progress updates.
@@ -233,7 +284,7 @@ class BaseAgent(ABC):
             )
             
             # Run the task with intermediate updates
-            result = await self.run()
+            result = await self.run(task)
             
             # Final progress with result
             yield AgentProgress(
