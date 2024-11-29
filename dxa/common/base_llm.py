@@ -1,14 +1,23 @@
-"""Base LLM (Large Language Model) implementation for the DXA system.
+"""Base LLM (Large Language Model) implementation.
 
-This module provides the foundational LLM interface used throughout the DXA system.
-It handles common LLM operations including:
-- Asynchronous initialization and cleanup
-- Retry logic for failed requests
-- Standardized error handling
-- Configuration management
+This module provides a basic LLM interface that handles raw interactions with 
+language models. It provides straightforward query functionality without any
+domain-specific prompt management or context handling.
 
-The BaseLLM class can be extended to support different LLM providers while
-maintaining consistent behavior across the system.
+Example:
+    ```python
+    llm = BaseLLM(
+        name="basic_llm",
+        config={
+            "model": "gpt-4",
+            "api_key": "your-key"
+        }
+    )
+    
+    response = await llm.query([
+        {"role": "user", "content": "Hello!"}
+    ])
+    ```
 """
 
 from typing import Dict, Any, Optional, List
@@ -21,7 +30,25 @@ import openai
 from .exceptions import LLMError
 
 class BaseLLM:
-    """Base class for LLM interactions."""
+    """Base class for raw LLM interactions.
+    
+    This class provides direct access to language model capabilities without
+    any additional prompt management or context handling. It's designed to be
+    a simple wrapper around the OpenAI API.
+    
+    Attributes:
+        name: Name identifier for this LLM instance
+        api_key: OpenAI API key
+        model: Name of the model to use
+        config: Additional configuration parameters
+        
+    Args:
+        name: Name for this LLM instance
+        config: Configuration dictionary containing api_key and other settings
+        system_prompt: Optional system prompt to use for all queries
+        max_retries: Maximum number of retries for failed requests
+        retry_delay: Delay between retries in seconds
+    """
     
     def __init__(
         self,
@@ -65,29 +92,37 @@ class BaseLLM:
         messages: List[Dict[str, str]],
         **kwargs
     ) -> ChatCompletion:
-        """Query the LLM with retry logic.
+        """Send a raw query to the LLM.
+        
+        Provides direct access to the OpenAI chat completion API without any
+        additional processing or prompt management.
         
         Args:
             messages: List of message dictionaries with 'role' and 'content'
             **kwargs: Additional arguments to pass to the chat completion
-        
+            
         Returns:
-            ChatCompletion response from the API
-        
-        Raises:
-            LLMError: If the query fails after all retries
+            Raw ChatCompletion response from the API
+            
+        Example:
+            ```python
+            response = await llm.query([
+                {"role": "system", "content": "You are a helpful assistant"},
+                {"role": "user", "content": "Hello!"}
+            ])
+            print(response.choices[0].message.content)
+            ```
         """
         if not self._client:
             await self.initialize()
 
         for attempt in range(self.max_retries):
             try:
-                response = await self._client.chat.completions.create(
+                return await self._client.chat.completions.create(
                     model=self.model,
                     messages=messages,
                     **kwargs
                 )
-                return response
             except (openai.APIError, openai.APIConnectionError, openai.RateLimitError, openai.APITimeoutError) as e:
                 self.logger.warning(
                     "LLM query attempt %d/%d failed: %s",

@@ -1,61 +1,44 @@
-"""Internal LLM implementation for DXA agents.
+"""Agent-specific LLM implementation.
 
-This module provides a specialized LLM implementation for use within agents.
-It handles agent-specific prompting and context management, distinct from
-external LLM resources.
+This module extends the base LLM functionality with agent-specific features,
+particularly prompt management and context handling. It combines agent-specific
+prompts with reasoning-specific prompts and manages the overall interaction
+context.
 
 Example:
     ```python
-    from dxa.agents.agent_llm import AgentLLM
-    
     llm = AgentLLM(
-        name="math_agent_llm",
-        config={
-            "model": "gpt-4",
-            "api_key": "your-key"
-        },
+        name="agent_llm",
+        config={"model": "gpt-4"},
         agent_prompts={
-            "system_prompt": "You are a mathematical reasoning expert...",
-            "user_prompt": "Solve step by step: {query}"
+            "system_prompt": "You are an expert in {domain}...",
+            "user_prompt": "Please analyze: {query}"
         }
     )
     
-    response = await llm.generate(
-        context={"previous_steps": []},
-        query="Solve: 2x + 5 = 13"
-    )
+    # Prompts will be combined with reasoning-specific prompts
+    response = await llm.query([
+        {"role": "system", "content": "Additional reasoning instructions..."},
+        {"role": "user", "content": "Specific task..."}
+    ])
     ```
 """
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from dxa.common.base_llm import BaseLLM
 
 class AgentLLM(BaseLLM):
-    """Internal agent LLM implementation.
+    """LLM implementation specialized for agent operations.
     
-    This class extends BaseLLM with agent-specific functionality, including
-    customized prompting and context handling for agent operations.
+    This class extends BaseLLM with agent-specific functionality, particularly:
+    1. Management of agent-specific prompts
+    2. Combination of agent and reasoning prompts
+    3. Context handling across interactions
+    4. Structured response formatting
     
-    Attributes:
-        agent_prompts: Dictionary of agent-specific prompt templates
-        
-    Args:
-        name: Name for this LLM instance
-        config: LLM configuration dictionary
-        agent_prompts: Optional agent-specific prompts
-        **kwargs: Additional arguments passed to BaseLLM
-        
-    Example:
-        ```python
-        llm = AgentLLM(
-            name="research_agent_llm",
-            config={"model": "gpt-4"},
-            agent_prompts={
-                "system_prompt": "You are a research assistant...",
-                "user_prompt": "Research topic: {query}"
-            }
-        )
-        ```
+    The key difference from BaseLLM is that AgentLLM handles the composition
+    of prompts from multiple sources (agent, reasoning system) and manages
+    the interaction context.
     """
     
     def __init__(
@@ -69,7 +52,64 @@ class AgentLLM(BaseLLM):
         super().__init__(name=name, config=config, **kwargs)
         self.agent_prompts = agent_prompts or {}
     
-    # pylint: disable=unused-argument
+    async def query(self, messages: List[Dict[str, str]], **kwargs) -> Dict[str, str]:
+        """Query the LLM with combined agent and reasoning prompts.
+        
+        Combines agent-specific prompts with reasoning-specific prompts,
+        manages the interaction context, and formats the response.
+        
+        Args:
+            messages: List of message dictionaries with 'role' and 'content'
+            **kwargs: Additional arguments to pass to the chat completion
+            
+        Returns:
+            Dict containing the processed response content
+            
+        Example:
+            ```python
+            # Agent prompts (set during initialization):
+            # system_prompt: "You are an expert in {domain}..."
+            # user_prompt: "Analyze: {query}"
+            
+            # Reasoning provides additional prompts:
+            response = await llm.query([
+                {"role": "system", "content": "Use step-by-step reasoning..."},
+                {"role": "user", "content": "Solve this problem..."}
+            ])
+            
+            # Prompts are combined and response is formatted
+            print(response["content"])
+            ```
+        """
+        # Combine agent-specific prompts with provided messages
+        combined_messages = []
+        
+        # Add agent system prompt if it exists
+        agent_system = self.get_system_prompt({}, "")
+        if agent_system:
+            combined_messages.append({"role": "system", "content": agent_system})
+        
+        # Add provided messages
+        combined_messages.extend(messages)
+        
+        # Add agent user prompt if it exists
+        agent_user = self.get_user_prompt({}, "")
+        if agent_user:
+            # Append to last user message or add new one
+            for msg in reversed(combined_messages):
+                if msg["role"] == "user":
+                    msg["content"] = f"{msg['content']}\n\n{agent_user}"
+                    break
+            else:
+                combined_messages.append({"role": "user", "content": agent_user})
+        
+        # Query the base LLM with combined prompts
+        response = await super().query(combined_messages, **kwargs)
+        
+        # Format the response
+        content = response.choices[0].message.content if response.choices else ""
+        return {"content": content}
+    
     def get_system_prompt(self, context: Dict[str, Any], query: str) -> Optional[str]:
         """Get the system prompt for the agent LLM.
         

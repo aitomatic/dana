@@ -1,104 +1,168 @@
-"""OODA (Observe, Orient, Decide, Act) loop reasoning pattern.
+"""OODA (Observe, Orient, Decide, Act) Loop Reasoning Pattern
 
-This module implements the OODA loop decision-making process:
-- Observe: Gather information and identify key data points
-- Orient: Analyze and interpret the situation
-- Decide: Determine the best course of action
-- Act: Execute the chosen action
+The OODA loop is a decision-making framework originally developed by military 
+strategist John Boyd. In DXA, it provides a dynamic reasoning approach that 
+continuously adapts to changing situations.
 
-The OODA loop provides a structured approach to decision-making that continuously
-adapts to new information and changing circumstances.
+How OODA Works:
+-------------
+The OODA loop cycles through four interconnected phases:
 
-Classes:
-    OODAPhase: Enumeration of OODA loop phases
-    OODAReasoning: Implementation of OODA loop reasoning pattern
+1. OBSERVE:
+   - Gathers raw information and data
+   - Identifies key data points and patterns
+   - Monitors changes in the situation
+   - Collects unfiltered inputs
 
-Example:
-    >>> reasoning = OODAReasoning()
-    >>> result = await reasoning.reason(
-    ...     context={"situation": "market volatility"},
-    ...     query="How should we adjust our portfolio?"
-    ... )"""
+2. ORIENT:
+   - Analyzes gathered information
+   - Applies context and experience
+   - Forms mental models
+   - Considers cultural traditions, genetic heritage, and previous experiences
+   - Synthesizes information into understanding
 
-from typing import Dict, Any
-from dxa.core.reasoning.base_reasoning import BaseReasoning
+3. DECIDE:
+   - Evaluates possible courses of action
+   - Considers hypotheses about situation
+   - Selects most appropriate action
+   - Makes decisions based on oriented understanding
 
-class OODAPhase:
-    """OODA loop phases."""
-    OBSERVE = "observe"
-    ORIENT = "orient"
-    DECIDE = "decide"
-    ACT = "act"
+4. ACT:
+   - Implements the chosen decision
+   - Tests hypotheses in real world
+   - Generates new observations
+   - Feeds back into the OODA cycle
+
+Implementation in DXA:
+--------------------
+The OODAReasoning class implements this cycle by:
+
+1. Continuous Adaptation:
+   ```python
+   @property
+   def steps(self) -> List[str]:
+       return ["observe", "orient", "decide", "act"]
+   ```
+   - Each step feeds into the next
+   - Cycle can repeat as needed
+   - Maintains situational awareness
+
+2. Dynamic Feedback:
+   - Each phase informs the others
+   - Results feed back into observation
+   - Allows for rapid adaptation
+   - Handles changing circumstances
+
+3. Resource Integration:
+   - Can pull in expert knowledge
+   - Utilizes human feedback
+   - Accesses tools and data
+   - Adapts to available resources
+
+4. Practical Application:
+   - Problem analysis
+   - Decision making
+   - Strategy development
+   - Continuous improvement
+
+Usage Example:
+------------
+```python
+reasoning = OODAReasoning()
+result = await reasoning.reason(
+    context={"situation_data": "..."}, 
+    query="What action should we take?"
+)
+```
+
+Benefits:
+--------
+- Adaptive: Continuously updates understanding
+- Dynamic: Responds to changing conditions
+- Practical: Focuses on actionable decisions
+- Iterative: Learns from results
+
+The OODA pattern excels in:
+- Strategic planning
+- Real-time decision making
+- Competitive situations
+- Adaptive problem solving
+- Continuous improvement cycles
+
+Key Differences from Other Patterns:
+---------------------------------
+Unlike linear reasoning patterns, OODA:
+- Is inherently cyclical
+- Emphasizes rapid adaptation
+- Focuses on situational awareness
+- Integrates feedback continuously
+"""
+
+from typing import Dict, Any, List, Optional
+from dxa.core.reasoning.base_reasoning import BaseReasoning, StepResult, ReasoningStatus
 
 class OODAReasoning(BaseReasoning):
     """OODA loop reasoning implementation."""
     
-    def __init__(self):
-        """Initialize OODA reasoning."""
-        super().__init__()
-        self.current_phase = OODAPhase.OBSERVE
+    @property
+    def steps(self) -> List[str]:
+        """Get list of possible steps."""
+        return ["observe", "orient", "decide", "act"]
+    
+    def get_initial_step(self) -> str:
+        """Get the initial step for reasoning."""
+        return "observe"
 
-    async def initialize(self) -> None:
-        """Initialize reasoning system."""
-        if self.agent_llm:
-            await self.agent_llm.initialize()
-    
-    async def cleanup(self) -> None:
-        """Clean up reasoning system."""
-        if self.agent_llm:
-            await self.agent_llm.cleanup()
-    
-    async def reason(self, context: Dict[str, Any], query: str) -> Dict[str, Any]:
-        """Run reasoning cycle."""
-        # Get prompts
-        system_prompt = self.get_system_prompt(context, query)
-        user_prompt = self.get_prompt(context, query)
-        
-        # Query LLM
-        response = await self._query_agent_llm({
-            "system_prompt": system_prompt,
-            "prompt": user_prompt,
-            "temperature": self.config.temperature,
-            "max_tokens": self.config.max_tokens
-        })
-        
-        # Process response and advance phase
-        result = self.reason_post_process(response["content"])
-        self._advance_phase()
-        return result
-    
-    def get_reasoning_system_prompt(self, context: Dict[str, Any], query: str) -> str:
-        """Get system prompt for OODA reasoning."""
-        return """You are executing one step in an OODA reasoning process.
-        Always show your work step by step."""
-
-    def get_reasoning_prompt(self, context: Dict[str, Any], query: str) -> str:
-        """Get prompt for OODA reasoning."""
+    def get_step_prompt(self,
+                        step: str,
+                        context: Dict[str, Any],
+                        query: str,
+                        previous_steps: List[Dict[str, Any]]) -> str:
+        """Get the prompt for a specific step."""
         prompts = {
-            OODAPhase.OBSERVE: self._get_observe_prompt,
-            OODAPhase.ORIENT: self._get_orient_prompt,
-            OODAPhase.DECIDE: self._get_decide_prompt,
-            OODAPhase.ACT: self._get_act_prompt
+            "observe": self._get_observe_prompt,
+            "orient": self._get_orient_prompt,
+            "decide": self._get_decide_prompt,
+            "act": self._get_act_prompt
         }
-        return prompts[self.current_phase](context, query)
+        return prompts[step](context, query, previous_steps)
 
-    def reason_post_process(self, response: str) -> Dict[str, Any]:
-        """Process the response based on current phase."""
-        return {
-            "phase": self.current_phase,
-            "response": response,
-            "next_phase": self._get_next_phase()
-        }
+    def get_next_step(self, current_step: str, step_result: StepResult) -> Optional[str]:
+        """Determine the next step based on current step and its result."""
+        # If we need resources or have error/completion, stop here
+        if step_result.status != ReasoningStatus.COMPLETE:
+            return None
+            
+        # Otherwise continue OODA cycle
+        step_order = self.steps
+        current_index = step_order.index(current_step)
+        return step_order[(current_index + 1) % len(step_order)]
 
-    def _advance_phase(self) -> None:
-        """Advance to the next phase in the OODA loop."""
-        phases = [OODAPhase.OBSERVE, OODAPhase.ORIENT, OODAPhase.DECIDE, OODAPhase.ACT]
-        current_index = phases.index(self.current_phase)
-        next_index = (current_index + 1) % len(phases)
-        self.current_phase = phases[next_index]
+    def get_reasoning_system_prompt(self, context: Dict[str, Any], query: str) -> str:
+        """Get the reasoning system prompt."""
+        return f"""You are executing the {self.current_step} phase in an OODA loop reasoning process.
+        Consider both immediate observations and long-term patterns."""
 
-    def _get_observe_prompt(self, context: Dict[str, Any], query: str) -> str:
-        """Get prompt for observation phase."""
+    def reason_post_process(self, response: str) -> StepResult:
+        """Process the response from the LLM."""
+        # Basic implementation - could be enhanced with more sophisticated parsing
+        return StepResult(
+            status=ReasoningStatus.COMPLETE,
+            content=response
+        )
+
+    # pylint: disable=unused-argument
+    def _get_observe_prompt(self, context: Dict[str, Any], query: str, previous_steps: List[Dict[str, Any]]) -> str:
+        """Get prompt for observation phase.
+        
+        Args:
+            context: The reasoning context
+            query: The user query
+            previous_steps: Results from previous steps
+            
+        Returns:
+            str: The formatted prompt for the observe phase
+        """
         return f"""OBSERVE phase:
         Query: {query}
         Context: {self._format_context(context)}
@@ -109,11 +173,21 @@ class OODAReasoning(BaseReasoning):
         2. What information might we need?
         3. What patterns or anomalies do we notice?"""
 
-    def _get_orient_prompt(self, context: Dict[str, Any], query: str) -> str:
-        """Get prompt for orientation phase."""
+    def _get_orient_prompt(self, context: Dict[str, Any], query: str, previous_steps: List[Dict[str, Any]]) -> str:
+        """Get prompt for orientation phase.
+        
+        Args:
+            context: The reasoning context
+            query: The user query
+            previous_steps: Results from previous steps
+            
+        Returns:
+            str: The formatted prompt for the orient phase
+        """
         return f"""ORIENT phase:
         Query: {query}
         Context: {self._format_context(context)}
+        Previous Observations: {self._format_previous_step(previous_steps, "observe")}
         
         How should we interpret this situation?
         Consider:
@@ -121,11 +195,21 @@ class OODAReasoning(BaseReasoning):
         2. What are the potential implications?
         3. What assumptions are we making?"""
 
-    def _get_decide_prompt(self, context: Dict[str, Any], query: str) -> str:
-        """Get prompt for decision phase."""
+    def _get_decide_prompt(self, context: Dict[str, Any], query: str, previous_steps: List[Dict[str, Any]]) -> str:
+        """Get prompt for decision phase.
+        
+        Args:
+            context: The reasoning context
+            query: The user query
+            previous_steps: Results from previous steps
+            
+        Returns:
+            str: The formatted prompt for the decide phase
+        """
         return f"""DECIDE phase:
         Query: {query}
         Context: {self._format_context(context)}
+        Previous Analysis: {self._format_previous_step(previous_steps, "orient")}
         
         What actions should we take?
         Consider:
@@ -133,37 +217,25 @@ class OODAReasoning(BaseReasoning):
         2. What are the potential outcomes?
         3. What are the risks and trade-offs?"""
 
-    def _get_act_prompt(self, context: Dict[str, Any], query: str) -> str:
-        """Get prompt for action phase."""
+    def _get_act_prompt(self, context: Dict[str, Any], query: str, previous_steps: List[Dict[str, Any]]) -> str:
+        """Get prompt for action phase.
+        
+        Args:
+            context: The reasoning context
+            query: The user query
+            previous_steps: Results from previous steps
+            
+        Returns:
+            str: The formatted prompt for the act phase
+        """
         return f"""ACT phase:
         Query: {query}
         Context: {self._format_context(context)}
+        Decision: {self._format_previous_step(previous_steps, "decide")}
         
         How should we execute our chosen action?
         Consider:
         1. What specific steps should we take?
         2. How will we measure success?
         3. What adjustments might be needed?"""
-
-    def _get_next_phase(self) -> str:
-        """Get the name of the next phase."""
-        phases = [OODAPhase.OBSERVE, OODAPhase.ORIENT, OODAPhase.DECIDE, OODAPhase.ACT]
-        current_index = phases.index(self.current_phase)
-        next_index = (current_index + 1) % len(phases)
-        return phases[next_index]
-
-    def _format_context(self, context: Dict[str, Any]) -> str:
-        """Format context for inclusion in prompts."""
-        formatted = []
-        for key, value in context.items():
-            if isinstance(value, dict):
-                formatted.append(f"{key}:")
-                for k, v in value.items():
-                    formatted.append(f"  {k}: {v}")
-            elif isinstance(value, (list, tuple)):
-                formatted.append(f"{key}:")
-                for item in value:
-                    formatted.append(f"  - {item}")
-            else:
-                formatted.append(f"{key}: {value}")
-        return '\n'.join(formatted) 
+  
