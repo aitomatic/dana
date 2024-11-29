@@ -31,7 +31,7 @@ Example:
 from typing import Dict, Any, Optional
 from dxa.agent.base_agent import BaseAgent
 from dxa.core.reasoning.base_reasoning import BaseReasoning
-from dxa.core.io.console import ConsoleIO
+from dxa.core.io.console_io import ConsoleIO
 
 class InteractiveAgent(BaseAgent):
     """An agent that enables real-time interaction with users during execution.

@@ -29,7 +29,7 @@ Example:
 import json
 from typing import Dict, Any, Optional, Union
 from dxa.agent.base_agent import BaseAgent
-from dxa.core.io.websocket import WebSocketIO
+from dxa.core.io.websocket_io import WebSocketIO
 from dxa.common.errors import WebSocketError, DXAConnectionError
 from dxa.core.reasoning import BaseReasoning, ChainOfThoughtReasoning
 
