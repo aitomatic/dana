@@ -49,13 +49,13 @@ from dxa.agent.websocket_agent import WebSocketAgent
 from dxa.agent.work_automation_agent import WorkAutomationAgent
 from dxa.agent.collaborative_agent import CollaborativeAgent
 from dxa.agent.autonomous_agent import AutonomousAgent
-from dxa.agent.state import (
+from dxa.agent.agent_state import (
     StateManager,
     Observation,
     AgentState,
     Message
 )
-from dxa.agent.progress import AgentProgress
+from dxa.agent.agent_progress import AgentProgress
 from dxa.agent.config import AgentConfig, LLMConfig
 from dxa.agent.agent_llm import AgentLLM
 

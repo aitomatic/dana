@@ -45,10 +45,10 @@ from dxa.core.reasoning.base_reasoning import BaseReasoning
 from dxa.core.reasoning.cot import ChainOfThoughtReasoning
 from dxa.core.resource.expert import ExpertResource
 from dxa.agent.agent_llm import AgentLLM
-from dxa.agent.progress import AgentProgress
+from dxa.agent.agent_progress import AgentProgress
 from dxa.common.utils.logging import DXALogger
-from dxa.agent.runtime import AgentRuntime
-from dxa.agent.state import StateManager
+from dxa.agent.agent_runtime import AgentRuntime
+from dxa.agent.agent_state import StateManager
 
 class BaseAgent(ABC):
     """Base class providing common agent functionality.

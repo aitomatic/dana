@@ -48,8 +48,8 @@ The runtime provides two main execution methods:
 """
 
 from typing import Dict, Any, Optional, AsyncIterator, Callable, Awaitable
-from dxa.agent.state import StateManager
-from dxa.agent.progress import AgentProgress
+from dxa.agent.agent_state import StateManager
+from dxa.agent.agent_progress import AgentProgress
 from dxa.common.errors import DXAError
 
 # Type aliases for clarity

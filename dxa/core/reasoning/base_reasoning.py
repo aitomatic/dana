@@ -5,7 +5,7 @@ from typing import Dict, Any, List, Optional
 from enum import Enum
 from dataclasses import dataclass
 import logging
-from dxa.agent.state import StateManager
+from dxa.agent.agent_state import StateManager
 from dxa.core.resource.base_resource import BaseResource
 from dxa.core.resource.expert import ExpertResource
 from dxa.core.resource.human import HumanResource
