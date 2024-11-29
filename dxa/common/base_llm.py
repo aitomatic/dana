@@ -95,13 +95,12 @@ class BaseLLM:
             await self.initialize()
 
         # Log the request
-        self.logger.info("LLM Request", extra={
-            "llm_name": self.name,
-            "model": self.model,
-            "messages": messages,
-            "parameters": kwargs,
-            "interaction_type": "request"
-        })
+        self.logger.info(
+            "LLM Request - Name: %s - Model: %s\nMessages: %s",
+            self.name,
+            self.model,
+            messages
+        )
 
         try:
             response = await self._client.chat.completions.create(
@@ -116,13 +115,15 @@ class BaseLLM:
                 token_usage = response.usage.total_tokens
 
             # Log the response
-            self.logger.info("LLM Response", extra={
-                "llm_name": self.name,
-                "model": self.model,
-                "response": response.model_dump() if hasattr(response, 'model_dump') else str(response),
-                "interaction_type": "response",
-                "tokens": token_usage
-            })
+            self.logger.info(
+                "LLM Response - Name: %s - Model: %s\n"
+                "Response: %s\n"
+                "Tokens: %s",
+                self.name,
+                self.model,
+                response.model_dump() if hasattr(response, 'model_dump') else str(response),
+                token_usage
+            )
 
             return response
 
