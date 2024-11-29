@@ -1,5 +1,7 @@
+<!-- markdownlint-disable MD041 -->
+<!-- markdownlint-disable MD033 -->
 <p align="center">
-  ![Aitomatic Logo](https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png){: width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"}
+    ![Aitomatic Logo](https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png){: width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"}
 </p>
 
 # DXA - Domain-Expert Agent
@@ -11,6 +13,7 @@ For installation and setup instructions, see the [project README](../README.md).
 ## Architecture Overview
 
 An Agent in DXA, similar to a human being, is composed of:
+
 1. A cognitive core (Reasoning) that drives decision-making and thought processes
 2. Inherent capabilities (like Memory and Expertise) that shape its abilities
 3. Input/Output channels for environmental interaction
@@ -33,35 +36,45 @@ graph TD
 ## Core Components
 
 ### Reasoning (`dxa.core.reasoning`)
+
 The reasoning system is the agent's "cognitive core," analogous to human thought processes:
+
 - Planning systems: For creating and executing multi-step plans
 - Goal management: For tracking and prioritizing objectives
 - Task execution: For carrying out specific actions
 - Decision trees: For structured decision-making processes
 
 ### Inherent Capabilities (`dxa.core.capability`)
+
 Like human innate abilities, these are fundamental features of the agent:
+
 - Memory management: Handles storage and retrieval of agent experiences and knowledge
 - Expertise domains: Defines areas of specialized knowledge and skills
 - Core reasoning abilities: Provides basic cognitive functions like planning and decision-making
 - Custom capability extensions: Allows for adding new specialized abilities
 
 ### I/O (`dxa.core.io`)
+
 Similar to human senses and expression, I/O handlers manage all interaction with the environment:
+
 - Text-based interfaces: For command-line and chat interactions
 - API endpoints: For web service integration
 - File system operations: For reading and writing files
 - Custom I/O handlers: For specialized communication needs
 
 ### Resources (`dxa.core.resource`)
+
 Like tools and references that humans use, resources provide access to external capabilities:
+
 - Database connections: For persistent storage
 - Search engine integrations: For accessing external knowledge
 - IoT device interfaces: For interacting with physical devices
 - Inter-agent communication: For coordinating with other agents
 
 ### Agents (`dxa.agent`)
+
 The agent module provides several specialized agent types, each designed for specific roles:
+
 - `BaseAgent`: The foundation for all agent types
 - `AutonomousAgent`: For agents that operate independently
 - `CollaborativeAgent`: For multi-agent systems where agents work together
@@ -70,6 +83,7 @@ The agent module provides several specialized agent types, each designed for spe
 - `AutomationAgent`: Specialized for workflow automation tasks
 
 Additional components in the `dxa.agent` module:
+
 - `AgentLLM`: Internal LLM implementation for agents
 - `AgentProgress`: For reporting task progress
 - `AgentConfig` and `LLMConfig`: For configuration management
@@ -124,7 +138,7 @@ custom_agent = create_agent(
 
 ## Module Structure
 
-```
+```text
 dxa/
 ├── agent/
 │   ├── __init__.py

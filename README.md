@@ -1,3 +1,5 @@
+<!-- markdownlint-disable MD041 -->
+<!-- markdownlint-disable MD033 -->
 <p align="center">
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
@@ -16,12 +18,14 @@ For detailed architecture documentation (Product-Engineering perspective), see [
 ## Setup Instructions
 
 1. Clone the repository:
+
    ```bash
    git clone <repository-url>
    cd dxa-prototype
    ```
 
 2. Set up the virtual environment:
+
    ```bash
    bash setup_env.sh
    source venv/bin/activate  # On Windows: source venv/Scripts/activate
@@ -32,6 +36,7 @@ For detailed architecture documentation (Product-Engineering perspective), see [
    - Update the values in `.env` with your configuration
 
 4. Run the application:
+
    ```bash
    python dxa-poc.py
    ```
@@ -39,6 +44,7 @@ For detailed architecture documentation (Product-Engineering perspective), see [
 ## Configuration
 
 The application requires the following configuration:
+
 - Environment variables in `.env` file
 - API key configuration in the main Python file
 
