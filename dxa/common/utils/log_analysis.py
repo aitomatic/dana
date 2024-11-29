@@ -1,23 +1,31 @@
 """Log analysis utilities for the DXA system.
 
-This module provides tools for analyzing LLM interaction logs, including:
+This module provides tools for analyzing LLM interaction logs. It offers:
 - Loading and parsing log files
 - Computing interaction statistics
 - Analyzing token usage patterns
-- Identifying common patterns in prompts
-- Generating analysis reports
+- Memory-efficient log processing
 
-The LLMInteractionAnalyzer class serves as the main entry point for all
-log analysis operations. It requires pandas for data manipulation and
-analysis capabilities.
-
-Example:
-    analyzer = LLMInteractionAnalyzer("/path/to/logs")
+Basic Usage:
+    # Create analyzer
+    analyzer = LLMInteractionAnalyzer("path/to/logs")
+    
+    # Get basic statistics
     stats = analyzer.get_interaction_stats()
-    analyzer.export_report("analysis_report.json")
+    print(f"Total interactions: {stats['total_interactions']}")
+    print(f"Success rate: {stats['success_rate']:.2%}")
+    
+    # Analyze token usage
+    token_usage = analyzer.get_token_usage_over_time()
+    
+    # Get response times
+    response_times = analyzer.get_response_times()
+
+The analyzer automatically handles large log files through chunked processing
+and provides safe access to log data.
 """
 
-from typing import Dict, List
+from typing import Dict, List, Optional
 from datetime import datetime
 from pathlib import Path
 import json
@@ -53,60 +61,25 @@ class LLMInteractionAnalyzer:
             return 0
 
     def load_interactions(self) -> pd.DataFrame:
-        """Load LLM interactions into a pandas DataFrame."""
-        interactions = []
+        """Load LLM interactions with chunked reading for memory efficiency"""
+        chunk_size = 10000  # Adjust based on available memory
+        chunks = []
         
         try:
-            with open(self.log_file, encoding='utf-8') as f:
-                for line in f:
-                    try:
-                        log = json.loads(line)
-                        # Create a clean record with required fields
-                        record = {
-                            'timestamp': datetime.fromisoformat(log.get('timestamp', datetime.now().isoformat())),
-                            'token_usage': self._safe_get_usage(log),
-                            'success': log.get('success', False),
-                            'interaction_type': log.get('interaction_type', 'unknown'),
-                            'error': log.get('error'),
-                            'metadata': log.get('metadata', {}),
-                            'content': log.get('content', ''),
-                            'response': log.get('response', {})
-                        }
-                        interactions.append(record)
-                    except (json.JSONDecodeError, KeyError, ValueError) as e:
-                        print(f"Error parsing log line: {e}")
-                        continue
-                        
-            # Create DataFrame with explicit columns
-            df = pd.DataFrame(interactions, columns=[
-                'timestamp',
-                'token_usage',
-                'success',
-                'interaction_type',
-                'error',
-                'metadata',
-                'content',
-                'response'
-            ])
+            for chunk in pd.read_json(self.log_file, lines=True, chunksize=chunk_size):
+                chunks.append(self._process_chunk(chunk))
             
-            # Ensure timestamp is datetime
-            df['timestamp'] = pd.to_datetime(df['timestamp'])
-            
-            return df
+            return pd.concat(chunks) if chunks else pd.DataFrame()
             
         except FileNotFoundError:
             print(f"Log file not found: {self.log_file}")
-            # Return empty DataFrame with correct columns
-            return pd.DataFrame(columns=[
-                'timestamp',
-                'token_usage',
-                'success',
-                'interaction_type',
-                'error',
-                'metadata',
-                'content',
-                'response'
-            ])
+            return pd.DataFrame()
+            
+    def _process_chunk(self, chunk: pd.DataFrame) -> pd.DataFrame:
+        """Process a chunk of log data"""
+        chunk['timestamp'] = pd.to_datetime(chunk['timestamp'])
+        chunk['token_usage'] = chunk.apply(self._safe_get_usage, axis=1)
+        return chunk
 
     def get_interaction_stats(self) -> Dict:
         """Get basic statistics about LLM interactions."""
@@ -225,4 +198,30 @@ class LLMInteractionAnalyzer:
         }
         
         with open(output_file, 'w', encoding='utf-8') as f:
-            json.dump(report, f, indent=2, default=str) 
+            json.dump(report, f, indent=2, default=str)
+
+    def get_interactions_in_timeframe(
+        self,
+        start_time: Optional[datetime] = None,
+        end_time: Optional[datetime] = None
+    ) -> pd.DataFrame:
+        """Get interactions within a specific timeframe.
+        
+        Args:
+            start_time: Start of timeframe (inclusive)
+            end_time: End of timeframe (inclusive)
+            
+        Returns:
+            DataFrame containing interactions within the timeframe
+        """
+        df = self.load_interactions()
+        
+        if df.empty:
+            return df
+        
+        if start_time:
+            df = df[df['timestamp'] >= start_time]
+        if end_time:
+            df = df[df['timestamp'] <= end_time]
+        
+        return df 

@@ -1,20 +1,22 @@
 """Visualization utilities for DXA log analysis.
 
-This module provides visualization tools for analyzing LLM interaction patterns
-and system performance. It offers various plotting capabilities including:
-- Token usage over time
-- Response time distributions
-- Success rates by phase
-- Error type distributions
-- Comprehensive dashboards
+This module provides visualization tools for analyzing LLM interaction patterns.
+It requires optional dependencies: matplotlib, seaborn, and pandas.
 
-The module requires matplotlib, seaborn, and pandas for visualization
-capabilities. These dependencies are optional and must be installed separately.
-
-Example:
-    visualizer = LLMInteractionVisualizer("/path/to/logs")
+Basic Usage:
+    # Create visualizer
+    visualizer = LLMInteractionVisualizer("path/to/logs")
+    
+    # Create individual plots
     visualizer.plot_token_usage("token_usage.png")
+    visualizer.plot_response_times("response_times.png")
+    visualizer.plot_success_rate_by_phase("success_rates.png")
+    
+    # Create comprehensive dashboard
     visualizer.create_dashboard("dashboard/")
+
+Note: Install visualization dependencies with:
+    pip install matplotlib seaborn pandas
 """
 
 from typing import Optional
@@ -45,6 +47,11 @@ class LLMInteractionVisualizer:
     
     def __init__(self, log_dir: str):
         """Initialize visualizer."""
+        if not VIZ_AVAILABLE:
+            raise ImportError(
+                "matplotlib, seaborn, and pandas are required for visualization. "
+                "Install them with: pip install matplotlib seaborn pandas"
+            )
         self.analyzer = LLMInteractionAnalyzer(log_dir)
 
     @require_viz

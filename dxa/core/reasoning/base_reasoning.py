@@ -514,7 +514,10 @@ class BaseReasoning(ABC):
         if "prompt" in llm_request:
             messages.append({"role": "user", "content": llm_request["prompt"]})
 
-        return await self.agent_llm.query(messages)
+        response = await self.agent_llm.query(messages)
+        
+        # AgentLLM.query() now returns a dict with 'content' key
+        return response  # Just return the response as-is since it's already in the right format
 
     async def __aenter__(self):
         """Context manager entry."""

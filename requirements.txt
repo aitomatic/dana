@@ -10,3 +10,4 @@ mypy>=1.0.0
 setuptools>=65.0.0
 websockets>=10.0
 pyyaml>=6.0.0
+structlog>=24.1.0

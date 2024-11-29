@@ -26,8 +26,12 @@ from typing import Optional, Dict, Any
 from dxa.agent.base_agent import BaseAgent
 from dxa.core.io.base_io import BaseIO
 from dxa.core.io.console import ConsoleIO
-from dxa.core.reasoning.base_reasoning import BaseReasoning
+from dxa.core.reasoning.base_reasoning import (
+    BaseReasoning,
+    ReasoningStatus
+)
 from dxa.common.errors import ReasoningError, ConfigurationError, DXAConnectionError
+from dxa.agent.agent_llm import AgentLLM
 
 class InteractiveAgent(BaseAgent):
     """Agent that interacts through console I/O.
@@ -81,6 +85,17 @@ class InteractiveAgent(BaseAgent):
         )
         self.reasoning = reasoning
         self.io = io or ConsoleIO()
+        
+        # Initialize and set the agent LLM
+        agent_llm = AgentLLM(
+            name=f"{config['name']}_llm",
+            config={
+                "api_key": config.get("api_key"),
+                "model": config.get("model", "gpt-4"),
+                "temperature": config.get("temperature", 0.7),
+            }
+        )
+        self.reasoning.set_agent_llm(agent_llm)
 
     async def run(self) -> Dict[str, Any]:
         """Start an interactive session with the user.
@@ -104,21 +119,31 @@ class InteractiveAgent(BaseAgent):
         """
         context = {}
         try:
-            # Get initial input
-            response = await self.io.get_input("How can I help you today?")
-            context['initial_input'] = response
-
-            # Run reasoning cycle
-            result = await self.reasoning.reason(context)
+            # Initialize the reasoning system
+            await self.reasoning.initialize()
             
-            # Check if we need user input
-            if result.get("needs_user_input"):
-                response = await self.io.get_input(result["user_prompt"])
+            # Get initial input
+            user_query = await self.io.get_input("How can I help you today?")
+            context['initial_input'] = user_query
+
+            # Run reasoning cycle with the query
+            result = await self.reasoning.reason(context, query=user_query)
+            
+            # Check if we need user input based on StepResult status
+            if result.status == ReasoningStatus.NEED_INFO:
+                response = await self.io.get_input(result.content)
                 context['user_input'] = response
             
             return {
                 "success": True,
-                "results": result,
+                "results": {
+                    "status": result.status,
+                    "content": result.content,
+                    "next_step": result.next_step,
+                    "final_answer": result.final_answer,
+                    "error_message": result.error_message,
+                    "resource_request": result.resource_request
+                },
                 "context": context
             }
             
@@ -128,3 +153,6 @@ class InteractiveAgent(BaseAgent):
                 "success": False,
                 "error": str(e)
             }
+        finally:
+            # Clean up the reasoning system
+            await self.reasoning.cleanup()
