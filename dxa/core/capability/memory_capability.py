@@ -23,7 +23,7 @@ Example:
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 from dataclasses import dataclass, field
-from dxa.core.capabilities.base_capability import BaseCapability
+from dxa.core.capability.base_capability import BaseCapability
 from dxa.common.exceptions import DXAError, DXAMemoryError
 
 @dataclass

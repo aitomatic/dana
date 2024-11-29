@@ -4,19 +4,20 @@ This module provides example implementations of different DXA agent types,
 demonstrating various use cases and configurations.
 
 Examples:
-    1. Interactive Math: Interactive math problem solving
+    1. Math Tutor: Interactive math problem solving
     2. Web Scraper: Automated web data extraction
     3. WebSocket Solver: Network-based problem solving
     4. Collaborative Research: Multi-agent coordination
 """
 
-from examples.interactive_math import main as run_math_solver
-from examples.automation_web import main as run_web_scraper
+from examples.math_tutor import create_math_tutor, main as run_math_tutor
+from examples.web_scraper import main as run_web_scraper
 from examples.websocket_solver import main as run_websocket_solver
 from examples.collaborative_research import main as run_collaborative_research
 
 __all__ = [
-    'run_math_solver',
+    'create_math_tutor',
+    'run_math_tutor',
     'run_web_scraper',
     'run_websocket_solver',
     'run_collaborative_research'
@@ -29,15 +30,15 @@ DXA (Domain-Expert Agent) Examples
 
 Available examples:
 
-1. Interactive Math (interactive_math.py):
+1. Math Tutor (math_tutor.py):
    - Interactive console-based math problem solver
    - Uses Chain of Thought reasoning
-   - Uses math expert resource
+   - Interactive agent implementation
    - Environment variables: OPENAI_API_KEY
 
-2. Web Scraper (automation_web.py):
-   - Automated web scraping workflow
-   - Step-by-step validation
+2. Web Scraper (web_scraper.py):
+   - Work automation agent for web scraping
+   - Step-by-step workflow execution
    - Environment variables: OPENAI_API_KEY
 
 3. WebSocket Solver (websocket_solver.py):
@@ -58,19 +59,15 @@ Running Examples:
    pip install -e .
    python examples/<example_file>.py
 
-Configuration:
-- All examples use configuration from dxa/common/config.py
-- Configuration can be provided via YAML or JSON files
-- Environment variables can override configuration
-
 Example Usage:
     ```python
-    from examples import run_collaborative_research
+    from examples import create_math_tutor, run_collaborative_research
     
-    # Required environment variables:
-    # - OPENAI_API_KEY
-    # - WEBSOCKET_URL
+    # Create a math tutor agent
+    tutor = create_math_tutor()
     
+    # Run collaborative research example
+    # Requires OPENAI_API_KEY and WEBSOCKET_URL
     await run_collaborative_research()
     ```
 """ 

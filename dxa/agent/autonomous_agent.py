@@ -30,7 +30,6 @@ Example:
 from typing import Dict, Any, Optional
 from dxa.agent.base_agent import BaseAgent
 from dxa.core.reasoning.base_reasoning import BaseReasoning
-from dxa.common.errors import DXAError
 
 class AutonomousAgent(BaseAgent):
     """Base class for agents that operate independently.
@@ -39,123 +38,97 @@ class AutonomousAgent(BaseAgent):
     to make decisions and process tasks autonomously. It supports iteration
     limits and progress tracking.
     
+    The key differences from BaseAgent are:
+    1. Stricter validation of task parameters
+    2. More detailed progress reporting
+    3. Automatic handling of stuck states
+    
     Attributes:
-        reasoning: Reasoning system instance
-        max_iterations: Maximum number of reasoning cycles (None for unlimited)
-        iteration_count: Current iteration count
+        All attributes inherited from BaseAgent
         
     Args:
         name: Agent identifier
         llm_config: LLM configuration dictionary
-        reasoning: Reasoning system instance
+        reasoning: Optional reasoning system instance
         description: Optional agent description
         max_iterations: Optional maximum iterations (None for unlimited)
-        
-    Example:
-        ```python
-        agent = AutonomousAgent(
-            name="data_analyzer",
-            llm_config={"model": "gpt-4"},
-            reasoning=ChainOfThoughtReasoning(),
-            max_iterations=5
-        )
-        ```
     """
     
     def __init__(
         self,
         name: str,
         llm_config: Dict[str, Any],
-        reasoning: BaseReasoning,
+        reasoning: Optional[BaseReasoning] = None,
         description: Optional[str] = None,
         max_iterations: Optional[int] = None
     ):
         """Initialize autonomous agent."""
         config = {
             "llm": llm_config,
-            "description": description,
-            "mode": "autonomous"
+            "description": description
         }
         
-        super().__init__(name=name, config=config)
-        
-        self.reasoning = reasoning
-        self.max_iterations = max_iterations
-        self.iteration_count = 0
+        super().__init__(
+            name=name,
+            config=config,
+            reasoning=reasoning,
+            mode="autonomous",
+            max_iterations=max_iterations
+        )
 
-    async def run(self, task: str) -> Dict[str, Any]:
-        """Run the autonomous agent's main loop.
-        
-        This method executes the agent's reasoning cycle repeatedly until the task
-        is complete, the iteration limit is reached, or the agent gets stuck.
+    async def _pre_execute(self, context: Dict[str, Any]) -> None:
+        """Validate task parameters before execution.
         
         Args:
-            task: The task/query to process
+            context: Initial execution context to validate
+            
+        Raises:
+            ValueError: If required task parameters are missing
+        """
+        required_params = ["objective"]
+        missing = [p for p in required_params if p not in context]
+        if missing:
+            raise ValueError(f"Missing required task parameters: {missing}")
+
+    async def _post_execute(self, result: Dict[str, Any]) -> Dict[str, Any]:
+        """Process results after execution.
+        
+        Args:
+            result: Results from final reasoning iteration
             
         Returns:
-            Dict containing:
-                - success: Whether the task completed successfully
-                - iterations: Number of iterations performed
-                - results: Results from final reasoning cycle
-                
-        Raises:
-            DXAError: If agent encounters an error during execution
-            
-        Example:
-            ```python
-            result = await agent.run({
-                "task": "analyze_text",
-                "text": "Sample text to analyze",
-                "objective": "sentiment"
-            })
-            ```
+            Processed results with additional metadata
         """
-        context = {"task": task}
-        try:
-            self.iteration_count = 0
+        # Add execution metadata
+        result["agent_type"] = "autonomous"
+        result["execution_mode"] = self.mode
+        return result
+
+    async def _should_continue(self, result: Dict[str, Any]) -> bool:
+        """Check if execution should continue.
+        
+        Args:
+            result: Results from last reasoning iteration
             
-            while self._is_running:
-                # Check iteration limit
-                if (self.max_iterations is not None and self.iteration_count >= self.max_iterations):
-                    self.logger.info("Reached maximum iterations")
-                    break
-                
-                # Run reasoning cycle
-                self.iteration_count += 1
-                self.logger.debug(
-                    "Starting iteration %d/%s", 
-                    self.iteration_count,
-                    self.max_iterations or "∞"
-                )
-                
-                result = await self.reasoning.reason(
-                    context,
-                    task
-                )
-                
-                # Update context with results
-                context.update(result)
-                
-                # Check if task is complete
-                if result.get("task_complete"):
-                    self.logger.info("Task completed successfully")
-                    break
-                
-                # Check if we're stuck
-                if result.get("is_stuck"):
-                    self.logger.warning("Agent is stuck: %s", result.get("stuck_reason"))
-                    break
+        Returns:
+            False if task is complete or agent is stuck, True otherwise
+        """
+        # Stop if task is complete or we're stuck
+        if result.get("task_complete") or result.get("is_stuck"):
+            return False
             
-            return {
-                "success": True,
-                "iterations": self.iteration_count,
-                "results": result
-            }
-            
-        except DXAError as e:
-            await self.handle_error(e)
-            return {
-                "success": False,
-                "iterations": self.iteration_count,
-                "error": str(e)
-            } 
+        # Continue otherwise
+        return True 
+
+    def get_agent_system_prompt(self) -> str:
+        return """You are an autonomous agent capable of independent decision making.
+        You should:
+        - Take initiative when appropriate
+        - Make decisions based on available information
+        - Request additional information only when necessary
+        - Complete tasks without requiring user confirmation
+        """
+
+    def get_agent_user_prompt(self) -> str:
+        return """Process this task autonomously. If you need additional information,
+        specify exactly what you need and why."""

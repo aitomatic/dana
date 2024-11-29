@@ -1,8 +1,8 @@
-"""Example of automation agent for web scraping."""
+"""Example of work automation agent for web scraping."""
 
 import asyncio
 import os
-from dxa.agent.automation_agent import AutomationAgent
+from dxa.agent.work_automation_agent import WorkAutomationAgent
 
 # Define the workflow steps
 SCRAPING_WORKFLOW = {
@@ -43,8 +43,8 @@ async def main():
     if not api_key:
         raise ValueError("OPENAI_API_KEY environment variable is not set")
 
-    # Create automation agent
-    agent = AutomationAgent(
+    # Create work automation agent
+    agent = WorkAutomationAgent(
         name="web_scraper",
         llm_config={
             "api_key": api_key,

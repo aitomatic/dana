@@ -32,7 +32,7 @@ Example:
 """
 
 from typing import Dict, Any, Optional
-from dxa.core.resources.base_resource import BaseResource, ResourceError
+from dxa.core.resource.base_resource import BaseResource, ResourceError
 from openai import AsyncOpenAI
 
 class LLMError(ResourceError):

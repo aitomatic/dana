@@ -13,9 +13,9 @@ Example:
 
 from typing import Optional
 import asyncio
+from urllib.parse import urlparse
 from websockets.legacy.server import WebSocketServerProtocol as WebSocket
 from websockets import serve, exceptions
-from urllib.parse import urlparse
 from dxa.core.io.base_io import BaseIO
 from dxa.common.errors import WebSocketError
 

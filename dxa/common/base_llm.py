@@ -1,32 +1,57 @@
-"""Base LLM (Large Language Model) implementation for the DXA system.
+"""Base LLM (Large Language Model) implementation.
 
-This module provides the foundational LLM interface used throughout the DXA system.
-It handles common LLM operations including:
-- Asynchronous initialization and cleanup
-- Retry logic for failed requests
-- Standardized error handling
-- Configuration management
+This module provides a basic LLM interface that handles raw interactions with 
+language models. It provides straightforward query functionality without any
+domain-specific prompt management or context handling.
 
-The BaseLLM class can be extended to support different LLM providers while
-maintaining consistent behavior across the system.
+Example:
+    ```python
+    llm = BaseLLM(
+        name="basic_llm",
+        config={
+            "model": "gpt-4",
+            "api_key": "your-key"
+        }
+    )
+    
+    response = await llm.query([
+        {"role": "user", "content": "Hello!"}
+    ])
+    ```
 """
 
-from typing import Dict, Any, Optional, List
-import asyncio
+from typing import Dict, Optional, List
 import logging
-from openai import AsyncOpenAI
+from openai import APIError, APIConnectionError, RateLimitError, APITimeoutError, AsyncOpenAI
 from openai.types.chat import ChatCompletion
-import openai
 
 from .exceptions import LLMError
 
 class BaseLLM:
-    """Base class for LLM interactions."""
+    """Base class for raw LLM interactions.
+    
+    This class provides direct access to language model capabilities without
+    any additional prompt management or context handling. It's designed to be
+    a simple wrapper around the OpenAI API.
+    
+    Attributes:
+        name: Name identifier for this LLM instance
+        api_key: OpenAI API key
+        model: Name of the model to use
+        config: Additional configuration parameters
+        
+    Args:
+        name: Name for this LLM instance
+        config: Configuration dictionary containing api_key and other settings
+        system_prompt: Optional system prompt to use for all queries
+        max_retries: Maximum number of retries for failed requests
+        retry_delay: Delay between retries in seconds
+    """
     
     def __init__(
         self,
         name: str,
-        config: Dict[str, Any],
+        config: Dict[str, str],
         system_prompt: Optional[str] = None,
         max_retries: int = 3,
         retry_delay: float = 1.0
@@ -41,14 +66,14 @@ class BaseLLM:
             retry_delay: Delay between retries in seconds
         """
         self.name = name
-        self.api_key = config.pop('api_key')
+        self.api_key = config.pop('api_key', '')
         self.model = config.pop('model', 'gpt-4')
         self.config = config
         self.system_prompt = system_prompt
         self.max_retries = max_retries
         self.retry_delay = retry_delay
         self._client: Optional[AsyncOpenAI] = None
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = logging.getLogger(f"dxa.llm.{name}")
 
     async def initialize(self) -> None:
         """Initialize the OpenAI client."""
@@ -65,39 +90,51 @@ class BaseLLM:
         messages: List[Dict[str, str]],
         **kwargs
     ) -> ChatCompletion:
-        """Query the LLM with retry logic.
-        
-        Args:
-            messages: List of message dictionaries with 'role' and 'content'
-            **kwargs: Additional arguments to pass to the chat completion
-        
-        Returns:
-            ChatCompletion response from the API
-        
-        Raises:
-            LLMError: If the query fails after all retries
-        """
+        """Send a raw query to the LLM and log the interaction."""
         if not self._client:
             await self.initialize()
 
-        for attempt in range(self.max_retries):
-            try:
-                response = await self._client.chat.completions.create(
-                    model=self.model,
-                    messages=messages,
-                    **kwargs
-                )
-                return response
-            except (openai.APIError, openai.APIConnectionError, openai.RateLimitError, openai.APITimeoutError) as e:
-                self.logger.warning(
-                    "LLM query attempt %d/%d failed: %s",
-                    attempt + 1,
-                    self.max_retries,
-                    str(e)
-                )
-                if attempt + 1 == self.max_retries:
-                    raise LLMError(f"LLM query failed after {self.max_retries} attempts: {str(e)}") from e
-                await asyncio.sleep(self.retry_delay)
+        # Log the request
+        self.logger.info("LLM Request", extra={
+            "llm_name": self.name,
+            "model": self.model,
+            "messages": messages,
+            "parameters": kwargs,
+            "interaction_type": "request"
+        })
+
+        try:
+            response = await self._client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                **kwargs
+            )
+
+            # Safely get token usage
+            token_usage = None
+            if response.usage:
+                token_usage = response.usage.total_tokens
+
+            # Log the response
+            self.logger.info("LLM Response", extra={
+                "llm_name": self.name,
+                "model": self.model,
+                "response": response.model_dump() if hasattr(response, 'model_dump') else str(response),
+                "interaction_type": "response",
+                "tokens": token_usage
+            })
+
+            return response
+
+        except (APIError, APIConnectionError, RateLimitError, APITimeoutError) as e:
+            # Log the error
+            self.logger.error("LLM Error", extra={
+                "llm_name": self.name,
+                "model": self.model,
+                "error": str(e),
+                "interaction_type": "error"
+            })
+            raise LLMError(f"LLM query failed: {str(e)}") from e
 
     async def cleanup(self) -> None:
         """Clean up any resources used by the LLM."""

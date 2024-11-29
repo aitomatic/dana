@@ -1,175 +1,134 @@
 """Log analysis utilities for the DXA system.
 
 This module provides tools for analyzing LLM interaction logs, including:
-- Loading and parsing log files
-- Computing interaction statistics
-- Analyzing token usage patterns
-- Identifying common patterns in prompts
-- Generating analysis reports
+- Loading and parsing interaction logs
+- Finding similar prompts using fuzzy matching
+- Analyzing interaction patterns and trends
 
-The LLMInteractionAnalyzer class serves as the main entry point for all
-log analysis operations. It requires pandas for data manipulation and
-analysis capabilities.
+Basic Usage:
+    # Create analyzer
+    analyzer = LLMInteractionAnalyzer("path/to/logs")
+    
+    # Find similar prompts
+    similar = analyzer.find_similar_prompts(
+        "How do I implement a binary search?",
+        threshold=0.8
+    )
+    
+    # Load all interactions
+    df = analyzer.load_interactions()
 
-Example:
-    analyzer = LLMInteractionAnalyzer("/path/to/logs")
-    stats = analyzer.get_interaction_stats()
-    analyzer.export_report("analysis_report.json")
+Note: This module requires pandas for data manipulation.
 """
 
-from typing import Dict, List
+import logging
 from datetime import datetime
-from pathlib import Path
 import json
+from pathlib import Path
+from typing import Dict, List
+from difflib import SequenceMatcher
+import pandas as pd
 
-try:
-    import pandas as pd
-    PANDAS_AVAILABLE = True
-except ImportError:
-    PANDAS_AVAILABLE = False
+
+logger = logging.getLogger(__name__)
 
 class LLMInteractionAnalyzer:
-    """Analyze LLM interactions from logs."""
+    """Analyze LLM interactions from logs.
+    
+    This class provides methods to analyze LLM interaction logs, including
+    loading log data, finding similar prompts, and extracting patterns.
+    
+    Attributes:
+        log_dir (Path): Directory containing log files
+        log_file (Path): Path to the main log file
+        
+    Example:
+        >>> analyzer = LLMInteractionAnalyzer("logs")
+        >>> similar = analyzer.find_similar_prompts("How to sort a list?")
+        >>> for match in similar:
+        ...     print(f"{match['similarity']:.2f}: {match['prompt']}")
+    """
     
     def __init__(self, log_dir: str):
-        """Initialize analyzer with log directory."""
-        if not PANDAS_AVAILABLE:
-            raise ImportError(
-                "pandas is required for log analysis. "
-                "Install it with: pip install pandas"
-            )
+        """Initialize analyzer with log directory.
+        
+        Args:
+            log_dir: Path to directory containing log files
+        """
         self.log_dir = Path(log_dir)
         self.log_file = self.log_dir / 'dxa.log'
 
-    def _safe_get_usage(self, row: Dict) -> int:
-        """Safely extract token usage from a log entry."""
-        try:
-            if 'response' in row and isinstance(row['response'], dict):
-                usage = row['response'].get('usage', {})
-                if isinstance(usage, dict):
-                    return usage.get('total_tokens', 0)
-            return 0
-        except (KeyError, ValueError):
-            return 0
-
     def load_interactions(self) -> pd.DataFrame:
-        """Load LLM interactions into a pandas DataFrame."""
+        """Load interactions from log file into a pandas DataFrame.
+        
+        Reads the log file and parses each line as a JSON object containing
+        interaction data. Invalid or malformed entries are skipped.
+        
+        Returns:
+            DataFrame containing interaction data with columns:
+            - timestamp: Interaction timestamp
+            - interaction_type: Type of interaction (e.g., completion, error)
+            - prompt: User prompt/input
+            - response: AI response content and metadata
+            - metadata: Additional interaction metadata
+            - success: Whether interaction was successful
+            
+        Example:
+            >>> df = analyzer.load_interactions()
+            >>> print(f"Total interactions: {len(df)}")
+            >>> print(f"Success rate: {df['success'].mean():.2%}")
+        """
+        if not self.log_file.exists():
+            logger.warning("Log file not found: %s", self.log_file)
+            return pd.DataFrame()
+            
         interactions = []
-        
-        try:
-            with open(self.log_file, encoding='utf-8') as f:
-                for line in f:
-                    try:
-                        log = json.loads(line)
-                        # Create a clean record with required fields
-                        record = {
-                            'timestamp': datetime.fromisoformat(log.get('timestamp', datetime.now().isoformat())),
-                            'token_usage': self._safe_get_usage(log),
-                            'success': log.get('success', False),
-                            'interaction_type': log.get('interaction_type', 'unknown'),
-                            'error': log.get('error'),
-                            'metadata': log.get('metadata', {}),
-                            'content': log.get('content', ''),
-                            'response': log.get('response', {})
-                        }
-                        interactions.append(record)
-                    except (json.JSONDecodeError, KeyError, ValueError) as e:
-                        print(f"Error parsing log line: {e}")
-                        continue
-                        
-            # Create DataFrame with explicit columns
-            df = pd.DataFrame(interactions, columns=[
-                'timestamp',
-                'token_usage',
-                'success',
-                'interaction_type',
-                'error',
-                'metadata',
-                'content',
-                'response'
-            ])
-            
-            # Ensure timestamp is datetime
-            df['timestamp'] = pd.to_datetime(df['timestamp'])
-            
-            return df
-            
-        except FileNotFoundError:
-            print(f"Log file not found: {self.log_file}")
-            # Return empty DataFrame with correct columns
-            return pd.DataFrame(columns=[
-                'timestamp',
-                'token_usage',
-                'success',
-                'interaction_type',
-                'error',
-                'metadata',
-                'content',
-                'response'
-            ])
-
-    def get_interaction_stats(self) -> Dict:
-        """Get basic statistics about LLM interactions."""
-        df = self.load_interactions()
-        
-        if df.empty:
-            return {
-                "total_interactions": 0,
-                "success_rate": 0.0,
-                "error_rate": 0.0,
-                "average_tokens": 0.0,
-                "most_common_errors": {},
-                "interactions_by_phase": {}
-            }
-        
-        stats = {
-            "total_interactions": len(df),
-            "success_rate": df['success'].mean(),
-            "error_rate": (df['interaction_type'] == 'error').mean(),
-            "average_tokens": df['token_usage'].mean()
-        }
-            
-        # Safely get error types
-        try:
-            error_counts = df[
-                (df['interaction_type'] == 'error') & 
-                (df['error'].notna())
-            ]['error'].value_counts().head()
-            stats["most_common_errors"] = error_counts.to_dict()
-        except (KeyError, ValueError):
-            stats["most_common_errors"] = {}
-            
-        # Safely get phase counts
-        try:
-            phase_counts = df['metadata'].apply(
-                lambda x: x.get('phase', 'unknown') if isinstance(x, dict) else 'unknown'
-            ).value_counts()
-            stats["interactions_by_phase"] = phase_counts.to_dict()
-        except (KeyError, ValueError):
-            stats["interactions_by_phase"] = {}
-        
-        return stats
-
-    def get_token_usage_over_time(self) -> pd.DataFrame:
-        """Analyze token usage over time."""
-        df = self.load_interactions()
-        if df.empty:
-            return pd.DataFrame(columns=['token_usage'])
-        return df.set_index('timestamp')['token_usage'].resample('1H').sum()
-
-    def get_response_times(self) -> pd.Series:
-        """Analyze LLM response times."""
-        df = self.load_interactions()
-        if df.empty:
-            return pd.Series()
-        return df['metadata'].apply(
-            lambda x: x.get('duration_ms', 0) if isinstance(x, dict) else 0
-        ).describe()
+        with open(self.log_file, encoding='utf-8') as f:
+            for line in f:
+                try:
+                    data = json.loads(line)
+                    # Extract interaction data from log entry
+                    interaction = {
+                        'timestamp': datetime.fromisoformat(data.get('timestamp', '')),
+                        'interaction_type': data.get('interaction_type'),
+                        'prompt': data.get('content'),
+                        'response': data.get('response', {}),
+                        'metadata': data.get('metadata', {}),
+                        'success': data.get('success', True)
+                    }
+                    interactions.append(interaction)
+                except (json.JSONDecodeError, ValueError) as e:
+                    logger.debug("Skipping malformed log entry: %s", e)
+                    continue
+                    
+        return pd.DataFrame(interactions)
 
     def find_similar_prompts(self, prompt: str, threshold: float = 0.8) -> List[Dict]:
-        """Find similar prompts in the logs using fuzzy matching."""
-        from difflib import SequenceMatcher
+        """Find similar prompts in the logs using fuzzy matching.
         
+        Uses sequence matching to find prompts that are similar to the input prompt.
+        Similarity is calculated using difflib's SequenceMatcher and ranges from 0 to 1,
+        where 1 indicates an exact match.
+        
+        Args:
+            prompt: The prompt to find matches for
+            threshold: Minimum similarity score (0-1) for matches, defaults to 0.8
+            
+        Returns:
+            List of dictionaries containing similar prompts, sorted by similarity:
+            - timestamp: When the similar prompt was used
+            - prompt: The similar prompt text
+            - similarity: Similarity score (0-1)
+            - response: The AI's response to that prompt
+            
+        Example:
+            >>> matches = analyzer.find_similar_prompts(
+            ...     "How do I sort a list?",
+            ...     threshold=0.7
+            ... )
+            >>> for match in matches:
+            ...     print(f"{match['similarity']:.2f}: {match['prompt']}")
+        """
         df = self.load_interactions()
         similar_prompts = []
         
@@ -190,39 +149,3 @@ class LLMInteractionAnalyzer:
                     })
                     
         return sorted(similar_prompts, key=lambda x: x['similarity'], reverse=True)
-
-    def get_prompt_patterns(self) -> Dict:
-        """Analyze common patterns in prompts."""
-        from collections import Counter
-        import re
-        
-        df = self.load_interactions()
-        patterns = Counter()
-        
-        for prompt in df['prompt']:
-            # Extract key phrases or patterns
-            key_phrases = re.findall(r'\b\w+\s+\w+\s+\w+\b', prompt.lower())
-            patterns.update(key_phrases)
-            
-        return {
-            "common_patterns": patterns.most_common(10),
-            "average_prompt_length": df['prompt'].str.len().mean(),
-            "prompt_complexity": df['prompt'].apply(lambda x: len(x.split()))
-        }
-
-    def export_report(self, output_file: str):
-        """Generate a comprehensive analysis report."""
-        stats = self.get_interaction_stats()
-        token_usage = self.get_token_usage_over_time()
-        response_times = self.get_response_times()
-        patterns = self.get_prompt_patterns()
-        
-        report = {
-            "summary": stats,
-            "token_usage": token_usage.to_dict(),
-            "response_times": response_times.to_dict(),
-            "prompt_patterns": patterns
-        }
-        
-        with open(output_file, 'w', encoding='utf-8') as f:
-            json.dump(report, f, indent=2, default=str) 
