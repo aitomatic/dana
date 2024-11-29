@@ -37,36 +37,9 @@ overridden by specialized agents or client code. For example:
 
 Classes:
     BaseAgent: Abstract base class for all DXA agents
-
-TODO:
-    - Integrate core capabilities system:
-        - Add capability registration/management
-        - Implement standard capabilities (memory, expertise)
-        - Add capability dependency resolution
-    
-    - Implement I/O system integration:
-        - Add I/O handler registration
-        - Support multiple I/O channels
-        - Add I/O routing/multiplexing
-    
-    - Enhance resource management:
-        - Add resource discovery
-        - Implement resource lifecycle management
-        - Add resource access controls
-        - Support dynamic resource loading
-    
-    - Add state management:
-        - Implement agent state persistence
-        - Add state recovery mechanisms
-        - Support state synchronization
-    
-    - Improve error handling:
-        - Add more granular error types
-        - Implement recovery strategies
-        - Add error reporting system
 """
 
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import Dict, Any, AsyncIterator, Optional
 from dxa.core.reasoning.base_reasoning import BaseReasoning
 from dxa.core.reasoning.cot import ChainOfThoughtReasoning
@@ -74,13 +47,8 @@ from dxa.core.resource.expert import ExpertResource
 from dxa.agent.agent_llm import AgentLLM
 from dxa.agent.progress import AgentProgress
 from dxa.common.utils.logging import DXALogger
-from dxa.common.errors import (
-    ReasoningError, 
-    ConfigurationError, 
-    AgentError,
-    ResourceError,
-    DXAConnectionError
-)
+from dxa.agent.runtime import AgentRuntime
+from dxa.agent.state import StateManager
 
 class BaseAgent(ABC):
     """Base class providing common agent functionality.
@@ -102,6 +70,7 @@ class BaseAgent(ABC):
         reasoning: Reasoning system instance (defaults to ChainOfThoughtReasoning)
         resources: Dictionary of available resources
         logger: Logger instance for this agent
+        runtime: Runtime manager for agent execution
         
     Args:
         name: Name of this agent
@@ -109,22 +78,6 @@ class BaseAgent(ABC):
         reasoning: Optional reasoning system (defaults to ChainOfThoughtReasoning)
         mode: Operating mode (default: autonomous)
         max_iterations: Optional maximum iterations (default: None)
-        
-    Example:
-        ```python
-        # Using default reasoning
-        agent = MyAgent(
-            name="default_agent",
-            config={...}
-        )
-        
-        # Using custom reasoning
-        agent = MyAgent(
-            name="custom_agent",
-            config={...},
-            reasoning=CustomReasoning()
-        )
-        ```
     """
     
     def __init__(
@@ -135,15 +88,7 @@ class BaseAgent(ABC):
         mode: str = "autonomous",
         max_iterations: Optional[int] = None
     ):
-        """Initialize base agent.
-        
-        Args:
-            name: Name of this agent
-            config: Configuration dictionary
-            reasoning: Optional reasoning system (defaults to ChainOfThoughtReasoning)
-            mode: Operating mode (default: autonomous)
-            max_iterations: Optional maximum iterations (default: None)
-        """
+        """Initialize base agent."""
         self.name = name
         self.mode = mode
         self.llm = AgentLLM(name=f"{name}_llm", config=config)
@@ -160,24 +105,100 @@ class BaseAgent(ABC):
             console_output=log_config.get("console_output", True)
         )
         
-        self._is_running = False
-        self.max_iterations = max_iterations
-        self.iteration_count = 0
+        self.runtime = AgentRuntime(
+            state_manager=StateManager(name),
+            max_iterations=max_iterations
+        )
 
-    @abstractmethod
     async def run(self, task: Dict[str, Any]) -> Dict[str, Any]:
-        """Run the agent.
+        """Run the agent with standardized runtime management.
         
         Args:
-            task: Dictionary containing task configuration and parameters
+            task: Task configuration dictionary containing:
+                - objective: Main task objective
+                - parameters: Task-specific parameters
+                - constraints: Optional execution constraints
+                
+        Returns:
+            Dict containing:
+                - success: Whether execution completed successfully
+                - iterations: Number of iterations performed
+                - results: Results from final reasoning cycle
+                - state_history: Record of observations and messages
+                - error: Error information if execution failed
+        """
+        return await self.runtime.execute(
+            task=task,
+            reasoning_step=self._reasoning_step,
+            pre_execute=self._pre_execute,
+            post_execute=self._post_execute,
+            should_continue=self._should_continue
+        )
+        
+    async def _reasoning_step(self, context: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute one reasoning iteration.
+        
+        Args:
+            context: Current execution context
             
         Returns:
-            Dict containing results of the agent's execution
+            Dict containing reasoning results and any updates to context
         """
-        raise NotImplementedError
+        return await self.reasoning.reason(context)
+        
+    async def _pre_execute(self, context: Dict[str, Any]) -> None:
+        """Hook for pre-execution setup.
+        
+        Args:
+            context: Initial execution context to prepare
+            
+        Returns:
+            None
+        """
+        pass
+        
+    async def _post_execute(self, result: Dict[str, Any]) -> Dict[str, Any]:
+        """Hook for post-execution processing.
+        
+        Args:
+            result: Results from final reasoning iteration
+            
+        Returns:
+            Processed results dictionary
+        """
+        return result
+        
+    # pylint: disable=unused-argument
+    async def _should_continue(self, result: Dict[str, Any]) -> bool:
+        """Hook for custom continuation logic.
+        
+        Args:
+            result: Results from last reasoning iteration containing:
+                - task_complete: Optional flag indicating task completion
+                - is_stuck: Optional flag indicating if reasoning is stuck
+                - Any other reasoning-specific results
+            
+        Returns:
+            True if execution should continue, False to stop
+            
+        Note:
+            Base implementation always returns True. Specialized agents can
+            override this to implement custom continuation logic based on
+            the reasoning results.
+        """
+        # Base implementation ignores result and always continues
+        # Specialized agents can override this to check result contents
+        return True
 
     async def initialize(self) -> None:
-        """Initialize agent and resources."""
+        """Initialize agent and resources.
+        
+        Initializes the LLM, reasoning system, and all registered resources.
+        Logs initialization status.
+        
+        Returns:
+            None
+        """
         await self.llm.initialize()
         await self.reasoning.initialize()
 
@@ -193,7 +214,14 @@ class BaseAgent(ABC):
         )
 
     async def cleanup(self) -> None:
-        """Clean up agent and resources."""
+        """Clean up agent and resources.
+        
+        Cleans up all resources, reasoning system, and LLM.
+        Logs cleanup status.
+        
+        Returns:
+            None
+        """
         for resource in self.resources.values():
             if callable(getattr(resource, "cleanup", None)):
                 await resource.cleanup()
@@ -222,14 +250,6 @@ class BaseAgent(ABC):
             
         Raises:
             ValueError: If no expert is found for the specified domain
-            
-        Example:
-            ```python
-            response = await agent.use_expert(
-                domain="mathematics",
-                request="Solve: 2x + 5 = 13"
-            )
-            ```
         """
         experts = {
             name: resource for name, resource in self.resources.items()
@@ -262,53 +282,27 @@ class BaseAgent(ABC):
         """Run a task with progress updates.
         
         Args:
-            task: Task configuration dictionary
-            
+            task: Task configuration dictionary containing:
+                - objective: Main task objective
+                - parameters: Task-specific parameters
+                - constraints: Optional execution constraints
+                
         Yields:
-            AgentProgress objects containing progress or result information
-            
-        Raises:
-            ReasoningError: If reasoning system fails
-            ConfigurationError: If agent is misconfigured
-            AgentError: If agent operations fail
-            ResourceError: If resource operations fail
-            DXAConnectionError: If connections fail
-            ValueError: If task parameters are invalid
+            AgentProgress objects containing:
+                - Progress updates during execution (type="progress")
+                - Final results or error information (type="result")
+                
+        Progress Reporting:
+            - 0%: Starting execution
+            - 10%: After pre-execution
+            - 10-90%: During main execution loop
+            - 100%: Final result or error
         """
-        try:
-            # Initial progress
-            yield AgentProgress(
-                type="progress",
-                message="Starting task",
-                percent=0
-            )
-            
-            # Run the task with intermediate updates
-            result = await self.run(task)
-            
-            # Final progress with result
-            yield AgentProgress(
-                type="result",
-                message="Task completed",
-                percent=100,
-                result=result
-            )
-            
-        except (
-            ReasoningError,
-            ConfigurationError,
-            AgentError,
-            ResourceError,
-            DXAConnectionError,
-            ValueError
-        ) as e:
-            # Error progress with specific error information
-            yield AgentProgress(
-                type="result",
-                message=f"Task failed: {str(e)}",
-                result={
-                    "success": False,
-                    "error": str(e),
-                    "error_type": e.__class__.__name__
-                }
-            )
+        async for progress in self.runtime.execute_with_progress(
+            task=task,
+            reasoning_step=self._reasoning_step,
+            pre_execute=self._pre_execute,
+            post_execute=self._post_execute,
+            should_continue=self._should_continue
+        ):
+            yield progress

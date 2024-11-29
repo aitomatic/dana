@@ -26,22 +26,12 @@ Example:
     # Run with user interaction
     result = await agent.run("Solve: 2x + 5 = 13")
     ```
-
-The agent supports different IO handlers (Console, WebSocket, etc.) through the
-dxa.core.io module, allowing flexibility in how user interaction is implemented.
 """
 
 from typing import Dict, Any, Optional
 from dxa.agent.base_agent import BaseAgent
-from dxa.core.io.console import ConsoleIO
 from dxa.core.reasoning.base_reasoning import BaseReasoning
-from dxa.common.errors import (
-    ReasoningError, 
-    ConfigurationError, 
-    AgentError,
-    ResourceError,
-    DXAConnectionError
-)
+from dxa.core.io.console import ConsoleIO
 
 class InteractiveAgent(BaseAgent):
     """An agent that enables real-time interaction with users during execution.
@@ -54,12 +44,16 @@ class InteractiveAgent(BaseAgent):
     - Make decisions at key decision points
     
     Attributes:
+        All attributes inherited from BaseAgent
         io: IO handler for user interaction (defaults to ConsoleIO)
-        iteration_count: Number of reasoning iterations performed
-        _is_running: Internal state tracking execution status
         
-    The agent supports different IO handlers (Console, WebSocket, etc.) through the
-    dxa.core.io module, allowing flexibility in how user interaction is implemented.
+    Args:
+        name: Agent identifier
+        llm_config: LLM configuration dictionary
+        reasoning: Optional reasoning system instance
+        description: Optional agent description
+        max_iterations: Optional maximum iterations
+        io_handler: Optional custom IO handler
     """
 
     def __init__(
@@ -74,100 +68,96 @@ class InteractiveAgent(BaseAgent):
         """Initialize interactive agent."""
         config = {
             "llm": llm_config,
-            "description": description,
-            "logging": llm_config.get("logging", {})
+            "description": description
         }
         
-        # Call parent constructor with reasoning
         super().__init__(
             name=name,
             config=config,
             reasoning=reasoning,
+            mode="interactive",
             max_iterations=max_iterations
         )
         
         # Initialize IO handler
         self.io = io_handler or ConsoleIO()
 
-    async def run(self, task: Dict[str, Any]) -> Dict[str, Any]:
-        """Run the interactive agent's main loop.
+    async def _pre_execute(self, context: Dict[str, Any]) -> None:
+        """Set up interactive session.
         
         Args:
-            task: Dictionary containing task configuration and parameters
+            context: Initial execution context
+        """
+        await self.io.output(
+            f"Starting interactive session for task: {context.get('objective', 'No objective specified')}"
+        )
+        
+        # Get initial user input if needed
+        if 'user_input' not in context:
+            user_input = await self.io.input("Initial input: ")
+            context['user_input'] = user_input
+
+    async def _post_execute(self, result: Dict[str, Any]) -> Dict[str, Any]:
+        """Process results and get final user feedback.
+        
+        Args:
+            result: Results from final reasoning iteration
             
         Returns:
-            Dict containing:
-                - success: Whether execution completed successfully
-                - iterations: Number of iterations performed
-                - results: Final reasoning results
-                - interaction_history: Record of user interactions
+            Processed results with user feedback
         """
-        context = task.copy()
-        interaction_history = []
+        await self.io.output(f"Final result: {result}")
+        feedback = await self.io.input("Any final comments? ")
         
-        try:
-            self.iteration_count = 0
+        result.update({
+            "agent_type": "interactive",
+            "execution_mode": self.mode,
+            "user_feedback": feedback
+        })
+        return result
+
+    async def _should_continue(self, result: Dict[str, Any]) -> bool:
+        """Check if user wants to continue execution.
+        
+        Args:
+            result: Results from last reasoning iteration
             
-            while self._is_running:
-                # Check iteration limit
-                if (self.max_iterations is not None and self.iteration_count >= self.max_iterations):
-                    await self.io.output("Reached maximum iterations")
-                    break
-                
-                # Run reasoning cycle
-                self.iteration_count += 1
-                await self.io.output(
-                    f"Starting iteration {self.iteration_count}/"
-                    f"{self.max_iterations or '∞'}"
-                )
-                
-                # Get reasoning result
-                result = await self.reasoning.reason(context, task)
-                
-                # Show result to user and get feedback
-                await self.io.output(f"Reasoning result: {result}")
-                should_continue = await self.io.input(
-                    "Continue to next iteration? (y/n): "
-                )
-                
-                if should_continue.lower() != 'y':
-                    await self.io.output("Stopping at user request")
-                    break
-                
-                # Update context with results
-                context.update(result)
-                interaction_history.append({
-                    "iteration": self.iteration_count,
-                    "result": result,
-                    "user_continued": should_continue.lower() == 'y'
-                })
-                
-                # Check if task is complete
-                if result.get("task_complete"):
-                    await self.io.output("Task completed successfully")
-                    break
-                
-                # Check if we're stuck
-                if result.get("is_stuck"):
-                    await self.io.output(
-                        f"Agent is stuck: {result.get('stuck_reason')}"
-                    )
-                    break
+        Returns:
+            True if user wants to continue, False otherwise
+        """
+        # Show intermediate results
+        await self.io.output(f"Iteration result: {result}")
+        
+        # Check completion conditions
+        if result.get("task_complete"):
+            await self.io.output("Task appears to be complete.")
+            return False
             
-            return {
-                "success": True,
-                "iterations": self.iteration_count,
-                "results": result,
-                "interaction_history": interaction_history
-            }
+        if result.get("is_stuck"):
+            await self.io.output(f"Agent is stuck: {result.get('stuck_reason')}")
+            return False
+        
+        # Get user decision
+        response = await self.io.input("Continue to next iteration? (y/n): ")
+        return response.lower() == 'y'
+
+    async def _reasoning_step(self, context: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute one reasoning iteration with user interaction.
+        
+        Args:
+            context: Current execution context
             
-        except (ReasoningError, ConfigurationError, AgentError, 
-                ResourceError, DXAConnectionError) as e:
-            await self.handle_error(e)
-            return {
-                "success": False,
-                "iterations": self.iteration_count,
-                "error": str(e),
-                "error_type": e.__class__.__name__,
-                "interaction_history": interaction_history
-            }
+        Returns:
+            Dict containing reasoning results and user input
+        """
+        # Show current context
+        await self.io.output(f"Current context: {context}")
+        
+        # Run reasoning
+        result = await self.reasoning.reason(context)
+        
+        # Get user feedback
+        feedback = await self.io.input("Feedback for this step: ")
+        result["user_feedback"] = feedback
+        
+        return result

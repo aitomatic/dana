@@ -51,6 +51,23 @@ class WorkAutomationAgent(BaseAgent):
     - Retry mechanisms for failed steps
     - State tracking throughout workflow
     - OODA-loop based reasoning for structured processes
+    
+    Attributes:
+        All attributes inherited from BaseAgent
+        workflow: Workflow definition dictionary
+        max_retries: Maximum retry attempts per step
+        retry_delay: Delay between retries in seconds
+        current_step: Index of current workflow step
+        
+    Args:
+        name: Agent identifier
+        llm_config: LLM configuration dictionary
+        workflow: Workflow definition dictionary
+        reasoning: Optional reasoning system (defaults to OODAReasoning)
+        description: Optional agent description
+        max_retries: Maximum retry attempts (default: 3)
+        retry_delay: Delay between retries in seconds (default: 1.0)
+        max_iterations: Optional maximum iterations
     """
     
     def __init__(
@@ -65,89 +82,107 @@ class WorkAutomationAgent(BaseAgent):
         max_iterations: Optional[int] = None
     ):
         """Initialize work automation agent."""
-        self.reasoning = reasoning or OODAReasoning()
-        self._is_running = True
-        
         config = {
             "llm": llm_config,
-            "description": description,
-            "logging": llm_config.get("logging", {})
+            "description": description
         }
         
         super().__init__(
             name=name,
             config=config,
+            reasoning=reasoning or OODAReasoning(),
+            mode="automation",
             max_iterations=max_iterations
         )
         
         self.workflow = workflow
         self.max_retries = max_retries
         self.retry_delay = retry_delay
+        self.current_step = 0
 
-    async def run(self, task: Dict[str, Any]) -> Dict[str, Any]:
-        """Run the automation workflow.
+    async def _pre_execute(self, context: Dict[str, Any]) -> None:
+        """Validate workflow and prepare for execution.
         
         Args:
-            task: Dictionary containing task configuration and parameters
+            context: Initial execution context
+            
+        Raises:
+            ValueError: If workflow definition is invalid
+        """
+        if not self.workflow.get("steps"):
+            raise ValueError("Workflow must contain steps")
+            
+        # Add workflow info to context
+        context.update({
+            "workflow_name": self.workflow["name"],
+            "total_steps": len(self.workflow["steps"]),
+            "current_step": 0
+        })
+
+    async def _post_execute(self, result: Dict[str, Any]) -> Dict[str, Any]:
+        """Process workflow results.
+        
+        Args:
+            result: Results from final reasoning iteration
             
         Returns:
-            Dict containing:
-                - success: Whether workflow completed successfully
-                - results: Results from workflow execution
-                - workflow_state: Final state of workflow execution
+            Processed results with workflow metadata
         """
-        context = task.copy()
-        workflow_state = {}
+        result.update({
+            "agent_type": "work_automation",
+            "execution_mode": self.mode,
+            "workflow_name": self.workflow["name"],
+            "completed_steps": self.current_step
+        })
+        return result
+
+    async def _should_continue(self, result: Dict[str, Any]) -> bool:
+        """Check if workflow should continue.
         
-        try:
-            self.iteration_count = 0
+        Args:
+            result: Results from last reasoning iteration
             
-            while self._is_running:
-                # Check iteration limit
-                if (self.max_iterations is not None and self.iteration_count >= self.max_iterations):
-                    self.logger.log_completion(
-                        prompt="Iteration check",
-                        response="Reached maximum iterations",
-                        tokens=0
-                    )
-                    break
-                    
-                # Run workflow step
-                self.iteration_count += 1
-                result = await self.reasoning.reason(context, task)
-                
-                # Update workflow state
-                workflow_state[f"step_{self.iteration_count}"] = result
-                context.update(result)
-                
-                if result.get("workflow_complete"):
-                    self.logger.log_completion(
-                        prompt="Workflow status",
-                        response="Workflow completed successfully",
-                        tokens=0
-                    )
-                    break
-                    
-                if result.get("is_stuck"):
-                    self.logger.log_error(
-                        error_type="workflow_stuck",
-                        message=f"Workflow is stuck: {result.get('stuck_reason')}"
-                    )
-                    break
-                    
-            return {
-                "success": True,
-                "results": result,
-                "workflow_state": workflow_state
-            }
+        Returns:
+            True if there are more steps to process, False otherwise
+        """
+        # Check completion
+        if result.get("task_complete") or result.get("is_stuck"):
+            return False
             
-        except (ValueError, TypeError) as e:
-            self.logger.log_error(
-                error_type="automation_error",
-                message=f"Automation workflow error: {str(e)}"
-            )
-            return {
-                "success": False,
-                "error": str(e),
-                "workflow_state": workflow_state
-            }
+        # Check if current step passed validation
+        current_step = self.workflow["steps"][self.current_step]
+        if current_step.get("validation"):
+            if not current_step["validation"](result):
+                # Retry logic could be implemented here
+                return False
+                
+        # Move to next step
+        self.current_step += 1
+        return self.current_step < len(self.workflow["steps"])
+
+    async def _reasoning_step(self, context: Dict[str, Any]) -> Dict[str, Any]:
+        """Execute one workflow step.
+        
+        Args:
+            context: Current execution context
+            
+        Returns:
+            Dict containing step results and validation status
+        """
+        # Get current step definition
+        step = self.workflow["steps"][self.current_step]
+        
+        # Add step info to context
+        context.update({
+            "current_step": self.current_step,
+            "step_name": step["name"]
+        })
+        
+        # Run reasoning for this step
+        result = await self.reasoning.reason(context)
+        
+        # Add step completion info
+        result["step_complete"] = True
+        result["step_name"] = step["name"]
+        
+        return result
