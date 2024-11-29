@@ -6,9 +6,9 @@ from dxa.core.reasoning.base_reasoning import (
     StepResult,
     ReasoningConfig
 )
-from dxa.core.reasoning.cot import ChainOfThoughtReasoning
-from dxa.core.reasoning.ooda import OODAReasoning
-from dxa.core.reasoning.dana import DANAReasoning
+from dxa.core.reasoning.cot_reasoning import ChainOfThoughtReasoning
+from dxa.core.reasoning.ooda_reasoning import OODAReasoning
+from dxa.core.reasoning.dana_reasoning import DANAReasoning
 
 __all__ = [
     'BaseReasoning',

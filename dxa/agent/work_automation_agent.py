@@ -39,7 +39,7 @@ Example:
 
 from typing import Dict, Any, Optional
 from dxa.agent.base_agent import BaseAgent
-from dxa.core.reasoning.ooda import OODAReasoning
+from dxa.core.reasoning.ooda_reasoning import OODAReasoning
 from dxa.core.reasoning import BaseReasoning
 
 class WorkAutomationAgent(BaseAgent):

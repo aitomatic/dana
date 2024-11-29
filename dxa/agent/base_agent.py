@@ -42,7 +42,7 @@ Classes:
 from abc import ABC
 from typing import Dict, Any, AsyncIterator, Optional
 from dxa.core.reasoning.base_reasoning import BaseReasoning
-from dxa.core.reasoning.cot import ChainOfThoughtReasoning
+from dxa.core.reasoning.cot_reasoning import ChainOfThoughtReasoning
 from dxa.core.resource.expert_resource import ExpertResource
 from dxa.agent.agent_llm import AgentLLM
 from dxa.agent.agent_progress import AgentProgress

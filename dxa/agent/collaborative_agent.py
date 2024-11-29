@@ -31,7 +31,7 @@ Example:
 from typing import Dict, Any, Optional
 from dxa.agent.base_agent import BaseAgent
 from dxa.core.reasoning.base_reasoning import BaseReasoning
-from dxa.core.reasoning.cot import ChainOfThoughtReasoning
+from dxa.core.reasoning.cot_reasoning import ChainOfThoughtReasoning
 from dxa.core.resource.agent_resource import AgentResource
 
 class CollaborativeAgent(BaseAgent):
