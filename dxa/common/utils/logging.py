@@ -107,11 +107,14 @@ class DXALogger:
         if json_format:
             formatter = logging.Formatter(
                 '{"timestamp": "%(asctime)s", "logger": "%(name)s", '
-                '"level": "%(levelname)s", "message": "%(message)s"}'
+                '"level": "%(levelname)s", "message": "%(message)s", '
+                '"llm_name": "%(llm_name)s", "model": "%(model)s", '
+                '"interaction_type": "%(interaction_type)s"}'
             )
         else:
             formatter = logging.Formatter(
-                '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+                '%(asctime)s - %(name)s - %(levelname)s - %(message)s - '
+                'LLM: %(llm_name)s - Model: %(model)s - Type: %(interaction_type)s'
             )
         
         # Set up file logging if directory specified
@@ -126,6 +129,18 @@ class DXALogger:
             )
             main_handler.setFormatter(formatter)
             self.logger.addHandler(main_handler)
+        
+            # LLM-specific log file
+            llm_handler = RotatingFileHandler(
+                os.path.join(log_dir, 'llm_interactions.log'),
+                maxBytes=kwargs.get('max_bytes', 10_000_000),
+                backupCount=kwargs.get('backup_count', 5)
+            )
+            llm_handler.setFormatter(formatter)
+            
+            # Only capture LLM logs
+            llm_handler.addFilter(lambda record: record.name.startswith('dxa.llm'))
+            self.logger.addHandler(llm_handler)
         
         # Set up console logging if requested
         console_output = kwargs.get('console_output', True)

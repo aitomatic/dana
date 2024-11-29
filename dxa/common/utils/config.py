@@ -1,4 +1,45 @@
-"""Configuration utilities for DXA."""
+"""Configuration management for DXA.
+
+This module handles loading and validating agent configurations from multiple sources:
+- Default values
+- YAML configuration files 
+- Environment variables
+- Runtime overrides
+
+Basic Usage:
+    # Load with defaults and overrides
+    config = load_agent_config(
+        agent_type="autonomous",
+        api_key="your-key-here",
+        model="gpt-4"
+    )
+
+    # Load from YAML file
+    config = load_agent_config(
+        agent_type="collaborative",
+        config_path="agent_config.yaml"
+    )
+
+    # Load with file and overrides
+    config = load_agent_config(
+        agent_type="collaborative", 
+        config_path="base_config.yaml",
+        model="gpt-4",
+        max_steps=5
+    )
+
+Configuration Sources (in order of precedence):
+1. Runtime overrides (passed as kwargs)
+2. YAML configuration file
+3. Environment variables (e.g., OPENAI_API_KEY)
+4. Default values
+
+Required Fields:
+- api_key: OpenAI API key
+- model: LLM model to use (default: "gpt-4")
+- resources: List of available resources
+- reasoning: Dictionary of reasoning settings
+"""
 
 import logging
 import os
@@ -128,6 +169,16 @@ def load_agent_config(
         
     # Final validation of complete config
     _validate_config(config)
+        
+    # Add logging config
+    config["logging"] = {
+        "level": os.getenv("LOG_LEVEL", "INFO"),
+        "dir": os.getenv("LOG_DIR", "logs"),
+        "format": os.getenv("LOG_FORMAT", "text"),
+        "max_bytes": int(os.getenv("LOG_MAX_BYTES", "10000000")),
+        "backup_count": int(os.getenv("LOG_BACKUP_COUNT", "5")),
+        "console_output": os.getenv("LOG_CONSOLE_OUTPUT", "true").lower() == "true"
+    }
         
     logger.debug("Successfully loaded config for agent type: %s", agent_type)
     return config 

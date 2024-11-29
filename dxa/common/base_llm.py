@@ -20,12 +20,10 @@ Example:
     ```
 """
 
-from typing import Dict, Any, Optional, List
-import asyncio
+from typing import Dict, Optional, List
 import logging
-from openai import AsyncOpenAI
+from openai import APIError, APIConnectionError, RateLimitError, APITimeoutError, AsyncOpenAI
 from openai.types.chat import ChatCompletion
-import openai
 
 from .exceptions import LLMError
 
@@ -53,7 +51,7 @@ class BaseLLM:
     def __init__(
         self,
         name: str,
-        config: Dict[str, Any],
+        config: Dict[str, str],
         system_prompt: Optional[str] = None,
         max_retries: int = 3,
         retry_delay: float = 1.0
@@ -68,14 +66,14 @@ class BaseLLM:
             retry_delay: Delay between retries in seconds
         """
         self.name = name
-        self.api_key = config.pop('api_key')
+        self.api_key = config.pop('api_key', '')
         self.model = config.pop('model', 'gpt-4')
         self.config = config
         self.system_prompt = system_prompt
         self.max_retries = max_retries
         self.retry_delay = retry_delay
         self._client: Optional[AsyncOpenAI] = None
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = logging.getLogger(f"dxa.llm.{name}")
 
     async def initialize(self) -> None:
         """Initialize the OpenAI client."""
@@ -92,47 +90,51 @@ class BaseLLM:
         messages: List[Dict[str, str]],
         **kwargs
     ) -> ChatCompletion:
-        """Send a raw query to the LLM.
-        
-        Provides direct access to the OpenAI chat completion API without any
-        additional processing or prompt management.
-        
-        Args:
-            messages: List of message dictionaries with 'role' and 'content'
-            **kwargs: Additional arguments to pass to the chat completion
-            
-        Returns:
-            Raw ChatCompletion response from the API
-            
-        Example:
-            ```python
-            response = await llm.query([
-                {"role": "system", "content": "You are a helpful assistant"},
-                {"role": "user", "content": "Hello!"}
-            ])
-            print(response.choices[0].message.content)
-            ```
-        """
+        """Send a raw query to the LLM and log the interaction."""
         if not self._client:
             await self.initialize()
 
-        for attempt in range(self.max_retries):
-            try:
-                return await self._client.chat.completions.create(
-                    model=self.model,
-                    messages=messages,
-                    **kwargs
-                )
-            except (openai.APIError, openai.APIConnectionError, openai.RateLimitError, openai.APITimeoutError) as e:
-                self.logger.warning(
-                    "LLM query attempt %d/%d failed: %s",
-                    attempt + 1,
-                    self.max_retries,
-                    str(e)
-                )
-                if attempt + 1 == self.max_retries:
-                    raise LLMError(f"LLM query failed after {self.max_retries} attempts: {str(e)}") from e
-                await asyncio.sleep(self.retry_delay)
+        # Log the request
+        self.logger.info("LLM Request", extra={
+            "llm_name": self.name,
+            "model": self.model,
+            "messages": messages,
+            "parameters": kwargs,
+            "interaction_type": "request"
+        })
+
+        try:
+            response = await self._client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                **kwargs
+            )
+
+            # Safely get token usage
+            token_usage = None
+            if response.usage:
+                token_usage = response.usage.total_tokens
+
+            # Log the response
+            self.logger.info("LLM Response", extra={
+                "llm_name": self.name,
+                "model": self.model,
+                "response": response.model_dump() if hasattr(response, 'model_dump') else str(response),
+                "interaction_type": "response",
+                "tokens": token_usage
+            })
+
+            return response
+
+        except (APIError, APIConnectionError, RateLimitError, APITimeoutError) as e:
+            # Log the error
+            self.logger.error("LLM Error", extra={
+                "llm_name": self.name,
+                "model": self.model,
+                "error": str(e),
+                "interaction_type": "error"
+            })
+            raise LLMError(f"LLM query failed: {str(e)}") from e
 
     async def cleanup(self) -> None:
         """Clean up any resources used by the LLM."""
