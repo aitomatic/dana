@@ -31,39 +31,51 @@ Example:
     })
 """
 
-from typing import Dict, Any, Optional
-from dxa.core.resource.base_resource import BaseResource, ResourceError
+from dataclasses import dataclass
+from typing import Dict, Any, Optional, TypeVar, Generic
 from openai import AsyncOpenAI
+
+from dxa.core.resource.base_resource import (
+    BaseResource, 
+    ResourceConfig, 
+    ResourceResponse, 
+    ResourceError
+)
 
 class LLMError(ResourceError):
     """Error in LLM interaction."""
     pass
 
-class LLMResource(BaseResource):
-    """A general-knowledge LLM resource."""
+@dataclass
+class LLMConfig(ResourceConfig):
+    """LLM-specific configuration."""
+    api_key: str
+    model: str
+    system_prompt: Optional[str] = None
+    max_retries: int = 3
+    retry_delay: float = 1.0
+
+@dataclass
+class LLMResponse(ResourceResponse):
+    """LLM-specific response."""
+    content: str
+    usage: Optional[Dict[str, int]] = None
+    model: Optional[str] = None
+
+T = TypeVar('T', bound=LLMConfig)
+R = TypeVar('R', bound=LLMResponse)
+
+class LLMResource(BaseResource[T, R], Generic[T, R]):
+    """LLM resource with typed config and response."""
     
     def __init__(
         self,
         name: str,
-        config: Dict[str, Any],
-        system_prompt: Optional[str] = None
+        config: T,
+        description: Optional[str] = None
     ):
-        """Initialize LLM resource.
-        
-        Args:
-            name: Name of this LLM instance
-            config: Configuration including:
-                - api_key: OpenAI API key
-                - model: Model to use (default: gpt-4)
-                - Other OpenAI parameters
-            system_prompt: System prompt defining LLM's role
-        """
-        super().__init__(
-            name=name,
-            description="General-knowledge LLM resource"
-        )
-        self.config = config
-        self.system_prompt = system_prompt
+        """Initialize LLM resource."""
+        super().__init__(name, description, config)
         self._client = None
 
     async def initialize(self) -> None:
@@ -80,8 +92,9 @@ class LLMResource(BaseResource):
     async def cleanup(self) -> None:
         """Clean up any resources used by the LLM resource."""
         await super().cleanup()
-        if hasattr(self, 'llm'):
-            await self.llm.cleanup()
+        if self._client:
+            await self._client.close()
+            self._client = None
 
     def can_handle(self, request: Dict[str, Any]) -> bool:
         """Check if this LLM can handle the request.
@@ -116,42 +129,27 @@ class LLMResource(BaseResource):
         # any well-formed text prompt within its limits
         return True
 
-    async def query(
-        self,
-        request: Dict[str, Any],
-        **kwargs
-    ) -> Dict[str, Any]:
-        """Query the LLM."""
-        if not self._is_available:
-            raise LLMError("LLM not initialized")
-
-        if not self.can_handle(request):
-            raise LLMError("Request cannot be handled by this LLM")
-
-        messages = []
-        if self.system_prompt:
-            messages.append({"role": "system", "content": self.system_prompt})
-        messages.append({"role": "user", "content": request['prompt']})
+    async def query(self, request: Dict[str, Any]) -> R:
+        """Query the LLM with typed response."""
+        if not self._client:
+            await self.initialize()
 
         try:
             response = await self._client.chat.completions.create(
-                model=self.config.get('model', 'gpt-4'),
-                messages=messages,
-                temperature=request.get('temperature', 0.7),
-                max_tokens=request.get('max_tokens'),
-                **kwargs
+                model=self.config.model,
+                messages=[{"role": "user", "content": request["prompt"]}],
+                **request.get("parameters", {})
             )
             
-            return {
-                "success": True,
-                "content": response.choices[0].message.content,
-                "usage": {
+            return R(
+                content=response.choices[0].message.content,
+                usage={
                     'prompt_tokens': response.usage.prompt_tokens,
                     'completion_tokens': response.usage.completion_tokens,
                     'total_tokens': response.usage.total_tokens
                 } if hasattr(response, 'usage') else None,
-                "model": response.model
-            }
+                model=response.model
+            )
             
         except Exception as e:
             raise LLMError(f"LLM query failed: {str(e)}") from e

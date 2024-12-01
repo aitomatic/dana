@@ -1,6 +1,8 @@
 """Human resource implementation."""
 
+import asyncio
 from typing import Dict, Any
+
 from dxa.core.resource.base_resource import BaseResource
 from dxa.common.errors import ResourceError
 
@@ -17,6 +19,25 @@ class HumanResource(BaseResource):
         super().__init__(name)
         self.role = role
 
+    async def initialize(self) -> None:
+        """Initialize the human resource."""
+        self._is_available = True
+
+    async def cleanup(self) -> None:
+        """Clean up the human resource."""
+        self._is_available = False
+
+    def can_handle(self, request: Dict[str, Any]) -> bool:
+        """Check if request can be handled by human.
+        
+        Args:
+            request: Query parameters
+            
+        Returns:
+            True if request can be handled, False otherwise
+        """
+        return self._is_available and isinstance(request, dict)
+
     async def query(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Query the human resource.
         
@@ -29,6 +50,9 @@ class HumanResource(BaseResource):
         Raises:
             ResourceError: If interaction fails
         """
+        if not self.can_handle(request):
+            raise ResourceError("Resource unavailable or invalid request format")
+
         try:
             # Implementation of human interaction
             response = await self._get_human_input(request)
@@ -51,7 +75,9 @@ class HumanResource(BaseResource):
         try:
             prompt = request.get("prompt", "Please provide input")
             print(f"\n[{self.role}] {prompt}")
-            response = input("> ")
+            # Use asyncio.get_event_loop().run_in_executor() for input
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(None, input, "> ")
             return response
         except Exception as e:
             raise ResourceError("Failed to get human input") from e

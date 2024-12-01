@@ -1,5 +1,7 @@
 """Factory functions for creating DXA agents.
 
+TODO: Do we need this factory?
+
 This module provides factory functions for creating and managing different types of DXA agents.
 It handles resource initialization, cleanup, and proper error handling for all agent types.
 

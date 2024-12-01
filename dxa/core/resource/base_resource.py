@@ -22,7 +22,7 @@ Example:
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Protocol, TypeVar, Generic, Optional
 import logging
 
 class ResourceError(Exception):
@@ -37,19 +37,30 @@ class ResourceAccessError(ResourceError):
     """Error raised when resource access fails."""
     pass
 
-class BaseResource(ABC):
-    """Base class for managing resources with clear lifecycle"""
+T = TypeVar('T')  # Resource-specific configuration type
+R = TypeVar('R')  # Resource-specific response type
+
+class ResourceConfig(Protocol):
+    """Protocol for resource configuration."""
+    pass
+
+class ResourceResponse(Protocol):
+    """Protocol for resource responses."""
+    pass
+
+class BaseResource(ABC, Generic[T, R]):
+    """Abstract base resource with generic config and response types."""
     
     def __init__(
         self,
         name: str,
         description: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None
+        config: Optional[T] = None
     ):
         """Initialize resource."""
         self.name = name
         self.description = description or "No description provided"
-        self.config = config or {}
+        self.config = config if config is not None else {}
         self._is_available = True
         self.logger = logging.getLogger(f"{self.__class__.__name__}:{name}")
 
@@ -60,12 +71,22 @@ class BaseResource(ABC):
 
     @abstractmethod
     async def initialize(self) -> None:
-        """Initialize the resource"""
+        """Initialize the resource."""
         pass
-        
+
+    @abstractmethod
+    async def query(self, request: Dict[str, Any]) -> R:
+        """Query the resource with typed response."""
+        pass
+
     @abstractmethod
     async def cleanup(self) -> None:
-        """Cleanup the resource"""
+        """Clean up resource."""
+        pass
+
+    @abstractmethod
+    def can_handle(self, request: Dict[str, Any]) -> bool:
+        """Check if request can be handled."""
         pass
         
     async def __aenter__(self) -> 'BaseResource':

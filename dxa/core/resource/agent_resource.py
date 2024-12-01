@@ -1,6 +1,8 @@
 """Agent resource implementation."""
 
+import asyncio
 from typing import Dict, Any
+
 from dxa.core.resource.base_resource import BaseResource
 from dxa.common.errors import ResourceError, ConfigurationError, AgentError
 
@@ -63,17 +65,20 @@ class AgentResource(BaseResource):
                 raise ResourceError(f"Failed to initialize agent {agent_id}") from e
 
     async def cleanup(self) -> None:
-        """Clean up all agents in registry.
-        
-        Raises:
-            ResourceError: If cleanup fails for any agent
-        """
-        errors = []
+        """Clean up all agents in registry concurrently."""
+        cleanup_tasks = []
         for agent_id, agent in self.agent_registry.items():
-            try:
-                await agent.cleanup()
-            except (AgentError, ValueError) as e:
-                errors.append(f"Failed to cleanup agent {agent_id}: {str(e)}")
+            task = asyncio.create_task(self._cleanup_agent(agent_id, agent))
+            cleanup_tasks.append(task)
+        
+        results = await asyncio.gather(*cleanup_tasks, return_exceptions=True)
+        errors = [str(e) for e in results if isinstance(e, Exception)]
         
         if errors:
-            raise ResourceError("\n".join(errors)) 
+            raise ResourceError("\n".join(errors))
+
+    async def _cleanup_agent(self, agent_id: str, agent: Any) -> None:
+        try:
+            await agent.cleanup()
+        except (AgentError, ValueError) as e:
+            raise ResourceError(f"Failed to cleanup agent {agent_id}: {str(e)}") from e

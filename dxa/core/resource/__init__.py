@@ -13,5 +13,3 @@ __all__ = [
     'LLMResource',
     'HumanResource'
 ]
-
-# Note: HumanResource is temporarily removed until human.py is properly implemented 

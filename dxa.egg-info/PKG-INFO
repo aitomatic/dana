@@ -1,0 +1,16 @@
+Metadata-Version: 2.1
+Name: dxa
+Version: 0.1.0
+Requires-Python: >=3.8
+Requires-Dist: openai>=1.0.0
+Requires-Dist: aiohttp>=3.8.0
+Provides-Extra: viz
+Requires-Dist: pandas>=2.0.0; extra == "viz"
+Requires-Dist: matplotlib>=3.7.0; extra == "viz"
+Requires-Dist: seaborn>=0.12.0; extra == "viz"
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0.0; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.21.0; extra == "dev"
+Requires-Dist: black>=23.0.0; extra == "dev"
+Requires-Dist: mypy>=1.0.0; extra == "dev"
+Requires-Dist: setuptools>=65.0.0; extra == "dev"
