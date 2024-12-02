@@ -2,6 +2,9 @@
 
 import asyncio
 import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from dxa.agent.interactive_agent import InteractiveAgent
 from dxa.core.reasoning import ChainOfThoughtReasoning
 
