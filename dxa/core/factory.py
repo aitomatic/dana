@@ -41,7 +41,7 @@ from typing import Dict, Any, AsyncIterator
 import logging
 from dxa.agent.interactive_agent import InteractiveAgent
 from dxa.agent.websocket_agent import WebSocketAgent
-from dxa.agent.work_automation_agent import AutomationAgent
+from dxa.agent.work_automation_agent import WorkAutomationAgent
 from dxa.core.reasoning.cot_reasoning import ChainOfThoughtReasoning
 from dxa.experts.math import create_math_expert
 from dxa.agent.base_agent import BaseAgent
@@ -126,7 +126,7 @@ async def create_agent(agent_type: str, config: Dict[str, Any]) -> AsyncIterator
         elif agent_type == "automation":
             if "workflow" not in config:
                 raise ConfigurationError("workflow is required for Automation agent")
-            agent = AutomationAgent(
+            agent = WorkAutomationAgent(
                 name=agent_config.name,
                 llm_config=llm_config.__dict__,
                 workflow=config["workflow"]

@@ -2,7 +2,13 @@
 
 import asyncio
 import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from dxa.agent.work_automation_agent import WorkAutomationAgent
+
+from dotenv import load_dotenv
+load_dotenv("../.env")
 
 # Define the workflow steps
 SCRAPING_WORKFLOW = {
