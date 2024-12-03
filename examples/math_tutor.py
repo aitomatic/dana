@@ -8,6 +8,9 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from dxa.agent.interactive_agent import InteractiveAgent
 from dxa.core.reasoning import ChainOfThoughtReasoning
 
+from dotenv import load_dotenv
+load_dotenv("../.env")
+
 def create_math_tutor(api_key: str = None) -> InteractiveAgent:
     """Create a math tutor agent with sensible defaults."""
     if not api_key:

@@ -13,6 +13,9 @@ from dxa.common.errors import (
     ReasoningError
 )
 
+from dotenv import load_dotenv
+load_dotenv("../.env")
+
 async def main():
     """Run WebSocket-based solver example."""
     api_key = os.getenv('OPENAI_API_KEY')
