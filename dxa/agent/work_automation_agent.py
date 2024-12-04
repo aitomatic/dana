@@ -83,9 +83,13 @@ class WorkAutomationAgent(BaseAgent):
     ):
         """Initialize work automation agent."""
         config = {
-            "llm": llm_config,
+            **llm_config,
             "description": description
         }
+
+        self.llm_system_prompt = ""
+        if "system_prompt" in llm_config:
+            self.llm_system_prompt = llm_config["system_prompt"]
         
         super().__init__(
             name=name,
@@ -99,6 +103,22 @@ class WorkAutomationAgent(BaseAgent):
         self.max_retries = max_retries
         self.retry_delay = retry_delay
         self.current_step = 0
+
+    def get_agent_system_prompt(self) -> str:
+        """Get the agent-specific system prompt.
+        
+        This defines the agent's core behavior and capabilities.
+        Subclasses must implement this to define their specific behavior.
+        """
+        return self.llm_system_prompt 
+
+    def get_agent_user_prompt(self) -> str:
+        """Get the agent-specific user prompt.
+        
+        This defines how the agent processes user inputs.
+        Subclasses must implement this to define their specific interaction style.
+        """
+        ""
 
     async def _pre_execute(self, context: Dict[str, Any]) -> None:
         """Validate workflow and prepare for execution.
@@ -179,10 +199,10 @@ class WorkAutomationAgent(BaseAgent):
         })
         
         # Run reasoning for this step
-        result = await self.reasoning.reason(context)
+        result = await self.reasoning.reason(context, "")
         
         # Add step completion info
-        result["step_complete"] = True
-        result["step_name"] = step["name"]
+        result.step_completed = True
+        result.step_name = step["name"]
         
         return result
