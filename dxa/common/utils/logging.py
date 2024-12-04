@@ -174,7 +174,7 @@ class DXALogger:
             self.llm_history.append(sanitized_data)
             if len(self.llm_history) > self.max_history:
                 self.llm_history = self.llm_history[-self.max_history:]
-            self.logger.info("LLM Interaction", extra={"interaction_data": sanitized_data})
+            self.logger.info("LLM Interaction", extra=sanitized_data)
             
             # Update metrics
             self.metrics['total_tokens'] += sanitized_data.get('token_usage', 0)
@@ -238,9 +238,13 @@ class DXALogger:
             raise ValueError("No log directory configured")
         return LLMInteractionVisualizer(self.log_dir)
 
-    def log_completion(self, prompt: str, response: str, tokens: int, success: bool = True):
+    def log_completion(self, prompt: str, response: str, tokens: int, 
+                       llm_name: str, llm_model,
+                       success: bool = True):
         """Simplified logging for completion interactions"""
         self.log_llm_interaction({
+            "llm_name": llm_name,
+            "model": llm_model,
             "interaction_type": "completion",
             "content": prompt,
             "response": {
