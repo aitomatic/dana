@@ -75,8 +75,13 @@ async def main():
         })
         
         if result["success"]:
-            print("Scraping completed successfully")
-            print(f"Data saved: {result['workflow_state']['step_results'][-1]}")
+            completed_steps = result['results']['completed_steps']
+            total_steps = len(SCRAPING_WORKFLOW['steps'])
+            if completed_steps >= total_steps:
+                print("Scraping completed successfully")
+                print(f"Data saved: {result['workflow_state']['step_results'][-1]}")
+            else:
+                print(f"Scraping completed {completed_steps} steps per total {total_steps} steps.")
         else:
             print(f"Scraping failed: {result.get('error')}")
     finally:
