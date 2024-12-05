@@ -18,27 +18,27 @@ SCRAPING_WORKFLOW = {
         {
             "name": "initialize",
             "description": "Set up browser and check site accessibility",
-            "validation": lambda r, c: r.get("browser_ready", False)
+            "validation": lambda r: r.get("browser_ready", False)
         },
         {
             "name": "navigate",
             "description": "Navigate to target pages",
-            "validation": lambda r, c: r.get("page_loaded", False)
+            "validation": lambda r: r.get("page_loaded", False)
         },
         {
             "name": "extract",
             "description": "Extract required data",
-            "validation": lambda r, c: len(r.get("extracted_data", [])) > 0
+            "validation": lambda r: len(r.get("extracted_data", [])) > 0
         },
         {
             "name": "process",
             "description": "Process and format extracted data",
-            "validation": lambda r, c: r.get("processed_data") is not None
+            "validation": lambda r: r.get("processed_data") is not None
         },
         {
             "name": "save",
             "description": "Save processed data",
-            "validation": lambda r, c: r.get("saved", False)
+            "validation": lambda r: r.get("saved", False)
         }
     ]
 }
