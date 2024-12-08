@@ -47,6 +47,7 @@ The runtime provides two main execution methods:
 2. execute: Returns only the final result (wrapper around execute_with_progress)
 """
 
+from dataclasses import asdict
 from typing import Dict, Any, Optional, AsyncIterator, Callable, Awaitable
 from dxa.agent.agent_state import StateManager
 from dxa.agent.agent_progress import AgentProgress
@@ -180,6 +181,7 @@ class AgentRuntime:
                 # Run iteration
                 self.iteration_count += 1
                 result = await reasoning_step(context)
+                result = asdict(result)
                 
                 # Calculate progress percentage
                 if self.max_iterations:
