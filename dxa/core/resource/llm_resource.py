@@ -31,8 +31,8 @@ Example:
     })
 """
 
+from typing import Dict, Any, Optional
 from dataclasses import dataclass
-from typing import Dict, Any, Optional, TypeVar, Generic
 from openai import AsyncOpenAI
 
 from dxa.core.resource.base_resource import (
@@ -58,20 +58,19 @@ class LLMConfig(ResourceConfig):
 @dataclass
 class LLMResponse(ResourceResponse):
     """LLM-specific response."""
+    success: bool = True
+    error: Optional[str] = None
     content: str
     usage: Optional[Dict[str, int]] = None
     model: Optional[str] = None
 
-T = TypeVar('T', bound=LLMConfig)
-R = TypeVar('R', bound=LLMResponse)
-
-class LLMResource(BaseResource[T, R], Generic[T, R]):
+class LLMResource(BaseResource):
     """LLM resource with typed config and response."""
     
     def __init__(
         self,
         name: str,
-        config: T,
+        config: LLMConfig,
         description: Optional[str] = None
     ):
         """Initialize LLM resource."""
@@ -81,7 +80,7 @@ class LLMResource(BaseResource[T, R], Generic[T, R]):
     async def initialize(self) -> None:
         """Initialize the LLM client."""
         try:
-            self._client = AsyncOpenAI(api_key=self.config['api_key'])
+            self._client = AsyncOpenAI(api_key=self.config.api_key)
             self._is_available = True
             self.logger.info("LLM resource initialized successfully")
         except Exception as e:
@@ -129,7 +128,7 @@ class LLMResource(BaseResource[T, R], Generic[T, R]):
         # any well-formed text prompt within its limits
         return True
 
-    async def query(self, request: Dict[str, Any]) -> R:
+    async def query(self, request: Dict[str, Any]) -> LLMResponse:
         """Query the LLM with typed response."""
         if not self._client:
             await self.initialize()
@@ -141,7 +140,8 @@ class LLMResource(BaseResource[T, R], Generic[T, R]):
                 **request.get("parameters", {})
             )
             
-            return R(
+            # pylint: disable=unexpected-keyword-arg
+            return LLMResponse(
                 content=response.choices[0].message.content,
                 usage={
                     'prompt_tokens': response.usage.prompt_tokens,

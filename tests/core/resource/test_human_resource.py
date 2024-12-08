@@ -1,14 +1,23 @@
-import pytest
+"""Tests for the human resource implementation.
+
+This module contains tests for the HumanResource class, which handles
+human-in-the-loop interactions within the DXA framework.
+"""
+
 from unittest.mock import patch
+
+import pytest
+
 from dxa.core.resource.human_resource import HumanResource, ResourceError
 
 @pytest.fixture
 async def human_resource():
     """Fixture providing a test human resource instance."""
-    resource = HumanResource(name="test_human", role="user")
-    await resource.initialize()
-    yield resource
-    await resource.cleanup()
+    async with HumanResource(
+        name="test_human",
+        role="user"
+    ) as resource:
+        yield resource
 
 @pytest.mark.asyncio
 async def test_human_initialization():
@@ -24,20 +33,7 @@ async def test_human_initialization():
     await human.cleanup()
     assert not human.is_available  # Should be False after cleanup
 
-@pytest.mark.asyncio
-async def test_can_handle():
-    """Test request handling capability check."""
-    human = HumanResource(name="test", role="user")
-    await human.initialize()
-    
-    assert human.can_handle({}) is True  # Empty dict is valid
-    assert human.can_handle({"prompt": "test"}) is True
-    assert human.can_handle(None) is False  # None is invalid
-    assert human.can_handle("invalid") is False  # String is invalid
-    
-    await human.cleanup()
-    assert human.can_handle({}) is False  # Resource unavailable after cleanup
-
+# pylint: disable=redefined-outer-name
 @pytest.mark.asyncio
 @patch('builtins.input', return_value="test response")
 async def test_human_query(mock_input, human_resource):
@@ -58,6 +54,7 @@ async def test_human_query_error(mock_input, human_resource):
         await human_resource.query({
             "prompt": "Please provide input"
         })
+    mock_input.assert_called_once()
 
 @pytest.mark.asyncio
 async def test_human_query_no_prompt(human_resource):

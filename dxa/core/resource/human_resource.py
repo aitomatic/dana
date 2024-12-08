@@ -1,22 +1,29 @@
 """Human resource implementation."""
 
 import asyncio
-from typing import Dict, Any
+from typing import Dict, Any, Optional
+from dataclasses import dataclass
 
-from dxa.core.resource.base_resource import BaseResource
-from dxa.common.errors import ResourceError
+from dxa.core.resource.base_resource import BaseResource, ResourceConfig, ResourceResponse, ResourceError
+
+@dataclass
+class HumanConfig(ResourceConfig):
+    """Human resource configuration."""
+    role: str = "user"
+
+@dataclass 
+class HumanResponse(ResourceResponse):
+    """Human resource response."""
+    response: str
+    success: bool = True
+    error: Optional[str] = None
 
 class HumanResource(BaseResource):
     """Resource representing human interaction."""
     
     def __init__(self, name: str, role: str = "user"):
-        """Initialize human resource.
-        
-        Args:
-            name: Resource identifier
-            role: Human's role (e.g., "user", "expert", "supervisor")
-        """
-        super().__init__(name)
+        config = HumanConfig(name=name, role=role)
+        super().__init__(name=name, config=config)
         self.role = role
 
     async def initialize(self) -> None:
@@ -28,35 +35,18 @@ class HumanResource(BaseResource):
         self._is_available = False
 
     def can_handle(self, request: Dict[str, Any]) -> bool:
-        """Check if request can be handled by human.
-        
-        Args:
-            request: Query parameters
-            
-        Returns:
-            True if request can be handled, False otherwise
-        """
+        """Check if request can be handled by human."""
         return self._is_available and isinstance(request, dict)
 
-    async def query(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """Query the human resource.
-        
-        Args:
-            request: Query parameters
-            
-        Returns:
-            Response from human
-            
-        Raises:
-            ResourceError: If interaction fails
-        """
+    async def query(self, request: Dict[str, Any]) -> HumanResponse:
+        """Query the human resource."""
         if not self.can_handle(request):
             raise ResourceError("Resource unavailable or invalid request format")
 
         try:
-            # Implementation of human interaction
             response = await self._get_human_input(request)
-            return {"response": response, "success": True}
+            # pylint: disable=unexpected-keyword-arg
+            return HumanResponse(response=response)
         except Exception as e:
             raise ResourceError(f"Failed to get human input: {str(e)}") from e
 

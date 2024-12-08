@@ -1,37 +1,47 @@
-import pytest
+"""Tests for the LLM resource implementation.
+
+This module contains tests for the LLMResource class, which provides
+integration with Large Language Models through standardized interfaces.
+"""
+
 from unittest.mock import AsyncMock, patch
+
+import pytest
+
 from dxa.core.resource.llm_resource import LLMResource, LLMError
+from dxa.core.resource.config import LLMConfig
 
 @pytest.fixture
 def llm_config():
     """Fixture providing test LLM configuration."""
-    return {
-        "api_key": "test-api-key",
-        "model": "gpt-4"
-    }
+    return LLMConfig(
+        name="test_llm",
+        description="Test LLM config",
+        api_key="test-api-key",
+        model="gpt-4",
+        system_prompt="You are a test assistant."
+    )
 
+# pylint: disable=redefined-outer-name
 @pytest.fixture
 async def llm_resource(llm_config):
     """Fixture providing a test LLM resource instance."""
-    resource = LLMResource(
-        name="test_llm",
-        config=llm_config,
-        system_prompt="You are a test assistant."
-    )
-    yield resource
-    await resource.cleanup()
+    async with LLMResource(
+        name=llm_config.name,
+        config=llm_config
+    ) as resource:
+        yield resource
 
 @pytest.mark.asyncio
 async def test_llm_initialization(llm_config):
     """Test LLM resource initialization."""
     llm = LLMResource(
         name="test",
-        config=llm_config,
-        system_prompt="Test prompt"
+        config=llm_config
     )
     assert llm.name == "test"
     assert llm.config == llm_config
-    assert llm.system_prompt == "Test prompt"
+    assert llm.config["system_prompt"] == "You are a test assistant."
 
 @pytest.mark.asyncio
 async def test_llm_can_handle_request(llm_resource):

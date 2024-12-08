@@ -22,8 +22,9 @@ Example:
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Protocol, TypeVar, Generic, Optional
+from typing import Dict, Any, Optional
 import logging
+from dataclasses import dataclass
 
 class ResourceError(Exception):
     """Base class for resource errors."""
@@ -37,30 +38,31 @@ class ResourceAccessError(ResourceError):
     """Error raised when resource access fails."""
     pass
 
-T = TypeVar('T')  # Resource-specific configuration type
-R = TypeVar('R')  # Resource-specific response type
+@dataclass
+class ResourceConfig:
+    """Base configuration for all resources."""
+    name: str
+    description: Optional[str] = None
 
-class ResourceConfig(Protocol):
-    """Protocol for resource configuration."""
-    pass
+@dataclass
+class ResourceResponse:
+    """Base response for all resources."""
+    success: bool = True
+    error: Optional[str] = None
 
-class ResourceResponse(Protocol):
-    """Protocol for resource responses."""
-    pass
-
-class BaseResource(ABC, Generic[T, R]):
-    """Abstract base resource with generic config and response types."""
+class BaseResource(ABC):
+    """Abstract base resource."""
     
     def __init__(
         self,
         name: str,
         description: Optional[str] = None,
-        config: Optional[T] = None
+        config: Optional[ResourceConfig] = None
     ):
         """Initialize resource."""
         self.name = name
         self.description = description or "No description provided"
-        self.config = config if config is not None else {}
+        self.config = config if config is not None else ResourceConfig(name=name, description=description)
         self._is_available = True
         self.logger = logging.getLogger(f"{self.__class__.__name__}:{name}")
 
@@ -75,8 +77,8 @@ class BaseResource(ABC, Generic[T, R]):
         pass
 
     @abstractmethod
-    async def query(self, request: Dict[str, Any]) -> R:
-        """Query the resource with typed response."""
+    async def query(self, request: Dict[str, Any]) -> ResourceResponse:
+        """Query the resource."""
         pass
 
     @abstractmethod
