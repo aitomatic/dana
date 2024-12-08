@@ -2,7 +2,13 @@
 
 import asyncio
 import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from dxa.agent.work_automation_agent import WorkAutomationAgent
+
+from dotenv import load_dotenv
+load_dotenv("../.env")
 
 # Define the workflow steps
 SCRAPING_WORKFLOW = {
@@ -12,27 +18,27 @@ SCRAPING_WORKFLOW = {
         {
             "name": "initialize",
             "description": "Set up browser and check site accessibility",
-            "validation": lambda r, c: r.get("browser_ready", False)
+            "validation": lambda r: r.get("browser_ready", False)
         },
         {
             "name": "navigate",
             "description": "Navigate to target pages",
-            "validation": lambda r, c: r.get("page_loaded", False)
+            "validation": lambda r: r.get("page_loaded", False)
         },
         {
             "name": "extract",
             "description": "Extract required data",
-            "validation": lambda r, c: len(r.get("extracted_data", [])) > 0
+            "validation": lambda r: len(r.get("extracted_data", [])) > 0
         },
         {
             "name": "process",
             "description": "Process and format extracted data",
-            "validation": lambda r, c: r.get("processed_data") is not None
+            "validation": lambda r: r.get("processed_data") is not None
         },
         {
             "name": "save",
             "description": "Save processed data",
-            "validation": lambda r, c: r.get("saved", False)
+            "validation": lambda r: r.get("saved", False)
         }
     ]
 }
@@ -69,8 +75,13 @@ async def main():
         })
         
         if result["success"]:
-            print("Scraping completed successfully")
-            print(f"Data saved: {result['workflow_state']['step_results'][-1]}")
+            completed_steps = result['results']['completed_steps']
+            total_steps = len(SCRAPING_WORKFLOW['steps'])
+            if completed_steps >= total_steps:
+                print("Scraping completed successfully")
+                print(f"Data saved: {result['workflow_state']['step_results'][-1]}")
+            else:
+                print(f"Scraping completed {completed_steps} steps per total {total_steps} steps.")
         else:
             print(f"Scraping failed: {result.get('error')}")
     finally:

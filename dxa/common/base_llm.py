@@ -74,15 +74,20 @@ class BaseLLM:
         self.retry_delay = retry_delay
         self._client: Optional[AsyncOpenAI] = None
         self.logger = logging.getLogger(f"dxa.llm.{name}")
+        self.logger_extra = {
+            "llm_name": self.name,
+            "model": self.model,
+            "interaction_type": 'none'
+        }
 
     async def initialize(self) -> None:
         """Initialize the OpenAI client."""
         if not self._client:
             try:
                 self._client = AsyncOpenAI(api_key=self.api_key)
-                self.logger.info("LLM client initialized successfully")
+                self.logger.info("LLM client initialized successfully", extra=self.logger_extra)
             except Exception as e:
-                self.logger.error("Failed to initialize LLM client: %s", str(e))
+                self.logger.error("Failed to initialize LLM client: %s", str(e), extra=self.logger_extra)
                 raise LLMError(f"LLM initialization failed: {str(e)}") from e
 
     async def query(
@@ -95,12 +100,12 @@ class BaseLLM:
             await self.initialize()
 
         # Log the request
-        self.logger.info(
-            "LLM Request - Name: %s - Model: %s\nMessages: %s",
-            self.name,
-            self.model,
-            messages
-        )
+        self.logger.info("LLM Request", extra={
+            **self.logger_extra,
+            "messages": messages,
+            "parameters": kwargs,
+            "interaction_type": "request"
+        })
 
         try:
             response = await self._client.chat.completions.create(
@@ -115,23 +120,19 @@ class BaseLLM:
                 token_usage = response.usage.total_tokens
 
             # Log the response
-            self.logger.info(
-                "LLM Response - Name: %s - Model: %s\n"
-                "Response: %s\n"
-                "Tokens: %s",
-                self.name,
-                self.model,
-                response.model_dump() if hasattr(response, 'model_dump') else str(response),
-                token_usage
-            )
+            self.logger.info("LLM Response", extra={
+                **self.logger_extra,
+                "response": response.model_dump() if hasattr(response, 'model_dump') else str(response),
+                "interaction_type": "response",
+                "tokens": token_usage
+            })
 
             return response
 
         except (APIError, APIConnectionError, RateLimitError, APITimeoutError) as e:
             # Log the error
             self.logger.error("LLM Error", extra={
-                "llm_name": self.name,
-                "model": self.model,
+                **self.logger_extra,
                 "error": str(e),
                 "interaction_type": "error"
             })

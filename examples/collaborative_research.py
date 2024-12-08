@@ -2,6 +2,9 @@
 
 import asyncio
 import os
+import sys
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from dxa.core.factory import create_agent
 from dxa.common.errors import (
     ConfigurationError,
@@ -9,6 +12,9 @@ from dxa.common.errors import (
     AgentError,
     ReasoningError
 )
+
+from dotenv import load_dotenv
+load_dotenv("../.env")
 
 async def main():
     """Run collaborative research example."""

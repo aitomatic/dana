@@ -128,6 +128,8 @@ class BaseAgent(ABC):
                 await resource.initialize()
             
         self.logger.log_completion(
+            llm_name=self._llm.name,
+            llm_model=self._llm.model,
             prompt=f"Initializing agent {self.name}",
             response="Agent initialized with resources: " + ", ".join(self.resources.keys()),
             tokens=0,
@@ -144,6 +146,8 @@ class BaseAgent(ABC):
         await self._llm.cleanup()
         
         self.logger.log_completion(
+            llm_name=self._llm.name,
+            llm_model=self._llm.model,
             prompt=f"Cleaning up agent {self.name}",
             response="Agent cleaned up",
             tokens=0,
