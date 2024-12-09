@@ -31,7 +31,7 @@ Example:
     })
 """
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Union
 from dataclasses import dataclass
 from openai import AsyncOpenAI
 
@@ -49,18 +49,26 @@ class LLMError(ResourceError):
 @dataclass
 class LLMConfig(ResourceConfig):
     """LLM-specific configuration."""
-    api_key: str
-    model: str
+    api_key: str = None
+    model: str = None
     system_prompt: Optional[str] = None
     max_retries: int = 3
     retry_delay: float = 1.0
+    
+    @classmethod
+    def from_dict(cls, config_dict: Dict[str, Any]) -> 'LLMConfig':
+        """Create config from dictionary."""
+        return cls(**{
+            k: v for k, v in config_dict.items() 
+            if k in cls.__dataclass_fields__
+        })
 
 @dataclass
 class LLMResponse(ResourceResponse):
     """LLM-specific response."""
     success: bool = True
     error: Optional[str] = None
-    content: str
+    content: str = None
     usage: Optional[Dict[str, int]] = None
     model: Optional[str] = None
 
@@ -70,10 +78,12 @@ class LLMResource(BaseResource):
     def __init__(
         self,
         name: str,
-        config: LLMConfig,
+        config: Union[Dict[str, Any], LLMConfig],
         description: Optional[str] = None
     ):
         """Initialize LLM resource."""
+        if isinstance(config, dict):
+            config = LLMConfig.from_dict(config)
         super().__init__(name, description, config)
         self._client = None
 
@@ -134,9 +144,22 @@ class LLMResource(BaseResource):
             await self.initialize()
 
         try:
+            messages = []
+            # Add system prompt if configured
+            if self.config.system_prompt:
+                messages.append({
+                    "role": "system",
+                    "content": self.config.system_prompt
+                })
+            # Add user message
+            messages.append({
+                "role": "user", 
+                "content": request["prompt"]
+            })
+
             response = await self._client.chat.completions.create(
                 model=self.config.model,
-                messages=[{"role": "user", "content": request["prompt"]}],
+                messages=messages,
                 **request.get("parameters", {})
             )
             

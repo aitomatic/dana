@@ -11,13 +11,12 @@ import pytest
 from dxa.core.resource.human_resource import HumanResource, ResourceError
 
 @pytest.fixture
-async def human_resource():
+def human_resource():
     """Fixture providing a test human resource instance."""
-    async with HumanResource(
+    return HumanResource(
         name="test_human",
         role="user"
-    ) as resource:
-        yield resource
+    )
 
 @pytest.mark.asyncio
 async def test_human_initialization():
@@ -38,12 +37,13 @@ async def test_human_initialization():
 @patch('builtins.input', return_value="test response")
 async def test_human_query(mock_input, human_resource):
     """Test human query functionality."""
+    await human_resource.initialize()
     response = await human_resource.query({
         "prompt": "Please provide input"
     })
     
-    assert response["success"] is True
-    assert response["response"] == "test response"
+    assert response.success is True
+    assert response.response == "test response"
     mock_input.assert_called_once()
 
 @pytest.mark.asyncio
@@ -59,14 +59,16 @@ async def test_human_query_error(mock_input, human_resource):
 @pytest.mark.asyncio
 async def test_human_query_no_prompt(human_resource):
     """Test query with no prompt."""
+    await human_resource.initialize()
     with patch('builtins.input', return_value="test response") as mock_input:
         response = await human_resource.query({})
-        assert response["success"] is True
-        assert response["response"] == "test response"
+        assert response.success is True
+        assert response.response == "test response"
         mock_input.assert_called_once()
 
 @pytest.mark.asyncio
 async def test_human_query_invalid_request(human_resource):
     """Test query with invalid request format."""
+    await human_resource.initialize()
     with pytest.raises(ResourceError):
         await human_resource.query(None)  # None is invalid request format 

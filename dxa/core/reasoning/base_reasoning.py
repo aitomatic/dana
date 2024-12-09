@@ -473,13 +473,10 @@ class BaseReasoning(ABC):
                 "source": "reasoning"  # Mark this as coming from reasoning
             })
 
+        # pylint: disable=no-member
         response = await self.agent_llm.query(messages)
         return {"response": response["content"]}
     
-    def query2(self, messages):
-        """h"""
-        pass
-
     async def __aenter__(self):
         """Context manager entry."""
         return self

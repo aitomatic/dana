@@ -79,7 +79,7 @@ async def test_expert_can_handle_request(expert_resource):
 @patch('openai.AsyncOpenAI')
 @patch('dxa.common.base_llm.AsyncOpenAI')
 @patch('dxa.core.resource.llm_resource.AsyncOpenAI')
-async def test_expert_query(mock_openai_llm, mock_openai_base, mock_openai, expert_config):
+async def test_expert_query(mock_openai, mock_openai_base, mock_openai_llm, expert_config):
     """Test expert query functionality."""
     # Setup mock response
     mock_response = AsyncMock()

@@ -78,10 +78,10 @@ async def test_llm_query(mock_openai, llm_resource):
         "temperature": 0.7
     })
     
-    assert response["success"] is True
-    assert response["content"] == "Test response"
-    assert response["usage"]["total_tokens"] == 30
-    assert response["model"] == "gpt-4"
+    assert response.success is True
+    assert response.content == "Test response"
+    assert response.usage.total_tokens == 30
+    assert response.model == "gpt-4"
 
 @pytest.mark.asyncio
 async def test_llm_error_handling(llm_resource):

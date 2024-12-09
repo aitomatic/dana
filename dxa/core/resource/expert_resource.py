@@ -34,109 +34,77 @@ Example:
 """
 
 from dataclasses import dataclass
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Union
 from dxa.core.resource.llm_resource import (
-    LLMResponse, 
-    LLMError
+    LLMResource,
+    LLMError,
+    LLMConfig
 )
 from dxa.core.capability.domain_expertise import DomainExpertise
-from dxa.core.resource.base_resource import ResourceConfig, ResourceResponse, BaseResource
-from openai import AsyncOpenAI
+from dxa.core.resource.base_resource import ResourceResponse
 
 
 @dataclass
-class ExpertConfig(ResourceConfig):
-    """Expert-specific configuration extending base config."""
-    expertise: DomainExpertise
-    api_key: str
-    model: str
-    system_prompt: Optional[str] = None
-    max_retries: int = 3
-    retry_delay: float = 1.0
+class ExpertConfig(LLMConfig):
+    """Expert-specific configuration extending LLM config."""
+    expertise: DomainExpertise = None,
     confidence_threshold: float = 0.7
+    
+    @classmethod
+    def from_dict(cls, config_dict: Dict[str, Any]) -> 'ExpertConfig':
+        """Create config from dictionary."""
+        return cls(**{
+            k: v for k, v in config_dict.items() 
+            if k in cls.__dataclass_fields__
+        })
 
 
 @dataclass
 class ExpertResponse(ResourceResponse):
     """Expert-specific response extending base response."""
-    content: str
+    content: str = None
     usage: Optional[Dict[str, int]] = None
     model: Optional[str] = None
 
 
-class ExpertResource(BaseResource):
+class ExpertResource(LLMResource):
     """Expert resource with specialized config."""
     
     def __init__(
         self,
         name: str,
-        config: ExpertConfig,
+        config: Union[Dict[str, Any], ExpertConfig],
         description: Optional[str] = None
     ):
         """Initialize expert resource."""
+        if isinstance(config, dict):
+            config = ExpertConfig.from_dict(config)
         super().__init__(
             name=name,
             config=config,
             description=description or f"Expert in {config.expertise.name}"
         )
-        self._client = None
-
-    async def initialize(self) -> None:
-        """Initialize the expert resource."""
-        self._client = AsyncOpenAI(api_key=self.config.api_key)
-        self._is_available = True
-
-    async def cleanup(self) -> None:
-        """Clean up the expert resource."""
-        if self._client:
-            await self._client.close()
-        self._client = None
-        self._is_available = False
-
-    def can_handle(self, request: Dict[str, Any]) -> bool:
-        """Check if request matches expertise domain."""
-        if not isinstance(request, dict) or "prompt" not in request:
-            return False
-            
-        prompt = request["prompt"]
-        expertise = self.config.expertise
-        
-        # Check for required context
-        has_requirements = all(req in prompt.lower() for req in expertise.requirements)
-        
-        # Check for relevant keywords
-        has_keywords = any(keyword in prompt.lower() for keyword in expertise.keywords)
-        
-        return has_requirements and has_keywords
 
     async def query(self, request: Dict[str, Any]) -> ExpertResponse:
         """Query with domain expertise context."""
         if not self.can_handle(request):
             raise LLMError(f"Request cannot be handled by {self.config.expertise.name} expert")
 
-        enhanced_request = {
-            **request,
-            "prompt": self._enhance_prompt(request["prompt"])
-        }
+        # Enhance the prompt with domain context
+        enhanced_request = request.copy()
+        enhanced_request["prompt"] = self._enhance_prompt(request["prompt"])
 
-        try:
-            response = await self._client.chat.completions.create(
-                model=self.config.model,
-                messages=[{"role": "user", "content": enhanced_request["prompt"]}],
-                **enhanced_request.get("parameters", {})
-            )
-            
-            return ExpertResponse(
-                content=response.choices[0].message.content,
-                usage={
-                    'prompt_tokens': response.usage.prompt_tokens,
-                    'completion_tokens': response.usage.completion_tokens,
-                    'total_tokens': response.usage.total_tokens
-                } if hasattr(response, 'usage') else None,
-                model=response.model
-            )
-        except Exception as e:
-            raise LLMError(f"Expert query failed: {str(e)}") from e
+        # Use parent class's query method
+        llm_response = await super().query(enhanced_request)
+
+        # Convert LLMResponse to ExpertResponse
+        return ExpertResponse(
+            success=llm_response.success,
+            error=llm_response.error,
+            content=llm_response.content,
+            usage=llm_response.usage,
+            model=llm_response.model
+        )
 
     def _enhance_prompt(self, prompt: str) -> str:
         """Add domain context to prompt."""

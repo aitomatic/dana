@@ -1,5 +1,6 @@
 """Example of interactive agent solving math problems."""
 
+# pylint: disable=wrong-import-position
 import asyncio
 import os
 import sys
@@ -8,6 +9,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from dxa.agent.interactive_agent import InteractiveAgent
 from dxa.core.reasoning import ChainOfThoughtReasoning
 
+# pylint: disable=wrong-import-order
 from dotenv import load_dotenv
 load_dotenv("../.env")
 

@@ -4,11 +4,15 @@ import logging
 handler = logging.StreamHandler()  # Outputs to terminal
 handler.setLevel(logging.INFO)
 
-# Modified formatter to include the extra fields
+# Modified formatter to handle missing custom fields gracefully
 formatter = logging.Formatter(
     '%(asctime)s - %(name)s - %(levelname)s - %(message)s\n'
-    'Details: %(messages)s\n'  # This will show the messages content
-    'Response: %(response)s\n'  # This will show the response content
+    'Details: %(messages)s\n'  # Will use empty string if messages is missing
+    'Response: %(response)s\n',  # Will use empty string if response is missing
+    defaults={
+        'messages': '',
+        'response': ''
+    }
 )
 handler.setFormatter(formatter)
 

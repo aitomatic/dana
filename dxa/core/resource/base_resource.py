@@ -22,7 +22,7 @@ Example:
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Union
 import logging
 from dataclasses import dataclass
 
@@ -43,6 +43,14 @@ class ResourceConfig:
     """Base configuration for all resources."""
     name: str
     description: Optional[str] = None
+    
+    @classmethod
+    def from_dict(cls, config_dict: Dict[str, Any]) -> 'ResourceConfig':
+        """Create config from dictionary."""
+        return cls(**{
+            k: v for k, v in config_dict.items() 
+            if k in cls.__dataclass_fields__
+        })
 
 @dataclass
 class ResourceResponse:
@@ -57,13 +65,25 @@ class BaseResource(ABC):
         self,
         name: str,
         description: Optional[str] = None,
-        config: Optional[ResourceConfig] = None
+        config: Optional[Union[Dict[str, Any], ResourceConfig]] = None
     ):
-        """Initialize resource."""
-        self.name = name
-        self.description = description or "No description provided"
-        self.config = config if config is not None else ResourceConfig(name=name, description=description)
-        self._is_available = True
+        """Initialize resource.
+        
+        Args:
+            name: Resource name
+            description: Optional resource description
+            config: Either a ResourceConfig object or a dict that can be converted to one
+        """
+        if isinstance(config, dict):
+            self.config = ResourceConfig.from_dict(config)
+        elif isinstance(config, ResourceConfig):
+            self.config = config
+        else:
+            self.config = ResourceConfig(name=name, description=description)
+            
+        self.name = self.config.name
+        self.description = self.config.description or "No description provided"
+        self._is_available = False # will only be True after initialization
         self.logger = logging.getLogger(f"{self.__class__.__name__}:{name}")
 
     @property
@@ -74,7 +94,7 @@ class BaseResource(ABC):
     @abstractmethod
     async def initialize(self) -> None:
         """Initialize the resource."""
-        pass
+        self._is_available = True
 
     @abstractmethod
     async def query(self, request: Dict[str, Any]) -> ResourceResponse:

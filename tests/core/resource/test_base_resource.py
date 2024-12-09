@@ -9,6 +9,7 @@ import pytest
 import asyncio
 from dxa.core.resource.base_resource import (
     BaseResource,
+    ResourceConfig,
     ResourceError,
     ResourceUnavailableError,
     ResourceAccessError
@@ -65,7 +66,7 @@ async def test_resource_initialization():
     test_resource = MockResource(name="test", description="Test description")
     assert test_resource.name == "test"
     assert test_resource.description == "Test description"
-    assert test_resource.config == {}
+    assert test_resource.config == ResourceConfig(name="test", description="Test description")
     assert test_resource.is_available is True
 
 @pytest.mark.asyncio

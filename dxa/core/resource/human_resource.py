@@ -14,7 +14,7 @@ class HumanConfig(ResourceConfig):
 @dataclass 
 class HumanResponse(ResourceResponse):
     """Human resource response."""
-    response: str
+    response: str = None
     success: bool = True
     error: Optional[str] = None
 
@@ -44,8 +44,9 @@ class HumanResource(BaseResource):
             raise ResourceError("Resource unavailable or invalid request format")
 
         try:
+            print(f"xxxx [{self.role}] {request}")
             response = await self._get_human_input(request)
-            # pylint: disable=unexpected-keyword-arg
+            print(f"xxxx [{self.role}] {response}")
             return HumanResponse(response=response)
         except Exception as e:
             raise ResourceError(f"Failed to get human input: {str(e)}") from e
