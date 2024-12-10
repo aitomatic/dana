@@ -64,6 +64,7 @@ async def test_base_resource():
 async def test_resource_initialization():
     """Test basic resource initialization."""
     test_resource = MockResource(name="test", description="Test description")
+    await test_resource.initialize()
     assert test_resource.name == "test"
     assert test_resource.description == "Test description"
     assert test_resource.config == ResourceConfig(name="test", description="Test description")
@@ -73,7 +74,7 @@ async def test_resource_initialization():
 async def test_resource_lifecycle():
     """Test resource initialization and cleanup."""
     test_resource = MockResource(name="test", description="Test description")
-    assert test_resource.is_available is True
+    assert test_resource.is_available is False
     await test_resource.initialize()
     assert test_resource.is_available is True
     await test_resource.cleanup()

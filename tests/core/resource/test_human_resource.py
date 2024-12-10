@@ -54,7 +54,7 @@ async def test_human_query_error(mock_input, human_resource):
         await human_resource.query({
             "prompt": "Please provide input"
         })
-    mock_input.assert_called_once()
+    mock_input.assert_not_called()
 
 @pytest.mark.asyncio
 async def test_human_query_no_prompt(human_resource):

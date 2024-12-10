@@ -37,31 +37,15 @@ from openai import AsyncOpenAI
 
 from dxa.core.resource.base_resource import (
     BaseResource, 
-    ResourceConfig, 
     ResourceResponse, 
-    ResourceError
+    ResourceError,
+    ResourceConfig
 )
+from dxa.core.config import LLMConfig
 
 class LLMError(ResourceError):
     """Error in LLM interaction."""
     pass
-
-@dataclass
-class LLMConfig(ResourceConfig):
-    """LLM-specific configuration."""
-    api_key: str = None
-    model: str = None
-    system_prompt: Optional[str] = None
-    max_retries: int = 3
-    retry_delay: float = 1.0
-    
-    @classmethod
-    def from_dict(cls, config_dict: Dict[str, Any]) -> 'LLMConfig':
-        """Create config from dictionary."""
-        return cls(**{
-            k: v for k, v in config_dict.items() 
-            if k in cls.__dataclass_fields__
-        })
 
 @dataclass
 class LLMResponse(ResourceResponse):
@@ -83,14 +67,23 @@ class LLMResource(BaseResource):
     ):
         """Initialize LLM resource."""
         if isinstance(config, dict):
-            config = LLMConfig.from_dict(config)
-        super().__init__(name, description, config)
+            config = LLMConfig(**config)
+        
+        resource_config = ResourceConfig(
+            name=name,
+            description=description,
+        )
+
+        if isinstance(config, LLMConfig):
+            resource_config.llm_config = config
+
+        super().__init__(name, description, resource_config)
         self._client = None
 
     async def initialize(self) -> None:
         """Initialize the LLM client."""
         try:
-            self._client = AsyncOpenAI(api_key=self.config.api_key)
+            self._client = AsyncOpenAI(api_key=self.config.llm_config.api_key)
             self._is_available = True
             self.logger.info("LLM resource initialized successfully")
         except Exception as e:
@@ -98,6 +91,16 @@ class LLMResource(BaseResource):
             self.logger.error("Failed to initialize LLM resource: %s", str(e))
             raise LLMError(f"LLM initialization failed: {str(e)}") from e
 
+    @property  
+    def llm_config(self) -> LLMConfig:
+        """Get the LLM config."""
+        return self.config.llm_config
+    
+    @llm_config.setter
+    def set_llm_config(self, llm_config: LLMConfig) -> None:
+        """Set the LLM config."""
+        self.config.llm_config = llm_config
+    
     async def cleanup(self) -> None:
         """Clean up any resources used by the LLM resource."""
         await super().cleanup()
@@ -146,10 +149,10 @@ class LLMResource(BaseResource):
         try:
             messages = []
             # Add system prompt if configured
-            if self.config.system_prompt:
+            if self.llm_config.system_prompt:
                 messages.append({
                     "role": "system",
-                    "content": self.config.system_prompt
+                    "content": self.llm_config.system_prompt
                 })
             # Add user message
             messages.append({
@@ -158,7 +161,7 @@ class LLMResource(BaseResource):
             })
 
             response = await self._client.chat.completions.create(
-                model=self.config.model,
+                model=self.llm_config.model_name,
                 messages=messages,
                 **request.get("parameters", {})
             )

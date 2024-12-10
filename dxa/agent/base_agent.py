@@ -40,7 +40,8 @@ Classes:
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, AsyncIterator, Optional, Callable
+from typing import Dict, Any, AsyncIterator, Optional
+from dataclasses import dataclass
 from dxa.core.reasoning.base_reasoning import BaseReasoning
 from dxa.core.reasoning.cot_reasoning import ChainOfThoughtReasoning
 from dxa.core.resource.expert_resource import ExpertResource
@@ -49,6 +50,15 @@ from dxa.agent.agent_progress import AgentProgress
 from dxa.common.utils.logging import DXALogger
 from dxa.agent.agent_runtime import AgentRuntime
 from dxa.agent.agent_state import StateManager
+from dxa.core.config import LLMConfig
+
+@dataclass
+class AgentConfig:
+    """Configuration for DXA agents."""
+    name: str
+    llm_config: LLMConfig
+    reasoning_config: Optional[Dict[str, Any]] = None
+    resources_config: Optional[Dict[str, Any]] = None
 
 class BaseAgent(ABC):
     """Base class providing common agent functionality."""

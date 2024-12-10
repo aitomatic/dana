@@ -49,6 +49,7 @@ class ResourceConfig:
         """Create config from dictionary."""
         return cls(**{
             k: v for k, v in config_dict.items() 
+            # pylint: disable=no-member
             if k in cls.__dataclass_fields__
         })
 
@@ -65,7 +66,7 @@ class BaseResource(ABC):
         self,
         name: str,
         description: Optional[str] = None,
-        config: Optional[Union[Dict[str, Any], ResourceConfig]] = None
+        resource_config: Optional[Union[Dict[str, Any], ResourceConfig]] = None
     ):
         """Initialize resource.
         
@@ -74,16 +75,16 @@ class BaseResource(ABC):
             description: Optional resource description
             config: Either a ResourceConfig object or a dict that can be converted to one
         """
-        if isinstance(config, dict):
-            self.config = ResourceConfig.from_dict(config)
-        elif isinstance(config, ResourceConfig):
-            self.config = config
+        if isinstance(resource_config, dict):
+            self.config = ResourceConfig.from_dict(resource_config)
+        elif isinstance(resource_config, ResourceConfig):
+            self.config = resource_config
         else:
             self.config = ResourceConfig(name=name, description=description)
             
         self.name = self.config.name
         self.description = self.config.description or "No description provided"
-        self._is_available = False # will only be True after initialization
+        self._is_available = False  # will only be True after initialization
         self.logger = logging.getLogger(f"{self.__class__.__name__}:{name}")
 
     @property
@@ -91,7 +92,6 @@ class BaseResource(ABC):
         """Check if resource is currently available."""
         return self._is_available
 
-    @abstractmethod
     async def initialize(self) -> None:
         """Initialize the resource."""
         self._is_available = True
