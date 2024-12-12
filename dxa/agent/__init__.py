@@ -1,6 +1,6 @@
 """DXA agent module."""
 
-from dxa.agent.base_agent import BaseAgent, AgentConfig
+from dxa.agent.base_agent import BaseAgent
 from dxa.agent.interactive_agent import InteractiveAgent
 from dxa.agent.autonomous_agent import AutonomousAgent
 from dxa.agent.websocket_agent import WebSocketAgent
@@ -16,5 +16,4 @@ __all__ = [
     "WebSocketAgent",
     "AgentLLM",
     "LLMConfig",
-    "AgentConfig",
 ]

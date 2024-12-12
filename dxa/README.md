@@ -86,7 +86,7 @@ Additional components in the `dxa.agent` module:
 
 - `AgentLLM`: Internal LLM implementation for agents
 - `AgentProgress`: For reporting task progress
-- `AgentConfig` and `LLMConfig`: For configuration management
+- `LLMConfig`: For configuration management
 - `StateManager`: Manages agent state, observations, and messages
 
 ## Examples

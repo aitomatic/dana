@@ -1,25 +1,47 @@
-"""Agent resource implementation."""
+"""Resource for managing and interacting with DXA agents.
+
+This resource provides a standardized interface for:
+1. Initializing and cleaning up multiple agents
+2. Routing queries to specific agents
+3. Error handling and response formatting
+
+Example:
+    ```python
+    # Create resource with agents
+    agents = {
+        "researcher": ResearchAgent(...),
+        "analyst": AnalystAgent(...)
+    }
+    resource = AgentResource("agent_pool", agents)
+
+    # Query specific agent
+    response = await resource.query({
+        "agent_id": "researcher",
+        "query": {"topic": "AI trends"}
+    })
+    ```
+"""
 
 import asyncio
 from typing import Dict, Any
-
+from dxa.agent.base_agent import BaseAgent
 from dxa.core.resource.base_resource import BaseResource
 from dxa.common.errors import ResourceError, ConfigurationError, AgentError
 
 class AgentResource(BaseResource):
-    """Resource for accessing other agents."""
+    """Resource for accessing and coordinating agent interactions."""
     
-    def __init__(self, name: str, agent_registry: Dict[str, Any]):
+    def __init__(self, name: str, agents: Dict[str, BaseAgent]):
         """Initialize agent resource.
         
         Args:
             name: Resource identifier
-            agent_registry: Dictionary mapping agent IDs to agent instances
+            agents: Dictionary mapping agent IDs to agent instances
         """
         super().__init__(name)
-        if not agent_registry:
-            raise ConfigurationError("Agent registry cannot be empty")
-        self.agent_registry = agent_registry
+        if not agents:
+            raise ConfigurationError("Agents dictionary cannot be empty")
+        self.agents = agents
 
     async def query(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Query an agent from the registry.
@@ -39,7 +61,7 @@ class AgentResource(BaseResource):
         if not agent_id:
             raise ConfigurationError("agent_id is required")
             
-        agent = self.agent_registry.get(agent_id)
+        agent = self.agents.get(agent_id)
         if not agent:
             raise ConfigurationError(f"Agent not found: {agent_id}")
         
@@ -58,7 +80,7 @@ class AgentResource(BaseResource):
             ResourceError: If initialization fails
             AgentError: If agent initialization fails
         """
-        for agent_id, agent in self.agent_registry.items():
+        for agent_id, agent in self.agents.items():
             try:
                 await agent.initialize()
             except (AgentError, ValueError) as e:
@@ -67,7 +89,7 @@ class AgentResource(BaseResource):
     async def cleanup(self) -> None:
         """Clean up all agents in registry concurrently."""
         cleanup_tasks = []
-        for agent_id, agent in self.agent_registry.items():
+        for agent_id, agent in self.agents.items():
             task = asyncio.create_task(self._cleanup_agent(agent_id, agent))
             cleanup_tasks.append(task)
         
@@ -77,7 +99,7 @@ class AgentResource(BaseResource):
         if errors:
             raise ResourceError("\n".join(errors))
 
-    async def _cleanup_agent(self, agent_id: str, agent: Any) -> None:
+    async def _cleanup_agent(self, agent_id: str, agent: BaseAgent) -> None:
         try:
             await agent.cleanup()
         except (AgentError, ValueError) as e:

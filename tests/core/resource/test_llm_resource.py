@@ -58,7 +58,6 @@ async def test_llm_can_handle_request(llm_resource):
 async def test_llm_query(mock_openai, llm_resource):
     """Test LLM query functionality."""
     mock_client = AsyncMock()
-    mock_completion = AsyncMock()
     mock_response = AsyncMock()
     
     mock_response.choices = [

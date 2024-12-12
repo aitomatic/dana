@@ -41,22 +41,15 @@ from dxa.core.resource.llm_resource import (
     LLMConfig
 )
 from dxa.core.capability.domain_expertise import DomainExpertise
-from dxa.core.resource.base_resource import ResourceResponse
+from dxa.core.resource.base_resource import BaseResource, ResourceResponse, ResourceConfig
 
 
 @dataclass
-class ExpertConfig(LLMConfig):
-    """Expert-specific configuration extending LLM config."""
-    expertise: DomainExpertise = None,
+class ExpertConfig(ResourceConfig):
+    """Expert-specific configuration."""
+    expertise: DomainExpertise = None
     confidence_threshold: float = 0.7
-    
-    @classmethod
-    def from_dict(cls, config_dict: Dict[str, Any]) -> 'ExpertConfig':
-        """Create config from dictionary."""
-        return cls(**{
-            k: v for k, v in config_dict.items() 
-            if k in cls.__dataclass_fields__
-        })
+    llm_config: LLMConfig = None
 
 
 @dataclass
@@ -67,8 +60,8 @@ class ExpertResponse(ResourceResponse):
     model: Optional[str] = None
 
 
-class ExpertResource(LLMResource):
-    """Expert resource with specialized config."""
+class ExpertResource(BaseResource):
+    """Expert resource that uses an LLM for domain-specific queries."""
     
     def __init__(
         self,
@@ -79,11 +72,25 @@ class ExpertResource(LLMResource):
         """Initialize expert resource."""
         if isinstance(config, dict):
             config = ExpertConfig.from_dict(config)
-        super().__init__(
-            name=name,
-            config=config,
-            description=description or f"Expert in {config.expertise.name}"
-        )
+        
+        if not config.expertise:
+            raise ValueError("ExpertResource requires expertise configuration")
+            
+        if not config.llm_config:
+            raise ValueError("ExpertResource requires LLM configuration")
+            
+        super().__init__(name=name, resource_config=config)
+        self._llm = LLMResource(name=f"{name}_llm", config=config.llm_config)
+
+    async def initialize(self) -> None:
+        """Initialize the expert and its LLM."""
+        await self._llm.initialize()
+        self._is_available = True
+
+    async def cleanup(self) -> None:
+        """Clean up the expert and its LLM."""
+        await self._llm.cleanup()
+        self._is_available = False
 
     async def query(self, request: Dict[str, Any]) -> ExpertResponse:
         """Query with domain expertise context."""
@@ -94,17 +101,31 @@ class ExpertResource(LLMResource):
         enhanced_request = request.copy()
         enhanced_request["prompt"] = self._enhance_prompt(request["prompt"])
 
-        # Use parent class's query method
-        llm_response = await super().query(enhanced_request)
+        # Get response using expert's domain logic
+        expert_response = await self._process_expert_query(enhanced_request)
+        return expert_response
 
-        # Convert LLMResponse to ExpertResponse
-        return ExpertResponse(
-            success=llm_response.success,
-            error=llm_response.error,
-            content=llm_response.content,
-            usage=llm_response.usage,
-            model=llm_response.model
-        )
+    async def _process_expert_query(self, request: Dict[str, Any]) -> ExpertResponse:
+        """Process the query using expert's domain logic.
+        
+        Default implementation uses the LLM directly. Subclasses can override
+        to add domain-specific processing.
+        """
+        if self._llm and self._llm.is_available:
+            llm_response = await self._llm.query(request)
+            return ExpertResponse(
+                success=llm_response.success,
+                error=llm_response.error,
+                content=llm_response.content,
+                usage=llm_response.usage,
+                model=llm_response.model
+            )
+        else:
+            return ExpertResponse(
+                success=True,
+                error=False,
+                content='Default Expert Response'
+            )
 
     def _enhance_prompt(self, prompt: str) -> str:
         """Add domain context to prompt."""
@@ -112,3 +133,20 @@ class ExpertResource(LLMResource):
         with capabilities in: {', '.join(self.config.expertise.capabilities)}
         
         Please address this query: {prompt}""" 
+
+    def can_handle(self, request: Dict[str, Any]) -> bool:
+        """Check if the request can be handled by this expert.
+        
+        Args:
+            request: The incoming request
+            
+        Returns:
+            bool: True if the request matches expert's domain
+        """
+        if not request.get("prompt"):
+            return False
+        
+        # Check if request contains any expertise keywords
+        prompt = request["prompt"].lower()
+        return any(keyword.lower() in prompt
+                   for keyword in self.config.expertise.keywords)

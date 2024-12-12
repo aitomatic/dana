@@ -31,9 +31,14 @@ class LLMConfig:
     @property
     def system_prompt(self) -> str:
         """Get the system prompt."""
-        return self.additional_params.get("system_prompt")
+        if self.additional_params:
+            return self.additional_params.get("system_prompt")
+        else:
+            return None
 
     @system_prompt.setter
     def set_system_prompt(self, system_prompt: str) -> None:
         """Set the system prompt."""
+        if not self.additional_params:
+            self.additional_params = {}
         self.additional_params["system_prompt"] = system_prompt

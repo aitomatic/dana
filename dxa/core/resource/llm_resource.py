@@ -143,39 +143,41 @@ class LLMResource(BaseResource):
 
     async def query(self, request: Dict[str, Any]) -> LLMResponse:
         """Query the LLM with typed response."""
+        # if no prompt proerty in request
+        if 'prompt' not in request:
+            raise LLMError("Prompt is required in request")
+        elif not request['prompt'].strip():
+            raise LLMError("Prompt in request cannot be empty")
+        
         if not self._client:
             await self.initialize()
-
-        try:
-            messages = []
-            # Add system prompt if configured
-            if self.llm_config.system_prompt:
-                messages.append({
-                    "role": "system",
-                    "content": self.llm_config.system_prompt
-                })
-            # Add user message
+        
+        messages = []
+        # Add system prompt if configured
+        if self.llm_config.system_prompt:
             messages.append({
-                "role": "user", 
-                "content": request["prompt"]
+                "role": "system",
+                "content": self.llm_config.system_prompt
             })
+        # Add user message
+        messages.append({
+            "role": "user", 
+            "content": request["prompt"]
+        })
 
-            response = await self._client.chat.completions.create(
-                model=self.llm_config.model_name,
-                messages=messages,
-                **request.get("parameters", {})
-            )
-            
-            # pylint: disable=unexpected-keyword-arg
-            return LLMResponse(
-                content=response.choices[0].message.content,
-                usage={
-                    'prompt_tokens': response.usage.prompt_tokens,
-                    'completion_tokens': response.usage.completion_tokens,
-                    'total_tokens': response.usage.total_tokens
-                } if hasattr(response, 'usage') else None,
-                model=response.model
-            )
-            
-        except Exception as e:
-            raise LLMError(f"LLM query failed: {str(e)}") from e
+        response = await self._client.chat.completions.create(
+            model=self.llm_config.model_name,
+            messages=messages,
+            **request.get("parameters", {})
+        )
+        
+        # pylint: disable=unexpected-keyword-arg
+        return LLMResponse(
+            content=response.choices[0].message.content,
+            usage={
+                'prompt_tokens': response.usage.prompt_tokens,
+                'completion_tokens': response.usage.completion_tokens,
+                'total_tokens': response.usage.total_tokens
+            } if hasattr(response, 'usage') else None,
+            model=response.model
+        )

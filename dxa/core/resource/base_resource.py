@@ -82,7 +82,7 @@ class BaseResource(ABC):
         else:
             self.config = ResourceConfig(name=name, description=description)
             
-        self.name = self.config.name
+        self.name = name or self.config.name
         self.description = self.config.description or "No description provided"
         self._is_available = False  # will only be True after initialization
         self.logger = logging.getLogger(f"{self.__class__.__name__}:{name}")
@@ -106,10 +106,9 @@ class BaseResource(ABC):
         """Clean up resource."""
         pass
 
-    @abstractmethod
     def can_handle(self, request: Dict[str, Any]) -> bool:
         """Check if request can be handled."""
-        pass
+        return False
         
     async def __aenter__(self) -> 'BaseResource':
         await self.initialize()
