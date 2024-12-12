@@ -49,6 +49,7 @@ async def test_initialization_empty_agents():
     with pytest.raises(ConfigurationError):
         AgentResource(name="test", agents={})
 
+# pylint: disable=outer-scope-variable
 @pytest.mark.asyncio
 async def test_query(agent_resource):
     """Test agent query functionality."""
