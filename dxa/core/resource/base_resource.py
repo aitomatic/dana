@@ -106,6 +106,7 @@ class BaseResource(ABC):
         """Clean up resource."""
         pass
 
+    # pylint: disable=unused-argument
     def can_handle(self, request: Dict[str, Any]) -> bool:
         """Check if request can be handled."""
         return False

@@ -1,19 +1,14 @@
-"""Core framework for DXA agents.
+"""Core runtime components for DXA agents.
 
-This module provides the foundational components for building and running agents:
-- Configuration management
-- State tracking and observations
-- Progress monitoring
-- Runtime execution
+This module provides the runtime components for running agents:
+- State management 
 - LLM integration
-
-All agent implementations build on top of these core components.
+- Runtime execution
 """
 
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Dict, Any, List, Optional, AsyncIterator, Callable, Awaitable
-from dxa.core.reasoning.base_reasoning import BaseReasoning
 from dxa.common.errors import DXAError
 from dxa.common.base_llm import BaseLLM
 
@@ -21,14 +16,6 @@ from dxa.common.base_llm import BaseLLM
 ReasoningStep = Callable[[Dict[str, Any]], Awaitable[Dict[str, Any]]]
 ExecutionHook = Callable[[Dict[str, Any]], Awaitable[None]]
 ContinuationCheck = Callable[[Dict[str, Any]], Awaitable[bool]]
-
-@dataclass
-class AgentConfig:
-    """Configuration for DXA agents."""
-    name: str
-    llm_config: Dict[str, Any]
-    reasoning: BaseReasoning
-    additional_params: Optional[Dict[str, Any]] = None
 
 @dataclass 
 class AgentState:
@@ -69,7 +56,7 @@ class AgentProgress:
 
     @property
     def is_result(self) -> bool:
-        return self.type == "result"
+        return self.type == "result" 
 
 class StateManager:
     """Manages agent state and execution context."""

@@ -8,17 +8,15 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from dxa.core.resource.llm_resource import LLMResource, LLMError
-from dxa.core.config import LLMConfig
+from dxa.core.resource.llm_resource import LLMResource, LLMError, LLMConfig
 
 @pytest.fixture
 def llm_config():
     """Fixture providing test LLM configuration."""
     return LLMConfig(
         name="test_llm",
-        model_name="gpt-4",
         description="Test LLM config",
-        api_key="test-api-key",
+        model_name="gpt-4",
         additional_params={"system_prompt": "You are a test assistant."}
     )
 
@@ -28,7 +26,8 @@ def llm_resource(llm_config):
     """Fixture providing a test LLM resource instance."""
     return LLMResource(
         name=llm_config.name,
-        config=llm_config
+        config=llm_config,
+        description=llm_config.description
     )
 
 @pytest.mark.asyncio
@@ -39,8 +38,34 @@ async def test_llm_initialization(llm_config):
         config=llm_config
     )
     assert llm.name == "test"
-    assert llm.llm_config == llm_config
-    assert llm.llm_config.system_prompt == "You are a test assistant."
+    assert isinstance(llm.config, LLMConfig)
+    assert llm.config.model_name == "gpt-4"
+    assert llm.config.additional_params["system_prompt"] == "You are a test assistant."
+
+@pytest.mark.asyncio
+async def test_dict_initialization():
+    """Test initialization with dictionary config."""
+    config_dict = {
+        "model_name": "gpt-4",
+        "api_key": "test-key",
+        "temperature": 0.7,
+        "max_tokens": None,
+        "top_p": 1.0,
+        "additional_params": {"system_prompt": "Test prompt"}
+    }
+    
+    llm = LLMResource(
+        name="test",
+        config=config_dict,
+        description="Test description"
+    )
+    
+    assert isinstance(llm.config, LLMConfig)
+    assert llm.config.name == "test"
+    assert llm.config.description == "Test description"
+    assert llm.config.model_name == "gpt-4"
+    assert llm.config.temperature == 0.7
+    assert llm.config.top_p == 1.0
 
 @pytest.mark.asyncio
 async def test_llm_can_handle_request(llm_resource):

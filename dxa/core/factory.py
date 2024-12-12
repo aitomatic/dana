@@ -47,7 +47,7 @@ from dxa.agent.work_automation_agent import WorkAutomationAgent
 from dxa.core.reasoning.cot_reasoning import ChainOfThoughtReasoning
 from dxa.experts.math import create_math_expert
 from dxa.agent.base_agent import BaseAgent
-from dxa.agent.config import LLMConfig
+from dxa.core.resource.llm_resource import LLMConfig
 from dxa.common.errors import (
     ConfigurationError,
     ResourceError,

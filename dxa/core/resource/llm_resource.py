@@ -32,7 +32,7 @@ Example:
 """
 
 from typing import Dict, Any, Optional, Union
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from openai import AsyncOpenAI
 
 from dxa.core.resource.base_resource import (
@@ -41,7 +41,16 @@ from dxa.core.resource.base_resource import (
     ResourceError,
     ResourceConfig
 )
-from dxa.core.config import LLMConfig
+
+@dataclass
+class LLMConfig(ResourceConfig):
+    """Configuration for Language Learning Models."""
+    model_name: str = field(default=...)  # Required field with no default
+    api_key: Optional[str] = field(default=None)
+    temperature: float = field(default=0.7)
+    max_tokens: Optional[int] = field(default=None)
+    top_p: float = field(default=1.0)
+    additional_params: Dict[str, Any] = field(default_factory=dict)
 
 class LLMError(ResourceError):
     """Error in LLM interaction."""
@@ -57,7 +66,7 @@ class LLMResponse(ResourceResponse):
     model: Optional[str] = None
 
 class LLMResource(BaseResource):
-    """LLM resource with typed config and response."""
+    """LLM resource with typed config."""
     
     def __init__(
         self,
@@ -67,23 +76,29 @@ class LLMResource(BaseResource):
     ):
         """Initialize LLM resource."""
         if isinstance(config, dict):
+            # Include name and description in the config
+            config['name'] = name
+            if description:
+                config['description'] = description
             config = LLMConfig(**config)
-        
-        resource_config = ResourceConfig(
-            name=name,
-            description=description,
-        )
 
-        if isinstance(config, LLMConfig):
-            resource_config.llm_config = config
-
-        super().__init__(name, description, resource_config)
+        super().__init__(name, description, config)
         self._client = None
+
+    @property
+    def llm_config(self) -> LLMConfig:
+        """Get the LLM config."""
+        return self.config
+    
+    @llm_config.setter
+    def set_llm_config(self, llm_config: LLMConfig) -> None:
+        """Set the LLM config."""
+        self.config = llm_config
 
     async def initialize(self) -> None:
         """Initialize the LLM client."""
         try:
-            self._client = AsyncOpenAI(api_key=self.config.llm_config.api_key)
+            self._client = AsyncOpenAI(api_key=self.config.api_key)
             self._is_available = True
             self.logger.info("LLM resource initialized successfully")
         except Exception as e:
@@ -91,16 +106,6 @@ class LLMResource(BaseResource):
             self.logger.error("Failed to initialize LLM resource: %s", str(e))
             raise LLMError(f"LLM initialization failed: {str(e)}") from e
 
-    @property  
-    def llm_config(self) -> LLMConfig:
-        """Get the LLM config."""
-        return self.config.llm_config
-    
-    @llm_config.setter
-    def set_llm_config(self, llm_config: LLMConfig) -> None:
-        """Set the LLM config."""
-        self.config.llm_config = llm_config
-    
     async def cleanup(self) -> None:
         """Clean up any resources used by the LLM resource."""
         await super().cleanup()
@@ -154,7 +159,7 @@ class LLMResource(BaseResource):
         
         messages = []
         # Add system prompt if configured
-        if self.llm_config.system_prompt:
+        if hasattr(self.llm_config, "system_prompt") and self.llm_config.system_prompt is not None:
             messages.append({
                 "role": "system",
                 "content": self.llm_config.system_prompt

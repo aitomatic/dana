@@ -1,11 +1,13 @@
 """DXA agent module."""
 
-from dxa.agent.agent_framework import (
-    AgentConfig,
-    AgentState,
+from dxa.agent.agent_config import AgentConfig
+from dxa.agent.agent_runtime import (
     StateManager,
-    AgentProgress,
     AgentRuntime,
+    AgentState,
+    AgentProgress,
+    Observation,
+    Message,
     AgentLLM
 )
 from dxa.agent.base_agent import BaseAgent
@@ -20,8 +22,10 @@ __version__ = "0.1.0"
 __all__ = [
     "AgentConfig",
     "AgentState", 
-    "StateManager",
     "AgentProgress",
+    "Observation",
+    "Message",
+    "StateManager",
     "AgentRuntime",
     "AgentLLM",
     "BaseAgent",
