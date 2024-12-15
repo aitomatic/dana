@@ -1,124 +1,174 @@
-# DXA Agents
+# DXA (Domain-Expert Agents)
 
 This directory contains the core agent implementation for the DXA framework.
 
-## Architecture
+A hierarchical agent system that separates strategic planning from
+tactical execution through a clean two-layer architecture. The
+system emphasizes clear separation of concerns while maintaining
+adaptivity through a well-defined signaling system.
 
-The DXA agent system uses a unified, composable design that supports progressive complexity.
+## Structure:
 
-### Core Components
+The system is built on two primary layers with distinct responsibilities:
 
-#### Agent
+The Planning Layer operates at a strategic level, maintaining the
+agent's overall direction and objectives. It owns the "big picture"
+— creating plans, evaluating progress, and making strategic decisions.
+This layer deliberately operates at a higher level of abstraction,
+focusing on what needs to be done rather than how to do it. It
+maintains working memory of recent history and context to inform
+its decisions, but delegates all tactical execution.
 
-The unified Agent class provides a flexible implementation supporting:
+The Reasoning Layer handles tactical execution and monitoring. It
+owns the "how" of execution - taking the current plan step, deciding
+the best way to execute it, and managing the actual execution. It
+has significant autonomy in how it achieves each step, including
+handling minor variations and setbacks without escalation. However,
+it maintains clear boundaries by signaling the Planning Layer when
+strategic changes might be needed.
 
-- Different reasoning strategies (CoT, OODA)
-- Resource management
-- I/O handling
-- Capability tracking
-
-```python
-# Basic usage
-agent = Agent("researcher")
-result = await agent.run("Analyze this data")
-
-# Progressive configuration
-agent = Agent("analyst")\
-    .with_reasoning(reasoning)\
-    .with_resources(resources)\
-    .with_capabilities(["analysis", "research"])\
-    .with_io(io_handler)
+```mermaid
+graph TB
+    subgraph Planning Layer
+        P[Plan Management] --> O[Objective Management]
+        O --> S[Strategy Selection]
+        P --> S
+    end
+    
+    subgraph Reasoning Layer
+        E[Execution] --> M[Monitoring]
+        M --> A[Analysis]
+        A --> E
+    end
+    
+    Planning Layer -->|Plans & Objectives| Reasoning Layer
+    Reasoning Layer -->|Signals & Status| Planning Layer
+    
+    subgraph Resources
+        LLM[Language Models]
+        DB[(Databases)]
+        API[External APIs]
+        MEM[Memory Store]
+    end
+    
+    Reasoning Layer -.->|Uses| LLM
+    Reasoning Layer -.->|Uses| DB
+    Reasoning Layer -.->|Uses| API
+    Reasoning Layer -.->|Uses| MEM
+    
+    Planning Layer -.->|Resource Awareness| Resources
 ```
 
-#### Runtime
+The interaction between layers is managed through two primary mechanisms:
 
-AgentRuntime manages execution:
+1. Plans flow down from Planning to Reasoning, providing clear
+direction while leaving tactical decisions to the Reasoning Layer
+2. Signals flow up from Reasoning to Planning, alerting to significant
+events or changes that might require strategic adjustment
 
-- State management
-- Iteration control
-- Progress tracking
-- Error handling
+Resources (like language models, databases, or APIs) are primarily
+managed by the Reasoning Layer, which has direct control over their
+usage. However, resource availability and constraints can trigger
+signals to the Planning Layer when strategic adjustments are needed.
 
-#### Factory
+## Execution
 
-Factory provides lifecycle management:
+The execution model emphasizes stability while maintaining adaptivity.
+Here's how the system operates:
 
-```python
-async with create_agent({
-    "name": "researcher",
-    "reasoning": "cot",
-    "capabilities": ["research"],
-    "resources": {
-        "llm": LLMResource(model="gpt-4")
-    }
-}) as agent:
-    result = await agent.run("Research quantum computing")
+The Planning Layer initializes execution by creating a plan based
+on the current objective. Plans are treated as living documents -
+expected to evolve but not constantly changing. The Planning Layer
+sets clear success criteria and constraints but leaves tactical
+decisions to the Reasoning Layer.
+
+The Reasoning Layer executes through a continuous cycle:
+
+1. Interpret the current plan step and determine best execution approach
+2. Execute using available resources
+3. Monitor progress and resource health
+4. Generate signals when significant events occur
+
+```mermaid
+sequenceDiagram
+    participant P as Planning Layer
+    participant R as Reasoning Layer
+    participant Res as Resources
+
+    Note over P,R: Initialization Phase
+    P->>R: Initial Plan & Objectives
+    
+    loop Execution Phase
+        R->>Res: Execute Current Step
+        Res-->>R: Results & State
+        
+        Note over R: Monitor & Analyze
+        
+        alt Normal Progress
+            R->>R: Continue Execution
+        else Significant Event
+            R->>P: Signal Event
+            Note over P: Strategic Evaluation
+            alt Requires Strategy Change
+                P->>R: Updated Plan/Objectives
+            else Continue Current Strategy
+                P->>R: Acknowledge & Continue
+            end
+        end
+    end
+
 ```
 
-### Key Features
+Critical to this model is the signal system between layers. Signals
+are generated by the Reasoning Layer when it detects:
 
-1. **Progressive Complexity**
-   - Start simple with sensible defaults
-   - Add capabilities as needed
-   - Configure for specific use cases
+1. Changes in objective understanding requiring refinement
+2. Resource constraints or failures requiring strategic adjustment
+3. Confidence drops suggesting current approach may not succeed
+4. Critical new information that could affect strategy
+5. Environmental changes impacting execution
 
-2. **Resource Management**
-   - LLM integration
-   - Expert knowledge
-   - Tool access
-   - I/O handling
+The Planning Layer evaluates signals based on significance, not
+timing. Major discoveries or failures trigger immediate replanning,
+while minor variations are handled by Reasoning Layer flexibility.
+This creates stability while maintaining adaptivity to important
+changes.
 
-3. **Reasoning Integration**
-   - Chain of Thought (CoT)
-   - OODA Loop
-   - Custom reasoning patterns
+## Configuration
 
-4. **State Management**
-   - Execution tracking
-   - Progress monitoring
-   - History recording
+The agent supports progressive complexity through a fluent builder pattern:
 
-## Components
-
-### Core Classes
-
-- `Agent`: Unified agent implementation
-- `AgentRuntime`: Execution management
-- `StateManager`: State tracking
-- `AgentConfig`: Configuration management
-
-### Supporting Types
-
-- `AgentProgress`: Progress tracking
-- `Observation`: Agent observations
-- `Message`: Communication records
-
-## Usage Examples
-
-### Basic Agent
-
-```python
-agent = Agent()
-result = await agent.run("Analyze this data")
-```
-
-### Research Agent
+### Basic Usage
 
 ```python
 agent = Agent("researcher")\
-    .with_reasoning("cot")\
-    .with_resources({
-        "llm": LLMResource(model="gpt-4"),
-        "search": SearchResource()
-    })
-result = await agent.run("Research quantum computing")
+            .with_llm(LLMResource(model="gpt-4"))\
+            .with_reasoning("cot")
 ```
 
-### Interactive Agent
+### Advanced Usage
 
 ```python
-agent = Agent("assistant")\
-    .with_reasoning("ooda")\
-    .with_io(WebSocketIO())
-result = await agent.run("Help user with task")
+agent = Agent("researcher")\
+            .with_llm(LLMResource(...))\
+            .with_reasoning_pipeline([
+                ObjectiveAnalysisStage(),
+                PlanValidationStage(),
+                ExecutionStage()
+            ])\
+            .with_plan_modification_strategy(
+                AdaptivePlanStrategy(
+                    triggers=[ConfidenceThresholdTrigger(0.7)]
+                )
+            )
 ```
+
+### Best Practices
+
+1. Keep the Planning Layer focused on strategy - avoid pulling it into tactical decisions
+2. Allow the Reasoning Layer appropriate autonomy in tactical execution
+3. Set appropriate signal thresholds to avoid unnecessary plan changes
+4. Maintain clear separation between strategic and tactical state
+5. Monitor and adjust signal thresholds based on execution patterns
+6. Implement robust error handling at both layers
+7. Maintain audit trails of strategic decisions and their rationale
