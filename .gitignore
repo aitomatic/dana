@@ -1,6 +1,6 @@
 .env
-.vscode/
-.venv/
-__pycache__
-logs/
+.vscode/*
+.venv/*
+__pycache__/*
 logs/*
+dxa.egg-info/*
