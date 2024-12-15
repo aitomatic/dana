@@ -20,5 +20,6 @@ Example:
 
 from dxa.core.io.console_io import ConsoleIO
 from dxa.core.io.websocket_io import WebSocketIO
+from dxa.core.io.base_io import BaseIO
 
-__all__ = ['ConsoleIO', 'WebSocketIO'] 
+__all__ = ['ConsoleIO', 'WebSocketIO', 'BaseIO'] 

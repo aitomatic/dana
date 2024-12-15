@@ -17,7 +17,7 @@ Example:
     ```
 """
 
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import Optional
 import logging
 from dxa.agent.agent_runtime import StateManager
@@ -39,41 +39,20 @@ class BaseIO(ABC):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.state_manager = StateManager(self.__class__.__name__)
     
-    @abstractmethod
     async def send_message(self, message: str) -> None:
-        """Send a message through the I/O implementation.
-        
-        Args:
-            message: The message string to be sent.
-            
-        Raises:
-            NotImplementedError: If the method is not implemented by the subclass.
-        """
+        """Send a message - must be implemented by subclasses."""
         pass
         
-    @abstractmethod
     async def get_input(self, prompt: Optional[str] = None) -> str:
-        """Get input through the I/O implementation.
-        
-        Args:
-            prompt: Optional prompt to display before getting input.
-            
-        Returns:
-            str: The input received from the I/O implementation.
-            
-        Raises:
-            NotImplementedError: If the method is not implemented by the subclass.
-        """
+        """Get input - must be implemented by subclasses."""
         pass
 
-    @abstractmethod
     async def initialize(self) -> None:
-        """Initialize I/O."""
+        """Default initialization does nothing."""
         pass
 
-    @abstractmethod
     async def cleanup(self) -> None:
-        """Clean up I/O."""
+        """Default cleanup does nothing."""
         pass
 
     async def __aenter__(self):

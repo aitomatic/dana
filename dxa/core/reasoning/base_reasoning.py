@@ -1,14 +1,59 @@
-"""Base reasoning pattern for DXA."""
+"""Base reasoning pattern for DXA.
+
+A reasoning pattern defines how an agent approaches problem-solving. Each pattern:
+
+1. Defines a sequence of steps (e.g., ["observe", "analyze", "act"])
+2. Processes tasks through these steps
+3. Uses an LLM resource provided by the Agent for the actual reasoning
+4. Maintains state and context between steps
+
+Core Concepts:
+-------------
+- Steps: Ordered sequence of reasoning operations
+- Context: Shared state between steps containing:
+    - objective: What we're trying to achieve
+    - resources: Available tools/capabilities
+    - workspace: Shared memory between steps
+    - history: Record of step results
+
+Information Flow:
+---------------
+- Steps read/write to context.workspace for shared state
+- Steps store results in context.history
+- Each step can access previous step results from history
+- LLM interactions handled through agent_llm property
+
+Example:
+    ```python
+    class MyReasoning(BaseReasoning):
+        @property
+        def steps(self) -> List[str]:
+            return ["analyze", "solve"]  # Define steps
+        
+        async def _apply_reasoning(self, task, context):
+            # Use context.workspace for state
+            context.workspace["analysis"] = await self._analyze(task)
+            # Use context.history for step results
+            context.history.append({"step": "analyze", "result": analysis})
+            return await self._solve(context)
+    ```
+
+Implementation Notes:
+------------------
+- Most patterns only need to override _apply_reasoning()
+- Default implementations provided for common operations
+- Context provides all necessary state management
+- Steps should be atomic and focused
+"""
 
 from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Optional
 from enum import Enum
-from dataclasses import dataclass
+from datetime import datetime
+from dataclasses import dataclass, field
 import logging
-from dxa.core.resource.base_resource import BaseResource
-from dxa.core.resource.expert_resource import ExpertResource
-from dxa.core.resource.human_resource import HumanResource
-from dxa.agent.agent_runtime import StateManager, AgentLLM
+from dxa.core.resource import LLMResource
+from dxa.agent.agent_runtime import StateManager
 
 class ReasoningStatus(str, Enum):
     """Possible statuses from reasoning."""
@@ -17,6 +62,14 @@ class ReasoningStatus(str, Enum):
     COMPLETE = "COMPLETE"
     ERROR = "ERROR"
 
+class ReasoningLevel(Enum):
+    """Reasoning complexity levels."""
+    DIRECT = 1.0      # Direct execution
+    REFLECTIVE = 2.0  # Basic validation
+    COT = 3.0         # Chain of thought
+    OODA = 4.0        # Full OODA loop
+    META_OODA = 5.0   # Self-modifying OODA
+    DANA = 6.0        # Domain-aware neurosymbolic agent
 @dataclass
 class StepResult:
     """Result of a reasoning step."""
@@ -33,471 +86,153 @@ class StepResult:
 @dataclass
 class ReasoningConfig:
     """Configuration for reasoning engine."""
+    agent_llm: Optional[LLMResource] = None
     strategy: str = "cot"
     temperature: float = 0.7
     max_tokens: int = 1000
 
+@dataclass
+class ReasoningResult:
+    """Result from any reasoning process."""
+    success: bool
+    output: Any
+    insights: Dict[str, Any]  # New understanding gained
+    needs_objective_refinement: bool = False
+    confidence: float = 0.0
+    reasoning_path: List[str] = None
+
+@dataclass
+class ReasoningContext:
+    """Context for reasoning execution."""
+    objective: str
+    resources: Dict[str, Any]  # Resource types
+    workspace: Dict[str, Any]  # Working memory
+    history: List[Dict[str, Any]]  # Execution history
+
+@dataclass
+class ObjectiveState:
+    """Tracks the evolution of an objective/problem statement."""
+    original: str
+    current: str
+    refinements: List[Dict[str, Any]] = field(default_factory=list)
+    confidence: float = 0.0
+    
+    def add_refinement(self, refinement: str, reason: str, confidence: float):
+        """Add a refinement to the objective."""
+        self.refinements.append({
+            "from": self.current,
+            "to": refinement,
+            "reason": reason,
+            "timestamp": datetime.now().timestamp()
+        })
+        self.current = refinement
+        self.confidence = confidence
+
 class BaseReasoning(ABC):
-    """Base class for implementing reasoning patterns in the DXA framework.
-
-    The DXA Reasoning Paradigm:
-    --------------------------
-    Reasoning in DXA follows a step-based approach where complex problems are broken
-    down into a sequence of smaller, focused reasoning steps. Each step:
-    
-    1. Receives context about the problem and previous reasoning
-    2. Generates a specific prompt for the LLM
-    3. Processes the LLM's response
-    4. Decides whether to:
-       - Move to the next step
-       - Request additional information/expertise
-       - Complete the reasoning process
-       - Handle an error condition
-
-    The reasoning flow is dynamic - steps can branch based on LLM responses,
-    request external resources when needed, and adapt to new information.
-    This creates a flexible yet structured approach to problem-solving that:
-    
-    - Breaks complex reasoning into manageable chunks
-    - Maintains context across multiple interactions
-    - Allows for backtracking and error recovery
-    - Integrates external knowledge and expertise
-    - Provides clear decision points and state management
-
-    Implementation Guide:
-    -------------------
-    To implement a new reasoning pattern, developers should:
-
-    1. Create a new class that inherits from BaseReasoning
-    2. Define the reasoning steps by implementing:
-        - steps property: List of possible step names
-        - get_initial_step(): Starting point of the reasoning
-        - get_next_step(): Logic for transitioning between steps
-    3. Implement prompt generation:
-        - get_step_prompt(): Generate step-specific prompts
-        - get_reasoning_system_prompt(): Define system-level instructions
-    4. Implement response handling:
-        - reason_post_process(): Parse LLM responses into StepResult objects
-
-    Example:
-        ```python
-        class MyReasoning(BaseReasoning):
-            @property
-            def steps(self) -> List[str]:
-                return ["ANALYZE", "PLAN", "EXECUTE", "REVIEW"]
-            
-            def get_initial_step(self) -> str:
-                return "ANALYZE"
-            
-            def get_step_prompt(self, step, context, query, previous_steps):
-                if step == "ANALYZE":
-                    return f"Analyze this query: {query}"
-                # ... implement other steps
-            
-            def get_next_step(self, current_step, step_result):
-                if current_step == "ANALYZE":
-                    return "PLAN" if step_result.status == ReasoningStatus.COMPLETE else None
-                # ... implement other transitions
-        ```
-
-    Key Features:
-    - Structured step-by-step reasoning process
-    - Resource management (experts, humans, tools)
-    - State tracking across reasoning steps
-    - Standardized interaction with LLMs
-    - Error handling and recovery
-    - Context management
-
-    The reasoning process can result in:
-    - COMPLETE: Reasoning reached a conclusion
-    - NEED_EXPERT: External expertise required
-    - NEED_INFO: Additional information needed
-    - ERROR: Reasoning cannot continue
-
-    Available Resources:
-    - Expert Resources: Domain specialists
-    - Human Resources: User interaction
-    - Other Resources: Tools and utilities
-
-    Tips for Implementation:
-    - Keep steps atomic and focused
-    - Use clear, descriptive step names
-    - Include error handling in step transitions
-    - Leverage previous step results in prompts
-    - Document expected inputs/outputs for each step
-    - Consider resource availability in reasoning flow
-    """
+    """Base class for implementing reasoning patterns."""
     
     def __init__(self, config: Optional[ReasoningConfig] = None):
-        """Initialize reasoning system.
-        
-        Args:
-            config: Optional configuration for the reasoning system
-        """
         self.config = config or ReasoningConfig()
-        self.strategy = self.config.strategy
-        self._agent_llm = None  # Will be set by Agent
+        self._agent_llm = self.config.agent_llm
         self.state_manager = StateManager(agent_name=self.__class__.__name__)
-        self.available_resources: Dict[str, BaseResource] = {}
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.current_step = self.get_initial_step()
-        self.previous_steps = []
-
-    @property
-    def agent_llm(self) -> Optional[AgentLLM]:
-        """Get the LLM instance."""
-        if self._agent_llm is None:
-            raise ValueError(
-                "No LLM configured for reasoning. The Agent must set its LLM on "
-                "the reasoning system before use."
-            )
-        return self._agent_llm
-
-    @agent_llm.setter
-    def agent_llm(self, llm: AgentLLM):
-        """Set the LLM instance.
-        
-        This will be called by the Agent to set its LLM on the reasoning system.
-        """
-        self._agent_llm = llm
+        self.objective_state = None
 
     @property
     @abstractmethod
     def steps(self) -> List[str]:
-        """Get list of possible steps."""
-        pass
-    
-    @abstractmethod
-    def get_initial_step(self) -> str:
-        """Get the initial step for reasoning."""
+        """Get ordered list of reasoning steps."""
         pass
 
-    @abstractmethod
-    def get_step_prompt(self,
-                        step: str,
-                        context: Dict[str, Any],
-                        query: str,
-                        previous_steps: List[Dict[str, Any]]) -> str:
-        """Get the prompt for a specific step."""
-        pass
+    @property
+    def agent_llm(self) -> Optional[LLMResource]:
+        """Get the LLM provided by the Agent."""
+        if self._agent_llm is None:
+            raise ValueError("No LLM configured. Agent must set LLM before reasoning.")
+        return self._agent_llm
 
-    @abstractmethod
-    def get_next_step(self, current_step: str, step_result: StepResult) -> Optional[str]:
-        """Determine the next step based on current step and its result.
-        
-        Returns None if reasoning should end (success/failure/need resource).
-        """
-        pass
+    @agent_llm.setter
+    def agent_llm(self, llm: LLMResource):
+        """Set the LLM for reasoning."""
+        self._agent_llm = llm
 
-    def get_reasoning_prompt(self, context: Dict[str, Any], query: str) -> str:
-        """Get prompt for the current reasoning step.
+    async def reason_about(self, task: Dict[str, Any], context: ReasoningContext) -> ReasoningResult:
+        """Main reasoning entry point."""
+        try:
+            await self._prepare_reasoning(task, context)
+            result = await self._apply_reasoning(task, context)
+            return await self._verify_reasoning(result, context)
+        # pylint: disable=broad-exception-caught
+        except Exception as e:
+            return await self._handle_reasoning_error(e, task, context)
+
+    # pylint: disable=unused-argument
+    async def _prepare_reasoning(self, task: Dict[str, Any], context: ReasoningContext) -> None:
+        """Setup reasoning context."""
+        await self._init_objective(context)
+        context.workspace.clear()  # Fresh workspace
+        context.history.clear()    # Fresh history
+
+    async def _apply_reasoning(self, task: Dict[str, Any], context: ReasoningContext) -> ReasoningResult:
+        """Apply the reasoning pattern. Override this in subclasses."""
+        response = await self.agent_llm.query({
+            "system": "Process this task directly.",
+            "user": str(task.get('command', task)),
+            "temperature": self.config.temperature
+        })
         
-        Combines the step-specific prompt with context and query information.
-        This is typically used internally by the reason() method.
+        # Record step in history
+        context.history.append({
+            "step": self.steps[0],
+            "task": task,
+            "response": response.get("content")
+        })
         
-        Args:
-            context (Dict[str, Any]): Current context for reasoning
-            query (str): User's original query
-            
-        Returns:
-            str: Generated prompt for the current step
-        """
-        return self.get_step_prompt(
-            self.current_step, 
-            context, 
-            query,
-            self.previous_steps
+        return ReasoningResult(
+            success=True,
+            output=response.get("content", "Task completed"),
+            insights={},
+            confidence=1.0,
+            reasoning_path=self.steps
         )
 
-    @abstractmethod
-    def get_reasoning_system_prompt(self, context: Dict[str, Any], query: str) -> str:
-        """Get the reasoning system prompt."""
-        pass
+    async def _verify_reasoning(self, result: ReasoningResult, context: ReasoningContext) -> ReasoningResult:
+        """Verify reasoning result. Override for custom verification."""
+        return result
 
-    def get_system_prompt(self, context: Dict[str, Any], query: str) -> str:
-        """Get the reasoning-specific system prompt.
-        
-        This provides instructions specific to the reasoning strategy (e.g., CoT, OODA).
-        The AgentLLM will combine this with the agent's system prompt.
-        """
-        return self.get_reasoning_system_prompt(context, query)
+    async def _init_objective(self, context: ReasoningContext) -> None:
+        """Initialize objective tracking."""
+        self.objective_state = ObjectiveState(
+            original=context.objective,
+            current=context.objective
+        )
 
-    def get_user_prompt(self, context: Dict[str, Any], query: str) -> str:
-        """Get the reasoning-specific user prompt.
-        
-        This provides the reasoning-specific part of the prompt (e.g., step instructions).
-        The AgentLLM will combine this with the agent's user prompt.
-        """
-        return self.get_reasoning_prompt(context, query)
-
-    async def reason(self, context: Dict[str, Any], query: str) -> Dict[str, Any]:
-        """Run a single reasoning cycle."""
-        # Get prompts
-        system_prompt = self.get_system_prompt(context, query)
-        user_prompt = self.get_user_prompt(context, query)
-        
-        # Query LLM
-        response = await self._query_agent_llm({
-            "system_prompt": system_prompt,
-            "prompt": user_prompt,
-            "temperature": self.config.temperature,
-            "max_tokens": self.config.max_tokens
-        })
-        
-        # Process response - note we access response["response"] here
-        step_result = self.reason_post_process(response["response"])
-        
-        # Store step result
-        self.previous_steps.append({
-            "step": self.current_step,
-            "result": step_result
-        })
-        
-        # Determine next step
-        next_step = self.get_next_step(self.current_step, step_result)
-        if next_step:
-            self.current_step = next_step
-            
-        return step_result
-
-    @abstractmethod
-    def reason_post_process(self, response: str) -> StepResult:
-        """Process the response from the LLM and return a standardized result.
-        
-        This method should parse and structure the raw LLM response into a 
-        standardized StepResult object. Implementations should handle:
-        
-        - Extracting key information from the response
-        - Determining the reasoning status (COMPLETE, NEED_INFO, etc.)
-        - Formatting any resource requests or final answers
-        - Error handling for malformed responses
-        
-        Args:
-            response (str): Raw response from the LLM.
-            
-        Returns:
-            StepResult: Structured result containing status, content, and any
-                additional information like resource requests or final answers.
-        """
-        pass
-
-    def reset(self) -> None:
-        """Reset the reasoning process to its initial state.
-        
-        Clears previous steps and returns to the initial step. This is useful
-        when starting a new reasoning chain or recovering from errors.
-        """
-        self.current_step = self.get_initial_step()
-        self.previous_steps = []
+    async def _handle_reasoning_error(self, error: Exception, task: Dict[str, Any], context: ReasoningContext) -> ReasoningResult:
+        """Handle reasoning errors."""
+        self.logger.error("Reasoning error: %s", str(error))
+        return ReasoningResult(
+            success=False,
+            output=str(error),
+            insights={"error_type": error.__class__.__name__},
+            confidence=0.0,
+            reasoning_path=[]
+        )
 
     async def initialize(self) -> None:
-        """Initialize the reasoning system.
-        
-        Performs any necessary setup before reasoning can begin, such as
-        initializing the LLM agent. Should be called before first use.
-        """
+        """Initialize the reasoning system."""
         if self.agent_llm:
             await self.agent_llm.initialize()
 
     async def cleanup(self) -> None:
-        """Clean up the reasoning system.
-        
-        Performs cleanup tasks when reasoning is complete, such as
-        closing LLM connections. Should be called when done using
-        the reasoning system.
-        """
+        """Clean up resources."""
         if self.agent_llm:
             await self.agent_llm.cleanup()
 
-    def _format_context(self, context: Dict[str, Any]) -> str:
-        """Format context information for inclusion in prompts.
-        
-        Internal method to convert context dictionary into a formatted
-        string suitable for LLM prompts.
-        
-        Args:
-            context (Dict[str, Any]): Context to format
-            
-        Returns:
-            str: Formatted context string
-        """
-        formatted = []
-        for key, value in context.items():
-            if isinstance(value, dict):
-                formatted.append(f"{key}:")
-                for k, v in value.items():
-                    formatted.append(f"  {k}: {v}")
-            elif isinstance(value, (list, tuple)):
-                formatted.append(f"{key}:")
-                for item in value:
-                    formatted.append(f"  - {item}")
-            else:
-                formatted.append(f"{key}: {value}")
-        return '\n'.join(formatted)
-
-    def set_available_resources(self, resources: Dict[str, BaseResource]) -> None:
-        """Configure available resources for the reasoning process.
-        
-        Resources can include domain experts, human users, or other tools
-        that the reasoning process can utilize when needed.
-        
-        Args:
-            resources (Dict[str, BaseResource]): Dictionary mapping resource
-                names to their implementations
-                
-        Raises:
-            TypeError: If resources are not properly typed
-        """
-        if not isinstance(resources, dict):
-            raise TypeError("Resources must be provided as a dictionary")
-        
-        if not all(isinstance(r, BaseResource) for r in resources.values()):
-            raise TypeError("All resources must inherit from BaseResource")
-            
-        self.available_resources = resources
-        
-        # Log available resources by type
-        experts = [r for r in resources.values() if isinstance(r, ExpertResource)]
-        humans = [r for r in resources.values() if isinstance(r, HumanResource)]
-        others = [
-            r for r in resources.values()
-            if not isinstance(r, (ExpertResource, HumanResource))
-        ]
-        
-        if experts:
-            self.logger.info(
-                "Available experts: %s",
-                [f"{e.expertise.name} ({e.expertise.description})" for e in experts]
-            )
-        if humans:
-            self.logger.info(
-                "Available human users: %s",
-                [f"{h.name} ({h.role})" for h in humans]
-            )
-        if others:
-            self.logger.info(
-                "Other available resources: %s",
-                [f"{r.name} ({r.description})" for r in others]
-            )
-
-    def get_resource_description(self) -> str:
-        """Get a formatted description of all available resources.
-        
-        Returns a human-readable string describing all configured resources,
-        grouped by type (experts, humans, others) with their capabilities
-        and metadata.
-        
-        Returns:
-            str: Formatted resource description
-        """
-        description = []
-        
-        # Group resources by type
-        experts = [
-            r for r in self.available_resources.values()
-            if isinstance(r, ExpertResource)
-        ]
-        humans = [
-            r for r in self.available_resources.values()
-            if isinstance(r, HumanResource)
-        ]
-        others = [
-            r for r in self.available_resources.values()
-            if not isinstance(r, (ExpertResource, HumanResource))
-        ]
-        
-        # Add expert descriptions
-        if experts:
-            description.append("Available Domain Experts:")
-            for expert in experts:
-                description.extend([
-                    f"- {expert.expertise.name}:",
-                    f"  Description: {expert.expertise.description}",
-                    f"  Capabilities: {', '.join(expert.expertise.capabilities)}",
-                    f"  Keywords: {', '.join(expert.expertise.keywords)}"
-                ])
-        
-        # Add human user descriptions
-        if humans:
-            description.append("\nAvailable Human Users:")
-            for human in humans:
-                description.extend([
-                    f"- {human.name}:",
-                    f"  Role: {human.role}",
-                    f"  Description: {human.description}"
-                ])
-        
-        # Add other resource descriptions
-        if others:
-            description.append("\nOther Available Resources:")
-            for resource in others:
-                description.extend([
-                    f"- {resource.name}:",
-                    f"  Description: {resource.description}"
-                ])
-        
-        return "\n".join(description)
-
-    def has_resource(self, resource_name: str) -> bool:
-        """Check if a specific resource is available.
-        
-        Args:
-            resource_name (str): Name of the resource to check
-            
-        Returns:
-            bool: True if the resource exists, False otherwise
-        """
-        return resource_name in self.available_resources
-
-    async def _query_agent_llm(self, llm_request: Dict[str, Any]) -> Dict[str, str]:
-        """Query the LLM agent with the given request."""
-        if not self.agent_llm:
-            raise ValueError(
-                "No LLM configured for reasoning. Ensure reasoning is initialized "
-                "with an AgentLLM instance."
-            )
-        
-        # Let AgentLLM handle the prompt combination
-        messages = []
-        if "system_prompt" in llm_request:
-            messages.append({
-                "role": "system", 
-                "content": llm_request["system_prompt"],
-                "source": "reasoning"  # Mark this as coming from reasoning
-            })
-        if "prompt" in llm_request:
-            messages.append({
-                "role": "user", 
-                "content": llm_request["prompt"],
-                "source": "reasoning"  # Mark this as coming from reasoning
-            })
-
-        # pylint: disable=no-member
-        response = await self.agent_llm.query(messages)
-        return {"response": response["content"]}
-    
     async def __aenter__(self):
         """Context manager entry."""
+        await self.initialize()
         return self
         
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Context manager exit."""
         await self.cleanup()
-
-    def _format_previous_step(self, previous_steps: List[Dict[str, Any]], step_name: str) -> str:
-        """Format the result from a previous reasoning step.
-        
-        Internal method to retrieve and format results from earlier steps
-        in the reasoning process.
-        
-        Args:
-            previous_steps (List[Dict[str, Any]]): List of previous step results
-            step_name (str): Name of the step to retrieve
-            
-        Returns:
-            str: Formatted step result or default message if step not found
-        """
-        for step in reversed(previous_steps):
-            if step["step"] == step_name:
-                return step["result"].content
-        return "No previous step information available"

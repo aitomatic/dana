@@ -1,162 +1,124 @@
-<!-- markdownlint-disable MD041 -->
-<!-- markdownlint-disable MD033 -->
-<p align="center">
-    <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
-</p>
-
 # DXA Agents
 
-This directory contains the core agent implementations for the DXA framework. Each agent type is specialized for different interaction patterns and execution models.
+This directory contains the core agent implementation for the DXA framework.
 
-## Class Hierarchy
+## Architecture
 
-```text
-BaseAgent
-├── AutonomousAgent        # Independent operation
-├── InteractiveAgent      # User interaction
-├── WebSocketAgent        # Network communication
-├── WorkAutomationAgent   # Workflow automation
-└── CollaborativeAgent    # Multi-agent coordination
-```
+The DXA agent system uses a unified, composable design that supports progressive complexity.
 
-## Agent Types
+### Core Components
 
-### BaseAgent
+#### Agent
 
-Abstract base class providing common functionality:
+The unified Agent class provides a flexible implementation supporting:
 
+- Different reasoning strategies (CoT, OODA)
 - Resource management
-- Error handling
-- Default Chain of Thought reasoning
-- Progress tracking
-- State management
-
-### AutonomousAgent
-
-Specialized for independent operation:
-
-- Runs without user interaction
-- Stricter validation of task parameters
-- Detailed progress reporting
-- Automatic handling of stuck states
-
-### InteractiveAgent
-
-Enables real-time user interaction:
-
-- Console-based interaction
-- Progress monitoring
-- Decision points
-- User feedback collection
-- Flow control (continue/stop)
-
-### WebSocketAgent
-
-Network-based agent using WebSocket communication:
-
-- Bidirectional communication
-- Connection state management
-- Reconnection handling
-- Message serialization
-- Error recovery
-
-### WorkAutomationAgent
-
-Focused on workflow automation:
-
-- Step-by-step execution
-- Process validation
-- Retry mechanisms
-- State tracking
-- Default OODA-loop reasoning
-
-### CollaborativeAgent
-
-Enables multi-agent coordination:
-
-- Agent-to-agent communication
-- Task delegation
-- Result aggregation
-- Collaboration history tracking
-- Resource sharing
-
-## Supporting Components
-
-### StateManager
-
-Manages agent state and execution history:
-
-- Observations
-- Messages
-- Working memory
-- State transitions
-
-### AgentProgress
-
-Reports task progress and results:
-
-- Progress updates
-- Completion status
-- Error reporting
-- Result formatting
-
-### AgentLLM
-
-Agent-specific LLM implementation:
-
-- Prompt management
-- Context handling
-- Response formatting
-- Agent-specific configurations
-
-### Configuration
-
-Configuration management through:
-
-- `LLMConfig`: LLM-specific settings
-
-## Usage Example
+- I/O handling
+- Capability tracking
 
 ```python
-from dxa.agent import InteractiveAgent
-from dxa.core.reasoning import ChainOfThoughtReasoning
+# Basic usage
+agent = Agent("researcher")
+result = await agent.run("Analyze this data")
 
-# Create an interactive agent
-agent = InteractiveAgent(
-    name="math_tutor",
-    llm_config={
-        "model": "gpt-4",
-        "temperature": 0.7
-    },
-    reasoning=ChainOfThoughtReasoning(),
-    description="Interactive math tutoring agent"
-)
-
-# Run with progress updates
-async for progress in agent.run_with_progress({
-    "objective": "teach_algebra",
-    "topic": "quadratic_equations"
-}):
-    if progress.is_progress:
-        print(f"Progress: {progress.percent}% - {progress.message}")
-    elif progress.is_result:
-        print("Final result:", progress.result)
+# Progressive configuration
+agent = Agent("analyst")\
+    .with_reasoning(reasoning)\
+    .with_resources(resources)\
+    .with_capabilities(["analysis", "research"])\
+    .with_io(io_handler)
 ```
 
-## Directory Structure
+#### Runtime
 
-```text
-agent/
-├── __init__.py              # Package exports
-├── agent_llm.py             # Agent-specific LLM implementation
-├── agent_progress.py        # Progress reporting
-├── agent_runtime.py         # Execution runtime
-├── agent_state.py           # State management
-├── autonomous_agent.py      # Autonomous agent implementation
-├── base_agent.py            # Base agent class
-├── collaborative_agent.py   # Multi-agent coordination
-├── config.py                # Configuration classes
-├── interactive_agent.py     # Interactive agent implementation
-├── websocket_agent.py       # WebSocket-based agent
-└── work_automation_agent.py # Workflow automation agent
+AgentRuntime manages execution:
+
+- State management
+- Iteration control
+- Progress tracking
+- Error handling
+
+#### Factory
+
+Factory provides lifecycle management:
+
+```python
+async with create_agent({
+    "name": "researcher",
+    "reasoning": "cot",
+    "capabilities": ["research"],
+    "resources": {
+        "llm": LLMResource(model="gpt-4")
+    }
+}) as agent:
+    result = await agent.run("Research quantum computing")
+```
+
+### Key Features
+
+1. **Progressive Complexity**
+   - Start simple with sensible defaults
+   - Add capabilities as needed
+   - Configure for specific use cases
+
+2. **Resource Management**
+   - LLM integration
+   - Expert knowledge
+   - Tool access
+   - I/O handling
+
+3. **Reasoning Integration**
+   - Chain of Thought (CoT)
+   - OODA Loop
+   - Custom reasoning patterns
+
+4. **State Management**
+   - Execution tracking
+   - Progress monitoring
+   - History recording
+
+## Components
+
+### Core Classes
+
+- `Agent`: Unified agent implementation
+- `AgentRuntime`: Execution management
+- `StateManager`: State tracking
+- `AgentConfig`: Configuration management
+
+### Supporting Types
+
+- `AgentProgress`: Progress tracking
+- `Observation`: Agent observations
+- `Message`: Communication records
+
+## Usage Examples
+
+### Basic Agent
+
+```python
+agent = Agent()
+result = await agent.run("Analyze this data")
+```
+
+### Research Agent
+
+```python
+agent = Agent("researcher")\
+    .with_reasoning("cot")\
+    .with_resources({
+        "llm": LLMResource(model="gpt-4"),
+        "search": SearchResource()
+    })
+result = await agent.run("Research quantum computing")
+```
+
+### Interactive Agent
+
+```python
+agent = Agent("assistant")\
+    .with_reasoning("ooda")\
+    .with_io(WebSocketIO())
+result = await agent.run("Help user with task")
 ```

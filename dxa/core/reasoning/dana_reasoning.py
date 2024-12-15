@@ -1,262 +1,214 @@
-"""Domain-Aware NeuroSymbolic Agent (DANA) Reasoning Pattern
+"""Domain-Aware Neurosymbolic Agent (DANA) Reasoning Pattern.
 
-DANA is a hybrid reasoning architecture that combines neural and symbolic 
-approaches to problem-solving. It leverages both the flexibility of neural 
-networks and the precision of symbolic computation.
+Combines neural and symbolic approaches for precise domain-specific reasoning:
 
-How DANA Works:
--------------
-DANA processes problems through four specialized phases:
+Key Features:
+- Neural understanding with symbolic execution
+- Domain-specific knowledge integration
+- Precise computational capabilities
+- Hybrid problem-solving approach
 
-1. UNDERSTAND (Neural):
-   - Natural language comprehension
-   - Context interpretation
-   - Domain identification
-   - Pattern recognition
-   - Implicit knowledge extraction
+Best For:
+- Domain-specific problems
+- Tasks requiring precise computation
+- Complex technical problems
+- When domain expertise is crucial
 
-2. TRANSLATE (Neural → Symbolic):
-   - Problem formalization
-   - Domain-specific mapping
-   - Constraint identification
-   - Symbolic representation creation
-   - Algorithm selection
+Example:
+    ```python
+    reasoning = DANAReasoning()
+    result = await reasoning.execute(
+        task={"objective": "Optimize database query performance"},
+        context=context
+    )
+    ```
 
-3. EXECUTE (Symbolic):
-   - Precise computation
-   - Logical inference
-   - Rule application
-   - Algorithmic processing
-   - Consistency checking
-
-4. SYNTHESIZE (Symbolic → Neural):
-   - Result interpretation
-   - Natural language generation
-   - Explanation creation
-   - Context integration
-   - Solution validation
-
-Implementation in DXA:
---------------------
-The DANAReasoning class implements this hybrid approach by:
-
-1. Phase Definition:
-   ```python
-   @property
-   def steps(self) -> List[str]:
-       return ["understand", "translate", "execute", "synthesize"]
-   ```
-
-2. Neural Processing:
-   - Natural language understanding
-   - Pattern recognition
-   - Fuzzy matching
-   - Context awareness
-   - Explanation generation
-
-3. Symbolic Processing:
-   - Exact computation
-   - Logical inference
-   - Rule application
-   - Consistency checking
-   - Formal verification
-
-4. Hybrid Integration:
-   - Seamless transitions between modes
-   - Cross-validation of results
-   - Combined reasoning capabilities
-   - Error detection and recovery
-
-Usage Example:
-------------
-```python
-reasoning = DANAReasoning()
-result = await reasoning.reason(
-    context={"domain_knowledge": "...", "rules": "..."}, 
-    query="Solve using domain-specific approach..."
-)
-```
-
-Benefits:
---------
-- Precision: Combines neural flexibility with symbolic accuracy
-- Domain Awareness: Leverages specific domain knowledge
-- Explainability: Clear reasoning steps in both modes
-- Robustness: Multiple validation approaches
-- Adaptability: Can handle both fuzzy and exact problems
-
-Key Applications:
----------------
-DANA excels in scenarios requiring:
-- Domain-specific reasoning
-- Formal verification
-- Complex problem decomposition
-- Precise computation
-- Natural language interaction
-- Rule-based processing
-
-Unique Features:
---------------
-Unlike pure neural or symbolic approaches, DANA:
-- Bridges neural and symbolic processing
-- Maintains domain awareness throughout
-- Provides multi-level validation
-- Combines flexibility with precision
-- Supports formal verification
-- Handles both structured and unstructured input
-
-Resource Integration:
-------------------
-DANA can effectively utilize:
-- Domain experts for knowledge validation
-- Symbolic processing tools
-- Neural language models
-- Formal verification systems
-- Domain-specific databases
-- Expert knowledge bases
+Process:
+1. Formulate: Neural understanding of problem
+2. Translate: Convert to symbolic form
+3. Execute: Precise symbolic computation
+4. Synthesize: Interpret results in context
 """
 
 from typing import Dict, Any, List, Optional
-from dxa.core.reasoning.base_reasoning import BaseReasoning, StepResult, ReasoningStatus
+from dxa.core.reasoning.base_reasoning import (
+    BaseReasoning, 
+    ReasoningResult, 
+    ReasoningContext,
+    StepResult,
+    ReasoningStatus
+)
 
 class DANAReasoning(BaseReasoning):
-    """Domain-Aware NeuroSymbolic Agent reasoning implementation."""
+    """Neural-symbolic hybrid reasoning implementation."""
     
     @property
     def steps(self) -> List[str]:
-        """Get list of possible steps."""
-        return ["understand", "translate", "execute", "synthesize"]
+        return ["formulate", "translate", "execute", "synthesize"]
     
     def get_initial_step(self) -> str:
-        """Get the initial step for reasoning."""
-        return "understand"
+        return "formulate"
 
-    def get_step_prompt(self,
-                        step: str,
-                        context: Dict[str, Any],
-                        query: str,
-                        previous_steps: List[Dict[str, Any]]) -> str:
-        """Get the prompt for a specific step."""
-        prompts = {
-            "understand": self._get_understand_prompt,
-            "translate": self._get_translate_prompt,
-            "execute": self._get_execute_prompt,
-            "synthesize": self._get_synthesize_prompt
-        }
-        return prompts[step](context, query, previous_steps)
-
-    def get_next_step(self, current_step: str, step_result: StepResult) -> Optional[str]:
-        """Determine the next step based on current step and its result."""
-        # If we need resources or have error/completion, stop here
-        if step_result.status != ReasoningStatus.COMPLETE:
-            return None
+    async def _core_execute(self, 
+                          task: Dict[str, Any],
+                          context: ReasoningContext) -> ReasoningResult:
+        await self._init_objective(context)
+        
+        # Neural: Problem formulation
+        formulation = await self._formulate_problem(task, context)
+        if formulation.status != ReasoningStatus.COMPLETE:
+            return self._create_error_result("Failed formulation", formulation)
             
-        # Move to next step in sequence, stop at end
-        step_order = self.steps
-        current_index = step_order.index(current_step)
-        if current_index < len(step_order) - 1:
-            return step_order[current_index + 1]
-        return None
-
-    def get_reasoning_system_prompt(self, context: Dict[str, Any], query: str) -> str:
-        """Get the reasoning system prompt."""
-        return f"""You are executing the {self.current_step} step in a DANA reasoning process.
-        Consider both neural understanding and symbolic precision in your analysis."""
-
-    def reason_post_process(self, response: str) -> StepResult:
-        """Process the response from the LLM."""
-        # Basic implementation - could be enhanced with more sophisticated parsing
-        return StepResult(
-            status=ReasoningStatus.COMPLETE,
-            content=response,
-            final_answer=response if self.current_step == "synthesize" else None
+        # Neural→Symbolic: Translation
+        translation = await self._translate_to_symbolic(formulation, context)
+        if translation.status != ReasoningStatus.COMPLETE:
+            return self._create_error_result("Failed translation", translation)
+            
+        # Symbolic: Execution
+        execution = await self._execute_symbolic(translation, context)
+        if execution.status != ReasoningStatus.COMPLETE:
+            return self._create_error_result("Failed execution", execution)
+            
+        # Symbolic→Neural: Synthesis
+        synthesis = await self._synthesize_results(execution, context)
+        if synthesis.status != ReasoningStatus.COMPLETE:
+            return self._create_error_result("Failed synthesis", synthesis)
+            
+        return ReasoningResult(
+            success=True,
+            output=synthesis.content,
+            insights={
+                "formulation": formulation.content,
+                "symbolic_form": translation.content,
+                "execution_result": execution.content,
+                "objective": self.objective_state.current
+            },
+            confidence=0.9,  # High confidence due to symbolic execution
+            reasoning_path=self.steps
         )
 
-    # pylint: disable=unused-argument
-    def _get_understand_prompt(self, context: Dict[str, Any], query: str, previous_steps: List[Dict[str, Any]]) -> str:
-        """Get prompt for neural understanding step.
+    async def _formulate_problem(self, task: Dict[str, Any], context: ReasoningContext) -> StepResult:
+        """Neural phase: Problem formulation and understanding."""
+        prompt = f"""
+        FORMULATE phase:
+        Objective: {context.objective}
+        Task: {task.get('command')}
+        Available Resources: {list(context.resources.keys())}
         
-        Args:
-            context: The reasoning context
-            query: The user query
-            previous_steps: Results from previous steps
-            
-        Returns:
-            str: The formatted prompt for the understand step
+        Formulate the problem:
+        1. What is the core computational task?
+        2. What domain knowledge is relevant?
+        3. What algorithms or methods could apply?
+        4. What are the key constraints?
+        
+        Focus on identifying precise, computable aspects of the problem.
         """
-        return f"""NEURAL UNDERSTANDING step:
-        Query: {query}
-        Context: {self._format_context(context)}
         
-        Use natural language understanding to:
-        1. Identify the domain and key concepts
-        2. Recognize patterns and relationships
-        3. Extract implicit requirements
-        4. Consider domain-specific context"""
+        response = await self._query_agent_llm({
+            "prompt": prompt,
+            "system_prompt": "You are formulating a problem for symbolic computation."
+        })
+        
+        return StepResult(
+            status=ReasoningStatus.COMPLETE,
+            content=response["response"]
+        )
 
-    def _get_translate_prompt(self, context: Dict[str, Any], query: str, previous_steps: List[Dict[str, Any]]) -> str:
-        """Get prompt for problem translation step.
+    async def _translate_to_symbolic(self, formulation: StepResult, context: ReasoningContext) -> StepResult:
+        """Neural→Symbolic bridge: Translation to computational form."""
+        prompt = f"""
+        TRANSLATE phase:
+        Formulation: {formulation.content}
+        Available Methods: {list(context.resources.keys())}
         
-        Args:
-            context: The reasoning context
-            query: The user query
-            previous_steps: Results from previous steps
-            
-        Returns:
-            str: The formatted prompt for the translate step
+        Translate to symbolic form:
+        1. What specific algorithms should we use?
+        2. What are the input parameters?
+        3. What validation is needed?
+        4. What is the expected output format?
+        
+        Provide concrete, executable specifications.
         """
-        return f"""PROBLEM TRANSLATION step:
-        Query: {query}
-        Context: {self._format_context(context)}
-        Understanding: {self._format_previous_step(previous_steps, "understand")}
         
-        Translate the natural understanding into formal components:
-        1. Map concepts to symbolic representations
-        2. Identify applicable algorithms or methods
-        3. Define formal constraints and requirements
-        4. Structure the problem for symbolic processing"""
+        response = await self._query_agent_llm({
+            "prompt": prompt,
+            "system_prompt": "You are translating to symbolic computation form."
+        })
+        
+        return StepResult(
+            status=ReasoningStatus.COMPLETE,
+            content=response["response"]
+        )
 
-    def _get_execute_prompt(self, context: Dict[str, Any], query: str, previous_steps: List[Dict[str, Any]]) -> str:
-        """Get prompt for symbolic execution step.
+    async def _execute_symbolic(self, translation: StepResult, context: ReasoningContext) -> StepResult:
+        """Symbolic phase: Pure computational execution."""
+        # Here we would parse the translation and execute using appropriate resources
+        # This is where we use actual Python/symbolic computation
         
-        Args:
-            context: The reasoning context
-            query: The user query
-            previous_steps: Results from previous steps
+        try:
+            # Extract computational parameters from translation
+            params = self._parse_execution_params(translation.content)
             
-        Returns:
-            str: The formatted prompt for the execute step
-        """
-        return f"""SYMBOLIC EXECUTION step:
-        Query: {query}
-        Context: {self._format_context(context)}
-        Translation: {self._format_previous_step(previous_steps, "translate")}
-        
-        Execute the solution symbolically:
-        1. Apply formal methods precisely
-        2. Maintain logical consistency
-        3. Track computational steps
-        4. Validate intermediate results"""
+            # Execute using appropriate resource
+            resource = context.resources.get(params["resource"])
+            result = await resource.execute(params["command"])
+            
+            return StepResult(
+                status=ReasoningStatus.COMPLETE,
+                content=str(result)  # Ensure serializable
+            )
+        except Exception as e:
+            return StepResult(
+                status=ReasoningStatus.ERROR,
+                content=f"Symbolic execution failed: {str(e)}"
+            )
 
-    def _get_synthesize_prompt(self, context: Dict[str, Any], query: str, previous_steps: List[Dict[str, Any]]) -> str:
-        """Get prompt for result synthesis step.
-        
-        Args:
-            context: The reasoning context
-            query: The user query
-            previous_steps: Results from previous steps
-            
-        Returns:
-            str: The formatted prompt for the synthesize step
-        """
-        return f"""RESULT SYNTHESIS step:
-        Query: {query}
-        Context: {self._format_context(context)}
-        Execution: {self._format_previous_step(previous_steps, "execute")}
+    async def _synthesize_results(self, execution: StepResult, context: ReasoningContext) -> StepResult:
+        """Symbolic→Neural bridge: Result interpretation."""
+        prompt = f"""
+        SYNTHESIZE phase:
+        Original Objective: {context.objective}
+        Execution Result: {execution.content}
         
         Synthesize the results:
-        1. Combine neural and symbolic insights
-        2. Translate formal results to natural language
-        3. Provide explanations and justifications
-        4. Present the final solution clearly"""
+        1. What do these results mean in context?
+        2. How do they address the objective?
+        3. What are the key insights?
+        4. What are the limitations?
+        
+        Translate technical results into clear insights.
+        """
+        
+        response = await self._query_agent_llm({
+            "prompt": prompt,
+            "system_prompt": "You are synthesizing computational results."
+        })
+        
+        return StepResult(
+            status=ReasoningStatus.COMPLETE,
+            content=response["response"]
+        )
+
+    def _parse_execution_params(self, translation: str) -> Dict[str, Any]:
+        """Parse symbolic execution parameters from translation.
+        
+        This is a critical function that bridges the neural and symbolic parts.
+        It should be carefully implemented based on your specific needs.
+        """
+        # This is a simplified example
+        # In practice, you'd want more sophisticated parsing
+        return {
+            "resource": "python",  # or other appropriate resource
+            "command": translation  # would need proper parsing in reality
+        }
+
+    def _create_error_result(self, message: str, step_result: StepResult) -> ReasoningResult:
+        """Create error result from failed step."""
+        return ReasoningResult(
+            success=False,
+            output=step_result.content,
+            insights={"error": message},
+            confidence=0.0,
+            reasoning_path=self.steps
+        )
   

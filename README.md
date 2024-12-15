@@ -4,11 +4,77 @@
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
 
-# DXA Prototype
+# DXA - Domain-Expert Agent Framework
 
-A prototype implementation of DXA (Domain-Expert Agents) - an AI-powered system for domain-specific expert agents.
+## Reasoning System
 
-For detailed architecture documentation (Product-Engineering perspective), see [DXA Architecture](dxa/README.md). For usage examples (AI Solution Engineering perspective), check out our [Examples](examples/README.md).
+DXA provides four core reasoning patterns, from simplest to most complex:
+
+### 1. Direct Reasoning
+- Simple command execution
+- No complex planning
+- Best for straightforward tasks
+
+```python
+agent = Agent("simple").with_reasoning("direct")
+# or
+agent = Agent("simple").with_reasoning(ReasoningLevel.DIRECT)
+```
+
+### 2. Chain of Thought (CoT)
+- Linear step-by-step reasoning
+- Explicit thought process
+- Best for problem decomposition
+
+```python
+agent = Agent("thinker").with_reasoning("cot")
+# or
+from dxa.core.reasoning import ChainOfThoughtReasoning
+agent = Agent("thinker").with_reasoning(ChainOfThoughtReasoning())
+```
+
+### 3. OODA Loop
+- Cyclical, adaptive reasoning
+- Continuous situation assessment
+- Best for dynamic environments
+
+```python
+agent = Agent("adaptive").with_reasoning("ooda")
+# or
+agent = Agent("adaptive").with_reasoning(ReasoningLevel.OODA)
+```
+
+### 4. DANA (Domain-Aware NeuroSymbolic)
+- Hybrid neural-symbolic reasoning
+- LLM for understanding, Python for execution
+- Best for computational tasks
+
+```python
+agent = Agent("hybrid").with_reasoning("dana")
+# or
+from dxa.core.reasoning import DANAReasoning
+agent = Agent("hybrid").with_reasoning(DANAReasoning())
+```
+
+## Example Usage
+
+```python
+from dxa.agent import Agent
+from dxa.core.resource import LLMResource
+
+# Create agent with specific reasoning
+agent = Agent("solver")\
+    .with_reasoning("cot")\
+    .with_resources({
+        "llm": LLMResource(model="gpt-4")
+    })
+
+# Run task
+result = await agent.run({
+    "objective": "Solve this problem",
+    "command": "Calculate X"
+})
+```
 
 ## Prerequisites
 

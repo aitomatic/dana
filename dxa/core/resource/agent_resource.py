@@ -9,8 +9,8 @@ Example:
     ```python
     # Create resource with agents
     agents = {
-        "researcher": ResearchAgent(...),
-        "analyst": AnalystAgent(...)
+        "researcher": Agent("researcher").with_reasoning("cot"),
+        "analyst": Agent("analyst").with_reasoning("ooda")
     }
     resource = AgentResource("agent_pool", agents)
 
@@ -23,15 +23,17 @@ Example:
 """
 
 import asyncio
-from typing import Dict, Any
-from dxa.agent.base_agent import BaseAgent
+from typing import Dict, Any, TYPE_CHECKING
 from dxa.core.resource.base_resource import BaseResource
 from dxa.common.errors import ResourceError, ConfigurationError, AgentError
+
+if TYPE_CHECKING:
+    from dxa.agent import Agent  # Only used for type hints
 
 class AgentResource(BaseResource):
     """Resource for accessing and coordinating agent interactions."""
     
-    def __init__(self, name: str, agents: Dict[str, BaseAgent]):
+    def __init__(self, name: str, agents: Dict[str, "Agent"]):
         """Initialize agent resource.
         
         Args:
@@ -99,7 +101,7 @@ class AgentResource(BaseResource):
         if errors:
             raise ResourceError("\n".join(errors))
 
-    async def _cleanup_agent(self, agent_id: str, agent: BaseAgent) -> None:
+    async def _cleanup_agent(self, agent_id: str, agent: "Agent") -> None:
         try:
             await agent.cleanup()
         except (AgentError, ValueError) as e:

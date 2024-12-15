@@ -5,129 +5,89 @@
 
 # DXA Examples
 
-This directory contains example implementations and use cases for the DXA (Domain-Expert Agent) framework. These examples demonstrate various capabilities and features of the framework, seen from the perspective of a DXA library developer (e.g., an AI Solution Engineer).
+This directory contains examples demonstrating different reasoning patterns and use cases.
 
-For a complete overview of DXA, see the [architecture documentation](../dxa/README.md) or the [overall project README](../README.md).
+## Reasoning Patterns
 
-## Available Examples
+### 1. Direct Reasoning
+Simple task execution:
+```python
+from dxa.agent import Agent
 
-### Math Tutor (`math_tutor.py`)
+# Create direct execution agent
+agent = Agent("executor").with_reasoning("direct")
 
-An interactive math tutor agent that helps solve mathematical problems step by step. This example demonstrates:
+# Run simple task
+result = await agent.run("Calculate 2+2")
+```
 
-- Interactive agent implementation
-- Chain of Thought reasoning
-- Structured system prompts
-- Environment variables: `OPENAI_API_KEY`
+### 2. Chain of Thought
+Step-by-step problem solving:
+```python
+# Create CoT agent
+agent = Agent("solver").with_reasoning("cot")
 
-### Web Scraping (`web_scraper.py`)
+# Solve complex problem
+result = await agent.run({
+    "objective": "Solve quadratic equation",
+    "command": "Find roots of x^2 + 5x + 6 = 0"
+})
+```
 
-A work automation agent designed for web scraping tasks with a defined workflow. This example demonstrates:
+### 3. OODA Loop
+Adaptive decision making:
+```python
+# Create OODA agent
+agent = Agent("strategist").with_reasoning("ooda")
 
-- Work automation agent implementation
-- Step-by-step workflow execution
-- Result validation
-- Resource cleanup
-- Environment variables: `OPENAI_API_KEY`
+# Handle dynamic situation
+result = await agent.run({
+    "objective": "Monitor system health",
+    "command": "Check and respond to system metrics"
+})
+```
 
-### WebSocket Solver (`websocket_solver.py`)
+### 4. DANA (Neural-Symbolic)
+Hybrid computation:
+```python
+# Create DANA agent
+agent = Agent("hybrid").with_reasoning("dana")
 
-A WebSocket-based problem-solving agent that provides progress updates. This example demonstrates:
+# Execute computational task
+result = await agent.run({
+    "objective": "Optimize function",
+    "command": "Find minimum of f(x) = x^2 - 4x + 4"
+})
+```
 
-- WebSocket communication
-- Progress tracking
-- OODA Loop reasoning principles
-- Asynchronous execution
-- Environment variables: `OPENAI_API_KEY`, `WEBSOCKET_URL`
+## Example Applications
 
-### Collaborative Research (`collaborative_research.py`)
+1. `research_assistant.py` - Uses CoT for research tasks
+2. `system_monitor.py` - Uses OODA for monitoring
+3. `math_solver.py` - Uses DANA for computations
+4. `chat_bot.py` - Uses Direct reasoning for simple interactions
 
-A multi-agent system coordinating research tasks between specialized agents. This example demonstrates:
+Each example includes:
+- Full implementation
+- Usage instructions
+- Sample inputs/outputs
+- Best practices
 
-- Multi-agent coordination
-- Mixed communication methods (Console and WebSocket)
-- Different reasoning strategies
-- State history tracking
-- Environment variables: `OPENAI_API_KEY`, `WEBSOCKET_URL`
+## Running Examples
 
-## Running the Examples
+1. Set up environment:
+```bash
+source venv/bin/activate
+```
 
-1. Make sure you have DXA installed and properly configured with your Aitomatic credentials
+2. Run an example:
+```bash
+python examples/research_assistant.py
+```
 
-2. Set up the required environment variables:
+## Creating Your Own
 
-    ```bash
-    export OPENAI_API_KEY="your-api-key"
-    export WEBSOCKET_URL="your-websocket-url"  # Required for WebSocket examples
-    ```
-
-3. Navigate to the examples directory:
-
-    ```bash
-    cd examples
-    ```
-
-4. Run any example using Python:
-
-    ```bash
-    python math_tutor.py  # or any other example file
-    ```
-
-## Creating Your Own Examples
-
-When creating new examples:
-
-1. Create a new Python file in this directory
-2. Include clear documentation and comments
-3. Demonstrate specific features or capabilities of DXA
-4. Follow the existing example structure for consistency
-
-### Basic DXA Architecture (Using math_tutor.py)
-
-The math tutor example demonstrates the fundamental architecture of a DXA agent:
-
-1. **Agent Configuration**:
-
-    ```python
-    agent_config = {
-        "name": "math_tutor",
-        "model": "gpt-4",
-        "temperature": 0.7,
-        "api_key": api_key,
-        "system_prompt": "...",
-        "reasoning": {
-            "strategy": "cot"
-        }
-    }
-    ```
-
-2. **Agent Components**:
-
-    - **Base Agent**: InteractiveAgent class that handles core agent functionality
-    - **Reasoning**: ChainOfThoughtReasoning for structured problem-solving
-    - **I/O**: Console-based interaction for user communication
-    - **Capabilities**: Built-in mathematical expertise
-
-3. **Execution Flow**:
-
-    ```python
-    # Create agent instance
-    agent = InteractiveAgent(
-        config=agent_config,
-        reasoning=ChainOfThoughtReasoning()
-    )
-
-    # Run agent asynchronously
-    result = await agent.run()
-    ```
-
-4. **Error Handling**:
-
-    - Environment variable validation
-    - Configuration error checking
-    - Runtime error management
-
-This architecture provides a template for creating new agents with different capabilities and interaction modes.
+See the template in `examples/template.py` for creating new examples.
 
 ## Support
 

@@ -21,7 +21,7 @@ An Agent in DXA, similar to a human being, is composed of:
 
 ```mermaid
 graph TD
-    A[dxa.agent.BaseAgent] --> B[dxa.core.reasoning.BaseReasoning]
+    A[dxa.agent.Agent] --> B[dxa.core.reasoning.BaseReasoning]
     A --> C[dxa.agent.AgentLLM]
     A --> D[dxa.core.capability.BaseCapability]
     A --> E[dxa.core.io.BaseIO]
@@ -37,12 +37,29 @@ graph TD
 
 ### Reasoning (`dxa.core.reasoning`)
 
-The reasoning system is the agent's "cognitive core," analogous to human thought processes:
+The reasoning system provides different strategies for problem-solving:
 
-- Planning systems: For creating and executing multi-step plans
-- Goal management: For tracking and prioritizing objectives
-- Task execution: For carrying out specific actions
-- Decision trees: For structured decision-making processes
+#### Direct Reasoning
+Simplest form - direct execution of tasks without complex reasoning.
+
+#### Chain of Thought (CoT)
+Linear step-by-step reasoning with explicit thought process:
+- Understand
+- Analyze
+- Solve
+- Verify
+
+#### OODA Loop
+Cyclical, adaptive reasoning based on the OODA loop:
+- Observe
+- Orient
+- Decide
+- Act
+
+#### DANA (Domain-Aware NeuroSymbolic Agent)
+Hybrid reasoning that combines:
+- Neural (LLM) for problem understanding
+- Symbolic (Python) for precise execution
 
 ### Inherent Capabilities (`dxa.core.capability`)
 
@@ -73,20 +90,18 @@ Like tools and references that humans use, resources provide access to external 
 
 ### Agents (`dxa.agent`)
 
-The agent module provides several specialized agent types, each designed for specific roles:
+The agent module provides a unified, composable Agent implementation that can be configured for different roles:
 
-- `BaseAgent`: The foundation for all agent types
-- `AutonomousAgent`: For agents that operate independently
-- `CollaborativeAgent`: For multi-agent systems where agents work together
-- `InteractiveAgent`: For direct human interaction with real-time conversation capabilities
-- `WebSocketAgent`: For web-based communication, enabling remote agent interactions
-- `AutomationAgent`: Specialized for workflow automation tasks
+- `Agent`: A unified agent class that supports:
+  - Different reasoning strategies (CoT, OODA)
+  - Resource management
+  - I/O handling
+  - Capability tracking
 
 Additional components in the `dxa.agent` module:
 
 - `AgentLLM`: Internal LLM implementation for agents
 - `AgentProgress`: For reporting task progress
-- `LLMConfig`: For configuration management
 - `StateManager`: Manages agent state, observations, and messages
 
 ## Examples
@@ -112,10 +127,12 @@ We encourage you to explore these examples to better understand the full potenti
 The simplest way to create an agent is to use one of the pre-built agent classes:
 
 ```python
-from dxa.agent import InteractiveAgent
+from dxa import Agent
 
-agent = InteractiveAgent()
-agent.run()
+agent = Agent("assistant")\
+    .with_reasoning("cot")\
+    .with_resources({"llm": LLMResource(model="gpt-4")})
+await agent.run("Help with this task")
 ```
 
 ## Advanced Usage
@@ -123,17 +140,17 @@ agent.run()
 For custom agent behaviors, you can use the factory pattern:
 
 ```python
-from dxa.core.factory import create_agent
+from dxa import create_agent
 
-custom_agent = create_agent(
-    agent_type="websocket",
-    config={
-        "name": "custom_agent",
-        "llm_config": {...},
-        "reasoning_config": {...},
-        "resources_config": {...}
+async with create_agent({
+    "name": "custom_agent",
+    "reasoning": "cot",
+    "capabilities": ["research"],
+    "resources": {
+        "llm": LLMResource(model="gpt-4")
     }
-)
+}) as agent:
+    result = await agent.run("Research this topic")
 ```
 
 ## Module Structure
@@ -142,12 +159,7 @@ custom_agent = create_agent(
 dxa/
 ├── agent/
 │   ├── __init__.py
-│   ├── base_agent.py
-│   ├── autonomous_agent.py
-│   ├── collaborative_agent.py
-│   ├── interactive_agent.py
-│   ├── websocket_agent.py
-│   ├── automation_agent.py
+│   ├── unified_agent.py
 │   ├── agent_llm.py
 │   ├── progress.py
 │   ├── config.py

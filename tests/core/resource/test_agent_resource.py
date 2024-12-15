@@ -4,24 +4,17 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from dxa.agent.base_agent import BaseAgent
 from dxa.common.errors import AgentError, ResourceError, ConfigurationError
 from dxa.core.resource.agent_resource import AgentResource
 
-class MockAgent(BaseAgent):
+class MockAgent:
     """Mock agent for testing."""
     def __init__(self, agent_id: str):
-        super().__init__(name=agent_id, config={}, mode="test")
+        self.name = agent_id
         self.agent_id = agent_id
         self.initialize = AsyncMock()
         self.cleanup = AsyncMock()
         self.run = AsyncMock(return_value={"result": "success"})
-
-    def get_agent_system_prompt(self) -> str:
-        return "test system prompt"
-
-    def get_agent_user_prompt(self) -> str:
-        return "test user prompt"
 
 @pytest.fixture
 def agents():
@@ -32,11 +25,13 @@ def agents():
     }
 
 @pytest.fixture
+# pylint: disable=redefined-outer-name
 def agent_resource(agents):
     """Fixture providing test agent resource."""
     return AgentResource(name="test_resource", agents=agents)
 
 @pytest.mark.asyncio
+# pylint: disable=redefined-outer-name
 async def test_initialization(agents):
     """Test agent resource initialization."""
     resource = AgentResource(name="test", agents=agents)
@@ -49,8 +44,8 @@ async def test_initialization_empty_agents():
     with pytest.raises(ConfigurationError):
         AgentResource(name="test", agents={})
 
-# pylint: disable=outer-scope-variable
 @pytest.mark.asyncio
+# pylint: disable=redefined-outer-name
 async def test_query(agent_resource):
     """Test agent query functionality."""
     response = await agent_resource.query({
@@ -63,6 +58,7 @@ async def test_query(agent_resource):
     agent_resource.agents["agent1"].run.assert_called_once_with({"test": "data"})
 
 @pytest.mark.asyncio
+# pylint: disable=redefined-outer-name
 async def test_query_invalid_agent(agent_resource):
     """Test query with invalid agent ID."""
     with pytest.raises(ConfigurationError):
@@ -72,6 +68,7 @@ async def test_query_invalid_agent(agent_resource):
         })
 
 @pytest.mark.asyncio
+# pylint: disable=redefined-outer-name
 async def test_query_missing_agent_id(agent_resource):
     """Test query with missing agent ID."""
     with pytest.raises(ConfigurationError):

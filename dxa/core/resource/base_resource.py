@@ -21,7 +21,7 @@ Example:
             pass
 """
 
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import Dict, Any, Optional, Union
 import logging
 from dataclasses import dataclass
@@ -93,22 +93,19 @@ class BaseResource(ABC):
         return self._is_available
 
     async def initialize(self) -> None:
-        """Initialize the resource."""
+        """Initialize the resource with default implementation."""
         self._is_available = True
 
-    @abstractmethod
     async def query(self, request: Dict[str, Any]) -> ResourceResponse:
-        """Query the resource."""
-        pass
+        """Default query implementation returns success."""
+        return ResourceResponse(success=True)
 
-    @abstractmethod
     async def cleanup(self) -> None:
-        """Clean up resource."""
-        pass
+        """Clean up resource with default implementation."""
+        self._is_available = False
 
-    # pylint: disable=unused-argument
     def can_handle(self, request: Dict[str, Any]) -> bool:
-        """Check if request can be handled."""
+        """Default implementation always returns False."""
         return False
         
     async def __aenter__(self) -> 'BaseResource':
