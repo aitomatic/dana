@@ -1,16 +1,40 @@
-"""Core runtime components for DXA agents.
+"""Runtime components for DXA agents.
 
-This module provides the runtime components for running agents:
-- State management 
-- LLM integration
-- Runtime execution
+This module provides the execution infrastructure for agents:
+
+1. State Management:
+   - Tracks agent state and history
+   - Manages observations and messages
+   - Maintains working memory
+
+2. Progress Tracking:
+   - Monitors execution progress
+   - Provides status updates
+   - Handles iteration control
+
+3. Execution Flow:
+   - Manages reasoning steps
+   - Handles pre/post execution hooks
+   - Controls execution lifecycle
+
+Example:
+    ```python
+    state_manager = StateManager("researcher")
+    runtime = AgentRuntime(state_manager)
+    
+    result = await runtime.execute(
+        task={"objective": "Research quantum computing"},
+        reasoning_step=reasoning.reason,
+        pre_execute=setup,
+        post_execute=cleanup
+    )
+    ```
 """
 
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Dict, Any, List, Optional, AsyncIterator, Callable, Awaitable
 from dxa.common.errors import DXAError
-from dxa.core.resource import LLMResource
 
 # Type aliases
 ReasoningStep = Callable[[Dict[str, Any]], Awaitable[Dict[str, Any]]]
@@ -19,7 +43,14 @@ ContinuationCheck = Callable[[Dict[str, Any]], Awaitable[bool]]
 
 @dataclass 
 class AgentState:
-    """Current state of an agent."""
+    """Current state of an agent.
+    
+    Attributes:
+        name: Agent identifier
+        status: Current status
+        timestamp: State update time
+        metadata: Additional state information
+    """
     name: str
     status: str
     timestamp: float = field(default_factory=lambda: datetime.now().timestamp())
@@ -27,7 +58,14 @@ class AgentState:
 
 @dataclass
 class Observation:
-    """An observation made by the agent."""
+    """An observation made by the agent.
+    
+    Attributes:
+        content: Observation content
+        source: Origin of observation
+        timestamp: When observed
+        metadata: Additional context
+    """
     content: Any
     source: str
     timestamp: float = field(default_factory=lambda: datetime.now().timestamp())
@@ -35,7 +73,15 @@ class Observation:
 
 @dataclass
 class Message:
-    """A message in the agent's communication."""
+    """A message in the agent's communication.
+    
+    Attributes:
+        content: Message content
+        sender: Message origin
+        receiver: Message destination
+        timestamp: When sent
+        metadata: Additional context
+    """
     content: str
     sender: str
     receiver: str
@@ -44,7 +90,14 @@ class Message:
 
 @dataclass
 class AgentProgress:
-    """Represents agent progress updates during task execution."""
+    """Progress updates during task execution.
+    
+    Attributes:
+        type: "progress" or "result"
+        message: Status message
+        percent: Completion percentage
+        result: Final result if complete
+    """
     type: str  # "progress" or "result"
     message: str
     percent: Optional[float] = None
@@ -59,7 +112,14 @@ class AgentProgress:
         return self.type == "result" 
 
 class StateManager:
-    """Manages agent state and execution context."""
+    """Manages agent state and execution context.
+    
+    Handles:
+    - State transitions
+    - Observation recording
+    - Message tracking
+    - Working memory
+    """
     
     def __init__(self, agent_name: str):
         self.agent_name = agent_name
@@ -88,45 +148,19 @@ class StateManager:
         self.messages.clear()
         self.working_memory.clear()
 
-class AgentLLM(LLMResource):
-    """LLM implementation specialized for agent operations."""
-    
-    def __init__(self, name: str, config: Dict[str, Any], agent_prompts: Optional[Dict[str, str]] = None):
-        super().__init__(name=name, config=config)
-        self.agent_prompts = agent_prompts or {}
-    
-    async def query(self, messages: List[Dict[str, str]], **kwargs) -> Dict[str, Any]:
-        combined_messages = []
-        
-        # Handle system messages
-        system_content = []
-        if self.agent_prompts.get("system_prompt"):
-            system_content.append(self.agent_prompts["system_prompt"])
-        system_content.extend(m["content"] for m in messages if m["role"] == "system")
-        
-        if system_content:
-            combined_messages.append({
-                "role": "system",
-                "content": "\n\n".join(system_content)
-            })
-        
-        # Handle user messages
-        user_content = []
-        if self.agent_prompts.get("user_prompt"):
-            user_content.append(self.agent_prompts["user_prompt"])
-        user_content.extend(m["content"] for m in messages if m["role"] == "user")
-        
-        if user_content:
-            combined_messages.append({
-                "role": "user",
-                "content": "\n\n".join(user_content)
-            })
-        
-        response = await super().query(combined_messages, **kwargs)
-        return {"content": response.choices[0].message.content if response.choices else ""}
-
 class AgentRuntime:
-    """Manages the execution lifecycle of an agent."""
+    """Manages the execution lifecycle of an agent.
+    
+    Handles:
+    - Task execution flow
+    - Progress monitoring
+    - State management
+    - Resource lifecycle
+    
+    Args:
+        state_manager: Manages agent state
+        max_iterations: Optional iteration limit
+    """
     
     def __init__(self, state_manager: StateManager, max_iterations: Optional[int] = None):
         self.state_manager = state_manager
@@ -143,6 +177,19 @@ class AgentRuntime:
         should_continue: Optional[ContinuationCheck] = None,
         context: Optional[Any] = None
     ) -> AsyncIterator[AgentProgress]:
+        """Execute task with progress updates.
+        
+        Args:
+            task: Task to execute
+            reasoning_step: Core reasoning function
+            pre_execute: Setup hook
+            post_execute: Cleanup hook
+            should_continue: Continuation check
+            context: Execution context
+            
+        Yields:
+            Progress updates and final result
+        """
         try:
             yield AgentProgress(type="progress", message="Starting execution", percent=0)
             
@@ -227,7 +274,19 @@ class AgentRuntime:
         should_continue: Optional[ContinuationCheck] = None,
         context: Optional[Any] = None
     ) -> Dict[str, Any]:
-        """Execute without progress updates."""
+        """Execute task and return result.
+        
+        Args:
+            task: Task to execute
+            reasoning_step: Core reasoning function
+            pre_execute: Setup hook
+            post_execute: Cleanup hook
+            should_continue: Continuation check
+            context: Execution context
+            
+        Returns:
+            Execution result
+        """
         async for progress in self.execute_with_progress(
             task=task,
             reasoning_step=reasoning_step,
