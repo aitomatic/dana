@@ -27,7 +27,7 @@ handling minor variations and setbacks without escalation. However,
 it maintains clear boundaries by signaling the Planning Layer when
 strategic changes might be needed.
 
-``mermaid
+```mermaid
 graph TB
     Planning --> Reasoning -.->|Uses| Resources
 
