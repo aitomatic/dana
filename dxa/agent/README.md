@@ -7,7 +7,7 @@ tactical execution through a clean two-layer architecture. The
 system emphasizes clear separation of concerns while maintaining
 adaptivity through a well-defined signaling system.
 
-## Structure:
+## Structure
 
 The system is built on two primary layers with distinct responsibilities:
 
@@ -33,16 +33,18 @@ graph TB
         P[Plan Management] --> O[Objective Management]
         O --> S[Strategy Selection]
         P --> S
+        PL[Planning Node]  %% A node to represent the Planning Layer
     end
     
     subgraph Reasoning Layer
         E[Execution] --> M[Monitoring]
         M --> A[Analysis]
         A --> E
+        RL[Reasoning Node] %% A node to represent the Reasoning Layer
     end
     
-    Planning Layer -->|Plans & Objectives| Reasoning Layer
-    Reasoning Layer -->|Signals & Status| Planning Layer
+    PL -->|Plans & Objectives| RL
+    RL -->|Signals & Status| PL
     
     subgraph Resources
         LLM[Language Models]
@@ -51,12 +53,12 @@ graph TB
         MEM[Memory Store]
     end
     
-    Reasoning Layer -.->|Uses| LLM
-    Reasoning Layer -.->|Uses| DB
-    Reasoning Layer -.->|Uses| API
-    Reasoning Layer -.->|Uses| MEM
+    RL -.->|Uses| LLM
+    RL -.->|Uses| DB
+    RL -.->|Uses| API
+    RL -.->|Uses| MEM
     
-    Planning Layer -.->|Resource Awareness| Resources
+    PL -.->|Resource Awareness| Resources
 ```
 
 The interaction between layers is managed through two primary mechanisms:
