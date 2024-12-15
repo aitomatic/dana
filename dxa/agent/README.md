@@ -27,38 +27,43 @@ handling minor variations and setbacks without escalation. However,
 it maintains clear boundaries by signaling the Planning Layer when
 strategic changes might be needed.
 
-```mermaid
+``mermaid
 graph TB
-    subgraph Planning Layer
-        P[Plan Management] --> O[Objective Management]
-        O --> S[Strategy Selection]
-        P --> S
-        PL[Planning Node]  %% A node to represent the Planning Layer
+    Planning --> Reasoning -.->|Uses| Resources
+
+    %% Resources Subgraph
+    subgraph Resources Layer
+        direction RL
+        LLM[Language Models] -.->
+        DB[(Databases)] -.->
+        API[External APIs] -.->
+        MEM[Memory Store] -.->
+        Resources 
     end
-    
-    subgraph Reasoning Layer
-        E[Execution] --> M[Monitoring]
-        M --> A[Analysis]
-        A --> E
-        RL[Reasoning Node] %% A node to represent the Reasoning Layer
+
+    %% Planning-Reasoning Subgraph
+    subgraph Planning-Reasoning
+        direction BT
+
+        %% Planning Layer Subgraph
+        subgraph Planning Layer
+            direction LR
+            P[Plan Management] --> O[Objective Management]
+            O --> S[Strategy Selection]
+            P --> S
+            Planning
+        end
+ 
+        %% Reasoning Layer Subgraph
+        subgraph Reasoning Layer
+            direction LR
+            E[Execution] --> M[Monitoring]
+            M --> A[Analysis]
+            A --> E
+            Reasoning
+        end
     end
-    
-    PL -->|Plans & Objectives| RL
-    RL -->|Signals & Status| PL
-    
-    subgraph Resources
-        LLM[Language Models]
-        DB[(Databases)]
-        API[External APIs]
-        MEM[Memory Store]
-    end
-    
-    RL -.->|Uses| LLM
-    RL -.->|Uses| DB
-    RL -.->|Uses| API
-    RL -.->|Uses| MEM
-    
-    PL -.->|Resource Awareness| Resources
+
 ```
 
 The interaction between layers is managed through two primary mechanisms:
