@@ -14,23 +14,23 @@ The DXA framework documentation is organized by component:
 
 ### Framework Core
 
-- [Framework Overview](dxa/README.md) - `dxa` - System architecture and design
-- [Common Utilities](dxa/common/README.md) - `dxa.common` - Shared functionality and tools
+- [Framework Overview](dxa/README.md) - System architecture and design
+- [Common Utilities](dxa/common/README.md) - Shared functionality and tools
 
 ### Components
 
-- [Agent System](dxa/agent/README.md) - `dxa.agent` - Agent implementation and runtime
-- [Reasoning System](dxa/core/reasoning/README.md) - `dxa.core.reasoning` - Decision-making patterns
-- [Resource System](dxa/core/resource/README.md) - `dxa.core.resource` - External tool integration
-- [I/O System](dxa/core/io/README.md) - `dxa.core.io` - Environment interaction
-- [Capability System](dxa/core/capability/README.md) - `dxa.core.capability` - Agent abilities
-- [Expert System](dxa/expert/README.md) - `dxa.expert` - Domain expertise integration
+- [Agent System](dxa/agent/README.md) - Agent implementation and runtime
+- [Reasoning System](dxa/core/reasoning/README.md) - Decision-making patterns
+- [Resource System](dxa/core/resource/README.md) - External tool integration
+- [I/O System](dxa/core/io/README.md) - Environment interaction
+- [Capability System](dxa/core/capability/README.md) - Agent abilities
+- [Expert System](dxa/expert/README.md) - Domain expertise integration
 
 ### Development
 
-- [Examples](examples/README.md) - `examples` - Implementation examples and patterns
-- [Tests](tests/README.md) - `tests` - Test suite and coverage
-- [API Documentation](docs/README.md) - `docs` - API reference and guides
+- [Examples](examples/README.md) - Implementation examples and patterns
+- [Tests](tests/README.md) - Test suite and coverage
+- [API Documentation](docs/README.md) - API reference and guides
 
 Each component's README provides:
 
@@ -86,11 +86,10 @@ dxa/                    # Project root
 │
 ├── tests/              # Test suite
 │   ├── agent/          # Agent tests
-│   ├── core/           # Core component tests
-│   │   ├── io/         # I/O handlers
-│   │   ├── reasoning/  # Reasoning patterns
-│   │   └── resource/   # External resources
-│   └── experts/        # Expert tests
+│   └── core/           # Core component tests
+│       ├── io/         # I/O handlers
+│       ├── reasoning/  # Reasoning patterns
+│       └── resource/   # External resources
 │
 └── docs/               # Documentation
     ├── api/            # API reference
