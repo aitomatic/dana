@@ -77,7 +77,7 @@ An Agent in DXA, similar to a human being, is composed of:
 4. Access to external resources and tools
 
 ```mermaid
-graph TD
+graph LR
     A[dxa.agent.Agent] --> B[dxa.core.reasoning.BaseReasoning]
     A --> C[dxa.agent.AgentLLM]
     A --> D[dxa.core.capability.BaseCapability]
