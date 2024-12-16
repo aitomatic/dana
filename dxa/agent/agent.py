@@ -25,8 +25,8 @@ from uuid import uuid4
 from dxa.core.reasoning import BaseReasoning, ReasoningLevel
 from dxa.core.resource import BaseResource
 from dxa.core.io import BaseIO
-from dxa.agent.agent_runtime import AgentRuntime, StateManager
 from dxa.common.errors import ConfigurationError
+from dxa.agent.agent_runtime import AgentRuntime, StateManager
 from dxa.core.reasoning.direct_reasoning import DirectReasoning
 from dxa.core.reasoning.cot_reasoning import ChainOfThoughtReasoning
 from dxa.core.reasoning.ooda_reasoning import OODAReasoning
@@ -198,7 +198,7 @@ class Agent:
         
         result = await self._runtime.execute(
             task,
-            reasoning_step=self._reasoning.reason,
+            reasoning_step=self._reasoning.reason_about,
             pre_execute=self.pre_execute,
             post_execute=self.post_execute,
             context=context

@@ -32,10 +32,10 @@ graph LR
 
     %% Resources Subgraph
     subgraph Resources Layer
-        direction LR
-        LLM[Language Models] -.->
-        DB[(Databases)] -.->
-        API[External APIs] -.->
+        direction TB
+        LLM[Language Models]
+        DB[(Databases)]
+        API[External APIs]
         MEM[Memory Store]
     end
 

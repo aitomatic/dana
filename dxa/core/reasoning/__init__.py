@@ -1,29 +1,22 @@
-"""Reasoning patterns for DXA.
+"""Reasoning module for DXA.
 
-This module provides different reasoning strategies with increasing complexity:
+This module provides the core reasoning capabilities for DXA agents.
+See README.md for detailed documentation of available reasoning patterns.
 
-1. DirectReasoning: 
-   - Simple direct execution without complex reasoning
-   - Best for straightforward tasks with clear steps
-   - Lowest overhead, fastest execution
+Exports:
+    BaseReasoning: Abstract base class for reasoning implementations
+    DirectReasoning: Simple direct execution
+    ChainOfThoughtReasoning: Step-by-step reasoning
+    OODAReasoning: Dynamic adaptation loop
+    DANAReasoning: Domain-aware computation
 
-2. ChainOfThoughtReasoning:
-   - Linear step-by-step reasoning with explicit thought process
-   - Best for problems requiring detailed explanation
-   - Includes understanding, analysis, solution, and verification
-
-3. OODAReasoning:
-   - Observe-Orient-Decide-Act loop for dynamic situations
-   - Best for problems requiring continuous adaptation
-   - Handles changing conditions and requirements
-
-4. DANAReasoning:
-   - Domain-Aware Neurosymbolic Agent combining neural and symbolic approaches
-   - Best for problems requiring precise computation with domain knowledge
-   - Bridges LLM reasoning with symbolic execution
-
-Each pattern is designed for specific use cases and complexity levels.
-Choose based on your task requirements and need for reasoning complexity.
+Supporting Types:
+    ReasoningStatus: Status enums for reasoning steps
+    ReasoningLevel: Complexity levels for reasoning
+    ReasoningResult: Output from reasoning process
+    ReasoningContext: State and resource management
+    ReasoningConfig: Configuration options
+    ObjectiveState: Objective tracking
 """
 
 from dxa.core.reasoning.base_reasoning import (
@@ -33,7 +26,8 @@ from dxa.core.reasoning.base_reasoning import (
     ReasoningResult,
     ReasoningContext,
     ReasoningConfig,
-    ObjectiveState
+    ObjectiveState,
+    ReasoningTask
 )
 from dxa.core.reasoning.direct_reasoning import DirectReasoning
 from dxa.core.reasoning.cot_reasoning import ChainOfThoughtReasoning
@@ -48,6 +42,7 @@ __all__ = [
     'ReasoningContext',
     'ReasoningConfig',
     'ObjectiveState',
+    'ReasoningTask',
     'DirectReasoning',
     'ChainOfThoughtReasoning',
     'OODAReasoning',

@@ -1,49 +1,61 @@
-"""Base reasoning pattern for DXA.
+"""Base class for implementing reasoning patterns in DXA.
 
-A reasoning pattern defines how an agent approaches problem-solving. Each pattern:
+BaseReasoning provides the foundation for all reasoning implementations:
+1. Manages LLM interactions
+2. Handles state and context
+3. Provides error handling
+4. Tracks objective evolution
 
-1. Defines a sequence of steps (e.g., ["observe", "analyze", "act"])
-2. Processes tasks through these steps
-3. Uses an LLM resource provided by the Agent for the actual reasoning
-4. Maintains state and context between steps
+Execution Flow:
+    reason_about(task, context)           # Main entry point
+        ↓
+    _prepare_reasoning(task, context)     # Setup phase
+        ↓
+    _apply_reasoning(task, context)       # Core reasoning
+        ↓
+    _verify_reasoning(result, context)    # Validation
+        ↓
+    _handle_reasoning_error(...)          # Error handling if needed
 
-Core Concepts:
--------------
-- Steps: Ordered sequence of reasoning operations
-- Context: Shared state between steps containing:
-    - objective: What we're trying to achieve
-    - resources: Available tools/capabilities
-    - workspace: Shared memory between steps
-    - history: Record of step results
-
-Information Flow:
----------------
-- Steps read/write to context.workspace for shared state
-- Steps store results in context.history
-- Each step can access previous step results from history
-- LLM interactions handled through agent_llm property
+Override Points:
+    _apply_reasoning(): Required - Implement core reasoning logic
+    _verify_reasoning(): Optional - Add custom validation
+    _prepare_reasoning(): Optional - Add setup steps
+    _handle_reasoning_error(): Optional - Custom error handling
 
 Example:
     ```python
     class MyReasoning(BaseReasoning):
         @property
         def steps(self) -> List[str]:
-            return ["analyze", "solve"]  # Define steps
+            return ["analyze", "solve"]
         
         async def _apply_reasoning(self, task, context):
-            # Use context.workspace for state
-            context.workspace["analysis"] = await self._analyze(task)
-            # Use context.history for step results
-            context.history.append({"step": "analyze", "result": analysis})
-            return await self._solve(context)
+            # Core reasoning implementation
+            response = await self.agent_llm.query({
+                "system": "Process this task.",
+                "user": str(task)
+            })
+            
+            # Record in context
+            context.history.append({
+                "step": self.steps[0],
+                "response": response
+            })
+            
+            return ReasoningResult(
+                success=True,
+                output=response.get("content"),
+                insights={},
+                confidence=1.0,
+                reasoning_path=self.steps
+            )
     ```
 
-Implementation Notes:
-------------------
-- Most patterns only need to override _apply_reasoning()
-- Default implementations provided for common operations
-- Context provides all necessary state management
-- Steps should be atomic and focused
+State Management:
+    - context.workspace: Shared memory between steps
+    - context.history: Record of reasoning steps
+    - objective_state: Tracks objective understanding
 """
 
 from abc import ABC, abstractmethod
@@ -53,7 +65,6 @@ from datetime import datetime
 from dataclasses import dataclass, field
 import logging
 from dxa.core.resource import LLMResource
-from dxa.agent.agent_runtime import StateManager
 
 class ReasoningStatus(str, Enum):
     """Possible statuses from reasoning."""
@@ -105,9 +116,12 @@ class ReasoningResult:
 class ReasoningContext:
     """Context for reasoning execution."""
     objective: str
-    resources: Dict[str, Any]  # Resource types
+    resources: Dict[str, Any]
     workspace: Dict[str, Any]  # Working memory
     history: List[Dict[str, Any]]  # Execution history
+    status: str = "initializing"
+    metadata: Dict[str, Any] = field(default_factory=dict)
+    observations: List[Dict[str, Any]] = field(default_factory=list)
 
 @dataclass
 class ObjectiveState:
@@ -128,13 +142,42 @@ class ObjectiveState:
         self.current = refinement
         self.confidence = confidence
 
+@dataclass
+class ReasoningTask:
+    """Task for reasoning system to process.
+    
+    Attributes:
+        objective: Main goal/command to achieve
+        context: Additional task context/parameters
+        system_prompt: Optional system prompt override
+        temperature: Optional temperature override
+        metadata: Additional task metadata
+    """
+    objective: str
+    context: Dict[str, Any] = field(default_factory=dict)
+    system_prompt: Optional[str] = None
+    temperature: Optional[float] = None
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "ReasoningTask":
+        """Create Task from dictionary."""
+        if isinstance(data, str):
+            return cls(objective=data)
+        return cls(
+            objective=data.get("objective", data.get("command", str(data))),
+            context=data.get("context", {}),
+            system_prompt=data.get("system_prompt"),
+            temperature=data.get("temperature"),
+            metadata=data.get("metadata", {})
+        )
+
 class BaseReasoning(ABC):
     """Base class for implementing reasoning patterns."""
     
     def __init__(self, config: Optional[ReasoningConfig] = None):
         self.config = config or ReasoningConfig()
         self._agent_llm = self.config.agent_llm
-        self.state_manager = StateManager(agent_name=self.__class__.__name__)
         self.logger = logging.getLogger(self.__class__.__name__)
         self.objective_state = None
 
@@ -207,7 +250,12 @@ class BaseReasoning(ABC):
             current=context.objective
         )
 
-    async def _handle_reasoning_error(self, error: Exception, task: Dict[str, Any], context: ReasoningContext) -> ReasoningResult:
+    async def _handle_reasoning_error(
+        self, 
+        error: Exception, 
+        task: Dict[str, Any], 
+        context: ReasoningContext
+    ) -> ReasoningResult:
         """Handle reasoning errors."""
         self.logger.error("Reasoning error: %s", str(error))
         return ReasoningResult(

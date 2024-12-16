@@ -21,6 +21,7 @@ def mock_llm():
     llm.query = AsyncMock(return_value={"content": "test response"})
     return llm
 
+# pylint: disable=redefined-outer-name
 @pytest.fixture
 def agent(mock_llm):
     """Basic agent fixture."""
@@ -70,6 +71,7 @@ async def test_with_capabilities(agent):
 async def test_with_io(agent, mock_io):
     """Test adding IO handler."""
     agent.with_io(mock_io)
+    # pylint: disable=protected-access
     assert agent._io == mock_io
 
 @pytest.mark.asyncio

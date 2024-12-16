@@ -10,6 +10,63 @@ DXA is a framework for building and deploying intelligent agents powered by Larg
 
 For installation and setup instructions, see the [project README](../README.md). For practical implementation examples, check out our [examples directory](../examples/README.md).
 
+## Documentation Map
+
+### 1. Core Components
+
+Each component has detailed documentation in its respective README:
+
+#### Reasoning System ([docs](dxa/core/reasoning/README.md))
+
+The cognitive engine that drives decision-making:
+
+- **Direct Reasoning**: Simple task execution without complex reasoning
+- **Chain of Thought (CoT)**: Linear process (understand → analyze → solve → verify)
+- **OODA Loop**: Dynamic adaptation (observe → orient → decide → act)
+- **DANA**: Neural-symbolic hybrid combining LLM understanding with precise computation
+
+#### Capabilities ([docs](dxa/core/capability/README.md))
+
+Fundamental agent abilities:
+
+- Memory management for experience and knowledge
+- Expertise domains for specialized knowledge
+- Core cognitive functions (planning, decision-making)
+- Custom capability extensions
+
+#### I/O System ([docs](dxa/core/io/README.md))
+
+Environmental interaction handlers:
+
+- Text interfaces (CLI, chat)
+- API endpoints
+- File system operations
+- Custom I/O handlers
+
+#### Resources ([docs](dxa/core/resource/README.md))
+
+External tool integration:
+
+- Database connections
+- Search engines
+- IoT devices
+- Inter-agent communication
+
+#### Agent System ([docs](dxa/agent/README.md))
+
+Unified agent implementation:
+
+- Composable agent architecture
+- Resource management
+- Progress tracking
+- State management
+
+### 2. Examples & Tutorials ([docs](examples/README.md))
+
+- Getting started guides
+- Use case implementations
+- Best practices examples
+
 ## Architecture Overview
 
 An Agent in DXA, similar to a human being, is composed of:
@@ -32,77 +89,6 @@ graph TD
     F --> I[IoT Data]
     F --> J[Other Agents]
 ```
-
-## Core Components
-
-### Reasoning (`dxa.core.reasoning`)
-
-The reasoning system provides different strategies for problem-solving:
-
-#### Direct Reasoning
-Simplest form - direct execution of tasks without complex reasoning.
-
-#### Chain of Thought (CoT)
-Linear step-by-step reasoning with explicit thought process:
-- Understand
-- Analyze
-- Solve
-- Verify
-
-#### OODA Loop
-Cyclical, adaptive reasoning based on the OODA loop:
-- Observe
-- Orient
-- Decide
-- Act
-
-#### DANA (Domain-Aware NeuroSymbolic Agent)
-Hybrid reasoning that combines:
-- Neural (LLM) for problem understanding
-- Symbolic (Python) for precise execution
-
-### Inherent Capabilities (`dxa.core.capability`)
-
-Like human innate abilities, these are fundamental features of the agent:
-
-- Memory management: Handles storage and retrieval of agent experiences and knowledge
-- Expertise domains: Defines areas of specialized knowledge and skills
-- Core reasoning abilities: Provides basic cognitive functions like planning and decision-making
-- Custom capability extensions: Allows for adding new specialized abilities
-
-### I/O (`dxa.core.io`)
-
-Similar to human senses and expression, I/O handlers manage all interaction with the environment:
-
-- Text-based interfaces: For command-line and chat interactions
-- API endpoints: For web service integration
-- File system operations: For reading and writing files
-- Custom I/O handlers: For specialized communication needs
-
-### Resources (`dxa.core.resource`)
-
-Like tools and references that humans use, resources provide access to external capabilities:
-
-- Database connections: For persistent storage
-- Search engine integrations: For accessing external knowledge
-- IoT device interfaces: For interacting with physical devices
-- Inter-agent communication: For coordinating with other agents
-
-### Agents (`dxa.agent`)
-
-The agent module provides a unified, composable Agent implementation that can be configured for different roles:
-
-- `Agent`: A unified agent class that supports:
-  - Different reasoning strategies (CoT, OODA)
-  - Resource management
-  - I/O handling
-  - Capability tracking
-
-Additional components in the `dxa.agent` module:
-
-- `AgentLLM`: Internal LLM implementation for agents
-- `AgentProgress`: For reporting task progress
-- `StateManager`: Manages agent state, observations, and messages
 
 ## Examples
 
