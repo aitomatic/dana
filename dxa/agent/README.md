@@ -28,22 +28,28 @@ it maintains clear boundaries by signaling the Planning Layer when
 strategic changes might be needed.
 
 ```mermaid
-graph TB
-    Planning --> Reasoning -.->|Uses| Resources
+graph LR
 
     %% Resources Subgraph
     subgraph Resources Layer
-        direction RL
+        direction LR
         LLM[Language Models] -.->
         DB[(Databases)] -.->
         API[External APIs] -.->
-        MEM[Memory Store] -.->
-        Resources 
+        MEM[Memory Store]
     end
 
     %% Planning-Reasoning Subgraph
     subgraph Planning-Reasoning
-        direction BT
+        direction LR
+
+        %% Reasoning Layer Subgraph
+        subgraph Reasoning Layer
+            direction LR
+            E[Execution] --> M[Monitoring]
+            M --> A[Analysis]
+            A --> E
+        end
 
         %% Planning Layer Subgraph
         subgraph Planning Layer
@@ -51,19 +57,10 @@ graph TB
             P[Plan Management] --> O[Objective Management]
             O --> S[Strategy Selection]
             P --> S
-            Planning
         end
  
-        %% Reasoning Layer Subgraph
-        subgraph Reasoning Layer
-            direction LR
-            E[Execution] --> M[Monitoring]
-            M --> A[Analysis]
-            A --> E
-            Reasoning
-        end
-    end
 
+    end
 ```
 
 The interaction between layers is managed through two primary mechanisms:

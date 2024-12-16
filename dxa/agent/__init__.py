@@ -1,6 +1,5 @@
 """DXA agent module."""
 
-from dxa.agent.agent_config import AgentConfig
 from dxa.agent.agent_runtime import (
     StateManager,
     AgentRuntime,
@@ -8,16 +7,14 @@ from dxa.agent.agent_runtime import (
     AgentProgress,
     Observation,
     Message,
-    AgentLLM
 )
-from dxa.agent.agent import Agent
+from dxa.agent.agent import Agent, AgentLLM
 from dxa.agent.factory import create_agent
 
 __version__ = "0.1.0"
 
 __all__ = [
     "Agent",
-    "AgentConfig",
     "AgentState", 
     "AgentProgress",
     "Observation",
