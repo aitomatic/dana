@@ -56,7 +56,7 @@ Each component's README provides:
    - Python 3.x
    - bash shell (Unix) or Git Bash (Windows)
 
-2. Installation:
+1. Installation:
 
    ```bash
    git clone <repository-url>
@@ -65,7 +65,7 @@ Each component's README provides:
    source venv/bin/activate  # Windows: source venv/Scripts/activate
    ```
 
-3. Basic Usage:
+1. Basic Usage:
 
    ```python
    from dxa.agent import Agent

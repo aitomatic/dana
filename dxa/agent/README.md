@@ -6,38 +6,191 @@
 
 # DXA Agent System
 
-The agent system provides the core agent implementation and runtime environment.
+The agent system provides the core implementation of DXA agents, handling configuration, execution, and state management.
 
-## Components
+## Core Concepts
 
-- **Agent**: Main agent class with fluent configuration
-- **AgentRuntime**: Execution environment and state management
-- **AgentLLM**: Language model integration
-- **AgentProgress**: Task progress tracking
+### Agent Components
 
-## Agent Configuration
+An Agent in DXA is composed of:
+
+1. A cognitive core (Reasoning) for decision-making
+2. Capabilities that define its abilities
+3. Resources it can access
+4. I/O channels for interaction
+
+### Key Components
+
+1. **Agent** - The high-level interface that:
+   - Provides the fluent configuration API
+   - Manages component lifecycle
+   - Delegates task execution to Runtime
+   - Maintains agent identity and configuration
+
+2. **AgentRuntime** - The execution environment that:
+   - Manages execution state and context
+   - Coordinates resource access
+   - Tracks progress and handles errors
+   - Provides the execution loop
+
+3. **BaseReasoning** - The cognitive engine that:
+   - Implements decision-making logic
+   - Processes tasks through defined patterns
+   - Manages reasoning state
+   - Interacts with capabilities and resources
+
+## System Structure
+
+### State Management
+
+- **Agent** holds configuration state
+- **AgentRuntime** manages execution state
+- **BaseReasoning** maintains reasoning context
+
+### Component Integration
 
 ```python
-# Basic setup
+# Configuration state
 agent = Agent("researcher")\
     .with_reasoning("cot")\
     .with_resources({"llm": my_llm})
 
-# Advanced configuration
-agent = Agent("analyst", 
-    config=AgentConfig(
-        reasoning_level="ooda",
-        max_iterations=10,
-        temperature=0.7
-    ))
+# Execution state
+async with agent.runtime.execution_context() as ctx:
+    # Reasoning state
+    result = await agent.reasoning.reason_about(task, ctx)
 ```
 
 ## Execution Flow
 
-1. Agent receives task
-2. Runtime prepares execution context
-3. Reasoning system processes task
-4. Resources are accessed as needed
-5. Results are returned through I/O
+### Task Processing
 
-See tests for detailed usage examples.
+When you call `agent.run(task)`:
+
+1. **Agent** prepares the execution:
+
+   ```python
+   result = await agent.run(task)
+   # - Validates configuration
+   # - Creates execution context
+   # - Delegates to runtime
+   ```
+
+2. **AgentRuntime** manages the process:
+
+   ```python
+   async def execute(self, task: Task) -> Result:
+       # - Initializes state
+       # - Sets up resources
+       # - Delegates to reasoning
+       # - Handles errors and cleanup
+   ```
+
+3. **BaseReasoning** performs the work:
+
+   ```python
+   async def reason_about(self, task: Task, context: Context) -> Result:
+       # - Applies reasoning pattern
+       # - Uses capabilities
+       # - Accesses resources
+       # - Returns results
+   ```
+
+### Usage Examples
+
+#### Basic Usage
+
+```python
+from dxa.agent import Agent
+from dxa.core.resource import LLMResource
+
+# Create simple agent
+agent = Agent("assistant")\
+    .with_reasoning("cot")\
+    .with_resources({"llm": LLMResource(model="gpt-4")})
+
+# Run task
+result = await agent.run("Analyze this data")
+```
+
+#### Advanced Configuration
+
+```python
+from dxa.agent import Agent, AgentConfig
+from dxa.core.capability import MemoryCapability
+
+agent = Agent(
+    name="analyst",
+    config=AgentConfig(
+        reasoning_level="ooda",
+        max_iterations=10,
+        temperature=0.7
+    )
+)\
+.with_capabilities([
+    MemoryCapability(size=1000),
+    "planning",
+    "research"
+])
+```
+
+## Development
+
+### Creating Custom Agents
+
+1. Extend base Agent class:
+
+```python
+class CustomAgent(Agent):
+    def __init__(self, name: str, **kwargs):
+        super().__init__(name, **kwargs)
+        self.custom_setup()
+
+    async def custom_setup(self):
+        """Add custom initialization"""
+        pass
+```
+
+### Best Practices
+
+1. State Management
+
+- Use AgentState for persistent data
+- Keep runtime state in context
+- Clean up resources properly
+
+1. Error Handling
+
+- Implement graceful degradation
+- Provide meaningful error messages
+- Log important state changes
+
+1. Testing
+
+- Test with different reasoning patterns
+- Verify resource interaction
+- Check error conditions
+
+### API Reference
+
+```python
+class Agent:
+    """Main agent interface."""
+    
+    def __init__(self, name: str, config: Optional[AgentConfig] = None):
+        """Initialize agent with name and optional config."""
+        
+    def with_reasoning(self, reasoning: Union[str, BaseReasoning]) -> "Agent":
+        """Configure reasoning system."""
+        
+    def with_resources(self, resources: Dict[str, BaseResource]) -> "Agent":
+        """Add resources to agent."""
+        
+    def with_capabilities(self, capabilities: List[Union[str, BaseCapability]]) -> "Agent":
+        """Add capabilities to agent."""
+        
+    async def run(self, task: Union[str, Dict[str, Any]]) -> Any:
+        """Execute task and return result."""
+```
+
+See individual module documentation for detailed API references.
