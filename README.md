@@ -50,29 +50,29 @@ Detailed documentation is available throughout the project:
 ## Project Structure
 
 ```text
-dxa/                     # Project root
+dxa/                    # Project root
 ├── dxa/                # Main package
-│   ├── agent/         # Agent implementation
-│   └── core/          # Core components
-│       ├── io/       # I/O handlers
-│       ├── reasoning/ # Reasoning patterns
-│       └── resource/ # External resources
+│   ├── agent/          # Agent implementation
+│   └── core/           # Core components
+│       ├── io/         # I/O handlers
+│       ├── reasoning/  # Reasoning patterns
+│       └── resource/   # External resources
 │
-├── examples/          # Usage examples
-│   ├── basic/        # Basic usage examples
-│   └── advanced/     # Advanced patterns
+├── examples/           # Usage examples
+│   ├── basic/          # Basic usage examples
+│   └── advanced/       # Advanced patterns
 │
-├── tests/            # Test suite
-│   ├── agent/       # Agent tests
-│   ├── core/        # Core component tests
-│   │   ├── io/
-│   │   ├── reasoning/
-│   │   └── resource/
-│   └── examples/    # Example tests
+├── tests/              # Test suite
+│   ├── agent/          # Agent tests
+│   ├── core/           # Core component tests
+│   │   ├── io/         # I/O handlers
+│   │   ├── reasoning/  # Reasoning patterns
+│   │   └── resource/   # External resources
+│   └── experts/        # Expert tests
 │
-└── docs/            # Documentation
-    ├── api/        # API reference
-    └── guides/     # User guides
+└── docs/               # Documentation
+    ├── api/            # API reference
+    └── guides/         # User guides
 ```
 
 ## Contributing
