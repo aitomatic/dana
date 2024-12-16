@@ -6,122 +6,74 @@
 
 # DXA - Domain-Expert Agent Framework
 
-## Reasoning System
+DXA is a framework for building and deploying intelligent agents powered by Large Language Models (LLMs). These agents combine cognitive abilities, domain expertise, and external resources to solve complex problems.
 
-DXA provides four core reasoning patterns, from simplest to most complex:
+## Project Documentation
 
-### 1. Direct Reasoning
-- Simple command execution
-- No complex planning
-- Best for straightforward tasks
+Detailed documentation is available throughout the project:
 
-```python
-agent = Agent("simple").with_reasoning("direct")
-# or
-agent = Agent("simple").with_reasoning(ReasoningLevel.DIRECT)
-```
+- [Framework Architecture](dxa/README.md) - Core components and design
+- [Examples & Tutorials](examples/README.md) - Implementation guides
+- [Reasoning Patterns](dxa/core/reasoning/README.md) - Available reasoning strategies
+- [Agent System](dxa/agent/README.md) - Agent composition and lifecycle
 
-### 2. Chain of Thought (CoT)
-- Linear step-by-step reasoning
-- Explicit thought process
-- Best for problem decomposition
+## Quick Start
 
-```python
-agent = Agent("thinker").with_reasoning("cot")
-# or
-from dxa.core.reasoning import ChainOfThoughtReasoning
-agent = Agent("thinker").with_reasoning(ChainOfThoughtReasoning())
-```
+1. Prerequisites:
+   - Python 3.x
+   - bash shell (Unix) or Git Bash (Windows)
 
-### 3. OODA Loop
-- Cyclical, adaptive reasoning
-- Continuous situation assessment
-- Best for dynamic environments
-
-```python
-agent = Agent("adaptive").with_reasoning("ooda")
-# or
-agent = Agent("adaptive").with_reasoning(ReasoningLevel.OODA)
-```
-
-### 4. DANA (Domain-Aware NeuroSymbolic)
-- Hybrid neural-symbolic reasoning
-- LLM for understanding, Python for execution
-- Best for computational tasks
-
-```python
-agent = Agent("hybrid").with_reasoning("dana")
-# or
-from dxa.core.reasoning import DANAReasoning
-agent = Agent("hybrid").with_reasoning(DANAReasoning())
-```
-
-## Example Usage
-
-```python
-from dxa.agent import Agent
-from dxa.core.resource import LLMResource
-
-# Create agent with specific reasoning
-agent = Agent("solver")\
-    .with_reasoning("cot")\
-    .with_resources({
-        "llm": LLMResource(model="gpt-4")
-    })
-
-# Run task
-result = await agent.run({
-    "objective": "Solve this problem",
-    "command": "Calculate X"
-})
-```
-
-## Prerequisites
-
-- Python 3.x
-- bash shell (for Unix-based systems) or Git Bash (for Windows)
-
-## Setup Instructions
-
-1. Clone the repository:
+2. Installation:
 
    ```bash
    git clone <repository-url>
    cd dxa-prototype
-   ```
-
-2. Set up the virtual environment:
-
-   ```bash
    bash setup_env.sh
-   source venv/bin/activate  # On Windows: source venv/Scripts/activate
+   source venv/bin/activate  # Windows: source venv/Scripts/activate
    ```
 
-3. Configure the environment:
-   - Copy `.env.example` to `.env` (if not already done)
-   - Update the values in `.env` with your configuration
+3. Basic Usage:
 
-4. Run the application:
+   ```python
+   from dxa.agent import Agent
+   from dxa.core.resource import LLMResource
 
-   ```bash
-   python dxa-poc.py
+   agent = Agent("assistant")\
+       .with_reasoning("cot")\
+       .with_resources({"llm": LLMResource(model="gpt-4")})
+   
+   result = await agent.run("Help with this task")
    ```
 
-## Configuration
+[Rest of setup instructions remain...]
 
-The application requires the following configuration:
+## Project Structure
 
-- Environment variables in `.env` file
-- API key configuration in the main Python file
-
-## Notes
-
-- Make sure all dependencies are properly installed before running the application
-- For any issues, please check the troubleshooting section or contact the development team
-
-## About DXA
-
-Domain-Expert Agents (DXA) is a system designed to create and manage AI agents that specialize in specific domains or areas of expertise. These agents can provide domain-specific knowledge, answer questions, and assist with tasks within their area of specialization.
+```text
+dxa/                     # Project root
+├── dxa/                # Main package
+│   ├── agent/         # Agent implementation
+│   └── core/          # Core components
+│       ├── io/       # I/O handlers
+│       ├── reasoning/ # Reasoning patterns
+│       └── resource/ # External resources
+│
+├── examples/          # Usage examples
+│   ├── basic/        # Basic usage examples
+│   └── advanced/     # Advanced patterns
+│
+├── tests/            # Test suite
+│   ├── agent/       # Agent tests
+│   ├── core/        # Core component tests
+│   │   ├── io/
+│   │   ├── reasoning/
+│   │   └── resource/
+│   └── examples/    # Example tests
+│
+└── docs/            # Documentation
+    ├── api/        # API reference
+    └── guides/     # User guides
+```
 
 ## Contributing
 
