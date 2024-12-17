@@ -6,14 +6,20 @@
 
 # DXA Examples
 
-Implementation examples and usage patterns for the DXA framework.
+Implementation examples demonstrating DXA framework usage.
 
 ## Basic Examples
 
-- **chat_bot.py**: Simple conversational agent
-- **system_monitor.py**: System monitoring and reporting
+- **template.py**: Minimal working example showing core patterns
+- **chat_bot.py**: Interactive conversational agent
 - **research_assistant.py**: Information gathering and analysis
-- **template.py**: Starter template for new agents
+- **system_monitor.py**: Continuous system monitoring
+
+## Advanced Examples
+
+- **collaborative.py**: Multi-agent coordination
+- **data_analysis.py**: Data processing and visualization
+- **web_automation.py**: Web interaction and scraping
 
 ## Usage
 
@@ -23,23 +29,37 @@ Each example can be run directly:
 python examples/chat_bot.py
 ```
 
-Or imported as a reference:
+## Common Patterns
 
+1. Agent Creation:
 ```python
-from examples.template import create_basic_agent
+agent = Agent("name")\
+    .with_reasoning("type")\
+    .with_resources({...})\
+    .with_capabilities([...])
+```
 
-agent = create_basic_agent()
-await agent.run("Hello!")
+2. Task Execution:
+```python
+async with agent:
+    result = await agent.run(task)
+```
+
+3. Resource Management:
+```python
+agent.with_resources({
+    "llm": LLMResource(model="gpt-4"),
+    "custom": CustomResource()
+})
 ```
 
 ## Example Structure
 
-Each example follows:
+Each example demonstrates:
+- Appropriate reasoning pattern selection
+- Resource configuration
+- Task structuring
+- Error handling
+- Proper cleanup using context managers
 
-1. Configuration setup
-2. Resource initialization
-3. Agent creation and setup
-4. Task execution
-5. Cleanup and shutdown
-
-See individual example files for detailed documentation.
+See individual examples for detailed implementations.

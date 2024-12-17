@@ -1,93 +1,105 @@
-"""Tests for BaseReasoning."""
+"""Tests for BaseReasoning implementation."""
 
-from typing import List
-from unittest.mock import AsyncMock, MagicMock
 import pytest
+from unittest.mock import AsyncMock, MagicMock
+from typing import Dict, Any
 
-from dxa.core.reasoning.base_reasoning import (
-    BaseReasoning,
-    ReasoningContext,
-    ReasoningConfig
-)
-from dxa.core.resource import LLMResource
+from dxa.core.reasoning.base_reasoning import BaseReasoning
+from dxa.core.reasoning.types import Objective, Plan, Signal, SignalType
 
 class SimpleReasoning(BaseReasoning):
-    """Minimal reasoning implementation for testing."""
-    @property
-    def steps(self) -> List[str]:
-        return ["test"]
+    """Simple reasoning implementation for testing."""
+    
+    async def _create_objective(self, task: Any) -> Objective:
+        return Objective(
+            original=str(task),
+            current=str(task)
+        )
+        
+    async def _create_plan(self, objective: Objective) -> Plan:
+        return Plan(
+            steps=[{"action": "solve", "input": objective.current}],
+            rationale="Simple test plan"
+        )
+        
+    async def _execute_step(self, step: Any, context: Any) -> Dict[str, Any]:
+        return {
+            "output": f"Executed {step['action']} with {step['input']}",
+            "confidence": 1.0
+        }
 
 @pytest.fixture
-def mock_llm():
-    """Mock LLM resource."""
-    llm = LLMResource(name="test_llm", config={"model_name": "test"})
-    llm.query = AsyncMock(return_value={"content": "test response"})
-    llm.cleanup = AsyncMock()
-    return llm
+def reasoning():
+    """Create test reasoning instance."""
+    return SimpleReasoning(config={
+        "max_iterations": 3,
+        "confidence_threshold": 0.5
+    })
 
-@pytest.fixture
-# pylint: disable=redefined-outer-name
-def reasoning(mock_llm):
-    """Test reasoning instance."""
-    config = ReasoningConfig(agent_llm=mock_llm)
-    return SimpleReasoning(config=config)
+@pytest.mark.asyncio
+async def test_basic_execution(reasoning):
+    """Test basic reasoning execution."""
+    result = await reasoning.reason_about("test task", {})
+    assert result.success
+    assert "Executed solve with test task" in result.output
+    assert result.confidence >= 0.5
 
-@pytest.fixture
-def context():
-    """Test reasoning context."""
-    return ReasoningContext(
-        objective="test objective",
-        resources={},
-        workspace={},
-        history=[]
+@pytest.mark.asyncio
+async def test_objective_review(reasoning):
+    """Test objective review and update."""
+    reasoning._review_objective = AsyncMock(return_value=ReviewResult(
+        needs_update=True,
+        updated_item=Objective(
+            original="test",
+            current="refined test"
+        ),
+        rationale="Test refinement"
+    ))
+    
+    result = await reasoning.reason_about("test", {})
+    assert any(
+        s.type == SignalType.OBJECTIVE 
+        for s in result.signals
     )
 
 @pytest.mark.asyncio
-# pylint: disable=redefined-outer-name
-async def test_basic_reasoning_flow(reasoning, context):
-    """Test the basic reasoning flow."""
-    result = await reasoning.reason_about({"command": "test"}, context)
+async def test_resource_check(reasoning):
+    """Test resource health check."""
+    reasoning._state.resources = {
+        "test": {"health": 0.1}  # Unhealthy resource
+    }
     
-    assert result.success
-    assert result.output == "test response"
-    assert result.reasoning_path == ["test"]
-    assert len(context.history) > 0
-
-@pytest.mark.asyncio
-# pylint: disable=redefined-outer-name
-async def test_error_handling(reasoning, context):
-    """Test error handling in reasoning."""
-    reasoning.agent_llm.query = AsyncMock(side_effect=ValueError("test error"))
-    
-    result = await reasoning.reason_about({"command": "test"}, context)
-    
+    result = await reasoning.reason_about("test", {})
     assert not result.success
-    assert "test error" in result.output
-    assert result.confidence == 0.0
+    assert "Insufficient resources" in result.output["error"]
 
 @pytest.mark.asyncio
-# pylint: disable=redefined-outer-name
-async def test_context_management(reasoning, context):
-    """Test context management during reasoning."""
-    await reasoning.reason_about({"command": "test"}, context)
+async def test_max_iterations(reasoning):
+    """Test max iterations limit."""
+    # Force non-completion
+    reasoning._evaluate_progress = AsyncMock(return_value=ProgressEvaluation(
+        is_complete=False,
+        iterations=0
+    ))
     
-    assert len(context.history) > 0
-    assert context.workspace == {}  # Should be cleared in _prepare_reasoning
-
-@pytest.mark.asyncio
-async def test_llm_required():
-    """Test that LLM is required."""
-    # pylint: disable=redefined-outer-name
-    reasoning = SimpleReasoning()  # No LLM configured
-    
-    result = await reasoning.reason_about({"command": "test"}, MagicMock())
+    result = await reasoning.reason_about("test", {})
     assert not result.success
-    assert result.insights["error_type"] == "ValueError"
-    assert result.output.startswith("No LLM configured")
+    assert "Max iterations exceeded" in result.output["error"]
 
 @pytest.mark.asyncio
-# pylint: disable=redefined-outer-name
-async def test_cleanup(reasoning):
-    """Test cleanup."""
-    await reasoning.cleanup()
-    reasoning.agent_llm.cleanup.assert_called_once()
+async def test_replanning(reasoning):
+    """Test plan updates."""
+    reasoning._review_plan = AsyncMock(return_value=ReviewResult(
+        needs_update=True,
+        updated_item=Plan(
+            steps=[{"action": "new_step"}],
+            rationale="Updated plan"
+        ),
+        rationale="Test update"
+    ))
+    
+    result = await reasoning.reason_about("test", {})
+    assert any(
+        s.type == SignalType.PROGRESS and s.content["action"] == "plan_updated"
+        for s in result.signals
+    )

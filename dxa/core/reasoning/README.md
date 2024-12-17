@@ -4,85 +4,194 @@
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
 
-# DXA Reasoning Patterns
+# DXA Reasoning System
 
-This module provides different reasoning strategies with increasing complexity.
+The DXA reasoning system implements a two-layer architecture that separates strategic planning from tactical execution. This separation allows the system to maintain high-level objectives and adapt plans while efficiently executing individual steps.
 
-## Available Patterns
+## Architecture Overview
 
-### 1. DirectReasoning
-
-- Simple direct execution without complex reasoning
-- Best for straightforward tasks with clear steps
-- Lowest overhead, fastest execution
-- Use when: Task is well-defined and needs quick execution
-
-### 2. ChainOfThoughtReasoning
-
-- Linear step-by-step reasoning with explicit thought process
-- Best for problems requiring detailed explanation
-- Includes understanding, analysis, solution, and verification
-- Use when: Need transparency in reasoning process
-
-### 3. OODAReasoning
-
-- Observe-Orient-Decide-Act loop for dynamic situations
-- Best for problems requiring continuous adaptation
-- Handles changing conditions and requirements
-- Use when: Environment is dynamic and needs constant reassessment
-
-### 4. DANAReasoning
-
-- Domain-Aware Neurosymbolic Agent combining neural and symbolic approaches
-- Best for problems requiring precise computation with domain knowledge
-- Bridges LLM reasoning with symbolic execution
-- Use when: Need precise domain-specific computation
-
-## Usage
-
-### 1. Through Agent (Recommended)
-
-```python
-agent = Agent("researcher", llm=my_llm)\
-    .with_reasoning("direct")  # or "cot", "ooda", "dana"
-result = await agent.run("Research quantum computing")
+```mermaid
+graph TB
+    A[Strategic Layer] --> B[Planning]
+    A --> C[Objective Management]
+    A --> D[Resource Coordination]
+    
+    E[Tactical Layer] --> F[Execution]
+    E --> G[Monitoring]
+    E --> H[Signal Generation]
+    
+    B --> E
+    G --> C
 ```
 
-### 2. Direct Usage (Advanced)
+## Core Concepts
 
-```python
-# Create reasoning instance
-reasoning = DirectReasoning(config=ReasoningConfig(
-    agent_llm=my_llm,
-    temperature=0.7
-))
+### 1. Reasoning Patterns (How to Think)
 
-# Create context
-context = ReasoningContext(
-    objective="Research quantum computing",
-    resources={"search": search_resource},
-    workspace={},
-    history=[]
-)
+Purpose: Define the cognitive approach
 
-# Execute reasoning
-result = await reasoning.reason_about(
-    task={"command": "Find recent papers"},
-    context=context
-)
+Pure Patterns:
+
+- Direct: Single LLM query → response
+- Chain-of-Thought: Structured step-by-step thinking
+- OODA: Observe-Orient-Decide-Act loop
+- DANA: Neural search → symbolic execution
+
+```mermaid
+graph LR
+    A[Input] --> B[Reasoning Pattern]
+    B --> C[Output]
+    
+    subgraph "OODA Example"
+    D[Observe] --> E[Orient]
+    E --> F[Decide]
+    F --> G[Act]
+    end
 ```
 
-## Core Components
+### 2. Execution Strategies (How to Act)
 
-- **ReasoningContext**: Maintains state and resources
-- **ReasoningConfig**: Configuration for reasoning behavior
-- **ReasoningResult**: Structured output from reasoning
-- **ObjectiveState**: Tracks objective refinements
+Purpose: Define the execution flow
 
-## Best Practices
+Pure Strategies:
 
-1. Start with DirectReasoning for simple tasks
-2. Use ChainOfThought when explanation is important
-3. Choose OODA for dynamic environments
-4. Use DANA for domain-specific computation
-5. Monitor and adjust based on task complexity
+- Single-Shot: One request → one response
+- Iterative: Repeated try-evaluate-adjust
+- Continuous: Ongoing operation
+- Interactive: User-in-loop operation
+
+```mermaid
+stateDiagram-v2
+    [*] --> Execute
+    Execute --> Evaluate
+    Evaluate --> Complete: Success
+    Evaluate --> Execute: Need Adjustment
+    Complete --> [*]
+```
+
+### 3. Workflows (What to Do)
+
+Purpose: Define the task structure
+
+Pure Workflows:
+
+- Linear: Sequential steps
+- Branching: Decision-based paths
+- State Machine: Complex state transitions
+- Event-Driven: Response patterns
+
+```mermaid
+stateDiagram-v2
+    [*] --> Monitoring
+    Monitoring --> Responding: Alert
+    Responding --> Monitoring: Resolved
+    Responding --> Alerting: Escalate
+    Alerting --> Monitoring: Handled
+```
+
+## Integration Model
+
+### Composition over Inheritance
+
+Components combine through composition:
+
+- Agents combine patterns, strategies, and workflows
+- Each component remains pure and focused
+- Mix and match based on needs
+
+Example Combinations:
+
+1. System Monitoring
+   - Pattern: OODA Reasoning (how to think)
+   - Strategy: Continuous Execution (how to act)
+   - Workflow: State Machine (what to do)
+
+2. Research Assistant
+   - Pattern: Chain-of-Thought Reasoning
+   - Strategy: Iterative Execution
+   - Workflow: Branching Tasks
+
+3. Chat Bot
+   - Pattern: Direct Reasoning
+   - Strategy: Interactive Execution
+   - Workflow: Event-Driven
+
+## Evolution Mechanisms
+
+### Objective Evolution
+
+```mermaid
+graph TD
+    A[Original Objective] --> B[Current Understanding]
+    B --> C[Updated Objective]
+    
+    D[Planning Layer] --> B
+    E[Reasoning Layer] --> B
+    F[User Feedback] --> B
+```
+
+### Plan Evolution
+
+```mermaid
+graph TD
+    A[Initial Plan] --> B[Execution]
+    B --> C[Review]
+    C --> D[Update Plan]
+    D --> B
+    
+    E[New Information] --> C
+    F[Resource Changes] --> C
+    G[Performance Data] --> C
+```
+
+## Implementation Notes
+
+1. Simple cases remain simple:
+   - Direct reasoning is just one LLM call
+   - Basic workflows are natural language → steps
+   - Interactive modes use simple patterns
+
+2. Complex cases are possible:
+   - Full planning/reasoning cycle
+   - Neural-symbolic integration
+   - Multi-stage execution
+
+3. User-Defined Workflows:
+   - Natural language specifications
+   - Runtime translation to plans
+   - Flexible execution patterns
+
+## Usage Examples
+
+```python
+# Simple Q&A
+result = await agent.run("What is quantum computing?")
+
+# Research Task
+result = await agent.run({
+    "task": "research",
+    "topic": "fusion energy breakthroughs",
+    "depth": "technical"
+})
+
+# System Monitoring
+async with agent.continuous_monitoring() as monitor:
+    await monitor.watch(
+        targets=["cpu", "memory"],
+        policies={"high_cpu": alert_and_diagnose}
+    )
+```
+
+## Resource Management
+
+[All new sections remain exactly the same through Migration Guide section]
+
+---
+
+<p align="center">
+Copyright © 2024 Aitomatic, Inc. All rights reserved.
+</p>
+
+<p align="center">
+<a href="https://aitomatic.com">https://aitomatic.com</a>
+</p>

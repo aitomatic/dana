@@ -23,13 +23,11 @@ Example:
     ... )
 """
 
-from dxa.agent.agent_runtime import StateManager
 from dxa.core.capability.domain_expertise import DomainExpertise
 from dxa.core.resource.expert_resource import ExpertResource
 from dxa.core.reasoning.cot_reasoning import ChainOfThoughtReasoning
 
 __all__ = [
-    'StateManager',
     'DomainExpertise',
     'ExpertResource',
     'ChainOfThoughtReasoning'

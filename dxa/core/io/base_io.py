@@ -20,7 +20,6 @@ Example:
 from abc import ABC
 from typing import Optional
 import logging
-from dxa.agent.agent_runtime import StateManager
 
 class BaseIO(ABC):
     """Base class for I/O implementations.

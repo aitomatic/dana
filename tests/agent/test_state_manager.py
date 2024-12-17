@@ -1,8 +1,7 @@
 """Tests for StateManager."""
 
 import pytest
-
-from dxa.agent.agent_runtime import StateManager, AgentState, Observation, Message
+from dxa.agent.agent_state import AgentState, Observation, Message
 
 @pytest.fixture
 def state_manager():

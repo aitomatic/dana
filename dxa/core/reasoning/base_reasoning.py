@@ -1,286 +1,335 @@
-"""Base class for implementing reasoning patterns in DXA.
+"""Base reasoning system with integrated planning and execution.
 
-BaseReasoning provides the foundation for all reasoning implementations:
-1. Manages LLM interactions
-2. Handles state and context
-3. Provides error handling
-4. Tracks objective evolution
+The DXA reasoning system implements a two-layer architecture that separates strategic
+planning from tactical execution. This separation allows the system to maintain
+high-level objectives and adapt plans while efficiently executing individual steps.
+Like a general commanding an army, the strategic layer makes high-level decisions
+and adjusts plans, while the tactical layer handles the immediate execution and
+reports back critical information.
 
-Execution Flow:
-    reason_about(task, context)           # Main entry point
-        ↓
-    _prepare_reasoning(task, context)     # Setup phase
-        ↓
-    _apply_reasoning(task, context)       # Core reasoning
-        ↓
-    _verify_reasoning(result, context)    # Validation
-        ↓
-    _handle_reasoning_error(...)          # Error handling if needed
+Consider these scenarios and their implementations:
 
-Override Points:
-    _apply_reasoning(): Required - Implement core reasoning logic
-    _verify_reasoning(): Optional - Add custom validation
-    _prepare_reasoning(): Optional - Add setup steps
-    _handle_reasoning_error(): Optional - Custom error handling
+1. Simple Question-Answering:
+   User: "What is quantum computing?"
+   Implementation:
+   - DirectReasoning subclass handles simple queries
+   - Bypasses complex planning by creating single-step plan
+   - Uses template-based prompting for consistent LLM interaction
+   - Minimal state tracking and resource management
+   ```python
+   class DirectReasoning(BaseReasoning):
+       async def _create_plan(self, objective):
+           return Plan(steps=[{
+               "action": "query",
+               "prompt": self._create_prompt(objective)
+           }])
+   ```
 
-Example:
-    ```python
-    class MyReasoning(BaseReasoning):
-        @property
-        def steps(self) -> List[str]:
-            return ["analyze", "solve"]
-        
-        async def _apply_reasoning(self, task, context):
-            # Core reasoning implementation
-            response = await self.agent_llm.query({
-                "system": "Process this task.",
-                "user": str(task)
-            })
-            
-            # Record in context
-            context.history.append({
-                "step": self.steps[0],
-                "response": response
-            })
-            
-            return ReasoningResult(
-                success=True,
-                output=response.get("content"),
-                insights={},
-                confidence=1.0,
-                reasoning_path=self.steps
-            )
-    ```
+2. Research Assistant:
+   User: "Research recent breakthroughs in fusion energy"
+   Implementation:
+   - ChainOfThoughtReasoning manages multi-step research
+   - Planning layer decomposes task into research steps
+   - Each step can refine objective based on findings
+   - Resources (search, analysis) managed tactically
+   ```python
+   class ResearchReasoning(BaseReasoning):
+       async def _execute_step(self, step, context):
+           if step.action == "search":
+               results = await context.search.find(step.query)
+               # Signal interesting findings back to planning
+               if self._is_significant(results):
+                   self._signal_discovery(results)
+   ```
 
-State Management:
-    - context.workspace: Shared memory between steps
-    - context.history: Record of reasoning steps
-    - objective_state: Tracks objective understanding
+3. System Monitoring:
+   User: "Monitor system health and respond to issues"
+   Implementation:
+   - OODAReasoning provides continuous observation loop
+   - Planning maintains alert policies and thresholds
+   - Tactical layer handles sensor reading and basic responses
+   - Signals trigger plan updates for complex issues
+   ```python
+   class MonitorReasoning(BaseReasoning):
+       async def _create_objective(self, task):
+           return Objective(
+               original=task,
+               current=task,
+               success_criteria=self._create_health_criteria(task)
+           )
+           
+       async def _review_plan(self, result):
+           if self._needs_escalation(result):
+               return ReviewResult(
+                   needs_update=True,
+                   updated_item=self._create_response_plan(result)
+               )
+   ```
+
+4. Code Generation:
+   User: "Optimize this database query"
+   Implementation:
+   - DANAReasoning combines neural search with symbolic execution
+   - Planning layer manages optimization strategy
+   - Neural components find similar patterns
+   - Symbolic components handle code generation and validation
+   ```python
+   class DANAReasoning(BaseReasoning):
+       async def _create_plan(self, objective):
+           similar_cases = await self._neural_search(objective)
+           return Plan(steps=[
+               {"action": "analyze", "target": objective.current},
+               {"action": "synthesize", "patterns": similar_cases},
+               {"action": "validate", "criteria": objective.constraints}
+           ])
+   ```
+
+The architecture supports this spectrum through careful separation of concerns:
+- BaseReasoning provides the core loop and state management
+- Subclasses implement specific reasoning patterns
+- Planning layer handles strategy and adaptation
+- Tactical layer manages execution and resources
+- Clear interfaces allow mixing and matching components
+
+System Architecture
+-----------------
+1. Strategic Layer (Planning)
+   Purpose: High-level control and adaptation
+   
+   Components:
+   - Objective Manager
+     * Interprets user intent
+     * Refines objectives
+     * Tracks success criteria
+   
+   - Plan Manager
+     * Selects execution pattern
+     * Creates/updates plans
+     * Monitors overall progress
+   
+   - Resource Coordinator
+     * Allocates resources
+     * Manages capabilities
+     * Ensures availability
+
+2. Tactical Layer (Reasoning)
+   Purpose: Direct execution and monitoring
+   
+   Components:
+   - Executor
+     * Runs reasoning steps
+     * Manages resources
+     * Reports progress
+   
+   - Monitor
+     * Tracks execution
+     * Detects issues
+     * Signals updates
+
+Objective Evolution
+-----------------
+1. Structure
+   - Original intent
+   - Current understanding
+   - Success criteria
+   - Constraints
+   - Evolution history
+
+2. Update Triggers
+   From Planning:
+   - User feedback
+   - Strategic realignment
+   - Resource constraints
+   - Success criteria changes
+
+   From Reasoning:
+   - New discoveries
+   - Technical blockers
+   - Opportunity detection
+   - Context changes
+
+3. Evolution Process
+   a. Signal Generation
+      - Source identifies need
+      - Packages evidence
+      - Assigns priority
+   
+   b. Strategic Review
+      - Evaluate significance
+      - Check feasibility
+      - Validate consistency
+   
+   c. Update Application
+      - Record rationale
+      - Update objective
+      - Adjust criteria
+      - Notify stakeholders
+
+Plan Evolution
+------------
+1. Structure
+   - Step sequence
+   - Resource requirements
+   - Progress metrics
+   - Update history
+
+2. Update Triggers
+   From Planning:
+   - Objective changes
+   - Strategy shifts
+   - Resource availability
+   - Priority changes
+
+   From Reasoning:
+   - Step failures
+   - Performance data
+   - Resource issues
+   - New approaches
+
+3. Evolution Process
+   a. Evaluation
+      - Current validity
+      - Performance review
+      - Resource check
+      - Alternative analysis
+   
+   b. Update Mechanism
+      - Preserve progress
+      - Update steps
+      - Adjust resources
+      - Record rationale
+
+4. Consistency Management
+   - Objective alignment
+   - Resource validation
+   - Progress preservation
+   - History tracking
+
+Extension Points
+--------------
+1. Custom Patterns
+   - New reasoning strategies
+   - Specialized workflows
+   - Domain-specific handlers
+
+2. Resource Integration
+   - Tool integration
+   - Custom capabilities
+   - I/O handlers
+
+Implementation Notes
+------------------
+1. Simple cases remain simple:
+   - Direct reasoning is just one LLM call
+   - Basic workflows are natural language → steps
+   - Interactive modes use simple patterns
+
+2. Complex cases are possible:
+   - Full planning/reasoning cycle
+   - Neural-symbolic integration
+   - Multi-stage execution
+
+3. User-Defined Workflows:
+   - Natural language specifications
+   - Runtime translation to plans
+   - Flexible execution patterns
+
+Core Concepts
+------------
+1. Reasoning Patterns (How to Think)
+   Purpose: Define the cognitive approach
+   
+   Pure Patterns:
+   - Direct: Single LLM query → response
+   - Chain-of-Thought: Structured step-by-step thinking
+   - OODA: Observe-Orient-Decide-Act loop
+   - DANA: Neural search → symbolic execution
+   
+   Example:
+   ```python
+   # Pure reasoning pattern
+   class OODAReasoning(ReasoningPattern):
+       async def reason_about_step(self, step, context):
+           observation = await self.observe(step.targets)
+           orientation = await self.orient(observation)
+           decision = await self.decide(orientation)
+           action = await self.plan_action(decision)
+           return action
+   ```
+
+2. Execution Strategies (How to Act)
+   Purpose: Define the execution flow
+   
+   Pure Strategies:
+   - Single-Shot: One request → one response
+   - Iterative: Repeated try-evaluate-adjust
+   - Continuous: Ongoing operation
+   - Interactive: User-in-loop operation
+   
+   Example:
+   ```python
+   # Pure execution strategy
+   class ContinuousStrategy(ExecutionStrategy):
+       async def execute(self, reasoning, objective):
+           while await self.should_continue(objective):
+               step = await self.next_step()
+               result = await reasoning.reason_about_step(step)
+               yield result
+   ```
+
+3. Workflows (What to Do)
+   Purpose: Define the task structure
+   
+   Pure Workflows:
+   - Linear: Sequential steps
+   - Branching: Decision-based paths
+   - State Machine: Complex state transitions
+   - Event-Driven: Response patterns
+   
+   Example:
+   ```python
+   # Pure workflow definition
+   monitoring_workflow = Workflow({
+       "type": "state_machine",
+       "states": {
+           "monitoring": {
+               "actions": ["check_metrics"],
+               "transitions": {
+                   "alert_triggered": "responding",
+                   "normal": "monitoring"
+               }
+           },
+           "responding": {
+               "actions": ["evaluate", "act"],
+               "transitions": {
+                   "resolved": "monitoring",
+                   "escalate": "alerting"
+               }
+           }
+       }
+   })
+   ```
+
+Integration Model
+---------------
+1. Composition (not Inheritance)
+   - Agents combine patterns, strategies, and workflows
+   - Each component remains pure and focused
+   - Mix and match based on needs
+
+2. Example Combinations:
+   a. System Monitoring
+      - Pattern: OODA Reasoning (how to think)
+      - Strategy: Continuous Execution (how to act)
+      - Workflow: State Machine (what to do)
+   
+   b. Research Assistant
+      - Pattern: Chain-of-Thought Reasoning
+      - Strategy: Iterative Execution
+      - Workflow: Branching Tasks
+   
+   c. Chat Bot
+      - Pattern: Direct Reasoning
+      - Strategy: Interactive Execution
+      - Workflow: Event-Driven
 """
-
-from abc import ABC, abstractmethod
-from typing import Dict, Any, List, Optional
-from enum import Enum
-from datetime import datetime
-from dataclasses import dataclass, field
-import logging
-from dxa.core.resource import LLMResource
-
-class ReasoningStatus(str, Enum):
-    """Possible statuses from reasoning."""
-    NEED_EXPERT = "NEED_EXPERT"
-    NEED_INFO = "NEED_INFO"
-    COMPLETE = "COMPLETE"
-    ERROR = "ERROR"
-
-class ReasoningLevel(Enum):
-    """Reasoning complexity levels."""
-    DIRECT = 1.0      # Direct execution
-    REFLECTIVE = 2.0  # Basic validation
-    COT = 3.0         # Chain of thought
-    OODA = 4.0        # Full OODA loop
-    META_OODA = 5.0   # Self-modifying OODA
-    DANA = 6.0        # Domain-aware neurosymbolic agent
-@dataclass
-class StepResult:
-    """Result of a reasoning step."""
-    status: ReasoningStatus
-    content: str
-    next_step: Optional[str] = None
-    # For NEED_EXPERT/NEED_INFO
-    resource_request: Optional[Dict[str, Any]] = None
-    # For COMPLETE
-    final_answer: Optional[str] = None
-    # For ERROR
-    error_message: Optional[str] = None
-
-@dataclass
-class ReasoningConfig:
-    """Configuration for reasoning engine."""
-    agent_llm: Optional[LLMResource] = None
-    strategy: str = "cot"
-    temperature: float = 0.7
-    max_tokens: int = 1000
-
-@dataclass
-class ReasoningResult:
-    """Result from any reasoning process."""
-    success: bool
-    output: Any
-    insights: Dict[str, Any]  # New understanding gained
-    needs_objective_refinement: bool = False
-    confidence: float = 0.0
-    reasoning_path: List[str] = None
-
-@dataclass
-class ReasoningContext:
-    """Context for reasoning execution."""
-    objective: str
-    resources: Dict[str, Any]
-    workspace: Dict[str, Any]  # Working memory
-    history: List[Dict[str, Any]]  # Execution history
-    status: str = "initializing"
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    observations: List[Dict[str, Any]] = field(default_factory=list)
-
-@dataclass
-class ObjectiveState:
-    """Tracks the evolution of an objective/problem statement."""
-    original: str
-    current: str
-    refinements: List[Dict[str, Any]] = field(default_factory=list)
-    confidence: float = 0.0
-    
-    def add_refinement(self, refinement: str, reason: str, confidence: float):
-        """Add a refinement to the objective."""
-        self.refinements.append({
-            "from": self.current,
-            "to": refinement,
-            "reason": reason,
-            "timestamp": datetime.now().timestamp()
-        })
-        self.current = refinement
-        self.confidence = confidence
-
-@dataclass
-class ReasoningTask:
-    """Task for reasoning system to process.
-    
-    Attributes:
-        objective: Main goal/command to achieve
-        context: Additional task context/parameters
-        system_prompt: Optional system prompt override
-        temperature: Optional temperature override
-        metadata: Additional task metadata
-    """
-    objective: str
-    context: Dict[str, Any] = field(default_factory=dict)
-    system_prompt: Optional[str] = None
-    temperature: Optional[float] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
-
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "ReasoningTask":
-        """Create Task from dictionary."""
-        if isinstance(data, str):
-            return cls(objective=data)
-        return cls(
-            objective=data.get("objective", data.get("command", str(data))),
-            context=data.get("context", {}),
-            system_prompt=data.get("system_prompt"),
-            temperature=data.get("temperature"),
-            metadata=data.get("metadata", {})
-        )
-
-class BaseReasoning(ABC):
-    """Base class for implementing reasoning patterns."""
-    
-    def __init__(self, config: Optional[ReasoningConfig] = None):
-        self.config = config or ReasoningConfig()
-        self._agent_llm = self.config.agent_llm
-        self.logger = logging.getLogger(self.__class__.__name__)
-        self.objective_state = None
-
-    @property
-    @abstractmethod
-    def steps(self) -> List[str]:
-        """Get ordered list of reasoning steps."""
-        pass
-
-    @property
-    def agent_llm(self) -> Optional[LLMResource]:
-        """Get the LLM provided by the Agent."""
-        if self._agent_llm is None:
-            raise ValueError("No LLM configured. Agent must set LLM before reasoning.")
-        return self._agent_llm
-
-    @agent_llm.setter
-    def agent_llm(self, llm: LLMResource):
-        """Set the LLM for reasoning."""
-        self._agent_llm = llm
-
-    async def reason_about(self, task: Dict[str, Any], context: ReasoningContext) -> ReasoningResult:
-        """Main reasoning entry point."""
-        try:
-            await self._prepare_reasoning(task, context)
-            result = await self._apply_reasoning(task, context)
-            return await self._verify_reasoning(result, context)
-        # pylint: disable=broad-exception-caught
-        except Exception as e:
-            return await self._handle_reasoning_error(e, task, context)
-
-    # pylint: disable=unused-argument
-    async def _prepare_reasoning(self, task: Dict[str, Any], context: ReasoningContext) -> None:
-        """Setup reasoning context."""
-        await self._init_objective(context)
-        context.workspace.clear()  # Fresh workspace
-        context.history.clear()    # Fresh history
-
-    async def _apply_reasoning(self, task: Dict[str, Any], context: ReasoningContext) -> ReasoningResult:
-        """Apply the reasoning pattern. Override this in subclasses."""
-        response = await self.agent_llm.query({
-            "system": "Process this task directly.",
-            "user": str(task.get('command', task)),
-            "temperature": self.config.temperature
-        })
-        
-        # Record step in history
-        context.history.append({
-            "step": self.steps[0],
-            "task": task,
-            "response": response.get("content")
-        })
-        
-        return ReasoningResult(
-            success=True,
-            output=response.get("content", "Task completed"),
-            insights={},
-            confidence=1.0,
-            reasoning_path=self.steps
-        )
-
-    async def _verify_reasoning(self, result: ReasoningResult, context: ReasoningContext) -> ReasoningResult:
-        """Verify reasoning result. Override for custom verification."""
-        return result
-
-    async def _init_objective(self, context: ReasoningContext) -> None:
-        """Initialize objective tracking."""
-        self.objective_state = ObjectiveState(
-            original=context.objective,
-            current=context.objective
-        )
-
-    async def _handle_reasoning_error(
-        self, 
-        error: Exception, 
-        task: Dict[str, Any], 
-        context: ReasoningContext
-    ) -> ReasoningResult:
-        """Handle reasoning errors."""
-        self.logger.error("Reasoning error: %s", str(error))
-        return ReasoningResult(
-            success=False,
-            output=str(error),
-            insights={"error_type": error.__class__.__name__},
-            confidence=0.0,
-            reasoning_path=[]
-        )
-
-    async def initialize(self) -> None:
-        """Initialize the reasoning system."""
-        if self.agent_llm:
-            await self.agent_llm.initialize()
-
-    async def cleanup(self) -> None:
-        """Clean up resources."""
-        if self.agent_llm:
-            await self.agent_llm.cleanup()
-
-    async def __aenter__(self):
-        """Context manager entry."""
-        await self.initialize()
-        return self
-        
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        """Context manager exit."""
-        await self.cleanup()
