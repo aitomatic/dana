@@ -8,6 +8,23 @@
 
 The DXA reasoning system implements a two-layer architecture that separates strategic planning from tactical execution. This separation allows the system to maintain high-level objectives and adapt plans while efficiently executing individual steps.
 
+## Design Philosophy
+
+1. Simple things should be simple, complex things should be possible
+   - One-liners for common cases
+   - Natural language interfaces where sensible
+   - Full power available when needed
+
+2. Progressive complexity
+   - Start with basic usage
+   - Add capabilities as needed
+   - No complexity penalty for simple cases
+
+3. Smart defaults, explicit control
+   - Auto-configuration for common cases
+   - Resource discovery and management
+   - Full control available when needed
+
 ## Architecture Overview
 
 ```mermaid
@@ -164,22 +181,37 @@ graph TD
 ## Usage Examples
 
 ```python
-# Simple Q&A
+# Simple: One-liner for common cases
+agent = Agent.create("chat")
 result = await agent.run("What is quantum computing?")
 
-# Research Task
-result = await agent.run({
-    "task": "research",
-    "topic": "fusion energy breakthroughs",
-    "depth": "technical"
-})
+# Natural language workflow
+agent = Agent.create("research", 
+    workflow="Research fusion energy breakthroughs, focus on technical details")
+result = await agent.run()
 
-# System Monitoring
-async with agent.continuous_monitoring() as monitor:
-    await monitor.watch(
-        targets=["cpu", "memory"],
-        policies={"high_cpu": alert_and_diagnose}
-    )
+# Auto-configured monitoring
+agent = Agent("monitor")\
+    .with_auto_resources()\
+    .with_workflow("Monitor CPU and memory, alert if usage exceeds 80%")
+
+async with agent:
+    await agent.run()
+
+# Complex: Full control when needed
+agent = Agent("expert")\
+    .with_reasoning("dana")\
+    .with_strategy("interactive")\
+    .with_workflow(ComplexWorkflow(
+        steps=[...],
+        transitions={...},
+        validation={...}
+    ))\
+    .with_resources({
+        "llm": CustomLLM(...),
+        "tools": CustomTools(...),
+        "memory": PersistentMemory(...)
+    })
 ```
 
 ## Resource Management
