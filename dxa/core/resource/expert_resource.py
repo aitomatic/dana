@@ -33,120 +33,120 @@ Example:
     })
 """
 
-from typing import Dict, Any, Optional
-from dxa.core.resource.llm_resource import LLMResource, LLMError
+from dataclasses import dataclass
+from typing import Dict, Any, Optional, Union
+from dxa.core.resource.llm_resource import (
+    LLMResource,
+    LLMError,
+    LLMConfig
+)
 from dxa.core.capability.domain_expertise import DomainExpertise
+from dxa.core.resource.base_resource import BaseResource, ResourceResponse, ResourceConfig
 
-class ExpertResource(LLMResource):
-    """A domain-expert LLM resource."""
+
+@dataclass
+class ExpertConfig(ResourceConfig):
+    """Expert-specific configuration."""
+    expertise: DomainExpertise = None
+    confidence_threshold: float = 0.7
+    llm_config: LLMConfig = None
+
+
+@dataclass
+class ExpertResponse(ResourceResponse):
+    """Expert-specific response extending base response."""
+    content: str = None
+    usage: Optional[Dict[str, int]] = None
+    model: Optional[str] = None
+
+
+class ExpertResource(BaseResource):
+    """Expert resource that uses an LLM for domain-specific queries."""
     
     def __init__(
         self,
         name: str,
-        expertise: DomainExpertise,
-        config: Dict[str, Any],
-        system_prompt: Optional[str] = None,
-        confidence_threshold: float = 0.7
+        config: Union[Dict[str, Any], ExpertConfig],
+        description: Optional[str] = None
     ):
-        """Initialize expert resource.
+        """Initialize expert resource."""
+        if isinstance(config, dict):
+            config = ExpertConfig.from_dict(config)
         
-        Args:
-            name: Name of this expert
-            expertise: Domain expertise definition
-            config: LLM configuration
-            system_prompt: System prompt defining expert's role
-            confidence_threshold: Threshold for accepting queries
-        """
-        super().__init__(
-            name=name,
-            config=config,
-            system_prompt=system_prompt or self._generate_system_prompt(expertise)
-        )
-        self.expertise = expertise
-        self.confidence_threshold = confidence_threshold
-        self.description = f"Expert in {expertise.name}"
+        if not config.expertise:
+            raise ValueError("ExpertResource requires expertise configuration")
+            
+        if not config.llm_config:
+            raise ValueError("ExpertResource requires LLM configuration")
+            
+        super().__init__(name=name, resource_config=config)
+        self._llm = LLMResource(name=f"{name}_llm", config=config.llm_config)
 
-    def _generate_system_prompt(self, expertise: DomainExpertise) -> str:
-        """Generate a system prompt from expertise definition."""
-        capabilities_str = "\n".join(f"- {cap}" for cap in expertise.capabilities)
-        return f"""You are an expert in {expertise.name}.
-        
-        Your expertise includes:
-        {capabilities_str}
-        
-        Description: {expertise.description}
-        
-        Always provide detailed explanations and show your work step by step."""
+    async def initialize(self) -> None:
+        """Initialize the expert and its LLM."""
+        await self._llm.initialize()
+        self._is_available = True
 
-    def can_handle(self, request: Dict[str, Any]) -> bool:
-        """Check if this expert can handle the request.
-        
-        An expert can handle a request if:
-        1. It's a valid LLM request (parent check)
-        2. The query matches the expert's domain
-        3. Required information is provided
-        
-        Args:
-            request: The request to check
-            
-        Returns:
-            True if the expert can handle this request
-        """
-        # First check if it's a valid LLM request
-        if not super().can_handle(request):
-            return False
-            
-        prompt = request['prompt'].lower()
-        
-        # Check if query matches domain keywords
-        matches_domain = any(
-            keyword.lower() in prompt 
-            for keyword in self.expertise.keywords
-        )
-        
-        # Check if required information is provided
-        has_requirements = all(
-            requirement.lower() in prompt
-            for requirement in self.expertise.requirements
-        )
-        
-        return matches_domain and has_requirements
+    async def cleanup(self) -> None:
+        """Clean up the expert and its LLM."""
+        await self._llm.cleanup()
+        self._is_available = False
 
-    async def query(
-        self,
-        request: Dict[str, Any],
-        **kwargs
-    ) -> Dict[str, Any]:
-        """Query the expert.
-        
-        Adds domain context to the request before querying.
-        
-        Args:
-            request: Query request containing prompt and parameters
-            **kwargs: Additional query parameters
-            
-        Returns:
-            Dict containing query response
-            
-        Raises:
-            LLMError: If request cannot be handled by this expert
-        """
+    async def query(self, request: Dict[str, Any]) -> ExpertResponse:
+        """Query with domain expertise context."""
         if not self.can_handle(request):
-            raise LLMError(
-                f"Request cannot be handled by {self.expertise.name} expert"
+            raise LLMError(f"Request cannot be handled by {self.config.expertise.name} expert")
+
+        # Enhance the prompt with domain context
+        enhanced_request = request.copy()
+        enhanced_request["prompt"] = self._enhance_prompt(request["prompt"])
+
+        # Get response using expert's domain logic
+        expert_response = await self._process_expert_query(enhanced_request)
+        return expert_response
+
+    async def _process_expert_query(self, request: Dict[str, Any]) -> ExpertResponse:
+        """Process the query using expert's domain logic.
+        
+        Default implementation uses the LLM directly. Subclasses can override
+        to add domain-specific processing.
+        """
+        if self._llm and self._llm.is_available:
+            llm_response = await self._llm.query(request)
+            return ExpertResponse(
+                success=llm_response.success,
+                error=llm_response.error,
+                content=llm_response.content,
+                usage=llm_response.usage,
+                model=llm_response.model
+            )
+        else:
+            return ExpertResponse(
+                success=True,
+                error=False,
+                content='Default Expert Response'
             )
 
-        # Add domain context to the prompt
-        enhanced_prompt = f"""As an expert in {self.expertise.name}, 
-        with capabilities in:
-        {', '.join(self.expertise.capabilities)}
+    def _enhance_prompt(self, prompt: str) -> str:
+        """Add domain context to prompt."""
+        return f"""As an expert in {self.config.expertise.name}, 
+        with capabilities in: {', '.join(self.config.expertise.capabilities)}
+        
+        Please address this query: {prompt}""" 
 
-        Please address this query:
-        {request['prompt']}"""
-
-        enhanced_request = {
-            **request,
-            "prompt": enhanced_prompt
-        }
-
-        return await super().query(enhanced_request, **kwargs) 
+    def can_handle(self, request: Dict[str, Any]) -> bool:
+        """Check if the request can be handled by this expert.
+        
+        Args:
+            request: The incoming request
+            
+        Returns:
+            bool: True if the request matches expert's domain
+        """
+        if not request.get("prompt"):
+            return False
+        
+        # Check if request contains any expertise keywords
+        prompt = request["prompt"].lower()
+        return any(keyword.lower() in prompt
+                   for keyword in self.config.expertise.keywords)

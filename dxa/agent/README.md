@@ -113,7 +113,6 @@ Agent-specific LLM implementation:
 
 Configuration management through:
 
-- `AgentConfig`: Overall agent configuration
 - `LLMConfig`: LLM-specific settings
 
 ## Usage Example

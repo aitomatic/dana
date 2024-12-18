@@ -1,5 +1,7 @@
 """Factory functions for creating DXA agents.
 
+TODO: Do we need this factory?
+
 This module provides factory functions for creating and managing different types of DXA agents.
 It handles resource initialization, cleanup, and proper error handling for all agent types.
 
@@ -45,7 +47,7 @@ from dxa.agent.work_automation_agent import WorkAutomationAgent
 from dxa.core.reasoning.cot_reasoning import ChainOfThoughtReasoning
 from dxa.experts.math import create_math_expert
 from dxa.agent.base_agent import BaseAgent
-from dxa.agent.config import AgentConfig, LLMConfig
+from dxa.core.resource.llm_resource import LLMConfig
 from dxa.common.errors import (
     ConfigurationError,
     ResourceError,

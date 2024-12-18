@@ -1,106 +1,134 @@
-"""Runtime management for DXA agents.
+"""Core runtime components for DXA agents.
 
-This module provides the AgentRuntime class which standardizes execution patterns
-across different agent types. It handles:
-
-1. Execution lifecycle management
-2. Progress reporting
-3. State tracking
-4. Error handling
-5. Iteration control
-
-The runtime uses a hook-based system that allows agents to customize behavior at key points:
-- pre_execute: Setup before main execution loop
-- reasoning_step: Core iteration logic
-- post_execute: Cleanup and result processing
-- should_continue: Custom continuation logic
-
-Example:
-    ```python
-    # Create runtime with state manager
-    runtime = AgentRuntime(
-        state_manager=StateManager("my_agent"),
-        max_iterations=10
-    )
-    
-    # Define hooks
-    async def reasoning_step(context):
-        return await perform_reasoning(context)
-        
-    async def should_continue(result):
-        return not result.get("complete")
-    
-    # Execute with progress updates
-    async for progress in runtime.execute_with_progress(
-        task={"objective": "analyze_data"},
-        reasoning_step=reasoning_step,
-        should_continue=should_continue
-    ):
-        if progress.is_progress:
-            print(f"Progress: {progress.percent}%")
-        else:
-            print(f"Final result: {progress.result}")
-    ```
-
-The runtime provides two main execution methods:
-1. execute_with_progress: Yields AgentProgress updates during execution
-2. execute: Returns only the final result (wrapper around execute_with_progress)
+This module provides the runtime components for running agents:
+- State management 
+- LLM integration
+- Runtime execution
 """
 
-from dataclasses import asdict
-from typing import Dict, Any, Optional, AsyncIterator, Callable, Awaitable
-from dxa.agent.agent_state import StateManager
-from dxa.agent.agent_progress import AgentProgress
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Dict, Any, List, Optional, AsyncIterator, Callable, Awaitable
 from dxa.common.errors import DXAError
+from dxa.common.base_llm import BaseLLM
 
-# Type aliases for clarity
+# Type aliases
 ReasoningStep = Callable[[Dict[str, Any]], Awaitable[Dict[str, Any]]]
 ExecutionHook = Callable[[Dict[str, Any]], Awaitable[None]]
 ContinuationCheck = Callable[[Dict[str, Any]], Awaitable[bool]]
 
-class AgentRuntime:
-    """Manages the execution lifecycle of an agent.
+@dataclass 
+class AgentState:
+    """Current state of an agent."""
+    name: str
+    status: str
+    timestamp: float = field(default_factory=lambda: datetime.now().timestamp())
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+@dataclass
+class Observation:
+    """An observation made by the agent."""
+    content: Any
+    source: str
+    timestamp: float = field(default_factory=lambda: datetime.now().timestamp())
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+@dataclass
+class Message:
+    """A message in the agent's communication."""
+    content: str
+    sender: str
+    receiver: str
+    timestamp: float = field(default_factory=lambda: datetime.now().timestamp())
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+@dataclass
+class AgentProgress:
+    """Represents agent progress updates during task execution."""
+    type: str  # "progress" or "result"
+    message: str
+    percent: Optional[float] = None
+    result: Optional[Dict[str, Any]] = None
+
+    @property
+    def is_progress(self) -> bool:
+        return self.type == "progress"
+
+    @property
+    def is_result(self) -> bool:
+        return self.type == "result" 
+
+class StateManager:
+    """Manages agent state and execution context."""
     
-    This class standardizes how agents execute tasks by providing:
-    - Progress tracking and reporting
-    - State management
-    - Error handling
-    - Iteration control
-    - Customization hooks
+    def __init__(self, agent_name: str):
+        self.agent_name = agent_name
+        self.state = AgentState(name=agent_name, status="initializing")
+        self.observations: List[Observation] = []
+        self.messages: List[Message] = []
+        self.working_memory: Dict[str, Any] = {}
+
+    def update_state(self, status: str, metadata: Optional[Dict[str, Any]] = None) -> None:
+        self.state = AgentState(name=self.agent_name, status=status, metadata=metadata or {})
+
+    def add_observation(self, content: Any, source: str, metadata: Optional[Dict[str, Any]] = None) -> None:
+        self.observations.append(Observation(content=content, source=source, metadata=metadata or {}))
+
+    def add_message(self, content: str, sender: str, receiver: str, metadata: Optional[Dict[str, Any]] = None) -> None:
+        self.messages.append(Message(content=content, sender=sender, receiver=receiver, metadata=metadata or {}))
+
+    def get_recent_observations(self, n: int = 5) -> List[Observation]:
+        return self.observations[-n:]
+
+    def get_recent_messages(self, n: int = 5) -> List[Message]:
+        return self.messages[-n:]
+
+    def clear_history(self) -> None:
+        self.observations.clear()
+        self.messages.clear()
+        self.working_memory.clear()
+
+class AgentLLM(BaseLLM):
+    """LLM implementation specialized for agent operations."""
     
-    The runtime uses a hook-based architecture where agents can inject custom
-    behavior at key points in the execution lifecycle:
+    def __init__(self, name: str, config: Dict[str, Any], agent_prompts: Optional[Dict[str, str]] = None):
+        super().__init__(name=name, config=config)
+        self.agent_prompts = agent_prompts or {}
     
-    Execution Flow:
-    1. Initialize context from task
-    2. Run pre_execute hook (if provided)
-    3. Enter main execution loop:
-        - Check iteration limits
-        - Run reasoning_step
-        - Update context with results
-        - Check completion conditions
-        - Run should_continue check
-    4. Run post_execute hook (if provided)
-    5. Return final results
-    
-    Attributes:
-        state_manager: Manages agent state and history
-        max_iterations: Maximum number of iterations (None for unlimited)
-        iteration_count: Current iteration count
-        _is_running: Internal execution state flag
-    """
-    
-    def __init__(
-        self,
-        state_manager: StateManager,
-        max_iterations: Optional[int] = None
-    ):
-        """Initialize the runtime.
+    async def query(self, messages: List[Dict[str, str]], **kwargs) -> Dict[str, Any]:
+        combined_messages = []
         
-        Args:
-            state_manager: StateManager instance for tracking agent state
-            max_iterations: Optional maximum number of iterations
-        """
+        # Handle system messages
+        system_content = []
+        if self.agent_prompts.get("system_prompt"):
+            system_content.append(self.agent_prompts["system_prompt"])
+        system_content.extend(m["content"] for m in messages if m["role"] == "system")
+        
+        if system_content:
+            combined_messages.append({
+                "role": "system",
+                "content": "\n\n".join(system_content)
+            })
+        
+        # Handle user messages
+        user_content = []
+        if self.agent_prompts.get("user_prompt"):
+            user_content.append(self.agent_prompts["user_prompt"])
+        user_content.extend(m["content"] for m in messages if m["role"] == "user")
+        
+        if user_content:
+            combined_messages.append({
+                "role": "user",
+                "content": "\n\n".join(user_content)
+            })
+        
+        response = await super().query(combined_messages, **kwargs)
+        return {"content": response.choices[0].message.content if response.choices else ""}
+
+class AgentRuntime:
+    """Manages the execution lifecycle of an agent."""
+    
+    def __init__(self, state_manager: StateManager, max_iterations: Optional[int] = None):
         self.state_manager = state_manager
         self.max_iterations = max_iterations
         self.iteration_count = 0
@@ -114,81 +142,26 @@ class AgentRuntime:
         post_execute: Optional[ExecutionHook] = None,
         should_continue: Optional[ContinuationCheck] = None
     ) -> AsyncIterator[AgentProgress]:
-        """Execute with progress updates.
-        
-        This method runs the agent's execution loop while yielding progress
-        updates. It handles the complete execution lifecycle including setup,
-        iteration, and cleanup.
-        
-        Args:
-            task: Task configuration and parameters
-            reasoning_step: Core reasoning function for each iteration
-            pre_execute: Optional hook run before main execution
-            post_execute: Optional hook run after main execution
-            should_continue: Optional custom continuation check
-            
-        Yields:
-            AgentProgress objects containing:
-                - Progress updates during execution
-                - Final results or error information
-                
-        Progress Reporting:
-            - 0%: Starting execution
-            - 10%: After pre-execution
-            - 10-90%: During main execution loop
-            - 100%: Final result or error
-            
-        State Management:
-            - Tracks iterations
-            - Records observations
-            - Maintains execution context
-            
-        Error Handling:
-            - Catches and processes DXAErrors
-            - Records errors in state
-            - Reports errors through progress updates
-        """
         try:
-            # Initial progress
-            yield AgentProgress(
-                type="progress",
-                message="Starting execution",
-                percent=0
-            )
+            yield AgentProgress(type="progress", message="Starting execution", percent=0)
             
             context = task.copy()
             self._is_running = True
             self.iteration_count = 0
             
-            # Pre-execution hook
             if pre_execute:
                 await pre_execute(context)
-                yield AgentProgress(
-                    type="progress",
-                    message="Completed pre-execution setup",
-                    percent=10
-                )
+                yield AgentProgress(type="progress", message="Setup complete", percent=10)
             
             while self._is_running:
-                # Check iteration limit
-                if (self.max_iterations and self.iteration_count >= self.max_iterations):
-                    self.state_manager.add_observation(
-                        "Reached maximum iterations",
-                        source="runtime"
-                    )
+                if self.max_iterations and self.iteration_count >= self.max_iterations:
+                    self.state_manager.add_observation("Reached maximum iterations", "runtime")
                     break
                 
-                # Run iteration
                 self.iteration_count += 1
                 result = await reasoning_step(context)
-                result = asdict(result)
                 
-                # Calculate progress percentage
-                if self.max_iterations:
-                    percent = min(90, (self.iteration_count / self.max_iterations) * 80 + 10)
-                else:
-                    percent = min(90, self.iteration_count * 10 + 10)
-                
+                percent = min(90, (self.iteration_count / (self.max_iterations or 10)) * 80 + 10)
                 yield AgentProgress(
                     type="progress",
                     message=f"Completed iteration {self.iteration_count}",
@@ -196,22 +169,17 @@ class AgentRuntime:
                     result={"iteration_result": result}
                 )
                 
-                # Update context
                 context.update(result)
                 
-                # Check completion
                 if result.get("task_complete") or result.get("is_stuck"):
                     break
                     
-                # Custom continuation check
                 if should_continue and not await should_continue(result):
                     break
             
-            # Post-execution hook
             if post_execute:
                 result = await post_execute(result)
             
-            # Final result
             yield AgentProgress(
                 type="result",
                 message="Execution complete",
@@ -230,8 +198,8 @@ class AgentRuntime:
         except DXAError as e:
             self.state_manager.add_observation(
                 f"Runtime error: {str(e)}",
-                source="runtime",
-                metadata={"error_type": e.__class__.__name__}
+                "runtime",
+                {"error_type": e.__class__.__name__}
             )
             
             yield AgentProgress(
@@ -257,45 +225,7 @@ class AgentRuntime:
         post_execute: Optional[ExecutionHook] = None,
         should_continue: Optional[ContinuationCheck] = None
     ) -> Dict[str, Any]:
-        """Execute without progress updates.
-        
-        This is a convenience wrapper around execute_with_progress that returns
-        only the final result. It provides the same execution flow and error
-        handling but without intermediate progress updates.
-        
-        Args:
-            task: Task configuration and parameters
-            reasoning_step: Core reasoning function for each iteration
-            pre_execute: Optional hook run before main execution
-            post_execute: Optional hook run after main execution
-            should_continue: Optional custom continuation check
-            
-        Returns:
-            Dict containing:
-                success: Whether execution completed successfully
-                iterations: Number of iterations performed
-                results: Results from final reasoning cycle
-                state_history: Record of observations and messages
-                error: Error information if execution failed
-                
-        Example:
-            ```python
-            result = await runtime.execute(
-                task={"objective": "analyze_data"},
-                reasoning_step=my_reasoning_step
-            )
-            
-            if result["success"]:
-                print(f"Completed in {result['iterations']} iterations")
-                print(f"Results: {result['results']}")
-            else:
-                print(f"Failed: {result['error']}")
-            ```
-            
-        Note:
-            This method is best used when you don't need progress updates.
-            For progress tracking, use execute_with_progress instead.
-        """
+        """Execute without progress updates."""
         async for progress in self.execute_with_progress(
             task=task,
             reasoning_step=reasoning_step,
