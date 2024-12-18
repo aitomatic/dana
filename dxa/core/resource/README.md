@@ -13,6 +13,7 @@ The resource system provides the foundational building blocks for DXA agents, im
 > Simple things should be easy, complex things should be possible.
 
 This principle guides our resource system design:
+
 - Simple resource access (direct queries)
 - Consistent interfaces
 - Composable resources

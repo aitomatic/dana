@@ -20,10 +20,11 @@ At its heart, DXA Core implements a cognitive architecture inspired by human dec
 
 These components work together to create agents that can understand objectives, form plans, execute actions, learn from experience, and interact with their environment. The system is designed to make simple tasks easy while enabling complex behaviors through composition.
 
-+ The system is built around a core LLM that powers both planning and reasoning layers:
-+ - Planning and Reasoning share the agent's LLM
-+ - Capabilities and Resources can access it when needed
-+ - IO remains LLM-independent for flexibility
+The system is built around a core LLM that powers both planning and reasoning layers:
+
+- Planning and Reasoning share the agent's LLM
+- Capabilities and Resources can access it when needed
+- IO remains LLM-independent for flexibility
 
 ## Core Modules
 

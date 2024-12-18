@@ -23,4 +23,4 @@ from dxa.common.types import JsonDict
 from dxa.common.utils import validate_config
 ```
 
-See individual modules for detailed documentation. 
+See individual modules for detailed documentation.
