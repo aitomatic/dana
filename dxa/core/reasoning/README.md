@@ -167,6 +167,8 @@ Choose your reasoning pattern based on:
 
 ## Implementation Details
 
+Reasoning patterns leverage the agent's LLM for cognitive operations.
+
 ### Pattern Structure
 
 ```python

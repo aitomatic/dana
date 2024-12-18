@@ -179,3 +179,17 @@ For external users or organizations interested in collaborating with Aitomatic o
 This software is proprietary and confidential. Copyright © 2024 Aitomatic, Inc. All rights reserved.
 
 Unauthorized copying, transfer, or reproduction of this software, via any medium, is strictly prohibited. This software is protected by copyright law and international treaties.
+
+# DXA Framework
+
+The DXA Framework provides a modular system for building intelligent agents. 
+
+## Core Design
+
+DXA agents are built around a core LLM that powers their cognitive functions:
+```python
+# LLM is a fundamental requirement
+agent = Agent("assistant", llm=LLMResource("gpt-4"))
+```
+
+This LLM is automatically provided to the agent's planning and reasoning systems.

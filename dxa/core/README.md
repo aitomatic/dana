@@ -4,43 +4,96 @@
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
 
-# DXA Core Modules
+# DXA Core System
 
-Core components that power the DXA agent system. For agent implementation details, see [Agent Documentation](../agent/README.md).
+The DXA Core system provides the foundational building blocks for creating intelligent agents. It implements a layered architecture that separates strategic planning from tactical execution, while providing essential capabilities and resources. This separation of concerns allows agents to maintain high-level objectives while efficiently executing individual steps and adapting to new information.
 
-## Modules
+## System Overview
+
+At its heart, DXA Core implements a cognitive architecture inspired by human decision-making:
+
+- **Planning** handles strategic decisions and goal management
+- **Reasoning** implements different thinking patterns for execution
+- **Capabilities** provide cognitive abilities like memory and expertise
+- **Resources** manage concrete tools and services
+- **IO** handles all external interactions
+
+These components work together to create agents that can understand objectives, form plans, execute actions, learn from experience, and interact with their environment. The system is designed to make simple tasks easy while enabling complex behaviors through composition.
+
++ The system is built around a core LLM that powers both planning and reasoning layers:
++ - Planning and Reasoning share the agent's LLM
++ - Capabilities and Resources can access it when needed
++ - IO remains LLM-independent for flexibility
+
+## Core Modules
 
 ### [Planning](planning/README.md)
 
-Strategic layer that manages objectives and generates plans, providing the high-level control for agent behavior.
+Strategic layer that manages objectives and generates plans. Implements different planning patterns from simple direct planning to complex hierarchical and dynamic planning strategies.
 
 ### [Reasoning](reasoning/README.md)
 
-Tactical layer that implements different thinking patterns (Direct, CoT, OODA, DANA), handling the actual execution of plans.
-
-### [Resource](resource/README.md)
-
-Resource management system that provides access to tools, APIs, and capabilities that agents can use during execution.
+Tactical layer that executes plans using various cognitive patterns. Includes direct reasoning, chain-of-thought, OODA loops, and DANA (Domain-Aware Neural-Symbolic Analysis).
 
 ### [Capability](capability/README.md)
 
-Pluggable skills and abilities that can be dynamically added to agents to extend their functionality.
+Core cognitive abilities like memory and domain expertise. Built on top of resources but provides higher-level, cognitively-aligned interfaces.
+
+### [Resource](resource/README.md)
+
+Concrete tools and services that agents can use, from LLM interactions to human-in-the-loop operations. Provides the foundation for capabilities.
 
 ### [IO](io/README.md)
 
-Input/Output handlers that manage agent interactions with users, systems, and the environment.
+Input/Output systems for all external interactions. Handles everything from simple console I/O to complex multi-modal interactions.
 
 ## Integration
 
-These modules work together to create flexible, powerful agents:
+These core modules are primarily used by the [Agent System](../agent/README.md), which provides the main interface for creating and using DXA agents. The agent system composes these components to create coherent, capable agents:
 
-- Planning decides what to do
-- Reasoning determines how to think
-- Resources provide tools to use
-- Capabilities define what's possible
-- IO manages interactions
+```python
+agent = Agent("assistant")\
+    .with_planning("hierarchical")\       # Strategic layer
+    .with_reasoning("cot")\               # Tactical layer
+    .with_capability("memory")\           # Cognitive abilities
+    .with_resource("llm")\                # Concrete tools
+    .with_io("interactive")               # External interaction
+```
 
-See the [Agent Documentation](../agent/README.md) for how these components are integrated into a complete system.
+## Directory Structure
+
+```python
+dxa/core/
+├── planning/           # Strategic planning
+├── reasoning/          # Tactical execution
+├── capability/         # Cognitive abilities
+├── resource/           # Tools and services
+└── io/                 # External interaction
+```
+
+## Development
+
+When developing new components:
+
+1. Choose the appropriate layer (planning, reasoning, etc.)
+2. Follow the established patterns in that module
+3. Maintain separation of concerns
+4. Consider integration points
+5. Document thoroughly
+
+## Testing
+
+Each module has its own test suite under `tests/core/`. Run tests with:
+
+```bash
+pytest tests/core/
+```
+
+## See Also
+
+- [Agent Documentation](../agent/README.md) - Main interface for using DXA
+- [Examples](../../examples/README.md) - Example agent implementations
+- [API Reference](../../docs/api/README.md) - Detailed API documentation
 
 ---
 

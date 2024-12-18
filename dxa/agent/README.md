@@ -45,4 +45,18 @@ async with agent:
     result = await agent.run(task)
 ```
 
+## Agent Construction
+
++ ### LLM Requirement
++ 
++ Every DXA agent requires an LLM that powers its cognitive functions:
++ ```python
++ # The LLM is provided at construction
++ agent = Agent("assistant", llm=LLMResource("gpt-4"))
++ 
++ # It's automatically used by planning and reasoning
++ agent.with_planning("hierarchical")  # Uses agent's LLM
++ agent.with_reasoning("cot")          # Uses agent's LLM
++ ```
++ 
 [Rest of agent-specific documentation...]
