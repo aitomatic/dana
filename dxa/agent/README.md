@@ -77,17 +77,66 @@ async with agent.runtime(runtime_config) as runtime:
 
 ## State Management
 
-Agents maintain state across operations:
+The DXA agent system uses a centralized state management approach to track the evolution of objectives and plans.
 
-```python
-# Access agent state
-current_task = agent.state.current_task
-progress = agent.state.progress
+## Core State Components
 
-# State persistence
-await agent.state.save()
-await agent.state.restore()
+### Objective State
+
+- Current objective being pursued
+- History of objective evolution
+- Metadata (timestamps, reasons for changes)
+
+### Plan State  
+
+- Current execution plan
+- History of plan evolution
+- Plan metadata (completion status, timestamps)
+
+### Execution State
+
+- Active step in current plan
+- Results from completed steps
+- Resource allocations
+
+## State Flow
+
+```mermaid
+graph TD
+    A[New Objective] --> B[Current Objective]
+    B --> C[Generate Plan]
+    C --> D[Current Plan]
+    D --> E[Execute Steps]
+    E --> F[Record Results]
+    F --> |New Info|B
 ```
+
+## Key Design Principles
+
+1. **Single Source of Truth**
+   - One state object accessed by all components
+   - Clear ownership and update patterns
+   - Atomic state transitions
+
+2. **History Tracking**
+   - Evolution of objectives and plans
+   - Timestamps for all changes
+   - Reasons for state transitions
+
+3. **Execution Context**
+   - Track active work
+   - Record step results
+   - Monitor resource usage
+
+## Usage Patterns
+
+Planning and Reasoning layers interact with state through well-defined interfaces:
+
+- Planning reads/writes objectives and plans
+- Reasoning reads plans and writes results
+- Both can trigger state transitions based on new information
+
+Would you like me to elaborate on any aspect of this design?
 
 ## Configuration
 
@@ -123,7 +172,6 @@ Track agent performance through:
 - [Examples](../../examples/README.md)
 
 ---
-
 
 <p align="center">
 Copyright © 2024 Aitomatic, Inc. All rights reserved.
