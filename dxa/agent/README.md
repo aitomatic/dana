@@ -77,7 +77,7 @@ async with agent.runtime(runtime_config) as runtime:
 
 ## State Management
 
-The DXA agent system uses a centralized state management approach to track the evolution of objectives and plans.
+The DXA agent system uses a centralized state management approach to track the evolution of objectives and plans. This integrates with the [Planning System](../core/planning/README.md) and [Reasoning System](../core/reasoning/README.md) to maintain coherent agent state.
 
 ## Core State Components
 
@@ -97,7 +97,7 @@ The DXA agent system uses a centralized state management approach to track the e
 
 - Active step in current plan
 - Results from completed steps
-- Resource allocations
+- Resource allocations (managed via [Resource System](../core/resource/README.md))
 
 ## State Flow
 
@@ -126,7 +126,7 @@ graph TD
 3. **Execution Context**
    - Track active work
    - Record step results
-   - Monitor resource usage
+   - Monitor resource usage via [I/O System](../core/io/README.md)
 
 ## Usage Patterns
 
@@ -135,6 +135,8 @@ Planning and Reasoning layers interact with state through well-defined interface
 - Planning reads/writes objectives and plans
 - Reasoning reads plans and writes results
 - Both can trigger state transitions based on new information
+
+See [Capability System](../core/capability/README.md) for higher-level state operations.
 
 Would you like me to elaborate on any aspect of this design?
 
