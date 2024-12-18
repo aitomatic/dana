@@ -4,37 +4,50 @@
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
 
-# DXA Core Components
+# DXA Core Modules
 
-Core components provide the fundamental building blocks of the DXA framework.
+Core components that power the DXA agent system. For agent implementation details, see [Agent Documentation](../agent/README.md).
 
-## Overview
+## Modules
 
-The core module contains:
+### [Planning](planning/README.md)
 
-- **Reasoning**: Decision-making strategies
-- **Resources**: External tool integration
-- **I/O**: Environment interaction
-- **Capabilities**: Agent abilities
+Strategic layer that manages objectives and generates plans, providing the high-level control for agent behavior.
 
-## Component Design
+### [Reasoning](reasoning/README.md)
 
-Each component follows:
+Tactical layer that implements different thinking patterns (Direct, CoT, OODA, DANA), handling the actual execution of plans.
 
-1. Base abstract class defining interface
-2. Standard implementations
-3. Extension points for custom behavior
-4. Comprehensive test coverage
+### [Resource](resource/README.md)
 
-## Usage
+Resource management system that provides access to tools, APIs, and capabilities that agents can use during execution.
 
-Components are typically accessed through the Agent interface:
+### [Capability](capability/README.md)
 
-```python
-agent = Agent("assistant")\
-    .with_reasoning("cot")\
-    .with_resources({"llm": my_llm})\
-    .with_capabilities(["research"])
-```
+Pluggable skills and abilities that can be dynamically added to agents to extend their functionality.
 
-See individual component READMEs for detailed documentation. 
+### [IO](io/README.md)
+
+Input/Output handlers that manage agent interactions with users, systems, and the environment.
+
+## Integration
+
+These modules work together to create flexible, powerful agents:
+
+- Planning decides what to do
+- Reasoning determines how to think
+- Resources provide tools to use
+- Capabilities define what's possible
+- IO manages interactions
+
+See the [Agent Documentation](../agent/README.md) for how these components are integrated into a complete system.
+
+---
+
+<p align="center">
+Copyright © 2024 Aitomatic, Inc. All rights reserved.
+</p>
+
+<p align="center">
+<a href="https://aitomatic.com">https://aitomatic.com</a>
+</p>

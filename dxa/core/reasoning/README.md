@@ -4,219 +4,338 @@
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
 
-# DXA Reasoning System
+# Reasoning System
 
-The DXA reasoning system implements a two-layer architecture that separates strategic planning from tactical execution. This separation allows the system to maintain high-level objectives and adapt plans while efficiently executing individual steps.
+The reasoning layer is the tactical brain of the DXA agent system, responsible for executing plans and making step-by-step decisions. While the [planning layer](../planning/README.md) decides what to do, reasoning determines how to think about each step. It implements various cognitive patterns - from simple direct queries to sophisticated neural-symbolic reasoning - each optimized for different types of tasks. The reasoning layer maintains continuous communication with planning through signals, allowing for dynamic adaptation as new information is discovered or circumstances change. This separation of strategic and tactical thinking enables both simple, one-shot tasks and complex, evolving objectives to be handled effectively.
 
 ## Design Philosophy
 
-1. Simple things should be simple, complex things should be possible
-   - One-liners for common cases
-   - Natural language interfaces where sensible
-   - Full power available when needed
+> Simple things should be easy, complex things should be possible.
 
-2. Progressive complexity
-   - Start with basic usage
-   - Add capabilities as needed
-   - No complexity penalty for simple cases
+This principle guides our reasoning system design:
 
-3. Smart defaults, explicit control
-   - Auto-configuration for common cases
-   - Resource discovery and management
-   - Full control available when needed
+- Direct reasoning for simple queries (one line of code)
+- Chain of Thought for clearer thinking (when needed)
+- OODA for continuous adaptation (when appropriate)
+- DANA for sophisticated neural-symbolic integration (when beneficial)
 
-## Architecture Overview
+Each pattern builds on the same foundation but adds power and flexibility where needed.
+
+See also:
+
+- [DXA Home](../../../README.md) - Overview of the entire system
+- [Agent Documentation](../../agent/README.md) - Agent implementation and usage
+- [Planning System](../planning/README.md) - Strategic planning layer
+- [Resource Management](../resource/README.md) - Tool and capability integration
+- [IO System](../io/README.md) - Interaction handling
+
+## Architecture
 
 ```mermaid
 graph TB
-    A[Strategic Layer] --> B[Planning]
-    A --> C[Objective Management]
-    A --> D[Resource Coordination]
+    A[Reasoning Pattern] --> B[Direct]
+    A --> C[Chain of Thought]
+    A --> D[OODA]
+    A --> E[DANA]
     
-    E[Tactical Layer] --> F[Execution]
-    E --> G[Monitoring]
-    E --> H[Signal Generation]
+    subgraph "Pattern Complexity"
+        B --> C
+        C --> D
+        D --> E
+    end
     
-    B --> E
-    G --> C
-```
-
-## Core Concepts
-
-### 1. Reasoning Patterns (How to Think)
-
-Purpose: Define the cognitive approach
-
-Pure Patterns:
-
-- Direct: Single LLM query → response
-- Chain-of-Thought: Structured step-by-step thinking
-- OODA: Observe-Orient-Decide-Act loop
-- DANA: Neural search → symbolic execution
-
-```mermaid
-graph LR
-    A[Input] --> B[Reasoning Pattern]
-    B --> C[Output]
-    
-    subgraph "OODA Example"
-    D[Observe] --> E[Orient]
-    E --> F[Decide]
-    F --> G[Act]
+    subgraph "Resource Needs"
+        B -.- F[LLM Only]
+        C -.- G[LLM + Memory]
+        D -.- H[LLM + Sensors]
+        E -.- I[LLM + Neural + Symbolic]
     end
 ```
 
-### 2. Execution Strategies (How to Act)
+## Usage Guide
 
-Purpose: Define the execution flow
-
-Pure Strategies:
-
-- Single-Shot: One request → one response
-- Iterative: Repeated try-evaluate-adjust
-- Continuous: Ongoing operation
-- Interactive: User-in-loop operation
-
-```mermaid
-stateDiagram-v2
-    [*] --> Execute
-    Execute --> Evaluate
-    Evaluate --> Complete: Success
-    Evaluate --> Execute: Need Adjustment
-    Complete --> [*]
-```
-
-### 3. Workflows (What to Do)
-
-Purpose: Define the task structure
-
-Pure Workflows:
-
-- Linear: Sequential steps
-- Branching: Decision-based paths
-- State Machine: Complex state transitions
-- Event-Driven: Response patterns
-
-```mermaid
-stateDiagram-v2
-    [*] --> Monitoring
-    Monitoring --> Responding: Alert
-    Responding --> Monitoring: Resolved
-    Responding --> Alerting: Escalate
-    Alerting --> Monitoring: Handled
-```
-
-## Integration Model
-
-### Composition over Inheritance
-
-Components combine through composition:
-
-- Agents combine patterns, strategies, and workflows
-- Each component remains pure and focused
-- Mix and match based on needs
-
-Example Combinations:
-
-1. System Monitoring
-   - Pattern: OODA Reasoning (how to think)
-   - Strategy: Continuous Execution (how to act)
-   - Workflow: State Machine (what to do)
-
-2. Research Assistant
-   - Pattern: Chain-of-Thought Reasoning
-   - Strategy: Iterative Execution
-   - Workflow: Branching Tasks
-
-3. Chat Bot
-   - Pattern: Direct Reasoning
-   - Strategy: Interactive Execution
-   - Workflow: Event-Driven
-
-## Evolution Mechanisms
-
-### Objective Evolution
-
-```mermaid
-graph TD
-    A[Original Objective] --> B[Current Understanding]
-    B --> C[Updated Objective]
-    
-    D[Planning Layer] --> B
-    E[Reasoning Layer] --> B
-    F[User Feedback] --> B
-```
-
-### Plan Evolution
-
-```mermaid
-graph TD
-    A[Initial Plan] --> B[Execution]
-    B --> C[Review]
-    C --> D[Update Plan]
-    D --> B
-    
-    E[New Information] --> C
-    F[Resource Changes] --> C
-    G[Performance Data] --> C
-```
-
-## Implementation Notes
-
-1. Simple cases remain simple:
-   - Direct reasoning is just one LLM call
-   - Basic workflows are natural language → steps
-   - Interactive modes use simple patterns
-
-2. Complex cases are possible:
-   - Full planning/reasoning cycle
-   - Neural-symbolic integration
-   - Multi-stage execution
-
-3. User-Defined Workflows:
-   - Natural language specifications
-   - Runtime translation to plans
-   - Flexible execution patterns
-
-## Usage Examples
+### Simple Query
 
 ```python
-# Simple: One-liner for common cases
-agent = Agent.create("chat")
+# Direct reasoning for simple tasks
+agent = Agent("assistant")\
+    .with_reasoning("direct")
 result = await agent.run("What is quantum computing?")
+```
 
-# Natural language workflow
-agent = Agent.create("research", 
-    workflow="Research fusion energy breakthroughs, focus on technical details")
-result = await agent.run()
+### Complex Analysis
 
-# Auto-configured monitoring
+```python
+# Chain of thought for step-by-step analysis
+agent = Agent("analyst")\
+    .with_reasoning("cot")\
+    .with_resources({
+        "memory": MemoryResource(),  # Track reasoning steps
+        "search": SearchResource()    # Look up information
+    })
+
+result = await agent.run({
+    "task": "analyze",
+    "topic": "Impact of quantum computing on cryptography",
+    "depth": "technical"
+})
+```
+
+### Continuous Monitoring
+
+```python
+# OODA for adaptive monitoring
 agent = Agent("monitor")\
-    .with_auto_resources()\
-    .with_workflow("Monitor CPU and memory, alert if usage exceeds 80%")
+    .with_reasoning("ooda")\
+    .with_resources({
+        "sensors": SystemSensors(),
+        "alerts": AlertSystem()
+    })
 
 async with agent:
-    await agent.run()
-
-# Complex: Full control when needed
-agent = Agent("expert")\
-    .with_reasoning("dana")\
-    .with_strategy("interactive")\
-    .with_workflow(ComplexWorkflow(
-        steps=[...],
-        transitions={...},
-        validation={...}
-    ))\
-    .with_resources({
-        "llm": CustomLLM(...),
-        "tools": CustomTools(...),
-        "memory": PersistentMemory(...)
+    await agent.run({
+        "task": "monitor_system",
+        "metrics": ["cpu", "memory"],
+        "thresholds": {"cpu_high": 80}
     })
 ```
 
-## Resource Management
+### Domain-Specific Tasks
 
-[All new sections remain exactly the same through Migration Guide section]
+```python
+# DANA for specialized tasks
+agent = Agent("optimizer")\
+    .with_reasoning("dana")\
+    .with_resources({
+        "vector_db": VectorDB(),     # Pattern matching
+        "runtime": CodeExecutor()     # Run generated code
+    })
+
+result = await agent.run({
+    "task": "optimize",
+    "target": my_function,
+    "constraints": {
+        "max_time": "100ms",
+        "memory_limit": "10mb"
+    }
+})
+```
+
+### Pattern Selection Guide
+
+Choose your reasoning pattern based on:
+
+1. Task Complexity
+   - Simple Q&A → Direct
+   - Multi-step analysis → Chain of Thought
+   - Real-time adaptation → OODA
+   - Domain expertise → DANA
+
+2. Resource Availability
+   - Minimal resources → Direct
+   - Memory needs → Chain of Thought
+   - Sensor access → OODA
+   - Full toolkit → DANA
+
+3. Performance Requirements
+   - Quick response → Direct
+   - Verifiable logic → Chain of Thought
+   - Continuous operation → OODA
+   - Optimal solutions → DANA
+
+## Reasoning Patterns
+
+1. Direct Reasoning
+   - Simple LLM queries
+   - Quick responses
+   - Minimal processing
+
+2. Chain of Thought
+   - Step-by-step thinking
+   - Explicit reasoning
+   - Verifiable logic
+
+3. OODA Loop
+   - Observe-Orient-Decide-Act
+   - Continuous monitoring
+   - Adaptive response
+
+4. DANA
+   - Neural search
+   - Symbolic execution
+   - Domain adaptation
+
+## Implementation Details
+
+### Pattern Structure
+
+```python
+class ReasoningPattern:
+    """Base class for all reasoning patterns."""
+    
+    async def reason_about_step(self, step: Dict, context: Context) -> Result:
+        """Apply reasoning to a single step."""
+        raise NotImplementedError
+```
+
+### State Management
+
+Each reasoning pattern maintains:
+
+- Current step state
+- Intermediate results
+- Confidence metrics
+- Resource usage
+
+### Signal Generation
+
+Patterns can signal:
+
+- Need for plan updates
+- Resource issues
+- Discovery of new information
+- Completion status
+
+## Pattern Details
+
+### Direct Reasoning
+
+Best for: Simple, single-step tasks
+
+```python
+class DirectReasoning(ReasoningPattern):
+    async def reason_about_step(self, step, context):
+        prompt = self._create_prompt(step)
+        response = await context.llm.query(prompt)
+        return self._process_response(response)
+```
+
+### Chain of Thought
+
+Best for: Complex problem solving
+
+Steps:
+
+1. Break down problem
+2. Consider each part
+3. Show reasoning steps
+4. Synthesize conclusion
+
+```python
+class ChainOfThoughtReasoning(ReasoningPattern):
+    async def reason_about_step(self, step, context):
+        thoughts = await self._generate_thoughts(step)
+        conclusion = await self._synthesize(thoughts)
+        return self._create_result(thoughts, conclusion)
+```
+
+### OODA Loop
+
+Best for: Continuous monitoring and response
+
+Cycle:
+
+1. **Observe**: Gather data
+2. **Orient**: Analyze situation
+3. **Decide**: Choose action
+4. **Act**: Execute decision
+
+```python
+class OODAReasoning(ReasoningPattern):
+    async def reason_about_step(self, step, context):
+        observation = await self._observe(step.targets)
+        orientation = await self._orient(observation)
+        decision = await self._decide(orientation)
+        action = await self._act(decision)
+        return self._create_result(action)
+```
+
+### DANA (Domain-Aware Neural-Symbolic)
+
+Best for: Specialized domain tasks
+
+Process:
+
+1. Neural search for similar patterns
+2. Program synthesis/selection
+3. Symbolic execution
+4. Result validation
+
+```python
+class DANAReasoning(ReasoningPattern):
+    async def reason_about_step(self, step, context):
+        patterns = await self._neural_search(step)
+        program = await self._synthesize_program(patterns)
+        result = await self._execute_symbolically(program)
+        return self._validate_result(result)
+```
+
+## Integration with Planning
+
+Reasoning patterns interact with planning through:
+
+1. Step execution results
+2. Progress signals
+3. Resource updates
+4. Discovery notifications
+
+Example:
+
+```python
+async def _execute_with_signals(self, step, context):
+    # Execute reasoning
+    result = await self.reason_about_step(step, context)
+    
+    # Generate signals
+    if self._is_significant(result):
+        await self._signal_discovery(result)
+    
+    # Update progress
+    await self._update_metrics(result)
+    
+    return result
+```
+
+## Resource Usage
+
+Each pattern has different resource needs:
+
+- Direct: Minimal (just LLM)
+- CoT: Moderate (LLM + memory)
+- OODA: Heavy (LLM + sensors + memory)
+- DANA: Intensive (LLM + vector DB + runtime)
+
+## Testing and Validation
+
+Patterns should implement:
+
+1. Confidence scoring
+2. Result validation
+3. Error detection
+4. Performance metrics
+
+## Best Practices
+
+1. Pattern Selection
+   - Use simplest pattern that works
+   - Match pattern to task complexity
+   - Consider resource constraints
+
+2. Implementation
+   - Clear step definitions
+   - Robust error handling
+   - Proper resource cleanup
+   - Meaningful signals
+
+3. Monitoring
+   - Track confidence scores
+   - Monitor resource usage
+   - Log reasoning steps
+   - Measure performance
+
+---
+
+See [Agent Documentation](../../agent/README.md) for integration details.
 
 ---
 
