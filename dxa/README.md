@@ -8,160 +8,157 @@
 
 DXA is a framework for building and deploying intelligent agents powered by Large Language Models (LLMs). Like human beings, these agents possess core cognitive abilities, inherent capabilities, ways to interact with their environment, and access to external resources.
 
-For installation and setup instructions, see the [project README](../README.md). For practical implementation examples, check out our [examples directory](../examples/README.md).
+## Core Architecture
 
-## Documentation Map
+At the heart of DXA is the Agent system, which coordinates cognitive functions through a layered architecture:
 
-### 1. Core Components
+1. **[Agent System](agent/README.md)** - The central entity that:
+   - Manages the core LLM that powers cognitive functions
+   - Coordinates planning and reasoning
+   - Handles resource allocation and state
+   - Provides the main interface for users
 
-Each component has detailed documentation in its respective README:
+2. **Core Cognitive Components**:
+   - **[Planning](core/planning/README.md)** - Strategic layer that:
+     - Understands objectives
+     - Generates execution plans
+     - Manages goal evolution
+     - Coordinates resources
 
-#### Reasoning System ([docs](dxa/core/reasoning/README.md))
+   - **[Reasoning](core/reasoning/README.md)** - Tactical layer that:
+     - Executes planned steps
+     - Makes detailed decisions
+     - Adapts to new information
+     - Reports progress
 
-The cognitive engine that drives decision-making:
+3. **Supporting Systems**:
+   - **[Capabilities](core/capability/README.md)** - Core abilities like:
+     - Memory management
+     - Domain expertise
+     - Learning functions
 
-- **Direct Reasoning**: Simple task execution without complex reasoning
-- **Chain of Thought (CoT)**: Linear process (understand → analyze → solve → verify)
-- **OODA Loop**: Dynamic adaptation (observe → orient → decide → act)
-- **DANA**: Neural-symbolic hybrid combining LLM understanding with precise computation
+   - **[Resources](core/resource/README.md)** - External tools:
+     - LLM interactions
+     - Database access
+     - API integrations
 
-#### Capabilities ([docs](dxa/core/capability/README.md))
+   - **[IO](core/io/README.md)** - Environmental interaction:
+     - User interfaces
+     - File operations
+     - Network communication
 
-Fundamental agent abilities:
-
-- Memory management for experience and knowledge
-- Expertise domains for specialized knowledge
-- Core cognitive functions (planning, decision-making)
-- Custom capability extensions
-
-#### I/O System ([docs](dxa/core/io/README.md))
-
-Environmental interaction handlers:
-
-- Text interfaces (CLI, chat)
-- API endpoints
-- File system operations
-- Custom I/O handlers
-
-#### Resources ([docs](dxa/core/resource/README.md))
-
-External tool integration:
-
-- Database connections
-- Search engines
-- IoT devices
-- Inter-agent communication
-
-#### Agent System ([docs](dxa/agent/README.md))
-
-Unified agent implementation:
-
-- Composable agent architecture
-- Resource management
-- Progress tracking
-- State management
-
-### 2. Examples & Tutorials ([docs](examples/README.md))
-
-- Getting started guides
-- Use case implementations
-- Best practices examples
-
-## Architecture Overview
-
-An Agent in DXA, similar to a human being, is composed of:
-
-1. A cognitive core (Reasoning) that drives decision-making and thought processes
-2. Inherent capabilities (like Memory and Expertise) that shape its abilities
-3. Input/Output channels for environmental interaction
-4. Access to external resources and tools
+## System Overview
 
 ```mermaid
-graph LR
-    A[dxa.agent.Agent] --> B[dxa.core.reasoning.BaseReasoning]
-    A --> C[dxa.agent.AgentLLM]
-    A --> D[dxa.core.capability.BaseCapability]
-    A --> E[dxa.core.io.BaseIO]
-    A --> F[dxa.core.resource.BaseResource]
+graph TB
+    A[Agent] --> B[Planning]
+    A --> C[Reasoning]
+    A --> D[Capabilities]
+    A --> E[Resources]
+    A --> F[IO]
     
-    F --> G[Databases]
-    F --> H[Search Engines]
-    F --> I[IoT Data]
-    F --> J[Other Agents]
+    B -.-> G[LLM]
+    C -.-> G
+```
+
+[Rest of existing content including Quick Start, Project Structure, etc...]
+
+## Getting Started
+
+The simplest way to create an agent is:
+
+```python
+from dxa import Agent
+from dxa.core.resource import LLMResource
+
+# LLM is required for cognitive functions
+agent = Agent("assistant", llm=LLMResource("gpt-4"))\
+    .with_planning("hierarchical")\
+    .with_reasoning("cot")
+    
+result = await agent.run("Help with this task")
 ```
 
 ## Examples
 
-The `examples/` directory now includes several implementations demonstrating various use cases:
+The `examples/` directory demonstrates various agent implementations:
 
-1. `collaborative_research.py`: Demonstrates multi-agent collaboration for research tasks
-2. `websocket_solver.py`: Shows how to create a WebSocket-based problem-solving agent
-3. `interactive_math.py`: Implements an interactive math tutor agent
-4. `automation_web.py`: Showcases web scraping automation using an agent
+1. **Basic Patterns**
+   - `chat_bot.py`: Interactive conversational agent
+   - `research_assistant.py`: Information gathering and analysis
+   - `system_monitor.py`: Continuous system monitoring
 
-These examples cover a range of agent types and scenarios:
+2. **Advanced Usage**
+   - `collaborative_research.py`: Multi-agent collaboration
+   - `websocket_solver.py`: WebSocket-based problem solving
+   - `interactive_math.py`: Interactive math tutoring
+   - `automation_web.py`: Web scraping automation
+
+These examples showcase different agent configurations and use cases:
 
 - Collaborative problem-solving
-- Network-based agent communication
-- Interactive console-based agents
+- Network-based communication
+- Interactive console agents
 - Workflow automation
-
-We encourage you to explore these examples to better understand the full potential of the DXA framework.
-
-## Getting Started
-
-The simplest way to create an agent is to use one of the pre-built agent classes:
-
-```python
-from dxa import Agent
-
-agent = Agent("assistant")\
-    .with_reasoning("cot")\
-    .with_resources({"llm": LLMResource(model="gpt-4")})
-await agent.run("Help with this task")
-```
 
 ## Advanced Usage
 
-For custom agent behaviors, you can use the factory pattern:
+For custom agent behaviors, use the factory pattern:
 
 ```python
 from dxa import create_agent
 
 async with create_agent({
     "name": "custom_agent",
+    "llm": LLMResource("gpt-4"),
+    "planning": "hierarchical",
     "reasoning": "cot",
-    "capabilities": ["research"],
-    "resources": {
-        "llm": LLMResource(model="gpt-4")
-    }
+    "capabilities": ["research"]
 }) as agent:
     result = await agent.run("Research this topic")
 ```
 
-## Module Structure
+## Project Structure
 
 ```text
 dxa/
-├── agent/
+├── agent/          # Agent implementation
 │   ├── __init__.py
-│   ├── unified_agent.py
-│   ├── agent_llm.py
-│   ├── progress.py
-│   ├── config.py
+│   ├── agent.py
+│   ├── runtime.py
 │   └── state.py
-├── core/
-│   ├── capability/
-│   ├── io/
-│   ├── reasoning/
-│   └── resource/
-└── examples/
-    ├── __init__.py
-    ├── collaborative_research.py
-    ├── websocket_solver.py
-    ├── interactive_math.py
-    └── automation_web.py
+├── core/           # Core components
+│   ├── planning/   # Strategic planning
+│   ├── reasoning/  # Tactical execution
+│   ├── capability/ # Core abilities
+│   ├── resource/   # External tools
+│   └── io/         # Interaction handling
+└── examples/       # Usage examples
+    ├── basic/      # Basic patterns
+    └── advanced/   # Complex scenarios
 ```
+
+## Installation
+
+1. Prerequisites:
+   - Python 3.x
+   - bash shell (Unix) or Git Bash (Windows)
+
+2. Setup:
+
+   ```bash
+   git clone <repository-url>
+   cd dxa-prototype
+   bash setup_env.sh
+   source venv/bin/activate  # Windows: source venv/Scripts/activate
+   ```
+
+## Documentation
+
+- [Framework Overview](dxa/README.md) - System architecture and design
+- [Agent Documentation](dxa/agent/README.md) - Agent implementation details
+- [Examples](examples/README.md) - Implementation examples and patterns
+- [API Reference](docs/README.md) - Detailed API documentation
 
 ## Contributing
 
@@ -170,7 +167,7 @@ DXA is proprietary software developed by Aitomatic, Inc. Contributions are limit
 1. Please ensure you have signed the necessary Confidentiality and IP agreements
 2. Follow the internal development guidelines
 3. Submit your changes through the company's approved development workflow
-4. Contact the project maintainers for access to the [Contributing Guide]
+4. Contact the project maintainers for access to the Contributing Guide
 
 For external users or organizations interested in collaborating with Aitomatic on DXA development, please contact our business development team.
 
@@ -180,16 +177,8 @@ This software is proprietary and confidential. Copyright © 2024 Aitomatic, Inc.
 
 Unauthorized copying, transfer, or reproduction of this software, via any medium, is strictly prohibited. This software is protected by copyright law and international treaties.
 
-# DXA Framework
+---
 
-The DXA Framework provides a modular system for building intelligent agents. 
-
-## Core Design
-
-DXA agents are built around a core LLM that powers their cognitive functions:
-```python
-# LLM is a fundamental requirement
-agent = Agent("assistant", llm=LLMResource("gpt-4"))
-```
-
-This LLM is automatically provided to the agent's planning and reasoning systems.
+<p align="center">
+<a href="https://aitomatic.com">https://aitomatic.com</a>
+</p>
