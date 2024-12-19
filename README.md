@@ -56,7 +56,7 @@ Each component's README provides:
    - Python 3.x
    - bash shell (Unix) or Git Bash (Windows)
 
-1. Installation:
+2. Installation:
 
    ```bash
    git clone <repository-url>
@@ -65,20 +65,32 @@ Each component's README provides:
    source venv/bin/activate  # Windows: source venv/Scripts/activate
    ```
 
-1. Basic Usage:
+3. Basic Usage:
 
    ```python
-   from dxa.agent import Agent
-   from dxa.core.resource import LLMResource
+   from dxa import get_agent_factory
 
-   agent = Agent("assistant")\
-       .with_reasoning("cot")\
-       .with_resources({"llm": LLMResource(model="gpt-4")})
-   
+   # Quick start with factory
+
+   factory = get_agent_factory()
+   agent = factory.create_quick("assistant")
    result = await agent.run("Help with this task")
    ```
 
-[Rest of setup instructions remain...]
+Or use templates for common patterns
+
+   ```python
+   agent = factory.create_from_template("researcher", "research_assistant")
+   result = await agent.run("Research quantum computing")
+   ```
+
+Full configuration available when needed
+
+   ```python
+   agent = Agent("assistant")\
+      .with_reasoning("cot")\
+      .with_resources({"llm": LLMResource(model="gpt-4")})
+   ```
 
 ## Project Structure
 
