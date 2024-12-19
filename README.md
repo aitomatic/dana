@@ -8,7 +8,7 @@
 
 # Top-level module
 
-DXA is a framework for building and deploying intelligent agents powered by Large Language Models (LLMs). These agents combine cognitive abilities, domain expertise, and external resources to solve complex problems. 
+DXA is a framework for building and deploying intelligent agents powered by Large Language Models (LLMs). These agents combine cognitive abilities, domain expertise, and external resources to solve complex problems.
 
 Through a composable architecture, DXA enables both rapid deployment of standard agent configurations and full customization when needed, guided by the principle that simple things should be easy and complex things should be possible.
 
@@ -128,7 +128,6 @@ DXA provides distinct advantages in several key areas when compared to other age
 | LangChain | Low | Step Function | Medium |
 | AutoGPT | Low | Limited | High |
 | BabyAGI | Low | Limited | Medium |
-
 
 ## Project Structure
 

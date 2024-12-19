@@ -46,4 +46,4 @@ pytest -v
 3. Test both success and error cases
 4. Include docstrings explaining test purpose
 
-See individual test files for examples. 
+See individual test files for examples.

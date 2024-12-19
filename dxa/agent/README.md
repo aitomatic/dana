@@ -117,24 +117,107 @@ graph TB
     C -.-> G
 ```
 
-## Usage
+## Usage Guide
+
+### Simple Tasks
 
 ```python
-# Simple usage with defaults
-agent = Agent("assistant", llm=default_llm)
-result = await agent.run("Help me with this task")
+# Direct pattern for simple queries
+agent = Agent("assistant")\
+    .with_planning("direct")\
+    .with_reasoning("direct")
 
-# Full control with composition
-agent = Agent("expert", llm=my_llm)\
-    .with_planning("hierarchical")\
-    .with_reasoning("cot")\
-    .with_capabilities(["research"])\
-    .with_io(custom_io)
-
-# Execution with context
-async with agent:
-    result = await agent.run(task)
+result = await agent.run("What is quantum computing?")
 ```
+
+### Analysis Tasks
+
+```python
+# Sequential planning with chain of thought reasoning
+agent = Agent("analyst")\
+    .with_planning("sequential")\
+    .with_reasoning("cot")\
+    .with_resources({
+        "memory": MemoryResource(),  # Track reasoning steps
+        "search": SearchResource()    # Look up information
+    })
+
+result = await agent.run({
+    "objective": "Analyze impact of quantum computing on cryptography",
+    "requirements": [
+        "find_key_papers",
+        "analyze_trends",
+        "synthesize_findings"
+    ]
+})
+```
+
+### Monitoring Tasks
+
+```python
+# Dynamic planning with OODA reasoning
+agent = Agent("monitor")\
+    .with_planning("dynamic")\
+    .with_reasoning("ooda")\
+    .with_resources({
+        "sensors": SystemSensors(),
+        "alerts": AlertSystem()
+    })
+
+async with agent:
+    await agent.run({
+        "objective": "Monitor system health",
+        "adaptation_rules": {
+            "high_load": "scale_resources",
+            "errors": "activate_fallback",
+            "attacks": "enhance_security"
+        }
+    })
+```
+
+### Domain-Specific Tasks
+
+```python
+# Hierarchical planning with DANA reasoning
+agent = Agent("optimizer")\
+    .with_planning("hierarchical")\
+    .with_reasoning("dana")\
+    .with_resources({
+        "vector_db": VectorDB(),     # Pattern matching
+        "runtime": CodeExecutor()     # Run generated code
+    })
+
+result = await agent.run({
+    "objective": "Optimize system performance",
+    "subgoals": {
+        "analyze": ["profile_code", "identify_bottlenecks"],
+        "improve": ["optimize_algorithms", "tune_parameters"],
+        "validate": ["run_benchmarks", "verify_results"]
+    }
+})
+```
+
+### Pattern Selection Guide
+
+Choose patterns based on:
+
+1. **Task Complexity**
+   - Simple Q&A → Direct Planning + Direct Reasoning
+   - Multi-step Analysis → Sequential Planning + Chain of Thought
+   - Real-time Adaptation → Dynamic Planning + OODA Loop
+   - Domain Expertise → Hierarchical Planning + DANA
+
+2. **Resource Requirements**
+   - Minimal → Direct (LLM only)
+   - Memory Intensive → Sequential + Chain of Thought
+   - Sensor Access → Dynamic + OODA
+   - Full Toolkit → Hierarchical + DANA
+
+3. **Performance Needs**
+   - Quick Response → Direct patterns
+   - Verifiable Logic → Sequential + Chain of Thought
+   - Continuous Operation → Dynamic + OODA
+   - Optimal Solutions → Hierarchical + DANA
 
 ## Runtime System
 

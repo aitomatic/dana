@@ -25,4 +25,4 @@ pip install -r docs/requirements.txt
 make html
 ```
 
-See individual sections for detailed information. 
+See individual sections for detailed information.

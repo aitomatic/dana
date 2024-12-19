@@ -34,6 +34,7 @@ python examples/chat_bot.py
 ## Common Patterns
 
 1. Agent Creation:
+
 ```python
 agent = Agent("name")\
     .with_reasoning("type")\
@@ -41,13 +42,15 @@ agent = Agent("name")\
     .with_capabilities([...])
 ```
 
-2. Task Execution:
+1. Task Execution:
+
 ```python
 async with agent:
     result = await agent.run(task)
 ```
 
-3. Resource Management:
+1. Resource Management:
+
 ```python
 agent.with_resources({
     "llm": LLMResource(model="gpt-4"),
@@ -58,6 +61,7 @@ agent.with_resources({
 ## Example Structure
 
 Each example demonstrates:
+
 - Appropriate reasoning pattern selection
 - Resource configuration
 - Task structuring
