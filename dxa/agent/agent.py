@@ -23,48 +23,77 @@ from typing import Dict, List, Union, Optional, Any
 from contextlib import asynccontextmanager
 
 from dxa.agent.agent_state import AgentState
-from dxa.core.reasoning import BaseReasoning, ReasoningFactory
-from dxa.core.resource import BaseResource
+from dxa.core.planning import BasePlanning
+from dxa.core.reasoning import BaseReasoning
 from dxa.core.capability import BaseCapability
+from dxa.core.resource import BaseResource
+from dxa.core.io import BaseIO
+from dxa.agent.agent_factory import AgentFactory
 
 class Agent:
     """Main agent interface with built-in execution management."""
     
     def __init__(self, 
-                 name: str,
+                 name: Optional[str] = None,
+                 config: Optional[Dict[str, Any]] = None,
+                 planning: Optional[Union[str, BasePlanning]] = None,
                  reasoning: Optional[Union[str, BaseReasoning]] = None,
-                 config: Optional[Dict[str, Any]] = None):
-        self.name = name
+                 capabilities: Optional[List[str, BaseCapability]] = None,
+                 resources: Optional[List[BaseResource]] = None,
+                 io: Optional[BaseIO] = None):
+        self._name = name or "agent"
         self._state = AgentState()
-        self._reasoning = None if reasoning is None else ReasoningFactory.create(reasoning)
-        self._resources: Dict[str, BaseResource] = {}
-        self._capabilities: List[BaseCapability] = []
         self._config = config or {}
-
+        self._planning = AgentFactory.create_planning(planning)
+        self._reasoning = AgentFactory.create_reasoning(reasoning)
+        self._capabilities = AgentFactory.create_capabilities(capabilities)
+        self._resources = AgentFactory.create_resources(resources)
+        self._io = AgentFactory.create_io(io)
+    
     @property
     def state(self) -> AgentState:
         """Get agent state."""
         return self._state
 
     @property
+    def config(self) -> Dict[str, Any]:
+        """Get configuration."""
+        return self._config
+    
+    @property
+    def planning(self) -> BasePlanning:
+        """Get planning system."""
+        if not self._planning:
+            self._planning = AgentFactory.create_planning()
+        return self._planning
+
+    @property
     def reasoning(self) -> BaseReasoning:
         """Get reasoning system."""
+        if not self._reasoning:
+            self._reasoning = AgentFactory.create_reasoning()
         return self._reasoning
     
     @property
     def resources(self) -> Dict[str, BaseResource]:
         """Get resources."""
+        if not self._resources:
+            self._resources = AgentFactory.create_resources()
         return self._resources
     
     @property
     def capabilities(self) -> List[BaseCapability]:
         """Get capabilities."""
+        if not self._capabilities:
+            self._capabilities = AgentFactory.create_capabilities()
         return self._capabilities
-    
+
     @property
-    def config(self) -> Dict[str, Any]:
-        """Get configuration."""
-        return self._config
+    def io(self) -> BaseIO:
+        """Get IO system."""
+        if not self._io:
+            self._io = AgentFactory.create_io()
+        return self._io
 
     @asynccontextmanager
     async def _execution_context(self):
@@ -77,25 +106,23 @@ class Agent:
 
     async def run(self, task: Union[str, Dict]) -> Any:
         """Execute a task using configured reasoning and resources."""
-        if not self._reasoning:
-            raise ValueError("Reasoning system not configured")
-
+        # TODO: Add planning and capabilities
         async with self._execution_context() as ctx:
-            return await self._reasoning.reason_about(task, ctx)
+            return await self.reasoning.reason_about(task, ctx)
 
     def with_reasoning(self, reasoning: Union[str, BaseReasoning]) -> "Agent":
         """Configure reasoning system."""
-        self._reasoning = ReasoningFactory.create(reasoning)
+        self._reasoning = AgentFactory.create_reasoning(reasoning)
         return self
 
     def with_resources(self, resources: Dict[str, BaseResource]) -> "Agent":
         """Add resources to agent."""
-        self._resources.update(resources)
+        self._resources.add(resources)
         return self
 
     def with_capabilities(self, capabilities: List[Union[str, BaseCapability]]) -> "Agent":
         """Add capabilities to agent."""
-        self._capabilities.extend(capabilities)
+        self._capabilities.add(capabilities)
         return self
 
     async def _initialize_resources(self):

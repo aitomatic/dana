@@ -62,8 +62,14 @@ The factory handles:
     - Proper cleanup
 """
 
-from typing import Dict, Any, Union
-from dxa.agent.agent import Agent
+from typing import List, Union
+from dxa.core.planning import (
+    BasePlanning,
+    SequentialPlanning,
+    HierarchicalPlanning,
+    DynamicPlanning,
+    HeuristicPlanning
+)
 from dxa.core.reasoning import (
     BaseReasoning,
     DirectReasoning,
@@ -71,11 +77,23 @@ from dxa.core.reasoning import (
     OODAReasoning,
     DANAReasoning
 )
+from dxa.core.capability import BaseCapability
+from dxa.core.resource import BaseResource
+from dxa.core.io import BaseIO
 
 class AgentFactory:
     """Factory for creating configured agents."""
     
+    PLANNING_TYPES = {
+        "none": BasePlanning,
+        "sequential": SequentialPlanning,
+        "hierarchical": HierarchicalPlanning,
+        "dynamic": DynamicPlanning,
+        "heuristic": HeuristicPlanning
+    }
+    
     REASONING_TYPES = {
+        "none": BaseReasoning,
         "direct": DirectReasoning,
         "cot": ChainOfThoughtReasoning,
         "ooda": OODAReasoning,
@@ -83,8 +101,25 @@ class AgentFactory:
     }
 
     @classmethod
-    def create_reasoning(cls, reasoning_type: Union[str, BaseReasoning]) -> BaseReasoning:
-        """Create reasoning instance from type."""
+    def create_planning(cls, planning_type: Union[str, BasePlanning] = None) -> BasePlanning:
+        """Return the given planning type or a default one if not provided."""
+        if planning_type is None:
+            return BasePlanning()
+        
+        if isinstance(planning_type, BasePlanning):
+            return planning_type
+        
+        if planning_type not in cls.PLANNING_TYPES:
+            raise ValueError(f"Unknown planning type: {planning_type}")
+        
+        return cls.PLANNING_TYPES[planning_type]()
+    
+    @classmethod
+    def create_reasoning(cls, reasoning_type: Union[str, BaseReasoning] = None) -> BaseReasoning:
+        """Return the given reasoning type or a default one if not provided."""
+        if reasoning_type is None:
+            return BaseReasoning()
+        
         if isinstance(reasoning_type, BaseReasoning):
             return reasoning_type
             
@@ -94,25 +129,16 @@ class AgentFactory:
         return cls.REASONING_TYPES[reasoning_type]()
 
     @classmethod
-    def from_config(cls, config: Dict[str, Any]) -> Agent:
-        """Create an agent from configuration dictionary."""
-        # Create base agent
-        agent = Agent(
-            name=config["name"],
-            config=config
-        )
-        
-        # Configure reasoning
-        if "reasoning" in config:
-            reasoning = cls.create_reasoning(config["reasoning"])
-            agent.with_reasoning(reasoning)
-            
-        # Add resources
-        if "resources" in config:
-            agent.with_resources(config["resources"])
-            
-        # Add capabilities
-        if "capabilities" in config:
-            agent.with_capabilities(config["capabilities"])
-            
-        return agent
+    def create_capabilities(cls, capabilities: List[BaseCapability] = None) -> List[BaseCapability]:
+        """Return the given capabilities or an empty list if not provided."""
+        return capabilities or []
+
+    @classmethod
+    def create_resources(cls, resources: List[BaseResource] = None) -> List[BaseResource]:
+        """Return the given resources or an empty list if not provided."""
+        return resources or []
+
+    @classmethod
+    def create_io(cls, io: BaseIO = None) -> BaseIO:
+        """Return the given IO instance or a default one if not provided."""
+        return io or BaseIO()

@@ -9,7 +9,6 @@ Exports:
     ChainOfThoughtReasoning: Step-by-step reasoning
     OODAReasoning: Dynamic adaptation loop
     DANAReasoning: Domain-aware computation
-    ReasoningFactory: Factory for creating reasoning instances
 
 Supporting Types:
     ReasoningStatus: Status enums for reasoning steps
@@ -20,34 +19,16 @@ Supporting Types:
     ObjectiveState: Objective tracking
 """
 
-from dxa.core.reasoning.base_reasoning import (
-    BaseReasoning,
-    ReasoningStatus,
-    ReasoningLevel,
-    ReasoningResult,
-    ReasoningContext,
-    ReasoningConfig,
-    ObjectiveState,
-    ReasoningTask
-)
+from dxa.core.reasoning.base_reasoning import BaseReasoning
 from dxa.core.reasoning.direct_reasoning import DirectReasoning
 from dxa.core.reasoning.cot_reasoning import ChainOfThoughtReasoning
 from dxa.core.reasoning.ooda_reasoning import OODAReasoning
 from dxa.core.reasoning.dana_reasoning import DANAReasoning
-from dxa.core.reasoning.reasoning_factory import ReasoningFactory
 
 __all__ = [
     'BaseReasoning',
-    'ReasoningStatus',
-    'ReasoningLevel',
-    'ReasoningResult',
-    'ReasoningContext',
-    'ReasoningConfig',
-    'ObjectiveState',
-    'ReasoningTask',
     'DirectReasoning',
     'ChainOfThoughtReasoning',
     'OODAReasoning',
-    'DANAReasoning',
-    'ReasoningFactory'
+    'DANAReasoning'
 ] 
