@@ -81,8 +81,16 @@ Each component's README provides:
    result = await agent.run("Research quantum computing")
 
    # Full configuration when needed
-   agent = AgentFactory.create_from_template("researcher")
+   agent = AgentFactory.create_from_template("researcher")\
+      .with_reasoning("cot")\
+      .with_resources({"llm": LLMResource(model="gpt-4")})
    result = await agent.run("Research quantum computing")
+
+   # Quick start with full customization 
+   agent = AgentFactory.quick("assistant")\
+      .with_reasoning("cot")\
+      .with_resources({"llm": LLMResource(model="gpt-4")})
+   result = await agent.run("Help with this task")
    ```
 
 ## Strategic Framework Selection Matrix
