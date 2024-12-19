@@ -10,11 +10,6 @@ DXA is a framework for building and deploying intelligent agents powered by Larg
 
 ## Core Architecture
 
-For dxa/README.md, find the "Core Architecture" section and update it to:
-
-```markdown
-## Core Architecture
-
 At the heart of DXA is the Agent system, which coordinates cognitive functions through a layered architecture:
 
 1. **[Agent System](agent/README.md)** - The central entity that:
