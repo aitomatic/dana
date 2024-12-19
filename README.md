@@ -8,6 +8,8 @@
 
 DXA is a framework for building and deploying intelligent agents powered by Large Language Models (LLMs). These agents combine cognitive abilities, domain expertise, and external resources to solve complex problems.
 
+The framework provides an AgentFactory system for quick creation of common agent types, while maintaining access to DXA's full capabilities through its builder pattern. This allows both rapid deployment of standard configurations and full customization when needed.
+
 ## Documentation Map
 
 The DXA framework documentation is organized by component:
@@ -91,6 +93,41 @@ Full configuration available when needed
       .with_reasoning("cot")\
       .with_resources({"llm": LLMResource(model="gpt-4")})
    ```
+
+## Strategic Framework Selection Matrix
+
+DXA provides distinct advantages in several key areas when compared to other agent frameworks:
+
+| Use Case | DXA | LangChain | AutoGPT | BabyAGI |
+|----------|-----|-----------|----------|----------|
+| **Quick Start** | ✨ Template-based initialization | Direct chain construction | Command interface | Simple task queue |
+| **Simple Tasks** | ✨ Pre-configured templates | Chain composition | Command sequences | Task scheduling |
+| **Complex Tasks** | ✨ Full cognitive architecture | Multiple chains | Command sequences | Task recursion |
+| **Domain Expertise** | ✨ Built-in expertise system | Tool integration | Command-based tools | Task-based tools |
+| **Autonomous Operation** | ✨ Structured autonomy | Chain automation | Free-form commands | Task loops |
+| **Growth Path** | ✨ Seamless capability expansion | Chain rebuilding | New commands | New tasks |
+
+✨ = Optimal choice for category
+
+### Framework Selection Guide
+
+| Need | Best Choice | Why |
+|------|-------------|-----|
+| Fast Start | DXA/LangChain | Equivalent simplicity with better growth |
+| Simple Tasks | DXA/LangChain | Standard patterns with full power available |
+| Complex Systems | DXA | Superior architecture and capabilities |
+| Expert Systems | DXA | Native expertise and knowledge integration |
+| Autonomous Agents | DXA/AutoGPT | Structured autonomy with better control |
+
+### Implementation Complexity
+
+| Framework | Initial | Growth | Maintenance |
+|-----------|---------|--------|-------------|
+| DXA | Low | Linear | Low |
+| LangChain | Low | Step Function | Medium |
+| AutoGPT | Low | Limited | High |
+| BabyAGI | Low | Limited | Medium |
+
 
 ## Project Structure
 
