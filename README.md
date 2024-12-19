@@ -70,28 +70,19 @@ Each component's README provides:
 3. Basic Usage:
 
    ```python
-   from dxa import get_agent_factory
+   from dxa import AgentFactory
 
-   # Quick start with factory
-
-   factory = get_agent_factory()
-   agent = factory.create_quick("assistant")
+   # Quick start
+   agent = AgentFactory.create_quick("assistant")
    result = await agent.run("Help with this task")
-   ```
 
-Or use templates for common patterns
-
-   ```python
-   agent = factory.create_from_template("researcher", "research_assistant")
+   # Or use templates
+   agent = AgentFactory.create_from_template("researcher")
    result = await agent.run("Research quantum computing")
-   ```
 
-Full configuration available when needed
-
-   ```python
-   agent = Agent("assistant")\
-      .with_reasoning("cot")\
-      .with_resources({"llm": LLMResource(model="gpt-4")})
+   # Full configuration when needed
+   agent = AgentFactory.create_from_template("researcher")
+   result = await agent.run("Research quantum computing")
    ```
 
 ## Strategic Framework Selection Matrix
