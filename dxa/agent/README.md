@@ -6,6 +6,8 @@
 
 # DXA Agent System
 
+## dxa.agent Module
+
 The DXA agent system implements a composable architecture that combines planning, reasoning, and execution to create powerful AI agents.
 
 ## Design Philosophy

@@ -6,6 +6,8 @@
 
 # DXA Core System
 
+## dxa.core Module
+
 The DXA Core system provides the foundational building blocks for creating intelligent agents. It implements a layered architecture that separates strategic planning from tactical execution, while providing essential capabilities and resources. This separation of concerns allows agents to maintain high-level objectives while efficiently executing individual steps and adapting to new information.
 
 ## System Overview

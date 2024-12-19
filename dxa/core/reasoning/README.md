@@ -6,6 +6,8 @@
 
 # Reasoning System
 
+## dxa.core.reasoning Module
+
 The reasoning layer is the tactical brain of the DXA agent system, responsible for executing plans and making step-by-step decisions. While the [planning layer](../planning/README.md) decides what to do, reasoning determines how to think about each step. It implements various cognitive patterns - from simple direct queries to sophisticated neural-symbolic reasoning - each optimized for different types of tasks. The reasoning layer maintains continuous communication with planning through signals, allowing for dynamic adaptation as new information is discovered or circumstances change. This separation of strategic and tactical thinking enables both simple, one-shot tasks and complex, evolving objectives to be handled effectively.
 
 ## Design Philosophy

@@ -6,6 +6,8 @@
 
 # Capability System
 
+## dxa.core.capability Module
+
 The capability layer provides core cognitive abilities to DXA agents, building on top of the [resource system](../resource/README.md) to create higher-level, more cognitively-aligned interfaces. While resources provide raw functionality (databases, APIs, tools), capabilities represent how an agent thinks and learns. The two primary capabilities - Memory and Domain-Expertise - are fundamental to creating agents that can learn from experience and apply specialized knowledge.
 
 ## Design Philosophy

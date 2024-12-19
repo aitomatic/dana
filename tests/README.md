@@ -6,6 +6,8 @@
 
 # DXA Test Suite
 
+## dxa.tests Module
+
 Comprehensive test coverage for the DXA framework.
 
 ## Test Organization

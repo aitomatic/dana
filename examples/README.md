@@ -6,6 +6,8 @@
 
 # DXA Examples
 
+## dxa.examples Module
+
 Implementation examples demonstrating DXA framework usage.
 
 ## Basic Examples

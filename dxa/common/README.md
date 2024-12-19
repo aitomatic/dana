@@ -6,6 +6,8 @@
 
 # DXA Common Utilities
 
+## dxa.common Module
+
 Common utilities and shared functionality for the DXA framework.
 
 ## Components

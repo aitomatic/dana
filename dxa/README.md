@@ -6,6 +6,8 @@
 
 # DXA - Domain-Expert Agent
 
+## dxa Module
+
 DXA is a framework for building and deploying intelligent agents powered by Large Language Models (LLMs). Like human beings, these agents possess core cognitive abilities, inherent capabilities, ways to interact with their environment, and access to external resources.
 
 ## Core Architecture

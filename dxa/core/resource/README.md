@@ -6,6 +6,8 @@
 
 # Resource System
 
+## dxa.core.resource Module
+
 The resource system provides the foundational building blocks for DXA agents, implementing concrete tools and services that agents can use. While [capabilities](../capability/README.md) define how agents think, resources define what agents can do. The system manages everything from LLM interactions to human-in-the-loop operations, providing a consistent interface for all external interactions.
 
 ## Design Philosophy

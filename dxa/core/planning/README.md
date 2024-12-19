@@ -6,6 +6,8 @@
 
 # Planning System
 
+## dxa.core.planning Module
+
 The planning layer is the strategic brain of the DXA agent system, responsible for understanding objectives and generating executable plans. While the [reasoning layer](../reasoning/README.md) determines how to think about individual steps, planning decides what steps to take. It manages the evolution of both objectives and plans, adapting to new information and changing circumstances. This strategic oversight ensures that agents maintain progress toward goals while efficiently using available resources.
 
 ## Design Philosophy

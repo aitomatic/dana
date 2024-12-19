@@ -6,6 +6,8 @@
 
 # DXA I/O System
 
+## dxa.core.io Module
+
 The I/O system manages all interactions between agents and their environment.
 
 ## Available Handlers
