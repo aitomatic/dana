@@ -14,6 +14,40 @@ The DXA agent system implements a composable architecture that combines planning
 2. Composition over inheritance
 3. Smart defaults with explicit control when needed
 
+## Agent Factory
+
+The DXA framework provides a factory pattern for creating agents with common configurations. This simplifies agent creation while maintaining access to DXA's full capabilities.
+
+### Why Use AgentFactory
+
+- Simplifies common agent creation patterns
+- Provides tested, optimized configurations
+- Maintains consistent initialization across applications
+- Enables quick starts with progressive enhancement
+
+### Usage
+
+```python
+# Get the factory
+factory = dxa.get_agent_factory()
+
+# Quick creation with sensible defaults
+agent = factory.create_quick("assistant")
+
+# Create from template
+agent = factory.create_from_template("researcher", "research_assistant")
+
+# Create domain expert
+agent = factory.create_expert("medical_assistant", "healthcare")
+
+# Create with autonomy settings
+agent = factory.create_autonomous("researcher", max_steps=100)
+
+# Create quick and enhance as needed
+agent = factory.create_quick("assistant")\
+    .with_memory()\
+    .with_domain_expertise("legal")
+
 ## Core Requirements
 
 Every DXA agent requires a core LLM that powers its cognitive functions:
