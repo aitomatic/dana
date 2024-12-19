@@ -28,25 +28,67 @@ The DXA framework provides a factory pattern for creating agents with common con
 ### Usage
 
 ```python
-# Get the factory
-factory = dxa.get_agent_factory()
+from dxa import AgentFactory
 
-# Quick creation with sensible defaults
-agent = factory.create_quick("assistant")
+# Quick start with factory
+agent = AgentFactory.quick("assistant")
 
 # Create from template
-agent = factory.create_from_template("researcher", "research_assistant")
+agent = AgentFactory.from_template("researcher")
 
-# Create domain expert
-agent = factory.create_expert("medical_assistant", "healthcare")
+# Template with customization
+agent = AgentFactory.from_template("researcher")\
+    .with_reasoning("cot")\
+    .with_resources({"llm": LLMResource(model="gpt-4")})
+```
 
-# Create with autonomy settings
-agent = factory.create_autonomous("researcher", max_steps=100)
+### Built-in Templates
 
-# Create quick and enhance as needed
-agent = factory.create_quick("assistant")\
-    .with_memory()\
-    .with_domain_expertise("legal")
+The factory includes tested configurations for common use cases:
+
+- researcher: Optimized for information gathering and analysis
+- automator: Configured for simple task automation
+- expert: Base configuration for domain expertise
+- autonomous: Self-directed agent configuration
+
+### Implementation
+
+```python
+class AgentFactory:
+    """Creates different types of DXA agents with appropriate configurations"""
+    
+    def __init__(self):
+        self._templates = {
+            "researcher": {
+                "planning": "hierarchical",
+                "reasoning": "cot",
+                "resources": ["search", "memory"],
+                "capabilities": ["research"]
+            },
+            "automator": {
+                "planning": "direct",
+                "reasoning": "simple",
+                "resources": ["tools"],
+                "capabilities": ["automation"]
+            }
+            # Additional templates...
+        }
+
+    @classmethod
+    def quick(cls, name: str) -> Agent:
+        """Creates simple agent with sensible defaults"""
+        return cls._create_from_template("automator", name)
+
+    @classmethod
+    def from_template(cls, template_name: str, name: str = None) -> Agent:
+        """Creates agent from predefined template"""
+        template = cls._templates[template_name]
+        return Agent(name or template_name)\
+            .with_planning(template["planning"])\
+            .with_reasoning(template["reasoning"])\
+            .with_resources(template["resources"])\
+            .with_capabilities(template["capabilities"])
+```
 
 ## Core Requirements
 

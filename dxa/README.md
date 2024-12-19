@@ -69,14 +69,16 @@ graph TB
 The simplest way to create an agent is:
 
 ```python
-from dxa import Agent
-from dxa.core.resource import LLMResource
+from dxa import AgentFactory
 
-# LLM is required for cognitive functions
-agent = Agent("assistant", llm=LLMResource("gpt-4"))\
-    .with_planning("hierarchical")\
-    .with_reasoning("cot")
-    
+# Quick start with factory
+agent = AgentFactory.quick("assistant")
+result = await agent.run("Help with this task")
+
+# Or use template with customization
+agent = AgentFactory.from_template("researcher")\
+    .with_reasoning("cot")\
+    .with_resources({"llm": LLMResource(model="gpt-4")})
 result = await agent.run("Help with this task")
 ```
 

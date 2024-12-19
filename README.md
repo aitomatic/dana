@@ -73,15 +73,15 @@ Each component's README provides:
    from dxa import AgentFactory
 
    # Quick start
-   agent = AgentFactory.create_quick("assistant")
+   agent = AgentFactory.quick("assistant")
    result = await agent.run("Help with this task")
 
-   # Or use templates
-   agent = AgentFactory.create_from_template("researcher")
+   # Use templates
+   agent = AgentFactory.from_template("researcher")
    result = await agent.run("Research quantum computing")
 
-   # Full configuration when needed
-   agent = AgentFactory.create_from_template("researcher")\
+   # Template with customization
+   agent = AgentFactory.from_template("researcher")\
       .with_reasoning("cot")\
       .with_resources({"llm": LLMResource(model="gpt-4")})
    result = await agent.run("Research quantum computing")
