@@ -8,11 +8,13 @@
 
 ## dxa Module
 
-DXA is a framework for building and deploying intelligent agents powered by Large Language Models (LLMs). Like human beings, these agents possess core cognitive abilities, inherent capabilities, ways to interact with their environment, and access to external resources.
+DXA is a framework for building and deploying intelligent agents powered by Large Language Models (LLMs). Like human beings, these agents possess core cognitive abilities, inherent capabilities, ways to interact with their environment, and access to external resources. The framework implements a layered architecture separating strategic planning from tactical execution, enabling both simple tasks and complex objectives to be handled effectively through composition.
 
 ## Core Architecture
 
-At the heart of DXA is the Agent system, which coordinates cognitive functions through a layered architecture:
+At the heart of DXA is the `Agent` system, which coordinates cognitive functions through a layered architecture inspired by human decision-making. The `Planning` layer handles strategic decisions - what steps to take - while the `Reasoning` layer determines how to think about each step. Supporting these cognitive functions are `Capabilities` like memory and domain expertise, concrete `Resources` like LLMs and APIs, and an `IO` system for environmental interaction. This separation of concerns allows both high-level strategic thinking and efficient tactical execution while maintaining modularity and extensibility.
+
+Getting started with DXA is straightforward through its `AgentFactory` system. For simple tasks, you can create an agent with a single line of code, selecting from tested configurations optimized for common use cases. As your needs grow more complex, the same agent can be progressively enhanced with additional capabilities, custom reasoning patterns, or specialized domain expertise. This approach embodies our core philosophy: simple things should be easy, complex things should be possible.
 
 1. **[Agent System](agent/README.md)** - The central entity that:
    - Provides factory patterns for quick creation
@@ -63,8 +65,6 @@ graph TB
     B -.-> G[LLM]
     C -.-> G
 ```
-
-[Rest of existing content including Quick Start, Project Structure, etc...]
 
 ## Getting Started
 

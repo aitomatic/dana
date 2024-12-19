@@ -8,9 +8,9 @@
 
 # Top-level module
 
-DXA is a framework for building and deploying intelligent agents powered by Large Language Models (LLMs). These agents combine cognitive abilities, domain expertise, and external resources to solve complex problems.
+DXA is a framework for building and deploying intelligent agents powered by Large Language Models (LLMs). These agents combine cognitive abilities, domain expertise, and external resources to solve complex problems. 
 
-The framework provides an AgentFactory system for quick creation of common agent types, while maintaining access to DXA's full capabilities through its builder pattern. This allows both rapid deployment of standard configurations and full customization when needed.
+Through a composable architecture, DXA enables both rapid deployment of standard agent configurations and full customization when needed, guided by the principle that simple things should be easy and complex things should be possible.
 
 ## Documentation Map
 
