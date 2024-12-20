@@ -1,3 +1,9 @@
+<!-- markdownlint-disable MD041 -->
+<!-- markdownlint-disable MD033 -->
+<p align="center">
+  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
+</p>
+
 # DXA Flow Architecture
 
 ## Overview
@@ -308,3 +314,290 @@ class Plan:
 3. Build Plan execution runtime
 4. Add persistence layer
 5. Create visualization tools
+
+---
+
+<p align="center">
+Copyright © 2024 Aitomatic, Inc. All rights reserved.
+</p>
+
+<p align="center">
+<a href="https://aitomatic.com">https://aitomatic.com</a>
+</p>
+
+# Flow System
+
+## Overview
+
+The DXA Flow system provides a higher-level abstraction for defining complex agent behaviors and business processes. While Plans handle tactical execution, Flows define the strategic patterns that guide plan generation.
+
+## Flow-Plan Relationship
+
+```python
+# Flow definition (design time)
+flow = Flow("data_analysis")\
+    .stage("collect", collector="api")\
+    .stage("process", method="pandas")\
+    .stage("analyze", model="regression")
+
+# Runtime execution (converts to plans)
+async with agent.use_flow(flow):
+    result = await agent.run(objective)
+```
+
+### Key Concepts
+
+1. **Flow to Plan Translation**
+   - Flows define the process template
+   - Planning system generates concrete plans
+   - Runtime maps flow stages to executable steps
+
+2. **State Management**
+   - Flows maintain process state
+   - Plans track execution state
+   - Runtime synchronizes both
+
+3. **Resource Coordination**
+   - Flows declare resource requirements
+   - Plans handle resource allocation
+   - Runtime manages resource lifecycle
+
+## Implementation Pattern
+
+```python
+class FlowExecutor:
+    """Converts flows to executable plans"""
+    
+    async def create_plan(self, flow: Flow, objective: Objective) -> Plan:
+        """Generate concrete plan from flow template"""
+        stages = flow.get_stages()
+        return Plan(
+            steps=[self._stage_to_step(stage) for stage in stages],
+            context={"flow_id": flow.id}
+        )
+        
+    def _stage_to_step(self, stage: FlowStage) -> Step:
+        """Convert flow stage to executable step"""
+        return Step(
+            description=stage.description,
+            resources=stage.required_resources,
+            validation=stage.validation_rules
+        )
+```
+
+## Usage Examples
+
+### Sequential Flow
+
+```python
+# Define sequential flow
+analysis_flow = Flow("analysis")\
+    .then("collect_data")\
+    .then("clean_data")\
+    .then("analyze")
+
+# Runtime converts to sequential plan
+plan = await planning.create_plan(objective, flow=analysis_flow)
+```
+
+### Parallel Flow
+
+```python
+# Define parallel flow
+processing_flow = Flow("processing")\
+    .parallel(
+        "process_batch_1",
+        "process_batch_2",
+        "process_batch_3"
+    )\
+    .then("combine_results")
+
+# Runtime converts to plan with parallel steps
+plan = await planning.create_plan(objective, flow=processing_flow)
+```
+
+### Conditional Flow
+
+```python
+# Define conditional flow
+validation_flow = Flow("validation")\
+    .if_("valid_data", then="process")\
+    .else_("request_fix")
+
+# Runtime generates appropriate plan based on conditions
+plan = await planning.create_plan(objective, flow=validation_flow)
+```
+
+## Best Practices
+
+1. **Flow Design**
+   - Keep flows high-level and declarative
+   - Focus on business logic not implementation
+   - Define clear stage boundaries
+
+2. **Plan Generation**
+   - Let planning system handle details
+   - Allow for dynamic optimization
+   - Enable runtime adaptation
+
+3. **Resource Management**
+   - Declare resource needs in flow
+   - Let runtime handle allocation
+   - Enable resource sharing
+
+## Flow Relationships with Business Processes
+
+### Conceptual Mapping
+
+```mermaid
+graph TD
+    F[Flow] --> W[Workflow]
+    F --> P[Procedure/SOP]
+    F --> BP[Business Process]
+    F --> RPA[RPA Process]
+    
+    subgraph "Abstraction Level"
+        BP
+        W
+        P
+        RPA
+    end
+```
+
+### 1. Workflows vs Flows
+
+**Workflows** are typically:
+- Sequential task sequences
+- Human-centric activities
+- Document/approval focused
+- Status-driven progression
+
+DXA Flows extend this by adding:
+```python
+# Traditional workflow
+workflow = Flow.from_workflow({
+    "steps": ["review", "approve", "publish"],
+    "roles": {
+        "review": "editor",
+        "approve": "manager",
+        "publish": "system"
+    }
+})
+
+# Enhanced with AI capabilities
+ai_workflow = workflow.with_ai_assistance({
+    "review": "content_checker",
+    "approve": "risk_analyzer",
+    "publish": "distribution_optimizer"
+})
+```
+
+### 2. Standard Operating Procedures (SOPs)
+
+**SOPs** traditionally feature:
+- Strict sequential steps
+- Verification points
+- Documentation requirements
+- Compliance focus
+
+DXA Flows enhance SOPs with:
+```python
+# Traditional SOP
+sop = Flow.from_sop({
+    "procedure": "equipment_startup",
+    "steps": [
+        {"action": "check_power", "verify": True},
+        {"action": "inspect_connections", "document": True},
+        {"action": "initiate_sequence", "verify": True}
+    ]
+})
+
+# AI-enhanced SOP
+ai_sop = sop.with_intelligence({
+    "monitoring": "sensor_analysis",
+    "verification": "visual_inspection",
+    "documentation": "auto_report"
+})
+```
+
+### 3. Business Processes
+
+**Business Processes** typically involve:
+- Complex decision trees
+- Multiple stakeholders
+- Resource coordination
+- KPI tracking
+
+DXA Flows augment these with:
+```python
+# Traditional business process
+process = Flow.from_business_process({
+    "process": "customer_onboarding",
+    "stages": {
+        "intake": ["collect_docs", "verify_identity"],
+        "review": ["credit_check", "risk_assessment"],
+        "setup": ["create_account", "send_welcome"]
+    }
+})
+
+# AI-enhanced process
+ai_process = process.with_optimization({
+    "bottleneck_detection": True,
+    "resource_optimization": True,
+    "predictive_analytics": True
+})
+```
+
+### 4. RPA (Robotic Process Automation)
+
+**RPA** traditionally focuses on:
+- UI automation
+- Data entry/extraction
+- Rule-based decisions
+- System integration
+
+DXA Flows enhance RPA with:
+```python
+# Traditional RPA
+rpa = Flow.from_rpa({
+    "automation": "invoice_processing",
+    "steps": [
+        {"action": "extract_data", "from": "pdf"},
+        {"action": "validate_fields", "rules": ["date", "amount"]},
+        {"action": "enter_system", "target": "erp"}
+    ]
+})
+
+# AI-enhanced RPA
+ai_rpa = rpa.with_cognitive_automation({
+    "document_understanding": True,
+    "anomaly_detection": True,
+    "adaptive_rules": True
+})
+```
+
+## Key Differentiators
+
+1. **Intelligence Integration**
+   - Traditional processes are static
+   - Flows enable dynamic AI assistance
+   - Adaptive decision-making
+   - Continuous optimization
+
+2. **Flexibility**
+   - Traditional processes are rigid
+   - Flows allow runtime adaptation
+   - Dynamic resource allocation
+   - Context-aware execution
+
+3. **Scalability**
+   - Traditional processes are linear
+   - Flows enable parallel processing
+   - Resource-aware scheduling
+   - Distributed execution
+
+4. **Monitoring & Optimization**
+   - Traditional processes are black-box
+   - Flows provide rich telemetry
+   - Performance analytics
+   - Continuous improvement
