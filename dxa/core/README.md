@@ -10,23 +10,16 @@
 
 The DXA Core system provides the foundational building blocks for creating intelligent agents. It implements a layered architecture that separates strategic planning from tactical execution, while providing essential capabilities and resources. This separation of concerns allows agents to maintain high-level objectives while efficiently executing individual steps and adapting to new information.
 
-## System Overview
+## System Architecture
 
-At its heart, DXA Core implements a cognitive architecture inspired by human decision-making:
+The DXA core consists of several interconnected systems:
 
-- **Planning** handles strategic decisions and goal management
-- **Reasoning** implements different thinking patterns for execution
-- **Capabilities** provide cognitive abilities like memory and expertise
-- **Resources** manage concrete tools and services
-- **IO** handles all external interactions
+1. **Planning System** - Strategic decision making
+2. **Reasoning System** - Tactical execution
+3. **Flow System** - Process automation and workflow management
+4. **Resource System** - Tool and capability integration
 
-These components work together to create agents that can understand objectives, form plans, execute actions, learn from experience, and interact with their environment. The system is designed to make simple tasks easy while enabling complex behaviors through composition.
-
-The system is built around a core LLM that powers both planning and reasoning layers:
-
-- Planning and Reasoning share the agent's LLM
-- Capabilities and Resources can access it when needed
-- IO remains LLM-independent for flexibility
+See [Flow Documentation](../flow/README.md) for details on process automation.
 
 ## Core Modules
 

@@ -327,7 +327,7 @@ Copyright © 2024 Aitomatic, Inc. All rights reserved.
 
 # Flow System
 
-## Overview
+## Overview of Flows
 
 The DXA Flow system provides a higher-level abstraction for defining complex agent behaviors and business processes. While Plans handle tactical execution, Flows define the strategic patterns that guide plan generation.
 
@@ -467,12 +467,14 @@ graph TD
 ### 1. Workflows vs Flows
 
 **Workflows** are typically:
+
 - Sequential task sequences
 - Human-centric activities
 - Document/approval focused
 - Status-driven progression
 
 DXA Flows extend this by adding:
+
 ```python
 # Traditional workflow
 workflow = Flow.from_workflow({
@@ -495,12 +497,14 @@ ai_workflow = workflow.with_ai_assistance({
 ### 2. Standard Operating Procedures (SOPs)
 
 **SOPs** traditionally feature:
+
 - Strict sequential steps
 - Verification points
 - Documentation requirements
 - Compliance focus
 
 DXA Flows enhance SOPs with:
+
 ```python
 # Traditional SOP
 sop = Flow.from_sop({
@@ -523,12 +527,14 @@ ai_sop = sop.with_intelligence({
 ### 3. Business Processes
 
 **Business Processes** typically involve:
+
 - Complex decision trees
 - Multiple stakeholders
 - Resource coordination
 - KPI tracking
 
 DXA Flows augment these with:
+
 ```python
 # Traditional business process
 process = Flow.from_business_process({
@@ -551,12 +557,14 @@ ai_process = process.with_optimization({
 ### 4. RPA (Robotic Process Automation)
 
 **RPA** traditionally focuses on:
+
 - UI automation
 - Data entry/extraction
 - Rule-based decisions
 - System integration
 
 DXA Flows enhance RPA with:
+
 ```python
 # Traditional RPA
 rpa = Flow.from_rpa({
@@ -601,3 +609,53 @@ ai_rpa = rpa.with_cognitive_automation({
    - Flows provide rich telemetry
    - Performance analytics
    - Continuous improvement
+
+## Related Systems
+
+The Flow system integrates closely with other DXA components:
+
+1. **[Agent System](../agent/README.md)**
+   - Agents can use flows directly via `.with_flow()`
+   - Flow execution is managed by agent runtime
+   - Agents provide resources for flow execution
+
+2. **[Planning System](../core/planning/README.md)**
+   - Planning converts flows to executable plans
+   - Handles dynamic flow adaptation
+   - Manages resource allocation for flow stages
+
+3. **[Reasoning System](../core/reasoning/README.md)**
+   - Executes individual flow steps
+   - Provides cognitive patterns for step execution
+   - Generates signals for flow adaptation
+
+4. **[Resource System](../core/resource/README.md)**
+   - Provides tools for flow execution
+   - Manages resource lifecycle
+   - Enables flow capabilities
+
+See also:
+- [Core Documentation](../core/README.md) - Core system architecture
+- [IO System](../core/io/README.md) - Flow interaction handling
+- [Examples](../../examples/README.md) - Flow usage examples
+
+## Integration Examples
+
+```python
+# Create flow with resource requirements
+flow = Flow("data_processing")\
+    .with_resources({
+        "database": DatabaseResource(),
+        "compute": ComputeResource()
+    })
+
+# Use flow with agent
+agent = Agent("processor")\
+    .with_flow(flow)\
+    .with_planning("dynamic")  # For flow adaptation
+    .with_reasoning("cot")     # For step execution
+
+# Execute flow
+async with agent:
+    result = await agent.run(objective)
+```

@@ -187,3 +187,11 @@ Unauthorized copying, transfer, or reproduction of this software, via any medium
 <p align="center">
 <a href="https://aitomatic.com">https://aitomatic.com</a>
 </p>
+
+## Core Systems
+
+- [Agent System](agent/README.md) - Agent creation and management
+- [Flow System](flow/README.md) - Process and workflow automation
+- [Planning System](core/planning/README.md) - Strategic planning
+- [Reasoning System](core/reasoning/README.md) - Tactical reasoning
+- [Resource System](core/resource/README.md) - Tool and capability integration

@@ -26,3 +26,22 @@ make html
 ```
 
 See individual sections for detailed information.
+
+## System Documentation
+
+- [Agent System](../dxa/agent/README.md)
+- [Planning System](../dxa/core/planning/README.md)
+- [Reasoning System](../dxa/core/reasoning/README.md)
+- [Flow System](../dxa/flow/README.md)
+- [Resource System](../dxa/core/resource/README.md)
+
+### Process Automation
+
+The DXA Flow system provides powerful process automation capabilities:
+
+- Workflow automation
+- SOP implementation
+- Business process management
+- RPA enhancement
+
+See [Flow Documentation](../dxa/flow/README.md) for details.

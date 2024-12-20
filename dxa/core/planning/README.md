@@ -354,3 +354,13 @@ Copyright © 2024 Aitomatic, Inc. All rights reserved.
 <p align="center">
 <a href="https://aitomatic.com">https://aitomatic.com</a>
 </p>
+
+## Integration with Flows
+
+The planning system works closely with the Flow system:
+
+1. Flows define high-level process templates
+2. Planning converts flows to executable plans
+3. Runtime manages execution
+
+See [Flow Documentation](../../flow/README.md) for more details on process automation.

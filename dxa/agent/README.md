@@ -343,3 +343,28 @@ Copyright © 2024 Aitomatic, Inc. All rights reserved.
 <p align="center">
 <a href="https://aitomatic.com">https://aitomatic.com</a>
 </p>
+
+## Integration with Other Systems
+
+Agents can leverage several DXA systems:
+
+1. **Planning** - For strategic decisions
+2. **Reasoning** - For tactical execution
+3. **Flows** - For process automation
+4. **Resources** - For tool integration
+
+### Using Flows with Agents
+
+```python
+# Create agent with flow support
+agent = Agent("processor")\
+    .with_flow(analysis_flow)\
+    .with_planning("dynamic")\
+    .with_reasoning("cot")
+
+# Execute using flow
+async with agent:
+    result = await agent.run(objective)
+```
+
+See [Flow System](../flow/README.md) for more details on process automation.
