@@ -635,6 +635,7 @@ The Flow system integrates closely with other DXA components:
    - Enables flow capabilities
 
 See also:
+
 - [Core Documentation](../core/README.md) - Core system architecture
 - [IO System](../core/io/README.md) - Flow interaction handling
 - [Examples](../../examples/README.md) - Flow usage examples
