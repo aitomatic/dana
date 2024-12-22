@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from dxa.common.errors import AgentError, ResourceError, ConfigurationError
+from dxa.common.exceptions import AgentError, ResourceError, ConfigurationError
 from dxa.core.resource.agent_resource import AgentResource
 
 class MockAgent:

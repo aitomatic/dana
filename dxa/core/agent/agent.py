@@ -11,7 +11,7 @@ Example:
     agent = Agent("researcher", llm=LLMResource(...))\\
         .with_reasoning("cot")\\
         .with_resources({"search": SearchResource()})\\
-        .with_capabilities(["research"])
+        .with_capabilities({"research": ResearchCapability()})
     
     result = await agent.run("Research quantum computing")
     ```
@@ -19,35 +19,28 @@ Example:
 See dxa/agent/README.md for detailed design documentation.
 """
 
-from typing import Dict, List, Union, Optional, Any
-from dxa.agent.agent_state import AgentState
-from dxa.agent.agent_runtime import AgentRuntime
-from dxa.core.planning import BasePlanning
-from dxa.core.reasoning import BaseReasoning
-from dxa.core.capability import BaseCapability
-from dxa.core.resource import BaseResource
-from dxa.core.io import BaseIO
-from dxa.agent.agent_factory import AgentFactory
+from typing import Dict, Union, Optional, Any
+from ..planning import BasePlanner, PlannerFactory 
+from ..reasoning import BaseReasoner, ReasonerFactory
+from ..capability import BaseCapability
+from ..resource import BaseResource, LLMResource
+from ..io import BaseIO, IOFactory
+from .agent_state import AgentState
+from .agent_runtime import AgentRuntime
 
 class Agent:
     """Main agent interface with built-in execution management."""
     
-    def __init__(self, 
-                 name: Optional[str] = None,
-                 config: Optional[Dict[str, Any]] = None,
-                 planning: Optional[Union[str, BasePlanning]] = None,
-                 reasoning: Optional[Union[str, BaseReasoning]] = None,
-                 capabilities: Optional[List[str, BaseCapability]] = None,
-                 resources: Optional[List[BaseResource]] = None,
-                 io: Optional[BaseIO] = None):
+    def __init__(self, name: Optional[str] = None):
         self._name = name or "agent"
         self._state = AgentState()
-        self._config = config or {}
-        self._planning = AgentFactory.create_planning(planning)
-        self._reasoning = AgentFactory.create_reasoning(reasoning)
-        self._capabilities = AgentFactory.create_capabilities(capabilities)
-        self._resources = AgentFactory.create_resources(resources)
-        self._io = AgentFactory.create_io(io)
+        self._agent_llm = None
+        self._config = {}
+        self._planner = None
+        self._reasoner = None
+        self._capabilities = None
+        self._resources = None
+        self._io = None
         self._runtime = None
     
     @property
@@ -61,75 +54,93 @@ class Agent:
         return self._config
     
     @property
-    def planning(self) -> BasePlanning:
+    def agent_llm(self) -> LLMResource:
+        """Get agent LLM."""
+        if not self._agent_llm:
+            self._agent_llm = LLMResource(name=f"{self._name}_llm")
+        return self._agent_llm
+    
+    @property
+    def planner(self) -> BasePlanner:
         """Get planning system."""
-        if not self._planning:
-            self._planning = AgentFactory.create_planning()
-        return self._planning
+        if not self._planner:
+            self._planner = PlannerFactory.create_planner()
+        return self._planner
 
     @property
-    def reasoning(self) -> BaseReasoning:
+    def reasoner(self) -> BaseReasoner:
         """Get reasoning system."""
-        if not self._reasoning:
-            self._reasoning = AgentFactory.create_reasoning()
-        return self._reasoning
+        if not self._reasoner:
+            self._reasoner = ReasonerFactory.create_reasoner()
+        return self._reasoner
     
     @property
     def resources(self) -> Dict[str, BaseResource]:
         """Get resources."""
         if not self._resources:
-            self._resources = AgentFactory.create_resources()
+            self._resources = {}
         return self._resources
     
     @property
-    def capabilities(self) -> List[BaseCapability]:
+    def capabilities(self) -> Dict[str, BaseCapability]:
         """Get capabilities."""
         if not self._capabilities:
-            self._capabilities = AgentFactory.create_capabilities()
+            self._capabilities = {}
         return self._capabilities
 
     @property
     def io(self) -> BaseIO:
         """Get IO system."""
         if not self._io:
-            self._io = AgentFactory.create_io()
+            self._io = IOFactory.create_io()
         return self._io
 
-    def with_planning(self, planning: Union[str, BasePlanning]) -> "Agent":
+    def with_llm(self, llm: Union[Dict, str, LLMResource]) -> "Agent":
+        """Configure agent LLM."""
+        if isinstance(llm, LLMResource):
+            self._agent_llm = llm
+        elif isinstance(llm, str):
+            config = {"model_name": llm}
+            self._agent_llm = LLMResource(name=f"{self._name}_llm", config=config)
+        elif isinstance(llm, Dict):
+            self._agent_llm = LLMResource(name=f"{self._name}_llm", config=llm)
+        return self
+    
+    def with_planner(self, planner: Union[str, BasePlanner]) -> "Agent":
         """Configure planning system."""
-        self._planning = AgentFactory.create_planning(planning)
+        self._planner = PlannerFactory.create_planner(planner)
         return self
 
-    def with_reasoning(self, reasoning: Union[str, BaseReasoning]) -> "Agent":
+    def with_reasoner(self, reasoner: Union[str, BaseReasoner]) -> "Agent":
         """Configure reasoning system."""
-        self._reasoning = AgentFactory.create_reasoning(reasoning)
+        self._reasoner = ReasonerFactory.create_reasoner(reasoner)
         return self
 
     def with_resources(self, resources: Dict[str, BaseResource]) -> "Agent":
         """Add resources to agent."""
-        self._resources.add(resources)
+        if not self._resources:
+            self._resources = {}
+        self._resources.update(resources)
         return self
 
-    def with_capabilities(self, capabilities: List[Union[str, BaseCapability]]) -> "Agent":
+    def with_capabilities(self, capabilities: Dict[str, BaseCapability]) -> "Agent":
         """Add capabilities to agent."""
-        self._capabilities.add(capabilities)
+        if not self._capabilities:
+            self._capabilities = {}
+        self._capabilities.update(capabilities)
         return self
     
     def with_io(self, io: BaseIO) -> "Agent":
-        """Add IO to agent."""
+        """Set agent IO to provided IO."""
         self._io = io
         return self
 
     async def __aenter__(self) -> "Agent":
         """Initialize runtime when entering context"""
-        if not self.planning or not self.reasoning:
+        if not self.planner or not self.reasoner:
             raise ValueError("Agent must have both planning and reasoning configured")
         
-        self._runtime = AgentRuntime(
-            planning=self.planning,
-            reasoning=self.reasoning,
-            resources=self.resources
-        )
+        self._runtime = AgentRuntime(agent=self)
         await self._runtime.initialize()
         return self
 

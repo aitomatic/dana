@@ -1,188 +1,71 @@
-"""LLM resource implementation for DXA.
+"""LLM resource implementation."""
 
-This module provides a wrapper for Large Language Model interactions,
-specifically designed for OpenAI's GPT models. It handles API communication,
-prompt management, and response processing.
-
-Classes:
-    LLMError: Exception class for LLM-related errors
-    LLMResource: Base resource class for LLM interactions
-
-Features:
-    - Async API communication
-    - System prompt management
-    - Token limit handling
-    - Usage tracking
-    - Error handling
-
-Example:
-    llm = LLMResource(
-        name="gpt4",
-        config={
-            "api_key": "your-api-key",
-            "model": "gpt-4"
-        },
-        system_prompt="You are a helpful assistant."
-    )
-    
-    response = await llm.query({
-        "prompt": "Explain quantum computing",
-        "temperature": 0.7
-    })
-"""
-
-from typing import Dict, Any, Optional, Union
-from dataclasses import dataclass, field
-from openai import AsyncOpenAI
-
-from dxa.core.resource.base_resource import (
-    BaseResource, 
-    ResourceResponse, 
-    ResourceError,
-    ResourceConfig
-)
-
-@dataclass
-class LLMConfig(ResourceConfig):
-    """Configuration for Language Learning Models."""
-    model_name: str = field(default=...)  # Required field with no default
-    api_key: Optional[str] = field(default=None)
-    temperature: float = field(default=0.7)
-    max_tokens: Optional[int] = field(default=None)
-    top_p: float = field(default=1.0)
-    additional_params: Dict[str, Any] = field(default_factory=dict)
-
-class LLMError(ResourceError):
-    """Error in LLM interaction."""
-    pass
-
-@dataclass
-class LLMResponse(ResourceResponse):
-    """LLM-specific response."""
-    success: bool = True
-    error: Optional[str] = None
-    content: str = None
-    usage: Optional[Dict[str, int]] = None
-    model: Optional[str] = None
+from typing import Dict, Any, Optional
+from .base_resource import BaseResource
+from ...common.base_llm import BaseLLM, LLMConfig
+from ...common.utils.config import load_agent_config
+from ...common.exceptions import ConfigurationError
 
 class LLMResource(BaseResource):
-    """LLM resource with typed config."""
+    """LLM resource implementation using BaseLLM."""
     
-    def __init__(
-        self,
-        name: str,
-        config: Union[Dict[str, Any], LLMConfig],
-        description: Optional[str] = None
-    ):
+    def __init__(self, name: str, config: Optional[Dict[str, Any]] = None):
         """Initialize LLM resource."""
-        if isinstance(config, dict):
-            # Include name and description in the config
-            config['name'] = name
-            if description:
-                config['description'] = description
-            config = LLMConfig(**config)
-
-        super().__init__(name, description, config)
-        self._client = None
-
-    @property
-    def llm_config(self) -> LLMConfig:
-        """Get the LLM config."""
-        return self.config
-    
-    @llm_config.setter
-    def set_llm_config(self, llm_config: LLMConfig) -> None:
-        """Set the LLM config."""
-        self.config = llm_config
+        super().__init__(name)
+        
+        # Load config with environment variables
+        base_config = load_agent_config("llm")
+        
+        # Override with provided config if any
+        if config:
+            base_config.update(config)
+            
+        self.config = LLMConfig(
+            name=name,
+            model_name=base_config.get("model", "gpt-4"),
+            api_key=base_config.get("api_key"),
+            temperature=float(base_config.get("temperature", 0.7)),
+            max_tokens=int(base_config.get("max_tokens", 0)) or None,
+            top_p=float(base_config.get("top_p", 1.0)),
+            additional_params=base_config.get("additional_params", {})
+        )
+        self._llm: Optional[BaseLLM] = None
 
     async def initialize(self) -> None:
-        """Initialize the LLM client."""
-        try:
-            self._client = AsyncOpenAI(api_key=self.config.api_key)
-            self._is_available = True
-            self.logger.info("LLM resource initialized successfully")
-        except Exception as e:
-            self._is_available = False
-            self.logger.error("Failed to initialize LLM resource: %s", str(e))
-            raise LLMError(f"LLM initialization failed: {str(e)}") from e
+        """Initialize the LLM."""
+        if not self.config.api_key:
+            raise ConfigurationError("API key required for LLM initialization")
+        
+        llm_config = {
+            "api_key": self.config.api_key,
+            "model": self.config.model_name,
+            "temperature": self.config.temperature,
+            "top_p": self.config.top_p
+        }
+        if self.config.max_tokens:
+            llm_config["max_tokens"] = self.config.max_tokens
+            
+        self._llm = BaseLLM(self.config.name, llm_config)
+        await self._llm.initialize()
+
+    async def query(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Send query to LLM."""
+        if not self._llm:
+            await self.initialize()
+            
+        messages = [{"role": "user", "content": request["prompt"]}]
+        response = await self._llm.query(messages)
+        
+        return {
+            "success": True,
+            "content": response.choices[0].message.content
+        }
 
     async def cleanup(self) -> None:
-        """Clean up any resources used by the LLM resource."""
-        await super().cleanup()
-        if self._client:
-            await self._client.close()
-            self._client = None
+        """Cleanup resources."""
+        if self._llm:
+            await self._llm.cleanup()
 
     def can_handle(self, request: Dict[str, Any]) -> bool:
-        """Check if this LLM can handle the request.
-        
-        This is a general-knowledge LLM that can handle:
-        1. Text-based queries
-        2. Requests with clear prompts
-        3. Requests within its context window
-        
-        Args:
-            request: The request to check, must contain:
-                - prompt: The text prompt to process
-                - max_tokens (optional): Maximum response length
-        
-        Returns:
-            True if the request can be handled, False otherwise
-        """
-        # Must have a prompt
-        if 'prompt' not in request or not isinstance(request['prompt'], str):
-            return False
-            
-        # Check if prompt is empty
-        if not request['prompt'].strip():
-            return False
-            
-        # Check if within context window (if specified)
-        max_tokens = request.get('max_tokens', 0)
-        if max_tokens and max_tokens > 4000:  # GPT-4's limit
-            return False
-            
-        # This is a general-knowledge LLM, so it can handle
-        # any well-formed text prompt within its limits
-        return True
-
-    async def query(self, request: Dict[str, Any]) -> LLMResponse:
-        """Query the LLM with typed response."""
-        # if no prompt proerty in request
-        if 'prompt' not in request:
-            raise LLMError("Prompt is required in request")
-        elif not request['prompt'].strip():
-            raise LLMError("Prompt in request cannot be empty")
-        
-        if not self._client:
-            await self.initialize()
-        
-        messages = []
-        # Add system prompt if configured
-        if hasattr(self.llm_config, "system_prompt") and self.llm_config.system_prompt is not None:
-            messages.append({
-                "role": "system",
-                "content": self.llm_config.system_prompt
-            })
-        # Add user message
-        messages.append({
-            "role": "user", 
-            "content": request["prompt"]
-        })
-
-        response = await self._client.chat.completions.create(
-            model=self.llm_config.model_name,
-            messages=messages,
-            **request.get("parameters", {})
-        )
-        
-        # pylint: disable=unexpected-keyword-arg
-        return LLMResponse(
-            content=response.choices[0].message.content,
-            usage={
-                'prompt_tokens': response.usage.prompt_tokens,
-                'completion_tokens': response.usage.completion_tokens,
-                'total_tokens': response.usage.total_tokens
-            } if hasattr(response, 'usage') else None,
-            model=response.model
-        )
+        """Check if request contains prompt."""
+        return "prompt" in request

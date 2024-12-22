@@ -36,7 +36,8 @@ class BaseIO(ABC):
     def __init__(self):
         """Initialize base I/O with logging and state management."""
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.state_manager = StateManager(self.__class__.__name__)
+        # TODO: probably need StateManager of some kind for asyncio
+        # self.state_manager = StateManager(self.__class__.__name__)
     
     async def send_message(self, message: str) -> None:
         """Send a message - must be implemented by subclasses."""

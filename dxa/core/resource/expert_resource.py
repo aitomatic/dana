@@ -35,9 +35,9 @@ Example:
 
 from dataclasses import dataclass
 from typing import Dict, Any, Optional, Union
+from dxa.common.exceptions import LLMError
 from dxa.core.resource.llm_resource import (
     LLMResource,
-    LLMError,
     LLMConfig
 )
 from dxa.core.capability.domain_expertise import DomainExpertise

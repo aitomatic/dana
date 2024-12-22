@@ -20,7 +20,7 @@ Common utilities and shared functionality for the DXA framework.
 ## Usage
 
 ```python
-from dxa.common.errors import ConfigurationError
+from dxa.common.exceptions import ConfigurationError
 from dxa.common.types import JsonDict
 from dxa.common.utils import validate_config
 ```

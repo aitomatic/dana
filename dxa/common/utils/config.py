@@ -45,8 +45,9 @@ import logging
 import os
 from pathlib import Path
 from typing import Dict, Any, Optional
+from dotenv import load_dotenv
 
-from dxa.common.errors import ConfigurationError
+from dxa.common.exceptions import ConfigurationError
 
 try:
     import yaml
@@ -54,23 +55,15 @@ try:
 except ImportError:  # pragma: no cover
     YAML_AVAILABLE = False
 
+# Load .env file at module import
+load_dotenv()
+
 logger = logging.getLogger(__name__)
 
 def _validate_config(config: Dict[str, Any]) -> None:
-    """Validate configuration dictionary.
-    
-    Args:
-        config: Configuration to validate
-        
-    Raises:
-        ConfigurationError: If configuration is invalid
-    """
-    # Validate required fields
-    if not config.get("api_key"):
-        logger.error("Missing required field: api_key")
-        raise ConfigurationError("API key is required")
-        
-    # Validate field types
+    """Validate configuration dictionary."""
+
+    # Validate field types only
     resources = config.get("resources", [])
     if not isinstance(resources, list):
         logger.error("Invalid type for field 'resources': expected list")

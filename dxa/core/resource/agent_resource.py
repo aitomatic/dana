@@ -25,7 +25,7 @@ Example:
 import asyncio
 from typing import Dict, Any, TYPE_CHECKING
 from dxa.core.resource.base_resource import BaseResource
-from dxa.common.errors import ResourceError, ConfigurationError, AgentError
+from dxa.common.exceptions import ResourceError, ConfigurationError, AgentError
 
 if TYPE_CHECKING:
     from dxa.agent import Agent  # Only used for type hints

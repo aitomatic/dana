@@ -20,12 +20,38 @@ Example:
     ```
 """
 
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Any
 import logging
+from dataclasses import dataclass
 from openai import APIError, APIConnectionError, RateLimitError, APITimeoutError, AsyncOpenAI
 from openai.types.chat import ChatCompletion
 
 from .exceptions import LLMError
+
+@dataclass
+class LLMConfig:
+    """Configuration for Language Learning Models.
+    
+    Combines both resource-specific and model-specific parameters.
+    
+    Attributes:
+        name: Name identifier for this LLM instance
+        model_name: Name of the model to use (e.g., "gpt-4")
+        description: Description of this LLM instance
+        api_key: API key for model access
+        temperature: Controls randomness in output (0.0-1.0)
+        max_tokens: Maximum tokens in model response
+        top_p: Controls diversity via nucleus sampling (0.0-1.0)
+        additional_params: Optional additional model parameters
+    """
+    name: str
+    model_name: str = "gpt-4"
+    description: str = "LLM Resource"
+    api_key: Optional[str] = None
+    temperature: float = 0.7
+    max_tokens: Optional[int] = None
+    top_p: float = 1.0
+    additional_params: Dict[str, Any] = None
 
 class BaseLLM:
     """Base class for raw LLM interactions.
@@ -56,19 +82,14 @@ class BaseLLM:
         max_retries: int = 3,
         retry_delay: float = 1.0
     ):
-        """Initialize the LLM.
-        
-        Args:
-            name: Name identifier for this LLM instance
-            config: Configuration dictionary containing api_key and other settings
-            system_prompt: Optional system prompt to use for all queries
-            max_retries: Maximum number of retries for failed requests
-            retry_delay: Delay between retries in seconds
-        """
+        """Initialize the LLM."""
         self.name = name
         self.api_key = config.pop('api_key', '')
         self.model = config.pop('model', 'gpt-4')
-        self.config = config
+        self.temperature = config.pop('temperature', 0.7)
+        self.top_p = config.pop('top_p', 1.0)
+        self.max_tokens = config.pop('max_tokens', None)
+        self.config = config  # Any remaining config options
         self.system_prompt = system_prompt
         self.max_retries = max_retries
         self.retry_delay = retry_delay
@@ -99,11 +120,20 @@ class BaseLLM:
         if not self._client:
             await self.initialize()
 
+        # Merge instance config with any request-specific kwargs
+        request_config = {
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+            **kwargs
+        }
+        if self.max_tokens:
+            request_config["max_tokens"] = self.max_tokens
+
         # Log the request
         self.logger.info("LLM Request", extra={
             **self.logger_extra,
             "messages": messages,
-            "parameters": kwargs,
+            "parameters": request_config,
             "interaction_type": "request"
         })
 
@@ -111,7 +141,7 @@ class BaseLLM:
             response = await self._client.chat.completions.create(
                 model=self.model,
                 messages=messages,
-                **kwargs
+                **request_config
             )
 
             # Safely get token usage

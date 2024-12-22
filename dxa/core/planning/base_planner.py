@@ -8,7 +8,7 @@ from typing import List, Optional, Tuple
 from ..types import Objective, Plan, Signal
 
 
-class BasePlanning(ABC):
+class BasePlanner(ABC):
     """
     Planning is responsible for:
     1. Creating plans from objectives

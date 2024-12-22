@@ -6,12 +6,13 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
 from ..types import Step, Signal
+from ..resource.llm_resource import LLMResource
 
 
-class BaseReasoning(ABC):
+class BaseReasoner(ABC):
     """
     Reasoning is responsible for:
-    1. Reasoning about individual steps
+    1. Reasoning about individual steps using agent's LLM
     2. Generating signals about discoveries
     3. Determining step completion/failure
     """
@@ -21,6 +22,7 @@ class BaseReasoning(ABC):
         self,
         step: Step,
         context: Dict[str, Any],
+        agent_llm: LLMResource,
         resources: Dict[str, Any]
     ) -> List[Signal]:
         """
@@ -29,7 +31,8 @@ class BaseReasoning(ABC):
         Args:
             step: The step to reason about
             context: Current execution context
-            resources: Available resources
+            agent_llm: Primary LLM for agent operations
+            resources: Additional available resources
             
         Returns:
             List[Signal]: Signals about discoveries, completion, etc.

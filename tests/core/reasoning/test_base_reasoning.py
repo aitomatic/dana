@@ -4,10 +4,10 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 from typing import Dict, Any
 
-from dxa.core.reasoning.base_reasoning import BaseReasoning
+from dxa.core.reasoning.base_reasoner import BaseReasoner
 from dxa.core.reasoning.types import Objective, Plan, Signal, SignalType
 
-class SimpleReasoning(BaseReasoning):
+class SimpleReasoning(BaseReasoner):
     """Simple reasoning implementation for testing."""
     
     async def _create_objective(self, task: Any) -> Objective:

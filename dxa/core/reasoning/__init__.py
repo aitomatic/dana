@@ -19,16 +19,12 @@ Supporting Types:
     ObjectiveState: Objective tracking
 """
 
-from dxa.core.reasoning.base_reasoning import BaseReasoning
-from dxa.core.reasoning.direct_reasoning import DirectReasoning
-from dxa.core.reasoning.cot_reasoning import ChainOfThoughtReasoning
-from dxa.core.reasoning.ooda_reasoning import OODAReasoning
-from dxa.core.reasoning.dana_reasoning import DANAReasoning
+from .base_reasoner import BaseReasoner
+from .direct_reasoner import DirectReasoner
+from .reasoner_factory import ReasonerFactory
 
 __all__ = [
-    'BaseReasoning',
-    'DirectReasoning',
-    'ChainOfThoughtReasoning',
-    'OODAReasoning',
-    'DANAReasoning'
+    'BaseReasoner',
+    'DirectReasoner',
+    'ReasonerFactory'
 ] 
