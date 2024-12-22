@@ -45,8 +45,9 @@ import logging
 import os
 from pathlib import Path
 from typing import Dict, Any, Optional
+from dotenv import load_dotenv
 
-from dxa.common.errors import ConfigurationError
+from dxa.common.exceptions import ConfigurationError
 
 try:
     import yaml
@@ -54,23 +55,15 @@ try:
 except ImportError:  # pragma: no cover
     YAML_AVAILABLE = False
 
+# Load .env file at module import
+load_dotenv()
+
 logger = logging.getLogger(__name__)
 
 def _validate_config(config: Dict[str, Any]) -> None:
-    """Validate configuration dictionary.
-    
-    Args:
-        config: Configuration to validate
-        
-    Raises:
-        ConfigurationError: If configuration is invalid
-    """
-    # Validate required fields
-    if not config.get("api_key"):
-        logger.error("Missing required field: api_key")
-        raise ConfigurationError("API key is required")
-        
-    # Validate field types
+    """Validate configuration dictionary."""
+
+    # Validate field types only
     resources = config.get("resources", [])
     if not isinstance(resources, list):
         logger.error("Invalid type for field 'resources': expected list")
@@ -172,12 +165,12 @@ def load_agent_config(
         
     # Add logging config
     config["logging"] = {
-        "level": os.getenv("LOG_LEVEL", "INFO"),
-        "dir": os.getenv("LOG_DIR", "logs"),
-        "format": os.getenv("LOG_FORMAT", "text"),
-        "max_bytes": int(os.getenv("LOG_MAX_BYTES", "10000000")),
-        "backup_count": int(os.getenv("LOG_BACKUP_COUNT", "5")),
-        "console_output": os.getenv("LOG_CONSOLE_OUTPUT", "true").lower() == "true"
+        "level": str.split(os.getenv("LOG_LEVEL", "INFO"))[0],
+        "dir": str.split(os.getenv("LOG_DIR", "logs"))[0],
+        "format": str.split(os.getenv("LOG_FORMAT", "text"))[0],
+        "max_bytes": int(str.split(os.getenv("LOG_MAX_BYTES", "1000000"))[0]),
+        "backup_count": int(str.split(os.getenv("LOG_BACKUP_COUNT", "5"))[0]),
+        "console_output": str.split(os.getenv("LOG_CONSOLE_OUTPUT", "true"))[0].lower() == "true"
     }
         
     logger.debug("Successfully loaded config for agent type: %s", agent_type)

@@ -20,12 +20,39 @@ Example:
     ```
 """
 
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Any, Union
 import logging
+from dataclasses import dataclass, field
 from openai import APIError, APIConnectionError, RateLimitError, APITimeoutError, AsyncOpenAI
 from openai.types.chat import ChatCompletion
 
 from .exceptions import LLMError
+
+@dataclass
+class LLMConfig:
+    """Configuration for LLM instances."""
+    name: str
+    model_name: str = "gpt-4"
+    api_key: Optional[str] = None
+    temperature: float = 0.7
+    max_tokens: Optional[int] = None
+    top_p: float = 1.0
+    additional_params: Dict[str, Any] = field(default_factory=dict)
+
+    @classmethod
+    def from_dict(cls, name: str, config: Optional[Dict[str, Any]] = None) -> 'LLMConfig':
+        """Build LLMConfig from dictionary."""
+        if not config:
+            config = {}
+        return cls(
+            name=name,
+            model_name=config.get("model", "gpt-4"),
+            api_key=config.get("api_key"),
+            temperature=float(config.get("temperature", 0.7)),
+            max_tokens=int(config.get("max_tokens", 0)) or None,
+            top_p=float(config.get("top_p", 1.0)),
+            additional_params=config.get("additional_params", {})
+        )
 
 class BaseLLM:
     """Base class for raw LLM interactions.
@@ -51,34 +78,62 @@ class BaseLLM:
     def __init__(
         self,
         name: str,
-        config: Dict[str, str],
+        config: Union[Dict[str, str], LLMConfig],
         system_prompt: Optional[str] = None,
         max_retries: int = 3,
         retry_delay: float = 1.0
     ):
-        """Initialize the LLM.
-        
-        Args:
-            name: Name identifier for this LLM instance
-            config: Configuration dictionary containing api_key and other settings
-            system_prompt: Optional system prompt to use for all queries
-            max_retries: Maximum number of retries for failed requests
-            retry_delay: Delay between retries in seconds
-        """
-        self.name = name
-        self.api_key = config.pop('api_key', '')
-        self.model = config.pop('model', 'gpt-4')
-        self.config = config
+        """Initialize the LLM."""
+        self._config = config if isinstance(config, LLMConfig) else LLMConfig.from_dict(name, config)
+        self.name = name or self._config.name
         self.system_prompt = system_prompt
         self.max_retries = max_retries
         self.retry_delay = retry_delay
         self._client: Optional[AsyncOpenAI] = None
+        
         self.logger = logging.getLogger(f"dxa.llm.{name}")
         self.logger_extra = {
             "llm_name": self.name,
-            "model": self.model,
+            "model": self.model_name,
             "interaction_type": 'none'
         }
+
+    @property
+    def config(self) -> LLMConfig:
+        """Get the LLM configuration."""
+        if not self._config:
+            self._config = LLMConfig.from_dict(self.name, {})
+        return self._config
+    
+    @property
+    def api_key(self) -> Optional[str]:
+        """Get the API key."""
+        return self.config.api_key
+
+    @property
+    def model_name(self) -> str:
+        """Get the model name."""
+        return self.config.model_name
+
+    @property
+    def temperature(self) -> float:
+        """Get the temperature."""
+        return self.config.temperature
+
+    @property
+    def top_p(self) -> float:
+        """Get the top_p."""
+        return self.config.top_p
+
+    @property
+    def max_tokens(self) -> Optional[int]:
+        """Get the max_tokens."""
+        return self.config.max_tokens
+
+    @property
+    def additional_params(self) -> Dict[str, Any]:
+        """Get the additional_params."""
+        return self.config.additional_params
 
     async def initialize(self) -> None:
         """Initialize the OpenAI client."""
@@ -99,19 +154,28 @@ class BaseLLM:
         if not self._client:
             await self.initialize()
 
+        # Merge instance config with any request-specific kwargs
+        request_config = {
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+            **kwargs
+        }
+        if self.max_tokens:
+            request_config["max_tokens"] = self.max_tokens
+
         # Log the request
         self.logger.info("LLM Request", extra={
             **self.logger_extra,
             "messages": messages,
-            "parameters": kwargs,
+            "parameters": request_config,
             "interaction_type": "request"
         })
 
         try:
             response = await self._client.chat.completions.create(
-                model=self.model,
+                model=self.model_name,
                 messages=messages,
-                **kwargs
+                **request_config
             )
 
             # Safely get token usage

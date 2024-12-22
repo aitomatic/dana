@@ -1,169 +1,169 @@
 <!-- markdownlint-disable MD041 -->
 <!-- markdownlint-disable MD033 -->
 <p align="center">
-    ![Aitomatic Logo](https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png){: width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"}
+  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
 
 # DXA - Domain-Expert Agent
 
-DXA is a framework for building and deploying intelligent agents powered by Large Language Models (LLMs). Like human beings, these agents possess core cognitive abilities, inherent capabilities, ways to interact with their environment, and access to external resources.
+## dxa Module
 
-For installation and setup instructions, see the [project README](../README.md). For practical implementation examples, check out our [examples directory](../examples/README.md).
+DXA is a framework for building and deploying intelligent agents powered by Large Language Models (LLMs). Like human beings, these agents possess core cognitive abilities, inherent capabilities, ways to interact with their environment, and access to external resources. The framework implements a layered architecture separating strategic planning from tactical execution, enabling both simple tasks and complex objectives to be handled effectively through composition.
 
-## Architecture Overview
+## Core Architecture
 
-An Agent in DXA, similar to a human being, is composed of:
+At the heart of DXA is the `Agent` system, which coordinates cognitive functions through a layered architecture inspired by human decision-making. The `Planning` layer handles strategic decisions - what steps to take - while the `Reasoning` layer determines how to think about each step. Supporting these cognitive functions are `Capabilities` like memory and domain expertise, concrete `Resources` like LLMs and APIs, and an `IO` system for environmental interaction. This separation of concerns allows both high-level strategic thinking and efficient tactical execution while maintaining modularity and extensibility.
 
-1. A cognitive core (Reasoning) that drives decision-making and thought processes
-2. Inherent capabilities (like Memory and Expertise) that shape its abilities
-3. Input/Output channels for environmental interaction
-4. Access to external resources and tools
+Getting started with DXA is straightforward through its `AgentFactory` system. For simple tasks, you can create an agent with a single line of code, selecting from tested configurations optimized for common use cases. As your needs grow more complex, the same agent can be progressively enhanced with additional capabilities, custom reasoning patterns, or specialized domain expertise. This approach embodies our core philosophy: simple things should be easy, complex things should be possible.
+
+1. **[Agent System](agent/README.md)** - The central entity that:
+   - Provides factory patterns for quick creation
+   - Manages the core LLM that powers cognitive functions
+   - Coordinates planning and reasoning
+   - Handles resource allocation and state
+   - Provides the main interface for users
+
+2. **Core Cognitive Components**:
+   - **[Planning](core/planning/README.md)** - Strategic layer that:
+     - Understands objectives
+     - Generates execution plans
+     - Manages goal evolution
+     - Coordinates resources
+
+   - **[Reasoning](core/reasoning/README.md)** - Tactical layer that:
+     - Executes planned steps
+     - Makes detailed decisions
+     - Adapts to new information
+     - Reports progress
+
+3. **Supporting Systems**:
+   - **[Capabilities](core/capability/README.md)** - Core abilities like:
+     - Memory management
+     - Domain expertise
+     - Learning functions
+
+   - **[Resources](core/resource/README.md)** - External tools:
+     - LLM interactions
+     - Database access
+     - API integrations
+
+   - **[IO](core/io/README.md)** - Environmental interaction:
+     - User interfaces
+     - File operations
+     - Network communication
+
+## System Overview
 
 ```mermaid
-graph TD
-    A[dxa.agent.BaseAgent] --> B[dxa.core.reasoning.BaseReasoning]
-    A --> C[dxa.agent.AgentLLM]
-    A --> D[dxa.core.capability.BaseCapability]
-    A --> E[dxa.core.io.BaseIO]
-    A --> F[dxa.core.resource.BaseResource]
+graph TB
+    A[Agent] --> B[Planning]
+    A --> C[Reasoning]
+    A --> D[Capabilities]
+    A --> E[Resources]
+    A --> F[IO]
     
-    F --> G[Databases]
-    F --> H[Search Engines]
-    F --> I[IoT Data]
-    F --> J[Other Agents]
+    B -.-> G[LLM]
+    C -.-> G
 ```
-
-## Core Components
-
-### Reasoning (`dxa.core.reasoning`)
-
-The reasoning system is the agent's "cognitive core," analogous to human thought processes:
-
-- Planning systems: For creating and executing multi-step plans
-- Goal management: For tracking and prioritizing objectives
-- Task execution: For carrying out specific actions
-- Decision trees: For structured decision-making processes
-
-### Inherent Capabilities (`dxa.core.capability`)
-
-Like human innate abilities, these are fundamental features of the agent:
-
-- Memory management: Handles storage and retrieval of agent experiences and knowledge
-- Expertise domains: Defines areas of specialized knowledge and skills
-- Core reasoning abilities: Provides basic cognitive functions like planning and decision-making
-- Custom capability extensions: Allows for adding new specialized abilities
-
-### I/O (`dxa.core.io`)
-
-Similar to human senses and expression, I/O handlers manage all interaction with the environment:
-
-- Text-based interfaces: For command-line and chat interactions
-- API endpoints: For web service integration
-- File system operations: For reading and writing files
-- Custom I/O handlers: For specialized communication needs
-
-### Resources (`dxa.core.resource`)
-
-Like tools and references that humans use, resources provide access to external capabilities:
-
-- Database connections: For persistent storage
-- Search engine integrations: For accessing external knowledge
-- IoT device interfaces: For interacting with physical devices
-- Inter-agent communication: For coordinating with other agents
-
-### Agents (`dxa.agent`)
-
-The agent module provides several specialized agent types, each designed for specific roles:
-
-- `BaseAgent`: The foundation for all agent types
-- `AutonomousAgent`: For agents that operate independently
-- `CollaborativeAgent`: For multi-agent systems where agents work together
-- `InteractiveAgent`: For direct human interaction with real-time conversation capabilities
-- `WebSocketAgent`: For web-based communication, enabling remote agent interactions
-- `AutomationAgent`: Specialized for workflow automation tasks
-
-Additional components in the `dxa.agent` module:
-
-- `AgentLLM`: Internal LLM implementation for agents
-- `AgentProgress`: For reporting task progress
-- `LLMConfig`: For configuration management
-- `StateManager`: Manages agent state, observations, and messages
-
-## Examples
-
-The `examples/` directory now includes several implementations demonstrating various use cases:
-
-1. `collaborative_research.py`: Demonstrates multi-agent collaboration for research tasks
-2. `websocket_solver.py`: Shows how to create a WebSocket-based problem-solving agent
-3. `interactive_math.py`: Implements an interactive math tutor agent
-4. `automation_web.py`: Showcases web scraping automation using an agent
-
-These examples cover a range of agent types and scenarios:
-
-- Collaborative problem-solving
-- Network-based agent communication
-- Interactive console-based agents
-- Workflow automation
-
-We encourage you to explore these examples to better understand the full potential of the DXA framework.
 
 ## Getting Started
 
-The simplest way to create an agent is to use one of the pre-built agent classes:
+The simplest way to create an agent is:
 
 ```python
-from dxa.agent import InteractiveAgent
+from dxa import AgentFactory
 
-agent = InteractiveAgent()
-agent.run()
+# Quick start with factory
+agent = AgentFactory.quick("assistant")
+result = await agent.run("Help with this task")
+
+# Or use template with customization
+agent = AgentFactory.from_template("researcher")\
+    .with_reasoning("cot")\
+    .with_resources({"llm": LLMResource(model="gpt-4")})
+result = await agent.run("Help with this task")
 ```
+
+## Examples
+
+The `examples/` directory demonstrates various agent implementations:
+
+1. **Basic Patterns**
+   - `chat_bot.py`: Interactive conversational agent
+   - `research_assistant.py`: Information gathering and analysis
+   - `system_monitor.py`: Continuous system monitoring
+
+2. **Advanced Usage**
+   - `collaborative_research.py`: Multi-agent collaboration
+   - `websocket_solver.py`: WebSocket-based problem solving
+   - `interactive_math.py`: Interactive math tutoring
+   - `automation_web.py`: Web scraping automation
+
+These examples showcase different agent configurations and use cases:
+
+- Collaborative problem-solving
+- Network-based communication
+- Interactive console agents
+- Workflow automation
 
 ## Advanced Usage
 
-For custom agent behaviors, you can use the factory pattern:
+For custom agent behaviors, use the factory pattern:
 
 ```python
-from dxa.core.factory import create_agent
+from dxa import create_agent
 
-custom_agent = create_agent(
-    agent_type="websocket",
-    config={
-        "name": "custom_agent",
-        "llm_config": {...},
-        "reasoning_config": {...},
-        "resources_config": {...}
-    }
-)
+async with create_agent({
+    "name": "custom_agent",
+    "llm": LLMResource("gpt-4"),
+    "planning": "hierarchical",
+    "reasoning": "cot",
+    "capabilities": ["research"]
+}) as agent:
+    result = await agent.run("Research this topic")
 ```
 
-## Module Structure
+## Project Structure
 
 ```text
 dxa/
-├── agent/
+├── agent/          # Agent implementation
 │   ├── __init__.py
-│   ├── base_agent.py
-│   ├── autonomous_agent.py
-│   ├── collaborative_agent.py
-│   ├── interactive_agent.py
-│   ├── websocket_agent.py
-│   ├── automation_agent.py
-│   ├── agent_llm.py
-│   ├── progress.py
-│   ├── config.py
+│   ├── agent.py
+│   ├── runtime.py
 │   └── state.py
-├── core/
-│   ├── capability/
-│   ├── io/
-│   ├── reasoning/
-│   └── resource/
-└── examples/
-    ├── __init__.py
-    ├── collaborative_research.py
-    ├── websocket_solver.py
-    ├── interactive_math.py
-    └── automation_web.py
+├── core/           # Core components
+│   ├── planning/   # Strategic planning
+│   ├── reasoning/  # Tactical execution
+│   ├── capability/ # Core abilities
+│   ├── resource/   # External tools
+│   └── io/         # Interaction handling
+└── examples/       # Usage examples
+    ├── basic/      # Basic patterns
+    └── advanced/   # Complex scenarios
 ```
+
+## Installation
+
+1. Prerequisites:
+   - Python 3.x
+   - bash shell (Unix) or Git Bash (Windows)
+
+2. Setup:
+
+   ```bash
+   git clone <repository-url>
+   cd dxa-prototype
+   bash setup_env.sh
+   source venv/bin/activate  # Windows: source venv/Scripts/activate
+   ```
+
+## Documentation
+
+- [Framework Overview](dxa/README.md) - System architecture and design
+- [Agent Documentation](dxa/agent/README.md) - Agent implementation details
+- [Examples](examples/README.md) - Implementation examples and patterns
+- [API Reference](docs/README.md) - Detailed API documentation
 
 ## Contributing
 
@@ -172,7 +172,7 @@ DXA is proprietary software developed by Aitomatic, Inc. Contributions are limit
 1. Please ensure you have signed the necessary Confidentiality and IP agreements
 2. Follow the internal development guidelines
 3. Submit your changes through the company's approved development workflow
-4. Contact the project maintainers for access to the [Contributing Guide]
+4. Contact the project maintainers for access to the Contributing Guide
 
 For external users or organizations interested in collaborating with Aitomatic on DXA development, please contact our business development team.
 
@@ -181,3 +181,17 @@ For external users or organizations interested in collaborating with Aitomatic o
 This software is proprietary and confidential. Copyright © 2024 Aitomatic, Inc. All rights reserved.
 
 Unauthorized copying, transfer, or reproduction of this software, via any medium, is strictly prohibited. This software is protected by copyright law and international treaties.
+
+---
+
+<p align="center">
+<a href="https://aitomatic.com">https://aitomatic.com</a>
+</p>
+
+## Core Systems
+
+- [Agent System](agent/README.md) - Agent creation and management
+- [Flow System](flow/README.md) - Process and workflow automation
+- [Planning System](core/planning/README.md) - Strategic planning
+- [Reasoning System](core/reasoning/README.md) - Tactical reasoning
+- [Resource System](core/resource/README.md) - Tool and capability integration

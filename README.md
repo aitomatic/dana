@@ -4,58 +4,157 @@
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
 
-# DXA Prototype
+# DXA - Domain-Expert Agent Framework
 
-A prototype implementation of DXA (Domain-Expert Agents) - an AI-powered system for domain-specific expert agents.
+# Top-level module
 
-For detailed architecture documentation (Product-Engineering perspective), see [DXA Architecture](dxa/README.md). For usage examples (AI Solution Engineering perspective), check out our [Examples](examples/README.md).
+DXA is a framework for building and deploying intelligent agents powered by Large Language Models (LLMs). These agents combine cognitive abilities, domain expertise, and external resources to solve complex problems.
 
-## Prerequisites
+Through a composable architecture, DXA enables both rapid deployment of standard agent configurations and full customization when needed, guided by the principle that simple things should be easy and complex things should be possible.
 
-- Python 3.x
-- bash shell (for Unix-based systems) or Git Bash (for Windows)
+## Documentation Map
 
-## Setup Instructions
+The DXA framework documentation is organized by component:
 
-1. Clone the repository:
+### Framework Core
+
+- [Framework Overview](dxa/README.md) - `dxa` - System architecture and design
+- [Common Utilities](dxa/common/README.md) - `dxa.common` - Shared functionality and tools
+
+### Components
+
+The DXA agent framework is built around a composable agent architecture:
+
+- An `Agent` (via `dxa.agent`) is the central entity that:
+  - Has `Capabilities` (via `dxa.core.capability`) like memory, learning, and expertise
+  - Uses `Reasoning` (via `dxa.core.reasoning`) for decision-making and planning
+  - Accesses `Resources` (via `dxa.core.resource`) for external tools and services, including domain experts
+  - Interacts through `I/O` (via `dxa.core.io`) with its environment
+
+These components are designed to be modular and extensible, allowing agents to be configured with different combinations of capabilities, reasoning patterns, and resources to suit specific needs.
+
+Component documentation:
+
+- [Agent System](dxa/agent/README.md) - `dxa.agent` - Agent implementation and runtime
+- [Reasoning System](dxa/core/reasoning/README.md) - `dxa.core.reasoning` - Decision-making patterns
+- [Resource System](dxa/core/resource/README.md) - `dxa.core.resource` - External tool integration
+- [I/O System](dxa/core/io/README.md) - `dxa.core.io` - Environment interaction
+- [Capability System](dxa/core/capability/README.md) - `dxa.core.capability` - Agent abilities
+
+### Development
+
+- [Examples](examples/README.md) - `examples` - Implementation examples and patterns
+- [Tests](tests/README.md) - `tests` - Test suite and coverage
+- [API Documentation](docs/README.md) - `docs` - API reference and guides
+
+Each component's README provides:
+
+- Detailed architecture
+- Usage examples
+- Interface documentation
+- Best practices
+
+## Quick Start
+
+1. Prerequisites:
+   - Python 3.x
+   - bash shell (Unix) or Git Bash (Windows)
+
+2. Installation:
 
    ```bash
    git clone <repository-url>
    cd dxa-prototype
-   ```
-
-2. Set up the virtual environment:
-
-   ```bash
    bash setup_env.sh
-   source venv/bin/activate  # On Windows: source venv/Scripts/activate
+   source venv/bin/activate  # Windows: source venv/Scripts/activate
    ```
 
-3. Configure the environment:
-   - Copy `.env.example` to `.env` (if not already done)
-   - Update the values in `.env` with your configuration
+3. Basic Usage:
 
-4. Run the application:
+   ```python
+   from dxa import AgentFactory
 
-   ```bash
-   python dxa-poc.py
+   # Quick start
+   agent = AgentFactory.quick("assistant")
+   result = await agent.run("Help with this task")
+
+   # Use templates
+   agent = AgentFactory.from_template("researcher")
+   result = await agent.run("Research quantum computing")
+
+   # Template with customization
+   agent = AgentFactory.from_template("researcher")\
+      .with_reasoning("cot")\
+      .with_resources({"llm": LLMResource(model="gpt-4")})
+   result = await agent.run("Research quantum computing")
+
+   # Quick start with full customization 
+   agent = AgentFactory.quick("assistant")\
+      .with_reasoning("cot")\
+      .with_resources({"llm": LLMResource(model="gpt-4")})
+   result = await agent.run("Help with this task")
    ```
 
-## Configuration
+## Strategic Framework Selection Matrix
 
-The application requires the following configuration:
+DXA provides distinct advantages in several key areas when compared to other agent frameworks:
 
-- Environment variables in `.env` file
-- API key configuration in the main Python file
+| Use Case | DXA | LangChain | AutoGPT | BabyAGI |
+|----------|-----|-----------|----------|----------|
+| **Quick Start** | ✨ Template-based initialization | Direct chain construction | Command interface | Simple task queue |
+| **Simple Tasks** | ✨ Pre-configured templates | Chain composition | Command sequences | Task scheduling |
+| **Complex Tasks** | ✨ Full cognitive architecture | Multiple chains | Command sequences | Task recursion |
+| **Domain Expertise** | ✨ Built-in expertise system | Tool integration | Command-based tools | Task-based tools |
+| **Autonomous Operation** | ✨ Structured autonomy | Chain automation | Free-form commands | Task loops |
+| **Growth Path** | ✨ Seamless capability expansion | Chain rebuilding | New commands | New tasks |
 
-## Notes
+✨ = Optimal choice for category
 
-- Make sure all dependencies are properly installed before running the application
-- For any issues, please check the troubleshooting section or contact the development team
+### Framework Selection Guide
 
-## About DXA
+| Need | Best Choice | Why |
+|------|-------------|-----|
+| Fast Start | DXA/LangChain | Equivalent simplicity with better growth |
+| Simple Tasks | DXA/LangChain | Standard patterns with full power available |
+| Complex Systems | DXA | Superior architecture and capabilities |
+| Expert Systems | DXA | Native expertise and knowledge integration |
+| Autonomous Agents | DXA/AutoGPT | Structured autonomy with better control |
 
-Domain-Expert Agents (DXA) is a system designed to create and manage AI agents that specialize in specific domains or areas of expertise. These agents can provide domain-specific knowledge, answer questions, and assist with tasks within their area of specialization.
+### Implementation Complexity
+
+| Framework | Initial | Growth | Maintenance |
+|-----------|---------|--------|-------------|
+| DXA | Low | Linear | Low |
+| LangChain | Low | Step Function | Medium |
+| AutoGPT | Low | Limited | High |
+| BabyAGI | Low | Limited | Medium |
+
+## Project Structure
+
+```text
+dxa/                    # Project root
+├── dxa/                # Main package
+│   ├── agent/          # Agent implementation
+│   └── core/           # Core components
+│       ├── io/         # I/O handlers
+│       ├── reasoning/  # Reasoning patterns
+│       └── resource/   # External resources
+│
+├── examples/           # Usage examples
+│   ├── basic/          # Basic usage examples
+│   └── advanced/       # Advanced patterns
+│
+├── tests/              # Test suite
+│   ├── agent/          # Agent tests
+│   └── core/           # Core component tests
+│       ├── io/         # I/O handlers
+│       ├── reasoning/  # Reasoning patterns
+│       └── resource/   # External resources
+│
+└── docs/               # Documentation
+    ├── api/            # API reference
+    └── guides/         # User guides
+```
 
 ## Contributing
 
