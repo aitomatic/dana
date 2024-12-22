@@ -47,22 +47,14 @@ class AgentRuntime:
 
     async def initialize(self) -> None:
         """Initialize runtime and resources"""
-        # Initialize agent_llm first
-        if hasattr(self.agent_llm, 'initialize'):
-            await self.agent_llm.initialize()
-            
-        # Initialize other resources
+        await self.agent_llm.initialize()
         for resource in self.resources.values():
             if hasattr(resource, 'initialize'):
                 await resource.initialize()
 
     async def cleanup(self) -> None:
         """Cleanup runtime and resources"""
-        # Cleanup agent_llm
-        if hasattr(self.agent_llm, 'cleanup'):
-            await self.agent_llm.cleanup()
-            
-        # Cleanup other resources
+        await self.agent_llm.cleanup()
         for resource in self.resources.values():
             if hasattr(resource, 'cleanup'):
                 await resource.cleanup()
@@ -95,6 +87,8 @@ class AgentRuntime:
                 break
 
             try:
+                import pytest ; pytest.set_trace()
+
                 # Execute step with reasoning
                 reasoning_signals = await self.reasoner.reason_about(
                     step=step,
@@ -103,11 +97,8 @@ class AgentRuntime:
                     resources=self.resources
                 )
                 
-                import pytest
-                pytest.set_trace()
-
                 # Process through planning
-                new_plan, planning_signals = await self.planner.process_signals(
+                new_plan, planning_signals = self.planner.process_signals(
                     self.agent_state.plan,
                     reasoning_signals  # Pass reasoning signals directly
                 )
@@ -121,7 +112,7 @@ class AgentRuntime:
                     self.agent_state.add_signal(signal)
 
                 # Process any objective evolution signals
-                await self._process_objective_signals()
+                self._process_objective_signals()
 
                 # Advance to next step
                 self.agent_state.advance_step()
@@ -143,8 +134,8 @@ class AgentRuntime:
                  ObjectiveStatus.FAILED,
                  ObjectiveStatus.NEEDS_CLARIFICATION])
 
-    async def _process_objective_signals(self) -> None:
-        """Process any signals that might evolve the objective"""
+    def _process_objective_signals(self) -> None:
+        """Process any signals that might evolve the objective."""
         for signal in self.agent_state.get_signals():
             if signal.type == SignalType.OBJECTIVE_UPDATE:
                 new_objective = signal.content.get("new_objective")

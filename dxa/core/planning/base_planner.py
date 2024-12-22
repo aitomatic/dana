@@ -30,7 +30,7 @@ class BasePlanner(ABC):
         pass
 
     @abstractmethod
-    async def process_signals(
+    def process_signals(
         self,
         plan: Plan,
         signals: List[Signal]

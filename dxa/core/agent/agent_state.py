@@ -1,62 +1,59 @@
 """Agent state management."""
 
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any
+from typing import Dict, Any, List, Optional
 from ..types import Objective, Plan, Signal, Step
 
-@dataclass
 class AgentState:
-    """Maintains execution state."""
+    """Manages agent execution state."""
     
-    # Initialize with default values using field
-    objective: Optional[Objective] = None
-    plan: Optional[Plan] = None
-    working_memory: Dict[str, Any] = field(default_factory=dict)
-    signals: List[Signal] = field(default_factory=list)
-    current_step_idx: int = 0
-    history: List[Any] = field(default_factory=list)
-    context: Dict[str, Any] = field(default_factory=dict)
+    def __init__(self):
+        self._objective: Optional[Objective] = None
+        self._plan: Optional[Plan] = None
+        self._signals: List[Signal] = []
+        self._context: Dict[str, Any] = {}
+        self._current_step_index = 0
 
     def set_objective(self, objective: Objective) -> None:
-        """Set or update current objective"""
-        self.objective = objective
+        """Set current objective."""
+        self._objective = objective
 
     def set_plan(self, plan: Plan) -> None:
-        """Set or update current plan"""
-        self.plan = plan
-        self.current_step_idx = 0
-
-    def get_current_step(self) -> Optional[Step]:
-        """Get current step being executed"""
-        if self.plan and self.current_step_idx < len(self.plan.steps):
-            return self.plan.steps[self.current_step_idx]
-        return None
-
-    def advance_step(self) -> None:
-        """Move to next step"""
-        self.current_step_idx += 1
+        """Set current plan."""
+        self._plan = plan
+        self._current_step_index = 0
 
     def add_signal(self, signal: Signal) -> None:
-        """Add new signal"""
-        self.signals.append(signal)
+        """Add signal to state."""
+        self._signals.append(signal)
 
     def get_signals(self) -> List[Signal]:
-        """Get all pending signals"""
-        return self.signals
+        """Get current signals."""
+        return self._signals
 
     def clear_signals(self) -> None:
-        """Clear all processed signals"""
-        self.signals.clear()
+        """Clear all signals."""
+        self._signals = []
 
     def get_context(self) -> Dict[str, Any]:
-        """Get current execution context"""
-        return {
-            "objective": self.objective,
-            "working_memory": self.working_memory,
-            "step_index": self.current_step_idx,
-            "total_steps": len(self.plan.steps) if self.plan else 0
-        }
+        """Get execution context."""
+        return self._context
 
-    def update_working_memory(self, key: str, value: Any) -> None:
-        """Update working memory"""
-        self.working_memory[key] = value
+    def advance_step(self) -> None:
+        """Move to next step."""
+        self._current_step_index += 1
+
+    def get_current_step(self) -> Optional[Step]:
+        """Get current step being executed."""
+        if self._plan and self._current_step_index < len(self._plan.steps):
+            return self._plan.steps[self._current_step_index]
+        return None
+
+    @property
+    def objective(self) -> Optional[Objective]:
+        """Get current objective."""
+        return self._objective
+
+    @property
+    def plan(self) -> Optional[Plan]:
+        """Get current plan."""
+        return self._plan

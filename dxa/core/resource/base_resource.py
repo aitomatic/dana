@@ -93,20 +93,22 @@ class BaseResource(ABC):
         return self._is_available
 
     async def initialize(self) -> None:
-        """Initialize the resource with default implementation."""
+        """Initialize resource."""
         self._is_available = True
 
-    async def query(self, request: Dict[str, Any]) -> ResourceResponse:
-        """Default query implementation returns success."""
-        return ResourceResponse(success=True)
-
     async def cleanup(self) -> None:
-        """Clean up resource with default implementation."""
+        """Cleanup resource."""
         self._is_available = False
 
+    async def query(self, request: Dict[str, Any]) -> ResourceResponse:
+        """Query resource."""
+        if not self._is_available:
+            raise ResourceUnavailableError(f"Resource {self.name} not initialized")
+        return ResourceResponse(success=True)
+
     def can_handle(self, request: Dict[str, Any]) -> bool:
-        """Default implementation always returns False."""
-        return False
+        """Check if resource can handle request."""
+        raise NotImplementedError
         
     async def __aenter__(self) -> 'BaseResource':
         await self.initialize()

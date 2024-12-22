@@ -57,6 +57,7 @@ class Step:
     Part of a plan to achieve the objective.
     """
     description: str  # What needs to be done
+    order: int = 0
     status: StepStatus = StepStatus.PENDING
     context: Dict[str, Any] = field(default_factory=dict)
     result: Optional[Dict[str, Any]] = None

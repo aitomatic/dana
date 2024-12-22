@@ -25,7 +25,7 @@ import logging
 from datetime import datetime
 import json
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Any
 from difflib import SequenceMatcher
 import pandas as pd
 
@@ -149,3 +149,11 @@ class LLMInteractionAnalyzer:
                     })
                     
         return sorted(similar_prompts, key=lambda x: x['similarity'], reverse=True)
+
+class LogAnalyzer:
+    def analyze_logs(self, logs: List[str]) -> Dict[str, Any]:
+        """Analyze log content."""
+        return {
+            "total_lines": len(logs),
+            "error_count": sum(1 for log in logs if "ERROR" in log)
+        }

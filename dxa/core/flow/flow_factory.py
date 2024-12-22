@@ -1,19 +1,18 @@
-"""Factory for creating DXA flows."""
+"""Factory for creating flow components."""
 
-from typing import Dict, Any
-from ..core.flow import BaseFlow
+from typing import Dict, Any, Union
+from .base_flow import BaseFlow
+from .sequential_flow import SequentialFlow
 
 class FlowFactory:
-    """Creates and configures DXA flows."""
-
-    FLOW_TYPES = {
-        "none": BaseFlow,
-    }
-
+    """Creates flow components."""
+    
     @classmethod
-    def create_flow(cls, config: Dict[str, Any]) -> BaseFlow:
-        """Create a flow with the given configuration."""
-        flow_type = config.get("type", "none")
-        if flow_type not in cls.FLOW_TYPES:
-            raise ValueError(f"Unknown flow type: {flow_type}")
-        return cls.FLOW_TYPES[flow_type](**config) 
+    def create_flow(cls, flow_type: Union[str, BaseFlow] = None) -> BaseFlow:
+        """Create flow instance."""
+        if isinstance(flow_type, BaseFlow):
+            return flow_type
+        flow_type = flow_type or "sequential"
+        if flow_type == "sequential":
+            return SequentialFlow()
+        raise ValueError(f"Unknown flow type: {flow_type}") 

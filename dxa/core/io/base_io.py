@@ -17,8 +17,8 @@ Example:
     ```
 """
 
-from abc import ABC
-from typing import Optional
+from abc import ABC, abstractmethod
+from typing import Any, Optional
 import logging
 
 class BaseIO(ABC):
@@ -39,20 +39,22 @@ class BaseIO(ABC):
         # TODO: probably need StateManager of some kind for asyncio
         # self.state_manager = StateManager(self.__class__.__name__)
     
-    async def send_message(self, message: str) -> None:
-        """Send a message - must be implemented by subclasses."""
-        pass
-        
-    async def get_input(self, prompt: Optional[str] = None) -> str:
-        """Get input - must be implemented by subclasses."""
-        pass
-
     async def initialize(self) -> None:
-        """Default initialization does nothing."""
+        """Initialize IO. Override if async setup needed."""
         pass
 
     async def cleanup(self) -> None:
-        """Default cleanup does nothing."""
+        """Cleanup IO. Override if async cleanup needed."""
+        pass
+
+    @abstractmethod
+    async def send(self, message: Any) -> None:
+        """Send message through IO channel."""
+        pass
+
+    @abstractmethod
+    async def receive(self) -> Any:
+        """Receive message from IO channel."""
         pass
 
     async def __aenter__(self):

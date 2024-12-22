@@ -9,16 +9,16 @@ from dxa.core.reasoning import DirectReasoner
 
 async def main():
     """Run simple Q&A example."""
-    agent = await DXAFactory.create_agent({"name": "qa_agent"})
-    agent. \
-        with_llm("gpt-4"). \
-        with_planner(DirectPlanner()). \
-        with_reasoner(DirectReasoner())
 
-    async with agent:
-        result = await agent.run("What is quantum computing?")
-        print("\nQuestion: What is quantum computing?")
-        print(f"Answer: {result['result']['answer']}")
+    agent = DXAFactory.create_agent({"name": "qa_agent"}) \
+        .with_llm("gpt-4") \
+        .with_planner(DirectPlanner()) \
+        .with_reasoner(DirectReasoner())
+
+    result = await agent.run("What is quantum computing?")
+
+    print("\nQuestion: What is quantum computing?")
+    print(f"Answer: {result['result']['answer']}")
 
 if __name__ == "__main__":
     import asyncio

@@ -1,23 +1,19 @@
 """Factory for creating DXA resources."""
 
 from typing import Dict, Any
-from . import BaseResource, LLMResource
+from . import BaseResource, LLMResource, ExpertResource
 
 class ResourceFactory:
-    """Creates and configures DXA resources."""
-
-    RESOURCE_TYPES = {
-        "none": BaseResource,
-        "llm": LLMResource,
-    }
-
+    """Creates resources based on type."""
+    
     @classmethod
-    def create_resource(cls, config: Dict[str, Any]) -> BaseResource:
-        """Create a resource with the given configuration."""
-        resource_type = config.get("type", "none")
-        if resource_type not in cls.RESOURCE_TYPES:
-            raise ValueError(f"Unknown resource type: {resource_type}")
-        return cls.RESOURCE_TYPES[resource_type](**config) 
+    def create_resource(cls, resource_type: str, config: Dict[str, Any]) -> BaseResource:
+        """Create resource instance."""
+        if resource_type == "llm":
+            return LLMResource(name=config.get("name", "llm"), config=config)
+        if resource_type == "expert":
+            return ExpertResource(name=config.get("name", "expert"))
+        raise ValueError(f"Unknown resource type: {resource_type}")
     
     @classmethod
     def create_llm_resource(cls, config: Dict[str, Any]) -> LLMResource:

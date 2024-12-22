@@ -14,17 +14,9 @@ class DXAFactory:
     """Creates and configures DXA components."""
     
     @classmethod
-    async def create_agent(cls, config: Dict[str, Any]) -> Agent:
-        """Create an agent with progressive configuration."""
-        # Create base agent through factory
-        agent = await AgentFactory.create_agent(config)
-        
-        # Ensure core components are initialized through property access
-        _ = agent.planner
-        _ = agent.reasoner
-        _ = agent.agent_llm
-        
-        return agent
+    def create_agent(cls, config: Dict[str, Any]) -> Agent:
+        """Create an agent with configuration."""
+        return AgentFactory.create_agent(config)
 
     @classmethod
     def create_planner(cls, planner_type: Union[str, BasePlanner] = None) -> BasePlanner:

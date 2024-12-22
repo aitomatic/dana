@@ -27,6 +27,7 @@ from ..resource import BaseResource, LLMResource
 from ..io import BaseIO, IOFactory
 from .agent_state import AgentState
 from .agent_runtime import AgentRuntime
+from ...common.utils.config import load_agent_config
 
 class Agent:
     """Main agent interface with built-in execution management."""
@@ -100,10 +101,13 @@ class Agent:
         if isinstance(llm, LLMResource):
             self._agent_llm = llm
         elif isinstance(llm, str):
-            config = {"model_name": llm}
+            config = load_agent_config("llm")
+            config["model"] = llm
             self._agent_llm = LLMResource(name=f"{self._name}_llm", config=config)
         elif isinstance(llm, Dict):
-            self._agent_llm = LLMResource(name=f"{self._name}_llm", config=llm)
+            config = load_agent_config("llm")
+            config.update(llm)
+            self._agent_llm = LLMResource(name=f"{self._name}_llm", config=config)
         return self
     
     def with_planner(self, planner: Union[str, BasePlanner]) -> "Agent":
@@ -135,26 +139,32 @@ class Agent:
         self._io = io
         return self
 
-    async def __aenter__(self) -> "Agent":
-        """Initialize runtime when entering context"""
+    async def initialize(self) -> None:
+        """Initialize agent and its components."""
         if not self.planner or not self.reasoner:
             raise ValueError("Agent must have both planning and reasoning configured")
         
         self._runtime = AgentRuntime(agent=self)
         await self._runtime.initialize()
+
+    async def cleanup(self) -> None:
+        """Cleanup agent and its components."""
+        if self._runtime:
+            await self._runtime.cleanup()
+            self._runtime = None
+
+    async def __aenter__(self) -> "Agent":
+        """Initialize agent when entering context."""
+        await self.initialize()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
-        """Cleanup runtime when exiting context"""
-        if self._runtime:
-            await self._runtime.cleanup()
+        """Cleanup agent when exiting context."""
+        await self.cleanup()
 
     async def run(self, objective: str, **kwargs) -> Any:
-        """
-        Execute an objective. Can be used directly or within context manager.
-        Creates temporary runtime if not in context.
-        """
-        if self._runtime is None:
-            async with self:
-                return await self._runtime.execute(objective, **kwargs)
-        return await self._runtime.execute(objective, **kwargs)
+        """Execute an objective."""
+        async with self:
+            if not self._runtime:
+                raise RuntimeError("Agent must be initialized before running")
+            return await self._runtime.execute(objective, **kwargs)

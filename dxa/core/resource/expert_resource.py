@@ -42,6 +42,7 @@ from dxa.core.resource.llm_resource import (
 )
 from dxa.core.capability.domain_expertise import DomainExpertise
 from dxa.core.resource.base_resource import BaseResource, ResourceResponse, ResourceConfig
+from dxa.core.io.io_factory import IOFactory
 
 
 @dataclass
@@ -61,92 +62,34 @@ class ExpertResponse(ResourceResponse):
 
 
 class ExpertResource(BaseResource):
-    """Expert resource that uses an LLM for domain-specific queries."""
+    """Resource for interacting with human experts."""
     
-    def __init__(
-        self,
-        name: str,
-        config: Union[Dict[str, Any], ExpertConfig],
-        description: Optional[str] = None
-    ):
-        """Initialize expert resource."""
-        if isinstance(config, dict):
-            config = ExpertConfig.from_dict(config)
-        
-        if not config.expertise:
-            raise ValueError("ExpertResource requires expertise configuration")
-            
-        if not config.llm_config:
-            raise ValueError("ExpertResource requires LLM configuration")
-            
-        super().__init__(name=name, resource_config=config)
-        self._llm = LLMResource(name=f"{name}_llm", config=config.llm_config)
+    def __init__(self, name: str, expert_type: str = "general"):
+        super().__init__(name)
+        self.expert_type = expert_type
+        self._io = None
 
     async def initialize(self) -> None:
-        """Initialize the expert and its LLM."""
-        await self._llm.initialize()
-        self._is_available = True
+        """Initialize IO for expert interaction."""
+        self._io = IOFactory.create_io("console")  # Sync creation
+        await self._io.initialize()  # Async init
+
+    async def query(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Get expert input."""
+        if not self._io:
+            await self.initialize()
+        
+        response = await self._io.get_input(request.get("prompt"))
+        return {
+            "success": True,
+            "content": response
+        }
 
     async def cleanup(self) -> None:
-        """Clean up the expert and its LLM."""
-        await self._llm.cleanup()
-        self._is_available = False
-
-    async def query(self, request: Dict[str, Any]) -> ExpertResponse:
-        """Query with domain expertise context."""
-        if not self.can_handle(request):
-            raise LLMError(f"Request cannot be handled by {self.config.expertise.name} expert")
-
-        # Enhance the prompt with domain context
-        enhanced_request = request.copy()
-        enhanced_request["prompt"] = self._enhance_prompt(request["prompt"])
-
-        # Get response using expert's domain logic
-        expert_response = await self._process_expert_query(enhanced_request)
-        return expert_response
-
-    async def _process_expert_query(self, request: Dict[str, Any]) -> ExpertResponse:
-        """Process the query using expert's domain logic.
-        
-        Default implementation uses the LLM directly. Subclasses can override
-        to add domain-specific processing.
-        """
-        if self._llm and self._llm.is_available:
-            llm_response = await self._llm.query(request)
-            return ExpertResponse(
-                success=llm_response.success,
-                error=llm_response.error,
-                content=llm_response.content,
-                usage=llm_response.usage,
-                model=llm_response.model
-            )
-        else:
-            return ExpertResponse(
-                success=True,
-                error=False,
-                content='Default Expert Response'
-            )
-
-    def _enhance_prompt(self, prompt: str) -> str:
-        """Add domain context to prompt."""
-        return f"""As an expert in {self.config.expertise.name}, 
-        with capabilities in: {', '.join(self.config.expertise.capabilities)}
-        
-        Please address this query: {prompt}""" 
+        """Cleanup IO."""
+        if self._io:
+            await self._io.cleanup()
 
     def can_handle(self, request: Dict[str, Any]) -> bool:
-        """Check if the request can be handled by this expert.
-        
-        Args:
-            request: The incoming request
-            
-        Returns:
-            bool: True if the request matches expert's domain
-        """
-        if not request.get("prompt"):
-            return False
-        
-        # Check if request contains any expertise keywords
-        prompt = request["prompt"].lower()
-        return any(keyword.lower() in prompt
-                   for keyword in self.config.expertise.keywords)
+        """Check if request needs expert input."""
+        return "prompt" in request

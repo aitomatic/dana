@@ -40,7 +40,7 @@ class BaseReasoner(ABC):
         pass
 
     @abstractmethod
-    async def validate(
+    def validate(
         self,
         step: Step,
         result: Dict[str, Any]

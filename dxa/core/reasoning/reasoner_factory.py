@@ -13,11 +13,10 @@ class ReasonerFactory:
 
     @classmethod
     def create_reasoner(cls, reasoner_type: Union[str, BaseReasoner] = None) -> BaseReasoner:
-        """Create a reasoning system with the given configuration."""
-        if reasoner_type is None:
-            return DirectReasoner()
+        """Create reasoner instance."""
         if isinstance(reasoner_type, BaseReasoner):
             return reasoner_type
-        if reasoner_type not in cls.REASONER_TYPES:
-            raise ValueError(f"Unknown reasoner type: {reasoner_type}")
-        return cls.REASONER_TYPES[reasoner_type]() 
+        reasoner_type = reasoner_type or "direct"
+        if reasoner_type == "direct":
+            return DirectReasoner()
+        raise ValueError(f"Unknown reasoner: {reasoner_type}")
