@@ -1,8 +1,8 @@
 """Factory for creating flow components."""
 
-from typing import Dict, Any, Union
+from typing import Union
 from .base_flow import BaseFlow
-from .sequential_flow import SequentialFlow
+from .research_flow import ResearchFlow
 
 class FlowFactory:
     """Creates flow components."""
@@ -12,7 +12,7 @@ class FlowFactory:
         """Create flow instance."""
         if isinstance(flow_type, BaseFlow):
             return flow_type
-        flow_type = flow_type or "sequential"
-        if flow_type == "sequential":
-            return SequentialFlow()
+        flow_type = flow_type or "research"
+        if flow_type == "research":
+            return ResearchFlow()
         raise ValueError(f"Unknown flow type: {flow_type}") 

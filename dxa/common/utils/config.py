@@ -165,12 +165,12 @@ def load_agent_config(
         
     # Add logging config
     config["logging"] = {
-        "level": os.getenv("LOG_LEVEL", "INFO"),
-        "dir": os.getenv("LOG_DIR", "logs"),
-        "format": os.getenv("LOG_FORMAT", "text"),
-        "max_bytes": int(os.getenv("LOG_MAX_BYTES", "10000000")),
-        "backup_count": int(os.getenv("LOG_BACKUP_COUNT", "5")),
-        "console_output": os.getenv("LOG_CONSOLE_OUTPUT", "true").lower() == "true"
+        "level": str.split(os.getenv("LOG_LEVEL", "INFO"))[0],
+        "dir": str.split(os.getenv("LOG_DIR", "logs"))[0],
+        "format": str.split(os.getenv("LOG_FORMAT", "text"))[0],
+        "max_bytes": int(str.split(os.getenv("LOG_MAX_BYTES", "1000000"))[0]),
+        "backup_count": int(str.split(os.getenv("LOG_BACKUP_COUNT", "5"))[0]),
+        "console_output": str.split(os.getenv("LOG_CONSOLE_OUTPUT", "true"))[0].lower() == "true"
     }
         
     logger.debug("Successfully loaded config for agent type: %s", agent_type)

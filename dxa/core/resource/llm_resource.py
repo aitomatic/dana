@@ -3,7 +3,6 @@
 from typing import Dict, Any, Optional
 from .base_resource import BaseResource
 from ...common.base_llm import BaseLLM, LLMConfig
-from ...common.exceptions import ConfigurationError
 
 class LLMResource(BaseResource):
     """LLM resource implementation using BaseLLM."""
@@ -12,8 +11,6 @@ class LLMResource(BaseResource):
         """Initialize LLM resource."""
         super().__init__(name)
         self.config = LLMConfig.from_dict(name, config)
-        if not self.config.api_key:
-            raise ConfigurationError("API key required")
         self._llm = BaseLLM(name=self.name, config=self.config)
 
     async def initialize(self) -> None:

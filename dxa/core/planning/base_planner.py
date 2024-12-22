@@ -3,10 +3,10 @@ Core interfaces defining how Planning and Reasoning interact
 with objectives, plans, steps, and signals.
 """
 from abc import ABC, abstractmethod
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict, Any
 
 from ..types import Objective, Plan, Signal
-
+from ..flow import BaseFlow
 
 class BasePlanner(ABC):
     """
@@ -16,6 +16,19 @@ class BasePlanner(ABC):
     3. Evolving objectives when needed
     """
     
+    def __init__(self, flow: Optional[BaseFlow] = None):
+        self.flow = flow
+        self._current_step_index = 0
+        self._world_state: Dict[str, Any] = {}
+
+    def get_world_state(self) -> Dict[str, Any]:
+        """Get current world state."""
+        return self._world_state
+
+    def update_world_state(self, updates: Dict[str, Any]) -> None:
+        """Update world state with new information."""
+        self._world_state.update(updates)
+
     @abstractmethod
     async def create_plan(self, objective: Objective) -> Plan:
         """

@@ -20,12 +20,14 @@ See dxa/agent/README.md for detailed design documentation.
 """
 
 from typing import Dict, Union, Optional, Any
+from ..flow import BaseFlow
+from ..types import Objective
 from ..planning import BasePlanner, PlannerFactory 
 from ..reasoning import BaseReasoner, ReasonerFactory
 from ..capability import BaseCapability
 from ..resource import BaseResource, LLMResource
 from ..io import BaseIO, IOFactory
-from .agent_state import AgentState
+from ..state import AgentState
 from .agent_runtime import AgentRuntime
 from ...common.utils.config import load_agent_config
 
@@ -162,9 +164,16 @@ class Agent:
         """Cleanup agent when exiting context."""
         await self.cleanup()
 
-    async def run(self, objective: str, **kwargs) -> Any:
+    async def run(self,
+                  objective: Optional[Union[str, Objective]] = None,
+                  flow: Optional[BaseFlow] = None
+                  ) -> Any:
         """Execute an objective."""
         async with self:
             if not self._runtime:
                 raise RuntimeError("Agent must be initialized before running")
-            return await self._runtime.execute(objective, **kwargs)
+
+            if flow is None:
+                flow = BaseFlow(objective)
+
+            return await self._runtime.execute(flow)

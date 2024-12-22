@@ -1,16 +1,23 @@
 """Agent state management."""
 
-from typing import Dict, Any, List, Optional
+from typing import List, Optional
 from ..types import Objective, Plan, Signal, Step
 
 class AgentState:
-    """Manages agent execution state."""
+    """Manages agent execution state.
+    
+    Centralizes state management for:
+    - Objective tracking
+    - Plan execution
+    - World knowledge
+    - Flow progress
+    - Signal handling
+    """
     
     def __init__(self):
         self._objective: Optional[Objective] = None
         self._plan: Optional[Plan] = None
         self._signals: List[Signal] = []
-        self._context: Dict[str, Any] = {}
         self._current_step_index = 0
 
     def set_objective(self, objective: Objective) -> None:
@@ -33,10 +40,6 @@ class AgentState:
     def clear_signals(self) -> None:
         """Clear all signals."""
         self._signals = []
-
-    def get_context(self) -> Dict[str, Any]:
-        """Get execution context."""
-        return self._context
 
     def advance_step(self) -> None:
         """Move to next step."""
