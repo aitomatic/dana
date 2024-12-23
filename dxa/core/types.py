@@ -9,9 +9,14 @@ Signals -> Planning reassesses Objective/Plan ->
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, TYPE_CHECKING
 from enum import Enum
 from datetime import datetime
+if TYPE_CHECKING:
+    from .agent.agent_state import AgentState
+    from .agent.world_state import WorldState
+    from .agent.flow_state import FlowState
+    from .agent.execution_state import ExecutionState
 
 class ObjectiveStatus(Enum):
     """Status of the current objective"""
@@ -102,3 +107,20 @@ class Signal:
     type: SignalType
     content: Dict[str, Any]
     timestamp: datetime = field(default_factory=datetime.now)
+
+@dataclass
+class Context:
+    """Execution context with access to all states."""
+    agent_state: 'AgentState'
+    world_state: 'WorldState'
+    flow_state: 'FlowState'
+    execution_state: 'ExecutionState'
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for backward compatibility."""
+        return {
+            "agent_state": self.agent_state,
+            "world_state": self.world_state,
+            "flow_state": self.flow_state,
+            "execution_state": self.execution_state
+        }

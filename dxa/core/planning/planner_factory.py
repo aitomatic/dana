@@ -1,7 +1,7 @@
 """Factory for creating planners."""
 
 from typing import Union
-from . import BasePlanner, DirectPlanner
+from . import BasePlanner, SequentialPlanner
 
 class PlannerFactory:
     """Creates planning systems."""
@@ -11,7 +11,5 @@ class PlannerFactory:
         """Create planner instance."""
         if isinstance(planner_type, BasePlanner):
             return planner_type
-        planner_type = planner_type or "direct"
-        if planner_type == "direct":
-            return DirectPlanner()
-        raise ValueError(f"Unknown planner type: {planner_type}")
+        # Default to SequentialPlanner
+        return SequentialPlanner()

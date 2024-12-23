@@ -5,18 +5,20 @@ a decision making process, an RPA workflow, some heuristics, proceess, procedure
 
 from typing import Dict, Any, List, Optional, TYPE_CHECKING
 from dataclasses import dataclass, field
+from .base_state import BaseState
 if TYPE_CHECKING:
-    from ..flow import BaseFlow
+    from ..workflow import BaseFlow
 
 @dataclass
-class FlowState:
+class FlowState(BaseState):
     """Progress through a workflow pattern."""
-    flow: Optional["BaseFlow"] = field(default=None)
+    flow: Optional["BaseFlow"] = None
     current_phase: str = ""
-    completed_phases: Optional[List[str]] = field(default=None)
-    phase_results: Optional[Dict[str, Any]] = field(default=None)
+    completed_phases: List[str] = field(default_factory=list)
+    phase_results: Dict[str, Any] = field(default_factory=dict)
 
-    def __init__(self, flow: Optional["BaseFlow"] = None):
+    def set_flow(self, flow: "BaseFlow") -> None:
+        """Set current flow."""
         self.flow = flow
 
     def update(self, phase: str, results: Dict[str, Any]) -> None:

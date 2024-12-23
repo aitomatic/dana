@@ -6,11 +6,11 @@
 
 # DXA - Domain-Expert Agent Framework
 
-# Top-level module
+## Top-level module
 
-DXA is a framework for building and deploying intelligent agents powered by Large Language Models (LLMs). These agents combine cognitive abilities, domain expertise, and external resources to solve complex problems.
+DXA is a framework for building and deploying intelligent agents powered by Large Language Models (LLMs). At its core are Workflows that define what agents can do - from simple Q&A to complex research patterns. These agents combine workflows with cognitive abilities, domain expertise, and external resources to solve complex problems.
 
-Through a composable architecture, DXA enables both rapid deployment of standard agent configurations and full customization when needed, guided by the principle that simple things should be easy and complex things should be possible.
+Through a composable architecture, DXA enables both rapid deployment of standard workflows and full customization when needed, guided by the principle that simple things should be easy and complex things should be possible.
 
 ## Documentation Map
 
@@ -23,23 +23,26 @@ The DXA framework documentation is organized by component:
 
 ### Components
 
-The DXA agent framework is built around a composable agent architecture:
+The DXA agent framework is built around Workflows executed by composable agents:
 
-- An `Agent` (via `dxa.agent`) is the central entity that:
-  - Has `Capabilities` (via `dxa.core.capability`) like memory, learning, and expertise
-  - Uses `Reasoning` (via `dxa.core.reasoning`) for decision-making and planning
-  - Accesses `Resources` (via `dxa.core.resource`) for external tools and services, including domain experts
-  - Interacts through `I/O` (via `dxa.core.io`) with its environment
+- A `Workflow` (via `dxa.core.workflow`) defines what agents can do
+- An `Agent` (via `dxa.agent`) executes workflows by:
+  - Using `Reasoning` (via `dxa.core.reasoning`) for decision-making
+  - Accessing `Resources` (via `dxa.core.resource`) for external tools
+  - Interacting through `I/O` (via `dxa.core.io`) with its environment
+  - Leveraging `Capabilities` (via `dxa.core.capability`) like memory and expertise
 
 These components are designed to be modular and extensible, allowing agents to be configured with different combinations of capabilities, reasoning patterns, and resources to suit specific needs.
 
 Component documentation:
 
+- [Workflow System](dxa/core/workflow/README.md) - `dxa.core.workflow` - Workflow patterns
 - [Agent System](dxa/agent/README.md) - `dxa.agent` - Agent implementation and runtime
-- [Reasoning System](dxa/core/reasoning/README.md) - `dxa.core.reasoning` - Decision-making patterns
+- [Agent Capabilities](dxa/core/capability/README.md) - `dxa.core.capability` - Agent abilities
+- [Planning System](dxa/core/planning/README.md) - `dxa.core.planning` - Planner
+- [Reasoning System](dxa/core/reasoning/README.md) - `dxa.core.reasoning` - Reasoner
 - [Resource System](dxa/core/resource/README.md) - `dxa.core.resource` - External tool integration
 - [I/O System](dxa/core/io/README.md) - `dxa.core.io` - Environment interaction
-- [Capability System](dxa/core/capability/README.md) - `dxa.core.capability` - Agent abilities
 
 ### Development
 
@@ -72,15 +75,23 @@ Each component's README provides:
 3. Basic Usage:
 
    ```python
-   from dxa import AgentFactory
+   from dxa.core.agent import Agent
+   from dxa.core.workflow import create_research_workflow
 
-   # Quick start
-   agent = AgentFactory.quick("assistant")
-   result = await agent.run("Help with this task")
+   # Simple Q&A
+   answer = Agent().ask("What is quantum computing?")
 
-   # Use templates
-   agent = AgentFactory.from_template("researcher")
-   result = await agent.run("Research quantum computing")
+   # Using research workflow
+   workflow = create_research_workflow()
+   agent = Agent(resources={"llm": LLMResource()})
+   result = agent.execute(workflow)
+
+   # Custom workflow with resources
+   agent = Agent(resources={
+       "llm": LLMResource(model="gpt-4"),
+       "search": SearchResource()
+   })
+   result = agent.execute(workflow)
 
    # Template with customization
    agent = AgentFactory.from_template("researcher")\

@@ -8,88 +8,126 @@
 
 ## dxa.core Module
 
-The DXA Core system provides the foundational building blocks for creating intelligent agents. It implements a layered architecture that separates strategic planning from tactical execution, while providing essential capabilities and resources. This separation of concerns allows agents to maintain high-level objectives while efficiently executing individual steps and adapting to new information.
+The DXA Core system provides the foundational components for building intelligent agents, centered around Workflows that define what agents can do. From this foundation, agents execute workflows through planning and reasoning, supported by capabilities and resources.
 
 ## System Architecture
 
-The DXA core consists of several interconnected systems:
+```mermaid
+graph TB
+    subgraph "Definition"
+        W[Workflows] --> A[Agent]
+    end
+    
+    subgraph "Execution"
+        A --> P[Planning]
+        A --> R[Reasoning]
+        A --> C[Resources]
+    end
+    
+    subgraph "Support"
+        C --> L[LLM]
+        C --> T[Tools]
+        C --> H[Human]
+    end
+```
 
-1. **Planning System** - Strategic decision making
-2. **Reasoning System** - Tactical execution
-3. **Flow System** - Process automation and workflow management
-4. **Resource System** - Tool and capability integration
+## Core Components
 
-See [Flow Documentation](../flow/README.md) for details on process automation.
+### [Workflow System](workflow/README.md)
 
-## Core Modules
+- Defines agent behavior patterns
+- Structures task sequences
+- Manages decision points
+- Tracks state changes
 
-### [Planning](planning/README.md)
+```python
+# Simple workflow
+workflow = create_qa_workflow()
 
-Strategic layer that manages objectives and generates plans. Implements different planning patterns from simple direct planning to complex hierarchical and dynamic planning strategies.
+# Research workflow
+workflow = create_research_workflow()
+workflow.add_task("analyze", "Analyze findings")
+```
 
-### [Reasoning](reasoning/README.md)
+### [Agent System](agent/README.md)
 
-Tactical layer that executes plans using various cognitive patterns. Includes direct reasoning, chain-of-thought, OODA loops, and DANA (Domain-Aware Neural-Symbolic Analysis).
+- Executes workflows
+- Manages resources
+- Tracks state
+- Handles errors
 
-### [Capability](capability/README.md)
+### [Planning System](planning/README.md)
 
-Core cognitive abilities like memory and domain expertise. Built on top of resources but provides higher-level, cognitively-aligned interfaces.
+- Converts workflows to plans
+- Allocates resources
+- Manages execution state
+- Adapts to changes
 
-### [Resource](resource/README.md)
+### [Reasoning System](reasoning/README.md)
 
-Concrete tools and services that agents can use, from LLM interactions to human-in-the-loop operations. Provides the foundation for capabilities.
+- Executes workflow steps
+- Makes tactical decisions
+- Processes results
+- Reports progress
 
-### [IO](io/README.md)
+### [Resource System](resource/README.md)
 
-Input/Output systems for all external interactions. Handles everything from simple console I/O to complex multi-modal interactions.
+- Provides LLM access
+- Manages tools
+- Enables human interaction
+- Tracks usage
+
+### [IO System](io/README.md)
+
+- Handles interaction
+- Manages files
+- Controls network access
+- Logs operations
 
 ## Integration
 
-These core modules are primarily used by the [Agent System](../agent/README.md), which provides the main interface for creating and using DXA agents. The agent system composes these components to create coherent, capable agents:
-
 ```python
-agent = Agent("assistant")\
-    .with_planning("hierarchical")\       # Strategic layer
-    .with_reasoning("cot")\               # Tactical layer
-    .with_capability("memory")\           # Cognitive abilities
-    .with_resource("llm")\                # Concrete tools
-    .with_io("interactive")               # External interaction
-```
+from dxa.core.workflow import create_research_workflow
+from dxa.core.agent import Agent
 
-## Directory Structure
+# Create workflow
+workflow = create_research_workflow()
 
-```python
-dxa/core/
-├── planning/           # Strategic planning
-├── reasoning/          # Tactical execution
-├── capability/         # Cognitive abilities
-├── resource/           # Tools and services
-└── io/                 # External interaction
+# Configure agent
+agent = Agent(resources={
+    "llm": LLMResource(),
+    "search": SearchResource()
+})
+
+# Execute workflow
+result = agent.execute(workflow)
 ```
 
 ## Development
 
 When developing new components:
 
-1. Choose the appropriate layer (planning, reasoning, etc.)
-2. Follow the established patterns in that module
-3. Maintain separation of concerns
-4. Consider integration points
+1. Start with workflow requirements
+2. Define needed resources
+3. Implement execution logic
+4. Add error handling
 5. Document thoroughly
 
 ## Testing
 
-Each module has its own test suite under `tests/core/`. Run tests with:
+Each module has its own test suite:
 
 ```bash
-pytest tests/core/
+pytest tests/core/workflow/
+pytest tests/core/agent/
+pytest tests/core/resource/
 ```
 
 ## See Also
 
-- [Agent Documentation](../agent/README.md) - Main interface for using DXA
-- [Examples](../../examples/README.md) - Example agent implementations
-- [API Reference](../../docs/api/README.md) - Detailed API documentation
+- [Framework Overview](../README.md)
+- [Examples](../../examples/README.md)
+- [API Reference](../../docs/api/README.md)
 
 ---
 

@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from typing import List, Optional, Tuple, Dict, Any
 
 from ..types import Objective, Plan, Signal
-from ..flow import BaseFlow
+from ..workflow import BaseFlow
 
 class BasePlanner(ABC):
     """
@@ -61,3 +61,7 @@ class BasePlanner(ABC):
             - List[Signal]: New signals if objective needs to evolve
         """
         pass
+
+    def set_flow(self, flow: BaseFlow) -> None:
+        """Update flow pattern."""
+        self.flow = flow

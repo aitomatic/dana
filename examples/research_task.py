@@ -6,7 +6,7 @@ Shows how DXA breaks down complex tasks into steps.
 from dxa import DXAFactory
 from dxa.core.planning import SequentialPlanner
 from dxa.core.reasoning import DirectReasoner
-from dxa.core.flow.research_flow import ResearchFlow
+from dxa.core.workflow.research_flow import ResearchFlow
 
 async def main():
     """Run research task example."""
@@ -15,9 +15,9 @@ async def main():
         .with_llm("gpt-4") \
         .with_planner(SequentialPlanner()) \
         .with_reasoner(DirectReasoner())
-
+    
     result = await agent.run(
-        ResearchFlow("Research quantum computing and summarize its potential impact on cryptography")
+        flow=ResearchFlow("Research quantum computing and summarize its potential impact on cryptography")
     )
 
     print("\nResearch Results:")

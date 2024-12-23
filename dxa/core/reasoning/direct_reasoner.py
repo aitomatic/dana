@@ -20,6 +20,7 @@ class DirectReasoner(BaseReasoner):
             response = await agent_llm.query({"prompt": step.description})
             step.result = {"answer": response["content"]}
             return [Signal(type=SignalType.STEP_COMPLETE, content=step.result)]
+        # pylint: disable=broad-exception-caught
         except Exception as e:
             return [Signal(
                 type=SignalType.STEP_FAILED,

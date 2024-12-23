@@ -8,7 +8,11 @@
 
 ## dxa Module
 
-DXA is a framework for building and deploying intelligent agents powered by Large Language Models (LLMs). Like human beings, these agents possess core cognitive abilities, inherent capabilities, ways to interact with their environment, and access to external resources. The framework implements a layered architecture separating strategic planning from tactical execution, enabling both simple tasks and complex objectives to be handled effectively through composition.
+DXA is built around Workflows that define what agents can do. From simple Q&A to complex research patterns, workflows provide executable structures that agents can run. These workflows combine:
+- Task sequences and decision points
+- Resource requirements
+- State management
+- Execution patterns
 
 ## Core Architecture
 
@@ -56,91 +60,98 @@ Getting started with DXA is straightforward through its `AgentFactory` system. F
 
 ```mermaid
 graph TB
-    A[Agent] --> B[Planning]
-    A --> C[Reasoning]
-    A --> D[Capabilities]
-    A --> E[Resources]
-    A --> F[IO]
+    subgraph "Definition"
+        W[Workflows] --> A[Agent]
+    end
     
-    B -.-> G[LLM]
-    C -.-> G
+    subgraph "Execution"
+        A --> P[Plans]
+        R[Resources] --> P
+        P --> E[Execution]
+    end
+    
+    subgraph "Resources"
+        R --> L[LLM]
+        R --> T[Tools]
+        R --> H[Human]
+    end
 ```
+
+## Core Components
+
+1. **Workflows** define agent behavior:
+   ```python
+   # Simple Q&A workflow
+   answer = Agent().ask("What is quantum computing?")
+   
+   # Research workflow with steps
+   workflow = create_research_workflow()
+   result = agent.execute(workflow)
+   
+   # Custom workflow
+   workflow = BaseWorkflow()
+   workflow.add_task("gather", "Gather information")
+   workflow.add_task("analyze", "Analyze findings")
+   ```
+
+2. **Agents** execute workflows through:
+   - Planning: Convert workflow to executable plan
+   - Reasoning: Execute plan steps
+   - Resources: Provide needed capabilities
+   - State: Track execution progress
+
+3. **Resources** enable workflow execution:
+   - LLM: Core language model
+   - Tools: External capabilities
+   - Human: Interactive feedback
+   - Domain: Expert knowledge
 
 ## Getting Started
 
-The simplest way to create an agent is:
-
 ```python
-from dxa import AgentFactory
+from dxa.core.agent import Agent
+from dxa.core.workflow import create_research_workflow
+from dxa.core.resource import LLMResource
 
-# Quick start with factory
-agent = AgentFactory.quick("assistant")
-result = await agent.run("Help with this task")
+# Simple Q&A
+answer = Agent().ask("What is quantum computing?")
 
-# Or use template with customization
-agent = AgentFactory.from_template("researcher")\
-    .with_reasoning("cot")\
-    .with_resources({"llm": LLMResource(model="gpt-4")})
-result = await agent.run("Help with this task")
-```
+# Research workflow
+workflow = create_research_workflow()
+agent = Agent(resources={"llm": LLMResource()})
+result = agent.execute(workflow)
 
-## Examples
+# Custom workflow with resources
+workflow = BaseWorkflow()
+workflow.add_task("research", "Research topic")
+workflow.add_task("synthesize", "Synthesize findings")
 
-The `examples/` directory demonstrates various agent implementations:
-
-1. **Basic Patterns**
-   - `chat_bot.py`: Interactive conversational agent
-   - `research_assistant.py`: Information gathering and analysis
-   - `system_monitor.py`: Continuous system monitoring
-
-2. **Advanced Usage**
-   - `collaborative_research.py`: Multi-agent collaboration
-   - `websocket_solver.py`: WebSocket-based problem solving
-   - `interactive_math.py`: Interactive math tutoring
-   - `automation_web.py`: Web scraping automation
-
-These examples showcase different agent configurations and use cases:
-
-- Collaborative problem-solving
-- Network-based communication
-- Interactive console agents
-- Workflow automation
-
-## Advanced Usage
-
-For custom agent behaviors, use the factory pattern:
-
-```python
-from dxa import create_agent
-
-async with create_agent({
-    "name": "custom_agent",
-    "llm": LLMResource("gpt-4"),
-    "planning": "hierarchical",
-    "reasoning": "cot",
-    "capabilities": ["research"]
-}) as agent:
-    result = await agent.run("Research this topic")
+agent = Agent(resources={
+    "llm": LLMResource(),
+    "search": SearchResource()
+})
+result = agent.execute(workflow)
 ```
 
 ## Project Structure
 
 ```text
 dxa/
-├── agent/          # Agent implementation
-│   ├── __init__.py
-│   ├── agent.py
-│   ├── runtime.py
-│   └── state.py
+|
 ├── core/           # Core components
-│   ├── planning/   # Strategic planning
-│   ├── reasoning/  # Tactical execution
-│   ├── capability/ # Core abilities
-│   ├── resource/   # External tools
-│   └── io/         # Interaction handling
+│   ├── workflow/   # Workflow definitions
+│   ├── agent/      # Agent implementation
+│   ├── capability/ # Cognitive abilities
+│   ├── io/         # Interaction handling
+│   ├── planning/   # Plan generation
+│   ├── reasoning/  # Step execution
+│   └── resource/   # External tools
+|
+├── common/         # Shared utilities
+│   ├── utils/      # Utility functions
+│   └── graph/      # Graph infrastructure
+|
 └── examples/       # Usage examples
-    ├── basic/      # Basic patterns
-    └── advanced/   # Complex scenarios
 ```
 
 ## Installation
