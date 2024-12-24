@@ -67,7 +67,7 @@ classDiagram
     Node <|-- WorkflowNode
     Edge <|-- WorkflowEdge
     Workflow --> Objective
-    Workflow -.-> Plan
+    Workflow --> Plan
     
     class DirectedGraph{
         +nodes: Dict[str, Node]
