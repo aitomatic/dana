@@ -6,15 +6,15 @@
 
 # DXA Workflow System
 
-The DXA Workflow system is designed to bridge the gap between human-specified processes and machine-executable workflows. At its core, it serves as a translator that can take process specifications in various forms - natural language descriptions, structured templates, or code - and convert them into a consistent, executable graph structure. This translation maintains the semantic richness of human descriptions while enforcing the precision needed for machine execution.
+## 1. Introduction & Context
 
-## System Context
+The DXA Workflow system translates process specifications into executable workflow graphs. It serves as a bridge between human-readable process descriptions and machine-executable plans, enabling agents to perform complex tasks through well-defined workflows.
 
-The Workflow system acts as a compilation layer between various input specifications and executable agent plans:
+### System Context
 
 ```mermaid
 graph TB
-    subgraph Inputs ["Input Layer"]
+    subgraph Inputs ["Process Specifications"]
         NL[Natural Language]
         ST[Structured Text]
         CD[Code Definition]
@@ -23,7 +23,7 @@ graph TB
     
     subgraph Workflow ["Workflow System"]
         direction TB
-        P[Parser Layer]
+        P[Parser/LLM]
         G[Graph Compiler]
         V[Validator]
         
@@ -31,117 +31,288 @@ graph TB
         G --> V
     end
     
-    subgraph Outputs ["Downstream Use"]
+    subgraph Integration ["System Integration"]
         PL[Planning System]
         AG[Agent Runtime]
-        AN[Analysis Tools]
+        ST[State Management]
     end
+    
+    V --> PL
+    PL --> AG
+    AG --> ST
+    ST -.-> V
     
     %% Input connections
     NL --> P
     ST --> P
     CD --> P
     YM --> P
-    
-    %% Output connections
-    V --> PL
-    V --> AG
-    V --> AN
-    
-    %% Styling
-    classDef system fill:#e1f5fe,stroke:#01579b
-    classDef input fill:#f3e5f5,stroke:#4a148c
-    classDef output fill:#e8f5e9,stroke:#1b5e20
-    
-    class Workflow system
-    class Inputs input
-    class Outputs output
 ```
 
-### Input Processing
+### Design Principles
 
-- **Natural Language**: Free-form process descriptions
-- **Structured Text**: Step-by-step instructions
-- **Code Definition**: Direct API usage
-- **YAML/JSON**: Configuration-based definitions
+1. **Natural Language First**: Workflows should be as easy to write as explaining them to a colleague
+2. **Clear State Management**: Define requirements and effects without managing state
+3. **Flexible Execution**: Define what to do, not how to do it
 
-### Compilation Steps
+## 2. System Architecture
 
-1. **Parsing**: Convert inputs to normalized format
-2. **Graph Compilation**: Build validated workflow graph
-3. **Validation**: Ensure correctness and completeness
+### Core Components
 
-### Downstream Usage
-
-- **Planning System**: Converts workflows to executable plans
-- **Agent Runtime**: Executes workflow-based plans
-- **Analysis Tools**: Workflow optimization and verification
-
-## Quick Start Examples
-
-### Simple Sequential Workflow
-
-```python
-# Natural language specification
-workflow = create_from_text("""
-    1. Search for recent papers on quantum computing
-    2. Summarize key findings
-    3. Identify major trends
-""")
+```mermaid
+classDiagram
+    DirectedGraph <|-- Workflow
+    Node <|-- WorkflowNode
+    Edge <|-- WorkflowEdge
+    Workflow -- Objective
+    Workflow -- Plan
+    
+    class DirectedGraph{
+        +nodes: Dict[str, Node]
+        +edges: Dict[str, Edge]
+        +add_node()
+        +add_edge()
+        +cursor()
+    }
+    
+    class Workflow{
+        +objective: Objective
+        +add_task()
+        +add_decision()
+        +to_plan()
+    }
+    
+    class WorkflowNode{
+        +type: str
+        +description: str
+        +requires: Dict
+        +provides: Dict
+    }
+    
+    class Plan{
+        +steps: List[Step]
+        +execute()
+    }
 ```
 
-### Decision-based Workflow
+### Integration Points
 
 ```python
-# Conditional processing
-workflow = create_from_text("""
-    Process: Credit Application Review
-    1. Check credit score
-    2. If score > 700:
-       - Fast-track approval
-       Otherwise:
-       - Request additional documentation
-    3. Make final decision
-""")
+from dxa.core.workflow import Workflow
+from dxa.core.planning import SequentialPlanner
+from dxa.core.state import WorldState, AgentState
+from dxa.core.agent import Agent
+
+# Workflow creation and planning
+workflow = create_workflow(objective="Research quantum computing")
+planner = SequentialPlanner()
+plan = planner.create_plan(workflow)
+
+# Execution
+agent = Agent()
+world_state = WorldState()
+agent_state = AgentState()
+result = agent.execute_plan(plan, world_state, agent_state)
 ```
 
-### Common Use Cases
+## 3. Core Concepts
 
-1. **System Monitoring**
+### Workflow Structure
 
 ```python
-workflow = create_monitoring_workflow(
-    description="""
-    Monitor system health:
-    1. Check CPU usage every 5 minutes
-    2. If usage > 90% for 15 minutes:
-       - Send alert to admin
-       - Scale up resources
-    3. Log all events
-    """,
-    resources={"monitoring_api", "alerting_system"}
+class Workflow(DirectedGraph):
+    """Workflow implementation using directed graphs."""
+    def __init__(self, objective: Optional[Union[str, Objective]] = None):
+        super().__init__()
+        self._objective = self._parse_objective(objective)
+        
+    def add_task(self, id: str, description: str, **kwargs) -> WorkflowNode:
+        """Add a task node to the workflow."""
+        node = WorkflowNode(id, "TASK", description, **kwargs)
+        self.add_node(node)
+        return node
+
+    def add_decision(self, id: str, description: str, **kwargs) -> WorkflowNode:
+        """Add a decision point to the workflow."""
+        node = WorkflowNode(id, "DECISION", description, **kwargs)
+        self.add_node(node)
+        return node
+```
+
+### Node Types
+
+1. **Task Nodes**
+
+```python
+task = workflow.add_task(
+    id="research",
+    description="Search recent papers",
+    requires={"api_key": "str"},
+    provides={"papers": "List[Paper]"}
 )
 ```
 
-1. **Research Assistant**
+1. **Decision Nodes**
 
 ```python
-workflow = create_research_workflow(
-    description="""
-    Research quantum computing:
-    1. Search latest papers
-    2. For breakthrough findings:
-       - Deep dive analysis
-    3. Compile summary
-    """,
-    resources={"paper_database"}
+decision = workflow.add_decision(
+    id="evaluate",
+    description="Check findings",
+    requires={"papers": "List[Paper]"},
+    provides={"next_action": "str"}
 )
+```
+
+1. **Control Nodes**
+
+```python
+start = workflow.get_start()  # START node
+ends = workflow.get_ends()    # END nodes
+```
+
+### State Management
+
+```python
+# State requirements
+node = WorkflowNode(
+    id="verify_credit",
+    requires={
+        "credit_score": "float",
+        "income": "float"
+    },
+    provides={
+        "approval_status": "bool",
+        "risk_level": "str"
+    }
+)
+
+# State validation
+def validate_node(node: WorkflowNode, state: WorldState) -> bool:
+    return all(
+        state.has(req) and state.validate(req, spec)
+        for req, spec in node.requires.items()
+    )
+```
+
+## 4. Basic Usage
+
+### Creating Simple Workflows
+
+```python
+# Using factory method
+workflow = create_sequential_workflow([
+    "gather_data",
+    "analyze_data",
+    "summarize_findings"
+], objective="Research topic")
+
+# Using natural language
+workflow = create_from_text("""
+1. Search for recent papers
+2. Analyze methodologies
+3. Summarize findings
+""")
+```
+
+### Adding Decision Points
+
+```python
+workflow = create_from_text("""
+Process: Credit Application Review
+Steps:
+1. Check credit score
+2. If score > 700:
+   - Fast-track approval
+   Else:
+   - Request additional documents
+3. Make final decision
+""")
 ```
 
 ### Common Patterns
 
 ```python
-# Monitoring workflow
+# Research workflow
+workflow = create_research_workflow(
+    objective="Research quantum computing"
+)
+
+# Q&A workflow
+workflow = create_basic_qa_workflow(
+    objective="Answer user question"
+)
+```
+
+## 5. Advanced Features
+
+### Graph Traversal
+
+```python
+cursor = workflow.cursor()
+while cursor.has_next():
+    node = cursor.next()
+    if node.type == "DECISION":
+        next_node = evaluate_decision(node)
+        cursor.set_next(next_node)
+```
+
+### Validation Framework
+
+```python
+# Structure validation
+workflow.validate_structure()  # From DirectedGraph
+
+# Resource validation
+def validate_resources(workflow: Workflow) -> bool:
+    required = set()
+    provided = set()
+    for node in workflow.nodes.values():
+        required.update(node.requires.keys())
+        provided.update(node.provides.keys())
+    return required.issubset(provided)
+
+# Add custom validation
+workflow.add_validation_rule(validate_resources)
+```
+
+### Error Handling
+
+```python
+try:
+    workflow = create_from_text(spec)
+    workflow.validate()
+except CycleDetectedError as e:
+    logger.error(f"Invalid workflow structure: {e}")
+except ResourceValidationError as e:
+    logger.error(f"Invalid resource specification: {e}")
+```
+
+## 6. Integration Examples
+
+### Research Task Example
+
+```python
+from dxa.core.workflow import create_research_workflow
+from dxa.core.planning import SequentialPlanner
+from dxa.core.agent import Agent
+
+# Create workflow
+workflow = create_research_workflow(
+    objective="Research quantum computing advances"
+)
+
+# Create plan
+planner = SequentialPlanner()
+plan = planner.create_plan(workflow)
+
+# Execute
+agent = Agent(resources={"llm": LLMResource()})
+result = agent.execute_plan(plan)
+```
+
+### Monitoring Example
+
+```python
 workflow = create_monitoring_workflow(
     target="system_metrics",
     interval="1h",
@@ -154,357 +325,14 @@ workflow = create_monitoring_workflow(
         "critical": "restart_service"
     }
 )
-
-# Verification workflow
-workflow = create_verification_workflow(
-    checks=[
-        "credit_score > 700",
-        "income > 50000",
-        "debt_ratio < 0.4"
-    ],
-    on_success="approve_application",
-    on_failure="request_additional_docs"
-)
 ```
 
-## Design Principles
+## 7. API Reference
 
-The system is built on three key design principles:
-
-1. **Natural Language First**: Process specifications should be as easy to write as explaining them to a colleague. The system leverages LLMs to understand and formalize these natural descriptions.
-2. **Clear State Management**: Workflows define what state is required and what state changes occur, but delegate actual state management to executors. This separation of concerns keeps workflows reusable and testable.
-3. **Flexible Execution**: While workflows define what needs to happen and in what order, they don't prescribe how things should happen. This allows the same workflow to be executed differently based on available resources and runtime conditions.
-
-The system is built on three key design principles:
-
-1. **Natural Language First**: Process specifications should be as easy to write as explaining them to a colleague. The system leverages LLMs to understand and formalize these natural descriptions.
-2. **Clear State Management**: Workflows define what state is required and what state changes occur, but delegate actual state management to executors. This separation of concerns keeps workflows reusable and testable.
-3. **Flexible Execution**: While workflows define what needs to happen and in what order, they don't prescribe how things should happen. This allows the same workflow to be executed differently based on available resources and runtime conditions.
-
-## Overview
-
-The DXA Workflow system translates process specifications into executable workflow graphs, primarily using LLM-assisted natural language processing. It bridges human-readable process descriptions and machine-executable workflows through:
-
-- Natural language understanding of process steps
-- Automatic extraction of resource requirements
-- Validation of workflow consistency and completeness
-- Integration with planning and execution systems
-
-## Core Philosophy
-
-The DXA Workflow system follows the principle: "Make the simple things easy, and complex things possible."
-
-### Simple Things (Should Be Easy)
-
-- Creating sequential workflows from natural language descriptions
-- Adding basic decision points and conditions
-- Defining common workflow patterns (Q&A, Research, Verification)
-- Specifying inputs and outputs for each step
-
-### Complex Things (Should Be Possible)
-
-- Custom validation rules
-- Complex branching logic
-- Resource management
-- Parallel task execution
-- Time-based conditions
-
-## Technical Foundation
-
-### Graph-Based Implementation
-
-The workflow system extends DXA's directed graph framework:
-
-```mermaid
-classDiagram
-    DirectedGraph <|-- Workflow
-    Node <|-- WorkflowNode
-    Edge <|-- WorkflowEdge
-    Workflow -- Objective
-    
-    class DirectedGraph{
-        +nodes: Dict[str, Node]
-        +edges: Dict[str, Edge]
-        +add_node()
-        +add_edge()
-        +cursor()
-        +validate()
-    }
-    
-    class Node{
-        +id: str
-    }
-    
-    class Edge{
-        +from_id: str
-        +to_id: str
-    }
-    
-    class WorkflowNode{
-        +type: str
-        +description: str
-        +requires: Dict
-        +provides: Dict
-    }
-    
-    class WorkflowEdge{
-        +condition: str
-        +state_updates: Dict
-    }
-```
-
-### Graph Traversal
-
-```python
-# Using cursor for workflow validation
-cursor = workflow.cursor()
-while cursor.has_next():
-    node = cursor.next()
-    if node.type == "TASK":
-        validate_task_resources(node)
-    elif node.type == "DECISION":
-        validate_decision_conditions(node)
-
-# Traversal with state tracking
-cursor = workflow.cursor()
-state = WorldState()
-while cursor.has_next():
-    node = cursor.next()
-    if not validate_node_requirements(node, state):
-        raise StateValidationError(f"Node {node.id} requirements not met")
-    state.update(node.provides)
-```
-
-### Error Handling
-
-```python
-try:
-    # Creation-time validation
-    workflow = create_from_text(spec)
-    workflow.validate_structure()  # From DirectedGraph
-    workflow.validate_resources()  # Workflow-specific
-except CycleDetectedError as e:
-    logger.error(f"Invalid workflow structure: {e}")
-except ResourceValidationError as e:
-    logger.error(f"Invalid resource specification: {e}")
-
-try:
-    # Runtime validation
-    cursor = workflow.cursor()
-    while cursor.has_next():
-        node = cursor.next()
-        validate_execution(node, world_state)
-except ExecutionError as e:
-    logger.error(f"Workflow execution failed: {e}")
-```
-
-## Natural Language Workflow Creation
-
-### LLM-Assisted Translation
-
-```mermaid
-graph TB
-    subgraph "Natural Language Processing"
-        T[Text Input] --> P[LLM Parser]
-        P --> S[Semantic Analysis]
-        P --> R[Resource Extraction]
-        
-        subgraph "Parser Output"
-            N[Nodes & Steps]
-            C[Conditions]
-            RS[Requirements]
-        end
-        
-        S --> N
-        S --> C
-        R --> RS
-    end
-```
-
-### Input Formats
-
-1. **Free-form Description**
-
-```python
-workflow = create_from_text("""
-Objective: Evaluate research papers
-Process: First search for papers on quantum computing.
-Then analyze their methodologies and summarize key findings.
-Finally, identify emerging trends and potential applications.
-""")
-```
-
-1. **Structured Steps**
-
-```python
-workflow = create_from_text("""
-1. Search papers (needs: api_access, provides: paper_list)
-2. For each paper:
-   - If year >= 2023: Detailed analysis
-   - Otherwise: Basic summary
-3. Synthesize findings
-""")
-```
-
-1. **Decision-Focused**
-
-```python
-workflow = create_from_text("""
-Process: Credit Application Review
-Rules:
-- If credit_score > 750: Automatic approval
-- If credit_score > 700: Fast-track review
-- Otherwise: Detailed assessment needed
-Requirements:
-- credit_report
-- income_verification
-- employment_history
-""")
-```
-
-## Core Components
-
-### Component Structure
-
-```mermaid
-classDiagram
-    DirectedGraph <|-- Workflow
-    Workflow *-- WorkflowNode
-    Workflow *-- WorkflowEdge
-    Workflow -- Objective
-    
-    class DirectedGraph{
-        +nodes: Dict
-        +edges: Dict
-        +add_node()
-        +add_edge()
-    }
-    
-    class Workflow{
-        +objective: Objective
-        +add_task()
-        +add_decision()
-        +add_transition()
-    }
-    
-    class WorkflowNode{
-        +type: str
-        +description: str
-        +requires: Dict
-        +provides: Dict
-    }
-    
-    class WorkflowEdge{
-        +condition: str
-        +state_updates: Dict
-        +metadata: Dict
-    }
-```
-
-## Advanced Features
-
-### State Management
-
-Workflows define state requirements without managing state:
-
-```python
-# Node state specifications
-node = WorkflowNode(
-    id="credit_check",
-    type="TASK",
-    description="Verify credit worthiness",
-    requires={
-        "credit_score": "float",
-        "income": "float",
-        "debt_ratio": "float"
-    },
-    provides={
-        "risk_level": "str",
-        "approval_status": "bool"
-    }
-)
-
-# Edge state transitions
-edge = WorkflowEdge(
-    from_id="credit_check",
-    to_id="approval",
-    condition="risk_level == 'low'",
-    state_updates={
-        "approval_status": True,
-        "processing_time": "fast_track"
-    }
-)
-```
-
-### Validation
-
-```python
-def validate_resources(workflow: Workflow) -> bool:
-    """Check if all required resources are provided somewhere."""
-    required = set()
-    provided = set()
-    
-    for node in workflow.nodes.values():
-        required.update(node.requires.keys())
-        provided.update(node.provides.keys())
-    
-    return required.issubset(provided)
-
-workflow.add_validation_rule(validate_resources)
-```
-
-### Planning Integration
-
-```python
-# Example of workflow to plan conversion
-workflow = create_verification_workflow(...)
-planner = SequentialPlanner()
-plan = planner.create_plan(workflow)
-
-# Plan execution
-agent_state = AgentState()
-world_state = WorldState()
-plan.execute(agent_state, world_state)
-```
-
-## Implementation Details
-
-### Base Classes
-
-The workflow system builds on the DirectedGraph foundation:
+### Core Classes
 
 ```python
 class Workflow(DirectedGraph):
-    """Workflow implementation using directed graphs."""
-    
-    def __init__(self, objective: Optional[Union[str, Objective]] = None):
-        super().__init__()
-        self._objective = self._parse_objective(objective)
-```
-
-### Factory Methods
-
-Built-in workflow patterns:
-
-```python
-# Sequential workflow
-workflow = create_sequential_workflow(
-    steps=["research", "analyze", "summarize"],
-    objective="Research quantum computing"
-)
-
-# Q&A workflow
-workflow = create_basic_qa_workflow(
-    objective="Answer user questions"
-)
-```
-
-### API Reference
-
-Core methods for workflow construction and manipulation:
-
-```python
-class Workflow:
     def add_task(self, id: str, description: str, **kwargs) -> WorkflowNode
     def add_decision(self, id: str, description: str, **kwargs) -> WorkflowNode
     def add_transition(self, from_id: str, to_id: str, condition: Optional[str] = None) -> WorkflowEdge
@@ -521,101 +349,7 @@ def create_basic_qa_workflow(objective: str = "Answer the question") -> Workflow
 def create_research_workflow(objective: str = "Research the topic") -> Workflow
 ```
 
-### Integration Points
-
-1. **Planning System**
-
-```python
-from dxa.core.planning import SequentialPlanner
-from dxa.core.state import WorldState, AgentState
-
-# Workflow to executable plan
-workflow = create_workflow(...)
-planner = SequentialPlanner()
-plan = planner.create_plan(workflow)
-
-# Execution with state management
-world_state = WorldState()
-agent_state = AgentState()
-plan.execute(world_state, agent_state)
-```
-
-1. **State Management**
-
-```python
-from dxa.core.state import WorldState
-
-# State validation
-def validate_node_requirements(node: WorkflowNode, state: WorldState) -> bool:
-    """Validate node can execute in current state."""
-    return all(
-        state.has(req) and state.validate(req, spec)
-        for req, spec in node.requires.items()
-    )
-
-# State updates
-def apply_node_effects(node: WorkflowNode, state: WorldState) -> None:
-    """Apply node's effects to state."""
-    for key, value in node.provides.items():
-        state.update(key, value)
-```
-
-### Extension Points
-
-[New section on customization...]
-
-## Examples
-
-### System Monitoring
-
-```python
-workflow = create_monitoring_workflow(
-    description="""
-    Monitor system health:
-    1. Check CPU usage every 5 minutes
-    2. If usage > 90% for 15 minutes:
-       - Send alert to admin
-       - Scale up resources
-    3. Log all events
-    """,
-    resources={"monitoring_api", "alerting_system"}
-)
-```
-
-### Research Assistant
-
-```python
-workflow = create_research_workflow(
-    description="""
-    Research quantum computing advances:
-    1. Search latest papers from top journals
-    2. For breakthrough findings:
-       - Deep dive analysis
-       - Identify practical applications
-    3. Compile weekly summary
-    """,
-    resources={"paper_database", "analysis_tools"}
-)
-```
-
-### Customer Support
-
-```python
-workflow = create_support_workflow(
-    description="""
-    Handle customer inquiry:
-    1. Analyze customer message
-    2. If technical issue:
-       - Check known solutions
-       - If found: Provide solution
-       - If not: Escalate to expert
-    3. Follow up after 24 hours
-    """,
-    resources={"knowledge_base", "ticketing_system"}
-)
-```
-
-## Future Development
+## 8. Future Development
 
 1. **Advanced Natural Language Processing**
    - Context-aware parsing
@@ -634,10 +368,4 @@ workflow = create_support_workflow(
 
 ---
 
-<p align="center">
-Copyright © 2024 Aitomatic, Inc. All rights reserved.
-</p>
-
-<p align="center">
-<a href="https://aitomatic.com">https://aitomatic.com</a>
-</p>
+[Copyright section remains the same]
