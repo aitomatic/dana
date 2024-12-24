@@ -32,14 +32,17 @@ graph TB
     end
     
     subgraph Execution ["Planning & Reasoning"]
-        PL[Planning System]
         AG[Agent Runtime]
+        PL[Planning System]
+        RS[Reasoning System]
         ST[State Management]
     end
     
-    V --> PL
-    PL --> AG
-    AG --> ST
+    V --> AG
+    AG --> PL
+    PL --> RS
+    RS --> ST
+    ST --> AG
     
     %% Input connections
     NL --> P
