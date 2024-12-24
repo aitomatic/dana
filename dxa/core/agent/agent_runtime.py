@@ -2,13 +2,14 @@
 Agent Runtime
 """
 
-from typing import Any, Dict, List, TYPE_CHECKING
+from typing import Any, Dict, TYPE_CHECKING, List
 from ..types import ObjectiveStatus, SignalType
-from ..workflow import BaseFlow
-from ..planning.base_planner import BasePlanner
-from ..reasoning.base_reasoner import BaseReasoner
-from ..resource.base_resource import BaseResource
-from ..state import ExecutionState, WorldState, FlowState
+from ..workflow import Workflow
+from ..planning import BasePlanner, PlanNode
+from ..reasoning import BaseReasoner
+from ..resource import BaseResource
+from ..state import ExecutionState, WorldState
+from ..types import Signal
 if TYPE_CHECKING:
     from .agent import Agent
 
@@ -23,14 +24,12 @@ class AgentRuntime:
         # Runtime owns and maintains these states
         self._execution_state = ExecutionState()  # Tracks execution progress
         self._world_state = WorldState()         # Tracks discovered knowledge
-        self._flow_state = FlowState()          # Tracks flow progress
         
         # Context provides read access to all states
         self._context = {
             "agent_state": self.agent.state,     # Owned by Agent
             "execution": self._execution_state,   # Owned by Runtime
             "world": self._world_state,          # Owned by Runtime
-            "flow": self._flow_state             # Owned by Runtime
         }
 
     @property
@@ -49,7 +48,7 @@ class AgentRuntime:
         return self.agent.reasoner
 
     @property
-    def resources(self) -> List[BaseResource]:
+    def resources(self) -> Dict[str, BaseResource]:
         """Convenient reference to the Agent’s resources"""
         return self.agent.resources
     
@@ -63,11 +62,6 @@ class AgentRuntime:
         """Get world state."""
         return self._world_state
     
-    @property
-    def flow_state(self) -> FlowState:
-        """Get flow state."""
-        return self._flow_state
-
     def get_context(self) -> Dict[str, Any]:
         """Get read-only context with all states."""
         return self._context.copy()
@@ -86,15 +80,14 @@ class AgentRuntime:
             if hasattr(resource, 'cleanup'):
                 await resource.cleanup()
 
-    async def execute(self, flow: BaseFlow) -> Any:
-        """Execute using flow as reference pattern."""
+    async def execute(self, workflow: Workflow) -> Any:
+        """Execute using workflow as reference pattern."""
         # Initialize execution state
         self._execution_state.reset()
         self._world_state.reset()
-        self._flow_state.set_flow(flow)
 
-        # Create and execute plan
-        plan = await self.planner.create_plan(flow.objective)
+        # Create plan from workflow pattern
+        plan = await self.planner.create_plan(workflow.objective)
         self.agent.state.set_plan(plan)  # Agent owns plan
 
         while not self._is_terminal_state():
@@ -102,7 +95,7 @@ class AgentRuntime:
             if not step:
                 break
 
-            # Execute step and collect results
+            # Execute step from plan (not workflow) and collect results
             signals = await self._execute_step(step)
             
             # Update states based on results
@@ -140,3 +133,45 @@ class AgentRuntime:
                 "final": self.agent.state.objective.current
             }
         }
+
+    async def _execute_step(self, step: PlanNode) -> List[Signal]:
+        """Execute a single step from the plan using the reasoner."""
+        context = self.get_context()
+        signals = await self.reasoner.reason_about(
+            step=step,
+            context=context,
+            agent_llm=self.agent_llm,
+            resources=self.resources
+        )
+        return signals
+
+    def _update_states(self, signals: List[Signal]) -> None:
+        """Update execution and world states based on signals."""
+        for signal in signals:
+            # Update world state with discoveries
+            if signal.type == SignalType.DISCOVERY:
+                self._world_state.update(signal.content)
+            
+            # Update execution state for step completion/failure
+            elif signal.type in [SignalType.STEP_COMPLETE, SignalType.STEP_FAILED]:
+                step = self.agent.state.get_current_step()
+                if step:
+                    self._execution_state.step_results[step.description] = signal.content
+                    self.agent.state.advance_step()
+            
+            # Add signal to agent state for planning
+            self.agent.state.add_signal(signal)
+
+    def _process_planning_results(self, signals: List[Signal]) -> None:
+        """Process signals that may affect planning."""
+        # Process objective evolution signals
+        self._process_objective_signals()
+        
+        # Let planner update plan if needed based on signals
+        if signals and self.agent.state.plan:
+            current_index = self.agent.state.current_step_index
+            self.planner.update_plan(
+                plan=self.agent.state.plan,
+                signals=signals,
+                from_step_index=current_index
+            )

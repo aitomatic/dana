@@ -18,7 +18,7 @@ class SequentialPlanner(BasePlanner):
     
     async def create_plan(self, objective: Objective) -> Plan:
         """Create plan based on available flow guidance."""
-        if not self.flow:
+        if not self.workflow:
             # Simple single-step plan
             return Plan(
                 objective=objective,
@@ -26,7 +26,7 @@ class SequentialPlanner(BasePlanner):
             )
         
         # Use flow guidance for multi-step plan
-        initial_steps = self.flow.suggest_next_steps(
+        initial_steps = self.workflow.suggest_next_steps(
             current_plan=None,
             world_state=self.get_world_state()
         )
@@ -39,14 +39,14 @@ class SequentialPlanner(BasePlanner):
             if signal.type == SignalType.DISCOVERY:
                 self.update_world_state(signal.content)
         
-        if not self.flow:
+        if not self.workflow:
             # Simple execution - just pass signals through
             return None, signals
             
         # Flow-guided execution - get next steps
         if any(s.type == SignalType.STEP_COMPLETE for s in signals):
             self._current_step_index += 1
-            next_steps = self.flow.suggest_next_steps(
+            next_steps = self.workflow.suggest_next_steps(
                 current_plan=plan,
                 world_state=self.get_world_state()
             )
@@ -55,7 +55,7 @@ class SequentialPlanner(BasePlanner):
                     objective=plan.objective,
                     steps=plan.steps[:self._current_step_index] + next_steps
                 )
-                if self.flow.validate_plan(new_plan):
+                if self.workflow.validate_plan(new_plan):
                     return new_plan, []
             
         return None, signals

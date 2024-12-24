@@ -7,6 +7,9 @@ from dataclasses import dataclass
 class BaseState:
     """Base class for all state management."""
     
+    # Add at least one field
+    initialized: bool = False
+
     def initialize(self) -> None:
         """Initialize state. Override if needed."""
         pass
@@ -14,8 +17,9 @@ class BaseState:
     def reset(self) -> None:
         """Reset state to initial values. Override if needed."""
         # Reset all fields to their default values
+        # pylint: disable=no-member
         for field_name, field_def in self.__dataclass_fields__.items():
-            if hasattr(field_def, "default_factory"):
+            if hasattr(field_def, "default_factory") and callable(field_def.default_factory):
                 setattr(self, field_name, field_def.default_factory())
             else:
                 setattr(self, field_name, field_def.default)

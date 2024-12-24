@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from typing import List, Optional, Tuple, Dict, Any
 
 from ..types import Objective, Plan, Signal
-from ..workflow import BaseFlow
+from ..workflow import Workflow
 
 class BasePlanner(ABC):
     """
@@ -16,8 +16,8 @@ class BasePlanner(ABC):
     3. Evolving objectives when needed
     """
     
-    def __init__(self, flow: Optional[BaseFlow] = None):
-        self.flow = flow
+    def __init__(self, workflow: Optional[Workflow] = None):
+        self.workflow = workflow
         self._current_step_index = 0
         self._world_state: Dict[str, Any] = {}
 
@@ -62,6 +62,6 @@ class BasePlanner(ABC):
         """
         pass
 
-    def set_flow(self, flow: BaseFlow) -> None:
-        """Update flow pattern."""
-        self.flow = flow
+    def set_workflow(self, workflow: Workflow) -> None:
+        """Update workflow pattern."""
+        self.workflow = workflow

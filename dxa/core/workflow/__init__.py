@@ -7,10 +7,18 @@ FlowGraphs are directed graphs that represent workflows where:
 - Validation ensures proper graph structure
 """
 
-from .Workflow import Workflow
-from .workflow_factory import create_simple_qa_workflow
+from .workflow import Workflow
+from .workflow_factory import (
+    create_workflow,
+    create_basic_qa_workflow,
+    create_research_workflow,
+    create_sequential_workflow
+)
 
 __all__ = [
     "Workflow",
-    "create_simple_qa_workflow"
+    "create_workflow",
+    "create_basic_qa_workflow",
+    "create_research_workflow",
+    "create_sequential_workflow"
 ]

@@ -1,8 +1,9 @@
 """Base workflow implementation using directed graphs."""
 
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Union, cast
 from dataclasses import dataclass, field
-from dxa.common.graph import DirectedGraph, Node, Edge
+from ...common.graph import DirectedGraph, Node, Edge
+from ..types import Objective
 
 @dataclass
 class WorkflowNode(Node):
@@ -29,7 +30,29 @@ class Workflow(DirectedGraph):
     - The structure defines all possible execution paths
     - State changes are tracked through transitions
     """
+    def __init__(self, objective: Optional[Union[str, Objective]] = None):
+        super().__init__()
+        if isinstance(objective, str):
+            self._objective = Objective(objective)
+        else:
+            self._objective = objective
+    
+    @property
+    def objective(self) -> Objective:
+        """Get objective."""
+        if not self._objective:
+            raise ValueError("Objective not set")
+        return self._objective
+    
+    @objective.setter
+    def objective(self, objective: Union[str, Objective]) -> None:
+        """Set objective."""
+        if isinstance(objective, str):
+            self._objective = Objective(objective)
+        else:
+            self._objective = objective
 
+    # pylint: disable=redefined-builtin
     def add_task(self, id: str, description: str, **kwargs) -> WorkflowNode:
         """Add a task node to the workflow."""
         node = WorkflowNode(id, "TASK", description, **kwargs)
@@ -56,14 +79,16 @@ class Workflow(DirectedGraph):
 
     def get_start(self) -> WorkflowNode:
         """Get the workflow's start node."""
-        return next(
+        node = next(
             node for node in self.nodes.values()
             if node.type == "START"
         )
+        return cast(WorkflowNode, node)
 
     def get_ends(self) -> List[WorkflowNode]:
         """Get all possible end nodes."""
-        return [
+        nodes = [
             node for node in self.nodes.values()
             if node.type == "END"
         ]
+        return cast(List[WorkflowNode], nodes)

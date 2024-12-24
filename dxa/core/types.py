@@ -9,14 +9,11 @@ Signals -> Planning reassesses Objective/Plan ->
 """
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Any, TYPE_CHECKING
+from typing import Dict, List, Any, TYPE_CHECKING
 from enum import Enum
 from datetime import datetime
 if TYPE_CHECKING:
-    from .agent.agent_state import AgentState
-    from .agent.world_state import WorldState
-    from .agent.flow_state import FlowState
-    from .agent.execution_state import ExecutionState
+    from .state import AgentState, WorldState, ExecutionState
 
 class ObjectiveStatus(Enum):
     """Status of the current objective"""
@@ -37,6 +34,13 @@ class Objective:
     status: ObjectiveStatus = ObjectiveStatus.INITIAL
     context: Dict[str, Any] = field(default_factory=dict)
     history: List[Dict] = field(default_factory=list)
+
+    def __init__(self, objective: str):
+        """Initialize the objective"""
+        if not objective:
+            objective = "No objective provided"
+        self.original = objective
+        self.current = objective
     
     def evolve(self, new_understanding: str, reason: str) -> None:
         """Update current understanding based on new information"""
@@ -47,48 +51,6 @@ class Objective:
             "reason": reason
         })
         self.current = new_understanding
-
-class StepStatus(Enum):
-    """Status of the current step"""
-    PENDING = "pending"
-    IN_PROGRESS = "in_progress"
-    COMPLETED = "completed"
-    FAILED = "failed"
-
-@dataclass
-class Step:
-    """
-    Atomic unit of work that can be reasoned about.
-    Part of a plan to achieve the objective.
-    """
-    description: str  # What needs to be done
-    order: int = 0
-    status: StepStatus = StepStatus.PENDING
-    context: Dict[str, Any] = field(default_factory=dict)
-    result: Optional[Dict[str, Any]] = None
-
-@dataclass
-class Plan:
-    """
-    Sequence of steps designed to achieve the current objective.
-    Can be updated based on new information or step results.
-    """
-    objective: Objective
-    steps: List[Step]
-    context: Dict[str, Any] = field(default_factory=dict)
-    history: List[Dict] = field(default_factory=list)
-
-    def update_steps(self, from_index: int, new_steps: List[Step], reason: str) -> None:
-        """Replace steps from given index onwards"""
-        old_steps = self.steps[from_index:]
-        self.history.append({
-            "timestamp": datetime.now(),
-            "from_index": from_index,
-            "old_steps": old_steps,
-            "new_steps": new_steps,
-            "reason": reason
-        })
-        self.steps = self.steps[:from_index] + new_steps
 
 class SignalType(Enum):
     """Type of signal"""
@@ -113,7 +75,6 @@ class Context:
     """Execution context with access to all states."""
     agent_state: 'AgentState'
     world_state: 'WorldState'
-    flow_state: 'FlowState'
     execution_state: 'ExecutionState'
 
     def to_dict(self) -> Dict[str, Any]:
@@ -121,6 +82,5 @@ class Context:
         return {
             "agent_state": self.agent_state,
             "world_state": self.world_state,
-            "flow_state": self.flow_state,
             "execution_state": self.execution_state
         }
