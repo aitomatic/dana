@@ -16,12 +16,12 @@ The DXA Workflow system translates process specifications into executable workfl
 graph TB
     subgraph Inputs ["Process Specifications"]
         NL[Natural Language]
-        ST[Structured Text]
+        STT[Structured Text]
         CD[Code Definition]
         YM[YAML/JSON]
     end
     
-    subgraph Workflow ["Workflow System"]
+    subgraph Workflow ["Workflow Specification"]
         direction TB
         P[Parser/LLM]
         G[Graph Compiler]
@@ -31,7 +31,7 @@ graph TB
         G --> V
     end
     
-    subgraph Integration ["System Integration"]
+    subgraph Execution ["Planning & Reasoning"]
         PL[Planning System]
         AG[Agent Runtime]
         ST[State Management]
@@ -40,11 +40,10 @@ graph TB
     V --> PL
     PL --> AG
     AG --> ST
-    ST -.-> V
     
     %% Input connections
     NL --> P
-    ST --> P
+    STT --> P
     CD --> P
     YM --> P
 ```
@@ -64,8 +63,8 @@ classDiagram
     DirectedGraph <|-- Workflow
     Node <|-- WorkflowNode
     Edge <|-- WorkflowEdge
-    Workflow -- Objective
-    Workflow -- Plan
+    Workflow --> Objective
+    Workflow -.-> Plan
     
     class DirectedGraph{
         +nodes: Dict[str, Node]
