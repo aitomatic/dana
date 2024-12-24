@@ -312,6 +312,33 @@ agent = Agent(resources={"llm": LLMResource()})
 result = agent.execute_plan(plan)
 ```
 
+Generated workflow structure:
+
+```mermaid
+graph LR
+    S[Start] --> G[Gather Information]
+    G --> A[Analyze Papers]
+    A --> E[Extract Key Findings]
+    E --> SY[Synthesize Results]
+    SY --> C[Create Summary]
+    C --> END[End]
+    
+    %% Node details
+    G --"papers found"--> D{Sufficient?}
+    D --"yes"--> A
+    D --"no"--> G
+    
+    %% Styling
+    classDef start fill:#e1f5fe,stroke:#01579b
+    classDef task fill:#f3e5f5,stroke:#4a148c
+    classDef decision fill:#fff3e0,stroke:#e65100
+    classDef end fill:#e8f5e9,stroke:#1b5e20
+    
+    class S,END start
+    class G,A,E,SY,C task
+    class D decision
+```
+
 ### Monitoring Example
 
 ```python
@@ -327,6 +354,29 @@ workflow = create_monitoring_workflow(
         "critical": "restart_service"
     }
 )
+```
+
+Generated workflow structure:
+
+```mermaid
+graph TB
+    S[Start] --> M[Monitor Metrics]
+    M --> C{Check Thresholds}
+    C --"Normal"--> W[Wait Interval]
+    C --"Warning"--> A[Alert Admin]
+    C --"Critical"--> R[Restart Service]
+    W --> M
+    A --> M
+    R --> M
+    
+    %% Styling
+    classDef start fill:#e1f5fe,stroke:#01579b
+    classDef task fill:#f3e5f5,stroke:#4a148c
+    classDef decision fill:#fff3e0,stroke:#e65100
+    
+    class S start
+    class M,W,A,R task
+    class C decision
 ```
 
 ## 7. API Reference
