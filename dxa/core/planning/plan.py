@@ -3,8 +3,16 @@
 from dataclasses import dataclass, field
 from typing import Dict, List, Any, Optional
 from datetime import datetime
-from ..types import Objective, StepStatus
-from ..graph import DirectedGraph, Node, Edge
+from enum import Enum
+from ..types import Objective
+from ...common.graph import DirectedGraph, Node, Edge
+
+class StepStatus(Enum):
+    """Status of the current step"""
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    FAILED = "failed"
 
 @dataclass
 class PlanNode(Node):
@@ -13,6 +21,10 @@ class PlanNode(Node):
     status: StepStatus = StepStatus.PENDING
     result: Optional[Dict[str, Any]] = None
     context: Dict[str, Any] = field(default_factory=dict)
+
+class Step(PlanNode):
+    """Step representing a single unit of work in the plan."""
+    pass
 
 @dataclass
 class PlanEdge(Edge):
@@ -32,9 +44,9 @@ class Plan(DirectedGraph):
         self.objective = objective
         self.history: List[Dict] = []
 
-    def add_step(self, id: str, description: str, **kwargs) -> PlanNode:
+    def add_step(self, step_id: str, description: str, **kwargs) -> PlanNode:
         """Add a step to the plan."""
-        node = PlanNode(id=id, description=description, **kwargs)
+        node = PlanNode(node_id=step_id, description=description, **kwargs)
         self.add_node(node)
         return node
 

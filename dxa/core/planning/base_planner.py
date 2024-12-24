@@ -5,8 +5,9 @@ with objectives, plans, steps, and signals.
 from abc import ABC, abstractmethod
 from typing import List, Optional, Tuple, Dict, Any
 
-from ..types import Objective, Plan, Signal
+from ..types import Objective, Signal
 from ..workflow import Workflow
+from .plan import Plan
 
 class BasePlanner(ABC):
     """

@@ -1,7 +1,8 @@
 """Direct reasoning implementation - simplest reasoning pattern."""
 
 from typing import Dict, Any, List
-from ..types import Signal, SignalType, Step
+from ..types import Signal, SignalType
+from ..planning import Step
 from .base_reasoner import BaseReasoner
 from ..resource.llm_resource import LLMResource
 

@@ -12,7 +12,10 @@ from .workflow_factory import (
     create_workflow,
     create_basic_qa_workflow,
     create_research_workflow,
-    create_sequential_workflow
+    create_sequential_workflow,
+    create_from_text,
+    create_from_yaml,
+    text_to_yaml,
 )
 
 __all__ = [
@@ -20,5 +23,8 @@ __all__ = [
     "create_workflow",
     "create_basic_qa_workflow",
     "create_research_workflow",
-    "create_sequential_workflow"
+    "create_sequential_workflow",
+    "create_from_text",
+    "create_from_yaml",
+    "text_to_yaml",
 ]

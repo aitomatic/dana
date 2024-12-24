@@ -22,9 +22,9 @@ class DirectedGraph:
     
     def add_node(self, node: Node) -> None:
         """Add a node to the graph."""
-        if node.id in self.nodes:
-            raise ValueError(f"Node {node.id} already exists")
-        self.nodes[node.id] = node
+        if node.node_id in self.nodes:
+            raise ValueError(f"Node {node.node_id} already exists")
+        self.nodes[node.node_id] = node
     
     def add_edge(self, edge: Edge) -> None:
         """Add an edge to the graph."""

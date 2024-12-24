@@ -5,7 +5,8 @@ and generates signals.
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
-from ..types import Step, Signal
+from ..types import Signal
+from ..planning import Step
 from ..resource.llm_resource import LLMResource
 
 

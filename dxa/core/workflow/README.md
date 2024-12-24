@@ -420,4 +420,10 @@ def create_research_workflow(objective: str = "Research the topic") -> Workflow
 
 ---
 
-[Copyright section remains the same]
+<p align="center">
+Copyright © 2024 Aitomatic, Inc. All rights reserved.
+</p>
+
+<p align="center">
+<a href="https://aitomatic.com">https://aitomatic.com</a>
+</p>

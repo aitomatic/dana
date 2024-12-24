@@ -1,7 +1,8 @@
 """Sequential planning implementation supporting both simple and flow-guided execution."""
 
 from typing import List, Optional, Tuple
-from ..types import Objective, Plan, Signal, Step, SignalType
+from ..types import Objective, Signal, SignalType
+from .plan import Plan
 
 from .base_planner import BasePlanner
 

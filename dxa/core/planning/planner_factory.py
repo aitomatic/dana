@@ -1,9 +1,11 @@
 """Factory for creating planners."""
 
-from typing import List, Optional, Union
+from typing import List, Optional
 from ..types import Objective
 from .base_planner import BasePlanner
-from .plan import Plan, PlanNode
+from .plan import Plan
+from .sequential_planner import SequentialPlanner
+from ..workflow import Workflow
 
 class PlannerFactory:
     """Creates and configures planners."""
