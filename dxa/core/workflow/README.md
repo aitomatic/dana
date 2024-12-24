@@ -6,9 +6,189 @@
 
 # DXA Workflow System
 
+The DXA Workflow system is designed to bridge the gap between human-specified processes and machine-executable workflows. At its core, it serves as a translator that can take process specifications in various forms - natural language descriptions, structured templates, or code - and convert them into a consistent, executable graph structure. This translation maintains the semantic richness of human descriptions while enforcing the precision needed for machine execution.
+
+## System Context
+
+The Workflow system acts as a compilation layer between various input specifications and executable agent plans:
+
+```mermaid
+graph TB
+    subgraph Inputs ["Input Layer"]
+        NL[Natural Language]
+        ST[Structured Text]
+        CD[Code Definition]
+        YM[YAML/JSON]
+    end
+    
+    subgraph Workflow ["Workflow System"]
+        direction TB
+        P[Parser Layer]
+        G[Graph Compiler]
+        V[Validator]
+        
+        P --> G
+        G --> V
+    end
+    
+    subgraph Outputs ["Downstream Use"]
+        PL[Planning System]
+        AG[Agent Runtime]
+        AN[Analysis Tools]
+    end
+    
+    %% Input connections
+    NL --> P
+    ST --> P
+    CD --> P
+    YM --> P
+    
+    %% Output connections
+    V --> PL
+    V --> AG
+    V --> AN
+    
+    %% Styling
+    classDef system fill:#e1f5fe,stroke:#01579b
+    classDef input fill:#f3e5f5,stroke:#4a148c
+    classDef output fill:#e8f5e9,stroke:#1b5e20
+    
+    class Workflow system
+    class Inputs input
+    class Outputs output
+```
+
+### Input Processing
+
+- **Natural Language**: Free-form process descriptions
+- **Structured Text**: Step-by-step instructions
+- **Code Definition**: Direct API usage
+- **YAML/JSON**: Configuration-based definitions
+
+### Compilation Steps
+
+1. **Parsing**: Convert inputs to normalized format
+2. **Graph Compilation**: Build validated workflow graph
+3. **Validation**: Ensure correctness and completeness
+
+### Downstream Usage
+
+- **Planning System**: Converts workflows to executable plans
+- **Agent Runtime**: Executes workflow-based plans
+- **Analysis Tools**: Workflow optimization and verification
+
+## Quick Start Examples
+
+### Simple Sequential Workflow
+
+```python
+# Natural language specification
+workflow = create_from_text("""
+    1. Search for recent papers on quantum computing
+    2. Summarize key findings
+    3. Identify major trends
+""")
+```
+
+### Decision-based Workflow
+
+```python
+# Conditional processing
+workflow = create_from_text("""
+    Process: Credit Application Review
+    1. Check credit score
+    2. If score > 700:
+       - Fast-track approval
+       Otherwise:
+       - Request additional documentation
+    3. Make final decision
+""")
+```
+
+### Common Use Cases
+
+1. **System Monitoring**
+
+```python
+workflow = create_monitoring_workflow(
+    description="""
+    Monitor system health:
+    1. Check CPU usage every 5 minutes
+    2. If usage > 90% for 15 minutes:
+       - Send alert to admin
+       - Scale up resources
+    3. Log all events
+    """,
+    resources={"monitoring_api", "alerting_system"}
+)
+```
+
+1. **Research Assistant**
+
+```python
+workflow = create_research_workflow(
+    description="""
+    Research quantum computing:
+    1. Search latest papers
+    2. For breakthrough findings:
+       - Deep dive analysis
+    3. Compile summary
+    """,
+    resources={"paper_database"}
+)
+```
+
+### Common Patterns
+
+```python
+# Monitoring workflow
+workflow = create_monitoring_workflow(
+    target="system_metrics",
+    interval="1h",
+    thresholds={
+        "cpu_usage": "> 90%",
+        "memory_usage": "> 85%"
+    },
+    actions={
+        "alert": "notify_admin",
+        "critical": "restart_service"
+    }
+)
+
+# Verification workflow
+workflow = create_verification_workflow(
+    checks=[
+        "credit_score > 700",
+        "income > 50000",
+        "debt_ratio < 0.4"
+    ],
+    on_success="approve_application",
+    on_failure="request_additional_docs"
+)
+```
+
+## Design Principles
+
+The system is built on three key design principles:
+
+1. **Natural Language First**: Process specifications should be as easy to write as explaining them to a colleague. The system leverages LLMs to understand and formalize these natural descriptions.
+2. **Clear State Management**: Workflows define what state is required and what state changes occur, but delegate actual state management to executors. This separation of concerns keeps workflows reusable and testable.
+3. **Flexible Execution**: While workflows define what needs to happen and in what order, they don't prescribe how things should happen. This allows the same workflow to be executed differently based on available resources and runtime conditions.
+
+The system is built on three key design principles:
+
+1. **Natural Language First**: Process specifications should be as easy to write as explaining them to a colleague. The system leverages LLMs to understand and formalize these natural descriptions.
+2. **Clear State Management**: Workflows define what state is required and what state changes occur, but delegate actual state management to executors. This separation of concerns keeps workflows reusable and testable.
+3. **Flexible Execution**: While workflows define what needs to happen and in what order, they don't prescribe how things should happen. This allows the same workflow to be executed differently based on available resources and runtime conditions.
+
 ## Overview
 
-The DXA Workflow system translates process specifications into executable workflow graphs, primarily using LLM-assisted natural language processing. It bridges human-readable process descriptions and machine-executable workflows.
+The DXA Workflow system translates process specifications into executable workflow graphs, primarily using LLM-assisted natural language processing. It bridges human-readable process descriptions and machine-executable workflows through:
+
+- Natural language understanding of process steps
+- Automatic extraction of resource requirements
+- Validation of workflow consistency and completeness
+- Integration with planning and execution systems
 
 ## Core Philosophy
 
@@ -221,78 +401,6 @@ classDiagram
     }
 ```
 
-## Basic Usage
-
-### Quick Start Examples
-
-```python
-# From natural language
-workflow = create_from_text("""
-    1. Search for recent papers on quantum computing
-    2. Summarize key findings
-    3. Identify major trends
-""")
-```
-
-### Decision-based Workflow
-
-```python
-workflow = create_from_text("""
-    1. Check if customer credit score > 700
-    2. If yes: Fast-track application
-       If no: Request additional documentation
-    3. Make final decision
-""")
-```
-
-```mermaid
-graph LR
-    subgraph "Credit Verification Example"
-        S[Start] --> C[Check Credit]
-        C -->|score > 700| F[Fast Track]
-        C -->|score <= 700| D[Request Docs]
-        F --> E[End]
-        D --> E
-        
-        style S fill:#e1f5fe
-        style E fill:#e1f5fe
-        style C fill:#fff3e0
-        style F fill:#f1f8e9
-        style D fill:#f1f8e9
-    end
-```
-
-[Continued in next message due to length...]
-
-### Common Patterns
-
-```python
-# Monitoring workflow
-workflow = create_monitoring_workflow(
-    target="system_metrics",
-    interval="1h",
-    thresholds={
-        "cpu_usage": "> 90%",
-        "memory_usage": "> 85%"
-    },
-    actions={
-        "alert": "notify_admin",
-        "critical": "restart_service"
-    }
-)
-
-# Verification workflow
-workflow = create_verification_workflow(
-    checks=[
-        "credit_score > 700",
-        "income > 50000",
-        "debt_ratio < 0.4"
-    ],
-    on_success="approve_application",
-    on_failure="request_additional_docs"
-)
-```
-
 ## Advanced Features
 
 ### State Management
@@ -413,6 +521,45 @@ def create_basic_qa_workflow(objective: str = "Answer the question") -> Workflow
 def create_research_workflow(objective: str = "Research the topic") -> Workflow
 ```
 
+### Integration Points
+
+1. **Planning System**
+
+```python
+from dxa.core.planning import SequentialPlanner
+from dxa.core.state import WorldState, AgentState
+
+# Workflow to executable plan
+workflow = create_workflow(...)
+planner = SequentialPlanner()
+plan = planner.create_plan(workflow)
+
+# Execution with state management
+world_state = WorldState()
+agent_state = AgentState()
+plan.execute(world_state, agent_state)
+```
+
+1. **State Management**
+
+```python
+from dxa.core.state import WorldState
+
+# State validation
+def validate_node_requirements(node: WorkflowNode, state: WorldState) -> bool:
+    """Validate node can execute in current state."""
+    return all(
+        state.has(req) and state.validate(req, spec)
+        for req, spec in node.requires.items()
+    )
+
+# State updates
+def apply_node_effects(node: WorkflowNode, state: WorldState) -> None:
+    """Apply node's effects to state."""
+    for key, value in node.provides.items():
+        state.update(key, value)
+```
+
 ### Extension Points
 
 [New section on customization...]
@@ -494,42 +641,3 @@ Copyright © 2024 Aitomatic, Inc. All rights reserved.
 <p align="center">
 <a href="https://aitomatic.com">https://aitomatic.com</a>
 </p>
-
-### Integration Points
-
-1. **Planning System**
-
-```python
-from dxa.core.planning import SequentialPlanner
-from dxa.core.state import WorldState, AgentState
-
-# Workflow to executable plan
-workflow = create_workflow(...)
-planner = SequentialPlanner()
-plan = planner.create_plan(workflow)
-
-# Execution with state management
-world_state = WorldState()
-agent_state = AgentState()
-plan.execute(world_state, agent_state)
-```
-
-1. **State Management**
-
-```python
-from dxa.core.state import WorldState
-
-# State validation
-def validate_node_requirements(node: WorkflowNode, state: WorldState) -> bool:
-    """Validate node can execute in current state."""
-    return all(
-        state.has(req) and state.validate(req, spec)
-        for req, spec in node.requires.items()
-    )
-
-# State updates
-def apply_node_effects(node: WorkflowNode, state: WorldState) -> None:
-    """Apply node's effects to state."""
-    for key, value in node.provides.items():
-        state.update(key, value)
-```
