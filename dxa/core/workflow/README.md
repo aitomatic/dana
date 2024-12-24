@@ -332,7 +332,7 @@ graph LR
     classDef start fill:#e1f5fe,stroke:#01579b
     classDef task fill:#f3e5f5,stroke:#4a148c
     classDef decision fill:#fff3e0,stroke:#e65100
-    classDef end fill:#e8f5e9,stroke:#1b5e20
+    classDef end_ fill:#e8f5e9,stroke:#1b5e20
     
     class S,END start
     class G,A,E,SY,C task
