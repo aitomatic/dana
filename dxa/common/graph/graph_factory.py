@@ -19,7 +19,7 @@ class GraphFactory:
             graph.add_node(node)
             
         for i in range(len(nodes) - 1):
-            graph.add_edge(Edge(nodes[i].id, nodes[i + 1].id))
+            graph.add_edge(Edge(nodes[i].node_id, nodes[i + 1].node_id))
             
         return graph
 
@@ -33,10 +33,10 @@ class GraphFactory:
             
         # Connect in sequence
         for i in range(len(body) - 1):
-            graph.add_edge(Edge(body[i].id, body[i+1].id))
+            graph.add_edge(Edge(body[i].node_id, body[i + 1].node_id))
             
         # Add loop back edge with condition
-        graph.add_edge(Edge(body[-1].id, body[0].id, condition=condition))
+        graph.add_edge(Edge(body[-1].node_id, body[0].node_id, condition=condition))
         
         return graph
 
@@ -49,7 +49,7 @@ class GraphFactory:
         for node in true_path + false_path:
             graph.add_node(node)
             
-        graph.add_edge(Edge(condition_node.id, true_path[0].id, condition="result==true"))
-        graph.add_edge(Edge(condition_node.id, false_path[0].id, condition="result==false"))
+        graph.add_edge(Edge(condition_node.node_id, true_path[0].node_id, condition="result==true"))
+        graph.add_edge(Edge(condition_node.node_id, false_path[0].node_id, condition="result==false"))
         
         return graph 

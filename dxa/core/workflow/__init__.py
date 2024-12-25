@@ -10,21 +10,17 @@ FlowGraphs are directed graphs that represent workflows where:
 from .workflow import Workflow
 from .workflow_factory import (
     create_workflow,
-    create_basic_qa_workflow,
-    create_research_workflow,
-    create_sequential_workflow,
-    create_from_text,
+    create_from_command,
+    create_from_steps,
     create_from_yaml,
-    text_to_yaml,
+    create_from_natural_language,
 )
 
 __all__ = [
     "Workflow",
     "create_workflow",
-    "create_basic_qa_workflow",
-    "create_research_workflow",
-    "create_sequential_workflow",
-    "create_from_text",
+    "create_from_command",
+    "create_from_steps",
     "create_from_yaml",
-    "text_to_yaml",
+    "create_from_natural_language",
 ]

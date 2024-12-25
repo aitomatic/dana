@@ -49,7 +49,7 @@ class GraphCursor:
             True if move was valid and successful
         """
         next_nodes = self.graph.get_next_nodes(self.current)
-        if not any(node.id == node_id for node in next_nodes):
+        if not any(node.node_id == node_id for node in next_nodes):
             return False
             
         self.current = node_id
@@ -60,7 +60,7 @@ class GraphCursor:
     def can_move_to(self, node_id: str) -> bool:
         """Check if moving to node is valid."""
         next_nodes = self.graph.get_next_nodes(self.current)
-        return any(node.id == node_id for node in next_nodes)
+        return any(node.node_id == node_id for node in next_nodes)
     
     def peek_forward(self, steps: int = 1) -> List[List['Node']]:
         """Look ahead possible paths.
@@ -78,7 +78,7 @@ class GraphCursor:
                 paths.append(path[:])
                 return
             for next_node in self.graph.get_next_nodes(node_id):
-                dfs(next_node.id, path + [next_node], depth + 1)
+                dfs(next_node.node_id, path + [next_node], depth + 1)
                 
         dfs(self.current, [], 0)
         return paths
