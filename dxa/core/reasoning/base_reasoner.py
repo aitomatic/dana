@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
 from ..types import Signal
-from ..planning import Step
+from ..execution_graph import ExecutionNode
 from ..resource.llm_resource import LLMResource
 
 
@@ -21,7 +21,7 @@ class BaseReasoner(ABC):
     @abstractmethod
     async def reason_about(
         self,
-        step: Step,
+        step: ExecutionNode,
         context: Dict[str, Any],
         agent_llm: LLMResource,
         resources: Dict[str, Any]
@@ -43,7 +43,7 @@ class BaseReasoner(ABC):
     @abstractmethod
     def validate(
         self,
-        step: Step,
+        step: ExecutionNode,
         result: Dict[str, Any]
     ) -> bool:
         """

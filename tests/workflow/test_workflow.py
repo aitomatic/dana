@@ -1,9 +1,10 @@
 """Tests for workflow creation and manipulation."""
 
-from typing import List
+from typing import List, cast
 import time
 import pytest
 import yaml
+from dxa.core.execution_graph import ExecutionNodeType, ExecutionNode, ExecutionEdge
 from dxa.core.workflow import (
     create_from_command,
     create_from_steps,
@@ -111,8 +112,8 @@ nodes:
   start:
     type: START
     description: "Begin workflow"
-  decision_1:
-    type: DECISION
+  condition_1:
+    type: CONDITION
     description: "Check if data is latest"
   task_1:
     type: TASK
@@ -125,11 +126,11 @@ nodes:
     description: "End workflow"
 edges:
   - from: start
-    to: decision_1
-  - from: decision_1
+    to: condition_1
+  - from: condition_1
     to: task_1
     condition: "data is outdated"
-  - from: decision_1
+  - from: condition_1
     to: task_2
     condition: "data is latest"
   - from: task_1
@@ -180,16 +181,16 @@ def test_natural_language_workflow(natural_language_workflow, mock_llm):
     assert len(workflow.edges) == 5  # START->1->2->3->END plus 1->3
     
     # Validate basic structure
-    assert any(n.type == "DECISION" for n in workflow.nodes.values())
-    decision_nodes = [n for n in workflow.nodes.values() if n.type == "DECISION"]
-    assert len(decision_nodes) == 1
+    assert any(n.type == ExecutionNodeType.CONDITION for n in workflow.nodes.values())
+    condition_nodes = [n for n in workflow.nodes.values() if n.type == ExecutionNodeType.CONDITION]
+    assert len(condition_nodes) == 1
     
-    # Validate decision paths
-    decision = decision_nodes[0]
-    outgoing = workflow.get_edges_from(decision.node_id)
+    # Validate condition paths
+    condition = condition_nodes[0]
+    outgoing = workflow.get_edges_from(condition.node_id)
     assert len(outgoing) == 2
     
-    # Verify conditions on decision edges
+    # Verify conditions on condition edges
     conditions = [e.condition for e in outgoing]
     assert "data is outdated" in conditions
     assert "data is latest" in conditions
@@ -238,13 +239,14 @@ edges:
     assert len(workflow.edges) == 3  # START->task_1->task_2->END
 
     # Validate node details
-    task1 = workflow.nodes["task_1"]
-    assert task1.type == "TASK"
+    task1 = cast(ExecutionNode, workflow.nodes["task_1"])
+    assert task1.type == ExecutionNodeType.TASK
     assert task1.requires == {"input_data": "str"}
     assert task1.provides == {"output_data": "str"}
 
     # Validate edge details
-    task1_to_task2 = next(e for e in workflow.edges if e.source == "task_1" and e.target == "task_2")
+    task1_to_task2 = next(e for e in cast(List[ExecutionEdge], workflow.edges)
+                          if e.source == "task_1" and e.target == "task_2")
     assert task1_to_task2.state_updates == {"data_processed": True}
 
     # Verify execution time

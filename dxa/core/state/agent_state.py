@@ -2,7 +2,8 @@
 
 from typing import List, Optional
 from ..types import Objective, Signal
-from ..planning import Plan, PlanNode
+from ..execution_graph import ExecutionNode
+from ..planning import Plan
 from dataclasses import dataclass, field
 from .base_state import BaseState
 
@@ -39,8 +40,8 @@ class AgentState(BaseState):
         """Move to next step."""
         self.current_step_index += 1
 
-    def get_current_step(self) -> Optional[PlanNode]:
+    def get_current_step(self) -> Optional[ExecutionNode]:
         """Get current step being executed."""
-        if self.plan and self.current_step_index < len(self.plan.steps):
-            return self.plan.steps[self.current_step_index]
+        if self.plan and self.current_step_index < len(self.plan.nodes):
+            return self.plan.nodes[self.current_step_index]
         return None

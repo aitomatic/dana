@@ -1,8 +1,9 @@
 """Factory methods for common workflow patterns."""
 
-from typing import List, Optional, Union
+from typing import List, Optional, Union, cast
 from pathlib import Path
-from .workflow import Workflow, WorkflowNode
+from .workflow import Workflow
+from ..execution_graph import ExecutionGraph, ExecutionNode, ExecutionNodeType
 
 def create_workflow() -> Workflow:
     """Create a new workflow."""
@@ -19,7 +20,11 @@ def create_from_steps(steps: List[str], objective: Optional[str] = None) -> Work
         workflow.objective = objective
         
     # Add START node
-    workflow.add_node(WorkflowNode("start", "START", "Begin workflow"))
+    workflow.add_node(ExecutionNode(
+        node_id="start",
+        type=ExecutionNodeType.START,
+        description="Begin workflow"
+    ))
     
     # Add task nodes
     prev_id = "start"
@@ -30,7 +35,11 @@ def create_from_steps(steps: List[str], objective: Optional[str] = None) -> Work
         prev_id = task_id
     
     # Add END node
-    workflow.add_node(WorkflowNode("end", "END", "End workflow"))
+    workflow.add_node(ExecutionNode(
+        node_id="end",
+        type=ExecutionNodeType.END,
+        description="End workflow"
+    ))
     workflow.add_transition(prev_id, "end")
     
     return workflow

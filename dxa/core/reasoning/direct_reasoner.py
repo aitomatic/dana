@@ -2,7 +2,7 @@
 
 from typing import Dict, Any, List
 from ..types import Signal, SignalType
-from ..planning import Step
+from ..execution_graph import ExecutionNode
 from .base_reasoner import BaseReasoner
 from ..resource.llm_resource import LLMResource
 
@@ -11,7 +11,7 @@ class DirectReasoner(BaseReasoner):
     
     async def reason_about(
         self,
-        step: Step,
+        step: ExecutionNode,
         context: Dict[str, Any],
         agent_llm: LLMResource,
         resources: Dict[str, Any]
@@ -28,6 +28,6 @@ class DirectReasoner(BaseReasoner):
                 content={"error": str(e)}
             )]
 
-    def validate(self, step: Step, result: Dict[str, Any]) -> bool:
+    def validate(self, step: ExecutionNode, result: Dict[str, Any]) -> bool:
         """Simple validation - just checks for answer."""
         return "answer" in result

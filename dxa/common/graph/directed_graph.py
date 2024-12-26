@@ -1,17 +1,18 @@
 """Base directed graph implementation."""
 
-from typing import Dict, List, Set, Any, Iterator
+from typing import Dict, List, Set, Any, Iterator, Optional
 from dataclasses import dataclass, field
 from collections import defaultdict
+from copy import deepcopy
 from .node import Node
 from .edge import Edge
 
 @dataclass
 class DirectedGraph:
     """Base class for directed graphs."""
-    
     _nodes: Dict[str, Node] = field(default_factory=dict)
     _edges: List[Edge] = field(default_factory=list)
+    _history: List[Dict[str, Any]] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
     
     @property
@@ -33,6 +34,17 @@ class DirectedGraph:
     def edges(self, edges: List[Edge]) -> None:
         """Set edges."""
         self._edges = edges
+
+    def duplicate(self) -> 'DirectedGraph':
+        """Duplicate the graph."""
+        return deepcopy(self)
+    
+    @property
+    def history(self) -> List[Dict[str, Any]]:
+        """Get history."""
+        if not self._history:
+            return []
+        return self._history
     
     def __post_init__(self):
         """Initialize adjacency lists."""
@@ -224,3 +236,10 @@ class DirectedGraph:
             lines.append(f"    {edge.source} --> {edge.target}")
         
         return "\n".join(lines)
+
+    def get_node_by_id(self, node_id: str) -> Optional[Node]:
+        """Get a node by its ID."""
+        for node in self.nodes.values():
+            if node.node_id == node_id:
+                return node
+        return None

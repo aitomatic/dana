@@ -5,10 +5,11 @@ Agent Runtime
 from typing import Any, Dict, TYPE_CHECKING, List
 from ..types import ObjectiveStatus, SignalType
 from ..workflow import Workflow
-from ..planning import BasePlanner, PlanNode
+from ..planning import BasePlanner
 from ..reasoning import BaseReasoner
 from ..resource import BaseResource
 from ..state import ExecutionState, WorldState
+from ..execution_graph import ExecutionNode
 from ..types import Signal
 if TYPE_CHECKING:
     from .agent import Agent
@@ -87,6 +88,7 @@ class AgentRuntime:
         self._world_state.reset()
 
         # Create plan from workflow pattern
+        assert workflow.objective is not None
         plan = await self.planner.create_plan(workflow.objective)
         self.agent.state.set_plan(plan)  # Agent owns plan
 
@@ -108,6 +110,7 @@ class AgentRuntime:
 
     def _is_terminal_state(self) -> bool:
         """Check if execution should terminate"""
+        assert self.agent.state.objective is not None
         return (self.agent.state.objective.status in 
                 [ObjectiveStatus.COMPLETED, 
                  ObjectiveStatus.FAILED,
@@ -134,7 +137,7 @@ class AgentRuntime:
             }
         }
 
-    async def _execute_step(self, step: PlanNode) -> List[Signal]:
+    async def _execute_step(self, step: ExecutionNode) -> List[Signal]:
         """Execute a single step from the plan using the reasoner."""
         context = self.get_context()
         signals = await self.reasoner.reason_about(

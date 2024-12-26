@@ -2,55 +2,68 @@
 Core interfaces defining how Planning and Reasoning interact
 with objectives, plans, steps, and signals.
 """
-from abc import ABC, abstractmethod
-from typing import List, Optional, Tuple, Dict, Any
+from abc import ABC
+from typing import List, Optional, Tuple
 
-from ..types import Objective, Signal
-from ..workflow import Workflow
+from ..types import Objective, Signal, Context
 from .plan import Plan
-
+from ..execution_graph import ExecutionNode
 class BasePlanner(ABC):
     """
+    Basic planner that maps workflow nodes directly to plan steps.
+    
     Planning is responsible for:
     1. Creating plans from objectives
     2. Updating plans based on signals
     3. Evolving objectives when needed
     """
     
-    def __init__(self, workflow: Optional[Workflow] = None):
-        self.workflow = workflow
-        self._current_step_index = 0
-        self._world_state: Dict[str, Any] = {}
+    def __init__(self, context: Context):
+        """Initialize the planner with a context.
+        Context has everything: Workflow, Plan, Reasoning, current state of Agent, World, Execution, etc."""
+        self.context = context
+        self._current_node_id: Optional[str] = None
 
-    def get_world_state(self) -> Dict[str, Any]:
-        """Get current world state."""
-        return self._world_state
-
-    def update_world_state(self, updates: Dict[str, Any]) -> None:
-        """Update world state with new information."""
-        self._world_state.update(updates)
-
-    @abstractmethod
     async def create_plan(self, objective: Objective) -> Plan:
         """
-        Create initial plan for the objective.
+        Create a simple one-step plan from current workflow node.
         
         Args:
             objective: The objective to create a plan for
             
         Returns:
-            Plan: The created plan
+            Plan: Single-step plan mapping current workflow node
         """
-        pass
+        if not self.context.current_workflow:
+            raise ValueError("No workflow set - cannot create plan")
 
-    @abstractmethod
+        # Get current or initial workflow node
+        if not self._current_node_id:
+            current_node = self.context.current_workflow.get_start_node()
+        else:
+            current_node = self.context.current_workflow.get_node_by_id(self._current_node_id)
+            
+        if not current_node:
+            raise ValueError("No current workflow node found")
+
+        # Create plan with single step matching workflow node
+        plan = Plan(objective)
+        plan_node = ExecutionNode(
+            node_id=current_node.node_id,
+            description=current_node.description or "",
+        )
+        plan.add_node(plan_node)
+        
+        self._current_node_id = current_node.node_id
+        return plan
+
     def process_signals(
         self,
         plan: Plan,
         signals: List[Signal]
     ) -> Tuple[Optional[Plan], List[Signal]]:
         """
-        Process signals and optionally return updated plan and new signals.
+        Process signals and advance to next workflow node if step complete.
         
         Args:
             plan: Current plan being executed
@@ -58,11 +71,31 @@ class BasePlanner(ABC):
             
         Returns:
             Tuple containing:
-            - Optional[Plan]: Updated plan if steps need to change
-            - List[Signal]: New signals if objective needs to evolve
+            - Optional[Plan]: New single-step plan if current step complete
+            - List[Signal]: Signals to propagate
         """
-        pass
+        # Update world state from discoveries
+        for signal in signals:
+            if signal.type == SignalType.DISCOVERY:
+                self.update_world_state(signal.content)
 
-    def set_workflow(self, workflow: Workflow) -> None:
-        """Update workflow pattern."""
-        self.workflow = workflow
+        # Check for step completion
+        if any(s.type == SignalType.STEP_COMPLETE for s in signals):
+            if not self.workflow:
+                return None, signals
+                
+            # Get next workflow node
+            next_node = self.workflow.get_next_node(self._current_node_id)
+            if next_node:
+                # Create new single-step plan
+                new_plan = Plan(plan.objective)
+                new_plan.add_step(
+                    step_id=next_node.id,
+                    description=next_node.description,
+                    status=PlanStepStatus.PENDING,
+                    context={"workflow_node_id": next_node.id}
+                )
+                self._current_node_id = next_node.id
+                return new_plan, []
+
+        return None, signals

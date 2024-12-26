@@ -11,15 +11,17 @@ The Domain-Expert Agent (DXA) core system is an intelligent agent architecture d
 ## Architecture Overview
 
 ```mermaid
-graph TB
-    subgraph "Layer Architecture"
-        W[Workflow Layer<br>WHY] --> P[Planning Layer<br>WHAT]
-        P --> R[Reasoning Layer<br>HOW]
-    end
-
+graph LR
     subgraph "Graph Mapping"
+        direction LR
         G1[High-level Graph] --> G2[Detailed Graph]
         G2 --> G3[Execution Graph]
+    end
+
+    subgraph "Layer Architecture"
+        direction LR
+        W[Workflow Layer<br>WHY] --> P[Planning Layer<br>WHAT]
+        P --> R[Reasoning Layer<br>HOW]
     end
 ```
 
@@ -27,23 +29,26 @@ graph TB
 
 ```mermaid
 graph TB
-    subgraph "Workflow Layer (WHY)"
-        W1[Launch New Product] --> W2[Market Research]
-        W2 --> W3[Product Development]
-        W3 --> W4[Market Launch]
+    subgraph "Reasoning Layer (HOW)"
+        direction LR
+        R1[Observe<br>Gather Data] --> R2[Orient<br>Analyze Context]
+        R2 --> R3[Decide<br>Choose Action]
+        R3 --> R4[Act<br>Execute]
+        R4 --> R1
     end
 
     subgraph "Planning Layer (WHAT)"
+        direction LR
         P1[Analyze Competitors] --> P2[Survey Customers]
         P2 --> P3[Synthesize Findings]
         P3 --> P4[Create Report]
     end
 
-    subgraph "Reasoning Layer (HOW)"
-        R1[Observe<br>Gather Data] --> R2[Orient<br>Analyze Context]
-        R2 --> R3[Decide<br>Choose Action]
-        R3 --> R4[Act<br>Execute]
-        R4 --> R1
+   subgraph "Workflow Layer (WHY)"
+        direction LR
+        W1[Launch New Product] --> W2[Market Research]
+        W2 --> W3[Product Development]
+        W3 --> W4[Market Launch]
     end
 
     W2 -.->|Maps to| P1

@@ -14,6 +14,9 @@ from enum import Enum
 from datetime import datetime
 if TYPE_CHECKING:
     from .state import AgentState, WorldState, ExecutionState
+    from .workflow import Workflow
+    from .planning import Plan
+    #from .reasoning import ReasoningStrategy
 
 class ObjectiveStatus(Enum):
     """Status of the current objective"""
@@ -76,11 +79,16 @@ class Context:
     agent_state: 'AgentState'
     world_state: 'WorldState'
     execution_state: 'ExecutionState'
+    current_workflow: 'Workflow'
+    current_plan: 'Plan'
+    # current_reasoning_strategy: 'ReasoningStrategy'
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for backward compatibility."""
         return {
             "agent_state": self.agent_state,
             "world_state": self.world_state,
-            "execution_state": self.execution_state
+            "execution_state": self.execution_state,
+            "current_workflow": self.current_workflow,
+            "current_plan": self.current_plan
         }
