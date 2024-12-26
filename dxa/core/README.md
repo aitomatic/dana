@@ -6,128 +6,167 @@
 
 # DXA Core System
 
-## dxa.core Module
+The Domain-Expert Agent (DXA) core system is an intelligent agent architecture designed to tackle complex domain-specific tasks with human-like expertise. At its heart is a unique three-layer graph architecture that breaks down high-level objectives into executable actions through a Why-What-How paradigm. The system maps business workflows (WHY) to concrete plans (WHAT), which are then executed through standardized reasoning patterns (HOW). This hierarchical decomposition allows agents to maintain strategic alignment while adapting to changing conditions - similar to how human experts combine domain knowledge with practical execution. Whether automating business processes, conducting research, or managing complex projects, DXA provides a flexible framework that combines strategic thinking with tactical execution.
 
-The DXA Core system provides the foundational components for building intelligent agents, centered around Workflows that define what agents can do. From this foundation, agents execute workflows through planning and reasoning, supported by capabilities and resources.
-
-## System Architecture
+## Architecture Overview
 
 ```mermaid
 graph TB
-    subgraph "Definition"
-        W[Workflows] --> A[Agent]
+    subgraph "Layer Architecture"
+        W[Workflow Layer<br>WHY] --> P[Planning Layer<br>WHAT]
+        P --> R[Reasoning Layer<br>HOW]
     end
-    
-    subgraph "Execution"
-        A --> P[Planning]
-        A --> R[Reasoning]
-        A --> C[Resources]
-    end
-    
-    subgraph "Support"
-        C --> L[LLM]
-        C --> T[Tools]
-        C --> H[Human]
+
+    subgraph "Graph Mapping"
+        G1[High-level Graph] --> G2[Detailed Graph]
+        G2 --> G3[Execution Graph]
     end
 ```
 
-## Core Components
+### Layer Mapping Example
 
-### [Workflow System](workflow/README.md)
+```mermaid
+graph TB
+    subgraph "Workflow Layer (WHY)"
+        W1[Launch New Product] --> W2[Market Research]
+        W2 --> W3[Product Development]
+        W3 --> W4[Market Launch]
+    end
 
-- Defines agent behavior patterns
-- Structures task sequences
-- Manages decision points
-- Tracks state changes
+    subgraph "Planning Layer (WHAT)"
+        P1[Analyze Competitors] --> P2[Survey Customers]
+        P2 --> P3[Synthesize Findings]
+        P3 --> P4[Create Report]
+    end
 
-```python
-# Simple workflow
-workflow = create_qa_workflow()
+    subgraph "Reasoning Layer (HOW)"
+        R1[Observe<br>Gather Data] --> R2[Orient<br>Analyze Context]
+        R2 --> R3[Decide<br>Choose Action]
+        R3 --> R4[Act<br>Execute]
+        R4 --> R1
+    end
 
-# Research workflow
-workflow = create_research_workflow()
-workflow.add_task("analyze", "Analyze findings")
+    W2 -.->|Maps to| P1
+    P1 -.->|Maps to| R1
+
+    style W1 fill:#f9f,stroke:#333
+    style W2 fill:#f9f,stroke:#333
+    style W3 fill:#f9f,stroke:#333
+    style W4 fill:#f9f,stroke:#333
+    
+    style P1 fill:#bbf,stroke:#333
+    style P2 fill:#bbf,stroke:#333
+    style P3 fill:#bbf,stroke:#333
+    style P4 fill:#bbf,stroke:#333
+    
+    style R1 fill:#bfb,stroke:#333
+    style R2 fill:#bfb,stroke:#333
+    style R3 fill:#bfb,stroke:#333
+    style R4 fill:#bfb,stroke:#333
 ```
 
-### [Agent System](agent/README.md)
+### Core Components
 
-- Executes workflows
-- Manages resources
-- Tracks state
-- Handles errors
+1. **Workflow Layer (WHY)**
+   - Defines high-level objectives and goals
+   - Manages strategic direction
+   - Tracks overall progress
+   - See [Flow Documentation](flow/README.md)
 
-### [Planning System](planning/README.md)
+2. **Planning Layer (WHAT)**
+   - Determines concrete actions
+   - Manages resource allocation
+   - Adapts plans dynamically
+   - See [Planning Documentation](planning/README.md)
 
-- Converts workflows to plans
-- Allocates resources
-- Manages execution state
-- Adapts to changes
+3. **Reasoning Layer (HOW)**
+   - Implements execution patterns
+   - Handles tactical decisions
+   - Processes feedback loops
+   - See [Reasoning Documentation](reasoning/README.md)
 
-### [Reasoning System](reasoning/README.md)
+## Key Features
 
-- Executes workflow steps
-- Makes tactical decisions
-- Processes results
-- Reports progress
+- **Graph-based Architecture**: Each layer is represented as a directed graph
+- **Hierarchical Mapping**: Nodes in higher layers map to subgraphs in lower layers
+- **Dynamic Adaptation**: Plans and execution patterns adapt to changing conditions
+- **State Management**: Each layer maintains its execution context
+- **Progress Tracking**: Completion status propagates up through layers
 
-### [Resource System](resource/README.md)
+## Core Modules
 
-- Provides LLM access
-- Manages tools
-- Enables human interaction
-- Tracks usage
+- [Agent](agent/README.md): Main execution controller
+- [Planning](planning/README.md): Strategic action planning
+- [Reasoning](reasoning/README.md): Tactical execution patterns
+- [Capability](capability/README.md): Agent capabilities and skills
+- [Resource](resource/README.md): Resource management
+- [IO](io/README.md): Input/Output handling
 
-### [IO System](io/README.md)
-
-- Handles interaction
-- Manages files
-- Controls network access
-- Logs operations
-
-## Integration
+## Implementation Example
 
 ```python
-from dxa.core.workflow import create_research_workflow
 from dxa.core.agent import Agent
+from dxa.core.planning import PlanningPattern
+from dxa.core.reasoning import ReasoningPattern
 
-# Create workflow
-workflow = create_research_workflow()
+# Create agent with layered execution
+agent = Agent("expert_agent")\
+    .with_workflow("product_launch")\
+    .with_planning(PlanningPattern.DYNAMIC)\
+    .with_reasoning(ReasoningPattern.OODA)
 
-# Configure agent
-agent = Agent(resources={
-    "llm": LLMResource(),
-    "search": SearchResource()
-})
-
-# Execute workflow
-result = agent.execute(workflow)
+# Execute with hierarchical decomposition
+async with agent:
+    result = await agent.run({
+        "objective": "Launch new product",
+        "constraints": {
+            "timeline": "Q3 2024",
+            "budget": 1000000
+        }
+    })
 ```
 
-## Development
+## Layer Integration
 
-When developing new components:
+The three layers work together through:
 
-1. Start with workflow requirements
-2. Define needed resources
-3. Implement execution logic
-4. Add error handling
-5. Document thoroughly
+1. **Top-down Direction**
+   - Workflow provides strategic context
+   - Planning breaks down objectives
+   - Reasoning implements actions
 
-## Testing
+2. **Bottom-up Feedback**
+   - Reasoning reports execution results
+   - Planning adapts to outcomes
+   - Workflow tracks progress
 
-Each module has its own test suite:
+3. **State Management**
+   - Each layer maintains graph position
+   - Context flows between layers
+   - Progress tracked at all levels
 
-```bash
-pytest tests/core/workflow/
-pytest tests/core/agent/
-pytest tests/core/resource/
-```
+## Development Guidelines
+
+1. **Graph Design**
+   - Keep nodes focused and single-purpose
+   - Define clear success criteria
+   - Enable flexible mapping between layers
+
+2. **Layer Separation**
+   - Maintain clear Why-What-How separation
+   - Avoid cross-layer dependencies
+   - Use defined interfaces for communication
+
+3. **State Handling**
+   - Track progress explicitly
+   - Maintain execution context
+   - Enable state recovery
 
 ## See Also
 
-- [Framework Overview](../README.md)
-- [Examples](../../examples/README.md)
-- [API Reference](../../docs/api/README.md)
+- [Examples](../examples/README.md)
+- [Documentation](../docs/README.md)
+- [Tests](../tests/README.md)
 
 ---
 
