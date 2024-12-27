@@ -5,13 +5,6 @@ from pathlib import Path
 from typing import Union, TextIO, cast, Dict, Any, Optional, List
 from ..execution_graph import ExecutionGraph, ExecutionNode, ExecutionNodeType, ExecutionNodeStatus
 
-@dataclass 
-class WorkflowNode(ExecutionNode):
-    """Node representing a workflow step."""
-    inputs: Dict[str, Any] = field(default_factory=dict)
-    outputs: Dict[str, Any] = field(default_factory=dict)
-    constraints: Dict[str, Any] = field(default_factory=dict)
-    resources: List[str] = field(default_factory=list)
 
 class Workflow(ExecutionGraph):
     """Workflow class for workflow patterns.
@@ -45,7 +38,7 @@ class Workflow(ExecutionGraph):
         Returns:
             The created workflow node
         """
-        node = WorkflowNode(
+        node = ExecutionNode(
             node_id=step_id,
             type=ExecutionNodeType.TASK,
             description=description,
@@ -55,15 +48,14 @@ class Workflow(ExecutionGraph):
         self.add_node(node)
         return node
 
-    def get_step(self, step_id: str) -> Optional[WorkflowNode]:
+    def get_step(self, step_id: str) -> Optional[ExecutionNode]:
         """Get a workflow step by ID."""
-        node = self.get_node_by_id(step_id)
-        return cast(WorkflowNode, node) if node else None
+        return self.get_node_by_id(step_id)
 
-    def get_active_steps(self) -> List[WorkflowNode]:
+    def get_active_steps(self) -> List[ExecutionNode]:
         """Get all steps currently in progress."""
         return [
-            cast(WorkflowNode, node) for node in self.nodes.values()
+            node for node in self.nodes.values()
             if node.status == ExecutionNodeStatus.IN_PROGRESS
         ]
 
