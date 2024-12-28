@@ -1,91 +1,85 @@
-"""Graph traversal interface."""
+"""Graph traversal implementations."""
 
-from typing import Dict, Any, Optional, Iterator, List
-from dataclasses import dataclass, field
+from abc import ABC, abstractmethod
+from typing import Iterator, Optional
 from .directed_graph import DirectedGraph
 from .node import Node
-from .edge import Edge
 
-@dataclass
-class Traversal:
-    """Manages traversal through a graph.
+class TraversalStrategy(ABC):
+    """Base class for graph traversal strategies."""
     
-    Provides a consistent interface for:
-    - Moving through nodes
-    - Checking conditions
-    - Tracking state
-    - Looking ahead/behind
-    """
-    
-    graph: DirectedGraph
-    context: Dict[str, Any]
-    current: str  # Current node ID
-    path: List[str] = field(default_factory=list)
-    
-    def __post_init__(self):
-        """Initialize traversal state."""
-        if self.current not in self.graph.nodes:
-            raise ValueError(f"Invalid start node: {self.current}")
-        self.path.append(self.current)
+    @abstractmethod
+    def traverse(self, graph: DirectedGraph, start_node: str) -> Iterator[Node]:
+        """Traverse graph starting from given node."""
+        pass
 
-    @property
-    def node(self) -> Node:
-        """Current node."""
-        return self.graph.nodes[self.current]
+class BreadthFirstTraversal(TraversalStrategy):
+    """Breadth-first traversal strategy."""
+    
+    def traverse(self, graph: DirectedGraph, start_node: str) -> Iterator[Node]:
+        visited = set()
+        queue = [start_node]
         
-    @property
-    def edges(self) -> List[Edge]:
-        """Available edges from current node."""
-        return self.graph.edges[self.current]
+        while queue:
+            node_id = queue.pop(0)
+            if node_id not in visited:
+                visited.add(node_id)
+                node = graph.nodes[node_id]
+                yield node
+                queue.extend(n.node_id for n in graph.get_next_nodes(node_id))
 
-    def next(self) -> Optional[Node]:
-        """Move to next valid node.
+class DepthFirstTraversal(TraversalStrategy):
+    """Depth-first traversal strategy."""
+    
+    def traverse(self, graph: DirectedGraph, start_node: str) -> Iterator[Node]:
+        visited = set()
         
-        Returns:
-            Next node if available, None if at end
-        """
-        valid_nodes = self.graph.get_next_nodes_by_context(self.current, self.context)
-        if not valid_nodes:
-            return None
-            
-        next_node = valid_nodes[0]  # Take first valid path
-        self.current = next_node.id
-        self.path.append(self.current)
-        return next_node
+        def visit(node_id: str) -> Iterator[Node]:
+            if node_id not in visited:
+                visited.add(node_id)
+                node = graph.nodes[node_id]
+                yield node
+                for next_node in graph.get_next_nodes(node_id):
+                    yield from visit(next_node.node_id)
+                    
+        yield from visit(start_node)
 
-    def peek(self) -> List[Node]:
-        """Look at possible next nodes without moving."""
-        return self.graph.get_next_nodes_by_context(self.current, self.context)
+class TopologicalTraversal(TraversalStrategy):
+    """Topological sort traversal."""
+    
+    def traverse(self, graph: DirectedGraph, start_node: str) -> Iterator[Node]:
+        visited = set()
+        temp = set()
+        
+        def visit(node_id: str) -> Iterator[Node]:
+            if node_id in temp:
+                raise ValueError("Graph has cycles")
+            if node_id not in visited:
+                temp.add(node_id)
+                for next_node in graph.get_next_nodes(node_id):
+                    yield from visit(next_node.node_id)
+                temp.remove(node_id)
+                visited.add(node_id)
+                yield graph.nodes[node_id]
+                
+        yield from visit(start_node)
 
-    def peek_path(self, steps: int = 1) -> List[List[Node]]:
-        """Look ahead multiple steps."""
-        return [
-            [self.graph.nodes[node_id] for node_id in path]
-            for path in self.graph.find_paths_by_context(
-                self.current, 
-                max_paths=steps, 
-                context=self.context
-            )
-        ]
-
-    def move_to(self, node_id: str) -> bool:
-        """Try to move to specific node."""
-        valid_nodes = self.graph.get_next_nodes_by_context(self.current, self.context)
-        if not any(node.id == node_id for node in valid_nodes):
-            return False
-            
-        self.current = node_id
-        self.path.append(node_id)
-        return True
-
-    def reset(self, node_id: Optional[str] = None) -> None:
-        """Reset traversal state."""
-        self.current = node_id or self.path[0]
-        self.path = [self.current]
-
+class Cursor:
+    """Cursor for traversing a graph."""
+    
+    def __init__(self, graph: DirectedGraph, start_node: str, 
+                 strategy: Optional[TraversalStrategy] = None):
+        self.graph = graph
+        self.current = start_node
+        self.strategy = strategy or TopologicalTraversal()
+        self._iterator = self.strategy.traverse(graph, start_node)
+        
     def __iter__(self) -> Iterator[Node]:
-        """Iterate through valid nodes from current position."""
-        while True:
-            yield self.node
-            if not self.next():
-                break 
+        return self._iterator
+        
+    def next(self) -> Optional[Node]:
+        """Get next node in traversal."""
+        try:
+            return next(self._iterator)
+        except StopIteration:
+            return None 

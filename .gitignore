@@ -9,3 +9,4 @@ logs
 logs/*
 dxa.egg-info
 dxa.egg-info/*
+.aider*

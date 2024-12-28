@@ -3,7 +3,7 @@
 from typing import List, Optional, Union, cast
 from pathlib import Path
 from .workflow import Workflow
-from ..execution_graph import ExecutionGraph, ExecutionNode, ExecutionNodeType
+from ..execution.execution_graph import ExecutionGraph, ExecutionNode, ExecutionNodeType
 
 def create_workflow() -> Workflow:
     """Create a new workflow."""

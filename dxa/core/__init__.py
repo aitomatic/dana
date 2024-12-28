@@ -2,11 +2,11 @@
 
 __version__ = "0.1.0"
 
-from .types import Objective, Context
-from .execution_graph import ExecutionGraph
+from .execution.execution_types import Objective, ExecutionContext
+from .execution.execution_graph import ExecutionGraph
 
 __all__ = [
     "Objective",
-    "Context",
+    "ExecutionContext",
     "ExecutionGraph",
 ]

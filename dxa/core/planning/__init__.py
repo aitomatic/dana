@@ -1,13 +1,11 @@
 """Planning module for DXA."""
 
-from .base_planner import BasePlanner
-from .sequential_planner import SequentialPlanner
-from .planner_factory import PlannerFactory
-from .plan import Plan
+from .planner import Planner
+from .planning_factory import PlanningFactory
+from .base_plan import BasePlan
 
 __all__ = [
-    'BasePlanner',
-    'SequentialPlanner',
-    'PlannerFactory',
-    'Plan',
+    'Planner',
+    'PlanningFactory',
+    'BasePlan',
 ]

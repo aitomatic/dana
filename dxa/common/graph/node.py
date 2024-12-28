@@ -1,16 +1,22 @@
-"""Base node definition for directed graphs."""
+"""Base node implementation for graphs."""
 
-from typing import Dict, Any, Optional
 from dataclasses import dataclass, field
-import uuid
+from typing import Dict, Any
 
 @dataclass
 class Node:
-    """Base class for graph nodes."""
-    node_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    type: Optional[str] = None
-    description: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = field(default_factory=dict)
-    
-    def __hash__(self):
+    """Base graph node."""
+    node_id: str
+    type: str = "node"
+    description: str = ""
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    def __hash__(self) -> int:
+        """Make node hashable by id."""
         return hash(self.node_id)
+
+    def __eq__(self, other: object) -> bool:
+        """Nodes are equal if they have the same id."""
+        if not isinstance(other, Node):
+            return NotImplemented
+        return self.node_id == other.node_id

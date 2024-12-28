@@ -1,24 +1,24 @@
 """Factory for creating planners."""
 
 from typing import List, Optional
-from ..types import Objective
-from .base_planner import BasePlanner
-from .plan import Plan
+from ..execution.execution_types import Objective
+from .planner import Planner
+from .base_plan import BasePlan
 from .sequential_planner import SequentialPlanner
 from ..workflow import Workflow
 
-class PlannerFactory:
+class PlanningFactory:
     """Creates and configures planners."""
 
     @staticmethod
-    def create_sequential_planner(workflow: Optional[Workflow] = None) -> BasePlanner:
+    def create_sequential_planner(workflow: Optional[Workflow] = None) -> Planner:
         """Create a planner of the specified type."""
         return SequentialPlanner(workflow)
 
     @staticmethod
-    def create_sequential_plan(objective: Objective, steps: List[str]) -> Plan:
+    def create_sequential_plan(objective: Objective, steps: List[str]) -> BasePlan:
         """Create a simple sequential plan from a list of step descriptions."""
-        plan = Plan(objective)
+        plan = BasePlan(objective)
         
         # Create nodes for each step
         prev_node = None

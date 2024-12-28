@@ -4,7 +4,7 @@ from typing import List, cast
 import time
 import pytest
 import yaml
-from dxa.core.execution_graph import ExecutionNodeType, ExecutionNode, ExecutionEdge
+from dxa.core.execution.execution_graph import ExecutionNodeType, ExecutionNode, ExecutionEdge
 from dxa.core.workflow import (
     create_from_command,
     create_from_steps,

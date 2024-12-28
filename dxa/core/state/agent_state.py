@@ -1,9 +1,9 @@
 """Agent state management."""
 
 from typing import List, Optional
-from ..types import Objective, Signal
-from ..execution_graph import ExecutionNode
-from ..planning import Plan
+from ..execution.execution_types import Objective, ExecutionSignal
+from ..execution.execution_graph import ExecutionNode
+from ..planning import BasePlan
 from dataclasses import dataclass, field
 from .base_state import BaseState
 
@@ -11,24 +11,24 @@ from .base_state import BaseState
 class AgentState(BaseState):
     """Manages agent execution state."""
     objective: Optional[Objective] = None
-    plan: Optional[Plan] = None
-    signals: List[Signal] = field(default_factory=list)
+    plan: Optional[BasePlan] = None
+    signals: List[ExecutionSignal] = field(default_factory=list)
     current_step_index: int = 0
 
     def set_objective(self, objective: Objective) -> None:
         """Set current objective."""
         self.objective = objective
 
-    def set_plan(self, plan: Plan) -> None:
+    def set_plan(self, plan: BasePlan) -> None:
         """Set current plan."""
         self.plan = plan
         self.current_step_index = 0
 
-    def add_signal(self, signal: Signal) -> None:
+    def add_signal(self, signal: ExecutionSignal) -> None:
         """Add signal to state."""
         self.signals.append(signal)
 
-    def get_signals(self) -> List[Signal]:
+    def get_signals(self) -> List[ExecutionSignal]:
         """Get current signals."""
         return self.signals
 

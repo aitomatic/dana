@@ -22,9 +22,9 @@ See dxa/agent/README.md for detailed design documentation.
 import asyncio
 from typing import Dict, Union, Optional, Any
 from ..workflow import Workflow
-from ..types import Objective
-from ..planning import BasePlanner, PlannerFactory 
-from ..reasoning import BaseReasoner, ReasonerFactory
+from ..execution.execution_types import Objective
+from ..planning import Planner, PlanningFactory 
+from ..reasoning import BaseReasoner, ReasoningFactory
 from ..capability import BaseCapability
 from ..resource import BaseResource, LLMResource
 from ..io import BaseIO, IOFactory
@@ -65,17 +65,17 @@ class Agent:
         return self._agent_llm
     
     @property
-    def planner(self) -> BasePlanner:
+    def planner(self) -> Planner:
         """Get planning system."""
         if not self._planner:
-            self._planner = PlannerFactory.create_planner()
+            self._planner = PlanningFactory.create_planner()
         return self._planner
 
     @property
     def reasoner(self) -> BaseReasoner:
         """Get reasoning system."""
         if not self._reasoner:
-            self._reasoner = ReasonerFactory.create_reasoner()
+            self._reasoner = ReasoningFactory.create_reasoner()
         return self._reasoner
     
     @property
@@ -113,14 +113,14 @@ class Agent:
             self._agent_llm = LLMResource(name=f"{self._name}_llm", config=config)
         return self
     
-    def with_planner(self, planner: Union[str, BasePlanner]) -> "Agent":
+    def with_planner(self, planner: Union[str, Planner]) -> "Agent":
         """Configure planning system."""
-        self._planner = PlannerFactory.create_planner(planner)
+        self._planner = PlanningFactory.create_planner(planner)
         return self
 
     def with_reasoner(self, reasoner: Union[str, BaseReasoner]) -> "Agent":
         """Configure reasoning system."""
-        self._reasoner = ReasonerFactory.create_reasoner(reasoner)
+        self._reasoner = ReasoningFactory.create_reasoner(reasoner)
         return self
 
     def with_resources(self, resources: Dict[str, BaseResource]) -> "Agent":

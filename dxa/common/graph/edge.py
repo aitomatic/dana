@@ -1,27 +1,21 @@
-"""Base edge definition for directed graphs."""
+"""Base edge implementation for graphs."""
 
-from typing import Dict, Any, Optional
 from dataclasses import dataclass, field
+from typing import Dict, Any
 
 @dataclass
 class Edge:
-    """Base class for graph edges."""
-    source: str
-    target: str
-    condition: Optional[str] = None
+    """Base graph edge."""
+    source: str  # Source node ID
+    target: str  # Target node ID
     metadata: Dict[str, Any] = field(default_factory=dict)
-    
-    def __hash__(self):
+
+    def __hash__(self) -> int:
+        """Make edge hashable by source/target pair."""
         return hash((self.source, self.target))
-        
-    def matches(self, context: Dict[str, Any]) -> bool:
-        """Check if edge condition matches given context."""
-        if not self.condition:
-            return True
-            
-        # Simple condition check - just verify key exists with expected value
-        key, value = self.condition.split('==')
-        key = key.strip()
-        value = value.strip(' "\'')
-        
-        return context.get(key) == value
+
+    def __eq__(self, other: object) -> bool:
+        """Edges are equal if they have same source/target."""
+        if not isinstance(other, Edge):
+            return NotImplemented
+        return self.source == other.source and self.target == other.target

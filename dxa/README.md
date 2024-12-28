@@ -9,25 +9,48 @@
 ## dxa Module
 
 DXA is built around Workflows that define what agents can do. From simple Q&A to complex research patterns, workflows provide executable structures that agents can run. These workflows combine:
+
 - Task sequences and decision points
 - Resource requirements
 - State management
 - Execution patterns
 
+What makes DXA powerful is its unique 3-layer architecture that maps Workflows to Plans to ReasoningLoops. Think of it like this:
+
+1. **Workflows** are like recipes - they describe what you want to achieve at a high level. A workflow could be as simple as "answer this question" or as complex as "research this topic, analyze the findings, and write a report."
+
+2. **Plans** are like detailed instructions that break down the recipe. The Planning layer takes your workflow and creates a flexible graph of steps. Each step knows what resources it needs and what conditions must be met. Plans can adapt - if something unexpected happens, the plan can reorganize itself.
+
+3. **ReasoningPatterns** are like the actual cooking process. They execute each planned step using the right tools (resources) and thinking approaches (reasoning). A ReasoningPattern could be as straightforward as "ask the LLM and return the answer" or as sophisticated as "gather multiple sources, cross-reference them, and synthesize the findings."
+
+Each layer is represented as a graph that can be as simple or complex as needed:
+
+- A workflow graph might be a single node for Q&A or a complex decision tree for research
+- A plan graph might be linear steps or a dynamic network that changes based on findings
+- A reasoning loop graph might be a simple request-response or an intricate pattern of thinking and verification
+
+This layered approach means you can start simple - like using DXA for basic Q&A - but then scale up to handle complex tasks without changing your core architecture. It's like having building blocks that work just as well for a small house as they do for a skyscraper.
+
 ## Core Architecture
 
-At the heart of DXA is the `Agent` system, which coordinates cognitive functions through a layered architecture inspired by human decision-making. The `Planning` layer handles strategic decisions - what steps to take - while the `Reasoning` layer determines how to think about each step. Supporting these cognitive functions are `Capabilities` like memory and domain expertise, concrete `Resources` like LLMs and APIs, and an `IO` system for environmental interaction. This separation of concerns allows both high-level strategic thinking and efficient tactical execution while maintaining modularity and extensibility.
+At the heart of DXA is the `Agent` system, which coordinates cognitive functions through a layered architecture inspired by human decision-making. The `Workflow` layer defines what needs to be done, the `Planning` layer handles strategic decisions - what steps to take - while the `Reasoning` layer determines how to think about each step. Supporting these cognitive functions are `Capabilities` like memory and domain expertise, concrete `Resources` like LLMs and APIs, and an `IO` system for environmental interaction. This separation of concerns allows both high-level strategic thinking and efficient tactical execution while maintaining modularity and extensibility.
 
 Getting started with DXA is straightforward through its `AgentFactory` system. For simple tasks, you can create an agent with a single line of code, selecting from tested configurations optimized for common use cases. As your needs grow more complex, the same agent can be progressively enhanced with additional capabilities, custom reasoning patterns, or specialized domain expertise. This approach embodies our core philosophy: simple things should be easy, complex things should be possible.
 
 1. **[Agent System](agent/README.md)** - The central entity that:
    - Provides factory patterns for quick creation
    - Manages the core LLM that powers cognitive functions
-   - Coordinates planning and reasoning
+   - Coordinates workflows, planning and reasoning
    - Handles resource allocation and state
    - Provides the main interface for users
 
 2. **Core Cognitive Components**:
+   - **[Workflows](workflow/README.md)** - Strategic layer that:
+     - Defines high-level objectives
+     - Specifies process patterns
+     - Manages business logic
+     - Sets success criteria
+
    - **[Planning](core/planning/README.md)** - Strategic layer that:
      - Understands objectives
      - Generates execution plans
@@ -80,6 +103,7 @@ graph TB
 ## Core Components
 
 1. **Workflows** define agent behavior:
+
    ```python
    # Simple Q&A workflow
    answer = Agent().ask("What is quantum computing?")
