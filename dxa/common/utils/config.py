@@ -45,7 +45,7 @@ import logging
 import os
 from pathlib import Path
 from typing import Dict, Any, Optional
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 
 from dxa.common.exceptions import ConfigurationError
 
@@ -55,8 +55,8 @@ try:
 except ImportError:  # pragma: no cover
     YAML_AVAILABLE = False
 
-# Load .env file at module import
-load_dotenv()
+# Load .env file at module import. The usecwd=True is to forde the .env file to be in the current working directory.
+load_dotenv(find_dotenv(usecwd=True), override=True)
 
 logger = logging.getLogger(__name__)
 
@@ -102,6 +102,7 @@ def _load_yaml_config(path: Path) -> Dict[str, Any]:
         logger.error("Failed to parse YAML config: %s", str(e))
         raise ConfigurationError(f"Invalid YAML format in {path}") from e
 
+# TODO: move to more appropriate module
 def load_agent_config(
     agent_type: str,
     config_path: Optional[str] = None,

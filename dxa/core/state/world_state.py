@@ -4,9 +4,10 @@ World state management.
 
 from typing import Dict, Any
 from dataclasses import dataclass, field
+from .base_state import BaseState
 
 @dataclass
-class WorldState:
+class WorldState(BaseState):
     """Current knowledge and context for decision making."""
     facts: Dict[str, Any] = field(default_factory=dict)
     context: Dict[str, Any] = field(default_factory=dict)

@@ -1,9 +1,11 @@
 """DXA agent module."""
 
 from .agent import Agent
-from ..state.agent_state import AgentState
+from .agent_runtime import AgentRuntime
+from .agent_factory import AgentFactory
 
 __all__ = [
     "Agent",
-    "AgentState",
+    "AgentRuntime",
+    "AgentFactory",
 ]

@@ -8,22 +8,49 @@
 
 ## dxa Module
 
-DXA is a framework for building and deploying intelligent agents powered by Large Language Models (LLMs). Like human beings, these agents possess core cognitive abilities, inherent capabilities, ways to interact with their environment, and access to external resources. The framework implements a layered architecture separating strategic planning from tactical execution, enabling both simple tasks and complex objectives to be handled effectively through composition.
+DXA is built around Workflows that define what agents can do. From simple Q&A to complex research patterns, workflows provide executable structures that agents can run. These workflows combine:
+
+- Task sequences and decision points
+- Resource requirements
+- State management
+- Execution patterns
+
+What makes DXA powerful is its unique 3-layer architecture that maps Workflows to Plans to ReasoningLoops. Think of it like this:
+
+1. **Workflows** are like recipes - they describe what you want to achieve at a high level. A workflow could be as simple as "answer this question" or as complex as "research this topic, analyze the findings, and write a report."
+
+2. **Plans** are like detailed instructions that break down the recipe. The Planning layer takes your workflow and creates a flexible graph of steps. Each step knows what resources it needs and what conditions must be met. Plans can adapt - if something unexpected happens, the plan can reorganize itself.
+
+3. **ReasoningPatterns** are like the actual cooking process. They execute each planned step using the right tools (resources) and thinking approaches (reasoning). A ReasoningPattern could be as straightforward as "ask the LLM and return the answer" or as sophisticated as "gather multiple sources, cross-reference them, and synthesize the findings."
+
+Each layer is represented as a graph that can be as simple or complex as needed:
+
+- A workflow graph might be a single node for Q&A or a complex decision tree for research
+- A plan graph might be linear steps or a dynamic network that changes based on findings
+- A reasoning loop graph might be a simple request-response or an intricate pattern of thinking and verification
+
+This layered approach means you can start simple - like using DXA for basic Q&A - but then scale up to handle complex tasks without changing your core architecture. It's like having building blocks that work just as well for a small house as they do for a skyscraper.
 
 ## Core Architecture
 
-At the heart of DXA is the `Agent` system, which coordinates cognitive functions through a layered architecture inspired by human decision-making. The `Planning` layer handles strategic decisions - what steps to take - while the `Reasoning` layer determines how to think about each step. Supporting these cognitive functions are `Capabilities` like memory and domain expertise, concrete `Resources` like LLMs and APIs, and an `IO` system for environmental interaction. This separation of concerns allows both high-level strategic thinking and efficient tactical execution while maintaining modularity and extensibility.
+At the heart of DXA is the `Agent` system, which coordinates cognitive functions through a layered architecture inspired by human decision-making. The `Workflow` layer defines what needs to be done, the `Planning` layer handles strategic decisions - what steps to take - while the `Reasoning` layer determines how to think about each step. Supporting these cognitive functions are `Capabilities` like memory and domain expertise, concrete `Resources` like LLMs and APIs, and an `IO` system for environmental interaction. This separation of concerns allows both high-level strategic thinking and efficient tactical execution while maintaining modularity and extensibility.
 
 Getting started with DXA is straightforward through its `AgentFactory` system. For simple tasks, you can create an agent with a single line of code, selecting from tested configurations optimized for common use cases. As your needs grow more complex, the same agent can be progressively enhanced with additional capabilities, custom reasoning patterns, or specialized domain expertise. This approach embodies our core philosophy: simple things should be easy, complex things should be possible.
 
 1. **[Agent System](agent/README.md)** - The central entity that:
    - Provides factory patterns for quick creation
    - Manages the core LLM that powers cognitive functions
-   - Coordinates planning and reasoning
+   - Coordinates workflows, planning and reasoning
    - Handles resource allocation and state
    - Provides the main interface for users
 
 2. **Core Cognitive Components**:
+   - **[Workflows](workflow/README.md)** - Strategic layer that:
+     - Defines high-level objectives
+     - Specifies process patterns
+     - Manages business logic
+     - Sets success criteria
+
    - **[Planning](core/planning/README.md)** - Strategic layer that:
      - Understands objectives
      - Generates execution plans
@@ -56,91 +83,99 @@ Getting started with DXA is straightforward through its `AgentFactory` system. F
 
 ```mermaid
 graph TB
-    A[Agent] --> B[Planning]
-    A --> C[Reasoning]
-    A --> D[Capabilities]
-    A --> E[Resources]
-    A --> F[IO]
+    subgraph "Definition"
+        W[Workflows] --> A[Agent]
+    end
     
-    B -.-> G[LLM]
-    C -.-> G
+    subgraph "Execution"
+        A --> P[Plans]
+        R[Resources] --> P
+        P --> E[Execution]
+    end
+    
+    subgraph "Resources"
+        R --> L[LLM]
+        R --> T[Tools]
+        R --> H[Human]
+    end
 ```
+
+## Core Components
+
+1. **Workflows** define agent behavior:
+
+   ```python
+   # Simple Q&A workflow
+   answer = Agent().ask("What is quantum computing?")
+   
+   # Research workflow with steps
+   workflow = create_research_workflow()
+   result = agent.execute(workflow)
+   
+   # Custom workflow
+   workflow = BaseWorkflow()
+   workflow.add_task("gather", "Gather information")
+   workflow.add_task("analyze", "Analyze findings")
+   ```
+
+2. **Agents** execute workflows through:
+   - Planning: Convert workflow to executable plan
+   - Reasoning: Execute plan steps
+   - Resources: Provide needed capabilities
+   - State: Track execution progress
+
+3. **Resources** enable workflow execution:
+   - LLM: Core language model
+   - Tools: External capabilities
+   - Human: Interactive feedback
+   - Domain: Expert knowledge
 
 ## Getting Started
 
-The simplest way to create an agent is:
-
 ```python
-from dxa import AgentFactory
+from dxa.core.agent import Agent
+from dxa.core.workflow import create_research_workflow
+from dxa.core.resource import LLMResource
 
-# Quick start with factory
-agent = AgentFactory.quick("assistant")
-result = await agent.run("Help with this task")
+# Simple Q&A
+answer = Agent().ask("What is quantum computing?")
 
-# Or use template with customization
-agent = AgentFactory.from_template("researcher")\
-    .with_reasoning("cot")\
-    .with_resources({"llm": LLMResource(model="gpt-4")})
-result = await agent.run("Help with this task")
-```
+# Research workflow
+workflow = create_research_workflow()
+agent = Agent(resources={"llm": LLMResource()})
+result = agent.execute(workflow)
 
-## Examples
+# Custom workflow with resources
+workflow = BaseWorkflow()
+workflow.add_task("research", "Research topic")
+workflow.add_task("synthesize", "Synthesize findings")
 
-The `examples/` directory demonstrates various agent implementations:
-
-1. **Basic Patterns**
-   - `chat_bot.py`: Interactive conversational agent
-   - `research_assistant.py`: Information gathering and analysis
-   - `system_monitor.py`: Continuous system monitoring
-
-2. **Advanced Usage**
-   - `collaborative_research.py`: Multi-agent collaboration
-   - `websocket_solver.py`: WebSocket-based problem solving
-   - `interactive_math.py`: Interactive math tutoring
-   - `automation_web.py`: Web scraping automation
-
-These examples showcase different agent configurations and use cases:
-
-- Collaborative problem-solving
-- Network-based communication
-- Interactive console agents
-- Workflow automation
-
-## Advanced Usage
-
-For custom agent behaviors, use the factory pattern:
-
-```python
-from dxa import create_agent
-
-async with create_agent({
-    "name": "custom_agent",
-    "llm": LLMResource("gpt-4"),
-    "planning": "hierarchical",
-    "reasoning": "cot",
-    "capabilities": ["research"]
-}) as agent:
-    result = await agent.run("Research this topic")
+agent = Agent(resources={
+    "llm": LLMResource(),
+    "search": SearchResource()
+})
+result = agent.execute(workflow)
 ```
 
 ## Project Structure
 
 ```text
 dxa/
-├── agent/          # Agent implementation
-│   ├── __init__.py
-│   ├── agent.py
-│   ├── runtime.py
-│   └── state.py
+|
 ├── core/           # Core components
-│   ├── planning/   # Strategic planning
-│   ├── reasoning/  # Tactical execution
-│   ├── capability/ # Core abilities
-│   ├── resource/   # External tools
-│   └── io/         # Interaction handling
+│   ├── workflow/   # Workflow definitions
+│   ├── agent/      # Agent implementation
+│   ├── capability/ # Cognitive abilities
+│   ├── io/         # Interaction handling
+│   ├── planning/   # Plan generation
+│   ├── reasoning/  # Step execution
+│   └── resource/   # External tools
+|
+├── common/         # Shared utilities
+│   ├── utils/      # Utility functions
+│   └── graph/      # Graph infrastructure
+|
 └── examples/       # Usage examples
-    ├── basic/      # Basic patterns
-    └── advanced/   # Complex scenarios
 ```
 
 ## Installation

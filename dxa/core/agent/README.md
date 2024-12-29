@@ -6,9 +6,14 @@
 
 # DXA Agent System
 
-## dxa.agent Module
+## dxa.core.agent Module
 
-The DXA agent system implements a composable architecture that combines planning, reasoning, and execution to create powerful AI agents.
+The DXA agent system executes workflows by:
+
+1. Converting workflows to executable plans
+2. Managing required resources
+3. Tracking execution state
+4. Adapting to new information
 
 ## Design Philosophy
 
@@ -30,149 +35,123 @@ The DXA framework provides a factory pattern for creating agents with common con
 ### Usage
 
 ```python
-from dxa import AgentFactory
+from dxa.core.agent import Agent
+from dxa.core.workflow import create_research_workflow
 
-# Quick start with factory
-agent = AgentFactory.quick("assistant")
+# Simple workflow execution
+answer = Agent().ask("What is quantum computing?")
 
-# Create from template
-agent = AgentFactory.from_template("researcher")
+# Research workflow with resources
+workflow = create_research_workflow()
+agent = Agent(resources={"llm": LLMResource()})
+result = agent.execute(workflow)
 
-# Template with customization
-agent = AgentFactory.from_template("researcher")\
-    .with_reasoning("cot")\
-    .with_resources({"llm": LLMResource(model="gpt-4")})
+# Custom workflow execution
+workflow = BaseWorkflow()
+workflow.add_task("research", "Research topic")
+workflow.add_task("synthesize", "Synthesize findings")
+
+agent = Agent(resources={
+    "llm": LLMResource(),
+    "search": SearchResource()
+})
+result = agent.execute(workflow)
 ```
 
-### Built-in Templates
+## Workflow Execution
 
-The factory includes tested configurations for common use cases:
-
-- researcher: Optimized for information gathering and analysis
-- automator: Configured for simple task automation
-- expert: Base configuration for domain expertise
-- autonomous: Self-directed agent configuration
-
-### Implementation
-
-```python
-class AgentFactory:
-    """Creates different types of DXA agents with appropriate configurations"""
-    
-    def __init__(self):
-        self._templates = {
-            "researcher": {
-                "planning": "hierarchical",
-                "reasoning": "cot",
-                "resources": ["search", "memory"],
-                "capabilities": ["research"]
-            },
-            "automator": {
-                "planning": "direct",
-                "reasoning": "simple",
-                "resources": ["tools"],
-                "capabilities": ["automation"]
-            }
-            # Additional templates...
-        }
-
-    @classmethod
-    def quick(cls, name: str) -> Agent:
-        """Creates simple agent with sensible defaults"""
-        return cls._create_from_template("automator", name)
-
-    @classmethod
-    def from_template(cls, template_name: str, name: str = None) -> Agent:
-        """Creates agent from predefined template"""
-        template = cls._templates[template_name]
-        return Agent(name or template_name)\
-            .with_planning(template["planning"])\
-            .with_reasoning(template["reasoning"])\
-            .with_resources(template["resources"])\
-            .with_capabilities(template["capabilities"])
-```
-
-## Core Requirements
-
-Every DXA agent requires a core LLM that powers its cognitive functions:
-
-```python
-# The LLM is provided at construction
-agent = Agent("assistant", llm=LLMResource("gpt-4"))
-```
-
-This LLM is automatically used by the agent's planning and reasoning systems, ensuring consistent cognitive capabilities across all operations.
-
-## Core Components
+Agents execute workflows through:
 
 ```mermaid
 graph TB
-    A[Agent] --> B[Planning]
-    A --> C[Reasoning]
-    A --> D[Resources]
-    A --> E[Capabilities]
-    A --> F[IO]
+    W[Workflow] --> P[Planning]
+    P --> E[Execution]
+    R[Resources] --> E
     
-    B -.-> G[LLM]
-    C -.-> G
+    subgraph "Agent Runtime"
+        P
+        E
+        S[State]
+    end
 ```
 
-## Usage Guide
+1. **Planning**
+   - Convert workflow to executable plan
+   - Allocate required resources
+   - Set up execution state
 
-### Simple Tasks
+2. **Execution**
+   - Run workflow steps
+   - Track progress
+   - Handle state changes
+   - Adapt to new information
 
-```python
-# Direct pattern for simple queries
-agent = Agent("assistant")\
-    .with_planning("direct")\
-    .with_reasoning("direct")
+3. **Resources**
+   - Manage LLM interactions
+   - Control tool access
+   - Handle I/O operations
 
-result = await agent.run("What is quantum computing?")
+## State Management
+
+Agents track:
+
+- Workflow progress
+- Resource allocation
+- Execution context
+- Generated artifacts
+
+## State Components
+
+The DXA agent system uses a centralized state management approach to track the evolution of objectives and plans. This integrates with the [Planning System](../core/planning/README.md) and [Reasoning System](../core/reasoning/README.md) to maintain coherent agent state.
+
+## Core State Components
+
+### Objective State
+
+- Current objective being pursued
+- History of objective evolution
+- Metadata (timestamps, reasons for changes)
+
+### Plan State  
+
+- Current execution plan
+- History of plan evolution
+- Plan metadata (completion status, timestamps)
+
+### Execution State
+
+- Active step in current plan
+- Results from completed steps
+- Resource allocations (managed via [Resource System](../core/resource/README.md))
+
+## State Flow
+
+```mermaid
+graph TD
+    A[New Objective] --> B[Current Objective]
+    B --> C[Generate Plan]
+    C --> D[Current Plan]
+    D --> E[Execute Steps]
+    E --> F[Record Results]
+    F --> |New Info|B
 ```
 
-### Analysis Tasks
+## Resource Integration
 
 ```python
-# Sequential planning with chain of thought reasoning
-agent = Agent("analyst")\
-    .with_planning("sequential")\
-    .with_reasoning("cot")\
-    .with_resources({
-        "memory": MemoryResource(),  # Track reasoning steps
-        "search": SearchResource()    # Look up information
-    })
-
-result = await agent.run({
-    "objective": "Analyze impact of quantum computing on cryptography",
-    "requirements": [
-        "find_key_papers",
-        "analyze_trends",
-        "synthesize_findings"
-    ]
+# Configure agent with resources
+agent = Agent(resources={
+    "llm": LLMResource(),      # Core LLM
+    "search": SearchResource(), # Search capability
+    "human": HumanResource()    # Human feedback
 })
-```
 
-### Monitoring Tasks
-
-```python
-# Dynamic planning with OODA reasoning
-agent = Agent("monitor")\
-    .with_planning("dynamic")\
-    .with_reasoning("ooda")\
-    .with_resources({
-        "sensors": SystemSensors(),
-        "alerts": AlertSystem()
-    })
-
-async with agent:
-    await agent.run({
-        "objective": "Monitor system health",
-        "adaptation_rules": {
-            "high_load": "scale_resources",
-            "errors": "activate_fallback",
-            "attacks": "enhance_security"
-        }
-    })
+# Resources are available during workflow execution
+result = agent.execute(workflow, context={
+    "llm_config": {"temperature": 0.7},
+    "search_depth": "comprehensive",
+    "require_feedback": True
+})
 ```
 
 ### Domain-Specific Tasks
@@ -236,42 +215,6 @@ async with agent.runtime(runtime_config) as runtime:
     result = await runtime.execute(task)
 ```
 
-## State Management
-
-The DXA agent system uses a centralized state management approach to track the evolution of objectives and plans. This integrates with the [Planning System](../core/planning/README.md) and [Reasoning System](../core/reasoning/README.md) to maintain coherent agent state.
-
-## Core State Components
-
-### Objective State
-
-- Current objective being pursued
-- History of objective evolution
-- Metadata (timestamps, reasons for changes)
-
-### Plan State  
-
-- Current execution plan
-- History of plan evolution
-- Plan metadata (completion status, timestamps)
-
-### Execution State
-
-- Active step in current plan
-- Results from completed steps
-- Resource allocations (managed via [Resource System](../core/resource/README.md))
-
-## State Flow
-
-```mermaid
-graph TD
-    A[New Objective] --> B[Current Objective]
-    B --> C[Generate Plan]
-    C --> D[Current Plan]
-    D --> E[Execute Steps]
-    E --> F[Record Results]
-    F --> |New Info|B
-```
-
 ## Key Design Principles
 
 1. **Single Source of Truth**
@@ -312,26 +255,17 @@ Agents can be configured through:
 
 ## Error Handling
 
-The agent system provides several error handling mechanisms:
+Agents provide:
 
-1. Automatic retries
-2. Fallback strategies
-3. Error recovery
-4. State preservation
-
-## Monitoring
-
-Track agent performance through:
-
-1. Progress metrics
-2. Resource usage
-3. Success rates
-4. Error patterns
+- Automatic retries
+- Resource cleanup
+- State preservation
+- Error recovery
 
 ## See Also
 
-- [Runtime Documentation](runtime/README.md)
-- [Core System](../core/README.md)
+- [Workflow System](../workflow/README.md)
+- [Resource System](../resource/README.md)
 - [Examples](../../examples/README.md)
 
 ---
@@ -343,28 +277,3 @@ Copyright © 2024 Aitomatic, Inc. All rights reserved.
 <p align="center">
 <a href="https://aitomatic.com">https://aitomatic.com</a>
 </p>
-
-## Integration with Other Systems
-
-Agents can leverage several DXA systems:
-
-1. **Planning** - For strategic decisions
-2. **Reasoning** - For tactical execution
-3. **Flows** - For process automation
-4. **Resources** - For tool integration
-
-### Using Flows with Agents
-
-```python
-# Create agent with flow support
-agent = Agent("processor")\
-    .with_flow(analysis_flow)\
-    .with_planning("dynamic")\
-    .with_reasoning("cot")
-
-# Execute using flow
-async with agent:
-    result = await agent.run(objective)
-```
-
-See [Flow System](../flow/README.md) for more details on process automation.

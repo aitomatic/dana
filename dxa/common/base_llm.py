@@ -22,9 +22,15 @@ Example:
 
 from typing import Dict, Optional, List, Any, Union
 import logging
+import os
 from dataclasses import dataclass, field
 from openai import APIError, APIConnectionError, RateLimitError, APITimeoutError, AsyncOpenAI
-from openai.types.chat import ChatCompletion
+from openai.types.chat import (
+    ChatCompletion,
+    ChatCompletionSystemMessageParam,
+    ChatCompletionUserMessageParam,
+    ChatCompletionAssistantMessageParam
+)
 
 from .exceptions import LLMError
 
@@ -108,11 +114,15 @@ class BaseLLM:
     @property
     def api_key(self) -> Optional[str]:
         """Get the API key."""
+        if not self.config.api_key:
+            self.config.api_key = os.environ.get("DEFAULT_LLM_KEY")
         return self.config.api_key
 
     @property
     def model_name(self) -> str:
         """Get the model name."""
+        if not self.config.model_name:
+            self.config.model_name = os.environ.get("DEFAULT_LLM", "gpt-4")
         return self.config.model_name
 
     @property
@@ -171,10 +181,19 @@ class BaseLLM:
             "interaction_type": "request"
         })
 
+        # flake8: noqa: E501
+        messages_typed = [
+            ChatCompletionSystemMessageParam(content=msg["content"], role="system") if msg["role"] == "system" else
+            ChatCompletionUserMessageParam(content=msg["content"], role="user") if msg["role"] == "user" else
+            ChatCompletionAssistantMessageParam(content=msg["content"], role="assistant") if msg["role"] == "assistant" else
+            ChatCompletionUserMessageParam(content=msg["content"], role="user")
+            for msg in messages
+        ]
         try:
+            assert isinstance(self._client, AsyncOpenAI)
             response = await self._client.chat.completions.create(
                 model=self.model_name,
-                messages=messages,
+                messages=messages_typed,
                 **request_config
             )
 

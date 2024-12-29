@@ -1,62 +1,47 @@
 """Agent state management."""
 
 from typing import List, Optional
-from ..types import Objective, Plan, Signal, Step
+from ..execution.execution_types import Objective, ExecutionSignal
+from ..execution.execution_graph import ExecutionNode
+from ..planning import Plan
+from dataclasses import dataclass, field
+from .base_state import BaseState
 
-class AgentState:
-    """Manages agent execution state.
-    
-    Centralizes state management for:
-    - Objective tracking
-    - Plan execution
-    - World knowledge
-    - Flow progress
-    - Signal handling
-    """
-    
-    def __init__(self):
-        self._objective: Optional[Objective] = None
-        self._plan: Optional[Plan] = None
-        self._signals: List[Signal] = []
-        self._current_step_index = 0
+@dataclass
+class AgentState(BaseState):
+    """Manages agent execution state."""
+    objective: Optional[Objective] = None
+    plan: Optional[Plan] = None
+    signals: List[ExecutionSignal] = field(default_factory=list)
+    current_step_index: int = 0
 
     def set_objective(self, objective: Objective) -> None:
         """Set current objective."""
-        self._objective = objective
+        self.objective = objective
 
     def set_plan(self, plan: Plan) -> None:
         """Set current plan."""
-        self._plan = plan
-        self._current_step_index = 0
+        self.plan = plan
+        self.current_step_index = 0
 
-    def add_signal(self, signal: Signal) -> None:
+    def add_signal(self, signal: ExecutionSignal) -> None:
         """Add signal to state."""
-        self._signals.append(signal)
+        self.signals.append(signal)
 
-    def get_signals(self) -> List[Signal]:
+    def get_signals(self) -> List[ExecutionSignal]:
         """Get current signals."""
-        return self._signals
+        return self.signals
 
     def clear_signals(self) -> None:
         """Clear all signals."""
-        self._signals = []
+        self.signals = []
 
     def advance_step(self) -> None:
         """Move to next step."""
-        self._current_step_index += 1
+        self.current_step_index += 1
 
-    def get_current_step(self) -> Optional[Step]:
+    def get_current_step(self) -> Optional[ExecutionNode]:
         """Get current step being executed."""
-        if self._plan and self._current_step_index < len(self._plan.steps):
-            return self._plan.steps[self._current_step_index]
+        if self.plan and self.current_step_index < len(self.plan.nodes):
+            return self.plan.nodes[self.current_step_index]
         return None
-
-    @property
-    def objective(self) -> Optional[Objective]:
-        """Get current objective."""
-        return self._objective
-
-    @property
-    def plan(self) -> Optional[Plan]:
-        """Get current plan."""
-        return self._plan
