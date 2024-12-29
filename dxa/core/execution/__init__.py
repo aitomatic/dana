@@ -1,16 +1,15 @@
 """Execution module exports."""
 
 from .execution_types import (
-    ExecutionNode, ExecutionNodeType, ExecutionNodeStatus,
+    ExecutionNode, ExecutionNodeStatus,
     ExecutionEdge, ExecutionSignal, ExecutionSignalType,
     Objective, ObjectiveStatus, ExecutionContext, ExecutionError
 )
 from .execution_graph import ExecutionGraph
-from .base_executor import BaseExecutor
+from .executor import Executor
 
 __all__ = [
     'ExecutionNode',
-    'ExecutionNodeType',
     'ExecutionNodeStatus',
     'ExecutionEdge',
     'ExecutionSignal',
@@ -19,6 +18,6 @@ __all__ = [
     'ObjectiveStatus',
     'ExecutionContext',
     'ExecutionGraph',
-    'BaseExecutor',
+    'Executor',
     'ExecutionError'
 ]

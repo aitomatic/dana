@@ -102,6 +102,7 @@ def _load_yaml_config(path: Path) -> Dict[str, Any]:
         logger.error("Failed to parse YAML config: %s", str(e))
         raise ConfigurationError(f"Invalid YAML format in {path}") from e
 
+# TODO: move to more appropriate module
 def load_agent_config(
     agent_type: str,
     config_path: Optional[str] = None,

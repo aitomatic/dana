@@ -23,14 +23,15 @@ import asyncio
 from typing import Dict, Union, Optional, Any
 from ..workflow import Workflow
 from ..execution.execution_types import Objective
-from ..planning import Planner, PlanningFactory 
-from ..reasoning import BaseReasoner, ReasoningFactory
 from ..capability import BaseCapability
 from ..resource import BaseResource, LLMResource
 from ..io import BaseIO, IOFactory
 from ..state import AgentState
+from ..workflow import WorkflowStrategy
+from ..planning import PlanningStrategy
+from ..reasoning import ReasoningStrategy
+from ...common.utils.config import load_agent_config
 from .agent_runtime import AgentRuntime
-from ...common.utils import load_agent_config
 
 class Agent:
     """Main agent interface with built-in execution management."""
@@ -38,20 +39,33 @@ class Agent:
     def __init__(self, name: Optional[str] = None):
         self._name = name or "agent"
         self._state = AgentState()
-        self._agent_llm = None
+        self._agent_llm = None  # Default LLM
+        self._workflow_llm = None  # Specialized LLMs
+        self._planning_llm = None
+        self._reasoning_llm = None
         self._config = {}
         self._planner = None
         self._reasoner = None
         self._capabilities = None
         self._resources = None
         self._io = None
-        self._runtime = None
+        self._runtime: Optional[AgentRuntime] = None
+        self._workflow_strategy = None
+        self._planning_strategy = None
+        self._reasoning_strategy = None
     
     @property
     def state(self) -> AgentState:
         """Get agent state."""
         return self._state
 
+    @property
+    def runtime(self) -> AgentRuntime:
+        """Get agent runtime."""
+        if not self._runtime:
+            raise ValueError("Agent runtime not initialized")
+        return self._runtime
+    
     @property
     def config(self) -> Dict[str, Any]:
         """Get configuration."""
@@ -63,20 +77,6 @@ class Agent:
         if not self._agent_llm:
             self._agent_llm = LLMResource(name=f"{self._name}_llm")
         return self._agent_llm
-    
-    @property
-    def planner(self) -> Planner:
-        """Get planning system."""
-        if not self._planner:
-            self._planner = PlanningFactory.create_planner()
-        return self._planner
-
-    @property
-    def reasoner(self) -> BaseReasoner:
-        """Get reasoning system."""
-        if not self._reasoner:
-            self._reasoner = ReasoningFactory.create_reasoner()
-        return self._reasoner
     
     @property
     def resources(self) -> Dict[str, BaseResource]:
@@ -99,6 +99,21 @@ class Agent:
             self._io = IOFactory.create_io()
         return self._io
 
+    @property
+    def workflow_llm(self) -> Optional[LLMResource]:
+        """Get workflow LLM or fallback to default."""
+        return self._workflow_llm or self.agent_llm
+
+    @property 
+    def planning_llm(self) -> Optional[LLMResource]:
+        """Get planning LLM or fallback to default."""
+        return self._planning_llm or self.agent_llm
+
+    @property
+    def reasoning_llm(self) -> Optional[LLMResource]:
+        """Get reasoning LLM or fallback to default."""
+        return self._reasoning_llm or self.agent_llm
+
     def with_llm(self, llm: Union[Dict, str, LLMResource]) -> "Agent":
         """Configure agent LLM."""
         if isinstance(llm, LLMResource):
@@ -113,16 +128,6 @@ class Agent:
             self._agent_llm = LLMResource(name=f"{self._name}_llm", config=config)
         return self
     
-    def with_planner(self, planner: Union[str, Planner]) -> "Agent":
-        """Configure planning system."""
-        self._planner = PlanningFactory.create_planner(planner)
-        return self
-
-    def with_reasoner(self, reasoner: Union[str, BaseReasoner]) -> "Agent":
-        """Configure reasoning system."""
-        self._reasoner = ReasoningFactory.create_reasoner(reasoner)
-        return self
-
     def with_resources(self, resources: Dict[str, BaseResource]) -> "Agent":
         """Add resources to agent."""
         if not self._resources:
@@ -142,44 +147,108 @@ class Agent:
         self._io = io
         return self
 
-    async def initialize(self) -> None:
-        """Initialize agent and its components."""
-        if not self.planner or not self.reasoner:
-            raise ValueError("Agent must have both planning and reasoning configured")
+    def with_workflow(self, strategy: WorkflowStrategy) -> 'Agent':
+        """Configure workflow strategy."""
+        self._workflow_strategy = strategy
+        return self
+
+    def with_planning(self, strategy: PlanningStrategy) -> 'Agent':
+        """Configure planning strategy."""
+        self._planning_strategy = strategy
+        return self
+
+    def with_reasoning(self, strategy: ReasoningStrategy) -> 'Agent':
+        """Configure reasoning strategy."""
+        self._reasoning_strategy = strategy
+        return self
+
+    def with_workflow_llm(self, llm: Union[Dict, str, LLMResource]) -> "Agent":
+        """Configure workflow LLM."""
+        self._workflow_llm = self._create_llm(llm, "workflow_llm")
+        return self
+
+    def with_planning_llm(self, llm: Union[Dict, str, LLMResource]) -> "Agent":
+        """Configure planning LLM."""
+        self._planning_llm = self._create_llm(llm, "planning_llm")
+        return self
+
+    def with_reasoning_llm(self, llm: Union[Dict, str, LLMResource]) -> "Agent":
+        """Configure reasoning LLM."""
+        self._reasoning_llm = self._create_llm(llm, "reasoning_llm")
+        return self
+
+    def _create_llm(self, llm: Union[Dict, str, LLMResource], name: str) -> LLMResource:
+        """Create LLM from various input types."""
+        if isinstance(llm, LLMResource):
+            return llm
+        elif isinstance(llm, str):
+            config = load_agent_config("llm")
+            config["model"] = llm
+            return LLMResource(name=f"{self._name}_{name}", config=config)
+        elif isinstance(llm, Dict):
+            config = load_agent_config("llm")
+            config.update(llm)
+            return LLMResource(name=f"{self._name}_{name}", config=config)
+        raise ValueError(f"Invalid LLM configuration: {llm}")
+
+    def _initialize(self) -> 'Agent':
+        """Internal initialization of agent configuration and runtime.
         
-        self._runtime = AgentRuntime(agent=self)
-        await self._runtime.initialize()
+        This method is idempotent - safe to call multiple times.
+        Only initializes if not already initialized.
+        """
+        if self._runtime:
+            return self  # Already initialized
+        
+        # Validate minimal config
+        if not self._agent_llm:
+            self.with_llm(LLMResource(name=f"{self._name}_llm"))
+        
+        # Set default strategies if not specified
+        self._workflow_strategy = self._workflow_strategy or WorkflowStrategy.DEFAULT
+        self._planning_strategy = self._planning_strategy or PlanningStrategy.DIRECT
+        self._reasoning_strategy = self._reasoning_strategy or ReasoningStrategy.DIRECT
+        
+        # Create runtime with strategies
+        self._runtime = AgentRuntime(
+            self,
+            workflow_strategy=self._workflow_strategy,
+            planning_strategy=self._planning_strategy,
+            reasoning_strategy=self._reasoning_strategy
+        )
+        
+        return self
 
     async def cleanup(self) -> None:
         """Cleanup agent and its components."""
         if self._runtime:
             await self._runtime.cleanup()
-            self._runtime = None
+            self._runtime: Optional[AgentRuntime] = None
 
-    async def __aenter__(self) -> "Agent":
+    async def __aenter__(self) -> 'Agent':
         """Initialize agent when entering context."""
-        await self.initialize()
+        self._initialize()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         """Cleanup agent when exiting context."""
         await self.cleanup()
 
-    async def run(self,
-                  objective: Optional[Union[str, Objective]] = None,
-                  workflow: Optional[Workflow] = None
-                  ) -> Any:
+    async def run(self, objective: Optional[Union[str, Objective]] = None) -> Any:
         """Execute an objective."""
-        async with self:
-            if not self._runtime:
-                raise RuntimeError("Agent must be initialized before running")
-
-            if workflow is None:
-                workflow = Workflow(objective)
-
-            return await self._runtime.execute(workflow)
+        self._initialize()
+        
+        async with self:  # For cleanup
+            # Create empty workflow with objective
+            if isinstance(objective, str):
+                objective = Objective(objective)
+            else:
+                raise ValueError(f"Invalid objective: {objective}")
+            workflow = Workflow(objective=objective)
+            return await self.runtime.execute(workflow)
     
-    def ask(self, question: str) -> str:
+    def ask(self, question: str) -> Any:
         """Ask a question to the agent."""
+        self._initialize()
         loop = asyncio.get_event_loop()
         return loop.run_until_complete(self.run(question))

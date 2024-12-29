@@ -19,12 +19,13 @@ Supporting Types:
     ObjectiveState: Objective tracking
 """
 
-from .base_reasoning_pattern import BaseReasoningPattern
+from .reasoning import Reasoning
 from .reasoning_factory import ReasoningFactory
-from .reasoner import Reasoner
+from .reasoning_executor import ReasoningStrategy, ReasoningExecutor
 
 __all__ = [
-    'BaseReasoningPattern',
+    'Reasoning',
     'ReasoningFactory',
-    'Reasoner'
+    'ReasoningStrategy',
+    'ReasoningExecutor',
 ] 

@@ -22,6 +22,7 @@ Example:
 
 from typing import Dict, Optional, List, Any, Union
 import logging
+import os
 from dataclasses import dataclass, field
 from openai import APIError, APIConnectionError, RateLimitError, APITimeoutError, AsyncOpenAI
 from openai.types.chat import (
@@ -113,11 +114,15 @@ class BaseLLM:
     @property
     def api_key(self) -> Optional[str]:
         """Get the API key."""
+        if not self.config.api_key:
+            self.config.api_key = os.environ.get("DEFAULT_LLM_KEY")
         return self.config.api_key
 
     @property
     def model_name(self) -> str:
         """Get the model name."""
+        if not self.config.model_name:
+            self.config.model_name = os.environ.get("DEFAULT_LLM", "gpt-4")
         return self.config.model_name
 
     @property

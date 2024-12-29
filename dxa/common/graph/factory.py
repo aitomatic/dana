@@ -2,9 +2,7 @@
 
 from typing import Dict, Any, Type, Union, TextIO
 from pathlib import Path
-from .directed_graph import DirectedGraph
-from .node import Node
-from .edge import Edge
+from .directed_graph import DirectedGraph, Node, Edge
 from .serializer import GraphSerializer
 
 class GraphFactory:

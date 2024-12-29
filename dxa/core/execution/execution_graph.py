@@ -4,9 +4,9 @@ from typing import Dict, Any, Optional, Union, List, cast, TextIO
 from pathlib import Path
 from dataclasses import dataclass
 from datetime import datetime
-from ...common.graph import DirectedGraph, Node, Edge
+from ...common.graph import DirectedGraph, Node, Edge, Cursor, NodeType
 from .execution_types import (
-    Objective, ExecutionContext, ExecutionNode, ExecutionNodeType,
+    Objective, ExecutionContext, ExecutionNode,
     ExecutionNodeStatus, ExecutionSignal, ExecutionSignalType,
     ExecutionEdge
 )
@@ -62,7 +62,7 @@ class ExecutionGraph(DirectedGraph):
 
     def get_start_node(self) -> Optional[ExecutionNode]:
         """Get the start node, meaning the node with type START."""
-        return next((node for node in self.nodes.values() if node.type == ExecutionNodeType.START.value), None)
+        return next((node for node in self.nodes.values() if node.node_type == NodeType.START), None)
     
     @classmethod
     def from_yaml(cls, stream: Union[str, TextIO, Path]) -> 'ExecutionGraph':
@@ -73,7 +73,7 @@ class ExecutionGraph(DirectedGraph):
         """Add an execution step."""
         node = ExecutionNode(
             node_id=step_id,
-            node_type=ExecutionNodeType.TASK,
+            node_type=NodeType.TASK,
             description=description,
             status=ExecutionNodeStatus.PENDING,
             metadata=kwargs.get('metadata', {}),
@@ -164,7 +164,7 @@ class ExecutionGraph(DirectedGraph):
         """Get all terminal (end) nodes."""
         return [
             cast(ExecutionNode, node) for node in self.nodes.values()
-            if node.type == ExecutionNodeType.END.value
+            if node.node_type == NodeType.END
         ]
 
     def is_complete(self) -> bool:
@@ -172,7 +172,7 @@ class ExecutionGraph(DirectedGraph):
         return all(
             cast(ExecutionNode, node).status == ExecutionNodeStatus.COMPLETED
             for node in self.nodes.values()
-            if node.type != ExecutionNodeType.END.value
+            if node.node_type != NodeType.END
         )
 
     def validate(self) -> None:
@@ -180,7 +180,7 @@ class ExecutionGraph(DirectedGraph):
         # Check for single start node
         start_nodes = [
             node for node in self.nodes.values()
-            if cast(ExecutionNode, node).type == ExecutionNodeType.START.value
+            if cast(ExecutionNode, node).node_type == NodeType.START
         ]
         if len(start_nodes) != 1:
             raise ValueError(f"Graph must have exactly one START node, found {len(start_nodes)}")
@@ -203,7 +203,7 @@ class ExecutionGraph(DirectedGraph):
             'metadata': self.metadata,
             'nodes': {
                 node_id: {
-                    'type': cast(ExecutionNode, node).type,
+                    'node_type': cast(ExecutionNode, node).node_type,
                     'status': cast(ExecutionNode, node).status.value,
                     'description': node.description,
                     'metadata': node.metadata
@@ -292,3 +292,16 @@ class ExecutionGraph(DirectedGraph):
             "type": "pattern_update",
             "state": state
         })
+
+    def get_start_cursor(self) -> 'Cursor':
+        """Get cursor starting at START type node."""
+        start_node = next((node for node in self.nodes.values() 
+                          if node.node_type == NodeType.START), None)
+        if not start_node:
+            raise ValueError("Graph has no START node")
+        return self.cursor(start_node)
+
+    def get_end_nodes(self) -> List[ExecutionNode]:
+        """Get all END type nodes."""
+        return [node for node in self.nodes.values() 
+                if node.node_type == NodeType.END]

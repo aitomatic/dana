@@ -1,8 +1,6 @@
 """Graph utilities for DXA workflows and plans."""
 
-from .node import Node
-from .edge import Edge
-from .directed_graph import DirectedGraph
+from .directed_graph import DirectedGraph, Node, Edge, NodeType
 from .traversal import (
     Cursor,
     TraversalStrategy,
@@ -13,9 +11,11 @@ from .traversal import (
 from .visualizer import GraphVisualizer
 from .serializer import GraphSerializer
 from .factory import GraphFactory
+
 __all__ = [
     'Node',
     'Edge',
+    'NodeType',
     'DirectedGraph',
     'Cursor',
     'TraversalStrategy',

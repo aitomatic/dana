@@ -20,7 +20,7 @@ class GraphVisualizer:
             
             node = graph.nodes[node_id]
             prefix = "  " * depth
-            lines.append(f"{prefix}{node.node_id} [{node.type}]")
+            lines.append(f"{prefix}{node.node_id} [{node.node_type}]")
             
             for next_node in graph.get_next_nodes(node_id):
                 visit(next_node.node_id, depth + 1)

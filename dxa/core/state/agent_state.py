@@ -3,7 +3,7 @@
 from typing import List, Optional
 from ..execution.execution_types import Objective, ExecutionSignal
 from ..execution.execution_graph import ExecutionNode
-from ..planning import BasePlan
+from ..planning import Plan
 from dataclasses import dataclass, field
 from .base_state import BaseState
 
@@ -11,7 +11,7 @@ from .base_state import BaseState
 class AgentState(BaseState):
     """Manages agent execution state."""
     objective: Optional[Objective] = None
-    plan: Optional[BasePlan] = None
+    plan: Optional[Plan] = None
     signals: List[ExecutionSignal] = field(default_factory=list)
     current_step_index: int = 0
 
@@ -19,7 +19,7 @@ class AgentState(BaseState):
         """Set current objective."""
         self.objective = objective
 
-    def set_plan(self, plan: BasePlan) -> None:
+    def set_plan(self, plan: Plan) -> None:
         """Set current plan."""
         self.plan = plan
         self.current_step_index = 0

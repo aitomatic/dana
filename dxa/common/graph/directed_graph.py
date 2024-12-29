@@ -1,19 +1,65 @@
 """Base directed graph implementation."""
 
-from typing import Dict, List, Optional, Iterator, Any, Union, TextIO
+from typing import Dict, List, Optional, Iterator, Any, Union, TextIO, TYPE_CHECKING
 from pathlib import Path
-from .node import Node
-from .edge import Edge
-from .visualizer import GraphVisualizer
-from .serializer import GraphSerializer
-from .traversal import (
-    Cursor,
-    TraversalStrategy,
-    BreadthFirstTraversal,
-    DepthFirstTraversal,
-    TopologicalTraversal
-)
+from enum import Enum
+from dataclasses import dataclass, field
+from ..utils import get_class_by_name
+if TYPE_CHECKING:
+    from .visualizer import GraphVisualizer
+    from .serializer import GraphSerializer
+    from .traversal import (
+        Cursor,
+        TraversalStrategy,
+        TopologicalTraversal
+    )
+_CURSOR_CLASS_NAME = "dxa.common.graph.traversal.Cursor"
 
+class NodeType(Enum):
+    """Base node types for all graphs."""
+    NODE = "NODE"
+    START = "START" 
+    END = "END"
+    TASK = "TASK"
+    CONDITION = "CONDITION"
+    FORK = "FORK"
+    JOIN = "JOIN"
+
+@dataclass
+class Node:
+    """Base graph node."""
+    node_id: str
+    node_type: NodeType = NodeType.NODE
+    description: str = ""
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    def __hash__(self) -> int:
+        """Make node hashable by id."""
+        return hash(self.node_id)
+
+    def __eq__(self, other: object) -> bool:
+        """Nodes are equal if they have the same id."""
+        if not isinstance(other, Node):
+            return NotImplemented
+        return self.node_id == other.node_id
+
+@dataclass
+class Edge:
+    """Base graph edge."""
+    source: str  # Source node ID
+    target: str  # Target node ID
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    def __hash__(self) -> int:
+        """Make edge hashable by source/target pair."""
+        return hash((self.source, self.target))
+
+    def __eq__(self, other: object) -> bool:
+        """Edges are equal if they have same source/target."""
+        if not isinstance(other, Edge):
+            return NotImplemented
+        return self.source == other.source and self.target == other.target
+    
 class DirectedGraph:
     """Pure directed graph implementation."""
     def __init__(self):
@@ -21,9 +67,10 @@ class DirectedGraph:
         self._edges: List[Edge] = []
         self._outgoing: Dict[str, List[Edge]] = {}
         self._incoming: Dict[str, List[Edge]] = {}
-        self._visualizer = GraphVisualizer()
-        self._serializer = GraphSerializer()
-        self._default_traversal = TopologicalTraversal()
+        self._visualizer: Optional[GraphVisualizer] = None
+        self._serializer: Optional[GraphSerializer] = None
+        self._default_traversal: Optional[TopologicalTraversal] = None
+        self._cursor = None
     
     @property
     def nodes(self) -> Dict[str, Node]:
@@ -48,7 +95,7 @@ class DirectedGraph:
     @classmethod
     def from_yaml(cls, stream: Union[str, TextIO, Path]) -> 'DirectedGraph':
         """Create graph from YAML specification."""
-        serializer = GraphSerializer()
+        serializer: GraphSerializer = GraphSerializer()
         return serializer.from_yaml(stream, cls)
 
     def add_node(self, node: Node) -> None:
@@ -116,23 +163,24 @@ class DirectedGraph:
 
     def to_ascii_art(self) -> str:
         """Generate ASCII visualization."""
+        if self._visualizer is None:
+            raise ValueError("Visualizer is not set")
         return self._visualizer.to_ascii_art(self)
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary representation."""
+        if self._serializer is None:
+            raise ValueError("Serializer is not set")
         return self._serializer.to_dict(self)
 
-    def cursor(self, start_node: str, 
-               strategy: Optional[TraversalStrategy] = None) -> Cursor:
+    def cursor(self, start_node: Node, strategy: Optional['TraversalStrategy'] = None) -> 'Cursor':
         """Get traversal cursor starting at given node."""
         if strategy is None:
             strategy = self._default_traversal
-        return Cursor(self, start_node, strategy)
+        cursor_class = get_class_by_name(_CURSOR_CLASS_NAME)
+        self._cursor = cursor_class(self, start_node, strategy)
+        return self._cursor
 
-    def traverse_bfs(self, start_node: str) -> Cursor:
-        """Get breadth-first traversal cursor."""
-        return self.cursor(start_node, BreadthFirstTraversal())
-
-    def traverse_dfs(self, start_node: str) -> Cursor:
-        """Get depth-first traversal cursor."""
-        return self.cursor(start_node, DepthFirstTraversal())
+    def get_current_node(self) -> Optional[Node]:
+        """Get current node from cursor if it exists."""
+        return self._cursor.current if self._cursor else None

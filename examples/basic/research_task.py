@@ -13,7 +13,7 @@ async def main():
     
     agent = DXAFactory.create_agent({"name": "researcher"}) \
         .with_llm("gpt-4") \
-        .with_planner(SequentialPlanner()) \
+        .with_planning(SequentialPlanner()) \
         .with_reasoner(DirectReasoner())
     
     result = await agent.run(workflow=create_research_workflow(

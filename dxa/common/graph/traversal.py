@@ -2,72 +2,84 @@
 
 from abc import ABC, abstractmethod
 from typing import Iterator, Optional
-from .directed_graph import DirectedGraph
-from .node import Node
+from .directed_graph import DirectedGraph, Node, NodeType
 
 class TraversalStrategy(ABC):
     """Base class for graph traversal strategies."""
     
     @abstractmethod
-    def traverse(self, graph: DirectedGraph, start_node: str) -> Iterator[Node]:
+    def traverse(self, graph: DirectedGraph, start_node: Node) -> Iterator[Node]:
         """Traverse graph starting from given node."""
         pass
 
 class BreadthFirstTraversal(TraversalStrategy):
     """Breadth-first traversal strategy."""
     
-    def traverse(self, graph: DirectedGraph, start_node: str) -> Iterator[Node]:
+    def traverse(self, graph: DirectedGraph, start_node: Node) -> Iterator[Node]:
+        """Traverse graph breadth-first."""
         visited = set()
-        queue = [start_node]
+        queue = [start_node]  # Now a Node
         
         while queue:
-            node_id = queue.pop(0)
-            if node_id not in visited:
-                visited.add(node_id)
-                node = graph.nodes[node_id]
+            node = queue.pop(0)  # Now a Node
+            if node.node_id not in visited:
+                visited.add(node.node_id)
                 yield node
-                queue.extend(n.node_id for n in graph.get_next_nodes(node_id))
+                queue.extend(graph.get_next_nodes(node.node_id))
 
 class DepthFirstTraversal(TraversalStrategy):
     """Depth-first traversal strategy."""
     
-    def traverse(self, graph: DirectedGraph, start_node: str) -> Iterator[Node]:
+    def traverse(self, graph: DirectedGraph, start_node: Node) -> Iterator[Node]:
+        """Traverse graph depth-first."""
         visited = set()
         
-        def visit(node_id: str) -> Iterator[Node]:
-            if node_id not in visited:
-                visited.add(node_id)
-                node = graph.nodes[node_id]
+        def visit(node: Node) -> Iterator[Node]:
+            if node.node_id not in visited:
+                visited.add(node.node_id)
                 yield node
-                for next_node in graph.get_next_nodes(node_id):
-                    yield from visit(next_node.node_id)
+                for next_node in graph.get_next_nodes(node.node_id):
+                    yield from visit(next_node)
                     
         yield from visit(start_node)
 
 class TopologicalTraversal(TraversalStrategy):
-    """Topological sort traversal."""
+    """Topological sort traversal that respects node types."""
     
-    def traverse(self, graph: DirectedGraph, start_node: str) -> Iterator[Node]:
+    def traverse(self, graph: DirectedGraph, start_node: Node) -> Iterator[Node]:
+        """Traverse graph in topological order respecting node types."""
         visited = set()
         temp = set()
         
-        def visit(node_id: str) -> Iterator[Node]:
-            if node_id in temp:
+        def visit(node: Node) -> Iterator[Node]:
+            if node.node_id in temp:
                 raise ValueError("Graph has cycles")
-            if node_id not in visited:
-                temp.add(node_id)
-                for next_node in graph.get_next_nodes(node_id):
-                    yield from visit(next_node.node_id)
-                temp.remove(node_id)
-                visited.add(node_id)
-                yield graph.nodes[node_id]
+            if node.node_id not in visited:
+                temp.add(node.node_id)
+                visited.add(node.node_id)  # Mark visited immediately
                 
+                if node.node_type == NodeType.START:
+                    yield node
+                    next_nodes = graph.get_next_nodes(node.node_id)
+                    for next_node in next_nodes:
+                        if next_node.node_type != NodeType.END:
+                            yield from visit(next_node)
+                    for next_node in next_nodes:
+                        if next_node.node_type == NodeType.END:
+                            yield from visit(next_node)
+                else:
+                    yield node  # Yield non-START nodes immediately
+                    for next_node in graph.get_next_nodes(node.node_id):
+                        yield from visit(next_node)
+                
+                temp.remove(node.node_id)
+        
         yield from visit(start_node)
 
 class Cursor:
     """Cursor for traversing a graph."""
     
-    def __init__(self, graph: DirectedGraph, start_node: str, 
+    def __init__(self, graph: DirectedGraph, start_node: Node,
                  strategy: Optional[TraversalStrategy] = None):
         self.graph = graph
         self.current = start_node

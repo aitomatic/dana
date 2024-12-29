@@ -3,9 +3,7 @@
 from typing import Dict, Any, Union, TextIO, Type
 from pathlib import Path
 import yaml
-from .directed_graph import DirectedGraph
-from .node import Node
-from .edge import Edge
+from .directed_graph import DirectedGraph, Node, Edge, NodeType
 
 class GraphSerializer:
     """Base graph serialization."""
@@ -15,7 +13,7 @@ class GraphSerializer:
         return {
             'nodes': {
                 node_id: {
-                    'type': node.type,
+                    'node_type': node.node_type,
                     'description': node.description,
                     'metadata': node.metadata
                 }
@@ -39,7 +37,7 @@ class GraphSerializer:
         for node_id, node_data in data['nodes'].items():
             node = Node(
                 node_id=node_id,
-                type=node_data.get('type', 'node'),
+                node_type=node_data.get('node_type', NodeType.NODE),
                 description=node_data.get('description', ''),
                 metadata=node_data.get('metadata', {})
             )

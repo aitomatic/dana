@@ -2,28 +2,16 @@
 
 from dataclasses import dataclass, field
 from typing import Dict, Any, Optional, List, TYPE_CHECKING
-from enum import Enum
 from datetime import datetime
-from ...common.graph.node import Node
-from ...common.graph.edge import Edge
+from enum import Enum
+from ...common.graph import Node, Edge, NodeType
 
 if TYPE_CHECKING:
     from ..state import AgentState, WorldState, ExecutionState
     from ..workflow import Workflow
-    from ..planning import BasePlan
-
-# Node types
-class ExecutionNodeType(Enum):
-    """Execution-specific node types."""
-    REGULAR = "REGULAR"
-    START = "START"
-    END = "END"
-    TASK = "TASK"
-    CONDITION = "CONDITION"
-    FORK = "FORK"
-    JOIN = "JOIN"
-    LOOP = "LOOP"
-    SUBGRAPH = "SUBGRAPH"
+    from ..planning import Plan
+    from ..reasoning import Reasoning
+    from ..resource import LLMResource
 
 class ExecutionNodeStatus(Enum):
     """Status of execution nodes."""
@@ -45,14 +33,14 @@ class ExecutionNode(Node):
 
     def __init__(self, 
                  node_id: str, 
-                 node_type: ExecutionNodeType, 
+                 node_type: NodeType, 
                  description: str, 
                  status: ExecutionNodeStatus = ExecutionNodeStatus.NONE, 
                  result: Optional[Dict[str, Any]] = None, 
                  metadata: Optional[Dict[str, Any]] = None,
                  requires: Optional[Dict[str, Any]] = None,
                  provides: Optional[Dict[str, Any]] = None):
-        super().__init__(node_id=node_id, type=node_type.value, description=description, metadata=metadata or {})
+        super().__init__(node_id=node_id, node_type=node_type, description=description, metadata=metadata or {})
         self.status = status
         self.result = result
         self.requires = requires or {}
@@ -66,24 +54,16 @@ class ExecutionEdge(Edge):
 
 # Signal types
 class ExecutionSignalType(Enum):
-    """Signal types for execution layers."""
-    # Common signals
-    STATE_CHANGE = "STATE_CHANGE"
+    """Types of execution signals."""
+    WORKFLOW_UPDATE = "WORKFLOW_UPDATE"
+    REASONING_UPDATE = "REASONING_UPDATE"
+    DISCOVERY = "DISCOVERY"
     STEP_COMPLETE = "STEP_COMPLETE"
     STEP_FAILED = "STEP_FAILED"
-    INTERRUPT = "INTERRUPT"
-
-    # Workflow layer (WHY)
     OBJECTIVE_UPDATE = "OBJECTIVE_UPDATE"
-    NEED_CLARIFICATION = "NEED_CLARIFICATION"
-
-    # Planning layer (WHAT)
-    DISCOVERY = "DISCOVERY"
-    DEPENDENCY_BLOCKED = "DEPENDENCY_BLOCKED"
-
-    # Reasoning layer (HOW)
-    VALIDATION_REQUIRED = "VALIDATION_REQUIRED"
-    RESOURCE = "RESOURCE"
+    RESULT = "RESULT"
+    ERROR = "ERROR"
+    STATE_CHANGE = "STATE_CHANGE"
 
 @dataclass
 class ExecutionSignal:
@@ -115,6 +95,8 @@ class Objective:
             objective = "No objective provided"
         self.original = objective
         self.current = objective
+        self.context = {}
+        self.history = []
     
     def evolve(self, new_understanding: str, reason: str) -> None:
         """Evolve the objective."""
@@ -133,8 +115,12 @@ class ExecutionContext:
     agent_state: 'AgentState'
     world_state: 'WorldState'
     execution_state: 'ExecutionState'
-    current_workflow: 'Workflow'
-    current_plan: 'BasePlan'
+    current_workflow: Optional['Workflow'] = None
+    current_plan: Optional['Plan'] = None
+    current_reasoning: Optional['Reasoning'] = None
+    workflow_llm: Optional['LLMResource'] = None
+    planning_llm: Optional['LLMResource'] = None
+    reasoning_llm: Optional['LLMResource'] = None
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert context to dictionary."""
@@ -143,7 +129,11 @@ class ExecutionContext:
             "world_state": self.world_state,
             "execution_state": self.execution_state,
             "current_workflow": self.current_workflow,
-            "current_plan": self.current_plan
+            "current_plan": self.current_plan,
+            "current_reasoning": self.current_reasoning,
+            "workflow_llm": self.workflow_llm,
+            "planning_llm": self.planning_llm,
+            "reasoning_llm": self.reasoning_llm
         }
 
 class ExecutionError(Exception):
