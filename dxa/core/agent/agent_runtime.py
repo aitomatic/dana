@@ -44,7 +44,7 @@ class AgentRuntime:
         )
 
         # Execute workflow with context
-        signals = await self.workflow_executor.execute(workflow, context)
+        signals = await self.workflow_executor.execute_workflow(workflow, context)
         
         # Get final result from signals
         for signal in reversed(signals):

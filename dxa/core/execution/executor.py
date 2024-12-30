@@ -38,14 +38,21 @@ class Executor(ABC):
             context: Execution context
         """
         if not self._graph:
-            # Create our graph if needed
-            self._graph = self._create_graph(upper_graph, upper_graph.objective)
+            # Create our graph based on the upper graph, if needed
+            self._graph = self._create_graph(upper_graph, upper_graph.objective, context)
         
         # Use cursor on our own graph
-        cursor = self._graph.get_start_cursor()
+        cursor = self._graph.start_cursor()
 
         signals = []
         while (current := cursor.next()) is not None:
+            indent = ""
+            if self.__class__.__name__ == "PlanExecutor":
+                indent = "          "
+            elif self.__class__.__name__ == "ReasoningExecutor":
+                indent = "                 "
+            print(f"{indent}Executing {self.__class__.__name__} node {current.node_id}")
+
             if current.node_type == NodeType.START or current.node_type == NodeType.END:
                 continue    # Skip start and end nodes
 
@@ -94,7 +101,10 @@ class Executor(ABC):
         )
 
     @abstractmethod
-    def _create_graph(self, upper_graph: ExecutionGraph, objective: Optional[Objective] = None) -> ExecutionGraph:
+    def _create_graph(self, 
+                      upper_graph: ExecutionGraph, 
+                      objective: Optional[Objective] = None, 
+                      context: Optional[ExecutionContext] = None) -> ExecutionGraph:
         """Create this layer's graph from the upper layer's graph.
         To be implemented by subclasses."""
         pass

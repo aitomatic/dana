@@ -173,14 +173,37 @@ class DirectedGraph:
             raise ValueError("Serializer is not set")
         return self._serializer.to_dict(self)
 
-    def cursor(self, start_node: Node, strategy: Optional['TraversalStrategy'] = None) -> 'Cursor':
+    def get_a_cursor(self, start_node: Node, strategy: Optional['TraversalStrategy'] = None) -> 'Cursor':
         """Get traversal cursor starting at given node."""
         if strategy is None:
             strategy = self._default_traversal
         cursor_class = get_class_by_name(_CURSOR_CLASS_NAME)
-        self._cursor = cursor_class(self, start_node, strategy)
-        return self._cursor
+        return cursor_class(self, start_node, strategy)
 
     def get_current_node(self) -> Optional[Node]:
         """Get current node from cursor if it exists."""
         return self._cursor.current if self._cursor else None
+    
+    def start_cursor(self) -> 'Cursor':
+        """Starting my cursor at the first START type node found."""
+        start_node = self.get_start_node()
+        if not start_node:
+            raise ValueError("Graph has no START node")
+        self._cursor = self.get_a_cursor(start_node)
+        return self._cursor
+
+    def get_start_node(self) -> Optional[Node]:
+        """Get the first START type node found."""
+        return next((node for node in self.nodes.values() 
+                     if node.node_type == NodeType.START), None)
+
+    def get_end_nodes(self) -> List[Node]:
+        """Get all END type nodes."""
+        return [node for node in self.nodes.values() 
+                if node.node_type == NodeType.END]
+
+    def update_cursor(self, node_id: str) -> None:
+        """Update graph cursor to specified node."""
+        if node_id not in self.nodes:
+            raise ValueError(f"Node {node_id} not found in graph")
+        self._cursor = self.get_a_cursor(self.nodes[node_id])

@@ -6,7 +6,7 @@ from ..execution import Executor, ExecutionNode, ExecutionSignal, ExecutionConte
 from ..execution import Objective
 from .plan import Plan
 from ..workflow import Workflow
-from ..execution import ExecutionGraph
+from ..execution import ExecutionGraph, ExecutionEdge
 from ...common.graph import NodeType
 
 class PlanningStrategy(Enum):
@@ -14,6 +14,7 @@ class PlanningStrategy(Enum):
     DIRECT = "DIRECT"        # 1:1 mapping
     COMPLETE = "COMPLETE"    # Whole workflow
     DYNAMIC = "DYNAMIC"      # Adaptive planning
+    FOLLOW_WORKFLOW = "FOLLOW_WORKFLOW"  # Exact structural copy with cursor sync
 
 class PlanExecutor(Executor):
     """Executes plans using planning strategies."""
@@ -23,31 +24,30 @@ class PlanExecutor(Executor):
         self.reasoning_executor = reasoning_executor
         self.strategy = strategy
 
-    async def execute(self, upper_graph: ExecutionGraph, context: ExecutionContext) -> List[ExecutionSignal]:
-        """Execute using planning strategy."""
-        # Create plan based on strategy
-        workflow = cast(Workflow, upper_graph)
-        # For now, use workflow objective
-        objective = workflow.objective
-        plan = self._create_plan(workflow, objective)
-        
-        # Update context with new plan
-        context.current_plan = plan
-        self.graph = cast(ExecutionGraph, plan)
-        
-        # Execute plan through base executor
-        return await super().execute(workflow, context)
-
     async def execute_node(self, node: ExecutionNode, context: ExecutionContext) -> List[ExecutionSignal]:
         """Execute a plan node using reasoning executor."""
         if node.node_type == NodeType.START or node.node_type == NodeType.END:
             return []   # Start and end nodes just initialize/terminate flow
         
-        return await self.reasoning_executor.execute(self.graph, context)
+        # Get the workflow from context
+        workflow = cast(Workflow, context.current_workflow)
+        
+        # Execute the node
+        signals = await self.reasoning_executor.execute(self.graph, context)
+        
+        # Update workflow cursor if using COPY_WORKFLOW strategy
+        if self.strategy == PlanningStrategy.FOLLOW_WORKFLOW:
+            workflow.update_cursor(node.node_id)  # Uses DirectedGraph's method
+        
+        return signals
 
-    def _create_graph(self, upper_graph: ExecutionGraph, objective: Optional[Objective] = None) -> ExecutionGraph:
+    def _create_graph(self, 
+                      upper_graph: ExecutionGraph, 
+                      objective: Optional[Objective] = None, 
+                      context: Optional[ExecutionContext] = None) -> ExecutionGraph:
         """Create this layer's graph from the upper layer's graph."""
         plan = self._create_plan(cast(Workflow, upper_graph), objective)
+        context.current_plan = plan
         return cast(ExecutionGraph, plan)
 
     def _create_plan(self, workflow: Workflow, objective: Optional[Objective] = None) -> Plan:
@@ -60,6 +60,8 @@ class PlanExecutor(Executor):
             return self._create_complete_plan(workflow, objective)
         elif self.strategy == PlanningStrategy.DYNAMIC:
             return self._create_dynamic_plan(workflow, objective)
+        elif self.strategy == PlanningStrategy.FOLLOW_WORKFLOW:
+            return self._create_follow_workflow_plan(workflow, objective)
         else:
             raise ValueError(f"Unknown strategy: {self.strategy}")
 
@@ -96,3 +98,21 @@ class PlanExecutor(Executor):
         """Create adaptive plan based on context."""
         # For now, same as direct
         return self._create_direct_plan(workflow, objective)
+
+    def _create_follow_workflow_plan(self, workflow: Workflow, objective: Optional[Objective] = None) -> Plan:
+        """Create exact structural copy of workflow."""
+        plan = Plan(objective or workflow.objective)
+        
+        # Copy nodes with same IDs to maintain cursor sync
+        for node_id, node in workflow.nodes.items():
+            plan.add_node(ExecutionNode(
+                node_id=node_id,  # Keep same IDs
+                node_type=node.node_type,
+                description=node.description
+            ))
+        
+        # Copy edges to maintain structure
+        for edge in workflow.edges:
+            plan.add_edge(ExecutionEdge(edge.source, edge.target))
+        
+        return plan

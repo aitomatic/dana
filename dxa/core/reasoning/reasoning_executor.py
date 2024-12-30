@@ -57,11 +57,13 @@ class ReasoningExecutor(Executor):
         else:
             raise ValueError(f"Unknown strategy: {self.strategy}")
 
-    def _create_graph(self, upper_graph: ExecutionGraph, objective: Optional[Objective] = None) -> ExecutionGraph:
+    def _create_graph(self, 
+                       upper_graph: ExecutionGraph, 
+                       objective: Optional[Objective] = None, 
+                       context: Optional[ExecutionContext] = None) -> ExecutionGraph:
         """Create this layer's graph from the upper layer's graph."""
-        plan = cast(Plan, upper_graph)
-        objective = objective or plan.objective
-        reasoning = self._create_reasoning(plan, objective)
+        reasoning = self._create_reasoning(cast(Plan, upper_graph), objective)
+        context.current_reasoning = reasoning
         return cast(ExecutionGraph, reasoning)
 
     def _create_reasoning(self, plan: "Plan", objective: Optional[Objective] = None) -> Reasoning:
