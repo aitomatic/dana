@@ -55,6 +55,21 @@ class Agent:
         self._reasoning_strategy = None
     
     @property
+    def workflow_strategy(self) -> WorkflowStrategy:
+        """Get workflow strategy."""
+        return self._workflow_strategy or WorkflowStrategy.DEFAULT
+    
+    @property
+    def planning_strategy(self) -> PlanningStrategy:
+        """Get planning strategy."""
+        return self._planning_strategy or PlanningStrategy.DEFAULT
+    
+    @property
+    def reasoning_strategy(self) -> ReasoningStrategy:
+        """Get reasoning strategy."""
+        return self._reasoning_strategy or ReasoningStrategy.DEFAULT
+    
+    @property
     def state(self) -> AgentState:
         """Get agent state."""
         return self._state
@@ -150,11 +165,17 @@ class Agent:
     def with_workflow(self, strategy: WorkflowStrategy) -> 'Agent':
         """Configure workflow strategy."""
         self._workflow_strategy = strategy
+        if strategy == WorkflowStrategy.WORKFLOW_IS_PLAN:
+            # This requires the plan to be aware of the same strategy.
+            self._planning_strategy = PlanningStrategy.WORKFLOW_IS_PLAN
         return self
 
     def with_planning(self, strategy: PlanningStrategy) -> 'Agent':
         """Configure planning strategy."""
         self._planning_strategy = strategy
+        if strategy == PlanningStrategy.WORKFLOW_IS_PLAN:
+            # This requires the workflow to be aware of the same strategy.
+            self._workflow_strategy = WorkflowStrategy.WORKFLOW_IS_PLAN
         return self
 
     def with_reasoning(self, strategy: ReasoningStrategy) -> 'Agent':
@@ -206,8 +227,8 @@ class Agent:
         
         # Set default strategies if not specified
         self._workflow_strategy = self._workflow_strategy or WorkflowStrategy.DEFAULT
-        self._planning_strategy = self._planning_strategy or PlanningStrategy.DIRECT
-        self._reasoning_strategy = self._reasoning_strategy or ReasoningStrategy.DIRECT
+        self._planning_strategy = self._planning_strategy or PlanningStrategy.DEFAULT
+        self._reasoning_strategy = self._reasoning_strategy or ReasoningStrategy.DEFAULT
         
         # Create runtime with strategies
         self._runtime = AgentRuntime(

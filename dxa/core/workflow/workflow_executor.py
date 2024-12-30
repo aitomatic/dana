@@ -20,6 +20,7 @@ class WorkflowStrategy(Enum):
     SEQUENTIAL = "SEQUENTIAL"
     PARALLEL = "PARALLEL"
     CONDITIONAL = "CONDITIONAL"
+    WORKFLOW_IS_PLAN = "WORKFLOW_IS_PLAN"
 
 class WorkflowExecutor(Executor):
     """Executes workflow graphs."""
@@ -33,10 +34,25 @@ class WorkflowExecutor(Executor):
         """Execute given workflow graph."""
         context.current_workflow = workflow
         self.graph = cast(ExecutionGraph, workflow)
-        return await super().execute(workflow, context)
+        return await self.execute(None, context)
+    
+    async def execute(self, upper_graph: ExecutionGraph, context: ExecutionContext) -> List[ExecutionSignal]:
+        """Execute workflow graph."""
+        if self.strategy == WorkflowStrategy.WORKFLOW_IS_PLAN:
+            # Go directly to plan execution, via the START node
+            return await self.plan_executor.execute(self.graph, context)
+
+        return await super().execute(upper_graph, context)
 
     async def execute_node(self, node: ExecutionNode, context: ExecutionContext) -> List[ExecutionSignal]:
         """Execute node based on its type."""
+
+        # Safety: make sure our graph is set
+        if self.graph is None and context.current_workflow:
+            self.graph = context.current_workflow
+        
+        if context.current_workflow is None and self.graph:
+            context.current_workflow = self.graph
 
         if node.node_type == NodeType.START or node.node_type == NodeType.END:
             return []  # Start and end nodes just initialize/terminate flow

@@ -112,9 +112,9 @@ class Objective:
 @dataclass
 class ExecutionContext:
     """Execution context with access to all states."""
-    agent_state: 'AgentState'
-    world_state: 'WorldState'
-    execution_state: 'ExecutionState'
+    agent_state: Optional['AgentState'] = None  
+    world_state: Optional['WorldState'] = None
+    execution_state: Optional['ExecutionState'] = None
     current_workflow: Optional['Workflow'] = None
     current_plan: Optional['Plan'] = None
     current_reasoning: Optional['Reasoning'] = None

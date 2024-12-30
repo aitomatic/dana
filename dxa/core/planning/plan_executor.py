@@ -11,33 +11,40 @@ from ...common.graph import NodeType
 
 class PlanningStrategy(Enum):
     """Planning strategies."""
-    DIRECT = "DIRECT"        # 1:1 mapping
+    DEFAULT = "DEFAULT"        # 1:1 mapping
     COMPLETE = "COMPLETE"    # Whole workflow
     DYNAMIC = "DYNAMIC"      # Adaptive planning
-    FOLLOW_WORKFLOW = "FOLLOW_WORKFLOW"  # Exact structural copy with cursor sync
+    WORKFLOW_IS_PLAN = "WORKFLOW_IS_PLAN"  # Exact structural copy with cursor sync
 
 class PlanExecutor(Executor):
     """Executes plans using planning strategies."""
 
-    def __init__(self, reasoning_executor, strategy: PlanningStrategy = PlanningStrategy.DIRECT):
+    def __init__(self, reasoning_executor, strategy: PlanningStrategy = PlanningStrategy.DEFAULT):
         super().__init__()
         self.reasoning_executor = reasoning_executor
         self.strategy = strategy
 
     async def execute_node(self, node: ExecutionNode, context: ExecutionContext) -> List[ExecutionSignal]:
         """Execute a plan node using reasoning executor."""
-        if node.node_type == NodeType.START or node.node_type == NodeType.END:
-            return []   # Start and end nodes just initialize/terminate flow
+        # Safety: make sure our graph is set
+        if self.graph is None and context.current_plan:
+            self.graph = context.current_plan
         
+        if context.current_plan is None and self.graph:
+            context.current_plan = self.graph
+
         # Get the workflow from context
         workflow = cast(Workflow, context.current_workflow)
         
+        # Update workflow cursor if using COPY_WORKFLOW strategy
+        if self.strategy == PlanningStrategy.WORKFLOW_IS_PLAN:
+            workflow.update_cursor(node.node_id)  # Uses DirectedGraph's method
+        
+        if node.node_type == NodeType.START or node.node_type == NodeType.END:
+            return []   # Start and end nodes just initialize/terminate flow
+        
         # Execute the node
         signals = await self.reasoning_executor.execute(self.graph, context)
-        
-        # Update workflow cursor if using COPY_WORKFLOW strategy
-        if self.strategy == PlanningStrategy.FOLLOW_WORKFLOW:
-            workflow.update_cursor(node.node_id)  # Uses DirectedGraph's method
         
         return signals
 
@@ -54,13 +61,13 @@ class PlanExecutor(Executor):
         """Create plan based on selected strategy."""
         objective = objective or workflow.objective
 
-        if self.strategy == PlanningStrategy.DIRECT:
+        if self.strategy == PlanningStrategy.DEFAULT:
             return self._create_direct_plan(workflow, objective)
         elif self.strategy == PlanningStrategy.COMPLETE:
             return self._create_complete_plan(workflow, objective)
         elif self.strategy == PlanningStrategy.DYNAMIC:
             return self._create_dynamic_plan(workflow, objective)
-        elif self.strategy == PlanningStrategy.FOLLOW_WORKFLOW:
+        elif self.strategy == PlanningStrategy.WORKFLOW_IS_PLAN:
             return self._create_follow_workflow_plan(workflow, objective)
         else:
             raise ValueError(f"Unknown strategy: {self.strategy}")

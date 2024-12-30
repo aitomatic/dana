@@ -39,6 +39,7 @@ class Executor(ABC):
         """
         if not self._graph:
             # Create our graph based on the upper graph, if needed
+            assert upper_graph is not None
             self._graph = self._create_graph(upper_graph, upper_graph.objective, context)
         
         # Use cursor on our own graph
@@ -52,9 +53,6 @@ class Executor(ABC):
             elif self.__class__.__name__ == "ReasoningExecutor":
                 indent = "                 "
             print(f"{indent}Executing {self.__class__.__name__} node {current.node_id}")
-
-            if current.node_type == NodeType.START or current.node_type == NodeType.END:
-                continue    # Skip start and end nodes
 
             try:
                 assert self.graph is not None

@@ -6,8 +6,8 @@ from dxa.core.planning import PlanningStrategy
 
 def main():
     """Simple Q&A example."""
-    agent = Agent().with_planning(PlanningStrategy.FOLLOW_WORKFLOW)
-    # agent = Agent()
+    # agent = Agent().with_planning(PlanningStrategy.WORKFLOW_IS_PLAN)
+    agent = Agent()
     question = "What is quantum computing?"
     print(f"\nQuestion: {question}")
     answer: Dict[str, Any] = agent.ask(question)

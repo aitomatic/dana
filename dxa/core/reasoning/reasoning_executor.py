@@ -13,7 +13,7 @@ from ..execution import ExecutionGraph, Objective
 
 class ReasoningStrategy(Enum):
     """Reasoning execution strategies."""
-    DIRECT = "DIRECT"           # Simple LLM query
+    DEFAULT = "DEFAULT"           # Simple LLM query
     CHAIN_OF_THOUGHT = "COT"    # Step by step reasoning
     OODA = "OODA"               # OODA loop pattern
     DANA = "DANA"               # DANA pattern
@@ -21,7 +21,7 @@ class ReasoningStrategy(Enum):
 class ReasoningExecutor(Executor):
     """Executes reasoning patterns."""
     
-    def __init__(self, strategy: ReasoningStrategy = ReasoningStrategy.DIRECT):
+    def __init__(self, strategy: ReasoningStrategy = ReasoningStrategy.DEFAULT):
         super().__init__()
         self.strategy = strategy
         self.current_reasoning = None
@@ -43,10 +43,17 @@ class ReasoningExecutor(Executor):
         if not context.reasoning_llm:
             raise ValueError("No reasoning LLM configured in context")
 
+        # Safety: make sure our graph is set
+        if self.graph is None and context.current_reasoning:
+            self.graph = context.current_reasoning
+        
+        if context.current_reasoning is None and self.graph:
+            context.current_reasoning = self.graph
+
         if node.node_type == NodeType.START or node.node_type == NodeType.END:
             return []   # Start and end nodes just initialize/terminate flow
 
-        if self.strategy == ReasoningStrategy.DIRECT:
+        if self.strategy == ReasoningStrategy.DEFAULT:
             return await self._execute_direct(node, context)
         elif self.strategy == ReasoningStrategy.CHAIN_OF_THOUGHT:
             return await self._execute_cot(node, context)
@@ -72,7 +79,7 @@ class ReasoningExecutor(Executor):
         objective = objective or plan.objective
         assert objective is not None
 
-        if self.strategy == ReasoningStrategy.DIRECT:
+        if self.strategy == ReasoningStrategy.DEFAULT:
             # Simple single-node reasoning
             node = ExecutionNode(
                 node_id="DIRECT_REASONING",
