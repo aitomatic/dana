@@ -1,8 +1,7 @@
 """Workflow implementation for high-level process."""
 
 from typing import List, Dict, Any, Optional, Union
-from ...common.graph import NodeType
-from ..execution import ExecutionGraph, ExecutionSignal, Objective, ExecutionNode
+from ..execution import ExecutionGraph, ExecutionSignal, Objective
 
 class Workflow(ExecutionGraph):
     """High-level business process (WHY layer)."""
@@ -10,35 +9,7 @@ class Workflow(ExecutionGraph):
     def __init__(self, objective: Optional[Union[str, Objective]] = None, name: Optional[str] = None):
         super().__init__(objective, name=name)
         self._cursor = None
-        self._set_minimal_workflow(objective)
-
-    def _set_minimal_workflow(self, objective: Optional[Objective] = None):
-        """Create workflow graph from objective."""
-        # For simple QA, create linear workflow
-        self.objective = objective
-
-        # Add START node
-        self.add_node(ExecutionNode(
-            node_id="START",
-            node_type=NodeType.START,
-            description="Begin workflow"
-        ))
-        
-        # Add question task
-        self.add_node(ExecutionNode(
-            node_id="ANSWER_QUESTION",
-            node_type=NodeType.TASK,
-            description=str(objective)
-        ))
-        self.add_transition("START", "ANSWER_QUESTION")
-        
-        # Add END node
-        self.add_node(ExecutionNode(
-            node_id="END",
-            node_type=NodeType.END,
-            description="End workflow"
-        ))
-        self.add_transition("ANSWER_QUESTION", "END")
+        self._objective = objective if isinstance(objective, Objective) else Objective(objective)
         
     def update_from_signal(self, signal: ExecutionSignal) -> None:
         """Update workflow based on signal."""

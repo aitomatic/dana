@@ -2,7 +2,7 @@
 
 import pytest
 from dxa.core.agent import Agent
-from dxa.core.workflow import WorkflowStrategy
+from dxa.core.workflow import WorkflowStrategy, WorkflowFactory
 from dxa.core.execution import ExecutionContext, Objective
 from dxa.core.resource import LLMResource
 
@@ -28,7 +28,8 @@ async def test_workflow_is_plan_execution(agent):
     """Test full execution flow with WORKFLOW_IS_PLAN strategy."""
     # Execute simple query
     runtime = agent.runtime
-    await agent.run("test query")
+    workflow = WorkflowFactory.create_minimal_workflow("test query")
+    await agent.async_run(workflow)
     
     # Verify execution completed
     workflow = runtime.workflow_executor.graph
@@ -43,7 +44,8 @@ async def test_context_propagation(agent):
     reasoning_exec = plan_exec.reasoning_executor
     
     # Run execution
-    await agent.run("test query")
+    workflow = WorkflowFactory.create_minimal_workflow("test query")
+    await agent.async_run(workflow)
     
     # Verify context consistency
     assert workflow_exec.graph is not None
@@ -78,7 +80,8 @@ async def test_workflow_plan_sync(agent):
     workflow_exec = runtime.workflow_executor
     plan_exec = workflow_exec.plan_executor
     
-    await agent.run("test query")
+    workflow = WorkflowFactory.create_minimal_workflow("test query")
+    await agent.async_run(workflow)
     
     # Verify workflow and plan nodes match
     workflow = workflow_exec.graph
@@ -92,7 +95,8 @@ async def test_cursor_progression(agent):
     runtime = agent.runtime
     workflow_exec = runtime.workflow_executor
     
-    await agent.run("test query")
+    workflow = WorkflowFactory.create_minimal_workflow("test query")
+    await agent.async_run(workflow)
     workflow = workflow_exec.graph
     
     # Verify cursor moved through all nodes

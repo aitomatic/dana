@@ -1,16 +1,15 @@
 """Test plan workflow copy strategy."""
 
 import pytest
-from dxa.core.workflow import Workflow
+from dxa.core.workflow import WorkflowFactory
 from dxa.core.planning import PlanExecutor, PlanningStrategy
 from dxa.core.reasoning import ReasoningExecutor
-from dxa.core.execution import Objective
 from dxa.core.execution import ExecutionContext
 
 @pytest.fixture
 def workflow():
     """Workflow fixture."""
-    return Workflow(objective=Objective("test workflow"))
+    return WorkflowFactory.create_minimal_workflow("test workflow")
 
 @pytest.fixture
 def plan_executor():
@@ -45,6 +44,6 @@ async def test_plan_execution_updates_workflow_cursor(workflow, plan_executor):
     plan = plan_executor._create_follow_workflow_plan(workflow, workflow.objective)
     context = ExecutionContext(current_workflow=workflow, current_plan=plan)
 
-    await plan_executor.execute_node(plan.nodes["ANSWER_QUESTION"], context)
+    await plan_executor.execute_node(plan.nodes["PERFORM_TASK"], context)
     
-    assert workflow.get_current_node().node_id == "ANSWER_QUESTION" 
+    assert workflow.get_current_node().node_id == "PERFORM_TASK" 

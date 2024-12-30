@@ -4,6 +4,8 @@ import pytest
 from dxa.core.agent import Agent
 from dxa.core.resource import LLMResource
 from dxa.common.graph import NodeType
+from dxa.core.workflow import WorkflowFactory
+
 class MockLLM(LLMResource):
     """Mock LLM for testing."""
     async def query(self, request: dict) -> dict:
@@ -27,10 +29,11 @@ async def test_default_execution_flow(agent):
     plan_exec = workflow_exec.plan_executor
     
     # Execute and verify each layer uses default strategy
-    await agent.run("test query")
+    workflow = WorkflowFactory.create_minimal_workflow("test query")
+    await agent.async_run(workflow)
     
     # Verify plan has single node (DEFAULT creates 1:1 mapping)
     plan = plan_exec.graph
     task_nodes = [n for n in plan.nodes.values() if n.node_type == NodeType.TASK]
     assert len(task_nodes) == 1
-    assert task_nodes[0].node_id == "DIRECT_STEP" 
+    assert task_nodes[0].node_id == "PERFORM_TASK" 

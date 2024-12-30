@@ -11,16 +11,16 @@ from ..execution import (
     Objective,
 )
 from ..planning import PlanExecutor
-from ..workflow import Workflow
+from ..workflow import WorkflowFactory, Workflow
 from ...common.graph import NodeType
 
 class WorkflowStrategy(Enum):
     """Workflow execution strategies."""
-    DEFAULT = "DEFAULT"      # Graph-based workflow
+    DEFAULT = "DEFAULT"      # same as WORKFLOW_IS_PLAN
+    WORKFLOW_IS_PLAN = "WORKFLOW_IS_PLAN"
     SEQUENTIAL = "SEQUENTIAL"
     PARALLEL = "PARALLEL"
     CONDITIONAL = "CONDITIONAL"
-    WORKFLOW_IS_PLAN = "WORKFLOW_IS_PLAN"
 
 class WorkflowExecutor(Executor):
     """Executes workflow graphs."""
@@ -28,7 +28,21 @@ class WorkflowExecutor(Executor):
     def __init__(self, plan_executor: PlanExecutor, strategy: WorkflowStrategy = WorkflowStrategy.DEFAULT):
         super().__init__()
         self.plan_executor = plan_executor
-        self.strategy = strategy
+        self._strategy = strategy
+    
+    @property
+    def strategy(self) -> WorkflowStrategy:
+        """Get workflow strategy."""
+        if self._strategy == WorkflowStrategy.DEFAULT:
+            self._strategy = WorkflowStrategy.WORKFLOW_IS_PLAN
+        return self._strategy
+    
+    @strategy.setter
+    def strategy(self, strategy: WorkflowStrategy):
+        """Set workflow strategy."""
+        if strategy == WorkflowStrategy.DEFAULT:
+            strategy = WorkflowStrategy.WORKFLOW_IS_PLAN
+        self._strategy = strategy
 
     async def execute_workflow(self, workflow: Workflow, context: ExecutionContext) -> List[ExecutionSignal]:
         """Execute given workflow graph."""
@@ -70,6 +84,6 @@ class WorkflowExecutor(Executor):
     def _create_graph(self, upper_graph: ExecutionGraph, objective: Optional[Objective] = None, 
                        context: Optional[ExecutionContext] = None) -> ExecutionGraph:
         """Create workflow graph from objective. At the Worflow layer, there is no upper graph."""
-        workflow = Workflow(objective)
+        workflow = WorkflowFactory.create_minimal_workflow(objective)
         context.current_workflow = workflow
         return cast(ExecutionGraph, workflow)

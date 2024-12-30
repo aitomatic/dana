@@ -11,10 +11,10 @@ from ...common.graph import NodeType
 
 class PlanningStrategy(Enum):
     """Planning strategies."""
-    DEFAULT = "DEFAULT"        # 1:1 mapping
+    DEFAULT = "DEFAULT"        # same as WORKFLOW_IS_PLAN
+    WORKFLOW_IS_PLAN = "WORKFLOW_IS_PLAN"  # Exact structural copy with cursor sync
     COMPLETE = "COMPLETE"    # Whole workflow
     DYNAMIC = "DYNAMIC"      # Adaptive planning
-    WORKFLOW_IS_PLAN = "WORKFLOW_IS_PLAN"  # Exact structural copy with cursor sync
 
 class PlanExecutor(Executor):
     """Executes plans using planning strategies."""
@@ -22,7 +22,21 @@ class PlanExecutor(Executor):
     def __init__(self, reasoning_executor, strategy: PlanningStrategy = PlanningStrategy.DEFAULT):
         super().__init__()
         self.reasoning_executor = reasoning_executor
-        self.strategy = strategy
+        self._strategy = strategy
+
+    @property
+    def strategy(self) -> PlanningStrategy:
+        """Get workflow strategy."""
+        if self._strategy == PlanningStrategy.DEFAULT:
+            self._strategy = PlanningStrategy.WORKFLOW_IS_PLAN
+        return self._strategy
+    
+    @strategy.setter
+    def strategy(self, strategy: PlanningStrategy):
+        """Set workflow strategy."""
+        if strategy == PlanningStrategy.DEFAULT:
+            strategy = PlanningStrategy.WORKFLOW_IS_PLAN
+        self._strategy = strategy
 
     async def execute_node(self, node: ExecutionNode, context: ExecutionContext) -> List[ExecutionSignal]:
         """Execute a plan node using reasoning executor."""

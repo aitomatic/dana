@@ -22,7 +22,7 @@ See dxa/agent/README.md for detailed design documentation.
 import asyncio
 from typing import Dict, Union, Optional, Any
 from ..workflow import Workflow
-from ..execution.execution_types import Objective
+from ..workflow import WorkflowFactory
 from ..capability import BaseCapability
 from ..resource import BaseResource, LLMResource
 from ..io import BaseIO, IOFactory
@@ -255,21 +255,18 @@ class Agent:
         """Cleanup agent when exiting context."""
         await self.cleanup()
 
-    async def run(self, objective: Optional[Union[str, Objective]] = None) -> Any:
+    async def async_run(self, workflow: Workflow) -> Any:
         """Execute an objective."""
         self._initialize()
         
         async with self:  # For cleanup
-            # Create empty workflow with objective
-            if isinstance(objective, str):
-                objective = Objective(objective)
-            else:
-                raise ValueError(f"Invalid objective: {objective}")
-            workflow = Workflow(objective=objective)
             return await self.runtime.execute(workflow)
     
+    def run(self, workflow: Workflow) -> Any:
+        """Run an objective."""
+        return asyncio.run(self.async_run(workflow))
+
     def ask(self, question: str) -> Any:
         """Ask a question to the agent."""
-        self._initialize()
-        loop = asyncio.get_event_loop()
-        return loop.run_until_complete(self.run(question))
+        workflow = WorkflowFactory.create_minimal_workflow(question)
+        return self.run(workflow)

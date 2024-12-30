@@ -90,11 +90,12 @@ class Objective:
     context: Dict[str, Any] = field(default_factory=dict)
     history: List[Dict] = field(default_factory=list)
 
-    def __init__(self, objective: str):
+    def __init__(self, objective: Optional[str] = None):
         if not objective:
             objective = "No objective provided"
         self.original = objective
         self.current = objective
+        self.status = ObjectiveStatus.INITIAL
         self.context = {}
         self.history = []
     
