@@ -30,7 +30,10 @@ class Executor(ABC):
         """Set the graph."""
         self._graph = graph
 
-    async def execute(self, upper_graph: ExecutionGraph, context: ExecutionContext) -> List[ExecutionSignal]:
+    async def execute(self, 
+                      upper_graph: ExecutionGraph, 
+                      context: ExecutionContext, 
+                      upper_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
         """Execute the graph using cursor traversal.
         
         Args:
@@ -45,7 +48,8 @@ class Executor(ABC):
         # Use cursor on our own graph
         cursor = self._graph.start_cursor()
 
-        signals = []
+        all_signals = []
+        prev_signals = []
         while (current := cursor.next()) is not None:
             indent = ""
             if self.__class__.__name__ == "PlanExecutor":
@@ -58,19 +62,25 @@ class Executor(ABC):
                 assert self.graph is not None
                 self.graph.update_node_status(current.node_id, ExecutionNodeStatus.IN_PROGRESS)
                 node = cast(ExecutionNode, current)
-                node_signals = await self.execute_node(node, context)
-                signals.extend(node_signals)
-                self._process_node_signals(current.node_id, node_signals)
+
+                new_signals = await self.execute_node(node, context, prev_signals, upper_signals)
+
+                all_signals.extend(new_signals)
+                self._process_node_signals(current.node_id, new_signals)
             # pylint: disable=broad-exception-caught
             except Exception as e:
                 self._handle_node_error(current.node_id, str(e))
-                signals.append(self._create_error_signal(current.node_id, str(e)))
+                all_signals.append(self._create_error_signal(current.node_id, str(e)))
                 break
                 
-        return signals
+        return all_signals
 
     @abstractmethod
-    async def execute_node(self, node: ExecutionNode, context: ExecutionContext) -> List[ExecutionSignal]:
+    async def execute_node(self,
+                           node: ExecutionNode, 
+                           context: ExecutionContext, 
+                           prev_signals: List[ExecutionSignal],
+                           upper_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
         """Execute a single node. To be implemented by subclasses."""
         pass
 

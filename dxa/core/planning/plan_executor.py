@@ -38,14 +38,20 @@ class PlanExecutor(Executor):
             strategy = PlanningStrategy.WORKFLOW_IS_PLAN
         self._strategy = strategy
 
-    async def execute_node(self, node: ExecutionNode, context: ExecutionContext) -> List[ExecutionSignal]:
+    async def execute_node(self, node: ExecutionNode,
+                           context: ExecutionContext, 
+                           prev_signals: List[ExecutionSignal],
+                           upper_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
         """Execute a plan node using reasoning executor."""
+
+        # TODO: use upper_signals somehow?
+
         # Safety: make sure our graph is set
         if self.graph is None and context.current_plan:
             self.graph = context.current_plan
         
         if context.current_plan is None and self.graph:
-            context.current_plan = self.graph
+            context.current_plan = cast(Plan, self.graph)
 
         # Get the workflow from context
         workflow = cast(Workflow, context.current_workflow)
@@ -58,7 +64,11 @@ class PlanExecutor(Executor):
             return []   # Start and end nodes just initialize/terminate flow
         
         # Execute the node
-        signals = await self.reasoning_executor.execute(self.graph, context)
+        signals = await self.reasoning_executor.execute(upper_graph=self.graph, 
+                                                        context=context, 
+                                                        # Pass my prev_signals down to reasoning executor
+                                                        upper_signals=prev_signals
+                                                        )
         
         return signals
 
@@ -68,6 +78,7 @@ class PlanExecutor(Executor):
                       context: Optional[ExecutionContext] = None) -> ExecutionGraph:
         """Create this layer's graph from the upper layer's graph."""
         plan = self._create_plan(cast(Workflow, upper_graph), objective)
+        assert context is not None
         context.current_plan = plan
         return cast(ExecutionGraph, plan)
 

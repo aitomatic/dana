@@ -26,7 +26,8 @@ class ReasoningExecutor(Executor):
         self.strategy = strategy
         self.current_reasoning = None
 
-    async def execute(self, upper_graph: ExecutionGraph, context: ExecutionContext) -> List[ExecutionSignal]:
+    async def execute(self, upper_graph: ExecutionGraph, context: ExecutionContext, 
+                      upper_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
         """Execute using reasoning strategy."""
         # Create reasoning graph based on strategy
         plan = cast(Plan, upper_graph)
@@ -36,19 +37,23 @@ class ReasoningExecutor(Executor):
         context.current_reasoning = reasoning
         
         # Execute reasoning through base executor
-        return await super().execute(reasoning, context)
+        return await super().execute(upper_graph=reasoning, context=context, upper_signals=upper_signals)
 
-    async def execute_node(self, node: ExecutionNode, context: ExecutionContext) -> List[ExecutionSignal]:
+    async def execute_node(self, node: ExecutionNode, context: ExecutionContext, 
+                           prev_signals: List[ExecutionSignal], 
+                           upper_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
         """Execute a reasoning node using LLM."""
         if not context.reasoning_llm:
             raise ValueError("No reasoning LLM configured in context")
+        
+        # TODO: use upper_signals and prev_signals somehow?
 
         # Safety: make sure our graph is set
         if self.graph is None and context.current_reasoning:
             self.graph = context.current_reasoning
         
         if context.current_reasoning is None and self.graph:
-            context.current_reasoning = self.graph
+            context.current_reasoning = cast(Reasoning, self.graph)
 
         if node.node_type == NodeType.START or node.node_type == NodeType.END:
             return []   # Start and end nodes just initialize/terminate flow
@@ -70,6 +75,7 @@ class ReasoningExecutor(Executor):
                        context: Optional[ExecutionContext] = None) -> ExecutionGraph:
         """Create this layer's graph from the upper layer's graph."""
         reasoning = self._create_reasoning(cast(Plan, upper_graph), objective)
+        assert context is not None
         context.current_reasoning = reasoning
         return cast(ExecutionGraph, reasoning)
 

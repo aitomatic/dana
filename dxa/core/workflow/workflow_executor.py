@@ -11,7 +11,7 @@ from ..execution import (
     Objective,
 )
 from ..planning import PlanExecutor
-from ..workflow import WorkflowFactory, Workflow
+from ..workflow import Workflow, WorkflowFactory
 from ...common.graph import NodeType
 
 class WorkflowStrategy(Enum):
@@ -48,25 +48,33 @@ class WorkflowExecutor(Executor):
         """Execute given workflow graph."""
         context.current_workflow = workflow
         self.graph = cast(ExecutionGraph, workflow)
-        return await self.execute(None, context)
+        return await self.execute(upper_graph=cast(ExecutionGraph, None), context=context, upper_signals=None)
     
-    async def execute(self, upper_graph: ExecutionGraph, context: ExecutionContext) -> List[ExecutionSignal]:
-        """Execute workflow graph."""
+    async def execute(self, 
+                      upper_graph: ExecutionGraph, 
+                      context: ExecutionContext, 
+                      upper_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
+        """Execute workflow graph. Upper signals are not used in the workflow layer."""
         if self.strategy == WorkflowStrategy.WORKFLOW_IS_PLAN:
             # Go directly to plan execution, via the START node
-            return await self.plan_executor.execute(self.graph, context)
+            assert self.graph is not None
+            return await self.plan_executor.execute(self.graph, context, None)
 
-        return await super().execute(upper_graph, context)
+        return await super().execute(upper_graph=upper_graph, context=context, upper_signals=None)
 
-    async def execute_node(self, node: ExecutionNode, context: ExecutionContext) -> List[ExecutionSignal]:
-        """Execute node based on its type."""
+    async def execute_node(self, node: ExecutionNode,
+                           context: ExecutionContext, 
+                           prev_signals: List[ExecutionSignal],
+                           upper_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
+        """Execute node based on its type and strategy. 
+        Upper signals are not used in the workflow layer."""
 
         # Safety: make sure our graph is set
         if self.graph is None and context.current_workflow:
             self.graph = context.current_workflow
         
         if context.current_workflow is None and self.graph:
-            context.current_workflow = self.graph
+            context.current_workflow = cast(Workflow, self.graph)
 
         if node.node_type == NodeType.START or node.node_type == NodeType.END:
             return []  # Start and end nodes just initialize/terminate flow
@@ -76,7 +84,8 @@ class WorkflowExecutor(Executor):
             # Pass current cursor position
             return await self.plan_executor.execute(
                 upper_graph=self.graph, 
-                context=context
+                context=context,
+                upper_signals=prev_signals  # Pass my prev_signals down to plan executor
             )
             
         return [] 
@@ -85,5 +94,6 @@ class WorkflowExecutor(Executor):
                        context: Optional[ExecutionContext] = None) -> ExecutionGraph:
         """Create workflow graph from objective. At the Worflow layer, there is no upper graph."""
         workflow = WorkflowFactory.create_minimal_workflow(objective)
+        assert context is not None
         context.current_workflow = workflow
         return cast(ExecutionGraph, workflow)
