@@ -12,6 +12,9 @@ setup(
     install_requires=[
         "openai>=1.0.0",
         "aiohttp>=3.8.0",
+        "pandas>=2.2",
+        "python-dotenv>=1.0",
+        "structlog>=24.4"
     ],
     extras_require={
         "viz": [
@@ -28,4 +31,4 @@ setup(
         ]
     },
     python_requires=">=3.8",
-) 
+)
