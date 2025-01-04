@@ -9,11 +9,26 @@ class WorkflowFactory:
     """Factory for creating workflow patterns."""
 
     @classmethod
+    def _add_start_end_nodes(cls, workflow: Workflow) -> None:
+        """Add START and END nodes to workflow."""
+        workflow.add_node(ExecutionNode(
+            node_id="START",
+            node_type=NodeType.START,
+            description="Begin workflow"
+        ))
+        workflow.add_node(ExecutionNode(
+            node_id="END",
+            node_type=NodeType.END,
+            description="End workflow"
+        ))
+
+    @classmethod
     def create_sequential_workflow(cls, objective: Union[str, Objective], commands: List[str]) -> Workflow:
         """Create a sequential workflow from list of commands."""
         objective = Objective(objective) if isinstance(objective, str) else objective
         workflow = Workflow(objective)
-        
+        cls._add_start_end_nodes(workflow)
+
         # Create task nodes for each command
         prev_id = "START"
         for i, command in enumerate(commands):
@@ -31,31 +46,21 @@ class WorkflowFactory:
 
     @classmethod
     def create_minimal_workflow(cls, objective: Optional[Union[str, Objective]] = None) -> Workflow:
-        """Create minimal workflow with START -> TASK -> END."""
+        """Create minimal workflow with START -> TASK -> END. 
+        The task node will have the objective as its description.
+        """
         objective = Objective(objective) if isinstance(objective, str) else objective
         workflow = Workflow(objective)
-        
-        # Add START node
-        workflow.add_node(ExecutionNode(
-            node_id="START",
-            node_type=NodeType.START,
-            description="Begin workflow"
-        ))
-        
+        cls._add_start_end_nodes(workflow)
+
         # Add task node
         workflow.add_node(ExecutionNode(
             node_id="PERFORM_TASK",
             node_type=NodeType.TASK,
             description=str(objective) if objective else ""
         ))
+
         workflow.add_transition("START", "PERFORM_TASK")
-        
-        # Add END node
-        workflow.add_node(ExecutionNode(
-            node_id="END",
-            node_type=NodeType.END,
-            description="End workflow"
-        ))
         workflow.add_transition("PERFORM_TASK", "END")
-        
+
         return workflow
