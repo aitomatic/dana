@@ -9,6 +9,7 @@ from dxa.core.workflow import WorkflowFactory
 class MockLLM(LLMResource):
     """Mock LLM for testing."""
     async def query(self, request: dict) -> dict:
+        """Mock LLM query."""
         return {"content": f"Mock response for: {request['prompt']}"}
 
 @pytest.fixture

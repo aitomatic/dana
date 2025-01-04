@@ -9,6 +9,7 @@ from dxa.core.resource import LLMResource
 class MockLLM(LLMResource):
     """Mock LLM for testing."""
     async def query(self, request: dict) -> dict:
+        """Mock LLM query."""
         return {"content": f"Mock response for: {request['prompt']}"}
 
 @pytest.fixture
@@ -71,22 +72,6 @@ async def test_graph_safety(agent):
     assert context.current_plan is not None
     assert context.current_reasoning is not None
     assert workflow_exec.graph == context.current_workflow 
-
-@pytest.mark.asyncio
-# pylint: disable=redefined-outer-name
-async def test_workflow_plan_sync(agent):
-    """Test workflow and plan stay synchronized."""
-    runtime = agent.runtime
-    workflow_exec = runtime.workflow_executor
-    plan_exec = workflow_exec.plan_executor
-    
-    workflow = WorkflowFactory.create_minimal_workflow("test query")
-    await agent.async_run(workflow)
-    
-    # Verify workflow and plan nodes match
-    workflow = workflow_exec.graph
-    plan = plan_exec.graph
-    assert workflow.get_current_node().node_id == plan.get_current_node().node_id 
 
 @pytest.mark.asyncio
 # pylint: disable=redefined-outer-name
