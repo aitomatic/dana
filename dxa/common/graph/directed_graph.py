@@ -91,6 +91,14 @@ class DirectedGraph:
     def edges(self, edges: List[Edge]) -> None:
         """Set all edges in the graph."""
         self._edges = edges
+    
+    def has_node(self, node_id: str) -> bool:
+        """Check if node exists in graph."""
+        return node_id in self.nodes
+    
+    def has_edge(self, source_id: str, target_id: str) -> bool:
+        """Check if edge exists in graph."""
+        return any(edge.source == source_id and edge.target == target_id for edge in self.edges)
 
     @classmethod
     def from_yaml(cls, stream: Union[str, TextIO, Path]) -> 'DirectedGraph':

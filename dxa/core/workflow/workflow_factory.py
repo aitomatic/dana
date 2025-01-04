@@ -36,7 +36,7 @@ class WorkflowFactory:
             workflow.add_node(ExecutionNode(
                 node_id=node_id,
                 node_type=NodeType.TASK,
-                description=command
+                description=str(command)
             ))
             workflow.add_transition(prev_id, node_id)
             prev_id = node_id
@@ -57,7 +57,7 @@ class WorkflowFactory:
         workflow.add_node(ExecutionNode(
             node_id="PERFORM_TASK",
             node_type=NodeType.TASK,
-            description=str(objective) if objective else ""
+            description=objective.original if objective else ""
         ))
 
         workflow.add_transition("START", "PERFORM_TASK")

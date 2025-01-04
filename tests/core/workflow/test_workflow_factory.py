@@ -5,6 +5,7 @@ from dxa.core.workflow.workflow_factory import WorkflowFactory
 from dxa.core.execution.execution_graph import ExecutionNodeStatus
 from dxa.common.graph.directed_graph import NodeType
 from dxa.core.workflow.workflow import Workflow
+from dxa.core.execution import Objective
 
 class TestWorkflowFactory(unittest.TestCase):
     """Test workflow factory."""
@@ -50,6 +51,116 @@ class TestWorkflowFactory(unittest.TestCase):
         node = workflow.get_step(node_id)
         assert node is not None
         self.assertEqual(node.status, status, f"{node_id} node status should be {status}")
+
+    def test_create_minimal_workflow(self):
+        """Test create_minimal_workflow with different inputs."""
+        # Test with string objective
+        workflow = WorkflowFactory.create_minimal_workflow("Test Objective")
+        self.assertEqual(len(workflow.nodes), 3)
+        self.assertEqual(len(workflow.edges), 2)
+        self._get_step_and_assert_description(workflow, "PERFORM_TASK", "Test Objective")
+
+        # Test with Objective instance
+        obj = Objective("Test Objective 2")
+        workflow = WorkflowFactory.create_minimal_workflow(obj)
+        self._get_step_and_assert_description(workflow, "PERFORM_TASK", "Test Objective 2")
+
+        # Test with None objective
+        workflow = WorkflowFactory.create_minimal_workflow(None)
+        self.assertEqual(len(workflow.nodes), 3)
+        self._get_step_and_assert_description(workflow, "PERFORM_TASK", "")
+
+        # Test node connections
+        self.assertTrue(workflow.has_edge("START", "PERFORM_TASK"))
+        self.assertTrue(workflow.has_edge("PERFORM_TASK", "END"))
+
+        # Verify node types
+        self._get_step_and_assert_type(workflow, "START", NodeType.START)
+        self._get_step_and_assert_type(workflow, "PERFORM_TASK", NodeType.TASK)
+        self._get_step_and_assert_type(workflow, "END", NodeType.END)
+
+    def test_sequential_workflow_edge_cases(self):
+        """Test create_sequential_workflow with edge cases."""
+        # Test with empty commands list
+        workflow = WorkflowFactory.create_sequential_workflow("Empty Test", [])
+        self.assertEqual(len(workflow.nodes), 2)  # Just START and END
+        self.assertEqual(len(workflow.edges), 1)  # START -> END
+
+        # Test with single command
+        workflow = WorkflowFactory.create_sequential_workflow("Single Test", ["Only Task"])
+        self.assertEqual(len(workflow.nodes), 3)
+        self._get_step_and_assert_description(workflow, "TASK_0", "Only Task")
+
+        # Test with many commands
+        many_commands = [f"Task {i}" for i in range(100)]
+        workflow = WorkflowFactory.create_sequential_workflow("Many Tests", many_commands)
+        self.assertEqual(len(workflow.nodes), 102)  # 100 tasks + START + END
+        self._get_step_and_assert_description(workflow, "TASK_99", "Task 99")
+
+        # Test with Objective instance
+        obj = Objective("Test with Objective")
+        workflow = WorkflowFactory.create_sequential_workflow(obj, ["Task 1", "Task 2"])
+        self.assertEqual(workflow.objective, obj)
+
+    def test_workflow_connectivity(self):
+        """Test workflow graph connectivity."""
+        workflow = WorkflowFactory.create_sequential_workflow(
+            "Test Connectivity", 
+            ["Task 1", "Task 2", "Task 3"]
+        )
+
+        # Verify all nodes are reachable from START
+        visited = set()
+
+        def dfs(node_id):
+            visited.add(node_id)
+            for edge in workflow.edges:
+                if edge.source == node_id and edge.target not in visited:
+                    dfs(edge.target)
+
+        dfs("START")
+        self.assertEqual(len(visited), len(workflow.nodes))
+
+        # Verify path exists from every node to END
+        for node_id in workflow.nodes:
+            if node_id != "END":
+                path_exists = False
+                current = node_id
+                visited = set()
+                while current in workflow.nodes:
+                    if current == "END":
+                        path_exists = True
+                        break
+                    visited.add(current)
+                    # Find next node
+                    for edge in workflow.edges:
+                        if edge.source == current and edge.target not in visited:
+                            current = edge.target
+                            break
+                    else:
+                        break
+                self.assertTrue(path_exists, f"No path from {node_id} to END")
+
+    def test_node_id_generation(self):
+        """Test node ID generation in sequential workflow."""
+        workflow = WorkflowFactory.create_sequential_workflow(
+            "Test IDs", 
+            ["First", "Second", "Third"]
+        )
+
+        # Verify task IDs are properly generated
+        self.assertIn("TASK_0", workflow.nodes)
+        self.assertIn("TASK_1", workflow.nodes)
+        self.assertIn("TASK_2", workflow.nodes)
+
+        # Verify descriptions match task IDs
+        self._get_step_and_assert_description(workflow, "TASK_0", "First")
+        self._get_step_and_assert_description(workflow, "TASK_1", "Second")
+        self._get_step_and_assert_description(workflow, "TASK_2", "Third")
+
+        # Verify START and END nodes exist
+        self.assertIn("START", workflow.nodes)
+        self.assertIn("END", workflow.nodes)
 
 if __name__ == '__main__':
     unittest.main()
