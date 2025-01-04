@@ -92,6 +92,7 @@ class Cursor:
     def next(self) -> Optional[Node]:
         """Get next node in traversal."""
         try:
-            return next(self._iterator)
+            self.current = next(self._iterator)  # Store the next node
+            return self.current
         except StopIteration:
             return None 

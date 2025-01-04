@@ -150,7 +150,13 @@ class LLMInteractionAnalyzer:
                     
         return sorted(similar_prompts, key=lambda x: x['similarity'], reverse=True)
 
+    def get_token_usage_over_time(self) -> pd.DataFrame:
+        """Get token usage over time."""
+        df = self.load_interactions()
+        return df.groupby('timestamp').sum()
+
 class LogAnalyzer:
+    """Analyze log content."""
     def analyze_logs(self, logs: List[str]) -> Dict[str, Any]:
         """Analyze log content."""
         return {

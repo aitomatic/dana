@@ -31,6 +31,7 @@ class ExecutionNode(Node):
     requires: Dict[str, Any] = field(default_factory=dict)
     provides: Dict[str, Any] = field(default_factory=dict)
 
+    # pylint: disable=too-many-arguments
     def __init__(self, 
                  node_id: str, 
                  node_type: NodeType, 
@@ -90,11 +91,12 @@ class Objective:
     context: Dict[str, Any] = field(default_factory=dict)
     history: List[Dict] = field(default_factory=list)
 
-    def __init__(self, objective: str):
+    def __init__(self, objective: Optional[str] = None):
         if not objective:
             objective = "No objective provided"
         self.original = objective
         self.current = objective
+        self.status = ObjectiveStatus.INITIAL
         self.context = {}
         self.history = []
     
@@ -109,12 +111,13 @@ class Objective:
         self.current = new_understanding
 
 # Context types
+# pylint: disable=too-many-instance-attributes
 @dataclass
 class ExecutionContext:
     """Execution context with access to all states."""
-    agent_state: 'AgentState'
-    world_state: 'WorldState'
-    execution_state: 'ExecutionState'
+    agent_state: Optional['AgentState'] = None  
+    world_state: Optional['WorldState'] = None
+    execution_state: Optional['ExecutionState'] = None
     current_workflow: Optional['Workflow'] = None
     current_plan: Optional['Plan'] = None
     current_reasoning: Optional['Reasoning'] = None

@@ -13,7 +13,7 @@ from ..execution import ExecutionGraph, Objective
 
 class ReasoningStrategy(Enum):
     """Reasoning execution strategies."""
-    DIRECT = "DIRECT"           # Simple LLM query
+    DEFAULT = "DEFAULT"           # Simple LLM query
     CHAIN_OF_THOUGHT = "COT"    # Step by step reasoning
     OODA = "OODA"               # OODA loop pattern
     DANA = "DANA"               # DANA pattern
@@ -21,12 +21,13 @@ class ReasoningStrategy(Enum):
 class ReasoningExecutor(Executor):
     """Executes reasoning patterns."""
     
-    def __init__(self, strategy: ReasoningStrategy = ReasoningStrategy.DIRECT):
+    def __init__(self, strategy: ReasoningStrategy = ReasoningStrategy.DEFAULT):
         super().__init__()
         self.strategy = strategy
         self.current_reasoning = None
 
-    async def execute(self, upper_graph: ExecutionGraph, context: ExecutionContext) -> List[ExecutionSignal]:
+    async def execute(self, upper_graph: ExecutionGraph, context: ExecutionContext, 
+                      upper_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
         """Execute using reasoning strategy."""
         # Create reasoning graph based on strategy
         plan = cast(Plan, upper_graph)
@@ -36,32 +37,45 @@ class ReasoningExecutor(Executor):
         context.current_reasoning = reasoning
         
         # Execute reasoning through base executor
-        return await super().execute(reasoning, context)
+        return await super().execute(upper_graph=reasoning, context=context, upper_signals=upper_signals)
 
-    async def execute_node(self, node: ExecutionNode, context: ExecutionContext) -> List[ExecutionSignal]:
+    async def execute_node(self, node: ExecutionNode, context: ExecutionContext, 
+                           prev_signals: List[ExecutionSignal], 
+                           upper_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
         """Execute a reasoning node using LLM."""
         if not context.reasoning_llm:
             raise ValueError("No reasoning LLM configured in context")
+        
+        # TODO: use upper_signals and prev_signals somehow?
 
-        if node.node_type == NodeType.START or node.node_type == NodeType.END:
+        # Safety: make sure our graph is set
+        if self.graph is None and context.current_reasoning:
+            self.graph = context.current_reasoning
+        
+        if context.current_reasoning is None and self.graph:
+            context.current_reasoning = cast(Reasoning, self.graph)
+
+        if node.node_type in [NodeType.START, NodeType.END]:
             return []   # Start and end nodes just initialize/terminate flow
 
-        if self.strategy == ReasoningStrategy.DIRECT:
+        if self.strategy == ReasoningStrategy.DEFAULT:
             return await self._execute_direct(node, context)
-        elif self.strategy == ReasoningStrategy.CHAIN_OF_THOUGHT:
+        if self.strategy == ReasoningStrategy.CHAIN_OF_THOUGHT:
             return await self._execute_cot(node, context)
-        elif self.strategy == ReasoningStrategy.OODA:
+        if self.strategy == ReasoningStrategy.OODA:
             return await self._execute_ooda(node, context)
-        elif self.strategy == ReasoningStrategy.DANA:
+        if self.strategy == ReasoningStrategy.DANA:
             return await self._execute_dana(node, context)
-        else:
-            raise ValueError(f"Unknown strategy: {self.strategy}")
+        raise ValueError(f"Unknown strategy: {self.strategy}")
 
-    def _create_graph(self, upper_graph: ExecutionGraph, objective: Optional[Objective] = None) -> ExecutionGraph:
+    def _create_graph(self, 
+                       upper_graph: ExecutionGraph, 
+                       objective: Optional[Objective] = None, 
+                       context: Optional[ExecutionContext] = None) -> ExecutionGraph:
         """Create this layer's graph from the upper layer's graph."""
-        plan = cast(Plan, upper_graph)
-        objective = objective or plan.objective
-        reasoning = self._create_reasoning(plan, objective)
+        reasoning = self._create_reasoning(cast(Plan, upper_graph), objective)
+        assert context is not None
+        context.current_reasoning = reasoning
         return cast(ExecutionGraph, reasoning)
 
     def _create_reasoning(self, plan: "Plan", objective: Optional[Objective] = None) -> Reasoning:
@@ -70,7 +84,7 @@ class ReasoningExecutor(Executor):
         objective = objective or plan.objective
         assert objective is not None
 
-        if self.strategy == ReasoningStrategy.DIRECT:
+        if self.strategy == ReasoningStrategy.DEFAULT:
             # Simple single-node reasoning
             node = ExecutionNode(
                 node_id="DIRECT_REASONING",

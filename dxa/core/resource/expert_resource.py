@@ -34,12 +34,8 @@ Example:
 """
 
 from dataclasses import dataclass
-from typing import Dict, Any, Optional, Union
-from dxa.common.exceptions import LLMError
-from dxa.core.resource.llm_resource import (
-    LLMResource,
-    LLMConfig
-)
+from typing import Dict, Any, Optional
+from dxa.core.resource.llm_resource import LLMConfig
 from dxa.core.capability.domain_expertise import DomainExpertise
 from dxa.core.resource.base_resource import BaseResource, ResourceResponse, ResourceConfig
 from dxa.core.io.io_factory import IOFactory
@@ -48,15 +44,15 @@ from dxa.core.io.io_factory import IOFactory
 @dataclass
 class ExpertConfig(ResourceConfig):
     """Expert-specific configuration."""
-    expertise: DomainExpertise = None
+    expertise: Optional[DomainExpertise] = None
     confidence_threshold: float = 0.7
-    llm_config: LLMConfig = None
+    llm_config: Optional[LLMConfig] = None
 
 
 @dataclass
 class ExpertResponse(ResourceResponse):
     """Expert-specific response extending base response."""
-    content: str = None
+    content: str = ""
     usage: Optional[Dict[str, int]] = None
     model: Optional[str] = None
 
@@ -64,9 +60,18 @@ class ExpertResponse(ResourceResponse):
 class ExpertResource(BaseResource):
     """Resource for interacting with human experts."""
     
-    def __init__(self, name: str, expert_type: str = "general"):
+    # pylint: disable=too-many-arguments
+    def __init__(self, 
+                 name: str, 
+                 expertise: Optional[DomainExpertise] = None, 
+                 system_prompt: Optional[str] = None,
+                 confidence_threshold: float = 0.7, 
+                 llm_config: Optional[LLMConfig] = None):
         super().__init__(name)
-        self.expert_type = expert_type
+        self.expertise = expertise
+        self.system_prompt = system_prompt
+        self.confidence_threshold = confidence_threshold
+        self.llm_config = llm_config
         self._io = None
 
     async def initialize(self) -> None:

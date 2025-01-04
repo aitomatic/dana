@@ -20,11 +20,11 @@ class AgentRuntime:
         
         # Initialize executors with strategies
         self.reasoning_executor = ReasoningExecutor(
-            strategy=reasoning_strategy or ReasoningStrategy.DIRECT
+            strategy=reasoning_strategy or ReasoningStrategy.DEFAULT
         )
         self.plan_executor = PlanExecutor(
             reasoning_executor=self.reasoning_executor,
-            strategy=planning_strategy or PlanningStrategy.DIRECT
+            strategy=planning_strategy or PlanningStrategy.DEFAULT
         )
         self.workflow_executor = WorkflowExecutor(
             plan_executor=self.plan_executor,
@@ -44,8 +44,8 @@ class AgentRuntime:
         )
 
         # Execute workflow with context
-        signals = await self.workflow_executor.execute(workflow, context)
-        
+        signals = await self.workflow_executor.execute_workflow(workflow, context)
+
         # Get final result from signals
         for signal in reversed(signals):
             if signal.type == ExecutionSignalType.RESULT:

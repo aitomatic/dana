@@ -22,7 +22,7 @@ See dxa/agent/README.md for detailed design documentation.
 import asyncio
 from typing import Dict, Union, Optional, Any
 from ..workflow import Workflow
-from ..execution.execution_types import Objective
+from ..workflow import WorkflowFactory
 from ..capability import BaseCapability
 from ..resource import BaseResource, LLMResource
 from ..io import BaseIO, IOFactory
@@ -33,9 +33,11 @@ from ..reasoning import ReasoningStrategy
 from ...common.utils.config import load_agent_config
 from .agent_runtime import AgentRuntime
 
+# pylint: disable=too-many-public-methods
 class Agent:
     """Main agent interface with built-in execution management."""
     
+    # pylint: disable=too-many-instance-attributes
     def __init__(self, name: Optional[str] = None):
         self._name = name or "agent"
         self._state = AgentState()
@@ -53,6 +55,21 @@ class Agent:
         self._workflow_strategy = None
         self._planning_strategy = None
         self._reasoning_strategy = None
+    
+    @property
+    def workflow_strategy(self) -> WorkflowStrategy:
+        """Get workflow strategy."""
+        return self._workflow_strategy or WorkflowStrategy.DEFAULT
+    
+    @property
+    def planning_strategy(self) -> PlanningStrategy:
+        """Get planning strategy."""
+        return self._planning_strategy or PlanningStrategy.DEFAULT
+    
+    @property
+    def reasoning_strategy(self) -> ReasoningStrategy:
+        """Get reasoning strategy."""
+        return self._reasoning_strategy or ReasoningStrategy.DEFAULT
     
     @property
     def state(self) -> AgentState:
@@ -150,11 +167,17 @@ class Agent:
     def with_workflow(self, strategy: WorkflowStrategy) -> 'Agent':
         """Configure workflow strategy."""
         self._workflow_strategy = strategy
+        if strategy == WorkflowStrategy.WORKFLOW_IS_PLAN:
+            # This requires the plan to be aware of the same strategy.
+            self._planning_strategy = PlanningStrategy.WORKFLOW_IS_PLAN
         return self
 
     def with_planning(self, strategy: PlanningStrategy) -> 'Agent':
         """Configure planning strategy."""
         self._planning_strategy = strategy
+        if strategy == PlanningStrategy.WORKFLOW_IS_PLAN:
+            # This requires the workflow to be aware of the same strategy.
+            self._workflow_strategy = WorkflowStrategy.WORKFLOW_IS_PLAN
         return self
 
     def with_reasoning(self, strategy: ReasoningStrategy) -> 'Agent':
@@ -181,11 +204,11 @@ class Agent:
         """Create LLM from various input types."""
         if isinstance(llm, LLMResource):
             return llm
-        elif isinstance(llm, str):
+        if isinstance(llm, str):
             config = load_agent_config("llm")
             config["model"] = llm
             return LLMResource(name=f"{self._name}_{name}", config=config)
-        elif isinstance(llm, Dict):
+        if isinstance(llm, Dict):
             config = load_agent_config("llm")
             config.update(llm)
             return LLMResource(name=f"{self._name}_{name}", config=config)
@@ -206,8 +229,8 @@ class Agent:
         
         # Set default strategies if not specified
         self._workflow_strategy = self._workflow_strategy or WorkflowStrategy.DEFAULT
-        self._planning_strategy = self._planning_strategy or PlanningStrategy.DIRECT
-        self._reasoning_strategy = self._reasoning_strategy or ReasoningStrategy.DIRECT
+        self._planning_strategy = self._planning_strategy or PlanningStrategy.DEFAULT
+        self._reasoning_strategy = self._reasoning_strategy or ReasoningStrategy.DEFAULT
         
         # Create runtime with strategies
         self._runtime = AgentRuntime(
@@ -234,21 +257,18 @@ class Agent:
         """Cleanup agent when exiting context."""
         await self.cleanup()
 
-    async def run(self, objective: Optional[Union[str, Objective]] = None) -> Any:
+    async def async_run(self, workflow: Workflow) -> Any:
         """Execute an objective."""
         self._initialize()
         
         async with self:  # For cleanup
-            # Create empty workflow with objective
-            if isinstance(objective, str):
-                objective = Objective(objective)
-            else:
-                raise ValueError(f"Invalid objective: {objective}")
-            workflow = Workflow(objective=objective)
             return await self.runtime.execute(workflow)
     
+    def run(self, workflow: Workflow) -> Any:
+        """Run an objective."""
+        return asyncio.run(self.async_run(workflow))
+
     def ask(self, question: str) -> Any:
         """Ask a question to the agent."""
-        self._initialize()
-        loop = asyncio.get_event_loop()
-        return loop.run_until_complete(self.run(question))
+        workflow = WorkflowFactory.create_minimal_workflow(question)
+        return self.run(workflow)

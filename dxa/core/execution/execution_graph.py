@@ -4,13 +4,14 @@ from typing import Dict, Any, Optional, Union, List, cast, TextIO
 from pathlib import Path
 from dataclasses import dataclass
 from datetime import datetime
-from ...common.graph import DirectedGraph, Node, Edge, Cursor, NodeType
+from ...common.graph import DirectedGraph, Node, Edge, NodeType
 from .execution_types import (
     Objective, ExecutionContext, ExecutionNode,
     ExecutionNodeStatus, ExecutionSignal, ExecutionSignalType,
     ExecutionEdge
 )
 
+# pylint: disable=too-many-public-methods
 @dataclass
 class ExecutionGraph(DirectedGraph):
     """Base graph for all execution layers (WHY/WHAT/HOW)."""
@@ -51,9 +52,7 @@ class ExecutionGraph(DirectedGraph):
     @property
     def edges(self) -> List[ExecutionEdge]:
         """Get all edges in the graph."""
-        return [
-            cast(ExecutionEdge, edge) for edge in super().edges
-        ]
+        return cast(List[ExecutionEdge], super().edges)
     
     @edges.setter
     def edges(self, edges: List[ExecutionEdge]) -> None:
@@ -293,15 +292,15 @@ class ExecutionGraph(DirectedGraph):
             "state": state
         })
 
-    def get_start_cursor(self) -> 'Cursor':
-        """Get cursor starting at START type node."""
-        start_node = next((node for node in self.nodes.values() 
-                          if node.node_type == NodeType.START), None)
-        if not start_node:
-            raise ValueError("Graph has no START node")
-        return self.cursor(start_node)
+    # def get_start_cursor(self) -> 'Cursor':
+    #     """Get cursor starting at START type node."""
+    #     start_node = next((node for node in self.nodes.values() 
+    #                       if node.node_type == NodeType.START), None)
+    #     if not start_node:
+    #         raise ValueError("Graph has no START node")
+    #     return self.cursor(start_node)
 
-    def get_end_nodes(self) -> List[ExecutionNode]:
-        """Get all END type nodes."""
-        return [node for node in self.nodes.values() 
-                if node.node_type == NodeType.END]
+    # def get_end_nodes(self) -> List[ExecutionNode]:
+    #     """Get all END type nodes."""
+    #     return [node for node in self.nodes.values() 
+    #             if node.node_type == NodeType.END]
