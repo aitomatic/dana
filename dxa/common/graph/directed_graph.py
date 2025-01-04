@@ -60,6 +60,7 @@ class Edge:
             return NotImplemented
         return self.source == other.source and self.target == other.target
     
+# pylint: disable=too-many-instance-attributes
 class DirectedGraph:
     """Pure directed graph implementation."""
     def __init__(self):
@@ -142,7 +143,7 @@ class DirectedGraph:
         """Remove node and its edges from graph."""
         if node_id in self.nodes:
             # Remove edges involving this node
-            self.edges = [e for e in self.edges if e.source != node_id and e.target != node_id]
+            self.edges = [e for e in self.edges if node_id not in (e.source, e.target)]
             # Clean up adjacency lists
             self._outgoing.pop(node_id, None)
             self._incoming.pop(node_id, None)

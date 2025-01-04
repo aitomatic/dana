@@ -67,6 +67,7 @@ __all__ = ['DXALogger']  # Export the class
 class DXALogger:
     """Unified logging for DXA system"""
     
+    # pylint: disable=too-many-arguments
     def __init__(
         self,
         log_dir: Optional[str] = None,
@@ -221,10 +222,10 @@ class DXALogger:
                 f"[{h.get('timestamp', 'N/A')}] {h.get('message', 'No message')}"
                 for h in filtered_history
             )
-        elif output_format == "json":
+        if output_format == "json":
             raise NotImplementedError("JSON visualization not yet implemented")
-        else:
-            raise ValueError(f"Unsupported format: {output_format}")
+
+        raise ValueError(f"Unsupported format: {output_format}")
 
     def get_analyzer(self) -> LLMInteractionAnalyzer:
         """Get an analyzer instance for the current logs."""

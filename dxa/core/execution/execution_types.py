@@ -31,6 +31,7 @@ class ExecutionNode(Node):
     requires: Dict[str, Any] = field(default_factory=dict)
     provides: Dict[str, Any] = field(default_factory=dict)
 
+    # pylint: disable=too-many-arguments
     def __init__(self, 
                  node_id: str, 
                  node_type: NodeType, 
@@ -110,6 +111,7 @@ class Objective:
         self.current = new_understanding
 
 # Context types
+# pylint: disable=too-many-instance-attributes
 @dataclass
 class ExecutionContext:
     """Execution context with access to all states."""

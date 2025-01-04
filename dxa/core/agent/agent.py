@@ -33,9 +33,11 @@ from ..reasoning import ReasoningStrategy
 from ...common.utils.config import load_agent_config
 from .agent_runtime import AgentRuntime
 
+# pylint: disable=too-many-public-methods
 class Agent:
     """Main agent interface with built-in execution management."""
     
+    # pylint: disable=too-many-instance-attributes
     def __init__(self, name: Optional[str] = None):
         self._name = name or "agent"
         self._state = AgentState()
@@ -202,11 +204,11 @@ class Agent:
         """Create LLM from various input types."""
         if isinstance(llm, LLMResource):
             return llm
-        elif isinstance(llm, str):
+        if isinstance(llm, str):
             config = load_agent_config("llm")
             config["model"] = llm
             return LLMResource(name=f"{self._name}_{name}", config=config)
-        elif isinstance(llm, Dict):
+        if isinstance(llm, Dict):
             config = load_agent_config("llm")
             config.update(llm)
             return LLMResource(name=f"{self._name}_{name}", config=config)

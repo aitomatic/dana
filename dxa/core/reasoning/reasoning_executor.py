@@ -55,19 +55,18 @@ class ReasoningExecutor(Executor):
         if context.current_reasoning is None and self.graph:
             context.current_reasoning = cast(Reasoning, self.graph)
 
-        if node.node_type == NodeType.START or node.node_type == NodeType.END:
+        if node.node_type in [NodeType.START, NodeType.END]:
             return []   # Start and end nodes just initialize/terminate flow
 
         if self.strategy == ReasoningStrategy.DEFAULT:
             return await self._execute_direct(node, context)
-        elif self.strategy == ReasoningStrategy.CHAIN_OF_THOUGHT:
+        if self.strategy == ReasoningStrategy.CHAIN_OF_THOUGHT:
             return await self._execute_cot(node, context)
-        elif self.strategy == ReasoningStrategy.OODA:
+        if self.strategy == ReasoningStrategy.OODA:
             return await self._execute_ooda(node, context)
-        elif self.strategy == ReasoningStrategy.DANA:
+        if self.strategy == ReasoningStrategy.DANA:
             return await self._execute_dana(node, context)
-        else:
-            raise ValueError(f"Unknown strategy: {self.strategy}")
+        raise ValueError(f"Unknown strategy: {self.strategy}")
 
     def _create_graph(self, 
                        upper_graph: ExecutionGraph, 

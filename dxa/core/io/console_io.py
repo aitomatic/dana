@@ -11,7 +11,7 @@ Example:
     ```
 """
 
-from typing import Optional, Any
+from typing import Any
 from dxa.core.io.base_io import BaseIO
 
 class ConsoleIO(BaseIO):

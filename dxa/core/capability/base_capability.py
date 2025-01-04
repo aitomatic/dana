@@ -1,6 +1,6 @@
 """Base capability for DXA."""
 
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import Dict, Any, Optional
 
 class BaseCapability(ABC):

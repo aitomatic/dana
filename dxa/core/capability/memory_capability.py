@@ -87,27 +87,26 @@ class MemoryCapability(BaseCapability):
                 kwargs.get('importance', 1.0),
                 context
             )
-        elif operation == 'retrieve':
+        if operation == 'retrieve':
             return await self._retrieve_memories(
                 kwargs.get('query', {}),
                 kwargs.get('limit')
             )
-        elif operation == 'update_working':
+        if operation == 'update_working':
             return await self._update_working_memory(
                 kwargs.get('updates', {})
             )
-        elif operation == 'clear':
+        if operation == 'clear':
             return await self._clear_memories(
                 kwargs.get('filter', {})
             )
-        else:
-            return {
-                "success": False,
-                "error": f"Unknown operation: {operation}"
-            }
+        return {
+            "success": False,
+            "error": f"Unknown operation: {operation}"
+        }
 
-    def can_handle(self, context: Dict[str, Any]) -> bool:
-        """Check if memory capability can handle the context."""
+    def can_handle(self, request: Dict[str, Any]) -> bool:
+        """Check if memory capability can handle the request."""
         return True  # Memory capability can always be used
 
     async def _store_memory(
@@ -243,8 +242,9 @@ class MemoryCapability(BaseCapability):
         
         # If still over max size, remove oldest
         if self.max_size and len(self._memories) > self.max_size:
-            self._memories.sort(key=lambda x: x.timestamp)
-            self._memories = self._memories[-self.max_size:]
+            # Sort by timestamp and keep only the newest max_size memories
+            self._memories.sort(key=lambda x: x.timestamp if x.timestamp is not None else 0)
+            self._memories = self._memories[max(0, len(self._memories) - self.max_size):]
 
     def _apply_decay(self):
         """Apply importance decay to memories."""

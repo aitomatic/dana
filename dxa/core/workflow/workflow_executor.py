@@ -1,7 +1,7 @@
 """Workflow executor implementation."""
 
 from enum import Enum
-from typing import List, cast, Optional
+from typing import List, cast, Optional, TYPE_CHECKING
 from ..execution import (
     Executor,
     ExecutionGraph,
@@ -10,9 +10,11 @@ from ..execution import (
     ExecutionContext,
     Objective,
 )
-from ..planning import PlanExecutor
-from ..workflow import Workflow, WorkflowFactory
+from .workflow import Workflow
+from .workflow_factory import WorkflowFactory
 from ...common.graph import NodeType
+if TYPE_CHECKING:
+    from ..planning import PlanExecutor
 
 class WorkflowStrategy(Enum):
     """Workflow execution strategies."""
@@ -25,7 +27,7 @@ class WorkflowStrategy(Enum):
 class WorkflowExecutor(Executor):
     """Executes workflow graphs."""
 
-    def __init__(self, plan_executor: PlanExecutor, strategy: WorkflowStrategy = WorkflowStrategy.DEFAULT):
+    def __init__(self, plan_executor: 'PlanExecutor', strategy: WorkflowStrategy = WorkflowStrategy.DEFAULT):
         super().__init__()
         self.plan_executor = plan_executor
         self._strategy = strategy
@@ -76,10 +78,10 @@ class WorkflowExecutor(Executor):
         if context.current_workflow is None and self.graph:
             context.current_workflow = cast(Workflow, self.graph)
 
-        if node.node_type == NodeType.START or node.node_type == NodeType.END:
+        if node.node_type in [NodeType.START, NodeType.END]:
             return []  # Start and end nodes just initialize/terminate flow
             
-        elif node.node_type == NodeType.TASK:
+        if node.node_type == NodeType.TASK:
             assert self.graph is not None
             # Pass current cursor position
             return await self.plan_executor.execute(

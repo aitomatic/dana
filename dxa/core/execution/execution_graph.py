@@ -11,6 +11,7 @@ from .execution_types import (
     ExecutionEdge
 )
 
+# pylint: disable=too-many-public-methods
 @dataclass
 class ExecutionGraph(DirectedGraph):
     """Base graph for all execution layers (WHY/WHAT/HOW)."""

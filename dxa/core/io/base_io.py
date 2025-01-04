@@ -18,8 +18,9 @@ Example:
 """
 
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Optional
 import logging
+from ..state import StateManager
 
 class BaseIO(ABC):
     """Base class for I/O implementations.
@@ -37,11 +38,16 @@ class BaseIO(ABC):
         """Initialize base I/O with logging and state management."""
         self.logger = logging.getLogger(self.__class__.__name__)
         # TODO: probably need StateManager of some kind for asyncio
-        # self.state_manager = StateManager(self.__class__.__name__)
+        self.state_manager = StateManager()
     
     async def initialize(self) -> None:
         """Initialize IO. Override if async setup needed."""
         pass
+
+    # pylint: disable=unused-argument
+    async def get_input(self, prompt: Optional[str] = None) -> str:
+        """Get input from IO."""
+        return ""
 
     async def cleanup(self) -> None:
         """Cleanup IO. Override if async cleanup needed."""

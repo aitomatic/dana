@@ -1,13 +1,15 @@
 """Plan executor implementation."""
 
 from enum import Enum
-from typing import List, cast, Optional
+from typing import List, cast, Optional, TYPE_CHECKING
 from ..execution import Executor, ExecutionNode, ExecutionSignal, ExecutionContext
 from ..execution import Objective
 from .plan import Plan
 from ..workflow import Workflow
 from ..execution import ExecutionGraph, ExecutionEdge
 from ...common.graph import NodeType
+if TYPE_CHECKING:
+    from ..reasoning import ReasoningExecutor
 
 class PlanningStrategy(Enum):
     """Planning strategies."""
@@ -19,7 +21,7 @@ class PlanningStrategy(Enum):
 class PlanExecutor(Executor):
     """Executes plans using planning strategies."""
 
-    def __init__(self, reasoning_executor, strategy: PlanningStrategy = PlanningStrategy.DEFAULT):
+    def __init__(self, reasoning_executor: 'ReasoningExecutor', strategy: PlanningStrategy = PlanningStrategy.DEFAULT):
         super().__init__()
         self.reasoning_executor = reasoning_executor
         self._strategy = strategy
@@ -60,10 +62,11 @@ class PlanExecutor(Executor):
         if self.strategy == PlanningStrategy.WORKFLOW_IS_PLAN:
             workflow.update_cursor(node.node_id)  # Uses DirectedGraph's method
         
-        if node.node_type == NodeType.START or node.node_type == NodeType.END:
+        if node.node_type in [NodeType.START, NodeType.END]:
             return []   # Start and end nodes just initialize/terminate flow
         
         # Execute the node
+        assert self.graph is not None
         signals = await self.reasoning_executor.execute(upper_graph=self.graph, 
                                                         context=context, 
                                                         # Pass my prev_signals down to reasoning executor
@@ -88,14 +91,13 @@ class PlanExecutor(Executor):
 
         if self.strategy == PlanningStrategy.DEFAULT:
             return self._create_direct_plan(workflow, objective)
-        elif self.strategy == PlanningStrategy.COMPLETE:
+        if self.strategy == PlanningStrategy.COMPLETE:
             return self._create_complete_plan(workflow, objective)
-        elif self.strategy == PlanningStrategy.DYNAMIC:
+        if self.strategy == PlanningStrategy.DYNAMIC:
             return self._create_dynamic_plan(workflow, objective)
-        elif self.strategy == PlanningStrategy.WORKFLOW_IS_PLAN:
+        if self.strategy == PlanningStrategy.WORKFLOW_IS_PLAN:
             return self._create_follow_workflow_plan(workflow, objective)
-        else:
-            raise ValueError(f"Unknown strategy: {self.strategy}")
+        raise ValueError(f"Unknown strategy: {self.strategy}")
 
     def _create_direct_plan(self, workflow: Workflow, objective: Optional[Objective] = None) -> Plan:
         """Create direct 1:1 plan from current task."""

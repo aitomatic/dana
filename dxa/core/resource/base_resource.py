@@ -100,6 +100,7 @@ class BaseResource(ABC):
         """Cleanup resource."""
         self._is_available = False
 
+    # pylint: disable=unused-argument
     async def query(self, request: Dict[str, Any]) -> ResourceResponse:
         """Query resource."""
         if not self._is_available:

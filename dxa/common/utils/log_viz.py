@@ -214,3 +214,7 @@ class LLMInteractionVisualizer:
         if save_dir:
             plt.savefig(Path(save_dir) / 'dashboard.png', bbox_inches='tight')
         plt.close() 
+    
+    def get_token_usage_over_time(self) -> pd.DataFrame:
+        """Get token usage over time."""
+        return self.analyzer.get_token_usage_over_time()
