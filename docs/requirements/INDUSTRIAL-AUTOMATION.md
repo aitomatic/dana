@@ -1,6 +1,17 @@
+<!-- markdownlint-disable MD041 -->
+<!-- markdownlint-disable MD033 -->
+<p align="center">
+  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
+</p>
+
 # Industrial Automation DXA Scenarios: Batch Processing
 
 This document describes two interconnected scenarios demonstrating how Domain Expert Agents (DXAs) enable autonomous batch operations at both unit and network levels, focusing on specialty chemicals manufacturing.
+
+<!-- markdownlint-disable-next-line no-inline-images -->
+<p align="center">
+    <img src="https://honeywell.scene7.com/is/image/honeywell/batch-automation-hero-img2" width="80%" alt="Batch Automation Process" width="80%" />
+</p>
 
 ## Scenario 1: Batch Process DXA
 
@@ -16,6 +27,12 @@ This document describes two interconnected scenarios demonstrating how Domain Ex
   - Standard operating procedures
   - Batch quality parameters
   - Clean-in-place procedures
+
+<p align="center">
+    <img src="https://www.chemengghelp.com/wp-content/uploads/2022/06/image-2.png" width="60%" alt="Batch Process Flow Diagram">
+    <br/>
+    Batch Process: Reactor and Distillation Column Configuration
+</p>
 
 ### System Architecture
 
