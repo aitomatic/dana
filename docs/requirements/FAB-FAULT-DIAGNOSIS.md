@@ -284,3 +284,87 @@ sequenceDiagram
     end
     DXA->>KB: Log Case & Resolution
 ```
+
+## Demo Script (3 minutes)
+
+### Setup (30s)
+
+- RIE chamber monitoring interface
+- Split screen showing:
+  - Real-time FDC/SPC data streams
+  - DXA analysis dashboard
+  - Chamber matching visualization
+  - Knowledge base interface
+
+### Demo Flow
+
+#### 0:00-0:30 - Normal Chamber Operation
+
+- Show real-time monitoring of matching parameters
+- Display key metrics:
+  - Etch rates correlation
+  - Chamber pressure matching
+  - RF power alignment
+  - Temperature profiles
+- Highlight autonomous monitoring by DXA
+
+#### 0:30-1:30 - Drift Detection & Analysis
+
+- Introduce gradual drift in etch rate matching
+- DXA performs multi-parameter analysis:
+  - Historical pattern matching
+  - Cross-chamber correlation
+  - Process window validation
+  - Root cause determination
+- Show real-time reasoning process
+- Display drift classification confidence
+
+#### 1:30-2:30 - Automated Response
+
+- DXA generates correction strategy
+- Show parameter adjustment calculations
+- Demonstrate SOP execution:
+  - Safety bound validation
+  - Step-by-step workflow
+  - Real-time verification
+- Display recovery metrics
+
+#### 2:30-3:00 - Learning & Optimization
+
+- Show case capture in knowledge base
+- Display optimization metrics:
+  - Time to detection
+  - Correction accuracy
+  - Learning integration
+- Demonstrate value vs. manual process
+
+### Interactive Elements
+
+- Parameter trend exploration
+- Alternative drift scenarios
+- SOP step drill-down
+- Knowledge base query interface
+
+### Technical Requirements 2
+
+#### Demo Environment
+
+- Fab equipment simulation
+- Real-time FDC/SPC feeds
+- DXA reasoning visualization
+- Knowledge base interface
+
+#### Visualization Requirements
+
+- Multi-parameter correlation plots
+- Chamber matching metrics
+- Drift detection confidence
+- SOP execution status
+- Learning capture display
+
+#### Backup Plans
+
+- Pre-recorded drift scenarios
+- Offline analysis results
+- Alternative chamber configurations
+- Sample learning sequences
