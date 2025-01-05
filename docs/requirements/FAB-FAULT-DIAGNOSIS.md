@@ -12,81 +12,162 @@
 
 ## Scenario Overview
 
-The system monitors a semiconductor etcher (RIE) through continuous SPC and FDC IoT data streams. The Domain Expert Agent (DXA) acts as a 24/7 virtual expert, performing:
+The system monitors a single semiconductor etcher (RIE) through continuous SPC and FDC IoT data streams. The Domain Expert Agent (DXA) acts as a 24/7 virtual expert, monitoring for various process issues:
 
-1. Real-time monitoring of process data streams
-2. Anomaly detection and classification
-3. Problem diagnosis and root cause analysis
-4. Recommendation of corrective actions based on SOPs
-5. Continuous learning from new cases and expert feedback
+### Critical RIE Parameters & Potential Issues
+
+1. **Plasma Generation & Stability**
+   - RF matching network faults
+   - Power delivery issues
+   - Plasma ignition failures
+   - Unstable plasma conditions
+
+2. **Process Chemistry**
+   - Gas flow irregularities
+   - Gas ratio deviations
+   - Mass flow controller (MFC) issues
+   - Gas line contamination
+   - Reaction byproduct buildup
+
+3. **Chamber Conditions**
+   - Pressure control issues
+   - Temperature uniformity problems
+   - Chamber leak detection
+   - Particle contamination
+   - Wall coating/polymer buildup
+   - O-ring degradation
+
+4. **Wafer Processing**
+   - Etch rate variations
+   - Uniformity issues
+   - Selectivity problems
+   - Loading effects
+   - Micro-loading effects
+   - Pattern dependent etching
+
+5. **Mechanical Systems**
+   - Vacuum system failures
+   - Wafer handling issues
+   - Chuck/ESC problems
+   - Cooling system malfunctions
+   - Valve operation issues
+
+### DXA Monitoring & Response Capabilities
+
+1. **Real-time Parameter Monitoring**
+   - Process parameters (pressure, power, gas flows)
+   - Equipment state parameters
+   - In-situ measurements where available
+   - End-point detection signals
+
+2. **Anomaly Detection Scope**
+   - Single parameter deviations
+   - Multi-parameter correlations
+   - Pattern recognition in time series
+   - Process sequence violations
+   - Equipment state transitions
+
+3. **Diagnostic Capabilities**
+   - Root cause analysis across all subsystems
+   - Historical case matching
+   - Fault tree analysis
+   - Parameter correlation analysis
+   - Trend analysis and prediction
 
 <p align="center">
   <img src="https://media.springernature.com/lw685/springer-static/image/art%3A10.1038%2Fs41598-024-57697-5/MediaObjects/41598_2024_57697_Fig3_HTML.png" alt="RIE Chamber Matching" width="50%" />
 </p>
 
-### Example Scenario: RIE Chamber Matching
+### Example Scenario: RIE RF Matching Fault Detection
 
 ```mermaid
 sequenceDiagram
-    participant C1 as Chamber 1
-    participant C2 as Chamber 2
+    participant RIE as RIE Chamber
+    participant FDC as FDC Monitor
     participant DXA as DXA System
     participant Op as Operator
 
-    Note over C1,C2: Continuous monitoring of<br/>matching parameters
-    C1->>DXA: FDC Data Stream
-    C2->>DXA: FDC Data Stream
-    DXA->>DXA: Detect drift in<br/>etch rate matching
+    Note over RIE,FDC: Continuous monitoring of<br/>RF matching network
+    RIE->>FDC: RF Power Data Stream
+    FDC->>DXA: Matching Network Parameters
+    DXA->>DXA: Detect RF matching<br/>anomalies
     
-    alt Severe Drift
-        DXA->>Op: Alert: Chamber matching<br/>deviation detected
-        DXA->>Op: Recommend parameter<br/>adjustment
-    else Minor Drift
-        DXA->>DXA: Log drift pattern
+    alt Severe Mismatch
+        DXA->>Op: Alert: RF matching<br/>fault detected
+        DXA->>Op: Recommend matching<br/>network adjustment
+    else Minor Deviation
+        DXA->>DXA: Log pattern
         DXA->>DXA: Monitor trend
     end
 ```
 
 #### Context
 
-- Two RIE chambers running the same process
+- Single RIE chamber operation
 - Critical parameters monitored:
-  - Etch rates
+  - RF forward/reflected power
+  - Matching network positions
   - Chamber pressure
-  - RF power matching
-  - Gas flow rates
-  - Chamber temperature
+  - Process gas flows
+  - Plasma stability indicators
 
 #### Challenge
 
-1. Maintain consistent performance across chambers
-2. Early detection of parameter drift
-3. Rapid diagnosis of matching issues
-4. Automated correction within safe bounds
+1. Early Detection
+   - Identify process deviations before yield impact
+   - Detect subtle parameter drifts across multiple subsystems
+   - Recognize complex fault patterns
+   - Monitor interdependent parameter relationships
+
+2. Accurate Diagnosis
+   - Handle multiple concurrent issues
+   - Determine root causes across different subsystems
+   - Differentiate between symptoms and causes
+   - Account for process history and maintenance state
+
+3. Timely Response
+   - Minimize time to diagnosis
+   - Prevent unnecessary tool downtime
+   - Prioritize issues based on severity
+   - Balance quick fixes vs. long-term solutions
+
+4. Knowledge Management
+   - Capture tribal knowledge from experts
+   - Maintain up-to-date SOPs
+   - Learn from historical cases
+   - Adapt to process and tool modifications
 
 #### DXA Actions
 
 1. **Continuous Monitoring**
-   - Real-time FDC data analysis
-   - SPC trend monitoring
-   - Cross-chamber correlation analysis
+   - Multi-parameter real-time analysis
+   - System state tracking
+   - Process sequence validation
+   - Equipment health monitoring
+   - Maintenance schedule integration
 
 2. **Anomaly Detection**
    - Statistical process control
-   - Pattern recognition in multivariate data
-   - Historical case matching
+   - Multi-variate analysis
+   - Pattern recognition across subsystems
+   - Correlation analysis
+   - Trend prediction
 
 3. **Diagnosis & Resolution**
-   - Root cause analysis using knowledge base
-   - Parameter adjustment recommendations
-   - SOP execution for known cases
-   - Expert escalation for novel situations
+   - Systematic fault tree analysis
+   - Cross-subsystem correlation
+   - Historical case comparison
+   - Expert knowledge application
+   - SOP selection and execution
+   - Escalation path determination
 
 4. **Learning & Optimization**
-   - Case logging and classification
-   - Success rate tracking
-   - Knowledge base updates
-   - SOP refinement
+   - Case history documentation
+   - Success/failure tracking
+   - SOP effectiveness analysis
+   - Knowledge base enrichment
+   - Expert feedback integration
+   - Continuous model refinement
 
 ## Solution Architecture
 
@@ -303,23 +384,22 @@ sequenceDiagram
 
 ### Setup (30s)
 
-- RIE chamber monitoring interface
+- RIE process monitoring interface
 - Split screen showing:
-  - Real-time FDC/SPC data streams
+  - Real-time RF matching data
   - DXA analysis dashboard
-  - Chamber matching visualization
+  - Plasma stability metrics
   - Knowledge base interface
 
 ### Demo Flow
 
-#### 0:00-0:30 - Normal Chamber Operation
+#### 0:00-0:30 - Normal Operation
 
-- Show real-time monitoring of matching parameters
+- Show real-time monitoring of RF matching
 - Display key metrics:
-  - Etch rates correlation
-  - Chamber pressure matching
-  - RF power alignment
-  - Temperature profiles
+  - Forward/reflected power
+  - Matching network positions
+  - Plasma stability indicators
 - Highlight autonomous monitoring by DXA
 
 #### 0:30-1:30 - Drift Detection & Analysis

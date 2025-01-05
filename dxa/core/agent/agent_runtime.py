@@ -4,7 +4,6 @@ from typing import Any, Optional, TYPE_CHECKING
 from ..workflow import WorkflowExecutor, WorkflowStrategy, Workflow
 from ..planning import PlanExecutor, PlanningStrategy
 from ..reasoning import ReasoningExecutor, ReasoningStrategy
-from ..state import WorldState, ExecutionState
 from ..execution import ExecutionContext, ExecutionSignalType
 if TYPE_CHECKING:
     from ..agent import Agent
@@ -31,21 +30,14 @@ class AgentRuntime:
             strategy=workflow_strategy or WorkflowStrategy.DEFAULT
         )
 
-    async def execute(self, workflow: Workflow) -> Any:
+    async def execute(self, workflow: Workflow, context: ExecutionContext) -> Any:
         """Execute workflow and return result."""
-        context = ExecutionContext(
-            agent_state=self.agent.state,
-            world_state=WorldState(),
-            execution_state=ExecutionState(),
-            current_workflow=workflow,
-            workflow_llm=self.agent.workflow_llm,  # Could be specialized
-            planning_llm=self.agent.planning_llm,  # Could be specialized
-            reasoning_llm=self.agent.agent_llm     # Default LLM for now
-        )
-
+        # Set current workflow in context
+        context.current_workflow = workflow
+        
         # Execute workflow with context
         signals = await self.workflow_executor.execute_workflow(workflow, context)
-
+        
         # Get final result from signals
         for signal in reversed(signals):
             if signal.type == ExecutionSignalType.RESULT:
