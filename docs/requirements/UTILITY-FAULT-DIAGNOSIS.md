@@ -1,6 +1,16 @@
+<!-- markdownlint-disable MD041 -->
+<!-- markdownlint-disable MD033 -->
+<p align="center">
+  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
+</p>
+
 # Utility Fault Diagnosis Scenario
 
 This scenario describes how a Domain Expert Agent (DXA) performs root-cause analysis of alarms in an electrical grid base station, supporting grid operators in fault diagnosis and resolution.
+
+<p align="center">
+  <img src="https://www.science.smith.edu/~jcardell/Courses/EGR220/ElecPwr_HSW_files/power-transmission.gif" alt="Grid Distribution System" width="50%" />
+</p>
 
 ## Grid Station Alarm Analysis
 
@@ -18,6 +28,10 @@ This scenario describes how a Domain Expert Agent (DXA) performs root-cause anal
   - Historical alarm patterns
   - Real-time sensor/telemetry data
   - Grid topology and connection diagrams
+
+<p align="center">
+  <img src="https://i.ytimg.com/vi/Na-7jCAwUBY/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLABpvlXlngGliKP9hKajbKHyzltTA" alt="Grid Utility Station Context" width="50%" />
+</p>
 
 ### System Architecture
 

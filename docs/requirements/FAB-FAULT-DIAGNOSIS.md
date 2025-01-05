@@ -1,4 +1,14 @@
+<!-- markdownlint-disable MD041 -->
+<!-- markdownlint-disable MD033 -->
+<p align="center">
+  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
+</p>
+
 # Fab Domain Expert Agent (DXA) Requirements
+
+<p align="center">
+  <img src="https://www.tel.com/product/pv8va20000001bxe-img/pv8va20000001bzt.jpg" alt="Tokyo Electron Tactras Etch System" width="50%" />
+</p>
 
 ## Scenario Overview
 
@@ -9,6 +19,10 @@ The system monitors a semiconductor etcher (RIE) through continuous SPC and FDC 
 3. Problem diagnosis and root cause analysis
 4. Recommendation of corrective actions based on SOPs
 5. Continuous learning from new cases and expert feedback
+
+<p align="center">
+  <img src="https://media.springernature.com/lw685/springer-static/image/art%3A10.1038%2Fs41598-024-57697-5/MediaObjects/41598_2024_57697_Fig3_HTML.png" alt="RIE Chamber Matching" width="50%" />
+</p>
 
 ### Example Scenario: RIE Chamber Matching
 

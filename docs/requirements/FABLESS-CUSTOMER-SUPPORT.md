@@ -1,6 +1,16 @@
+<!-- markdownlint-disable MD041 -->
+<!-- markdownlint-disable MD033 -->
+<p align="center">
+  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
+</p>
+
 # Fabless Customer Design Support Scenario
 
 This scenario describes how a Field Application Engineer (FAE), supported by a Domain Expert Agent (DXA), assists customers in successfully implementing IC designs through technical consultation and documentation.
+
+<p align="center">
+  <img src="https://phisonblog.com/wp-content/uploads/2023/03/1507431_WPICDesignProcess_01_112222.jpg" alt="IC Design Process Flow" width="50%" />
+</p>
 
 ## Circuit Design Support Consultation
 
@@ -16,6 +26,10 @@ This scenario describes how a Field Application Engineer (FAE), supported by a D
   - Public datasheets and reference designs
   - Historical design consultations
   - Circuit design expertise knowledge base
+
+<p align="center">
+  <img src="https://ai2-s2-public.s3.amazonaws.com/figures/2017-08-08/c6ba81ee054b628387041a6878d2a1429cfce488/5-Figure2-1.png" alt="Semiconductor Industry Structure" width="50%" />
+</p>
 
 ### System Architecture
 

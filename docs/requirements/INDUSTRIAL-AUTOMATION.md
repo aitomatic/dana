@@ -29,7 +29,7 @@ This document describes two interconnected scenarios demonstrating how Domain Ex
   - Clean-in-place procedures
 
 <p align="center">
-    <img src="https://www.chemengghelp.com/wp-content/uploads/2022/06/image-2.png" width="60%" alt="Batch Process Flow Diagram">
+    <img src="https://www.chemengghelp.com/wp-content/uploads/2022/06/image-2.png" width="50%" alt="Batch Process Flow Diagram">
     <br/>
     Batch Process: Reactor and Distillation Column Configuration
 </p>
