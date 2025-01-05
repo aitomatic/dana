@@ -8,9 +8,6 @@
 
 This scenario describes how a Field Application Engineer (FAE), supported by a Domain Expert Agent (DXA), assists customers in troubleshooting device issues through technical consultation and documentation.
 
-<p align="center">
-  <img src="" alt="IC Design Process Flow" width="50%" />
-</p>
 
 ## Device Troubleshooting Consultation
 
@@ -28,7 +25,7 @@ This scenario describes how a Field Application Engineer (FAE), supported by a D
   - Device troubleshooting expertise knowledge base
 
 <p align="center">
-  <img src="https://www.powersystemsdesign.com/images/articles/1384946982Illustration_YoleSermaPressrelease_March2013.jpg" alt="Semiconductor Industry Structure" width="50%" />
+  <img src="https://cdn.shopify.com/s/files/1/0217/1112/6600/files/banner-plc-troubleshooting-guide_1.jpg?v=1672758990" alt="" width="50%" />
 </p>
 
 ### System Architecture
