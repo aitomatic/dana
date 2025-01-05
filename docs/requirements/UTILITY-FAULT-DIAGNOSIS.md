@@ -9,7 +9,7 @@
 This scenario describes how a Domain Expert Agent (DXA) performs root-cause analysis of alarms in an electrical grid base station, supporting grid operators in fault diagnosis and resolution.
 
 <p align="center">
-  <img src="https://www.electricaltechnology.org/wp-content/uploads/2021/10/Classification-of-Electric-Power-Distribution-Network-Systems.png" alt="Grid Distribution System" width="50%" />
+  <img src="https://www.electricaltechnology.org/wp-content/uploads/2021/10/Classification-of-Electric-Power-Distribution-Network-Systems.png" alt="Grid Distribution System" width="70%" />
 </p>
 
 ## Grid Station Alarm Analysis

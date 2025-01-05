@@ -28,7 +28,7 @@ This scenario describes how a Field Application Engineer (FAE), supported by a D
   - Circuit design expertise knowledge base
 
 <p align="center">
-  <img src="https://ai2-s2-public.s3.amazonaws.com/figures/2017-08-08/c6ba81ee054b628387041a6878d2a1429cfce488/5-Figure2-1.png" alt="Semiconductor Industry Structure" width="50%" />
+  <img src="https://www.powersystemsdesign.com/images/articles/1384946982Illustration_YoleSermaPressrelease_March2013.jpg" alt="Semiconductor Industry Structure" width="50%" />
 </p>
 
 ### System Architecture
