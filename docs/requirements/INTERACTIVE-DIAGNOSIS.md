@@ -233,11 +233,11 @@ Solution completion time
 
 #### System Constraints
 
-Maximum step limit (MAX_STEP)
-Plan regeneration threshold
-Question matching threshold
-Document retrieval limits
-Execution timeout parameters
+Maximum step limit (MAX_STEP);
+Plan regeneration threshold;
+Question matching threshold;
+Document retrieval limits;
+Execution timeout parameters.
 
 
 ## Demo Flow
