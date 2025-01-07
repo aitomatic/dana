@@ -183,11 +183,13 @@ graph TB
         WF[Workflow Engine]
         PS[Planning System]
         RE[Reasoning Engine]
+        SEMI[SEMIKONG LLM]
     end
     subgraph "Knowledge Layer"
         KB[(Knowledge Base)]
-        SEMI[SEMIKONG LLM]
         RAG[RAG Pipeline]
+        DP[Document Processor]
+        TG[Template Generator]
     end
     SPC --> AD
     FDC --> AD
@@ -198,148 +200,59 @@ graph TB
     KB <--> SEMI
     KB <--> RAG
     SEMI <--> RAG
+    KB <--> DP
+    KB <--> TG
 ```
 
 ### 1. Data Monitoring & Anomaly Detection Layer
 
-- Integration with SPC and FDC data streams
-- Plug-in architecture for AI/infra team's anomaly detection kernels
-- Real-time monitoring and signal processing
-- Multi-variate anomaly detection capabilities
+- Raw FDC data structuring and analysis
+- Real-time signal processing
+- Multi-parameter correlation detection
+- Automated threshold adjustment
 
-### 2. Domain Expert Agent Core
+### 2. DXA Core Components
 
-#### 2.1 Workflow Engine
-
-- Flexible workflow design combining expert knowledge and Fab APIs
-- Support for multiple concurrent root cause analyses
-- Dynamic workflow adaptation based on case context
-- Integration with knowledge base for workflow templates
-
-#### 2.2 Planning System
-
-- Automated diagnosis planning
-- SOP execution planning
-- Resource allocation and scheduling
-- Plan adaptation based on feedback
-
-```mermaid
-stateDiagram-v2
-    [*] --> DetectAnomaly
-    DetectAnomaly --> AssessContext
-    AssessContext --> QueryKB
-    QueryKB --> PlanGeneration
-    PlanGeneration --> ValidationCheck
-    
-    ValidationCheck --> ExecutePlan: Pass
-    ValidationCheck --> ModifyPlan: Fail
-    ModifyPlan --> ValidationCheck
-    
-    ExecutePlan --> MonitorExecution
-    MonitorExecution --> UpdateKB
-    MonitorExecution --> ModifyPlan: Need Adjustment
-    UpdateKB --> [*]
-```
-
-#### 2.3 Reasoning Engine
-
-- Enhanced SEMIKONG LLM integration
-- Multi-step reasoning capabilities
-- Semantic knowledge base querying
-- Uncertainty handling and probabilistic reasoning
-
-### 3. Knowledge Management System
-
-- Semantic Knowledge Base for:
-  - Expert knowledge
-  - SOPs and procedures
-  - Historical cases
-  - Workflow templates
-  - Domain heuristics
-- Flexible knowledge capture with customized templates
-- Knowledge editing and version control
-- Dynamic knowledge extension through expert interviews
-
-```mermaid
-graph TB
-    subgraph "Knowledge Sources"
-        EI[Expert Interviews]
-        DOC[Documents]
-        PP[PowerPoints]
-        HIST[Historical Cases]
-    end
-
-    subgraph "Processing"
-        KE[Knowledge Extraction]
-        NLP[NLP Processing]
-        VAL[Validation]
-    end
-
-    subgraph "Storage"
-        KB[(Knowledge Base)]
-        META[Metadata Store]
-        VER[Version Control]
-    end
-
-    EI --> KE
-    DOC --> KE
-    PP --> KE
-    HIST --> KE
-    KE --> NLP
-    NLP --> VAL
-    VAL --> KB
-    KB --> META
-    KB --> VER
-```
-
-### 4. Enhanced SEMIKONG LLM Integration
-
-- Integration timeline: Complete by 1/31/2025
-- Fab domain specialization through fine-tuning
-- Components:
-  - Data preparation pipeline
-  - Model fine-tuning pipeline
-  - RAG (Retrieval Augmented Generation) pipeline
-- Evaluation and validation framework
-- Specific requirements from original doc:
-  - SemiKong with Llama 3.3 - 1/31/2025
-  - Finetune with current SEMIKONG
-  - Finetune specifically with Fab domain know-how (mostly from PowerPoint)
-  - New SEMIKONG release date: Before 1/31/2025
-
-## Technical Requirements
-
-### Workflow Capabilities
+#### Workflow Engine
 
 - Dynamic workflow construction from expert knowledge
 - Integration with multiple Fab APIs
 - Support for 1-to-many root cause analysis
 - Knowledge-based workflow design
-- Original workflow requirements:
-  - How to build workflows that combine expert interview results with multiple Fab APIs
-  - Design elements (workflows, plans, facts, heuristics, conditions) should come from knowledge base
+- Autonomous operation capabilities
+- Collaborative mode switching
 
-### Reasoning Capabilities
+#### Planning System
 
-- Enhanced SEMIKONG integration
+- Confidence-based execution paths
+- Auto-execution criteria
+- Expert consultation triggers
+- Decision point integration with SEMIKONG
+
+#### Reasoning Engine
+
+- Enhanced SEMIKONG LLM integration
 - Document-based reasoning support
 - Raw FDC data anomaly detection
 - Causal analysis and inference
-- Original reasoning requirements:
-  - Based on supporting documents to provide more information about cases
-  - Root cause analysis beyond expert interview content
-  - Anomaly detection from raw FDC data
+- Domain-adapted reasoning models
 
 ### Knowledge Integration
 
+#### Document Processing
+
 - Flexible knowledge capture mechanisms
-- Dynamic question generation for knowledge acquisition
+- Dynamic template generation
+- Expert interview workflow
 - Knowledge base editing and maintenance
 - Domain-specific template customization
-- Original knowledge integration requirements:
-  - Customized templates for different domain knowledge capture
-  - Capability to extend questions based on expert answers
-  - Flexibility to edit existing knowledge
+
+#### Knowledge Validation
+
+- Expert feedback integration
+- Case validation workflow
+- Learning capture verification
+- Knowledge base consistency checks
 
 ## Current Limitations & Challenges
 
@@ -347,6 +260,28 @@ graph TB
 - Need for specialized fine-tuning
 - Complex integration requirements with existing systems
 - Real-time performance requirements
+
+## Implementation Timeline
+
+### Phase 1 (v1.0) - Basic DXA: 1/8/2024
+
+- Core monitoring capabilities
+- Basic workflow execution
+- Initial knowledge base
+
+### Phase 2 (v1.1) - Enhanced Knowledge: 1/31/2024
+
+- Document processing pipeline
+- Dynamic template generation
+- Expert interview system
+- Knowledge validation workflow
+
+### Phase 3 (v1.2) - SEMIKONG Integration: Q1 2024
+
+- LLM decision point integration
+- RAG pipeline implementation
+- Domain-specific fine-tuning
+- Autonomous operation capabilities
 
 ## Success Criteria
 
@@ -462,3 +397,38 @@ sequenceDiagram
 - Offline analysis results
 - Alternative chamber configurations
 - Sample learning sequences
+
+### Enhanced DXA Capabilities
+
+#### Knowledge Capture System
+
+- Document processing pipeline
+- Dynamic template generation
+- Expert interview workflow
+- Raw data structuring
+- Knowledge validation process
+
+#### Operational Modes
+
+1. Autonomous Operation
+   - Independent decision making
+   - Confidence thresholds
+   - Auto-execution criteria
+
+2. Collaborative Operation
+   - Expert consultation triggers
+   - Knowledge validation workflow
+   - Feedback integration
+
+#### SEMIKONG Integration
+
+- Decision point integration
+- RAG implementation
+- Fine-tuning approach
+- Domain adaptation strategy
+
+### Release Schedule
+
+- v1.0: Basic DXA (1/8/2024)
+- v1.1: Enhanced knowledge capture (1/31/2024)
+- v1.2: SEMIKONG integration (Q1 2024)
