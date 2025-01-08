@@ -1,31 +1,32 @@
 """Execution context for DXA."""
 
 from dataclasses import dataclass, field
-from typing import Dict, Any, Optional
-from ..state import AgentState, WorldState, ExecutionState
-from ..workflow import Workflow
-from ..planning import Plan
-from ..reasoning import Reasoning
-from ..resource import LLMResource
+from typing import Dict, Any, Optional, TYPE_CHECKING
+if TYPE_CHECKING:
+    from ..state import AgentState, WorldState, ExecutionState
+    from ..workflow import Workflow
+    from ..planning import Plan
+    from ..reasoning import Reasoning
+    from ..resource import LLMResource
 
 @dataclass
 class ExecutionContext:
     """Context for execution across layers."""
 
     # State management
-    agent_state: AgentState
-    world_state: WorldState
-    execution_state: ExecutionState
+    agent_state: 'AgentState'
+    world_state: 'WorldState'
+    execution_state: 'ExecutionState'
 
     # Current graphs
-    current_workflow: Optional[Workflow] = None
-    current_plan: Optional[Plan] = None
-    current_reasoning: Optional[Reasoning] = None
+    current_workflow: Optional['Workflow'] = None
+    current_plan: Optional['Plan'] = None
+    current_reasoning: Optional['Reasoning'] = None
 
     # LLM resources
-    workflow_llm: Optional[LLMResource] = None
-    planning_llm: Optional[LLMResource] = None
-    reasoning_llm: Optional[LLMResource] = None
+    workflow_llm: Optional['LLMResource'] = None
+    planning_llm: Optional['LLMResource'] = None
+    reasoning_llm: Optional['LLMResource'] = None
 
     # Monitoring specific fields
     current_data: Dict[str, Any] = field(default_factory=dict)
