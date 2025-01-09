@@ -16,6 +16,7 @@ setup(
         "python-dotenv>=1.0",
         "pyyaml>=6.0",
         "structlog>=24.4",
+        "websockets>=10.0",
     ],
     extras_require={
         "viz": [
