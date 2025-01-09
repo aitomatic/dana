@@ -31,5 +31,5 @@ setup(
             "setuptools>=65.0.0",
         ]
     },
-    python_requires=">=3.8",
+    python_requires=">=3.12",  # require Python 3.12+ for compatibility with other potential deps incl. OpenSSA
 )
