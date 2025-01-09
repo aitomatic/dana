@@ -14,6 +14,7 @@ setup(
         "aiohttp>=3.8.0",
         "pandas>=2.2",
         "python-dotenv>=1.0",
+        "pyyaml>=6.0",
         "structlog>=24.4",
     ],
     extras_require={
