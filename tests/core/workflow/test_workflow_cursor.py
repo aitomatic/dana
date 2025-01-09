@@ -14,10 +14,14 @@ def test_workflow_cursor_update():
     
     # Test cursor movement
     workflow.update_cursor("START")
-    assert workflow.get_current_node().node_type == NodeType.START
+    node = workflow.get_current_node()
+    assert node is not None
+    assert node.node_type == NodeType.START
     
     workflow.update_cursor("PERFORM_TASK")
-    assert workflow.get_current_node().node_type == NodeType.TASK
+    node = workflow.get_current_node()
+    assert node is not None
+    assert node.node_type == NodeType.TASK
 
 def test_workflow_cursor_validation():
     """Test cursor validation."""

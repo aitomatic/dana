@@ -58,7 +58,7 @@ def create_math_expert(api_key: str) -> ExpertResource:
     return ExpertResource(
         name="math_expert",
         expertise=expertise,
-        config={
+        llm_config={
             "api_key": api_key,
             "model": "gpt-4"
         },

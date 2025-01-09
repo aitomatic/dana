@@ -1,23 +1,24 @@
-"""Execution module exports."""
+"""Execution module for DXA."""
 
 from .execution_types import (
-    ExecutionNode, ExecutionNodeStatus,
-    ExecutionEdge, ExecutionSignal, ExecutionSignalType,
-    Objective, ObjectiveStatus, ExecutionContext, ExecutionError
+    Objective, ObjectiveStatus,
+    ExecutionNode, ExecutionEdge,
+    ExecutionNodeStatus,
+    ExecutionSignal, ExecutionSignalType,
 )
+from .execution_context import ExecutionContext
 from .execution_graph import ExecutionGraph
 from .executor import Executor
 
 __all__ = [
-    'ExecutionNode',
-    'ExecutionNodeStatus',
-    'ExecutionEdge',
-    'ExecutionSignal',
-    'ExecutionSignalType',
     'Objective',
     'ObjectiveStatus',
-    'ExecutionContext',
     'ExecutionGraph',
+    'ExecutionSignal',
+    'ExecutionSignalType',
+    'ExecutionNode',
+    'ExecutionEdge',
+    'ExecutionNodeStatus',
     'Executor',
-    'ExecutionError'
+    'ExecutionContext',
 ]

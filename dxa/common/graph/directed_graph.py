@@ -60,6 +60,7 @@ class Edge:
             return NotImplemented
         return self.source == other.source and self.target == other.target
     
+# pylint: disable=too-many-instance-attributes
 class DirectedGraph:
     """Pure directed graph implementation."""
     def __init__(self):
@@ -91,6 +92,14 @@ class DirectedGraph:
     def edges(self, edges: List[Edge]) -> None:
         """Set all edges in the graph."""
         self._edges = edges
+    
+    def has_node(self, node_id: str) -> bool:
+        """Check if node exists in graph."""
+        return node_id in self.nodes
+    
+    def has_edge(self, source_id: str, target_id: str) -> bool:
+        """Check if edge exists in graph."""
+        return any(edge.source == source_id and edge.target == target_id for edge in self.edges)
 
     @classmethod
     def from_yaml(cls, stream: Union[str, TextIO, Path]) -> 'DirectedGraph':
@@ -134,7 +143,7 @@ class DirectedGraph:
         """Remove node and its edges from graph."""
         if node_id in self.nodes:
             # Remove edges involving this node
-            self.edges = [e for e in self.edges if e.source != node_id and e.target != node_id]
+            self.edges = [e for e in self.edges if node_id not in (e.source, e.target)]
             # Clean up adjacency lists
             self._outgoing.pop(node_id, None)
             self._incoming.pop(node_id, None)

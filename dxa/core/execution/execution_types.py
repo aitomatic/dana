@@ -1,17 +1,10 @@
 """Execution-specific types for DXA."""
 
 from dataclasses import dataclass, field
-from typing import Dict, Any, Optional, List, TYPE_CHECKING
+from typing import Dict, Any, Optional, List
 from datetime import datetime
 from enum import Enum
 from ...common.graph import Node, Edge, NodeType
-
-if TYPE_CHECKING:
-    from ..state import AgentState, WorldState, ExecutionState
-    from ..workflow import Workflow
-    from ..planning import Plan
-    from ..reasoning import Reasoning
-    from ..resource import LLMResource
 
 class ExecutionNodeStatus(Enum):
     """Status of execution nodes."""
@@ -31,6 +24,7 @@ class ExecutionNode(Node):
     requires: Dict[str, Any] = field(default_factory=dict)
     provides: Dict[str, Any] = field(default_factory=dict)
 
+    # pylint: disable=too-many-arguments
     def __init__(self, 
                  node_id: str, 
                  node_type: NodeType, 
@@ -55,15 +49,18 @@ class ExecutionEdge(Edge):
 # Signal types
 class ExecutionSignalType(Enum):
     """Types of execution signals."""
-    WORKFLOW_UPDATE = "WORKFLOW_UPDATE"
-    REASONING_UPDATE = "REASONING_UPDATE"
-    DISCOVERY = "DISCOVERY"
-    STEP_COMPLETE = "STEP_COMPLETE"
-    STEP_FAILED = "STEP_FAILED"
-    OBJECTIVE_UPDATE = "OBJECTIVE_UPDATE"
     RESULT = "RESULT"
     ERROR = "ERROR"
+    STATUS = "STATUS"
     STATE_CHANGE = "STATE_CHANGE"
+    COMPLETE = "COMPLETE"
+    # WORKFLOW_UPDATE = "WORKFLOW_UPDATE"
+    # REASONING_UPDATE = "REASONING_UPDATE"
+    # DISCOVERY = "DISCOVERY"
+    # STEP_COMPLETE = "STEP_COMPLETE"
+    # STEP_FAILED = "STEP_FAILED"
+    # OBJECTIVE_UPDATE = "OBJECTIVE_UPDATE"
+
 
 @dataclass
 class ExecutionSignal:
@@ -108,34 +105,6 @@ class Objective:
             "reason": reason
         })
         self.current = new_understanding
-
-# Context types
-@dataclass
-class ExecutionContext:
-    """Execution context with access to all states."""
-    agent_state: Optional['AgentState'] = None  
-    world_state: Optional['WorldState'] = None
-    execution_state: Optional['ExecutionState'] = None
-    current_workflow: Optional['Workflow'] = None
-    current_plan: Optional['Plan'] = None
-    current_reasoning: Optional['Reasoning'] = None
-    workflow_llm: Optional['LLMResource'] = None
-    planning_llm: Optional['LLMResource'] = None
-    reasoning_llm: Optional['LLMResource'] = None
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert context to dictionary."""
-        return {
-            "agent_state": self.agent_state,
-            "world_state": self.world_state,
-            "execution_state": self.execution_state,
-            "current_workflow": self.current_workflow,
-            "current_plan": self.current_plan,
-            "current_reasoning": self.current_reasoning,
-            "workflow_llm": self.workflow_llm,
-            "planning_llm": self.planning_llm,
-            "reasoning_llm": self.reasoning_llm
-        }
 
 class ExecutionError(Exception):
     """Exception for execution errors."""

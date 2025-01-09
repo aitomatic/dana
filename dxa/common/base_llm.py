@@ -60,6 +60,7 @@ class LLMConfig:
             additional_params=config.get("additional_params", {})
         )
 
+# pylint: disable=too-many-instance-attributes
 class BaseLLM:
     """Base class for raw LLM interactions.
     
@@ -81,6 +82,7 @@ class BaseLLM:
         retry_delay: Delay between retries in seconds
     """
     
+    # pylint: disable=too-many-arguments
     def __init__(
         self,
         name: str,

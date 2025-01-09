@@ -1,10 +1,10 @@
 """Agent state management."""
 
 from typing import List, Optional
+from dataclasses import dataclass, field
 from ..execution.execution_types import Objective, ExecutionSignal
 from ..execution.execution_graph import ExecutionNode
 from ..planning import Plan
-from dataclasses import dataclass, field
 from .base_state import BaseState
 
 @dataclass

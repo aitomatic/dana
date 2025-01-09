@@ -32,10 +32,14 @@ from ..planning import PlanningStrategy
 from ..reasoning import ReasoningStrategy
 from ...common.utils.config import load_agent_config
 from .agent_runtime import AgentRuntime
+from ..execution import ExecutionContext
+from ..state import WorldState, ExecutionState
 
+# pylint: disable=too-many-public-methods
 class Agent:
     """Main agent interface with built-in execution management."""
     
+    # pylint: disable=too-many-instance-attributes
     def __init__(self, name: Optional[str] = None):
         self._name = name or "agent"
         self._state = AgentState()
@@ -202,11 +206,11 @@ class Agent:
         """Create LLM from various input types."""
         if isinstance(llm, LLMResource):
             return llm
-        elif isinstance(llm, str):
+        if isinstance(llm, str):
             config = load_agent_config("llm")
             config["model"] = llm
             return LLMResource(name=f"{self._name}_{name}", config=config)
-        elif isinstance(llm, Dict):
+        if isinstance(llm, Dict):
             config = load_agent_config("llm")
             config.update(llm)
             return LLMResource(name=f"{self._name}_{name}", config=config)
@@ -255,12 +259,31 @@ class Agent:
         """Cleanup agent when exiting context."""
         await self.cleanup()
 
-    async def async_run(self, workflow: Workflow) -> Any:
+    async def async_run(self, workflow: Workflow, context: Optional[ExecutionContext] = None) -> Any:
         """Execute an objective."""
         self._initialize()
         
+        # Create new context if none provided
+        if context is None:
+            context = ExecutionContext(
+                agent_state=self.state,
+                world_state=WorldState(),
+                execution_state=ExecutionState(),
+                workflow_llm=self.workflow_llm,
+                planning_llm=self.planning_llm,
+                reasoning_llm=self.reasoning_llm
+            )
+        else:
+            # Update LLMs in provided context if not set
+            if not context.workflow_llm:
+                context.workflow_llm = self.workflow_llm
+            if not context.planning_llm:
+                context.planning_llm = self.planning_llm
+            if not context.reasoning_llm:
+                context.reasoning_llm = self.reasoning_llm
+        
         async with self:  # For cleanup
-            return await self.runtime.execute(workflow)
+            return await self.runtime.execute(workflow, context)
     
     def run(self, workflow: Workflow) -> Any:
         """Run an objective."""
