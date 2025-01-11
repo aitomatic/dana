@@ -3,10 +3,10 @@
 from dataclasses import dataclass, field
 from typing import Dict, Any, Optional, List
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from ...common.graph import Node, Edge, NodeType
 
-class ExecutionNodeStatus(Enum):
+class ExecutionNodeStatus(StrEnum):
     """Status of execution nodes."""
     NONE = "NONE"
     PENDING = "PENDING"
@@ -47,7 +47,7 @@ class ExecutionEdge(Edge):
     state_updates: Dict[str, Any] = field(default_factory=dict)
 
 # Signal types
-class ExecutionSignalType(Enum):
+class ExecutionSignalType(StrEnum):
     """Types of execution signals."""
     RESULT = "RESULT"
     ERROR = "ERROR"
@@ -70,7 +70,7 @@ class ExecutionSignal:
     timestamp: datetime = field(default_factory=datetime.now)
 
 # Objective types
-class ObjectiveStatus(Enum):
+class ObjectiveStatus(StrEnum):
     """Status of the current objective."""
     INITIAL = "initial"
     IN_PROGRESS = "in_progress"
