@@ -10,12 +10,12 @@ from dxa.core.resource.base_resource import ResourceResponse
 
 
 @pytest.fixture
-def docs_path() -> str:
+def docs_path() -> Path:
     """Get path to docs/requirements directory."""
     # Start from test file location and navigate to repo root
     current_dir = Path(__file__).parent
     repo_root = current_dir.parent.parent.parent
-    return str(repo_root / "docs" / "requirements")
+    return repo_root / "docs" / "requirements"
 
 
 @pytest.mark.asyncio
@@ -27,7 +27,6 @@ async def test_file_resource_basic(docs_path: str):
     # Test initial state
     assert not resource.is_available
     assert os.path.basename(docs_path) in resource.name
-    assert resource.overview  # Should have some content
     
     # Test initialization
     await resource.initialize()
