@@ -2,7 +2,14 @@
 
 from typing import Dict, Any, Optional, Union
 
+from llama_index.core.base.embeddings.base import BaseEmbedding as LlamaIndexEmbedModel
+from llama_index.core.base.llms.base import BaseLLM as LlamaIndexLM
+
 from openssa import FileResource as OpenSsaFileResource
+from openssa.core.util.lm.openai import (
+    default_llama_index_openai_embed_model,
+    default_llama_index_openai_lm
+)
 
 from .base_resource import BaseResource, ResourceConfig, ResourceResponse
 
@@ -14,8 +21,8 @@ class FileResource(BaseResource):
         self,
         path: str,
         re_index: bool = False,
-        embed_model: Any = None,
-        lm: Any = None,
+        embed_model: Optional[LlamaIndexEmbedModel] = None,
+        lm: Optional[LlamaIndexLM] = None,
         resource_config: Optional[Union[Dict[str, Any], ResourceConfig]] = None
     ):  # pylint: disable=too-many-arguments
         """Initialize FileResource.
@@ -23,16 +30,16 @@ class FileResource(BaseResource):
         Args:
             path: Path to file or directory
             re_index: Whether to force reindexing
-            embed_model: Optional custom embedding model
-            lm: Optional custom language model
+            embed_model: Optional custom embedding model (defaults to OpenAI)
+            lm: Optional custom language model (defaults to OpenAI)
             resource_config: Resource configuration
         """
-        # Create OpenSSA FileResource instance
+        # Create OpenSSA FileResource instance with proper defaults
         self._openssa_resource = OpenSsaFileResource(
             path=path,
             re_index=re_index,
-            embed_model=embed_model,
-            lm=lm
+            embed_model=embed_model or default_llama_index_openai_embed_model(),
+            lm=lm or default_llama_index_openai_lm()
         )
         
         # Initialize BaseResource using OpenSSA resource properties
