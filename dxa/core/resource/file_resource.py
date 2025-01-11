@@ -6,7 +6,8 @@ from openssa import FileResource as OpenSsaFileResource
 
 from .base_resource import BaseResource, ResourceConfig, ResourceResponse
 
-class FileResource(BaseResource, OpenSsaFileResource):
+
+class FileResource(BaseResource):
     """File-stored Informational Resource."""
 
     def __init__(
@@ -21,27 +22,25 @@ class FileResource(BaseResource, OpenSsaFileResource):
         
         Args:
             path: Path to file or directory
-            resource_config: Resource configuration
             re_index: Whether to force reindexing
             embed_model: Optional custom embedding model
             lm: Optional custom language model
+            resource_config: Resource configuration
         """
-        # Initialize OpenSsaFileResource first
-        super(OpenSsaFileResource, self).__init__(
+        # Create OpenSSA FileResource instance
+        self._openssa_resource = OpenSsaFileResource(
             path=path,
             re_index=re_index,
             embed_model=embed_model,
             lm=lm
         )
         
-        # Then initialize BaseResource using name and overview from OpenSsaFileResource
-        super(BaseResource, self).__init__(
-            name=self.name,
-            description=self.overview,
+        # Initialize BaseResource using OpenSSA resource properties
+        super().__init__(
+            name=self._openssa_resource.name,
+            description=self._openssa_resource.overview,
             resource_config=resource_config
         )
-        
-        self._is_available = False
 
     async def initialize(self) -> None:
         """Initialize the resource and build/load the index."""
@@ -76,9 +75,9 @@ class FileResource(BaseResource, OpenSsaFileResource):
                 )
 
             n_words = request.get('n_words', 1000)
-            answer = self.answer(question=question, n_words=n_words)
+            answer = self._openssa_resource.answer(question=question, n_words=n_words)
             
-            return ResourceResponse(success=True, error=None)
+            return ResourceResponse(success=True, content=answer)
 
         except Exception as e:
             return ResourceResponse(
