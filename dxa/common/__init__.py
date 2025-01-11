@@ -1,19 +1,33 @@
 """Common utilities and shared functionality for DXA."""
 
-from dxa.common.errors import (
+from .exceptions import (
+    DXAError,
     ConfigurationError,
+    LLMError,
     ResourceError,
+    NetworkError,
+    WebSocketError,
+    ReasoningError,
     AgentError,
-    ReasoningError
+    CommunicationError,
+    ValidationError,
+    StateError
 )
-from dxa.common.utils.config import load_agent_config
+from .utils.config import load_agent_config
 
 __all__ = [
     # Errors
+    'DXAError',
     'ConfigurationError',
+    'LLMError',
     'ResourceError',
-    'AgentError',
+    'NetworkError',
+    'WebSocketError',
     'ReasoningError',
+    'AgentError',
+    'CommunicationError',
+    'ValidationError',
+    'StateError',
     
     # Utils
     'load_agent_config'

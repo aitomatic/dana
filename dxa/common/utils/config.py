@@ -1,11 +1,53 @@
-"""Configuration utilities for DXA."""
+"""Configuration management for DXA.
+
+This module handles loading and validating agent configurations from multiple sources:
+- Default values
+- YAML configuration files 
+- Environment variables
+- Runtime overrides
+
+Basic Usage:
+    # Load with defaults and overrides
+    config = load_agent_config(
+        agent_type="autonomous",
+        api_key="your-key-here",
+        model="gpt-4"
+    )
+
+    # Load from YAML file
+    config = load_agent_config(
+        agent_type="collaborative",
+        config_path="agent_config.yaml"
+    )
+
+    # Load with file and overrides
+    config = load_agent_config(
+        agent_type="collaborative", 
+        config_path="base_config.yaml",
+        model="gpt-4",
+        max_steps=5
+    )
+
+Configuration Sources (in order of precedence):
+1. Runtime overrides (passed as kwargs)
+2. YAML configuration file
+3. Environment variables (e.g., OPENAI_API_KEY)
+4. Default values
+
+Required Fields:
+- api_key: OpenAI API key
+- model: LLM model to use (default: "gpt-4")
+- resources: List of available resources
+- reasoning: Dictionary of reasoning settings
+"""
 
 import logging
 import os
 from pathlib import Path
 from typing import Dict, Any, Optional
+from dotenv import load_dotenv, find_dotenv
 
-from dxa.common.errors import ConfigurationError
+from dxa.common.exceptions import ConfigurationError
 
 try:
     import yaml
@@ -13,23 +55,15 @@ try:
 except ImportError:  # pragma: no cover
     YAML_AVAILABLE = False
 
+# Load .env file at module import. The usecwd=True is to forde the .env file to be in the current working directory.
+load_dotenv(find_dotenv(usecwd=True), override=True)
+
 logger = logging.getLogger(__name__)
 
 def _validate_config(config: Dict[str, Any]) -> None:
-    """Validate configuration dictionary.
-    
-    Args:
-        config: Configuration to validate
-        
-    Raises:
-        ConfigurationError: If configuration is invalid
-    """
-    # Validate required fields
-    if not config.get("api_key"):
-        logger.error("Missing required field: api_key")
-        raise ConfigurationError("API key is required")
-        
-    # Validate field types
+    """Validate configuration dictionary."""
+
+    # Validate field types only
     resources = config.get("resources", [])
     if not isinstance(resources, list):
         logger.error("Invalid type for field 'resources': expected list")
@@ -68,6 +102,7 @@ def _load_yaml_config(path: Path) -> Dict[str, Any]:
         logger.error("Failed to parse YAML config: %s", str(e))
         raise ConfigurationError(f"Invalid YAML format in {path}") from e
 
+# TODO: move to more appropriate module
 def load_agent_config(
     agent_type: str,
     config_path: Optional[str] = None,
@@ -128,6 +163,16 @@ def load_agent_config(
         
     # Final validation of complete config
     _validate_config(config)
+        
+    # Add logging config
+    config["logging"] = {
+        "level": str.split(os.getenv("LOG_LEVEL", "INFO"))[0],
+        "dir": str.split(os.getenv("LOG_DIR", "logs"))[0],
+        "format": str.split(os.getenv("LOG_FORMAT", "text"))[0],
+        "max_bytes": int(str.split(os.getenv("LOG_MAX_BYTES", "1000000"))[0]),
+        "backup_count": int(str.split(os.getenv("LOG_BACKUP_COUNT", "5"))[0]),
+        "console_output": str.split(os.getenv("LOG_CONSOLE_OUTPUT", "true"))[0].lower() == "true"
+    }
         
     logger.debug("Successfully loaded config for agent type: %s", agent_type)
     return config 

@@ -7,4 +7,5 @@ max-line-length = 120
 # W292: No newline at end of file
 # E127: Continuation line over-indented for visual indent
 # E402: Module level import not at top of file
-ignore = W291,W293,W504,E302,W292,E127,E402
+# E305: Expected 2 blank lines after class or function definition
+ignore = W291,W293,W504,E302,W292,E127,E402,E305

@@ -67,6 +67,7 @@ __all__ = ['DXALogger']  # Export the class
 class DXALogger:
     """Unified logging for DXA system"""
     
+    # pylint: disable=too-many-arguments
     def __init__(
         self,
         log_dir: Optional[str] = None,
@@ -107,11 +108,14 @@ class DXALogger:
         if json_format:
             formatter = logging.Formatter(
                 '{"timestamp": "%(asctime)s", "logger": "%(name)s", '
-                '"level": "%(levelname)s", "message": "%(message)s"}'
+                '"level": "%(levelname)s", "message": "%(message)s", '
+                '"llm_name": "%(llm_name)s", "model": "%(model)s", '
+                '"interaction_type": "%(interaction_type)s"}'
             )
         else:
             formatter = logging.Formatter(
-                '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+                '%(asctime)s - %(name)s - %(levelname)s - %(message)s - '
+                'LLM: %(llm_name)s - Model: %(model)s - Type: %(interaction_type)s'
             )
         
         # Set up file logging if directory specified
@@ -126,6 +130,18 @@ class DXALogger:
             )
             main_handler.setFormatter(formatter)
             self.logger.addHandler(main_handler)
+        
+            # LLM-specific log file
+            llm_handler = RotatingFileHandler(
+                os.path.join(log_dir, 'llm_interactions.log'),
+                maxBytes=kwargs.get('max_bytes', 10_000_000),
+                backupCount=kwargs.get('backup_count', 5)
+            )
+            llm_handler.setFormatter(formatter)
+            
+            # Only capture LLM logs
+            llm_handler.addFilter(lambda record: record.name.startswith('dxa.llm'))
+            self.logger.addHandler(llm_handler)
         
         # Set up console logging if requested
         console_output = kwargs.get('console_output', True)
@@ -159,7 +175,7 @@ class DXALogger:
             self.llm_history.append(sanitized_data)
             if len(self.llm_history) > self.max_history:
                 self.llm_history = self.llm_history[-self.max_history:]
-            self.logger.info("LLM Interaction", extra={"interaction_data": sanitized_data})
+            self.logger.info("LLM Interaction", extra=sanitized_data)
             
             # Update metrics
             self.metrics['total_tokens'] += sanitized_data.get('token_usage', 0)
@@ -206,10 +222,10 @@ class DXALogger:
                 f"[{h.get('timestamp', 'N/A')}] {h.get('message', 'No message')}"
                 for h in filtered_history
             )
-        elif output_format == "json":
+        if output_format == "json":
             raise NotImplementedError("JSON visualization not yet implemented")
-        else:
-            raise ValueError(f"Unsupported format: {output_format}")
+
+        raise ValueError(f"Unsupported format: {output_format}")
 
     def get_analyzer(self) -> LLMInteractionAnalyzer:
         """Get an analyzer instance for the current logs."""
@@ -223,9 +239,13 @@ class DXALogger:
             raise ValueError("No log directory configured")
         return LLMInteractionVisualizer(self.log_dir)
 
-    def log_completion(self, prompt: str, response: str, tokens: int, success: bool = True):
+    def log_completion(self, prompt: str, response: str, tokens: int, 
+                       llm_name: str, llm_model,
+                       success: bool = True):
         """Simplified logging for completion interactions"""
         self.log_llm_interaction({
+            "llm_name": llm_name,
+            "model": llm_model,
             "interaction_type": "completion",
             "content": prompt,
             "response": {

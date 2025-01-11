@@ -18,7 +18,9 @@ Example:
     ```
 """
 
-from dxa.core.io.console import ConsoleIO
-from dxa.core.io.websocket import WebSocketIO
+from .io_factory import IOFactory
+from .base_io import BaseIO
+from .console_io import ConsoleIO
+from .websocket_io import WebSocketIO
 
-__all__ = ['ConsoleIO', 'WebSocketIO'] 
+__all__ = ['IOFactory', 'ConsoleIO', 'WebSocketIO', 'BaseIO'] 

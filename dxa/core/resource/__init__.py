@@ -1,17 +1,8 @@
-"""DXA resource management."""
+"""DXA resource module."""
 
-from dxa.core.resource.base_resource import BaseResource
-from dxa.core.resource.expert import ExpertResource
-from dxa.core.resource.agents import AgentResource
-from dxa.core.resource.llm_resource import LLMResource
-from dxa.core.resource.human import HumanResource
+from .base_resource import BaseResource
+from .llm_resource import LLMResource
+from .expert_resource import ExpertResource
+from .resource_factory import ResourceFactory
 
-__all__ = [
-    'BaseResource',
-    'ExpertResource',
-    'AgentResource',
-    'LLMResource',
-    'HumanResource'
-]
-
-# Note: HumanResource is temporarily removed until human.py is properly implemented 
+__all__ = ['BaseResource', 'LLMResource', 'ExpertResource', 'ResourceFactory']

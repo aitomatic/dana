@@ -27,7 +27,7 @@ Notes:
     - Considers both quantitative data and market context
 """
 
-from dxa.core.resource.expert import DomainExpertise, ExpertResource
+from dxa.core.resource.expert_resource import DomainExpertise, ExpertResource
 
 def create_finance_expert(api_key: str) -> ExpertResource:
     """Create a finance expert resource."""
@@ -64,7 +64,7 @@ def create_finance_expert(api_key: str) -> ExpertResource:
     return ExpertResource(
         name="finance_expert",
         expertise=expertise,
-        config={
+        llm_config={
             "api_key": api_key,
             "model": "gpt-4"
         },

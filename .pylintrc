@@ -4,4 +4,8 @@
 # W0107: Unnecessary pass statement
 # C0301: Line too long
 # C0413: Import should be placed at the top of module
-disable=C0303,C0304,W0107,C0301,C0413
+# C0103: Constant name should be uppercase
+# R0903: Too few public methods
+# E0401: Import outside toplevel
+# R0917: Too many positional arguments
+disable=C0303,C0304,W0107,C0301,C0413,C0103,R0903,E0401,R0917

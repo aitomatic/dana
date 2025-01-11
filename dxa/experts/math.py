@@ -24,7 +24,7 @@ Notes:
     - Uses GPT-4 as the default model for complex mathematical reasoning
 """
 
-from dxa.core.resource.expert import DomainExpertise, ExpertResource
+from dxa.core.resource.expert_resource import DomainExpertise, ExpertResource
 
 def create_math_expert(api_key: str) -> ExpertResource:
     """Create a mathematics expert resource."""
@@ -58,7 +58,7 @@ def create_math_expert(api_key: str) -> ExpertResource:
     return ExpertResource(
         name="math_expert",
         expertise=expertise,
-        config={
+        llm_config={
             "api_key": api_key,
             "model": "gpt-4"
         },

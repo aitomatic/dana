@@ -1,6 +1,6 @@
 """Base capability for DXA."""
 
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import Dict, Any, Optional
 
 class BaseCapability(ABC):
@@ -30,27 +30,11 @@ class BaseCapability(ABC):
         """Disable this capability."""
         self._is_enabled = False
 
-    @abstractmethod
-    async def use(self, context: Dict[str, Any], **kwargs) -> Dict[str, Any]:
-        """Use this capability.
-        
-        Args:
-            context: Current context including any relevant state
-            **kwargs: Additional arguments for specific capabilities
-            
-        Returns:
-            Dict containing results of using the capability
-        """
-        pass
+    def use(self, context: Dict[str, Any], **kwargs) -> Dict[str, Any]:
+        """Use this capability."""
+        raise NotImplementedError
 
-    @abstractmethod
-    def can_handle(self, context: Dict[str, Any]) -> bool:
-        """Check if this capability can handle the given context.
-        
-        Args:
-            context: Current context to check
-            
-        Returns:
-            True if this capability can handle the context, False otherwise
-        """
-        pass 
+    def can_handle(self, request: Dict[str, Any]) -> bool:
+        """Check if capability can handle request."""
+        raise NotImplementedError
+  

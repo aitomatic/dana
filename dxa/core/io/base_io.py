@@ -18,9 +18,9 @@ Example:
 """
 
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Any, Optional
 import logging
-from dxa.agent.state import StateManager
+from ..state import StateManager
 
 class BaseIO(ABC):
     """Base class for I/O implementations.
@@ -37,43 +37,30 @@ class BaseIO(ABC):
     def __init__(self):
         """Initialize base I/O with logging and state management."""
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.state_manager = StateManager(self.__class__.__name__)
+        # TODO: probably need StateManager of some kind for asyncio
+        self.state_manager = StateManager()
     
-    @abstractmethod
-    async def send_message(self, message: str) -> None:
-        """Send a message through the I/O implementation.
-        
-        Args:
-            message: The message string to be sent.
-            
-        Raises:
-            NotImplementedError: If the method is not implemented by the subclass.
-        """
-        pass
-        
-    @abstractmethod
-    async def get_input(self, prompt: Optional[str] = None) -> str:
-        """Get input through the I/O implementation.
-        
-        Args:
-            prompt: Optional prompt to display before getting input.
-            
-        Returns:
-            str: The input received from the I/O implementation.
-            
-        Raises:
-            NotImplementedError: If the method is not implemented by the subclass.
-        """
-        pass
-
-    @abstractmethod
     async def initialize(self) -> None:
-        """Initialize I/O."""
+        """Initialize IO. Override if async setup needed."""
+        pass
+
+    # pylint: disable=unused-argument
+    async def get_input(self, prompt: Optional[str] = None) -> str:
+        """Get input from IO."""
+        return ""
+
+    async def cleanup(self) -> None:
+        """Cleanup IO. Override if async cleanup needed."""
         pass
 
     @abstractmethod
-    async def cleanup(self) -> None:
-        """Clean up I/O."""
+    async def send(self, message: Any) -> None:
+        """Send message through IO channel."""
+        pass
+
+    @abstractmethod
+    async def receive(self) -> Any:
+        """Receive message from IO channel."""
         pass
 
     async def __aenter__(self):
