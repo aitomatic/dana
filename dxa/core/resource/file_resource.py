@@ -12,11 +12,11 @@ class FileResource(BaseResource, OpenSsaFileResource):
     def __init__(
         self,
         path: str,
-        resource_config: Optional[Union[Dict[str, Any], ResourceConfig]] = None,
         re_index: bool = False,
         embed_model: Any = None,
-        lm: Any = None
-    ):
+        lm: Any = None,
+        resource_config: Optional[Union[Dict[str, Any], ResourceConfig]] = None
+    ):  # pylint: disable=too-many-arguments
         """Initialize FileResource.
         
         Args:
