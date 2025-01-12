@@ -271,16 +271,13 @@ class Agent:
                 execution_state=ExecutionState(),
                 workflow_llm=self.workflow_llm,
                 planning_llm=self.planning_llm,
-                reasoning_llm=self.reasoning_llm
+                reasoning_llm=self.reasoning_llm,
+                resources=self.resources  # Add all agent resources to context
             )
         else:
-            # Update LLMs in provided context if not set
-            if not context.workflow_llm:
-                context.workflow_llm = self.workflow_llm
-            if not context.planning_llm:
-                context.planning_llm = self.planning_llm
-            if not context.reasoning_llm:
-                context.reasoning_llm = self.reasoning_llm
+            # Update existing context with agent resources
+            for resource_id, resource in self.resources.items():
+                context.add_resource(resource_id, resource)
         
         async with self:  # For cleanup
             return await self.runtime.execute(workflow, context)
