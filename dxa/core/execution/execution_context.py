@@ -1,10 +1,13 @@
 """Execution context for DXA."""
 
 from __future__ import annotations
+
 from dataclasses import dataclass, field
 from typing import Dict, Any, Optional, TYPE_CHECKING
-if TYPE_CHECKING:
-    from ..state import AgentState, WorldState, ExecutionState
+
+from ..state import AgentState, WorldState, ExecutionState
+
+if TYPE_CHECKING:    
     from ..workflow import Workflow
     from ..planning import Plan
     from ..reasoning import Reasoning
@@ -15,9 +18,9 @@ class ExecutionContext:
     """Context for execution across layers."""
 
     # State management
-    agent_state: 'AgentState'
-    world_state: 'WorldState'
-    execution_state: 'ExecutionState'
+    agent_state: 'AgentState' = field(default_factory=AgentState)
+    world_state: 'WorldState' = field(default_factory=WorldState)
+    execution_state: 'ExecutionState' = field(default_factory=ExecutionState)
 
     # Current graphs
     current_workflow: Optional['Workflow'] = None
