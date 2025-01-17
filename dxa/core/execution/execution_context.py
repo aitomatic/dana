@@ -14,9 +14,9 @@ class ExecutionContext:
     """Context for execution across layers."""
 
     # State management
-    agent_state: 'AgentState'
-    world_state: 'WorldState'
-    execution_state: 'ExecutionState'
+    agent_state: Optional['AgentState'] = None
+    world_state: Optional['WorldState'] = None
+    execution_state: Optional['ExecutionState'] = None
 
     # Current graphs
     current_workflow: Optional['Workflow'] = None
