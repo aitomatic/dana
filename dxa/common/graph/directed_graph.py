@@ -17,13 +17,17 @@ _CURSOR_CLASS_NAME = "dxa.common.graph.traversal.Cursor"
 
 class NodeType(StrEnum):
     """Base node types for all graphs."""
-    NODE = "NODE"
-    START = "START" 
-    END = "END"
-    TASK = "TASK"
-    CONDITION = "CONDITION"
-    FORK = "FORK"
-    JOIN = "JOIN"
+    NODE = "NODE"               # General node
+    START = "START"             # Starting point
+    END = "END"                 # Ending point
+    TASK = "TASK"               # Execution task
+    CONDITION = "CONDITION"     # Conditional execution
+    FORK = "FORK"               # Branching execution
+    JOIN = "JOIN"               # Joining execution
+    SOURCE = "SOURCE"           # Data sources (IoT, DB, etc)
+    SINK = "SINK"               # Data destinations
+    TRANSFORM = "TRANSFORM"     # Data transformations
+    MODEL = "MODEL"             # ML model operations
 
 @dataclass
 class Node:
@@ -122,6 +126,11 @@ class DirectedGraph:
         self.edges.append(edge)
         self._outgoing[edge.source].append(edge)
         self._incoming[edge.target].append(edge)
+    
+    def add_edge_between(self, source_id: str, target_id: str) -> None:
+        """Add edge between two nodes."""
+        edge = Edge(source_id, target_id)
+        self.add_edge(edge)
 
     def get_node_by_id(self, node_id: str) -> Optional[Node]:
         """Get node by ID."""
