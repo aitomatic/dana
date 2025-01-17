@@ -1,78 +1,173 @@
+<!-- markdownlint-disable MD041 -->
+<!-- markdownlint-disable MD033 -->
+<p align="center">
+  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
+</p>
+
 # Fab Domain Expert Agent (DXA) Requirements
+
+<p align="center">
+  <img src="https://www.tel.com/product/pv8va20000001bxe-img/pv8va20000001bzt.jpg" alt="Tokyo Electron Tactras Etch System" width="50%" />
+</p>
 
 ## Scenario Overview
 
-The system monitors a semiconductor etcher (RIE) through continuous SPC and FDC IoT data streams. The Domain Expert Agent (DXA) acts as a 24/7 virtual expert, performing:
+The system monitors a single semiconductor etcher (RIE) through continuous SPC and FDC IoT data streams. The Domain Expert Agent (DXA) acts as a 24/7 virtual expert, monitoring for various process issues:
 
-1. Real-time monitoring of process data streams
-2. Anomaly detection and classification
-3. Problem diagnosis and root cause analysis
-4. Recommendation of corrective actions based on SOPs
-5. Continuous learning from new cases and expert feedback
+### Critical RIE Parameters & Potential Issues
 
-### Example Scenario: RIE Chamber Matching
+1. **Plasma Generation & Stability**
+   - RF matching network faults
+   - Power delivery issues
+   - Plasma ignition failures
+   - Unstable plasma conditions
+
+2. **Process Chemistry**
+   - Gas flow irregularities
+   - Gas ratio deviations
+   - Mass flow controller (MFC) issues
+   - Gas line contamination
+   - Reaction byproduct buildup
+
+3. **Chamber Conditions**
+   - Pressure control issues
+   - Temperature uniformity problems
+   - Chamber leak detection
+   - Particle contamination
+   - Wall coating/polymer buildup
+   - O-ring degradation
+
+4. **Wafer Processing**
+   - Etch rate variations
+   - Uniformity issues
+   - Selectivity problems
+   - Loading effects
+   - Micro-loading effects
+   - Pattern dependent etching
+
+5. **Mechanical Systems**
+   - Vacuum system failures
+   - Wafer handling issues
+   - Chuck/ESC problems
+   - Cooling system malfunctions
+   - Valve operation issues
+
+### DXA Monitoring & Response Capabilities
+
+1. **Real-time Parameter Monitoring**
+   - Process parameters (pressure, power, gas flows)
+   - Equipment state parameters
+   - In-situ measurements where available
+   - End-point detection signals
+
+2. **Anomaly Detection Scope**
+   - Single parameter deviations
+   - Multi-parameter correlations
+   - Pattern recognition in time series
+   - Process sequence violations
+   - Equipment state transitions
+
+3. **Diagnostic Capabilities**
+   - Root cause analysis across all subsystems
+   - Historical case matching
+   - Fault tree analysis
+   - Parameter correlation analysis
+   - Trend analysis and prediction
+
+<p align="center">
+  <img src="https://media.springernature.com/lw685/springer-static/image/art%3A10.1038%2Fs41598-024-57697-5/MediaObjects/41598_2024_57697_Fig3_HTML.png" alt="RIE Chamber Matching" width="50%" />
+</p>
+
+### Example Scenario: RIE RF Matching Fault Detection
 
 ```mermaid
 sequenceDiagram
-    participant C1 as Chamber 1
-    participant C2 as Chamber 2
+    participant RIE as RIE Chamber
+    participant FDC as FDC Monitor
     participant DXA as DXA System
     participant Op as Operator
 
-    Note over C1,C2: Continuous monitoring of<br/>matching parameters
-    C1->>DXA: FDC Data Stream
-    C2->>DXA: FDC Data Stream
-    DXA->>DXA: Detect drift in<br/>etch rate matching
+    Note over RIE,FDC: Continuous monitoring of<br/>RF matching network
+    RIE->>FDC: RF Power Data Stream
+    FDC->>DXA: Matching Network Parameters
+    DXA->>DXA: Detect RF matching<br/>anomalies
     
-    alt Severe Drift
-        DXA->>Op: Alert: Chamber matching<br/>deviation detected
-        DXA->>Op: Recommend parameter<br/>adjustment
-    else Minor Drift
-        DXA->>DXA: Log drift pattern
+    alt Severe Mismatch
+        DXA->>Op: Alert: RF matching<br/>fault detected
+        DXA->>Op: Recommend matching<br/>network adjustment
+    else Minor Deviation
+        DXA->>DXA: Log pattern
         DXA->>DXA: Monitor trend
     end
 ```
 
 #### Context
 
-- Two RIE chambers running the same process
+- Single RIE chamber operation
 - Critical parameters monitored:
-  - Etch rates
+  - RF forward/reflected power
+  - Matching network positions
   - Chamber pressure
-  - RF power matching
-  - Gas flow rates
-  - Chamber temperature
+  - Process gas flows
+  - Plasma stability indicators
 
 #### Challenge
 
-1. Maintain consistent performance across chambers
-2. Early detection of parameter drift
-3. Rapid diagnosis of matching issues
-4. Automated correction within safe bounds
+1. Early Detection
+   - Identify process deviations before yield impact
+   - Detect subtle parameter drifts across multiple subsystems
+   - Recognize complex fault patterns
+   - Monitor interdependent parameter relationships
+
+2. Accurate Diagnosis
+   - Handle multiple concurrent issues
+   - Determine root causes across different subsystems
+   - Differentiate between symptoms and causes
+   - Account for process history and maintenance state
+
+3. Timely Response
+   - Minimize time to diagnosis
+   - Prevent unnecessary tool downtime
+   - Prioritize issues based on severity
+   - Balance quick fixes vs. long-term solutions
+
+4. Knowledge Management
+   - Capture tribal knowledge from experts
+   - Maintain up-to-date SOPs
+   - Learn from historical cases
+   - Adapt to process and tool modifications
 
 #### DXA Actions
 
 1. **Continuous Monitoring**
-   - Real-time FDC data analysis
-   - SPC trend monitoring
-   - Cross-chamber correlation analysis
+   - Multi-parameter real-time analysis
+   - System state tracking
+   - Process sequence validation
+   - Equipment health monitoring
+   - Maintenance schedule integration
 
 2. **Anomaly Detection**
    - Statistical process control
-   - Pattern recognition in multivariate data
-   - Historical case matching
+   - Multi-variate analysis
+   - Pattern recognition across subsystems
+   - Correlation analysis
+   - Trend prediction
 
 3. **Diagnosis & Resolution**
-   - Root cause analysis using knowledge base
-   - Parameter adjustment recommendations
-   - SOP execution for known cases
-   - Expert escalation for novel situations
+   - Systematic fault tree analysis
+   - Cross-subsystem correlation
+   - Historical case comparison
+   - Expert knowledge application
+   - SOP selection and execution
+   - Escalation path determination
 
 4. **Learning & Optimization**
-   - Case logging and classification
-   - Success rate tracking
-   - Knowledge base updates
-   - SOP refinement
+   - Case history documentation
+   - Success/failure tracking
+   - SOP effectiveness analysis
+   - Knowledge base enrichment
+   - Expert feedback integration
+   - Continuous model refinement
 
 ## Solution Architecture
 
@@ -88,11 +183,13 @@ graph TB
         WF[Workflow Engine]
         PS[Planning System]
         RE[Reasoning Engine]
+        SEMI[SEMIKONG LLM]
     end
     subgraph "Knowledge Layer"
         KB[(Knowledge Base)]
-        SEMI[SEMIKONG LLM]
         RAG[RAG Pipeline]
+        DP[Document Processor]
+        TG[Template Generator]
     end
     SPC --> AD
     FDC --> AD
@@ -103,148 +200,59 @@ graph TB
     KB <--> SEMI
     KB <--> RAG
     SEMI <--> RAG
+    KB <--> DP
+    KB <--> TG
 ```
 
 ### 1. Data Monitoring & Anomaly Detection Layer
 
-- Integration with SPC and FDC data streams
-- Plug-in architecture for AI/infra team's anomaly detection kernels
-- Real-time monitoring and signal processing
-- Multi-variate anomaly detection capabilities
+- Raw FDC data structuring and analysis
+- Real-time signal processing
+- Multi-parameter correlation detection
+- Automated threshold adjustment
 
-### 2. Domain Expert Agent Core
+### 2. DXA Core Components
 
-#### 2.1 Workflow Engine
-
-- Flexible workflow design combining expert knowledge and Fab APIs
-- Support for multiple concurrent root cause analyses
-- Dynamic workflow adaptation based on case context
-- Integration with knowledge base for workflow templates
-
-#### 2.2 Planning System
-
-- Automated diagnosis planning
-- SOP execution planning
-- Resource allocation and scheduling
-- Plan adaptation based on feedback
-
-```mermaid
-stateDiagram-v2
-    [*] --> DetectAnomaly
-    DetectAnomaly --> AssessContext
-    AssessContext --> QueryKB
-    QueryKB --> PlanGeneration
-    PlanGeneration --> ValidationCheck
-    
-    ValidationCheck --> ExecutePlan: Pass
-    ValidationCheck --> ModifyPlan: Fail
-    ModifyPlan --> ValidationCheck
-    
-    ExecutePlan --> MonitorExecution
-    MonitorExecution --> UpdateKB
-    MonitorExecution --> ModifyPlan: Need Adjustment
-    UpdateKB --> [*]
-```
-
-#### 2.3 Reasoning Engine
-
-- Enhanced SEMIKONG LLM integration
-- Multi-step reasoning capabilities
-- Semantic knowledge base querying
-- Uncertainty handling and probabilistic reasoning
-
-### 3. Knowledge Management System
-
-- Semantic Knowledge Base for:
-  - Expert knowledge
-  - SOPs and procedures
-  - Historical cases
-  - Workflow templates
-  - Domain heuristics
-- Flexible knowledge capture with customized templates
-- Knowledge editing and version control
-- Dynamic knowledge extension through expert interviews
-
-```mermaid
-graph TB
-    subgraph "Knowledge Sources"
-        EI[Expert Interviews]
-        DOC[Documents]
-        PP[PowerPoints]
-        HIST[Historical Cases]
-    end
-
-    subgraph "Processing"
-        KE[Knowledge Extraction]
-        NLP[NLP Processing]
-        VAL[Validation]
-    end
-
-    subgraph "Storage"
-        KB[(Knowledge Base)]
-        META[Metadata Store]
-        VER[Version Control]
-    end
-
-    EI --> KE
-    DOC --> KE
-    PP --> KE
-    HIST --> KE
-    KE --> NLP
-    NLP --> VAL
-    VAL --> KB
-    KB --> META
-    KB --> VER
-```
-
-### 4. Enhanced SEMIKONG LLM Integration
-
-- Integration timeline: Complete by 1/31/2025
-- Fab domain specialization through fine-tuning
-- Components:
-  - Data preparation pipeline
-  - Model fine-tuning pipeline
-  - RAG (Retrieval Augmented Generation) pipeline
-- Evaluation and validation framework
-- Specific requirements from original doc:
-  - SemiKong with Llama 3.3 - 1/31/2025
-  - Finetune with current SEMIKONG
-  - Finetune specifically with Fab domain know-how (mostly from PowerPoint)
-  - New SEMIKONG release date: Before 1/31/2025
-
-## Technical Requirements
-
-### Workflow Capabilities
+#### Workflow Engine
 
 - Dynamic workflow construction from expert knowledge
 - Integration with multiple Fab APIs
 - Support for 1-to-many root cause analysis
 - Knowledge-based workflow design
-- Original workflow requirements:
-  - How to build workflows that combine expert interview results with multiple Fab APIs
-  - Design elements (workflows, plans, facts, heuristics, conditions) should come from knowledge base
+- Autonomous operation capabilities
+- Collaborative mode switching
 
-### Reasoning Capabilities
+#### Planning System
 
-- Enhanced SEMIKONG integration
+- Confidence-based execution paths
+- Auto-execution criteria
+- Expert consultation triggers
+- Decision point integration with SEMIKONG
+
+#### Reasoning Engine
+
+- Enhanced SEMIKONG LLM integration
 - Document-based reasoning support
 - Raw FDC data anomaly detection
 - Causal analysis and inference
-- Original reasoning requirements:
-  - Based on supporting documents to provide more information about cases
-  - Root cause analysis beyond expert interview content
-  - Anomaly detection from raw FDC data
+- Domain-adapted reasoning models
 
 ### Knowledge Integration
 
+#### Document Processing
+
 - Flexible knowledge capture mechanisms
-- Dynamic question generation for knowledge acquisition
+- Dynamic template generation
+- Expert interview workflow
 - Knowledge base editing and maintenance
 - Domain-specific template customization
-- Original knowledge integration requirements:
-  - Customized templates for different domain knowledge capture
-  - Capability to extend questions based on expert answers
-  - Flexibility to edit existing knowledge
+
+#### Knowledge Validation
+
+- Expert feedback integration
+- Case validation workflow
+- Learning capture verification
+- Knowledge base consistency checks
 
 ## Current Limitations & Challenges
 
@@ -252,6 +260,28 @@ graph TB
 - Need for specialized fine-tuning
 - Complex integration requirements with existing systems
 - Real-time performance requirements
+
+## Implementation Timeline
+
+### Phase 1 (v1.0) - Basic DXA: 1/8/2024
+
+- Core monitoring capabilities
+- Basic workflow execution
+- Initial knowledge base
+
+### Phase 2 (v1.1) - Enhanced Knowledge: 1/31/2024
+
+- Document processing pipeline
+- Dynamic template generation
+- Expert interview system
+- Knowledge validation workflow
+
+### Phase 3 (v1.2) - SEMIKONG Integration: Q1 2024
+
+- LLM decision point integration
+- RAG pipeline implementation
+- Domain-specific fine-tuning
+- Autonomous operation capabilities
 
 ## Success Criteria
 
@@ -284,3 +314,121 @@ sequenceDiagram
     end
     DXA->>KB: Log Case & Resolution
 ```
+
+## Demo Script (3 minutes)
+
+### Setup (30s)
+
+- RIE process monitoring interface
+- Split screen showing:
+  - Real-time RF matching data
+  - DXA analysis dashboard
+  - Plasma stability metrics
+  - Knowledge base interface
+
+### Demo Flow
+
+#### 0:00-0:30 - Normal Operation
+
+- Show real-time monitoring of RF matching
+- Display key metrics:
+  - Forward/reflected power
+  - Matching network positions
+  - Plasma stability indicators
+- Highlight autonomous monitoring by DXA
+
+#### 0:30-1:30 - Drift Detection & Analysis
+
+- Introduce gradual drift in etch rate matching
+- DXA performs multi-parameter analysis:
+  - Historical pattern matching
+  - Cross-chamber correlation
+  - Process window validation
+  - Root cause determination
+- Show real-time reasoning process
+- Display drift classification confidence
+
+#### 1:30-2:30 - Automated Response
+
+- DXA generates correction strategy
+- Show parameter adjustment calculations
+- Demonstrate SOP execution:
+  - Safety bound validation
+  - Step-by-step workflow
+  - Real-time verification
+- Display recovery metrics
+
+#### 2:30-3:00 - Learning & Optimization
+
+- Show case capture in knowledge base
+- Display optimization metrics:
+  - Time to detection
+  - Correction accuracy
+  - Learning integration
+- Demonstrate value vs. manual process
+
+### Interactive Elements
+
+- Parameter trend exploration
+- Alternative drift scenarios
+- SOP step drill-down
+- Knowledge base query interface
+
+### Technical Requirements 2
+
+#### Demo Environment
+
+- Fab equipment simulation
+- Real-time FDC/SPC feeds
+- DXA reasoning visualization
+- Knowledge base interface
+
+#### Visualization Requirements
+
+- Multi-parameter correlation plots
+- Chamber matching metrics
+- Drift detection confidence
+- SOP execution status
+- Learning capture display
+
+#### Backup Plans
+
+- Pre-recorded drift scenarios
+- Offline analysis results
+- Alternative chamber configurations
+- Sample learning sequences
+
+### Enhanced DXA Capabilities
+
+#### Knowledge Capture System
+
+- Document processing pipeline
+- Dynamic template generation
+- Expert interview workflow
+- Raw data structuring
+- Knowledge validation process
+
+#### Operational Modes
+
+1. Autonomous Operation
+   - Independent decision making
+   - Confidence thresholds
+   - Auto-execution criteria
+
+2. Collaborative Operation
+   - Expert consultation triggers
+   - Knowledge validation workflow
+   - Feedback integration
+
+#### SEMIKONG Integration
+
+- Decision point integration
+- RAG implementation
+- Fine-tuning approach
+- Domain adaptation strategy
+
+### Release Schedule
+
+- v1.0: Basic DXA (1/8/2024)
+- v1.1: Enhanced knowledge capture (1/31/2024)
+- v1.2: SEMIKONG integration (Q1 2024)

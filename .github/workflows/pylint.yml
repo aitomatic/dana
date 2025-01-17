@@ -1,5 +1,5 @@
 # GitHub Action to run Pylint code analysis
-# - Runs on Python 3.10 and 3.12
+# - Runs on Python 3.12
 # - Checks all Python files in the repository
 # - Uses settings from .pylintrc
 # - Fails only if score is below 7.0/10
@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.12"]
+        python-version: ["3.12"]
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}

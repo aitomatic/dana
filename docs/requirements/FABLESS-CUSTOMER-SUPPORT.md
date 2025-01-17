@@ -1,6 +1,16 @@
+<!-- markdownlint-disable MD041 -->
+<!-- markdownlint-disable MD033 -->
+<p align="center">
+  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
+</p>
+
 # Fabless Customer Design Support Scenario
 
 This scenario describes how a Field Application Engineer (FAE), supported by a Domain Expert Agent (DXA), assists customers in successfully implementing IC designs through technical consultation and documentation.
+
+<p align="center">
+  <img src="https://phisonblog.com/wp-content/uploads/2023/03/1507431_WPICDesignProcess_01_112222.jpg" alt="IC Design Process Flow" width="50%" />
+</p>
 
 ## Circuit Design Support Consultation
 
@@ -16,6 +26,10 @@ This scenario describes how a Field Application Engineer (FAE), supported by a D
   - Public datasheets and reference designs
   - Historical design consultations
   - Circuit design expertise knowledge base
+
+<p align="center">
+  <img src="https://www.powersystemsdesign.com/images/articles/1384946982Illustration_YoleSermaPressrelease_March2013.jpg" alt="Semiconductor Industry Structure" width="50%" />
+</p>
 
 ### System Architecture
 
@@ -147,3 +161,88 @@ stateDiagram-v2
     Solution_Design --> Documentation
     Documentation --> [*]
 ```
+
+## Demo Script (3 minutes)
+
+### Setup (30s)
+
+- Customer consultation interface
+- Split screen showing:
+  - FAE video conference window
+  - DXA analysis dashboard
+  - Circuit design workspace
+  - Technical documentation viewer
+
+### Demo Flow
+
+#### 0:00-0:30 - Initial Customer Engagement
+
+- Show FAE starting customer consultation
+- DXA actively monitoring discussion
+- Display real-time parameter identification:
+  - Operating conditions
+  - Performance targets
+  - System constraints
+- Highlight automatic documentation retrieval
+
+#### 0:30-1:30 - Technical Analysis
+
+- Customer describes specific design challenge
+- DXA performs multi-faceted analysis:
+  - Parameter validation
+  - Design rule checking
+  - Reference design matching
+  - Performance optimization
+- Show real-time documentation synthesis
+- Display design trade-off analysis
+
+#### 1:30-2:30 - Solution Development
+
+- DXA generates design recommendations
+- Show interactive optimization process:
+  - Parameter adjustment impacts
+  - Performance predictions
+  - Design margin analysis
+- FAE explains trade-offs with DXA support
+- Display reference circuit suggestions
+
+#### 2:30-3:00 - Documentation & Follow-up
+
+- Generate consultation summary
+- Show automated documentation package:
+  - Design recommendations
+  - Parameter calculations
+  - Reference circuits
+  - Best practices checklist
+- Highlight knowledge capture for future cases
+
+### Interactive Elements
+
+- Circuit parameter exploration
+- Alternative design scenarios
+- Documentation drill-down
+- Design trade-off visualization
+
+### Technical Requirements
+
+#### Demo Environment
+
+- Video conferencing system
+- Circuit design tools
+- DXA analysis interface
+- Documentation system
+
+#### Visualization Requirements
+
+- Parameter correlation plots
+- Design trade-off matrices
+- Performance prediction graphs
+- Documentation synthesis display
+- Knowledge capture interface
+
+#### Backup Plans
+
+- Pre-recorded consultation scenarios
+- Offline analysis results
+- Sample design challenges
+- Alternative solution paths

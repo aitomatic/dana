@@ -1,11 +1,10 @@
 """Base class for graph execution."""
 
 from abc import ABC, abstractmethod
-from typing import Optional, List, cast
+from typing import Optional, List, cast, TYPE_CHECKING
 from .execution_types import (
     ExecutionNode,
     ExecutionSignal,
-    ExecutionContext,
     Objective,
     ExecutionSignalType,
     ExecutionNodeStatus,
@@ -13,6 +12,8 @@ from .execution_types import (
 )
 from .execution_graph import ExecutionGraph
 from ...common.graph import NodeType
+if TYPE_CHECKING:
+    from .execution_context import ExecutionContext
 
 class Executor(ABC):
     """Base class for executing any graph-based process."""
@@ -32,7 +33,7 @@ class Executor(ABC):
 
     async def execute(self, 
                       upper_graph: ExecutionGraph, 
-                      context: ExecutionContext, 
+                      context: 'ExecutionContext', 
                       upper_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
         """Execute the graph using cursor traversal.
         
@@ -78,7 +79,7 @@ class Executor(ABC):
     @abstractmethod
     async def execute_node(self,
                            node: ExecutionNode, 
-                           context: ExecutionContext, 
+                           context: 'ExecutionContext', 
                            prev_signals: List[ExecutionSignal],
                            upper_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
         """Execute a single node. To be implemented by subclasses."""
@@ -112,7 +113,7 @@ class Executor(ABC):
     def _create_graph(self, 
                       upper_graph: ExecutionGraph, 
                       objective: Optional[Objective] = None, 
-                      context: Optional[ExecutionContext] = None) -> ExecutionGraph:
+                      context: Optional['ExecutionContext'] = None) -> ExecutionGraph:
         """Create this layer's graph from the upper layer's graph.
         To be implemented by subclasses."""
         pass

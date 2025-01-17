@@ -1,7 +1,7 @@
 """Graph traversal implementations."""
 
 from abc import ABC, abstractmethod
-from typing import Iterator, Optional
+from typing import Iterator, Optional, Set, List
 from .directed_graph import DirectedGraph, Node, NodeType
 
 class TraversalStrategy(ABC):
@@ -96,3 +96,72 @@ class Cursor:
             return self.current
         except StopIteration:
             return None 
+
+class ContinuousTraversal(TraversalStrategy):
+    """Traversal strategy for continuous monitoring loops."""
+    
+    def __init__(self):
+        self._visited: Set[str] = set()
+        self._cycle_count = 0
+        self._in_cycle = False
+
+    def traverse(self, graph: DirectedGraph, start_node: Node) -> Iterator[Node]:
+        """Traverse graph continuously, handling cycles and conditions."""
+        while True:  # Continuous monitoring loop
+            current = start_node
+            self._in_cycle = True
+            
+            while self._in_cycle:
+                yield current
+
+                # Get next nodes based on conditions
+                next_nodes = graph.get_next_nodes(current.node_id)
+                
+                # If no next nodes, end cycle
+                if not next_nodes:
+                    self._in_cycle = False
+                    break
+
+                # Handle conditional transitions
+                next_node = self._select_next_node(graph, current, next_nodes)
+                if not next_node:
+                    self._in_cycle = False
+                    break
+
+                current = next_node
+                
+                # If we hit END, restart from START
+                if current.node_type == NodeType.END:
+                    self._cycle_count += 1
+                    break
+
+    def _select_next_node(self, graph: DirectedGraph, 
+                         current: Node, 
+                         next_nodes: List[Node]) -> Optional[Node]:
+        """Select next node based on conditions in edge metadata."""
+        for node in next_nodes:
+            # Find edge between current and next node
+            edge = next(
+                (e for e in graph.edges 
+                 if e.source == current.node_id 
+                 and e.target == node.node_id),
+                None
+            )
+            
+            if not edge:
+                continue
+
+            # If no condition in metadata, or condition is met
+            if (not edge.metadata.get('condition') or 
+                self._check_condition(edge.metadata['condition'])):
+                return node
+                
+        return None
+
+    def _check_condition(self, condition: str) -> bool:
+        """Check if condition is met.
+        For now, return True for 'parameters_normal',
+        False for 'parameters_abnormal'
+        TODO: Implement actual condition checking
+        """
+        return condition == 'parameters_normal' 

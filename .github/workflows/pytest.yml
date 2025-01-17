@@ -1,5 +1,5 @@
 # GitHub Action to run pytest on pull requests
-# - Runs on Python 3.10 and 3.12
+# - Runs on Python 3.12
 # - Installs the package and its dependencies
 # - Executes all tests in the tests/ directory
 # This helps catch test failures before merging PRs
@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.12"]
+        python-version: ["3.12"]
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python ${{ matrix.python-version }}

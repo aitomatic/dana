@@ -2,8 +2,7 @@
 
 from enum import Enum
 from typing import List, cast, Optional, TYPE_CHECKING
-from ..execution import Executor, ExecutionNode, ExecutionSignal, ExecutionContext
-from ..execution import Objective
+from ..execution import Executor, ExecutionNode, ExecutionSignal, ExecutionContext, Objective
 from .plan import Plan
 from ..workflow import Workflow
 from ..execution import ExecutionGraph, ExecutionEdge

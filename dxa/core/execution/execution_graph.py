@@ -1,15 +1,17 @@
 """Execution graph implementation."""
 
-from typing import Dict, Any, Optional, Union, List, cast, TextIO
+from typing import Dict, Any, Optional, Union, List, cast, TextIO, TYPE_CHECKING
 from pathlib import Path
 from dataclasses import dataclass
 from datetime import datetime
 from ...common.graph import DirectedGraph, Node, Edge, NodeType
 from .execution_types import (
-    Objective, ExecutionContext, ExecutionNode,
+    Objective, ExecutionNode,
     ExecutionNodeStatus, ExecutionSignal, ExecutionSignalType,
     ExecutionEdge
 )
+if TYPE_CHECKING:
+    from .execution_context import ExecutionContext
 
 # pylint: disable=too-many-public-methods
 @dataclass
@@ -98,7 +100,7 @@ class ExecutionGraph(DirectedGraph):
         if signal.type == ExecutionSignalType.STATE_CHANGE:
             # Common state updates
             self.metadata.update(signal.content.get("metadata", {}))
-        elif signal.type == ExecutionSignalType.STEP_COMPLETE:
+        elif signal.type == ExecutionSignalType.COMPLETE:
             # Common step completion handling
             if node_id := signal.content.get("node"):
                 self.update_node_status(node_id, ExecutionNodeStatus.COMPLETED)
@@ -138,7 +140,7 @@ class ExecutionGraph(DirectedGraph):
             })
 
     # pylint: disable=unused-argument
-    def get_valid_transitions(self, node_id: str, context: ExecutionContext) -> List[ExecutionNode]:
+    def get_valid_transitions(self, node_id: str, context: Optional['ExecutionContext'] = None) -> List[ExecutionNode]:
         """Get valid next nodes based on edge conditions."""
         valid_nodes = []
         outgoing = cast(List[ExecutionEdge], self._outgoing[node_id])
