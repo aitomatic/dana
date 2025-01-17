@@ -55,9 +55,16 @@ class ResourceConfig:
 
 @dataclass
 class ResourceResponse:
-    """Base response for all resources."""
-    success: bool = True
+    """Base response for all resources.
+    
+    Attributes:
+        success: Whether the query was successful, None indicates unknown status
+        error: Optional error message if the query failed
+        content: Optional content returned by the resource
+    """
+    success: Optional[bool] = None
     error: Optional[str] = None
+    content: Optional[str] = None
 
 class BaseResource(ABC):
     """Abstract base resource."""
