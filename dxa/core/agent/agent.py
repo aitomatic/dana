@@ -25,7 +25,7 @@ from ..workflow import Workflow
 from ..workflow import WorkflowFactory
 from ..capability import BaseCapability
 from ..resource import BaseResource, LLMResource
-from ..io import BaseIO, IOFactory
+from ..resource.io import BaseIO, IOFactory
 from ..state import AgentState
 from ..workflow import WorkflowStrategy
 from ..planning import PlanningStrategy
