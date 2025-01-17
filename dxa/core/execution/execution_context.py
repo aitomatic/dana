@@ -7,7 +7,7 @@ from typing import Dict, Any, Optional, TYPE_CHECKING
 
 from ..state import AgentState, WorldState, ExecutionState
 
-if TYPE_CHECKING:    
+if TYPE_CHECKING:
     from ..workflow import Workflow
     from ..planning import Plan
     from ..reasoning import Reasoning
@@ -18,9 +18,9 @@ class ExecutionContext:
     """Context for execution across layers."""
 
     # State management
-    agent_state: 'AgentState' = field(default_factory=AgentState)
-    world_state: 'WorldState' = field(default_factory=WorldState)
-    execution_state: 'ExecutionState' = field(default_factory=ExecutionState)
+    agent_state: Optional['AgentState'] = None
+    world_state: Optional['WorldState'] = None
+    execution_state: Optional['ExecutionState'] = None
 
     # Current graphs
     current_workflow: Optional['Workflow'] = None
@@ -29,7 +29,7 @@ class ExecutionContext:
 
     # Resources
     resources: Dict[str, 'BaseResource'] = field(default_factory=dict)  # All available resources
-    
+
     # Commonly used LLMs
     workflow_llm: Optional['LLMResource'] = None
     planning_llm: Optional['LLMResource'] = None
@@ -63,7 +63,7 @@ class ExecutionContext:
 
         param_value = self.current_data["values"][param_name]
         param_def = self.parameters.get("rf_matching", {}).get(param_name, {})
-        
+
         if not param_def or "normal_range" not in param_def:
             return True
 
@@ -81,5 +81,5 @@ class ExecutionContext:
         elif condition == "parameters_abnormal":
             # Check if any parameter is outside limits
             return not self.check_conditions("parameters_normal")
-        
-        return False  # Unknown condition 
+
+        return False  # Unknown condition
