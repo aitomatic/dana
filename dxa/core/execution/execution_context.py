@@ -1,7 +1,5 @@
 """Execution context for DXA."""
 
-from __future__ import annotations
-
 from dataclasses import dataclass, field
 from typing import Dict, Any, Optional, TYPE_CHECKING
 
