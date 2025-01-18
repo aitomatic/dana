@@ -1,6 +1,6 @@
 """Plan executor implementation."""
 
-from enum import Enum
+from enum import StrEnum
 from typing import List, cast, Optional, TYPE_CHECKING
 from ..execution import Executor, ExecutionNode, ExecutionSignal, ExecutionContext, Objective
 from .plan import Plan
@@ -10,7 +10,7 @@ from ...common.graph import NodeType
 if TYPE_CHECKING:
     from ..reasoning import ReasoningExecutor
 
-class PlanningStrategy(Enum):
+class PlanningStrategy(StrEnum):
     """Planning strategies."""
     DEFAULT = "DEFAULT"        # same as WORKFLOW_IS_PLAN
     WORKFLOW_IS_PLAN = "WORKFLOW_IS_PLAN"  # Exact structural copy with cursor sync

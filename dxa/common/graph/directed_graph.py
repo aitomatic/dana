@@ -2,7 +2,7 @@
 
 from typing import Dict, List, Optional, Iterator, Any, Union, TextIO, TYPE_CHECKING
 from pathlib import Path
-from enum import Enum
+from enum import StrEnum
 from dataclasses import dataclass, field
 from ..utils import get_class_by_name
 if TYPE_CHECKING:
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     )
 _CURSOR_CLASS_NAME = "dxa.common.graph.traversal.Cursor"
 
-class NodeType(Enum):
+class NodeType(StrEnum):
     """Base node types for all graphs."""
     NODE = "NODE"               # General node
     START = "START"             # Starting point
