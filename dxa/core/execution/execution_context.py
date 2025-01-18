@@ -5,9 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Dict, Any, Optional, TYPE_CHECKING
 
-from ..state import AgentState, WorldState, ExecutionState
-
 if TYPE_CHECKING:
+    from ..state import AgentState, WorldState, ExecutionState
     from ..workflow import Workflow
     from ..planning import Plan
     from ..reasoning import Reasoning
