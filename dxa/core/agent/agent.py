@@ -12,7 +12,7 @@ Example:
         .with_reasoning("cot")\\
         .with_resources({"search": SearchResource()})\\
         .with_capabilities({"research": ResearchCapability()})
-    
+
     result = await agent.run("Research quantum computing")
     ```
 
@@ -38,7 +38,7 @@ from ..state import WorldState, ExecutionState
 # pylint: disable=too-many-public-methods
 class Agent:
     """Main agent interface with built-in execution management."""
-    
+
     # pylint: disable=too-many-instance-attributes
     def __init__(self, name: Optional[str] = None):
         self._name = name or "agent"
@@ -57,22 +57,22 @@ class Agent:
         self._workflow_strategy = None
         self._planning_strategy = None
         self._reasoning_strategy = None
-    
+
     @property
     def workflow_strategy(self) -> WorkflowStrategy:
         """Get workflow strategy."""
         return self._workflow_strategy or WorkflowStrategy.DEFAULT
-    
+
     @property
     def planning_strategy(self) -> PlanningStrategy:
         """Get planning strategy."""
         return self._planning_strategy or PlanningStrategy.DEFAULT
-    
+
     @property
     def reasoning_strategy(self) -> ReasoningStrategy:
         """Get reasoning strategy."""
         return self._reasoning_strategy or ReasoningStrategy.DEFAULT
-    
+
     @property
     def state(self) -> AgentState:
         """Get agent state."""
@@ -84,26 +84,26 @@ class Agent:
         if not self._runtime:
             raise ValueError("Agent runtime not initialized")
         return self._runtime
-    
+
     @property
     def config(self) -> Dict[str, Any]:
         """Get configuration."""
         return self._config
-    
+
     @property
     def agent_llm(self) -> LLMResource:
         """Get agent LLM."""
         if not self._agent_llm:
             self._agent_llm = LLMResource(name=f"{self._name}_llm")
         return self._agent_llm
-    
+
     @property
     def resources(self) -> Dict[str, BaseResource]:
         """Get resources."""
         if not self._resources:
             self._resources = {}
         return self._resources
-    
+
     @property
     def capabilities(self) -> Dict[str, BaseCapability]:
         """Get capabilities."""
@@ -123,7 +123,7 @@ class Agent:
         """Get workflow LLM or fallback to default."""
         return self._workflow_llm or self.agent_llm
 
-    @property 
+    @property
     def planning_llm(self) -> Optional[LLMResource]:
         """Get planning LLM or fallback to default."""
         return self._planning_llm or self.agent_llm
@@ -146,7 +146,7 @@ class Agent:
             config.update(llm)
             self._agent_llm = LLMResource(name=f"{self._name}_llm", config=config)
         return self
-    
+
     def with_resources(self, resources: Dict[str, BaseResource]) -> "Agent":
         """Add resources to agent."""
         if not self._resources:
@@ -160,7 +160,7 @@ class Agent:
             self._capabilities = {}
         self._capabilities.update(capabilities)
         return self
-    
+
     def with_io(self, io: BaseIO) -> "Agent":
         """Set agent IO to provided IO."""
         self._io = io
@@ -218,22 +218,22 @@ class Agent:
 
     def _initialize(self) -> 'Agent':
         """Internal initialization of agent configuration and runtime.
-        
+
         This method is idempotent - safe to call multiple times.
         Only initializes if not already initialized.
         """
         if self._runtime:
             return self  # Already initialized
-        
+
         # Validate minimal config
         if not self._agent_llm:
             self.with_llm(LLMResource(name=f"{self._name}_llm"))
-        
+
         # Set default strategies if not specified
         self._workflow_strategy = self._workflow_strategy or WorkflowStrategy.DEFAULT
         self._planning_strategy = self._planning_strategy or PlanningStrategy.DEFAULT
         self._reasoning_strategy = self._reasoning_strategy or ReasoningStrategy.DEFAULT
-        
+
         # Create runtime with strategies
         self._runtime = AgentRuntime(
             self,
@@ -241,7 +241,7 @@ class Agent:
             planning_strategy=self._planning_strategy,
             reasoning_strategy=self._reasoning_strategy
         )
-        
+
         return self
 
     async def cleanup(self) -> None:
@@ -262,7 +262,7 @@ class Agent:
     async def async_run(self, workflow: Workflow, context: Optional[ExecutionContext] = None) -> Any:
         """Execute an objective."""
         self._initialize()
-        
+
         # Create new context if none provided
         if context is None:
             context = ExecutionContext(
@@ -274,14 +274,23 @@ class Agent:
                 reasoning_llm=self.reasoning_llm,
                 resources=self.resources  # Add all agent resources to context
             )
+
         else:
+            # Update LLMs in provided context if not set
+            if not context.workflow_llm:
+                context.workflow_llm = self.workflow_llm
+            if not context.planning_llm:
+                context.planning_llm = self.planning_llm
+            if not context.reasoning_llm:
+                context.reasoning_llm = self.reasoning_llm
+
             # Update existing context with agent resources
             for resource_id, resource in self.resources.items():
                 context.add_resource(resource_id, resource)
-        
+
         async with self:  # For cleanup
             return await self.runtime.execute(workflow, context)
-    
+
     def run(self, workflow: Workflow) -> Any:
         """Run an objective."""
         return asyncio.run(self.async_run(workflow))
