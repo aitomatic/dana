@@ -29,7 +29,8 @@ Example:
 """
 
 from dataclasses import dataclass, field
-from typing import List, Set
+from typing import List, Set, Union
+from pathlib import Path
 
 @dataclass
 class DomainExpertise:
@@ -80,3 +81,26 @@ class DomainExpertise:
         if not note.strip():
             return
         self.notes.add(note.strip())
+
+    def add_notes_from_file(self, file_path: Union[str, Path]) -> None:
+        """Add contents of a text file as a single note.
+        
+        The entire file content will be added as one note,
+        preserving all formatting and line breaks.
+        
+        Args:
+            file_path: Path to text file containing the note
+            
+        Raises:
+            FileNotFoundError: If file does not exist
+            UnicodeDecodeError: If file is not valid UTF-8
+            
+        Example:
+            >>> expertise.add_notes_from_file("math_theory.txt")
+        """
+        path = Path(file_path)
+        try:
+            content = path.read_text(encoding='utf-8')
+            self.add_note(content)
+        except (FileNotFoundError, UnicodeDecodeError) as e:
+            raise e from None
