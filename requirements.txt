@@ -4,3 +4,4 @@ python-dotenv>=1.0
 pyyaml>=6.0
 structlog>=24.4
 websockets>=10.0
+openssa>=0.24.12.12
