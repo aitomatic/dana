@@ -62,11 +62,11 @@ class DomainExpertise:
         >>> math_expert.add_note("Verify solutions by substitution")
     """
     name: str                    # e.g., "mathematics"
-    description: str            # What this expert knows
-    capabilities: List[str]     # What this expert can do
-    keywords: List[str]         # Trigger words/phrases
-    requirements: List[str]     # What input this expert needs
-    example_queries: List[str]  # Example questions this expert can answer
+    description: str = ""        # What this expert knows
+    capabilities: List[str] = field(default_factory=list)  # What this expert can do
+    keywords: List[str] = field(default_factory=list)      # Trigger words/phrases
+    requirements: List[str] = field(default_factory=list)  # What input this expert needs
+    example_queries: List[str] = field(default_factory=list)  # Example questions
     notes: Set[str] = field(default_factory=set)  # Domain-specific knowledge notes
 
     def add_note(self, note: str) -> None:
@@ -104,3 +104,42 @@ class DomainExpertise:
             self.add_note(content)
         except (FileNotFoundError, UnicodeDecodeError) as e:
             raise e from None
+
+    @property
+    def long_description(self) -> str:
+        """Get detailed description of the domain expertise.
+        
+        Returns:
+            Detailed description including all non-empty fields except notes.
+            Sections with empty lists are omitted.
+        """
+        sections = [f"Domain: {self.name}"]
+        
+        if self.description:
+            sections.append(f"\nDescription: {self.description}")
+            
+        if self.capabilities:
+            sections.extend([
+                "\nCapabilities:",
+                *[f"- {cap}" for cap in self.capabilities]
+            ])
+            
+        if self.keywords:
+            sections.extend([
+                "\nKeywords:",
+                *[f"- {kw}" for kw in self.keywords]
+            ])
+            
+        if self.requirements:
+            sections.extend([
+                "\nRequirements:",
+                *[f"- {req}" for req in self.requirements]
+            ])
+            
+        if self.example_queries:
+            sections.extend([
+                "\nExample Queries:",
+                *[f"- {q}" for q in self.example_queries]
+            ])
+            
+        return "\n".join(sections)
