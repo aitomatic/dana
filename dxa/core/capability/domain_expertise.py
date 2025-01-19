@@ -6,6 +6,7 @@ enabling agents to:
 - Specify expert capabilities and requirements
 - Match queries to appropriate expert resources
 - Validate expertise requirements
+- Store domain-specific knowledge notes
 
 The DomainExpertise class serves as a blueprint for creating specialized expert 
 resources with well-defined capabilities and requirements.
@@ -22,10 +23,13 @@ Example:
     ...     requirements=["financial data", "time period"],
     ...     example_queries=["Analyze risk for AAPL stock"]
     ... )
+    >>> finance_expert.add_note("Always check market conditions before analysis")
+    >>> finance_expert.add_note("Consider both technical and fundamental factors")
+    >>> finance_expert.add_note("Risk metrics: Beta, Sharpe ratio, VaR")
 """
 
-from dataclasses import dataclass
-from typing import List
+from dataclasses import dataclass, field
+from typing import List, Set
 
 @dataclass
 class DomainExpertise:
@@ -42,6 +46,7 @@ class DomainExpertise:
         keywords (List[str]): Trigger words/phrases that indicate this expertise is needed
         requirements (List[str]): Required information or context for queries in this domain
         example_queries (List[str]): Sample questions demonstrating proper usage
+        notes (Set[str]): Set of domain-specific knowledge notes and best practices
         
     Example:
         >>> math_expert = DomainExpertise(
@@ -52,6 +57,8 @@ class DomainExpertise:
         ...     requirements=["mathematical expression"],
         ...     example_queries=["solve x^2 + 2x + 1 = 0"]
         ... )
+        >>> math_expert.add_note("Check for special cases (quadratic, linear)")
+        >>> math_expert.add_note("Verify solutions by substitution")
     """
     name: str                    # e.g., "mathematics"
     description: str            # What this expert knows
@@ -59,3 +66,17 @@ class DomainExpertise:
     keywords: List[str]         # Trigger words/phrases
     requirements: List[str]     # What input this expert needs
     example_queries: List[str]  # Example questions this expert can answer
+    notes: Set[str] = field(default_factory=set)  # Domain-specific knowledge notes
+
+    def add_note(self, note: str) -> None:
+        """Add a note to the domain expertise.
+        
+        Args:
+            note: Knowledge note or best practice to add
+            
+        Example:
+            >>> expertise.add_note("Always validate input ranges")
+        """
+        if not note.strip():
+            return
+        self.notes.add(note.strip())
