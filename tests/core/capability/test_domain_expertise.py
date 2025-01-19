@@ -20,7 +20,7 @@ def test_domain_expertise_basic():
     assert "plan" in expertise.keywords
     assert len(expertise.notes) == 0
 
-def test_domain_expertise_add_notes_from_file():
+def test_domain_expertise_add_note_from_file():
     """Test adding notes from README file."""
     # Create expertise instance
     expertise = DomainExpertise(
@@ -33,7 +33,7 @@ def test_domain_expertise_add_notes_from_file():
     readme_path = test_dir.parent.parent.parent / "README.md"
     
     # Add README content as note
-    expertise.add_notes_from_file(readme_path)
+    expertise.add_note_from_file(readme_path)
     
     # Verify note was added
     assert len(expertise.notes) == 1
@@ -94,4 +94,4 @@ def test_domain_expertise_file_not_found():
     expertise = DomainExpertise(name="test")
     
     with pytest.raises(FileNotFoundError):
-        expertise.add_notes_from_file("nonexistent.txt")
+        expertise.add_note_from_file("nonexistent.txt")

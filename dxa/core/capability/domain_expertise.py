@@ -82,7 +82,7 @@ class DomainExpertise:
             return
         self.notes.add(note.strip())
 
-    def add_notes_from_file(self, file_path: Union[str, Path]) -> None:
+    def add_note_from_file(self, file_path: Union[str, Path]) -> None:
         """Add contents of a text file as a single note.
         
         The entire file content will be added as one note,
@@ -96,7 +96,7 @@ class DomainExpertise:
             UnicodeDecodeError: If file is not valid UTF-8
             
         Example:
-            >>> expertise.add_notes_from_file("math_theory.txt")
+            >>> expertise.add_note_from_file("math_theory.txt")
         """
         path = Path(file_path)
         try:
