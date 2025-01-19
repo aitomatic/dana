@@ -37,4 +37,12 @@ class BaseCapability(ABC):
     def can_handle(self, request: Dict[str, Any]) -> bool:
         """Check if capability can handle request."""
         raise NotImplementedError
-  
+
+    @property
+    def long_description(self) -> str:
+        """Get detailed description of the capability.
+        
+        Returns:
+            Detailed description including name and description
+        """
+        return f"Capability: {self.name}\n{self.description}"
