@@ -46,35 +46,42 @@ class Executor(ABC):
             assert upper_graph is not None
             self._graph = self._create_graph(upper_graph, upper_graph.objective, context)
         
-        # Use cursor on our own graph
-        cursor = self._graph.start_cursor()
+        # Setup buffers before execution
+        await self._graph.setup_node_buffers(context)
+        
+        try:
+            # Use cursor on our own graph
+            cursor = self._graph.start_cursor()
 
-        all_signals = []
-        prev_signals = []
-        while (current := cursor.next()) is not None:
-            indent = ""
-            if self.__class__.__name__ == "PlanExecutor":
-                indent = "          "
-            elif self.__class__.__name__ == "ReasoningExecutor":
-                indent = "                 "
-            print(f"{indent}Executing {self.__class__.__name__} node {current.node_id}")
+            all_signals = []
+            prev_signals = []
+            while (current := cursor.next()) is not None:
+                indent = ""
+                if self.__class__.__name__ == "PlanExecutor":
+                    indent = "          "
+                elif self.__class__.__name__ == "ReasoningExecutor":
+                    indent = "                 "
+                print(f"{indent}Executing {self.__class__.__name__} node {current.node_id}")
 
-            try:
-                assert self.graph is not None
-                self.graph.update_node_status(current.node_id, ExecutionNodeStatus.IN_PROGRESS)
-                node = cast(ExecutionNode, current)
+                try:
+                    assert self.graph is not None
+                    self.graph.update_node_status(current.node_id, ExecutionNodeStatus.IN_PROGRESS)
+                    node = cast(ExecutionNode, current)
 
-                new_signals = await self.execute_node(node, context, prev_signals, upper_signals)
+                    new_signals = await self.execute_node(node, context, prev_signals, upper_signals)
 
-                all_signals.extend(new_signals)
-                self._process_node_signals(current.node_id, new_signals)
-            # pylint: disable=broad-exception-caught
-            except Exception as e:
-                self._handle_node_error(current.node_id, str(e))
-                all_signals.append(self._create_error_signal(current.node_id, str(e)))
-                break
+                    all_signals.extend(new_signals)
+                    self._process_node_signals(current.node_id, new_signals)
+                # pylint: disable=broad-exception-caught
+                except Exception as e:
+                    self._handle_node_error(current.node_id, str(e))
+                    all_signals.append(self._create_error_signal(current.node_id, str(e)))
+                    break
                 
-        return all_signals
+            return all_signals
+        finally:
+            # Cleanup buffers after execution
+            await self._graph.cleanup_node_buffers(context)
 
     @abstractmethod
     async def execute_node(self,

@@ -1,7 +1,7 @@
 """Execution-specific types for DXA."""
 
 from dataclasses import dataclass, field
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Callable, Awaitable
 from datetime import datetime
 from enum import StrEnum
 from ...common.graph import Node, Edge, NodeType
@@ -20,9 +20,15 @@ class ExecutionNodeStatus(StrEnum):
 class ExecutionNode(Node):
     """Node with execution-specific attributes."""
     status: ExecutionNodeStatus = ExecutionNodeStatus.NONE
+    step: Optional[Callable[[Dict[str, Any]], Awaitable[Dict[str, Any]]]] = None
     result: Optional[Dict[str, Any]] = None
     requires: Dict[str, Any] = field(default_factory=dict)
     provides: Dict[str, Any] = field(default_factory=dict)
+    buffer_config: Dict[str, Any] = field(default_factory=lambda: {
+        "enabled": False,
+        "size": 1000,
+        "mode": "streaming"
+    })
 
     # pylint: disable=too-many-arguments
     def __init__(self, 
@@ -30,12 +36,14 @@ class ExecutionNode(Node):
                  node_type: NodeType, 
                  description: str, 
                  status: ExecutionNodeStatus = ExecutionNodeStatus.NONE, 
+                 step: Optional[Any] = None,
                  result: Optional[Dict[str, Any]] = None, 
                  metadata: Optional[Dict[str, Any]] = None,
                  requires: Optional[Dict[str, Any]] = None,
                  provides: Optional[Dict[str, Any]] = None):
         super().__init__(node_id=node_id, node_type=node_type, description=description, metadata=metadata or {})
         self.status = status
+        self.step = step
         self.result = result
         self.requires = requires or {}
         self.provides = provides or {}
@@ -54,13 +62,12 @@ class ExecutionSignalType(StrEnum):
     STATUS = "STATUS"
     STATE_CHANGE = "STATE_CHANGE"
     COMPLETE = "COMPLETE"
-    # WORKFLOW_UPDATE = "WORKFLOW_UPDATE"
-    # REASONING_UPDATE = "REASONING_UPDATE"
-    # DISCOVERY = "DISCOVERY"
-    # STEP_COMPLETE = "STEP_COMPLETE"
-    # STEP_FAILED = "STEP_FAILED"
-    # OBJECTIVE_UPDATE = "OBJECTIVE_UPDATE"
-
+    
+    # New data flow types
+    DATA_CHUNK = "DATA_CHUNK"
+    BUFFER_STATE = "BUFFER_STATE"
+    STREAM_START = "STREAM_START"
+    STREAM_END = "STREAM_END"
 
 @dataclass
 class ExecutionSignal:

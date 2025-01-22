@@ -9,6 +9,28 @@ from .execution_types import (
 from .execution_context import ExecutionContext
 from .execution_graph import ExecutionGraph
 from .executor import Executor
+from .pipeline import (
+    Pipeline,
+    PipelineSteps,
+)
+from .workflow import (
+    Workflow,
+    WorkflowFactory,
+    WorkflowExecutor,
+    WorkflowStrategy,
+)
+from .planning import (
+    Plan,
+    PlanningFactory,
+    PlanningStrategy,
+    PlanExecutor,
+)
+from .reasoning import (
+    Reasoning,
+    ReasoningFactory,
+    ReasoningStrategy,
+    ReasoningExecutor,
+)
 
 __all__ = [
     'Objective',
@@ -21,4 +43,18 @@ __all__ = [
     'ExecutionNodeStatus',
     'Executor',
     'ExecutionContext',
+    'Pipeline',
+    'Workflow',
+    'WorkflowFactory',
+    'WorkflowExecutor',
+    'WorkflowStrategy',
+    'PipelineSteps',
+    'Plan',
+    'PlanningFactory',
+    'PlanningStrategy',
+    'PlanExecutor',
+    'Reasoning',
+    'ReasoningFactory',
+    'ReasoningStrategy',
+    'ReasoningExecutor',
 ]

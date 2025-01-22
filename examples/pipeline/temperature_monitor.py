@@ -1,7 +1,7 @@
 """Temperature monitoring pipeline example."""
 
 from typing import Dict, Any
-from dxa.core.resource.pipeline import PipelineResource
+from dxa.core.resource.pipeline import Pipeline
 
 async def main():
     """Run temperature monitoring pipeline."""
@@ -25,7 +25,7 @@ async def main():
         return data
 
     # Create pipeline
-    pipeline = PipelineResource(
+    pipeline = Pipeline(
         name="temp_monitor",
         steps=[read_sensor, analyze, report]
     )

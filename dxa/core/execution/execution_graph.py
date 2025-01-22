@@ -30,6 +30,7 @@ class ExecutionGraph(DirectedGraph):
         self.name = name
         self._metadata = {"layer": layer}
         self.history: List[Dict] = []
+        self._context: Optional['ExecutionContext'] = None
     
     @property
     def metadata(self) -> Dict[str, Any]:
@@ -94,25 +95,56 @@ class ExecutionGraph(DirectedGraph):
             if node.status == ExecutionNodeStatus.IN_PROGRESS
         ]
 
+    @property
+    def context(self) -> Optional['ExecutionContext']:
+        """Get execution context."""
+        return self._context
+
+    @context.setter 
+    def context(self, context: 'ExecutionContext') -> None:
+        """Set execution context."""
+        self._context = context
+
     def process_signal(self, signal: ExecutionSignal) -> List[ExecutionSignal]:
-        """Common signal processing for all execution graphs."""
+        """Process execution signals."""
         new_signals = []
+        
         if signal.type == ExecutionSignalType.STATE_CHANGE:
             # Common state updates
             self.metadata.update(signal.content.get("metadata", {}))
+            
         elif signal.type == ExecutionSignalType.COMPLETE:
             # Common step completion handling
             if node_id := signal.content.get("node"):
                 self.update_node_status(node_id, ExecutionNodeStatus.COMPLETED)
-                # Notify state change
                 new_signals.append(ExecutionSignal(
-                    ExecutionSignalType.STATE_CHANGE,
-                    {
+                    type=ExecutionSignalType.STATE_CHANGE,
+                    content={
                         "component": self.metadata.get("layer", "execution"),
                         "type": "step_completed",
                         "node": node_id
                     }
                 ))
+                
+        elif signal.type == ExecutionSignalType.DATA_CHUNK:
+            # Handle data flow signals
+            target = signal.content.get("target")
+            if target in self.nodes and self.context:
+                assert self.nodes is not None
+                assert isinstance(self.nodes, dict)  # More specific type check
+                node = cast(ExecutionNode, self.nodes[target])
+                if node.buffer_config["enabled"]:
+                    # Buffer state monitoring
+                    buffer = self.context.buffers.get(target)
+                    if buffer and buffer.full():
+                        new_signals.append(ExecutionSignal(
+                            type=ExecutionSignalType.BUFFER_STATE,
+                            content={
+                                "node": target,
+                                "state": "full"
+                            }
+                        ))
+        
         return new_signals
 
     def to_ascii_art(self) -> str:
@@ -197,6 +229,14 @@ class ExecutionGraph(DirectedGraph):
         except ValueError as e:
             raise ValueError("Invalid graph structure: " + str(e)) from e
 
+        # Add buffer validation
+        for node in self.nodes.values():
+            if node.buffer_config["enabled"]:
+                if node.buffer_config["size"] <= 0:
+                    raise ValueError(f"Invalid buffer size for node {node.node_id}")
+                if node.buffer_config["mode"] not in ["streaming", "batch"]:
+                    raise ValueError(f"Invalid buffer mode for node {node.node_id}")
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert execution graph to dictionary representation."""
         return {
@@ -248,6 +288,13 @@ class ExecutionGraph(DirectedGraph):
             self.nodes[node_id] = new_node
         
         self.edges = new_graph.edges
+        
+        # Preserve buffer configuration
+        for node_id, new_node in new_graph.nodes.items():
+            if node_id in self.nodes:
+                current = cast(ExecutionNode, self.nodes[node_id])
+                new = cast(ExecutionNode, new_node)
+                new.buffer_config = current.buffer_config
 
     def create_signal(self, signal_type: str, content: Any) -> ExecutionSignal:
         """Create a signal with proper typing."""
@@ -306,3 +353,50 @@ class ExecutionGraph(DirectedGraph):
     #     """Get all END type nodes."""
     #     return [node for node in self.nodes.values() 
     #             if node.node_type == NodeType.END]
+
+    async def setup_node_buffers(self, context: 'ExecutionContext') -> None:
+        """Setup buffers for all nodes that need them."""
+        for node_id, node in self.nodes.items():
+            if node.buffer_config["enabled"]:
+                await context.setup_buffer(
+                    node_id, 
+                    node.buffer_config["size"]
+                )
+
+    async def send_data_signal(self, source: str, target: str, data: Any, 
+                               context: Optional['ExecutionContext'] = None) -> ExecutionSignal:
+        """Send data between nodes via signals."""
+        signal = ExecutionSignal(
+            type=ExecutionSignalType.DATA_CHUNK,
+            content={
+                "source": source,
+                "target": target,
+                "data": data
+            }
+        )
+        await context.send_data(target, data)
+        return signal
+
+    async def cleanup_node_buffers(self, context: 'ExecutionContext') -> None:
+        """Cleanup buffers for all nodes."""
+        await context.cleanup_buffers()
+
+    async def receive_data_signal(self, node_id: str, context: 'ExecutionContext') -> Optional[Any]:
+        """Receive data for a node via signals."""
+        if node_id not in self.nodes:
+            return None
+            
+        node = cast(ExecutionNode, self.nodes[node_id])
+        if not node.buffer_config["enabled"]:
+            return None
+            
+        data = await context.receive_data(node_id)
+        if data is not None:
+            return ExecutionSignal(
+                type=ExecutionSignalType.DATA_CHUNK,
+                content={
+                    "node": node_id,
+                    "data": data
+                }
+            )
+        return None
