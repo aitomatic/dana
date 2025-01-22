@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from ..workflow import Workflow
     from ..planning import Plan
     from ..reasoning import Reasoning
-    from ..resource import LLMResource
+    from ..resource import BaseResource, LLMResource
 
 @dataclass
 class ExecutionContext:
@@ -25,7 +25,10 @@ class ExecutionContext:
     current_plan: Optional['Plan'] = None
     current_reasoning: Optional['Reasoning'] = None
 
-    # LLM resources
+    # Resources
+    resources: Dict[str, 'BaseResource'] = field(default_factory=dict)  # All available resources
+
+    # Commonly used LLMs
     workflow_llm: Optional['LLMResource'] = None
     planning_llm: Optional['LLMResource'] = None
     reasoning_llm: Optional['LLMResource'] = None
@@ -51,7 +54,7 @@ class ExecutionContext:
 
         param_value = self.current_data["values"][param_name]
         param_def = self.parameters.get("rf_matching", {}).get(param_name, {})
-        
+
         if not param_def or "normal_range" not in param_def:
             return True
 
