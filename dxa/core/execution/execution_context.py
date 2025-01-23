@@ -6,9 +6,9 @@ import asyncio
 from datetime import datetime
 if TYPE_CHECKING:
     from ..state import AgentState, WorldState, ExecutionState
-    from ..workflow import Workflow
-    from ..planning import Plan
-    from ..reasoning import Reasoning
+    from .workflow import Workflow
+    from .planning import Plan
+    from .reasoning import Reasoning
     from ..resource import BaseResource, LLMResource
 
 @dataclass

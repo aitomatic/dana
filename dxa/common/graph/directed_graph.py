@@ -225,3 +225,7 @@ class DirectedGraph:
         if node_id not in self.nodes:
             raise ValueError(f"Node {node_id} not found in graph")
         self._cursor = self.get_a_cursor(self.nodes[node_id])
+
+    def get_outgoing_edges(self, node_id: str) -> List[Edge]:
+        """Get all edges going out from node."""
+        return self._outgoing.get(node_id, [])

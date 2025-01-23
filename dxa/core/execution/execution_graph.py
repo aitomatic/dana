@@ -125,25 +125,6 @@ class ExecutionGraph(DirectedGraph):
                         "node": node_id
                     }
                 ))
-                
-        elif signal.type == ExecutionSignalType.DATA_CHUNK:
-            # Handle data flow signals
-            target = signal.content.get("target")
-            if target in self.nodes and self.context:
-                assert self.nodes is not None
-                assert isinstance(self.nodes, dict)  # More specific type check
-                node = cast(ExecutionNode, self.nodes[target])
-                if node.buffer_config["enabled"]:
-                    # Buffer state monitoring
-                    buffer = self.context.buffers.get(target)
-                    if buffer and buffer.full():
-                        new_signals.append(ExecutionSignal(
-                            type=ExecutionSignalType.BUFFER_STATE,
-                            content={
-                                "node": target,
-                                "state": "full"
-                            }
-                        ))
         
         return new_signals
 
@@ -353,50 +334,3 @@ class ExecutionGraph(DirectedGraph):
     #     """Get all END type nodes."""
     #     return [node for node in self.nodes.values() 
     #             if node.node_type == NodeType.END]
-
-    async def setup_node_buffers(self, context: 'ExecutionContext') -> None:
-        """Setup buffers for all nodes that need them."""
-        for node_id, node in self.nodes.items():
-            if node.buffer_config["enabled"]:
-                await context.setup_buffer(
-                    node_id, 
-                    node.buffer_config["size"]
-                )
-
-    async def send_data_signal(self, source: str, target: str, data: Any, 
-                               context: Optional['ExecutionContext'] = None) -> ExecutionSignal:
-        """Send data between nodes via signals."""
-        signal = ExecutionSignal(
-            type=ExecutionSignalType.DATA_CHUNK,
-            content={
-                "source": source,
-                "target": target,
-                "data": data
-            }
-        )
-        await context.send_data(target, data)
-        return signal
-
-    async def cleanup_node_buffers(self, context: 'ExecutionContext') -> None:
-        """Cleanup buffers for all nodes."""
-        await context.cleanup_buffers()
-
-    async def receive_data_signal(self, node_id: str, context: 'ExecutionContext') -> Optional[Any]:
-        """Receive data for a node via signals."""
-        if node_id not in self.nodes:
-            return None
-            
-        node = cast(ExecutionNode, self.nodes[node_id])
-        if not node.buffer_config["enabled"]:
-            return None
-            
-        data = await context.receive_data(node_id)
-        if data is not None:
-            return ExecutionSignal(
-                type=ExecutionSignalType.DATA_CHUNK,
-                content={
-                    "node": node_id,
-                    "data": data
-                }
-            )
-        return None
