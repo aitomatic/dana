@@ -3,9 +3,10 @@
 from pathlib import Path
 from typing import List, Optional, Union, Dict
 import yaml
-from ..execution import Objective, ExecutionNode
+
+from ..execution_types import Objective, ExecutionNode
 from .workflow import Workflow
-from ...common.graph import NodeType, Edge
+from ....common.graph import NodeType, Edge
 
 class WorkflowFactory:
     """Factory for creating workflow patterns."""
@@ -79,13 +80,13 @@ class WorkflowFactory:
             ))
             workflow.add_transition(prev_id, node_id)
             prev_id = node_id
-            
+
         workflow.add_transition(prev_id, "END")
         return workflow
 
     @classmethod
     def create_minimal_workflow(cls, objective: Optional[Union[str, Objective]] = None) -> Workflow:
-        """Create minimal workflow with START -> TASK -> END. 
+        """Create minimal workflow with START -> TASK -> END.
         The task node will have the objective as its description.
         """
         objective = Objective(objective) if isinstance(objective, str) else objective
@@ -105,7 +106,7 @@ class WorkflowFactory:
         return workflow
 
     @classmethod
-    def create_monitoring_workflow(cls, 
+    def create_monitoring_workflow(cls,
                                    parameters: List[str],
                                    name: str = "monitoring",
                                    description: str = "") -> Workflow:

@@ -2,11 +2,20 @@
 
 from enum import StrEnum
 from typing import List, cast, Optional, TYPE_CHECKING
-from ..execution import Executor, ExecutionNode, ExecutionSignal, ExecutionContext, Objective
+
+from ..execution_context import ExecutionContext
+from ..execution_types import (
+    ExecutionNode,
+    ExecutionSignal,
+    Objective,
+    ExecutionEdge
+)
+from ..execution_graph import ExecutionGraph
+from ..executor import Executor
 from .plan import Plan
-from ..workflow import Workflow
-from ..execution import ExecutionGraph, ExecutionEdge
-from ...common.graph import NodeType
+from ..workflow.workflow import Workflow
+from ....common.graph import NodeType
+
 if TYPE_CHECKING:
     from ..reasoning import ReasoningExecutor
 
@@ -31,7 +40,7 @@ class PlanExecutor(Executor):
         if self._strategy == PlanningStrategy.DEFAULT:
             self._strategy = PlanningStrategy.WORKFLOW_IS_PLAN
         return self._strategy
-    
+
     @strategy.setter
     def strategy(self, strategy: PlanningStrategy):
         """Set workflow strategy."""
@@ -40,7 +49,7 @@ class PlanExecutor(Executor):
         self._strategy = strategy
 
     async def execute_node(self, node: ExecutionNode,
-                           context: ExecutionContext, 
+                           context: ExecutionContext,
                            prev_signals: List[ExecutionSignal],
                            upper_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
         """Execute a plan node using reasoning executor."""
@@ -50,33 +59,33 @@ class PlanExecutor(Executor):
         # Safety: make sure our graph is set
         if self.graph is None and context.current_plan:
             self.graph = context.current_plan
-        
+
         if context.current_plan is None and self.graph:
             context.current_plan = cast(Plan, self.graph)
 
         # Get the workflow from context
         workflow = cast(Workflow, context.current_workflow)
-        
+
         # Update workflow cursor if using COPY_WORKFLOW strategy
         if self.strategy == PlanningStrategy.WORKFLOW_IS_PLAN:
             workflow.update_cursor(node.node_id)  # Uses DirectedGraph's method
-        
+
         if node.node_type in [NodeType.START, NodeType.END]:
             return []   # Start and end nodes just initialize/terminate flow
-        
+
         # Execute the node
         assert self.graph is not None
-        signals = await self.reasoning_executor.execute(upper_graph=self.graph, 
-                                                        context=context, 
+        signals = await self.reasoning_executor.execute(upper_graph=self.graph,
+                                                        context=context,
                                                         # Pass my prev_signals down to reasoning executor
                                                         upper_signals=prev_signals
                                                         )
-        
+
         return signals
 
-    def _create_graph(self, 
-                      upper_graph: ExecutionGraph, 
-                      objective: Optional[Objective] = None, 
+    def _create_graph(self,
+                      upper_graph: ExecutionGraph,
+                      objective: Optional[Objective] = None,
                       context: Optional[ExecutionContext] = None) -> ExecutionGraph:
         """Create this layer's graph from the upper layer's graph."""
         plan = self._create_plan(cast(Workflow, upper_graph), objective)
@@ -104,7 +113,7 @@ class PlanExecutor(Executor):
         current_node = workflow.get_current_node()
         if not current_node:
             raise ValueError("No current node in workflow")
-        
+
         assert objective is not None
         plan = self._create_execution_graph([
             ExecutionNode(
@@ -135,7 +144,7 @@ class PlanExecutor(Executor):
     def _create_follow_workflow_plan(self, workflow: Workflow, objective: Optional[Objective] = None) -> Plan:
         """Create exact structural copy of workflow."""
         plan = Plan(objective or workflow.objective)
-        
+
         # Copy nodes with same IDs to maintain cursor sync
         for node_id, node in workflow.nodes.items():
             plan.add_node(ExecutionNode(
@@ -143,9 +152,9 @@ class PlanExecutor(Executor):
                 node_type=node.node_type,
                 description=node.description
             ))
-        
+
         # Copy edges to maintain structure
         for edge in workflow.edges:
             plan.add_edge(ExecutionEdge(edge.source, edge.target))
-        
+
         return plan

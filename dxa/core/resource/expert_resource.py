@@ -15,19 +15,19 @@ Features:
 
 Example:
     from dxa.core.capabilities.expertise import DomainExpertise
-    
+
     expertise = DomainExpertise(
         name="Mathematics",
         capabilities=["algebra", "calculus"],
         keywords=["solve", "equation", "derivative"]
     )
-    
+
     expert = ExpertResource(
         name="math_expert",
         expertise=expertise,
         config={"model": "gpt-4"}
     )
-    
+
     response = await expert.query({
         "prompt": "Solve the equation x^2 + 2x + 1 = 0"
     })
@@ -38,7 +38,7 @@ from typing import Dict, Any, Optional
 from dxa.core.resource.llm_resource import LLMConfig
 from dxa.core.capability.domain_expertise import DomainExpertise
 from dxa.core.resource.base_resource import BaseResource, ResourceResponse, ResourceConfig
-from dxa.core.resource.io import IOFactory
+from dxa.core.io import IOFactory
 
 
 @dataclass
@@ -59,13 +59,13 @@ class ExpertResponse(ResourceResponse):
 
 class ExpertResource(BaseResource):
     """Resource for interacting with human experts."""
-    
+
     # pylint: disable=too-many-arguments
-    def __init__(self, 
-                 name: str, 
-                 expertise: Optional[DomainExpertise] = None, 
+    def __init__(self,
+                 name: str,
+                 expertise: Optional[DomainExpertise] = None,
                  system_prompt: Optional[str] = None,
-                 confidence_threshold: float = 0.7, 
+                 confidence_threshold: float = 0.7,
                  llm_config: Optional[LLMConfig] = None):
         super().__init__(name)
         self.expertise = expertise
@@ -83,7 +83,7 @@ class ExpertResource(BaseResource):
         """Get expert input."""
         if not self._io:
             await self.initialize()
-        
+
         response = await self._io.get_input(request.get("prompt"))
         return {
             "success": True,

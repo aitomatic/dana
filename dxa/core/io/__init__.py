@@ -6,12 +6,12 @@ This package provides various I/O resource implementations, including:
 
 Example:
     ```python
-    from dxa.core.resource.io import ConsoleIOResource, WebSocketIOResource
-    
+    from dxa.core.io import ConsoleIOResource, WebSocketIOResource
+
     # Using console I/O
     async with ConsoleIOResource() as io:
         await io.send("Hello!")
-        
+
     # Using WebSocket I/O
     async with WebSocketIOResource("ws://localhost:8765") as io:
         await io.send("Hello!")
@@ -25,7 +25,7 @@ from .io_factory import IOFactory
 
 __all__ = [
     'BaseIO',
-    'ConsoleIO', 
+    'ConsoleIO',
     'WebSocketIO',
     'IOFactory'
-] 
+]

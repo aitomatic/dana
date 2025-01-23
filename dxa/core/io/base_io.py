@@ -8,18 +8,18 @@ input/output operations while extending BaseResource functionality.
 from abc import abstractmethod
 from typing import Any, Dict, Optional
 import logging
-from ..base_resource import BaseResource
+from ..resource.base_resource import BaseResource
 
 class BaseIO(BaseResource):
     """Base class for I/O resources.
-    
+
     This abstract class defines the interface for handling input/output operations
     in DXA while providing resource capabilities.
 
     Attributes:
         logger: A logging instance for the I/O implementation
     """
-    
+
     def __init__(self, name: str, description: Optional[str] = None):
         """Initialize base I/O with logging and resource capabilities."""
         super().__init__(name, description)
@@ -37,13 +37,13 @@ class BaseIO(BaseResource):
 
     async def query(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Handle resource queries by mapping to send/receive.
-        
+
         Args:
             request: Dict with either "send" or "receive" key
-            
+
         Returns:
             Dict with query results
-            
+
         Raises:
             ValueError: If neither send nor receive specified
         """
@@ -57,4 +57,4 @@ class BaseIO(BaseResource):
 
     def can_handle(self, request: Dict[str, Any]) -> bool:
         """Check if request contains valid IO operations."""
-        return "send" in request or "receive" in request 
+        return "send" in request or "receive" in request

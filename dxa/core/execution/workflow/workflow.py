@@ -1,7 +1,9 @@
 """Workflow implementation for high-level process."""
 
 from typing import List, Dict, Any, Optional, Union
-from ..execution import ExecutionGraph, ExecutionSignal, Objective
+
+from ..execution_graph import ExecutionGraph
+from ..execution_types import ExecutionSignal, Objective
 
 class Workflow(ExecutionGraph):
     """High-level business process (WHY layer)."""
@@ -10,7 +12,7 @@ class Workflow(ExecutionGraph):
         super().__init__(objective, name=name)
         self._cursor = None
         self._objective = objective if isinstance(objective, Objective) else Objective(objective)
-        
+
     def update_from_signal(self, signal: ExecutionSignal) -> None:
         """Update workflow based on signal."""
         pass  # For simple QA, no updates needed

@@ -21,19 +21,20 @@ See dxa/agent/README.md for detailed design documentation.
 
 import asyncio
 from typing import Dict, Union, Optional, Any
-from ..workflow import Workflow
-from ..workflow import WorkflowFactory
+from ..execution import (
+    Workflow,
+    WorkflowFactory,
+    WorkflowStrategy,
+    PlanningStrategy,
+    ReasoningStrategy,
+    ExecutionContext
+)
 from ..capability import BaseCapability
 from ..resource import BaseResource, LLMResource
-from ..resource.io import BaseIO, IOFactory
-from ..state import AgentState
-from ..workflow import WorkflowStrategy
-from ..planning import PlanningStrategy
-from ..reasoning import ReasoningStrategy
+from ..io import BaseIO, IOFactory
+from ..state import AgentState, WorldState, ExecutionState
 from ...common.utils.config import load_agent_config
 from .agent_runtime import AgentRuntime
-from ..execution import ExecutionContext
-from ..state import WorldState, ExecutionState
 
 # pylint: disable=too-many-public-methods
 class Agent:

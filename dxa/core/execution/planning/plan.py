@@ -1,11 +1,13 @@
 """Plan implementation for concrete execution steps."""
 
 from typing import List, Optional
-from ..execution import ExecutionGraph, Objective, ExecutionNode
+
+from ..execution_graph import ExecutionGraph
+from ..execution_types import Objective, ExecutionNode
 
 class Plan(ExecutionGraph):
     """Concrete execution steps (WHAT layer)."""
-    
+
     def __init__(self, objective: Optional[Objective] = None):
         """Initialize plan."""
         super().__init__(
