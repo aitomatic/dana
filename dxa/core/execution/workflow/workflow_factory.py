@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import List, Optional, Union, Dict
 import yaml
 
+from ..execution_graph import ExecutionGraph
 from ..execution_types import Objective, ExecutionNode
 from .workflow import Workflow
 from ....common.graph import NodeType, Edge
@@ -49,25 +50,12 @@ class WorkflowFactory:
         return workflow
 
     @classmethod
-    def _add_start_end_nodes(cls, workflow: Workflow) -> None:
-        """Add START and END nodes to workflow."""
-        workflow.add_node(ExecutionNode(
-            node_id="START",
-            node_type=NodeType.START,
-            description="Begin workflow"
-        ))
-        workflow.add_node(ExecutionNode(
-            node_id="END",
-            node_type=NodeType.END,
-            description="End workflow"
-        ))
-
-    @classmethod
     def create_sequential_workflow(cls, objective: Union[str, Objective], commands: List[str]) -> Workflow:
         """Create a sequential workflow from list of commands."""
         objective = Objective(objective) if isinstance(objective, str) else objective
         workflow = Workflow(objective)
-        cls._add_start_end_nodes(workflow)
+        # pylint: disable=protected-access
+        ExecutionGraph._add_start_end_nodes(graph=workflow)
 
         # Create task nodes for each command
         prev_id = "START"
@@ -91,7 +79,8 @@ class WorkflowFactory:
         """
         objective = Objective(objective) if isinstance(objective, str) else objective
         workflow = Workflow(objective)
-        cls._add_start_end_nodes(workflow)
+        # pylint: disable=protected-access
+        ExecutionGraph._add_start_end_nodes(graph=workflow)
 
         # Add task node
         workflow.add_node(ExecutionNode(

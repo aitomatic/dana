@@ -50,8 +50,9 @@ class PlanExecutor(Executor):
 
     async def execute_node(self, node: ExecutionNode,
                            context: ExecutionContext,
-                           prev_signals: List[ExecutionSignal],
-                           upper_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
+                           prev_signals: Optional[List[ExecutionSignal]] = None,
+                           upper_signals: Optional[List[ExecutionSignal]] = None,
+                           lower_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
         """Execute a plan node using reasoning executor."""
 
         # TODO: use upper_signals somehow?

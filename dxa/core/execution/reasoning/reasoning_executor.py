@@ -47,8 +47,9 @@ class ReasoningExecutor(Executor):
         return await super().execute(upper_graph=reasoning, context=context, upper_signals=upper_signals)
 
     async def execute_node(self, node: ExecutionNode, context: ExecutionContext,
-                           prev_signals: List[ExecutionSignal],
-                           upper_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
+                           prev_signals: Optional[List[ExecutionSignal]] = None,
+                           upper_signals: Optional[List[ExecutionSignal]] = None,
+                           lower_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
         """Execute a reasoning node using LLM."""
         if not context.reasoning_llm:
             raise ValueError("No reasoning LLM configured in context")
@@ -116,14 +117,14 @@ class ReasoningExecutor(Executor):
         """Execute direct LLM query."""
         assert context.reasoning_llm is not None
         response = await context.reasoning_llm.query({"prompt": node.description})
-        return [ExecutionSignal(type=ExecutionSignalType.RESULT, content=response)]
+        return [ExecutionSignal(type=ExecutionSignalType.DATA_RESULT, content=response)]
 
     async def _execute_cot(self, node: ExecutionNode, context: ExecutionContext) -> List[ExecutionSignal]:
         """Execute chain-of-thought reasoning."""
         prompt = f"Let's solve this step by step:\nQuestion: {node.description}\nThought process:"
         assert context.reasoning_llm is not None
         response = await context.reasoning_llm.query({"prompt": prompt})
-        return [ExecutionSignal(type=ExecutionSignalType.RESULT, content=response)]
+        return [ExecutionSignal(type=ExecutionSignalType.DATA_RESULT, content=response)]
 
     async def _execute_ooda(self, node: ExecutionNode, context: ExecutionContext) -> List[ExecutionSignal]:
         """Execute OODA loop reasoning."""
@@ -140,7 +141,7 @@ class ReasoningExecutor(Executor):
         response = loop.run_until_complete(context.reasoning_llm.query({"prompt": prompt}))
 
         node.metadata["ooda_stage"] = stage + 1
-        return [ExecutionSignal(type=ExecutionSignalType.RESULT, content=response)]
+        return [ExecutionSignal(type=ExecutionSignalType.DATA_RESULT, content=response)]
 
     async def _execute_dana(self, node: ExecutionNode, context: ExecutionContext) -> List[ExecutionSignal]:
         """Execute DANA pattern reasoning."""

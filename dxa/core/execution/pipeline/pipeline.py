@@ -9,7 +9,7 @@ Features:
 - Buffer data between steps
 """
 
-from typing import Dict, Any, Optional, List, Callable, Awaitable
+from typing import Dict, Any, Optional, List, Callable, Awaitable, cast
 from dataclasses import dataclass, field
 from ....common.graph import NodeType
 from ...execution import (
@@ -17,7 +17,7 @@ from ...execution import (
     ExecutionSignal, ExecutionContext,
     ExecutionSignalType
 )
-from .pipeline_executor import PipelineExecutor
+from .pipeline_context import PipelineContext
 
 # A pipeline step is just an async function that processes data
 PipelineStep = Callable[[Dict[str, Any]], Awaitable[Dict[str, Any]]]
@@ -33,23 +33,38 @@ class PipelineNode(ExecutionNode):
         "mode": "streaming"
     })
 
+    async def _identity(self, data: Any) -> Any:
+        """Identity function."""
+        return data
+
     def __init__(
         self,
         node_id: str,
         node_type: NodeType,
         description: str,
-        step: PipelineStep,
-        buffer_config: Dict[str, Any]
+        step: Optional[PipelineStep] = None,
+        buffer_config: Optional[Dict[str, Any]] = None
     ) -> None:
         """Initialize pipeline node."""
         super().__init__(node_id=node_id, node_type=node_type, description=description)
+
+        if step is None:
+            step = cast(PipelineStep, self._identity)
         self.step = step
+
+        if buffer_config is None:
+            buffer_config = {
+                "enabled": False,
+                "size": 1000,
+                "mode": "streaming"
+            }
         self.buffer_config = buffer_config
 
     async def execute(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Execute the pipeline step."""
         if self.step is None:
             raise RuntimeError("No step defined for node")
+
         return await self.step(data)
 
 class Pipeline(ExecutionGraph):
@@ -67,17 +82,19 @@ class Pipeline(ExecutionGraph):
         self.name = name
         self.buffer_size = buffer_size
         self.batch_size = batch_size
-        self._context: Optional[ExecutionContext] = None
+        self._context: Optional[PipelineContext] = None
         self._build_graph(steps)
 
     @property
-    def context(self) -> Optional[ExecutionContext]:
+    def context(self) -> Optional[PipelineContext]:
         """Get execution context."""
         return self._context
 
     @context.setter
     def context(self, context: ExecutionContext) -> None:
         """Set execution context."""
+        if not isinstance(context, PipelineContext):
+            raise TypeError("Pipeline requires PipelineContext")
         self._context = context
 
     def _build_graph(self, steps: List[PipelineStep]) -> None:
@@ -108,21 +125,38 @@ class Pipeline(ExecutionGraph):
             if prev_node:
                 self.add_edge(ExecutionEdge(source=prev_node, target=node_id))
             prev_node = node_id
+        
+        ExecutionGraph._add_start_end_nodes(graph=self, node_cls=PipelineNode)
 
     async def execute(self) -> Dict[str, Any]:
         """Execute pipeline."""
+        context = self.context
+        if context is None:
+            context = PipelineContext()
+            await self.setup(context)
+            self.context = context
+    
+        # Execute pipeline
+        return await self._execute()
+        
+    async def _execute(self) -> Dict[str, Any]:
+        """Execute pipeline (raw, i.e. without context setup)."""
         if self.context is None:
             raise RuntimeError("Pipeline context not set. Call setup() first.")
-        
+
         try:
             await self.setup_node_buffers(self.context)
+            # pylint: disable=import-outside-toplevel
+            from .pipeline_executor import PipelineExecutor
             executor = PipelineExecutor()
             executor.graph = self
-            return await executor.execute(self, self.context)
+            signals = await executor.execute(self, self.context)
+            # Get final result from last signal
+            return signals[-1].content.get("result", {})
         finally:
             await self.cleanup_node_buffers(self.context)
 
-    async def setup(self, context: ExecutionContext) -> None:
+    async def setup(self, context: PipelineContext) -> None:
         """Setup pipeline buffers."""
         self.context = context
         await self.setup_node_buffers(context)
@@ -140,10 +174,12 @@ class Pipeline(ExecutionGraph):
         """Setup buffers for all nodes that need them."""
         for node_id, node in self.nodes.items():
             if isinstance(node, PipelineNode) and node.buffer_config["enabled"]:
+                context = cast(PipelineContext, context)
                 await context.setup_buffer(node_id, node.buffer_config["size"])
 
     async def cleanup_node_buffers(self, context: ExecutionContext) -> None:
         """Cleanup buffers for all nodes."""
+        context = cast(PipelineContext, context)
         await context.cleanup_buffers()
 
     async def send_data_signal(
@@ -155,7 +191,7 @@ class Pipeline(ExecutionGraph):
     ) -> ExecutionSignal:
         """Send data between nodes via signals."""
         signal = ExecutionSignal(
-            type=ExecutionSignalType.DATA_CHUNK,
+            type=ExecutionSignalType.BUFFER_DATA,
             content={
                 "source": source,
                 "target": target,
@@ -163,6 +199,7 @@ class Pipeline(ExecutionGraph):
             }
         )
         if context:
+            context = cast(PipelineContext, context)
             await context.send_data(target, data)
         return signal
 
@@ -179,10 +216,11 @@ class Pipeline(ExecutionGraph):
         if not isinstance(node, PipelineNode) or not node.buffer_config["enabled"]:
             return None
 
-        data = await context.receive_data(node_id)
+        context = cast(PipelineContext, context)
+        data = context.buffer_data.get(node.node_id, {})
         if data is not None:
             return ExecutionSignal(
-                type=ExecutionSignalType.DATA_CHUNK,
+                type=ExecutionSignalType.BUFFER_DATA,
                 content={
                     "node": node_id,
                     "data": data
@@ -194,17 +232,17 @@ class Pipeline(ExecutionGraph):
         """Process pipeline-specific signals."""
         new_signals = []
 
-        if signal.type == ExecutionSignalType.DATA_CHUNK:
+        if signal.type == ExecutionSignalType.BUFFER_DATA:
             target = signal.content.get("target")
             assert target is not None
             if target in self.nodes and self.context:
                 node = self.nodes[target]
                 if isinstance(node, PipelineNode) and node.buffer_config["enabled"]:
-                    context = cast(ExecutionContext, self.context)
+                    context = cast(PipelineContext, self.context)
                     buffer = context.buffers.get(target)
                     if buffer and buffer.full():
                         new_signals.append(ExecutionSignal(
-                            type=ExecutionSignalType.BUFFER_STATE,
+                            type=ExecutionSignalType.BUFFER_FULL,
                             content={
                                 "node": target,
                                 "state": "full"

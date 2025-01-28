@@ -12,7 +12,7 @@ from .workflow_factory import WorkflowFactory
 from ....common.graph import NodeType
 
 if TYPE_CHECKING:
-    from ..plan_executor import PlanExecutor
+    from ..planning.plan_executor import PlanExecutor
 
 class WorkflowStrategy(StrEnum):
     """Workflow execution strategies."""
@@ -64,8 +64,9 @@ class WorkflowExecutor(Executor):
 
     async def execute_node(self, node: ExecutionNode,
                            context: ExecutionContext,
-                           prev_signals: List[ExecutionSignal],
-                           upper_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
+                           prev_signals: Optional[List[ExecutionSignal]] = None,
+                           upper_signals: Optional[List[ExecutionSignal]] = None,
+                           lower_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
         """Execute node based on its type and strategy.
         Upper signals are not used in the workflow layer."""
 

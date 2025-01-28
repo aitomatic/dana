@@ -1,4 +1,4 @@
 """Factory for creating planners."""
 
-class PlanningFactory:
+class PlanFactory:
     """Creates and configures planners."""

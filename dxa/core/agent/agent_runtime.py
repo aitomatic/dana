@@ -44,7 +44,7 @@ class AgentRuntime:
 
         # Get final result from signals
         for signal in reversed(signals):
-            if signal.type == ExecutionSignalType.RESULT:
+            if signal.type == ExecutionSignalType.DATA_RESULT:
                 return signal.content
 
         return None

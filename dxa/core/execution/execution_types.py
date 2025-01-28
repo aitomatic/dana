@@ -54,20 +54,33 @@ class ExecutionEdge(Edge):
     condition: Optional[str] = None
     state_updates: Dict[str, Any] = field(default_factory=dict)
 
-# Signal types
 class ExecutionSignalType(StrEnum):
-    """Types of execution signals."""
-    RESULT = "RESULT"
-    ERROR = "ERROR"
-    STATUS = "STATUS"
-    STATE_CHANGE = "STATE_CHANGE"
-    COMPLETE = "COMPLETE"
+    """Types of execution signals.
     
-    # New data flow types
-    DATA_CHUNK = "DATA_CHUNK"
-    BUFFER_STATE = "BUFFER_STATE"
-    STREAM_START = "STREAM_START"
-    STREAM_END = "STREAM_END"
+    Categories:
+    - CONTROL_*: Execution control flow signals
+    - DATA_*: Direct node-to-node data transfer
+    - BUFFER_*: Buffer data transfer and management
+    """
+    # Control Flow - Node Status
+    CONTROL_START = "node_start"        # Node begins execution
+    CONTROL_COMPLETE = "node_complete"  # Node completed successfully 
+    CONTROL_ERROR = "node_error"        # Node execution failed
+    CONTROL_SKIP = "node_skip"          # Node was skipped
+    
+    # Control Flow - Graph Status  
+    CONTROL_GRAPH_START = "graph_start"   # Graph execution started
+    CONTROL_GRAPH_END = "graph_end"       # Graph execution completed
+    CONTROL_STATE_CHANGE = "state_change"  # General execution state changes
+    
+    # Data Flow - Direct
+    DATA_RESULT = "data_result"    # Node output data for next node
+    
+    # Buffer Operations
+    BUFFER_DATA = "buffer_data"    # Data chunk for buffered transfer
+    BUFFER_FULL = "buffer_full"    # Buffer reached capacity
+    BUFFER_EMPTY = "buffer_empty"  # Buffer is empty
+    BUFFER_ERROR = "buffer_error"  # Buffer operation failed
 
 @dataclass
 class ExecutionSignal:
@@ -76,7 +89,6 @@ class ExecutionSignal:
     content: Dict[str, Any]
     timestamp: datetime = field(default_factory=datetime.now)
 
-# Objective types
 class ObjectiveStatus(StrEnum):
     """Status of the current objective."""
     INITIAL = "initial"

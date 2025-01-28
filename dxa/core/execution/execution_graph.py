@@ -1,6 +1,6 @@
 """Execution graph implementation."""
 
-from typing import Dict, Any, Optional, Union, List, cast, TextIO, TYPE_CHECKING
+from typing import Dict, Any, Optional, Union, List, cast, TextIO, TYPE_CHECKING, Type
 from pathlib import Path
 from dataclasses import dataclass
 from datetime import datetime
@@ -95,6 +95,57 @@ class ExecutionGraph(DirectedGraph):
             if node.status == ExecutionNodeStatus.IN_PROGRESS
         ]
 
+    @classmethod
+    def _add_start_end_nodes(cls,
+                             graph: 'ExecutionGraph',
+                             node_cls: Optional[Type[ExecutionNode]] = None,
+                             edge_cls: Optional[Type[ExecutionEdge]] = None) -> None:
+        """Add START and END nodes to graph."""
+        # Get name of this graph type
+        graph_name = graph.__class__.__name__
+        if node_cls is None:
+            node_cls = ExecutionNode
+        if edge_cls is None:
+            edge_cls = ExecutionEdge
+
+        # Add START to the beginning of the graph, connecting it to the first node
+        # If there is no first node, add it to the graph
+        first_node = next(iter(graph.nodes.values()), None)
+
+        # Create START node
+        # pylint: disable=unexpected-keyword-arg
+        # pylance: disable=unexpected-keyword-arg
+        start_node = node_cls(
+            node_id="START",
+            node_type=NodeType.START,
+            description=f"Begin {graph_name}"
+        )
+        graph.add_node(start_node)
+
+        if first_node:
+            start_edge = edge_cls(
+                source="START",
+                target=first_node.node_id,
+                metadata={"type": "start"}
+            )
+            graph.add_edge(start_edge)
+
+        # Add END to the end of the graph, connecting it to the last node
+        # Create END node
+        end_node = node_cls(
+            node_id="END",
+            node_type=NodeType.END,
+            description=f"End {graph_name}"
+        )
+        graph.add_node(end_node)
+
+        end_edge = edge_cls(
+            source=end_node.node_id,
+            target="END",
+            metadata={"type": "end"}
+        )
+        graph.add_edge(end_edge)
+
     @property
     def context(self) -> Optional['ExecutionContext']:
         """Get execution context."""
@@ -109,16 +160,16 @@ class ExecutionGraph(DirectedGraph):
         """Process execution signals."""
         new_signals = []
         
-        if signal.type == ExecutionSignalType.STATE_CHANGE:
+        if signal.type == ExecutionSignalType.CONTROL_STATE_CHANGE:
             # Common state updates
             self.metadata.update(signal.content.get("metadata", {}))
             
-        elif signal.type == ExecutionSignalType.COMPLETE:
+        elif signal.type == ExecutionSignalType.CONTROL_COMPLETE:
             # Common step completion handling
             if node_id := signal.content.get("node"):
                 self.update_node_status(node_id, ExecutionNodeStatus.COMPLETED)
                 new_signals.append(ExecutionSignal(
-                    type=ExecutionSignalType.STATE_CHANGE,
+                    type=ExecutionSignalType.CONTROL_STATE_CHANGE,
                     content={
                         "component": self.metadata.get("layer", "execution"),
                         "type": "step_completed",
@@ -334,3 +385,6 @@ class ExecutionGraph(DirectedGraph):
     #     """Get all END type nodes."""
     #     return [node for node in self.nodes.values() 
     #             if node.node_type == NodeType.END]
+
+    CONTROL_COMPLETE = "node_complete"  # Node completed successfully
+    CONTROL_GRAPH_END = "graph_end"     # Graph execution completed

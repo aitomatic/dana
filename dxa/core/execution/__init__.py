@@ -11,7 +11,10 @@ from .execution_graph import ExecutionGraph
 from .executor import Executor
 from .pipeline import (
     Pipeline,
-    PipelineSteps,
+    PipelineFactory,
+    PipelineExecutor,
+    PipelineContext,
+    PipelineNode,
 )
 from .workflow import (
     Workflow,
@@ -21,15 +24,15 @@ from .workflow import (
 )
 from .planning import (
     Plan,
-    PlanningFactory,
-    PlanningStrategy,
+    PlanFactory,
     PlanExecutor,
+    PlanningStrategy,
 )
 from .reasoning import (
     Reasoning,
     ReasoningFactory,
-    ReasoningStrategy,
     ReasoningExecutor,
+    ReasoningStrategy,
 )
 
 __all__ = [
@@ -43,14 +46,17 @@ __all__ = [
     'ExecutionNodeStatus',
     'Executor',
     'ExecutionContext',
-    'Pipeline',
+    'PipelineNode',
     'Workflow',
     'WorkflowFactory',
     'WorkflowExecutor',
     'WorkflowStrategy',
-    'PipelineSteps',
+    'Pipeline',
+    'PipelineFactory',
+    'PipelineExecutor',
+    'PipelineContext',
     'Plan',
-    'PlanningFactory',
+    'PlanFactory',
     'PlanningStrategy',
     'PlanExecutor',
     'Reasoning',
