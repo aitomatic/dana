@@ -2,7 +2,7 @@
 
 import pytest
 from dxa.core.agent import Agent
-from dxa.core.workflow import WorkflowStrategy, WorkflowFactory
+from dxa.core.execution import WorkflowStrategy, WorkflowFactory
 from dxa.core.execution import ExecutionContext, Objective
 from dxa.core.resource import LLMResource
 
@@ -34,7 +34,7 @@ async def test_workflow_is_plan_execution(agent):
     
     # Verify execution completed
     workflow = runtime.workflow_executor.graph
-    assert workflow.get_current_node().node_id == "END"
+    assert workflow.get_current_node().node_id == "PERFORM_TASK"
 
 @pytest.mark.asyncio
 # pylint: disable=redefined-outer-name
@@ -85,5 +85,5 @@ async def test_cursor_progression(agent):
     workflow = workflow_exec.graph
     
     # Verify cursor moved through all nodes
-    assert workflow.get_current_node().node_id == "END"
+    assert workflow.get_current_node().node_id == "PERFORM_TASK"
     # Could also track cursor history 

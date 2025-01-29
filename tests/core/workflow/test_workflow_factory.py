@@ -1,10 +1,10 @@
 """Test workflow factory."""
 
 import unittest
-from dxa.core.workflow.workflow_factory import WorkflowFactory
-from dxa.core.execution.execution_graph import ExecutionNodeStatus
+from dxa.core.execution import WorkflowFactory
+from dxa.core.execution import ExecutionNodeStatus
 from dxa.common.graph.directed_graph import NodeType
-from dxa.core.workflow.workflow import Workflow
+from dxa.core.execution import Workflow
 from dxa.core.execution import Objective
 
 class TestWorkflowFactory(unittest.TestCase):

@@ -47,6 +47,7 @@ class ExecutionNode(Node):
         self.result = result
         self.requires = requires or {}
         self.provides = provides or {}
+        self.buffer_config = {}
 
 @dataclass
 class ExecutionEdge(Edge):

@@ -132,6 +132,12 @@ class DirectedGraph:
         edge = Edge(source_id, target_id)
         self.add_edge(edge)
 
+    def remove_edge_between(self, source_id: str, target_id: str) -> None:
+        """Remove edge between two nodes."""
+        self.edges = [edge for edge in self.edges if edge.source != source_id or edge.target != target_id]
+        self._outgoing[source_id] = [edge for edge in self._outgoing[source_id] if edge.target != target_id]
+        self._incoming[target_id] = [edge for edge in self._incoming[target_id] if edge.source != source_id]
+
     def get_node_by_id(self, node_id: str) -> Optional[Node]:
         """Get node by ID."""
         return self.nodes.get(node_id)
