@@ -5,10 +5,10 @@ from typing import Dict, Any, Optional
 
 class BaseCapability(ABC):
     """Base class for agent capabilities."""
-    
+
     def __init__(self, name: str, description: Optional[str] = None):
         """Initialize capability.
-        
+
         Args:
             name: Name of the capability
             description: Optional description of what the capability does
@@ -37,12 +37,3 @@ class BaseCapability(ABC):
     def can_handle(self, request: Dict[str, Any]) -> bool:
         """Check if capability can handle request."""
         raise NotImplementedError
-
-    @property
-    def long_description(self) -> str:
-        """Get detailed description of the capability.
-        
-        Returns:
-            Detailed description including name and description
-        """
-        return f"Capability: {self.name}\n{self.description}"

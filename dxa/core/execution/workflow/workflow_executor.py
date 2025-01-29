@@ -1,6 +1,6 @@
 """Workflow executor implementation."""
 
-from enum import StrEnum
+from enum import Enum
 from typing import List, cast, Optional, TYPE_CHECKING
 
 from ..execution_context import ExecutionContext
@@ -14,7 +14,7 @@ from ....common.graph import NodeType
 if TYPE_CHECKING:
     from ..planning.plan_executor import PlanExecutor
 
-class WorkflowStrategy(StrEnum):
+class WorkflowStrategy(Enum):
     """Workflow execution strategies."""
     DEFAULT = "DEFAULT"      # same as WORKFLOW_IS_PLAN
     WORKFLOW_IS_PLAN = "WORKFLOW_IS_PLAN"

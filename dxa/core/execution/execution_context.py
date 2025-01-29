@@ -23,10 +23,7 @@ class ExecutionContext:
     current_plan: Optional['Plan'] = None
     current_reasoning: Optional['Reasoning'] = None
 
-    # Resources
-    resources: Dict[str, 'BaseResource'] = field(default_factory=dict)  # All available resources
-
-    # Commonly used LLMs
+    # LLM resources
     workflow_llm: Optional['LLMResource'] = None
     planning_llm: Optional['LLMResource'] = None
     reasoning_llm: Optional['LLMResource'] = None
@@ -63,5 +60,5 @@ class ExecutionContext:
             )
         elif condition == "parameters_abnormal":
             return not self.check_conditions("parameters_normal")
-        
-        return False  # Unknown condition 
+
+        return False  # Unknown condition

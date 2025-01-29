@@ -1,6 +1,6 @@
 """Reasoning executor implementation."""
 
-from enum import StrEnum
+from enum import Enum
 from typing import List, cast, Optional
 import asyncio
 
@@ -17,7 +17,7 @@ from .reasoning import Reasoning
 from ..planning.plan import Plan
 from ....common.graph import NodeType
 
-class ReasoningStrategy(StrEnum):
+class ReasoningStrategy(Enum):
     """Reasoning execution strategies."""
     DEFAULT = "DEFAULT"           # Simple LLM query
     CHAIN_OF_THOUGHT = "COT"    # Step by step reasoning

@@ -3,10 +3,10 @@
 from dataclasses import dataclass, field
 from typing import Dict, Any, Optional, List, Callable, Awaitable
 from datetime import datetime
-from enum import StrEnum
+from enum import Enum
 from ...common.graph import Node, Edge, NodeType
 
-class ExecutionNodeStatus(StrEnum):
+class ExecutionNodeStatus(Enum):
     """Status of execution nodes."""
     NONE = "NONE"
     PENDING = "PENDING"
@@ -31,13 +31,13 @@ class ExecutionNode(Node):
     })
 
     # pylint: disable=too-many-arguments
-    def __init__(self, 
-                 node_id: str, 
-                 node_type: NodeType, 
-                 description: str, 
-                 status: ExecutionNodeStatus = ExecutionNodeStatus.NONE, 
+    def __init__(self,
+                 node_id: str,
+                 node_type: NodeType,
+                 description: str,
+                 status: ExecutionNodeStatus = ExecutionNodeStatus.NONE,
                  step: Optional[Any] = None,
-                 result: Optional[Dict[str, Any]] = None, 
+                 result: Optional[Dict[str, Any]] = None,
                  metadata: Optional[Dict[str, Any]] = None,
                  requires: Optional[Dict[str, Any]] = None,
                  provides: Optional[Dict[str, Any]] = None):
@@ -48,15 +48,15 @@ class ExecutionNode(Node):
         self.requires = requires or {}
         self.provides = provides or {}
 
-@dataclass 
+@dataclass
 class ExecutionEdge(Edge):
     """Edge with execution-specific attributes."""
     condition: Optional[str] = None
     state_updates: Dict[str, Any] = field(default_factory=dict)
 
-class ExecutionSignalType(StrEnum):
+class ExecutionSignalType(Enum):
     """Types of execution signals.
-    
+
     Categories:
     - CONTROL_*: Execution control flow signals
     - DATA_*: Direct node-to-node data transfer
@@ -64,18 +64,18 @@ class ExecutionSignalType(StrEnum):
     """
     # Control Flow - Node Status
     CONTROL_START = "node_start"        # Node begins execution
-    CONTROL_COMPLETE = "node_complete"  # Node completed successfully 
+    CONTROL_COMPLETE = "node_complete"  # Node completed successfully
     CONTROL_ERROR = "node_error"        # Node execution failed
     CONTROL_SKIP = "node_skip"          # Node was skipped
-    
-    # Control Flow - Graph Status  
+
+    # Control Flow - Graph Status
     CONTROL_GRAPH_START = "graph_start"   # Graph execution started
     CONTROL_GRAPH_END = "graph_end"       # Graph execution completed
     CONTROL_STATE_CHANGE = "state_change"  # General execution state changes
-    
+
     # Data Flow - Direct
     DATA_RESULT = "data_result"    # Node output data for next node
-    
+
     # Buffer Operations
     BUFFER_DATA = "buffer_data"    # Data chunk for buffered transfer
     BUFFER_FULL = "buffer_full"    # Buffer reached capacity
@@ -89,7 +89,7 @@ class ExecutionSignal:
     content: Dict[str, Any]
     timestamp: datetime = field(default_factory=datetime.now)
 
-class ObjectiveStatus(StrEnum):
+class ObjectiveStatus(Enum):
     """Status of the current objective."""
     INITIAL = "initial"
     IN_PROGRESS = "in_progress"
@@ -114,7 +114,7 @@ class Objective:
         self.status = ObjectiveStatus.INITIAL
         self.context = {}
         self.history = []
-    
+
     def evolve(self, new_understanding: str, reason: str) -> None:
         """Evolve the objective."""
         self.history.append({
