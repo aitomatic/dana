@@ -9,7 +9,3 @@ logs/*
 dxa.egg-info
 dxa.egg-info/*
 .aider*
-
-# embedding files generated from docs/requirements/
-# which is used to testing FileResource
-docs/requirements/.*/

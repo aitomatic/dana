@@ -2,13 +2,12 @@
 
 from dataclasses import dataclass, field
 from typing import Dict, Any, Optional, TYPE_CHECKING
-
 if TYPE_CHECKING:
     from ..state import AgentState, WorldState, ExecutionState
     from ..workflow import Workflow
     from ..planning import Plan
     from ..reasoning import Reasoning
-    from ..resource import BaseResource, LLMResource
+    from ..resource import LLMResource
 
 @dataclass
 class ExecutionContext:
@@ -24,10 +23,7 @@ class ExecutionContext:
     current_plan: Optional['Plan'] = None
     current_reasoning: Optional['Reasoning'] = None
 
-    # Resources
-    resources: Dict[str, 'BaseResource'] = field(default_factory=dict)  # All available resources
-
-    # Commonly used LLMs
+    # LLM resources
     workflow_llm: Optional['LLMResource'] = None
     planning_llm: Optional['LLMResource'] = None
     reasoning_llm: Optional['LLMResource'] = None
@@ -36,18 +32,6 @@ class ExecutionContext:
     current_data: Dict[str, Any] = field(default_factory=dict)
     parameters: Dict[str, Dict] = field(default_factory=dict)
     fault_patterns: Dict[str, Dict] = field(default_factory=dict)
-
-    def get_resource(self, resource_id: str) -> Optional['BaseResource']:
-        """Get resource by ID."""
-        return self.resources.get(resource_id)
-
-    def add_resource(self, resource_id: str, resource: 'BaseResource') -> None:
-        """Add resource to context."""
-        self.resources[resource_id] = resource
-
-    def remove_resource(self, resource_id: str) -> None:
-        """Remove resource from context."""
-        self.resources.pop(resource_id, None)
 
     def update_monitoring_data(self, data: Dict[str, Any]) -> None:
         """Update current monitoring data."""

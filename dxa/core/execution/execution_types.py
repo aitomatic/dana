@@ -3,10 +3,10 @@
 from dataclasses import dataclass, field
 from typing import Dict, Any, Optional, List
 from datetime import datetime
-from enum import StrEnum
+from enum import Enum
 from ...common.graph import Node, Edge, NodeType
 
-class ExecutionNodeStatus(StrEnum):
+class ExecutionNodeStatus(Enum):
     """Status of execution nodes."""
     NONE = "NONE"
     PENDING = "PENDING"
@@ -25,12 +25,12 @@ class ExecutionNode(Node):
     provides: Dict[str, Any] = field(default_factory=dict)
 
     # pylint: disable=too-many-arguments
-    def __init__(self, 
-                 node_id: str, 
-                 node_type: NodeType, 
-                 description: str, 
-                 status: ExecutionNodeStatus = ExecutionNodeStatus.NONE, 
-                 result: Optional[Dict[str, Any]] = None, 
+    def __init__(self,
+                 node_id: str,
+                 node_type: NodeType,
+                 description: str,
+                 status: ExecutionNodeStatus = ExecutionNodeStatus.NONE,
+                 result: Optional[Dict[str, Any]] = None,
                  metadata: Optional[Dict[str, Any]] = None,
                  requires: Optional[Dict[str, Any]] = None,
                  provides: Optional[Dict[str, Any]] = None):
@@ -40,14 +40,14 @@ class ExecutionNode(Node):
         self.requires = requires or {}
         self.provides = provides or {}
 
-@dataclass 
+@dataclass
 class ExecutionEdge(Edge):
     """Edge with execution-specific attributes."""
     condition: Optional[str] = None
     state_updates: Dict[str, Any] = field(default_factory=dict)
 
 # Signal types
-class ExecutionSignalType(StrEnum):
+class ExecutionSignalType(Enum):
     """Types of execution signals."""
     RESULT = "RESULT"
     ERROR = "ERROR"
@@ -70,7 +70,7 @@ class ExecutionSignal:
     timestamp: datetime = field(default_factory=datetime.now)
 
 # Objective types
-class ObjectiveStatus(StrEnum):
+class ObjectiveStatus(Enum):
     """Status of the current objective."""
     INITIAL = "initial"
     IN_PROGRESS = "in_progress"
@@ -95,7 +95,7 @@ class Objective:
         self.status = ObjectiveStatus.INITIAL
         self.context = {}
         self.history = []
-    
+
     def evolve(self, new_understanding: str, reason: str) -> None:
         """Evolve the objective."""
         self.history.append({

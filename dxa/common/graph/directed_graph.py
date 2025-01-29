@@ -2,7 +2,7 @@
 
 from typing import Dict, List, Optional, Iterator, Any, Union, TextIO, TYPE_CHECKING
 from pathlib import Path
-from enum import StrEnum
+from enum import Enum
 from dataclasses import dataclass, field
 from ..utils import get_class_by_name
 if TYPE_CHECKING:
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     )
 _CURSOR_CLASS_NAME = "dxa.common.graph.traversal.Cursor"
 
-class NodeType(StrEnum):
+class NodeType(Enum):
     """Base node types for all graphs."""
     NODE = "NODE"               # General node
     START = "START"             # Starting point
@@ -63,7 +63,7 @@ class Edge:
         if not isinstance(other, Edge):
             return NotImplemented
         return self.source == other.source and self.target == other.target
-    
+
 # pylint: disable=too-many-instance-attributes
 class DirectedGraph:
     """Pure directed graph implementation."""
@@ -76,31 +76,31 @@ class DirectedGraph:
         self._serializer: Optional[GraphSerializer] = None
         self._default_traversal: Optional[TopologicalTraversal] = None
         self._cursor = None
-    
+
     @property
     def nodes(self) -> Dict[str, Node]:
         """Get all nodes in the graph."""
         return self._nodes
-    
+
     @nodes.setter
     def nodes(self, nodes: Dict[str, Node]) -> None:
         """Set all nodes in the graph."""
         self._nodes = nodes
-    
+
     @property
     def edges(self) -> List[Edge]:
         """Get all edges in the graph."""
         return self._edges
-    
+
     @edges.setter
     def edges(self, edges: List[Edge]) -> None:
         """Set all edges in the graph."""
         self._edges = edges
-    
+
     def has_node(self, node_id: str) -> bool:
         """Check if node exists in graph."""
         return node_id in self.nodes
-    
+
     def has_edge(self, source_id: str, target_id: str) -> bool:
         """Check if edge exists in graph."""
         return any(edge.source == source_id and edge.target == target_id for edge in self.edges)
@@ -126,7 +126,7 @@ class DirectedGraph:
         self.edges.append(edge)
         self._outgoing[edge.source].append(edge)
         self._incoming[edge.target].append(edge)
-    
+
     def add_edge_between(self, source_id: str, target_id: str) -> None:
         """Add edge between two nodes."""
         edge = Edge(source_id, target_id)
@@ -201,7 +201,7 @@ class DirectedGraph:
     def get_current_node(self) -> Optional[Node]:
         """Get current node from cursor if it exists."""
         return self._cursor.current if self._cursor else None
-    
+
     def start_cursor(self) -> 'Cursor':
         """Starting my cursor at the first START type node found."""
         start_node = self.get_start_node()
@@ -212,12 +212,12 @@ class DirectedGraph:
 
     def get_start_node(self) -> Optional[Node]:
         """Get the first START type node found."""
-        return next((node for node in self.nodes.values() 
+        return next((node for node in self.nodes.values()
                      if node.node_type == NodeType.START), None)
 
     def get_end_nodes(self) -> List[Node]:
         """Get all END type nodes."""
-        return [node for node in self.nodes.values() 
+        return [node for node in self.nodes.values()
                 if node.node_type == NodeType.END]
 
     def update_cursor(self, node_id: str) -> None:

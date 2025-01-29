@@ -43,32 +43,25 @@ class ResourceConfig:
     """Base configuration for all resources."""
     name: str
     description: Optional[str] = None
-    
+
     @classmethod
     def from_dict(cls, config_dict: Dict[str, Any]) -> 'ResourceConfig':
         """Create config from dictionary."""
         return cls(**{
-            k: v for k, v in config_dict.items() 
+            k: v for k, v in config_dict.items()
             # pylint: disable=no-member
             if k in cls.__dataclass_fields__
         })
 
 @dataclass
 class ResourceResponse:
-    """Base response for all resources.
-    
-    Attributes:
-        success: Whether the query was successful, None indicates unknown status
-        error: Optional error message if the query failed
-        content: Optional content returned by the resource
-    """
-    success: Optional[bool] = None
+    """Base response for all resources."""
+    success: bool = True
     error: Optional[str] = None
-    content: Optional[str] = None
 
 class BaseResource(ABC):
     """Abstract base resource."""
-    
+
     def __init__(
         self,
         name: str,
@@ -76,7 +69,7 @@ class BaseResource(ABC):
         resource_config: Optional[Union[Dict[str, Any], ResourceConfig]] = None
     ):
         """Initialize resource.
-        
+
         Args:
             name: Resource name
             description: Optional resource description
@@ -88,7 +81,7 @@ class BaseResource(ABC):
             self.config = resource_config
         else:
             self.config = ResourceConfig(name=name, description=description)
-            
+
         self.name = name or self.config.name
         self.description = self.config.description or "No description provided"
         self._is_available = False  # will only be True after initialization
@@ -117,10 +110,10 @@ class BaseResource(ABC):
     def can_handle(self, request: Dict[str, Any]) -> bool:
         """Check if resource can handle request."""
         raise NotImplementedError
-        
+
     async def __aenter__(self) -> 'BaseResource':
         await self.initialize()
         return self
-        
+
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
-        await self.cleanup() 
+        await self.cleanup()
