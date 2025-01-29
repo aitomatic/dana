@@ -8,6 +8,26 @@
 
 DXA is a Python framework that enables building intelligent agents with domain expertise, powered by Large Language Models (LLMs).
 
+## Quick Start
+
+## Getting Started
+
+First things first, set up your development environment:
+
+```bash
+# Set up development environment
+% ./setup_env.sh
+
+# Activate virtual environment
+% source .venv/bin/activate
+
+# Include this package in your environment
+% pip install -e .
+
+# Then try running the tests
+% pytest tests
+```
+
 ## Contents
 
 - [What is DXA?](#what-is-dxa)
