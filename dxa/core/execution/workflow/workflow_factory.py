@@ -57,6 +57,9 @@ class WorkflowFactory:
         # pylint: disable=protected-access
         ExecutionGraph._add_start_end_nodes(graph=workflow)
 
+        # Remove the edge from START to END
+        workflow.remove_edge_between("START", "END")
+
         # Create task nodes for each command
         prev_id = "START"
         for i, command in enumerate(commands):
@@ -81,6 +84,9 @@ class WorkflowFactory:
         workflow = Workflow(objective)
         # pylint: disable=protected-access
         ExecutionGraph._add_start_end_nodes(graph=workflow)
+
+        # Remove the edge from START to END
+        workflow.remove_edge_between("START", "END")
 
         # Add task node
         workflow.add_node(ExecutionNode(

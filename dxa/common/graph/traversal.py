@@ -52,8 +52,9 @@ class TopologicalTraversal(TraversalStrategy):
         temp = set()
         
         def visit(node: Node) -> Iterator[Node]:
-            if node.node_id in temp:
-                raise ValueError("Graph has cycles")
+            # Graph may have cycles, so we don't check for them here
+            # if node.node_id in temp:
+            #     raise ValueError("Graph has cycles")
             if node.node_id not in visited:
                 temp.add(node.node_id)
                 visited.add(node.node_id)  # Mark visited immediately

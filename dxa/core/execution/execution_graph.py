@@ -60,7 +60,7 @@ class ExecutionGraph(DirectedGraph):
     @edges.setter
     def edges(self, edges: List[ExecutionEdge]) -> None:
         """Set all edges in the graph."""
-        super().edges = cast(List[Edge], edges)
+        self._edges = cast(List[Edge], edges)
 
     def get_start_node(self) -> Optional[ExecutionNode]:
         """Get the start node, meaning the node with type START."""
@@ -140,7 +140,7 @@ class ExecutionGraph(DirectedGraph):
         graph.add_node(end_node)
 
         end_edge = edge_cls(
-            source=end_node.node_id,
+            source="START",
             target="END",
             metadata={"type": "end"}
         )
