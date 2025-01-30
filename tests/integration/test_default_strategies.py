@@ -1,10 +1,10 @@
 """Integration tests for default strategy execution."""
 
 import pytest
-from dxa.core.agent import Agent
-from dxa.core.resource import LLMResource
+from dxa.agent import Agent
+from dxa.agent.resource import LLMResource
 from dxa.common.graph import NodeType
-from dxa.core.workflow import WorkflowFactory
+from dxa.execution import WorkflowFactory
 
 class MockLLM(LLMResource):
     """Mock LLM for testing."""
