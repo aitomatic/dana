@@ -11,7 +11,7 @@ from .execution_types import (
     ExecutionError,
 )
 from .execution_graph import ExecutionGraph
-from ...common.graph import NodeType
+from ..common.graph import NodeType
 if TYPE_CHECKING:
     from .execution_context import ExecutionContext
 

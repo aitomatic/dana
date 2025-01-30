@@ -23,8 +23,8 @@ Example:
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 from dataclasses import dataclass, field
-from dxa.core.capability.base_capability import BaseCapability
-from dxa.common.exceptions import DXAError, DXAMemoryError
+from .base_capability import BaseCapability
+from ...common.exceptions import DXAError, DXAMemoryError
 
 @dataclass
 class MemoryEntry:

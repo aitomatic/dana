@@ -14,7 +14,7 @@ from ..execution_graph import ExecutionGraph
 from ..executor import Executor
 from .plan import Plan
 from ..workflow.workflow import Workflow
-from ....common.graph import NodeType
+from ...common.graph import NodeType
 
 if TYPE_CHECKING:
     from ..reasoning import ReasoningExecutor

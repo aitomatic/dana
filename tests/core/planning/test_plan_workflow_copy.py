@@ -1,9 +1,9 @@
 """Test plan workflow copy strategy."""
 
 import pytest
-from dxa.core.execution import WorkflowFactory
-from dxa.core.execution import PlanExecutor, PlanningStrategy
-from dxa.core.execution import ReasoningExecutor, ExecutionContext
+from dxa.execution import WorkflowFactory
+from dxa.execution import PlanExecutor, PlanningStrategy
+from dxa.execution import ReasoningExecutor, ExecutionContext
 
 @pytest.fixture
 def workflow():

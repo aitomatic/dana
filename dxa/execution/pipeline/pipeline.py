@@ -11,7 +11,7 @@ Features:
 
 from typing import Dict, Any, Optional, List, Callable, Awaitable, cast
 from dataclasses import dataclass, field
-from ....common.graph import NodeType
+from ...common.graph import NodeType
 from ...execution import (
     ExecutionGraph, ExecutionNode, ExecutionEdge,
     ExecutionSignal, ExecutionContext,

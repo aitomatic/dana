@@ -4,7 +4,7 @@ from typing import Dict, Any, Optional, Union, List, cast, TextIO, TYPE_CHECKING
 from pathlib import Path
 from dataclasses import dataclass
 from datetime import datetime
-from ...common.graph import DirectedGraph, Node, Edge, NodeType
+from ..common.graph import DirectedGraph, Node, Edge, NodeType
 from .execution_types import (
     Objective, ExecutionNode,
     ExecutionNodeStatus, ExecutionSignal, ExecutionSignalType,
