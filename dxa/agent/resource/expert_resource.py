@@ -72,7 +72,7 @@ class ExpertResource(BaseResource):
         self.system_prompt = system_prompt
         self.confidence_threshold = confidence_threshold
         self.llm_config = llm_config
-        self._io = None
+        self._io = IOFactory.create_io("console")
 
     async def initialize(self) -> None:
         """Initialize IO for expert interaction."""
@@ -84,7 +84,7 @@ class ExpertResource(BaseResource):
         if not self._io:
             await self.initialize()
 
-        response = await self._io.get_input(request.get("prompt"))
+        response = await self._io.query(request.get("prompt"))
         return {
             "success": True,
             "content": response

@@ -1,9 +1,8 @@
 """Simple Q&A example using DXA."""
 
 from typing import Dict, Any
-from dxa.core.agent import Agent
-from dxa.core.planning import PlanningStrategy
-from dxa.core.workflow import WorkflowFactory
+from dxa.agent import Agent
+from dxa.execution import PlanningStrategy, WorkflowFactory
 
 def simple_qa(question: str) -> Dict[str, Any]:
     """Direct question-answer using default agent."""

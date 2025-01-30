@@ -1,7 +1,7 @@
 """Temperature monitoring pipeline example."""
 
 from typing import Dict, Any
-from dxa.core.execution.pipeline import Pipeline, PipelineContext
+from dxa.execution import Pipeline, PipelineContext
 
 async def main():
     """Run temperature monitoring pipeline."""
