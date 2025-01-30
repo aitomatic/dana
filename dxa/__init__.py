@@ -22,9 +22,3 @@ Example:
     ...     example_queries=["solve x^2 + 2x + 1 = 0"]
     ... )
 """
-
-from .dxa_factory import DXAFactory
-
-__all__ = [
-    'DXAFactory'
-]
