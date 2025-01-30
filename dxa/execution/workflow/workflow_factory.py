@@ -7,7 +7,7 @@ import yaml
 from ..execution_graph import ExecutionGraph
 from ..execution_types import Objective, ExecutionNode
 from .workflow import Workflow
-from ....common.graph import NodeType, Edge
+from ...common.graph import NodeType, Edge
 
 class WorkflowFactory:
     """Factory for creating workflow patterns."""

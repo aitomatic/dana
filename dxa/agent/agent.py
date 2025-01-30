@@ -29,11 +29,12 @@ from ..execution import (
     ReasoningStrategy,
     ExecutionContext
 )
-from ..capability import BaseCapability
-from ..resource import BaseResource, LLMResource
-from ..io import BaseIO, IOFactory
-from ..state import AgentState, WorldState, ExecutionState
-from ...common.utils.config import load_agent_config
+from .capability import BaseCapability
+from .resource import BaseResource, LLMResource
+from .io import BaseIO, IOFactory
+from .state import AgentState, WorldState, ExecutionState
+
+from ..common.utils.config import load_agent_config
 from .agent_runtime import AgentRuntime
 
 # pylint: disable=too-many-public-methods

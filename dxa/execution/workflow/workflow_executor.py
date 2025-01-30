@@ -9,7 +9,7 @@ from ..execution_graph import ExecutionGraph
 from ..executor import Executor
 from .workflow import Workflow
 from .workflow_factory import WorkflowFactory
-from ....common.graph import NodeType
+from ...common.graph import NodeType
 
 if TYPE_CHECKING:
     from ..planning.plan_executor import PlanExecutor

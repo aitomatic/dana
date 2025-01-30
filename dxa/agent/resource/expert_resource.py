@@ -35,10 +35,10 @@ Example:
 
 from dataclasses import dataclass
 from typing import Dict, Any, Optional
-from dxa.core.resource.llm_resource import LLMConfig
-from dxa.core.capability.domain_expertise import DomainExpertise
-from dxa.core.resource.base_resource import BaseResource, ResourceResponse, ResourceConfig
-from dxa.core.io import IOFactory
+from .llm_resource import LLMConfig
+from ..capability.domain_expertise import DomainExpertise
+from .base_resource import BaseResource, ResourceResponse, ResourceConfig
+from ..io import IOFactory
 
 
 @dataclass

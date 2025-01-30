@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import Dict, Any, Optional, List, Callable, Awaitable
 from datetime import datetime
 from enum import Enum
-from ...common.graph import Node, Edge, NodeType
+from ..common.graph import Node, Edge, NodeType
 
 class ExecutionNodeStatus(Enum):
     """Status of execution nodes."""

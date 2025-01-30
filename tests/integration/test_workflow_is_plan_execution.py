@@ -1,10 +1,11 @@
 """Integration tests for WORKFLOW_IS_PLAN execution strategy."""
 
 import pytest
-from dxa.core.agent import Agent
-from dxa.core.execution import WorkflowStrategy, WorkflowFactory
-from dxa.core.execution import ExecutionContext, Objective
-from dxa.core.resource import LLMResource
+from dxa.agent import Agent
+from dxa.execution import WorkflowStrategy, WorkflowFactory
+from dxa.execution import ExecutionContext, Objective
+
+from dxa.agent.resource import LLMResource
 
 class MockLLM(LLMResource):
     """Mock LLM for testing."""

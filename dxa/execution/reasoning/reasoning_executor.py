@@ -15,7 +15,7 @@ from ..execution_graph import ExecutionGraph
 from ..executor import Executor
 from .reasoning import Reasoning
 from ..planning.plan import Plan
-from ....common.graph import NodeType
+from ...common.graph import NodeType
 
 class ReasoningStrategy(Enum):
     """Reasoning execution strategies."""
