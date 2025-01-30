@@ -6,136 +6,109 @@
 
 # DXA - Domain-Expert Agent
 
-## dxa Module
+The Domain-Expert Agent (DXA) is an intelligent agent architecture designed to tackle complex domain-specific tasks with human-like expertise. At its heart is a unique three-layer graph architecture that breaks down high-level objectives into executable actions through a Why-What-How paradigm.
 
-DXA is built around Workflows that define what agents can do. From simple Q&A to complex research patterns, workflows provide executable structures that agents can run. These workflows combine:
+## Architecture Overview
 
-- Task sequences and decision points
-- Resource requirements
-- State management
-- Execution patterns
-
-What makes DXA powerful is its unique 3-layer architecture that maps Workflows to Plans to ReasoningLoops. Think of it like this:
-
-1. **Workflows** are like recipes - they describe what you want to achieve at a high level. A workflow could be as simple as "answer this question" or as complex as "research this topic, analyze the findings, and write a report."
-
-2. **Plans** are like detailed instructions that break down the recipe. The Planning layer takes your workflow and creates a flexible graph of steps. Each step knows what resources it needs and what conditions must be met. Plans can adapt - if something unexpected happens, the plan can reorganize itself.
-
-3. **ReasoningPatterns** are like the actual cooking process. They execute each planned step using the right tools (resources) and thinking approaches (reasoning). A ReasoningPattern could be as straightforward as "ask the LLM and return the answer" or as sophisticated as "gather multiple sources, cross-reference them, and synthesize the findings."
-
-Each layer is represented as a graph that can be as simple or complex as needed:
-
-- A workflow graph might be a single node for Q&A or a complex decision tree for research
-- A plan graph might be linear steps or a dynamic network that changes based on findings
-- A reasoning loop graph might be a simple request-response or an intricate pattern of thinking and verification
-
-This layered approach means you can start simple - like using DXA for basic Q&A - but then scale up to handle complex tasks without changing your core architecture. It's like having building blocks that work just as well for a small house as they do for a skyscraper.
-
-## Core Architecture
-
-At the heart of DXA is the `Agent` system, which coordinates cognitive functions through a layered architecture inspired by human decision-making. The `Workflow` layer defines what needs to be done, the `Planning` layer handles strategic decisions - what steps to take - while the `Reasoning` layer determines how to think about each step. Supporting these cognitive functions are `Capabilities` like memory and domain expertise, concrete `Resources` like LLMs and APIs, and an `IO` system for environmental interaction. This separation of concerns allows both high-level strategic thinking and efficient tactical execution while maintaining modularity and extensibility.
-
-Getting started with DXA is straightforward through its `AgentFactory` system. For simple tasks, you can create an agent with a single line of code, selecting from tested configurations optimized for common use cases. As your needs grow more complex, the same agent can be progressively enhanced with additional capabilities, custom reasoning patterns, or specialized domain expertise. This approach embodies our core philosophy: simple things should be easy, complex things should be possible.
-
-1. **[Agent System](agent/README.md)** - The central entity that:
-   - Provides factory patterns for quick creation
-   - Manages the core LLM that powers cognitive functions
-   - Coordinates workflows, planning and reasoning
-   - Handles resource allocation and state
-   - Provides the main interface for users
-
-2. **Core Cognitive Components**:
-   - **[Workflows](workflow/README.md)** - Strategic layer that:
-     - Defines high-level objectives
-     - Specifies process patterns
-     - Manages business logic
-     - Sets success criteria
-
-   - **[Planning](core/planning/README.md)** - Strategic layer that:
-     - Understands objectives
-     - Generates execution plans
-     - Manages goal evolution
-     - Coordinates resources
-
-   - **[Reasoning](core/reasoning/README.md)** - Tactical layer that:
-     - Executes planned steps
-     - Makes detailed decisions
-     - Adapts to new information
-     - Reports progress
-
-3. **Supporting Systems**:
-   - **[Capabilities](core/capability/README.md)** - Core abilities like:
-     - Memory management
-     - Domain expertise
-     - Learning functions
-
-   - **[Resources](core/resource/README.md)** - External tools:
-     - LLM interactions
-     - Database access
-     - API integrations
-
-   - **[IO](core/io/README.md)** - Environmental interaction:
-     - User interfaces
-     - File operations
-     - Network communication
-
-## System Overview
+DXA maps business workflows (WHY) to concrete plans (WHAT), which are then executed through standardized reasoning patterns (HOW). This hierarchical decomposition allows agents to maintain strategic alignment while adapting to changing conditions - similar to how human experts combine domain knowledge with practical execution.
 
 ```mermaid
-graph TB
-    subgraph "Definition"
-        W[Workflows] --> A[Agent]
+graph LR
+    subgraph "Graph Mapping"
+        direction LR
+        G1[High-level Graph] --> G2[Detailed Graph]
+        G2 --> G3[Execution Graph]
     end
-    
-    subgraph "Execution"
-        A --> P[Plans]
-        R[Resources] --> P
-        P --> E[Execution]
-    end
-    
-    subgraph "Resources"
-        R --> L[LLM]
-        R --> T[Tools]
-        R --> H[Human]
+
+    subgraph "Layer Architecture"
+        direction LR
+        W[Workflow Layer<br>WHY] --> P[Planning Layer<br>WHAT]
+        P --> R[Reasoning Layer<br>HOW]
     end
 ```
 
-## Core Components
+### Layer Mapping Example
 
-1. **Workflows** define agent behavior:
+```mermaid
+graph TB
+    subgraph "Reasoning Layer (HOW)"
+        direction LR
+        R1[Observe<br>Gather Data] --> R2[Orient<br>Analyze Context]
+        R2 --> R3[Decide<br>Choose Action]
+        R3 --> R4[Act<br>Execute]
+        R4 --> R1
+    end
 
-   ```python
-   # Simple Q&A workflow
-   answer = Agent().ask("What is quantum computing?")
-   
-   # Research workflow with steps
-   workflow = create_research_workflow()
-   result = agent.execute(workflow)
-   
-   # Custom workflow
-   workflow = BaseWorkflow()
-   workflow.add_task("gather", "Gather information")
-   workflow.add_task("analyze", "Analyze findings")
-   ```
+    subgraph "Planning Layer (WHAT)"
+        direction LR
+        P1[Analyze Competitors] --> P2[Survey Customers]
+        P2 --> P3[Synthesize Findings]
+        P3 --> P4[Create Report]
+    end
 
-2. **Agents** execute workflows through:
-   - Planning: Convert workflow to executable plan
-   - Reasoning: Execute plan steps
-   - Resources: Provide needed capabilities
-   - State: Track execution progress
+   subgraph "Workflow Layer (WHY)"
+        direction LR
+        W1[Launch New Product] --> W2[Market Research]
+        W2 --> W3[Product Development]
+        W3 --> W4[Market Launch]
+    end
 
-3. **Resources** enable workflow execution:
-   - LLM: Core language model
-   - Tools: External capabilities
-   - Human: Interactive feedback
-   - Domain: Expert knowledge
+    W2 -.->|Maps to| P1
+    P1 -.->|Maps to| R1
 
-## Getting Started
+    style W1 fill:#f9f,stroke:#333
+    style W2 fill:#f9f,stroke:#333
+    style W3 fill:#f9f,stroke:#333
+    style W4 fill:#f9f,stroke:#333
+    
+    style P1 fill:#bbf,stroke:#333
+    style P2 fill:#bbf,stroke:#333
+    style P3 fill:#bbf,stroke:#333
+    style P4 fill:#bbf,stroke:#333
+    
+    style R1 fill:#bfb,stroke:#333
+    style R2 fill:#bfb,stroke:#333
+    style R3 fill:#bfb,stroke:#333
+    style R4 fill:#bfb,stroke:#333
+```
+
+## System Architecture
+
+### Agent System ([documentation](agent/README.md))
+
+1. **Core Components**
+   - Agent Factory & Runtime ([documentation](agent/README.md))
+   - [Capabilities](agent/capability/README.md) - Cognitive abilities
+   - [Resources](agent/resource/README.md) - Tools and services
+   - IO System - Environmental interaction
+   - State System - Execution state management
+
+2. **Key Features**
+   - Factory patterns for quick creation
+   - Resource and capability management
+   - State tracking and persistence
+   - I/O handling and environmental interaction
+
+### Execution System
+
+1. **Components**
+   - [Workflow](execution/workflow/README.md) - Process definition and control
+   - [Planning](execution/planning/README.md) - Strategic decomposition
+   - [Reasoning](execution/reasoning/README.md) - Tactical execution
+   - [Pipeline](execution/pipeline/README.md) - Execution flow management
+
+2. **Key Features**
+   - Graph-based execution
+   - Hierarchical decomposition
+   - Dynamic adaptation
+   - Progress tracking
+
+## Implementation Examples
 
 ```python
-from dxa.core.agent import Agent
-from dxa.core.workflow import create_research_workflow
-from dxa.core.resource import LLMResource
+from dxa.agent import Agent
+from dxa.agent.resource import LLMResource
+from dxa.execution.workflow import create_research_workflow
 
 # Simple Q&A
 answer = Agent().ask("What is quantum computing?")
@@ -144,16 +117,21 @@ answer = Agent().ask("What is quantum computing?")
 workflow = create_research_workflow()
 agent = Agent(resources={"llm": LLMResource()})
 result = agent.execute(workflow)
+```
 
-# Custom workflow with resources
-workflow = BaseWorkflow()
-workflow.add_task("research", "Research topic")
-workflow.add_task("synthesize", "Synthesize findings")
+## Getting Started
 
-agent = Agent(resources={
-    "llm": LLMResource(),
-    "search": SearchResource()
-})
+```python
+from dxa.agent import Agent
+from dxa.agent.resource import LLMResource
+from dxa.execution.workflow import create_research_workflow
+
+# Simple Q&A
+answer = Agent().ask("What is quantum computing?")
+
+# Research workflow
+workflow = create_research_workflow()
+agent = Agent(resources={"llm": LLMResource()})
 result = agent.execute(workflow)
 ```
 
@@ -161,44 +139,37 @@ result = agent.execute(workflow)
 
 ```text
 dxa/
-|
-├── core/           # Core components
-│   ├── workflow/   # Workflow definitions
-│   ├── agent/      # Agent implementation
-│   ├── capability/ # Cognitive abilities
-│   ├── io/         # Interaction handling
-│   ├── planning/   # Plan generation
-│   ├── reasoning/  # Step execution
-│   └── resource/   # External tools
-|
-├── common/         # Shared utilities
-│   ├── utils/      # Utility functions
-│   └── graph/      # Graph infrastructure
-|
-└── examples/       # Usage examples
+├── agent/                  # Agent system
+│   ├── capability/        # Cognitive abilities
+│   ├── resource/         # External tools & services
+│   ├── io/              # Input/Output handling
+│   └── state/           # State management
+├── execution/             # Execution system
+│   ├── pipeline/        # Pipeline execution
+│   ├── planning/        # Strategic planning
+│   ├── workflow/        # Process workflows
+│   └── reasoning/       # Reasoning patterns
+└── examples/             # Usage examples
+    ├── basic/           # Basic usage patterns
+    └── pipeline/        # Pipeline examples
 ```
 
-## Installation
+## Documentation Map
 
-1. Prerequisites:
-   - Python 3.x
-   - bash shell (Unix) or Git Bash (Windows)
+- **Agent System**
+  - [Agent Core](agent/README.md) - Factory and runtime
+  - [Capabilities](agent/capability/README.md) - Cognitive abilities
+  - [Resources](agent/resource/README.md) - Tools and services
+  - IO System - Environmental interaction
+  - State System - Execution state management
 
-2. Setup:
+- **Execution System**
+  - [Workflow](execution/workflow/README.md) - Process definition
+  - [Planning](execution/planning/README.md) - Strategic planning
+  - [Reasoning](execution/reasoning/README.md) - Tactical execution
+  - [Pipeline](execution/pipeline/README.md) - Execution orchestration
 
-   ```bash
-   git clone <repository-url>
-   cd dxa-prototype
-   bash setup_env.sh
-   source venv/bin/activate  # Windows: source venv/Scripts/activate
-   ```
-
-## Documentation
-
-- [Framework Overview](dxa/README.md) - System architecture and design
-- [Agent Documentation](dxa/agent/README.md) - Agent implementation details
-- [Examples](examples/README.md) - Implementation examples and patterns
-- [API Reference](docs/README.md) - Detailed API documentation
+- [Examples](examples/README.md) - Usage patterns and tutorials
 
 ## Contributing
 
@@ -222,11 +193,3 @@ Unauthorized copying, transfer, or reproduction of this software, via any medium
 <p align="center">
 <a href="https://aitomatic.com">https://aitomatic.com</a>
 </p>
-
-## Core Systems
-
-- [Agent System](agent/README.md) - Agent creation and management
-- [Flow System](flow/README.md) - Process and workflow automation
-- [Planning System](core/planning/README.md) - Strategic planning
-- [Reasoning System](core/reasoning/README.md) - Tactical reasoning
-- [Resource System](core/resource/README.md) - Tool and capability integration
