@@ -1,7 +1,7 @@
 """Test workflow cursor functionality."""
 
 import pytest
-from dxa.core.workflow import WorkflowFactory
+from dxa.execution import WorkflowFactory
 from dxa.common.graph import NodeType
 
 def test_workflow_cursor_update():

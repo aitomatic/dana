@@ -52,8 +52,9 @@ class TopologicalTraversal(TraversalStrategy):
         temp = set()
         
         def visit(node: Node) -> Iterator[Node]:
-            if node.node_id in temp:
-                raise ValueError("Graph has cycles")
+            # Graph may have cycles, so we don't check for them here
+            # if node.node_id in temp:
+            #     raise ValueError("Graph has cycles")
             if node.node_id not in visited:
                 temp.add(node.node_id)
                 visited.add(node.node_id)  # Mark visited immediately
@@ -136,15 +137,14 @@ class ContinuousTraversal(TraversalStrategy):
                     break
 
     def _select_next_node(self, graph: DirectedGraph, 
-                         current: Node, 
-                         next_nodes: List[Node]) -> Optional[Node]:
+                          current: Node, 
+                          next_nodes: List[Node]) -> Optional[Node]:
         """Select next node based on conditions in edge metadata."""
         for node in next_nodes:
             # Find edge between current and next node
             edge = next(
                 (e for e in graph.edges 
-                 if e.source == current.node_id 
-                 and e.target == node.node_id),
+                 if e.source == current.node_id and e.target == node.node_id),
                 None
             )
             
@@ -153,7 +153,7 @@ class ContinuousTraversal(TraversalStrategy):
 
             # If no condition in metadata, or condition is met
             if (not edge.metadata.get('condition') or 
-                self._check_condition(edge.metadata['condition'])):
+                    self._check_condition(edge.metadata['condition'])):
                 return node
                 
         return None

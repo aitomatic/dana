@@ -1,12 +1,13 @@
 """Temperature monitoring pipeline example."""
 
 from typing import Dict, Any
-from dxa.core.resource.pipeline import PipelineResource
+from dxa.core.execution.pipeline import Pipeline, PipelineContext
 
 async def main():
     """Run temperature monitoring pipeline."""
     
     # Define pipeline steps
+    # pylint: disable=unused-argument
     async def read_sensor(data: Dict[str, Any]) -> Dict[str, Any]:
         """Read sensor data."""
         return {"temperature": 25.0}
@@ -25,13 +26,21 @@ async def main():
         return data
 
     # Create pipeline
-    pipeline = PipelineResource(
+    pipeline = Pipeline(
         name="temp_monitor",
         steps=[read_sensor, analyze, report]
     )
     
-    # Execute pipeline
-    await pipeline.execute()
+    # Create and setup context
+    context = PipelineContext()
+    await pipeline.setup(context)
+    
+    try:
+        # Execute pipeline
+        await pipeline.execute()
+    finally:
+        # Clean up
+        await pipeline.cleanup(context)
 
 if __name__ == "__main__":
     import asyncio
