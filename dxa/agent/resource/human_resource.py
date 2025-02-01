@@ -8,7 +8,7 @@ import asyncio
 from typing import Dict, Any, Optional
 from dataclasses import dataclass
 
-from dxa.core.resource.base_resource import BaseResource, ResourceConfig, ResourceResponse, ResourceError
+from .base_resource import BaseResource, ResourceConfig, ResourceResponse, ResourceError
 
 @dataclass
 class HumanConfig(ResourceConfig):

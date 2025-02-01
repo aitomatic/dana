@@ -13,7 +13,13 @@ from .exceptions import (
     ValidationError,
     StateError
 )
-from .utils.config import load_agent_config
+from .utils import (
+    load_agent_config,
+    LLMInteractionAnalyzer,
+    DXALogger,
+    LLMInteractionVisualizer,
+    get_class_by_name
+)
 
 __all__ = [
     # Errors
@@ -30,5 +36,9 @@ __all__ = [
     'StateError',
     
     # Utils
-    'load_agent_config'
+    'load_agent_config',
+    'LLMInteractionAnalyzer',
+    'DXALogger',
+    'LLMInteractionVisualizer',
+    'get_class_by_name'
 ]
