@@ -1,11 +1,15 @@
 """Temperature monitoring pipeline example."""
 
 from typing import Dict, Any
-from dxa.execution import Pipeline, PipelineContext
+from dxa.execution import Pipeline
+from dxa.common import dxa_logger
 
 async def main():
     """Run temperature monitoring pipeline."""
     
+    # Enable debug logging with data samples
+    dxa_logger.configure(level="debug", log_data=True)
+
     # Define pipeline steps
     # pylint: disable=unused-argument
     async def read_sensor(data: Dict[str, Any]) -> Dict[str, Any]:
@@ -25,22 +29,17 @@ async def main():
         print(f"Temperature: {data['temperature']}°C ({data['status']})")
         return data
 
+    # Execution starts here
+    
     # Create pipeline
     pipeline = Pipeline(
         name="temp_monitor",
         steps=[read_sensor, analyze, report]
     )
     
-    # Create and setup context
-    context = PipelineContext()
-    await pipeline.setup(context)
-    
-    try:
-        # Execute pipeline
-        await pipeline.execute()
-    finally:
-        # Clean up
-        await pipeline.cleanup(context)
+    # Execute pipeline (context will be auto-created if needed)
+    await pipeline.execute()
+        
 
 if __name__ == "__main__":
     import asyncio

@@ -18,7 +18,8 @@ from .utils import (
     LLMInteractionAnalyzer,
     DXALogger,
     LLMInteractionVisualizer,
-    get_class_by_name
+    get_class_by_name,
+    dxa_logger
 )
 
 __all__ = [
@@ -40,5 +41,6 @@ __all__ = [
     'LLMInteractionAnalyzer',
     'DXALogger',
     'LLMInteractionVisualizer',
-    'get_class_by_name'
+    'get_class_by_name',
+    'dxa_logger'
 ]

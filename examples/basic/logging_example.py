@@ -1,47 +1,50 @@
-"""Demonstrates combined basic and LLM logging."""
+"""Demonstrates both basic and advanced DXALogger usage."""
 
-from dxa.common.utils.logging import DXALogger
 import time
+from dxa.common import DXALogger, dxa_logger
 
-def main():
-    # Initialize and configure
+def demo_basic_usage():
+    """Simplest possible logging setup"""
+    dxa_logger.info("Basic example started")
+    dxa_logger.log_llm(
+        prompt="Hi there!",
+        response="Hello!",
+        model="gpt-3.5-turbo"
+    )
+
+def demo_combined_logging():
+    """More comprehensive example with error handling"""
     logger = DXALogger()
     logger.configure(console=True, level="debug")
     
-    # Basic application logging
-    logger.debug("Starting processing", module="data_loader")
-    logger.info("Connected to database", db="production")
-    logger.warning("High memory usage", current="85%", threshold="80%")
+    # Application monitoring
+    logger.debug("Starting data processing", module="analyzer")
+    logger.info("Connected to cloud storage", provider="AWS S3")
     
     try:
-        # LLM interaction with timing
-        with logger.track("llm_query") as op:
-            op.add_meta(user="u123", phase="analysis")
-            time.sleep(0.5)  # Simulate processing time
-            
-            # Log LLM interaction
+        # Complex LLM operation
+        with logger.track("data_analysis"):
             logger.log_llm(
-                prompt="Analyze this dataset",
-                response="Summary: ...",
-                model="gpt-4-analytics",
-                tokens=2450
+                prompt="Analyze quarterly sales",
+                response="Sales increased by 15%",
+                model="gpt-4",
+                tokens=1200
             )
+            time.sleep(0.3)  # Simulate processing
             
-        # Simulate error
         raise ConnectionError("API timeout")
         
-    except Exception as e:
-        # LLM error logging
+    except ConnectionError as e:
         logger.log_llm_error(
-            error_message=str(e),
-            model="gpt-4-analytics",
-            error_type="api_timeout",
-            retries=3,
-            endpoint="/v1/completions"
+            message=str(e),
+            model="gpt-4",
+            error_type="api_failure",
+            retries=2
         )
-        
-        # General error logging
-        logger.error("Critical pipeline failure", stage="analysis")
 
 if __name__ == "__main__":
-    main() 
+    print("=== BASIC USAGE ===")
+    demo_basic_usage()
+    
+    print("\n=== ADVANCED USAGE ===")
+    demo_combined_logging() 
