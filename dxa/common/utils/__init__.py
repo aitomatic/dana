@@ -4,7 +4,7 @@
 from .misc import get_class_by_name
 from .config import load_agent_config
 from .log_analysis import LLMInteractionAnalyzer
-from .logging import DXALogger
+from .logging import DXALogger, dxa_logger
 from .log_viz import LLMInteractionVisualizer
 
 __all__ = [
@@ -12,5 +12,6 @@ __all__ = [
     'LLMInteractionAnalyzer',
     'DXALogger',
     'LLMInteractionVisualizer',
-    'get_class_by_name'
+    'get_class_by_name',
+    'dxa_logger'
 ]
