@@ -22,3 +22,7 @@ Example:
     ...     example_queries=["solve x^2 + 2x + 1 = 0"]
     ... )
 """
+
+from .common.utils import dxa_logger
+
+__all__ = ['dxa_logger']

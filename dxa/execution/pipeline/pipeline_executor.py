@@ -1,5 +1,6 @@
 """Pipeline executor implementation."""
 
+from time import perf_counter
 from typing import Any, Optional, List, cast
 from ...execution import (
     Executor, ExecutionNode, ExecutionGraph,
@@ -8,6 +9,7 @@ from ...execution import (
 )
 from .pipeline import PipelineNode
 from .pipeline_context import PipelineContext
+from ...common import dxa_logger
 
 class PipelineExecutor(Executor):
     """Executes pipeline steps in sequence."""
@@ -26,6 +28,7 @@ class PipelineExecutor(Executor):
 
         node = cast(PipelineNode, node)
         context = cast(PipelineContext, context)
+        dxa_logger.info(f"Executing pipeline node {node.node_id}", node_type=node.node_type)
         try:
             data = {}  # Initialize with empty dict as default
 
@@ -44,12 +47,21 @@ class PipelineExecutor(Executor):
             # 3. If neither signal nor buffer data, data remains empty dict (default)
 
             # Execute the step
+            start_time = perf_counter()
+            
             result = await node.execute(data)
             
+            dxa_logger.debug(f"Node {node.node_id} completed", 
+                             duration=perf_counter() - start_time,
+                             data_keys=list(result.keys()),
+                             **({"result_data": result} if dxa_logger.log_data else 
+                                {"result_sample": str(result)[:100]}))
+
             # Create and return result signal
             return [self.create_result_signal(node.node_id, result)]
 
         except Exception as e:  # pylint: disable=broad-except
+            dxa_logger.error(f"Node {node.node_id} failed", error=str(e))
             return [self.create_error_signal(node.node_id, str(e))]
 
     # pylint: disable=unused-argument

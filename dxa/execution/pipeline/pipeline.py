@@ -9,6 +9,7 @@ Features:
 - Buffer data between steps
 """
 
+from time import perf_counter
 from typing import Dict, Any, Optional, List, Callable, Awaitable, cast
 from dataclasses import dataclass, field
 from ...common.graph import NodeType
@@ -18,6 +19,7 @@ from ...execution import (
     ExecutionSignalType
 )
 from .pipeline_context import PipelineContext
+from ...common import dxa_logger
 
 # A pipeline step is just an async function that processes data
 PipelineStep = Callable[[Dict[str, Any]], Awaitable[Dict[str, Any]]]
@@ -65,7 +67,8 @@ class PipelineNode(ExecutionNode):
         if self.step is None:
             raise RuntimeError("No step defined for node")
 
-        return await self.step(data)
+        result = await self.step(data)
+        return result
 
 class Pipeline(ExecutionGraph):
     """A data processing pipeline."""
@@ -83,6 +86,8 @@ class Pipeline(ExecutionGraph):
         self.buffer_size = buffer_size
         self.batch_size = batch_size
         self._context: Optional[PipelineContext] = None
+        self._cleaned_up = False  # Track cleanup state
+        self._buffers_initialized = False  # Track buffer setup state
         self._build_graph(steps)
 
     @property
@@ -130,14 +135,23 @@ class Pipeline(ExecutionGraph):
 
     async def execute(self) -> Dict[str, Any]:
         """Execute pipeline."""
-        context = self.context
-        if context is None:
-            context = PipelineContext()
-            await self.setup(context)
-            self.context = context
-    
-        # Execute pipeline
-        return await self._execute()
+        start_time = perf_counter()
+        dxa_logger.info(f"Starting pipeline '{self.name}'", 
+                        nodes=len(self.nodes),
+                        buffer_size=self.buffer_size)
+        
+        try:
+            context = self.context
+            if context is None:
+                context = PipelineContext()
+                await self.setup(context)
+                self.context = context
+        
+            # Execute pipeline
+            return await self._execute()
+        finally:
+            dxa_logger.info(f"Completed pipeline '{self.name}'", 
+                            duration=perf_counter() - start_time)
         
     async def _execute(self) -> Dict[str, Any]:
         """Execute pipeline (raw, i.e. without context setup)."""
@@ -155,6 +169,8 @@ class Pipeline(ExecutionGraph):
             return signals[-1].content.get("result", {})
         finally:
             await self.cleanup_node_buffers(self.context)
+            self._cleaned_up = True
+            self._buffers_initialized = False  # Reset for next execution
 
     async def setup(self, context: PipelineContext) -> None:
         """Setup pipeline buffers."""
@@ -163,7 +179,12 @@ class Pipeline(ExecutionGraph):
 
     async def cleanup(self, context: ExecutionContext) -> None:
         """Cleanup pipeline buffers."""
+        if self._cleaned_up:
+            return
+        
         await self.cleanup_node_buffers(context)
+        self._cleaned_up = True
+        self._buffers_initialized = False  # Reset for next execution
 
     def get_next_nodes(self, node_id: str) -> List[ExecutionNode]:
         """Get next nodes in pipeline sequence."""
@@ -172,10 +193,16 @@ class Pipeline(ExecutionGraph):
 
     async def setup_node_buffers(self, context: ExecutionContext) -> None:
         """Setup buffers for all nodes that need them."""
+        if self._buffers_initialized:
+            return
+        
         for node_id, node in self.nodes.items():
             if isinstance(node, PipelineNode) and node.buffer_config["enabled"]:
-                context = cast(PipelineContext, context)
+                dxa_logger.debug(f"Setting up buffer for {node_id}", 
+                                 size=node.buffer_config["size"])
                 await context.setup_buffer(node_id, node.buffer_config["size"])
+        
+        self._buffers_initialized = True
 
     async def cleanup_node_buffers(self, context: ExecutionContext) -> None:
         """Cleanup buffers for all nodes."""
