@@ -5,6 +5,7 @@ from typing import Dict, Any, Optional
 import asyncio
 from datetime import datetime
 from ..execution_context import ExecutionContext
+from ...common import dxa_logger
 
 @dataclass
 class PipelineContext(ExecutionContext):
@@ -27,7 +28,10 @@ class PipelineContext(ExecutionContext):
     async def send_data(self, node_id: str, data: Any) -> None:
         """Send data to node buffer."""
         if node_id in self.buffers:
-            await self.buffers[node_id].put(data)
+            buffer = self.buffers[node_id]
+            if buffer.full():
+                dxa_logger.warning(f"Buffer {node_id} full", size=buffer.qsize())
+            await buffer.put(data)
             self.buffer_metrics[node_id]["messages_processed"] += 1
             self.buffer_metrics[node_id]["last_activity"] = datetime.now()
 
@@ -44,6 +48,8 @@ class PipelineContext(ExecutionContext):
 
     async def cleanup_buffers(self) -> None:
         """Cleanup all buffers."""
+        dxa_logger.debug("Cleaning up pipeline buffers", 
+                            buffer_count=len(self.buffers))
         for buffer in self.buffers.values():
             while not buffer.empty():
                 try:

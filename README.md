@@ -207,3 +207,28 @@ For external users or organizations interested in collaborating with Aitomatic o
 This software is proprietary and confidential. Copyright © 2024 Aitomatic, Inc. All rights reserved.
 
 Unauthorized copying, transfer, or reproduction of this software, via any medium, is strictly prohibited. This software is protected by copyright law and international treaties.
+
+## Basic Logging
+
+```python
+from dxa import dxa_logger
+
+dxa_logger.info("Application started")
+dxa_logger.log_llm(
+    prompt="What is 2+2?",
+    response="4",
+    model="gpt-3.5"
+)
+```
+
+## Advanced Configuration
+
+```python
+from dxa.common.utils import DXALogger
+
+custom_logger = DXALogger()
+custom_logger.configure(
+    console=True,
+    level="debug"
+)
+```

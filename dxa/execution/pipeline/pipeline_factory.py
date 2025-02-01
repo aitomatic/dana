@@ -9,6 +9,7 @@ from datetime import datetime
 import json
 import logging
 import numpy as np
+from ...common import dxa_logger
 
 logger = logging.getLogger(__name__)
 
@@ -123,7 +124,9 @@ class PipelineFactory:
             
             Useful for debugging and monitoring.
             """
-            getattr(logger, level.lower())(str(data))
+            dxa_logger.log(level, "Pipeline data snapshot", 
+                           data_keys=list(data.keys()),
+                           data_types={k: type(v).__name__ for k, v in data.items()})
             return data
 
         @staticmethod
@@ -139,6 +142,7 @@ class PipelineFactory:
         # pylint: disable=unused-argument
         async def sensor_reader(data: Dict[str, Any]) -> Dict[str, Any]:
             """Example source step."""
+            dxa_logger.debug("Reading sensor data")
             await asyncio.sleep(0.1)
             return {
                 "temperature": 25.0,
@@ -148,6 +152,7 @@ class PipelineFactory:
         @staticmethod
         async def analyzer(data: Dict[str, Any]) -> Dict[str, Any]:
             """Example transform step."""
+            dxa_logger.debug("Analyzing sensor data", temp=data["temperature"])
             temp = data["temperature"]
             return {
                 **data,

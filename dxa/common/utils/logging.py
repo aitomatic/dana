@@ -11,34 +11,57 @@ import logging
 
 class DXALogger:
     """DXALogger is a simplified logging class for DXA"""
-    def __init__(self):
+    def __init__(self, log_data: bool = False):
         self.logger = logging.getLogger("dxa")
-        self.logger.setLevel(logging.INFO)
         self._configured = False
+        self.log_data = log_data  # Control data visibility
         
+        # Default configuration
+        if not self.logger.handlers:
+            self._setup_basic_config()
+    
+    def _setup_basic_config(self):
+        """Set up minimal console logging by default"""
+        handler = logging.StreamHandler()
+        formatter = logging.Formatter(
+            '%(asctime)s - %(levelname)s - %(message)s'
+        )
+        handler.setFormatter(formatter)
+        self.logger.addHandler(handler)
+        self.logger.setLevel(logging.INFO)
+    
     def configure(self, 
                   console: bool = True,
-                  level: str = "info"):
+                  level: str = "info",
+                  log_data: bool = False):
         """One-click configuration with dual formatting"""
+        self.log_data = log_data
+        # Remove existing handlers
+        for handler in self.logger.handlers[:]:
+            self.logger.removeHandler(handler)
+        
         class DualFormatter(logging.Formatter):
             """DualFormatter is a formatter that can format both LLM and timing logs"""
             def format(self, record):
-                asctime = self.formatTime(record)
+                original = super().format(record)
                 
-                if hasattr(record, 'prompt'):
-                    # LLM format
-                    return (f"{asctime} - {record.levelname} - {record.msg} | "
-                            f"Details: {record.prompt} | Response: {record.response} | "
-                            f"Model: {getattr(record, 'model', 'N/A')}")
-                elif hasattr(record, 'operation'):
-                    # Timing format
-                    return (f"{asctime} - {record.levelname} - {record.msg}\n"
-                            f"operation: {record.operation}\n"
-                            f"duration: {record.duration}\n"
-                            f"{', '.join(f'{k}: {v}' for k, v in record.__dict__.items() 
-                                         if k not in ['operation', 'duration'])}")
-                # Basic format
-                return f"{asctime} - {record.levelname} - {record.msg}"
+                # Get the logging context
+                context = getattr(record, 'context', {})
+                
+                # Only show data for execution-related logs
+                data_keys = {
+                    'result_data'  # Only log final output data
+                }
+                if not data_keys.intersection(context.keys()):
+                    return original
+                
+                # Format output data and metadata
+                lines = []
+                if 'result_data' in context:
+                    lines.append(f"output_data: {context['result_data']}")
+                
+                param_str = "\n    ".join(lines)
+                return f"{original}\n    {param_str}"
         
         formatter = DualFormatter(
             fmt='%(asctime)s - %(levelname)s - %(message)s',
@@ -101,6 +124,15 @@ class DXALogger:
         """Timed operations context manager"""
         return TimedOperation(self, operation)
 
+    def log(self, level: str, message: str, **context):
+        """Generic logging method for any level"""
+        level_upper = level.upper()
+        self.logger.log(
+            getattr(logging, level_upper),
+            message,
+            extra={'context': context}
+        )
+
 class TimedOperation:
     """Timed operations context manager"""
     def __init__(self, logger: DXALogger, name: str):
@@ -124,3 +156,6 @@ class TimedOperation:
             f"Operation '{self.name}' completed in {duration:.2f}s",
             **self.metadata
         )
+
+# Create preconfigured instance
+dxa_logger = DXALogger()
