@@ -3,7 +3,7 @@ Global DXA Factory
 """
 
 from typing import Dict, Any
-from .agent import Agent, AgentFactory
+from ..agent import Agent, AgentFactory
 
 class DXAFactory:
     """Creates and configures DXA components."""

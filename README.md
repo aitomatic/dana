@@ -106,8 +106,8 @@ Prerequisites:
 ## Quick Start
 
 ```python
-from dxa.core.agent import Agent
-from dxa.core.workflow import create_research_workflow
+from dxa.agent import Agent
+from dxa.execution import create_research_workflow
 
 # Simple Q&A
 answer = Agent().ask("What is quantum computing?")
