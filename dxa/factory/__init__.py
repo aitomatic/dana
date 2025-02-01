@@ -25,10 +25,12 @@ Notes:
     - Experts can be combined or used independently based on use case
 """
 
-from dxa.experts.math import create_math_expert
-from dxa.experts.finance import create_finance_expert
+from .dxa_factory import DXAFactory
+from .math import create_math_expert
+from .finance import create_finance_expert
 
 __all__ = [
+    'DXAFactory',
     'create_math_expert',
     'create_finance_expert'
 ]

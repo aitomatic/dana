@@ -27,7 +27,7 @@ Notes:
     - Considers both quantitative data and market context
 """
 
-from dxa.core.resource.expert_resource import DomainExpertise, ExpertResource
+from ..agent.resource import DomainExpertise, ExpertResource
 
 def create_finance_expert(api_key: str) -> ExpertResource:
     """Create a finance expert resource."""
