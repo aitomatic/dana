@@ -3,6 +3,7 @@
 from typing import Dict, Any
 from dxa.agent import Agent
 from dxa.execution import PlanningStrategy, WorkflowFactory
+from dxa.common import DXA_LOGGER
 
 def simple_qa(question: str) -> Dict[str, Any]:
     """Direct question-answer using default agent."""
@@ -29,19 +30,19 @@ def two_step_qa(question: str) -> Dict[str, Any]:
     )
     return agent.run(workflow)
 
-def main():
-    """Simple Q&A example."""
-    question = "What is quantum computing?"
-    print(f"\nQuestion: {question}")
+def run_simple_qa():
+    """Simple QA workflow with proper signal handling."""
+    agent = Agent("qa_agent")
+    workflow = WorkflowFactory.create_minimal_workflow(
+        "Explain quantum entanglement in simple terms"
+    )
     
-    # print("\nSimple QA:")
-    # print(simple_qa(question)['content'])
+    result = agent.run(workflow)
     
-    # print("\nWorkflow QA:")
-    # print(workflow_qa(question)['content'])
-    
-    print("\nTwo-step QA:")
-    print(two_step_qa(question)['content'])
+    # Access response through signal content
+    # Dump the result dict
+    print(result)
 
 if __name__ == "__main__":
-    main()
+    DXA_LOGGER.configure(level=DXA_LOGGER.DEBUG)
+    run_simple_qa()

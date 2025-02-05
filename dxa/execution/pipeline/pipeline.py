@@ -19,7 +19,7 @@ from ...execution import (
     ExecutionSignalType
 )
 from .pipeline_context import PipelineContext
-from ...common import dxa_logger
+from ...common import DXA_LOGGER
 
 # A pipeline step is just an async function that processes data
 PipelineStep = Callable[[Dict[str, Any]], Awaitable[Dict[str, Any]]]
@@ -136,7 +136,7 @@ class Pipeline(ExecutionGraph):
     async def execute(self) -> Dict[str, Any]:
         """Execute pipeline."""
         start_time = perf_counter()
-        dxa_logger.info(f"Starting pipeline '{self.name}'", 
+        DXA_LOGGER.info(f"Starting pipeline '{self.name}'", 
                         nodes=len(self.nodes),
                         buffer_size=self.buffer_size)
         
@@ -150,7 +150,7 @@ class Pipeline(ExecutionGraph):
             # Execute pipeline
             return await self._execute()
         finally:
-            dxa_logger.info(f"Completed pipeline '{self.name}'", 
+            DXA_LOGGER.info(f"Completed pipeline '{self.name}'", 
                             duration=perf_counter() - start_time)
         
     async def _execute(self) -> Dict[str, Any]:
@@ -196,11 +196,14 @@ class Pipeline(ExecutionGraph):
         if self._buffers_initialized:
             return
         
+        # Cast to PipelineContext to access buffer methods
+        pipeline_context = cast(PipelineContext, context)
+        
         for node_id, node in self.nodes.items():
             if isinstance(node, PipelineNode) and node.buffer_config["enabled"]:
-                dxa_logger.debug(f"Setting up buffer for {node_id}", 
+                DXA_LOGGER.debug(f"Setting up buffer for {node_id}", 
                                  size=node.buffer_config["size"])
-                await context.setup_buffer(node_id, node.buffer_config["size"])
+                await pipeline_context.setup_buffer(node_id, node.buffer_config["size"])
         
         self._buffers_initialized = True
 

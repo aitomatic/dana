@@ -21,7 +21,7 @@ Note: Install visualization dependencies with:
 
 from typing import Optional
 from pathlib import Path
-from dxa.common.utils.log_analysis import LLMInteractionAnalyzer
+from .logging import LLMInteractionAnalyzer
 
 try:
     import matplotlib.pyplot as plt
@@ -91,7 +91,7 @@ class LLMInteractionVisualizer:
         )
 
         plt.figure(figsize=(10, 6))
-        sns.histplot(response_times, bins=50)
+        sns.histplot(data=response_times.to_numpy(), bins=50)
         plt.title('Distribution of Response Times')
         plt.xlabel('Response Time (ms)')
         plt.ylabel('Count')
@@ -188,7 +188,7 @@ class LLMInteractionVisualizer:
         response_times = df['metadata'].apply(
             lambda x: float(x.get('duration_ms', 0)) if isinstance(x, dict) else 0.0
         )
-        sns.histplot(response_times, bins=50, ax=ax2)
+        sns.histplot(data=response_times.to_numpy(), bins=50, ax=ax2)
         ax2.set_title('Response Time Distribution')
 
         # Success rate by phase

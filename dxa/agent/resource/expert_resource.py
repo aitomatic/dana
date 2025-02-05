@@ -84,7 +84,9 @@ class ExpertResource(BaseResource):
         if not self._io:
             await self.initialize()
 
-        response = await self._io.query(request.get("prompt"))
+        # Ensure we pass a proper dictionary with prompt
+        prompt = request.get("prompt") or ""
+        response = await self._io.query({"prompt": prompt})
         return {
             "success": True,
             "content": response

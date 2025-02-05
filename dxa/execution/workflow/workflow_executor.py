@@ -2,7 +2,6 @@
 
 from enum import Enum
 from typing import List, cast, Optional, TYPE_CHECKING
-
 from ..execution_context import ExecutionContext
 from ..execution_types import ExecutionNode, ExecutionSignal, Objective
 from ..execution_graph import ExecutionGraph
@@ -26,9 +25,11 @@ class WorkflowExecutor(Executor):
     """Executes workflow graphs."""
 
     def __init__(self, plan_executor: 'PlanExecutor', strategy: WorkflowStrategy = WorkflowStrategy.DEFAULT):
-        super().__init__()
+        super().__init__(depth=1)
         self.plan_executor = plan_executor
         self._strategy = strategy
+        self.layer = "workflow"
+        self._configure_logger()
 
     @property
     def strategy(self) -> WorkflowStrategy:
@@ -88,6 +89,12 @@ class WorkflowExecutor(Executor):
                 context=context,
                 upper_signals=prev_signals  # Pass my prev_signals down to plan executor
             )
+
+        self.logger.debug(
+            "Processing workflow node",
+            node_id=node.node_id,
+            node_type=node.node_type
+        )
 
         return []
 

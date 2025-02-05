@@ -30,9 +30,11 @@ class PlanExecutor(Executor):
     """Executes plans using planning strategies."""
 
     def __init__(self, reasoning_executor: 'ReasoningExecutor', strategy: PlanningStrategy = PlanningStrategy.DEFAULT):
-        super().__init__()
+        super().__init__(depth=2)
         self.reasoning_executor = reasoning_executor
         self._strategy = strategy
+        self.layer = "plan"
+        self._configure_logger()
 
     @property
     def strategy(self) -> PlanningStrategy:
@@ -92,6 +94,15 @@ class PlanExecutor(Executor):
         plan = self._create_plan(cast(Workflow, upper_graph), objective)
         assert context is not None
         context.current_plan = plan
+        assert upper_graph.objective is not None
+        self.logger.info(
+            "Plan created", 
+            extra={
+                'strategy': self.strategy.value,
+                'steps': len(plan.nodes),
+                'source_workflow': upper_graph.objective.original[:50] + "..."
+            }
+        )
         return cast(ExecutionGraph, plan)
 
     def _create_plan(self, workflow: Workflow, objective: Optional[Objective] = None) -> Plan:
@@ -159,3 +170,10 @@ class PlanExecutor(Executor):
             plan.add_edge(ExecutionEdge(edge.source, edge.target))
 
         return plan
+
+    async def _execute_step(self, step: ExecutionNode, context: ExecutionContext):
+        self.logger.debug(
+            "Executing plan step",
+            step=getattr(context.agent_state, 'current_step_index', 0),
+            node_id=step.node_id
+        )

@@ -16,10 +16,10 @@ from .exceptions import (
 from .utils import (
     load_agent_config,
     LLMInteractionAnalyzer,
-    DXALogger,
     LLMInteractionVisualizer,
     get_class_by_name,
-    dxa_logger
+    DXALogger,
+    DXA_LOGGER
 )
 
 __all__ = [
@@ -39,8 +39,8 @@ __all__ = [
     # Utils
     'load_agent_config',
     'LLMInteractionAnalyzer',
-    'DXALogger',
     'LLMInteractionVisualizer',
     'get_class_by_name',
-    'dxa_logger'
+    'DXALogger',
+    'DXA_LOGGER'
 ]
