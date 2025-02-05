@@ -3,11 +3,11 @@
 from dataclasses import dataclass, field
 from typing import Dict, Any, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
-    from ..state import AgentState, WorldState, ExecutionState
+    from ..agent import AgentState, WorldState, ExecutionState
+    from ..agent.resource import LLMResource
     from .workflow import Workflow
     from .planning import Plan
     from .reasoning import Reasoning
-    from ..resource import BaseResource, LLMResource
 
 @dataclass
 class ExecutionContext:

@@ -22,13 +22,17 @@ Example:
 """
 
 from abc import ABC
-from typing import Dict, Any, Optional, Union
-import logging
 from dataclasses import dataclass
+from typing import Dict, Any, Optional, Union
+from ...common import DXA_LOGGER
 
 class ResourceError(Exception):
     """Base class for resource errors."""
-    pass
+    def __init__(self, message: str, original_error: Optional[Exception] = None):
+        super().__init__(message)
+        self.original_error = original_error
+        DXA_LOGGER.error("Resource error occurred", 
+                            extra={"error": message, "exception": original_error})
 
 class ResourceUnavailableError(ResourceError):
     """Error raised when resource is unavailable."""
@@ -57,6 +61,7 @@ class ResourceConfig:
 class ResourceResponse:
     """Base response for all resources."""
     success: bool = True
+    content: Optional[Any] = None  # Added MCP-compatible field
     error: Optional[str] = None
 
 class BaseResource(ABC):
@@ -85,7 +90,7 @@ class BaseResource(ABC):
         self.name = name or self.config.name
         self.description = self.config.description or "No description provided"
         self._is_available = False  # will only be True after initialization
-        self.logger = logging.getLogger(f"{self.__class__.__name__}:{name}")
+        self.logger = DXA_LOGGER.getChild(f"resource.{self.__class__.__name__}")
 
     @property
     def is_available(self) -> bool:
@@ -95,21 +100,29 @@ class BaseResource(ABC):
     async def initialize(self) -> None:
         """Initialize resource."""
         self._is_available = True
+        self.logger.info(f"Initializing resource [{self.name}]")
+        # Resource-specific initialization logic
+        self.logger.debug(f"Resource [{self.name}] initialized successfully")
 
     async def cleanup(self) -> None:
         """Cleanup resource."""
         self._is_available = False
+        self.logger.info(f"Cleaning up resource [{self.name}]")
+        # Resource-specific cleanup logic
+        self.logger.debug(f"Resource [{self.name}] cleanup completed")
 
     # pylint: disable=unused-argument
     async def query(self, request: Dict[str, Any]) -> ResourceResponse:
         """Query resource."""
         if not self._is_available:
             raise ResourceUnavailableError(f"Resource {self.name} not initialized")
+        self.logger.debug(f"Resource [{self.name}] received query: {self._sanitize_log_data(request)}")
         return ResourceResponse(success=True)
 
     def can_handle(self, request: Dict[str, Any]) -> bool:
         """Check if resource can handle request."""
-        raise NotImplementedError
+        self.logger.debug(f"Checking if [{self.name}] can handle request")
+        return False
 
     async def __aenter__(self) -> 'BaseResource':
         await self.initialize()
@@ -117,3 +130,12 @@ class BaseResource(ABC):
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.cleanup()
+
+    def _sanitize_log_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Sanitize sensitive data before logging"""
+        sanitized = data.copy()
+        # Example sanitization - extend based on your needs
+        for key in ["password", "api_key", "token"]:
+            if key in sanitized:
+                sanitized[key] = "***REDACTED***"
+        return sanitized

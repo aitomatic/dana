@@ -23,6 +23,6 @@ Example:
     ... )
 """
 
-from .common.utils import dxa_logger
+from .common.utils import DXA_LOGGER
 
-__all__ = ['dxa_logger']
+__all__ = ['DXA_LOGGER']
