@@ -2,9 +2,7 @@
 
 from typing import List, Optional
 from dataclasses import dataclass, field
-from ...execution.execution_types import Objective, ExecutionSignal
-from ...execution.execution_graph import ExecutionNode
-from ...execution.planning.plan import Plan
+from ...execution import Workflow, Objective, ExecutionSignal, ExecutionNode, Plan
 from .base_state import BaseState
 
 @dataclass
@@ -12,6 +10,7 @@ class AgentState(BaseState):
     """Manages agent execution state."""
     objective: Optional[Objective] = None
     plan: Optional[Plan] = None
+    current_workflow: Optional['Workflow'] = None
     signals: List[ExecutionSignal] = field(default_factory=list)
     current_step_index: int = 0
 
@@ -41,7 +40,12 @@ class AgentState(BaseState):
         self.current_step_index += 1
 
     def get_current_step(self) -> Optional[ExecutionNode]:
-        """Get current step being executed."""
-        if self.plan and self.current_step_index < len(self.plan.nodes):
-            return self.plan.nodes[self.current_step_index]
-        return None
+        """Safely get current step with validation."""
+        if not self.plan:
+            return None
+        
+        step_keys = [k for k in self.plan.nodes if k.startswith("step_")]
+        try:
+            return self.plan.nodes[step_keys[self.current_step_index]]
+        except (IndexError, KeyError):
+            return None

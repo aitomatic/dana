@@ -28,10 +28,12 @@ class ReasoningExecutor(Executor):
     """Executes reasoning patterns."""
 
     def __init__(self, strategy: ReasoningStrategy = ReasoningStrategy.DEFAULT):
-        super().__init__()
+        super().__init__(depth=3)  # Child of plan
         self.strategy = strategy
         self.current_reasoning = None
-        self.graph = None  # Initialize graph attribute to fix linter error
+        self.graph: Optional[ExecutionGraph] = None  # Add type annotation
+        self.layer = "reasoning"
+        self._configure_logger()
 
     async def execute(self, upper_graph: ExecutionGraph, context: ExecutionContext,
                       upper_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
@@ -109,15 +111,39 @@ class ReasoningExecutor(Executor):
             )
             reasoning = self._create_execution_graph([node])
         # ... other strategies
-        assert reasoning is not None
+        if not reasoning:
+            raise ValueError(f"Failed to create reasoning graph for strategy {self.strategy}")
         reasoning.objective = objective
         return cast(Reasoning, reasoning)
 
     async def _execute_direct(self, node: ExecutionNode, context: ExecutionContext) -> List[ExecutionSignal]:
         """Execute direct LLM query."""
+        self.logger.info(
+            "Starting reasoning", 
+            extra={
+                'strategy': self.strategy.value,
+                'layer': 'reasoning',
+                'prompt': node.description[:50] + "...",
+                'plan_step': getattr(context.agent_state, 'current_step_index', 0)
+            }
+        )
         assert context.reasoning_llm is not None
         response = await context.reasoning_llm.query({"prompt": node.description})
-        return [ExecutionSignal(type=ExecutionSignalType.DATA_RESULT, content=response)]
+        self.logger.debug(
+            "LLM response received",
+            extra={
+                'response_length': len(response),
+                'node': node.node_id,
+                'latency': getattr(context, 'llm_latency', 0)
+            }
+        )
+        return [ExecutionSignal(
+            type=ExecutionSignalType.DATA_RESULT,
+            content={
+                "result": response,
+                "node": node.node_id
+            }
+        )]
 
     async def _execute_cot(self, node: ExecutionNode, context: ExecutionContext) -> List[ExecutionSignal]:
         """Execute chain-of-thought reasoning."""

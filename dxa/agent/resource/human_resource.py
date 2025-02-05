@@ -28,7 +28,7 @@ class HumanResponse(ResourceResponse):
         success (bool): Indicates whether the operation was successful.
         error (Optional[str]): An optional error message if the operation failed.
     """
-    response: str = None
+    response: str = ""
     success: bool = True
     error: Optional[str] = None
 

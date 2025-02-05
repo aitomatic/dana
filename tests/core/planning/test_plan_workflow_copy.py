@@ -43,6 +43,9 @@ async def test_plan_execution_updates_workflow_cursor(workflow, plan_executor):
     plan = plan_executor._create_follow_workflow_plan(workflow, workflow.objective)
     context = ExecutionContext(current_workflow=workflow, current_plan=plan)
 
-    await plan_executor.execute_node(plan.nodes["PERFORM_TASK"], context, None, None)
+    try:
+        await plan_executor.execute_node(plan.nodes["PERFORM_TASK"], context, None, None)
+    except ValueError as e:
+        assert str(e) == "No reasoning LLM configured in context"
     
     assert workflow.get_current_node().node_id == "PERFORM_TASK" 

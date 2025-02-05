@@ -2,6 +2,7 @@
 
 from abc import ABC, abstractmethod
 from typing import Optional, List, cast, TYPE_CHECKING, Any
+from logging import LoggerAdapter
 from .execution_types import (
     ExecutionNode,
     ExecutionSignal,
@@ -11,15 +12,30 @@ from .execution_types import (
     ExecutionError,
 )
 from .execution_graph import ExecutionGraph
+from ..common import DXA_LOGGER
 from ..common.graph import NodeType
+
 if TYPE_CHECKING:
     from .execution_context import ExecutionContext
 
 class Executor(ABC):
     """Base class for executing any graph-based process."""
     
-    def __init__(self):
+    def __init__(self, depth: int = 0):
         self._graph = None
+        self._cursor = None
+        self.layer = "executor"
+        self._depth = depth  # Execution depth for indentation
+        self.logger = DXA_LOGGER
+        # self._configure_logger()
+
+    def _configure_logger(self):
+        """Configure logger by depth."""
+        layer_name = self.layer.upper() + ' ' * (10 - len(self.layer))
+        self.logger = LoggerAdapter(
+            DXA_LOGGER.getChild(self.__class__.__name__).logger,
+            {'prefix': layer_name + '  ' * self._depth}
+        )
 
     @property
     def graph(self) -> Optional[ExecutionGraph]:
@@ -44,6 +60,8 @@ class Executor(ABC):
         prev_signals = []
         lower_signals = []
 
+        self._log_execution_start()
+
         while (current := cursor.next()) is not None:
             try:
                 assert self.graph is not None
@@ -67,7 +85,7 @@ class Executor(ABC):
                 # Process signals (update node status, store results, etc)
                 self._process_node_signals(current.node_id, signals)
                 
-            except Exception as e:  # pylint: disable=broad-exception-caught
+            except ConnectionError as e:  # pylint: disable=broad-exception-caught
                 self._handle_node_error(current.node_id, str(e))
                 all_signals.append(self._create_error_signal(current.node_id, str(e)))
                 break
@@ -177,6 +195,16 @@ class Executor(ABC):
             content={
                 "node": node_id,
                 "error": error
+            }
+        )
+
+    def _log_execution_start(self):
+        self.logger.info(
+            "Execution started",
+            extra={
+                'layer': self.layer,
+                'graph_type': self.__class__.__name__,
+                'node_count': len(self.graph.nodes) if self.graph else 0
             }
         )
     

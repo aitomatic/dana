@@ -1,5 +1,6 @@
 aiohttp
 matplotlib
+mcp
 openai
 pandas
 pytest
