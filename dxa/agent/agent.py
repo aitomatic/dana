@@ -204,6 +204,26 @@ class Agent:
         self._reasoning_llm = self._create_llm(llm, "reasoning_llm")
         return self
 
+    # def with_mcp(self, config: Dict[str, Any]) -> 'Agent':
+    #     """Add MCP resource to agent."""
+    #     return self.with_resources({
+    #         "mcp": MCPResource(
+    #             name="mcp_gateway",
+    #             endpoint=config["endpoint"],
+    #             context_config=config.get("context")
+    #         )
+    #     })
+
+    # def with_wot(self, config: Dict[str, Any]) -> 'Agent':
+    #     """Add WoT resource to agent."""
+    #     return self.with_resources({
+    #         "wot": WoTResource(
+    #             name="wot_gateway",
+    #             directory_endpoint=config["directory"],
+    #             thing_description=config.get("thing_description")
+    #         )
+    #     })
+
     def _create_llm(self, llm: Union[Dict, str, LLMResource], name: str) -> LLMResource:
         """Create LLM from various input types."""
         if isinstance(llm, LLMResource):
@@ -252,9 +272,13 @@ class Agent:
             await self._runtime.cleanup()
             self._runtime: Optional[AgentRuntime] = None
 
+    async def initialize(self) -> None:
+        """Public initialization method."""
+        self._initialize()
+
     async def __aenter__(self) -> 'Agent':
         """Initialize agent when entering context."""
-        self._initialize()
+        await self.initialize()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
@@ -288,7 +312,7 @@ class Agent:
             return await self.runtime.execute(workflow, context)
 
     def run(self, workflow: Workflow) -> Any:
-        """Run an objective."""
+        """Run an workflow."""
         return asyncio.run(self.async_run(workflow))
 
     def ask(self, question: str) -> Any:

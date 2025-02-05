@@ -2,13 +2,13 @@
 
 from typing import Dict, Any
 from dxa.execution import Pipeline
-from dxa.common import dxa_logger
+from dxa.common import DXA_LOGGER
 
 async def main():
     """Run temperature monitoring pipeline."""
     
     # Enable debug logging with data samples
-    dxa_logger.configure(level="debug", log_data=True)
+    DXA_LOGGER.configure(level=DXA_LOGGER.DEBUG, log_data=True)
 
     # Define pipeline steps
     # pylint: disable=unused-argument

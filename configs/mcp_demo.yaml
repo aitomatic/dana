@@ -1,0 +1,8 @@
+agent:
+  name: mcp_demo
+  log_level: debug
+
+mcp:
+  timeout: 30
+  retries: 3
+  cache_ttl: 3600 

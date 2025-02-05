@@ -1,12 +1,12 @@
 """Demonstrates both basic and advanced DXALogger usage."""
 
 import time
-from dxa.common import DXALogger, dxa_logger
+from dxa.common import DXA_LOGGER
 
 def demo_basic_usage():
     """Simplest possible logging setup"""
-    dxa_logger.info("Basic example started")
-    dxa_logger.log_llm(
+    DXA_LOGGER.info("Basic example started")
+    DXA_LOGGER.log_llm(
         prompt="Hi there!",
         response="Hello!",
         model="gpt-3.5-turbo"
@@ -14,8 +14,8 @@ def demo_basic_usage():
 
 def demo_combined_logging():
     """More comprehensive example with error handling"""
-    logger = DXALogger()
-    logger.configure(console=True, level="debug")
+    logger = DXA_LOGGER.getLogger(__name__)
+    logger.configure(console=True, level=DXA_LOGGER.DEBUG)
     
     # Application monitoring
     logger.debug("Starting data processing", module="analyzer")
