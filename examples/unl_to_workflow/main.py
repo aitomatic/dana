@@ -92,99 +92,6 @@ def run_unl_to_workflow_two_agents_with_reasoning_llm(unl: str):
     result = agent.run(workflow)
     print(f"\nRESULT: \n{result}")
 
-def run_unl_to_workflow_in_one_agent(unl: str, onl: str):
-    print("\n\n==================== Run workflow =====================")
-    agent = Agent("workflow_agent")
-    workflow = WorkflowFactory.create_minimal_workflow(workflow)
-    result = agent.run(workflow)
-    print(f"\nRESULT: \n{result}")
-
-
-    """Two-step summarize-explain using workflow-is-plan strategy."""
-    print("\n\n==================== Translate ONL to workflow =====================")
-    workflow = WorkflowFactory.create_sequential_workflow(
-        objective="Translate the following unstructured natural language into a workflow",
-        commands=[
-            UNL_TO_ONL_PROMPT.format(unl=unl),
-            ONL_TO_WORKFLOW_PROMPT.format(onl=onl)
-        ]
-    )
-    return agent.run(workflow)
-
-def build_yaml_data(workflow_yaml: str) -> dict:
-    """Convert workflow YAML string to dictionary compatible with WorkflowFactory.from_yaml().
-    Only extracts leaf nodes (steps) to create a sequential workflow.
-    
-    Args:
-        workflow_yaml (str): YAML content as string containing workflow steps
-                           in format:
-                           workflow-name:
-                             process-name:
-                                 - "Step 1"
-                                 - "Step 2"
-        
-    Returns:
-        dict: Workflow data with nodes and edges in the format:
-        {
-            'name': 'workflow_name',
-            'description': 'workflow description',
-            'nodes': [{id, type, description, metadata}],
-            'edges': [{source, target, metadata}]
-        }
-    """
-    if not workflow_yaml or not workflow_yaml.strip():
-        raise ValueError("Empty workflow YAML")
-        
-    raw_data = yaml.safe_load(workflow_yaml)
-    if not raw_data or not isinstance(raw_data, dict):
-        raise ValueError("Invalid workflow YAML structure")
-    
-    # Get the workflow name (first key in the YAML)
-    try:
-        workflow_name = next(iter(raw_data))
-        processes = raw_data[workflow_name]
-    except (StopIteration, KeyError):
-        raise ValueError("Invalid workflow YAML structure")
-    
-    # Create nodes list starting with START
-    nodes = [
-        {"id": "START", "type": "START", "description": "Begin workflow"}
-    ]
-    
-    # Extract all steps sequentially
-    step_counter = 1
-    for process_name, steps in processes.items():
-        if isinstance(steps, list):
-            for step in steps:
-                nodes.append({
-                    "id": f"STEP_{step_counter}",
-                    "type": "TASK",
-                    "description": str(step),
-                    "metadata": {"process": process_name}
-                })
-                step_counter += 1
-    
-    if len(nodes) == 1:  # Only START node exists
-        raise ValueError("No valid steps found in workflow")
-    
-    # Add END node
-    nodes.append({"id": "END", "type": "END", "description": "End workflow"})
-    
-    # Create sequential edges
-    edges = []
-    for i in range(len(nodes) - 1):
-        edges.append({
-            "source": nodes[i]["id"],
-            "target": nodes[i + 1]["id"]
-        })
-    
-    return {
-        "name": workflow_name,
-        "objective": f"Sequential workflow for {workflow_name}",
-        "nodes": nodes,
-        "edges": edges
-    }
-
 
 if __name__ == "__main__":
     # DXA_LOGGER.configure(level=DXA_LOGGER.DEBUG, log_data=True)
@@ -202,4 +109,3 @@ if __name__ == "__main__":
     """
 
     run_unl_to_workflow_two_agents_with_reasoning_llm(unl)
-    # test_build_yaml_data()
