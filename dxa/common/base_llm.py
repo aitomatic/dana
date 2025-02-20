@@ -20,6 +20,16 @@ Example:
     ```
 """
 
+import warnings
+
+# Add deprecation warning at top of file
+warnings.warn(
+    "BaseLLM is deprecated and will be removed in a future version. "
+    "Use LLMResource with aisuite directly instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
+
 from typing import Dict, Optional, List, Any, Union
 import logging
 import os
