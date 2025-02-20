@@ -9,7 +9,8 @@ from ..execution_types import (
     ExecutionNode,
     ExecutionSignal,
     ExecutionSignalType,
-    Objective
+    Objective,
+    ExecutionEdge
 )
 from ..execution_graph import ExecutionGraph
 from ..executor import Executor
@@ -38,15 +39,19 @@ class ReasoningExecutor(Executor):
     async def execute(self, upper_graph: ExecutionGraph, context: ExecutionContext,
                       upper_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
         """Execute using reasoning strategy."""
-        # Create reasoning graph based on strategy
-        plan = cast(Plan, upper_graph)
-        reasoning = self._create_reasoning(plan, upper_graph.objective)
+        # Only create reasoning graph if we don't have one yet
+        if not self.graph:
+            plan = cast(Plan, upper_graph)
+            reasoning = self._create_reasoning(plan, upper_graph.objective)
+            context.current_reasoning = reasoning
+            self.graph = reasoning
 
-        # Update context with new reasoning
-        context.current_reasoning = reasoning
-
-        # Execute reasoning through base executor
-        return await super().execute(upper_graph=reasoning, context=context, upper_signals=upper_signals)
+        # Execute through base executor with current graph
+        return await super().execute(
+            upper_graph=self.graph,
+            context=context,
+            upper_signals=upper_signals
+        )
 
     async def execute_node(self, node: ExecutionNode, context: ExecutionContext,
                            prev_signals: Optional[List[ExecutionSignal]] = None,
@@ -95,13 +100,21 @@ class ReasoningExecutor(Executor):
         assert objective is not None
 
         if self.strategy == ReasoningStrategy.DEFAULT:
-            # Simple single-node reasoning
-            node = ExecutionNode(
-                node_id="DIRECT_REASONING",
-                node_type=NodeType.TASK,
-                description=objective.original
-            )
-            reasoning = self._create_execution_graph([node])
+            # Create exact structural copy of plan for 1:1 mapping
+            reasoning = Reasoning(objective or plan.objective)
+
+            # Copy nodes with same IDs to maintain cursor sync
+            for node_id, node in plan.nodes.items():
+                reasoning.add_node(ExecutionNode(
+                    node_id=node_id,  # Keep same IDs
+                    node_type=node.node_type,
+                    description=node.description
+                ))
+
+            # Copy edges to maintain structure
+            for edge in plan.edges:
+                reasoning.add_edge(ExecutionEdge(edge.source, edge.target))
+        
         elif self.strategy == ReasoningStrategy.CHAIN_OF_THOUGHT:
             # Add nodes for each reasoning step
             node = ExecutionNode(
@@ -127,8 +140,14 @@ class ReasoningExecutor(Executor):
                 'plan_step': getattr(context.agent_state, 'current_step_index', 0)
             }
         )
+
+        plan = cast(Plan, context.current_plan)
+        if plan.get_current_node():
+            plan.update_cursor(self.graph.get_current_node().node_id)
+
         assert context.reasoning_llm is not None
         response = await context.reasoning_llm.query({"prompt": node.description})
+        
         self.logger.debug(
             "LLM response received",
             extra={
@@ -137,6 +156,7 @@ class ReasoningExecutor(Executor):
                 'latency': getattr(context, 'llm_latency', 0)
             }
         )
+        
         return [ExecutionSignal(
             type=ExecutionSignalType.DATA_RESULT,
             content={

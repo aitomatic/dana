@@ -8,14 +8,14 @@ from ...common.base_llm import BaseLLM, LLMConfig
 class LLMResource(BaseResource):
     """LLM resource implementation using BaseLLM."""
     
-    def __init__(self, name: Optional[str] = None, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, name: Optional[str] = None, config: Optional[Dict[str, Any]] = None, system_prompt: Optional[str] = None):
         """Initialize LLM resource."""
         if name is None:
             name = "default_llm"
 
         super().__init__(name)
         self.config = LLMConfig.from_dict(name, config)
-        self._llm = BaseLLM(name=self.name, config=self.config)
+        self._llm = BaseLLM(name=self.name, config=self.config, system_prompt=system_prompt)
 
     async def initialize(self) -> None:
         """Initialize the LLM."""
