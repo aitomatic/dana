@@ -15,6 +15,7 @@ from ..executor import Executor
 from .plan import Plan
 from ..workflow.workflow import Workflow
 from ...common.graph import NodeType
+from ..reasoning import ReasoningStrategy
 
 if TYPE_CHECKING:
     from ..reasoning import ReasoningExecutor
@@ -49,6 +50,22 @@ class PlanExecutor(Executor):
         if strategy == PlanningStrategy.DEFAULT:
             strategy = PlanningStrategy.WORKFLOW_IS_PLAN
         self._strategy = strategy
+
+    async def execute(self,
+                      upper_graph: ExecutionGraph,
+                      context: ExecutionContext,
+                      upper_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
+        """Execute plan graph. When ReasoningStrategy.DEFAULT is used, go directly to reasoning execution."""
+        # Only create plan graph if we don't have one yet
+        if not self.graph:
+            self.graph = self._create_graph(upper_graph, upper_graph.objective, context)
+
+        # If using DEFAULT reasoning strategy, go directly to reasoning execution
+        if self.reasoning_executor.strategy == ReasoningStrategy.DEFAULT:
+            assert self.graph is not None
+            return await self.reasoning_executor.execute(self.graph, context, upper_signals)
+
+        return await super().execute(upper_graph=upper_graph, context=context, upper_signals=upper_signals)
 
     async def execute_node(self, node: ExecutionNode,
                            context: ExecutionContext,
