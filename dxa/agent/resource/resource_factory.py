@@ -1,6 +1,6 @@
 """Factory for creating DXA resources."""
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 from .base_resource import BaseResource
 from .llm_resource import LLMResource
 from .expert_resource import ExpertResource
@@ -18,8 +18,8 @@ class ResourceFactory:
         raise ValueError(f"Unknown resource type: {resource_type}")
     
     @classmethod
-    def create_llm_resource(cls, config: Optional[Dict[str, Any]] = None, system_prompt: Optional[str] = None) -> LLMResource:
+    def create_llm_resource(cls, config: Dict[str, Any]) -> LLMResource:
         """Create a LLM resource with the given configuration."""
-        return LLMResource(name=config.get("name", "llm"), config=config, system_prompt=system_prompt)
+        return LLMResource(**config)
 
     

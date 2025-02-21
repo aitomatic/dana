@@ -59,33 +59,8 @@ def run_unl_to_workflow_two_agents(unl: str):
     workflow_yaml = result['result']['content']
     print(f"\nRESULT: \n{workflow_yaml}")
 
-    workflow = WorkflowFactory.from_yaml(workflow_yaml)
-    agent = Agent("workflow_agent")
-    result = agent.run(workflow)
-    print(f"\nRESULT: \n{result}")
-
-def run_unl_to_workflow_two_agents_with_reasoning_llm(unl: str):
-    print("\n\n==================== Translate UNL to ONL =====================")
-    config = {
-        "name": "unl_to_onl_resource",
-        "model": "gpt-4o-mini",
-    }
-    unl_to_onl_resource = ResourceFactory.create_llm_resource(config=config, system_prompt=UNL_TO_ONL_PROMPT)
-    agent = Agent("unl_to_onl_agent").with_reasoning_llm(unl_to_onl_resource) 
-    result = agent.ask(unl)
-    onl = result['result']['content']
-    print(f"\nRESULT: \n{onl}")
-
-    print("\n\n==================== Translate ONL to workflow =====================")
-    config = {
-        "name": "onl_to_workflow_resource",
-        "model": "gpt-4o-mini",
-    }
-    onl_to_workflow_resource = ResourceFactory.create_llm_resource(config=config, system_prompt=ONL_TO_WORKFLOW_PROMPT)
-    agent = Agent("onl_to_workflow_agent").with_reasoning_llm(onl_to_workflow_resource)
-    result = agent.ask(onl)
-    workflow_yaml = result['result']['content']
-    print(f"\nRESULT: \n{workflow_yaml}")
+    # remove the yaml tags if exists
+    workflow_yaml = workflow_yaml.replace("```yaml", "").replace("```", "")
 
     workflow = WorkflowFactory.from_yaml(workflow_yaml)
     agent = Agent("workflow_agent")
@@ -94,7 +69,7 @@ def run_unl_to_workflow_two_agents_with_reasoning_llm(unl: str):
 
 
 if __name__ == "__main__":
-    # DXA_LOGGER.configure(level=DXA_LOGGER.DEBUG, log_data=True)
+    DXA_LOGGER.configure(level=DXA_LOGGER.DEBUG, log_data=True)
     unl = """
         It is mostly correct. I just had minor adjustment.
         alarm is raised by an statistical measurement and its upper and lower bounds of out of controlled. The measurements in This alarm usually tee common/important parts which easily indicate (and lead to) a significant issue.
@@ -108,4 +83,4 @@ if __name__ == "__main__":
         Besides, documents may include SOP, TROUBLESHOOTING GUIDES, SENSORS DESCRIPTION, etc.
     """
 
-    run_unl_to_workflow_two_agents_with_reasoning_llm(unl)
+    run_unl_to_workflow_two_agents(unl)
