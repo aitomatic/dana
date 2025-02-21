@@ -71,16 +71,7 @@ def run_unl_to_workflow_two_agents(unl: str):
 if __name__ == "__main__":
     DXA_LOGGER.configure(level=DXA_LOGGER.DEBUG, log_data=True)
     unl = """
-        It is mostly correct. I just had minor adjustment.
-        alarm is raised by an statistical measurement and its upper and lower bounds of out of controlled. The measurements in This alarm usually tee common/important parts which easily indicate (and lead to) a significant issue.
-        charts: only 2 types of charts. T-chat or time based charts are the raw data from sensors. The sensor data is the continuous measurement on a particular equipment + chamber (one equipment has multiple chambers). Common sensor name: CH3 RF Vpp where CH3 is chamber id. U chart is unit based measurement. A windowed statistical measurement such as MEAN, RANGE, STD, … will be performed in each unit (wafer) throughout the corresponding T-Chart. Each data point is a wafer based measurement, called INDICATOR. For example, MEAN(W1(W0(CH3 RF Vpp))) is indicator.
-        Anomaly detection kernel is performed on each sensor/indicator to see any possible abnormality. In this PoC, includes (but not limited to) DROP, SPIKE, FLUCTUATED, LEVEL_SHIFTED. The interpretation of these abnormal patterns depend on physical meaning and expertise.
-        other knowledge include maintenance records, part/component lifetime records, shift-handover records.
-        Maintenance records contain records for each maintenance, include datetime, equipment, chamber, and related sensors/indicators.
-        Part/component lifetime records is the records showing the lifetime for components from first time installed up to current check time. There are an threshold to indicate OLD / (potentially) DEGRADED
-        Shift handover may contain notes, images, photo from the real environment that process engineer PE takes notes from their work and transfer to other PE to monitor or further diagnosis.
-        If the PE can not identify the root cause and recover the equipment operations, it needs to be shut down and sent to equipment engineers for further diagnosis.
-        Besides, documents may include SOP, TROUBLESHOOTING GUIDES, SENSORS DESCRIPTION, etc.
+        When equipment issues come up in the fab, operators usually start by looking at the basic stuff - you know, power, pressure, those kinds of readings. If anything looks off, they'll want to check the maintenance history and see if someone's worked on it recently. Sometimes the logs will show some warnings that help point to what's wrong. If the basic checks don't show anything obvious, they'll need to dig deeper into the process data and maybe check if sensors are reading correctly. It's important to document everything as you go. If they can't figure it out quickly, they'll need to call in the technical team and maybe shut things down temporarily while they investigate. The key is to be thorough but also work quickly to minimize downtime.
     """
 
     run_unl_to_workflow_two_agents(unl)
