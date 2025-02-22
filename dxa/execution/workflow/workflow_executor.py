@@ -78,6 +78,9 @@ class WorkflowExecutor(Executor):
         if context.current_workflow is None and self.graph:
             context.current_workflow = cast(Workflow, self.graph)
 
+        # Update cursor to current node
+        self.graph.update_cursor(node.node_id)
+
         if node.node_type in [NodeType.START, NodeType.END]:
             return []  # Start and end nodes just initialize/terminate flow
 
