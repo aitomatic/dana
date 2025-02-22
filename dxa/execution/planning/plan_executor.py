@@ -66,6 +66,9 @@ class PlanExecutor(Executor):
         if context.current_plan is None and self.graph:
             context.current_plan = cast(Plan, self.graph)
 
+        # Update cursor to current node
+        self.graph.update_cursor(node.node_id)
+
         # Get the workflow from context
         workflow = cast(Workflow, context.current_workflow)
 

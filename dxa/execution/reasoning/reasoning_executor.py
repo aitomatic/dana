@@ -67,6 +67,9 @@ class ReasoningExecutor(Executor):
         if context.current_reasoning is None and self.graph:
             context.current_reasoning = cast(Reasoning, self.graph)
 
+        # Update cursor to current node
+        self.graph.update_cursor(node.node_id)
+
         if node.node_type in [NodeType.START, NodeType.END]:
             return []   # Start and end nodes just initialize/terminate flow
 
