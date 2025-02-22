@@ -67,6 +67,9 @@ class Executor(ABC):
                 assert self.graph is not None
                 self.graph.update_node_status(current.node_id, ExecutionNodeStatus.IN_PROGRESS)
                 node = cast(ExecutionNode, current)
+
+                # Update cursor to current node
+                self.graph.update_cursor(node.node_id)
                 
                 # Execute node and get its result signals
                 new_signals = await self.execute_node(node, context, prev_signals, upper_signals, lower_signals)
