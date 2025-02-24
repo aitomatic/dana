@@ -103,19 +103,17 @@ class WorkflowFactory:
     
     def _create_problem_analysis_prompt(cls, objective: Objective) -> str:
         problem_analysis_prompt = f"""
-        \nAnalyze the question and interpret the problem.
-        Problem: {objective.original}
-        Tell me the problem statement.
-        Now, please analyze the problem and interpret the question. Try to understand the problem and its context.
-        Justify if there are any additional information can be inferred from the question.
-        Let me know all the information you can get from the question.
-        You can infer more information based on provided information in the question, but DO NOT hallucinate any information.
-        No need to do any task, just analyze the problem and next step will be based on your analysis to construct the plan/solution.
-        Please do reasoning to see if it's mandatory to get more extra information to solve the problem.
-        If there are any well-known knowledge that would be helpful for the problem, please provide it.
-        Do not assume the important information if you are not sure and do not assume customized information (for example, different company will have different level ladder).
-        
-        Based on the information from documents above, let me know if the problem can be solved by only looking at the documents.
+\nAnalyze the question and interpret the problem.
+Problem: {objective.original}
+Tell me the problem statement.
+Now, please analyze the problem and interpret the question. Try to understand the problem and its context.
+Justify if there are any additional information can be inferred from the question.
+Let me know all the information you can get from the question.
+You can infer more information based on provided information in the question, but DO NOT hallucinate any information.
+No need to do any task, just analyze the problem and next step will be based on your analysis to construct the plan/solution.
+Please do reasoning to see if it's mandatory to get more extra information to solve the problem.
+If there are any well-known knowledge that would be helpful for the problem, please provide it.
+Do not assume the important information if you are not sure and do not assume customized information (for example, different company will have different level ladder).
         """      
         return problem_analysis_prompt
     
@@ -152,7 +150,7 @@ step_<i>: step <i> to solve current problem. The step should help me get closer 
 
 expected_output_step_<i>: What do you expect from the output for step <i>. This is just the criteria for the output to make sure that this step is success and can be used to get the accurate answer after gathering all step. Do not specify exact output answer unless you are extremely sure about it. If the step is request to gather information, it must have expected information to be completed. Must be in one line, do not use "\n".
 
-If analysis show that the problem can be solved by only looking at the documents, then your plan must be only look at documents, the expected output is nothing special, any output should be accepted. The step should be only Get information XXXX from documents, expected output is nothing special, any output should be accepted. 
+
 Do not forget to generate both step and expected output step.
 Do not forget the key and do not change the key format. Do not highlight the key.
             """
@@ -163,12 +161,12 @@ Do not forget the key and do not change the key format. Do not highlight the key
         These are the reasoning steps and their outputs:
         <reasoning_result>
         
-        Now, based on the reasoning steps and their outputs above, please give me the final answer for the original problem: {objective.original}
+        Now, based on the reasoning steps and their outputs above, please give me the comprehensive final answer for the original problem: {objective.original}
         """
         return finalize_answer_prompt
     
     @classmethod
-    def create_prosea_workflow(cls, objective: Union[str, Objective]) -> Workflow:
+    def create_prosea_workflow(cls, objective: Union[str, Objective], agent_role: str = "Mathematician") -> Workflow:
         """Create a Prosea workflow for given parameters."""
         objective = Objective(objective) if isinstance(objective, str) else objective
         workflow = Workflow(objective)
@@ -220,6 +218,8 @@ Do not forget the key and do not change the key format. Do not highlight the key
         for edge in edges:
             workflow.add_edge(edge)
 
+        workflow.add_role(role=agent_role)
+        
         return workflow
 
         
