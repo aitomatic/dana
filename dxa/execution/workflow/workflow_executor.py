@@ -9,9 +9,12 @@ from ..executor import Executor
 from .workflow import Workflow
 from .workflow_factory import WorkflowFactory
 from ...common.graph import NodeType
-
+from ...common.utils.text_processor import TextProcessor
 if TYPE_CHECKING:
     from ..planning.plan_executor import PlanExecutor
+from uuid import uuid4
+from ...common.graph import Edge
+from ..planning.plan import Plan
 
 class WorkflowStrategy(Enum):
     """Workflow execution strategies."""
@@ -20,6 +23,7 @@ class WorkflowStrategy(Enum):
     SEQUENTIAL = "SEQUENTIAL"
     PARALLEL = "PARALLEL"
     CONDITIONAL = "CONDITIONAL"
+    PROSEA = "PROSEA"
 
 class WorkflowExecutor(Executor):
     """Executes workflow graphs."""
@@ -30,7 +34,7 @@ class WorkflowExecutor(Executor):
         self._strategy = strategy
         self.layer = "workflow"
         self._configure_logger()
-
+        self.parse_by_key = TextProcessor().parse_by_key
     @property
     def strategy(self) -> WorkflowStrategy:
         """Get workflow strategy."""
@@ -51,15 +55,100 @@ class WorkflowExecutor(Executor):
         self.graph = cast(ExecutionGraph, workflow)
         return await self.execute(upper_graph=cast(ExecutionGraph, None), context=context, upper_signals=None)
 
+    def _parse_plan(self, plan):
+        steps = []
+        step_count = 1
+        while True:
+            step_key = f"step_{step_count}"
+            expected_key = f"expected_output_step_{step_count}"
+            
+            step_prompt = self.parse_by_key(plan, step_key)
+            expected_output = self.parse_by_key(plan, expected_key)
+            
+            # Break the loop if no more steps are found
+            if step_prompt == "Unknown" or expected_output == "Unknown":
+                break
+            
+            steps.append({"step": step_prompt, "expected_output": expected_output, "id": str(uuid4())})
+            step_count += 1
+        return steps
+
+    def _construct_plan_graph_from_nodes(self, nodes, plan, objective):
+        plan_graph = Plan(objective=objective)
+        plan_graph.add_node(ExecutionNode(node_id="START", node_type=NodeType.START, description="Start"))
+        for node in nodes:
+            plan_graph.add_node(node)
+        plan_graph.add_node(ExecutionNode(node_id="END", node_type=NodeType.END, description="End"))
+        plan_graph.add_edge(Edge(source="START", target=nodes[0].node_id))
+        for i in range(len(plan) - 1):
+            plan_graph.add_edge(Edge(source=nodes[i].node_id, target=nodes[i+1].node_id))
+        plan_graph.add_edge(Edge(source=nodes[-1].node_id, target="END"))
+        return plan_graph
+    
+    def _construct_plan_graph(self, plan, objective):
+        steps = plan
+        nodes = []
+        validation_nodes = []
+        for i, step in enumerate(steps):
+            nodes.append(ExecutionNode(node_id=f"step_{i+1}", node_type=NodeType.TASK, description=step['step']))
+            validation_nodes.append(ExecutionNode(node_id=f"step_{i+1}", node_type=NodeType.TASK, description=step['expected_output']))
+        
+        plan_graph = self._construct_plan_graph_from_nodes(nodes, plan, objective)
+        validation_plan_graph = self._construct_plan_graph_from_nodes(validation_nodes, plan, objective)
+        
+        return plan_graph, validation_plan_graph
+    
     async def execute(self,
                       upper_graph: ExecutionGraph,
                       context: ExecutionContext,
                       upper_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
         """Execute workflow graph. Upper signals are not used in the workflow layer."""
+        context.current_plan = self.graph
+        # PLEASE CHECK THIS
         if self.strategy == WorkflowStrategy.WORKFLOW_IS_PLAN:
             # Go directly to plan execution, via the START node
             assert self.graph is not None
             return await self.plan_executor.execute(self.graph, context, None)
+        
+        
+        if self.strategy == WorkflowStrategy.PROSEA:
+            execution_signals = []
+            analyze_response = None
+            plan = []
+            for node_id in self.graph.nodes.keys():
+                node = self.graph.nodes[node_id]
+                print("Executing node:", node.node_id)
+                if node.node_type == NodeType.TASK:
+                    if node.node_id == "ANALYZE":
+                        response = await self.plan_executor.execute_node(node=node, context=context, prev_signals=execution_signals, upper_signals=None, lower_signals=None)
+                        print(len(response))
+                        analyze_response = response[0].content['result']['content']
+                        response[0].content['result']['content'] = f"{node.node_id}: \nStep Output: " + response[0].content['result']['content']
+                        execution_signals.extend(response)
+                    elif node.node_id == "PLANNING":
+                        while len(plan) == 0:
+                            node.description = node.description.replace("<problem_analysis>", analyze_response)
+                            response = await self.plan_executor.execute_node(node=node, context=context, prev_signals=execution_signals, upper_signals=None, lower_signals=None)
+                            plan = self._parse_plan(response[0].content['result']['content'])
+                            print(plan)
+                        execution_signals.extend(response)
+                        plan_graph, validation_plan_graph = self._construct_plan_graph(plan, objective=context.current_workflow.objective)
+                        # context.current_plan = plan_graph
+                        for plan_node_id in plan_graph.nodes.keys():
+                            plan_node = plan_graph.nodes[plan_node_id]
+                            validation_plan_node = validation_plan_graph.nodes[plan_node_id]
+                            if plan_node.node_type == NodeType.TASK:
+                                print("\033[92mStep:\033[0m", plan_node.description)
+                                # print("\033[91mExecution signals:\033[0m", execution_signals)
+                                response = await self.plan_executor.execute_node(plan_node, context, validation_node=validation_plan_node, original_problem=context.current_plan.objective, prev_signals=execution_signals, upper_signals=None, lower_signals=None)
+                                response[0].content['result']['content'] = f"{plan_node.node_id}: {plan_node.description} \nStep Output: " + response[0].content['result']['content']
+                                execution_signals.extend(response)
+                    elif node.node_id == "FINALIZE_ANSWER":
+                        response = await self.plan_executor.execute_node(node=node, context=context, prev_signals=execution_signals, upper_signals=None, lower_signals=None)
+                        execution_signals.extend(response)
+    
+            return execution_signals
+        
 
         return await super().execute(upper_graph=upper_graph, context=context, upper_signals=None)
 
