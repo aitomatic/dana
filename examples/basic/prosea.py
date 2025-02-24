@@ -28,7 +28,7 @@ def run_prosea():
     
     
     workflow = WorkflowFactory.create_prosea_workflow(
-        objective="Prove the Fermat's Last Theorem",
+        objective="Compare 9.11 and 9.8",
         agent_role="Mathematician"
     )
     return agent.run(workflow)
