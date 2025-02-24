@@ -161,7 +161,8 @@ Do not forget the key and do not change the key format. Do not highlight the key
         These are the reasoning steps and their outputs:
         <reasoning_result>
         
-        Now, based on the reasoning steps and their outputs above, please give me the comprehensive final answer for the original problem: {objective.original}
+        Now, based on the reasoning steps and their outputs above, please give me the comprehensive final answer for the original problem: {objective.original}.
+        Remember to strictly trust in the reasoning steps and their outputs, do not make any assumption or correction the provided reasoning steps and their outputs.
         """
         return finalize_answer_prompt
     
