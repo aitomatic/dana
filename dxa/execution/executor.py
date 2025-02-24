@@ -61,7 +61,7 @@ class Executor(ABC):
         lower_signals = []
 
         self._log_execution_start()
-
+        
         while (current := cursor.next()) is not None:
             try:
                 assert self.graph is not None
@@ -70,6 +70,9 @@ class Executor(ABC):
                 
                 # Execute node and get its result signals
                 new_signals = await self.execute_node(node, context, prev_signals, upper_signals, lower_signals)
+                
+                # print(f"New signals: {new_signals}")
+                
                 
                 # Propagate signals between layers
                 signals = []
