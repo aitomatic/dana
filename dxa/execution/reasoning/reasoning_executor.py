@@ -19,11 +19,12 @@ from ...common.graph import NodeType
 
 class ReasoningStrategy(Enum):
     """Reasoning execution strategies."""
-    DEFAULT = "DEFAULT"           # Simple LLM query
+    DEFAULT = "DEFAULT"         # Simple LLM query
     CHAIN_OF_THOUGHT = "COT"    # Step by step reasoning
     OODA = "OODA"               # OODA loop pattern
     DANA = "DANA"               # DANA pattern
-
+    PROSEA = "PROSEA"           # PROSEA pattern
+    
 class ReasoningExecutor(Executor):
     """Executes reasoning patterns."""
 
@@ -49,6 +50,8 @@ class ReasoningExecutor(Executor):
         return await super().execute(upper_graph=reasoning, context=context, upper_signals=upper_signals)
 
     async def execute_node(self, node: ExecutionNode, context: ExecutionContext,
+                           validation_node: Optional[ExecutionNode] = None,
+                           original_problem: Optional[str] = None,
                            prev_signals: Optional[List[ExecutionSignal]] = None,
                            upper_signals: Optional[List[ExecutionSignal]] = None,
                            lower_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
@@ -56,6 +59,11 @@ class ReasoningExecutor(Executor):
         if not context.reasoning_llm:
             raise ValueError("No reasoning LLM configured in context")
 
+        # print(node.node_id)
+        # print("\033[91mPrev signals:\033[0m", prev_signals)
+        # print("\033[92mUpper signals:\033[0m", upper_signals)
+        # print("\033[93mLower signals:\033[0m", lower_signals)
+        
         # TODO: use upper_signals and prev_signals somehow?
 
         # Safety: make sure our graph is set
@@ -76,6 +84,8 @@ class ReasoningExecutor(Executor):
             return await self._execute_ooda(node, context)
         if self.strategy == ReasoningStrategy.DANA:
             return await self._execute_dana(node, context)
+        if self.strategy == ReasoningStrategy.PROSEA:
+            return await self._execute_prosea(node=node, context=context, validation_node=validation_node, original_problem=original_problem, prev_signals=prev_signals, upper_signals=upper_signals, lower_signals=lower_signals)
         raise ValueError(f"Unknown strategy: {self.strategy}")
 
     def _create_graph(self,
@@ -95,13 +105,20 @@ class ReasoningExecutor(Executor):
         assert objective is not None
 
         if self.strategy == ReasoningStrategy.DEFAULT:
+            if len(plan.nodes) == 2:
             # Simple single-node reasoning
-            node = ExecutionNode(
-                node_id="DIRECT_REASONING",
-                node_type=NodeType.TASK,
-                description=objective.original
-            )
-            reasoning = self._create_execution_graph([node])
+                node = ExecutionNode(
+                    node_id="DIRECT_REASONING",
+                    node_type=NodeType.TASK,
+                    description=objective.original
+                )
+                reasoning = self._create_execution_graph([node])
+            if len(plan.nodes) > 2:
+                nodes = []
+                for node_id in plan.nodes.keys():
+                    nodes.append(plan.nodes[node_id])
+                    reasoning = self._create_execution_graph(nodes)
+                    
         elif self.strategy == ReasoningStrategy.CHAIN_OF_THOUGHT:
             # Add nodes for each reasoning step
             node = ExecutionNode(
@@ -110,11 +127,54 @@ class ReasoningExecutor(Executor):
                 description=f"Let's solve this step by step:\n{objective.original}"
             )
             reasoning = self._create_execution_graph([node])
-        # ... other strategies
+        # elif self.strategy == ReasoningStrategy.PROSEA:
+            # nodes = []
+            # print(plan.nodes)
+            # for node_id in plan.nodes.keys():
+            #     nodes.append(plan.nodes[node_id])
+            # reasoning = self._create_execution_graph(nodes)
+        
         if not reasoning:
             raise ValueError(f"Failed to create reasoning graph for strategy {self.strategy}")
         reasoning.objective = objective
         return cast(Reasoning, reasoning)
+
+    async def _execute_prosea(self, node: ExecutionNode, context: ExecutionContext,
+                              validation_node: Optional[ExecutionNode] = None,
+                              original_problem: Optional[str] = None,
+                              prev_signals: Optional[List[ExecutionSignal]] = None,
+                              upper_signals: Optional[List[ExecutionSignal]] = None,
+                              lower_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
+        """Execute PROSEA reasoning."""
+        assert context.reasoning_llm is not None
+        # print("\033[91mPrev signals\033[0m", prev_signals)
+        prev_step_output = ""
+        if prev_signals:
+            for signal in prev_signals:
+                if signal.type == ExecutionSignalType.DATA_RESULT:
+                    prev_step_output += signal.content["result"]["content"]
+                    prev_step_output += "\n\n"
+        if "step_" in node.node_id:
+            prompt = f"""
+            These are the previous steps and their outputs:
+            {prev_step_output}
+            
+            The original problem is:
+            {original_problem}
+
+            Now, based on the previous steps and the original problem, please solve the current step:
+            {node.description}
+            """
+        elif "FINALIZE_ANSWER" in node.node_id:
+            print("FINALIZE_ANSWER")
+            prompt = node.description.replace("<reasoning_result>", prev_step_output)
+        else:
+            prompt = node.description
+        response = await context.reasoning_llm.query({"prompt": prompt})
+        return [ExecutionSignal(type=ExecutionSignalType.DATA_RESULT, content={
+            "result": response,
+            "node": node.node_id
+        })]
 
     async def _execute_direct(self, node: ExecutionNode, context: ExecutionContext) -> List[ExecutionSignal]:
         """Execute direct LLM query."""
