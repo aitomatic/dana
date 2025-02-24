@@ -1,11 +1,12 @@
 """LLM resource implementation."""
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 import asyncio
 import aisuite as ai
 from openai import APIConnectionError, RateLimitError
 from ...common.exceptions import LLMError
 from .base_resource import BaseResource
+from openai import AsyncClient
 
 
 class LLMConfig:
@@ -87,6 +88,7 @@ class LLMResource(BaseResource):
         self._client: Optional[ai.Client] = None
         self.max_retries = int(self.config.get("max_retries", 3))
         self.retry_delay = float(self.config.get("retry_delay", 1.0))
+        self._async_client = AsyncClient()
 
     async def initialize(self) -> None:
         """Initialize the AISuite client."""
@@ -175,8 +177,40 @@ class LLMResource(BaseResource):
                 # Handle response structure mismatches
                 self.logger.error("Unexpected response structure from provider: %s", str(e))
                 raise LLMError(f"Unexpected response structure: {str(e)}") from e
-        
+
         raise LLMError("Max retries exceeded")
+    
+    async def conversational_query(self, messages: List[Dict[str, Any]], model: str = "gpt-4o") -> Dict[str, Any]:
+        """Currently, this one only used for Prosea workflow."""
+        response = None
+        while response is None:
+            try:
+                response = await asyncio.wait_for(
+                    self._async_client.chat.completions.create(
+                        model=model,
+                        messages=messages,
+                        temperature=0.0,
+                        max_tokens=2000,
+                    ),
+                    timeout=20  # 20 seconds
+                )
+            except asyncio.TimeoutError:
+                print("Timeout reached for GPT-4o call. Retrying...")
+        # Use aisuite's standardized response format
+        reasoning = None
+        if hasattr(response, 'reasoning_content'):
+            reasoning = response.reasoning_content
+        elif hasattr(response, 'choices') and hasattr(response.choices[0].message, 'reasoning_content'):
+            reasoning = response.choices[0].message.reasoning_content
+            
+        return  {
+                    "content": response.choices[0].message.content 
+                    if hasattr(response, 'choices') else response.content,
+                    "model": model,  # Use our model string since it's guaranteed to exist
+                    "usage": getattr(response, 'usage', None),
+                    # Include any thinking content if present
+                    "reasoning": reasoning
+                }
 
     async def cleanup(self) -> None:
         """Cleanup resources."""
