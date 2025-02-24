@@ -55,6 +55,7 @@ class PlanExecutor(Executor):
                            context: ExecutionContext,
                            validation_node: Optional[ExecutionNode] = None,
                            original_problem: Optional[str] = None,
+                           agent_role: Optional[str] = None,
                            prev_signals: Optional[List[ExecutionSignal]] = None,
                            upper_signals: Optional[List[ExecutionSignal]] = None,
                            lower_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
@@ -80,7 +81,9 @@ class PlanExecutor(Executor):
         if node.node_type in [NodeType.START, NodeType.END]:
             return []   # Start and end nodes just initialize/terminate flow
         # print("Prev signals", prev_signals)
-        return await self.reasoning_executor.execute_node(node=node, context=context, validation_node=validation_node, original_problem=original_problem, prev_signals=prev_signals, upper_signals=upper_signals, lower_signals=lower_signals)
+        return await self.reasoning_executor.execute_node(node=node, context=context, validation_node=validation_node, original_problem=original_problem, 
+                                                          agent_role=agent_role, prev_signals=prev_signals, upper_signals=upper_signals, 
+                                                          lower_signals=lower_signals)
         
         # # Execute the node
         # assert self.graph is not None
