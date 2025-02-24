@@ -303,6 +303,10 @@ class ExecutionGraph(DirectedGraph):
             'previous': self.to_dict()
         })
         self._merge_graph(new_graph)
+        
+    def add_role(self, role: str) -> None:
+        """Add role to graph."""
+        self.metadata["role"] = role
 
     def _merge_graph(self, new_graph: 'ExecutionGraph') -> None:
         """Merge new graph while preserving node states."""
