@@ -121,7 +121,6 @@ class WorkflowExecutor(Executor):
                 if node.node_type == NodeType.TASK:
                     if node.node_id == "ANALYZE":
                         response = await self.plan_executor.execute_node(node=node, context=context, prev_signals=execution_signals, upper_signals=None, lower_signals=None)
-                        print(len(response))
                         analyze_response = response[0].content['result']['content']
                         response[0].content['result']['content'] = f"{node.node_id}: \nStep Output: " + response[0].content['result']['content']
                         execution_signals.extend(response)
@@ -133,7 +132,6 @@ class WorkflowExecutor(Executor):
                             print(plan)
                         execution_signals.extend(response)
                         plan_graph, validation_plan_graph = self._construct_plan_graph(plan, objective=context.current_workflow.objective)
-                        # context.current_plan = plan_graph
                         step_id = 1
                         for plan_node_id in plan_graph.nodes.keys():
                             plan_node = plan_graph.nodes[plan_node_id]
@@ -141,7 +139,6 @@ class WorkflowExecutor(Executor):
                             if plan_node.node_type == NodeType.TASK:
                                 print(f"\033[92mStep {step_id}:\033[0m", plan_node.description)
                                 step_id += 1
-                                # print("\033[91mExecution signals:\033[0m", execution_signals)
                                 response = await self.plan_executor.execute_node(plan_node, context, validation_node=validation_plan_node, 
                                                                                  original_problem=context.current_plan.objective.original, 
                                                                                  agent_role=context.current_workflow.metadata["role"],
