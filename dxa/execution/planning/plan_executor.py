@@ -25,6 +25,7 @@ class PlanningStrategy(Enum):
     WORKFLOW_IS_PLAN = "WORKFLOW_IS_PLAN"  # Exact structural copy with cursor sync
     COMPLETE = "COMPLETE"    # Whole workflow
     DYNAMIC = "DYNAMIC"      # Adaptive planning
+    PROSEA = "PROSEA"        # PROSEA planning
 
 class PlanExecutor(Executor):
     """Executes plans using planning strategies."""
@@ -52,6 +53,8 @@ class PlanExecutor(Executor):
 
     async def execute_node(self, node: ExecutionNode,
                            context: ExecutionContext,
+                           validation_node: Optional[ExecutionNode] = None,
+                           original_problem: Optional[str] = None,
                            prev_signals: Optional[List[ExecutionSignal]] = None,
                            upper_signals: Optional[List[ExecutionSignal]] = None,
                            lower_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
@@ -62,6 +65,7 @@ class PlanExecutor(Executor):
         # Safety: make sure our graph is set
         if self.graph is None and context.current_plan:
             self.graph = context.current_plan
+            
 
         if context.current_plan is None and self.graph:
             context.current_plan = cast(Plan, self.graph)
@@ -75,17 +79,28 @@ class PlanExecutor(Executor):
 
         if node.node_type in [NodeType.START, NodeType.END]:
             return []   # Start and end nodes just initialize/terminate flow
+        # print("Prev signals", prev_signals)
+        return await self.reasoning_executor.execute_node(node=node, context=context, validation_node=validation_node, original_problem=original_problem, prev_signals=prev_signals, upper_signals=upper_signals, lower_signals=lower_signals)
+        
+        # # Execute the node
+        # assert self.graph is not None
+        # signals = await self.reasoning_executor.execute(upper_graph=self.graph,
+        #                                                 context=context,
+        #                                                 # Pass my prev_signals down to reasoning executor
+        #                                                 upper_signals=prev_signals
+        #                                                 )
 
-        # Execute the node
-        assert self.graph is not None
-        signals = await self.reasoning_executor.execute(upper_graph=self.graph,
-                                                        context=context,
-                                                        # Pass my prev_signals down to reasoning executor
-                                                        upper_signals=prev_signals
-                                                        )
-
-        return signals
-
+        # return signals
+        
+    async def execute_node_prosea(self, node: ExecutionNode, context: ExecutionContext,
+                                  validation_node: Optional[ExecutionNode] = None,
+                                  prev_signals: Optional[List[ExecutionSignal]] = None,
+                                  upper_signals: Optional[List[ExecutionSignal]] = None,
+                                  lower_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
+        """Execute a plan node using reasoning executor."""
+        
+        response = await self.reasoning_executor.execute_node(node, context, validation_node, prev_signals, upper_signals, lower_signals)
+        
     def _create_graph(self,
                       upper_graph: ExecutionGraph,
                       objective: Optional[Objective] = None,
