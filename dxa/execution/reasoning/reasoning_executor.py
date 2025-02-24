@@ -1,7 +1,7 @@
 """Reasoning executor implementation."""
 
 from enum import Enum
-from typing import List, cast, Optional
+from typing import List, cast, Optional, Dict
 import asyncio
 
 from ..execution_context import ExecutionContext
@@ -54,6 +54,7 @@ class ReasoningExecutor(Executor):
     async def execute_node(self, node: ExecutionNode, context: ExecutionContext,
                            validation_node: Optional[ExecutionNode] = None,
                            original_problem: Optional[str] = None,
+                           agent_role: Optional[str] = None,
                            prev_signals: Optional[List[ExecutionSignal]] = None,
                            upper_signals: Optional[List[ExecutionSignal]] = None,
                            lower_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
@@ -87,7 +88,9 @@ class ReasoningExecutor(Executor):
         if self.strategy == ReasoningStrategy.DANA:
             return await self._execute_dana(node, context)
         if self.strategy == ReasoningStrategy.PROSEA:
-            return await self._execute_prosea(node=node, context=context, validation_node=validation_node, original_problem=original_problem, prev_signals=prev_signals, upper_signals=upper_signals, lower_signals=lower_signals)
+            return await self._execute_prosea(node=node, context=context, validation_node=validation_node, 
+                                              original_problem=original_problem, agent_role=agent_role, prev_signals=prev_signals, 
+                                              upper_signals=upper_signals, lower_signals=lower_signals)
         raise ValueError(f"Unknown strategy: {self.strategy}")
 
     def _create_graph(self,
@@ -144,18 +147,15 @@ class ReasoningExecutor(Executor):
     async def _execute_prosea(self, node: ExecutionNode, context: ExecutionContext,
                               validation_node: Optional[ExecutionNode] = None,
                               original_problem: Optional[str] = None,
+                              agent_role: Optional[str] = None,
                               prev_signals: Optional[List[ExecutionSignal]] = None,
                               upper_signals: Optional[List[ExecutionSignal]] = None,
                               lower_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
         """Execute PROSEA reasoning."""
         assert context.reasoning_llm is not None
         # print("\033[91mPrev signals\033[0m", prev_signals)
-        prev_step_output = ""
-        if len(prev_signals) > 2:
-            for i in range(2, len(prev_signals)):
-                if prev_signals[i].type == ExecutionSignalType.DATA_RESULT:
-                    prev_step_output += prev_signals[i].content["result"]["content"]
-                    prev_step_output += "\n\n"
+        prev_step_output = await self._get_previous_steps(prev_signals)
+        
         if "step_" in node.node_id:
             prompt = f"""
             These are the previous steps and their outputs:
@@ -175,26 +175,41 @@ class ReasoningExecutor(Executor):
         
         
         if validation_node is not None:
-            response = await self._execute_prosea_step_with_validation(node=node, context=context, validation_node=validation_node, original_problem=original_problem, prompt=prompt, prev_signals=prev_signals)
+            response = await self._execute_prosea_step_with_validation(node=node, context=context, validation_node=validation_node, 
+                                                                       original_problem=original_problem, agent_role=agent_role,
+                                                                       prompt=prompt, prev_signals=prev_signals)
         else:
-            response = await context.reasoning_llm.query({"prompt": prompt})
+            conclusion_messages = [
+                {"role": "system", "content": f"You are a {agent_role} expert."},
+            ]
+            conclusion_messages = self._update_messages(conclusion_messages, prompt)
+            response = await context.reasoning_llm.conversational_query(conclusion_messages)
+            
         return [ExecutionSignal(type=ExecutionSignalType.DATA_RESULT, content={
             "result": response,
             "node": node.node_id
         })]
     
-    async def _validate_response(self, response: str, node: ExecutionNode, validation_node: ExecutionNode, context: ExecutionContext,
-                                 original_problem: Optional[str] = None, additional_prompt: Optional[str] = None,
-                                 prev_signals: Optional[List[ExecutionSignal]] = None) -> List[any]:
-        """Validate the response against the validation node."""
-        assert validation_node is not None
-        assert original_problem is not None
+    async def _get_previous_steps(self, prev_signals: List[ExecutionSignal]) -> str:
+        """Get the previous steps."""
         previous_step_output = ""
         if len(prev_signals) > 2:
             for i in range(2, len(prev_signals)):
                 if prev_signals[i].type == ExecutionSignalType.DATA_RESULT:
                     previous_step_output += prev_signals[i].content["result"]["content"]
                     previous_step_output += "\n\n"
+        return previous_step_output
+    
+    async def _validate_response(self, response: str, node: ExecutionNode, validation_node: ExecutionNode, context: ExecutionContext,
+                                 original_problem: Optional[str] = None, additional_prompt: Optional[str] = None,
+                                 prev_signals: Optional[List[ExecutionSignal]] = None, agent_role: Optional[str] = None) -> List[any]:
+        """Validate the response against the validation node."""
+        assert validation_node is not None
+        assert original_problem is not None
+        previous_step_output = await self._get_previous_steps(prev_signals)
+        validation_messages = [
+            {"role": "system", "content": f"You are a {agent_role} expert."},
+        ]
         
         prompt = f"""
         Initial analysis for the problem: {prev_signals[0].content["result"]["content"]}
@@ -220,7 +235,8 @@ class ReasoningExecutor(Executor):
         Do not lack any key above.
         Do not forget the key and do not change the key format. Do not highlight the key.
         """
-        response = await context.reasoning_llm.query({"prompt": prompt})
+        validation_messages = self._update_messages(validation_messages, prompt)
+        response = await context.reasoning_llm.conversational_query(validation_messages)
         response_text = response["content"]
         is_matched = "yes" in self.parse_by_key(response_text, "is_matched").lower()
         is_contradicted = "yes" in self.parse_by_key(response_text, "is_contradicted").lower()
@@ -228,20 +244,83 @@ class ReasoningExecutor(Executor):
         is_solvable_by_continuing_prompt = "yes" in self.parse_by_key(response_text, "is_solvable_by_continuing_prompt").lower()
         
         return is_matched, is_contradicted, refined_criteria, is_solvable_by_continuing_prompt    
+    
+    async def _adjust_criteria(self, validation_node: ExecutionNode, new_criteria: str) -> str:
+        """Adjust the criteria based on the validation node."""
+        validation_node.description = new_criteria
+        return validation_node
+    
+    async def _adjust_prompt(self, previous_steps: str, step_prompt: str, step_expectation: str, 
+                             previous_tried_prompt: str, previous_tried_output: str, context: ExecutionContext, agent_role: Optional[str] = None) -> str:
+        """Adjust the prompt based on the validation node."""
+        prompt_to_agent_for_next_prompt = f"""
+                                    This is previous steps: {previous_steps} \n\n
+                                    
+                                    Let me remind you about the task you need to do is: {step_prompt}, 
+                                    and the criteria need to achieve is {step_expectation}. 
+                                    This is the previous prompt you wrote: {previous_tried_prompt}, and it doesn't work.
+                                    I got this answer from that prompt: {previous_tried_output}
+                                    
+                                    First, analyze the reason why the previous prompt doesn't work, then generate a new prompt to achieve the expectation.
+                                    
+                                    Please generate a new prompt to achieve the expectation. Prompt must be direct and concise.
+                                    Do not assume the important if you are not sure 
+                                    and do not assume customized information (for example, different company will have different level ladder).
+                                    If you assume something, please explain there reason why you chose that value before assume.
+                                    
+                                    Answer format:
+                                    old_answer_analysis: Look at previous answer, analyze the reason why the previous answer is not matched to criteria.
+                                    old_prompt_analysis: Look at previous prompt, analyze the reason why the previous prompt cannot get the correct answer.
+                                    strategy_for_new_prompt: Based on the analysis above, let me know what do we need to change from the previous prompt to make it work.
+                            
+                                    additional_prompt: Based on the method to adjust prompt above, write a new prompt that can achieve the expectation here. New prompt need to be different with previous prompt.
+                                    
+                                    Do not forget the key and do not change the key format. Do not highlight the key.
+                                    
+                                    """
+        adjusted_prompt_messages = [
+            {"role": "system", "content": f"You are a {agent_role} expert."},
+        ]
+        adjusted_prompt_messages = self._update_messages(adjusted_prompt_messages, prompt_to_agent_for_next_prompt)
+        response = await context.reasoning_llm.query({"prompt": prompt_to_agent_for_next_prompt})
+        return response["content"]
+    
+    def _update_messages(self, messages: List[Dict[str, str]], text: str, role: str = "user") -> List[Dict[str, str]]:
+        messages.append({"role": role, "content": text})
+        return messages
         
     async def _execute_prosea_step_with_validation(self, node: ExecutionNode, context: ExecutionContext,
                               validation_node: Optional[ExecutionNode] = None,
                               original_problem: Optional[str] = None, prompt: str = None,
-                              prev_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
+                              prev_signals: Optional[List[ExecutionSignal]] = None,
+                              agent_role: Optional[str] = None) -> List[ExecutionSignal]:
         """Execute PROSEA reasoning with validation."""
         assert context.reasoning_llm is not None
         is_matched = False
-        print("Start validation")
+        execution_messages = [
+            {"role": "system", "content": f"You are a {agent_role} expert."},
+        ]
         while not is_matched:
-            response = await context.reasoning_llm.query({"prompt": prompt})
+            execution_messages = self._update_messages(execution_messages, prompt)
+            # response = await context.reasoning_llm.query({"prompt": prompt})
+            # print("Prompt: ", prompt, "\n\n")
+            response = await context.reasoning_llm.conversational_query(execution_messages)
             response_text = response["content"]
-            is_matched, is_contradicted, refined_criteria, is_solvable_by_continuing_prompt = await self._validate_response(response=response_text, node=node, validation_node=validation_node, context=context, original_problem=original_problem, additional_prompt=prompt, prev_signals=prev_signals)
-            print("is_matched", is_matched)
+            execution_messages = self._update_messages(execution_messages, response_text, role="assistant")
+            # print("Response: ", response_text, "\n\n")
+            is_matched, is_contradicted, refined_criteria, is_solvable_by_continuing_prompt = await self._validate_response(response=response_text, 
+                                                                                                                            node=node, validation_node=validation_node, 
+                                                                                                                            context=context, original_problem=original_problem,
+                                                                                                                            additional_prompt=prompt, prev_signals=prev_signals,
+                                                                                                                            agent_role=agent_role)
+            print("Is matched: ", is_matched)
+            if is_matched:
+                break
+            if is_contradicted:
+                validation_node = await self._adjust_criteria(validation_node=validation_node, new_criteria=refined_criteria)
+            if is_solvable_by_continuing_prompt:
+                prompt = await self._adjust_prompt(previous_steps=prev_signals, step_prompt=node.description, step_expectation=validation_node.description, 
+                                                   previous_tried_prompt=prompt, previous_tried_output=response_text, context=context, agent_role=agent_role)
         return response
         
     async def _execute_direct(self, node: ExecutionNode, context: ExecutionContext) -> List[ExecutionSignal]:
