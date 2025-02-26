@@ -26,7 +26,8 @@ from .planning import (
     Plan,
     PlanFactory,
     PlanExecutor,
-    PlanningStrategy,
+    PlanStrategy,
+    PlanConfig,
 )
 from .reasoning import (
     Reasoning,
@@ -57,7 +58,7 @@ __all__ = [
     'PipelineContext',
     'Plan',
     'PlanFactory',
-    'PlanningStrategy',
+    'PlanStrategy',
     'PlanExecutor',
     'Reasoning',
     'ReasoningFactory',

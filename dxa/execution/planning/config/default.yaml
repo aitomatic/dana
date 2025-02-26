@@ -1,0 +1,77 @@
+# Default planning configuration
+name: default
+description: "Default planning pattern"
+
+# Define nodes in the plan
+nodes:
+  - id: START
+    type: START
+    description: "Start of plan execution"
+    
+  - id: ANALYZE
+    type: TASK
+    description: "Analyze the problem and identify key requirements"
+    prompt: default.analyze_problem
+    
+  - id: DESIGN
+    type: TASK
+    description: "Design a solution approach based on the analysis"
+    prompt: default.design_solution
+    
+  - id: IMPLEMENT
+    type: TASK
+    description: "Implement the solution"
+    prompt: default.implement_solution
+    
+  - id: VERIFY
+    type: TASK
+    description: "Verify the solution meets all requirements"
+    prompt: default.verify_solution
+    
+  - id: END
+    type: END
+    description: "End of plan execution"
+
+# Define prompts used in nodes
+prompts:
+  analyze_problem: |
+    Analyze the following problem:
+    
+    {objective}
+    
+    Identify:
+    1. Key requirements and constraints
+    2. Available resources and information
+    3. Success criteria for a solution
+    
+  design_solution: |
+    Based on your analysis, design a solution approach for:
+    
+    {objective}
+    
+    Your design should include:
+    1. The overall architecture or framework
+    2. Key components and their relationships
+    3. Algorithms or methods to be used
+    4. Any trade-offs considered
+    
+  implement_solution: |
+    Implement your designed solution for:
+    
+    {objective}
+    
+    Provide:
+    1. The complete implementation
+    2. Explanations of key implementation decisions
+    3. How you've addressed the requirements
+    
+  verify_solution: |
+    Verify that your solution correctly addresses:
+    
+    {objective}
+    
+    Verification should include:
+    1. Testing against the requirements
+    2. Analysis of edge cases
+    3. Evaluation of performance and efficiency
+    4. Final summary of how the solution meets the objective 

@@ -1,0 +1,28 @@
+name: Monitoring
+description: "Monitoring workflow for parameters"
+version: 1.0
+
+nodes:
+  - id: MONITOR
+    description: "Monitor parameters"
+  
+  - id: CHECK
+    description: "Check parameter values"
+  
+  - id: DIAGNOSE
+    description: "Diagnose issues"
+
+  prompts:
+    MONITOR: |
+      Objective: {objective}
+      Monitor parameters
+    
+    CHECK: |
+      Objective: {objective}
+      Check parameter values
+
+    DIAGNOSE: |
+      Objective: {objective}
+      Parameter Values: {CHECK.output}
+
+      Diagnose issues

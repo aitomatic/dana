@@ -25,7 +25,7 @@ from ..execution import (
     Workflow,
     WorkflowFactory,
     WorkflowStrategy,
-    PlanningStrategy,
+    PlanStrategy,
     ReasoningStrategy,
     ExecutionContext
 )
@@ -66,9 +66,9 @@ class Agent:
         return self._workflow_strategy or WorkflowStrategy.DEFAULT
 
     @property
-    def planning_strategy(self) -> PlanningStrategy:
+    def planning_strategy(self) -> PlanStrategy:
         """Get planning strategy."""
-        return self._planning_strategy or PlanningStrategy.DEFAULT
+        return self._planning_strategy or PlanStrategy.DEFAULT
 
     @property
     def reasoning_strategy(self) -> ReasoningStrategy:
@@ -173,13 +173,13 @@ class Agent:
         self._workflow_strategy = strategy
         if strategy == WorkflowStrategy.WORKFLOW_IS_PLAN:
             # This requires the plan to be aware of the same strategy.
-            self._planning_strategy = PlanningStrategy.WORKFLOW_IS_PLAN
+            self._planning_strategy = PlanStrategy.WORKFLOW_IS_PLAN
         return self
 
-    def with_planning(self, strategy: PlanningStrategy) -> 'Agent':
+    def with_planning(self, strategy: PlanStrategy) -> 'Agent':
         """Configure planning strategy."""
         self._planning_strategy = strategy
-        if strategy == PlanningStrategy.WORKFLOW_IS_PLAN:
+        if strategy == PlanStrategy.WORKFLOW_IS_PLAN:
             # This requires the workflow to be aware of the same strategy.
             self._workflow_strategy = WorkflowStrategy.WORKFLOW_IS_PLAN
         return self
@@ -253,7 +253,7 @@ class Agent:
 
         # Set default strategies if not specified
         self._workflow_strategy = self._workflow_strategy or WorkflowStrategy.DEFAULT
-        self._planning_strategy = self._planning_strategy or PlanningStrategy.DEFAULT
+        self._planning_strategy = self._planning_strategy or PlanStrategy.DEFAULT
         self._reasoning_strategy = self._reasoning_strategy or ReasoningStrategy.DEFAULT
 
         # Create runtime with strategies

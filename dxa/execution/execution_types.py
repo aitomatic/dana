@@ -97,6 +97,7 @@ class ObjectiveStatus(Enum):
     NEEDS_CLARIFICATION = "needs_clarification"
     COMPLETED = "completed"
     FAILED = "failed"
+    NONE_PROVIDED = "none_provided"
 
 @dataclass
 class Objective:
@@ -109,7 +110,7 @@ class Objective:
 
     def __init__(self, objective: Optional[str] = None):
         if not objective:
-            objective = "No objective provided"
+            objective = str(ObjectiveStatus.NONE_PROVIDED)
         self.original = objective
         self.current = objective
         self.status = ObjectiveStatus.INITIAL
