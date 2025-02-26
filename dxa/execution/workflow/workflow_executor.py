@@ -104,6 +104,7 @@ class WorkflowExecutor(Executor):
                       upper_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
         """Execute workflow graph. Upper signals are not used in the workflow layer."""
         context.current_plan = self.graph
+        context.current_reasoning = self.graph
         # PLEASE CHECK THIS
         if self.strategy == WorkflowStrategy.WORKFLOW_IS_PLAN:
             # Go directly to plan execution, via the START node
