@@ -3,13 +3,13 @@
 import asyncio
 from dxa.agent import Agent
 from dxa.execution.workflow.workflow_factory import WorkflowFactory
-from dxa.execution import WorkflowStrategy, PlanningStrategy
+from dxa.execution import WorkflowStrategy, PlanStrategy
 
 async def monitor_system():
     """Continuous system monitoring loop."""
     agent = (Agent("sysmon_agent")
              .with_workflow(WorkflowStrategy.CONDITIONAL)
-             .with_planning(PlanningStrategy.DYNAMIC))
+             .with_planning(PlanStrategy.DYNAMIC))
     
     # Create monitoring workflow for CPU/Memory
     workflow = WorkflowFactory.create_monitoring_workflow(

@@ -35,6 +35,7 @@ class WorkflowExecutor(Executor):
         self.layer = "workflow"
         self._configure_logger()
         self.parse_by_key = TextProcessor().parse_by_key
+
     @property
     def strategy(self) -> WorkflowStrategy:
         """Get workflow strategy."""

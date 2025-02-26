@@ -1,65 +1,208 @@
 """Workflow factory for creating common workflow patterns."""
 
-from pathlib import Path
 from typing import List, Optional, Union, Dict
+from pathlib import Path
 import yaml
-
-from ..execution_graph import ExecutionGraph
-from ..execution_types import Objective, ExecutionNode
 from .workflow import Workflow
 from ...common.graph import NodeType, Edge
+from ..execution_types import Objective, ExecutionNode
+from .workflow_config import WorkflowConfig
 
 class WorkflowFactory:
     """Factory for creating workflow patterns."""
 
     @classmethod
-    def from_yaml(cls, yaml_data: Union[str, Dict, Path]) -> Workflow:
+    def from_yaml(cls, yaml_data: Union[str, Dict, Path], 
+                  objective: Optional[Objective] = None,
+                  custom_prompts: Optional[Dict[str, str]] = None) -> Workflow:
         """Create workflow from YAML data or file."""
         # Handle different input types
+        config_path = None
         if isinstance(yaml_data, (str, Path)):
-            with open(yaml_data, encoding="utf-8") as f:
+            if isinstance(yaml_data, str) and not Path(yaml_data).exists():
+                # Assume it's a workflow name
+                config_path = WorkflowConfig.get_config_path(yaml_data)
+            else:
+                config_path = str(yaml_data)
+
+            with open(config_path, encoding="utf-8") as f:
                 data = yaml.safe_load(f)
         else:
             data = yaml_data
 
+        print(f">>>>>>>>>>>>>>Path: {config_path}")
+
         # Create workflow
         workflow = Workflow(
-            objective=Objective(data.get('description', '')),
+            objective=objective or Objective(data.get('description', '')),
             name=data.get('name', 'unnamed_workflow')
         )
+        
+        # Process nodes
+        nodes_data = data.get('nodes', [])
+        node_ids = []
+        
+        # Check if START and END nodes exist
+        has_start = any(node.get('id') == 'START' for node in nodes_data)
+        has_end = any(node.get('id') == 'END' for node in nodes_data)
+        
+        # Add START node if it doesn't exist
+        if not has_start:
+            start_node = ExecutionNode(
+                node_id="START",
+                node_type=NodeType.START,
+                description="Begin workflow"
+            )
+            workflow.add_node(start_node)
+            node_ids.append("START")
+        
+        # Process nodes from YAML
+        for node_data in nodes_data:
+            description = node_data.get('description', '')
+            node_id = node_data['id']
+            node_ids.append(node_id)
+            
+            # Determine node type
+            if 'type' not in node_data:
+                print(f"Warning: Node '{node_id}' is missing 'type' field, defaulting to TASK")
+                node_type = NodeType.TASK
+            else:
+                node_type = NodeType[node_data['type']]
 
-        # Add nodes
-        for node_data in data.get('nodes', []):
+            # Prepare metadata
+            metadata = node_data.get('metadata', {})
+
+            # Ensure planning and reasoning strategies are included in metadata
+            # Standardize on 'planning' and 'reasoning' field names
+            if 'planning' in node_data:
+                metadata['planning'] = node_data['planning']
+            else:
+                metadata['planning'] = 'DEFAULT'
+
+            if 'reasoning' in node_data:
+                metadata['reasoning'] = node_data['reasoning']
+            else:
+                metadata['reasoning'] = 'DEFAULT'
+
+            # Handle prompt reference
+            if 'prompt' in node_data:
+                prompt_ref = node_data['prompt']
+                prompt_text = WorkflowConfig.get_prompt(prompt_ref=prompt_ref, custom_prompts=custom_prompts)
+            else:
+                prompt_text = WorkflowConfig.get_prompt(config_path=config_path,
+                                                        prompt_name=node_id,
+                                                        custom_prompts=custom_prompts)
+
+            metadata['prompt'] = prompt_text
+                
+            # If no description, use the prompt text as the description
+            if not description:
+                # Get the prompt text from the config
+                description = prompt_text
+
             node = ExecutionNode(
-                node_id=node_data['id'],
-                node_type=NodeType[node_data['type']],
-                description=node_data.get('description', ''),
-                metadata=node_data.get('metadata', {})
+                node_id=node_id,
+                node_type=node_type,
+                description=description,
+                metadata=metadata
             )
             workflow.add_node(node)
+        
+        # Add END node if it doesn't exist
+        if not has_end:
+            end_node = ExecutionNode(
+                node_id="END",
+                node_type=NodeType.END,
+                description="End workflow"
+            )
+            workflow.add_node(end_node)
+            node_ids.append("END")
 
         # Add edges
-        for edge_data in data.get('edges', []):
-            edge = Edge(
-                source=edge_data['source'],
-                target=edge_data['target'],
-                metadata=edge_data.get('metadata', {})
-            )
-            workflow.add_edge(edge)
+        cls._add_edges_to_workflow(workflow, data, node_ids)
+        
+        # Add role if specified
+        if 'role' in data:
+            workflow.add_role(role=data['role'])
 
         return workflow
 
     @classmethod
+    def _add_edges_to_workflow(cls, workflow: Workflow, data: Dict, node_ids: List[str]) -> None:
+        """Add edges to the workflow based on the data and node IDs."""
+        edges_data = data.get('edges', [])
+        
+        # If no edges are specified, create sequential edges
+        if not edges_data and len(node_ids) > 1:
+            # Find START and END nodes if they exist
+            start_node = next((node_id for node_id in node_ids if node_id == "START"), None)
+            end_node = next((node_id for node_id in node_ids if node_id == "END"), None)
+            
+            # If no START/END nodes, use first and last nodes
+            if not start_node:
+                start_node = node_ids[0]
+            if not end_node:
+                end_node = node_ids[-1]
+            
+            # Create sequential edges
+            for i in range(len(node_ids) - 1):
+                if node_ids[i] != end_node and node_ids[i + 1] != start_node:
+                    workflow.add_edge(Edge(
+                        source=node_ids[i],
+                        target=node_ids[i + 1]
+                    ))
+        else:
+            # Add specified edges
+            for edge_data in edges_data:
+                edge = Edge(
+                    source=edge_data['source'],
+                    target=edge_data['target'],
+                    metadata=edge_data.get('metadata', {})
+                )
+                workflow.add_edge(edge)
+
+    @classmethod
+    def create_workflow_from_config(cls, workflow_name: str, 
+                                    objective: Union[str, Objective], 
+                                    agent_role: Optional[str] = None,
+                                    custom_prompts: Optional[Dict[str, str]] = None) -> Workflow:
+        """Create a workflow from named configuration."""
+        # Get the config path
+        config_path = WorkflowConfig.get_config_path(workflow_name)
+        
+        if not config_path.exists():
+            raise ValueError(f"No configuration found for workflow: {workflow_name}")
+            
+        # Convert objective to Objective object if needed
+        obj = Objective(objective) if isinstance(objective, str) else objective
+            
+        # Load workflow from YAML with objective
+        workflow = cls.from_yaml(config_path, obj, custom_prompts)
+        
+        # Set agent role if provided
+        if agent_role:
+            workflow.add_role(role=agent_role)
+        
+        return workflow
+
+    @classmethod
+    def create_prosea_workflow(cls, objective: Union[str, Objective], 
+                               agent_role: str = "ProSea Agent", 
+                               custom_prompts: Optional[Dict[str, str]] = None) -> Workflow:
+        """Create a Prosea workflow for given parameters."""
+        return cls.create_workflow_by_name("basic.prosea", objective, agent_role, custom_prompts)
+
+    @classmethod
     def create_sequential_workflow(cls, objective: Union[str, Objective], commands: List[str]) -> Workflow:
-        """Create a sequential workflow from list of commands."""
-        objective = Objective(objective) if isinstance(objective, str) else objective
-        workflow = Workflow(objective)
-        # pylint: disable=protected-access
-        ExecutionGraph._add_start_end_nodes(graph=workflow)
+        """Create a sequential workflow from list of commands.  Sequential is treated special,
+        in that the steps are passed in programmatically rather than hard-coded in the YAML file."""
 
-        # Remove the edge from START to END
-        workflow.remove_edge_between("START", "END")
-
+        # First load the base sequential workflow
+        workflow = cls.create_workflow_by_name("basic.sequential", objective)
+        
+        # Clear any existing edges (to ensure we don't have extras)
+        workflow.edges = []
+        
         # Create task nodes for each command
         prev_id = "START"
         for i, command in enumerate(commands):
@@ -69,10 +212,10 @@ class WorkflowFactory:
                 node_type=NodeType.TASK,
                 description=str(command)
             ))
-            workflow.add_transition(prev_id, node_id)
+            workflow.add_edge(Edge(source=prev_id, target=node_id))
             prev_id = node_id
 
-        workflow.add_transition(prev_id, "END")
+        workflow.add_edge(Edge(source=prev_id, target="END"))
         return workflow
 
     @classmethod
@@ -80,205 +223,59 @@ class WorkflowFactory:
         """Create minimal workflow with START -> TASK -> END.
         The task node will have the objective as its description.
         """
-        objective = Objective(objective) if isinstance(objective, str) else objective
-        workflow = Workflow(objective)
-        # pylint: disable=protected-access
-        ExecutionGraph._add_start_end_nodes(graph=workflow)
-
-        # Remove the edge from START to END
-        workflow.remove_edge_between("START", "END")
-
-        # Add task node
-        workflow.add_node(ExecutionNode(
-            node_id="PERFORM_TASK",
-            node_type=NodeType.TASK,
-            description=objective.original if objective else ""
-        ))
-
-        workflow.add_transition("START", "PERFORM_TASK")
-        workflow.add_transition("PERFORM_TASK", "END")
-
-        return workflow
+        return cls.create_workflow_by_name("basic.minimal", objective or "No objective provided")
     
-    
-    def _create_problem_analysis_prompt(cls, objective: Objective) -> str:
-        problem_analysis_prompt = f"""
-\nAnalyze the question and interpret the problem.
-Problem: {objective.original}
-Tell me the problem statement.
-Now, please analyze the problem and interpret the question. Try to understand the problem and its context.
-Justify if there are any additional information can be inferred from the question.
-Let me know all the information you can get from the question.
-You can infer more information based on provided information in the question, but DO NOT hallucinate any information.
-No need to do any task, just analyze the problem and next step will be based on your analysis to construct the plan/solution.
-Please do reasoning to see if it's mandatory to get more extra information to solve the problem.
-If there are any well-known knowledge that would be helpful for the problem, please provide it.
-Do not assume the important information if you are not sure and do not assume customized information (for example, different company will have different level ladder).
-        """      
-        return problem_analysis_prompt
-    
-    def _create_planning_prompt(cls, objective: Objective) -> str:
-        planning_prompt = f"""\n            
-Remember, you have 2 tools to solve the problem:
-1. Use a LLM as a tool to solve the problem.
-2. Ask for more information from user if you need to interact with physical world.
-
-Generate for me an excutable plan to fix the issue. 
-All the steps for the plan must be solvable.
-Then, let me know what do you expect to get for each step.
-
-The step need to be for the problem identification and the solution in a logical order.
-Criteria for the plan: After executing the plan, the solution must be achieved.
-All the steps must be solvable with LLMs.
-
-required problem: {objective.original}
-problem analysis result: <problem_analysis>
-
-
-Think straightforward and logically to generate the plan.
-You should try your best to solve the problem with the information provided in the question and only ask for more information if without it, it's impossible to solve the problem.
-For the simple problem, make simple plan and do not overkill the plan and overcomplicate the plan if not necessary.
-try you best to find the solution with the information provided in the question.
-Just do enough things to get the solution, do not do more than enough. Do not do the redundant step.
-For the step required calculation, please do the calculation step by step and make sure that the calculation is correct. Say the accurate formula before doing the calculation.
-Do not assume the important information if you are not sure and do not assume customized information (for example, different company will have different level ladder). 
-Remember final output is a plan with steps with expected output for each step.
-
-
-Answer must follow this format:
-step_<i>: step <i> to solve current problem. The step should help me get closer to the solution. Give the necessary information from the question to solve the problem. Just do the thing that essential to solve the problem. Must be in one line, do not use "\n".
-
-expected_output_step_<i>: What do you expect from the output for step <i>. This is just the criteria for the output to make sure that this step is success and can be used to get the accurate answer after gathering all step. Do not specify exact output answer unless you are extremely sure about it. If the step is request to gather information, it must have expected information to be completed. Must be in one line, do not use "\n".
-
-
-Do not forget to generate both step and expected output step.
-Do not forget the key and do not change the key format. Do not highlight the key.
-            """
-        return planning_prompt
-    
-    def _create_finalize_answer_prompt(cls, objective: Objective) -> str:
-        finalize_answer_prompt = f"""
-        These are the reasoning steps and their outputs:
-        <reasoning_result>
-        
-        Now, based on the reasoning steps and their outputs above, please give me the comprehensive final answer for the original problem: {objective.original}.
-        Remember to strictly trust in the reasoning steps and their outputs, do not make any assumption or correction the provided reasoning steps and their outputs.
-        """
-        return finalize_answer_prompt
-    
-    @classmethod
-    def create_prosea_workflow(cls, objective: Union[str, Objective], agent_role: str = "Mathematician") -> Workflow:
-        """Create a Prosea workflow for given parameters."""
-        objective = Objective(objective) if isinstance(objective, str) else objective
-        workflow = Workflow(objective)
-        
-        problem_analysis_prompt = cls._create_problem_analysis_prompt(cls, objective=objective)
-        planning_prompt = cls._create_planning_prompt(cls, objective=objective)
-        finalize_answer_prompt = cls._create_finalize_answer_prompt(cls, objective=objective)
-        # Add standard monitoring nodes
-        nodes = {
-            "START": ExecutionNode(
-                node_id="START",
-                node_type=NodeType.START,
-                description="Begin Prosea workflow"
-            ),
-            "ANALYZE": ExecutionNode(
-                node_id="ANALYZE",
-                node_type=NodeType.TASK,
-                description=problem_analysis_prompt
-            ),
-            "PLANNING": ExecutionNode(
-                node_id="PLANNING",
-                node_type=NodeType.TASK,
-                description=planning_prompt
-            ),
-            "FINALIZE_ANSWER": ExecutionNode(
-                node_id="FINALIZE_ANSWER",
-                node_type=NodeType.TASK,
-                description=finalize_answer_prompt
-            ),
-            "END": ExecutionNode(
-                node_id="END",
-                node_type=NodeType.END,
-                description="End Prosea workflow"
-            )
-        }
-
-        # Add all nodes
-        for node in nodes.values():
-            workflow.add_node(node)
-        
-        # Add edges
-        edges = [
-            Edge("START", "ANALYZE"),
-            Edge("ANALYZE", "PLANNING"),
-            Edge("PLANNING", "FINALIZE_ANSWER"),
-            Edge("FINALIZE_ANSWER", "END")
-        ]
-        
-        for edge in edges:
-            workflow.add_edge(edge)
-
-        workflow.add_role(role=agent_role)
-        
-        return workflow
-
-        
     @classmethod
     def create_monitoring_workflow(cls,
                                    parameters: List[str],
                                    name: str = "monitoring",
                                    description: str = "") -> Workflow:
         """Create a monitoring workflow for given parameters."""
-        workflow = Workflow(
-            objective=Objective(description or f"Monitor {', '.join(parameters)}"),
-            name=name
-        )
-
-        # Add standard monitoring nodes
-        nodes = {
-            "START": ExecutionNode(
-                node_id="START",
-                node_type=NodeType.START,
-                description="Begin monitoring"
-            ),
-            "MONITOR": ExecutionNode(
-                node_id="MONITOR",
-                node_type=NodeType.TASK,
-                description="Monitor parameters",
-                metadata={"parameters": parameters}
-            ),
-            "CHECK": ExecutionNode(
-                node_id="CHECK",
-                node_type=NodeType.CONDITION,
-                description="Check parameter values"
-            ),
-            "DIAGNOSE": ExecutionNode(
-                node_id="DIAGNOSE",
-                node_type=NodeType.TASK,
-                description="Diagnose issues"
-            ),
-            "END": ExecutionNode(
-                node_id="END",
-                node_type=NodeType.END,
-                description="End monitoring cycle"
-            )
-        }
-
-        # Add all nodes
-        for node in nodes.values():
-            workflow.add_node(node)
-
-        # Add edges with conditions
-        edges = [
-            Edge("START", "MONITOR"),
-            Edge("MONITOR", "CHECK"),
-            Edge("CHECK", "MONITOR", {"condition": "parameters_normal"}),
-            Edge("CHECK", "DIAGNOSE", {"condition": "parameters_abnormal"}),
-            Edge("DIAGNOSE", "END")
-        ]
-
-        for edge in edges:
-            workflow.add_edge(edge)
-
+        # Create objective
+        objective = Objective(description or f"Monitor {', '.join(parameters)}")
+        
+        # Load base monitoring workflow
+        workflow = cls.create_workflow_by_name("automation/monitoring", objective)
+        workflow.name = name
+        
+        # Update MONITOR node with parameters
+        monitor_node = workflow.get_node_by_id("MONITOR")
+        if monitor_node:
+            monitor_node.metadata["parameters"] = parameters
+        
         return workflow
+
+    @classmethod
+    def create_workflow_by_name(cls, workflow_name: str, 
+                                objective: Union[str, Objective], 
+                                agent_role: Optional[str] = None,
+                                custom_prompts: Optional[Dict[str, str]] = None) -> Workflow:
+        """Create a workflow by name."""
+        # No need to normalize the name - just pass it through
+        return cls.create_workflow_from_config(workflow_name, objective, agent_role, custom_prompts)
+
+    @classmethod
+    def create_default_workflow(cls, objective: Union[str, Objective], 
+                                agent_role: str = "Default Workflow Agent", 
+                                custom_prompts: Optional[Dict[str, str]] = None) -> Workflow:
+        """Create a default workflow for given parameters.
+        
+        This workflow follows the standard problem-solving pattern:
+        DEFINE -> RESEARCH -> STRATEGIZE -> EXECUTE -> EVALUATE
+        
+        Args:
+            objective: The objective to accomplish
+            agent_role: Optional role for the agent
+            custom_prompts: Optional custom prompts to override defaults
+            
+        Returns:
+            A configured default workflow
+            
+        Examples:
+            >>> workflow = WorkflowFactory.create_default_workflow("Design a database schema")
+            >>> workflow = WorkflowFactory.create_default_workflow(
+            ...     "Create a marketing plan", 
+            ...     agent_role="Marketing Specialist"
+            ... )
+        """
+        return cls.create_workflow_from_config("default", objective, agent_role, custom_prompts)

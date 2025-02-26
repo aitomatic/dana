@@ -2,7 +2,7 @@
 
 import pytest
 from dxa.execution import WorkflowFactory
-from dxa.execution import PlanExecutor, PlanningStrategy
+from dxa.execution import PlanExecutor, PlanStrategy
 from dxa.execution import ReasoningExecutor, ExecutionContext
 
 @pytest.fixture
@@ -16,7 +16,7 @@ def plan_executor():
     reasoning_executor = ReasoningExecutor()
     return PlanExecutor(
         reasoning_executor=reasoning_executor,
-        strategy=PlanningStrategy.WORKFLOW_IS_PLAN
+        strategy=PlanStrategy.WORKFLOW_IS_PLAN
     )
 
 @pytest.mark.asyncio
