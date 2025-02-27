@@ -23,7 +23,6 @@ class WorkflowStrategy(Enum):
     SEQUENTIAL = "SEQUENTIAL"
     PARALLEL = "PARALLEL"
     CONDITIONAL = "CONDITIONAL"
-    PROSEA = "PROSEA"
 
 class WorkflowExecutor(Executor):
     """Executes workflow graphs."""

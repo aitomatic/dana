@@ -1,16 +1,38 @@
 """Factory for creating planning patterns."""
 
-from typing import Dict, Optional, Union, Any
+from typing import Any, Dict, Optional, Union
 from pathlib import Path
 
 from ..execution_types import ExecutionNode, Objective, NodeType, Edge
 from ..execution_graph import ExecutionGraph
+from ..execution_factory import ExecutionFactory
+from ..execution_config import ExecutionConfig
 from .plan import Plan
 from .plan_executor import PlanStrategy
-from .plan_config import PlanConfig
 
-class PlanFactory:
+class PlanConfig(ExecutionConfig):
+    """Configuration for planning patterns."""
+    
+    @classmethod
+    def get_base_path(cls) -> Path:
+        """Get base path for configuration files."""
+        return Path(__file__).parent
+
+class PlanFactory(ExecutionFactory):
     """Creates planning pattern instances."""
+
+    # Override class variables
+    graph_class = Plan
+    config_class = PlanConfig
+
+    @classmethod
+    def create_from_config(cls, name: str,
+                           objective: Union[str, Objective],
+                           role: Optional[str] = None,
+                           custom_prompts: Optional[Dict[str, str]] = None) -> ExecutionGraph:
+        """Create a planning instance by name."""
+        plan = super().create_from_config(name, objective, role, custom_prompts)
+        return plan
     
     @classmethod
     def create_planning_strategy(cls, node: ExecutionNode, context: Any = None) -> PlanStrategy:
@@ -41,7 +63,7 @@ class PlanFactory:
         return PlanStrategy.DIRECT
     
     @classmethod
-    def from_yaml(cls, yaml_data, objective=None, custom_prompts=None):
+    def unused_from_yaml(cls, yaml_data, objective=None, custom_prompts=None):
         """Create planning from YAML data or file."""
         if isinstance(yaml_data, (str, Path)):
             config = PlanConfig.load_yaml(yaml_data)

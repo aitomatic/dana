@@ -8,10 +8,11 @@ from ..execution_types import Objective, ExecutionNode, ObjectiveStatus
 class Plan(ExecutionGraph):
     """Concrete execution steps (WHAT layer)."""
 
-    def __init__(self, objective: Optional[Objective] = None):
+    def __init__(self, objective: Optional[Objective] = None, name: Optional[str] = None):
         """Initialize plan."""
         super().__init__(
-            objective=objective or Objective(ObjectiveStatus.NONE_PROVIDED),
+            objective=objective or Objective(str(ObjectiveStatus.NONE_PROVIDED)),
+            name=name,
             layer="plan"
         )
 

@@ -9,8 +9,9 @@ from ..execution_types import Objective, ObjectiveStatus
 class Reasoning(ExecutionGraph, ABC):
     """Pattern for reasoning about execution (HOW layer)."""
 
-    def __init__(self, objective: Optional[Objective] = None):
+    def __init__(self, objective: Optional[Objective] = None, name: Optional[str] = None):
         super().__init__(
-            objective=objective or Objective(ObjectiveStatus.NONE_PROVIDED),
+            objective=objective or Objective(str(ObjectiveStatus.NONE_PROVIDED)),
+            name=name or "reasoning",
             layer="reasoning"
         )
