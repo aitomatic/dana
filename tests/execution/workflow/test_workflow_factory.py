@@ -1,6 +1,7 @@
 """Test workflow factory."""
 
 import unittest
+from pathlib import Path
 from dxa.execution import WorkflowFactory
 from dxa.execution import ExecutionNodeStatus
 from dxa.common.graph import NodeType
@@ -16,6 +17,43 @@ class TestWorkflowFactory(unittest.TestCase):
         self.assertEqual(len(workflow.nodes), 7)
         self.assertEqual(len(workflow.edges), 6)
         self._get_step_and_assert_description(workflow, "DEFINE", "Define the problem scope and objectives")
+
+    def test_create_workflow_from_local_config(self):
+        """Test creating a workflow from a local config directory."""
+        # Path to the test config directory
+        test_config_dir = Path(__file__).parent.parent.parent / "execution" / "workflow" / "config"
+        
+        # Verify the directory exists
+        assert test_config_dir.exists(), f"Test config directory not found: {test_config_dir}"
+        
+        # Create a workflow using the local config
+        objective = "Test local config"
+        workflow = WorkflowFactory.create_from_config(
+            "prosea_test",  # Assuming prosea_test.yaml exists in the test config dir
+            objective,
+            config_dir=test_config_dir
+        )
+        
+        # Verify the workflow was created correctly
+        assert isinstance(workflow, Workflow)
+        assert workflow.objective is not None
+        assert workflow.objective.original == objective
+        
+        # Check for specific nodes from the prosea_test config
+        # These assertions will depend on what's in the prosea_test.yaml file
+        assert "ANALYZE" in workflow.nodes, "ANALYZE node not found in workflow"
+        
+        # Test with a role
+        role = "Local Config Test Agent"
+        workflow_with_role = WorkflowFactory.create_from_config(
+            "prosea_test",
+            objective,
+            role=role,
+            config_dir=test_config_dir
+        )
+        
+        # Verify the role was set
+        assert workflow_with_role.metadata.get("role") == role 
 
     def test_create_sequential_workflow(self):
         """Test create_sequential_workflow."""

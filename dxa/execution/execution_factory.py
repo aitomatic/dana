@@ -156,7 +156,8 @@ class ExecutionFactory:
     def create_from_config(cls, name: str,
                            objective: Union[str, Objective],
                            role: Optional[str] = None,
-                           custom_prompts: Optional[Dict[str, str]] = None) -> ExecutionGraph:
+                           custom_prompts: Optional[Dict[str, str]] = None,
+                           config_dir: Optional[Union[str, Path]] = None) -> ExecutionGraph:
         """Create an execution graph from named configuration.
         
         Args:
@@ -164,6 +165,7 @@ class ExecutionFactory:
             objective: The objective to accomplish
             role: Optional role for the agent
             custom_prompts: Optional custom prompts to override defaults
+            config_dir: Optional directory containing configuration files
             
         Returns:
             A configured execution graph
@@ -171,7 +173,23 @@ class ExecutionFactory:
         if not isinstance(objective, Objective):
             objective = Objective(objective)
 
-        graph = cls.from_yaml(name, objective, custom_prompts)
+        # If config_dir is provided, use it to find the configuration
+        if config_dir:
+            # Construct path to the config file
+            config_dir = Path(config_dir)
+            
+            # Handle both direct file references and directory/name combinations
+            if name.endswith(('.yaml', '.yml')):
+                yaml_path = config_dir / name
+            else:
+                yaml_path = config_dir / f"{name}.yaml"
+                if not yaml_path.exists():
+                    yaml_path = config_dir / f"{name}.yml"
+            
+            graph = cls.from_yaml(yaml_path, objective, custom_prompts)
+        else:
+            # Use the standard path resolution
+            graph = cls.from_yaml(name, objective, custom_prompts)
         
         # Set role if provided
         if role:

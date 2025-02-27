@@ -29,9 +29,10 @@ class ReasoningFactory(ExecutionFactory):
     def create_from_config(cls, name: str,
                            objective: Union[str, Objective],
                            role: Optional[str] = None,
-                           custom_prompts: Optional[Dict[str, str]] = None) -> ExecutionGraph:
+                           custom_prompts: Optional[Dict[str, str]] = None,
+                           config_dir: Optional[Union[str, Path]] = None) -> ExecutionGraph:
         """Create a reasoning instance by name."""
-        reasoning = super().create_from_config(name, objective, role, custom_prompts)
+        reasoning = super().create_from_config(name, objective, role, custom_prompts, config_dir)
         return reasoning
     
     @classmethod
