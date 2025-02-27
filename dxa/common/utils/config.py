@@ -33,20 +33,13 @@ Configuration Sources (in order of precedence):
 2. YAML configuration file
 3. Environment variables (e.g., OPENAI_API_KEY)
 4. Default values
-
-Required Fields:
-- api_key: OpenAI API key
-- model: LLM model to use (default: "gpt-4")
-- resources: List of available resources
-- reasoning: Dictionary of reasoning settings
 """
 
 import logging
 import os
+from typing import Dict, Any, Optional, List, Tuple
 from pathlib import Path
-from typing import Dict, Any, Optional
 from dotenv import load_dotenv, find_dotenv
-
 from dxa.common.exceptions import ConfigurationError
 
 try:
@@ -74,7 +67,9 @@ def _validate_config(config: Dict[str, Any]) -> None:
         logger.error("Invalid type for field 'reasoning': expected dict")
         raise ConfigurationError("'reasoning' must be a dictionary")
 
-def _load_yaml_config(path: Path) -> Dict[str, Any]:
+_yaml_cache: List[Tuple[str, Any]] = []
+
+def load_yaml_config(path: str | Path) -> Dict[str, Any]:
     """Load YAML configuration file.
     
     Args:
@@ -84,23 +79,29 @@ def _load_yaml_config(path: Path) -> Dict[str, Any]:
         Configuration dictionary
         
     Raises:
-        ImportError: If PyYAML is not installed
-        ConfigurationError: If YAML is invalid
+        FileNotFoundError: If config file does not exist
+        ValueError: If config values are invalid
     """
-    if not YAML_AVAILABLE:
-        logger.error("PyYAML is required but not installed")
-        raise ImportError(
-            "PyYAML is required for configuration files. "
-            "Install with: pip install pyyaml"
-        )
-    try:
-        yaml_config = yaml.safe_load(path.read_text())
-        if not isinstance(yaml_config, dict):
-            raise ValueError("YAML config must be a dictionary")
-        return yaml_config
-    except yaml.YAMLError as e:
-        logger.error("Failed to parse YAML config: %s", str(e))
-        raise ConfigurationError(f"Invalid YAML format in {path}") from e
+    if not isinstance(path, Path):
+        path = Path(path)
+
+    if not path.exists():
+        logger.error("Config file not found: %s", path)
+        raise FileNotFoundError(f"Config file not found: {path}")
+            
+    for item in _yaml_cache:
+        if item[0] == str(path):
+            return item[1]
+
+    with open(path, encoding="utf-8") as f:
+        config = yaml.safe_load(f)
+
+        _yaml_cache.append((str(path), config))
+        if len(_yaml_cache) > 10:
+            _yaml_cache.pop(0)
+
+        return config
+
 
 # TODO: move to more appropriate module
 def load_agent_config(
@@ -147,7 +148,7 @@ def load_agent_config(
             raise ConfigurationError("Config file must be .yaml or .yml")
             
         try:
-            file_config = _load_yaml_config(path)
+            file_config = load_yaml_config(path)
             # Validate before updating
             _validate_config(file_config)
             config.update(file_config)

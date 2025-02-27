@@ -2,7 +2,8 @@
 
 from pathlib import Path
 from typing import Dict, Any, Optional
-import yaml
+from ..common.utils import load_yaml_config
+
 
 class ExecutionConfig:
     """Centralized configuration management for all execution components."""
@@ -45,15 +46,7 @@ class ExecutionConfig:
             Loaded configuration dictionary
         """
         config_path = cls.get_config_path(path)
-        
-        print(f"Loading config from: {config_path}")
-        
-        if not config_path.exists():
-            print(f"Warning: No configuration found at: {config_path}")
-            return {}
-            
-        with open(config_path, encoding="utf-8") as f:
-            return yaml.safe_load(f)
+        return load_yaml_config(config_path)
     
     @classmethod
     def get_prompt(cls, config_path=None, prompt_name=None, 
@@ -102,7 +95,7 @@ class ExecutionConfig:
             return custom_prompts.get(prompt_ref, "")
         
         # If all else fails, return empty string
-        print(f"Warning: Prompt '{prompt_name}' not found in config '{config_path}'")
+        # print(f"Warning: Prompt '{prompt_name}' not found in config '{config_path}'")
         return ""
     
     @classmethod
@@ -201,3 +194,23 @@ class ExecutionConfig:
         
         # If all else fails, return empty string
         return ""
+
+    @classmethod
+    def format_node_description(cls, description: str, prompt_ref: str, 
+                                custom_prompts: Optional[Dict[str, str]] = None) -> str:
+        """Format node description with prompt.
+        
+        Args:
+            description: Original node description
+            prompt_ref: Reference to prompt
+            custom_prompts: Optional custom prompts to override defaults
+            
+        Returns:
+            Formatted description
+        """
+        # If description is empty, use the prompt as the description
+        if not description:
+            return cls.get_prompt(prompt_ref=prompt_ref, custom_prompts=custom_prompts)
+        
+        # Otherwise, return the description as is
+        return description

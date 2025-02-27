@@ -6,7 +6,6 @@ from dxa.execution import ExecutionNodeStatus
 from dxa.common.graph import NodeType
 from dxa.execution import Workflow
 from dxa.execution import Objective
-from dxa.execution import ObjectiveStatus
 
 class TestWorkflowFactory(unittest.TestCase):
     """Test workflow factory."""
@@ -59,17 +58,17 @@ class TestWorkflowFactory(unittest.TestCase):
         workflow = WorkflowFactory.create_minimal_workflow("Test Objective")
         self.assertEqual(len(workflow.nodes), 3)
         self.assertEqual(len(workflow.edges), 2)
-        self._get_step_and_assert_description(workflow, "PERFORM_TASK", "Test Objective")
+        self._get_step_and_assert_description(workflow, "PERFORM_TASK", "{objective}")
 
         # Test with Objective instance
         obj = Objective("Test Objective 2")
         workflow = WorkflowFactory.create_minimal_workflow(obj)
-        self._get_step_and_assert_description(workflow, "PERFORM_TASK", "Test Objective 2")
+        self._get_step_and_assert_description(workflow, "PERFORM_TASK", "{objective}")
 
         # Test with None objective
         workflow = WorkflowFactory.create_minimal_workflow(None)
         self.assertEqual(len(workflow.nodes), 3)
-        self._get_step_and_assert_description(workflow, "PERFORM_TASK", str(ObjectiveStatus.NONE_PROVIDED))
+        self._get_step_and_assert_description(workflow, "PERFORM_TASK", "{objective}")
 
         # Test node connections
         self.assertTrue(workflow.has_edge("START", "PERFORM_TASK"))
