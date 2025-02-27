@@ -29,13 +29,15 @@ class WorkflowFactory(ExecutionFactory):
     def create_from_config(cls, name: str,
                            objective: Union[str, Objective],
                            role: Optional[str] = None,
-                           custom_prompts: Optional[Dict[str, str]] = None) -> Workflow:
+                           custom_prompts: Optional[Dict[str, str]] = None,
+                           config_dir: Optional[Union[str, Path]] = None) -> Workflow:
         """Create a workflow from named configuration."""
         graph = super().create_from_config(
             name=name,
             objective=objective,
             role=role,
-            custom_prompts=custom_prompts
+            custom_prompts=custom_prompts,
+            config_dir=config_dir
         )
         return cast(Workflow, graph)
 

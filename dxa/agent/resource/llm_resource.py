@@ -88,7 +88,7 @@ class LLMResource(BaseResource):
         self._client: Optional[ai.Client] = None
         self.max_retries = int(self.config.get("max_retries", 3))
         self.retry_delay = float(self.config.get("retry_delay", 1.0))
-        self._async_client = AsyncClient()
+        # self._async_client = AsyncClient()
 
     async def initialize(self) -> None:
         """Initialize the AISuite client."""
