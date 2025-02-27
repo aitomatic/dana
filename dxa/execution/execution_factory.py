@@ -150,4 +150,31 @@ class ExecutionFactory:
         else:
             # Otherwise, create a linear sequence
             for i in range(len(node_ids) - 1):
-                graph.add_edge(Edge(source=node_ids[i], target=node_ids[i + 1])) 
+                graph.add_edge(Edge(source=node_ids[i], target=node_ids[i + 1]))
+
+    @classmethod
+    def create_from_config(cls, name: str,
+                           objective: Union[str, Objective],
+                           role: Optional[str] = None,
+                           custom_prompts: Optional[Dict[str, str]] = None) -> ExecutionGraph:
+        """Create an execution graph from named configuration.
+        
+        Args:
+            name: Name of the configuration to load
+            objective: The objective to accomplish
+            role: Optional role for the agent
+            custom_prompts: Optional custom prompts to override defaults
+            
+        Returns:
+            A configured execution graph
+        """
+        if not isinstance(objective, Objective):
+            objective = Objective(objective)
+
+        graph = cls.from_yaml(name, objective, custom_prompts)
+        
+        # Set role if provided
+        if role:
+            graph.metadata["role"] = role
+        
+        return graph

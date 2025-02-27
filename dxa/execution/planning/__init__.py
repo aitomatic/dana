@@ -1,7 +1,6 @@
 """Planning module for DXA."""
 
-from .plan_config import PlanConfig
-from .plan_factory import PlanFactory
+from .plan_factory import PlanFactory, PlanConfig
 from .plan import Plan
 from .plan_executor import PlanStrategy, PlanExecutor
 

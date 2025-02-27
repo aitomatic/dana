@@ -26,21 +26,18 @@ class WorkflowFactory(ExecutionFactory):
     
     # Add workflow-specific methods
     @classmethod
-    def create_workflow_from_config(cls, workflow_name: str, 
-                                    objective: Union[str, Objective], 
-                                    agent_role: Optional[str] = None,
-                                    custom_prompts: Optional[Dict[str, str]] = None) -> Workflow:
+    def create_from_config(cls, name: str,
+                           objective: Union[str, Objective],
+                           role: Optional[str] = None,
+                           custom_prompts: Optional[Dict[str, str]] = None) -> Workflow:
         """Create a workflow from named configuration."""
-        if not isinstance(objective, Objective):
-            objective = Objective(objective)
-
-        workflow = cls.from_yaml(workflow_name, objective, custom_prompts)
-        
-        # Set agent role if provided
-        if agent_role:
-            workflow.add_role(role=agent_role)
-        
-        return cast(Workflow, workflow)
+        graph = super().create_from_config(
+            name=name,
+            objective=objective,
+            role=role,
+            custom_prompts=custom_prompts
+        )
+        return cast(Workflow, graph)
 
     @classmethod
     def create_prosea_workflow(cls, objective: Union[str, Objective], 
@@ -109,7 +106,7 @@ class WorkflowFactory(ExecutionFactory):
                                 custom_prompts: Optional[Dict[str, str]] = None) -> Workflow:
         """Create a workflow by name."""
         # No need to normalize the name - just pass it through
-        return cls.create_workflow_from_config(workflow_name, objective, agent_role, custom_prompts)
+        return cls.create_from_config(workflow_name, objective, agent_role, custom_prompts)
 
     @classmethod
     def create_default_workflow(cls, objective: Union[str, Objective], 
@@ -135,4 +132,4 @@ class WorkflowFactory(ExecutionFactory):
             ...     agent_role="Marketing Specialist"
             ... )
         """
-        return cls.create_workflow_from_config("default", objective, agent_role, custom_prompts)
+        return cls.create_from_config("default", objective, agent_role, custom_prompts)

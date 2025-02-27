@@ -21,7 +21,7 @@ from ...common.utils.text_processor import TextProcessor
 class ReasoningStrategy(Enum):
     """Reasoning execution strategies."""
     DEFAULT = "DEFAULT"         # Simple LLM query
-    CHAIN_OF_THOUGHT = "COT"    # Step by step reasoning
+    CHAIN_OF_THOUGHT = "CHAIN_OF_THOUGHT"    # Step by step reasoning
     OODA = "OODA"               # OODA loop pattern
     DANA = "DANA"               # DANA pattern
     PROSEA = "PROSEA"           # PROSEA pattern
