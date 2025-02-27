@@ -12,7 +12,7 @@ nodes:
   - id: DIAGNOSE
     description: "Diagnose issues"
 
-  prompts:
+prompts:
     MONITOR: |
       Objective: {objective}
       Monitor parameters

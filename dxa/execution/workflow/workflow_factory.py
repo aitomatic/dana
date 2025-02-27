@@ -1,189 +1,46 @@
 """Workflow factory for creating common workflow patterns."""
 
-from typing import List, Optional, Union, Dict
+from typing import List, Optional, Union, Dict, cast
 from pathlib import Path
-import yaml
+
+from ..execution_factory import ExecutionFactory
 from .workflow import Workflow
 from ...common.graph import NodeType, Edge
 from ..execution_types import Objective, ExecutionNode
-from .workflow_config import WorkflowConfig
+from ..execution_config import ExecutionConfig
 
-class WorkflowFactory:
+class WorkflowConfig(ExecutionConfig):
+    """Workflow configuration for creating common workflow patterns."""
+
+    @classmethod
+    def get_base_path(cls) -> Path:
+        """Get base path for configuration files."""
+        return Path(__file__).parent
+
+class WorkflowFactory(ExecutionFactory):
     """Factory for creating workflow patterns."""
-
-    @classmethod
-    def from_yaml(cls, yaml_data: Union[str, Dict, Path], 
-                  objective: Optional[Objective] = None,
-                  custom_prompts: Optional[Dict[str, str]] = None) -> Workflow:
-        """Create workflow from YAML data or file."""
-        # Handle different input types
-        config_path = None
-        if isinstance(yaml_data, (str, Path)):
-            if isinstance(yaml_data, str) and not Path(yaml_data).exists():
-                # Assume it's a workflow name
-                config_path = WorkflowConfig.get_config_path(yaml_data)
-            else:
-                config_path = str(yaml_data)
-
-            with open(config_path, encoding="utf-8") as f:
-                data = yaml.safe_load(f)
-        else:
-            data = yaml_data
-
-        print(f">>>>>>>>>>>>>>Path: {config_path}")
-
-        # Create workflow
-        workflow = Workflow(
-            objective=objective or Objective(data.get('description', '')),
-            name=data.get('name', 'unnamed_workflow')
-        )
-        
-        # Process nodes
-        nodes_data = data.get('nodes', [])
-        node_ids = []
-        
-        # Check if START and END nodes exist
-        has_start = any(node.get('id') == 'START' for node in nodes_data)
-        has_end = any(node.get('id') == 'END' for node in nodes_data)
-        
-        # Add START node if it doesn't exist
-        if not has_start:
-            start_node = ExecutionNode(
-                node_id="START",
-                node_type=NodeType.START,
-                description="Begin workflow"
-            )
-            workflow.add_node(start_node)
-            node_ids.append("START")
-        
-        # Process nodes from YAML
-        for node_data in nodes_data:
-            description = node_data.get('description', '')
-            node_id = node_data['id']
-            node_ids.append(node_id)
-            
-            # Determine node type
-            if 'type' not in node_data:
-                print(f"Warning: Node '{node_id}' is missing 'type' field, defaulting to TASK")
-                node_type = NodeType.TASK
-            else:
-                node_type = NodeType[node_data['type']]
-
-            # Prepare metadata
-            metadata = node_data.get('metadata', {})
-
-            # Ensure planning and reasoning strategies are included in metadata
-            # Standardize on 'planning' and 'reasoning' field names
-            if 'planning' in node_data:
-                metadata['planning'] = node_data['planning']
-            else:
-                metadata['planning'] = 'DEFAULT'
-
-            if 'reasoning' in node_data:
-                metadata['reasoning'] = node_data['reasoning']
-            else:
-                metadata['reasoning'] = 'DEFAULT'
-
-            # Handle prompt reference
-            if 'prompt' in node_data:
-                prompt_ref = node_data['prompt']
-                prompt_text = WorkflowConfig.get_prompt(prompt_ref=prompt_ref, custom_prompts=custom_prompts)
-            else:
-                prompt_text = WorkflowConfig.get_prompt(config_path=config_path,
-                                                        prompt_name=node_id,
-                                                        custom_prompts=custom_prompts)
-
-            metadata['prompt'] = prompt_text
-                
-            # If no description, use the prompt text as the description
-            if not description:
-                # Get the prompt text from the config
-                description = prompt_text
-
-            node = ExecutionNode(
-                node_id=node_id,
-                node_type=node_type,
-                description=description,
-                metadata=metadata
-            )
-            workflow.add_node(node)
-        
-        # Add END node if it doesn't exist
-        if not has_end:
-            end_node = ExecutionNode(
-                node_id="END",
-                node_type=NodeType.END,
-                description="End workflow"
-            )
-            workflow.add_node(end_node)
-            node_ids.append("END")
-
-        # Add edges
-        cls._add_edges_to_workflow(workflow, data, node_ids)
-        
-        # Add role if specified
-        if 'role' in data:
-            workflow.add_role(role=data['role'])
-
-        return workflow
-
-    @classmethod
-    def _add_edges_to_workflow(cls, workflow: Workflow, data: Dict, node_ids: List[str]) -> None:
-        """Add edges to the workflow based on the data and node IDs."""
-        edges_data = data.get('edges', [])
-        
-        # If no edges are specified, create sequential edges
-        if not edges_data and len(node_ids) > 1:
-            # Find START and END nodes if they exist
-            start_node = next((node_id for node_id in node_ids if node_id == "START"), None)
-            end_node = next((node_id for node_id in node_ids if node_id == "END"), None)
-            
-            # If no START/END nodes, use first and last nodes
-            if not start_node:
-                start_node = node_ids[0]
-            if not end_node:
-                end_node = node_ids[-1]
-            
-            # Create sequential edges
-            for i in range(len(node_ids) - 1):
-                if node_ids[i] != end_node and node_ids[i + 1] != start_node:
-                    workflow.add_edge(Edge(
-                        source=node_ids[i],
-                        target=node_ids[i + 1]
-                    ))
-        else:
-            # Add specified edges
-            for edge_data in edges_data:
-                edge = Edge(
-                    source=edge_data['source'],
-                    target=edge_data['target'],
-                    metadata=edge_data.get('metadata', {})
-                )
-                workflow.add_edge(edge)
-
+    
+    # Override class variables
+    graph_class = Workflow
+    config_class = WorkflowConfig
+    
+    # Add workflow-specific methods
     @classmethod
     def create_workflow_from_config(cls, workflow_name: str, 
                                     objective: Union[str, Objective], 
                                     agent_role: Optional[str] = None,
                                     custom_prompts: Optional[Dict[str, str]] = None) -> Workflow:
         """Create a workflow from named configuration."""
-        # Get the config path
-        config_path = WorkflowConfig.get_config_path(workflow_name)
-        
-        if not config_path.exists():
-            raise ValueError(f"No configuration found for workflow: {workflow_name}")
-            
-        # Convert objective to Objective object if needed
-        obj = Objective(objective) if isinstance(objective, str) else objective
-            
-        # Load workflow from YAML with objective
-        workflow = cls.from_yaml(config_path, obj, custom_prompts)
+        if not isinstance(objective, Objective):
+            objective = Objective(objective)
+
+        workflow = cls.from_yaml(workflow_name, objective, custom_prompts)
         
         # Set agent role if provided
         if agent_role:
             workflow.add_role(role=agent_role)
         
-        return workflow
+        return cast(Workflow, workflow)
 
     @classmethod
     def create_prosea_workflow(cls, objective: Union[str, Objective], 

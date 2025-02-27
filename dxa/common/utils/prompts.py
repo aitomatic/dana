@@ -1,9 +1,8 @@
 """Utility for managing and formatting prompts."""
 
-from typing import Dict, Any, Optional, Union
-import yaml
+from typing import Dict, Union
 from pathlib import Path
-import re
+from .config import load_yaml_config
 
 class Prompts:
     """Generic prompt management utility."""
@@ -13,8 +12,7 @@ class Prompts:
         """Load prompts from YAML configuration."""
         # Handle different input types
         if isinstance(yaml_data, (str, Path)):
-            with open(yaml_data, encoding="utf-8") as f:
-                data = yaml.safe_load(f)
+            data = load_yaml_config(yaml_data)
         else:
             data = yaml_data
             

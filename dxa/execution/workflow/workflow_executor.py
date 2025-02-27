@@ -2,6 +2,7 @@
 
 from enum import Enum
 from typing import List, cast, Optional, TYPE_CHECKING
+from uuid import uuid4
 from ..execution_context import ExecutionContext
 from ..execution_types import ExecutionNode, ExecutionSignal, Objective
 from ..execution_graph import ExecutionGraph
@@ -12,7 +13,6 @@ from ...common.graph import NodeType
 from ...common.utils.text_processor import TextProcessor
 if TYPE_CHECKING:
     from ..planning.plan_executor import PlanExecutor
-from uuid import uuid4
 from ...common.graph import Edge
 from ..planning.plan import Plan
 

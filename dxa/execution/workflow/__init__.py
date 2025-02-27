@@ -7,7 +7,7 @@ FlowGraphs are directed graphs that represent workflows where:
 - Validation ensures proper graph structure
 """
 
-from .workflow_factory import WorkflowFactory
+from .workflow_factory import WorkflowFactory, WorkflowConfig
 from .workflow import Workflow
 from .workflow_executor import WorkflowExecutor, WorkflowStrategy
 
@@ -16,4 +16,5 @@ __all__ = [
     "WorkflowFactory",
     "WorkflowStrategy",
     "WorkflowExecutor",
+    "WorkflowConfig",
 ]
