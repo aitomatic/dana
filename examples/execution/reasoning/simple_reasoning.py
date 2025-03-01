@@ -11,7 +11,7 @@ def main():
     objective = "Solve the equation: 2x + 5 = 15"
     
     # Create reasoning from default config
-    reasoning = ReasoningFactory.from_yaml(
+    reasoning = ReasoningFactory.graph_from_yaml(
         "default",
         objective=Objective(objective)
     )

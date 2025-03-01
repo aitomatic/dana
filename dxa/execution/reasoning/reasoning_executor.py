@@ -185,10 +185,14 @@ class ReasoningExecutor(Executor):
             conclusion_messages = self._update_messages(conclusion_messages, prompt)
             response = await context.reasoning_llm.conversational_query(conclusion_messages)
             
-        return [ExecutionSignal(type=ExecutionSignalType.DATA_RESULT, content={
-            "result": response,
-            "node": node.node_id
-        })]
+        return [ExecutionSignal(
+            node_id=node.node_id,
+            content={
+                "result": response,
+                "node": node.node_id,
+                "type": ExecutionSignalType.DATA_RESULT
+            }
+        )]
     
     async def _get_previous_steps(self, prev_signals: List[ExecutionSignal]) -> str:
         """Get the previous steps."""
@@ -348,7 +352,7 @@ class ReasoningExecutor(Executor):
             type=ExecutionSignalType.DATA_RESULT,
             content={
                 "result": response,
-                "node": node.node_id
+                "node": node.node_id,
             }
         )]
 

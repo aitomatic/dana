@@ -8,6 +8,7 @@ This example shows how to:
 
 from dxa.execution import WorkflowFactory
 
+
 def main():
     """Create and inspect a basic Default workflow."""
     # Define the objective for the workflow
@@ -20,8 +21,8 @@ def main():
     )
     
     # Print the workflow using the pretty_print method
-    print(workflow.pretty_print())
-    
+    print(workflow.pretty_print())  # pylint: disable=no-member
+
     print("\nWorkflow created successfully!")
 
 if __name__ == "__main__":

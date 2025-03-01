@@ -1,40 +1,20 @@
 """Factory for creating planning patterns."""
 
-from typing import Any, Dict, Optional, Union
-from pathlib import Path
+from typing import Any
 
 from ..execution_types import ExecutionNode, Objective
-from ..execution_graph import ExecutionGraph
 from ..execution_factory import ExecutionFactory
-from ..execution_config import ExecutionConfig
 from .plan import Plan
 from .plan_executor import PlanStrategy
 
-class PlanConfig(ExecutionConfig):
-    """Configuration for planning patterns."""
-    
-    @classmethod
-    def get_base_path(cls) -> Path:
-        """Get base path for configuration files."""
-        return Path(__file__).parent
 
 class PlanFactory(ExecutionFactory):
     """Creates planning pattern instances."""
 
     # Override class variables
     graph_class = Plan
-    config_class = PlanConfig
-
-    @classmethod
-    def create_from_config(cls, name: str,
-                           objective: Union[str, Objective],
-                           role: Optional[str] = None,
-                           custom_prompts: Optional[Dict[str, str]] = None,
-                           config_dir: Optional[Union[str, Path]] = None) -> ExecutionGraph:
-        """Create a planning instance by name."""
-        plan = super().create_from_config(name, objective, role, custom_prompts, config_dir)
-        return plan
     
+
     @classmethod
     def create_planning_strategy(cls, node: ExecutionNode, context: Any = None) -> PlanStrategy:
         """Select appropriate planning strategy based on node metadata or context."""

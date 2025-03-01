@@ -1,39 +1,18 @@
 """Factory for creating reasoning patterns."""
 
-from typing import Dict, Optional, Union, Any
-from pathlib import Path
+from typing import Any
 
 from ..execution_types import ExecutionNode, Objective
-from ..execution_graph import ExecutionGraph
 from .reasoning import Reasoning
 from .reasoning_executor import ReasoningStrategy
 from ..execution_factory import ExecutionFactory
-from ..execution_config import ExecutionConfig
-
-class ReasoningConfig(ExecutionConfig):
-    """Configuration for reasoning patterns."""
-    
-    @classmethod
-    def get_base_path(cls) -> Path:
-        """Get base path for configuration files."""
-        return Path(__file__).parent
 
 class ReasoningFactory(ExecutionFactory):
     """Creates reasoning pattern instances."""
     
     # Override class variables
     graph_class = Reasoning
-    config_class = ReasoningConfig
 
-    @classmethod
-    def create_from_config(cls, name: str,
-                           objective: Union[str, Objective],
-                           role: Optional[str] = None,
-                           custom_prompts: Optional[Dict[str, str]] = None,
-                           config_dir: Optional[Union[str, Path]] = None) -> ExecutionGraph:
-        """Create a reasoning instance by name."""
-        reasoning = super().create_from_config(name, objective, role, custom_prompts, config_dir)
-        return reasoning
     
     @classmethod
     def _select_auto_strategy(cls, node: ExecutionNode, context: Any = None) -> ReasoningStrategy:
