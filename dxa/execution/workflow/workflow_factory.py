@@ -1,46 +1,19 @@
 """Workflow factory for creating common workflow patterns."""
 
 from typing import List, Optional, Union, Dict, cast
-from pathlib import Path
 
 from ..execution_factory import ExecutionFactory
 from .workflow import Workflow
 from ...common.graph import NodeType, Edge
 from ..execution_types import Objective, ExecutionNode
-from ..execution_config import ExecutionConfig
-
-class WorkflowConfig(ExecutionConfig):
-    """Workflow configuration for creating common workflow patterns."""
-
-    @classmethod
-    def get_base_path(cls) -> Path:
-        """Get base path for configuration files."""
-        return Path(__file__).parent
 
 class WorkflowFactory(ExecutionFactory):
     """Factory for creating workflow patterns."""
     
     # Override class variables
     graph_class = Workflow
-    config_class = WorkflowConfig
     
     # Add workflow-specific methods
-    @classmethod
-    def create_from_config(cls, name: str,
-                           objective: Union[str, Objective],
-                           role: Optional[str] = None,
-                           custom_prompts: Optional[Dict[str, str]] = None,
-                           config_dir: Optional[Union[str, Path]] = None) -> Workflow:
-        """Create a workflow from named configuration."""
-        graph = super().create_from_config(
-            name=name,
-            objective=objective,
-            role=role,
-            custom_prompts=custom_prompts,
-            config_dir=config_dir
-        )
-        return cast(Workflow, graph)
-
     @classmethod
     def create_prosea_workflow(cls, objective: Union[str, Objective], 
                                agent_role: str = "ProSea Agent", 
@@ -108,7 +81,8 @@ class WorkflowFactory(ExecutionFactory):
                                 custom_prompts: Optional[Dict[str, str]] = None) -> Workflow:
         """Create a workflow by name."""
         # No need to normalize the name - just pass it through
-        return cls.create_from_config(workflow_name, objective, agent_role, custom_prompts)
+        graph = cls.create_from_config(workflow_name, objective, agent_role, custom_prompts)
+        return cast(Workflow, graph)
 
     @classmethod
     def create_default_workflow(cls, objective: Union[str, Objective], 
@@ -134,4 +108,5 @@ class WorkflowFactory(ExecutionFactory):
             ...     agent_role="Marketing Specialist"
             ... )
         """
-        return cls.create_from_config("default", objective, agent_role, custom_prompts)
+        graph = cls.create_from_config("default", objective, agent_role, custom_prompts)
+        return cast(Workflow, graph)

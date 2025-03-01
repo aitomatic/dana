@@ -1,5 +1,7 @@
 """Configuration utilities for execution components."""
 
+import inspect
+import os
 from pathlib import Path
 from typing import Dict, Any, Optional
 from ..common.utils import load_yaml_config
@@ -9,15 +11,25 @@ class ExecutionConfig:
     """Centralized configuration management for all execution components."""
     
     @classmethod
-    def get_base_path(cls) -> Path:
-        """Get base path for configuration files."""
-        return Path(__file__).parent
+    def get_base_path(cls, for_class=None) -> Path:
+        """Get base path for the given the_class."""
+        if not for_class:
+            for_class = cls
+
+        # Get the file where the class is defined
+        file_path = inspect.getfile(for_class)
+    
+        # Convert to absolute path if it's not already
+        abs_path = os.path.abspath(file_path)
+    
+        return Path(abs_path).parent
     
     @classmethod
-    def get_config_path(cls, path: str) -> Path:
+    def get_config_path(cls, for_class=None, path: Optional[str] = None) -> Path:
         """Get path to configuration file.
         
         Args:
+            the_class: The class that is requesting the config path
             path: Full path to config file, OR relative to the config directory
                  (e.g., "workflow/default" or "workflow/basic/prosea")
             
@@ -25,17 +37,23 @@ class ExecutionConfig:
             Full path to the configuration file
         """
         # If path is already a full path, return it
+        if not path:
+            path = "default"
+
         if Path(path).exists():
             return Path(path)
 
         # Normalize path separators (convert dots to slashes)
         path = path.replace(".", "/")
+
+        if not for_class:
+            for_class = cls
         
         # Build the full path
-        return cls.get_base_path() / "config" / f"{path}.yaml"
+        return cls.get_base_path(for_class=for_class) / "config" / f"{path}.yaml"
     
     @classmethod
-    def load_config(cls, path: str) -> Dict[str, Any]:
+    def load_config(cls, for_class=None, path: Optional[str] = None) -> Dict[str, Any]:
         """Load configuration from YAML file.
         
         Args:
@@ -45,11 +63,17 @@ class ExecutionConfig:
         Returns:
             Loaded configuration dictionary
         """
-        config_path = cls.get_config_path(path)
+        if not for_class:
+            for_class = cls
+
+        config_path = cls.get_config_path(for_class=for_class, path=path)
         return load_yaml_config(config_path)
     
     @classmethod
-    def get_prompt(cls, config_path=None, prompt_name=None, 
+    def get_prompt(cls,
+                   for_class=None,
+                   config_path=None,
+                   prompt_name=None, 
                    prompt_ref=None, 
                    custom_prompts: Optional[Dict[str, str]] = None) -> str:
         """Get prompt by reference.
@@ -69,6 +93,9 @@ class ExecutionConfig:
         Returns:
             Raw prompt text
         """
+        if not for_class:
+            for_class = cls
+
         prompt_ref = str(prompt_ref)
 
         if not config_path:
@@ -80,7 +107,7 @@ class ExecutionConfig:
             config_path, prompt_name = prompt_ref.rsplit(".", 1)
         
         # Load the config
-        config = cls.load_config(config_path)
+        config = cls.load_config(path=config_path)
         
         # Look for the prompt in the config
         if config and "prompts" in config:

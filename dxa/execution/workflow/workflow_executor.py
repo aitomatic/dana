@@ -2,19 +2,17 @@
 
 from enum import Enum
 from typing import List, cast, Optional, TYPE_CHECKING
-from uuid import uuid4
+
 from ..execution_context import ExecutionContext
 from ..execution_types import ExecutionNode, ExecutionSignal, Objective
 from ..execution_graph import ExecutionGraph
 from ..executor import Executor
 from .workflow import Workflow
-from .workflow_factory import WorkflowFactory
 from ...common.graph import NodeType
 from ...common.utils.text_processor import TextProcessor
+
 if TYPE_CHECKING:
     from ..planning.plan_executor import PlanExecutor
-from ...common.graph import Edge
-from ..planning.plan import Plan
 
 class WorkflowStrategy(Enum):
     """Workflow execution strategies."""
@@ -55,107 +53,107 @@ class WorkflowExecutor(Executor):
         self.graph = cast(ExecutionGraph, workflow)
         return await self.execute(upper_graph=cast(ExecutionGraph, None), context=context, upper_signals=None)
 
-    def _parse_plan(self, plan):
-        steps = []
-        step_count = 1
-        while True:
-            step_key = f"step_{step_count}"
-            expected_key = f"expected_output_step_{step_count}"
-            
-            step_prompt = self.parse_by_key(plan, step_key)
-            expected_output = self.parse_by_key(plan, expected_key)
-            
-            # Break the loop if no more steps are found
-            if step_prompt == "Unknown" or expected_output == "Unknown":
-                break
-            
-            steps.append({"step": step_prompt, "expected_output": expected_output, "id": str(uuid4())})
-            step_count += 1
-        return steps
-
-    def _construct_plan_graph_from_nodes(self, nodes, plan, objective):
-        plan_graph = Plan(objective=objective)
-        plan_graph.add_node(ExecutionNode(node_id="START", node_type=NodeType.START, description="Start"))
-        for node in nodes:
-            plan_graph.add_node(node)
-        plan_graph.add_node(ExecutionNode(node_id="END", node_type=NodeType.END, description="End"))
-        plan_graph.add_edge(Edge(source="START", target=nodes[0].node_id))
-        for i in range(len(plan) - 1):
-            plan_graph.add_edge(Edge(source=nodes[i].node_id, target=nodes[i+1].node_id))
-        plan_graph.add_edge(Edge(source=nodes[-1].node_id, target="END"))
-        return plan_graph
-    
-    def _construct_plan_graph(self, plan, objective):
-        steps = plan
-        nodes = []
-        validation_nodes = []
-        for i, step in enumerate(steps):
-            nodes.append(ExecutionNode(node_id=f"step_{i+1}", node_type=NodeType.TASK, description=step['step']))
-            validation_nodes.append(ExecutionNode(node_id=f"step_{i+1}", node_type=NodeType.TASK, description=step['expected_output']))
-        
-        plan_graph = self._construct_plan_graph_from_nodes(nodes, plan, objective)
-        validation_plan_graph = self._construct_plan_graph_from_nodes(validation_nodes, plan, objective)
-        
-        return plan_graph, validation_plan_graph
-    
-    async def execute(self,
-                      upper_graph: ExecutionGraph,
+    async def execute(self, upper_graph: Optional[ExecutionGraph], 
                       context: ExecutionContext,
                       upper_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
         """Execute workflow graph. Upper signals are not used in the workflow layer."""
+        # Safety: make sure our graph is set
+        if self.graph is None and context.current_workflow:
+            self.graph = context.current_workflow
+
+        # Set current plan and reasoning in context
         context.current_plan = self.graph
         context.current_reasoning = self.graph
-        # PLEASE CHECK THIS
-        if self.strategy == WorkflowStrategy.WORKFLOW_IS_PLAN:
-            # Go directly to plan execution, via the START node
-            assert self.graph is not None
-            return await self.plan_executor.execute(self.graph, context, None)
         
-        
-        if self.strategy == WorkflowStrategy.PROSEA:
-            execution_signals = []
-            analyze_response = None
-            plan = []
-            for node_id in self.graph.nodes.keys():
-                node = self.graph.nodes[node_id]
-                print("Executing node:", node.node_id)
-                if node.node_type == NodeType.TASK:
-                    if node.node_id == "ANALYZE":
-                        response = await self.plan_executor.execute_node(node=node, context=context, prev_signals=execution_signals, upper_signals=None, lower_signals=None)
-                        analyze_response = response[0].content['result']['content']
-                        response[0].content['result']['content'] = f"{node.node_id}: \nStep Output: " + response[0].content['result']['content']
-                        execution_signals.extend(response)
-                    elif node.node_id == "PLANNING":
-                        while len(plan) == 0:
-                            node.description = node.description.replace("<problem_analysis>", analyze_response)
-                            response = await self.plan_executor.execute_node(node=node, context=context, prev_signals=execution_signals, upper_signals=None, lower_signals=None)
-                            plan = self._parse_plan(response[0].content['result']['content'])
-                            print(plan)
-                        execution_signals.extend(response)
-                        plan_graph, validation_plan_graph = self._construct_plan_graph(plan, objective=context.current_workflow.objective)
-                        step_id = 1
-                        for plan_node_id in plan_graph.nodes.keys():
-                            plan_node = plan_graph.nodes[plan_node_id]
-                            validation_plan_node = validation_plan_graph.nodes[plan_node_id]
-                            if plan_node.node_type == NodeType.TASK:
-                                print(f"\033[92mStep {step_id}:\033[0m", plan_node.description)
-                                step_id += 1
-                                response = await self.plan_executor.execute_node(plan_node, context, validation_node=validation_plan_node, 
-                                                                                 original_problem=context.current_plan.objective.original, 
-                                                                                 agent_role=context.current_workflow.metadata["role"],
-                                                                                 prev_signals=execution_signals, upper_signals=None, lower_signals=None)
-                                print("Workflow executor", response)
-                                response[0].content['result']['content'] = f"{plan_node.node_id}: {plan_node.description} \nStep Output: " \
-                                                                            + response[0].content['result']['content']
-                                execution_signals.extend(response)
-                    elif node.node_id == "FINALIZE_ANSWER":
-                        response = await self.plan_executor.execute_node(node=node, context=context, prev_signals=execution_signals, upper_signals=None, lower_signals=None)
-                        execution_signals.extend(response)
-    
-            return execution_signals
-        
+        # Select execution strategy based on workflow metadata
+        strategy_name = self.graph.metadata.get("strategy", self.strategy.value)
+        try:
+            strategy = WorkflowStrategy(strategy_name)
+        except ValueError:
+            self.logger.warning(f"Unknown workflow strategy: {strategy_name}, using default")
+            strategy = self.strategy
+            
+        self.logger.info(f"Executing workflow with strategy: {strategy.name}")
+            
+        # Execute based on strategy
+        if strategy == WorkflowStrategy.WORKFLOW_IS_PLAN:
+            return await self._execute_workflow_as_plan(context, upper_signals)
+        elif strategy == WorkflowStrategy.SEQUENTIAL:
+            return await self._execute_sequential(context, upper_signals)
+        elif strategy == WorkflowStrategy.PARALLEL:
+            return await self._execute_parallel(context, upper_signals)
+        elif strategy == WorkflowStrategy.CONDITIONAL:
+            return await self._execute_conditional(context, upper_signals)
+        else:
+            self.logger.error(f"Unsupported workflow strategy: {strategy.name}")
+            raise ValueError(f"Unsupported workflow strategy: {strategy.name}")
 
-        return await super().execute(upper_graph=upper_graph, context=context, upper_signals=None)
+    async def _execute_workflow_as_plan(self, context: ExecutionContext, 
+                                       upper_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
+        """Execute workflow by treating it as a plan."""
+        # Go directly to plan execution, via the START node
+        assert self.graph is not None
+        start_node = self.graph.get_node_by_id("START")
+        if not start_node:
+            self.logger.error("No START node found in workflow graph")
+            raise ValueError("No START node found in workflow graph")
+            
+        return await super().execute(upper_graph=self.graph, context=context, upper_signals=upper_signals)
+
+    async def _execute_sequential(self, context: ExecutionContext,
+                                 upper_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
+        """Execute workflow nodes in sequence."""
+        assert self.graph is not None
+        all_signals = []
+        
+        # Start from the START node
+        current_node_id = "START"
+        visited = set()
+        
+        while current_node_id != "END":
+            # Prevent infinite loops
+            if current_node_id in visited:
+                self.logger.error(f"Cycle detected at node {current_node_id}")
+                raise ValueError(f"Cycle detected at node {current_node_id}")
+                
+            visited.add(current_node_id)
+            
+            # Get the current node
+            current_node = self.graph.get_node_by_id(current_node_id)
+            if not current_node:
+                self.logger.error(f"Node {current_node_id} not found in workflow graph")
+                raise ValueError(f"Node {current_node_id} not found in workflow graph")
+                
+            # Execute the node
+            if current_node.node_type == NodeType.TASK:
+                self.logger.info(f"Executing node: {current_node_id}")
+                signals = await self.execute_node(current_node, context, all_signals, upper_signals)
+                all_signals.extend(signals)
+            
+            # Find the next node
+            outgoing_edges = self.graph.get_outgoing_edges(current_node_id)
+            if not outgoing_edges:
+                self.logger.error(f"No outgoing edges from node {current_node_id}")
+                raise ValueError(f"No outgoing edges from node {current_node_id}")
+                
+            # For sequential, just take the first edge
+            current_node_id = outgoing_edges[0].target
+            
+        return all_signals
+
+    async def _execute_parallel(self, context: ExecutionContext,
+                               upper_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
+        """Execute workflow nodes in parallel."""
+        # This is a placeholder for future implementation
+        self.logger.warning("Parallel execution not yet implemented, falling back to sequential")
+        return await self._execute_sequential(context, upper_signals)
+
+    async def _execute_conditional(self, context: ExecutionContext,
+                                  upper_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
+        """Execute workflow with conditional branching."""
+        # This is a placeholder for future implementation
+        self.logger.warning("Conditional execution not yet implemented, falling back to sequential")
+        return await self._execute_sequential(context, upper_signals)
 
     async def execute_node(self, node: ExecutionNode,
                            context: ExecutionContext,
@@ -186,15 +184,18 @@ class WorkflowExecutor(Executor):
 
         self.logger.debug(
             "Processing workflow node",
-            node_id=node.node_id,
-            node_type=node.node_type
+            extra={
+                'node_id': node.node_id,
+                'node_type': node.node_type
+            }
         )
 
         return []
 
     def _create_graph(self, upper_graph: ExecutionGraph, objective: Optional[Objective] = None,
                        context: Optional[ExecutionContext] = None) -> ExecutionGraph:
-        """Create workflow graph from objective. At the Worflow layer, there is no upper graph."""
+        """Create workflow graph from objective. At the Workflow layer, there is no upper graph."""
+        from .workflow_factory import WorkflowFactory
         workflow = WorkflowFactory.create_minimal_workflow(objective)
         assert context is not None
         context.current_workflow = workflow

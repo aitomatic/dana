@@ -27,7 +27,6 @@ from .planning import (
     PlanFactory,
     PlanExecutor,
     PlanStrategy,
-    PlanConfig,
 )
 from .reasoning import (
     Reasoning,
