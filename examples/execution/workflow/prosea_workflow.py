@@ -37,6 +37,8 @@ async def main():
     
     print(f"Created workflow with {len(workflow.nodes)} nodes")
     print(f"Nodes: {', '.join(workflow.nodes.keys())}")
+    print(f"Workflow: {workflow.pretty_print()}")
+    import pdb; pdb.set_trace()
     
     # Set up the execution pipeline
     print("Setting up execution pipeline...")
