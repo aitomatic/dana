@@ -178,18 +178,16 @@ class ExecutionGraph(DirectedGraph):
             metadata['reasoning'] = 'DEFAULT'
         
         # Store prompt reference in metadata if present
-        from .execution_config import ExecutionConfig  # pylint: disable=import-outside-toplevel
         if 'prompt' in node_data:
             prompt_ref = node_data['prompt']
-            prompt_text = ExecutionConfig.get_prompt(for_class=cls,
-                                                     config_path=config_path,
-                                                     prompt_ref=prompt_ref,
-                                                     custom_prompts=custom_prompts)
         else:
-            prompt_text = ExecutionConfig.get_prompt(for_class=cls,
-                                                     config_path=config_path,
-                                                     prompt_name=node_id,
-                                                     custom_prompts=custom_prompts)
+            prompt_ref = node_id
+
+        from .execution_config import ExecutionConfig  # pylint: disable=import-outside-toplevel
+        prompt_text = ExecutionConfig.get_prompt(for_class=cls,
+                                                 config_path=config_path,
+                                                 prompt_ref=prompt_ref,
+                                                 custom_prompts=custom_prompts)
 
         metadata['prompt'] = prompt_text
 

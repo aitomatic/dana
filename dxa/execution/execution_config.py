@@ -73,7 +73,6 @@ class ExecutionConfig:
     def get_prompt(cls,
                    for_class=None,
                    config_path=None,
-                   prompt_name=None, 
                    prompt_ref=None, 
                    custom_prompts: Optional[Dict[str, str]] = None) -> str:
         """Get prompt by reference.
@@ -81,9 +80,6 @@ class ExecutionConfig:
         Args:
             config_path: Path to config file relative to the config directory
                  (e.g., "workflow/default" or "workflow/basic/prosea")
-            prompt_name: Name of the prompt to get
-
-            OR
 
             prompt_ref: Reference to prompt in format "path/to/config.prompt_name"
                        (e.g., "default.DEFINE" or "basic/prosea.ANALYZE")
@@ -98,17 +94,20 @@ class ExecutionConfig:
 
         prompt_ref = str(prompt_ref)
 
-        if not config_path:
+        if config_path:
+            # Make sure the prompt_name has only the last component (without the config_path)
+            prompt_name = prompt_ref.rsplit(".", maxsplit=1)[-1]
+        else:
             if "." not in prompt_ref:
                 print(f"Warning: Prompt reference must be in format 'config_name.prompt_name', got '{prompt_ref}'")
                 return ""
         
             # Split the prompt reference into config path and prompt name
-            config_path, prompt_name = prompt_ref.rsplit(".", 1)
+            config_path, prompt_name = prompt_ref.rsplit(".", maxsplit=1)
         
         # Load the config
         config = cls.load_config(path=config_path)
-        
+
         # Look for the prompt in the config
         if config and "prompts" in config:
             prompts = config.get("prompts", {})
