@@ -52,6 +52,9 @@ async def main():
         agent_state=AgentState(),
         world_state=WorldState(),
         execution_state=ExecutionState(),
+        workflow_llm=agent.workflow_llm,
+        planning_llm=agent.planning_llm,
+        reasoning_llm=agent.reasoning_llm,
         parameters=knowledge["parameters"],
         fault_patterns=knowledge["fault_patterns"]
     )

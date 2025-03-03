@@ -121,17 +121,17 @@ class Agent:
         return self._io
 
     @property
-    def workflow_llm(self) -> Optional[LLMResource]:
+    def workflow_llm(self) -> LLMResource:
         """Get workflow LLM or fallback to default."""
         return self._workflow_llm or self.agent_llm
 
     @property
-    def planning_llm(self) -> Optional[LLMResource]:
+    def planning_llm(self) -> LLMResource:
         """Get planning LLM or fallback to default."""
         return self._planning_llm or self.agent_llm
 
     @property
-    def reasoning_llm(self) -> Optional[LLMResource]:
+    def reasoning_llm(self) -> LLMResource:
         """Get reasoning LLM or fallback to default."""
         return self._reasoning_llm or self.agent_llm
 
@@ -307,6 +307,10 @@ class Agent:
                 context.planning_llm = self.planning_llm
             if not context.reasoning_llm:
                 context.reasoning_llm = self.reasoning_llm
+        
+        assert context.workflow_llm is not None
+        assert context.planning_llm is not None
+        assert context.reasoning_llm is not None
 
         async with self:  # For cleanup
             return await self.runtime.execute(workflow, context)
