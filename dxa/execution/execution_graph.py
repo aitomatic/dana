@@ -66,6 +66,18 @@ class ExecutionGraph(DirectedGraph):
     def get_start_node(self) -> Optional[ExecutionNode]:
         """Get the start node, meaning the node with type START."""
         return next((node for node in self.nodes.values() if node.node_type == NodeType.START), None)
+
+    # Metadata handling
+    def get_strategy(self) -> Optional[Any]:
+        """Retrieves Strategy from metadata"""
+        if self.metadata and "strategy" in self.metadata:
+            return self.metadata["strategy"]
+        return None
+    
+    def set_strategy(self, strategy: Any) -> None:
+        """Sets Strategy in metadata"""
+        if self.metadata:
+            self.metadata["strategy"] = strategy
     
     @classmethod
     def from_execution_yaml(cls,
@@ -189,7 +201,7 @@ class ExecutionGraph(DirectedGraph):
                                                  prompt_ref=prompt_ref,
                                                  custom_prompts=custom_prompts)
 
-        metadata['prompt'] = prompt_text
+        ExecutionNode.set_prompt_in_metadata(prompt_text, metadata)
 
         # If no description, use the prompt text as the description
         if not description:
@@ -569,3 +581,18 @@ class ExecutionGraph(DirectedGraph):
 
     CONTROL_COMPLETE = "node_complete"  # Node completed successfully
     CONTROL_GRAPH_END = "graph_end"     # Graph execution completed
+
+    def add_edge_between(self, source_id: str, target_id: str, condition: Optional[str] = None, 
+                         state_updates: Optional[Dict[str, Any]] = None) -> None:
+        """Add execution edge between two nodes.
+        
+        Args:
+            source_id: Source node ID
+            target_id: Target node ID
+            condition: Optional condition for the edge
+            state_updates: Optional state updates for the edge
+        """
+        edge = ExecutionEdge(source=source_id, target=target_id, 
+                             condition=condition, 
+                             state_updates=state_updates or {})
+        self.add_edge(edge)

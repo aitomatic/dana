@@ -1,5 +1,6 @@
 """Execution module for DXA."""
 
+from .executor import Executor
 from .execution_types import (
     Objective, ObjectiveStatus,
     ExecutionNode, ExecutionEdge,
@@ -8,7 +9,6 @@ from .execution_types import (
 )
 from .execution_context import ExecutionContext
 from .execution_graph import ExecutionGraph
-from .executor import Executor
 from .pipeline import (
     Pipeline,
     PipelineFactory,
@@ -44,7 +44,6 @@ __all__ = [
     'ExecutionNode',
     'ExecutionEdge',
     'ExecutionNodeStatus',
-    'Executor',
     'ExecutionContext',
     'PipelineNode',
     'Workflow',

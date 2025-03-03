@@ -77,8 +77,8 @@ class Workflow(ExecutionGraph):
                 output.append("  Metadata:")
                 # First print prompt for emphasis
                 if 'prompt' in node.metadata:
-                    prompt_ref = node.metadata['prompt']
-                    output.append(f"    prompt: {prompt_ref}")
+                    prompt = node.get_prompt()
+                    output.append(f"    prompt: {prompt}")
                 
                 # Then print planning and reasoning
                 if 'planning' in node.metadata:

@@ -1,260 +1,312 @@
 """Plan executor implementation."""
 
-from enum import Enum
-from typing import List, cast, Optional, TYPE_CHECKING
+import logging
+from typing import List, Optional, TYPE_CHECKING
 
-from ..execution_context import ExecutionContext
-from ..execution_types import (
-    ExecutionNode,
-    ExecutionSignal,
-    Objective,
-    ExecutionEdge
-)
-from ..execution_graph import ExecutionGraph
 from ..executor import Executor
-from .plan import Plan
-from ..workflow.workflow import Workflow
+from ..execution_context import ExecutionContext
+from ..execution_graph import ExecutionGraph
+from ..execution_types import ExecutionNode, ExecutionSignal, Objective, ExecutionNodeStatus, ExecutionEdge
 from ...common.graph import NodeType
-from ..reasoning.reasoning_factory import ReasoningFactory
+from .plan import Plan
+from .plan_strategy import PlanStrategy
 
 if TYPE_CHECKING:
-    from ..reasoning import ReasoningExecutor
+    from ..reasoning.reasoning_executor import ReasoningExecutor
 
-class PlanStrategy(Enum):
-    """Planning strategies."""
-    DEFAULT = "DEFAULT"        # same as WORKFLOW_IS_PLAN
-    WORKFLOW_IS_PLAN = "WORKFLOW_IS_PLAN"  # Exact structural copy with cursor sync
-    COMPLETE = "COMPLETE"    # Whole workflow
-    DYNAMIC = "DYNAMIC"      # Adaptive planning
-    PROSEA = "PROSEA"        # PROSEA planning
 
-class PlanExecutor(Executor):
-    """Executes plans using planning strategies."""
-
-    def __init__(self, reasoning_executor: 'ReasoningExecutor', strategy: PlanStrategy = PlanStrategy.DEFAULT):
-        super().__init__(depth=2)
+class PlanExecutor(Executor[PlanStrategy]):
+    """Executes plans by delegating to a reasoning executor.
+    
+    The PlanExecutor is responsible for executing plan graphs,
+    which represent mid-level execution flows. It delegates the actual
+    reasoning tasks to a ReasoningExecutor.
+    """
+    
+    strategy_class = PlanStrategy
+    default_strategy = PlanStrategy.DEFAULT
+    
+    def __init__(
+        self, 
+        reasoning_executor: 'ReasoningExecutor', 
+        strategy: PlanStrategy = PlanStrategy.DEFAULT
+    ):
+        """Initialize plan executor.
+        
+        Args:
+            reasoning_executor: Reasoning executor to use for executing reasoning tasks
+            strategy: Plan execution strategy
+        """
+        super().__init__(depth=1)
         self.reasoning_executor = reasoning_executor
-        self._strategy = strategy
+        self.strategy = strategy
         self.layer = "plan"
-        self._configure_logger()
-
-    @property
-    def strategy(self) -> PlanStrategy:
-        """Get workflow strategy."""
-        if self._strategy == PlanStrategy.DEFAULT:
-            self._strategy = PlanStrategy.WORKFLOW_IS_PLAN
-        return self._strategy
-
-    @strategy.setter
-    def strategy(self, strategy: PlanStrategy):
-        """Set workflow strategy."""
-        if strategy == PlanStrategy.DEFAULT:
-            strategy = PlanStrategy.WORKFLOW_IS_PLAN
-        self._strategy = strategy
-
-    async def execute_node(self, node: ExecutionNode,
-                           context: ExecutionContext,
-                           validation_node: Optional[ExecutionNode] = None,
-                           original_problem: Optional[str] = None,
-                           agent_role: Optional[str] = None,
-                           prev_signals: Optional[List[ExecutionSignal]] = None,
-                           upper_signals: Optional[List[ExecutionSignal]] = None,
-                           lower_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
-        """Execute a plan node using reasoning executor."""
-
-        # Safety: make sure our graph is set
-        if self.graph is None and context.current_plan:
-            self.graph = context.current_plan
+        self.logger = logging.getLogger(f"dxa.execution.{self.layer}")
+    
+    async def execute_node(
+        self,
+        node: ExecutionNode, 
+        context: ExecutionContext,
+        prev_signals: Optional[List[ExecutionSignal]] = None,
+        upper_signals: Optional[List[ExecutionSignal]] = None,
+        lower_signals: Optional[List[ExecutionSignal]] = None
+    ) -> List[ExecutionSignal]:
+        """Execute a single node in the plan.
+        
+        This method handles the execution of a plan node by:
+        1. Updating the node status
+        2. Delegating to the reasoning executor based on the strategy
+        3. Processing the results
+        
+        Args:
+            node: Node to execute
+            context: Execution context
+            prev_signals: Signals from previous nodes
+            upper_signals: Signals from upper execution layer
+            lower_signals: Signals from lower execution layer
             
-        if context.current_plan is None and self.graph:
-            context.current_plan = cast(Plan, self.graph)
-
-        # Get the workflow from context
-        workflow = cast(Workflow, context.current_workflow)
-
-        # Update workflow cursor if using COPY_WORKFLOW strategy
-        if self.strategy == PlanStrategy.WORKFLOW_IS_PLAN:
-            workflow.update_cursor(node.node_id)  # Uses DirectedGraph's method
-
-        if node.node_type in [NodeType.START, NodeType.END]:
-            return []   # Start and end nodes just initialize/terminate flow
+        Returns:
+            List of execution signals resulting from the node execution
+        """
+        self.logger.info(f"Executing plan node: {node.node_id}")
+        
+        try:
+            # Skip START and END nodes
+            if node.node_type in [NodeType.START, NodeType.END]:
+                return []
             
-        # Select appropriate reasoning strategy for this node
-        if self.reasoning_executor.strategy == "AUTO":
-            # Use ReasoningFactory to select appropriate strategy
-            selected_strategy = ReasoningFactory.create_reasoning_strategy(node, context)
-            # Store original strategy to restore later
-            original_strategy = self.reasoning_executor.strategy
-            # Set selected strategy for this node
-            self.reasoning_executor.strategy = selected_strategy
+            # Update node status to in progress
+            if self.graph:
+                self.graph.update_node_status(node.node_id, ExecutionNodeStatus.IN_PROGRESS)
             
-            # Execute with selected strategy
+            # Prepare node with strategy information
+            node_metadata = node.metadata.copy() if node.metadata else {}
+            node_metadata["plan_strategy"] = self.strategy.name
+            
+            # Create a copy of the node with updated metadata
+            execution_node = ExecutionNode(
+                node_id=node.node_id,
+                node_type=node.node_type,
+                description=node.description,
+                metadata=node_metadata
+            )
+            
+            # Execute the node using the reasoning executor
             signals = await self.reasoning_executor.execute_node(
-                node=node, 
-                context=context, 
-                validation_node=validation_node, 
-                original_problem=original_problem, 
-                agent_role=agent_role, 
-                prev_signals=prev_signals, 
-                upper_signals=upper_signals, 
-                lower_signals=lower_signals
+                node=execution_node,
+                context=context,
+                prev_signals=prev_signals,
+                upper_signals=upper_signals
             )
             
-            # Restore original strategy
-            self.reasoning_executor.strategy = original_strategy
+            # Update node status to completed
+            if self.graph:
+                self.graph.update_node_status(node.node_id, ExecutionNodeStatus.COMPLETED)
+            
             return signals
-        else:
-            # Use the configured strategy
-            return await self.reasoning_executor.execute_node(
-                node=node, 
-                context=context, 
-                validation_node=validation_node, 
-                original_problem=original_problem, 
-                agent_role=agent_role, 
-                prev_signals=prev_signals, 
-                upper_signals=upper_signals, 
-                lower_signals=lower_signals
+            
+        except Exception as e:
+            self.logger.error(f"Error executing node {node.node_id}: {str(e)}")
+            
+            # Update node status to error
+            if self.graph:
+                self.graph.update_node_status(node.node_id, ExecutionNodeStatus.FAILED)
+            
+            # Create error signal
+            return [self._create_error_signal(node.node_id, str(e))]
+    
+    async def _execute_task(
+        self,
+        node: ExecutionNode, 
+        context: ExecutionContext,
+        prev_signals: Optional[List[ExecutionSignal]] = None,
+        upper_signals: Optional[List[ExecutionSignal]] = None,
+        lower_signals: Optional[List[ExecutionSignal]] = None
+    ) -> List[ExecutionSignal]:
+        """Execute the task associated with a plan node.
+        
+        This method implements the abstract method from the Executor base class.
+        For the PlanExecutor, this delegates to execute_node which contains
+        the actual implementation.
+        
+        Args:
+            node: Node to execute
+            context: Execution context
+            prev_signals: Signals from previous nodes
+            upper_signals: Signals from upper execution layer
+            lower_signals: Signals from lower execution layer
+            
+        Returns:
+            List of execution signals resulting from the task execution
+        """
+        return await self.execute_node(
+            node=node,
+            context=context,
+            prev_signals=prev_signals,
+            upper_signals=upper_signals,
+            lower_signals=lower_signals
+        )
+    
+    def _create_graph(
+        self, 
+        upper_graph: ExecutionGraph, 
+        objective: Optional[Objective] = None, 
+        context: Optional[ExecutionContext] = None
+    ) -> ExecutionGraph:
+        """Create a plan execution graph.
+        
+        For plan execution, the graph is created based on the planning strategy.
+        
+        Args:
+            upper_graph: Graph from the upper execution layer (workflow)
+            objective: Execution objective
+            context: Execution context
+            
+        Returns:
+            Plan execution graph
+        """
+        # If we already have a graph, return it
+        if self.graph is not None:
+            return self.graph
+        
+        # Get workflow from context if available
+        workflow = None
+        # Check if context has a workflow attribute
+        if context:
+            workflow = context.current_workflow
+            
+        if not workflow:
+            workflow = upper_graph
+            
+        if not workflow:
+            # Create a minimal plan if no workflow is available
+            return Plan(
+                objective=objective or Objective("Execute plan"),
+                name="default_plan"
             )
         
-    def _create_graph(self,
-                      upper_graph: ExecutionGraph,
-                      objective: Optional[Objective] = None,
-                      context: Optional[ExecutionContext] = None) -> ExecutionGraph:
-        """Create this layer's graph from the upper layer's graph."""
-        plan = self._create_plan(cast(Workflow, upper_graph), objective)
-        assert context is not None
-        context.current_plan = plan
-        assert upper_graph.objective is not None
-        self.logger.info(
-            "Plan created", 
-            extra={
-                'strategy': self.strategy.value,
-                'steps': len(plan.nodes),
-                'source_workflow': upper_graph.objective.original[:50] + "..."
-            }
-        )
-        return cast(ExecutionGraph, plan)
-
-    def _create_plan(self, workflow: Workflow, objective: Optional[Objective] = None) -> Plan:
-        """Create plan based on selected strategy."""
-        objective = objective or workflow.objective
-
+        # Create a plan based on the strategy
         if self.strategy == PlanStrategy.DEFAULT:
+            # Direct execution - create a minimal plan that follows the workflow structure
             return self._create_direct_plan(workflow, objective)
-        if self.strategy == PlanStrategy.COMPLETE:
-            return self._create_complete_plan(workflow, objective)
-        if self.strategy == PlanStrategy.DYNAMIC:
+        elif self.strategy == PlanStrategy.DYNAMIC:
             return self._create_dynamic_plan(workflow, objective)
-        if self.strategy == PlanStrategy.WORKFLOW_IS_PLAN:
-            return self._create_follow_workflow_plan(workflow, objective)
-        if self.strategy == PlanStrategy.PROSEA:
-            return self._create_prosea_plan(workflow, objective)
-        raise ValueError(f"Unknown strategy: {self.strategy}")
-
-    def _create_direct_plan(self, workflow: Workflow, objective: Optional[Objective] = None) -> Plan:
-        """Create direct 1:1 plan from current task."""
-        # Use the current node from workflow execution
-        current_node = workflow.get_current_node()
-        if not current_node:
-            raise ValueError("No current node in workflow")
-
-        assert objective is not None
-        plan = self._create_execution_graph([
-            ExecutionNode(
-                node_id="DIRECT_STEP",
-                node_type=NodeType.TASK,
-                description=objective.original
-            )
-        ])
-        plan.objective = objective
-        return cast(Plan, plan)
-
-    def _create_complete_plan(self, workflow: Workflow, objective: Optional[Objective] = None) -> Plan:
-        """Create plan for complete workflow."""
-        plan = Plan(objective)
-        for node in workflow.nodes.values():
-            if node.node_type == NodeType.TASK:
-                plan.add_step(
-                    step_id=f"step_{node.node_id}",
-                    description=node.description
-                )
-        return plan
-
-    def _create_dynamic_plan(self, workflow: Workflow, objective: Optional[Objective] = None) -> Plan:
-        """Create adaptive plan based on context."""
-        # For now, same as direct
-        return self._create_direct_plan(workflow, objective)
-
-    def _create_follow_workflow_plan(self, workflow: Workflow, objective: Optional[Objective] = None) -> Plan:
-        """Create exact structural copy of workflow."""
-        plan = Plan(objective or workflow.objective)
-
-        # Copy nodes with same IDs to maintain cursor sync
-        for node_id, node in workflow.nodes.items():
-            # Copy node metadata including reasoning strategy
-            metadata = node.metadata.copy() if node.metadata else {}
+        elif self.strategy == PlanStrategy.INCREMENTAL:
+            return self._create_incremental_plan(workflow, objective)
+        else:
+            # Default to direct plan
+            return self._create_direct_plan(workflow, objective)
+    
+    def _create_direct_plan(
+        self, 
+        workflow: ExecutionGraph, 
+        objective: Optional[Objective] = None
+    ) -> Plan:
+        """Create a direct plan from a workflow.
+        
+        A direct plan follows the workflow structure directly.
+        
+        Args:
+            workflow: Workflow graph
+            objective: Execution objective
             
-            # If no reasoning strategy specified, set AUTO as default
-            if node.node_type == NodeType.TASK and "reasoning_strategy" not in metadata:
-                metadata["reasoning_strategy"] = "AUTO"
-                
-            plan.add_node(ExecutionNode(
-                node_id=node_id,  # Keep same IDs
-                node_type=node.node_type,
-                description=node.description,
-                metadata=metadata
-            ))
-
-        # Copy edges to maintain structure
-        for edge in workflow.edges:
-            plan.add_edge(ExecutionEdge(edge.source, edge.target))
-
-        return plan
-        
-    def _create_prosea_plan(self, workflow: Workflow, objective: Optional[Objective] = None) -> Plan:
-        """Create a plan for PROSEA workflow."""
-        plan = Plan(objective or workflow.objective)
-        
-        # Copy nodes with same IDs to maintain cursor sync
-        for node_id, node in workflow.nodes.items():
-            # Copy node metadata including reasoning strategy
-            metadata = node.metadata.copy() if node.metadata else {}
-            
-            # Set specific reasoning strategies for PROSEA nodes
-            if node.node_id == "ANALYZE":
-                metadata["reasoning_strategy"] = "DIRECT"
-            elif node.node_id == "PLANNING":
-                metadata["reasoning_strategy"] = "DIRECT"
-            elif node.node_id == "FINALIZE_ANSWER":
-                metadata["reasoning_strategy"] = "DIRECT"
-            elif node.node_type == NodeType.TASK and "reasoning_strategy" not in metadata:
-                metadata["reasoning_strategy"] = "AUTO"
-                
-            plan.add_node(ExecutionNode(
-                node_id=node_id,  # Keep same IDs
-                node_type=node.node_type,
-                description=node.description,
-                metadata=metadata
-            ))
-
-        # Copy edges to maintain structure
-        for edge in workflow.edges:
-            plan.add_edge(ExecutionEdge(edge.source, edge.target))
-            
-        return plan
-
-    async def execute_node_prosea(self, node: ExecutionNode, context: ExecutionContext,
-                                  validation_node: Optional[ExecutionNode] = None,
-                                  prev_signals: Optional[List[ExecutionSignal]] = None,
-                                  upper_signals: Optional[List[ExecutionSignal]] = None,
-                                  lower_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
-        """Execute a plan node using reasoning executor."""
-        
-        response = await self.reasoning_executor.execute_node(node, context, validation_node, prev_signals, upper_signals, lower_signals)
-        
-    async def _execute_step(self, step: ExecutionNode, context: ExecutionContext):
-        self.logger.debug(
-            "Executing plan step",
-            step=getattr(context.agent_state, 'current_step_index', 0),
-            node_id=step.node_id
+        Returns:
+            Direct plan
+        """
+        # Create a plan that directly follows the workflow
+        plan = Plan(
+            objective=objective or workflow.objective,
+            name=f"direct_plan_for_{workflow.name}"
         )
+        
+        # Copy nodes and edges from workflow
+        for node in workflow.nodes.values():
+            plan_node = ExecutionNode(
+                node_id=node.node_id,
+                node_type=node.node_type,
+                description=node.description,
+                metadata=node.metadata.copy() if node.metadata else {}
+            )
+            plan.add_node(plan_node)
+            
+        for edge in workflow.edges:
+            plan_edge = ExecutionEdge(
+                source=edge.source,
+                target=edge.target,
+                metadata=edge.metadata.copy() if edge.metadata else {}
+            )
+            plan.add_edge(plan_edge)
+            
+        return plan
+    
+    def _create_dynamic_plan(
+        self, 
+        workflow: ExecutionGraph, 
+        objective: Optional[Objective] = None
+    ) -> Plan:
+        """Create a dynamic plan from a workflow.
+        
+        A dynamic plan adapts during execution based on results.
+        
+        Args:
+            workflow: Workflow graph
+            objective: Execution objective
+            
+        Returns:
+            Dynamic plan
+        """
+        # For now, just create a direct plan
+        # In the future, this would create a more adaptive plan
+        return self._create_direct_plan(workflow, objective)
+    
+    def _create_incremental_plan(
+        self, 
+        workflow: ExecutionGraph, 
+        objective: Optional[Objective] = None
+    ) -> Plan:
+        """Create an incremental plan from a workflow.
+        
+        An incremental plan only plans a few steps ahead.
+        
+        Args:
+            workflow: Workflow graph
+            objective: Execution objective
+            
+        Returns:
+            Incremental plan
+        """
+        # For now, just create a direct plan
+        # In the future, this would create a plan that evolves incrementally
+        return self._create_direct_plan(workflow, objective)
+    
+    async def _custom_graph_traversal(
+        self, 
+        graph: ExecutionGraph, 
+        context: ExecutionContext,
+        upper_signals: Optional[List[ExecutionSignal]] = None
+    ) -> Optional[List[ExecutionSignal]]:
+        """Implement custom traversal strategies for plans.
+        
+        This method creates a reasoning graph based on the plan graph
+        and sets it in the context before traversing the graph.
+        
+        Args:
+            graph: Execution graph to traverse
+            context: Execution context
+            upper_signals: Signals from upper execution layer
+            
+        Returns:
+            List of signals if custom traversal was performed, None otherwise
+        """
+        # Create a reasoning graph based on the plan graph
+        reasoning_graph = self.reasoning_executor._create_graph(
+            upper_graph=graph,
+            objective=graph.objective,
+            context=context
+        )
+        
+        # Set the reasoning graph in the executor and context
+        self.reasoning_executor.graph = reasoning_graph
+        
+        # Continue with default traversal
+        return None 

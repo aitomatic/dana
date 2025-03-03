@@ -1,17 +1,19 @@
 """Workflow factory for creating common workflow patterns."""
 
-from typing import List, Optional, Union, Dict, cast
+from typing import List, Optional, Union, Dict, cast, Any
 
 from ..execution_factory import ExecutionFactory
 from .workflow import Workflow
 from ...common.graph import NodeType, Edge
 from ..execution_types import Objective, ExecutionNode
+from .workflow_strategy import WorkflowStrategy
 
 class WorkflowFactory(ExecutionFactory):
     """Factory for creating workflow patterns."""
     
     # Override class variables
     graph_class = Workflow
+    strategy_class = WorkflowStrategy
     
     # Add workflow-specific methods
     @classmethod
@@ -49,10 +51,41 @@ class WorkflowFactory(ExecutionFactory):
 
     @classmethod
     def create_minimal_workflow(cls, objective: Optional[Union[str, Objective]] = None) -> Workflow:
-        """Create minimal workflow with START -> TASK -> END.
-        The task node will have the objective as its description.
-        """
-        return cls.create_workflow_by_name("basic.minimal", objective or "No objective provided")
+        """Create a minimal workflow with START, PERFORM_TASK, and END nodes."""
+        if isinstance(objective, str):
+            objective = Objective(objective)
+            
+        workflow = Workflow(objective=objective)
+        
+        # Add START node
+        start_node = ExecutionNode(
+            node_id="START",
+            node_type=NodeType.START,
+            description="Start workflow"
+        )
+        workflow.add_node(start_node)
+        
+        # Add task node
+        task_node = ExecutionNode(
+            node_id="PERFORM_TASK",
+            node_type=NodeType.TASK,
+            description="{objective}"
+        )
+        workflow.add_node(task_node)
+        
+        # Add END node
+        end_node = ExecutionNode(
+            node_id="END",
+            node_type=NodeType.END,
+            description="End workflow"
+        )
+        workflow.add_node(end_node)
+        
+        # Add edges
+        workflow.add_edge_between("START", "PERFORM_TASK")
+        workflow.add_edge_between("PERFORM_TASK", "END")
+        
+        return workflow
     
     @classmethod
     def create_monitoring_workflow(cls,
@@ -110,3 +143,24 @@ class WorkflowFactory(ExecutionFactory):
         """
         graph = cls.create_from_config("default", objective, agent_role, custom_prompts)
         return cast(Workflow, graph)
+
+    @classmethod
+    def create_workflow_strategy(cls, node: ExecutionNode, context: Any = None) -> WorkflowStrategy:
+        """Select appropriate workflow strategy based on node metadata or context."""
+        # Check if node has explicit workflow strategy in metadata
+        if "workflow" in node.metadata:
+            strategy_name = node.metadata["workflow"].upper()
+            try:
+                return WorkflowStrategy[strategy_name]
+            except KeyError:
+                pass  # Invalid strategy name, fallback to auto-selection
+        
+        return cls._select_auto_strategy(node, context)
+    
+    @classmethod
+    def _select_auto_strategy(cls, node: ExecutionNode, context: Any = None) -> WorkflowStrategy:
+        """Select appropriate workflow strategy based on node content and context."""
+        return cls.select_strategy_from_description(
+            node.description, 
+            WorkflowStrategy.DEFAULT
+        )

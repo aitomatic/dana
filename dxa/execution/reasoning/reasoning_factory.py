@@ -1,10 +1,10 @@
 """Factory for creating reasoning patterns."""
 
-from typing import Any
+from typing import Optional, Any, cast
 
 from ..execution_types import ExecutionNode, Objective
 from .reasoning import Reasoning
-from .reasoning_executor import ReasoningStrategy
+from .reasoning_strategy import ReasoningStrategy
 from ..execution_factory import ExecutionFactory
 
 class ReasoningFactory(ExecutionFactory):
@@ -12,37 +12,44 @@ class ReasoningFactory(ExecutionFactory):
     
     # Override class variables
     graph_class = Reasoning
-
+    strategy_class = ReasoningStrategy
+    
+    @classmethod
+    def create_reasoning_strategy(cls, node: ExecutionNode, context: Any = None) -> ReasoningStrategy:
+        """Select appropriate reasoning strategy based on node metadata or context."""
+        # Check if node has explicit reasoning strategy in metadata
+        if "reasoning" in node.metadata:
+            strategy_name = node.metadata["reasoning"].upper()
+            try:
+                return ReasoningStrategy[strategy_name]
+            except KeyError:
+                pass  # Invalid strategy name, fallback to auto-selection
+        
+        return cls._select_auto_strategy(node, context)
     
     @classmethod
     def _select_auto_strategy(cls, node: ExecutionNode, context: Any = None) -> ReasoningStrategy:
-        """Select appropriate reasoning strategy based on (Planning) node content and context."""
-        # Simple heuristics for strategy selection
-        description = node.description.lower()
-        
-        # For mathematical or logical problems, use chain of thought
-        if any(keyword in description for keyword in ["calculate", "solve", "equation", "math", "logic", "proof"]):
-            return ReasoningStrategy.CHAIN_OF_THOUGHT
-        
-        # For decision-making or situational analysis, use OODA
-        if any(keyword in description for keyword in ["decide", "situation", "analyze", "assess", "evaluate"]):
-            return ReasoningStrategy.OODA
-        
-        # For complex reasoning with multiple steps, use DANA
-        if any(keyword in description for keyword in ["complex", "multi-step", "detailed", "comprehensive"]):
-            return ReasoningStrategy.DANA
-        
-        # For PROSEA specific nodes, use PROSEA
-        if node.node_id in ["ANALYZE", "PLAN", "FINALIZE"]:
-            return ReasoningStrategy.PROSEA
-            
-        # Default to simple direct reasoning
-        return ReasoningStrategy.DEFAULT
+        """Select appropriate reasoning strategy based on node content and context."""
+        return cls.select_strategy_from_description(
+            node.description, 
+            ReasoningStrategy.DEFAULT
+        )
     
     @classmethod
-    def create_reasoning(cls, objective: Objective,
-                         strategy: ReasoningStrategy = ReasoningStrategy.DEFAULT) -> Reasoning:
+    def create_reasoning(
+        cls, 
+        objective: Objective, 
+        strategy: ReasoningStrategy = ReasoningStrategy.DEFAULT
+    ) -> Reasoning:
         """Create a reasoning instance with the specified strategy."""
-        reasoning = Reasoning(objective)
+        reasoning = cls.create_minimal_graph(objective)
+        
+        # Add strategy to reasoning metadata
         reasoning.metadata["strategy"] = strategy.value
-        return reasoning
+        
+        return cast(Reasoning, reasoning)
+        
+    @classmethod
+    def create_minimal_reasoning(cls, objective: Optional[Objective] = None) -> Reasoning:
+        """Create a minimal reasoning with just START and END nodes."""
+        return cast(Reasoning, cls.create_minimal_graph(objective))

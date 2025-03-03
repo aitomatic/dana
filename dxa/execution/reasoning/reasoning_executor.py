@@ -1,386 +1,245 @@
 """Reasoning executor implementation."""
 
-from enum import Enum
-from typing import List, cast, Optional, Dict
-import asyncio
+import logging
+from typing import List, Optional
 
-from ..execution_context import ExecutionContext
-from ..execution_types import (
-    ExecutionNode,
-    ExecutionSignal,
-    ExecutionSignalType,
-    Objective
-)
-from ..execution_graph import ExecutionGraph
 from ..executor import Executor
-from .reasoning import Reasoning
-from ..planning.plan import Plan
+from ..execution_context import ExecutionContext
+from ..execution_graph import ExecutionGraph
+from ..execution_types import ExecutionNode, ExecutionSignal, Objective, ExecutionNodeStatus
 from ...common.graph import NodeType
-from ...common.utils.text_processor import TextProcessor
+from .reasoning_strategy import ReasoningStrategy
 
-class ReasoningStrategy(Enum):
-    """Reasoning execution strategies."""
-    DEFAULT = "DEFAULT"         # Simple LLM query
-    CHAIN_OF_THOUGHT = "CHAIN_OF_THOUGHT"    # Step by step reasoning
-    OODA = "OODA"               # OODA loop pattern
-    DANA = "DANA"               # DANA pattern
-    PROSEA = "PROSEA"           # PROSEA pattern
+
+class ReasoningExecutor(Executor[ReasoningStrategy]):
+    """Executes reasoning tasks using LLM-based reasoning.
     
-class ReasoningExecutor(Executor):
-    """Executes reasoning patterns."""
-
-    def __init__(self, strategy: ReasoningStrategy = ReasoningStrategy.DEFAULT):
-        super().__init__(depth=3)  # Child of plan
-        self.strategy = strategy
-        self.current_reasoning = None
-        self.graph: Optional[ExecutionGraph] = None  # Add type annotation
-        self.layer = "reasoning"
-        self._configure_logger()
-        self.parse_by_key = TextProcessor().parse_by_key
-
-    async def execute(self, upper_graph: ExecutionGraph, context: ExecutionContext,
-                      upper_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
-        """Execute using reasoning strategy."""
-        # Create reasoning graph based on strategy
-        plan = cast(Plan, upper_graph)
-        reasoning = self._create_reasoning(plan, upper_graph.objective)
-
-        # Update context with new reasoning
-        context.current_reasoning = reasoning
-
-        # Execute reasoning through base executor
-        return await super().execute(upper_graph=reasoning, context=context, upper_signals=upper_signals)
-
-    async def execute_node(self, node: ExecutionNode, context: ExecutionContext,
-                           validation_node: Optional[ExecutionNode] = None,
-                           original_problem: Optional[str] = None,
-                           agent_role: Optional[str] = None,
-                           prev_signals: Optional[List[ExecutionSignal]] = None,
-                           upper_signals: Optional[List[ExecutionSignal]] = None,
-                           lower_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
-        """Execute a reasoning node using LLM."""
-        if not context.reasoning_llm:
-            raise ValueError("No reasoning LLM configured in context")
-
-        # print(node.node_id)
-        # print("\033[91mPrev signals:\033[0m", prev_signals)
-        # print("\033[92mUpper signals:\033[0m", upper_signals)
-        # print("\033[93mLower signals:\033[0m", lower_signals)
-        
-        # TODO: use upper_signals and prev_signals somehow?
-
-        # Safety: make sure our graph is set
-        if self.graph is None and context.current_reasoning:
-            self.graph = context.current_reasoning
-
-        if context.current_reasoning is None and self.graph:
-            context.current_reasoning = cast(Reasoning, self.graph)
-
-        if node.node_type in [NodeType.START, NodeType.END]:
-            return []   # Start and end nodes just initialize/terminate flow
-
-        if self.strategy == ReasoningStrategy.DEFAULT:
-            return await self._execute_direct(node, context)
-        if self.strategy == ReasoningStrategy.CHAIN_OF_THOUGHT:
-            return await self._execute_cot(node, context)
-        if self.strategy == ReasoningStrategy.OODA:
-            return await self._execute_ooda(node, context)
-        if self.strategy == ReasoningStrategy.DANA:
-            return await self._execute_dana(node, context)
-        if self.strategy == ReasoningStrategy.PROSEA:
-            return await self._execute_prosea(node=node, context=context, validation_node=validation_node, 
-                                              original_problem=original_problem, agent_role=agent_role, prev_signals=prev_signals, 
-                                              upper_signals=upper_signals, lower_signals=lower_signals)
-        raise ValueError(f"Unknown strategy: {self.strategy}")
-
-    def _create_graph(self,
-                       upper_graph: ExecutionGraph,
-                       objective: Optional[Objective] = None,
-                       context: Optional[ExecutionContext] = None) -> ExecutionGraph:
-        """Create this layer's graph from the upper layer's graph."""
-        reasoning = self._create_reasoning(cast(Plan, upper_graph), objective)
-        assert context is not None
-        context.current_reasoning = reasoning
-        return cast(ExecutionGraph, reasoning)
-
-    def _create_reasoning(self, plan: "Plan", objective: Optional[Objective] = None) -> Reasoning:
-        """Create reasoning graph based on strategy."""
-        reasoning = None
-        objective = objective or plan.objective
-        assert objective is not None
-
-        if self.strategy == ReasoningStrategy.DEFAULT:
-            if len(plan.nodes) == 2:
-            # Simple single-node reasoning
-                node = ExecutionNode(
-                    node_id="DIRECT_REASONING",
-                    node_type=NodeType.TASK,
-                    description=objective.original
-                )
-                reasoning = self._create_execution_graph([node])
-            if len(plan.nodes) > 2:
-                nodes = []
-                for node_id in plan.nodes.keys():
-                    nodes.append(plan.nodes[node_id])
-                    reasoning = self._create_execution_graph(nodes)
-                    
-        elif self.strategy == ReasoningStrategy.CHAIN_OF_THOUGHT:
-            # Add nodes for each reasoning step
-            node = ExecutionNode(
-                node_id="cot_reasoning",
-                node_type=NodeType.TASK,
-                description=f"Let's solve this step by step:\n{objective.original}"
-            )
-            reasoning = self._create_execution_graph([node])
-        # elif self.strategy == ReasoningStrategy.PROSEA:
-            # nodes = []
-            # print(plan.nodes)
-            # for node_id in plan.nodes.keys():
-            #     nodes.append(plan.nodes[node_id])
-            # reasoning = self._create_execution_graph(nodes)
-        
-        if not reasoning:
-            raise ValueError(f"Failed to create reasoning graph for strategy {self.strategy}")
-        reasoning.objective = objective
-        return cast(Reasoning, reasoning)
-
-    async def _execute_prosea(self, node: ExecutionNode, context: ExecutionContext,
-                              validation_node: Optional[ExecutionNode] = None,
-                              original_problem: Optional[str] = None,
-                              agent_role: Optional[str] = None,
-                              prev_signals: Optional[List[ExecutionSignal]] = None,
-                              upper_signals: Optional[List[ExecutionSignal]] = None,
-                              lower_signals: Optional[List[ExecutionSignal]] = None) -> List[ExecutionSignal]:
-        """Execute PROSEA reasoning."""
-        assert context.reasoning_llm is not None
-        # print("\033[91mPrev signals\033[0m", prev_signals)
-        prev_step_output = await self._get_previous_steps(prev_signals)
-        
-        if "step_" in node.node_id:
-            prompt = f"""
-            These are the previous steps and their outputs:
-            {prev_step_output}
-            
-            The original problem is:
-            {original_problem}
-
-            Now, based on the previous steps and the original problem, please solve the current step:
-            {node.description}
-            """
-        elif "FINALIZE_ANSWER" in node.node_id:
-            print("FINALIZE_ANSWER")
-            prompt = node.description.replace("<reasoning_result>", prev_step_output)
-        else:
-            prompt = node.description
-        
-        
-        if validation_node is not None:
-            response = await self._execute_prosea_step_with_validation(node=node, context=context, validation_node=validation_node, 
-                                                                       original_problem=original_problem, agent_role=agent_role,
-                                                                       prompt=prompt, prev_signals=prev_signals)
-        else:
-            conclusion_messages = [
-                {"role": "system", "content": f"You are a {agent_role} expert."},
-            ]
-            conclusion_messages = self._update_messages(conclusion_messages, prompt)
-            response = await context.reasoning_llm.conversational_query(conclusion_messages)
-            
-        return [ExecutionSignal(
-            node_id=node.node_id,
-            content={
-                "result": response,
-                "node": node.node_id,
-                "type": ExecutionSignalType.DATA_RESULT
-            }
-        )]
+    The ReasoningExecutor is responsible for executing reasoning tasks,
+    which represent low-level execution steps. It uses LLM-based reasoning
+    to perform the actual work.
+    """
     
-    async def _get_previous_steps(self, prev_signals: List[ExecutionSignal]) -> str:
-        """Get the previous steps."""
-        previous_step_output = ""
-        if len(prev_signals) > 2:
-            for i in range(2, len(prev_signals)):
-                if prev_signals[i].type == ExecutionSignalType.DATA_RESULT:
-                    previous_step_output += prev_signals[i].content["result"]["content"]
-                    previous_step_output += "\n\n"
-        return previous_step_output
+    strategy_class = ReasoningStrategy
+    default_strategy = ReasoningStrategy.DEFAULT
     
-    async def _validate_response(self, response: str, node: ExecutionNode, validation_node: ExecutionNode, context: ExecutionContext,
-                                 original_problem: Optional[str] = None, additional_prompt: Optional[str] = None,
-                                 prev_signals: Optional[List[ExecutionSignal]] = None, agent_role: Optional[str] = None) -> List[any]:
-        """Validate the response against the validation node."""
-        assert validation_node is not None
-        assert original_problem is not None
-        previous_step_output = await self._get_previous_steps(prev_signals)
-        validation_messages = [
-            {"role": "system", "content": f"You are a {agent_role} expert."},
-        ]
+    def __init__(
+        self, 
+        strategy: ReasoningStrategy = ReasoningStrategy.DEFAULT
+    ):
+        """Initialize reasoning executor.
         
-        prompt = f"""
-        Initial analysis for the problem: {prev_signals[0].content["result"]["content"]}
-        This is previous steps: {previous_step_output} \n\n
-        This is the start prompt: {node.description}
-        This is the additional prompt used in previous try: {additional_prompt}
-        This is the output: {response}
-        This is the expected information from output: {validation_node.description}
-
-        First, please do reasoning and analysis on the output and expected information, then let me know if the output is matched with the expectation or not.
-        If not, please do analysis and tell me that can you solve this problem only by continuing generate new prompt for the conversation to achieve the expectation?
-        Do not assume the important if you are not sure and do not assume customized information (for example, different company will have different level ladder).
-        
-        Answer format:
-        reasoning_analysis: Your reasoning and analysis on the output and expected information. You need to critique the output based on expected information. Always make sure that the information provided in the output is correct. If not, that's a big issue. If the criteria is gathering information, but output is how to gather information, then it's not correct. If expected output is nothing special, any output should be accepted. If there are information that matched with all requirement in the answer (even though the answer also has irrelevant information), the answer is also matched.
-        is_matched: Specify if output is matched with criteria. Yes/No (just write Yes or No, no more). If the criteria is gathering information, but output is how to gather information or just give the questions or just give questions to get the information, then it's not correct and the answer is No. If expected output is nothing special, any output should be accepted and answer is Yes. f there are information that matched with all requirement in the answer (even though the answer has irrelevant information), the answer is also matched, please answer Yes.
-        reasoning_for_contradicted: If the output is not matched with the expectation, given the start prompt, please do reasoning to check if the criteria for the output has any mistake that will make the output inaccurate. Point out the mistake. If criteria is accept anything, it means no contradict.
-        is_contradicted: Specify if the criteria for the output has any mistake. Yes/No (just write Yes or No, no more). If the criteria is accept anything, it means no contradict and answer is No.
-        refined_criteria: If the criteria for the output has any mistake, then let me know the refined criteria for the output here. Just tel me new criteria, do not say anything else.
-        reasoning_analysis_solvable_by_continuing_prompt: Think carefully about if you can solve this problem by only ask a LLM and/or retrieve information from documents without interact with real world. If it's necessary to interact with real world or interact with device to get output, then you need to ask for more input from the user. If without input from user, the result will be unreliable, please ask user. If the answer can be achived by checking documents, continue prompt. If there is something need user's confirmation. You must ask user. Provide a clear analysis. Before asking user, is there anything from provided questions can replace the information you need? If require confirmation form human, you must ask user.
-        is_solvable_by_continuing_prompt: Based on your above analysis, specify if you can solve this problem only by continuing generate new prompt to ask LLM (and/or retrieve information from documents) to achieve the expectation. Yes/No (just write Yes or No, no more). Yes means you can solve this problem only by continuing generate new prompt for the conversation (with RAG) to achieve the expectation or there is no need addtional input from user to process. No means you must ask for more input from the user. If require confirmation form human, you must ask user by saying Yes.
-        
-        Do not lack any key above.
-        Do not forget the key and do not change the key format. Do not highlight the key.
+        Args:
+            strategy: Reasoning strategy
         """
-        validation_messages = self._update_messages(validation_messages, prompt)
-        response = await context.reasoning_llm.conversational_query(validation_messages)
-        response_text = response["content"]
-        is_matched = "yes" in self.parse_by_key(response_text, "is_matched").lower()
-        is_contradicted = "yes" in self.parse_by_key(response_text, "is_contradicted").lower()
-        refined_criteria = self.parse_by_key(response_text, "refined_criteria")
-        is_solvable_by_continuing_prompt = "yes" in self.parse_by_key(response_text, "is_solvable_by_continuing_prompt").lower()
-        
-        return is_matched, is_contradicted, refined_criteria, is_solvable_by_continuing_prompt    
+        super().__init__(depth=2)
+        self.strategy = strategy
+        self.layer = "reasoning"
+        self.logger = logging.getLogger(f"dxa.execution.{self.layer}")
     
-    async def _adjust_criteria(self, validation_node: ExecutionNode, new_criteria: str) -> str:
-        """Adjust the criteria based on the validation node."""
-        validation_node.description = new_criteria
-        return validation_node
-    
-    async def _adjust_prompt(self, previous_steps: str, step_prompt: str, step_expectation: str, 
-                             previous_tried_prompt: str, previous_tried_output: str, context: ExecutionContext, agent_role: Optional[str] = None) -> str:
-        """Adjust the prompt based on the validation node."""
-        prompt_to_agent_for_next_prompt = f"""
-                                    This is previous steps: {previous_steps} \n\n
-                                    
-                                    Let me remind you about the task you need to do is: {step_prompt}, 
-                                    and the criteria need to achieve is {step_expectation}. 
-                                    This is the previous prompt you wrote: {previous_tried_prompt}, and it doesn't work.
-                                    I got this answer from that prompt: {previous_tried_output}
-                                    
-                                    First, analyze the reason why the previous prompt doesn't work, then generate a new prompt to achieve the expectation.
-                                    
-                                    Please generate a new prompt to achieve the expectation. Prompt must be direct and concise.
-                                    Do not assume the important if you are not sure 
-                                    and do not assume customized information (for example, different company will have different level ladder).
-                                    If you assume something, please explain there reason why you chose that value before assume.
-                                    
-                                    Answer format:
-                                    old_answer_analysis: Look at previous answer, analyze the reason why the previous answer is not matched to criteria.
-                                    old_prompt_analysis: Look at previous prompt, analyze the reason why the previous prompt cannot get the correct answer.
-                                    strategy_for_new_prompt: Based on the analysis above, let me know what do we need to change from the previous prompt to make it work.
-                            
-                                    additional_prompt: Based on the method to adjust prompt above, write a new prompt that can achieve the expectation here. New prompt need to be different with previous prompt.
-                                    
-                                    Do not forget the key and do not change the key format. Do not highlight the key.
-                                    
-                                    """
-        adjusted_prompt_messages = [
-            {"role": "system", "content": f"You are a {agent_role} expert."},
-        ]
-        adjusted_prompt_messages = self._update_messages(adjusted_prompt_messages, prompt_to_agent_for_next_prompt)
-        response = await context.reasoning_llm.query({"prompt": prompt_to_agent_for_next_prompt})
-        return response["content"]
-    
-    def _update_messages(self, messages: List[Dict[str, str]], text: str, role: str = "user") -> List[Dict[str, str]]:
-        messages.append({"role": role, "content": text})
-        return messages
+    async def execute_node(
+        self,
+        node: ExecutionNode, 
+        context: ExecutionContext,
+        prev_signals: Optional[List[ExecutionSignal]] = None,
+        upper_signals: Optional[List[ExecutionSignal]] = None,
+        lower_signals: Optional[List[ExecutionSignal]] = None
+    ) -> List[ExecutionSignal]:
+        """Execute a single node in the reasoning layer.
         
-    async def _execute_prosea_step_with_validation(self, node: ExecutionNode, context: ExecutionContext,
-                              validation_node: Optional[ExecutionNode] = None,
-                              original_problem: Optional[str] = None, prompt: str = None,
-                              prev_signals: Optional[List[ExecutionSignal]] = None,
-                              agent_role: Optional[str] = None) -> List[ExecutionSignal]:
-        """Execute PROSEA reasoning with validation."""
-        assert context.reasoning_llm is not None
-        is_matched = False
-        execution_messages = [
-            {"role": "system", "content": f"You are a {agent_role} expert."},
-        ]
-        while not is_matched:
-            execution_messages = self._update_messages(execution_messages, prompt)
-            # response = await context.reasoning_llm.query({"prompt": prompt})
-            # print("Prompt: ", prompt, "\n\n")
-            response = await context.reasoning_llm.conversational_query(execution_messages)
-            response_text = response["content"]
-            execution_messages = self._update_messages(execution_messages, response_text, role="assistant")
-            # print("Response: ", response_text, "\n\n")
-            is_matched, is_contradicted, refined_criteria, is_solvable_by_continuing_prompt = await self._validate_response(response=response_text, 
-                                                                                                                            node=node, validation_node=validation_node, 
-                                                                                                                            context=context, original_problem=original_problem,
-                                                                                                                            additional_prompt=prompt, prev_signals=prev_signals,
-                                                                                                                            agent_role=agent_role)
-            print("Is matched: ", is_matched)
-            if is_matched:
-                break
-            if is_contradicted:
-                validation_node = await self._adjust_criteria(validation_node=validation_node, new_criteria=refined_criteria)
-            if is_solvable_by_continuing_prompt:
-                prompt = await self._adjust_prompt(previous_steps=prev_signals, step_prompt=node.description, step_expectation=validation_node.description, 
-                                                   previous_tried_prompt=prompt, previous_tried_output=response_text, context=context, agent_role=agent_role)
-        return response
+        This method handles the execution of a reasoning node by:
+        1. Updating the node status
+        2. Executing the reasoning task based on the strategy
+        3. Processing the results
         
-    async def _execute_direct(self, node: ExecutionNode, context: ExecutionContext) -> List[ExecutionSignal]:
-        """Execute direct LLM query."""
-        self.logger.info(
-            "Starting reasoning", 
-            extra={
-                'strategy': self.strategy.value,
-                'layer': 'reasoning',
-                'prompt': node.description[:50] + "...",
-                'plan_step': getattr(context.agent_state, 'current_step_index', 0)
-            }
+        Args:
+            node: Node to execute
+            context: Execution context
+            prev_signals: Signals from previous nodes
+            upper_signals: Signals from upper execution layer
+            lower_signals: Signals from lower execution layer
+            
+        Returns:
+            List of execution signals resulting from the node execution
+        """
+        self.logger.info(f"Executing reasoning node: {node.node_id}")
+        
+        try:
+            # Check if this is a pass-through node from WORKFLOW_IS_PLAN
+            is_pass_through = False
+            if node.metadata and node.metadata.get("is_pass_through", False):
+                is_pass_through = True
+                self.logger.info(f"Executing pass-through node {node.node_id} from WORKFLOW_IS_PLAN")
+            
+            # Skip START and END nodes
+            if node.node_type in [NodeType.START, NodeType.END]:
+                return []
+            
+            # Update node status to in progress (only if not a pass-through node)
+            if self.graph and not is_pass_through:
+                self.graph.update_node_status(node.node_id, ExecutionNodeStatus.IN_PROGRESS)
+            
+            # Get the instruction from the node
+            instruction = node.description
+            
+            # Get previous steps if available
+            prev_steps = ""
+            if prev_signals:
+                prev_steps = "\n".join([
+                    signal.content.get("result", "") 
+                    for signal in prev_signals 
+                    if "result" in signal.content
+                ])
+            
+            # Get objective from node metadata, context, or default
+            objective_text = "Complete the task"
+            
+            # First check node metadata for workflow objective (highest priority)
+            if node.metadata and "workflow_objective" in node.metadata:
+                obj = node.metadata["workflow_objective"]
+                if hasattr(obj, "current"):
+                    objective_text = obj.current
+                else:
+                    objective_text = str(obj)
+            # Then check context for plan objective
+            elif context and context.current_plan and context.current_plan.objective:
+                objective_text = context.current_plan.objective.current
+            
+            # Execute the reasoning task
+            result = await self._execute_reasoning(
+                node=node,
+                context=context,
+                instruction=instruction,
+                prev_steps=prev_steps,
+                objective=objective_text
+            )
+            
+            # Update node status to completed (only if not a pass-through node)
+            if self.graph and not is_pass_through:
+                self.graph.update_node_status(node.node_id, ExecutionNodeStatus.COMPLETED)
+            
+            # Create result signal
+            return [self.create_result_signal(node.node_id, result)]
+            
+        except Exception as e:
+            self.logger.error(f"Error executing node {node.node_id}: {str(e)}")
+            
+            # Update node status to error (only if not a pass-through node)
+            if self.graph and not is_pass_through:
+                self.graph.update_node_status(node.node_id, ExecutionNodeStatus.FAILED)
+            
+            # Create error signal
+            return [self.create_error_signal(node.node_id, str(e))]
+    
+    async def _execute_task(
+        self,
+        node: ExecutionNode, 
+        context: ExecutionContext,
+        prev_signals: Optional[List[ExecutionSignal]] = None,
+        upper_signals: Optional[List[ExecutionSignal]] = None,
+        lower_signals: Optional[List[ExecutionSignal]] = None
+    ) -> List[ExecutionSignal]:
+        """Execute the task associated with a reasoning node.
+        
+        This method implements the abstract method from the Executor base class.
+        For the ReasoningExecutor, this delegates to execute_node which contains
+        the actual implementation.
+        
+        Args:
+            node: Node to execute
+            context: Execution context
+            prev_signals: Signals from previous nodes
+            upper_signals: Signals from upper execution layer
+            lower_signals: Signals from lower execution layer
+            
+        Returns:
+            List of execution signals resulting from the task execution
+        """
+        return await self.execute_node(
+            node=node,
+            context=context,
+            prev_signals=prev_signals,
+            upper_signals=upper_signals,
+            lower_signals=lower_signals
         )
-        assert context.reasoning_llm is not None
-        response = await context.reasoning_llm.query({"prompt": node.description})
-        self.logger.debug(
-            "LLM response received",
-            extra={
-                'response_length': len(response),
-                'node': node.node_id,
-                'latency': getattr(context, 'llm_latency', 0)
-            }
+    
+    async def _execute_reasoning(
+        self, 
+        node: ExecutionNode, 
+        context: ExecutionContext,
+        instruction: str, 
+        prev_steps: str, 
+        objective: str,
+        max_tokens: int = 1000
+    ) -> str:
+        """Execute a reasoning task.
+        
+        This method simulates the execution of a reasoning task by:
+        1. Creating a prompt template
+        2. Executing the reasoning with the appropriate strategy
+        3. Returning the result
+        
+        Args:
+            node: Node to execute
+            context: Execution context
+            instruction: Instruction for the reasoning task
+            prev_steps: Previous steps in the reasoning process
+            objective: Objective of the reasoning task
+            max_tokens: Maximum tokens for the response
+            
+        Returns:
+            Result of the reasoning task
+        """
+        self.logger.info(f"Executing reasoning task: {instruction}")
+        
+        # For now, just simulate the LLM call
+        # In a real implementation, this would use the reasoning_llm from context
+        
+        # Create a simple result based on the node ID and strategy
+        result = f"Reasoning result for node {node.node_id} using strategy {self.strategy.name}"
+        
+        return result
+    
+    def _create_graph(
+        self, 
+        upper_graph: ExecutionGraph, 
+        objective: Optional[Objective] = None, 
+        context: Optional[ExecutionContext] = None
+    ) -> ExecutionGraph:
+        """Create a reasoning execution graph.
+        
+        For reasoning execution, the graph is typically created from the plan graph.
+        
+        Args:
+            upper_graph: Graph from the upper execution layer (plan)
+            objective: Execution objective
+            context: Execution context
+            
+        Returns:
+            Reasoning execution graph
+        """
+        # If we already have a graph, return it
+        if self.graph is not None:
+            return self.graph
+        
+        # Create a new reasoning graph
+        graph = ExecutionGraph(
+            objective=objective or (upper_graph.objective if upper_graph else Objective("Execute reasoning")),
+            name=f"reasoning_for_{upper_graph.name if upper_graph else 'unnamed'}"
         )
-        return [ExecutionSignal(
-            type=ExecutionSignalType.DATA_RESULT,
-            content={
-                "result": response,
-                "node": node.node_id,
-            }
-        )]
-
-    async def _execute_cot(self, node: ExecutionNode, context: ExecutionContext) -> List[ExecutionSignal]:
-        """Execute chain-of-thought reasoning."""
-        prompt = f"Let's solve this step by step:\nQuestion: {node.description}\nThought process:"
-        assert context.reasoning_llm is not None
-        response = await context.reasoning_llm.query({"prompt": prompt})
-        return [ExecutionSignal(type=ExecutionSignalType.DATA_RESULT, content=response)]
-
-    async def _execute_ooda(self, node: ExecutionNode, context: ExecutionContext) -> List[ExecutionSignal]:
-        """Execute OODA loop reasoning."""
-        stage = node.metadata.get("ooda_stage", 0)
-        stages = ["observe", "orient", "decide", "act"]
-
-        if stage >= len(stages):
-            return []
-
-        current_stage = stages[stage]
-        prompt = f"{current_stage.capitalize()}: {node.description}"
-        assert context.reasoning_llm is not None
-        loop = asyncio.get_event_loop()
-        response = loop.run_until_complete(context.reasoning_llm.query({"prompt": prompt}))
-
-        node.metadata["ooda_stage"] = stage + 1
-        return [ExecutionSignal(type=ExecutionSignalType.DATA_RESULT, content=response)]
-
-    async def _execute_dana(self, node: ExecutionNode, context: ExecutionContext) -> List[ExecutionSignal]:
-        """Execute DANA pattern reasoning."""
-        # For now, same as direct
-        return await self._execute_direct(node, context)
+        
+        # Copy nodes and edges from upper graph if available
+        if upper_graph:
+            for node_id, node in upper_graph.nodes.items():
+                graph.add_node(
+                    ExecutionNode(
+                        node_id=node.node_id,
+                        node_type=node.node_type,
+                        description=node.description,
+                        metadata=node.metadata.copy() if node.metadata else {}
+                    )
+                )
+                
+            for edge in upper_graph.edges:
+                graph.add_edge_between(edge.source, edge.target)
+        
+        return graph 
