@@ -289,8 +289,11 @@ class Executor(ABC, Generic[StrategyT]):
         This method handles the execution of a single node, including:
         1. Checking if the node should be executed
         2. Preparing the node for execution
-        3. Executing the node's task
+        3. Executing the node's task (implementing the specific execution logic)
         4. Processing the results
+        
+        Subclasses must implement this method with the specific execution
+        logic for their node types.
         
         Args:
             node: Node to execute
@@ -301,32 +304,6 @@ class Executor(ABC, Generic[StrategyT]):
             
         Returns:
             List of execution signals resulting from the node execution
-        """
-        pass
-    
-    @abstractmethod
-    async def _execute_task(
-        self,
-        node: ExecutionNode, 
-        context: ExecutionContext,
-        prev_signals: Optional[List[ExecutionSignal]] = None,
-        upper_signals: Optional[List[ExecutionSignal]] = None,
-        lower_signals: Optional[List[ExecutionSignal]] = None
-    ) -> List[ExecutionSignal]:
-        """Execute the task associated with a node.
-        
-        This is the core method that implements the specific execution
-        logic for a node. Subclasses must implement this method.
-        
-        Args:
-            node: Node to execute
-            context: Execution context
-            prev_signals: Signals from previous nodes
-            upper_signals: Signals from upper execution layer
-            lower_signals: Signals from lower execution layer
-            
-        Returns:
-            List of execution signals resulting from the task execution
         """
         pass
     

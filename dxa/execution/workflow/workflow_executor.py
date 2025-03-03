@@ -9,10 +9,12 @@ from ..execution_graph import ExecutionGraph
 from ..execution_types import ExecutionNode, ExecutionSignal, Objective, ExecutionNodeStatus
 from ...common.graph import NodeType
 from .workflow_strategy import WorkflowStrategy
+from .workflow import Workflow
 
 if TYPE_CHECKING:
     from ..planning.plan_executor import PlanExecutor
     from ..planning.plan import Plan
+    from ..reasoning.reasoning import Reasoning
 
 
 class WorkflowExecutor(Executor[WorkflowStrategy]):
@@ -46,49 +48,46 @@ class WorkflowExecutor(Executor[WorkflowStrategy]):
     async def execute_workflow(self, workflow: ExecutionGraph, context: ExecutionContext) -> List[ExecutionSignal]:
         """Execute a workflow graph.
         
-        This is the main entry point for workflow execution, used by the agent runtime.
-        
         Args:
-            workflow: Workflow graph to execute
-            context: Execution context
+            workflow: The workflow graph to execute
+            context: The execution context
             
         Returns:
-            List of execution signals resulting from the workflow execution
+            List of execution signals
         """
-        self.logger.info(f"Executing workflow: {workflow.name if hasattr(workflow, 'name') else 'unnamed'}")
+        self.logger.info(f"Executing workflow: {workflow.name if workflow.name else 'unnamed'}")
         
-        # Set the workflow as the current graph
+        # Set the current graph to the workflow
         self.graph = workflow
+        context.current_workflow = cast(Workflow, workflow)
+        
+        # Import here to avoid circular imports
+        from ..planning.plan import Plan
+        from ..reasoning.reasoning import Reasoning
         
         # Create a plan graph and set it in the context
-        plan = self.plan_executor._create_graph(
-            upper_graph=workflow,
-            objective=workflow.objective,
-            context=context
-        )
-        self.plan_executor.graph = plan
-        
-        # Set the plan in the context
-        from ..planning import Plan
+        plan = self.plan_executor._create_graph(workflow, workflow.objective, context)
         context.current_plan = cast(Plan, plan)
         
-        # Create a reasoning graph and set it in the context
-        reasoning = self.plan_executor.reasoning_executor._create_graph(
-            upper_graph=plan,
-            objective=workflow.objective,
-            context=context
-        )
-        self.plan_executor.reasoning_executor.graph = reasoning
+        # Also set the plan in the plan executor
+        self.plan_executor.graph = plan
         
-        # Set the reasoning in the context
-        from ..reasoning import Reasoning
+        # Create a reasoning graph and set it in the context
+        reasoning = self.plan_executor.reasoning_executor._create_graph(plan, workflow.objective, context)
         context.current_reasoning = cast(Reasoning, reasoning)
         
+        # Also set the reasoning in the reasoning executor
+        self.plan_executor.reasoning_executor.graph = reasoning
+        
         # Execute the graph
-        return await self.execute_graph(
-            upper_graph=workflow,
-            context=context
-        )
+        signals = await self.execute_graph(workflow, context)
+        
+        # Update cursor to the END node after execution
+        terminal_nodes = workflow.get_terminal_nodes()
+        if terminal_nodes and len(terminal_nodes) > 0:
+            workflow.update_cursor(terminal_nodes[0].node_id)
+        
+        return signals
     
     async def execute_node(
         self,
@@ -165,38 +164,6 @@ class WorkflowExecutor(Executor[WorkflowStrategy]):
             
             # Create error signal
             return [self._create_error_signal(node.node_id, str(e))]
-    
-    async def _execute_task(
-        self,
-        node: ExecutionNode, 
-        context: ExecutionContext,
-        prev_signals: Optional[List[ExecutionSignal]] = None,
-        upper_signals: Optional[List[ExecutionSignal]] = None,
-        lower_signals: Optional[List[ExecutionSignal]] = None
-    ) -> List[ExecutionSignal]:
-        """Execute the task associated with a workflow node.
-        
-        This method implements the abstract method from the Executor base class.
-        For the WorkflowExecutor, this delegates to execute_node which contains
-        the actual implementation.
-        
-        Args:
-            node: Node to execute
-            context: Execution context
-            prev_signals: Signals from previous nodes
-            upper_signals: Signals from upper execution layer
-            lower_signals: Signals from lower execution layer
-            
-        Returns:
-            List of execution signals resulting from the task execution
-        """
-        return await self.execute_node(
-            node=node,
-            context=context,
-            prev_signals=prev_signals,
-            upper_signals=upper_signals,
-            lower_signals=lower_signals
-        )
     
     def _create_pass_through_plan(self, node: ExecutionNode) -> 'Plan':
         """Create a pass-through plan for WORKFLOW_IS_PLAN strategy.
@@ -291,7 +258,6 @@ class WorkflowExecutor(Executor[WorkflowStrategy]):
             workflow = upper_graph
         else:
             # If no graph is available, create a minimal one
-            from ..workflow.workflow import Workflow
             workflow = Workflow(
                 objective=objective or Objective("Execute workflow"),
                 name="default_workflow"
@@ -322,57 +288,4 @@ class WorkflowExecutor(Executor[WorkflowStrategy]):
             from ..reasoning import Reasoning
             context.current_reasoning = cast(Reasoning, reasoning)
         
-        return workflow
-    
-    async def _custom_graph_traversal(
-        self,
-        graph: ExecutionGraph,
-        context: ExecutionContext,
-        upper_signals: Optional[List[ExecutionSignal]] = None
-    ) -> Optional[List[ExecutionSignal]]:
-        """Implement custom traversal strategies for workflows.
-        
-        For WORKFLOW_IS_PLAN strategy, this delegates the entire workflow
-        to the plan executor rather than traversing it node by node.
-        
-        Args:
-            graph: Execution graph to traverse
-            context: Execution context
-            upper_signals: Signals from upper execution layer
-            
-        Returns:
-            List of signals if custom traversal was performed, None otherwise
-        """
-        # If using WORKFLOW_IS_PLAN strategy, delegate the entire workflow
-        # to the plan executor
-        if self.strategy == WorkflowStrategy.WORKFLOW_IS_PLAN:
-            # Get the first real node (not START)
-            start_node = graph.get_start_node()
-            if not start_node:
-                self.logger.error("No START node found in graph")
-                return []
-            
-            # Get the next nodes after START
-            next_nodes = graph.get_valid_transitions(start_node.node_id, context)
-            if not next_nodes:
-                self.logger.error("No nodes to execute after START")
-                return []
-            
-            # Execute the first real node, which will delegate the entire workflow
-            first_node = next_nodes[0]
-            signals = await self.execute_node(
-                node=first_node,
-                context=context,
-                prev_signals=upper_signals,
-                upper_signals=upper_signals
-            )
-            
-            # Update cursor to END node after execution
-            end_nodes = graph.get_terminal_nodes()
-            if end_nodes:
-                graph.update_cursor(end_nodes[0].node_id)
-            
-            return signals
-        
-        # For other strategies, use the default traversal
-        return None 
+        return workflow 
