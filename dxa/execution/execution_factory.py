@@ -2,11 +2,9 @@
 
 from typing import Dict, Any, Optional, Union, List, Type, TypeVar
 from pathlib import Path
-from ..common.graph import Edge
-from .execution_types import Objective, ExecutionNode
+from ..common.graph import NodeType
+from .execution_types import Objective, ExecutionNode, ExecutionEdge
 from .execution_graph import ExecutionGraph
-import json
-import os
 
 # Generic type for strategy enums
 StrategyT = TypeVar('StrategyT')
@@ -33,15 +31,12 @@ class ExecutionFactory:
                 if not source or not target:
                     continue
                     
-                edge = Edge(source=source, target=target)
-                if condition:
-                    edge.metadata = {"condition": condition}
-                    
+                edge = ExecutionEdge(source=source, target=target, condition=condition)
                 graph.add_edge(edge)
         else:
             # Otherwise, create a linear sequence
             for i in range(len(node_ids) - 1):
-                graph.add_edge(Edge(source=node_ids[i], target=node_ids[i + 1]))
+                graph.add_edge(ExecutionEdge(source=node_ids[i], target=node_ids[i + 1]))
 
     @classmethod
     def create_from_config(cls,

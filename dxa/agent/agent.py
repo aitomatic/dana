@@ -56,9 +56,9 @@ class Agent:
         self._resources = None
         self._io = None
         self._runtime: Optional[AgentRuntime] = None
-        self._workflow_strategy = None
-        self._planning_strategy = None
-        self._reasoning_strategy = None
+        self._workflow_strategy = WorkflowStrategy.DEFAULT
+        self._planning_strategy = PlanStrategy.DEFAULT
+        self._reasoning_strategy = ReasoningStrategy.DEFAULT
 
     @property
     def workflow_strategy(self) -> WorkflowStrategy:
