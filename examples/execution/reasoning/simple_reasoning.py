@@ -11,17 +11,17 @@ def main():
     objective = "Solve the equation: 2x + 5 = 15"
     
     # Create reasoning from default config
-    reasoning = ReasoningFactory.graph_from_yaml(
+    reasoning = ReasoningFactory.create_from_config(
         "default",
         objective=Objective(objective)
     )
     
     # Print reasoning information
-    print(f"Reasoning Objective: {reasoning.objective.original}")
-    print(f"Number of nodes: {len(reasoning.graph.nodes)}")
+    print(f"Reasoning Objective: {reasoning.objective.original if reasoning.objective else 'None'}")
+    print(f"Number of nodes: {len(reasoning.nodes)}")
     
     # Print node details
-    for node_id, node in reasoning.graph.nodes.items():
+    for node_id, node in reasoning.nodes.items():
         print(f"\nNode ID: {node_id}")
         print(f"  Description: {node.description}")
         
