@@ -48,8 +48,7 @@ class PipelineContext(ExecutionContext):
 
     async def cleanup_buffers(self) -> None:
         """Cleanup all buffers."""
-        DXA_LOGGER.debug("Cleaning up pipeline buffers", 
-                            buffer_count=len(self.buffers))
+        DXA_LOGGER.debug(f"Cleaning up pipeline buffers (count: {len(self.buffers)})")
         for buffer in self.buffers.values():
             while not buffer.empty():
                 try:

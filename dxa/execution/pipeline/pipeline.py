@@ -136,9 +136,10 @@ class Pipeline(ExecutionGraph):
     async def execute(self) -> Dict[str, Any]:
         """Execute pipeline."""
         start_time = perf_counter()
-        DXA_LOGGER.info(f"Starting pipeline '{self.name}'", 
-                        nodes=len(self.nodes),
-                        buffer_size=self.buffer_size)
+        DXA_LOGGER.info(
+            f"Starting pipeline '{self.name}' with {len(self.nodes)} nodes "
+            f"and buffer size {self.buffer_size}"
+        )
         
         try:
             context = self.context
@@ -148,11 +149,16 @@ class Pipeline(ExecutionGraph):
                 self.context = context
         
             # Execute pipeline
-            return await self._execute()
-        finally:
-            DXA_LOGGER.info(f"Completed pipeline '{self.name}'", 
-                            duration=perf_counter() - start_time)
-        
+            result = await self._execute()
+            
+            duration = perf_counter() - start_time
+            DXA_LOGGER.info(f"Completed pipeline '{self.name}' in {duration:.2f} seconds")
+            
+            return result
+        except Exception as e:
+            DXA_LOGGER.error(f"Pipeline '{self.name}' failed: {str(e)}")
+            raise
+
     async def _execute(self) -> Dict[str, Any]:
         """Execute pipeline (raw, i.e. without context setup)."""
         if self.context is None:
@@ -201,15 +207,16 @@ class Pipeline(ExecutionGraph):
         
         for node_id, node in self.nodes.items():
             if isinstance(node, PipelineNode) and node.buffer_config["enabled"]:
-                DXA_LOGGER.debug(f"Setting up buffer for {node_id}", 
-                                 size=node.buffer_config["size"])
-                await pipeline_context.setup_buffer(node_id, node.buffer_config["size"])
+                buffer_size = node.buffer_config["size"]
+                DXA_LOGGER.debug(f"Setting up buffer for {node_id} with size {buffer_size}")
+                await pipeline_context.setup_buffer(node_id, buffer_size)
         
         self._buffers_initialized = True
 
     async def cleanup_node_buffers(self, context: ExecutionContext) -> None:
         """Cleanup buffers for all nodes."""
         context = cast(PipelineContext, context)
+        DXA_LOGGER.debug("Cleaning up all buffers")
         await context.cleanup_buffers()
 
     async def send_data_signal(
