@@ -13,7 +13,7 @@ def main():
     objective = "Design a database schema for a library management system."
     
     # Create planning from default config
-    plan = PlanFactory.graph_from_yaml(
+    plan = PlanFactory.create_from_config(
         "default",
         objective=Objective(objective)
     )
