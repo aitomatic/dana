@@ -6,7 +6,13 @@ from typing import List, Optional
 from ..executor import Executor
 from ..execution_context import ExecutionContext
 from ..execution_graph import ExecutionGraph
-from ..execution_types import ExecutionNode, ExecutionSignal, Objective, ExecutionNodeStatus
+from ..execution_types import (
+    ExecutionNode, 
+    ExecutionSignal, 
+    Objective, 
+    ExecutionNodeStatus,
+    ExecutionSignalType
+)
 from ...common.graph import NodeType
 from .reasoning_strategy import ReasoningStrategy
 
@@ -48,7 +54,7 @@ class ReasoningExecutor(Executor[ReasoningStrategy]):
         
         This method handles the execution of a reasoning node by:
         1. Updating the node status
-        2. Executing the reasoning task based on the strategy
+        2. Executing the reasoning task
         3. Processing the results
         
         Args:
@@ -64,71 +70,62 @@ class ReasoningExecutor(Executor[ReasoningStrategy]):
         self.logger.info(f"Executing reasoning node: {node.node_id}")
         
         try:
-            # Check if this is a pass-through node from WORKFLOW_IS_PLAN
-            is_pass_through = False
-            if node.metadata and node.metadata.get("is_pass_through", False):
-                is_pass_through = True
-                self.logger.info(f"Executing pass-through node {node.node_id} from WORKFLOW_IS_PLAN")
-            
             # Skip START and END nodes
             if node.node_type in [NodeType.START, NodeType.END]:
                 return []
             
-            # Update node status to in progress (only if not a pass-through node)
-            if self.graph and not is_pass_through:
+            # Update node status to in progress
+            if self.graph:
                 self.graph.update_node_status(node.node_id, ExecutionNodeStatus.IN_PROGRESS)
             
-            # Get the instruction from the node
-            instruction = node.description
+            # Get the instruction from the node metadata
+            instruction = node.metadata.get("instruction", "")
+            if not instruction and node.metadata.get("description"):
+                instruction = node.metadata.get("description", "")
             
-            # Get previous steps if available
-            prev_steps = ""
-            if prev_signals:
-                prev_steps = "\n".join([
-                    signal.content.get("result", "") 
-                    for signal in prev_signals 
-                    if "result" in signal.content
-                ])
+            # If no instruction, use the node ID
+            if not instruction:
+                instruction = f"Execute task {node.node_id}"
             
-            # Get objective from node metadata, context, or default
-            objective_text = "Complete the task"
-            
-            # First check node metadata for workflow objective (highest priority)
-            if node.metadata and "workflow_objective" in node.metadata:
-                obj = node.metadata["workflow_objective"]
-                if hasattr(obj, "current"):
-                    objective_text = obj.current
-                else:
-                    objective_text = str(obj)
-            # Then check context for plan objective
-            elif context and context.current_plan and context.current_plan.objective:
-                objective_text = context.current_plan.objective.current
+            # Get the objective from the graph
+            objective = None
+            if self.graph and hasattr(self.graph, "objective"):
+                objective = self.graph.objective
             
             # Execute the reasoning task
-            result = await self._execute_reasoning(
+            result = await self._execute_reasoning_task(
                 node=node,
                 context=context,
                 instruction=instruction,
-                prev_steps=prev_steps,
-                objective=objective_text
+                prev_steps=None,  # We don't have previous steps yet
+                objective=objective,
+                max_tokens=1000
             )
             
-            # Update node status to completed (only if not a pass-through node)
-            if self.graph and not is_pass_through:
+            # Update node status to completed
+            if self.graph:
                 self.graph.update_node_status(node.node_id, ExecutionNodeStatus.COMPLETED)
             
             # Create result signal
-            return [self.create_result_signal(node.node_id, result)]
+            signal = ExecutionSignal(
+                type=ExecutionSignalType.DATA_RESULT,
+                content={
+                    "node": node.node_id,
+                    "result": result
+                }
+            )
+            
+            return [signal]
             
         except Exception as e:
             self.logger.error(f"Error executing node {node.node_id}: {str(e)}")
             
-            # Update node status to error (only if not a pass-through node)
-            if self.graph and not is_pass_through:
+            # Update node status to error
+            if self.graph:
                 self.graph.update_node_status(node.node_id, ExecutionNodeStatus.FAILED)
             
             # Create error signal
-            return [self.create_error_signal(node.node_id, str(e))]
+            return [self._create_error_signal(node.node_id, str(e))]
     
     async def _execute_task(
         self,
@@ -162,21 +159,16 @@ class ReasoningExecutor(Executor[ReasoningStrategy]):
             lower_signals=lower_signals
         )
     
-    async def _execute_reasoning(
-        self, 
-        node: ExecutionNode, 
+    async def _execute_reasoning_task(
+        self,
+        node: ExecutionNode,
         context: ExecutionContext,
-        instruction: str, 
-        prev_steps: str, 
-        objective: str,
-        max_tokens: int = 1000
+        instruction: str,
+        prev_steps: Optional[List[str]] = None,
+        objective: Optional[Objective] = None,
+        max_tokens: Optional[int] = None
     ) -> str:
-        """Execute a reasoning task.
-        
-        This method simulates the execution of a reasoning task by:
-        1. Creating a prompt template
-        2. Executing the reasoning with the appropriate strategy
-        3. Returning the result
+        """Execute a reasoning task using LLM.
         
         Args:
             node: Node to execute
@@ -191,13 +183,48 @@ class ReasoningExecutor(Executor[ReasoningStrategy]):
         """
         self.logger.info(f"Executing reasoning task: {instruction}")
         
-        # For now, just simulate the LLM call
-        # In a real implementation, this would use the reasoning_llm from context
-        
-        # Create a simple result based on the node ID and strategy
-        result = f"Reasoning result for node {node.node_id} using strategy {self.strategy.name}"
-        
-        return result
+        # Use the reasoning_llm from context to generate a response
+        if context and context.reasoning_llm:
+            try:
+                # Prepare the prompt
+                prompt = instruction
+                if objective:
+                    # Access the objective text safely
+                    objective_text = getattr(objective, "description", str(objective))
+                    prompt = f"Objective: {objective_text}\n\nTask: {instruction}"
+                
+                # Add previous steps if available
+                if prev_steps and len(prev_steps) > 0:
+                    steps_text = "\n".join([f"- {step}" for step in prev_steps])
+                    prompt = f"{prompt}\n\nPrevious steps:\n{steps_text}"
+                
+                # Query the LLM
+                response = await context.reasoning_llm.query({
+                    "prompt": prompt,
+                    "system_prompt": (
+                        "You are a helpful AI assistant. "
+                        "Provide a clear, accurate, and detailed response."
+                    ),
+                    "parameters": {
+                        "temperature": 0.7,
+                        "max_tokens": max_tokens or 1000
+                    }
+                })
+                
+                # Extract and return the content
+                if response and "content" in response:
+                    return response["content"]
+                else:
+                    self.logger.error("LLM response did not contain content")
+                    return "Error: LLM response did not contain content"
+                    
+            except Exception as e:
+                self.logger.error(f"Error executing reasoning task: {str(e)}")
+                return f"Error executing reasoning task: {str(e)}"
+        else:
+            # Fallback to placeholder if no LLM is available
+            self.logger.warning("No reasoning LLM available in context, using placeholder")
+            return f"Reasoning result for node {node.node_id} using strategy {self.strategy.name}"
     
     def _create_graph(
         self, 
