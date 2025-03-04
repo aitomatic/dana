@@ -250,15 +250,14 @@ class ExecutionGraph(DirectedGraph):
                 if not source or not target:
                     continue
                     
-                edge = Edge(source=source, target=target)
-                if condition:
-                    edge.metadata = {"condition": condition}
-                    
+                # Create ExecutionEdge instead of Edge
+                edge = ExecutionEdge(source=source, target=target, condition=condition)
                 graph.add_edge(edge)
         else:
             # Otherwise, create a linear sequence
             for i in range(len(node_ids) - 1):
-                graph.add_edge(Edge(source=node_ids[i], target=node_ids[i + 1]))
+                # Create ExecutionEdge instead of Edge
+                graph.add_edge(ExecutionEdge(source=node_ids[i], target=node_ids[i + 1]))
 
     def add_step(self, step_id: str, description: str, **kwargs) -> ExecutionNode:
         """Add an execution step."""
