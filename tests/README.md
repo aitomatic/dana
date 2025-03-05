@@ -13,15 +13,18 @@ Comprehensive test coverage for the DXA framework.
 ## Test Organization
 
 - **agent/**: Agent system tests
-  - Runtime execution
-  - State management
+  - Strategy implementation
   - Agent configuration
 
-- **core/**: Component tests
+- **execution/**: Execution system tests
+  - Planning functionality
   - Reasoning patterns
-  - Resource implementations
-  - I/O handlers
-  - Capabilities
+  - Workflow implementation
+  - Factory patterns
+
+- **integration/**: Cross-component tests
+  - Default strategies
+  - Workflow-plan integration
 
 ## Running Tests
 
@@ -30,7 +33,13 @@ Comprehensive test coverage for the DXA framework.
 pytest
 
 # Run specific module
-pytest tests/core/reasoning/
+pytest tests/execution/reasoning/
+
+# Run specific test file
+pytest tests/execution/planning/test_plan_factory.py
+
+# Run specific test case
+pytest tests/execution/planning/test_plan_factory.py::TestPlanFactory::test_create_plan
 
 # Run with coverage
 pytest --cov=dxa
