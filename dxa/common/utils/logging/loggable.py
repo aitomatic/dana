@@ -116,7 +116,7 @@ class Loggable(ABC):
         logger = DXA_LOGGER.getLogger(logger_name)
         
         # Ensure the logger is configured
-        if not logger._configured:
+        if not logger._configured:  # pylint: disable=protected-access
             # Configure the logger with a console handler
             logger.configure(
                 console=True,
