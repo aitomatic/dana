@@ -14,7 +14,6 @@ from .workflow import Workflow
 if TYPE_CHECKING:
     from ..planning.plan_executor import PlanExecutor
     from ..planning.plan import Plan
-    from ..reasoning.reasoning import Reasoning
 
 
 class WorkflowExecutor(Executor[WorkflowStrategy]):
@@ -33,7 +32,7 @@ class WorkflowExecutor(Executor[WorkflowStrategy]):
         plan_executor: 'PlanExecutor', 
         strategy: WorkflowStrategy = WorkflowStrategy.DEFAULT
     ):
-        """Initialize workflow executor.
+        """Initialize the workflow executor.
         
         Args:
             plan_executor: Plan executor to use for executing plans
@@ -43,7 +42,7 @@ class WorkflowExecutor(Executor[WorkflowStrategy]):
         self.plan_executor = plan_executor
         self.strategy = strategy
         self.layer = "workflow"
-        self.logger = logging.getLogger(f"dxa.execution.{self.layer}")
+        self.logger = logging.getLogger("dxa.execution.%s" % self.layer)
     
     async def execute_workflow(self, workflow: ExecutionGraph, context: ExecutionContext) -> List[ExecutionSignal]:
         """Execute a workflow graph.
@@ -55,7 +54,7 @@ class WorkflowExecutor(Executor[WorkflowStrategy]):
         Returns:
             List of execution signals
         """
-        self.logger.info(f"Executing workflow: {workflow.name if workflow.name else 'unnamed'}")
+        self.logger.info("Executing workflow: %s", workflow.name if workflow.name else 'unnamed')
         
         # Set the current graph to the workflow
         self.graph = workflow
@@ -97,33 +96,29 @@ class WorkflowExecutor(Executor[WorkflowStrategy]):
         upper_signals: Optional[List[ExecutionSignal]] = None,
         lower_signals: Optional[List[ExecutionSignal]] = None
     ) -> List[ExecutionSignal]:
-        """Execute a single node in the workflow.
-        
-        This method handles the execution of a workflow node by:
-        1. Updating the node status
-        2. Delegating to the plan executor based on the strategy
-        3. Processing the results
+        """Execute a workflow node.
         
         Args:
-            node: Node to execute
-            context: Execution context
-            prev_signals: Signals from previous nodes
+            node: The node to execute
+            context: The execution context
+            prev_signals: Signals from previous node execution
             upper_signals: Signals from upper execution layer
             lower_signals: Signals from lower execution layer
             
         Returns:
-            List of execution signals resulting from the node execution
+            List of execution signals
         """
-        self.logger.info(f"Executing workflow node: {node.node_id}")
-        
         try:
+            # Log node execution
+            self.logger.info("Executing workflow node: %s", node.node_id)
+            
+            # Update node status
+            if self.graph:
+                self.graph.update_node_status(node.node_id, ExecutionNodeStatus.IN_PROGRESS)
+            
             # Skip START and END nodes
             if node.node_type in [NodeType.START, NodeType.END]:
                 return []
-            
-            # Update node status to in progress
-            if self.graph:
-                self.graph.update_node_status(node.node_id, ExecutionNodeStatus.IN_PROGRESS)
             
             # Handle WORKFLOW_IS_PLAN strategy
             if self.strategy == WorkflowStrategy.WORKFLOW_IS_PLAN:
@@ -155,8 +150,8 @@ class WorkflowExecutor(Executor[WorkflowStrategy]):
             
             return signals
             
-        except Exception as e:
-            self.logger.error(f"Error executing node {node.node_id}: {str(e)}")
+        except Exception as e:  # pylint: disable=broad-except
+            self.logger.error("Error executing node %s: %s", node.node_id, str(e))
             
             # Update node status to error
             if self.graph:
