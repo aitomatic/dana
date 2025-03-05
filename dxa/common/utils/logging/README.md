@@ -37,6 +37,7 @@ class MyService(Loggable):
 2. **Execution Layer Support**: For execution layer classes (with a `layer` attribute), the logger is automatically named `dxa.execution.<layer>`.
 
 3. **Convenience Methods**: Direct access to logging methods:
+
    ```python
    self.debug("Debug message")
    self.info("Info message")
@@ -45,12 +46,14 @@ class MyService(Loggable):
    ```
 
 4. **Class-level Logging**: Static method for class-level logging:
+
    ```python
    logger = MyClass.get_class_logger()
    logger.info("Class-level log message")
    ```
 
 5. **Customization Options**: Optional parameters for custom logger names and prefixes:
+
    ```python
    super().__init__(logger_name="custom.logger", prefix="MyComponent")
    ```
@@ -63,7 +66,7 @@ To migrate existing classes to use `Loggable`:
 2. Replace your logger initialization code with a call to `super().__init__()`
 3. For classes with a `layer` attribute, ensure it's set before calling `super().__init__()`
 
-#### Before:
+#### Before
 
 ```python
 class Executor:
@@ -72,7 +75,7 @@ class Executor:
         self.logger = logging.getLogger(f"dxa.execution.{self.layer}")
 ```
 
-#### After:
+#### After
 
 ```python
 class Executor(Loggable):
@@ -103,4 +106,4 @@ class ResourceExecutor(Resource, Loggable):
 See the example files in `examples/basic/`:
 
 - `loggable_example.py`: Demonstrates basic and advanced usage
-- `loggable_migration.py`: Shows how to migrate existing classes 
+- `loggable_migration.py`: Shows how to migrate existing classes

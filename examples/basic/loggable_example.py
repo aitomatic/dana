@@ -106,7 +106,7 @@ def main():
         small_avg = processor.analyze([1, 2])
         print(f"Small average: {small_avg}")
         
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-exception-caught
         print(f"Error: {e}")
     
     print("\n=== NESTED COMPONENT EXAMPLE ===")
