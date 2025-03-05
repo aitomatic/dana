@@ -133,26 +133,23 @@ class Pipeline(ExecutionGraph):
         
         ExecutionGraph._add_start_end_nodes(graph=self, node_cls=PipelineNode)
 
-    async def execute(self) -> Dict[str, Any]:
-        """Execute pipeline."""
-        start_time = perf_counter()
-        DXA_LOGGER.info(f"Starting pipeline '{self.name}'", 
-                        nodes=len(self.nodes),
-                        buffer_size=self.buffer_size)
+    async def execute(self, context: Optional[PipelineContext] = None) -> Dict[str, Any]:
+        """Execute pipeline with context."""
+        if context is None:
+            context = PipelineContext()
+            
+        self.context = context
         
         try:
-            context = self.context
-            if context is None:
-                context = PipelineContext()
-                await self.setup(context)
-                self.context = context
-        
-            # Execute pipeline
-            return await self._execute()
-        finally:
-            DXA_LOGGER.info(f"Completed pipeline '{self.name}'", 
-                            duration=perf_counter() - start_time)
-        
+            start_time = perf_counter()
+            result = await self._execute()
+            duration = perf_counter() - start_time
+            DXA_LOGGER.info("Completed pipeline '%s' in %.2f seconds", self.name, duration)
+            return result
+        except Exception as e:
+            DXA_LOGGER.error("Pipeline '%s' failed: %s", self.name, str(e))
+            raise
+
     async def _execute(self) -> Dict[str, Any]:
         """Execute pipeline (raw, i.e. without context setup)."""
         if self.context is None:
@@ -192,24 +189,29 @@ class Pipeline(ExecutionGraph):
         return [self.nodes[edge.target] for edge in edges]
 
     async def setup_node_buffers(self, context: ExecutionContext) -> None:
-        """Setup buffers for all nodes that need them."""
+        """Setup buffers for all nodes in pipeline."""
+        if not isinstance(context, PipelineContext):
+            raise TypeError("Expected PipelineContext, got %s" % type(context))
+            
+        context = cast(PipelineContext, context)
+        
+        # Skip if buffers already initialized
         if self._buffers_initialized:
             return
-        
-        # Cast to PipelineContext to access buffer methods
-        pipeline_context = cast(PipelineContext, context)
-        
+            
+        # Setup buffers for all nodes
         for node_id, node in self.nodes.items():
             if isinstance(node, PipelineNode) and node.buffer_config["enabled"]:
-                DXA_LOGGER.debug(f"Setting up buffer for {node_id}", 
-                                 size=node.buffer_config["size"])
-                await pipeline_context.setup_buffer(node_id, node.buffer_config["size"])
-        
+                buffer_size = node.buffer_config["size"]
+                DXA_LOGGER.debug("Setting up buffer for %s with size %d", node_id, buffer_size)
+                await context.setup_buffer(node_id, buffer_size)
+                
         self._buffers_initialized = True
 
     async def cleanup_node_buffers(self, context: ExecutionContext) -> None:
         """Cleanup buffers for all nodes."""
         context = cast(PipelineContext, context)
+        DXA_LOGGER.debug("Cleaning up all buffers")
         await context.cleanup_buffers()
 
     async def send_data_signal(

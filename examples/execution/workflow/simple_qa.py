@@ -2,7 +2,7 @@
 
 from typing import Dict, Any
 from dxa.agent import Agent
-from dxa.execution import PlanningStrategy, WorkflowFactory
+from dxa.execution import PlanStrategy, WorkflowFactory
 from dxa.common import DXA_LOGGER
 
 def simple_qa(question: str) -> Dict[str, Any]:
@@ -11,7 +11,7 @@ def simple_qa(question: str) -> Dict[str, Any]:
 
 def workflow_qa(question: str) -> Dict[str, Any]:
     """Question-answer using workflow-is-plan strategy."""
-    agent = Agent().with_planning(PlanningStrategy.WORKFLOW_IS_PLAN)
+    agent = Agent().with_planning(PlanStrategy.WORKFLOW_IS_PLAN)
     workflow = WorkflowFactory.create_sequential_workflow(
         objective=question,
         commands=[question]
@@ -20,7 +20,7 @@ def workflow_qa(question: str) -> Dict[str, Any]:
 
 def two_step_qa(question: str) -> Dict[str, Any]:
     """Two-step summarize-explain using workflow-is-plan strategy."""
-    agent = Agent().with_planning(PlanningStrategy.WORKFLOW_IS_PLAN)
+    agent = Agent().with_planning(PlanStrategy.WORKFLOW_IS_PLAN)
     workflow = WorkflowFactory.create_sequential_workflow(
         objective=question,
         commands=[

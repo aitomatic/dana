@@ -2,17 +2,54 @@
 
 from time import perf_counter
 from typing import Any, Optional, List, cast
+from ...execution.executor import Executor
 from ...execution import (
-    Executor, ExecutionNode, ExecutionGraph,
+    ExecutionNode, ExecutionGraph,
     ExecutionSignal, ExecutionContext,
     ExecutionSignalType
 )
-from .pipeline import PipelineNode
+from .pipeline import PipelineNode, Pipeline
 from .pipeline_context import PipelineContext
 from ...common import DXA_LOGGER
 
 class PipelineExecutor(Executor):
     """Executes pipeline steps in sequence."""
+
+    async def execute(self, pipeline: 'Pipeline', context: 'PipelineContext') -> List[ExecutionSignal]:
+        """Execute the entire pipeline.
+        
+        Args:
+            pipeline: The pipeline to execute
+            context: The execution context
+            
+        Returns:
+            List of execution signals from the terminal node
+        """
+        DXA_LOGGER.info("Executing pipeline '%s'", pipeline.name)
+        start_time = perf_counter()
+        
+        # Get the start node and execute the pipeline
+        start_node = pipeline.get_start_node()
+        if not start_node:
+            raise ValueError("Pipeline has no start node")
+            
+        # Execute the pipeline starting from the start node
+        signals = await self.execute_node(start_node, context)
+        
+        # Process each node in sequence
+        current_node_id = start_node.node_id
+        while signals and pipeline.get_next_nodes(current_node_id):
+            next_nodes = pipeline.get_next_nodes(current_node_id)
+            if not next_nodes:
+                break
+                
+            next_node = next_nodes[0]  # Pipeline is linear, so take first node
+            signals = await self.execute_node(next_node, context, prev_signals=signals)
+            current_node_id = next_node.node_id
+            
+        duration = perf_counter() - start_time
+        DXA_LOGGER.info("Pipeline '%s' execution completed in %.4fs", pipeline.name, duration)
+        return signals
 
     async def execute_node(
         self,
@@ -28,7 +65,7 @@ class PipelineExecutor(Executor):
 
         node = cast(PipelineNode, node)
         context = cast(PipelineContext, context)
-        DXA_LOGGER.info(f"Executing pipeline node {node.node_id}", node_type=node.node_type)
+        DXA_LOGGER.info("Executing pipeline node %s of type %s", node.node_id, node.node_type)
         try:
             data = {}  # Initialize with empty dict as default
 
@@ -51,17 +88,26 @@ class PipelineExecutor(Executor):
             
             result = await node.execute(data)
             
-            DXA_LOGGER.debug(f"Node {node.node_id} completed", 
-                             duration=perf_counter() - start_time,
-                             data_keys=list(result.keys()),
-                             **({"result_data": result} if DXA_LOGGER.log_data else 
-                                {"result_sample": str(result)[:100]}))
+            duration = perf_counter() - start_time
+            data_keys = list(result.keys())
+            
+            if DXA_LOGGER.log_data:
+                DXA_LOGGER.debug(
+                    "Node %s completed in %.4fs with data keys: %s. Result data: %s",
+                    node.node_id, duration, data_keys, result
+                )
+            else:
+                result_sample = str(result)[:100]
+                DXA_LOGGER.debug(
+                    "Node %s completed in %.4fs with data keys: %s. Result sample: %s",
+                    node.node_id, duration, data_keys, result_sample
+                )
 
             # Create and return result signal
             return [self.create_result_signal(node.node_id, result)]
 
         except Exception as e:  # pylint: disable=broad-except
-            DXA_LOGGER.error(f"Node {node.node_id} failed", error=str(e))
+            DXA_LOGGER.error("Node %s failed: %s", node.node_id, str(e))
             return [self.create_error_signal(node.node_id, str(e))]
 
     # pylint: disable=unused-argument
