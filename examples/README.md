@@ -6,47 +6,111 @@
 
 # DXA Examples
 
-## dxa.examples Module
+## Overview
 
-Implementation examples demonstrating DXA framework usage.
+This directory contains examples demonstrating the DXA (Distributed eXecution Architecture) framework. 
+Examples are organized by learning path to help you navigate from basic concepts to advanced applications.
 
-## Basic Examples
+Each example includes:
+- Detailed documentation explaining its purpose and key concepts
+- Complete runnable code
+- Comments explaining important implementation details
 
-- **basic/loggable_example.py**: Example of using the Loggable base class
-- **execution/workflow/simple_qa.py**: Simple question answering workflow
-- **execution/workflow/default_workflow.py**: Default workflow example
-- **execution/planning/simple_plan.py**: Basic planning pattern
+## Learning Paths
 
-## Advanced Examples
+### 1. Getting Started [Beginner]
 
-- **execution/workflow/prosea_workflow.py**: ProSEA framework implementation
-- **execution/workflow/complex_research.py**: Multi-step research pattern
-- **execution/workflow/system_health.py**: System monitoring example
+Start here if you're new to DXA. These examples introduce fundamental concepts and simple workflows.
 
-## Usage
+- **[execution/workflow/qa_approaches.py](execution/workflow/qa_approaches.py)**: Different approaches to question answering
+  - Direct question answering using `agent.ask()`
+  - Single-step workflow with WORKFLOW_IS_PLAN strategy
+  - Multi-step reasoning with custom workflow creation
+  
+- **[basic/loggable_example.py](basic/loggable_example.py)**: Using the Loggable base class
+  - Basic logging configuration
+  - Structured logging patterns
+  
+- **[execution/workflow/default_workflow.py](execution/workflow/default_workflow.py)**: Default workflow creation
+  - Creating a basic workflow
+  - Running a workflow with an agent
 
-Each example can be run directly:
+### 2. Core Concepts [Intermediate]
 
-```bash
-python examples/execution/workflow/simple_qa.py
-```
+Once familiar with the basics, these examples demonstrate key DXA concepts in more detail.
 
-## Common Patterns
+#### Workflow Patterns
 
-1. Agent Creation:
+- **[execution/workflow/run_default_workflow.py](execution/workflow/run_default_workflow.py)**: Running default workflows
+  - Workflow execution process
+  - Handling workflow results
+
+#### Planning Strategies
+
+- **[execution/planning/simple_plan.py](execution/planning/simple_plan.py)**: Basic planning patterns
+  - Creating plans from objectives
+  - Plan structure and components
+
+#### Reasoning Approaches
+
+- **[execution/reasoning/simple_reasoning.py](execution/reasoning/simple_reasoning.py)**: Basic reasoning patterns
+  - Reasoning strategies
+  - Executing reasoning tasks
+
+#### Resource Integration
+
+- **[resource/llm_resource.py](resource/llm_resource.py)**: LLM integration
+  - Configuring LLM resources
+  - Using LLMs in agents
+
+### 3. Advanced Patterns [Advanced]
+
+These examples demonstrate sophisticated patterns and complex workflows.
+
+- **[execution/workflow/prosea_workflow.py](execution/workflow/prosea_workflow.py)**: ProSEA framework implementation
+  - Problem-Solution-Evaluation-Action pattern
+  - Complex reasoning workflows
+  
+- **[execution/workflow/complex_research.py](execution/workflow/complex_research.py)**: Multi-step research pattern
+  - Sequential task execution
+  - Managing complex workflows
+  
+- **[execution/pipeline/temperature_monitor.py](execution/pipeline/temperature_monitor.py)**: Data pipeline example
+  - Processing streaming data
+  - Continuous execution patterns
+
+### 4. Real-World Applications [Advanced]
+
+Domain-specific examples showing DXA in practical applications.
+
+- **[execution/workflow/system_health.py](execution/workflow/system_health.py)**: System monitoring example
+  - Health check workflows
+  - Monitoring and alerting patterns
+  
+- **[fab-roca/rie_monitoring.py](fab-roca/rie_monitoring.py)**: Semiconductor manufacturing use case
+  - Domain-specific workflows
+  - Integration with external systems
+  
+- **[resource/mcp/mcp_agent_demo.py](resource/mcp/mcp_agent_demo.py)**: MCP integration
+  - Using the Model Control Plane
+  - Advanced resource configuration
+
+## Concept Reference
+
+### Agent Creation & Configuration
 
 ```python
 from dxa.agent import Agent
 from dxa.agent.resource import LLMResource
 from dxa.execution import ReasoningStrategy
 
-agent = Agent(name="name")\
+agent = Agent(name="example_agent")\
     .with_reasoning(ReasoningStrategy.DEFAULT)\
     .with_llm(LLMResource())\
     .with_capabilities({...})
 ```
 
-2. Task Execution:
+### Task Execution
 
 ```python
 # Synchronous execution
@@ -57,7 +121,7 @@ async with agent:
     result = await agent.async_run(workflow)
 ```
 
-3. Resource Management:
+### Resource Management
 
 ```python
 agent.with_llm(LLMResource(config={"model": "openai:gpt-4"}))
@@ -66,9 +130,22 @@ agent.with_resources({
 })
 ```
 
-## Example Categories
+### Workflow Creation
 
-The example directory is organized by module and functionality:
+```python
+from dxa.execution import WorkflowFactory
+
+# Create a sequential workflow
+workflow = WorkflowFactory.create_sequential_workflow(
+    objective="Research topic X",
+    commands=["Step 1", "Step 2", "Step 3"]
+)
+
+# Create a minimal workflow
+workflow = WorkflowFactory.create_minimal_workflow("Simple task")
+```
+
+## Directory Structure
 
 - **basic/**: Fundamental utilities
   - Logging utilities
@@ -87,6 +164,13 @@ The example directory is organized by module and functionality:
 - **fab-roca/**: Domain-specific examples
   - Semiconductor manufacturing use case
   - RIE monitoring example
-  - FDC integration
 
-See individual examples for detailed implementations.
+## Running Examples
+
+Each example can be run directly:
+
+```bash
+python examples/execution/workflow/qa_approaches.py
+```
+
+See individual examples for detailed documentation and usage instructions.
