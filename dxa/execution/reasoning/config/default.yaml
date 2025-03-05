@@ -1,0 +1,64 @@
+# Default reasoning configuration
+name: default
+description: "Default reasoning pattern"
+
+# Define nodes in the reasoning process
+nodes:
+  - id: UNDERSTAND
+    description: "Understand the problem and clarify requirements"
+    
+  - id: EXPLORE
+    description: "Explore possible approaches and select the most promising one"
+    
+  - id: SOLVE
+    description: "Apply the selected approach to solve the problem"
+    
+  - id: REVIEW
+    description: "Review the solution for correctness and completeness"
+
+# Define prompts used in nodes
+prompts:
+  UNDERSTAND: |
+    Take time to understand the following problem:
+    
+    {objective}
+    
+    In your response:
+    1. Restate the problem in your own words
+    2. Identify what is being asked for
+    3. List any assumptions you need to make
+    4. Clarify any ambiguous aspects
+    
+  EXPLORE: |
+    Consider different approaches to solve this problem:
+    
+    {objective}
+    
+    For each approach:
+    1. Describe the method
+    2. Analyze its strengths and weaknesses
+    3. Assess its applicability to this specific problem
+    
+    Then select the most promising approach and explain your choice.
+    
+  SOLVE: |
+    Apply your selected approach to solve:
+    
+    {objective}
+    
+    Show your work step-by-step, including:
+    1. Your reasoning at each step
+    2. Any calculations or transformations
+    3. Intermediate results
+    4. How each step brings you closer to the solution
+    
+  REVIEW: |
+    Review your solution to:
+    
+    {objective}
+    
+    In your review:
+    1. Verify the solution satisfies all requirements
+    2. Check for logical or computational errors
+    3. Consider if the solution is optimal or if improvements are possible
+    4. Summarize the final answer clearly and concisely 

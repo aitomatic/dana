@@ -1,65 +1,39 @@
 """Workflow factory for creating common workflow patterns."""
 
-from pathlib import Path
-from typing import List, Optional, Union, Dict
-import yaml
+from typing import List, Optional, Union, Dict, cast, Any
 
-from ..execution_graph import ExecutionGraph
-from ..execution_types import Objective, ExecutionNode
+from ..execution_factory import ExecutionFactory
 from .workflow import Workflow
 from ...common.graph import NodeType, Edge
+from ..execution_types import Objective, ExecutionNode
+from .workflow_strategy import WorkflowStrategy
 
-class WorkflowFactory:
+class WorkflowFactory(ExecutionFactory):
     """Factory for creating workflow patterns."""
-
+    
+    # Override class variables
+    graph_class = Workflow
+    strategy_class = WorkflowStrategy
+    
+    # Add workflow-specific methods
     @classmethod
-    def from_yaml(cls, yaml_data: Union[str, Dict, Path]) -> Workflow:
-        """Create workflow from YAML data or file."""
-        # Handle different input types
-        if isinstance(yaml_data, (str, Path)):
-            with open(yaml_data, encoding="utf-8") as f:
-                data = yaml.safe_load(f)
-        else:
-            data = yaml_data
-
-        # Create workflow
-        workflow = Workflow(
-            objective=Objective(data.get('description', '')),
-            name=data.get('name', 'unnamed_workflow')
-        )
-
-        # Add nodes
-        for node_data in data.get('nodes', []):
-            node = ExecutionNode(
-                node_id=node_data['id'],
-                node_type=NodeType[node_data['type']],
-                description=node_data.get('description', ''),
-                metadata=node_data.get('metadata', {})
-            )
-            workflow.add_node(node)
-
-        # Add edges
-        for edge_data in data.get('edges', []):
-            edge = Edge(
-                source=edge_data['source'],
-                target=edge_data['target'],
-                metadata=edge_data.get('metadata', {})
-            )
-            workflow.add_edge(edge)
-
-        return workflow
+    def create_prosea_workflow(cls, objective: Union[str, Objective], 
+                               agent_role: str = "ProSea Agent", 
+                               custom_prompts: Optional[Dict[str, str]] = None) -> Workflow:
+        """Create a Prosea workflow for given parameters."""
+        return cls.create_workflow_by_name("basic.prosea", objective, agent_role, custom_prompts)
 
     @classmethod
     def create_sequential_workflow(cls, objective: Union[str, Objective], commands: List[str]) -> Workflow:
-        """Create a sequential workflow from list of commands."""
-        objective = Objective(objective) if isinstance(objective, str) else objective
-        workflow = Workflow(objective)
-        # pylint: disable=protected-access
-        ExecutionGraph._add_start_end_nodes(graph=workflow)
+        """Create a sequential workflow from list of commands.  Sequential is treated special,
+        in that the steps are passed in programmatically rather than hard-coded in the YAML file."""
 
-        # Remove the edge from START to END
-        workflow.remove_edge_between("START", "END")
-
+        # First load the base sequential workflow
+        workflow = cls.create_workflow_by_name("basic.sequential", objective)
+        
+        # Clear any existing edges (to ensure we don't have extras)
+        workflow.edges = []
+        
         # Create task nodes for each command
         prev_id = "START"
         for i, command in enumerate(commands):
@@ -69,92 +43,124 @@ class WorkflowFactory:
                 node_type=NodeType.TASK,
                 description=str(command)
             ))
-            workflow.add_transition(prev_id, node_id)
+            workflow.add_edge(Edge(source=prev_id, target=node_id))
             prev_id = node_id
 
-        workflow.add_transition(prev_id, "END")
+        workflow.add_edge(Edge(source=prev_id, target="END"))
         return workflow
 
     @classmethod
     def create_minimal_workflow(cls, objective: Optional[Union[str, Objective]] = None) -> Workflow:
-        """Create minimal workflow with START -> TASK -> END.
-        The task node will have the objective as its description.
-        """
-        objective = Objective(objective) if isinstance(objective, str) else objective
-        workflow = Workflow(objective)
-        # pylint: disable=protected-access
-        ExecutionGraph._add_start_end_nodes(graph=workflow)
-
-        # Remove the edge from START to END
-        workflow.remove_edge_between("START", "END")
-
+        """Create a minimal workflow with START, PERFORM_TASK, and END nodes."""
+        if isinstance(objective, str):
+            objective = Objective(objective)
+            
+        workflow = Workflow(objective=objective)
+        
+        # Add START node
+        start_node = ExecutionNode(
+            node_id="START",
+            node_type=NodeType.START,
+            description="Start workflow"
+        )
+        workflow.add_node(start_node)
+        
         # Add task node
-        workflow.add_node(ExecutionNode(
+        task_node = ExecutionNode(
             node_id="PERFORM_TASK",
             node_type=NodeType.TASK,
-            description=objective.original if objective else ""
-        ))
-
-        workflow.add_transition("START", "PERFORM_TASK")
-        workflow.add_transition("PERFORM_TASK", "END")
-
+            description="{objective}"
+        )
+        workflow.add_node(task_node)
+        
+        # Add END node
+        end_node = ExecutionNode(
+            node_id="END",
+            node_type=NodeType.END,
+            description="End workflow"
+        )
+        workflow.add_node(end_node)
+        
+        # Add edges
+        workflow.add_edge_between("START", "PERFORM_TASK")
+        workflow.add_edge_between("PERFORM_TASK", "END")
+        
         return workflow
-
+    
     @classmethod
     def create_monitoring_workflow(cls,
                                    parameters: List[str],
                                    name: str = "monitoring",
                                    description: str = "") -> Workflow:
         """Create a monitoring workflow for given parameters."""
-        workflow = Workflow(
-            objective=Objective(description or f"Monitor {', '.join(parameters)}"),
-            name=name
-        )
-
-        # Add standard monitoring nodes
-        nodes = {
-            "START": ExecutionNode(
-                node_id="START",
-                node_type=NodeType.START,
-                description="Begin monitoring"
-            ),
-            "MONITOR": ExecutionNode(
-                node_id="MONITOR",
-                node_type=NodeType.TASK,
-                description="Monitor parameters",
-                metadata={"parameters": parameters}
-            ),
-            "CHECK": ExecutionNode(
-                node_id="CHECK",
-                node_type=NodeType.CONDITION,
-                description="Check parameter values"
-            ),
-            "DIAGNOSE": ExecutionNode(
-                node_id="DIAGNOSE",
-                node_type=NodeType.TASK,
-                description="Diagnose issues"
-            ),
-            "END": ExecutionNode(
-                node_id="END",
-                node_type=NodeType.END,
-                description="End monitoring cycle"
-            )
-        }
-
-        # Add all nodes
-        for node in nodes.values():
-            workflow.add_node(node)
-
-        # Add edges with conditions
-        edges = [
-            Edge("START", "MONITOR"),
-            Edge("MONITOR", "CHECK"),
-            Edge("CHECK", "MONITOR", {"condition": "parameters_normal"}),
-            Edge("CHECK", "DIAGNOSE", {"condition": "parameters_abnormal"}),
-            Edge("DIAGNOSE", "END")
-        ]
-
-        for edge in edges:
-            workflow.add_edge(edge)
-
+        # Create objective
+        objective = Objective(description or f"Monitor {', '.join(parameters)}")
+        
+        # Load base monitoring workflow
+        workflow = cls.create_workflow_by_name("automation/monitoring", objective)
+        workflow.name = name
+        
+        # Update MONITOR node with parameters
+        monitor_node = workflow.get_node_by_id("MONITOR")
+        if monitor_node:
+            monitor_node.metadata["parameters"] = parameters
+        
         return workflow
+
+    @classmethod
+    def create_workflow_by_name(cls, workflow_name: str, 
+                                objective: Union[str, Objective], 
+                                agent_role: Optional[str] = None,
+                                custom_prompts: Optional[Dict[str, str]] = None) -> Workflow:
+        """Create a workflow by name."""
+        # No need to normalize the name - just pass it through
+        graph = cls.create_from_config(workflow_name, objective, agent_role, custom_prompts)
+        return cast(Workflow, graph)
+
+    @classmethod
+    def create_default_workflow(cls, objective: Union[str, Objective], 
+                                agent_role: str = "Default Workflow Agent", 
+                                custom_prompts: Optional[Dict[str, str]] = None) -> Workflow:
+        """Create a default workflow for given parameters.
+        
+        This workflow follows the standard problem-solving pattern:
+        DEFINE -> RESEARCH -> STRATEGIZE -> EXECUTE -> EVALUATE
+        
+        Args:
+            objective: The objective to accomplish
+            agent_role: Optional role for the agent
+            custom_prompts: Optional custom prompts to override defaults
+            
+        Returns:
+            A configured default workflow
+            
+        Examples:
+            >>> workflow = WorkflowFactory.create_default_workflow("Design a database schema")
+            >>> workflow = WorkflowFactory.create_default_workflow(
+            ...     "Create a marketing plan", 
+            ...     agent_role="Marketing Specialist"
+            ... )
+        """
+        graph = cls.create_from_config("default", objective, agent_role, custom_prompts)
+        return cast(Workflow, graph)
+
+    @classmethod
+    def create_workflow_strategy(cls, node: ExecutionNode, context: Any = None) -> WorkflowStrategy:
+        """Select appropriate workflow strategy based on node metadata or context."""
+        # Check if node has explicit workflow strategy in metadata
+        if "workflow" in node.metadata:
+            strategy_name = node.metadata["workflow"].upper()
+            try:
+                return WorkflowStrategy[strategy_name]
+            except KeyError:
+                pass  # Invalid strategy name, fallback to auto-selection
+        
+        return cls._select_auto_strategy(node, context)
+    
+    @classmethod
+    def _select_auto_strategy(cls, node: ExecutionNode, context: Any = None) -> WorkflowStrategy:
+        """Select appropriate workflow strategy based on node content and context."""
+        return cls.select_strategy_from_description(
+            node.description, 
+            WorkflowStrategy.DEFAULT
+        )

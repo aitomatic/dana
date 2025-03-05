@@ -2,10 +2,9 @@
 
 from typing import Any, Optional, TYPE_CHECKING
 
-from ..execution.workflow.workflow_executor import WorkflowExecutor, WorkflowStrategy
-from ..execution.workflow.workflow import Workflow
-from ..execution.planning.plan_executor import PlanExecutor, PlanningStrategy
-from ..execution.reasoning.reasoning_executor import ReasoningExecutor, ReasoningStrategy
+from ..execution.workflow import WorkflowExecutor, WorkflowStrategy, Workflow
+from ..execution.planning import PlanExecutor, PlanStrategy
+from ..execution.reasoning import ReasoningExecutor, ReasoningStrategy
 from ..execution.execution_context import ExecutionContext
 from ..execution.execution_types import ExecutionSignalType
 
@@ -17,7 +16,7 @@ class AgentRuntime:
 
     def __init__(self, agent: 'Agent',
                  workflow_strategy: Optional[WorkflowStrategy] = None,
-                 planning_strategy: Optional[PlanningStrategy] = None,
+                 planning_strategy: Optional[PlanStrategy] = None,
                  reasoning_strategy: Optional[ReasoningStrategy] = None):
         self.agent = agent
 
@@ -27,7 +26,7 @@ class AgentRuntime:
         )
         self.plan_executor = PlanExecutor(
             reasoning_executor=self.reasoning_executor,
-            strategy=planning_strategy or PlanningStrategy.DEFAULT
+            strategy=planning_strategy or PlanStrategy.DEFAULT
         )
         self.workflow_executor = WorkflowExecutor(
             plan_executor=self.plan_executor,
@@ -38,6 +37,11 @@ class AgentRuntime:
         """Execute workflow and return result."""
         # Set current workflow in context
         context.current_workflow = workflow
+
+        # Make sure there are LLMs for each layer in the context
+        assert context.workflow_llm is not None
+        assert context.planning_llm is not None
+        assert context.reasoning_llm is not None    
 
         # Execute workflow with context
         signals = await self.workflow_executor.execute_workflow(workflow, context)

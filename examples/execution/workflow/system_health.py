@@ -3,13 +3,12 @@
 import asyncio
 from dxa.agent import Agent
 from dxa.execution.workflow.workflow_factory import WorkflowFactory
-from dxa.execution import WorkflowStrategy, PlanningStrategy
+from dxa.execution import PlanStrategy
 
 async def monitor_system():
     """Continuous system monitoring loop."""
     agent = (Agent("sysmon_agent")
-             .with_workflow(WorkflowStrategy.CONDITIONAL)
-             .with_planning(PlanningStrategy.DYNAMIC))
+             .with_planning(PlanStrategy.DYNAMIC))
     
     # Create monitoring workflow for CPU/Memory
     workflow = WorkflowFactory.create_monitoring_workflow(
@@ -26,10 +25,25 @@ async def monitor_system():
 
 def handle_monitoring_result(signals):
     """Process monitoring signals with severity levels."""
-    for signal in signals:
-        if signal.type == "parameters_abnormal":
-            print(f"ALERT: {signal.content['parameter']} at {signal.content['value']}%")
-            # trigger_alert(signal.content)  # Implement actual alerting
+    # If signals is a string, just print it
+    if isinstance(signals, str):
+        print(f"Result: {signals}")
+        return
+        
+    # Check if signals is None
+    if signals is None:
+        print("No monitoring results received.")
+        return
+        
+    # Process signals
+    try:
+        for signal in signals:
+            if hasattr(signal, 'type') and signal.type == "parameters_abnormal":
+                print(f"ALERT: {signal.content['parameter']} at {signal.content['value']}%")
+                # trigger_alert(signal.content)  # Implement actual alerting
+    except Exception as e:
+        print(f"Error processing monitoring results: {e}")
+        print(f"Received: {type(signals)}: {signals}")
 
 if __name__ == "__main__":
     asyncio.run(monitor_system()) 

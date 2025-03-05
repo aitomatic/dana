@@ -1,0 +1,15 @@
+name: Minimal
+description: "Minimal workflow with a single task"
+version: 1.0
+role: "Minimal-Workflow Agent"
+
+nodes:
+  - id: PERFORM_TASK
+    description: "{objective}"
+
+prompts:
+  PERFORM_TASK: |
+    Please perform the following task:
+    {objective}
+
+    Provide a detailed report of your work.

@@ -48,6 +48,18 @@ class ExecutionNode(Node):
         self.requires = requires or {}
         self.provides = provides or {}
         self.buffer_config = {}
+    
+    def get_prompt(self) -> Optional[str]:
+        """Get the prompt for the node."""
+        if self.metadata:
+            return self.metadata['prompt']
+        return None
+    
+    @classmethod
+    def set_prompt_in_metadata(cls, prompt: str, metadata: Dict[str, Any]) -> None:
+        """Set the prompt in the metadata."""
+        if metadata:
+            metadata['prompt'] = prompt 
 
 @dataclass
 class ExecutionEdge(Edge):
@@ -97,6 +109,7 @@ class ObjectiveStatus(Enum):
     NEEDS_CLARIFICATION = "needs_clarification"
     COMPLETED = "completed"
     FAILED = "failed"
+    NONE_PROVIDED = "none_provided"
 
 @dataclass
 class Objective:
@@ -109,7 +122,7 @@ class Objective:
 
     def __init__(self, objective: Optional[str] = None):
         if not objective:
-            objective = "No objective provided"
+            objective = str(ObjectiveStatus.NONE_PROVIDED)
         self.original = objective
         self.current = objective
         self.status = ObjectiveStatus.INITIAL
