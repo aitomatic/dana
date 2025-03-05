@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Dict, Generic, List, Optional, Type, TypeVar, Any, cast
+from typing import Generic, List, Optional, Type, TypeVar, Any, cast
 
 import logging
 
@@ -12,7 +12,7 @@ from .execution_types import (
     ExecutionNode, ExecutionSignal, Objective, 
     ExecutionNodeStatus, ExecutionSignalType
 )
-from ..common.graph import NodeType, Edge
+from ..common.graph import NodeType
 
 # Type variable for strategy enums
 StrategyT = TypeVar('StrategyT', bound=Enum)
@@ -44,7 +44,7 @@ class Executor(ABC, Generic[StrategyT]):
         self.depth = depth
         self._graph = None
         self.layer = "base"  # Will be overridden by subclasses
-        self.logger = logging.getLogger(f"dxa.execution.{self.layer}")
+        self.logger = logging.getLogger("dxa.execution.%s" % self.layer)
         self._strategy = self.default_strategy
         self._configure_logger()
     
@@ -329,17 +329,18 @@ class Executor(ABC, Generic[StrategyT]):
                 self._handle_node_error(node_id, error_msg)
     
     def _handle_node_error(self, node_id: str, error: str) -> None:
-        """Handle an error that occurred during node execution.
+        """Handle node execution error.
         
         Args:
-            node_id: ID of the node where the error occurred
+            node_id: ID of the node that failed
             error: Error message
         """
-        self.logger.error(f"Error executing node {node_id}: {error}")
+        # Log error
+        self.logger.error("Error executing node %s: %s", node_id, error)
         
         # Update node status in graph
         if self.graph and node_id in self.graph.nodes:
-            self.graph.update_node_status(node_id, ExecutionNodeStatus.ERROR)
+            self.graph.update_node_status(node_id, ExecutionNodeStatus.FAILED)
     
     def _create_error_signal(self, node_id: str, error: str) -> ExecutionSignal:
         """Create an error signal for a node.

@@ -1,6 +1,5 @@
 """Execution module for DXA."""
 
-from .executor import Executor
 from .execution_types import (
     Objective, ObjectiveStatus,
     ExecutionNode, ExecutionEdge,

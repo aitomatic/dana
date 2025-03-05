@@ -2,8 +2,9 @@
 
 from time import perf_counter
 from typing import Any, Optional, List, cast
+from ...execution.executor import Executor
 from ...execution import (
-    Executor, ExecutionNode, ExecutionGraph,
+    ExecutionNode, ExecutionGraph,
     ExecutionSignal, ExecutionContext,
     ExecutionSignalType
 )
@@ -24,7 +25,7 @@ class PipelineExecutor(Executor):
         Returns:
             List of execution signals from the terminal node
         """
-        DXA_LOGGER.info(f"Executing pipeline '{pipeline.name}'")
+        DXA_LOGGER.info("Executing pipeline '%s'", pipeline.name)
         start_time = perf_counter()
         
         # Get the start node and execute the pipeline
@@ -47,7 +48,7 @@ class PipelineExecutor(Executor):
             current_node_id = next_node.node_id
             
         duration = perf_counter() - start_time
-        DXA_LOGGER.info(f"Pipeline '{pipeline.name}' execution completed in {duration:.4f}s")
+        DXA_LOGGER.info("Pipeline '%s' execution completed in %.4fs", pipeline.name, duration)
         return signals
 
     async def execute_node(
@@ -64,7 +65,7 @@ class PipelineExecutor(Executor):
 
         node = cast(PipelineNode, node)
         context = cast(PipelineContext, context)
-        DXA_LOGGER.info(f"Executing pipeline node {node.node_id} of type {node.node_type}")
+        DXA_LOGGER.info("Executing pipeline node %s of type %s", node.node_id, node.node_type)
         try:
             data = {}  # Initialize with empty dict as default
 
@@ -92,21 +93,21 @@ class PipelineExecutor(Executor):
             
             if DXA_LOGGER.log_data:
                 DXA_LOGGER.debug(
-                    f"Node {node.node_id} completed in {duration:.4f}s with data keys: {data_keys}. "
-                    f"Result data: {result}"
+                    "Node %s completed in %.4fs with data keys: %s. Result data: %s",
+                    node.node_id, duration, data_keys, result
                 )
             else:
                 result_sample = str(result)[:100]
                 DXA_LOGGER.debug(
-                    f"Node {node.node_id} completed in {duration:.4f}s with data keys: {data_keys}. "
-                    f"Result sample: {result_sample}"
+                    "Node %s completed in %.4fs with data keys: %s. Result sample: %s",
+                    node.node_id, duration, data_keys, result_sample
                 )
 
             # Create and return result signal
             return [self.create_result_signal(node.node_id, result)]
 
         except Exception as e:  # pylint: disable=broad-except
-            DXA_LOGGER.error(f"Node {node.node_id} failed: {str(e)}")
+            DXA_LOGGER.error("Node %s failed: %s", node.node_id, str(e))
             return [self.create_error_signal(node.node_id, str(e))]
 
     # pylint: disable=unused-argument

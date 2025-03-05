@@ -9,3 +9,4 @@ logs/*
 dxa.egg-info
 dxa.egg-info/*
 .aider*
+flake8_issues.txt
