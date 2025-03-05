@@ -6,7 +6,7 @@ from ...execution.executor import Executor
 from ...execution import (
     ExecutionNode, ExecutionGraph,
     ExecutionSignal, ExecutionContext,
-    ExecutionSignalType
+    ExecutionSignalType, Objective
 )
 from .pipeline import PipelineNode, Pipeline
 from .pipeline_context import PipelineContext
@@ -108,7 +108,7 @@ class PipelineExecutor(Executor):
 
         except Exception as e:  # pylint: disable=broad-except
             DXA_LOGGER.error("Node %s failed: %s", node.node_id, str(e))
-            return [self.create_error_signal(node.node_id, str(e))]
+            return [self._create_error_signal(node.node_id, str(e))]
 
     # pylint: disable=unused-argument
     def _should_propagate_down(self, signal: ExecutionSignal) -> bool:
@@ -121,11 +121,18 @@ class PipelineExecutor(Executor):
         # Add logic here to filter upward signals
         return False
 
-    def _create_graph(
+    def create_graph_from_node(
         self,
-        upper_graph: ExecutionGraph,
+        upper_node: Optional[ExecutionNode] = None,
+        upper_graph: Optional[ExecutionGraph] = None,
         objective: Optional[Any] = None,
         context: Optional[ExecutionContext] = None
     ) -> ExecutionGraph:
         """Create execution graph - for pipeline this is already built."""
-        return upper_graph 
+        # For pipelines, we typically use the provided graph directly
+        # If we already have a graph, return it
+        if self.graph is not None:
+            return self.graph
+            
+        # If no graph is available, create a minimal one
+        return ExecutionGraph(objective=objective or Objective("Pipeline execution")) 

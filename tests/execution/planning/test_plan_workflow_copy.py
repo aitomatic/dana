@@ -39,9 +39,10 @@ class MockReasoningExecutor(ReasoningExecutor):
         """Mock implementation."""
         return []
     
-    def _create_graph(
+    def create_graph_from_node(
         self, 
-        upper_graph, 
+        upper_node=None,
+        upper_graph=None, 
         objective=None, 
         context=None
     ):
@@ -73,9 +74,10 @@ class MockPlanExecutor(PlanExecutor):
         """Mock implementation."""
         return []
     
-    def _create_graph(
+    def create_graph_from_node(
         self, 
-        upper_graph, 
+        upper_node=None,
+        upper_graph=None, 
         objective=None, 
         context=None
     ):
@@ -107,9 +109,10 @@ class MockWorkflowExecutor(WorkflowExecutor):
         """Mock implementation."""
         return []
     
-    def _create_graph(
+    def create_graph_from_node(
         self, 
-        upper_graph, 
+        upper_node=None,
+        upper_graph=None, 
         objective=None, 
         context=None
     ):
