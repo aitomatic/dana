@@ -10,6 +10,7 @@ from ..execution_types import ExecutionNode, ExecutionSignal, Objective, Executi
 from ...common.graph import NodeType
 from .workflow_strategy import WorkflowStrategy
 from .workflow import Workflow
+from .workflow_factory import WorkflowFactory
 
 if TYPE_CHECKING:
     from ..planning.plan_executor import PlanExecutor
@@ -64,15 +65,37 @@ class WorkflowExecutor(Executor[WorkflowStrategy]):
         from ..planning.plan import Plan
         from ..reasoning.reasoning import Reasoning
         
-        # Create a plan graph and set it in the context
-        plan = self.plan_executor._create_graph(workflow, workflow.objective, context)
+        # Get the start node of the workflow
+        start_node = workflow.get_start_node()
+        if not start_node:
+            self.logger.error("Workflow has no START node")
+            return []
+        
+        # Create a plan graph from the workflow's start node and set it in the context
+        plan = self.plan_executor.create_graph_from_node(
+            upper_node=start_node, 
+            upper_graph=workflow, 
+            objective=workflow.objective, 
+            context=context
+        )
         context.current_plan = cast(Plan, plan)
         
         # Also set the plan in the plan executor
         self.plan_executor.graph = plan
         
-        # Create a reasoning graph and set it in the context
-        reasoning = self.plan_executor.reasoning_executor._create_graph(plan, workflow.objective, context)
+        # Get the start node of the plan
+        plan_start_node = plan.get_start_node()
+        if not plan_start_node:
+            self.logger.error("Plan has no START node")
+            return []
+        
+        # Create a reasoning graph from the plan's start node and set it in the context
+        reasoning = self.plan_executor.reasoning_executor.create_graph_from_node(
+            upper_node=plan_start_node,
+            upper_graph=plan, 
+            objective=workflow.objective,
+            context=context
+        )
         context.current_reasoning = cast(Reasoning, reasoning)
         
         # Also set the reasoning in the reasoning executor
@@ -129,11 +152,12 @@ class WorkflowExecutor(Executor[WorkflowStrategy]):
                 if context:
                     context.current_plan = pass_through_plan
                 
-                # Execute the plan using the plan executor
+                # Execute the plan using the plan executor with the workflow node
                 signals = await self.plan_executor.execute_graph(
                     upper_graph=pass_through_plan,
                     context=context,
-                    upper_signals=upper_signals
+                    upper_signals=upper_signals,
+                    upper_node=node  # Pass the workflow node to create reasoning graph
                 )
             else:
                 # For DEFAULT strategy, just delegate to the plan executor
@@ -222,65 +246,49 @@ class WorkflowExecutor(Executor[WorkflowStrategy]):
         
         return plan
     
-    def _create_graph(
-        self, 
-        upper_graph: ExecutionGraph, 
-        objective: Optional[Objective] = None, 
+    def _get_graph_class(self):
+        """Get the appropriate graph class for this executor.
+        
+        Returns:
+            Workflow graph class
+        """
+        from .workflow import Workflow
+        return Workflow
+    
+    def create_graph_from_node(
+        self,
+        upper_node: ExecutionNode,
+        upper_graph: ExecutionGraph,
+        objective: Optional[Objective] = None,
         context: Optional[ExecutionContext] = None
     ) -> ExecutionGraph:
-        """Create a workflow execution graph.
+        """Create a workflow execution graph from a node in an upper layer.
         
         For workflow execution, the graph is typically provided directly
-        rather than being created from an upper graph.
+        rather than being created from an upper graph. 
+        
+        Workflows are the top-level execution layer, so this method
+        is mostly provided to satisfy the interface.
         
         Args:
-            upper_graph: Graph from the upper execution layer
+            upper_node: Node from upper layer (rarely used for workflows)
+            upper_graph: Graph from upper layer (rarely used for workflows)
             objective: Execution objective
             context: Execution context
             
         Returns:
             Workflow execution graph
         """
-        # For workflow, we typically use the provided graph directly
-        # This method is mainly here to satisfy the abstract method requirement
-        
+        # For workflows, we typically use the provided graph directly
         # If we already have a graph, return it
         if self.graph is not None:
             return self.graph
+
+        # Create a new workflow if we don't have one
         
-        # Otherwise, use the upper graph if it's provided
-        if upper_graph is not None:
-            workflow = upper_graph
-        else:
-            # If no graph is available, create a minimal one
-            workflow = Workflow(
-                objective=objective or Objective("Execute workflow"),
-                name="default_workflow"
-            )
+        # Create a minimal workflow with START, TASK, and END nodes
+        node_id = upper_node.node_id if upper_node else 'unknown'
+        workflow_objective = objective or Objective(f"Execute workflow for {node_id}")
         
-        # Create a plan graph and set it in the context
-        if context is not None:
-            plan = self.plan_executor._create_graph(
-                upper_graph=workflow,
-                objective=workflow.objective,
-                context=context
-            )
-            self.plan_executor.graph = plan
-            
-            # Set the plan in the context
-            from ..planning import Plan
-            context.current_plan = cast(Plan, plan)
-            
-            # Create a reasoning graph and set it in the context
-            reasoning = self.plan_executor.reasoning_executor._create_graph(
-                upper_graph=plan,
-                objective=workflow.objective,
-                context=context
-            )
-            self.plan_executor.reasoning_executor.graph = reasoning
-            
-            # Set the reasoning in the context
-            from ..reasoning import Reasoning
-            context.current_reasoning = cast(Reasoning, reasoning)
-        
-        return workflow 
+        # Use the factory to create a proper workflow with all required nodes
+        return WorkflowFactory.create_minimal_workflow(workflow_objective)
