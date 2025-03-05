@@ -16,6 +16,32 @@ Each example includes:
 - Complete runnable code
 - Comments explaining important implementation details
 
+## Directory Organization
+
+The examples are organized in two complementary ways:
+
+### 1. Module-Based Organization (Original)
+
+Examples are organized by module type:
+- [basic/](basic/): Basic utilities and logging
+- [execution/](execution/): Execution system examples (workflow, planning, reasoning, pipeline)
+- [resource/](resource/): Resource management examples
+- [fab-roca/](fab-roca/): Domain-specific examples
+
+### 2. Learning Path-Based Organization (New)
+
+Examples are also organized by learning progression:
+- [learning_paths/01_getting_started/](learning_paths/01_getting_started/): Beginner-friendly examples
+- [learning_paths/02_core_concepts/](learning_paths/02_core_concepts/): Intermediate examples
+- [learning_paths/03_advanced_patterns/](learning_paths/03_advanced_patterns/): Advanced examples
+- [learning_paths/04_real_world_applications/](learning_paths/04_real_world_applications/): Domain-specific examples
+
+### 3. End-to-End Tutorials
+
+Step-by-step tutorials for building complete applications:
+- [tutorials/build_qa_agent/](tutorials/build_qa_agent/): Building a question-answering agent
+- [tutorials/temperature_monitoring/](tutorials/temperature_monitoring/): Building a temperature monitoring system
+
 ## Learning Paths
 
 ### 1. Getting Started [Beginner]
