@@ -12,23 +12,23 @@ Implementation examples demonstrating DXA framework usage.
 
 ## Basic Examples
 
-- **template.py**: Minimal working example showing core patterns
-- **chat_bot.py**: Interactive conversational agent
-- **research_assistant.py**: Information gathering and analysis
-- **system_monitor.py**: Continuous system monitoring
+- **basic/loggable_example.py**: Example of using the Loggable base class
+- **execution/workflow/simple_qa.py**: Simple question answering workflow
+- **execution/workflow/default_workflow.py**: Default workflow example
+- **execution/planning/simple_plan.py**: Basic planning pattern
 
 ## Advanced Examples
 
-- **collaborative.py**: Multi-agent coordination
-- **data_analysis.py**: Data processing and visualization
-- **web_automation.py**: Web interaction and scraping
+- **execution/workflow/prosea_workflow.py**: ProSEA framework implementation
+- **execution/workflow/complex_research.py**: Multi-step research pattern
+- **execution/workflow/system_health.py**: System monitoring example
 
 ## Usage
 
 Each example can be run directly:
 
 ```bash
-python examples/chat_bot.py
+python examples/execution/workflow/simple_qa.py
 ```
 
 ## Common Patterns
@@ -36,36 +36,57 @@ python examples/chat_bot.py
 1. Agent Creation:
 
 ```python
-agent = Agent("name")\
-    .with_reasoning("type")\
-    .with_resources({...})\
-    .with_capabilities([...])
+from dxa.agent import Agent
+from dxa.agent.resource import LLMResource
+from dxa.execution import ReasoningStrategy
+
+agent = Agent(name="name")\
+    .with_reasoning(ReasoningStrategy.DEFAULT)\
+    .with_llm(LLMResource())\
+    .with_capabilities({...})
 ```
 
-1. Task Execution:
+2. Task Execution:
 
 ```python
+# Synchronous execution
+result = agent.run(workflow)
+
+# Asynchronous execution
 async with agent:
-    result = await agent.run(task)
+    result = await agent.async_run(workflow)
 ```
 
-1. Resource Management:
+3. Resource Management:
 
 ```python
+agent.with_llm(LLMResource(config={"model": "openai:gpt-4"}))
 agent.with_resources({
-    "llm": LLMResource(model="gpt-4"),
     "custom": CustomResource()
 })
 ```
 
-## Example Structure
+## Example Categories
 
-Each example demonstrates:
+The example directory is organized by module and functionality:
 
-- Appropriate reasoning pattern selection
-- Resource configuration
-- Task structuring
-- Error handling
-- Proper cleanup using context managers
+- **basic/**: Fundamental utilities
+  - Logging utilities
+  - Loggable class usage
+  
+- **execution/**: Execution system examples
+  - **workflow/**: Workflow definition and execution
+  - **planning/**: Planning system usage
+  - **reasoning/**: Reasoning patterns
+  - **pipeline/**: Data pipeline examples
+  
+- **resource/**: Resource system examples
+  - LLM integration
+  - MCP resource examples
+  
+- **fab-roca/**: Domain-specific examples
+  - Semiconductor manufacturing use case
+  - RIE monitoring example
+  - FDC integration
 
 See individual examples for detailed implementations.

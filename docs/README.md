@@ -10,19 +10,20 @@ Complete documentation for the DXA framework.
 
 ## Structure
 
-- **api/**: API reference documentation
-- **guides/**: User guides and tutorials
-- **examples/**: Code examples and patterns
-- **architecture/**: Design documentation
+- **requirements/**: Domain-specific requirements documentation
+- **dxa.html**: API reference HTML documentation
 
-## Building Docs
+## Documentation
+
+The primary documentation for the DXA framework is contained in README files within each module directory. The code itself is also extensively documented with docstrings.
 
 ```bash
-# Install doc dependencies
-pip install -r docs/requirements.txt
+# View framework overview
+cat dxa/README.md
 
-# Build documentation
-make html
+# View specific component documentation
+cat dxa/agent/README.md
+cat dxa/execution/workflow/README.md
 ```
 
 See individual sections for detailed information.
@@ -30,18 +31,21 @@ See individual sections for detailed information.
 ## System Documentation
 
 - [Agent System](../dxa/agent/README.md)
-- [Planning System](../dxa/core/planning/README.md)
-- [Reasoning System](../dxa/core/reasoning/README.md)
-- [Flow System](../dxa/flow/README.md)
-- [Resource System](../dxa/core/resource/README.md)
+- [Execution System](../dxa/execution/README.md)
+  - [Planning System](../dxa/execution/planning/README.md)
+  - [Reasoning System](../dxa/execution/reasoning/README.md)
+  - [Workflow System](../dxa/execution/workflow/README.md)
+  - [Pipeline System](../dxa/execution/pipeline/README.md)
+- [Resource System](../dxa/agent/resource/README.md)
+- [Capability System](../dxa/agent/capability/README.md)
 
 ### Process Automation
 
-The DXA Flow system provides powerful process automation capabilities:
+The DXA Workflow system provides powerful process automation capabilities:
 
 - Workflow automation
 - SOP implementation
 - Business process management
 - RPA enhancement
 
-See [Flow Documentation](../dxa/flow/README.md) for details.
+See [Workflow Documentation](../dxa/execution/workflow/README.md) for details.
