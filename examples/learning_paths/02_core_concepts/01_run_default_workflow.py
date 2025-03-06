@@ -17,51 +17,12 @@ by formalizing the relationship between layers while maintaining the same functi
 """
 
 import asyncio
-from typing import Dict, Any
 
 from dxa.execution import WorkflowFactory, WorkflowExecutor, PlanExecutor, ReasoningExecutor
 from dxa.execution import ExecutionContext
 from dxa.execution.execution_types import Objective
 from dxa.common.utils.logging import DXA_LOGGER
-
-# Mock LLM implementation for testing
-class MockLLM:
-    """A mock LLM that returns tailored responses based on the task."""
-    
-    async def initialize(self):
-        """Initialize the LLM."""
-        self.responses = {
-            "DEFINE": "The task is to analyze a tech company's customer reviews to identify common issues and recommend solutions.",
-            "RESEARCH": "After analyzing 500 customer reviews, key issues include: slow app performance (30%), confusing interface (25%), lack of features (20%), and poor customer support (15%).",
-            "STRATEGIZE": "Root causes of these issues appear to be: (1) Technical debt in backend services, (2) Lack of user experience testing, (3) Feature prioritization based on internal rather than customer needs, (4) Understaffed support team.",
-            "EXECUTE": "Recommended solutions: (1) Optimize database queries and API calls to improve performance, (2) Conduct usability testing and redesign problematic interfaces, (3) Create a customer-driven feature roadmap, (4) Expand and train the support team.",
-            "EVALUATE": "These solutions directly address customer pain points identified in the reviews. The performance optimization and interface redesign will have the highest immediate impact. Implementation priorities should be: (1) Performance optimization, (2) Interface redesign, (3) Customer-driven feature roadmap, (4) Support team expansion. This approach will address 90% of customer complaints within 3-6 months."
-        }
-        
-    async def cleanup(self):
-        """Clean up resources."""
-        pass
-        
-    async def query(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """Return a tailored response based on the task."""
-        prompt = request.get("prompt", "")
-        
-        # Log the LLM interaction for demonstration purposes
-        DXA_LOGGER.log_llm(
-            prompt=prompt,
-            response="Mock response for demonstration",
-            model="mock-llm"
-        )
-        
-        # Determine which node is being executed
-        for node_name, response in self.responses.items():
-            if node_name in prompt:
-                return {"content": response}
-                
-        # Default response if we can't identify the node
-        return {
-            "content": f"Processing task: {prompt[:50]}... (Generic response for testing)"
-        }
+from dxa.agent.resource import LLMResource
 
 async def main():
     """Run a Default workflow to analyze customer reviews and recommend solutions."""
@@ -82,11 +43,16 @@ async def main():
     print("4. Processing and displaying the results in a structured way")
     print("\nStarting Customer Review Analysis workflow...")
     
-    # Create a mock LLM
-    llm = MockLLM()
+    # Create a real LLM resource
+    llm = LLMResource(
+        # You can configure the LLM with parameters like:
+        # model="gpt-4",
+        # temperature=0.7,
+        # etc.
+    )
     await llm.initialize()
     
-    # Create an execution context with the mock LLM
+    # Create an execution context with the LLM resource
     context = ExecutionContext(
         reasoning_llm=llm,
         planning_llm=llm,
@@ -137,7 +103,8 @@ async def main():
                     results_by_node[node_name] = str(result)
         
         # Display results in workflow order
-        for node_name in ["DEFINE", "RESEARCH", "STRATEGIZE", "EXECUTE", "EVALUATE"]:
+        node_order = workflow.nodes.keys()
+        for node_name in node_order:
             if node_name in results_by_node:
                 print(f"\n## {node_name} ##")
                 print(results_by_node[node_name])
