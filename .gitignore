@@ -4,6 +4,10 @@
 .venv/*
 __pycache__
 __pycache__/*
+mcp
+mcp/*
+configs
+configs/*
 logs
 logs/*
 dxa.egg-info
@@ -11,3 +15,4 @@ dxa.egg-info/*
 .aider*
 flake8_issues.txt
 .env.swp
+.gitignore.swp
