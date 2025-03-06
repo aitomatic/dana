@@ -10,9 +10,11 @@ Examples organized by learning progression:
   - Logging and configuration
 
 - **02_core_concepts/**: Intermediate examples
-  - Three-layer execution model (Workflow, Planning, Reasoning)
+  - Complete workflow execution through all three layers
+  - Planning layer concepts and implementation
+  - Reasoning layer concepts and implementation
   - Data pipelines
-  - Resource integration
+  - LLM resource integration
 
 - **03_advanced_patterns/**: Advanced examples
   - ProSEA framework

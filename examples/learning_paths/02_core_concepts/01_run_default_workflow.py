@@ -46,6 +46,13 @@ class MockLLM:
         """Return a tailored response based on the task."""
         prompt = request.get("prompt", "")
         
+        # Log the LLM interaction for demonstration purposes
+        DXA_LOGGER.log_llm(
+            prompt=prompt,
+            response="Mock response for demonstration",
+            model="mock-llm"
+        )
+        
         # Determine which node is being executed
         for node_name, response in self.responses.items():
             if node_name in prompt:
@@ -58,8 +65,13 @@ class MockLLM:
 
 async def main():
     """Run a Default workflow to analyze customer reviews and recommend solutions."""
-    # Set up logging
-    DXA_LOGGER.configure(level=DXA_LOGGER.INFO)
+    # Set up logging with enhanced detail level to see LLM interactions
+    DXA_LOGGER.configure(
+        level=DXA_LOGGER.DEBUG,  # Set to DEBUG to see more detailed logs
+        console=True,            # Output logs to console
+        log_data=True            # Log data payloads
+    )
+    
     print("=================================================================")
     print("EXAMPLE: RUNNING A DEFAULT WORKFLOW WITH OUR REFACTORED W-P-R STACK")
     print("=================================================================")
