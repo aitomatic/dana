@@ -7,3 +7,5 @@ name = "dxa"
 version = "0.1.0"
 description = "Domain-Expert Agent Framework"
 
+[tool.setuptools]
+packages = ["dxa"]
