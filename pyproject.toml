@@ -5,4 +5,5 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "dxa"
 version = "0.1.0"
-description = "Domain-Expert Agent Framework”
+description = "Domain-Expert Agent Framework"
+
