@@ -34,7 +34,7 @@ Start with these beginner-friendly examples in the recommended order:
 
 Once familiar with the basics, explore these intermediate examples:
 
-- **learning_paths/02_core_concepts/01_run_default_workflow.py**: Workflow execution process
+- **learning_paths/02_core_concepts/01_run_default_workflow.py**: Complete workflow execution through all three layers
 - **learning_paths/02_core_concepts/02_simple_plan.py**: Planning layer concepts
 - **learning_paths/02_core_concepts/03_simple_reasoning.py**: Reasoning layer concepts
 - **learning_paths/02_core_concepts/04_temperature_monitor.py**: Data pipeline example
