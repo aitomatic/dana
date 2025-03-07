@@ -51,15 +51,16 @@ graph TB
 Combines `BaseResource` and `ExecutionGraph` to create a queryable pipeline:
 
 ```python
-from dxa.core.resource.pipeline import PipelineResource
+from dxa.execution.pipeline import PipelineResource
+from dxa.agent.resource import BaseResource
 
 # Create pipeline
 pipeline = PipelineResource("anomaly_detection")
 
 # Add nodes
-pipeline.add_source(IoTResource("sensor"))
-pipeline.add_model(AnomalyDetector("detector"))
-pipeline.add_sink(ReasoningInput("reasoning"))
+pipeline.add_source(IoTSensorResource("sensor"))
+pipeline.add_transform(PreprocessResource("preprocessing"))
+pipeline.add_sink(OutputResource("results"))
 
 # Initialize and run
 await pipeline.initialize()

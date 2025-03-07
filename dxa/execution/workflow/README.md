@@ -100,21 +100,17 @@ classDiagram
 ### Integration Points
 
 ```python
-from dxa.core.workflow import Workflow
-from dxa.core.planning import SequentialPlanner
-from dxa.core.state import WorldState, AgentState
-from dxa.core.agent import Agent
+from dxa.execution.workflow import WorkflowFactory
+from dxa.execution import PlanStrategy
+from dxa.agent.state import WorldState, AgentState
+from dxa.agent import Agent
 
 # Workflow creation and planning
-workflow = create_workflow(objective="Research quantum computing")
-planner = SequentialPlanner()
-plan = planner.create_plan(workflow)
+workflow = WorkflowFactory.create_default_workflow(objective="Research quantum computing")
+agent = Agent(name="researcher").with_planning(PlanStrategy.DEFAULT)
 
 # Execution
-agent = Agent()
-world_state = WorldState()
-agent_state = AgentState()
-result = agent.execute_plan(plan, world_state, agent_state)
+result = agent.run(workflow)
 ```
 
 ## 3. Core Concepts
@@ -294,22 +290,21 @@ except ResourceValidationError as e:
 ### Research Task Example
 
 ```python
-from dxa.core.workflow import create_research_workflow
-from dxa.core.planning import SequentialPlanner
-from dxa.core.agent import Agent
+from dxa.execution.workflow import WorkflowFactory
+from dxa.agent import Agent
+from dxa.agent.resource import LLMResource
 
 # Create workflow
-workflow = create_research_workflow(
+workflow = WorkflowFactory.create_default_workflow(
     objective="Research quantum computing advances"
 )
 
-# Create plan
-planner = SequentialPlanner()
-plan = planner.create_plan(workflow)
+# Configure agent
+agent = Agent(name="researcher")
+agent.with_llm(LLMResource(config={"model": "openai:gpt-4"}))
 
 # Execute
-agent = Agent(resources={"llm": LLMResource()})
-result = agent.execute_plan(plan)
+result = agent.run(workflow)
 ```
 
 Generated workflow structure:
@@ -384,21 +379,26 @@ graph TB
 ### Core Classes
 
 ```python
-class Workflow(DirectedGraph):
-    def add_task(self, id: str, description: str, **kwargs) -> WorkflowNode
-    def add_decision(self, id: str, description: str, **kwargs) -> WorkflowNode
-    def add_transition(self, from_id: str, to_id: str, condition: Optional[str] = None) -> WorkflowEdge
-    def get_start(self) -> WorkflowNode
-    def get_ends(self) -> List[WorkflowNode]
+class Workflow(ExecutionGraph):
+    def add_task(self, node_id: str, description: str, **kwargs) -> ExecutionNode
+    def add_decision(self, node_id: str, description: str, **kwargs) -> ExecutionNode
+    def add_transition(self, source: str, target: str, condition: Optional[str] = None) -> ExecutionEdge
+    def get_start_node(self) -> Optional[ExecutionNode]
+    def get_terminal_nodes(self) -> List[ExecutionNode]
 ```
 
 ### Factory Functions
 
 ```python
-def create_workflow() -> Workflow
-def create_sequential_workflow(steps: List[Node], objective: str) -> Workflow
-def create_basic_qa_workflow(objective: str = "Answer the question") -> Workflow
-def create_research_workflow(objective: str = "Research the topic") -> Workflow
+class WorkflowFactory:
+    @classmethod
+    def create_default_workflow(cls, objective: str) -> Workflow
+    @classmethod
+    def create_sequential_workflow(cls, objective: str, commands: List[str]) -> Workflow
+    @classmethod
+    def create_minimal_workflow(cls, objective: str) -> Workflow
+    @classmethod
+    def create_from_config(cls, config_name: str, objective: Optional[Objective] = None) -> Workflow
 ```
 
 ## 8. Future Development

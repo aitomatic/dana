@@ -108,31 +108,21 @@ graph TB
 ```python
 from dxa.agent import Agent
 from dxa.agent.resource import LLMResource
-from dxa.execution.workflow import create_research_workflow
+from dxa.execution import WorkflowFactory, PlanStrategy
 
 # Simple Q&A
 answer = Agent().ask("What is quantum computing?")
 
 # Research workflow
-workflow = create_research_workflow()
-agent = Agent(resources={"llm": LLMResource()})
-result = agent.execute(workflow)
-```
+workflow = WorkflowFactory.create_default_workflow("Research quantum computing")
+agent = Agent(name="researcher").with_llm(LLMResource())
+result = agent.run(workflow)
 
-## Getting Started
-
-```python
-from dxa.agent import Agent
-from dxa.agent.resource import LLMResource
-from dxa.execution.workflow import create_research_workflow
-
-# Simple Q&A
-answer = Agent().ask("What is quantum computing?")
-
-# Research workflow
-workflow = create_research_workflow()
-agent = Agent(resources={"llm": LLMResource()})
-result = agent.execute(workflow)
+# Custom workflow with strategies
+agent = Agent(name="advanced_agent")\
+    .with_llm(LLMResource(config={"model": "openai:gpt-4"}))\
+    .with_planning(PlanStrategy.DEFAULT)
+result = agent.run(workflow)
 ```
 
 ## Project Structure

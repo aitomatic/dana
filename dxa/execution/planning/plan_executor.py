@@ -43,6 +43,16 @@ class PlanExecutor(Executor[PlanStrategy]):
         self.layer = "plan"
         self.logger = logging.getLogger(f"dxa.execution.{self.layer}")
     
+    def _get_graph_class(self):
+        """Get the appropriate graph class for this executor.
+        
+        Returns:
+            Plan graph class
+        """
+        # Import here to avoid circular import
+        from .plan import Plan
+        return Plan
+    
     async def execute_node(
         self,
         node: ExecutionNode, 
@@ -90,6 +100,17 @@ class PlanExecutor(Executor[PlanStrategy]):
                 description=node.description,
                 metadata=node_metadata
             )
+            
+            # First, create a reasoning graph for this plan node
+            reasoning_graph = self.reasoning_executor.create_graph_from_node(
+                upper_node=execution_node,
+                upper_graph=self.graph,
+                objective=self.graph.objective if self.graph else None,
+                context=context
+            )
+            
+            # Set the reasoning graph in the reasoning executor
+            self.reasoning_executor.graph = reasoning_graph
             
             # Execute the node using the reasoning executor
             signals = await self.reasoning_executor.execute_node(
@@ -147,18 +168,20 @@ class PlanExecutor(Executor[PlanStrategy]):
             lower_signals=lower_signals
         )
     
-    def _create_graph(
-        self, 
-        upper_graph: ExecutionGraph, 
-        objective: Optional[Objective] = None, 
+    def create_graph_from_node(
+        self,
+        upper_node: ExecutionNode,
+        upper_graph: ExecutionGraph,
+        objective: Optional[Objective] = None,
         context: Optional[ExecutionContext] = None
     ) -> ExecutionGraph:
-        """Create a plan execution graph.
+        """Create a plan execution graph from a node in the workflow.
         
-        For plan execution, the graph is created based on the planning strategy.
+        This method creates a plan graph based on a workflow node.
         
         Args:
-            upper_graph: Graph from the upper execution layer (workflow)
+            upper_node: Node from the workflow layer
+            upper_graph: Graph from the workflow layer
             objective: Execution objective
             context: Execution context
             
@@ -169,38 +192,32 @@ class PlanExecutor(Executor[PlanStrategy]):
         if self.graph is not None:
             return self.graph
         
-        # Get workflow from context if available
-        workflow = None
-        # Check if context has a workflow attribute
-        if context:
-            workflow = context.current_workflow
-            
-        if not workflow:
-            workflow = upper_graph
-            
+        # Get the workflow graph
+        workflow = upper_graph
         if not workflow:
             # Create a minimal plan if no workflow is available
             return Plan(
-                objective=objective or Objective("Execute plan"),
-                name="default_plan"
+                objective=objective or Objective(f"Execute plan for {upper_node.node_id}"),
+                name=f"plan_for_{upper_node.node_id}"
             )
         
         # Create a plan based on the strategy
         if self.strategy == PlanStrategy.DEFAULT:
             # Direct execution - create a minimal plan that follows the workflow structure
-            return self._create_direct_plan(workflow, objective)
+            return self._create_direct_plan(workflow, objective, upper_node)
         elif self.strategy == PlanStrategy.DYNAMIC:
-            return self._create_dynamic_plan(workflow, objective)
+            return self._create_dynamic_plan(workflow, objective, upper_node)
         elif self.strategy == PlanStrategy.INCREMENTAL:
-            return self._create_incremental_plan(workflow, objective)
+            return self._create_incremental_plan(workflow, objective, upper_node)
         else:
             # Default to direct plan
-            return self._create_direct_plan(workflow, objective)
-    
+            return self._create_direct_plan(workflow, objective, upper_node)
+            
     def _create_direct_plan(
         self, 
         workflow: ExecutionGraph, 
-        objective: Optional[Objective] = None
+        objective: Optional[Objective] = None,
+        upper_node: Optional[ExecutionNode] = None
     ) -> Plan:
         """Create a direct plan from a workflow.
         
@@ -209,14 +226,16 @@ class PlanExecutor(Executor[PlanStrategy]):
         Args:
             workflow: Workflow graph
             objective: Execution objective
+            upper_node: Node from the workflow layer to create plan for
             
         Returns:
             Direct plan
         """
         # Create a plan that directly follows the workflow
+        node_id = upper_node.node_id if upper_node else "workflow"
         plan = Plan(
             objective=objective or workflow.objective,
-            name=f"direct_plan_for_{workflow.name}"
+            name=f"direct_plan_for_{node_id}"
         )
         
         # Copy nodes and edges from workflow
@@ -227,6 +246,14 @@ class PlanExecutor(Executor[PlanStrategy]):
                 description=node.description,
                 metadata=node.metadata.copy() if node.metadata else {}
             )
+            
+            # If this is the upper node, add additional metadata
+            if upper_node and node.node_id == upper_node.node_id:
+                if not plan_node.metadata:
+                    plan_node.metadata = {}
+                plan_node.metadata["is_upper_node"] = True
+                plan_node.metadata["upper_layer_id"] = upper_node.node_id
+            
             plan.add_node(plan_node)
             
         for edge in workflow.edges:
@@ -242,7 +269,8 @@ class PlanExecutor(Executor[PlanStrategy]):
     def _create_dynamic_plan(
         self, 
         workflow: ExecutionGraph, 
-        objective: Optional[Objective] = None
+        objective: Optional[Objective] = None,
+        upper_node: Optional[ExecutionNode] = None
     ) -> Plan:
         """Create a dynamic plan from a workflow.
         
@@ -251,18 +279,20 @@ class PlanExecutor(Executor[PlanStrategy]):
         Args:
             workflow: Workflow graph
             objective: Execution objective
+            upper_node: Node from the workflow layer to create plan for
             
         Returns:
             Dynamic plan
         """
         # For now, just create a direct plan
         # In the future, this would create a more adaptive plan
-        return self._create_direct_plan(workflow, objective)
+        return self._create_direct_plan(workflow, objective, upper_node)
     
     def _create_incremental_plan(
         self, 
         workflow: ExecutionGraph, 
-        objective: Optional[Objective] = None
+        objective: Optional[Objective] = None,
+        upper_node: Optional[ExecutionNode] = None
     ) -> Plan:
         """Create an incremental plan from a workflow.
         
@@ -271,13 +301,14 @@ class PlanExecutor(Executor[PlanStrategy]):
         Args:
             workflow: Workflow graph
             objective: Execution objective
+            upper_node: Node from the workflow layer to create plan for
             
         Returns:
             Incremental plan
         """
         # For now, just create a direct plan
         # In the future, this would create a plan that evolves incrementally
-        return self._create_direct_plan(workflow, objective)
+        return self._create_direct_plan(workflow, objective, upper_node)
     
     async def _custom_graph_traversal(
         self, 
@@ -298,8 +329,27 @@ class PlanExecutor(Executor[PlanStrategy]):
         Returns:
             List of signals if custom traversal was performed, None otherwise
         """
-        # Create a reasoning graph based on the plan graph
-        reasoning_graph = self.reasoning_executor._create_graph(
+        # Get the current node from the context
+        current_node = None
+        if hasattr(context, 'current_node') and context.current_node:
+            current_node = context.current_node
+        else:
+            # Use the current cursor position
+            cursor_pos = getattr(graph, 'cursor_position', None)
+            if cursor_pos and cursor_pos in graph.nodes:
+                current_node = graph.nodes[cursor_pos]
+            else:
+                # Default to start node
+                current_node = graph.get_start_node()
+        
+        if not current_node:
+            self.logger.warning("No current node found for creating reasoning graph")
+            # Continue with default traversal
+            return None
+        
+        # Create a reasoning graph using the new create_graph_from_node method
+        reasoning_graph = self.reasoning_executor.create_graph_from_node(
+            upper_node=current_node,
             upper_graph=graph,
             objective=graph.objective,
             context=context
