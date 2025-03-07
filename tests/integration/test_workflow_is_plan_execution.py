@@ -67,7 +67,7 @@ async def test_graph_safety(agent):
     try:
         await workflow_exec.execute_workflow(
             # pylint: disable=protected-access
-            workflow=workflow_exec._create_graph(None, Objective("test"), context),
+            workflow=workflow_exec.create_graph_from_node(None, None, Objective("test"), context),
             context=context
         )
     except ValueError as e:

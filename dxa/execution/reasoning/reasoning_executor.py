@@ -226,18 +226,30 @@ class ReasoningExecutor(Executor[ReasoningStrategy]):
             self.logger.warning("No reasoning LLM available in context, using placeholder")
             return f"Reasoning result for node {node.node_id} using strategy {self.strategy.name}"
     
-    def _create_graph(
-        self, 
-        upper_graph: ExecutionGraph, 
-        objective: Optional[Objective] = None, 
+    def _get_graph_class(self):
+        """Get the appropriate graph class for this executor.
+        
+        Returns:
+            Reasoning graph class
+        """
+        # Import here to avoid circular import
+        from .reasoning import Reasoning
+        return Reasoning
+
+    def create_graph_from_node(
+        self,
+        upper_node: ExecutionNode,
+        upper_graph: ExecutionGraph,
+        objective: Optional[Objective] = None,
         context: Optional[ExecutionContext] = None
     ) -> ExecutionGraph:
-        """Create a reasoning execution graph.
+        """Create a reasoning execution graph from a node in the plan.
         
-        For reasoning execution, the graph is typically created from the plan graph.
+        This method creates a reasoning graph based on a plan node.
         
         Args:
-            upper_graph: Graph from the upper execution layer (plan)
+            upper_node: Node from the plan layer
+            upper_graph: Graph from the plan layer
             objective: Execution objective
             context: Execution context
             
@@ -248,25 +260,61 @@ class ReasoningExecutor(Executor[ReasoningStrategy]):
         if self.graph is not None:
             return self.graph
         
+        # Import here to avoid circular import
+        from .reasoning import Reasoning
+        
         # Create a new reasoning graph
-        graph = ExecutionGraph(
-            objective=objective or (upper_graph.objective if upper_graph else Objective("Execute reasoning")),
-            name=f"reasoning_for_{upper_graph.name if upper_graph else 'unnamed'}"
+        graph = Reasoning(
+            objective=objective or (
+                upper_graph.objective if upper_graph else 
+                Objective(f"Execute reasoning for {upper_node.node_id}")
+            ),
+            name=f"reasoning_for_{upper_node.node_id}"
         )
         
         # Copy nodes and edges from upper graph if available
         if upper_graph:
             for node_id, node in upper_graph.nodes.items():
-                graph.add_node(
-                    ExecutionNode(
-                        node_id=node.node_id,
-                        node_type=node.node_type,
-                        description=node.description,
-                        metadata=node.metadata.copy() if node.metadata else {}
-                    )
+                reasoning_node = ExecutionNode(
+                    node_id=node.node_id,
+                    node_type=node.node_type,
+                    description=node.description,
+                    metadata=node.metadata.copy() if node.metadata else {}
                 )
+                
+                # If this is the upper node, add additional metadata
+                if node.node_id == upper_node.node_id:
+                    if not reasoning_node.metadata:
+                        reasoning_node.metadata = {}
+                    reasoning_node.metadata["is_upper_node"] = True
+                    reasoning_node.metadata["upper_layer_id"] = upper_node.node_id
+                
+                graph.add_node(reasoning_node)
                 
             for edge in upper_graph.edges:
                 graph.add_edge_between(edge.source, edge.target)
         
-        return graph 
+        return graph
+        
+    async def _custom_graph_traversal(
+        self, 
+        graph: ExecutionGraph, 
+        context: ExecutionContext,
+        upper_signals: Optional[List[ExecutionSignal]] = None
+    ) -> Optional[List[ExecutionSignal]]:
+        """Implement custom traversal strategies for reasoning.
+        
+        The reasoning layer is the lowest level of execution, so it doesn't
+        need to create graphs for lower layers. This method can implement
+        custom traversal strategies if needed.
+        
+        Args:
+            graph: Execution graph to traverse
+            context: Execution context
+            upper_signals: Signals from upper execution layer
+            
+        Returns:
+            List of signals if custom traversal was performed, None otherwise
+        """
+        # Default implementation: no custom traversal
+        return None

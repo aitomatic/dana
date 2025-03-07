@@ -6,7 +6,7 @@
 
 # DXA Agent System
 
-## dxa.core.agent Module
+## dxa.agent Module
 
 The DXA agent system executes workflows by:
 
@@ -35,27 +35,29 @@ The DXA framework provides a factory pattern for creating agents with common con
 ### Usage
 
 ```python
-from dxa.core.agent import Agent
-from dxa.core.workflow import create_research_workflow
+from dxa.agent import Agent
+from dxa.agent.resource import LLMResource
+from dxa.execution import WorkflowFactory
 
 # Simple workflow execution
 answer = Agent().ask("What is quantum computing?")
 
 # Research workflow with resources
-workflow = create_research_workflow()
-agent = Agent(resources={"llm": LLMResource()})
-result = agent.execute(workflow)
+workflow = WorkflowFactory.create_default_workflow("Research quantum computing")
+agent = Agent(name="researcher").with_llm(LLMResource())
+result = agent.run(workflow)
 
 # Custom workflow execution
-workflow = BaseWorkflow()
-workflow.add_task("research", "Research topic")
-workflow.add_task("synthesize", "Synthesize findings")
+workflow = WorkflowFactory.create_sequential_workflow(
+    objective="Research and synthesize findings", 
+    commands=[
+        "Research topic",
+        "Synthesize findings"
+    ]
+)
 
-agent = Agent(resources={
-    "llm": LLMResource(),
-    "search": SearchResource()
-})
-result = agent.execute(workflow)
+agent = Agent(name="custom_agent").with_llm(LLMResource())
+result = agent.run(workflow)
 ```
 
 ## Workflow Execution
@@ -102,7 +104,7 @@ Agents track:
 
 ## State Components
 
-The DXA agent system uses a centralized state management approach to track the evolution of objectives and plans. This integrates with the [Planning System](../core/planning/README.md) and [Reasoning System](../core/reasoning/README.md) to maintain coherent agent state.
+The DXA agent system uses a centralized state management approach to track the evolution of objectives and plans. This integrates with the [Planning System](../execution/planning/README.md) and [Reasoning System](../execution/reasoning/README.md) to maintain coherent agent state.
 
 ## Core State Components
 
@@ -122,7 +124,7 @@ The DXA agent system uses a centralized state management approach to track the e
 
 - Active step in current plan
 - Results from completed steps
-- Resource allocations (managed via [Resource System](../core/resource/README.md))
+- Resource allocations (managed via [Resource System](resource/README.md))
 
 ## State Flow
 
@@ -139,41 +141,44 @@ graph TD
 ## Resource Integration
 
 ```python
+from dxa.agent import Agent
+from dxa.agent.resource import LLMResource, HumanResource
+
 # Configure agent with resources
-agent = Agent(resources={
-    "llm": LLMResource(),      # Core LLM
-    "search": SearchResource(), # Search capability
-    "human": HumanResource()    # Human feedback
-})
+agent = Agent(name="assistant")\
+    .with_llm(LLMResource(config={"model": "openai:gpt-4"}))\
+    .with_resources({
+        "human": HumanResource(name="user")
+    })
 
 # Resources are available during workflow execution
-result = agent.execute(workflow, context={
-    "llm_config": {"temperature": 0.7},
-    "search_depth": "comprehensive",
-    "require_feedback": True
-})
+result = agent.run(workflow)
 ```
 
 ### Domain-Specific Tasks
 
 ```python
-# Hierarchical planning with DANA reasoning
-agent = Agent("optimizer")\
-    .with_planning("hierarchical")\
-    .with_reasoning("dana")\
-    .with_resources({
-        "vector_db": VectorDB(),     # Pattern matching
-        "runtime": CodeExecutor()     # Run generated code
-    })
+from dxa.agent import Agent
+from dxa.agent.resource import LLMResource
+from dxa.execution import PlanStrategy, ReasoningStrategy
+from dxa.execution import WorkflowFactory
 
-result = await agent.run({
-    "objective": "Optimize system performance",
-    "subgoals": {
-        "analyze": ["profile_code", "identify_bottlenecks"],
-        "improve": ["optimize_algorithms", "tune_parameters"],
-        "validate": ["run_benchmarks", "verify_results"]
-    }
-})
+# Advanced planning and reasoning configuration
+agent = Agent(name="optimizer")\
+    .with_llm(LLMResource())\
+    .with_planning(PlanStrategy.HIERARCHICAL)\
+    .with_reasoning(ReasoningStrategy.DEFAULT)
+
+workflow = WorkflowFactory.create_sequential_workflow(
+    objective="Optimize system performance",
+    commands=[
+        "Profile code and identify bottlenecks",
+        "Optimize algorithms and tune parameters",
+        "Run benchmarks and verify results"
+    ]
+)
+
+result = await agent.async_run(workflow)
 ```
 
 ### Pattern Selection Guide
@@ -181,38 +186,36 @@ result = await agent.run({
 Choose patterns based on:
 
 1. **Task Complexity**
-   - Simple Q&A → Direct Planning + Direct Reasoning
-   - Multi-step Analysis → Sequential Planning + Chain of Thought
-   - Real-time Adaptation → Dynamic Planning + OODA Loop
-   - Domain Expertise → Hierarchical Planning + DANA
+   - Simple Q&A → DEFAULT Planning + DEFAULT Reasoning
+   - Multi-step Analysis → SEQUENTIAL Planning + Chain of Thought Reasoning
+   - Real-time Adaptation → DYNAMIC Planning + State-based Reasoning
+   - Domain Expertise → HIERARCHICAL Planning + Domain-specific Reasoning
 
 2. **Resource Requirements**
-   - Minimal → Direct (LLM only)
-   - Memory Intensive → Sequential + Chain of Thought
-   - Sensor Access → Dynamic + OODA
-   - Full Toolkit → Hierarchical + DANA
+   - Minimal → DEFAULT (LLM only)
+   - Memory Intensive → SEQUENTIAL Planning
+   - External Tools → WORKFLOW_IS_PLAN with custom resources
+   - Complex Processing → HIERARCHICAL Planning with specialized LLMs
 
 3. **Performance Needs**
-   - Quick Response → Direct patterns
-   - Verifiable Logic → Sequential + Chain of Thought
-   - Continuous Operation → Dynamic + OODA
-   - Optimal Solutions → Hierarchical + DANA
+   - Quick Response → DEFAULT Planning strategies
+   - Verifiable Logic → SEQUENTIAL Planning with detailed reasoning
+   - Continuous Operation → DYNAMIC Planning with state tracking
+   - Optimal Solutions → HIERARCHICAL Planning with specialized reasoning
 
 ## Runtime System
 
 The agent runtime manages execution flow and state:
 
 ```python
-# Runtime configuration
-runtime_config = {
-    "max_steps": 100,
-    "timeout": 300,
-    "error_policy": "retry"
-}
+# Using the agent as an async context manager
+async with agent as runtime_agent:
+    result = await runtime_agent.async_run(workflow)
 
-# Using the runtime
-async with agent.runtime(runtime_config) as runtime:
-    result = await runtime.execute(task)
+# Manual initialization and cleanup
+await agent.initialize()
+result = await agent.async_run(workflow)
+await agent.cleanup()
 ```
 
 ## Key Design Principles
@@ -230,7 +233,7 @@ async with agent.runtime(runtime_config) as runtime:
 3. **Execution Context**
    - Track active work
    - Record step results
-   - Monitor resource usage via [I/O System](../core/io/README.md)
+   - Monitor resource usage via [I/O System](io/README.md)
 
 ## Usage Patterns
 
@@ -240,7 +243,7 @@ Planning and Reasoning layers interact with state through well-defined interface
 - Reasoning reads plans and writes results
 - Both can trigger state transitions based on new information
 
-See [Capability System](../core/capability/README.md) for higher-level state operations.
+See [Capability System](capability/README.md) for higher-level state operations.
 
 Would you like me to elaborate on any aspect of this design?
 
@@ -264,8 +267,9 @@ Agents provide:
 
 ## See Also
 
-- [Workflow System](../workflow/README.md)
-- [Resource System](../resource/README.md)
+- [Workflow System](../execution/workflow/README.md)
+- [Resource System](resource/README.md)
+- [Capability System](capability/README.md)
 - [Examples](../../examples/README.md)
 
 ---

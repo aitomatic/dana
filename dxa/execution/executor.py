@@ -101,7 +101,8 @@ class Executor(ABC, Generic[StrategyT]):
         self, 
         upper_graph: ExecutionGraph, 
         context: ExecutionContext,
-        upper_signals: Optional[List[ExecutionSignal]] = None
+        upper_signals: Optional[List[ExecutionSignal]] = None,
+        upper_node: Optional[ExecutionNode] = None
     ) -> List[ExecutionSignal]:
         """Execute an execution graph.
         
@@ -115,13 +116,31 @@ class Executor(ABC, Generic[StrategyT]):
             upper_graph: Graph from the upper execution layer
             context: Execution context
             upper_signals: Signals from the upper execution layer
+            upper_node: Specific node from upper layer to create graph for
             
         Returns:
             List of execution signals resulting from the execution
         """
         # Create graph for this execution layer if needed
         if self.graph is None:
-            self.graph = self._create_graph(
+            # If we don't have an upper_node, use the start node of the upper graph or create a default node
+            if not upper_node:
+                if upper_graph:
+                    upper_node = upper_graph.get_start_node() or ExecutionNode(
+                        node_id="default",
+                        node_type=NodeType.TASK,
+                        description="Default task"
+                    )
+                else:
+                    upper_node = ExecutionNode(
+                        node_id="default",
+                        node_type=NodeType.TASK,
+                        description="Default task"
+                    )
+            
+            # Create graph using create_graph_from_node
+            self.graph = self.create_graph_from_node(
+                upper_node=upper_node,
                 upper_graph=upper_graph,
                 context=context
             )
@@ -342,50 +361,41 @@ class Executor(ABC, Generic[StrategyT]):
         if self.graph and node_id in self.graph.nodes:
             self.graph.update_node_status(node_id, ExecutionNodeStatus.FAILED)
     
-    def _create_error_signal(self, node_id: str, error: str) -> ExecutionSignal:
-        """Create an error signal for a node.
+    def _get_graph_class(self):
+        """Get the appropriate graph class for this executor.
         
-        Args:
-            node_id: ID of the node where the error occurred
-            error: Error message
-            
         Returns:
-            Error signal
+            Graph class for this layer, or None to use ExecutionGraph
         """
-        return ExecutionSignal(
-            type=ExecutionSignalType.CONTROL_ERROR,
-            content={
-                "node": node_id,
-                "message": error
-            }
-        )
+        # Subclasses should override this if they use a specific graph class
+        return None
     
     @abstractmethod
-    def _create_graph(
-        self, 
-        upper_graph: ExecutionGraph, 
-        objective: Optional[Objective] = None, 
+    def create_graph_from_node(
+        self,
+        upper_node: ExecutionNode,
+        upper_graph: ExecutionGraph,
+        objective: Optional[Objective] = None,
         context: Optional[ExecutionContext] = None
     ) -> ExecutionGraph:
-        """Create an execution graph for this executor.
+        """Create a new execution graph from a node in the upper layer.
         
-        This method creates a graph for this execution layer based on
-        the upper layer's graph and the execution context.
+        This method creates a graph for the current layer based on a node
+        from the upper execution layer. This formalizes the creation of graphs
+        in the Workflow -> Planning -> Reasoning stack.
         
         Args:
+            upper_node: Node from the upper execution layer
             upper_graph: Graph from the upper execution layer
-            objective: Execution objective
+            objective: Execution objective (defaults to the upper graph's objective)
             context: Execution context
             
         Returns:
-            Execution graph for this layer
+            New execution graph for the current layer
         """
         pass
     
-    def _create_sequence_graph(
-        self, 
-        nodes: List[ExecutionNode]
-    ) -> ExecutionGraph:
+    def _create_sequence_graph(self, nodes: List[ExecutionNode]) -> ExecutionGraph:
         """Create a sequential execution graph from a list of nodes.
         
         Args:
@@ -395,6 +405,7 @@ class Executor(ABC, Generic[StrategyT]):
             Sequential execution graph
         """
         # Create graph
+        # Use ExecutionGraph directly instead of trying to use graph_class
         graph = ExecutionGraph(layer=self.layer)
         
         # Add START node
@@ -467,7 +478,7 @@ class Executor(ABC, Generic[StrategyT]):
             }
         )
     
-    def create_error_signal(
+    def _create_error_signal(
         self, 
         node_id: str, 
         error: str
