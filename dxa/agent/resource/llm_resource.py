@@ -118,7 +118,7 @@ class LLMResource(BaseResource):
             self._client = ai.Client(provider_configs=self.provider_configs)
             self.logger.info("LLM client initialized successfully for model: %s", self.model)
 
-    async def query(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    async def query(self, request: Dict[str, Any]) -> Dict[str, Any]
         """Send query to LLM.
         
         Args:
@@ -143,7 +143,8 @@ class LLMResource(BaseResource):
             raise ValueError("'Prompt' is required")
 
         # Log the prompt being sent to the LLM
-        self.conversation_logger.info(f"PROMPT TO {self.model}:\n{'-' * 80}\n{request.get('prompt')}\n{'-' * 80}")
+        # self.conversation_logger.info(f"PROMPT TO {self.model}:\n{'-' * 80}\n{request.get('prompt')}\n{'-' * 80}")
+        self.conversation_logger.info(f"PROMPT TO {self.model}:\n{'-' * 80}\n{messages}\n{'-' * 80}")
         
         request_params = {
             "temperature": float(self.config.get("temperature", 0.7)),
