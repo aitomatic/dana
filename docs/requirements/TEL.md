@@ -7,7 +7,7 @@
 # Tokyo Electron (TEL) DXA Requirements
 
 <p align="center">
-  <img src="https://www.tel.com/resources/images/company/brand/logo_tel_en.svg" alt="Tokyo Electron Logo" width="50%" />
+  <img src="https://companieslogo.com/img/orig/8035.T-35274dbe.png?t=1720244490" alt="Tokyo Electron Logo" width="50%" />
 </p>
 
 ## Scenario Overview

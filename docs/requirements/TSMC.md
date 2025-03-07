@@ -7,7 +7,7 @@
 # Taiwan Semiconductor Manufacturing Company (TSMC) DXA Requirements
 
 <p align="center">
-  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/TSMC_Logo.svg/2560px-TSMC_Logo.svg.png" alt="TSMC Logo" width="50%" />
+  <img src="https://1000logos.net/wp-content/uploads/2021/08/TSMC-Logo.png" alt="TSMC Logo" width="50%" />
 </p>
 
 ## Scenario Overview
