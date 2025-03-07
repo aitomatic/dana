@@ -12,6 +12,20 @@ This directory contains requirements specifications for different DXA deployment
   - SPC/FDC data analysis
   - SEMIKONG LLM integration
 
+- [Tokyo Electron (TEL)](TEL.md)
+  - Enhanced collaboration framework
+  - Critical issue resolution
+  - DXA framework integration
+  - Use case development
+  - Product quality and experience
+
+- [Taiwan Semiconductor (TSMC)](TSMC.md)
+  - Framework delivery with MCP integration
+  - Data source integration
+  - Knowledge extraction and management
+  - Problem solving capabilities
+  - Development and release cycle
+
 - [Industrial Automation](INDUSTRIAL-AUTOMATION.md)
   - *Documentation in progress*
 
@@ -55,3 +69,5 @@ Each scenario document follows a consistent format:
 | FABLESS-CUSTOMER-SUPPORT.md | Complete | - |
 | INDUSTRIAL-AUTOMATION.md | Pending | - |
 | MANUFACTURER.md | Pending | - |
+| TEL.md | Complete | 2024-03-05 |
+| TSMC.md | Complete | 2024-03-05 |
