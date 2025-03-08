@@ -57,7 +57,7 @@ class Workflow(ExecutionGraph):
             2. Maintain the essential content while improving organization 
             3. Use consistent YAML syntax including proper indentation and list markers.
             4. Always start the steps with a verb.
-            5. The output should be a valid YAML content only, no other text or comments. And dont put the content in ```yaml``` tags.
+            5. THIS IS VERY IMPORTANT: The output should be a valid YAML content only, no other text or comments. And dont put the content in ```yaml``` tags.
 
             Instructions: 
             1. Identify the main procedure name and use it as the root key 
