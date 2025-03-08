@@ -1,11 +1,13 @@
 """LLM resource implementation."""
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 import asyncio
 import aisuite as ai
+import logging
 from openai import APIConnectionError, RateLimitError
 from ...common.exceptions import LLMError
 from .base_resource import BaseResource
+# from openai import AsyncClient
 
 
 class LLMConfig:
@@ -88,6 +90,24 @@ class LLMResource(BaseResource):
         self._client: Optional[ai.Client] = None
         self.max_retries = int(self.config.get("max_retries", 3))
         self.retry_delay = float(self.config.get("retry_delay", 1.0))
+        # self._async_client = AsyncClient()
+        
+        # Create a dedicated logger for LLM conversations
+        self.conversation_logger = logging.getLogger("llm_conversation")
+        self.conversation_logger.setLevel(logging.INFO)
+        
+        # Add a file handler if not already present
+        if not self.conversation_logger.handlers:
+            # Create logs directory if it doesn't exist
+            import os
+            os.makedirs("logs", exist_ok=True)
+            
+            # Add file handler
+            file_handler = logging.FileHandler("logs/llm_conversation.log")
+            file_handler.setFormatter(logging.Formatter(
+                '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+            ))
+            self.conversation_logger.addHandler(file_handler)
 
     async def initialize(self) -> None:
         """Initialize the AISuite client."""
@@ -123,6 +143,9 @@ class LLMResource(BaseResource):
         else:
             raise ValueError("'Prompt' is required")
 
+        # Log the prompt being sent to the LLM
+        self.conversation_logger.info(f"PROMPT TO {self.model}:\n{'-' * 80}\n{request.get('prompt')}\n{'-' * 80}")
+        
         request_params = {
             "temperature": float(self.config.get("temperature", 0.7)),
             "top_p": float(self.config.get("top_p", 1.0)),
@@ -154,9 +177,22 @@ class LLMResource(BaseResource):
                 elif hasattr(response, 'choices') and hasattr(response.choices[0].message, 'reasoning_content'):
                     reasoning = response.choices[0].message.reasoning_content
 
+                content = response.choices[0].message.content if hasattr(response, 'choices') else response.content
+                
+                # Log the response from the LLM
+                self.conversation_logger.info(f"RESPONSE FROM {self.model}:\n{'-' * 80}\n{content}\n{'-' * 80}")
+                
+                # Log usage statistics if available
+                if hasattr(response, 'usage'):
+                    usage = response.usage
+                    self.conversation_logger.info(
+                        f"USAGE: prompt_tokens={usage.prompt_tokens}, "
+                        f"completion_tokens={usage.completion_tokens}, "
+                        f"total_tokens={usage.total_tokens}"
+                    )
+
                 return {
-                    "content": response.choices[0].message.content 
-                    if hasattr(response, 'choices') else response.content,
+                    "content": content,
                     "model": self.model,  # Use our model string since it's guaranteed to exist
                     "usage": getattr(response, 'usage', None),
                     # Include any thinking content if present
@@ -176,8 +212,63 @@ class LLMResource(BaseResource):
                 # Handle response structure mismatches
                 self.logger.error("Unexpected response structure from provider: %s", str(e))
                 raise LLMError(f"Unexpected response structure: {str(e)}") from e
-        
+
         raise LLMError("Max retries exceeded")
+    
+    async def conversational_query(self, messages: List[Dict[str, Any]], model: str = "gpt-4o") -> Dict[str, Any]:
+        """Currently, this one only used for Prosea workflow."""
+        # Log the conversation messages being sent to the LLM
+        self.conversation_logger.info(f"CONVERSATION WITH {model}:\n{'-' * 80}")
+        for msg in messages:
+            role = msg.get('role', 'unknown')
+            content = msg.get('content', '')
+            self.conversation_logger.info(f"[{role.upper()}]: {content}\n{'-' * 40}")
+        
+        response = None
+        while response is None:
+            try:
+                """
+                response = await asyncio.wait_for(
+                    self._async_client.chat.completions.create(
+                        model=model,
+                        messages=messages,
+                        temperature=0.0,
+                        max_tokens=2000,
+                    ),
+                    timeout=20  # 20 seconds
+                )
+                """
+            except asyncio.TimeoutError:
+                print("Timeout reached for GPT-4o call. Retrying...")
+                self.conversation_logger.warning("Timeout reached for GPT-4o call. Retrying...")
+        
+        # Use aisuite's standardized response format
+        reasoning = None
+        if hasattr(response, 'reasoning_content'):
+            reasoning = response.reasoning_content
+        elif hasattr(response, 'choices') and hasattr(response.choices[0].message, 'reasoning_content'):
+            reasoning = response.choices[0].message.reasoning_content
+        
+        content = response.choices[0].message.content if hasattr(response, 'choices') else response.content
+        
+        # Log the response from the LLM
+        self.conversation_logger.info(f"[ASSISTANT]: {content}\n{'-' * 80}")
+        
+        # Log usage statistics if available
+        if hasattr(response, 'usage'):
+            usage = response.usage
+            self.conversation_logger.info(
+                f"USAGE: prompt_tokens={usage.prompt_tokens}, "
+                f"completion_tokens={usage.completion_tokens}, "
+                f"total_tokens={usage.total_tokens}"
+            )
+            
+        return {
+            "content": content,
+            "model": model,
+            "usage": getattr(response, 'usage', None),
+            "reasoning": reasoning
+        }
 
     async def cleanup(self) -> None:
         """Cleanup resources."""

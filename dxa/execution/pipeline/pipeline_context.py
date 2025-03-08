@@ -30,7 +30,7 @@ class PipelineContext(ExecutionContext):
         if node_id in self.buffers:
             buffer = self.buffers[node_id]
             if buffer.full():
-                DXA_LOGGER.warning(f"Buffer {node_id} full", size=buffer.qsize())
+                DXA_LOGGER.warning("Buffer %s full", node_id, size=buffer.qsize())
             await buffer.put(data)
             self.buffer_metrics[node_id]["messages_processed"] += 1
             self.buffer_metrics[node_id]["last_activity"] = datetime.now()
@@ -48,8 +48,7 @@ class PipelineContext(ExecutionContext):
 
     async def cleanup_buffers(self) -> None:
         """Cleanup all buffers."""
-        DXA_LOGGER.debug("Cleaning up pipeline buffers", 
-                            buffer_count=len(self.buffers))
+        DXA_LOGGER.debug("Cleaning up pipeline buffers (count: %d)", len(self.buffers))
         for buffer in self.buffers.values():
             while not buffer.empty():
                 try:

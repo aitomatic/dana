@@ -58,18 +58,20 @@ async def test_context_propagation(agent):
 # pylint: disable=redefined-outer-name
 async def test_graph_safety(agent):
     """Test graph safety mechanisms across execution."""
-    context = ExecutionContext()
+    context = ExecutionContext(workflow_llm=agent.workflow_llm,
+                               planning_llm=agent.planning_llm,
+                               reasoning_llm=agent.reasoning_llm)
     workflow_exec = agent.runtime.workflow_executor
     
-    # Execute with empty context
+    # Execute with minimal context
     try:
         await workflow_exec.execute_workflow(
             # pylint: disable=protected-access
-            workflow=workflow_exec._create_graph(None, Objective("test"), context),
+            workflow=workflow_exec.create_graph_from_node(None, None, Objective("test"), context),
             context=context
         )
     except ValueError as e:
-        assert str(e) == "No reasoning LLM configured in context"
+        assert str(e) == "No workflow/planning/reasoning LLM configured in context"
     
     # Verify graph-context sync
     assert context.current_workflow is not None
