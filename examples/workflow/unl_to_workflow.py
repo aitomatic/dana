@@ -1,12 +1,7 @@
-from itertools import tee
-from openai import chat
-from traitlets import This
 from dxa.agent.agent import Agent
-from dxa.agent.resource.resource_factory import ResourceFactory
 from dxa.common.utils.logging.dxa_logger import DXA_LOGGER
 from dxa.execution.workflow.workflow import Workflow
 from dxa.execution.workflow.workflow_factory import WorkflowFactory
-import yaml
 import asyncio
 
 UNL_TO_ONL_PROMPT = """
@@ -33,12 +28,12 @@ ONL_TO_WORKFLOW_PROMPT = """
     1. Convert a multi-level troubleshooting procedure into a structured YAML format that can describe a work flow, which can covert to a dict[str, list[str]] in python, where * key is a short name for a certain process, * each key is then mapped to a list of steps (in sequence) that should be followed.
     2. Maintain the essential content while improving organization 
     3. Use consistent YAML syntax including proper indentation and list markers.
-    4. The output should be a valid YAML content only, no other text or comments. And dont put the content in ```yaml``` tags.
+    4. THIS IS VERY IMPORTANT: The output should be a valid YAML content only, no other text or comments. And dont put the content in ```yaml``` tags.
 
     Instructions: 
     1. Identify the main procedure name and use it as the root key 
     2. Generate clean, valid YAML that preserves the procedural flow of the original text
-    [IMPORTANT] Strictly follow example workflow file with just the essential structure.
+    [THIS IS VERY IMPORTANT] Strictly follow example workflow file with just the essential structure.
     ```
     workflow-name: 
         process-name:
@@ -52,13 +47,13 @@ def run_unl_to_workflow_two_agents(unl: str):
     print("\n\n==================== Translate UNL to ONL =====================")
     agent = Agent("unl_to_onl_agent")
     result = agent.ask(UNL_TO_ONL_PROMPT.format(unl=unl))
-    onl = result['result']['content']
+    onl = result['result']
     print(f"\nRESULT: \n{onl}")
 
     print("\n\n==================== Translate ONL to workflow =====================")
     agent = Agent("onl_to_workflow_agent")
     result = agent.ask(ONL_TO_WORKFLOW_PROMPT.format(onl=onl))
-    workflow_yaml = result['result']['content']
+    workflow_yaml = result['result']
     print(f"\nRESULT: \n{workflow_yaml}")
 
     # remove the yaml tags if exists

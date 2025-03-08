@@ -1,6 +1,11 @@
 """Workflow factory for creating common workflow patterns."""
 
+from pathlib import Path
 from typing import List, Optional, Union, Dict, cast, Any
+
+import yaml
+
+from dxa.execution.execution_graph import ExecutionGraph
 
 from ..execution_factory import ExecutionFactory
 from .workflow import Workflow
@@ -14,6 +19,99 @@ class WorkflowFactory(ExecutionFactory):
     # Override class variables
     graph_class = Workflow
     strategy_class = WorkflowStrategy
+
+
+    @classmethod
+    def from_yaml(cls, yaml_data: Union[str, Dict, Path], name: Optional[str] = None) -> Workflow:
+        """Create workflow from YAML data or file.
+        
+        Args:
+            yaml_data: YAML data as string, dictionary, or file path
+            name: Optional workflow name
+            
+        Returns:
+            Workflow: New workflow instance
+        """
+        # Convert YAML data to sequential workflow for now
+        # TODO: support more complex workflow patterns
+        return cls._create_sequential_workflow_from_yaml_steps(yaml_data)
+    
+    @classmethod
+    def _create_sequential_workflow_from_yaml_steps(cls, workflow_yaml: Union[str, Dict, Path]) -> Workflow:
+        # Handle different input types
+        if isinstance(workflow_yaml, (str, Path)):
+            if not str(workflow_yaml).strip():
+                raise ValueError("Empty workflow YAML")
+            try:
+                raw_data = yaml.safe_load(workflow_yaml)
+            except yaml.YAMLError as e:
+                raise ValueError(f"Invalid YAML syntax: {str(e)}")
+        else:
+            raw_data = workflow_yaml
+
+        if not raw_data or not isinstance(raw_data, dict):
+            raise ValueError("Invalid workflow YAML structure - must be a non-empty dictionary")
+
+        # Get the workflow name (first key in the YAML)
+        try:
+            workflow_name = next(iter(raw_data))
+            processes = raw_data[workflow_name]
+            if not isinstance(processes, dict):
+                raise ValueError("Processes must be a dictionary")
+        except (StopIteration, KeyError, AttributeError):
+            raise ValueError("Invalid workflow YAML structure - missing workflow name or processes")
+
+        workflow = Workflow()
+
+        # Add START node
+        start_node = ExecutionNode(
+            node_id="START",
+            node_type=NodeType.START,
+            description="Start workflow"
+        )
+        workflow.add_node(start_node)
+
+        # Add all task nodes sequentially
+        step_counter = 1
+        for process_name, steps in processes.items():
+            if not isinstance(steps, list):
+                continue
+                
+            for step in steps:
+                if not step:  # Skip empty steps
+                    continue
+                
+                print(f'Adding node {step_counter} for {process_name}: {step}')
+                task_node = ExecutionNode(
+                    node_id=f"STEP_{step_counter}",
+                    node_type=NodeType.TASK,
+                    description=str(step),
+                    metadata={
+                        "process": str(process_name),
+                        "step_number": step_counter,
+                        "instruction": str(step)
+                    }
+                )
+                workflow.add_node(task_node)
+                step_counter += 1
+
+        if len(workflow.nodes) == 1:  # Only START node exists
+            raise ValueError("No valid steps found in workflow")
+
+        # Add END node
+        end_node = ExecutionNode(
+            node_id="END",
+            node_type=NodeType.END,
+            description="End workflow"
+        )
+        workflow.add_node(end_node)
+
+        # Add edges
+        node_ids = list(workflow.nodes.keys())
+        for i in range(len(node_ids) - 1):
+            workflow.add_edge_between(node_ids[i], node_ids[i + 1])
+
+        return workflow
     
     # Add workflow-specific methods
     @classmethod
