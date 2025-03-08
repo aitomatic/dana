@@ -70,6 +70,8 @@ async def run_unl_to_workflow(unl: str):
     print(f"\nRESULT: \n{workflow_yaml}")
 
     workflow = WorkflowFactory.from_yaml(workflow_yaml)
+    print(workflow.pretty_print())
+
     agent = Agent("workflow_agent")
     result = await agent.async_run(workflow)
     print(f"\nRESULT: \n{result}")

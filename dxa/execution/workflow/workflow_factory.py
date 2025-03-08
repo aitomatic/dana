@@ -81,7 +81,6 @@ class WorkflowFactory(ExecutionFactory):
                 if not step:  # Skip empty steps
                     continue
                 
-                print(f'Adding node {step_counter} for {process_name}: {step}')
                 task_node = ExecutionNode(
                     node_id=f"STEP_{step_counter}",
                     node_type=NodeType.TASK,
