@@ -16,7 +16,7 @@ EXECUTION_SERVICE_SCRIPT = "./mcp_servers/execution.py"
 async def setup_agents():
     """Create and configure all agents with their MCP resources"""
     
-    # Create the research agent with exposed MCP server (using SSE)
+    # Create the research agent with exposed MCP server
     research_agent = Agent("research-agent").with_resources({
         "research": McpLocalResource(
             name="research",
@@ -55,7 +55,7 @@ async def setup_agents():
     # Get connection parameters from the reasoning agent
     reasoning_local_connection_params = reasoning_agent.resources["reasoning"].get_connection_params()
     
-    # Create the execution agent with its own unexposed MCP server and connections to other agents
+    # Create the execution agent with connections to other agents
     execution_agent = Agent("execution-agent").with_resources({
         "execution": McpLocalResource(
             name="execution",
@@ -243,12 +243,6 @@ async def main():
         # Setup all agents
         research_agent, reasoning_agent, execution_agent = await setup_agents()
         
-        # Initialize agent resources
-        for agent in [research_agent, reasoning_agent, execution_agent]:
-            for resource_name, resource in agent.resources.items():
-                await resource.initialize()
-        
-        # Run standalone tasks
         await execute_research_task(research_agent)
         
         # Run agent-to-agent communication example
@@ -260,16 +254,10 @@ async def main():
     except Exception as e:
         logger.error(f"Error in main execution: {str(e)}", exc_info=True)
     finally:
-        # Cleanup agent resources
-        if 'research_agent' in locals():
-            for resource_name, resource in research_agent.resources.items():
-                await resource.cleanup()
-        if 'reasoning_agent' in locals():
-            for resource_name, resource in reasoning_agent.resources.items():
-                await resource.cleanup()
-        if 'execution_agent' in locals():
-            for resource_name, resource in execution_agent.resources.items():
-                await resource.cleanup()
+        for agent in (research_agent, reasoning_agent, execution_agent):
+            if agent:
+                for resource in agent.resources.values():
+                    await resource.cleanup()
 
 if __name__ == "__main__":
     asyncio.run(main())
