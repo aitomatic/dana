@@ -6,7 +6,7 @@
 
 # Resource System
 
-## dxa.core.resource Module
+## dxa.agent.resource Module
 
 The resource system provides the foundational building blocks for DXA agents, implementing concrete tools and services that agents can use. While [capabilities](../capability/README.md) define how agents think, resources define what agents can do. The system manages everything from LLM interactions to human-in-the-loop operations, providing a consistent interface for all external interactions.
 
@@ -59,7 +59,7 @@ agent = Agent("assistant")\
         config={"model": "gpt-4"}
     ))
 
-response = await agent.resources.gpt4.query({
+response = await agent.resources["gpt4"].query({
     "prompt": "Explain quantum computing"
 })
 ```
@@ -69,12 +69,14 @@ response = await agent.resources.gpt4.query({
 ```python
 # Human interaction
 agent = Agent("interactive")\
-    .with_resource(HumanResource(
-        name="user",
-        role="expert"
-    ))
+    .with_resources({
+        "user": HumanResource(
+            name="user",
+            role="expert"
+        )
+    })
 
-response = await agent.resources.user.query({
+response = await agent.resources["user"].query({
     "prompt": "Please review this output",
     "content": result
 })
@@ -84,6 +86,8 @@ response = await agent.resources.user.query({
 
 ```python
 # Expert resource with domain knowledge
+from dxa.agent.capability import DomainExpertise
+
 expertise = DomainExpertise(
     name="Mathematics",
     capabilities=["algebra", "calculus"],
@@ -91,15 +95,17 @@ expertise = DomainExpertise(
 )
 
 agent = Agent("math_tutor")\
-    .with_resource(ExpertResource(
-        name="math_expert",
-        config={
-            "expertise": expertise,
-            "llm_config": {"model": "gpt-4"}
-        }
-    ))
+    .with_resources({
+        "math_expert": ExpertResource(
+            name="math_expert",
+            config={
+                "expertise": expertise,
+                "llm_config": {"model": "openai:gpt-4"}
+            }
+        )
+    })
 
-response = await agent.resources.math_expert.query({
+response = await agent.resources["math_expert"].query({
     "prompt": "Solve x^2 + 2x + 1 = 0"
 })
 ```
@@ -116,7 +122,7 @@ class BaseResource:
         """Set up resource."""
         raise NotImplementedError
         
-    async def query(self, request: Dict[str, Any]) -> ResourceResponse:
+    async def query(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Query the resource."""
         raise NotImplementedError
         
@@ -129,29 +135,49 @@ class BaseResource:
 
 ```python
 class LLMResource(BaseResource):
-    async def query(self, request: Dict[str, Any]) -> LLMResponse:
+    async def query(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Send query to LLM."""
-        prompt = self._prepare_prompt(request)
-        response = await self._llm.complete(prompt)
-        return LLMResponse(
-            content=response.text,
-            usage=response.usage
+        if not self._client:
+            await self.initialize()
+            
+        messages = []
+        if "system_prompt" in request:
+            messages.append({"role": "system", "content": request["system_prompt"]})
+        if "prompt" in request:
+            messages.append({"role": "user", "content": request["prompt"]})
+            
+        response = await self._client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            temperature=self.config.get("temperature", 0.7)
         )
+        
+        return {
+            "content": response.choices[0].message.content,
+            "model": self.model,
+            "usage": getattr(response, 'usage', None)
+        }
 ```
 
 ### Expert Implementation
 
 ```python
 class ExpertResource(BaseResource):
-    async def query(self, request: Dict[str, Any]) -> ExpertResponse:
+    async def query(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Query with domain expertise."""
         if not self.can_handle(request):
-            raise ResourceError(
-                f"Request cannot be handled by {self.expertise.name} expert"
+            raise ValueError(
+                f"Request cannot be handled by this expert resource"
             )
         
-        enhanced_request = self._enhance_prompt(request)
-        return await self._process_expert_query(enhanced_request)
+        # Enhance request with domain knowledge
+        enhanced_request = self._enhance_with_expertise(request)
+        
+        # Process through LLM with expertise context
+        response = await self.llm_resource.query(enhanced_request)
+        response["expertise_applied"] = True
+        
+        return response
 ```
 
 ## Integration Patterns
@@ -161,14 +187,16 @@ class ExpertResource(BaseResource):
 ```python
 # Combine multiple resources
 agent = Agent("assistant")\
-    .with_resource(LLMResource("gpt4"))\
-    .with_resource(HumanResource("user"))\
-    .with_resource(ExpertResource("domain_expert"))
+    .with_resources({
+        "gpt4": LLMResource(name="gpt4", config={"model": "openai:gpt-4"}),
+        "user": HumanResource(name="user"),
+        "domain_expert": ExpertResource(name="domain_expert")
+    })
 
 # Use resources together
-result = await agent.resources.gpt4.query({"prompt": "Draft response"})
-feedback = await agent.resources.user.query({"prompt": "Review", "content": result})
-final = await agent.resources.domain_expert.query({"prompt": "Validate", "content": result})
+result = await agent.resources["gpt4"].query({"prompt": "Draft response"})
+feedback = await agent.resources["user"].query({"prompt": "Review", "content": result["content"]})
+final = await agent.resources["domain_expert"].query({"prompt": "Validate", "content": result["content"]})
 ```
 
 ## Testing and Validation

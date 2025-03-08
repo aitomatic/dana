@@ -25,7 +25,7 @@ from ..execution import (
     Workflow,
     WorkflowFactory,
     WorkflowStrategy,
-    PlanningStrategy,
+    PlanStrategy,
     ReasoningStrategy,
     ExecutionContext
 )
@@ -56,9 +56,9 @@ class Agent:
         self._resources = None
         self._io = None
         self._runtime: Optional[AgentRuntime] = None
-        self._workflow_strategy = None
-        self._planning_strategy = None
-        self._reasoning_strategy = None
+        self._workflow_strategy = WorkflowStrategy.DEFAULT
+        self._planning_strategy = PlanStrategy.DEFAULT
+        self._reasoning_strategy = ReasoningStrategy.DEFAULT
 
     @property
     def workflow_strategy(self) -> WorkflowStrategy:
@@ -66,9 +66,9 @@ class Agent:
         return self._workflow_strategy or WorkflowStrategy.DEFAULT
 
     @property
-    def planning_strategy(self) -> PlanningStrategy:
+    def planning_strategy(self) -> PlanStrategy:
         """Get planning strategy."""
-        return self._planning_strategy or PlanningStrategy.DEFAULT
+        return self._planning_strategy or PlanStrategy.DEFAULT
 
     @property
     def reasoning_strategy(self) -> ReasoningStrategy:
@@ -121,17 +121,17 @@ class Agent:
         return self._io
 
     @property
-    def workflow_llm(self) -> Optional[LLMResource]:
+    def workflow_llm(self) -> LLMResource:
         """Get workflow LLM or fallback to default."""
         return self._workflow_llm or self.agent_llm
 
     @property
-    def planning_llm(self) -> Optional[LLMResource]:
+    def planning_llm(self) -> LLMResource:
         """Get planning LLM or fallback to default."""
         return self._planning_llm or self.agent_llm
 
     @property
-    def reasoning_llm(self) -> Optional[LLMResource]:
+    def reasoning_llm(self) -> LLMResource:
         """Get reasoning LLM or fallback to default."""
         return self._reasoning_llm or self.agent_llm
 
@@ -173,13 +173,13 @@ class Agent:
         self._workflow_strategy = strategy
         if strategy == WorkflowStrategy.WORKFLOW_IS_PLAN:
             # This requires the plan to be aware of the same strategy.
-            self._planning_strategy = PlanningStrategy.WORKFLOW_IS_PLAN
+            self._planning_strategy = PlanStrategy.WORKFLOW_IS_PLAN
         return self
 
-    def with_planning(self, strategy: PlanningStrategy) -> 'Agent':
+    def with_planning(self, strategy: PlanStrategy) -> 'Agent':
         """Configure planning strategy."""
         self._planning_strategy = strategy
-        if strategy == PlanningStrategy.WORKFLOW_IS_PLAN:
+        if strategy == PlanStrategy.WORKFLOW_IS_PLAN:
             # This requires the workflow to be aware of the same strategy.
             self._workflow_strategy = WorkflowStrategy.WORKFLOW_IS_PLAN
         return self
@@ -253,7 +253,7 @@ class Agent:
 
         # Set default strategies if not specified
         self._workflow_strategy = self._workflow_strategy or WorkflowStrategy.DEFAULT
-        self._planning_strategy = self._planning_strategy or PlanningStrategy.DEFAULT
+        self._planning_strategy = self._planning_strategy or PlanStrategy.DEFAULT
         self._reasoning_strategy = self._reasoning_strategy or ReasoningStrategy.DEFAULT
 
         # Create runtime with strategies
@@ -307,6 +307,10 @@ class Agent:
                 context.planning_llm = self.planning_llm
             if not context.reasoning_llm:
                 context.reasoning_llm = self.reasoning_llm
+        
+        assert context.workflow_llm is not None
+        assert context.planning_llm is not None
+        assert context.reasoning_llm is not None
 
         async with self:  # For cleanup
             return await self.runtime.execute(workflow, context)

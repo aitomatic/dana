@@ -6,66 +6,102 @@
 
 # DXA Examples
 
-## dxa.examples Module
+This directory contains examples demonstrating the DXA (Distributed eXecution Architecture) framework.
 
-Implementation examples demonstrating DXA framework usage.
+## Directory Structure
 
-## Basic Examples
+- **learning_paths/**: Examples organized by learning progression
+  - **01_getting_started/**: Beginner-friendly examples
+  - **02_core_concepts/**: Intermediate examples
+  - **03_advanced_patterns/**: Advanced examples
+  - **04_real_world_applications/**: Domain-specific examples
 
-- **template.py**: Minimal working example showing core patterns
-- **chat_bot.py**: Interactive conversational agent
-- **research_assistant.py**: Information gathering and analysis
-- **system_monitor.py**: Continuous system monitoring
+- **tutorials/**: Step-by-step tutorials for building complete applications
+  - **build_qa_agent/**: Building a question-answering agent
+  - **temperature_monitoring/**: Building a temperature monitoring system
 
-## Advanced Examples
+## Getting Started
 
-- **collaborative.py**: Multi-agent coordination
-- **data_analysis.py**: Data processing and visualization
-- **web_automation.py**: Web interaction and scraping
+Start with these beginner-friendly examples in the recommended order:
 
-## Usage
+- **learning_paths/01_getting_started/00_hello_dxa.py**: Introduction to DXA and basic concepts
+- **learning_paths/01_getting_started/01_simple_qa.py**: Creating a simple question-answering agent
+- **learning_paths/01_getting_started/02_default_workflow.py**: Creating a basic workflow
+- **learning_paths/01_getting_started/03_qa_approaches.py**: Different approaches to question answering
+- **learning_paths/01_getting_started/04_logging_example.py**: DXA logging system
+
+## Core Concepts
+
+Once familiar with the basics, explore these intermediate examples:
+
+- **learning_paths/02_core_concepts/01_run_default_workflow.py**: Complete workflow execution through all three layers
+- **learning_paths/02_core_concepts/02_simple_plan.py**: Planning layer concepts
+- **learning_paths/02_core_concepts/03_simple_reasoning.py**: Reasoning layer concepts
+- **learning_paths/02_core_concepts/04_temperature_monitor.py**: Data pipeline example
+- **learning_paths/02_core_concepts/05_llm_resource.py**: LLM integration
+
+## Advanced Patterns
+
+For more sophisticated patterns and workflows:
+
+- **learning_paths/03_advanced_patterns/01_prosea_workflow.py**: ProSEA framework implementation
+- **learning_paths/03_advanced_patterns/02_complex_research.py**: Multi-step research pattern
+- **learning_paths/03_advanced_patterns/03_system_health.py**: System monitoring example
+- **learning_paths/03_advanced_patterns/04_mcp_agent_demo.py**: MCP integration
+
+## Real-World Applications
+
+Domain-specific examples:
+
+- **learning_paths/04_real_world_applications/01_rie_monitoring.py**: Semiconductor manufacturing use case
+- **learning_paths/04_real_world_applications/02_system_health.py**: System monitoring example
+- **learning_paths/04_real_world_applications/03_temperature_monitor.py**: Data pipeline example
+
+## Quick Reference
+
+### Agent Creation & Configuration
+
+```python
+from dxa.agent import Agent
+from dxa.agent.resource import LLMResource
+from dxa.execution import ReasoningStrategy
+
+agent = Agent(name="example_agent")\
+    .with_reasoning(ReasoningStrategy.DEFAULT)\
+    .with_llm(LLMResource())\
+    .with_capabilities({...})
+```
+
+### Task Execution
+
+```python
+# Synchronous execution
+result = agent.run(workflow)
+
+# Asynchronous execution
+async with agent:
+    result = await agent.async_run(workflow)
+```
+
+### Workflow Creation
+
+```python
+from dxa.execution import WorkflowFactory
+
+# Create a sequential workflow
+workflow = WorkflowFactory.create_sequential_workflow(
+    objective="Research topic X",
+    commands=["Step 1", "Step 2", "Step 3"]
+)
+
+# Create a minimal workflow
+workflow = WorkflowFactory.create_minimal_workflow("Simple task")
+```
+
+## Running Examples
 
 Each example can be run directly:
 
 ```bash
-python examples/chat_bot.py
+python examples/learning_paths/01_getting_started/01_simple_qa.py
 ```
-
-## Common Patterns
-
-1. Agent Creation:
-
-```python
-agent = Agent("name")\
-    .with_reasoning("type")\
-    .with_resources({...})\
-    .with_capabilities([...])
-```
-
-1. Task Execution:
-
-```python
-async with agent:
-    result = await agent.run(task)
-```
-
-1. Resource Management:
-
-```python
-agent.with_resources({
-    "llm": LLMResource(model="gpt-4"),
-    "custom": CustomResource()
-})
-```
-
-## Example Structure
-
-Each example demonstrates:
-
-- Appropriate reasoning pattern selection
-- Resource configuration
-- Task structuring
-- Error handling
-- Proper cleanup using context managers
-
-See individual examples for detailed implementations.

@@ -21,7 +21,8 @@ Supporting Types:
 
 from .reasoning import Reasoning
 from .reasoning_factory import ReasoningFactory
-from .reasoning_executor import ReasoningStrategy, ReasoningExecutor
+from .reasoning_strategy import ReasoningStrategy
+from .reasoning_executor import ReasoningExecutor
 
 __all__ = [
     'Reasoning',
