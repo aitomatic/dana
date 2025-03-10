@@ -16,7 +16,6 @@ from ..execution_types import (
 from ...common.graph import NodeType
 from .reasoning_strategy import ReasoningStrategy
 
-
 class ReasoningExecutor(Executor[ReasoningStrategy]):
     """Executes reasoning tasks using LLM-based reasoning.
     
