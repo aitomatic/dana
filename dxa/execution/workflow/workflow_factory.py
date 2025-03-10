@@ -1,6 +1,11 @@
 """Workflow factory for creating common workflow patterns."""
 
+from pathlib import Path
 from typing import List, Optional, Union, Dict, cast, Any
+
+import yaml
+
+from dxa.execution.execution_graph import ExecutionGraph
 
 from ..execution_factory import ExecutionFactory
 from .workflow import Workflow
@@ -14,6 +19,144 @@ class WorkflowFactory(ExecutionFactory):
     # Override class variables
     graph_class = Workflow
     strategy_class = WorkflowStrategy
+
+    @classmethod
+    def from_yaml(cls, yaml_data: Union[str, Dict, Path], name: Optional[str] = None) -> Workflow:
+        """Create workflow from YAML data or file.
+        
+        Args:
+            yaml_data: YAML data as string, dictionary, or file path
+            name: Optional workflow name
+            
+        Returns:
+            Workflow: New workflow instance
+        """
+        # If yaml_data is already a Workflow object, return it
+        if isinstance(yaml_data, Workflow):
+            return yaml_data
+            
+        # Handle different input types
+        if isinstance(yaml_data, (str, Path)):
+            if isinstance(yaml_data, Path) or (isinstance(yaml_data, str) and yaml_data.endswith(('.yaml', '.yml'))):
+                with open(yaml_data, encoding="utf-8") as f:
+                    data = yaml.safe_load(f)
+            else:
+                data = yaml.safe_load(yaml_data)
+        else:
+            data = yaml_data
+
+        # Create workflow
+        workflow = Workflow(
+            objective=Objective(data.get('objective', '')),
+            name=data.get('name', 'unnamed_workflow')
+        )
+
+        # pylint: disable=protected-access
+        ExecutionGraph._add_start_end_nodes(graph=workflow)
+
+        # Remove the edge from START to END
+        workflow.remove_edge_between("START", "END")
+
+        # Add nodes
+        prev_id = "START"
+        for node_data in data.get('nodes', []):
+            node_id = node_data['id']
+            # Default to TASK type if not specified
+            node_type = NodeType[node_data.get('type', 'TASK')]
+            workflow.add_node(ExecutionNode(
+                node_id=node_data['id'],
+                node_type=node_type,
+                description=node_data.get('description', ''),
+                metadata=node_data.get('metadata', {})
+            ))
+            workflow.add_transition(prev_id, node_id)
+            prev_id = node_id
+
+        workflow.add_transition(prev_id, "END")
+
+        return workflow
+    
+    @classmethod
+    def _create_sequential_workflow_from_yaml_steps(cls, workflow_yaml: Union[str, Dict, Path]) -> Workflow:
+        # Handle different input types
+        if isinstance(workflow_yaml, (str, Path)):
+            if not str(workflow_yaml).strip():
+                raise ValueError("Empty workflow YAML")
+            try:
+                if isinstance(workflow_yaml, Path):
+                    with open(workflow_yaml, 'r', encoding='utf-8') as f:
+                        raw_data = yaml.safe_load(f)
+                else:
+                    # Use StringIO for string input
+                    from io import StringIO
+                    raw_data = yaml.safe_load(StringIO(workflow_yaml))
+            except yaml.YAMLError as e:
+                raise ValueError(f"Invalid YAML syntax: {str(e)}")
+        else:
+            raw_data = workflow_yaml
+
+        if not raw_data or not isinstance(raw_data, dict):
+            raise ValueError("Invalid workflow YAML structure - must be a non-empty dictionary")
+
+        # Get the workflow name (first key in the YAML)
+        try:
+            workflow_name = next(iter(raw_data))
+            processes = raw_data[workflow_name]
+            if not isinstance(processes, dict):
+                raise ValueError("Processes must be a dictionary")
+        except (StopIteration, KeyError, AttributeError):
+            raise ValueError("Invalid workflow YAML structure - missing workflow name or processes")
+
+        workflow = Workflow()
+
+        # Add START node
+        start_node = ExecutionNode(
+            node_id="START",
+            node_type=NodeType.START,
+            description="Start workflow"
+        )
+        workflow.add_node(start_node)
+
+        # Add all task nodes sequentially
+        step_counter = 1
+        for process_name, steps in processes.items():
+            if not isinstance(steps, list):
+                continue
+                
+            for step in steps:
+                if not step:  # Skip empty steps
+                    continue
+                
+                task_node = ExecutionNode(
+                    node_id=f"STEP_{step_counter}",
+                    node_type=NodeType.TASK,
+                    description=str(step),
+                    metadata={
+                        "process": str(process_name),
+                        "step_number": step_counter,
+                        "instruction": str(step)
+                    }
+                )
+                workflow.add_node(task_node)
+                step_counter += 1
+
+        if len(workflow.nodes) == 1:  # Only START node exists
+            raise ValueError("No valid steps found in workflow")
+
+        # Add END node
+        end_node = ExecutionNode(
+            node_id="END",
+            node_type=NodeType.END,
+            description="End workflow"
+        )
+        workflow.add_node(end_node)
+
+        # Add edges
+        node_ids = list(workflow.nodes.keys())
+        for i in range(len(node_ids) - 1):
+            workflow.add_edge_between(node_ids[i], node_ids[i + 1])
+
+        return workflow
     
     # Add workflow-specific methods
     @classmethod
@@ -164,3 +307,114 @@ class WorkflowFactory(ExecutionFactory):
             node.description, 
             WorkflowStrategy.DEFAULT
         )
+
+    @classmethod
+    async def nl_to_onl(cls, natural_language: str) -> str:
+        """Convert natural language to organized natural language.
+        
+        Args:
+            natural_language: Unstructured natural language text
+            
+        Returns:
+            str: Organized natural language text
+        """
+        from dxa.agent.resource import LLMResource
+        from ..execution_config import ExecutionConfig
+        
+        # Load prompt from configuration
+        prompt_template = ExecutionConfig.get_prompt(
+            for_class=cls.__name__,
+            config_path="dxa/execution/workflow/config/admin/nl_to_onl.yaml",
+            prompt_ref="ORGANIZE"
+        )
+        
+        # Create LLM resource
+        resource = LLMResource(name="NL to ONL Resource")
+        try:
+            # Format prompt and query LLM
+            prompt = prompt_template.format(input=natural_language)
+            result = await resource.query({"prompt": prompt})
+            
+            if 'content' not in result:
+                raise ValueError("Invalid LLM response: missing 'content' field")
+                
+            return result['content']
+        finally:
+            # Ensure resource is cleaned up
+            await resource.cleanup()
+
+    @classmethod
+    async def onl_to_yaml(cls, organized_natural_language: str) -> str:
+        """Convert organized natural language to YAML workflow.
+        
+        Args:
+            organized_natural_language: Organized natural language text
+            
+        Returns:
+            str: YAML formatted workflow
+        """
+        from dxa.agent.resource import LLMResource
+        from ..execution_config import ExecutionConfig
+        import yaml
+        import re
+        
+        # Load prompt from configuration
+        prompt_template = ExecutionConfig.get_prompt(
+            for_class=cls.__name__,
+            config_path="dxa/execution/workflow/config/admin/onl_to_yaml.yaml",
+            prompt_ref="CONVERT"
+        )
+        
+        # Create LLM resource
+        resource = LLMResource(name="ONL to YAML Resource")
+        try:
+            # Format prompt and query LLM
+            prompt = prompt_template.format(input=organized_natural_language)
+            result = await resource.query({"prompt": prompt})
+            
+            if 'content' not in result:
+                raise ValueError("Invalid LLM response: missing 'content' field")
+                
+            # Clean up the response
+            content = result['content']
+            
+            # Extract YAML content between triple backticks if present
+            yaml_match = re.search(r'```(?:yaml)?\s*([\s\S]*?)```', content)
+            if yaml_match:
+                workflow_yaml = yaml_match.group(1).strip()
+            else:
+                # If no backticks, use the whole content but remove any explanatory text
+                # that might appear after the YAML content
+                lines = content.split('\n')
+                yaml_lines = []
+                for line in lines:
+                    if line.strip() and not line.startswith('This YAML') and not line.startswith('The workflow'):
+                        yaml_lines.append(line)
+                workflow_yaml = '\n'.join(yaml_lines)
+            
+            # Validate YAML
+            try:
+                yaml.safe_load(workflow_yaml)
+            except yaml.YAMLError as e:
+                raise ValueError(f"Generated YAML is invalid: {str(e)}") from e
+                
+            return workflow_yaml
+        finally:
+            # Ensure resource is cleaned up
+            await resource.cleanup()
+
+    @classmethod
+    async def nl_to_workflow(cls, natural_language: str) -> Workflow:
+        """Convert natural language directly to a workflow.
+        
+        This is a convenience method that combines nl_to_onl and onl_to_yaml.
+        
+        Args:
+            natural_language: Unstructured natural language text
+            
+        Returns:
+            Workflow: A workflow instance
+        """
+        onl = await cls.nl_to_onl(natural_language)
+        yaml_str = await cls.onl_to_yaml(onl)
+        return cls.from_yaml(yaml_str)
