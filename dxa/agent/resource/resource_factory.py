@@ -21,4 +21,5 @@ class ResourceFactory:
     def create_llm_resource(cls, config: Dict[str, Any]) -> LLMResource:
         """Create a LLM resource with the given configuration."""
         return LLMResource(**config)
+
     
