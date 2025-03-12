@@ -100,7 +100,7 @@ class TestNLToYAML(unittest.TestCase):
             Ensure the troubleshooting process is thorough yet swift to minimize equipment downtime.
         """
 
-    @patch('dxa.agent.resource.LLMResource')
+    @patch('dxa.agent.LLMResource')
     def test_nl_to_onl(self, mock_llm_resource):
         """Test nl_to_onl method."""
         # Setup mock
@@ -116,7 +116,7 @@ class TestNLToYAML(unittest.TestCase):
         mock_instance.query.assert_called_once()
         mock_instance.cleanup.assert_called_once()
 
-    @patch('dxa.agent.resource.LLMResource')
+    @patch('dxa.agent.LLMResource')
     def test_onl_to_yaml(self, mock_llm_resource):
         """Test onl_to_yaml method."""
         # Setup mock
@@ -153,7 +153,7 @@ class TestNLToYAML(unittest.TestCase):
         mock_onl_to_yaml.assert_called_once_with(self.organized_natural_language)
         mock_from_yaml.assert_called_once_with(self.yaml_content)
 
-    @patch('dxa.agent.resource.LLMResource')
+    @patch('dxa.agent.LLMResource')
     def test_nl_to_onl_error_handling(self, mock_llm_resource):
         """Test nl_to_onl error handling."""
         # Setup mock to return an invalid response
@@ -168,7 +168,7 @@ class TestNLToYAML(unittest.TestCase):
         self.assertIn("Invalid LLM response", str(context.exception))
         mock_instance.cleanup.assert_called_once()
 
-    @patch('dxa.agent.resource.LLMResource')
+    @patch('dxa.agent.LLMResource')
     def test_onl_to_yaml_error_handling(self, mock_llm_resource):
         """Test onl_to_yaml error handling."""
         # Setup mock to return an invalid YAML
@@ -199,7 +199,7 @@ class TestNLToYAML(unittest.TestCase):
         mock_nl_to_onl.assert_called_once_with(self.natural_language)
         mock_onl_to_yaml.assert_not_called()
 
-    @patch('dxa.agent.resource.LLMResource')
+    @patch('dxa.agent.LLMResource')
     def test_integration_nl_to_workflow(self, mock_llm_resource):
         """Test the entire workflow from natural language to workflow creation."""
         # Setup mock
