@@ -2,16 +2,18 @@
 
 from pathlib import Path
 from typing import List, Optional, Union, Dict, cast, Any
-
+import re
 import yaml
+from io import StringIO
 
-from dxa.execution.execution_graph import ExecutionGraph
-
+from ...execution import ExecutionGraph
 from ..execution_factory import ExecutionFactory
 from .workflow import Workflow
 from ...common.graph import NodeType, Edge
 from ..execution_types import Objective, ExecutionNode
 from .workflow_strategy import WorkflowStrategy
+from ...agent import LLMResource
+from ..execution_config import ExecutionConfig
 
 class WorkflowFactory(ExecutionFactory):
     """Factory for creating workflow patterns."""
@@ -88,10 +90,9 @@ class WorkflowFactory(ExecutionFactory):
                         raw_data = yaml.safe_load(f)
                 else:
                     # Use StringIO for string input
-                    from io import StringIO
                     raw_data = yaml.safe_load(StringIO(workflow_yaml))
             except yaml.YAMLError as e:
-                raise ValueError(f"Invalid YAML syntax: {str(e)}")
+                raise ValueError(f"Invalid YAML syntax: {str(e)}") from e
         else:
             raw_data = workflow_yaml
 
@@ -104,8 +105,8 @@ class WorkflowFactory(ExecutionFactory):
             processes = raw_data[workflow_name]
             if not isinstance(processes, dict):
                 raise ValueError("Processes must be a dictionary")
-        except (StopIteration, KeyError, AttributeError):
-            raise ValueError("Invalid workflow YAML structure - missing workflow name or processes")
+        except (StopIteration, KeyError, AttributeError) as e:
+            raise ValueError("Invalid workflow YAML structure - missing workflow name or processes") from e
 
         workflow = Workflow()
 
@@ -318,13 +319,14 @@ class WorkflowFactory(ExecutionFactory):
         Returns:
             str: Organized natural language text
         """
-        from dxa.agent.resource import LLMResource
-        from ..execution_config import ExecutionConfig
+        
+        # Get the path to the YAML file
+        yaml_path = Path(__file__).parent / "yaml" / "admin" / "nl_to_onl.yaml"
         
         # Load prompt from configuration
         prompt_template = ExecutionConfig.get_prompt(
-            for_class=cls.__name__,
-            config_path="dxa/execution/workflow/config/admin/nl_to_onl.yaml",
+            for_class=cls,
+            config_path=str(yaml_path),
             prompt_ref="ORGANIZE"
         )
         
@@ -353,15 +355,14 @@ class WorkflowFactory(ExecutionFactory):
         Returns:
             str: YAML formatted workflow
         """
-        from dxa.agent.resource import LLMResource
-        from ..execution_config import ExecutionConfig
-        import yaml
-        import re
+        
+        # Get the path to the YAML file
+        yaml_path = Path(__file__).parent / "yaml" / "admin" / "onl_to_yaml.yaml"
         
         # Load prompt from configuration
         prompt_template = ExecutionConfig.get_prompt(
-            for_class=cls.__name__,
-            config_path="dxa/execution/workflow/config/admin/onl_to_yaml.yaml",
+            for_class=cls,
+            config_path=str(yaml_path),
             prompt_ref="CONVERT"
         )
         
