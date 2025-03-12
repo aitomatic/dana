@@ -1,56 +1,62 @@
 """Configuration utilities for execution components."""
 
 import inspect
-import os
 from pathlib import Path
-from typing import Dict, Any, Optional
-from ..common.utils import load_yaml_config
+from typing import Dict, Any, Optional, Type
+from ..common.utils import load_yaml_config, get_config_path
 
 
 class ExecutionConfig:
     """Centralized configuration management for all execution components."""
     
     @classmethod
-    def get_base_path(cls, for_class=None) -> Path:
-        """Get base path for the given the_class."""
-        if not for_class:
-            for_class = cls
-
-        # Get the file where the class is defined
-        file_path = inspect.getfile(for_class)
-    
-        # Convert to absolute path if it's not already
-        abs_path = os.path.abspath(file_path)
-    
-        return Path(abs_path).parent
+    def get_base_path(cls) -> Path:
+        """Get base path for execution components."""
+        return Path(inspect.getfile(cls)).parent
     
     @classmethod
-    def get_config_path(cls, for_class=None, path: Optional[str] = None) -> Path:
-        """Get path to configuration file.
-        
-        Args:
-            the_class: The class that is requesting the config path
-            path: Full path to config file, OR relative to the config directory
-                 (e.g., "workflow/default" or "workflow/basic/prosea")
-            
-        Returns:
-            Full path to the configuration file
-        """
-        # If path is already a full path, return it
-        if not path:
-            path = "default"
-
-        if Path(path).exists():
-            return Path(path)
-
-        # Normalize path separators (convert dots to slashes)
-        path = path.replace(".", "/")
+    def get_yaml_path(cls, for_class: Optional[Type[Any]] = None, path: Optional[str] = None) -> Path:
+        """Get path to a configuration file."""
 
         if not for_class:
             for_class = cls
-        
-        # Build the full path
-        return cls.get_base_path(for_class=for_class) / "config" / f"{path}.yaml"
+
+        # If path contains a dot, it's a reference to a nested config
+        # Convert dots to slashes and ensure we don't append .yaml twice
+        if path and "." in path and not path.endswith(".yaml") and not path.endswith(".yml"):
+            path_parts = path.split(".")
+            path = "/".join(path_parts)
+            
+            # Check if the file exists with .yaml extension
+            from_class_path = get_config_path(
+                for_class=for_class,
+                path=f"{path}.yaml",
+                config_dir="yaml",
+                default_config_file="default",
+                file_extension="yaml"
+            )
+            
+            if from_class_path.exists():
+                return from_class_path
+                
+            # Check if the file exists with .yml extension
+            from_class_path = get_config_path(
+                for_class=for_class,
+                path=f"{path}.yml",
+                config_dir="yaml",
+                default_config_file="default",
+                file_extension="yaml"
+            )
+            
+            if from_class_path.exists():
+                return from_class_path
+
+        # Default behavior
+        return get_config_path(for_class=for_class,
+                               path=path,
+                               config_dir="yaml",
+                               default_config_file="default",
+                               file_extension="yaml")
     
     @classmethod
     def load_config(cls, for_class=None, path: Optional[str] = None) -> Dict[str, Any]:
@@ -66,7 +72,7 @@ class ExecutionConfig:
         if not for_class:
             for_class = cls
 
-        config_path = cls.get_config_path(for_class=for_class, path=path)
+        config_path = cls.get_yaml_path(for_class=for_class, path=path)
         return load_yaml_config(config_path)
     
     @classmethod
@@ -94,6 +100,26 @@ class ExecutionConfig:
 
         prompt_ref = str(prompt_ref)
 
+        # If config_path is a full path to a YAML file, extract the directory and filename
+        if config_path and (str(config_path).endswith('.yaml') or str(config_path).endswith('.yml')):
+            # Use the file directly if it exists
+            config_file = Path(config_path)
+            if config_file.exists():
+                # Load the config directly
+                config = load_yaml_config(config_file)
+                
+                # Extract the prompt name from prompt_ref
+                prompt_name = prompt_ref.rsplit(".", maxsplit=1)[-1]
+                
+                # Look for the prompt in the config
+                if config and "prompts" in config:
+                    prompts = config.get("prompts", {})
+                    prompt_text = prompts.get(prompt_name, "")
+                    
+                    if prompt_text:
+                        return prompt_text
+        
+        # Normal processing for relative paths
         if config_path:
             # Make sure the prompt_name has only the last component (without the config_path)
             prompt_name = prompt_ref.rsplit(".", maxsplit=1)[-1]
