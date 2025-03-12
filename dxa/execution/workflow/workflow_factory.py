@@ -12,7 +12,6 @@ from .workflow import Workflow
 from ...common.graph import NodeType, Edge
 from ..execution_types import Objective, ExecutionNode
 from .workflow_strategy import WorkflowStrategy
-from ...agent import LLMResource
 from ..execution_config import ExecutionConfig
 
 class WorkflowFactory(ExecutionFactory):
@@ -319,6 +318,8 @@ class WorkflowFactory(ExecutionFactory):
         Returns:
             str: Organized natural language text
         """
+        # Import LLMResource here to avoid circular import
+        from ...agent import LLMResource
         
         # Get the path to the YAML file
         yaml_path = Path(__file__).parent / "yaml" / "admin" / "nl_to_onl.yaml"
@@ -355,6 +356,8 @@ class WorkflowFactory(ExecutionFactory):
         Returns:
             str: YAML formatted workflow
         """
+        # Import LLMResource here to avoid circular import
+        from ...agent import LLMResource
         
         # Get the path to the YAML file
         yaml_path = Path(__file__).parent / "yaml" / "admin" / "onl_to_yaml.yaml"
