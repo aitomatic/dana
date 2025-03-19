@@ -17,7 +17,7 @@ logger = DXA_LOGGER.getLogger(__file__.rsplit('/', maxsplit=1)[-1])
 MCP_SERVICE_NAME = "local_echo"
 MCP_TOOL_NAME = "echo"
 MCP_TOOL_ARGUMENTS = {"message": "Hello from DXA agent!"}
-MCP_SERVICE_SCRIPT = "/Users/ctn/src/aitomatic/dxa/dxa/agent/resource/mcp/services/mcp_echo_service.py"
+MCP_SERVICE_SCRIPT = "../../../dxa/agent/resource/mcp/services/mcp_echo_service.py"
 MCP_SCRIPT_COMMAND = "python3"
 
 async def main():
@@ -27,12 +27,17 @@ async def main():
     agent = Agent("MCP-Using-Agent").with_resources({
         MCP_SERVICE_NAME: McpLocalResource(
             name=MCP_SERVICE_NAME,
-            server_script=MCP_SERVICE_SCRIPT,
-            command=MCP_SCRIPT_COMMAND
+            connection_params={
+                "command": MCP_SCRIPT_COMMAND,
+                "args": [MCP_SERVICE_SCRIPT]
+            }
         ),
         "remote_time": McpRemoteResource(
             name="remote_time",
-            base_url="http://time.service/mcp"
+            connection_params={
+                "base_url": "http://time.service/mcp",
+                "timeout": 5.0
+            }
         )
     })
 

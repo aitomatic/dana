@@ -79,6 +79,7 @@ class LLMResource(BaseResource):
                 - api_key: Optional API key (will use environment variables if not provided)
                 - additional provider-specific parameters
         """
+
         if name is None:
             name = "default_llm"
 
