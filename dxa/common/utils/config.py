@@ -86,8 +86,33 @@ def load_yaml_config(path: str | Path) -> Dict[str, Any]:
         path = Path(path)
 
     if not path.exists():
-        logger.error("Config file not found: %s", path)
-        raise FileNotFoundError(f"Config file not found: {path}")
+        # Try to fix the path if it's in the form of basic/sequential/yaml.yaml
+        parts = str(path).split('/')
+        if len(parts) >= 3 and parts[-1] == "yaml.yaml":
+            # Remove the last part and replace with the second-to-last part + .yaml
+            fixed_path = '/'.join(parts[:-1]) + '.yaml'
+            if Path(fixed_path).exists():
+                path = Path(fixed_path)
+            else:
+                # Try removing the last two parts and replace with the second-to-last part + .yaml
+                fixed_path = '/'.join(parts[:-2]) + '/' + parts[-2] + '.yaml'
+                if Path(fixed_path).exists():
+                    path = Path(fixed_path)
+                else:
+                    logger.error("Config file not found: %s", path)
+                    raise FileNotFoundError(f"Config file not found: {path}")
+        # Handle the case where the file has a .yml extension but the path is looking for .yml/yaml.yaml
+        elif len(parts) >= 3 and parts[-1] == "yml.yaml":
+            # Try removing the last part and replace with the second-to-last part + .yml
+            fixed_path = '/'.join(parts[:-1]) + '.yml'
+            if Path(fixed_path).exists():
+                path = Path(fixed_path)
+            else:
+                logger.error("Config file not found: %s", path)
+                raise FileNotFoundError(f"Config file not found: {path}")
+        else:
+            logger.error("Config file not found: %s", path)
+            raise FileNotFoundError(f"Config file not found: {path}")
             
     for item in _yaml_cache:
         if item[0] == str(path):

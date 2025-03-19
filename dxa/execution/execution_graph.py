@@ -229,9 +229,48 @@ class ExecutionGraph(DirectedGraph):
         if config_path is None or not config_path.exists():
             if config_name:
                 from .execution_config import ExecutionConfig  # pylint: disable=import-outside-toplevel
-                config_path = ExecutionConfig.get_config_path(cls, config_name)
+                
+                # Handle dot notation in config_name
+                if "." in config_name and not config_name.endswith(('.yaml', '.yml')):
+                    # Convert dots to slashes
+                    path_parts = config_name.split(".")
+                    path = "/".join(path_parts)
+                    
+                    # Try with .yaml extension
+                    yaml_path = Path(ExecutionConfig.get_base_path()) / "yaml" / f"{path}.yaml"
+                    if yaml_path.exists():
+                        config_path = yaml_path
+                    else:
+                        # Try with .yml extension
+                        yml_path = Path(ExecutionConfig.get_base_path()) / "yaml" / f"{path}.yml"
+                        if yml_path.exists():
+                            config_path = yml_path
+                        else:
+                            # Fall back to standard path resolution
+                            config_path = ExecutionConfig.get_yaml_path(cls, config_name)
+                else:
+                    # Standard path resolution
+                    config_path = ExecutionConfig.get_yaml_path(cls, config_name)
             else:
                 raise ValueError("No config path or name provided")
+
+        # If the path doesn't exist, try to fix it
+        if not config_path.exists():
+            # Check if the path is in the form of basic/sequential/yaml.yaml
+            # and try to fix it to basic/sequential.yaml
+            parts = str(config_path).split('/')
+            if len(parts) >= 3 and parts[-1] == "yaml.yaml":
+                # Remove the last two parts and replace with the second-to-last part + .yaml
+                fixed_path = '/'.join(parts[:-2]) + '/' + parts[-2] + '.yaml'
+                if Path(fixed_path).exists():
+                    config_path = Path(fixed_path)
+            # Check if the path is in the form of test_config_yml/yml.yaml
+            # and try to fix it to test_config_yml.yml
+            elif len(parts) >= 2 and parts[-1] == "yml.yaml":
+                # Try removing the last part and use the directory name with .yml extension
+                fixed_path = '/'.join(parts[:-1]) + '.yml'
+                if Path(fixed_path).exists():
+                    config_path = Path(fixed_path)
 
         data = load_yaml_config(config_path)
 

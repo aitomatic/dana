@@ -4,8 +4,8 @@
 .venv/*
 __pycache__
 __pycache__/*
-mcp
-mcp/*
+# mcp
+# mcp/*
 configs
 configs/*
 logs
