@@ -119,7 +119,7 @@ class LLMResource(BaseResource):
             self._client = ai.Client(provider_configs=self.provider_configs)
             self.logger.info("LLM client initialized successfully for model: %s", self.model)
 
-    async def query(self, request: Dict[str, Any]) -> Dict[str, Any]
+    async def query(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Send query to LLM.
         
         Args:
