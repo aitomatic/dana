@@ -11,10 +11,11 @@ from ..execution_types import (
     ExecutionSignal, 
     Objective, 
     ExecutionNodeStatus,
-    ExecutionSignalType
+    ExecutionSignalType,
 )
 from ...common.graph import NodeType
 from .reasoning_strategy import ReasoningStrategy
+from .reasoning_config import ReasoningConfig
 
 class ReasoningExecutor(Executor[ReasoningStrategy]):
     """Executes reasoning tasks using LLM-based reasoning.
@@ -40,6 +41,7 @@ class ReasoningExecutor(Executor[ReasoningStrategy]):
         self.strategy = strategy
         self.layer = "reasoning"
         self.logger = logging.getLogger(f"dxa.execution.{self.layer}")
+        self.config = ReasoningConfig()
     
     async def execute_node(
         self,
@@ -158,6 +160,118 @@ class ReasoningExecutor(Executor[ReasoningStrategy]):
             lower_signals=lower_signals
         )
     
+    def _build_combined_prompt(
+        self,
+        node: ExecutionNode,
+        context: ExecutionContext,
+        instruction: str,
+        prev_steps: Optional[List[str]] = None,
+        objective: Optional[Objective] = None
+    ) -> str:
+        """Build a combined prompt from all layers' context.
+        
+        Args:
+            node: Node to execute
+            context: Execution context
+            instruction: Base instruction
+            prev_steps: Previous steps
+            objective: Execution objective
+            
+        Returns:
+            Combined prompt string
+        """
+        # Get the base prompt template
+        prompt_ref = node.metadata.get("prompt", instruction)
+        self.logger.debug(f"Prompt reference: {prompt_ref}")
+        
+        prompt_template = self.config.get_prompt(prompt_ref)
+        if not prompt_template:
+            prompt_template = instruction
+        self.logger.debug(f"Prompt template: {prompt_template}")
+
+        # Build workflow context
+        assert context.current_workflow is not None, "Current workflow is required"
+        workflow_node = context.current_workflow.get_current_node()
+        assert workflow_node is not None, "Current workflow node is required"
+        self.logger.debug(f"Workflow node: {workflow_node}")
+        workflow_prompt = workflow_node.metadata.get("prompt", "")
+        self.logger.debug(f"Workflow prompt: {workflow_prompt}")
+        workflow_context = workflow_node.metadata.get("workflow_context", {})
+        self.logger.debug(f"Workflow context: {workflow_context}")
+        workflow_previous_outputs = workflow_context.get("previous_outputs", {})
+        self.logger.debug(f"Workflow previous outputs: {workflow_previous_outputs}")
+
+        # Build planning context
+        assert context.current_plan is not None, "Current plan is required"
+        plan_node = context.current_plan.get_current_node()
+        assert plan_node is not None, "Current plan node is required"
+        self.logger.debug(f"Plan node: {plan_node}")
+        plan_prompt = plan_node.metadata.get("prompt", "")
+        self.logger.debug(f"Plan prompt: {plan_prompt}")
+        plan_context = plan_node.metadata.get("plan_context", {})
+        self.logger.debug(f"Plan context: {plan_context}")
+        plan_previous_outputs = plan_context.get("previous_outputs", {})
+        self.logger.debug(f"Plan previous outputs: {plan_previous_outputs}")
+
+        # Format the prompt template with objective and previous outputs
+        format_values = {}
+        if objective:
+            if isinstance(objective, Objective):
+                assert objective is not None, "Objective current is required"
+                str_objective = objective.current
+            else:
+                str_objective = str(objective)
+            objective_text = getattr(objective, "description", str_objective)
+            format_values["objective"] = objective_text
+            
+        # Add previous outputs to format values
+        for node_id, output in workflow_previous_outputs.items():
+            # Use node_id as given, without converting to uppercase
+            format_values[node_id] = output
+            
+        for node_id, output in plan_previous_outputs.items():
+            # Use node_id as given, without converting to uppercase
+            format_values[node_id] = output
+            
+        self.logger.debug(f"Format values: {format_values}")
+        
+        try:
+            prompt_template = prompt_template.format(**format_values)
+            self.logger.debug(f"Formatted prompt template: {prompt_template}")
+        except (KeyError, IndexError) as e:
+            self.logger.warning(f"Error formatting prompt template: {e}")
+            # If there are other format placeholders, append the values instead
+            if objective:
+                prompt_template = f"{prompt_template}\n\nObjective:\n{objective_text}"
+            for node_id, output in workflow_previous_outputs.items():
+                prompt_template = f"{prompt_template}\n\n{node_id} Output:\n{output}"
+            for node_id, output in plan_previous_outputs.items():
+                prompt_template = f"{prompt_template}\n\n{node_id} Output:\n{output}"
+
+        # Build the combined prompt
+        combined_prompt = f"""
+Workflow Context:
+Current Node: {node.node_id}
+State: {node.status.name if hasattr(node, 'status') else 'UNKNOWN'}
+Previous Outputs: {workflow_context.get('previous_outputs', {})}
+
+Planning Context:
+Node: {plan_context.get('node_id', 'UNKNOWN')}
+Requirements: {plan_context.get('requirements', [])}
+Constraints: {plan_context.get('constraints', [])}
+
+Reasoning Task:
+{prompt_template}
+"""
+        self.logger.debug(f"Combined prompt: {combined_prompt}")
+
+        # Add previous steps if available
+        if prev_steps and len(prev_steps) > 0:
+            steps_text = "\n".join([f"- {step}" for step in prev_steps])
+            combined_prompt = f"{combined_prompt}\n\nPrevious steps:\n{steps_text}"
+
+        return combined_prompt
+
     async def _execute_reasoning_task(
         self,
         node: ExecutionNode,
@@ -185,24 +299,27 @@ class ReasoningExecutor(Executor[ReasoningStrategy]):
         # Use the reasoning_llm from context to generate a response
         if context and context.reasoning_llm:
             try:
-                # Prepare the prompt
-                prompt = instruction
-                if objective:
-                    # Access the objective text safely
-                    objective_text = getattr(objective, "description", str(objective))
-                    prompt = f"Objective: {objective_text}\n\nTask: {instruction}"
-                
-                # Add previous steps if available
-                if prev_steps and len(prev_steps) > 0:
-                    steps_text = "\n".join([f"- {step}" for step in prev_steps])
-                    prompt = f"{prompt}\n\nPrevious steps:\n{steps_text}"
+                # Build the combined prompt
+                prompt = self._build_combined_prompt(
+                    node=node,
+                    context=context,
+                    instruction=instruction,
+                    prev_steps=prev_steps,
+                    objective=objective
+                )
                 
                 # Query the LLM
                 response = await context.reasoning_llm.query({
                     "prompt": prompt,
                     "system_prompt": (
-                        "You are a helpful AI assistant. "
-                        "Provide a clear, accurate, and detailed response."
+                        "You are a helpful AI assistant executing a multi-layer reasoning process, "
+                        "comprising Workflow, Planning, and Reasoning layers. Each layer is modeled as a "
+                        "graph or flow chart, with nodes representing tasks or conditions. Each node "
+                        "from Workflow maps to a graph in the Planning layer, and so on. Fundamentally, "
+                        "Workflow represents a human workflow, Planning represents a dynamic plan to accomplish "
+                        "each task in the Workflow, while Reasoning represents the thinking or deliberation "
+                        "involved in accomplishing each task in the Plan. "
+                        "Consider the workflow and planning context carefully when formulating your response."
                     ),
                     "parameters": {
                         "temperature": 0.7,
