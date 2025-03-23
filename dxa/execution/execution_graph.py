@@ -102,6 +102,15 @@ class ExecutionGraph(DirectedGraph):
             name=yaml_data.get('name', f'unnamed_{cls.__name__.lower()}')
         )
         
+        # Process prompts first
+        if 'prompts' in yaml_data:
+            graph.metadata['prompts'] = yaml_data['prompts']
+            
+            # Apply custom prompts if provided
+            if custom_prompts:
+                for key, value in custom_prompts.items():
+                    graph.metadata['prompts'][key] = value
+        
         # Process nodes
         nodes_data = yaml_data.get('nodes', [])
         node_ids = []
@@ -143,15 +152,6 @@ class ExecutionGraph(DirectedGraph):
         # Process edges
         cls._add_edges_to_graph(graph, yaml_data, node_ids)
         
-        # Process prompts
-        if 'prompts' in yaml_data:
-            graph.metadata['prompts'] = yaml_data['prompts']
-            
-            # Apply custom prompts if provided
-            if custom_prompts:
-                for key, value in custom_prompts.items():
-                    graph.metadata['prompts'][key] = value
-        
         # Store additional metadata
         for key, value in yaml_data.items():
             if key not in ['nodes', 'edges', 'prompts']:
@@ -189,19 +189,20 @@ class ExecutionGraph(DirectedGraph):
         else:
             metadata['reasoning'] = 'DEFAULT'
         
-        # Store prompt reference in metadata if present
-        if 'prompt' in node_data:
-            prompt_ref = node_data['prompt']
+        # Get prompt from YAML data if available
+        if 'prompts' in graph.metadata and node_id in graph.metadata['prompts']:
+            prompt_text = graph.metadata['prompts'][node_id]
         else:
-            prompt_ref = node_id
+            # Fall back to standard prompt resolution
+            from .execution_config import ExecutionConfig  # pylint: disable=import-outside-toplevel
+            prompt_ref = node_data.get('prompt', node_id)
+            prompt_text = ExecutionConfig.get_prompt(for_class=cls,
+                                                     config_path=config_path,
+                                                     prompt_ref=prompt_ref,
+                                                     custom_prompts=custom_prompts)
 
-        from .execution_config import ExecutionConfig  # pylint: disable=import-outside-toplevel
-        prompt_text = ExecutionConfig.get_prompt(for_class=cls,
-                                                 config_path=config_path,
-                                                 prompt_ref=prompt_ref,
-                                                 custom_prompts=custom_prompts)
-
-        ExecutionNode.set_prompt_in_metadata(prompt_text, metadata)
+        # Store the prompt in metadata
+        metadata['prompt'] = prompt_text
 
         # If no description, use the prompt text as the description
         if not description:

@@ -52,6 +52,10 @@ class WorkflowFactory(ExecutionFactory):
             name=data.get('name', 'unnamed_workflow')
         )
 
+        # Store prompts in metadata
+        if 'prompts' in data:
+            workflow.metadata['prompts'] = data['prompts']
+
         # pylint: disable=protected-access
         ExecutionGraph._add_start_end_nodes(graph=workflow)
 

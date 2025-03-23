@@ -1,7 +1,7 @@
 """Plan executor implementation."""
 
 import logging
-from typing import List, Optional, TYPE_CHECKING
+from typing import List, Optional, TYPE_CHECKING, cast, Dict, Any
 
 from ..executor import Executor
 from ..execution_context import ExecutionContext
@@ -13,6 +13,7 @@ from .plan_strategy import PlanStrategy
 
 if TYPE_CHECKING:
     from ..reasoning.reasoning_executor import ReasoningExecutor
+    from ..reasoning.reasoning import Reasoning
 
 
 class PlanExecutor(Executor[PlanStrategy]):
@@ -23,8 +24,20 @@ class PlanExecutor(Executor[PlanStrategy]):
     reasoning tasks to a ReasoningExecutor.
     """
     
-    strategy_class = PlanStrategy
-    default_strategy = PlanStrategy.DEFAULT
+    @property
+    def layer(self) -> str:
+        """Get the execution layer name."""
+        return "plan"
+    
+    @property
+    def strategy_class(self) -> type[PlanStrategy]:
+        """Get the strategy class for this executor."""
+        return PlanStrategy
+    
+    @property
+    def default_strategy(self) -> PlanStrategy:
+        """Get the default strategy for this executor."""
+        return PlanStrategy.DEFAULT
     
     def __init__(
         self, 
@@ -38,9 +51,8 @@ class PlanExecutor(Executor[PlanStrategy]):
             strategy: Plan execution strategy
         """
         super().__init__(depth=1)
-        self.reasoning_executor = reasoning_executor
+        self.lower_executor = reasoning_executor
         self.strategy = strategy
-        self.layer = "plan"
         self.logger = logging.getLogger(f"dxa.execution.{self.layer}")
     
     def _get_graph_class(self):
@@ -55,45 +67,51 @@ class PlanExecutor(Executor[PlanStrategy]):
     
     async def execute_node(
         self,
-        node: ExecutionNode, 
+        node: ExecutionNode,
         context: ExecutionContext,
         prev_signals: Optional[List[ExecutionSignal]] = None,
         upper_signals: Optional[List[ExecutionSignal]] = None,
         lower_signals: Optional[List[ExecutionSignal]] = None
     ) -> List[ExecutionSignal]:
-        """Execute a single node in the plan.
-        
-        This method handles the execution of a plan node by:
-        1. Updating the node status
-        2. Delegating to the reasoning executor based on the strategy
-        3. Processing the results
+        """Execute a plan node.
         
         Args:
             node: Node to execute
             context: Execution context
-            prev_signals: Signals from previous nodes
+            prev_signals: Signals from previous node execution
             upper_signals: Signals from upper execution layer
             lower_signals: Signals from lower execution layer
             
         Returns:
-            List of execution signals resulting from the node execution
+            List of execution signals
         """
-        self.logger.info(f"Executing plan node: {node.node_id}")
-        
         try:
+            # Log node execution
+            self.logger.info("Executing plan node: %s", node.node_id)
+            
+            # Update node status
+            if self.graph:
+                self.graph.update_node_status(node.node_id, ExecutionNodeStatus.IN_PROGRESS)
+            
             # Skip START and END nodes
             if node.node_type in [NodeType.START, NodeType.END]:
                 return []
             
-            # Update node status to in progress
-            if self.graph:
-                self.graph.update_node_status(node.node_id, ExecutionNodeStatus.IN_PROGRESS)
-            
-            # Prepare node with strategy information
+            # Prepare node metadata
             node_metadata = node.metadata.copy() if node.metadata else {}
-            node_metadata["plan_strategy"] = self.strategy.name
             
-            # Create a copy of the node with updated metadata
+            # Add planning context
+            planning_context = {
+                "current_node": node.node_id,
+                "plan_state": node.status.name if hasattr(node, 'status') else 'UNKNOWN',
+                "requirements": node_metadata.get("requirements", []),
+                "constraints": node_metadata.get("constraints", [])
+            }
+            
+            # Add planning context to metadata
+            node_metadata["planning_context"] = planning_context
+            
+            # Create execution node with updated metadata
             execution_node = ExecutionNode(
                 node_id=node.node_id,
                 node_type=node.node_type,
@@ -101,24 +119,21 @@ class PlanExecutor(Executor[PlanStrategy]):
                 metadata=node_metadata
             )
             
-            # First, create a reasoning graph for this plan node
-            reasoning_graph = self.reasoning_executor.create_graph_from_node(
+            # Create a new reasoning graph for this plan node
+            if not self.graph:
+                raise RuntimeError("No graph set in plan executor")
+                
+            reasoning = self.lower_executor.create_graph_from_node(
                 upper_node=execution_node,
                 upper_graph=self.graph,
                 objective=self.graph.objective if self.graph else None,
                 context=context
             )
             
-            # Set the reasoning graph in the reasoning executor
-            self.reasoning_executor.graph = reasoning_graph
-            
-            # Execute the node using the reasoning executor
-            signals = await self.reasoning_executor.execute_node(
-                node=execution_node,
-                context=context,
-                prev_signals=prev_signals,
-                upper_signals=upper_signals
-            )
+            # Set the reasoning in context and execute it
+            context.current_reasoning = cast(Reasoning, reasoning)
+            self.lower_executor.graph = reasoning
+            signals = await self.lower_executor.execute_graph(reasoning, context)
             
             # Update node status to completed
             if self.graph:
@@ -238,32 +253,33 @@ class PlanExecutor(Executor[PlanStrategy]):
             name=f"direct_plan_for_{node_id}"
         )
         
-        # Copy nodes and edges from workflow
+        # Create nodes based on workflow structure
         for node in workflow.nodes.values():
+            # Create a copy of the node's metadata
+            metadata = node.metadata.copy() if node.metadata else {}
+            
+            # Ensure prompt is passed through
+            if "prompt" in metadata:
+                metadata["prompt"] = metadata["prompt"]
+            
             plan_node = ExecutionNode(
                 node_id=node.node_id,
                 node_type=node.node_type,
                 description=node.description,
-                metadata=node.metadata.copy() if node.metadata else {}
+                metadata=metadata
             )
             
             # If this is the upper node, add additional metadata
             if upper_node and node.node_id == upper_node.node_id:
-                if not plan_node.metadata:
-                    plan_node.metadata = {}
                 plan_node.metadata["is_upper_node"] = True
-                plan_node.metadata["upper_layer_id"] = upper_node.node_id
+                plan_node.metadata["upper_node_id"] = upper_node.node_id
             
             plan.add_node(plan_node)
-            
+        
+        # Create edges based on workflow structure
         for edge in workflow.edges:
-            plan_edge = ExecutionEdge(
-                source=edge.source,
-                target=edge.target,
-                metadata=edge.metadata.copy() if edge.metadata else {}
-            )
-            plan.add_edge(plan_edge)
-            
+            plan.add_edge_between(edge.source, edge.target)
+        
         return plan
     
     def _create_dynamic_plan(
@@ -329,34 +345,108 @@ class PlanExecutor(Executor[PlanStrategy]):
         Returns:
             List of signals if custom traversal was performed, None otherwise
         """
-        # Get the current node from the context
-        current_node = None
-        if hasattr(context, 'current_node') and context.current_node:
-            current_node = context.current_node
+        # Get the current node from the cursor position
+        cursor_pos = getattr(graph, 'cursor_position', None)
+        if cursor_pos and cursor_pos in graph.nodes:
+            current_node = graph.nodes[cursor_pos]
         else:
-            # Use the current cursor position
-            cursor_pos = getattr(graph, 'cursor_position', None)
-            if cursor_pos and cursor_pos in graph.nodes:
-                current_node = graph.nodes[cursor_pos]
-            else:
-                # Default to start node
-                current_node = graph.get_start_node()
+            # Default to start node
+            current_node = graph.get_start_node()
         
-        if not current_node:
-            self.logger.warning("No current node found for creating reasoning graph")
-            # Continue with default traversal
-            return None
+        if current_node:
+            # Create a reasoning graph for the current node
+            reasoning_graph = self.lower_executor.create_graph_from_node(
+                upper_node=current_node,
+                upper_graph=graph,
+                objective=graph.objective if graph else None,
+                context=context
+            )
+            
+            # Set the reasoning graph in the reasoning executor
+            self.lower_executor.graph = reasoning_graph
+            
+            # Execute the current node using the reasoning executor
+            return await self.lower_executor.execute_node(
+                node=current_node,
+                context=context,
+                upper_signals=upper_signals
+            )
         
-        # Create a reasoning graph using the new create_graph_from_node method
-        reasoning_graph = self.reasoning_executor.create_graph_from_node(
-            upper_node=current_node,
-            upper_graph=graph,
-            objective=graph.objective,
+        return None 
+    def _process_previous_signals(self, signals: List[ExecutionSignal]) -> Dict[str, Any]:
+        """Process previous signals to extract outputs.
+        
+        Args:
+            signals: List of previous execution signals
+            
+        Returns:
+            Dictionary mapping node IDs to their outputs
+        """
+        return {
+            str(signal.content.get("node")): signal.content.get("output")
+            for signal in signals
+            if signal.type == "output"
+        }
+    
+    def _build_layer_context(
+        self,
+        node: ExecutionNode,
+        prev_signals: Optional[List[ExecutionSignal]] = None
+    ) -> Dict[str, Any]:
+        """Build plan context for node execution.
+        
+        Args:
+            node: Node to execute
+            prev_signals: Signals from previous node execution
+            
+        Returns:
+            Plan context dictionary
+        """
+        # Get base context from parent
+        context = super()._build_layer_context(node, prev_signals)
+        
+        # Add plan-specific context
+        if prev_signals:
+            context["previous_outputs"] = self._process_previous_signals(prev_signals)
+        
+        return context
+    
+    async def _execute_next_layer(
+        self,
+        node: ExecutionNode,
+        context: ExecutionContext
+    ) -> List[ExecutionSignal]:
+        """Execute the reasoning layer for the given node.
+        
+        Args:
+            node: Node to execute
+            context: Execution context
+            
+        Returns:
+            List of execution signals
+        """
+        if not self.graph:
+            raise RuntimeError("No graph set for plan execution")
+            
+        if not self.lower_executor:
+            raise RuntimeError("No reasoning executor set")
+            
+        # Assert that lower_executor is not None for type checker
+        lower_executor = cast('ReasoningExecutor', self.lower_executor)
+            
+        # Create reasoning graph from plan node
+        reasoning_graph = lower_executor.create_graph_from_node(
+            upper_node=node,
+            upper_graph=self.graph,
+            objective=self.graph.objective if self.graph else None,
             context=context
         )
         
-        # Set the reasoning graph in the executor and context
-        self.reasoning_executor.graph = reasoning_graph
+        # Cast to Reasoning type
+        reasoning = cast('Reasoning', reasoning_graph)
         
-        # Continue with default traversal
-        return None 
+        # Set reasoning graph in context
+        context.current_reasoning = reasoning
+        
+        # Execute reasoning graph
+        return await lower_executor.execute_graph(reasoning, context) 

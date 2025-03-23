@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import Generic, List, Optional, Type, TypeVar, Any, cast
+from typing import Generic, List, Optional, Type, TypeVar, Any, cast, Dict, TYPE_CHECKING, Union
 
 import logging
 
@@ -17,6 +17,10 @@ from ..common.graph import NodeType
 # Type variable for strategy enums
 StrategyT = TypeVar('StrategyT', bound=Enum)
 
+if TYPE_CHECKING:
+    from .workflow.workflow_executor import WorkflowExecutor
+    from .planning.plan_executor import PlanExecutor
+    from .reasoning.reasoning_executor import ReasoningExecutor
 
 class ExecutionError(Exception):
     """Exception raised for errors during execution."""
@@ -26,27 +30,167 @@ class ExecutionError(Exception):
 class Executor(ABC, Generic[StrategyT]):
     """Base class for all executors in the execution system.
     
-    This abstract class defines the interface and common functionality
-    for all executors. Subclasses must implement the abstract methods
-    to provide specific execution behavior.
+    The Executor class provides common execution logic for all layers
+    in the execution system. Each layer (workflow, plan, reasoning)
+    implements its own specific behavior while inheriting common
+    functionality from this base class.
     """
     
-    # Default strategy class and value, will be overridden by subclasses
-    strategy_class: Type[Enum] = cast(Type[Enum], None)
-    default_strategy = None
-    
     def __init__(self, depth: int = 0):
-        """Initialize the executor.
+        """Initialize executor.
         
         Args:
-            depth: Execution depth level (0 for top-level)
+            depth: Execution depth (0 for workflow, 1 for plan, 2 for reasoning)
         """
         self.depth = depth
-        self._graph = None
-        self.layer = "base"  # Will be overridden by subclasses
-        self.logger = logging.getLogger("dxa.execution.%s" % self.layer)
+        self._graph: Optional[ExecutionGraph] = None
+        self.lower_executor: Optional[Union['WorkflowExecutor', 'PlanExecutor', 'ReasoningExecutor']] = None
+        self.logger = logging.getLogger(f"dxa.execution.{self.layer}")
         self._strategy = self.default_strategy
         self._configure_logger()
+    
+    @property
+    @abstractmethod
+    def layer(self) -> str:
+        """Get the execution layer name."""
+        pass
+    
+    @property
+    @abstractmethod
+    def strategy_class(self) -> Type[StrategyT]:
+        """Get the strategy class for this executor."""
+        pass
+    
+    @property
+    @abstractmethod
+    def default_strategy(self) -> StrategyT:
+        """Get the default strategy for this executor."""
+        pass
+    
+    @property
+    def graph(self) -> Optional[ExecutionGraph]:
+        """Get current execution graph."""
+        return self._graph
+    
+    @graph.setter
+    def graph(self, graph: ExecutionGraph) -> None:
+        """Set current execution graph."""
+        self._graph = graph
+    
+    async def execute_node(
+        self,
+        node: ExecutionNode,
+        context: ExecutionContext,
+        prev_signals: Optional[List[ExecutionSignal]] = None,
+        upper_signals: Optional[List[ExecutionSignal]] = None,
+        lower_signals: Optional[List[ExecutionSignal]] = None
+    ) -> List[ExecutionSignal]:
+        """Execute a node using common execution logic.
+        
+        Args:
+            node: Node to execute
+            context: Execution context
+            prev_signals: Signals from previous node execution
+            upper_signals: Signals from upper execution layer
+            lower_signals: Signals from lower execution layer
+            
+        Returns:
+            List of execution signals
+        """
+        try:
+            # Update node status
+            if self.graph:
+                self.graph.update_node_status(node.node_id, ExecutionNodeStatus.IN_PROGRESS)
+            
+            # Skip START and END nodes
+            if node.node_type in [NodeType.START, NodeType.END]:
+                return []
+            
+            # Prepare node metadata
+            node_metadata = node.metadata.copy() if node.metadata else {}
+            
+            # Build layer-specific context
+            layer_context = self._build_layer_context(node, prev_signals)
+            node_metadata[f"{self.layer}_context"] = layer_context
+            
+            # Create execution node with updated metadata
+            execution_node = ExecutionNode(
+                node_id=node.node_id,
+                node_type=node.node_type,
+                description=node.description,
+                metadata=node_metadata
+            )
+            
+            # Create and execute graph for next layer
+            signals = await self._execute_next_layer(execution_node, context)
+            
+            # Update node status to completed
+            if self.graph:
+                self.graph.update_node_status(node.node_id, ExecutionNodeStatus.COMPLETED)
+            
+            return signals
+            
+        except Exception as e:
+            self.logger.error(f"Error executing node {node.node_id}: {str(e)}")
+            
+            # Update node status to error
+            if self.graph:
+                self.graph.update_node_status(node.node_id, ExecutionNodeStatus.FAILED)
+            
+            # Create error signal
+            return [self._create_error_signal(node.node_id, str(e))]
+    
+    @abstractmethod
+    def _build_layer_context(
+        self,
+        node: ExecutionNode,
+        prev_signals: Optional[List[ExecutionSignal]] = None
+    ) -> Dict[str, Any]:
+        """Build layer-specific context for node execution.
+        
+        Args:
+            node: Node to execute
+            prev_signals: Signals from previous node execution
+            
+        Returns:
+            Layer-specific context dictionary
+        """
+        pass
+    
+    @abstractmethod
+    async def _execute_next_layer(
+        self,
+        node: ExecutionNode,
+        context: ExecutionContext
+    ) -> List[ExecutionSignal]:
+        """Execute the next layer's graph for the given node.
+        
+        Args:
+            node: Node to execute
+            context: Execution context
+            
+        Returns:
+            List of execution signals
+        """
+        pass
+    
+    def _create_error_signal(self, node_id: str, error: str) -> ExecutionSignal:
+        """Create an error signal.
+        
+        Args:
+            node_id: ID of the node that failed
+            error: Error message
+            
+        Returns:
+            Error signal
+        """
+        return ExecutionSignal(
+            type=ExecutionSignalType.CONTROL_ERROR,
+            content={
+                "node": node_id,
+                "error": error
+            }
+        )
     
     def _configure_logger(self):
         """Configure logger with appropriate handlers and formatters."""
@@ -58,16 +202,6 @@ class Executor(ABC, Generic[StrategyT]):
             )
             handler.setFormatter(formatter)
             self.logger.addHandler(handler)
-    
-    @property
-    def graph(self) -> Optional[ExecutionGraph]:
-        """Get current execution graph."""
-        return self._graph
-    
-    @graph.setter
-    def graph(self, graph: ExecutionGraph) -> None:
-        """Set current execution graph."""
-        self._graph = graph
     
     @property
     def strategy(self) -> StrategyT:
@@ -98,140 +232,83 @@ class Executor(ABC, Generic[StrategyT]):
             self._strategy = strategy
     
     async def execute_graph(
-        self, 
-        upper_graph: ExecutionGraph, 
+        self,
+        graph: ExecutionGraph,
         context: ExecutionContext,
+        prev_signals: Optional[List[ExecutionSignal]] = None,
         upper_signals: Optional[List[ExecutionSignal]] = None,
-        upper_node: Optional[ExecutionNode] = None
+        lower_signals: Optional[List[ExecutionSignal]] = None
     ) -> List[ExecutionSignal]:
-        """Execute an execution graph.
-        
-        This method handles the overall execution of a graph, including:
-        1. Creating a graph for this execution layer if needed
-        2. Setting up the execution context
-        3. Traversing the graph according to the strategy
-        4. Processing and returning execution signals
+        """Execute a graph using common execution logic.
         
         Args:
-            upper_graph: Graph from the upper execution layer
+            graph: Graph to execute
             context: Execution context
-            upper_signals: Signals from the upper execution layer
-            upper_node: Specific node from upper layer to create graph for
+            prev_signals: Signals from previous execution
+            upper_signals: Signals from upper execution layer
+            lower_signals: Signals from lower execution layer
             
         Returns:
-            List of execution signals resulting from the execution
+            List of execution signals
         """
-        # Create graph for this execution layer if needed
-        if self.graph is None:
-            # If we don't have an upper_node, use the start node of the upper graph or create a default node
-            if not upper_node:
-                if upper_graph:
-                    upper_node = upper_graph.get_start_node() or ExecutionNode(
-                        node_id="default",
-                        node_type=NodeType.TASK,
-                        description="Default task"
-                    )
-                else:
-                    upper_node = ExecutionNode(
-                        node_id="default",
-                        node_type=NodeType.TASK,
-                        description="Default task"
-                    )
-            
-            # Create graph using create_graph_from_node
-            self.graph = self.create_graph_from_node(
-                upper_node=upper_node,
-                upper_graph=upper_graph,
-                context=context
-            )
+        # Set current graph
+        self.graph = graph
         
         # Set graph in context
-        self._set_graph_in_context(self.graph, context)
+        self._set_graph_in_context(graph, context)
         
         # Log execution start
         self._log_execution_start()
         
-        # Check for custom traversal strategy
-        custom_signals = await self._custom_graph_traversal(
-            graph=self.graph,
-            context=context,
-            upper_signals=upper_signals
-        )
-        
-        if custom_signals is not None:
-            return custom_signals
-        
-        # Default traversal: follow graph structure
-        signals = []
-        
-        # Start from the START node
-        start_node = self.graph.get_start_node()
+        # Get start node
+        start_node = graph.get_start_node()
         if not start_node:
-            self.logger.error("No START node found in graph")
-            return signals
-        
-        # Initialize cursor at START node
-        self.graph.update_cursor(start_node.node_id)
-        
-        # Process nodes in order determined by graph structure
+            self.logger.error(f"{self.layer} has no START node")
+            return []
+            
+        # Execute nodes in sequence
+        signals = []
         current_node = start_node
-        prev_signals = upper_signals or []
         
-        while current_node:
+        while current_node and current_node.node_type != NodeType.END:
             # Execute current node
             node_signals = await self.execute_node(
-                node=current_node,
-                context=context,
-                prev_signals=prev_signals,
-                upper_signals=upper_signals
+                current_node,
+                context,
+                prev_signals=signals,
+                upper_signals=upper_signals,
+                lower_signals=lower_signals
             )
-            
-            # Add signals to result
             signals.extend(node_signals)
             
-            # Process signals for this node
-            self._process_node_signals(current_node.node_id, node_signals)
-            
-            # Update previous signals for next node
-            prev_signals = node_signals
-            
-            # Get next node based on graph structure
-            next_nodes = self.graph.get_valid_transitions(
-                current_node.node_id, 
-                context
-            )
-            
-            if not next_nodes:
+            # Get next node
+            next_node = self._get_next_node(current_node)
+            if not next_node:
                 break
-                
-            # For now, just take the first valid transition
-            # More complex traversal would be implemented in _custom_graph_traversal
-            current_node = next_nodes[0]
-            self.graph.update_cursor(current_node.node_id)
+            current_node = next_node
         
         return signals
     
-    async def _custom_graph_traversal(
-        self,
-        graph: ExecutionGraph,
-        context: ExecutionContext,
-        upper_signals: Optional[List[ExecutionSignal]] = None
-    ) -> Optional[List[ExecutionSignal]]:
-        """Implement custom traversal strategies.
-        
-        Override this method in subclasses to implement custom traversal logic.
-        Return None to use the default traversal.
+    def _get_next_node(self, current_node: ExecutionNode) -> Optional[ExecutionNode]:
+        """Get the next node in the execution sequence.
         
         Args:
-            graph: Execution graph to traverse
-            context: Execution context
-            upper_signals: Signals from upper execution layer
+            current_node: Current node
             
         Returns:
-            List of signals if custom traversal was performed, None otherwise
+            Next node, or None if no next node
         """
-        # Default implementation: no custom traversal
-        return None
+        if not self.graph:
+            return None
+            
+        # Get outgoing edges
+        outgoing_edges = [e for e in self.graph.edges if e.source == current_node.node_id]
+        if not outgoing_edges:
+            return None
+            
+        # Get next node
+        next_node_id = outgoing_edges[0].target
+        return self.graph.nodes.get(next_node_id)
     
     def _set_graph_in_context(
         self, 
@@ -294,38 +371,6 @@ class Executor(ABC, Generic[StrategyT]):
         # Default implementation: don't propagate horizontally
         return False
     
-    @abstractmethod
-    async def execute_node(
-        self,
-        node: ExecutionNode, 
-        context: ExecutionContext,
-        prev_signals: Optional[List[ExecutionSignal]] = None,
-        upper_signals: Optional[List[ExecutionSignal]] = None,
-        lower_signals: Optional[List[ExecutionSignal]] = None
-    ) -> List[ExecutionSignal]:
-        """Execute a single node in the graph.
-        
-        This method handles the execution of a single node, including:
-        1. Checking if the node should be executed
-        2. Preparing the node for execution
-        3. Executing the node's task (implementing the specific execution logic)
-        4. Processing the results
-        
-        Subclasses must implement this method with the specific execution
-        logic for their node types.
-        
-        Args:
-            node: Node to execute
-            context: Execution context
-            prev_signals: Signals from previous nodes
-            upper_signals: Signals from upper execution layer
-            lower_signals: Signals from lower execution layer
-            
-        Returns:
-            List of execution signals resulting from the node execution
-        """
-        pass
-    
     def _process_node_signals(
         self, 
         node_id: str, 
@@ -378,20 +423,16 @@ class Executor(ABC, Generic[StrategyT]):
         objective: Optional[Objective] = None,
         context: Optional[ExecutionContext] = None
     ) -> ExecutionGraph:
-        """Create a new execution graph from a node in the upper layer.
-        
-        This method creates a graph for the current layer based on a node
-        from the upper execution layer. This formalizes the creation of graphs
-        in the Workflow -> Planning -> Reasoning stack.
+        """Create an execution graph from a node in an upper layer.
         
         Args:
-            upper_node: Node from the upper execution layer
-            upper_graph: Graph from the upper execution layer
-            objective: Execution objective (defaults to the upper graph's objective)
+            upper_node: Node from upper layer
+            upper_graph: Graph from upper layer
+            objective: Execution objective
             context: Execution context
             
         Returns:
-            New execution graph for the current layer
+            Execution graph
         """
         pass
     
@@ -475,28 +516,6 @@ class Executor(ABC, Generic[StrategyT]):
             content={
                 "node": node_id,
                 "result": result
-            }
-        )
-    
-    def _create_error_signal(
-        self, 
-        node_id: str, 
-        error: str
-    ) -> ExecutionSignal:
-        """Create an error signal for a node.
-        
-        Args:
-            node_id: ID of the node where the error occurred
-            error: Error message
-            
-        Returns:
-            Error signal
-        """
-        return ExecutionSignal(
-            type=ExecutionSignalType.CONTROL_ERROR,
-            content={
-                "node": node_id,
-                "message": error
             }
         )
     
