@@ -16,7 +16,7 @@ import asyncio
 from typing import Dict, Any, Tuple
 
 from dxa.execution import (
-    WorkflowExecutor, PlanExecutor, ReasoningExecutor,
+    WorkflowExecutor,
     ExecutionContext, Objective, ExecutionNode, ExecutionSignal
 )
 from dxa.execution.workflow import Workflow
@@ -157,9 +157,7 @@ async def main():
         
         # Set up executors
         logger.info("Setting up execution pipeline")
-        reasoning_executor = ReasoningExecutor()
-        plan_executor = PlanExecutor(reasoning_executor=reasoning_executor)
-        workflow_executor = WorkflowExecutor(plan_executor=plan_executor)
+        workflow_executor = WorkflowExecutor()
         
         # Execute workflow
         logger.info("Executing workflow")

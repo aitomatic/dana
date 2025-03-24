@@ -1,6 +1,6 @@
 """Workflow executor implementation."""
 
-from typing import List, Optional, Dict, Any, cast
+from typing import List, Optional, Dict, Any
 
 from ..executor import Executor
 from ..execution_context import ExecutionContext
@@ -8,9 +8,12 @@ from ..execution_graph import ExecutionGraph
 from ..execution_types import ExecutionNode, ExecutionSignal
 from .workflow_strategy import WorkflowStrategy
 from ..planning.plan_executor import PlanExecutor
-from ..planning.plan import Plan
+from ..planning.plan_strategy import PlanStrategy
+from ..reasoning.reasoning_executor import ReasoningExecutor
+from ..reasoning.reasoning_strategy import ReasoningStrategy
 from .workflow import Workflow
 from ..execution_types import Objective
+
 class WorkflowExecutor(Executor[WorkflowStrategy]):
     """Executes workflows by delegating to a plan executor.
     
@@ -36,8 +39,9 @@ class WorkflowExecutor(Executor[WorkflowStrategy]):
     
     def __init__(
         self, 
-        plan_executor: PlanExecutor, 
-        strategy: WorkflowStrategy = WorkflowStrategy.DEFAULT
+        workflow_strategy: WorkflowStrategy = WorkflowStrategy.DEFAULT,
+        planning_strategy: PlanStrategy = PlanStrategy.DEFAULT,
+        reasoning_strategy: ReasoningStrategy = ReasoningStrategy.DEFAULT
     ):
         """Initialize the workflow executor.
         
@@ -46,8 +50,9 @@ class WorkflowExecutor(Executor[WorkflowStrategy]):
             strategy: Workflow execution strategy
         """
         super().__init__(depth=0)
-        self.lower_executor = plan_executor
-        self.strategy = strategy
+        self.strategy = workflow_strategy
+        self.lower_executor = PlanExecutor(strategy=planning_strategy)
+        self.lower_executor.lower_executor = ReasoningExecutor(strategy=reasoning_strategy)
     
     async def execute_workflow(
         self,

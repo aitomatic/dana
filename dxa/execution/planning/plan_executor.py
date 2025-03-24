@@ -12,7 +12,7 @@ from .plan import Plan
 from .plan_strategy import PlanStrategy
 
 if TYPE_CHECKING:
-    from ..reasoning import ReasoningExecutor, Reasoning
+    from ..reasoning import Reasoning
 
 
 class PlanExecutor(Executor[PlanStrategy]):
@@ -40,7 +40,6 @@ class PlanExecutor(Executor[PlanStrategy]):
     
     def __init__(
         self, 
-        reasoning_executor: 'ReasoningExecutor', 
         strategy: PlanStrategy = PlanStrategy.DEFAULT
     ):
         """Initialize plan executor.
@@ -50,7 +49,6 @@ class PlanExecutor(Executor[PlanStrategy]):
             strategy: Plan execution strategy
         """
         super().__init__(depth=1)
-        self.lower_executor = reasoning_executor
         self.strategy = strategy
         self.logger = logging.getLogger(f"dxa.execution.{self.layer}")
     
@@ -61,7 +59,6 @@ class PlanExecutor(Executor[PlanStrategy]):
             Plan graph class
         """
         # Import here to avoid circular import
-        from .plan import Plan
         return Plan
     
     async def execute_node(

@@ -78,6 +78,15 @@ class DirectedGraph:
         self._cursor = None
 
     @property
+    def cursor(self) -> Optional["Cursor"]:
+        """Get the current cursor."""
+        return self._cursor
+
+    @cursor.setter
+    def cursor(self, cursor: Optional["Cursor"]) -> None:
+        self._cursor = cursor
+
+    @property
     def nodes(self) -> Dict[str, Node]:
         """Get all nodes in the graph."""
         return self._nodes

@@ -4,7 +4,7 @@ import asyncio
 import os
 import logging
 
-from dxa.execution import WorkflowFactory, WorkflowExecutor, PlanExecutor, ReasoningExecutor
+from dxa.execution import WorkflowFactory, WorkflowExecutor
 from dxa.execution import ExecutionContext
 from dxa.agent.resource import LLMResource
 
@@ -41,9 +41,7 @@ async def main():
     
     # Set up the execution pipeline
     print("Setting up execution pipeline...")
-    reasoning_executor = ReasoningExecutor()
-    plan_executor = PlanExecutor(reasoning_executor=reasoning_executor)
-    workflow_executor = WorkflowExecutor(plan_executor=plan_executor)
+    workflow_executor = WorkflowExecutor()
     
     # Execute the workflow
     print("\nExecuting workflow...\n")
