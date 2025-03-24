@@ -110,7 +110,7 @@ class ReasoningExecutor(Executor[ReasoningStrategy]):
                 node=node,
                 context=context,
                 instruction=instruction,
-                prev_steps=None,  # We don't have previous steps yet
+                prev_steps=None,  # TODO: really? We don't have previous steps yet
                 objective=objective,
                 max_tokens=1000
             )
@@ -370,40 +370,6 @@ Reasoning Task:
         
         return context
     
-    async def _execute_lower_layer(
-        self,
-        node: ExecutionNode,
-        context: ExecutionContext
-    ) -> List[ExecutionSignal]:
-        """Execute the task layer for the given node.
-        
-        Args:
-            node: Node to execute
-            context: Execution context
-            
-        Returns:
-            List of execution signals
-        """
-        if not self.graph:
-            raise RuntimeError("No graph set for reasoning execution")
-            
-        # Create task graph from reasoning node
-        task_graph = self.create_graph_from_node(
-            upper_node=node,
-            upper_graph=self.graph,
-            objective=self.graph.objective if self.graph else None,
-            context=context
-        )
-        
-        # Cast to Reasoning type
-        reasoning = cast(Reasoning, task_graph)
-        
-        # Set reasoning graph in context
-        context.current_reasoning = reasoning
-        
-        # Execute task - since this is the lowest layer, we execute the node directly
-        return await self.execute_node(node, context)
-    
     def create_graph_from_node(
         self,
         upper_node: ExecutionNode,
@@ -563,77 +529,3 @@ Reasoning Task:
         # In the future, this would create a self-critique reasoning
         return self._create_direct_reasoning(plan, objective, upper_node)
         
-    async def _custom_graph_traversal(
-        self, 
-        graph: ExecutionGraph, 
-        context: ExecutionContext,
-        upper_signals: Optional[List[ExecutionSignal]] = None
-    ) -> Optional[List[ExecutionSignal]]:
-        """Implement custom traversal strategies for reasoning.
-        
-        The reasoning layer is the lowest level of execution, so it doesn't
-        need to create graphs for lower layers. This method can implement
-        custom traversal strategies if needed.
-        
-        Args:
-            graph: Execution graph to traverse
-            context: Execution context
-            upper_signals: Signals from upper execution layer
-            
-        Returns:
-            List of signals if custom traversal was performed, None otherwise
-        """
-        # Default implementation: no custom traversal
-        return None
-
-    async def _execute_next_layer(
-        self,
-        node: ExecutionNode,
-        context: ExecutionContext
-    ) -> List[ExecutionSignal]:
-        """Execute the next layer for the given node.
-        
-        For the reasoning layer, this is the lowest layer so we execute
-        the node directly using _execute_reasoning_task.
-        
-        Args:
-            node: Node to execute
-            context: Execution context
-            
-        Returns:
-            List of execution signals
-        """
-        # Get the instruction from the node metadata
-        instruction = node.metadata.get("instruction", "")
-        if not instruction and node.metadata.get("description"):
-            instruction = node.metadata.get("description", "")
-        
-        # If no instruction, use the node ID
-        if not instruction:
-            instruction = f"Execute task {node.node_id}"
-        
-        # Get the objective from the graph
-        objective = None
-        if self.graph and hasattr(self.graph, "objective"):
-            objective = self.graph.objective
-        
-        # Execute the reasoning task
-        result = await self._execute_reasoning_task(
-            node=node,
-            context=context,
-            instruction=instruction,
-            prev_steps=None,  # We don't have previous steps yet
-            objective=objective,
-            max_tokens=1000
-        )
-        
-        # Create result signal
-        signal = ExecutionSignal(
-            type=ExecutionSignalType.DATA_RESULT,
-            content={
-                "node": node.node_id,
-                "result": result
-            }
-        )
-        
-        return [signal]

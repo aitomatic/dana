@@ -99,34 +99,33 @@ class Executor(ABC, Generic[StrategyT]):
         """
         try:
             # Update node status
-            if self.graph:
-                self.graph.update_node_status(node.node_id, ExecutionNodeStatus.IN_PROGRESS)
+            assert self.graph is not None, "Graph is not set"
+            self.graph.update_node_status(node.node_id, ExecutionNodeStatus.IN_PROGRESS)
             
             # Skip START and END nodes
             if node.node_type in [NodeType.START, NodeType.END]:
                 return []
             
-            # Prepare node metadata
-            node_metadata = node.metadata.copy() if node.metadata else {}
+            # Ensure node has metadata
+            if node.metadata is None:
+                node.metadata = {}
             
-            # Build layer-specific context
+            # Build layer-specific context and update node metadata
             layer_context = self._build_layer_context(node, prev_signals)
-            node_metadata[f"{self.layer}_context"] = layer_context
+            node.metadata[f"{self.layer}_context"] = layer_context
             
-            # Create execution node with updated metadata
-            execution_node = ExecutionNode(
-                node_id=node.node_id,
-                node_type=node.node_type,
-                description=node.description,
-                metadata=node_metadata
+            # Execute next layer
+            assert self.lower_executor is not None, "Lower executor is not set"
+            lower_graph = self.lower_executor.create_graph_from_node(
+                upper_node=node,
+                upper_graph=self.graph,
+                objective=self.graph.objective if self.graph else None,
+                context=context
             )
-            
-            # Create and execute graph for next layer
-            signals = await self._execute_next_layer(execution_node, context)
+            signals = await self.lower_executor.execute_graph(lower_graph, context) 
             
             # Update node status to completed
-            if self.graph:
-                self.graph.update_node_status(node.node_id, ExecutionNodeStatus.COMPLETED)
+            self.graph.update_node_status(node.node_id, ExecutionNodeStatus.COMPLETED)
             
             return signals
             
@@ -154,23 +153,6 @@ class Executor(ABC, Generic[StrategyT]):
             
         Returns:
             Layer-specific context dictionary
-        """
-        pass
-    
-    @abstractmethod
-    async def _execute_next_layer(
-        self,
-        node: ExecutionNode,
-        context: ExecutionContext
-    ) -> List[ExecutionSignal]:
-        """Execute the next layer's graph for the given node.
-        
-        Args:
-            node: Node to execute
-            context: Execution context
-            
-        Returns:
-            List of execution signals
         """
         pass
     
