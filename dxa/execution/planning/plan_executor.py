@@ -151,38 +151,6 @@ class PlanExecutor(Executor[PlanStrategy]):
             # Create error signal
             return [self._create_error_signal(node.node_id, str(e))]
     
-    async def _execute_task(
-        self,
-        node: ExecutionNode, 
-        context: ExecutionContext,
-        prev_signals: Optional[List[ExecutionSignal]] = None,
-        upper_signals: Optional[List[ExecutionSignal]] = None,
-        lower_signals: Optional[List[ExecutionSignal]] = None
-    ) -> List[ExecutionSignal]:
-        """Execute the task associated with a plan node.
-        
-        This method implements the abstract method from the Executor base class.
-        For the PlanExecutor, this delegates to execute_node which contains
-        the actual implementation.
-        
-        Args:
-            node: Node to execute
-            context: Execution context
-            prev_signals: Signals from previous nodes
-            upper_signals: Signals from upper execution layer
-            lower_signals: Signals from lower execution layer
-            
-        Returns:
-            List of execution signals resulting from the task execution
-        """
-        return await self.execute_node(
-            node=node,
-            context=context,
-            prev_signals=prev_signals,
-            upper_signals=upper_signals,
-            lower_signals=lower_signals
-        )
-    
     def create_graph_from_node(
         self,
         upper_node: ExecutionNode,
