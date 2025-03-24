@@ -1,19 +1,18 @@
 """Plan executor implementation."""
 
 import logging
-from typing import List, Optional, TYPE_CHECKING, cast, Dict, Any
+from typing import List, Optional, cast, Dict, Any, TYPE_CHECKING
 
 from ..executor import Executor
 from ..execution_context import ExecutionContext
 from ..execution_graph import ExecutionGraph
-from ..execution_types import ExecutionNode, ExecutionSignal, Objective, ExecutionNodeStatus, ExecutionEdge
+from ..execution_types import ExecutionNode, ExecutionSignal, Objective, ExecutionNodeStatus
 from ...common.graph import NodeType
 from .plan import Plan
 from .plan_strategy import PlanStrategy
 
 if TYPE_CHECKING:
-    from ..reasoning.reasoning_executor import ReasoningExecutor
-    from ..reasoning.reasoning import Reasoning
+    from ..reasoning import ReasoningExecutor, Reasoning
 
 
 class PlanExecutor(Executor[PlanStrategy]):
@@ -123,6 +122,8 @@ class PlanExecutor(Executor[PlanStrategy]):
             if not self.graph:
                 raise RuntimeError("No graph set in plan executor")
                 
+            assert self.lower_executor is not None, "Lower executor is not set"
+
             reasoning = self.lower_executor.create_graph_from_node(
                 upper_node=execution_node,
                 upper_graph=self.graph,
@@ -131,7 +132,7 @@ class PlanExecutor(Executor[PlanStrategy]):
             )
             
             # Set the reasoning in context and execute it
-            context.current_reasoning = cast(Reasoning, reasoning)
+            context.current_reasoning = cast("Reasoning", reasoning)
             self.lower_executor.graph = reasoning
             signals = await self.lower_executor.execute_graph(reasoning, context)
             
@@ -294,53 +295,6 @@ class PlanExecutor(Executor[PlanStrategy]):
         # In the future, this would create a plan that evolves incrementally
         return self._create_direct_plan(workflow, objective, upper_node)
     
-    async def _custom_graph_traversal(
-        self, 
-        graph: ExecutionGraph, 
-        context: ExecutionContext,
-        upper_signals: Optional[List[ExecutionSignal]] = None
-    ) -> Optional[List[ExecutionSignal]]:
-        """Implement custom traversal strategies for plans.
-        
-        This method creates a reasoning graph based on the plan graph
-        and sets it in the context before traversing the graph.
-        
-        Args:
-            graph: Execution graph to traverse
-            context: Execution context
-            upper_signals: Signals from upper execution layer
-            
-        Returns:
-            List of signals if custom traversal was performed, None otherwise
-        """
-        # Get the current node from the cursor position
-        cursor_pos = getattr(graph, 'cursor_position', None)
-        if cursor_pos and cursor_pos in graph.nodes:
-            current_node = graph.nodes[cursor_pos]
-        else:
-            # Default to start node
-            current_node = graph.get_start_node()
-        
-        if current_node:
-            # Create a reasoning graph for the current node
-            reasoning_graph = self.lower_executor.create_graph_from_node(
-                upper_node=current_node,
-                upper_graph=graph,
-                objective=graph.objective if graph else None,
-                context=context
-            )
-            
-            # Set the reasoning graph in the reasoning executor
-            self.lower_executor.graph = reasoning_graph
-            
-            # Execute the current node using the reasoning executor
-            return await self.lower_executor.execute_node(
-                node=current_node,
-                context=context,
-                upper_signals=upper_signals
-            )
-        
-        return None 
     def _process_previous_signals(self, signals: List[ExecutionSignal]) -> Dict[str, Any]:
         """Process previous signals to extract outputs.
         
@@ -378,43 +332,3 @@ class PlanExecutor(Executor[PlanStrategy]):
             context["previous_outputs"] = self._process_previous_signals(prev_signals)
         
         return context
-    
-    async def _execute_next_layer(
-        self,
-        node: ExecutionNode,
-        context: ExecutionContext
-    ) -> List[ExecutionSignal]:
-        """Execute the reasoning layer for the given node.
-        
-        Args:
-            node: Node to execute
-            context: Execution context
-            
-        Returns:
-            List of execution signals
-        """
-        if not self.graph:
-            raise RuntimeError("No graph set for plan execution")
-            
-        if not self.lower_executor:
-            raise RuntimeError("No reasoning executor set")
-            
-        # Assert that lower_executor is not None for type checker
-        lower_executor = cast('ReasoningExecutor', self.lower_executor)
-            
-        # Create reasoning graph from plan node
-        reasoning_graph = lower_executor.create_graph_from_node(
-            upper_node=node,
-            upper_graph=self.graph,
-            objective=self.graph.objective if self.graph else None,
-            context=context
-        )
-        
-        # Cast to Reasoning type
-        reasoning = cast('Reasoning', reasoning_graph)
-        
-        # Set reasoning graph in context
-        context.current_reasoning = reasoning
-        
-        # Execute reasoning graph
-        return await lower_executor.execute_graph(reasoning, context) 

@@ -119,38 +119,6 @@ class WorkflowExecutor(Executor[WorkflowStrategy]):
         
         return context
     
-    async def _execute_next_layer(
-        self,
-        node: ExecutionNode,
-        context: ExecutionContext
-    ) -> List[ExecutionSignal]:
-        """Execute the plan layer for the given node.
-        
-        Args:
-            node: Node to execute
-            context: Execution context
-            
-        Returns:
-            List of execution signals
-        """
-        if not self.graph:
-            raise RuntimeError("No graph set for workflow execution")
-            
-        if not self.lower_executor:
-            raise RuntimeError("No plan executor set")
-            
-        # Create plan graph from workflow node
-        plan_graph = self.lower_executor.create_graph_from_node(node=node, context=context)
-        
-        # Cast to Plan type
-        plan = cast(Plan, plan_graph)
-        
-        # Set plan graph in context
-        context.current_plan = plan
-        
-        # Execute plan graph
-        return await self.lower_executor.execute_graph(plan, context)
-    
     def create_graph_from_node(
             self,
             upper_node: ExecutionNode,
