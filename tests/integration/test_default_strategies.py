@@ -27,7 +27,7 @@ async def test_default_execution_flow(agent):
     """Test execution with all default strategies."""
     runtime = agent.runtime
     workflow_exec = runtime.workflow_executor
-    plan_exec = workflow_exec.plan_executor
+    plan_exec = workflow_exec.lower_executor
     
     # Execute and verify each layer uses default strategy
     workflow = WorkflowFactory.create_minimal_workflow("test query")

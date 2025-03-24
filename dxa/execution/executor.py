@@ -248,29 +248,28 @@ class Executor(ABC, Generic[StrategyT]):
             self.logger.error(f"{self.layer} has no START node")
             return []
             
+        # Create cursor for graph traversal
+        from ..common.graph.traversal import Cursor, TopologicalTraversal
+        graph.cursor = Cursor(graph, start_node, TopologicalTraversal())
+        
         # Execute nodes in sequence
         signals = []
-        current_node = start_node
         
-        while current_node and current_node.node_type != NodeType.END:
+        # Traverse graph using cursor
+        for node in graph.cursor:
             # Execute current node
             node_signals = await self.execute_node(
-                current_node,
+                cast(ExecutionNode, node),
                 context,
                 prev_signals=signals,
                 upper_signals=upper_signals,
                 lower_signals=lower_signals
             )
             signals.extend(node_signals)
-            
-            # Get next node
-            next_node = self._get_next_node(current_node)
-            if not next_node:
-                break
-            current_node = next_node
         
         return signals
     
+    # TODO: DEPRECATED
     def _get_next_node(self, current_node: ExecutionNode) -> Optional[ExecutionNode]:
         """Get the next node in the execution sequence.
         

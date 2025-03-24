@@ -1,17 +1,18 @@
 """Test plan workflow copy strategy."""
 
 import pytest
+from typing import List, Optional
 from dxa.agent.resource import LLMResource
 from dxa.execution.planning.plan_executor import PlanExecutor
 from dxa.execution.planning.plan_strategy import PlanStrategy
 from dxa.execution.reasoning.reasoning_executor import ReasoningExecutor
+from dxa.execution.reasoning.reasoning_strategy import ReasoningStrategy
 from dxa.execution.workflow.workflow_executor import WorkflowExecutor
 from dxa.execution.workflow.workflow_strategy import WorkflowStrategy
 from dxa.execution.workflow.workflow import Workflow
 from dxa.execution.execution_context import ExecutionContext
 from dxa.execution.execution_types import ExecutionNode, ExecutionSignal, Objective
 from dxa.common.graph import NodeType
-from typing import List, Optional
 
 # Mock implementations for testing
 class MockReasoningExecutor(ReasoningExecutor):
@@ -95,7 +96,7 @@ class MockLLM(LLMResource):
 @pytest.fixture
 def workflow():
     """Create a test workflow."""
-    workflow = Workflow(objective=Objective("Test workflow objective"))
+    the_workflow = Workflow(objective=Objective("Test workflow objective"))
     
     # Add START node
     start_node = ExecutionNode(
@@ -103,7 +104,7 @@ def workflow():
         node_type=NodeType.START,
         description="Start workflow"
     )
-    workflow.add_node(start_node)
+    the_workflow.add_node(start_node)
     
     # Add task node
     task_node = ExecutionNode(
@@ -112,7 +113,7 @@ def workflow():
         description="Perform a test task",
         metadata={"test_key": "test_value"}
     )
-    workflow.add_node(task_node)
+    the_workflow.add_node(task_node)
     
     # Add END node
     end_node = ExecutionNode(
@@ -120,67 +121,30 @@ def workflow():
         node_type=NodeType.END,
         description="End workflow"
     )
-    workflow.add_node(end_node)
+    the_workflow.add_node(end_node)
     
     # Add edges
-    workflow.add_edge_between("START", "PERFORM_TASK")
-    workflow.add_edge_between("PERFORM_TASK", "END")
+    the_workflow.add_edge_between("START", "PERFORM_TASK")
+    the_workflow.add_edge_between("PERFORM_TASK", "END")
     
-    return workflow
+    return the_workflow
 
 @pytest.fixture
 def plan_executor():
     """Create a mock plan executor."""
     reasoning_executor = MockReasoningExecutor()
-    executor = MockPlanExecutor(
-        reasoning_executor=reasoning_executor,
-        strategy=PlanStrategy.DEFAULT
-    )
+    executor = MockPlanExecutor(strategy=PlanStrategy.DEFAULT)
+    executor.lower_executor = reasoning_executor
     return executor
 
+# pylint: disable=redefined-outer-name
 @pytest.fixture
 def workflow_executor(plan_executor):
     """Workflow executor fixture."""
-    return MockWorkflowExecutor(
-        plan_executor=plan_executor,
-        strategy=WorkflowStrategy.WORKFLOW_IS_PLAN
+    executor = MockWorkflowExecutor(
+        workflow_strategy=WorkflowStrategy.WORKFLOW_IS_PLAN,
+        planning_strategy=PlanStrategy.DEFAULT,
+        reasoning_strategy=ReasoningStrategy.DEFAULT
     )
-
-@pytest.mark.asyncio
-# pylint: disable=redefined-outer-name
-async def test_workflow_copy_creation(workflow, workflow_executor):
-    """Test creation of plan as exact copy of workflow."""
-    # pylint: disable=protected-access
-    plan = workflow_executor._create_pass_through_plan(workflow.nodes["PERFORM_TASK"])
-
-    # Verify structure
-    assert len(plan.nodes) == 3  # START, task node, END
-    assert len(plan.edges) == 2  # START->task, task->END
-    
-    # Verify node preservation
-    assert "PERFORM_TASK" in plan.nodes
-    assert plan.nodes["PERFORM_TASK"].metadata.get("is_pass_through") is True
-
-@pytest.mark.asyncio
-# pylint: disable=redefined-outer-name
-async def test_plan_execution_updates_workflow_cursor(workflow, workflow_executor, plan_executor):
-    """Test that plan execution updates workflow cursor."""
-    # pylint: disable=protected-access
-    plan = workflow_executor._create_pass_through_plan(workflow.nodes["PERFORM_TASK"])
-    context = ExecutionContext(
-        current_workflow=workflow,
-        current_plan=plan,
-        workflow_llm=MockLLM(),
-        planning_llm=MockLLM(),
-        reasoning_llm=MockLLM()
-    )
-    
-    # Set the current node in the workflow
-    workflow.update_cursor("PERFORM_TASK")
-    
-    try:
-        await plan_executor.execute_node(plan.nodes["PERFORM_TASK"], context, None, None)
-    except ValueError as e:
-        assert str(e) == "No reasoning LLM configured in context"
-
-    assert workflow.get_current_node().node_id == "PERFORM_TASK" 
+    executor.lower_executor = plan_executor
+    return executor

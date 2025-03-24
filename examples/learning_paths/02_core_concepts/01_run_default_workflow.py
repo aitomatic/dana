@@ -18,7 +18,7 @@ by formalizing the relationship between layers while maintaining the same functi
 
 import asyncio
 
-from dxa.execution import WorkflowFactory, WorkflowExecutor, PlanExecutor, ReasoningExecutor
+from dxa.execution import WorkflowFactory, WorkflowExecutor
 from dxa.execution import ExecutionContext
 from dxa.execution.execution_types import Objective
 from dxa.common.utils.logging import DXA_LOGGER
@@ -71,16 +71,8 @@ async def main():
     print(workflow.pretty_print())
     print(f"\nCreated workflow with {len(workflow.nodes)} nodes")
     
-    # Set up executors - this demonstrates our refactored three-layer architecture
-    print("\nSetting up execution layers (Workflow → Plan → Reasoning):")
-    print("1. Creating ReasoningExecutor (lowest layer - executes tasks using LLM)")
-    reasoning_executor = ReasoningExecutor()
-    
-    print("2. Creating PlanExecutor (middle layer - creates plans from workflow nodes)")
-    plan_executor = PlanExecutor(reasoning_executor=reasoning_executor)
-    
-    print("3. Creating WorkflowExecutor (top layer - orchestrates overall process)")
-    workflow_executor = WorkflowExecutor(plan_executor=plan_executor)
+    print("Creating WorkflowExecutor (top layer - orchestrates overall process)")
+    workflow_executor = WorkflowExecutor()
     
     # Execute workflow
     print("\nExecuting workflow using our refactored create_graph_from_node pattern...")

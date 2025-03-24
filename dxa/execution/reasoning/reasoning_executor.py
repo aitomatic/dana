@@ -1,7 +1,7 @@
 """Reasoning executor implementation."""
 
 import logging
-from typing import List, Optional, Dict, Any, cast
+from typing import List, Optional, Dict, Any
 
 from ..executor import Executor
 from ..execution_context import ExecutionContext
@@ -15,7 +15,6 @@ from ..execution_types import (
 )
 from ...common.graph import NodeType
 from .reasoning_strategy import ReasoningStrategy
-from .reasoning_config import ReasoningConfig
 from .reasoning import Reasoning
 
 class ReasoningExecutor(Executor[ReasoningStrategy]):
@@ -53,7 +52,7 @@ class ReasoningExecutor(Executor[ReasoningStrategy]):
         super().__init__(depth=2)
         self.strategy = strategy
         self.logger = logging.getLogger(f"dxa.execution.{self.layer}")
-        self.config = ReasoningConfig()
+        # self.config = ReasoningConfig()
     
     async def execute_node(
         self,
