@@ -28,17 +28,6 @@ class MockReasoningExecutor(ReasoningExecutor):
         """Mock implementation."""
         return []
     
-    async def _execute_task(
-        self,
-        node: ExecutionNode, 
-        context: ExecutionContext,
-        prev_signals: Optional[List[ExecutionSignal]] = None,
-        upper_signals: Optional[List[ExecutionSignal]] = None,
-        lower_signals: Optional[List[ExecutionSignal]] = None
-    ) -> List[ExecutionSignal]:
-        """Mock implementation."""
-        return []
-    
     def create_graph_from_node(
         self, 
         upper_node=None,
@@ -63,17 +52,6 @@ class MockPlanExecutor(PlanExecutor):
         """Mock implementation."""
         return []
     
-    async def _execute_task(
-        self,
-        node: ExecutionNode, 
-        context: ExecutionContext,
-        prev_signals: Optional[List[ExecutionSignal]] = None,
-        upper_signals: Optional[List[ExecutionSignal]] = None,
-        lower_signals: Optional[List[ExecutionSignal]] = None
-    ) -> List[ExecutionSignal]:
-        """Mock implementation."""
-        return []
-    
     def create_graph_from_node(
         self, 
         upper_node=None,
@@ -88,17 +66,6 @@ class MockWorkflowExecutor(WorkflowExecutor):
     """Mock workflow executor for testing."""
     
     async def execute_node(
-        self,
-        node: ExecutionNode, 
-        context: ExecutionContext,
-        prev_signals: Optional[List[ExecutionSignal]] = None,
-        upper_signals: Optional[List[ExecutionSignal]] = None,
-        lower_signals: Optional[List[ExecutionSignal]] = None
-    ) -> List[ExecutionSignal]:
-        """Mock implementation."""
-        return []
-    
-    async def _execute_task(
         self,
         node: ExecutionNode, 
         context: ExecutionContext,
