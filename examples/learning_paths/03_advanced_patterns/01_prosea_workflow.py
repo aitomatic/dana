@@ -2,15 +2,15 @@
 
 import asyncio
 import os
-import logging
 
+from dxa.common import DXA_LOGGER
 from dxa.execution import WorkflowFactory, WorkflowExecutor
 from dxa.execution import ExecutionContext
 from dxa.agent.resource import LLMResource
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
+DXA_LOGGER.basicConfig(
+    level=DXA_LOGGER.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 

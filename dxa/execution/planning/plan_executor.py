@@ -1,18 +1,14 @@
 """Plan executor implementation."""
 
-import logging
-from typing import List, Optional, cast, Dict, Any, TYPE_CHECKING
+from typing import List, Optional, Dict, Any
 
+from ...common import DXA_LOGGER
 from ..executor import Executor
 from ..execution_context import ExecutionContext
 from ..execution_graph import ExecutionGraph
-from ..execution_types import ExecutionNode, ExecutionSignal, Objective, ExecutionNodeStatus
-from ...common.graph import NodeType
+from ..execution_types import ExecutionNode, ExecutionSignal, Objective
 from .plan import Plan
 from .plan_strategy import PlanStrategy
-
-if TYPE_CHECKING:
-    from ..reasoning import Reasoning
 
 
 class PlanExecutor(Executor[PlanStrategy]):
@@ -50,7 +46,7 @@ class PlanExecutor(Executor[PlanStrategy]):
         """
         super().__init__(depth=1)
         self.strategy = strategy
-        self.logger = logging.getLogger(f"dxa.execution.{self.layer}")
+        self.logger = DXA_LOGGER.getLogger(f"dxa.execution.{self.layer}")
     
     def _get_graph_class(self):
         """Get the appropriate graph class for this executor.
@@ -61,101 +57,13 @@ class PlanExecutor(Executor[PlanStrategy]):
         # Import here to avoid circular import
         return Plan
     
-    async def execute_node(
-        self,
-        node: ExecutionNode,
-        context: ExecutionContext,
-        prev_signals: Optional[List[ExecutionSignal]] = None,
-        upper_signals: Optional[List[ExecutionSignal]] = None,
-        lower_signals: Optional[List[ExecutionSignal]] = None
-    ) -> List[ExecutionSignal]:
-        """Execute a plan node.
-        
-        Args:
-            node: Node to execute
-            context: Execution context
-            prev_signals: Signals from previous node execution
-            upper_signals: Signals from upper execution layer
-            lower_signals: Signals from lower execution layer
-            
-        Returns:
-            List of execution signals
-        """
-        try:
-            # Log node execution
-            self.logger.info("Executing plan node: %s", node.node_id)
-            
-            # Update node status
-            if self.graph:
-                self.graph.update_node_status(node.node_id, ExecutionNodeStatus.IN_PROGRESS)
-            
-            # Skip START and END nodes
-            if node.node_type in [NodeType.START, NodeType.END]:
-                return []
-            
-            # Prepare node metadata
-            node_metadata = node.metadata.copy() if node.metadata else {}
-            
-            # Add planning context
-            planning_context = {
-                "current_node": node.node_id,
-                "plan_state": node.status.name if hasattr(node, 'status') else 'UNKNOWN',
-                "requirements": node_metadata.get("requirements", []),
-                "constraints": node_metadata.get("constraints", [])
-            }
-            
-            # Add planning context to metadata
-            node_metadata["planning_context"] = planning_context
-            
-            # Create execution node with updated metadata
-            execution_node = ExecutionNode(
-                node_id=node.node_id,
-                node_type=node.node_type,
-                description=node.description,
-                metadata=node_metadata
-            )
-            
-            # Create a new reasoning graph for this plan node
-            if not self.graph:
-                raise RuntimeError("No graph set in plan executor")
-                
-            assert self.lower_executor is not None, "Lower executor is not set"
-
-            reasoning = self.lower_executor.create_graph_from_node(
-                upper_node=execution_node,
-                upper_graph=self.graph,
-                objective=self.graph.objective if self.graph else None,
-                context=context
-            )
-            
-            # Set the reasoning in context and execute it
-            context.current_reasoning = cast("Reasoning", reasoning)
-            self.lower_executor.graph = reasoning
-            signals = await self.lower_executor.execute_graph(reasoning, context)
-            
-            # Update node status to completed
-            if self.graph:
-                self.graph.update_node_status(node.node_id, ExecutionNodeStatus.COMPLETED)
-            
-            return signals
-            
-        except Exception as e:
-            self.logger.error(f"Error executing node {node.node_id}: {str(e)}")
-            
-            # Update node status to error
-            if self.graph:
-                self.graph.update_node_status(node.node_id, ExecutionNodeStatus.FAILED)
-            
-            # Create error signal
-            return [self._create_error_signal(node.node_id, str(e))]
-    
-    def create_graph_from_node(
+    def create_graph_from_upper_node(
         self,
         upper_node: ExecutionNode,
         upper_graph: ExecutionGraph,
         objective: Optional[Objective] = None,
         context: Optional[ExecutionContext] = None
-    ) -> ExecutionGraph:
+    ) -> Optional[ExecutionGraph]:
         """Create a plan execution graph from a node in the workflow.
         
         This method creates a plan graph based on a workflow node.
@@ -312,20 +220,43 @@ class PlanExecutor(Executor[PlanStrategy]):
         node: ExecutionNode,
         prev_signals: Optional[List[ExecutionSignal]] = None
     ) -> Dict[str, Any]:
-        """Build plan context for node execution.
+        """Build the planning context for a node.
+        
+        This method builds the context needed for plan layer execution,
+        including:
+        1. Node information
+        2. Previous execution results
+        3. Planning-specific metadata
+        4. Requirements and constraints
         
         Args:
-            node: Node to execute
-            prev_signals: Signals from previous node execution
+            node: Node to build context for
+            prev_signals: Signals from previous execution
             
         Returns:
-            Plan context dictionary
+            Planning context dictionary
         """
-        # Get base context from parent
-        context = super()._build_layer_context(node, prev_signals)
+        context = {
+            "node_id": node.node_id,
+            "node_type": node.node_type,
+            "description": node.description,
+            "metadata": node.metadata or {}
+        }
         
-        # Add plan-specific context
+        # Add planning-specific information
+        context.update({
+            "requirements": node.metadata.get("requirements", []),
+            "constraints": node.metadata.get("constraints", []),
+            "dependencies": node.metadata.get("dependencies", []),
+            "resources": node.metadata.get("resources", [])
+        })
+        
+        # Add previous outputs if available
         if prev_signals:
-            context["previous_outputs"] = self._process_previous_signals(prev_signals)
+            context["previous_outputs"] = {
+                signal.content.get("node"): signal.content.get("output")
+                for signal in prev_signals
+                if signal.type == "output"
+            }
         
         return context

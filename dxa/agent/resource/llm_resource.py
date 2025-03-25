@@ -3,8 +3,8 @@
 from typing import Dict, Any, Optional, List
 import asyncio
 import aisuite as ai
-import logging
 from openai import APIConnectionError, RateLimitError
+from ...common import DXA_LOGGER
 from ...common.exceptions import LLMError
 from .base_resource import BaseResource
 # from openai import AsyncClient
@@ -93,21 +93,22 @@ class LLMResource(BaseResource):
         # self._async_client = AsyncClient()
         
         # Create a dedicated logger for LLM conversations
-        self.conversation_logger = logging.getLogger("llm_conversation")
-        self.conversation_logger.setLevel(logging.INFO)
+        self.conversation_logger = DXA_LOGGER.getLogger("llm_conversation")
+        self.conversation_logger.logger.setLevel(DXA_LOGGER.INFO)
         
         # Add a file handler if not already present
-        if not self.conversation_logger.handlers:
+        if not self.conversation_logger.logger.handlers:
             # Create logs directory if it doesn't exist
             import os
             os.makedirs("logs", exist_ok=True)
             
             # Add file handler
+            import logging
             file_handler = logging.FileHandler("logs/llm_conversation.log")
             file_handler.setFormatter(logging.Formatter(
                 '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
             ))
-            self.conversation_logger.addHandler(file_handler)
+            self.conversation_logger.logger.addHandler(file_handler)
 
     async def initialize(self) -> None:
         """Initialize the AISuite client."""
