@@ -4,8 +4,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Generic, List, Optional, Type, TypeVar, Any, cast, Dict, TYPE_CHECKING, Union
 
-import logging
-
+from ..common import DXA_LOGGER
 from .execution_context import ExecutionContext
 from .execution_graph import ExecutionGraph
 from .execution_types import (
@@ -45,7 +44,7 @@ class Executor(ABC, Generic[StrategyT]):
         self.depth = depth
         self._graph: Optional[ExecutionGraph] = None
         self.lower_executor: Optional[Union['WorkflowExecutor', 'PlanExecutor', 'ReasoningExecutor']] = None
-        self.logger = logging.getLogger(f"dxa.execution.{self.layer}")
+        self.logger = DXA_LOGGER.getLogger(f"dxa.execution.{self.layer}")
         self._strategy = self.default_strategy
         self._configure_logger()
     
@@ -85,7 +84,14 @@ class Executor(ABC, Generic[StrategyT]):
         upper_signals: Optional[List[ExecutionSignal]] = None,
         lower_signals: Optional[List[ExecutionSignal]] = None
     ) -> List[ExecutionSignal]:
-        """Execute a node using common execution logic.
+        """Execute a node in the execution graph.
+        
+        This method orchestrates the execution of a node by:
+        1. Setting up pre-execution state
+        2. Validating the node
+        3. Building execution context
+        4. Executing the lower layer
+        5. Cleaning up post-execution
         
         Args:
             node: Node to execute
@@ -98,46 +104,188 @@ class Executor(ABC, Generic[StrategyT]):
             List of execution signals
         """
         try:
-            # Update node status
-            assert self.graph is not None, "Graph is not set"
-            self.graph.update_node_status(node.node_id, ExecutionNodeStatus.IN_PROGRESS)
+            # Phase 1: Pre-execution setup
+            await self._pre_execute_node(node)
             
-            # Skip START and END nodes
-            if node.node_type in [NodeType.START, NodeType.END]:
+            # Phase 2: Node validation
+            if not self._validate_node(node):
                 return []
             
-            # Ensure node has metadata
-            if node.metadata is None:
-                node.metadata = {}
+            # Phase 3: Build context
+            execution_context = self._build_execution_context(node, context, prev_signals, upper_signals, lower_signals)
             
-            # Build layer-specific context and update node metadata
-            layer_context = self._build_layer_context(node, prev_signals)
-            node.metadata[f"{self.layer}_context"] = layer_context
+            # Phase 4: Execute lower layer
+            signals = await self._execute_lower_layer(node, execution_context)
             
-            # Execute next layer
-            assert self.lower_executor is not None, "Lower executor is not set"
-            lower_graph = self.lower_executor.create_graph_from_node(
+            # Phase 5: Post-execution cleanup
+            await self._post_execute_node(node)
+            
+            return signals
+            
+        except Exception as e:
+            return self._handle_execution_error(node, e)
+    
+    async def _pre_execute_node(self, node: ExecutionNode) -> None:
+        """Set up pre-execution state for a node.
+        
+        This phase handles:
+        1. Logging node execution
+        2. Updating node status to IN_PROGRESS
+        
+        Args:
+            node: Node to prepare for execution
+        """
+        self.logger.info(f"Executing {self.layer} node: {node.node_id}")
+        
+        # Update node status
+        if self.graph:
+            self.graph.update_node_status(node.node_id, ExecutionNodeStatus.IN_PROGRESS)
+    
+    def _validate_node(self, node: ExecutionNode) -> bool:
+        """Validate a node for execution.
+        
+        This phase handles:
+        1. Checking if node is START/END
+        2. Validating node metadata
+        
+        Args:
+            node: Node to validate
+            
+        Returns:
+            True if node should be executed, False otherwise
+        """
+        # Skip START and END nodes
+        if node.node_type in [NodeType.START, NodeType.END]:
+            return False
+            
+        # Ensure node has metadata
+        if node.metadata is None:
+            node.metadata = {}
+            
+        return True
+    
+    def _build_execution_context(
+        self,
+        node: ExecutionNode,
+        context: ExecutionContext,
+        prev_signals: Optional[List[ExecutionSignal]] = None,
+        upper_signals: Optional[List[ExecutionSignal]] = None,
+        lower_signals: Optional[List[ExecutionSignal]] = None
+    ) -> ExecutionContext:
+        """Build execution context for a node.
+        
+        This phase handles:
+        1. Building layer-specific context
+        2. Updating node metadata
+        3. Preparing context for lower layer
+        
+        Args:
+            node: Node to build context for
+            context: Base execution context
+            prev_signals: Signals from previous execution
+            upper_signals: Signals from upper layer
+            lower_signals: Signals from lower layer
+            
+        Returns:
+            Updated execution context
+        """
+        # Build layer-specific context
+        layer_context = self._build_layer_context(node, prev_signals)
+        
+        # Update node metadata with layer context
+        node.metadata[f"{self.layer}_context"] = layer_context
+        
+        # Create execution node with updated metadata (but we don't set it in context
+        # because ExecutionContext doesn't have current_node attribute)
+        return context
+    
+    async def _execute_lower_layer(
+        self,
+        node: ExecutionNode,
+        context: ExecutionContext
+    ) -> List[ExecutionSignal]:
+        """Execute the lower layer for a node.
+        
+        This phase handles:
+        1. Creating lower layer graph
+        2. Executing lower layer graph
+        
+        Args:
+            node: Node to execute lower layer for
+            context: Execution context
+            
+        Returns:
+            List of execution signals
+        """
+        # Create lower layer graph
+        if not self.graph:
+            raise RuntimeError(f"No graph set in {self.layer} executor")
+            
+        assert self.lower_executor is not None, "Lower executor is not set"
+
+        lower_graph = self.lower_executor.graph
+        if lower_graph is None:
+            lower_graph = self.lower_executor.create_graph_from_upper_node(
                 upper_node=node,
                 upper_graph=self.graph,
                 objective=self.graph.objective if self.graph else None,
                 context=context
             )
-            signals = await self.lower_executor.execute_graph(lower_graph, context) 
+        
+        # Execute lower layer graph (ensure it's not None)
+        if lower_graph is None:
+            self.logger.warning(f"No lower graph created for node {node.node_id}")
+            return []
             
-            # Update node status to completed
+        # Update the context accordingly
+        if self.layer == "workflow":
+            from ..execution.planning import Plan
+            context.current_plan = cast(Plan, lower_graph)
+        elif self.layer == "plan":
+            from ..execution.reasoning import Reasoning
+            context.current_reasoning = cast(Reasoning, lower_graph)
+            
+        return await self.lower_executor.execute_graph(lower_graph, context)
+    
+    async def _post_execute_node(self, node: ExecutionNode) -> None:
+        """Clean up post-execution state for a node.
+        
+        This phase handles:
+        1. Updating node status to COMPLETED
+        
+        Args:
+            node: Node to clean up after execution
+        """
+        if self.graph:
             self.graph.update_node_status(node.node_id, ExecutionNodeStatus.COMPLETED)
+    
+    def _handle_execution_error(
+        self,
+        node: ExecutionNode,
+        error: Exception
+    ) -> List[ExecutionSignal]:
+        """Handle execution errors for a node.
+        
+        This phase handles:
+        1. Logging error
+        2. Updating node status to FAILED
+        3. Creating error signal
+        
+        Args:
+            node: Node that encountered an error
+            error: Exception that occurred
             
-            return signals
-            
-        except Exception as e:
-            self.logger.error(f"Error executing node {node.node_id}: {str(e)}")
-            
-            # Update node status to error
-            if self.graph:
-                self.graph.update_node_status(node.node_id, ExecutionNodeStatus.FAILED)
-            
-            # Create error signal
-            return [self._create_error_signal(node.node_id, str(e))]
+        Returns:
+            List containing error signal
+        """
+        self.logger.error(f"Error executing node {node.node_id}: {str(error)}")
+        
+        # Update node status to error
+        if self.graph:
+            self.graph.update_node_status(node.node_id, ExecutionNodeStatus.FAILED)
+        
+        # Create error signal
+        return [self._create_error_signal(node.node_id, str(error))]
     
     @abstractmethod
     def _build_layer_context(
@@ -176,14 +324,8 @@ class Executor(ABC, Generic[StrategyT]):
     
     def _configure_logger(self):
         """Configure logger with appropriate handlers and formatters."""
-        self.logger.setLevel(logging.INFO)
-        if not self.logger.handlers:
-            handler = logging.StreamHandler()
-            formatter = logging.Formatter(
-                '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-            )
-            handler.setFormatter(formatter)
-            self.logger.addHandler(handler)
+        # DXA_LOGGER already handles configuration
+        pass
     
     @property
     def strategy(self) -> StrategyT:
@@ -396,14 +538,13 @@ class Executor(ABC, Generic[StrategyT]):
         # Subclasses should override this if they use a specific graph class
         return None
     
-    @abstractmethod
-    def create_graph_from_node(
+    def create_graph_from_upper_node(
         self,
         upper_node: ExecutionNode,
         upper_graph: ExecutionGraph,
         objective: Optional[Objective] = None,
         context: Optional[ExecutionContext] = None
-    ) -> ExecutionGraph:
+    ) -> Optional[ExecutionGraph]:
         """Create an execution graph from a node in an upper layer.
         
         Args:

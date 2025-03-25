@@ -121,7 +121,7 @@ class PipelineExecutor(Executor):
         # Add logic here to filter upward signals
         return False
 
-    def create_graph_from_node(
+    def create_graph_from_upper_node(
         self,
         upper_node: Optional[ExecutionNode] = None,
         upper_graph: Optional[ExecutionGraph] = None,

@@ -1,8 +1,8 @@
 """Reasoning executor implementation."""
 
-import logging
 from typing import List, Optional, Dict, Any
 
+from ...common import DXA_LOGGER
 from ..executor import Executor
 from ..execution_context import ExecutionContext
 from ..execution_graph import ExecutionGraph
@@ -10,13 +10,11 @@ from ..execution_types import (
     ExecutionNode, 
     ExecutionSignal, 
     Objective, 
-    ExecutionNodeStatus,
     ExecutionSignalType,
 )
-from ...common.graph import NodeType
 from .reasoning_strategy import ReasoningStrategy
 from .reasoning import Reasoning
-
+from .reasoning_config import ReasoningConfig
 class ReasoningExecutor(Executor[ReasoningStrategy]):
     """Executes reasoning tasks using LLM-based reasoning.
     
@@ -51,93 +49,8 @@ class ReasoningExecutor(Executor[ReasoningStrategy]):
         """
         super().__init__(depth=2)
         self.strategy = strategy
-        self.logger = logging.getLogger(f"dxa.execution.{self.layer}")
-        # self.config = ReasoningConfig()
-    
-    async def execute_node(
-        self,
-        node: ExecutionNode, 
-        context: ExecutionContext,
-        prev_signals: Optional[List[ExecutionSignal]] = None,
-        upper_signals: Optional[List[ExecutionSignal]] = None,
-        lower_signals: Optional[List[ExecutionSignal]] = None
-    ) -> List[ExecutionSignal]:
-        """Execute a single node in the reasoning layer.
-        
-        This method handles the execution of a reasoning node by:
-        1. Updating the node status
-        2. Executing the reasoning task
-        3. Processing the results
-        
-        Args:
-            node: Node to execute
-            context: Execution context
-            prev_signals: Signals from previous nodes
-            upper_signals: Signals from upper execution layer
-            lower_signals: Signals from lower execution layer
-            
-        Returns:
-            List of execution signals resulting from the node execution
-        """
-        self.logger.info(f"Executing reasoning node: {node.node_id}")
-        
-        try:
-            # Skip START and END nodes
-            if node.node_type in [NodeType.START, NodeType.END]:
-                return []
-            
-            # Update node status to in progress
-            if self.graph:
-                self.graph.update_node_status(node.node_id, ExecutionNodeStatus.IN_PROGRESS)
-            
-            # Get the instruction from the node metadata
-            instruction = node.metadata.get("instruction", "")
-            if not instruction and node.metadata.get("description"):
-                instruction = node.metadata.get("description", "")
-            
-            # If no instruction, use the node ID
-            if not instruction:
-                instruction = f"Execute task {node.node_id}"
-            
-            # Get the objective from the graph
-            objective = None
-            if self.graph and hasattr(self.graph, "objective"):
-                objective = self.graph.objective
-            
-            # Execute the reasoning task
-            result = await self._execute_reasoning_task(
-                node=node,
-                context=context,
-                instruction=instruction,
-                prev_steps=None,  # TODO: really? We don't have previous steps yet
-                objective=objective,
-                max_tokens=1000
-            )
-            
-            # Update node status to completed
-            if self.graph:
-                self.graph.update_node_status(node.node_id, ExecutionNodeStatus.COMPLETED)
-            
-            # Create result signal
-            signal = ExecutionSignal(
-                type=ExecutionSignalType.DATA_RESULT,
-                content={
-                    "node": node.node_id,
-                    "result": result
-                }
-            )
-            
-            return [signal]
-            
-        except Exception as e:
-            self.logger.error(f"Error executing node {node.node_id}: {str(e)}")
-            
-            # Update node status to error
-            if self.graph:
-                self.graph.update_node_status(node.node_id, ExecutionNodeStatus.FAILED)
-            
-            # Create error signal
-            return [self._create_error_signal(node.node_id, str(e))]
+        self.logger = DXA_LOGGER.getLogger(f"dxa.execution.{self.layer}")
+        self.config = ReasoningConfig()  # TODO: remove?
     
     def _build_combined_prompt(
         self,
@@ -173,24 +86,26 @@ class ReasoningExecutor(Executor[ReasoningStrategy]):
         workflow_node = context.current_workflow.get_current_node()
         assert workflow_node is not None, "Current workflow node is required"
         self.logger.debug(f"Workflow node: {workflow_node}")
-        workflow_prompt = workflow_node.metadata.get("prompt", "")
+        prompts = context.current_workflow.metadata.get("prompts", {})
+        workflow_prompt = prompts[node.node_id] if node.node_id in prompts else ""
         self.logger.debug(f"Workflow prompt: {workflow_prompt}")
+        
+        # Get workflow context and previous outputs
         workflow_context = workflow_node.metadata.get("workflow_context", {})
-        self.logger.debug(f"Workflow context: {workflow_context}")
         workflow_previous_outputs = workflow_context.get("previous_outputs", {})
-        self.logger.debug(f"Workflow previous outputs: {workflow_previous_outputs}")
 
         # Build planning context
         assert context.current_plan is not None, "Current plan is required"
         plan_node = context.current_plan.get_current_node()
         assert plan_node is not None, "Current plan node is required"
         self.logger.debug(f"Plan node: {plan_node}")
-        plan_prompt = plan_node.metadata.get("prompt", "")
+        prompts = context.current_plan.metadata.get("prompts", {})
+        plan_prompt = prompts[node.node_id] if node.node_id in prompts else ""
         self.logger.debug(f"Plan prompt: {plan_prompt}")
+        
+        # Get plan context and previous outputs
         plan_context = plan_node.metadata.get("plan_context", {})
-        self.logger.debug(f"Plan context: {plan_context}")
         plan_previous_outputs = plan_context.get("previous_outputs", {})
-        self.logger.debug(f"Plan previous outputs: {plan_previous_outputs}")
 
         # Format the prompt template with objective and previous outputs
         format_values = {}
@@ -351,31 +266,52 @@ Reasoning Task:
         node: ExecutionNode,
         prev_signals: Optional[List[ExecutionSignal]] = None
     ) -> Dict[str, Any]:
-        """Build reasoning context for node execution.
+        """Build the reasoning context for a node.
+        
+        This method builds the context needed for reasoning execution,
+        including:
+        1. Node information
+        2. Previous execution results
+        3. Reasoning-specific metadata
         
         Args:
-            node: Node to execute
-            prev_signals: Signals from previous node execution
+            node: Node to build context for
+            prev_signals: Signals from previous execution
             
         Returns:
             Reasoning context dictionary
         """
-        # Get base context from parent
-        context = super()._build_layer_context(node, prev_signals)
+        context = {
+            "node_id": node.node_id,
+            "node_type": node.node_type,
+            "description": node.description,
+            "metadata": node.metadata or {}
+        }
         
-        # Add reasoning-specific context
+        # Add reasoning-specific information
+        context.update({
+            "instruction": node.metadata.get("instruction", ""),
+            "prompt": node.metadata.get("prompt", ""),
+            "max_tokens": node.metadata.get("max_tokens", 1000),
+        })
+        
+        # Add previous outputs if available
         if prev_signals:
-            context["previous_outputs"] = self._process_previous_signals(prev_signals)
+            context["previous_outputs"] = {
+                signal.content.get("node"): signal.content.get("result")
+                for signal in prev_signals
+                if signal.type == ExecutionSignalType.DATA_RESULT
+            }
         
         return context
     
-    def create_graph_from_node(
+    def create_graph_from_upper_node(
         self,
         upper_node: ExecutionNode,
         upper_graph: ExecutionGraph,
         objective: Optional[Objective] = None,
         context: Optional[ExecutionContext] = None
-    ) -> ExecutionGraph:
+    ) -> Optional[ExecutionGraph]:
         """Create a reasoning graph from a node in the plan.
         
         Args:
@@ -404,12 +340,6 @@ Reasoning Task:
         if self.strategy == ReasoningStrategy.DEFAULT:
             # Direct execution - create a minimal reasoning
             return self._create_direct_reasoning(plan, objective, upper_node)
-        elif self.strategy == ReasoningStrategy.CHAIN_OF_THOUGHT:
-            return self._create_chain_of_thought_reasoning(plan, objective, upper_node)
-        elif self.strategy == ReasoningStrategy.TREE_OF_THOUGHT:
-            return self._create_tree_of_thought_reasoning(plan, objective, upper_node)
-        elif self.strategy == ReasoningStrategy.REFLECTION:
-            return self._create_reflection_reasoning(plan, objective, upper_node)
         else:
             # Default to direct reasoning
             return self._create_direct_reasoning(plan, objective, upper_node)
@@ -467,64 +397,56 @@ Reasoning Task:
             reasoning.add_edge_between(edge.source, edge.target)
         
         return reasoning
-    
-    def _create_chain_of_thought_reasoning(
-        self, 
-        plan: ExecutionGraph, 
-        objective: Optional[Objective] = None,
-        upper_node: Optional[ExecutionNode] = None
-    ) -> Reasoning:
-        """Create a chain of thought reasoning from a plan.
+        
+    async def _execute_lower_layer(
+        self,
+        node: ExecutionNode,
+        context: ExecutionContext
+    ) -> List[ExecutionSignal]:
+        """Execute a reasoning task for a node.
+        
+        Since reasoning is the lowest layer, this method directly executes
+        the reasoning task instead of delegating to a lower layer.
         
         Args:
-            plan: Plan graph
-            objective: Execution objective
-            upper_node: Node from the plan layer to create reasoning for
+            node: Node to execute reasoning for
+            context: Execution context
             
         Returns:
-            Chain of thought reasoning
+            List of execution signals
         """
-        # For now, just create a direct reasoning
-        # In the future, this would create a step-by-step reasoning
-        return self._create_direct_reasoning(plan, objective, upper_node)
-    
-    def _create_tree_of_thought_reasoning(
-        self, 
-        plan: ExecutionGraph, 
-        objective: Optional[Objective] = None,
-        upper_node: Optional[ExecutionNode] = None
-    ) -> Reasoning:
-        """Create a tree of thought reasoning from a plan.
+        # Get the instruction from the node metadata
+        instruction = node.metadata.get("instruction", "")
+        if not instruction and node.metadata.get("description"):
+            instruction = node.metadata.get("description", "")
         
-        Args:
-            plan: Plan graph
-            objective: Execution objective
-            upper_node: Node from the plan layer to create reasoning for
-            
-        Returns:
-            Tree of thought reasoning
-        """
-        # For now, just create a direct reasoning
-        # In the future, this would create a branching reasoning
-        return self._create_direct_reasoning(plan, objective, upper_node)
-    
-    def _create_reflection_reasoning(
-        self, 
-        plan: ExecutionGraph, 
-        objective: Optional[Objective] = None,
-        upper_node: Optional[ExecutionNode] = None
-    ) -> Reasoning:
-        """Create a reflection reasoning from a plan.
+        # If no instruction, use the node ID
+        if not instruction:
+            instruction = f"Execute task {node.node_id}"
         
-        Args:
-            plan: Plan graph
-            objective: Execution objective
-            upper_node: Node from the plan layer to create reasoning for
-            
-        Returns:
-            Reflection reasoning
-        """
-        # For now, just create a direct reasoning
-        # In the future, this would create a self-critique reasoning
-        return self._create_direct_reasoning(plan, objective, upper_node)
+        # Get the objective from the graph
+        objective = None
+        if self.graph and hasattr(self.graph, "objective"):
+            objective = self.graph.objective
+        
+        # Execute the reasoning task
+        result = await self._execute_reasoning_task(
+            node=node,
+            context=context,
+            instruction=instruction,
+            prev_steps=None,
+            objective=objective,
+            max_tokens=1000
+        )
+        
+        # Create result signal
+        signal = ExecutionSignal(
+            type=ExecutionSignalType.DATA_RESULT,
+            content={
+                "node": node.node_id,
+                "result": result
+            }
+        )
+        
+        return [signal]
         
