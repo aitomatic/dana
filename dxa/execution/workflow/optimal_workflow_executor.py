@@ -194,6 +194,13 @@ class OptimalWorkflowExecutor(WorkflowExecutor):
                 workflow_desc.append(f"  {i + 1}. {step}")
         workflow_text = "\n".join(workflow_desc)
         
+        # Check if we have previous results for this workflow node
+        workflow_results = {}
+        for step in OODA_STEPS:
+            result = self.results.get_latest(workflow_node.node_id, step)
+            if result:
+                workflow_results[step] = result
+        
         # Create prompt to determine planning structure
         # Build hierarchy description, starting with workflow node
         hierarchy_desc = []
@@ -203,15 +210,26 @@ class OptimalWorkflowExecutor(WorkflowExecutor):
         
         hierarchy_text = "\n".join(hierarchy_desc)
         
+        # Add previous results to the prompt if any exist
+        previous_results_text = ""
+        if workflow_results:
+            previous_results_text = "\nPrevious Results Available:\n"
+            for step, result in workflow_results.items():
+                previous_results_text += f"- {step}: {result}\n"
+            previous_results_text += "\nYou can reuse these results where appropriate."
+        
         plan_structure_prompt = f"""
         Based on the following node hierarchy and objective "{objective.current}",
         determine the most appropriate plan structure. Each plan node can either:
         1. Map directly to reasoning nodes (for simple tasks)
         2. Require further breakdown into sub-plans (for complex tasks that need decomposition)
+        3. Reuse previous results (if available and still valid)
         
         IMPORTANT: This is the {workflow_node.node_id} step of the workflow.
         Complete Workflow Steps:
         {workflow_text}
+        
+        {previous_results_text}
         
         Your plan should focus ONLY on this step's responsibilities.
         Do not try to handle responsibilities of other workflow steps.
@@ -231,6 +249,12 @@ class OptimalWorkflowExecutor(WorkflowExecutor):
            - Only include OODA steps that are truly necessary
            - Different tasks need different combinations of steps
            - Avoid including steps just because they're available
+        
+        4. Reuse Previous Results:
+           - If previous results exist and are still valid, reuse them
+           - Only create new reasoning nodes for missing or invalid results
+           - Mark nodes as PREVIOUS_RESULTS when reusing existing results
+           - You can mark individual nodes or the entire plan as PREVIOUS_RESULTS
         
         Examples of GOOD Simple Plans:
         1. Single Node with Minimal Steps:
@@ -263,6 +287,40 @@ class OptimalWorkflowExecutor(WorkflowExecutor):
                    {{
                        "id": "DECIDE",
                        "description": "Make the decision"
+                   }}
+               ]
+           }}
+        
+        3. Reusing Previous Results:
+           {{
+               "id": "PREVIOUS_RESULTS",
+               "description": "Using previously completed results",
+               "requires_sub_plan": false,
+               "reasoning_nodes": []
+           }}
+        
+        4. Mixed Plan with Reused Results:
+           {{
+               "id": "ANALYZE_AND_DECIDE",
+               "description": "Analyze data and make decision",
+               "requires_sub_plan": true,
+               "sub_plans": [
+                   {{
+                       "id": "PREVIOUS_RESULTS",
+                       "description": "Using previous analysis results",
+                       "requires_sub_plan": false,
+                       "reasoning_nodes": []
+                   }},
+                   {{
+                       "id": "MAKE_DECISION",
+                       "description": "Make decision based on analysis",
+                       "requires_sub_plan": false,
+                       "reasoning_nodes": [
+                           {{
+                               "id": "DECIDE",
+                               "description": "Make the final decision"
+                           }}
+                       ]
                    }}
                ]
            }}
@@ -325,6 +383,7 @@ class OptimalWorkflowExecutor(WorkflowExecutor):
            - Single word or multiple words joined by underscores
            - Descriptive of the node's task
            - Examples: ANALYZE, CREATE_REPORT, PROCESS_DATA, GENERATE_SUMMARY
+           - Use PREVIOUS_RESULTS when reusing existing results
         2. The requires_sub_plan property must be a boolean:
            - If true: The node will be broken down into sub-plans later
            - If false: The node must have reasoning_nodes
@@ -345,6 +404,7 @@ class OptimalWorkflowExecutor(WorkflowExecutor):
         2. Choose which reasoning steps are necessary (be selective!)
         3. Structure the overall plan (keep it simple!)
         4. Ensure each node builds upon previous results without duplication
+        5. Reuse previous results when available and valid
         """
         
         # Use LLM to determine the structure
@@ -553,7 +613,7 @@ class OptimalWorkflowExecutor(WorkflowExecutor):
                 # Get all results for this plan node
                 plan_results[plan_id] = {
                     'reasoning': {
-                        step: self.results.get_latest(plan_id, step)
+                        step: self.results.get_latest(f"{workflow_node_id}.{plan_id}", step)
                         for step in OODA_STEPS
                     }
                 }
