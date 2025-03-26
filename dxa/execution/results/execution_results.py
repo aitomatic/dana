@@ -3,6 +3,7 @@
 from collections import OrderedDict
 from typing import Dict, Any, Optional
 from dataclasses import dataclass, field
+import logging
 
 from .result_key import ResultKey
 
@@ -12,6 +13,8 @@ from .constants import (
     ResultDict,
     ContextDict
 )
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -42,12 +45,17 @@ class ExecutionResults:
             key: The ResultKey (can have composite node_id)
             result: The result to store
         """
+        key_str = str(key)
+        logger.info(f"Storing result for key: {key_str}")
+        logger.info(f"Current plan: {self._current_plan_id}")
+        
         # Move results from previous plans to recent storage
         if key.is_plan and not key.is_current_plan():
             self._move_to_recent(key)
             
         # Store the new result
-        self._immediate[str(key)] = result
+        self._immediate[key_str] = result
+        logger.info(f"Stored in immediate storage. Immediate storage now contains: {list(self._immediate.keys())}")
         
         # Enforce size limit on immediate results
         if len(self._immediate) > self._max_recent:
@@ -268,19 +276,29 @@ class ExecutionResults:
         """
         # Create a ResultKey to handle composite IDs
         key = ResultKey(node_id=node_id, step=step)
+        key_str = str(key)
+        logger.info(f"Getting latest result for key: {key_str}")
+        logger.info(f"Current plan: {self._current_plan_id}")
+        logger.info(f"Immediate storage contains: {list(self._immediate.keys())}")
+        logger.info(f"Recent storage contains: {list(self._recent.keys())}")
+        logger.info(f"Historical storage contains: {list(self._historical.keys())}")
         
         # Check immediate results first
-        if str(key) in self._immediate:
-            return self._immediate[str(key)]
+        if key_str in self._immediate:
+            logger.info(f"Found result in immediate storage")
+            return self._immediate[key_str]
             
         # Check recent results
-        if str(key) in self._recent:
-            return self._recent[str(key)]
+        if key_str in self._recent:
+            logger.info(f"Found result in recent storage")
+            return self._recent[key_str]
             
         # Check historical results
-        if str(key) in self._historical:
-            return self._historical[str(key)]
+        if key_str in self._historical:
+            logger.info(f"Found result in historical storage")
+            return self._historical[key_str]
             
+        logger.info("No result found in any storage")
         return None
 
     def _move_to_recent(self, key: ResultKey) -> None:
