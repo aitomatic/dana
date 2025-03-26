@@ -198,19 +198,25 @@ class OptimalWorkflowExecutor(WorkflowExecutor):
         previous_results = {}
         
         # Get workflow-level results
+        logger.info(f"Getting workflow-level results for node {workflow_node.node_id}")
         for step in OODA_STEPS:
             result = self.results.get_latest(workflow_node.node_id, step)
             if result:
+                logger.info(f"Found workflow result for {workflow_node.node_id}.{step}")
                 previous_results[f"{workflow_node.node_id}.{step}"] = result
         
         # Get results from previous plans
+        logger.info(f"Getting plan-level results for {len(parent_nodes)} parent nodes")
         for parent in parent_nodes:
             for step in OODA_STEPS:
                 # Create composite node_id by concatenating workflow and plan IDs
                 composite_node_id = f"{workflow_node.node_id}.{parent.node_id}"
                 result = self.results.get_latest(composite_node_id, step)
                 if result:
+                    logger.info(f"Found plan result for {composite_node_id}.{step}")
                     previous_results[f"{composite_node_id}.{step}"] = result
+        
+        logger.info(f"Total previous results found: {len(previous_results)}")
         
         # Create prompt to determine planning structure
         # Build hierarchy description, starting with workflow node
@@ -228,7 +234,10 @@ class OptimalWorkflowExecutor(WorkflowExecutor):
             # Group results by node
             results_by_node = {}
             for key, result in previous_results.items():
-                node_id, step = key.split('.')
+                # Split the key into node_id and step
+                parts = key.split('.')
+                node_id = '.'.join(parts[:-1])  # Everything except the last part
+                step = parts[-1]  # The last part is the step
                 if node_id not in results_by_node:
                     results_by_node[node_id] = {}
                 results_by_node[node_id][step] = result
@@ -244,6 +253,11 @@ class OptimalWorkflowExecutor(WorkflowExecutor):
                             result_text = result_text[:497] + "..."
                         previous_results_section += f"  {step}:\n{result_text}\n"
             previous_results_section += "\nYou can reuse these results where appropriate."
+            
+            logger.info(f"Previous results section length: {len(previous_results_section)}")
+            logger.info(f"Previous results section:\n{previous_results_section}")
+        else:
+            logger.info("No previous results found to include in prompt")
         
         plan_structure_prompt = f"""
         Based on the following node hierarchy and objective "{objective.current}",
@@ -725,7 +739,8 @@ class OptimalWorkflowExecutor(WorkflowExecutor):
         # Add immediate context (previous steps in current plan)
         immediate_context = previous_results.get('immediate_context', {})
         if immediate_context.get('results'):
-            previous_results_text.append("Previous steps in current plan:")
+            composite_id = f"{parent_nodes[0].node_id}.{current_plan.node_id}"
+            previous_results_text.append(f"Previous steps in current plan ({composite_id}):")
             previous_results_text.append(immediate_context['usage'])
             for key, result in immediate_context['results'].items():
                 step = key.split('.')[-1]  # Get the OODA step from the key
@@ -734,7 +749,7 @@ class OptimalWorkflowExecutor(WorkflowExecutor):
         # Add recent context (other plan nodes)
         recent_context = previous_results.get('recent_context', {})
         if recent_context.get('results'):
-            previous_results_text.append("\nResults from recent plan nodes:")
+            previous_results_text.append(f"\nResults from recent plan nodes ({parent_nodes[0].node_id}):")
             previous_results_text.append(recent_context['usage'])
             for key, result in recent_context['results'].items():
                 plan_id = key.split('.')[0]  # Get the plan ID from the key
@@ -744,7 +759,7 @@ class OptimalWorkflowExecutor(WorkflowExecutor):
         # Add historical context (important historical steps)
         historical_context = previous_results.get('historical_context', {})
         if historical_context.get('results'):
-            previous_results_text.append("\nImportant historical results:")
+            previous_results_text.append(f"\nImportant historical results ({parent_nodes[0].node_id}):")
             previous_results_text.append(historical_context['usage'])
             for key, result in historical_context['results'].items():
                 node_id = key.split('.')[0]  # Get the node ID from the key
@@ -762,6 +777,8 @@ class OptimalWorkflowExecutor(WorkflowExecutor):
         
         Node Hierarchy:
         {hierarchy_text}
+        
+        Current Reasoning Step ID: {parent_nodes[0].node_id}.{current_plan.node_id}.{reasoning_node['id']}
         
         Current Plan Node: {current_plan.node_id}
         Plan Description: {current_plan.description}
