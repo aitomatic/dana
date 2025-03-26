@@ -398,7 +398,7 @@ Reasoning Task:
         
         return reasoning
         
-    async def _execute_lower_layer(
+    async def _execute_node_core(
         self,
         node: ExecutionNode,
         context: ExecutionContext
