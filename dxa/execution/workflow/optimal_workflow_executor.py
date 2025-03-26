@@ -194,12 +194,23 @@ class OptimalWorkflowExecutor(WorkflowExecutor):
                 workflow_desc.append(f"  {i + 1}. {step}")
         workflow_text = "\n".join(workflow_desc)
         
-        # Check if we have previous results for this workflow node
-        workflow_results = {}
+        # Get previous results for this workflow node and its plans
+        previous_results = {}
+        
+        # Get workflow-level results
         for step in OODA_STEPS:
             result = self.results.get_latest(workflow_node.node_id, step)
             if result:
-                workflow_results[step] = result
+                previous_results[f"{workflow_node.node_id}.{step}"] = result
+        
+        # Get results from previous plans
+        for parent in parent_nodes:
+            for step in OODA_STEPS:
+                # Create composite node_id by concatenating workflow and plan IDs
+                composite_node_id = f"{workflow_node.node_id}.{parent.node_id}"
+                result = self.results.get_latest(composite_node_id, step)
+                if result:
+                    previous_results[f"{composite_node_id}.{step}"] = result
         
         # Create prompt to determine planning structure
         # Build hierarchy description, starting with workflow node
@@ -210,13 +221,29 @@ class OptimalWorkflowExecutor(WorkflowExecutor):
         
         hierarchy_text = "\n".join(hierarchy_desc)
         
-        # Add previous results to the prompt if any exist
-        previous_results_text = ""
-        if workflow_results:
-            previous_results_text = "\nPrevious Results Available:\n"
-            for step, result in workflow_results.items():
-                previous_results_text += f"- {step}: {result}\n"
-            previous_results_text += "\nYou can reuse these results where appropriate."
+        # Format previous results for the prompt
+        previous_results_section = ""
+        if previous_results:
+            previous_results_section = "\nPREVIOUS RESULTS:\n"
+            # Group results by node
+            results_by_node = {}
+            for key, result in previous_results.items():
+                node_id, step = key.split('.')
+                if node_id not in results_by_node:
+                    results_by_node[node_id] = {}
+                results_by_node[node_id][step] = result
+            
+            # Format results grouped by node
+            for node_id, node_results in results_by_node.items():
+                previous_results_section += f"\nNode: {node_id}\n"
+                for step in OODA_STEPS:
+                    if step in node_results:
+                        result_text = str(node_results[step])
+                        # Truncate long results to keep the prompt manageable
+                        if len(result_text) > 500:
+                            result_text = result_text[:497] + "..."
+                        previous_results_section += f"  {step}:\n{result_text}\n"
+            previous_results_section += "\nYou can reuse these results where appropriate."
         
         plan_structure_prompt = f"""
         Based on the following node hierarchy and objective "{objective.current}",
@@ -229,7 +256,7 @@ class OptimalWorkflowExecutor(WorkflowExecutor):
         Complete Workflow Steps:
         {workflow_text}
         
-        {previous_results_text}
+        {previous_results_section}
         
         Your plan should focus ONLY on this step's responsibilities.
         Do not try to handle responsibilities of other workflow steps.
