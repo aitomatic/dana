@@ -33,98 +33,91 @@ class ExecutionResults:
         """Set the current plan being executed."""
         self._current_plan_id = plan_id
 
-    def store(self, key: ResultKey, value: Any):
-        """Store a result with smart categorization.
+    def store(self, key: ResultKey, result: str) -> None:
+        """Store a result with proper context management."""
+        key_str = str(key)
         
-        Args:
-            key: Unique identifier for the result
-            value: The result value to store
-        """
-        str_key = str(key)
-        print(f"\nStoring result for {str_key}")
-        print(f"Current plan: {self._current_plan_id}")
-        
-        # 1. If this is a new plan node, move previous plan results to recent
-        if (key.node_id.startswith("PLAN_") and self._current_plan_id and key.node_id != self._current_plan_id):
-            print(f"Moving results from previous plan {self._current_plan_id} to recent")
+        # Rule 1: Move results from previous plan node to recent
+        if self._current_plan_id and key.node_id != self._current_plan_id:
             # Move all results from previous plan to recent
             for k, v in list(self._immediate.items()):
                 prev_key = ResultKey.from_str(k)
-                if prev_key.node_id.startswith("PLAN_"):
-                    print(f"Moving {k} to recent")
+                if prev_key.node_id == self._current_plan_id:
                     self._recent[k] = v
                     del self._immediate[k]
-                    if len(self._recent) > self._max_recent:
-                        self._recent.popitem(last=False)  # Remove oldest
-        
-        # 2. Store in immediate if part of current plan or any plan in the current graph
-        if key.node_id == self._current_plan_id or key.node_id.startswith("PLAN_"):
-            print(f"Storing {str_key} in immediate")
-            self._immediate[str_key] = value
-            return
-
-        # 3. Store in historical if it's a key decision point
-        # Rules for historical storage:
-        # - Workflow-level decisions (DECIDE/ACT) that affect future executions
-        # - Final outcomes of completed workflows
-        # - Critical decisions that establish precedents
-        if (key.is_workflow and key.step in ['DECIDE', 'ACT']):
-            print(f"Storing {str_key} in historical")
-            self._historical[str_key] = value
-            return
-
-        # 4. Otherwise store in recent, maintaining size limit
-        print(f"Storing {str_key} in recent")
-        self._recent[str_key] = value
-        if len(self._recent) > self._max_recent:
-            self._recent.popitem(last=False)  # Remove oldest
-
-    def get_relevant_context(
-        self,
-        current_key: ResultKey,
-        max_tokens: int = DEFAULT_TOKEN_BUDGET
-    ) -> ContextDict:
-        """Get relevant context using explicit rules for each context type.
-        
-        Args:
-            current_key: Key for the current execution step
-            max_tokens: Maximum token budget for context
             
-        Returns:
-            Dictionary containing immediate, recent, and historical context with usage instructions
-        """
+            # Update current plan
+            self._current_plan_id = key.node_id
+        elif not self._current_plan_id:
+            # First result, set current plan
+            self._current_plan_id = key.node_id
+        
+        # Rule 2: Store workflow-level decisions in historical
+        if key.is_workflow:
+            self._historical[key_str] = result
+            return
+        
+        # Rule 3: Store results from current plan or any plan in current graph in immediate
+        if key.node_id == self._current_plan_id or key.node_id.startswith("PLAN_"):
+            self._immediate[key_str] = result
+            return
+        
+        # Rule 4: Store other results in recent
+        self._recent[key_str] = result
+        
+        # Rule 5: Enforce size limits
+        if len(self._recent) > self._max_recent:
+            # Remove oldest result
+            oldest_key = next(iter(self._recent))
+            del self._recent[oldest_key]
+
+    def get_relevant_context(self, current_key: ResultKey) -> Dict[str, Any]:
+        """Get relevant context for a reasoning step."""
         print(f"\nGetting context for {current_key}")
         print(f"Current plan: {self._current_plan_id}")
-        print(f"Immediate results: {list(self._immediate.keys())}")
-        print(f"Recent results: {list(self._recent.keys())}")
-        print(f"Historical results: {list(self._historical.keys())}")
         
-        context = {
+        # Get immediate context (previous steps in current plan)
+        immediate_context = self._get_immediate_context(current_key)
+        print("\nImmediate storage contents:")
+        for k in self._immediate.keys():
+            print(f"- {k}")
+        print("\nImmediate context (filtered for current plan):")
+        for k in immediate_context.keys():
+            print(f"- {k}")
+        
+        # Get recent context (other plan nodes)
+        recent_context = self._get_relevant_recent_results(current_key)
+        print("\nRecent storage contents:")
+        for k in self._recent.keys():
+            print(f"- {k}")
+        print("\nRecent context (filtered for relevance):")
+        for k in recent_context.keys():
+            print(f"- {k}")
+        
+        # Get historical context (important historical steps)
+        historical_context = self._get_relevant_historical_results(current_key)
+        print("\nHistorical storage contents:")
+        for k in self._historical.keys():
+            print(f"- {k}")
+        print("\nHistorical context (filtered for relevance):")
+        for k in historical_context.keys():
+            print(f"- {k}")
+        
+        # Return the context with usage instructions
+        return {
             'immediate_context': {
-                'results': self._get_immediate_context(current_key),
-                'usage': 'Use these results to maintain continuity within the current plan node. '
-                         'Each step should build upon the previous steps in sequence.'
+                'results': immediate_context,
+                'usage': "Use these results to maintain continuity with previous steps in the current plan."
             },
             'recent_context': {
-                'results': self._get_relevant_recent_results(current_key),
-                'usage': 'Use these results to coordinate with parallel plan nodes and maintain '
-                         'consistency across the current execution. Reference specific results when '
-                         'they directly influence the current step.'
+                'results': recent_context,
+                'usage': "Use these results to coordinate with other plan nodes and maintain consistency across the current graph execution."
             },
             'historical_context': {
-                'results': self._get_relevant_historical_results(current_key),
-                'usage': 'Use these results as established precedents and constraints. '
-                         'Reference specific decisions when they set boundaries or requirements '
-                         'for the current step.'
+                'results': historical_context,
+                'usage': "Use these results to inform decisions based on historical precedents and workflow-level outcomes."
             }
         }
-        
-        print("\nContext returned:")
-        print(f"Immediate context: {list(context['immediate_context']['results'].keys())}")
-        print(f"Recent context: {list(context['recent_context']['results'].keys())}")
-        print(f"Historical context: {list(context['historical_context']['results'].keys())}")
-        
-        return self._trim_to_token_budget(context, max_tokens)
 
     def _get_immediate_context(self, current_key: ResultKey) -> ResultDict:
         """Get context from current plan's previous steps."""
@@ -153,8 +146,8 @@ class ExecutionResults:
         # Rule 1: Include results from previous plan nodes in the current graph
         for k, v in self._immediate.items():
             key = ResultKey.from_str(k)
-            # Include results from any plan node that's not the current one
-            if key.node_id.startswith("PLAN_") and key.node_id != current_key.node_id:
+            # Include results from any node that's not the current one
+            if key.node_id != current_key.node_id:
                 relevant[k] = v
         
         # Rule 2: Include results from same OODA step from other nodes
@@ -203,9 +196,11 @@ class ExecutionResults:
                     relevant[k] = v
 
         # Rule 3: Include results from previous graph executions
-        for k, v in self._immediate.items():
+        # Only include results that are actually in the historical store
+        # and not from the current graph execution
+        for k, v in self._historical.items():
             key = ResultKey.from_str(k)
-            if (key.node_id != current_key.node_id and not key.node_id.startswith("PLAN_")):
+            if key.node_id != current_key.node_id:
                 relevant[k] = v
 
         return relevant
