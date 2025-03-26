@@ -20,6 +20,7 @@ from ..execution_graph import ExecutionGraph
 from ..execution_context import ExecutionContext
 from ..execution_types import (
     ExecutionSignal,
+    ExecutionSignalType,
     Objective,
 )
 from ..planning import PlanExecutor
@@ -130,17 +131,23 @@ class OptimalWorkflowExecutor(WorkflowExecutor):
         for plan_id, result in plan_results.items():
             if isinstance(result, dict) and 'consolidated' in result:
                 # Option A: One consolidated result
-                signal = {
-                    "node": plan_id,
-                    "result": result['consolidated']
-                }
+                signal = ExecutionSignal(
+                    type=ExecutionSignalType.DATA_RESULT,
+                    content={
+                        "node": plan_id,
+                        "result": result['consolidated']
+                    }
+                )
                 signals.append(signal)
             else:
                 # Option B: Multiple results
-                signal = {
-                    "node": plan_id,
-                    "result": result
-                }
+                signal = ExecutionSignal(
+                    type=ExecutionSignalType.DATA_RESULT,
+                    content={
+                        "node": plan_id,
+                        "result": result
+                    }
+                )
                 signals.append(signal)
         
         return signals
@@ -166,6 +173,27 @@ class OptimalWorkflowExecutor(WorkflowExecutor):
         if parent_nodes is None:
             parent_nodes = []
         
+        # Get all workflow steps and current position
+        workflow_steps = []
+        if self.workflow:
+            # Get start node
+            start_node = self.workflow.get_start_node()
+            if start_node:
+                current_node_id = start_node.node_id
+                while current_node_id:
+                    workflow_steps.append(current_node_id)
+                    next_nodes = self.workflow.get_next_nodes(current_node_id)
+                    current_node_id = next_nodes[0].node_id if next_nodes else None
+        
+        # Create workflow steps description with current step highlighted
+        workflow_desc = []
+        for i, step in enumerate(workflow_steps):
+            if step == workflow_node.node_id:
+                workflow_desc.append(f"  {i + 1}. {step} (CURRENT)")
+            else:
+                workflow_desc.append(f"  {i + 1}. {step}")
+        workflow_text = "\n".join(workflow_desc)
+        
         # Create prompt to determine planning structure
         # Build hierarchy description, starting with workflow node
         hierarchy_desc = []
@@ -181,8 +209,94 @@ class OptimalWorkflowExecutor(WorkflowExecutor):
         1. Map directly to reasoning nodes (for simple tasks)
         2. Require further breakdown into sub-plans (for complex tasks that need decomposition)
         
-        Consider the complexity of the task, the type of workflow node, and the objective.
-        Use sub-plans VERY sparingly, only when a task is truly complex and needs decomposition.
+        IMPORTANT: This is the {workflow_node.node_id} step of the workflow.
+        Complete Workflow Steps:
+        {workflow_text}
+        
+        Your plan should focus ONLY on this step's responsibilities.
+        Do not try to handle responsibilities of other workflow steps.
+        
+        CRITICAL PRINCIPLES:
+        1. Start Simple:
+           - Begin with a single plan node
+           - Only break down into multiple nodes if absolutely necessary
+           - Each additional node adds complexity and potential for duplication
+        
+        2. Respect Workflow Boundaries:
+           - Focus only on the current workflow step
+           - Don't try to handle responsibilities of future workflow steps
+           - Let each workflow step handle its own concerns
+        
+        3. Minimal OODA Steps:
+           - Only include OODA steps that are truly necessary
+           - Different tasks need different combinations of steps
+           - Avoid including steps just because they're available
+        
+        Examples of GOOD Simple Plans:
+        1. Single Node with Minimal Steps:
+           {{
+               "id": "ANALYZE_REVIEWS",
+               "description": "Analyze customer reviews to identify key themes",
+               "requires_sub_plan": false,
+               "reasoning_nodes": [
+                   {{
+                       "id": "OBSERVE",
+                       "description": "Review the prepared data"
+                   }},
+                   {{
+                       "id": "ORIENT",
+                       "description": "Identify key themes and patterns"
+                   }}
+               ]
+           }}
+        
+        2. Single Node with Selective Steps:
+           {{
+               "id": "MAKE_DECISION",
+               "description": "Make a decision based on previous analysis",
+               "requires_sub_plan": false,
+               "reasoning_nodes": [
+                   {{
+                       "id": "ORIENT",
+                       "description": "Review previous analysis"
+                   }},
+                   {{
+                       "id": "DECIDE",
+                       "description": "Make the decision"
+                   }}
+               ]
+           }}
+        
+        Example of BAD Complex Plan (Avoid This):
+        {{
+            "id": "COMPLEX_ANALYSIS",
+            "description": "Overly complex plan trying to do too much",
+            "requires_sub_plan": true,
+            "sub_plans": [
+                {{
+                    "id": "GATHER_DATA",
+                    "description": "Gather all possible data",
+                    "requires_sub_plan": false,
+                    "reasoning_nodes": [
+                        {{"id": "OBSERVE", "description": "Gather data"}},
+                        {{"id": "ORIENT", "description": "Organize data"}},
+                        {{"id": "DECIDE", "description": "Decide what to keep"}},
+                        {{"id": "ACT", "description": "Store the data"}}
+                    ]
+                }},
+                {{
+                    "id": "ANALYZE_DATA",
+                    "description": "Analyze the gathered data",
+                    "requires_sub_plan": false,
+                    "reasoning_nodes": [
+                        {{"id": "OBSERVE", "description": "Review data"}},
+                        {{"id": "ORIENT", "description": "Find patterns"}},
+                        {{"id": "DECIDE", "description": "Determine insights"}},
+                        {{"id": "ACT", "description": "Document findings"}}
+                    ]
+                }}
+            ]
+        }}
         
         Node Hierarchy:
         {hierarchy_text}
@@ -201,11 +315,6 @@ class OptimalWorkflowExecutor(WorkflowExecutor):
                             "description": "What this reasoning step will do"
                         }}
                     ]
-                }},
-                {{
-                    "id": "COMPLEX_TASK",
-                    "description": "Complex task that needs decomposition",
-                    "requires_sub_plan": true
                 }}
             ]
         }}
@@ -222,7 +331,8 @@ class OptimalWorkflowExecutor(WorkflowExecutor):
         3. For nodes with requires_sub_plan=false:
            - Must include reasoning_nodes array
            - Each reasoning_node.id must be one of: OBSERVE, ORIENT, DECIDE, ACT
-           - Include only the reasoning steps that are necessary and sufficient
+           - Include ONLY the reasoning steps that are necessary and sufficient
+           - Do not include steps just because they're available
         4. For nodes with requires_sub_plan=true:
            - Must NOT include reasoning_nodes
            - Will be broken down into sub-plans during execution
@@ -231,9 +341,10 @@ class OptimalWorkflowExecutor(WorkflowExecutor):
         7. The JSON must be properly formatted with no trailing commas
         
         Consider the node hierarchy when deciding whether to:
-        1. Break down a task into sub-plans
-        2. Choose which reasoning steps are necessary
-        3. Structure the overall plan
+        1. Break down a task into sub-plans (prefer not to)
+        2. Choose which reasoning steps are necessary (be selective!)
+        3. Structure the overall plan (keep it simple!)
+        4. Ensure each node builds upon previous results without duplication
         """
         
         # Use LLM to determine the structure
@@ -414,9 +525,10 @@ class OptimalWorkflowExecutor(WorkflowExecutor):
                 reasoning_nodes = plan_data['reasoning_nodes']
                 
                 for reasoning_node in reasoning_nodes:
-                    # Create result key for this step
+                    # Create result key for this step, prepending workflow node ID
+                    workflow_node_id = parent_nodes[0].node_id
                     result_key = ResultKey(
-                        node_id=plan_id,
+                        node_id=f"{workflow_node_id}.{plan_id}",
                         step=reasoning_node['id']
                     )
                     
@@ -576,12 +688,20 @@ class OptimalWorkflowExecutor(WorkflowExecutor):
         {previous_results_section}
         
         Instructions:
-        1. Review all previous results carefully, following the usage instructions for each context
-        2. Build upon earlier observations and analysis
-        3. Maintain consistency with workflow-level outcomes
-        4. Coordinate with results from parallel plan nodes
-        5. Ensure your response advances the overall objective
-        6. Follow the specific requirements of your OODA step
+        1. First, explicitly confirm your understanding of:
+           a) The workflow node task: {parent_nodes[0].description}
+           b) The current plan node task: {current_plan.description}
+           c) Your specific reasoning step task: {reasoning_node.get('description', '')}
+        
+        2. Review all previous results carefully, following the usage instructions for each context
+        3. Build upon earlier observations and analysis
+        4. Maintain consistency with workflow-level outcomes
+        5. Coordinate with results from parallel plan nodes
+        6. Ensure your response advances the overall objective
+        7. Follow the specific requirements of your OODA step
+        
+        Your response should start with a clear confirmation of your understanding of the tasks,
+        then proceed with the actual reasoning step execution.
         
         Return a complete, well-structured reasoning result that fulfills the specific requirements
         of this OODA step while advancing toward the overall objective.
