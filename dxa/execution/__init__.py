@@ -20,6 +20,7 @@ from .workflow import (
     WorkflowFactory,
     WorkflowExecutor,
     WorkflowStrategy,
+    OptimalWorkflowExecutor,
 )
 from .planning import (
     Plan,
@@ -33,6 +34,13 @@ from .reasoning import (
     ReasoningExecutor,
     ReasoningStrategy,
 )
+
+from .results import (
+    ExecutionResults,
+    ResultKey,
+    ResultType,
+    OODA_STEPS
+)   
 
 __all__ = [
     'Objective',
@@ -48,6 +56,7 @@ __all__ = [
     'Workflow',
     'WorkflowFactory',
     'WorkflowExecutor',
+    'OptimalWorkflowExecutor',
     'WorkflowStrategy',
     'Pipeline',
     'PipelineFactory',
@@ -61,4 +70,8 @@ __all__ = [
     'ReasoningFactory',
     'ReasoningStrategy',
     'ReasoningExecutor',
+    'ExecutionResults',
+    'ResultKey',
+    'ResultType',
+    'OODA_STEPS'
 ]

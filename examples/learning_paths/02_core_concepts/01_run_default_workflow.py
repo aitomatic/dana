@@ -18,7 +18,7 @@ by formalizing the relationship between layers while maintaining the same functi
 
 import asyncio
 
-from dxa.execution import WorkflowFactory, WorkflowExecutor
+from dxa.execution import WorkflowFactory, OptimalWorkflowExecutor
 from dxa.execution import ExecutionContext
 from dxa.execution.execution_types import Objective
 from dxa.common.utils.logging import DXA_LOGGER
@@ -72,7 +72,8 @@ async def main():
     print(f"\nCreated workflow with {len(workflow.nodes)} nodes")
     
     print("Creating WorkflowExecutor (top layer - orchestrates overall process)")
-    workflow_executor = WorkflowExecutor()
+    # workflow_executor = WorkflowExecutor()
+    workflow_executor = OptimalWorkflowExecutor()
     
     # Execute workflow
     print("\nExecuting workflow using our refactored create_graph_from_node pattern...")

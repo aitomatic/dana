@@ -108,14 +108,14 @@ class Executor(ABC, Generic[StrategyT]):
             await self._pre_execute_node(node)
             
             # Phase 2: Node validation
-            if not self._validate_node(node):
+            if not self._validate_node_for_execution(node):
                 return []
             
             # Phase 3: Build context
             execution_context = self._build_execution_context(node, context, prev_signals, upper_signals, lower_signals)
             
             # Phase 4: Execute lower layer
-            signals = await self._execute_lower_layer(node, execution_context)
+            signals = await self._execute_node_core(node, execution_context)
             
             # Phase 5: Post-execution cleanup
             await self._post_execute_node(node)
@@ -141,7 +141,7 @@ class Executor(ABC, Generic[StrategyT]):
         if self.graph:
             self.graph.update_node_status(node.node_id, ExecutionNodeStatus.IN_PROGRESS)
     
-    def _validate_node(self, node: ExecutionNode) -> bool:
+    def _validate_node_for_execution(self, node: ExecutionNode) -> bool:
         """Validate a node for execution.
         
         This phase handles:
@@ -199,7 +199,7 @@ class Executor(ABC, Generic[StrategyT]):
         # because ExecutionContext doesn't have current_node attribute)
         return context
     
-    async def _execute_lower_layer(
+    async def _execute_node_core(
         self,
         node: ExecutionNode,
         context: ExecutionContext
