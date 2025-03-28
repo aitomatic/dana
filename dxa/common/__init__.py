@@ -23,6 +23,18 @@ from .utils import (
     DXALogger,
     DXA_LOGGER
 )
+from .graph import (
+    Node,
+    Edge,
+    NodeType,
+    DirectedGraph,
+    Cursor,
+    TraversalStrategy,
+    BreadthFirstTraversal,
+    DepthFirstTraversal, 
+    TopologicalTraversal,
+    GraphVisualizer,
+)
 
 __all__ = [
     # Errors
@@ -46,5 +58,17 @@ __all__ = [
     'get_base_path',
     'get_config_path',
     'DXALogger',
-    'DXA_LOGGER'
+    'DXA_LOGGER',
+    
+    # Graph
+    'Node',
+    'Edge',
+    'NodeType',
+    'DirectedGraph',
+    'Cursor',
+    'TraversalStrategy',
+    'BreadthFirstTraversal',
+    'DepthFirstTraversal', 
+    'TopologicalTraversal',
+    'GraphVisualizer',
 ]

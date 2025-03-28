@@ -1,22 +1,20 @@
 """Workflow executor implementation."""
 
-from typing import List, Optional, cast, Dict, Any
+from typing import List, Optional, Dict, Any
 
 from ..executor import Executor
 from ..execution_context import ExecutionContext
-from ..execution_graph import ExecutionGraph
 from ..execution_types import (
     ExecutionNode, ExecutionSignal, ExecutionNodeStatus,
     ExecutionSignalType
 )
-from ...common import DXA_LOGGER
-from ...common.graph import Cursor, TopologicalTraversal, NodeType
+from ...common.graph import NodeType
 from .workflow_strategy import WorkflowStrategy
 from .workflow import Workflow
 from ..planning import PlanExecutor, PlanStrategy
 from ..reasoning import ReasoningExecutor, ReasoningStrategy
 
-class WorkflowExecutor(Executor[WorkflowStrategy]):
+class WorkflowExecutor(Executor[WorkflowStrategy, Workflow]):
     """Executes workflows by delegating to a plan executor.
     
     The WorkflowExecutor is responsible for executing workflow graphs,
@@ -24,20 +22,9 @@ class WorkflowExecutor(Executor[WorkflowStrategy]):
     planning and reasoning tasks to a PlanExecutor.
     """
     
-    @property
-    def layer(self) -> str:
-        """Get the execution layer name."""
-        return "workflow"
-    
-    @property
-    def strategy_class(self) -> type[WorkflowStrategy]:
-        """Get the strategy class for this executor."""
-        return WorkflowStrategy
-    
-    @property
-    def default_strategy(self) -> WorkflowStrategy:
-        """Get the default strategy for this executor."""
-        return WorkflowStrategy.DEFAULT
+    # Class attributes for layer configuration
+    _default_strategy_value = WorkflowStrategy.DEFAULT
+    _depth = 0
     
     def __init__(
         self, 
@@ -52,19 +39,12 @@ class WorkflowExecutor(Executor[WorkflowStrategy]):
             planning_strategy: Plan execution strategy
             reasoning_strategy: Reasoning execution strategy
         """
-        super().__init__(depth=0)
-        self.strategy = workflow_strategy
-        self.lower_executor = PlanExecutor(strategy=planning_strategy)
-        self.lower_executor.lower_executor = ReasoningExecutor(strategy=reasoning_strategy)
-        self.logger = DXA_LOGGER.getLogger(f"dxa.execution.{self.layer}")
-    
-    def _get_graph_class(self):
-        """Get the appropriate graph class for this executor.
+        # Create the executor chain
+        reasoning_executor = ReasoningExecutor(strategy=reasoning_strategy)
+        plan_executor = PlanExecutor(strategy=planning_strategy, lower_executor=reasoning_executor)
         
-        Returns:
-            Workflow graph class
-        """
-        return Workflow
+        # Initialize with workflow strategy and plan executor
+        super().__init__(strategy=workflow_strategy, lower_executor=plan_executor)
     
     async def execute_workflow(
         self,
@@ -105,65 +85,6 @@ class WorkflowExecutor(Executor[WorkflowStrategy]):
             lower_signals
         )
     
-    async def execute_graph(
-        self,
-        graph: ExecutionGraph,
-        context: ExecutionContext,
-        prev_signals: Optional[List[ExecutionSignal]] = None,
-        upper_signals: Optional[List[ExecutionSignal]] = None,
-        lower_signals: Optional[List[ExecutionSignal]] = None
-    ) -> List[ExecutionSignal]:
-        """Execute a workflow graph.
-        
-        This method executes the workflow graph using the standard execution pattern.
-        For optimized execution with planning ahead and node compression, use the
-        OptimalWorkflowExecutor instead.
-        
-        Args:
-            graph: Workflow graph to execute
-            context: Execution context
-            prev_signals: Signals from previous execution
-            upper_signals: Signals from upper execution layer
-            lower_signals: Signals from lower execution layer
-            
-        Returns:
-            List of execution signals
-        """
-        # Set current graph
-        self.graph = graph
-        
-        # Set graph in context
-        self._set_graph_in_context(graph, context)
-        
-        # Log execution start
-        self._log_execution_start()
-        
-        # Get start node
-        start_node = graph.get_start_node()
-        if not start_node:
-            self.logger.error("Workflow has no START node")
-            return []
-            
-        # Create cursor for graph traversal
-        cursor = Cursor(graph, start_node, TopologicalTraversal())
-        
-        # Execute nodes in sequence
-        signals = []
-        
-        # Traverse graph using cursor
-        for node in cursor:
-            # Execute current node
-            node_signals = await self.execute_node(
-                cast(ExecutionNode, node),
-                context,
-                prev_signals=signals,
-                upper_signals=upper_signals,
-                lower_signals=lower_signals
-            )
-            signals.extend(node_signals)
-        
-        return signals
-    
     def _build_layer_context(
         self,
         node: ExecutionNode,
@@ -175,7 +96,6 @@ class WorkflowExecutor(Executor[WorkflowStrategy]):
         including:
         1. Node information
         2. Previous execution results
-        3. Workflow-specific metadata
         
         Args:
             node: Node to build context for
@@ -191,13 +111,6 @@ class WorkflowExecutor(Executor[WorkflowStrategy]):
             "description": node.description,
             "metadata": node.metadata or {}
         }
-        
-        # Add workflow-specific information
-        context.update({
-            "dependencies": self._get_node_dependencies(node),
-            "position": self._get_node_position(node),
-            "progress": self._get_workflow_progress()
-        })
         
         # Add previous outputs if available
         if prev_signals:
