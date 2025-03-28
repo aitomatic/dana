@@ -9,13 +9,15 @@ from ...common.exceptions import LLMError
 from .base_resource import BaseResource
 # from openai import AsyncClient
 
+# _DEFAULT_MODEL = "openai:gpt-4o"
+_DEFAULT_MODEL = "deepseek:deepseek-chat"
 
 class LLMConfig:
     """Configuration for LLM instances using AISuite."""
     
     def __init__(
         self,
-        model: str = "openai:gpt-4",
+        model: str = _DEFAULT_MODEL,
         providers: Optional[Dict[str, Dict[str, Any]]] = None,
         temperature: float = 0.7,
         max_tokens: Optional[int] = None,
@@ -85,7 +87,7 @@ class LLMResource(BaseResource):
 
         super().__init__(name)
         self.config = config or {}
-        self.model = self.config.get("model", "openai:gpt-4")
+        self.model = self.config.get("model", _DEFAULT_MODEL)
         self.provider_configs = self.config.get("providers", {})
         self._client: Optional[ai.Client] = None
         self.max_retries = int(self.config.get("max_retries", 3))

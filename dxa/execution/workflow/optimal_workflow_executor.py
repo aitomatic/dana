@@ -9,12 +9,10 @@ import logging
 from typing import List, Dict, Any, Optional
 from ...common.graph import (
     Node,
-    NodeType,
 )
 from ..results import (
     ExecutionResults,
     ResultKey,
-    OODA_STEPS
 )
 from ..execution_graph import ExecutionGraph
 from ..execution_context import ExecutionContext
@@ -31,6 +29,9 @@ from ..planning import PlanStrategy
 from ..reasoning import ReasoningStrategy
 
 logger = logging.getLogger(__name__)
+
+# Define OODA steps for reasoning
+OODA_STEPS = ["OBSERVE", "ORIENT", "DECIDE", "ACT"]
 
 class OptimalWorkflowExecutor(WorkflowExecutor):
     """Executes workflows with optimized three-layer execution.
@@ -100,7 +101,8 @@ class OptimalWorkflowExecutor(WorkflowExecutor):
         This method implements an optimized execution pattern that:
         1. Determines the entire plan graph structure in a single LLM call
         2. Executes the plan graph based on its structure
-        3. Returns the results as execution signals
+        3. Creates a workflow-level summary of all results
+        4. Returns the results as execution signals
         
         Args:
             node: Node to execute lower layer for
@@ -125,6 +127,9 @@ class OptimalWorkflowExecutor(WorkflowExecutor):
         
         # Execute the plan graph
         plan_results = await self._execute_plan_graph(plan_graph, objective, context, [node])
+        
+        # Create workflow-level summary of all results
+        await self._create_workflow_summary(node, plan_results, objective, context)
         
         # Convert results to execution signals
         signals = []
@@ -158,418 +163,166 @@ class OptimalWorkflowExecutor(WorkflowExecutor):
         objective: Objective,
         context: ExecutionContext,
         parent_nodes: Optional[List[Node]] = None
-    ) -> Optional[Dict[str, Any]]:
-        """Determine the plan graph structure, supporting hierarchical plans.
+    ) -> Dict[str, Any]:
+        """Create a plan graph for a workflow node.
         
         Args:
-            workflow_node: The current workflow node
+            workflow_node: The workflow node to create plans for
             objective: The overall task objective
             context: Current execution context
-            parent_nodes: Optional list of parent nodes in the hierarchy
+            parent_nodes: Optional ordered list of nodes from workflow root to current node,
+                          where parent_nodes[0] is the workflow node
         
         Returns:
-            A complete plan graph structure
+            Dictionary mapping plan IDs to their graph structures
         """
         if parent_nodes is None:
-            parent_nodes = []
+            parent_nodes = [workflow_node]
         
-        # Get all workflow steps and current position
-        workflow_steps = []
-        if self.workflow:
-            # Get start node
-            start_node = self.workflow.get_start_node()
-            if start_node:
-                current_node_id = start_node.node_id
-                while current_node_id:
-                    workflow_steps.append(current_node_id)
-                    next_nodes = self.workflow.get_next_nodes(current_node_id)
-                    current_node_id = next_nodes[0].node_id if next_nodes else None
-        
-        # Create workflow steps description with current step highlighted
-        workflow_desc = []
-        for i, step in enumerate(workflow_steps):
-            if step == workflow_node.node_id:
-                workflow_desc.append(f"  {i + 1}. {step} (CURRENT)")
-            else:
-                workflow_desc.append(f"  {i + 1}. {step}")
-        workflow_text = "\n".join(workflow_desc)
-        
-        # Get previous results for this workflow node and its plans
+        # Get previous results for the workflow node
         previous_results = {}
+        for parent_node in parent_nodes:
+            result_key = ResultKey(
+                node_id=parent_node.node_id,
+                step="REASONING"
+            )
+            previous_results[parent_node.node_id] = self.results.get_relevant_context(result_key)
         
-        # Get workflow-level results
-        logger.info(f"Getting workflow-level results for node {workflow_node.node_id}")
-        for step in OODA_STEPS:
-            result = self.results.get_latest(workflow_node.node_id, step)
-            if result:
-                logger.info(f"Found workflow result for {workflow_node.node_id}.{step}")
-                previous_results[f"{workflow_node.node_id}.{step}"] = result
+        # Create a prompt for the LLM to create the plan graph
+        hierarchy_text = self._create_hierarchy_text(parent_nodes)
+        previous_results_text = self._format_previous_results(previous_results, workflow_node.node_id)
         
-        # Get results from previous plans
-        logger.info(f"Getting plan-level results for {len(parent_nodes)} parent nodes")
-        for parent in parent_nodes:
-            for step in OODA_STEPS:
-                # Create composite node_id by concatenating workflow and plan IDs
-                composite_node_id = f"{workflow_node.node_id}.{parent.node_id}"
-                result = self.results.get_latest(composite_node_id, step)
-                if result:
-                    logger.info(f"Found plan result for {composite_node_id}.{step}")
-                    previous_results[f"{composite_node_id}.{step}"] = result
-        
-        logger.info(f"Total previous results found: {len(previous_results)}")
-        
-        # Create prompt to determine planning structure
-        # Build hierarchy description, starting with workflow node
-        hierarchy_desc = []
-        hierarchy_desc.append(f"Workflow Node: {workflow_node.node_id} - {workflow_node.description}")
-        for i, parent in enumerate(parent_nodes):
-            hierarchy_desc.append(f"Level {i + 1} Plan: {parent.node_id} - {parent.description}")
-        
-        hierarchy_text = "\n".join(hierarchy_desc)
-        
-        # Format previous results for the prompt
-        previous_results_section = ""
-        if previous_results:
-            previous_results_section = "\nPREVIOUS RESULTS:\n"
-            # Group results by node
-            results_by_node = {}
-            for key, result in previous_results.items():
-                # Split the key into node_id and step
-                parts = key.split('.')
-                node_id = '.'.join(parts[:-1])  # Everything except the last part
-                step = parts[-1]  # The last part is the step
-                if node_id not in results_by_node:
-                    results_by_node[node_id] = {}
-                results_by_node[node_id][step] = result
-            
-            # Format results grouped by node
-            for node_id, node_results in results_by_node.items():
-                previous_results_section += f"\nNode: {node_id}\n"
-                for step in OODA_STEPS:
-                    if step in node_results:
-                        result_text = str(node_results[step])
-                        # Truncate long results to keep the prompt manageable
-                        if len(result_text) > 500:
-                            result_text = result_text[:497] + "..."
-                        previous_results_section += f"  {step}:\n{result_text}\n"
-            previous_results_section += "\nYou can reuse these results where appropriate."
-            
-            logger.info(f"Previous results section length: {len(previous_results_section)}")
-            logger.info(f"Previous results section:\n{previous_results_section}")
-        else:
-            logger.info("No previous results found to include in prompt")
-        
-        plan_structure_prompt = f"""
-        Based on the following node hierarchy and objective "{objective.current}",
-        determine the most appropriate plan structure. Each plan node can either:
-        1. Map directly to reasoning nodes (for simple tasks)
-        2. Require further breakdown into sub-plans (for complex tasks that need decomposition)
-        3. Reuse previous results (if available and still valid)
-        
-        IMPORTANT: This is the {workflow_node.node_id} step of the workflow.
-        Complete Workflow Steps:
-        {workflow_text}
-        
-        {previous_results_section}
-        
-        Your plan should focus ONLY on this step's responsibilities.
-        Do not try to handle responsibilities of other workflow steps.
-        
-        CRITICAL PRINCIPLES:
-        1. Start Simple:
-           - Begin with a single plan node
-           - Only break down into multiple nodes if absolutely necessary
-           - Each additional node adds complexity and potential for duplication
-        
-        2. Respect Workflow Boundaries:
-           - Focus only on the current workflow step
-           - Don't try to handle responsibilities of future workflow steps
-           - Let each workflow step handle its own concerns
-        
-        3. Minimal OODA Steps:
-           - Only include OODA steps that are truly necessary
-           - Different tasks need different combinations of steps
-           - Avoid including steps just because they're available
-        
-        4. Reuse Previous Results:
-           - If previous results exist and are still valid, reuse them
-           - Only create new reasoning nodes for missing or invalid results
-           - Mark nodes as PREVIOUS_RESULTS when reusing existing results
-           - You can mark individual nodes or the entire plan as PREVIOUS_RESULTS
-        
-        Examples of GOOD Simple Plans:
-        1. Single Node with Minimal Steps:
-           {{
-               "id": "ANALYZE_REVIEWS",
-               "description": "Analyze customer reviews to identify key themes",
-               "requires_sub_plan": false,
-               "reasoning_nodes": [
-                   {{
-                       "id": "OBSERVE",
-                       "description": "Review the prepared data"
-                   }},
-                   {{
-                       "id": "ORIENT",
-                       "description": "Identify key themes and patterns"
-                   }}
-               ]
-           }}
-        
-        2. Single Node with Selective Steps:
-           {{
-               "id": "MAKE_DECISION",
-               "description": "Make a decision based on previous analysis",
-               "requires_sub_plan": false,
-               "reasoning_nodes": [
-                   {{
-                       "id": "ORIENT",
-                       "description": "Review previous analysis"
-                   }},
-                   {{
-                       "id": "DECIDE",
-                       "description": "Make the decision"
-                   }}
-               ]
-           }}
-        
-        3. Reusing Previous Results:
-           {{
-               "id": "PREVIOUS_RESULTS",
-               "description": "Using previously completed results",
-               "requires_sub_plan": false,
-               "reasoning_nodes": []
-           }}
-        
-        4. Mixed Plan with Reused Results:
-           {{
-               "id": "ANALYZE_AND_DECIDE",
-               "description": "Analyze data and make decision",
-               "requires_sub_plan": true,
-               "sub_plans": [
-                   {{
-                       "id": "PREVIOUS_RESULTS",
-                       "description": "Using previous analysis results",
-                       "requires_sub_plan": false,
-                       "reasoning_nodes": []
-                   }},
-                   {{
-                       "id": "MAKE_DECISION",
-                       "description": "Make decision based on analysis",
-                       "requires_sub_plan": false,
-                       "reasoning_nodes": [
-                           {{
-                               "id": "DECIDE",
-                               "description": "Make the final decision"
-                           }}
-                       ]
-                   }}
-               ]
-           }}
-        
-        Example of BAD Complex Plan (Avoid This):
-        {{
-            "id": "COMPLEX_ANALYSIS",
-            "description": "Overly complex plan trying to do too much",
-            "requires_sub_plan": true,
-            "sub_plans": [
-                {{
-                    "id": "GATHER_DATA",
-                    "description": "Gather all possible data",
+        # Example JSON structure (non-f-string part)
+        example_json = '''
+        {
+            "understanding": "Your confirmation of understanding the tasks",
+            "plan_graph": {
+                "ANALYZE_DATA": {
+                    "node": {
+                        "node_id": "ANALYZE_DATA",
+                        "description": "Analyze the data to identify patterns and insights"
+                    },
+                    "objective": "Extract meaningful insights from the data",
                     "requires_sub_plan": false,
                     "reasoning_nodes": [
-                        {{"id": "OBSERVE", "description": "Gather data"}},
-                        {{"id": "ORIENT", "description": "Organize data"}},
-                        {{"id": "DECIDE", "description": "Decide what to keep"}},
-                        {{"id": "ACT", "description": "Store the data"}}
+                        {
+                            "id": "REASONING",
+                            "description": "Combined OODA (Observe, Orient, Decide, Act) reasoning step",
+                            "ooda_steps": ["OBSERVE", "ORIENT", "DECIDE", "ACT"]
+                        }
                     ]
-                }},
-                {{
-                    "id": "ANALYZE_DATA",
-                    "description": "Analyze the gathered data",
-                    "requires_sub_plan": false,
+                },
+                "GENERATE_REPORT": {
+                    "node": {
+                        "node_id": "GENERATE_REPORT",
+                        "description": "Generate a comprehensive report of findings"
+                    },
+                    "objective": "Create a clear and actionable report",
+                    "requires_sub_plan": true,
                     "reasoning_nodes": [
-                        {{"id": "OBSERVE", "description": "Review data"}},
-                        {{"id": "ORIENT", "description": "Find patterns"}},
-                        {{"id": "DECIDE", "description": "Determine insights"}},
-                        {{"id": "ACT", "description": "Document findings"}}
+                        {
+                            "id": "REASONING",
+                            "description": "Combined OODA (Observe, Orient, Decide, Act) reasoning step",
+                            "ooda_steps": ["OBSERVE", "ORIENT", "DECIDE", "ACT"]
+                        }
                     ]
-                }}
-            ]
-        }}
+                }
+            }
+        }
+        '''
+        
+        # Main prompt with f-strings
+        prompt = f"""
+        Create a plan graph for the workflow node: {workflow_node.node_id}
         
         Node Hierarchy:
         {hierarchy_text}
         
-        You MUST respond with a valid JSON object in the following exact format:
-        {{
-            "justification": "Your explanation for choosing this structure",
-            "plan_nodes": [
-                {{
-                    "id": "ANALYZE_TASK",
-                    "description": "Clear description of what this plan node does",
-                    "requires_sub_plan": false,
-                    "reasoning_nodes": [
-                        {{
-                            "id": "OBSERVE|ORIENT|DECIDE|ACT",
-                            "description": "What this reasoning step will do"
-                        }}
-                    ]
-                }}
-            ]
-        }}
+        Current Node Description: {workflow_node.description}
+        Overall Objective: {objective.current}
         
-        Rules for the JSON:
-        1. Plan node IDs must be:
-           - In UPPERCASE
-           - Single word or multiple words joined by underscores
-           - Descriptive of the node's task
-           - Examples: ANALYZE, CREATE_REPORT, PROCESS_DATA, GENERATE_SUMMARY
-           - Use PREVIOUS_RESULTS when reusing existing results
-        2. The requires_sub_plan property must be a boolean:
-           - If true: The node will be broken down into sub-plans later
-           - If false: The node must have reasoning_nodes
-        3. For nodes with requires_sub_plan=false:
-           - Must include reasoning_nodes array
-           - Each reasoning_node.id must be one of: OBSERVE, ORIENT, DECIDE, ACT
-           - Include ONLY the reasoning steps that are necessary and sufficient
-           - Do not include steps just because they're available
-        4. For nodes with requires_sub_plan=true:
-           - Must NOT include reasoning_nodes
-           - Will be broken down into sub-plans during execution
-        5. All fields are required
-        6. No additional fields are allowed
-        7. The JSON must be properly formatted with no trailing commas
+        Previous Results:
+        {previous_results_text}
         
-        Consider the node hierarchy when deciding whether to:
-        1. Break down a task into sub-plans (prefer not to)
-        2. Choose which reasoning steps are necessary (be selective!)
-        3. Structure the overall plan (keep it simple!)
-        4. Ensure each node builds upon previous results without duplication
-        5. Reuse previous results when available and valid
+        Instructions:
+        1. First, explicitly confirm your understanding of:
+           a) The workflow node task
+           b) The overall objective
+           c) The previous results and their implications
+        
+        2. Create a plan graph that:
+           a) Breaks down the workflow node into specific plan nodes with descriptive IDs
+           b) Each plan node should have a clear objective
+           c) Plan nodes can be sequential or parallel
+           d) Some plan nodes may require sub-plans
+        
+        3. For each plan node:
+           a) Define a clear objective
+           b) Specify if it requires sub-plans
+           c) Include a single reasoning step that combines OODA (Observe, Orient, Decide, Act)
+              - OBSERVE: Gather and collect information about the current situation
+              - ORIENT: Analyze and synthesize the observed information
+              - DECIDE: Make decisions based on the analysis
+              - ACT: Execute the decided actions
+        
+        4. Ensure the plan graph:
+           a) Builds upon previous results
+           b) Advances the overall objective
+           c) Maintains consistency with workflow-level outcomes
+        
+        Your response should be a JSON object with the following structure:
+        {example_json}
+        
+        Each plan node should have exactly one reasoning node with id "REASONING".
+        The reasoning node should combine all OODA steps into a single step while maintaining
+        the descriptive nature of the plan node IDs.
         """
         
-        # Use LLM to determine the structure
-        if context and context.reasoning_llm:
-            response = await context.reasoning_llm.query({
-                "prompt": plan_structure_prompt,
-                "system_prompt": (
-                    "You are determining the optimal plan structure for a workflow node. "
-                    "You must respond with a valid JSON object in the exact format specified."
-                ),
-                "parameters": {
-                    "temperature": 0.3,
-                    "max_tokens": 1000
-                }
-            })
-            
-            if response and "content" in response:
-                try:
-                    # Clean the response to ensure it's valid JSON
-                    content = response["content"].strip()
-                    
-                    # Find the first { and last } to extract just the JSON object
-                    start = content.find('{')
-                    end = content.rfind('}') + 1
-                    if start >= 0 and end > start:
-                        content = content[start:end]
-                    
-                    # Parse the JSON structure
-                    structure = json.loads(content)
-                    
-                    # Validate the structure
-                    if not isinstance(structure, dict):
-                        raise ValueError("Response must be a JSON object")
-                    
-                    if "justification" not in structure or "plan_nodes" not in structure:
-                        raise ValueError("Response must contain 'justification' and 'plan_nodes'")
-                    
-                    if not isinstance(structure["plan_nodes"], list):
-                        raise ValueError("'plan_nodes' must be a list")
-                    
-                    # Convert the structure into our plan graph format
-                    plan_graph = {}
-                    for plan_node in structure["plan_nodes"]:
-                        if not all(k in plan_node for k in ["id", "description", "requires_sub_plan"]):
-                            raise ValueError(
-                                "Each plan node must have 'id', 'description', and 'requires_sub_plan'"
-                            )
-                        
-                        plan_id = plan_node["id"]
-                        if not plan_id.isupper():
-                            raise ValueError(f"Plan node ID must be in UPPERCASE: {plan_id}")
-                        
-                        if not all(word.isalnum() for word in plan_id.split('_')):
-                            raise ValueError(
-                                "Plan node ID must contain only alphanumeric characters and underscores: "
-                                f"{plan_id}"
-                            )
-                        
-                        if len(plan_id.split('_')) > 5:  # Limit to 5 words for readability
-                            raise ValueError(f"Plan node ID should not exceed 5 words: {plan_id}")
-                        
-                        requires_sub_plan = plan_node["requires_sub_plan"]
-                        if not isinstance(requires_sub_plan, bool):
-                            raise ValueError("requires_sub_plan must be a boolean")
-                        
-                        if requires_sub_plan:
-                            if "reasoning_nodes" in plan_node:
-                                raise ValueError(
-                                    "Nodes with requires_sub_plan=true must not have reasoning_nodes"
-                                )
-                        else:
-                            if "reasoning_nodes" not in plan_node:
-                                raise ValueError(
-                                    "Nodes with requires_sub_plan=false must have reasoning_nodes"
-                                )
-                            
-                            reasoning_nodes = plan_node["reasoning_nodes"]
-                            if not isinstance(reasoning_nodes, list):
-                                raise ValueError("'reasoning_nodes' must be a list")
-                            
-                            # Validate reasoning nodes
-                            valid_steps = {"OBSERVE", "ORIENT", "DECIDE", "ACT"}
-                            for rnode in reasoning_nodes:
-                                required_fields = ["id", "description"]
-                                if not all(k in rnode for k in required_fields):
-                                    raise ValueError(
-                                        "Each reasoning node must have 'id' and 'description'"
-                                    )
-                                
-                                if rnode["id"] not in valid_steps:
-                                    raise ValueError(f"Invalid reasoning step: {rnode['id']}")
-                        
-                        plan_graph[plan_id] = {
-                            'node': Node(
-                                node_id=plan_id,
-                                node_type=NodeType.TASK,
-                                description=plan_node["description"],
-                                metadata={
-                                    'requires_sub_plan': requires_sub_plan,
-                                    'justification': structure["justification"]
-                                }
-                            ),
-                            'requires_sub_plan': requires_sub_plan
-                        }
-                        
-                        if not requires_sub_plan:
-                            plan_graph[plan_id]['reasoning_nodes'] = reasoning_nodes
-                    
-                    return plan_graph
-                    
-                except json.JSONDecodeError as e:
-                    logger.error(f"Invalid JSON in response: {e}")
-                    logger.error(f"Response content: {response['content']}")
-                    return None
-                except ValueError as e:
-                    logger.error(f"Invalid structure in response: {e}")
-                    logger.error(f"Response content: {response['content']}")
-                    return None
-                except Exception as e:
-                    logger.error(f"Unexpected error parsing plan structure: {e}")
-                    logger.error(f"Response content: {response['content']}")
-                    return None
+        # Call the LLM to create the plan graph
+        result = await self._call_llm(
+            prompt,
+            context,
+            "You are creating a plan graph for a workflow node."
+        )
         
-        return None
+        try:
+            # Parse the JSON response
+            response_data = json.loads(result)
+            plan_graph = response_data.get('plan_graph', {})
+            
+            # Validate the plan graph structure
+            for plan_id, plan_data in plan_graph.items():
+                if not isinstance(plan_data, dict):
+                    raise ValueError(f"Invalid plan data for {plan_id}")
+                
+                if 'node' not in plan_data:
+                    raise ValueError(f"Missing node data for {plan_id}")
+                
+                if 'reasoning_nodes' not in plan_data:
+                    raise ValueError(f"Missing reasoning nodes for {plan_id}")
+                
+                # Ensure there is exactly one reasoning node with id "REASONING"
+                reasoning_nodes = plan_data['reasoning_nodes']
+                if len(reasoning_nodes) != 1:
+                    raise ValueError(f"Expected exactly one reasoning node for {plan_id}")
+                if reasoning_nodes[0]['id'] != "REASONING":
+                    raise ValueError(f"Reasoning node must have id 'REASONING' for {plan_id}")
+                
+                # Ensure the reasoning node has OODA steps
+                if 'ooda_steps' not in reasoning_nodes[0]:
+                    raise ValueError(f"Reasoning node must have ooda_steps for {plan_id}")
+                if reasoning_nodes[0]['ooda_steps'] != OODA_STEPS:
+                    raise ValueError(f"Reasoning node must have correct OODA steps for {plan_id}")
+            
+            return plan_graph
+            
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse plan graph as JSON: {e}")
+            logger.error(f"Raw response: {result}")
+            return {}
+        except ValueError as e:
+            logger.error(f"Invalid plan graph structure: {e}")
+            return {}
     
     async def _execute_plan_graph(
         self,
@@ -592,12 +345,16 @@ class OptimalWorkflowExecutor(WorkflowExecutor):
         """
         plan_results = {}
         
+        logger.info(f"\nExecuting plan graph with parent nodes: {[n.node_id for n in parent_nodes]}")
+        
         for plan_id, plan_data in plan_graph.items():
             plan_node = plan_data['node']
             requires_sub_plan = plan_data.get('requires_sub_plan', False)
             
             # Set current plan for results tracking
             self.results.set_current_plan(plan_id)
+            logger.info(f"\nProcessing plan node: {plan_id}")
+            logger.info(f"Parent nodes: {[n.node_id for n in parent_nodes]}")
             
             if requires_sub_plan:
                 # Create sub-plan graph for this node
@@ -622,42 +379,111 @@ class OptimalWorkflowExecutor(WorkflowExecutor):
                         'error': 'Failed to create sub-plan graph'
                     }
             else:
-                # Execute reasoning nodes for this plan node
-                reasoning_nodes = plan_data['reasoning_nodes']
+                # Execute reasoning for this plan node
+                reasoning_node = plan_data['reasoning_nodes'][0]  # Get the single reasoning node
                 
-                for reasoning_node in reasoning_nodes:
-                    # Create result key for this step, prepending workflow node ID
-                    workflow_node_id = parent_nodes[0].node_id
+                # Create result key for the reasoning step
+                workflow_node_id = parent_nodes[0].node_id
+                composite_id = f"{workflow_node_id}.{plan_id}"
+                
+                # Get previous results for the reasoning step
+                result_key = ResultKey(
+                    node_id=composite_id,
+                    step="REASONING"
+                )
+                previous_results = self.results.get_relevant_context(result_key)
+                
+                # Create a prompt for the reasoning step
+                workflow_task = parent_nodes[0].description
+                plan_task = plan_node.description
+                reasoning_task = reasoning_node.get('description', '')
+                
+                # Create hierarchy text and previous results text
+                hierarchy_text = self._create_hierarchy_text(parent_nodes + [plan_node])
+                previous_results_text = self._format_previous_results(previous_results, composite_id)
+                
+                # Build the prompt using string concatenation
+                reasoning_prompt = (
+                    "Execute the reasoning step for the current plan node.\n\n"
+                    f"Node Hierarchy:\n{hierarchy_text}\n\n"
+                    f"Current Plan Node: {plan_id}\n"
+                    f"Plan Description: {plan_node.description}\n"
+                    f"Plan Objective: {reasoning_node.get('description', '')}\n\n"
+                    f"Overall Objective: {objective.current}\n\n"
+                    f"Previous Results:\n{previous_results_text}\n\n"
+                    "Instructions:\n"
+                    "1. First, explicitly confirm your understanding of the tasks,\n"
+                    f"   a) The workflow node task: {workflow_task}\n"
+                    f"   b) The current plan node task: {plan_task}\n"
+                    f"   c) Your specific reasoning step task: {reasoning_task}\n\n"
+                    "2. Review all previous results carefully, following the usage instructions for each context\n"
+                    "3. Build upon earlier observations and analysis\n"
+                    "4. Maintain consistency with workflow-level outcomes\n"
+                    "5. Coordinate with results from parallel plan nodes\n"
+                    "6. Ensure your response advances the overall objective\n\n"
+                    "7. Execute the OODA (Observe, Orient, Decide, Act) cycle:\n"
+                    "   a) OBSERVE: Gather and collect information about the current situation\n"
+                    "      - What information is available?\n"
+                    "      - What are the key facts and data points?\n"
+                    "      - What is the current state of the system?\n"
+                    "      - What patterns or anomalies can be identified?\n\n"
+                    "   b) ORIENT: Analyze and synthesize the observed information\n"
+                    "      - What does the collected information mean in this context?\n"
+                    "      - How does it relate to the objective?\n"
+                    "      - What patterns or relationships emerge?\n"
+                    "      - What are the implications of these observations?\n\n"
+                    "   c) DECIDE: Make decisions based on the analysis\n"
+                    "      - What are the possible courses of action?\n"
+                    "      - What are the pros and cons of each option?\n"
+                    "      - What is the best path forward?\n"
+                    "      - What specific actions should be taken?\n\n"
+                    "   d) ACT: Execute the decided actions\n"
+                    "      - What specific steps need to be taken?\n"
+                    "      - How should the decision be implemented?\n"
+                    "      - What is the expected outcome?\n"
+                    "      - How will success be measured?\n\n"
+                    "Your response should be a JSON object with the following structure:\n"
+                    "{\n"
+                    "    \"understanding\": \"Your confirmation of understanding\",\n"
+                    "    \"result\": {\n"
+                    "        \"OBSERVE\": \"Your observations\",\n"
+                    "        \"ORIENT\": \"Your analysis\",\n"
+                    "        \"DECIDE\": \"Your decisions\",\n"
+                    "        \"ACT\": \"Your actions\"\n"
+                    "    }\n"
+                    "}"
+                )
+                
+                # Execute the reasoning step
+                result = await self._call_llm(
+                    reasoning_prompt,
+                    context,
+                    "You are executing a reasoning step for a plan node."
+                )
+                
+                try:
+                    # Parse the JSON response
+                    response_data = json.loads(result)
+                    reasoning_result = response_data.get('result', {})
+                    
+                    # Store the reasoning result
                     result_key = ResultKey(
-                        node_id=f"{workflow_node_id}.{plan_id}",
-                        step=reasoning_node['id']
+                        node_id=composite_id,
+                        step="REASONING"
                     )
+                    self.results.store(result_key, reasoning_result)
+                    logger.info(f"Stored reasoning result for key: {result_key}")
                     
-                    # Get previous results
-                    previous_results = self.results.get_relevant_context(result_key)
-                    
-                    # Create prompt for this reasoning step
-                    prompt = self._create_reasoning_prompt(
-                        parent_nodes + [plan_node],  # full hierarchy including current plan
-                        reasoning_node,
-                        objective,
-                        context,
-                        previous_results
-                    )
-                    
-                    # Execute the reasoning node
-                    result = await self._call_llm(prompt, context)
-                    
-                    # Store result
-                    self.results.store(result_key, result)
-                
-                # Get all results for this plan node
-                plan_results[plan_id] = {
-                    'reasoning': {
-                        step: self.results.get_latest(f"{workflow_node_id}.{plan_id}", step)
-                        for step in OODA_STEPS
+                    # Get the reasoning result for this plan node
+                    plan_results[plan_id] = {
+                        'reasoning': self.results.get_latest(composite_id, "REASONING")
                     }
-                }
+                except json.JSONDecodeError as e:
+                    logger.error(f"Failed to parse reasoning result as JSON: {e}")
+                    logger.error(f"Raw response: {result}")
+                    plan_results[plan_id] = {
+                        'error': 'Failed to parse reasoning result'
+                    }
         
         return plan_results
     
@@ -792,7 +618,7 @@ class OptimalWorkflowExecutor(WorkflowExecutor):
         {previous_results_section}
         
         Instructions:
-        1. First, explicitly confirm your understanding of:
+        1. First, explicitly confirm your understanding of the tasks,
            a) The workflow node task: {parent_nodes[0].description}
            b) The current plan node task: {current_plan.description}
            c) Your specific reasoning step task: {reasoning_node.get('description', '')}
@@ -840,4 +666,184 @@ class OptimalWorkflowExecutor(WorkflowExecutor):
             if response and "content" in response:
                 return response["content"]
         
-        return "Error: No LLM response available" 
+        return "Error: No LLM response available"
+    
+    async def _create_workflow_summary(
+        self,
+        workflow_node: Node,
+        plan_results: Dict[str, Any],
+        objective: Objective,
+        context: ExecutionContext
+    ) -> None:
+        """Create and store a workflow-level summary of all plan results.
+        
+        Args:
+            workflow_node: The current workflow node
+            plan_results: Results from all plan nodes
+            objective: The overall task objective
+            context: Current execution context
+        """
+        # Create a summary prompt that includes all plan results
+        summary_prompt = f"""
+        Create a comprehensive summary of the results from the {workflow_node.node_id} workflow step.
+        This summary will be used by subsequent workflow steps to understand what has been accomplished
+        and avoid repeating work.
+        
+        Workflow Node: {workflow_node.node_id}
+        Description: {workflow_node.description}
+        Objective: {objective.current}
+        
+        Plan Results:
+        """
+        
+        # Add each plan's results to the prompt
+        for plan_id, results in plan_results.items():
+            if isinstance(results, dict) and 'reasoning' in results:
+                summary_prompt += f"\nPlan: {plan_id}\n"
+                for step, result in results['reasoning'].items():
+                    summary_prompt += f"{step}:\n{result}\n"
+        
+        summary_prompt += """
+        Instructions:
+        1. Review all plan results carefully
+        2. Create a clear, concise summary that:
+           - Captures the key findings and decisions
+           - Highlights important patterns or insights
+           - Notes any limitations or assumptions
+           - Identifies what work has been completed
+        3. Format the summary in a way that will be useful for subsequent workflow steps
+        4. Focus on information that will help avoid repeating work
+        """
+        
+        # Get the summary from the LLM
+        if context and context.reasoning_llm:
+            response = await context.reasoning_llm.query({
+                "prompt": summary_prompt,
+                "system_prompt": "You are creating a workflow-level summary of completed work.",
+                "parameters": {
+                    "temperature": 0.3,
+                    "max_tokens": 1000
+                }
+            })
+            
+            if response and "content" in response:
+                # Store the summary with a special key format
+                summary_key = ResultKey(
+                    node_id=f"{workflow_node.node_id}.SUMMARY",
+                    step="ALL"
+                )
+                self.results.store(summary_key, response["content"])
+                logger.info(f"Stored workflow summary for {workflow_node.node_id}")
+            else:
+                logger.warning(f"Failed to create workflow summary for {workflow_node.node_id}")
+        else:
+            logger.warning("No LLM available to create workflow summary")
+    
+    def _create_hierarchy_text(self, nodes: List[Node]) -> str:
+        """Create a text description of the node hierarchy.
+        
+        Args:
+            nodes: List of nodes from workflow root to current node
+            
+        Returns:
+            Formatted hierarchy text
+        """
+        hierarchy_desc = []
+        for i, node in enumerate(nodes):
+            if i == 0:
+                hierarchy_desc.append(f"Workflow Node: {node.node_id} - {node.description}")
+            else:
+                hierarchy_desc.append(f"Level {i} Plan: {node.node_id} - {node.description}")
+        return "\n".join(hierarchy_desc)
+    
+    def _get_ooda_description(self, step: str) -> str:
+        """Get the description for an OODA step.
+        
+        Args:
+            step: The OODA step name
+            
+        Returns:
+            The step description
+        """
+        ooda_descriptions = {
+            "OBSERVE": """
+                OBSERVE: Gather and collect information about the current situation
+                - What information is available?
+                - What are the key facts and data points?
+                - What is the current state of the system?
+                - What patterns or anomalies can be identified?
+                Your response should focus on objective observations and data gathering.
+            """,
+            "ORIENT": """
+                ORIENT: Analyze and synthesize the observed information
+                - What does the collected information mean in this context?
+                - How does it relate to the objective?
+                - What patterns or relationships emerge?
+                - What are the implications of these observations?
+                Your response should focus on analysis and understanding of the observations.
+            """,
+            "DECIDE": """
+                DECIDE: Make decisions based on the analysis
+                - What are the possible courses of action?
+                - What are the pros and cons of each option?
+                - What is the best path forward?
+                - What specific actions should be taken?
+                Your response should focus on clear decision-making and justification.
+            """,
+            "ACT": """
+                ACT: Execute the decided actions
+                - What specific steps need to be taken?
+                - How should the decision be implemented?
+                - What is the expected outcome?
+                - How will success be measured?
+                Your response should focus on concrete actions and implementation details.
+            """
+        }
+        return ooda_descriptions.get(step, "")
+    
+    def _format_previous_results(
+        self,
+        previous_results: Dict[str, Any],
+        composite_id: str
+    ) -> str:
+        """Format previous results for inclusion in a prompt.
+        
+        Args:
+            previous_results: Dictionary of previous results with context
+            composite_id: The composite node ID
+            
+        Returns:
+            Formatted previous results text
+        """
+        result_texts = []
+        
+        # Add immediate context
+        immediate_context = previous_results.get('immediate_context', {})
+        if immediate_context.get('results'):
+            result_texts.append("Previous steps in current plan:")
+            result_texts.append(immediate_context['usage'])
+            for key, result in immediate_context['results'].items():
+                step = key.split('.')[-1]
+                result_texts.append(f"- {step}: {result}")
+        
+        # Add recent context
+        recent_context = previous_results.get('recent_context', {})
+        if recent_context.get('results'):
+            result_texts.append("\nResults from recent plan nodes:")
+            result_texts.append(recent_context['usage'])
+            for key, result in recent_context['results'].items():
+                plan_id = key.split('.')[0]
+                step = key.split('.')[-1]
+                result_texts.append(f"- {plan_id} ({step}): {result}")
+        
+        # Add historical context
+        historical_context = previous_results.get('historical_context', {})
+        if historical_context.get('results'):
+            result_texts.append("\nImportant historical results:")
+            result_texts.append(historical_context['usage'])
+            for key, result in historical_context['results'].items():
+                node_id = key.split('.')[0]
+                step = key.split('.')[-1]
+                result_texts.append(f"- {node_id} ({step}): {result}")
+        
+        return "\n".join(result_texts) if result_texts else "No previous results available" 
