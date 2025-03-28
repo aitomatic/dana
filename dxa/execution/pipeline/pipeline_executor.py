@@ -110,17 +110,6 @@ class PipelineExecutor(Executor):
             DXA_LOGGER.error("Node %s failed: %s", node.node_id, str(e))
             return [self._create_error_signal(node.node_id, str(e))]
 
-    # pylint: disable=unused-argument
-    def _should_propagate_down(self, signal: ExecutionSignal) -> bool:
-        """Pipelines are flat, so no downward propagation."""
-        # Add logic here to filter downward signals
-        return False
-
-    def _should_propagate_up(self, signal: ExecutionSignal) -> bool:
-        """Pipelines are flat, so no upward propagation."""
-        # Add logic here to filter upward signals
-        return False
-
     def create_graph_from_upper_node(
         self,
         upper_node: Optional[ExecutionNode] = None,

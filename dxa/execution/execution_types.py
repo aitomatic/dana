@@ -59,7 +59,24 @@ class ExecutionNode(Node):
     def set_prompt_in_metadata(cls, prompt: str, metadata: Dict[str, Any]) -> None:
         """Set the prompt in the metadata."""
         if metadata:
-            metadata['prompt'] = prompt 
+            metadata['prompt'] = prompt
+            
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert node to dictionary representation.
+        
+        Returns:
+            Dictionary containing node data
+        """
+        return {
+            "node_id": self.node_id,
+            "node_type": self.node_type,
+            "description": self.description,
+            "status": self.status,
+            "metadata": self.metadata,
+            "requires": self.requires,
+            "provides": self.provides,
+            "buffer_config": self.buffer_config
+        }
 
 @dataclass
 class ExecutionEdge(Edge):
