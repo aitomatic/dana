@@ -57,7 +57,7 @@ class ExecutionFactory(Generic[GraphT]):
         task_node = ExecutionNode(
             node_id="TASK",
             node_type=NodeType.TASK,
-            description="Basic task"
+            objective=objective or "Basic task"
         )
         
         # Use create_sequential_graph with the single task node
@@ -90,7 +90,7 @@ class ExecutionFactory(Generic[GraphT]):
         start_node = ExecutionNode(
             node_id="START",
             node_type=NodeType.START,
-            description="Start node"
+            objective="Start node"
         )
         graph.add_node(start_node)
         
@@ -105,7 +105,7 @@ class ExecutionFactory(Generic[GraphT]):
         end_node = ExecutionNode(
             node_id="END",
             node_type=NodeType.END,
-            description="End node"
+            objective="End node"
         )
         graph.add_node(end_node)
         graph.add_edge_between(prev_node_id, "END")

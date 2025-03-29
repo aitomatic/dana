@@ -3,13 +3,13 @@ Example demonstrating how to run a Default workflow using our refactored Workflo
 
 This example showcases our architectural changes that formalize the relationship between execution layers:
 - Each lower layer creates its graphs from nodes in the upper layer
-- Using create_graph_from_node instead of _create_graph throughout the architecture
+- Using create_graph_from_upper_node instead of _create_graph throughout the architecture
 - Maintaining explicit connections between layers via the upper_node parameter
 
 The example performs a Customer Review Analysis task, walking through:
 1. Creating a Default workflow with a structured process (Define -> Research -> Strategize -> Execute -> Evaluate)
 2. Setting up the three-layer executor hierarchy (Workflow -> Plan -> Reasoning)
-3. Running the workflow through all three layers using our refactored create_graph_from_node pattern
+3. Running the workflow through all three layers using our refactored create_graph_from_upper_node pattern
 4. Processing and displaying results in a structured format
 
 This demonstrates how our refactoring improves architecture clarity and maintainability

@@ -53,7 +53,7 @@ class WorkflowFactory(ExecutionFactory[Workflow]):
         task_node = ExecutionNode(
             node_id="task",
             node_type=NodeType.TASK,
-            description="Execute task"
+            objective="Execute task"
         )
         workflow.add_node(task_node)
         
@@ -83,7 +83,7 @@ class WorkflowFactory(ExecutionFactory[Workflow]):
             ExecutionNode(
                 node_id=f"TASK_{i}",
                 node_type=NodeType.TASK,
-                description=command
+                objective=f"{command} in {objective.current if isinstance(objective, Objective) else objective}"
             )
             for i, command in enumerate(commands)
         ]
@@ -141,7 +141,7 @@ class WorkflowFactory(ExecutionFactory[Workflow]):
                 node = ExecutionNode(
                     node_id=node_data["id"],
                     node_type=NodeType[node_data["type"].upper()],
-                    description=node_data.get("description", "")
+                    objective=node_data.get("objective", "")
                 )
                 workflow.add_node(node)
                 node_ids.append(node.node_id)

@@ -42,7 +42,7 @@ async def create_workflow() -> Workflow:
     start_node = ExecutionNode(
         node_id="START",
         node_type=NodeType.START,
-        description="Start analysis"
+        objective="Start analysis"
     )
     workflow.add_node(start_node)
     
@@ -50,7 +50,7 @@ async def create_workflow() -> Workflow:
     gather_node = ExecutionNode(
         node_id="GATHER",
         node_type=NodeType.TASK,
-        description="Gather customer feedback data",
+        objective="Gather customer feedback data",
         metadata={
             "output_key": "feedback_data",
             "task_type": "data_collection"
@@ -62,7 +62,7 @@ async def create_workflow() -> Workflow:
     process_node = ExecutionNode(
         node_id="PROCESS",
         node_type=NodeType.TASK,
-        description="Process and clean the feedback data",
+        objective="Process and clean the feedback data",
         metadata={
             "input_key": "feedback_data",
             "output_key": "processed_data",
@@ -75,7 +75,7 @@ async def create_workflow() -> Workflow:
     analyze_node = ExecutionNode(
         node_id="ANALYZE",
         node_type=NodeType.TASK,
-        description="Analyze processed data and generate insights",
+        objective="Analyze processed data and generate insights",
         metadata={
             "input_key": "processed_data",
             "output_key": "insights",
@@ -87,7 +87,7 @@ async def create_workflow() -> Workflow:
     end_node = ExecutionNode(
         node_id="END",
         node_type=NodeType.END,
-        description="End analysis"
+        objective="End analysis"
     )
     workflow.add_node(end_node)
     

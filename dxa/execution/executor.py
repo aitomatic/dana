@@ -541,7 +541,7 @@ class Executor(Loggable, ABC, Generic[StrategyT, GraphT, FactoryT]):
         try:
             # Create a basic graph with START -> TASK -> END using the factory
             return self._factory_class.create_basic_graph(
-                objective=Objective(node.metadata.get("description", "")),
+                objective=node.objective,
                 name=f"{self.graph_class.__name__.lower()}_{node.node_id}"
             )
         except Exception as e:

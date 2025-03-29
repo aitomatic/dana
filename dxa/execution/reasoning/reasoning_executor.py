@@ -1,12 +1,12 @@
 """Reasoning executor implementation."""
 
+from typing import List
 from ..executor import Executor
 from .reasoning import Reasoning
 from .reasoning_strategy import ReasoningStrategy
 from .reasoning_factory import ReasoningFactory
 from ..execution_types import ExecutionNode, ExecutionSignal
 from ..execution_context import ExecutionContext
-from typing import List
 
 class ReasoningExecutor(Executor[ReasoningStrategy, Reasoning, ReasoningFactory]):
     """Executor for reasoning layer tasks.
@@ -59,6 +59,9 @@ class ReasoningExecutor(Executor[ReasoningStrategy, Reasoning, ReasoningFactory]
             print(f"  Type: {workflow_node.node_type}")
             print(f"  Description: {workflow_node.description}")
             print(f"  Status: {workflow_node.status}")
+            workflow_obj = context.current_workflow.objective if context.current_workflow else None
+            print(f"  Workflow Objective: {workflow_obj.current if workflow_obj else 'None'}")
+            print(f"  Node Objective: {workflow_node.objective.current if workflow_node.objective else 'None'}")
             
             # Plan node (middle level)
             if plan_node:
@@ -67,6 +70,9 @@ class ReasoningExecutor(Executor[ReasoningStrategy, Reasoning, ReasoningFactory]
                 print(f"    Type: {plan_node.node_type}")
                 print(f"    Description: {plan_node.description}")
                 print(f"    Status: {plan_node.status}")
+                plan_obj = context.current_plan.objective if context.current_plan else None
+                print(f"    Plan Objective: {plan_obj.current if plan_obj else 'None'}")
+                print(f"    Node Objective: {plan_node.objective.current if plan_node.objective else 'None'}")
                 
                 # Reasoning node (bottom level)
                 print("\n    Reasoning Node:")
@@ -74,6 +80,9 @@ class ReasoningExecutor(Executor[ReasoningStrategy, Reasoning, ReasoningFactory]
                 print(f"      Type: {node.node_type}")
                 print(f"      Description: {node.description}")
                 print(f"      Status: {node.status}")
+                reasoning_obj = context.current_reasoning.objective if context.current_reasoning else None
+                print(f"      Reasoning Objective: {reasoning_obj.current if reasoning_obj else 'None'}")
+                print(f"      Node Objective: {node.objective.current if node.objective else 'None'}")
                 print(f"      Metadata: {node.metadata}")
         
         # For now, just return an empty list of signals
