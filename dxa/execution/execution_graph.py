@@ -124,7 +124,7 @@ class ExecutionGraph(DirectedGraph):
             start_node = ExecutionNode(
                 node_id="START",
                 node_type=NodeType.START,
-                description="Begin execution"
+                objective="Begin execution"
             )
             graph.add_node(start_node)
             node_ids.append("START")
@@ -144,7 +144,7 @@ class ExecutionGraph(DirectedGraph):
             end_node = ExecutionNode(
                 node_id="END",
                 node_type=NodeType.END,
-                description="End execution"
+                objective="End execution"
             )
             graph.add_node(end_node)
             node_ids.append("END")
@@ -167,7 +167,7 @@ class ExecutionGraph(DirectedGraph):
                                           config_path: Optional[str],
                                           custom_prompts: Optional[Dict[str, str]]) -> None:
         """Process a single node from YAML data and add it to the graph."""
-        description = node_data.get('description', '')
+        objective = node_data.get('objective', '')
         
         # Determine node type
         if 'type' not in node_data:
@@ -205,14 +205,14 @@ class ExecutionGraph(DirectedGraph):
         metadata['prompt'] = prompt_text
 
         # If no description, use the prompt text as the description
-        if not description:
-            description = prompt_text
+        if not objective:
+            objective = prompt_text
 
         # Create and add the node
         node = ExecutionNode(
             node_id=node_id,
             node_type=node_type,
-            description=description,
+            objective=objective,
             metadata=metadata
         )
         graph.add_node(node)
@@ -299,12 +299,12 @@ class ExecutionGraph(DirectedGraph):
                 # Create ExecutionEdge instead of Edge
                 graph.add_edge(ExecutionEdge(source=node_ids[i], target=node_ids[i + 1]))
 
-    def add_step(self, step_id: str, description: str, **kwargs) -> ExecutionNode:
+    def add_step(self, step_id: str, objective: str, **kwargs) -> ExecutionNode:
         """Add an execution step."""
         node = ExecutionNode(
             node_id=step_id,
             node_type=NodeType.TASK,
-            description=description,
+            objective=objective,
             status=ExecutionNodeStatus.PENDING,
             metadata=kwargs.get('metadata', {}),
             **kwargs
@@ -346,7 +346,7 @@ class ExecutionGraph(DirectedGraph):
         start_node = node_cls(
             node_id="START",
             node_type=NodeType.START,
-            description=f"Begin {graph_name}"
+            objective=f"Begin {graph_name}"
         )
         graph.add_node(start_node)
 
@@ -363,7 +363,7 @@ class ExecutionGraph(DirectedGraph):
         end_node = node_cls(
             node_id="END",
             node_type=NodeType.END,
-            description=f"End {graph_name}"
+            objective=f"End {graph_name}"
         )
         graph.add_node(end_node)
 
@@ -506,7 +506,7 @@ class ExecutionGraph(DirectedGraph):
                 node_id: {
                     'node_type': cast(ExecutionNode, node).node_type,
                     'status': cast(ExecutionNode, node).status.value,
-                    'description': node.description,
+                    'objective': node.objective,
                     'metadata': node.metadata
                 }
                 for node_id, node in self.nodes.items()
