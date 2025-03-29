@@ -7,7 +7,7 @@ from dxa.execution import WorkflowStrategy, ReasoningStrategy
 
 def create_research_workflow():
     """Create predefined research steps."""
-    return WorkflowFactory.create_sequential_workflow(
+    return WorkflowFactory.create_basic_workflow(
         objective="Research AI safety",
         commands=[
             "Identify key AI safety organizations",

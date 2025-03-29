@@ -16,7 +16,7 @@ async def main():
     llm = LLMResource(name="simple_workflow_llm")
     
     # Create a simple workflow with three steps
-    workflow = WorkflowFactory.create_sequential_workflow(
+    workflow = WorkflowFactory.create_basic_workflow(
         objective=Objective("Demonstrate basic workflow execution"),
         commands=[
             "Step 1: Initialize",
@@ -39,7 +39,7 @@ async def main():
     executor = WorkflowExecutor()
     
     # Execute workflow
-    signals = await executor.execute_workflow(workflow, context)
+    signals = await executor.execute(workflow, context)
 
     # Print results
     print("\nWorkflow Results:")

@@ -10,10 +10,30 @@ from ...execution import (
 )
 from .pipeline import PipelineNode, Pipeline
 from .pipeline_context import PipelineContext
+from .pipeline_strategy import PipelineStrategy
+from .pipeline_factory import PipelineFactory
 from ...common import DXA_LOGGER
 
-class PipelineExecutor(Executor):
+class PipelineExecutor(Executor[PipelineStrategy, Pipeline, PipelineFactory]):
     """Executes pipeline steps in sequence."""
+
+    # Class attributes for layer configuration
+    _strategy_type = PipelineStrategy
+    _default_strategy = PipelineStrategy.DEFAULT
+    graph_class = Pipeline
+    _factory_class = PipelineFactory
+    _depth = 0
+    
+    def __init__(
+        self,
+        strategy: Optional[PipelineStrategy] = None
+    ):
+        """Initialize pipeline executor.
+        
+        Args:
+            strategy: Pipeline execution strategy
+        """
+        super().__init__(strategy=strategy)
 
     async def execute(self, pipeline: 'Pipeline', context: 'PipelineContext') -> List[ExecutionSignal]:
         """Execute the entire pipeline.
