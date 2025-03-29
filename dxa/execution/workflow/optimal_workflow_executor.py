@@ -10,10 +10,6 @@ from typing import List, Dict, Any, Optional
 from ...common.graph import (
     Node,
 )
-from ..results import (
-    ExecutionResults,
-    ResultKey,
-)
 from ..execution_graph import ExecutionGraph
 from ..execution_context import ExecutionContext
 from ..execution_types import (
@@ -83,7 +79,7 @@ class OptimalWorkflowExecutor(WorkflowExecutor):
         self.results.set_current_plan(start_node.node_id)
         
         # Execute the graph
-        return await self.execute_graph(
+        return await self.execute(
             workflow,
             context,
             prev_signals,

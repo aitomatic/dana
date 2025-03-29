@@ -62,7 +62,7 @@ class TestWorkflowFactory(unittest.TestCase):
         commands = ["First Task", "Second Task"]
 
         # Create the workflow using the factory
-        workflow = WorkflowFactory.create_sequential_workflow(objective, commands)
+        workflow = WorkflowFactory.create_basic_workflow(objective, commands)
 
         # Assertions
         self.assertEqual(len(workflow.nodes), 4, "Workflow should have 4 nodes (including START and END)")
@@ -127,29 +127,29 @@ class TestWorkflowFactory(unittest.TestCase):
     def test_sequential_workflow_edge_cases(self):
         """Test create_sequential_workflow with edge cases."""
         # Test with empty commands list
-        workflow = WorkflowFactory.create_sequential_workflow("Empty Test", [])
+        workflow = WorkflowFactory.create_basic_workflow("Empty Test", [])
         self.assertEqual(len(workflow.nodes), 2)  # Just START and END
         self.assertEqual(len(workflow.edges), 1)  # START -> END
 
         # Test with single command
-        workflow = WorkflowFactory.create_sequential_workflow("Single Test", ["Only Task"])
+        workflow = WorkflowFactory.create_basic_workflow("Single Test", ["Only Task"])
         self.assertEqual(len(workflow.nodes), 3)
         self._get_step_and_assert_description(workflow, "TASK_0", "Only Task")
 
         # Test with many commands
         many_commands = [f"Task {i}" for i in range(100)]
-        workflow = WorkflowFactory.create_sequential_workflow("Many Tests", many_commands)
+        workflow = WorkflowFactory.create_basic_workflow("Many Tests", many_commands)
         self.assertEqual(len(workflow.nodes), 102)  # 100 tasks + START + END
         self._get_step_and_assert_description(workflow, "TASK_99", "Task 99")
 
         # Test with Objective instance
         obj = Objective("Test with Objective")
-        workflow = WorkflowFactory.create_sequential_workflow(obj, ["Task 1", "Task 2"])
+        workflow = WorkflowFactory.create_basic_workflow(obj, ["Task 1", "Task 2"])
         self.assertEqual(workflow.objective, obj)
 
     def test_workflow_connectivity(self):
         """Test workflow graph connectivity."""
-        workflow = WorkflowFactory.create_sequential_workflow(
+        workflow = WorkflowFactory.create_basic_workflow(
             "Test Connectivity", 
             ["Task 1", "Task 2", "Task 3"]
         )
@@ -188,7 +188,7 @@ class TestWorkflowFactory(unittest.TestCase):
 
     def test_node_id_generation(self):
         """Test node ID generation in sequential workflow."""
-        workflow = WorkflowFactory.create_sequential_workflow(
+        workflow = WorkflowFactory.create_basic_workflow(
             "Test IDs", 
             ["First", "Second", "Third"]
         )
