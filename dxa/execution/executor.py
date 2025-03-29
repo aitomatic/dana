@@ -141,13 +141,18 @@ class Executor(Loggable, ABC, Generic[StrategyT, GraphT, FactoryT]):
         self._log_execution_start(graph)
         
         # Create cursor starting at START node
-        graph.cursor = graph.start_cursor()
+        cursor = graph.start_cursor()
+        graph.cursor = cursor
         
         # Execute nodes in sequence
         signals = []
         
         # Traverse graph using cursor
-        for node in graph.cursor:
+        while True:
+            node = cursor.next()
+            if node is None:
+                break
+                
             # Execute current node
             node_signals = await self.execute_node(
                 cast(ExecutionNode, node),
@@ -170,12 +175,23 @@ class Executor(Loggable, ABC, Generic[StrategyT, GraphT, FactoryT]):
     ) -> List[ExecutionSignal]:
         """Execute a node in the execution graph."""
         try:
+            # Initial status check
+            if node.status == ExecutionNodeStatus.BLOCKED:
+                return []
+                
+            # Set to PENDING when execution begins
+            node.status = ExecutionNodeStatus.PENDING
+            
             # Phase 1: Pre-execution setup
             await self._pre_execute_node(node)
             
             # Phase 2: Node validation
             if not self._validate_node_for_execution(node):
+                node.status = ExecutionNodeStatus.SKIPPED
                 return []
+            
+            # Set to IN_PROGRESS when actual execution starts
+            node.status = ExecutionNodeStatus.IN_PROGRESS
             
             # Phase 3: Build context
             execution_context = self.build_execution_context(
@@ -192,9 +208,13 @@ class Executor(Loggable, ABC, Generic[StrategyT, GraphT, FactoryT]):
             # Phase 6: Post-execution cleanup
             await self._post_execute_node(node)
             
+            # Set to COMPLETED on success
+            node.status = ExecutionNodeStatus.COMPLETED
             return processed_signals
             
         except Exception as e:
+            # Set to FAILED on error
+            node.status = ExecutionNodeStatus.FAILED
             # _handle_error will always return a List[ExecutionSignal] when create_signal=True
             return self._handle_error(node, e, create_signal=True) or []
             
