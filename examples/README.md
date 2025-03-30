@@ -49,17 +49,20 @@ The `advanced/` directory contains complex examples and patterns:
 Before running any examples:
 
 1. Install DXA and its dependencies:
+
    ```bash
    pip install -e .
    ```
 
 2. Set up your environment variables:
+
    ```bash
    cp .env.example .env
    # Edit .env with your API keys and configuration
    ```
 
 3. Configure logging (optional):
+
    ```python
    from dxa.common.utils.logging import DXA_LOGGER
    DXA_LOGGER.configure(
