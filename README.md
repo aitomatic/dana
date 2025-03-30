@@ -36,6 +36,7 @@ First things first, set up your development environment:
 - [Framework Comparison](#strategic-framework-selection-matrix)
 - [Project Structure](#project-structure)
 - [Contributing](#contributing)
+- [Logging](#logging)
 
 ## What is DXA?
 
@@ -71,8 +72,25 @@ DXA consists of several core components that work together:
 The Execution system is organized in a 3-layer architecture:
 
 - **Workflow Layer** (`dxa.execution.workflow`) - Defines what agents can do (WHY)
+  - `Workflow` - Main workflow container
+  - `ExecutionNode` - Individual workflow steps
+  - `NodeType` - Different types of nodes (START, TASK, END)
+  - `Objective` - Goal definition for workflows and nodes
+
 - **Planning Layer** (`dxa.execution.planning`) - Converts workflows to executable plans (WHAT)
+  - Converts high-level workflows into concrete steps
+  - Manages dependencies between steps
+  - Handles data flow between nodes
+
 - **Reasoning Layer** (`dxa.execution.reasoning`) - Executes plans with thinking patterns (HOW)
+  - Implements specific reasoning strategies
+  - Processes execution signals
+  - Manages state and context
+
+- **Pipeline Layer** (`dxa.execution.pipeline`) - Orchestrates execution flow
+  - `WorkflowExecutor` - Main execution engine
+  - `ExecutionContext` - Manages execution state and resources
+  - `ExecutionSignal` - Communication between layers
 
 Agents have modular components for different functionalities:
 
@@ -106,24 +124,55 @@ Prerequisites:
 ## Quick Start
 
 ```python
+# Simple Q&A
 from dxa.agent import Agent
 from dxa.agent.resource import LLMResource
-from dxa.execution import WorkflowFactory, PlanStrategy, ReasoningStrategy
-
-# Simple Q&A
 answer = Agent().ask("What is quantum computing?")
 
-# Research workflow
-workflow = WorkflowFactory.create_default_workflow("Research quantum computing")
-agent = Agent(name="researcher").with_llm(LLMResource())
-result = agent.run(workflow)
+# Basic Workflow Execution
+from dxa.execution import WorkflowExecutor, ExecutionContext
+from dxa.execution.workflow import Workflow
+from dxa.common.graph import NodeType
 
-# Custom workflow with strategies
-agent = Agent(name="advanced_agent")\
-    .with_llm(LLMResource(config={"model": "openai:gpt-4"}))\
-    .with_planning(PlanStrategy.DEFAULT)\
-    .with_reasoning(ReasoningStrategy.DEFAULT)
-result = agent.run(workflow)
+# Create a workflow
+workflow = Workflow(objective="Analyze customer feedback")
+workflow.add_node(ExecutionNode(
+    node_id="ANALYZE",
+    node_type=NodeType.TASK,
+    objective="Analyze feedback data"
+))
+
+# Set up execution
+context = ExecutionContext(
+    reasoning_llm=LLMResource(),
+    planning_llm=LLMResource(),
+    workflow_llm=LLMResource()
+)
+executor = WorkflowExecutor()
+result = await executor.execute(workflow, context)
+
+# Advanced Usage with Custom Workflows
+from dxa.execution import ExecutionNode
+from dxa.common.utils.logging import DXA_LOGGER
+
+# Configure logging
+DXA_LOGGER.configure(level=DXA_LOGGER.DEBUG, console=True)
+
+# Create complex workflow with data dependencies
+workflow = Workflow(objective="Research quantum computing")
+workflow.add_node(ExecutionNode(
+    node_id="GATHER",
+    node_type=NodeType.TASK,
+    objective="Gather research data",
+    metadata={"output_key": "research_data"}
+))
+workflow.add_node(ExecutionNode(
+    node_id="ANALYZE",
+    node_type=NodeType.TASK,
+    objective="Analyze findings",
+    metadata={"input_key": "research_data"}
+))
+workflow.add_edge_between("GATHER", "ANALYZE")
 ```
 
 ## Documentation
@@ -178,14 +227,19 @@ dxa/                    # Project root
 │   │   ├── resource/   # External resources
 │   │   └── state/      # State management
 │   ├── common/         # Shared utilities
+│   │   └── utils/      # Utility functions
+│   │       └── logging.py  # Logging configuration
 │   ├── factory/        # Factory components
 │   └── execution/      # Execution system
 │       ├── pipeline/   # Pipeline execution
+│       │   └── executor.py # WorkflowExecutor
 │       ├── planning/   # Strategic planning
 │       ├── workflow/   # Process workflows
+│       │   └── workflow.py # Workflow implementation
 │       └── reasoning/  # Reasoning patterns
 │
 ├── examples/           # Usage examples
+│   └── learning_paths/ # Tutorial examples
 │
 ├── tests/              # Test suite
 │
@@ -209,10 +263,12 @@ This software is proprietary and confidential. Copyright © 2024 Aitomatic, Inc.
 
 Unauthorized copying, transfer, or reproduction of this software, via any medium, is strictly prohibited. This software is protected by copyright law and international treaties.
 
-## Basic Logging
+## Logging
+
+### Basic Usage
 
 ```python
-from dxa.common import DXA_LOGGER
+from dxa.common.utils.logging import DXA_LOGGER
 
 DXA_LOGGER.info("Application started")
 DXA_LOGGER.log_llm(
@@ -222,14 +278,36 @@ DXA_LOGGER.log_llm(
 )
 ```
 
-## Advanced Configuration
+### Advanced Configuration
 
 ```python
-from dxa.common.utils.logging import DXALogger
+from dxa.common.utils.logging import DXA_LOGGER
 
-custom_logger = DXALogger()
-custom_logger.configure(
+# Configure logging with options
+DXA_LOGGER.configure(
+    level=DXA_LOGGER.DEBUG,
     console=True,
-    level="debug"
+    log_data=True
 )
+
+# Get logger instance
+logger = DXA_LOGGER.getLogger(__name__)
+
+# Log execution signals
+def process_signals(signals):
+    for signal in signals:
+        logger.debug("Processing signal: %s", signal)
+```
+
+### Signal Processing
+
+```python
+from dxa.execution import ExecutionSignal
+
+def process_execution_results(signals: list[ExecutionSignal]):
+    results = {}
+    for signal in signals:
+        if hasattr(signal, 'content') and 'result' in signal.content:
+            results[signal.content.get('node')] = signal.content['result']
+    return results
 ```
