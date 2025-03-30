@@ -84,6 +84,36 @@ class ReasoningExecutor(Executor[ReasoningStrategy, Reasoning, ReasoningFactory]
                 print(f"      Reasoning Objective: {reasoning_obj.current if reasoning_obj else 'None'}")
                 print(f"      Node Objective: {node.objective.current if node.objective else 'None'}")
                 print(f"      Metadata: {node.metadata}")
+
+                # Make LLM call with the reasoning node's objective
+                if context.reasoning_llm and node.objective:
+                    prompt = (
+                        f"Execute the reasoning task for the following objective hierarchy:\n\n"
+                        f"1. Workflow Objective: {workflow_obj.current if workflow_obj else 'None'}\n"
+                        f"2. Workflow Node within Workflow: {workflow_node.objective.current if workflow_node.objective else 'None'}\n"
+                        f"4. Plan Node under Workflow Node Objective: {plan_node.objective.current if plan_node.objective else 'None'}\n"
+                        f"6. Reasoning Node under Plan Node Objective: {node.objective.current}\n\n"
+                        f"Reasoning Node Description: {node.description}\n\n"
+                        f"Please provide a detailed analysis and reasoning for this task, "
+                        f"ensuring your response aligns with all levels of the objective hierarchy."
+                    )
+                    
+                    response = await context.reasoning_llm.query({
+                        "prompt": prompt,
+                        "system_prompt": (
+                            "You are executing a reasoning task. "
+                            "Provide clear, logical analysis and reasoning."
+                        ),
+                        "parameters": {
+                            "temperature": 0.7,
+                            "max_tokens": 1000
+                        }
+                    })
+                    
+                    if response and "content" in response:
+                        print("\nReasoning Result:")
+                        print("================")
+                        print(response["content"])
         
         # For now, just return an empty list of signals
         return []
