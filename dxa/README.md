@@ -3,6 +3,7 @@
 <p align="center">
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
+<!-- markdownlint-enable MD033 -->
 
 # DXA - Domain-Expert Agent
 
@@ -105,24 +106,66 @@ graph TB
 
 ## Implementation Examples
 
+### Basic Usage
+
 ```python
+# Simple Q&A
 from dxa.agent import Agent
 from dxa.agent.resource import LLMResource
-from dxa.execution import WorkflowFactory, PlanStrategy
-
-# Simple Q&A
 answer = Agent().ask("What is quantum computing?")
+```
 
-# Research workflow
-workflow = WorkflowFactory.create_default_workflow("Research quantum computing")
-agent = Agent(name="researcher").with_llm(LLMResource())
-result = agent.run(workflow)
+### Workflow Execution
 
-# Custom workflow with strategies
-agent = Agent(name="advanced_agent")\
-    .with_llm(LLMResource(config={"model": "openai:gpt-4"}))\
-    .with_planning(PlanStrategy.DEFAULT)
-result = agent.run(workflow)
+```python
+# Basic Workflow Execution
+from dxa.execution import WorkflowExecutor, ExecutionContext
+from dxa.execution.workflow import Workflow
+from dxa.common.graph import NodeType
+
+# Create a workflow
+workflow = Workflow(objective="Analyze customer feedback")
+workflow.add_node(ExecutionNode(
+    node_id="ANALYZE",
+    node_type=NodeType.TASK,
+    objective="Analyze feedback data"
+))
+
+# Set up execution
+context = ExecutionContext(
+    reasoning_llm=LLMResource(),
+    planning_llm=LLMResource(),
+    workflow_llm=LLMResource()
+)
+executor = WorkflowExecutor()
+result = await executor.execute(workflow, context)
+```
+
+### Advanced Usage
+
+```python
+# Advanced Usage with Custom Workflows
+from dxa.execution import ExecutionNode
+from dxa.common.utils.logging import DXA_LOGGER
+
+# Configure logging
+DXA_LOGGER.configure(level=DXA_LOGGER.DEBUG, console=True)
+
+# Create complex workflow with data dependencies
+workflow = Workflow(objective="Research quantum computing")
+workflow.add_node(ExecutionNode(
+    node_id="GATHER",
+    node_type=NodeType.TASK,
+    objective="Gather research data",
+    metadata={"output_key": "research_data"}
+))
+workflow.add_node(ExecutionNode(
+    node_id="ANALYZE",
+    node_type=NodeType.TASK,
+    objective="Analyze findings",
+    metadata={"input_key": "research_data"}
+))
+workflow.add_edge_between("GATHER", "ANALYZE")
 ```
 
 ## Project Structure
@@ -134,14 +177,17 @@ dxa/
 │   ├── resource/         # External tools & services
 │   ├── io/              # Input/Output handling
 │   └── state/           # State management
-├── execution/             # Execution system
-│   ├── pipeline/        # Pipeline execution
-│   ├── planning/        # Strategic planning
-│   ├── workflow/        # Process workflows
-│   └── reasoning/       # Reasoning patterns
-└── examples/             # Usage examples
-    ├── basic/           # Basic usage patterns
-    └── pipeline/        # Pipeline examples
+├── common/               # Shared utilities
+│   └── utils/           # Utility functions
+│       └── logging.py   # Logging configuration
+├── execution/            # Execution system
+│   ├── pipeline/       # Pipeline execution
+│   │   └── executor.py # WorkflowExecutor
+│   ├── planning/       # Strategic planning
+│   ├── workflow/       # Process workflows
+│   │   └── workflow.py # Workflow implementation
+│   └── reasoning/      # Reasoning patterns
+└── factory/            # Factory components
 ```
 
 ## Documentation Map
@@ -150,8 +196,8 @@ dxa/
   - [Agent Core](agent/README.md) - Factory and runtime
   - [Capabilities](agent/capability/README.md) - Cognitive abilities
   - [Resources](agent/resource/README.md) - Tools and services
-  - IO System - Environmental interaction
-  - State System - Execution state management
+  - [IO System](agent/io/README.md) - Environmental interaction
+  - [State System](agent/state/README.md) - Execution state management
 
 - **Execution System**
   - [Workflow](execution/workflow/README.md) - Process definition
@@ -159,7 +205,7 @@ dxa/
   - [Reasoning](execution/reasoning/README.md) - Tactical execution
   - [Pipeline](execution/pipeline/README.md) - Execution orchestration
 
-- [Examples](examples/README.md) - Usage patterns and tutorials
+- [Examples](../examples/README.md) - Usage patterns and tutorials
 
 ## Contributing
 
