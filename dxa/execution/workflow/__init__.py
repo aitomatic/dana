@@ -10,6 +10,7 @@ FlowGraphs are directed graphs that represent workflows where:
 from .workflow_factory import WorkflowFactory
 from .workflow import Workflow
 from .workflow_executor import WorkflowExecutor
+from .optimal_workflow_executor import OptimalWorkflowExecutor
 from .workflow_strategy import WorkflowStrategy
 
 __all__ = [
@@ -17,5 +18,6 @@ __all__ = [
     "WorkflowFactory",
     "WorkflowStrategy",
     "WorkflowExecutor",
+    "OptimalWorkflowExecutor",
 ]
 

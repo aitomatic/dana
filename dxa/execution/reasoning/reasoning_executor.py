@@ -1,319 +1,124 @@
 """Reasoning executor implementation."""
 
-import logging
-from typing import List, Optional
-
+from typing import List
 from ..executor import Executor
-from ..execution_context import ExecutionContext
-from ..execution_graph import ExecutionGraph
-from ..execution_types import (
-    ExecutionNode, 
-    ExecutionSignal, 
-    Objective, 
-    ExecutionNodeStatus,
-    ExecutionSignalType
-)
-from ...common.graph import NodeType
+from .reasoning import Reasoning
 from .reasoning_strategy import ReasoningStrategy
+from .reasoning_factory import ReasoningFactory
+from ..execution_types import ExecutionNode, ExecutionSignal
+from ..execution_context import ExecutionContext
 
-class ReasoningExecutor(Executor[ReasoningStrategy]):
-    """Executes reasoning tasks using LLM-based reasoning.
+class ReasoningExecutor(Executor[ReasoningStrategy, Reasoning, ReasoningFactory]):
+    """Executor for reasoning layer tasks.
     
-    The ReasoningExecutor is responsible for executing reasoning tasks,
-    which represent low-level execution steps. It uses LLM-based reasoning
-    to perform the actual work.
+    This executor handles the reasoning layer of execution, which is
+    responsible for executing individual reasoning tasks using LLMs.
     """
     
-    strategy_class = ReasoningStrategy
-    default_strategy = ReasoningStrategy.DEFAULT
-    
-    def __init__(
-        self, 
-        strategy: ReasoningStrategy = ReasoningStrategy.DEFAULT
-    ):
-        """Initialize reasoning executor.
-        
-        Args:
-            strategy: Reasoning strategy
-        """
-        super().__init__(depth=2)
-        self.strategy = strategy
-        self.layer = "reasoning"
-        self.logger = logging.getLogger(f"dxa.execution.{self.layer}")
-    
-    async def execute_node(
-        self,
-        node: ExecutionNode, 
-        context: ExecutionContext,
-        prev_signals: Optional[List[ExecutionSignal]] = None,
-        upper_signals: Optional[List[ExecutionSignal]] = None,
-        lower_signals: Optional[List[ExecutionSignal]] = None
-    ) -> List[ExecutionSignal]:
-        """Execute a single node in the reasoning layer.
-        
-        This method handles the execution of a reasoning node by:
-        1. Updating the node status
-        2. Executing the reasoning task
-        3. Processing the results
-        
-        Args:
-            node: Node to execute
-            context: Execution context
-            prev_signals: Signals from previous nodes
-            upper_signals: Signals from upper execution layer
-            lower_signals: Signals from lower execution layer
-            
-        Returns:
-            List of execution signals resulting from the node execution
-        """
-        self.logger.info(f"Executing reasoning node: {node.node_id}")
-        
-        try:
-            # Skip START and END nodes
-            if node.node_type in [NodeType.START, NodeType.END]:
-                return []
-            
-            # Update node status to in progress
-            if self.graph:
-                self.graph.update_node_status(node.node_id, ExecutionNodeStatus.IN_PROGRESS)
-            
-            # Get the instruction from the node metadata
-            instruction = node.metadata.get("instruction", "")
-            if not instruction and node.metadata.get("description"):
-                instruction = node.metadata.get("description", "")
-            
-            # If no instruction, use the node ID
-            if not instruction:
-                instruction = f"Execute task {node.node_id}"
-            
-            # Get the objective from the graph
-            objective = None
-            if self.graph and hasattr(self.graph, "objective"):
-                objective = self.graph.objective
-            
-            # Execute the reasoning task
-            result = await self._execute_reasoning_task(
-                node=node,
-                context=context,
-                instruction=instruction,
-                prev_steps=None,  # We don't have previous steps yet
-                objective=objective,
-                max_tokens=1000
-            )
-            
-            # Update node status to completed
-            if self.graph:
-                self.graph.update_node_status(node.node_id, ExecutionNodeStatus.COMPLETED)
-            
-            # Create result signal
-            signal = ExecutionSignal(
-                type=ExecutionSignalType.DATA_RESULT,
-                content={
-                    "node": node.node_id,
-                    "result": result
-                }
-            )
-            
-            return [signal]
-            
-        except Exception as e:
-            self.logger.error(f"Error executing node {node.node_id}: {str(e)}")
-            
-            # Update node status to error
-            if self.graph:
-                self.graph.update_node_status(node.node_id, ExecutionNodeStatus.FAILED)
-            
-            # Create error signal
-            return [self._create_error_signal(node.node_id, str(e))]
-    
-    async def _execute_task(
-        self,
-        node: ExecutionNode, 
-        context: ExecutionContext,
-        prev_signals: Optional[List[ExecutionSignal]] = None,
-        upper_signals: Optional[List[ExecutionSignal]] = None,
-        lower_signals: Optional[List[ExecutionSignal]] = None
-    ) -> List[ExecutionSignal]:
-        """Execute the task associated with a reasoning node.
-        
-        This method implements the abstract method from the Executor base class.
-        For the ReasoningExecutor, this delegates to execute_node which contains
-        the actual implementation.
-        
-        Args:
-            node: Node to execute
-            context: Execution context
-            prev_signals: Signals from previous nodes
-            upper_signals: Signals from upper execution layer
-            lower_signals: Signals from lower execution layer
-            
-        Returns:
-            List of execution signals resulting from the task execution
-        """
-        return await self.execute_node(
-            node=node,
-            context=context,
-            prev_signals=prev_signals,
-            upper_signals=upper_signals,
-            lower_signals=lower_signals
-        )
-    
-    async def _execute_reasoning_task(
-        self,
-        node: ExecutionNode,
-        context: ExecutionContext,
-        instruction: str,
-        prev_steps: Optional[List[str]] = None,
-        objective: Optional[Objective] = None,
-        max_tokens: Optional[int] = None
-    ) -> str:
-        """Execute a reasoning task using LLM.
-        
-        Args:
-            node: Node to execute
-            context: Execution context
-            instruction: Instruction for the reasoning task
-            prev_steps: Previous steps in the reasoning process
-            objective: Objective of the reasoning task
-            max_tokens: Maximum tokens for the response
-            
-        Returns:
-            Result of the reasoning task
-        """
-        self.logger.info(f"Executing reasoning task: {instruction}")
-        
-        # Use the reasoning_llm from context to generate a response
-        if context and context.reasoning_llm:
-            try:
-                # Prepare the prompt
-                prompt = instruction
-                if objective:
-                    # Access the objective text safely
-                    objective_text = getattr(objective, "description", str(objective))
-                    prompt = f"Objective: {objective_text}\n\nTask: {instruction}"
-                
-                # Add previous steps if available
-                if prev_steps and len(prev_steps) > 0:
-                    steps_text = "\n".join([f"- {step}" for step in prev_steps])
-                    prompt = f"{prompt}\n\nPrevious steps:\n{steps_text}"
-                
-                # Query the LLM
-                response = await context.reasoning_llm.query({
-                    "prompt": prompt,
-                    "system_prompt": (
-                        "You are a helpful AI assistant. "
-                        "Provide a clear, accurate, and detailed response."
-                    ),
-                    "parameters": {
-                        "temperature": 0.7,
-                        "max_tokens": max_tokens or 1000
-                    }
-                })
-                
-                # Extract and return the content
-                if response and "content" in response:
-                    return response["content"]
-                else:
-                    self.logger.error("LLM response did not contain content")
-                    return "Error: LLM response did not contain content"
-                    
-            except Exception as e:
-                self.logger.error(f"Error executing reasoning task: {str(e)}")
-                return f"Error executing reasoning task: {str(e)}"
-        else:
-            # Fallback to placeholder if no LLM is available
-            self.logger.warning("No reasoning LLM available in context, using placeholder")
-            return f"Reasoning result for node {node.node_id} using strategy {self.strategy.name}"
-    
-    def _get_graph_class(self):
-        """Get the appropriate graph class for this executor.
-        
-        Returns:
-            Reasoning graph class
-        """
-        # Import here to avoid circular import
-        from .reasoning import Reasoning
-        return Reasoning
+    # Required class attributes
+    _strategy_type = ReasoningStrategy
+    _default_strategy = ReasoningStrategy.DEFAULT
+    graph_class = Reasoning
+    _factory_class = ReasoningFactory
+    _depth = 2
 
-    def create_graph_from_node(
-        self,
-        upper_node: ExecutionNode,
-        upper_graph: ExecutionGraph,
-        objective: Optional[Objective] = None,
-        context: Optional[ExecutionContext] = None
-    ) -> ExecutionGraph:
-        """Create a reasoning execution graph from a node in the plan.
-        
-        This method creates a reasoning graph based on a plan node.
+    def __init__(self, 
+                 strategy: ReasoningStrategy = ReasoningStrategy.DEFAULT):
+        """Initialize the reasoning executor.
         
         Args:
-            upper_node: Node from the plan layer
-            upper_graph: Graph from the plan layer
-            objective: Execution objective
-            context: Execution context
-            
-        Returns:
-            Reasoning execution graph
+            reasoning_strategy: Strategy for reasoning execution
         """
-        # If we already have a graph, return it
-        if self.graph is not None:
-            return self.graph
+        super().__init__(strategy)
+
+    async def _execute_node_core(self, node: ExecutionNode, context: ExecutionContext) -> List[ExecutionSignal]:
+        """Execute a reasoning node using LLM.
         
-        # Import here to avoid circular import
-        from .reasoning import Reasoning
-        
-        # Create a new reasoning graph
-        graph = Reasoning(
-            objective=objective or (
-                upper_graph.objective if upper_graph else 
-                Objective(f"Execute reasoning for {upper_node.node_id}")
-            ),
-            name=f"reasoning_for_{upper_node.node_id}"
-        )
-        
-        # Copy nodes and edges from upper graph if available
-        if upper_graph:
-            for node_id, node in upper_graph.nodes.items():
-                reasoning_node = ExecutionNode(
-                    node_id=node.node_id,
-                    node_type=node.node_type,
-                    description=node.description,
-                    metadata=node.metadata.copy() if node.metadata else {}
-                )
-                
-                # If this is the upper node, add additional metadata
-                if node.node_id == upper_node.node_id:
-                    if not reasoning_node.metadata:
-                        reasoning_node.metadata = {}
-                    reasoning_node.metadata["is_upper_node"] = True
-                    reasoning_node.metadata["upper_layer_id"] = upper_node.node_id
-                
-                graph.add_node(reasoning_node)
-                
-            for edge in upper_graph.edges:
-                graph.add_edge_between(edge.source, edge.target)
-        
-        return graph
-        
-    async def _custom_graph_traversal(
-        self, 
-        graph: ExecutionGraph, 
-        context: ExecutionContext,
-        upper_signals: Optional[List[ExecutionSignal]] = None
-    ) -> Optional[List[ExecutionSignal]]:
-        """Implement custom traversal strategies for reasoning.
-        
-        The reasoning layer is the lowest level of execution, so it doesn't
-        need to create graphs for lower layers. This method can implement
-        custom traversal strategies if needed.
+        This is the bottom layer executor, so it handles the actual execution
+        of reasoning tasks using LLMs.
         
         Args:
-            graph: Execution graph to traverse
-            context: Execution context
-            upper_signals: Signals from upper execution layer
+            node: The node to execute
+            context: The execution context
             
         Returns:
-            List of signals if custom traversal was performed, None otherwise
+            List of execution signals
         """
-        # Default implementation: no custom traversal
-        return None
+        # Get parent nodes
+        workflow_node = context.get_current_workflow_node()
+        plan_node = context.get_current_plan_node()
+        
+        # Print execution hierarchy with indentation
+        print("\nExecution Hierarchy:")
+        print("===================")
+        
+        # Workflow node (top level)
+        if workflow_node:
+            print("Workflow Node:")
+            print(f"  ID: {workflow_node.node_id}")
+            print(f"  Type: {workflow_node.node_type}")
+            print(f"  Description: {workflow_node.description}")
+            print(f"  Status: {workflow_node.status}")
+            workflow_obj = context.current_workflow.objective if context.current_workflow else None
+            print(f"  Workflow Objective: {workflow_obj.current if workflow_obj else 'None'}")
+            print(f"  Node Objective: {workflow_node.objective.current if workflow_node.objective else 'None'}")
+            
+            # Plan node (middle level)
+            if plan_node:
+                print("\n  Plan Node:")
+                print(f"    ID: {plan_node.node_id}")
+                print(f"    Type: {plan_node.node_type}")
+                print(f"    Description: {plan_node.description}")
+                print(f"    Status: {plan_node.status}")
+                plan_obj = context.current_plan.objective if context.current_plan else None
+                print(f"    Plan Objective: {plan_obj.current if plan_obj else 'None'}")
+                print(f"    Node Objective: {plan_node.objective.current if plan_node.objective else 'None'}")
+                
+                # Reasoning node (bottom level)
+                print("\n    Reasoning Node:")
+                print(f"      ID: {node.node_id}")
+                print(f"      Type: {node.node_type}")
+                print(f"      Description: {node.description}")
+                print(f"      Status: {node.status}")
+                reasoning_obj = context.current_reasoning.objective if context.current_reasoning else None
+                print(f"      Reasoning Objective: {reasoning_obj.current if reasoning_obj else 'None'}")
+                print(f"      Node Objective: {node.objective.current if node.objective else 'None'}")
+                print(f"      Metadata: {node.metadata}")
+
+                # Make LLM call with the reasoning node's objective
+                if context.reasoning_llm and node.objective:
+                    prompt = (
+                        f"Execute the reasoning task for the following objective hierarchy:\n\n"
+                        f"1. Workflow Objective: "
+                        f"{workflow_obj.current if workflow_obj else 'None'}\n"
+                        f"2. Workflow Node within Workflow: "
+                        f"{workflow_node.objective.current if workflow_node.objective else 'None'}\n"
+                        f"4. Plan Node under Workflow Node Objective: "
+                        f"{plan_node.objective.current if plan_node.objective else 'None'}\n"
+                        f"6. Reasoning Node under Plan Node Objective: "
+                        f"{node.objective.current}\n\n"
+                        f"Reasoning Node Description: {node.description}\n\n"
+                        f"Please provide a detailed analysis and reasoning for this task, "
+                        f"ensuring your response aligns with all levels of the objective hierarchy."
+                    )
+                    
+                    response = await context.reasoning_llm.query({
+                        "prompt": prompt,
+                        "system_prompt": (
+                            "You are executing a reasoning task. "
+                            "Provide clear, logical analysis and reasoning."
+                        ),
+                        "parameters": {
+                            "temperature": 0.7,
+                            "max_tokens": 1000
+                        }
+                    })
+                    
+                    if response and "content" in response:
+                        print("\nReasoning Result:")
+                        print("================")
+                        print(response["content"])
+        
+        # For now, just return an empty list of signals
+        return []
+    

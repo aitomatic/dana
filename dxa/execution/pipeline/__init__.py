@@ -4,6 +4,7 @@ from .pipeline import Pipeline, PipelineNode
 from .pipeline_factory import PipelineFactory
 from .pipeline_executor import PipelineExecutor
 from .pipeline_context import PipelineContext
+from .pipeline_strategy import PipelineStrategy
 
 __all__ = [
     "Pipeline",
@@ -11,4 +12,5 @@ __all__ = [
     "PipelineFactory",
     "PipelineExecutor",
     "PipelineContext",
+    "PipelineStrategy",
 ]

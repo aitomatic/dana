@@ -10,10 +10,30 @@ from ...execution import (
 )
 from .pipeline import PipelineNode, Pipeline
 from .pipeline_context import PipelineContext
+from .pipeline_strategy import PipelineStrategy
+from .pipeline_factory import PipelineFactory
 from ...common import DXA_LOGGER
 
-class PipelineExecutor(Executor):
+class PipelineExecutor(Executor[PipelineStrategy, Pipeline, PipelineFactory]):
     """Executes pipeline steps in sequence."""
+
+    # Class attributes for layer configuration
+    _strategy_type = PipelineStrategy
+    _default_strategy = PipelineStrategy.DEFAULT
+    graph_class = Pipeline
+    _factory_class = PipelineFactory
+    _depth = 0
+    
+    def __init__(
+        self,
+        strategy: Optional[PipelineStrategy] = None
+    ):
+        """Initialize pipeline executor.
+        
+        Args:
+            strategy: Pipeline execution strategy
+        """
+        super().__init__(strategy=strategy)
 
     async def execute(self, pipeline: 'Pipeline', context: 'PipelineContext') -> List[ExecutionSignal]:
         """Execute the entire pipeline.
@@ -110,18 +130,7 @@ class PipelineExecutor(Executor):
             DXA_LOGGER.error("Node %s failed: %s", node.node_id, str(e))
             return [self._create_error_signal(node.node_id, str(e))]
 
-    # pylint: disable=unused-argument
-    def _should_propagate_down(self, signal: ExecutionSignal) -> bool:
-        """Pipelines are flat, so no downward propagation."""
-        # Add logic here to filter downward signals
-        return False
-
-    def _should_propagate_up(self, signal: ExecutionSignal) -> bool:
-        """Pipelines are flat, so no upward propagation."""
-        # Add logic here to filter upward signals
-        return False
-
-    def create_graph_from_node(
+    def create_graph_from_upper_node(
         self,
         upper_node: Optional[ExecutionNode] = None,
         upper_graph: Optional[ExecutionGraph] = None,

@@ -1,7 +1,7 @@
 """Execution-specific types for DXA."""
 
 from dataclasses import dataclass, field
-from typing import Dict, Any, Optional, List, Callable, Awaitable
+from typing import Dict, Any, Optional, List, Callable, Awaitable, Union
 from datetime import datetime
 from enum import Enum
 from ..common.graph import Node, Edge, NodeType
@@ -16,9 +16,47 @@ class ExecutionNodeStatus(Enum):
     SKIPPED = "SKIPPED"
     BLOCKED = "BLOCKED"
 
+class ObjectiveStatus(Enum):
+    """Status of the current objective."""
+    INITIAL = "initial"
+    IN_PROGRESS = "in_progress"
+    NEEDS_CLARIFICATION = "needs_clarification"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    NONE_PROVIDED = "none_provided"
+
+@dataclass
+class Objective:
+    """Represents what needs to be achieved."""
+    original: str
+    current: str
+    status: ObjectiveStatus = ObjectiveStatus.INITIAL
+    context: Dict[str, Any] = field(default_factory=dict)
+    history: List[Dict] = field(default_factory=list)
+
+    def __init__(self, objective: Optional[str] = None):
+        if not objective:
+            objective = str(ObjectiveStatus.NONE_PROVIDED)
+        self.original = objective
+        self.current = objective
+        self.status = ObjectiveStatus.INITIAL
+        self.context = {}
+        self.history = []
+
+    def evolve(self, new_understanding: str, reason: str) -> None:
+        """Evolve the objective."""
+        self.history.append({
+            "previous": self.current,
+            "new": new_understanding,
+            "reason": reason,
+            "timestamp": datetime.now()
+        })
+        self.current = new_understanding
+
 @dataclass
 class ExecutionNode(Node):
     """Node with execution-specific attributes."""
+    objective: Optional[Objective] = None
     status: ExecutionNodeStatus = ExecutionNodeStatus.NONE
     step: Optional[Callable[[Dict[str, Any]], Awaitable[Dict[str, Any]]]] = None
     result: Optional[Dict[str, Any]] = None
@@ -34,14 +72,16 @@ class ExecutionNode(Node):
     def __init__(self,
                  node_id: str,
                  node_type: NodeType,
-                 description: str,
+                 objective: Union[str, Objective],
                  status: ExecutionNodeStatus = ExecutionNodeStatus.NONE,
                  step: Optional[Any] = None,
                  result: Optional[Dict[str, Any]] = None,
                  metadata: Optional[Dict[str, Any]] = None,
                  requires: Optional[Dict[str, Any]] = None,
                  provides: Optional[Dict[str, Any]] = None):
+        description = objective if isinstance(objective, str) else objective.current
         super().__init__(node_id=node_id, node_type=node_type, description=description, metadata=metadata or {})
+        self.objective = objective if isinstance(objective, Objective) else Objective(objective)
         self.status = status
         self.step = step
         self.result = result
@@ -59,7 +99,24 @@ class ExecutionNode(Node):
     def set_prompt_in_metadata(cls, prompt: str, metadata: Dict[str, Any]) -> None:
         """Set the prompt in the metadata."""
         if metadata:
-            metadata['prompt'] = prompt 
+            metadata['prompt'] = prompt
+            
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert node to dictionary representation.
+        
+        Returns:
+            Dictionary containing node data
+        """
+        return {
+            "node_id": self.node_id,
+            "node_type": self.node_type,
+            "description": self.description,
+            "status": self.status,
+            "metadata": self.metadata,
+            "requires": self.requires,
+            "provides": self.provides,
+            "buffer_config": self.buffer_config
+        }
 
 @dataclass
 class ExecutionEdge(Edge):
@@ -101,43 +158,6 @@ class ExecutionSignal:
     type: ExecutionSignalType
     content: Dict[str, Any]
     timestamp: datetime = field(default_factory=datetime.now)
-
-class ObjectiveStatus(Enum):
-    """Status of the current objective."""
-    INITIAL = "initial"
-    IN_PROGRESS = "in_progress"
-    NEEDS_CLARIFICATION = "needs_clarification"
-    COMPLETED = "completed"
-    FAILED = "failed"
-    NONE_PROVIDED = "none_provided"
-
-@dataclass
-class Objective:
-    """Represents what needs to be achieved."""
-    original: str
-    current: str
-    status: ObjectiveStatus = ObjectiveStatus.INITIAL
-    context: Dict[str, Any] = field(default_factory=dict)
-    history: List[Dict] = field(default_factory=list)
-
-    def __init__(self, objective: Optional[str] = None):
-        if not objective:
-            objective = str(ObjectiveStatus.NONE_PROVIDED)
-        self.original = objective
-        self.current = objective
-        self.status = ObjectiveStatus.INITIAL
-        self.context = {}
-        self.history = []
-
-    def evolve(self, new_understanding: str, reason: str) -> None:
-        """Evolve the objective."""
-        self.history.append({
-            "timestamp": datetime.now(),
-            "from": self.current,
-            "to": new_understanding,
-            "reason": reason
-        })
-        self.current = new_understanding
 
 class ExecutionError(Exception):
     """Exception for execution errors."""

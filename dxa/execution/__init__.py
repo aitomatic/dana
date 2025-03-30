@@ -14,12 +14,14 @@ from .pipeline import (
     PipelineExecutor,
     PipelineContext,
     PipelineNode,
+    PipelineStrategy,
 )
 from .workflow import (
     Workflow,
     WorkflowFactory,
     WorkflowExecutor,
     WorkflowStrategy,
+    OptimalWorkflowExecutor,
 )
 from .planning import (
     Plan,
@@ -48,11 +50,13 @@ __all__ = [
     'Workflow',
     'WorkflowFactory',
     'WorkflowExecutor',
+    'OptimalWorkflowExecutor',
     'WorkflowStrategy',
     'Pipeline',
     'PipelineFactory',
     'PipelineExecutor',
     'PipelineContext',
+    'PipelineStrategy',
     'Plan',
     'PlanFactory',
     'PlanStrategy',

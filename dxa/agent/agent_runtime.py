@@ -1,10 +1,10 @@
 """Agent runtime for execution orchestration."""
 
-from typing import Any, Optional, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 from ..execution.workflow import WorkflowExecutor, WorkflowStrategy, Workflow
-from ..execution.planning import PlanExecutor, PlanStrategy
-from ..execution.reasoning import ReasoningExecutor, ReasoningStrategy
+from ..execution.planning import PlanStrategy
+from ..execution.reasoning import ReasoningStrategy
 from ..execution.execution_context import ExecutionContext
 from ..execution.execution_types import ExecutionSignalType
 
@@ -15,23 +15,15 @@ class AgentRuntime:
     """Manages agent execution, coordinating between layers."""
 
     def __init__(self, agent: 'Agent',
-                 workflow_strategy: Optional[WorkflowStrategy] = None,
-                 planning_strategy: Optional[PlanStrategy] = None,
-                 reasoning_strategy: Optional[ReasoningStrategy] = None):
+                 workflow_strategy: WorkflowStrategy = WorkflowStrategy.DEFAULT,
+                 planning_strategy: PlanStrategy = PlanStrategy.DEFAULT,
+                 reasoning_strategy: ReasoningStrategy = ReasoningStrategy.DEFAULT):
         self.agent = agent
 
         # Initialize executors with strategies
-        self.reasoning_executor = ReasoningExecutor(
-            strategy=reasoning_strategy or ReasoningStrategy.DEFAULT
-        )
-        self.plan_executor = PlanExecutor(
-            reasoning_executor=self.reasoning_executor,
-            strategy=planning_strategy or PlanStrategy.DEFAULT
-        )
-        self.workflow_executor = WorkflowExecutor(
-            plan_executor=self.plan_executor,
-            strategy=workflow_strategy or WorkflowStrategy.DEFAULT
-        )
+        self.workflow_executor = WorkflowExecutor(workflow_strategy=workflow_strategy,
+                                                  planning_strategy=planning_strategy,
+                                                  reasoning_strategy=reasoning_strategy)
 
     async def execute(self, workflow: Workflow, context: ExecutionContext) -> Any:
         """Execute workflow and return result."""

@@ -3,19 +3,21 @@
 from typing import Dict, Any, Optional, List
 import asyncio
 import aisuite as ai
-import logging
 from openai import APIConnectionError, RateLimitError
+from ...common import DXA_LOGGER
 from ...common.exceptions import LLMError
 from .base_resource import BaseResource
 # from openai import AsyncClient
 
+# _DEFAULT_MODEL = "openai:gpt-4o"
+_DEFAULT_MODEL = "deepseek:deepseek-chat"
 
 class LLMConfig:
     """Configuration for LLM instances using AISuite."""
     
     def __init__(
         self,
-        model: str = "openai:gpt-4",
+        model: str = _DEFAULT_MODEL,
         providers: Optional[Dict[str, Dict[str, Any]]] = None,
         temperature: float = 0.7,
         max_tokens: Optional[int] = None,
@@ -85,7 +87,7 @@ class LLMResource(BaseResource):
 
         super().__init__(name)
         self.config = config or {}
-        self.model = self.config.get("model", "openai:gpt-4")
+        self.model = self.config.get("model", _DEFAULT_MODEL)
         self.provider_configs = self.config.get("providers", {})
         self._client: Optional[ai.Client] = None
         self.max_retries = int(self.config.get("max_retries", 3))
@@ -93,21 +95,22 @@ class LLMResource(BaseResource):
         # self._async_client = AsyncClient()
         
         # Create a dedicated logger for LLM conversations
-        self.conversation_logger = logging.getLogger("llm_conversation")
-        self.conversation_logger.setLevel(logging.INFO)
+        self.conversation_logger = DXA_LOGGER.getLogger("llm_conversation")
+        self.conversation_logger.logger.setLevel(DXA_LOGGER.INFO)
         
         # Add a file handler if not already present
-        if not self.conversation_logger.handlers:
+        if not self.conversation_logger.logger.handlers:
             # Create logs directory if it doesn't exist
             import os
             os.makedirs("logs", exist_ok=True)
             
             # Add file handler
+            import logging
             file_handler = logging.FileHandler("logs/llm_conversation.log")
             file_handler.setFormatter(logging.Formatter(
                 '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
             ))
-            self.conversation_logger.addHandler(file_handler)
+            self.conversation_logger.logger.addHandler(file_handler)
 
     async def initialize(self) -> None:
         """Initialize the AISuite client."""
@@ -144,7 +147,8 @@ class LLMResource(BaseResource):
             raise ValueError("'Prompt' is required")
 
         # Log the prompt being sent to the LLM
-        self.conversation_logger.info(f"PROMPT TO {self.model}:\n{'-' * 80}\n{request.get('prompt')}\n{'-' * 80}")
+        # self.conversation_logger.info(f"PROMPT TO {self.model}:\n{'-' * 80}\n{request.get('prompt')}\n{'-' * 80}")
+        self.conversation_logger.info(f"PROMPT TO {self.model}:\n{'-' * 80}\n{messages}\n{'-' * 80}")
         
         request_params = {
             "temperature": float(self.config.get("temperature", 0.7)),
