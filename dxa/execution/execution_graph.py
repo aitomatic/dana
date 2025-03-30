@@ -102,6 +102,15 @@ class ExecutionGraph(DirectedGraph):
             name=yaml_data.get('name', f'unnamed_{cls.__name__.lower()}')
         )
         
+        # Process prompts first
+        if 'prompts' in yaml_data:
+            graph.metadata['prompts'] = yaml_data['prompts']
+            
+            # Apply custom prompts if provided
+            if custom_prompts:
+                for key, value in custom_prompts.items():
+                    graph.metadata['prompts'][key] = value
+        
         # Process nodes
         nodes_data = yaml_data.get('nodes', [])
         node_ids = []
@@ -115,7 +124,7 @@ class ExecutionGraph(DirectedGraph):
             start_node = ExecutionNode(
                 node_id="START",
                 node_type=NodeType.START,
-                description="Begin execution"
+                objective="Begin execution"
             )
             graph.add_node(start_node)
             node_ids.append("START")
@@ -135,22 +144,13 @@ class ExecutionGraph(DirectedGraph):
             end_node = ExecutionNode(
                 node_id="END",
                 node_type=NodeType.END,
-                description="End execution"
+                objective="End execution"
             )
             graph.add_node(end_node)
             node_ids.append("END")
         
         # Process edges
         cls._add_edges_to_graph(graph, yaml_data, node_ids)
-        
-        # Process prompts
-        if 'prompts' in yaml_data:
-            graph.metadata['prompts'] = yaml_data['prompts']
-            
-            # Apply custom prompts if provided
-            if custom_prompts:
-                for key, value in custom_prompts.items():
-                    graph.metadata['prompts'][key] = value
         
         # Store additional metadata
         for key, value in yaml_data.items():
@@ -167,7 +167,7 @@ class ExecutionGraph(DirectedGraph):
                                           config_path: Optional[str],
                                           custom_prompts: Optional[Dict[str, str]]) -> None:
         """Process a single node from YAML data and add it to the graph."""
-        description = node_data.get('description', '')
+        objective = node_data.get('objective', '')
         
         # Determine node type
         if 'type' not in node_data:
@@ -189,29 +189,30 @@ class ExecutionGraph(DirectedGraph):
         else:
             metadata['reasoning'] = 'DEFAULT'
         
-        # Store prompt reference in metadata if present
-        if 'prompt' in node_data:
-            prompt_ref = node_data['prompt']
+        # Get prompt from YAML data if available
+        if 'prompts' in graph.metadata and node_id in graph.metadata['prompts']:
+            prompt_text = graph.metadata['prompts'][node_id]
         else:
-            prompt_ref = node_id
+            # Fall back to standard prompt resolution
+            from .execution_config import ExecutionConfig  # pylint: disable=import-outside-toplevel
+            prompt_ref = node_data.get('prompt', node_id)
+            prompt_text = ExecutionConfig.get_prompt(for_class=cls,
+                                                     config_path=config_path,
+                                                     prompt_ref=prompt_ref,
+                                                     custom_prompts=custom_prompts)
 
-        from .execution_config import ExecutionConfig  # pylint: disable=import-outside-toplevel
-        prompt_text = ExecutionConfig.get_prompt(for_class=cls,
-                                                 config_path=config_path,
-                                                 prompt_ref=prompt_ref,
-                                                 custom_prompts=custom_prompts)
-
-        ExecutionNode.set_prompt_in_metadata(prompt_text, metadata)
+        # Store the prompt in metadata
+        metadata['prompt'] = prompt_text
 
         # If no description, use the prompt text as the description
-        if not description:
-            description = prompt_text
+        if not objective:
+            objective = prompt_text
 
         # Create and add the node
         node = ExecutionNode(
             node_id=node_id,
             node_type=node_type,
-            description=description,
+            objective=objective,
             metadata=metadata
         )
         graph.add_node(node)
@@ -229,9 +230,48 @@ class ExecutionGraph(DirectedGraph):
         if config_path is None or not config_path.exists():
             if config_name:
                 from .execution_config import ExecutionConfig  # pylint: disable=import-outside-toplevel
-                config_path = ExecutionConfig.get_config_path(cls, config_name)
+                
+                # Handle dot notation in config_name
+                if "." in config_name and not config_name.endswith(('.yaml', '.yml')):
+                    # Convert dots to slashes
+                    path_parts = config_name.split(".")
+                    path = "/".join(path_parts)
+                    
+                    # Try with .yaml extension
+                    yaml_path = Path(ExecutionConfig.get_base_path()) / "yaml" / f"{path}.yaml"
+                    if yaml_path.exists():
+                        config_path = yaml_path
+                    else:
+                        # Try with .yml extension
+                        yml_path = Path(ExecutionConfig.get_base_path()) / "yaml" / f"{path}.yml"
+                        if yml_path.exists():
+                            config_path = yml_path
+                        else:
+                            # Fall back to standard path resolution
+                            config_path = ExecutionConfig.get_yaml_path(cls, config_name)
+                else:
+                    # Standard path resolution
+                    config_path = ExecutionConfig.get_yaml_path(cls, config_name)
             else:
                 raise ValueError("No config path or name provided")
+
+        # If the path doesn't exist, try to fix it
+        if not config_path.exists():
+            # Check if the path is in the form of basic/sequential/yaml.yaml
+            # and try to fix it to basic/sequential.yaml
+            parts = str(config_path).split('/')
+            if len(parts) >= 3 and parts[-1] == "yaml.yaml":
+                # Remove the last two parts and replace with the second-to-last part + .yaml
+                fixed_path = '/'.join(parts[:-2]) + '/' + parts[-2] + '.yaml'
+                if Path(fixed_path).exists():
+                    config_path = Path(fixed_path)
+            # Check if the path is in the form of test_config_yml/yml.yaml
+            # and try to fix it to test_config_yml.yml
+            elif len(parts) >= 2 and parts[-1] == "yml.yaml":
+                # Try removing the last part and use the directory name with .yml extension
+                fixed_path = '/'.join(parts[:-1]) + '.yml'
+                if Path(fixed_path).exists():
+                    config_path = Path(fixed_path)
 
         data = load_yaml_config(config_path)
 
@@ -259,12 +299,12 @@ class ExecutionGraph(DirectedGraph):
                 # Create ExecutionEdge instead of Edge
                 graph.add_edge(ExecutionEdge(source=node_ids[i], target=node_ids[i + 1]))
 
-    def add_step(self, step_id: str, description: str, **kwargs) -> ExecutionNode:
+    def add_step(self, step_id: str, objective: str, **kwargs) -> ExecutionNode:
         """Add an execution step."""
         node = ExecutionNode(
             node_id=step_id,
             node_type=NodeType.TASK,
-            description=description,
+            objective=objective,
             status=ExecutionNodeStatus.PENDING,
             metadata=kwargs.get('metadata', {}),
             **kwargs
@@ -306,7 +346,7 @@ class ExecutionGraph(DirectedGraph):
         start_node = node_cls(
             node_id="START",
             node_type=NodeType.START,
-            description=f"Begin {graph_name}"
+            objective=f"Begin {graph_name}"
         )
         graph.add_node(start_node)
 
@@ -323,7 +363,7 @@ class ExecutionGraph(DirectedGraph):
         end_node = node_cls(
             node_id="END",
             node_type=NodeType.END,
-            description=f"End {graph_name}"
+            objective=f"End {graph_name}"
         )
         graph.add_node(end_node)
 
@@ -466,7 +506,7 @@ class ExecutionGraph(DirectedGraph):
                 node_id: {
                     'node_type': cast(ExecutionNode, node).node_type,
                     'status': cast(ExecutionNode, node).status.value,
-                    'description': node.description,
+                    'objective': node.objective,
                     'metadata': node.metadata
                 }
                 for node_id, node in self.nodes.items()

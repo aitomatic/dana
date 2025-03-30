@@ -321,5 +321,5 @@ class Agent:
 
     def ask(self, question: str) -> Any:
         """Ask a question to the agent."""
-        workflow = WorkflowFactory.create_minimal_workflow(question)
+        workflow = WorkflowFactory.create_basic_workflow(question)
         return self.run(workflow)

@@ -10,11 +10,14 @@ import json
 import logging
 import numpy as np
 from ...common import DXA_LOGGER
-
+from ..execution_factory import ExecutionFactory
+from .pipeline import Pipeline
 logger = logging.getLogger(__name__)
 
-class PipelineFactory:
+class PipelineFactory(ExecutionFactory):
     """Factory for creating pipelines."""
+
+    graph_class = Pipeline
 
     class Steps:
         """Collection of fundamental pipeline steps and examples."""
