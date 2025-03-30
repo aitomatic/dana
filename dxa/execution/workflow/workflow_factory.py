@@ -47,19 +47,33 @@ class WorkflowFactory(ExecutionFactory[Workflow]):
         if not isinstance(objective, Objective):
             objective = Objective(objective)
             
-        workflow = cls.create_basic_graph(objective)
+        workflow = cls.graph_class(objective=objective)
         
         # Add default nodes
+        start_node = ExecutionNode(
+            node_id="START",
+            node_type=NodeType.START,
+            objective="Start node"
+        )
+        workflow.add_node(start_node)
+        
         task_node = ExecutionNode(
-            node_id="task",
+            node_id="TASK",
             node_type=NodeType.TASK,
             objective="Execute task"
         )
         workflow.add_node(task_node)
         
+        end_node = ExecutionNode(
+            node_id="END",
+            node_type=NodeType.END,
+            objective="End node"
+        )
+        workflow.add_node(end_node)
+        
         # Connect START → task → END
-        workflow.add_edge_between("start", task_node.node_id)
-        workflow.add_edge_between(task_node.node_id, "end")
+        workflow.add_edge_between("START", task_node.node_id)
+        workflow.add_edge_between(task_node.node_id, "END")
         
         return cast(Workflow, workflow)
         

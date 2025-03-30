@@ -161,7 +161,7 @@ async def main():
         
         # Execute workflow
         logger.info("Executing workflow")
-        signals = await workflow_executor.execute_workflow(workflow, context)
+        signals = await workflow_executor.execute(workflow, context)
         
         # Process and display results
         results = process_signals(signals)
