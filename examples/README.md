@@ -10,11 +10,14 @@ This directory contains examples demonstrating different aspects of the DXA fram
 
 ## Directory Structure
 
-```
+```text
 examples/
 ├── getting_started/      # Basic examples for new users
 ├── core_concepts/        # Examples of core DXA features
-└── advanced/            # Complex patterns and integrations
+├── advanced/            # Complex patterns and integrations
+├── learning_paths/      # Tutorial examples
+├── workflow/           # Workflow-specific examples
+└── tutorials/          # Detailed tutorials
 ```
 
 ## Getting Started
@@ -30,7 +33,7 @@ The `getting_started/` directory contains basic examples that demonstrate fundam
 The `core_concepts/` directory contains examples that demonstrate core DXA features:
 
 1. `01_workflow_planning.py` - Workflow and planning layer interaction
-2. `02_reasoning_layer.py` - Understanding the reasoning layer
+2. `02_workflow_planning_reasoning.py` - Understanding the three-layer architecture
 3. `03_execution_context.py` - Managing execution context and resources
 
 ## Advanced
@@ -46,19 +49,27 @@ The `advanced/` directory contains complex examples and patterns:
 Before running any examples:
 
 1. Install DXA and its dependencies:
+
    ```bash
    pip install -e .
    ```
 
 2. Set up your environment variables:
+
    ```bash
-   export OPENAI_API_KEY=your_api_key
+   cp .env.example .env
+   # Edit .env with your API keys and configuration
    ```
 
-3. (Optional) Configure logging:
+3. Configure logging (optional):
+
    ```python
    from dxa.common.utils.logging import DXA_LOGGER
-   DXA_LOGGER.configure(level=DXA_LOGGER.DEBUG)
+   DXA_LOGGER.configure(
+       level=DXA_LOGGER.DEBUG,
+       console=True,
+       log_data=True
+   )
    ```
 
 ## Running Examples
@@ -66,7 +77,11 @@ Before running any examples:
 Each example can be run directly with Python:
 
 ```bash
+# Run a specific example
 python examples/getting_started/01_hello_dxa.py
+
+# Run all examples in a directory
+python -m pytest examples/getting_started/
 ```
 
 ## Learning Path
@@ -74,13 +89,14 @@ python examples/getting_started/01_hello_dxa.py
 1. Start with the getting_started examples to understand basic concepts
 2. Move to core_concepts to learn about DXA's architecture
 3. Explore advanced examples for complex use cases
+4. Follow learning_paths for structured tutorials
 
 ## Troubleshooting
 
 Common issues and solutions:
 
 1. **LLM Connection Issues**
-   - Verify your API key is set correctly
+   - Verify your API key is set correctly in .env
    - Check your network connection
    - Ensure you have sufficient API credits
 
@@ -88,11 +104,13 @@ Common issues and solutions:
    - Check the workflow structure is valid
    - Verify all required nodes are present
    - Ensure proper edge connections
+   - Check execution context setup
 
 3. **Context Management**
    - Verify execution context is properly initialized
    - Check resource availability
    - Ensure proper cleanup
+   - Validate LLM resource configuration
 
 ## Contributing
 
@@ -103,3 +121,4 @@ When adding new examples:
 3. Add proper error handling
 4. Include prerequisites and dependencies
 5. Add cross-references to related examples
+6. Update this README with new example information
