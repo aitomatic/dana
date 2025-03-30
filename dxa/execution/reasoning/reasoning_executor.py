@@ -89,10 +89,14 @@ class ReasoningExecutor(Executor[ReasoningStrategy, Reasoning, ReasoningFactory]
                 if context.reasoning_llm and node.objective:
                     prompt = (
                         f"Execute the reasoning task for the following objective hierarchy:\n\n"
-                        f"1. Workflow Objective: {workflow_obj.current if workflow_obj else 'None'}\n"
-                        f"2. Workflow Node within Workflow: {workflow_node.objective.current if workflow_node.objective else 'None'}\n"
-                        f"4. Plan Node under Workflow Node Objective: {plan_node.objective.current if plan_node.objective else 'None'}\n"
-                        f"6. Reasoning Node under Plan Node Objective: {node.objective.current}\n\n"
+                        f"1. Workflow Objective: "
+                        f"{workflow_obj.current if workflow_obj else 'None'}\n"
+                        f"2. Workflow Node within Workflow: "
+                        f"{workflow_node.objective.current if workflow_node.objective else 'None'}\n"
+                        f"4. Plan Node under Workflow Node Objective: "
+                        f"{plan_node.objective.current if plan_node.objective else 'None'}\n"
+                        f"6. Reasoning Node under Plan Node Objective: "
+                        f"{node.objective.current}\n\n"
                         f"Reasoning Node Description: {node.description}\n\n"
                         f"Please provide a detailed analysis and reasoning for this task, "
                         f"ensuring your response aligns with all levels of the objective hierarchy."

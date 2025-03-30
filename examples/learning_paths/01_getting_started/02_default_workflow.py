@@ -27,12 +27,12 @@ def main():
     
     This function demonstrates:
     1. Defining an objective for the workflow
-    2. Creating a Default workflow with a specific agent role
+    2. Creating a Default workflow
     3. Visualizing the workflow structure
     
     The Default workflow is a simple pattern that consists of:
     - START node: Entry point for execution
-    - PERFORM_TASK node: Contains the objective to be accomplished
+    - task node: Contains the objective to be accomplished
     - END node: Exit point for execution
     
     Returns:
@@ -43,11 +43,7 @@ def main():
     objective = "Design a database schema for a library management system."
     
     # Create the Default workflow using the convenience method from WorkflowFactory
-    # The agent_role parameter helps guide the agent's approach to the task
-    workflow = WorkflowFactory.create_default_workflow(
-        objective=objective,
-        agent_role="Database Designer"
-    )
+    workflow = WorkflowFactory.create_default_workflow(objective=objective)
     
     # Print the workflow using the pretty_print method
     # This visualizes the nodes and edges in the workflow graph

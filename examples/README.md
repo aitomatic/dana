@@ -6,102 +6,100 @@
 
 # DXA Examples
 
-This directory contains examples demonstrating the DXA (Distributed eXecution Architecture) framework.
+This directory contains examples demonstrating different aspects of the DXA framework.
 
 ## Directory Structure
 
-- **learning_paths/**: Examples organized by learning progression
-  - **01_getting_started/**: Beginner-friendly examples
-  - **02_core_concepts/**: Intermediate examples
-  - **03_advanced_patterns/**: Advanced examples
-  - **04_real_world_applications/**: Domain-specific examples
-
-- **tutorials/**: Step-by-step tutorials for building complete applications
-  - **build_qa_agent/**: Building a question-answering agent
-  - **temperature_monitoring/**: Building a temperature monitoring system
+```
+examples/
+├── getting_started/      # Basic examples for new users
+├── core_concepts/        # Examples of core DXA features
+└── advanced/            # Complex patterns and integrations
+```
 
 ## Getting Started
 
-Start with these beginner-friendly examples in the recommended order:
+The `getting_started/` directory contains basic examples that demonstrate fundamental DXA concepts:
 
-- **learning_paths/01_getting_started/00_hello_dxa.py**: Introduction to DXA and basic concepts
-- **learning_paths/01_getting_started/01_simple_qa.py**: Creating a simple question-answering agent
-- **learning_paths/01_getting_started/02_default_workflow.py**: Creating a basic workflow
-- **learning_paths/01_getting_started/03_qa_approaches.py**: Different approaches to question answering
-- **learning_paths/01_getting_started/04_logging_example.py**: DXA logging system
+1. `01_hello_dxa.py` - Basic agent creation and usage
+2. `02_simple_workflow.py` - Creating and running a basic workflow
+3. `03_qa_approaches.py` - Different question-answering patterns
 
 ## Core Concepts
 
-Once familiar with the basics, explore these intermediate examples:
+The `core_concepts/` directory contains examples that demonstrate core DXA features:
 
-- **learning_paths/02_core_concepts/01_run_default_workflow.py**: Complete workflow execution through all three layers
-- **learning_paths/02_core_concepts/02_simple_plan.py**: Planning layer concepts
-- **learning_paths/02_core_concepts/03_simple_reasoning.py**: Reasoning layer concepts
-- **learning_paths/02_core_concepts/04_temperature_monitor.py**: Data pipeline example
-- **learning_paths/02_core_concepts/05_llm_resource.py**: LLM integration
+1. `01_workflow_planning.py` - Workflow and planning layer interaction
+2. `02_reasoning_layer.py` - Understanding the reasoning layer
+3. `03_execution_context.py` - Managing execution context and resources
 
-## Advanced Patterns
+## Advanced
 
-For more sophisticated patterns and workflows:
+The `advanced/` directory contains complex examples and patterns:
 
-- **learning_paths/03_advanced_patterns/01_prosea_workflow.py**: ProSEA framework implementation
-- **learning_paths/03_advanced_patterns/02_complex_research.py**: Multi-step research pattern
-- **learning_paths/03_advanced_patterns/03_system_health.py**: System monitoring example
-- **learning_paths/03_advanced_patterns/04_mcp_agent_demo.py**: MCP integration
+1. `01_custom_executors.py` - Creating custom executors
+2. `02_complex_workflows.py` - Complex workflow patterns
+3. `03_integration.py` - Integration with external systems
 
-## Real-World Applications
+## Prerequisites
 
-Domain-specific examples:
+Before running any examples:
 
-- **learning_paths/04_real_world_applications/01_rie_monitoring.py**: Semiconductor manufacturing use case
-- **learning_paths/04_real_world_applications/02_system_health.py**: System monitoring example
-- **learning_paths/04_real_world_applications/03_temperature_monitor.py**: Data pipeline example
+1. Install DXA and its dependencies:
+   ```bash
+   pip install -e .
+   ```
 
-## Quick Reference
+2. Set up your environment variables:
+   ```bash
+   export OPENAI_API_KEY=your_api_key
+   ```
 
-### Agent Creation & Configuration
-
-```python
-from dxa.agent import Agent
-from dxa.agent.resource import LLMResource
-from dxa.execution import ReasoningStrategy
-
-agent = Agent(name="example_agent")\
-    .with_reasoning(ReasoningStrategy.DEFAULT)\
-    .with_llm(LLMResource())\
-    .with_capabilities({...})
-```
-
-### Task Execution
-
-```python
-# Synchronous execution
-result = agent.run(workflow)
-
-# Asynchronous execution
-async with agent:
-    result = await agent.async_run(workflow)
-```
-
-### Workflow Creation
-
-```python
-from dxa.execution import WorkflowFactory
-
-# Create a sequential workflow
-workflow = WorkflowFactory.create_sequential_workflow(
-    objective="Research topic X",
-    commands=["Step 1", "Step 2", "Step 3"]
-)
-
-# Create a minimal workflow
-workflow = WorkflowFactory.create_minimal_workflow("Simple task")
-```
+3. (Optional) Configure logging:
+   ```python
+   from dxa.common.utils.logging import DXA_LOGGER
+   DXA_LOGGER.configure(level=DXA_LOGGER.DEBUG)
+   ```
 
 ## Running Examples
 
-Each example can be run directly:
+Each example can be run directly with Python:
 
 ```bash
-python examples/learning_paths/01_getting_started/01_simple_qa.py
+python examples/getting_started/01_hello_dxa.py
 ```
+
+## Learning Path
+
+1. Start with the getting_started examples to understand basic concepts
+2. Move to core_concepts to learn about DXA's architecture
+3. Explore advanced examples for complex use cases
+
+## Troubleshooting
+
+Common issues and solutions:
+
+1. **LLM Connection Issues**
+   - Verify your API key is set correctly
+   - Check your network connection
+   - Ensure you have sufficient API credits
+
+2. **Workflow Execution Errors**
+   - Check the workflow structure is valid
+   - Verify all required nodes are present
+   - Ensure proper edge connections
+
+3. **Context Management**
+   - Verify execution context is properly initialized
+   - Check resource availability
+   - Ensure proper cleanup
+
+## Contributing
+
+When adding new examples:
+
+1. Follow the existing directory structure
+2. Include clear documentation
+3. Add proper error handling
+4. Include prerequisites and dependencies
+5. Add cross-references to related examples

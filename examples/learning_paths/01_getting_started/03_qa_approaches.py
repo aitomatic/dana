@@ -22,7 +22,7 @@ from typing import Dict, Any
 from dxa.agent import Agent
 from dxa.execution import PlanStrategy, WorkflowFactory
 from dxa.execution.workflow import Workflow
-from dxa.execution.execution_types import ExecutionNode
+from dxa.execution.execution_types import ExecutionNode, Objective
 from dxa.common.graph import NodeType
 from dxa.common import DXA_LOGGER
 
@@ -69,9 +69,8 @@ def single_step_workflow_is_plan(question: str) -> Dict[str, Any]:
     """
     agent = Agent().with_planning(PlanStrategy.WORKFLOW_IS_PLAN)
     
-    # Create a minimal workflow instead of using create_sequential_workflow
-    # This avoids issues with Edge vs ExecutionEdge compatibility
-    workflow = WorkflowFactory.create_minimal_workflow(question)
+    # Create a default workflow instead of using create_minimal_workflow
+    workflow = WorkflowFactory.create_default_workflow(objective=question)
     
     return agent.run(workflow)
 
@@ -99,13 +98,13 @@ def two_step_summarize_explain(question: str) -> Dict[str, Any]:
     agent = Agent().with_planning(PlanStrategy.WORKFLOW_IS_PLAN)
     
     # Create a custom workflow with two steps
-    workflow = Workflow(objective=question)
+    workflow = Workflow(objective=Objective(question))
     
     # Add START node
     start_node = ExecutionNode(
         node_id="START",
         node_type=NodeType.START,
-        description="Start workflow"
+        objective=Objective("Start workflow")
     )
     workflow.add_node(start_node)
     
@@ -113,7 +112,7 @@ def two_step_summarize_explain(question: str) -> Dict[str, Any]:
     task1_node = ExecutionNode(
         node_id="TASK_0",
         node_type=NodeType.TASK,
-        description=f"Summarize: {question}"
+        objective=Objective(f"Summarize: {question}")
     )
     workflow.add_node(task1_node)
     
@@ -121,7 +120,7 @@ def two_step_summarize_explain(question: str) -> Dict[str, Any]:
     task2_node = ExecutionNode(
         node_id="TASK_1",
         node_type=NodeType.TASK,
-        description="Explain the summary in detail"
+        objective=Objective("Explain the summary in detail")
     )
     workflow.add_node(task2_node)
     
@@ -129,7 +128,7 @@ def two_step_summarize_explain(question: str) -> Dict[str, Any]:
     end_node = ExecutionNode(
         node_id="END",
         node_type=NodeType.END,
-        description="End workflow"
+        objective=Objective("End workflow")
     )
     workflow.add_node(end_node)
     
@@ -163,7 +162,7 @@ def minimal_workflow_example(question: str = "Explain quantum entanglement in si
         Dictionary containing the response and execution metadata
     """
     agent = Agent("qa_agent")
-    workflow = WorkflowFactory.create_minimal_workflow(question)
+    workflow = WorkflowFactory.create_default_workflow(objective=question)
     return agent.run(workflow)
 
 def demonstrate_all_approaches():

@@ -10,8 +10,7 @@ from .execution_graph import ExecutionGraph
 from .execution_factory import ExecutionFactory
 from .execution_types import (
     ExecutionNode, ExecutionSignal,
-    ExecutionNodeStatus, ExecutionSignalType,
-    Objective
+    ExecutionNodeStatus, ExecutionSignalType
 )
 from ..common.graph import NodeType
 
