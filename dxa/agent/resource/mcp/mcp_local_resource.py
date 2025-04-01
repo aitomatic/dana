@@ -23,16 +23,11 @@ class McpLocalResource(BaseResource):
     def __init__(self, name: str, connection_params: Optional[Union[McpLocalConnectionParams, Dict[str, Any]]] = None, expose: bool = False, **params):
         super().__init__(name)
         self.logger = DXA_LOGGER.getLogger(__class__.__name__)
-        self.expose = expose
         self.server_id = str(uuid.uuid4())[:8]  # Generate unique ID for this server
         
         env = get_default_environment()
         env["PYDEVD_DISABLE_FILE_VALIDATION"] = "1"
         
-        # Add environment variables for exposure if needed
-        if self.expose:
-            env["MCP_EXPOSE"] = "1"
-                
         user_env = params.get("env", {})
         if user_env is not None:
             env.update(user_env)
@@ -41,21 +36,21 @@ class McpLocalResource(BaseResource):
 
         if isinstance(connection_params, McpLocalConnectionParams):
             self.command = connection_params.command or "python3"
-            self.server_script = connection_params.args[0] if connection_params.args else params.get("server_script")
+            self.args = connection_params.args if connection_params.args else [params.get("server_script")]
             if connection_params.env:
                 self.env.update(connection_params.env)
         elif isinstance(connection_params, dict):
             self.command = connection_params.get("command", "python3")
-            self.server_script = connection_params.get("args", [params.get("server_script")])[0]
+            self.args = connection_params.get("args", [params.get("server_script")])
             if connection_params.get("env"):
                 self.env.update(connection_params["env"])
         else:
             self.command = params.get("command", "python3")
-            self.server_script = params.get("server_script")
+            self.args = [params.get("server_script")]
 
         self.server_params = StdioServerParameters(
             command=self.command,
-            args=[self.server_script],
+            args=self.args,
             env=self.env,
             **params.get("stdio_config", {})
         )
@@ -85,7 +80,6 @@ class McpLocalResource(BaseResource):
                         request["tool"],
                         arguments
                     )
-                    self.logger.debug("Tool call returned: %s", result)
                     return ResourceResponse(success=True, content=result)
                     
         except Exception as e:  # pylint: disable=broad-except
@@ -96,36 +90,17 @@ class McpLocalResource(BaseResource):
         """Check for local tool execution pattern"""
         return "tool" in request
 
-    def get_connection_params(self) -> McpLocalConnectionParams:
-        """Get parameters for other agents to connect to this resource"""
-        if not self.expose:
-            raise ValueError(f"MCP resource '{self.name}' is not configured for exposure")
-            
-        return McpLocalConnectionParams(
-            connection_type='stdio',
-            command=self.command,
-            args=[self.server_script],
-            env=self.env,
-            server_id=self.server_id
-        )
-    
     async def list_tools(self) -> List[Tool]:
         """List all available tools from the MCP server.
         
         Returns:
             List[Tool]: List of available tools with their schemas
         """
-        self.logger.debug("Listing available MCP tools")
         try:
             async with stdio_client(self.server_params) as (read, write):
-                self.logger.debug("Stdio transport established")
                 async with ClientSession(read, write) as session:
-                    self.logger.debug("Client session created")
                     await session.initialize()
-                    self.logger.debug("Session initialization complete")
-
                     result = await session.list_tools()
-                    self.logger.debug("Tool listing returned: %s", result)
                     return result.tools
 
         except Exception as e:  # pylint: disable=broad-except
@@ -150,11 +125,35 @@ class McpLocalResource(BaseResource):
         mcp_tools = await self.list_tools()
 
         for tool in mcp_tools:
+            # Copy and clean up base schema
             parameters = tool.inputSchema.copy()
-            if "properties" in parameters and "self" in parameters["properties"]:
-                del parameters["properties"]["self"]
-            if "required" in parameters and "self" in parameters["required"]:
-                parameters["required"].remove("self")
+            
+            # Remove 'self' references if present
+            if "properties" in parameters:
+                properties = parameters["properties"]
+                if "self" in properties:
+                    del properties["self"]
+                    if "required" in parameters:
+                        parameters["required"].remove("self")
+
+            # Process properties if they exist
+            if "properties" in parameters and "required" in parameters:
+                properties = parameters["properties"]
+                required_fields = parameters["required"]
+
+                # Make non-required fields nullable and add to required list
+                for field_name, field_props in properties.items():
+                    if field_name not in required_fields and "type" in field_props:
+                        field_type = field_props["type"]
+                        field_props["type"] = ([field_type] if isinstance(field_type, str) else field_type) + ["null"]
+                        parameters["required"].append(field_name)
+
+                # Clean up property definitions to only include essential keys
+                allowed_keys = {"description", "title", "type"}
+                for prop in properties.values():
+                    prop_keys = set(prop.keys())
+                    for key in prop_keys - allowed_keys:
+                        del prop[key]
 
             parameters["additionalProperties"] = False
 
