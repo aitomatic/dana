@@ -22,6 +22,7 @@ Note: Install visualization dependencies with:
 from typing import Optional
 from pathlib import Path
 from .logging import LLMInteractionAnalyzer
+import pandas as pd
 
 try:
     import matplotlib.pyplot as plt

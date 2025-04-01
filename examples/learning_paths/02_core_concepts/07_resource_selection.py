@@ -79,6 +79,13 @@ def main():
         server_script=MCP_SERVICE_SCRIPT,
         command=MCP_SCRIPT_COMMAND
     )
+    # weather = McpLocalResource(
+    #     name="weather",
+    #     connection_params={
+    #         "command": "npx",
+    #         "args": ["-y", "@h1deya/mcp-server-weather"]
+    #     }
+    # )
 
     # Create specialized agents
     planner_agent = Agent("planner", "Agent responsible for creating structured plans and coordinating activities based on available information")
