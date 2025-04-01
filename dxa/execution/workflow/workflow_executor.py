@@ -2,8 +2,7 @@
 
 from typing import List, Optional
 
-from sqlalchemy import ExecutionContext
-
+from dxa.execution.execution_context import ExecutionContext
 from dxa.execution.execution_graph import ExecutionGraph
 from dxa.execution.execution_types import ExecutionSignal
 from ..executor import Executor
