@@ -23,7 +23,7 @@ Example:
 """
 
 import asyncio
-from typing import Dict, Any, TYPE_CHECKING
+from typing import Dict, Any, TYPE_CHECKING, List
 from .base_resource import BaseResource
 from ...common.exceptions import ResourceError, ConfigurationError, AgentError
 
@@ -44,6 +44,7 @@ class AgentResource(BaseResource):
         if not agents:
             raise ConfigurationError("Agents dictionary cannot be empty")
         self.agents = agents
+        self.initialize()
 
     async def query(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Query an agent from the registry.
@@ -68,7 +69,8 @@ class AgentResource(BaseResource):
             raise ConfigurationError(f"Agent not found: {agent_id}")
         
         try:    
-            response = await agent.run(request.get("query", {}))
+            loop = asyncio.get_event_loop()
+            response = await loop.run_in_executor(None, agent.ask, request.get("query", {}).get("request", ""))
             return {"response": response, "success": True}
         except AgentError as e:
             raise ResourceError(f"Agent {agent_id} execution failed") from e
@@ -88,6 +90,13 @@ class AgentResource(BaseResource):
             except (AgentError, ValueError) as e:
                 raise ResourceError(f"Failed to initialize agent {agent_id}") from e
 
+    def list_agents(self) -> Dict[str, str]:
+        """List all agents in the registry."""
+        return {
+            f"{agent_id}": agent.description
+            for agent_id, agent in self.agents.items()
+        }
+    
     async def cleanup(self) -> None:
         """Clean up all agents in registry concurrently."""
         cleanup_tasks = []
@@ -106,3 +115,25 @@ class AgentResource(BaseResource):
             await agent.cleanup()
         except (AgentError, ValueError) as e:
             raise ResourceError(f"Failed to cleanup agent {agent_id}: {str(e)}") from e
+        
+    async def get_tool_strings(
+        self, 
+        resource_id: str,
+        **kwargs
+    ) -> List[Dict[str, Any]]:
+        """Format a resource into OpenAI function specification.
+        
+        Args:
+            resource: Resource instance to format
+            **kwargs: Additional keyword arguments
+            
+        Returns:
+            OpenAI function specification list
+        """
+
+        tool_strings = []
+        agents = self.list_agents()
+        for agent_id, agent_description in agents.items():
+            tool_strings.extend(await super().get_tool_strings(resource_id=resource_id, agent_id=agent_id, agent_description=agent_description))
+
+        return tool_strings

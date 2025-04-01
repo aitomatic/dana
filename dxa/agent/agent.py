@@ -42,8 +42,9 @@ class Agent:
     """Main agent interface with built-in execution management."""
 
     # pylint: disable=too-many-instance-attributes
-    def __init__(self, name: Optional[str] = None):
+    def __init__(self, name: Optional[str] = None, description: Optional[str] = None):
         self._name = name or "agent"
+        self._description = description or "Agent responsible for executing tasks and coordinating activities based on available information"
         self._state = AgentState()
         self._agent_llm = None  # Default LLM
         self._workflow_llm = None  # Specialized LLMs
@@ -134,6 +135,16 @@ class Agent:
     def reasoning_llm(self) -> LLMResource:
         """Get reasoning LLM or fallback to default."""
         return self._reasoning_llm or self.agent_llm
+    
+    @property
+    def description(self) -> str:
+        """Get agent description."""
+        return self._description
+
+    @property
+    def name(self) -> str:
+        """Get agent name."""
+        return self._name
 
     def with_llm(self, llm: Union[Dict, str, LLMResource]) -> "Agent":
         """Configure agent LLM."""
@@ -297,7 +308,8 @@ class Agent:
                 execution_state=ExecutionState(),
                 workflow_llm=self.workflow_llm,
                 planning_llm=self.planning_llm,
-                reasoning_llm=self.reasoning_llm
+                reasoning_llm=self.reasoning_llm,
+                resources=self.resources
             )
         else:
             # Update LLMs in provided context if not set
@@ -321,5 +333,5 @@ class Agent:
 
     def ask(self, question: str) -> Any:
         """Ask a question to the agent."""
-        workflow = WorkflowFactory.create_basic_workflow(question)
+        workflow = WorkflowFactory.create_basic_workflow(question, ["query"])
         return self.run(workflow)

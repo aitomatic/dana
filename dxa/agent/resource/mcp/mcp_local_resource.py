@@ -1,9 +1,9 @@
 """MCP local resource using stdio transport (matches mcp_client.py pattern)"""
 
-from typing import Dict, Any, Optional, Union, Literal
+from typing import Dict, Any, List, Optional, Union, Literal
 from dataclasses import dataclass
 import uuid
-from mcp import ClientSession, StdioServerParameters
+from mcp import ClientSession, StdioServerParameters, Tool
 from mcp.client.stdio import stdio_client, get_default_environment
 from ..base_resource import BaseResource, ResourceResponse
 from ....common import DXA_LOGGER
@@ -108,3 +108,64 @@ class McpLocalResource(BaseResource):
             env=self.env,
             server_id=self.server_id
         )
+    
+    async def list_tools(self) -> List[Tool]:
+        """List all available tools from the MCP server.
+        
+        Returns:
+            List[Tool]: List of available tools with their schemas
+        """
+        self.logger.debug("Listing available MCP tools")
+        try:
+            async with stdio_client(self.server_params) as (read, write):
+                self.logger.debug("Stdio transport established")
+                async with ClientSession(read, write) as session:
+                    self.logger.debug("Client session created")
+                    await session.initialize()
+                    self.logger.debug("Session initialization complete")
+
+                    result = await session.list_tools()
+                    self.logger.debug("Tool listing returned: %s", result)
+                    return result.tools
+
+        except Exception as e:  # pylint: disable=broad-except
+            self.logger.error("Tool listing failed", exc_info=True)
+            return []
+        
+    async def get_tool_strings(
+        self, 
+        resource_id: str,
+        **kwargs
+    ) -> List[Dict[str, Any]]:
+        """Format a resource into OpenAI function specification.
+        
+        Args:
+            resource: Resource instance to format
+            **kwargs: Additional keyword arguments
+            
+        Returns:
+            OpenAI function specification list
+        """
+        tool_strings = []
+        mcp_tools = await self.list_tools()
+
+        for tool in mcp_tools:
+            parameters = tool.inputSchema.copy()
+            if "properties" in parameters and "self" in parameters["properties"]:
+                del parameters["properties"]["self"]
+            if "required" in parameters and "self" in parameters["required"]:
+                parameters["required"].remove("self")
+
+            parameters["additionalProperties"] = False
+
+            tool_strings.append({
+                "type": "function",
+                "function": {
+                    "name": f"{resource_id}__query__{tool.name}",
+                    "description": tool.description,
+                    "parameters": parameters,
+                    "strict": True
+                }
+            })
+
+        return tool_strings

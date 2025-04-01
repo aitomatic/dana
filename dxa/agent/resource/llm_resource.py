@@ -129,10 +129,11 @@ class LLMResource(BaseResource):
             request: Dictionary with:
                 - prompt: The user message
                 - system_prompt: Optional system prompt
+                - tools: Optional list of resources to use as tools
                 - additional parameters
         
         Returns:
-            Dictionary with "content", "model", and "usage" keys.
+            Dictionary with "content", "model", and  "usage", and "tools_used" keys.
         """
         if not self._client:
             await self.initialize()
@@ -157,6 +158,10 @@ class LLMResource(BaseResource):
             "frequency_penalty": self.config.get("frequency_penalty"),
             "presence_penalty": self.config.get("presence_penalty"),
         }
+
+        # Add tools if provided in the request
+        if "tools" in request and request["tools"]:
+            request_params["tools"] = request["tools"]
         
         # Merge with request-specific params
         request_params.update(request.get("parameters", {}))
@@ -175,8 +180,13 @@ class LLMResource(BaseResource):
                 )
 
                 # Use aisuite's standardized response format
+                # handle tool calls
                 reasoning = None
-                if hasattr(response, 'reasoning_content'):
+                tools_used = None
+                if hasattr(response, 'choices') and hasattr(response.choices[0].message, 'tool_calls'):
+                    tools_used = response.choices[0].message.tool_calls
+                    reasoning = response.choices[0].finish_reason
+                elif hasattr(response, 'reasoning_content'):
                     reasoning = response.reasoning_content
                 elif hasattr(response, 'choices') and hasattr(response.choices[0].message, 'reasoning_content'):
                     reasoning = response.choices[0].message.reasoning_content
@@ -200,7 +210,8 @@ class LLMResource(BaseResource):
                     "model": self.model,  # Use our model string since it's guaranteed to exist
                     "usage": getattr(response, 'usage', None),
                     # Include any thinking content if present
-                    "reasoning": reasoning
+                    "reasoning": reasoning,
+                    "tools_used": tools_used
                 }
 
             except (APIConnectionError, RateLimitError) as e:

@@ -7,6 +7,7 @@ from .resource_factory import ResourceFactory
 from .human_resource import HumanResource
 from .mcp import McpLocalResource, McpRemoteResource
 from .wot_resource import WoTResource
+from .agent_resource import AgentResource
 
 __all__ = [
     'BaseResource',
@@ -16,5 +17,6 @@ __all__ = [
     'HumanResource',
     'McpLocalResource',
     'McpRemoteResource',
-    'WoTResource'
+    'WoTResource',
+    'AgentResource'
 ]
