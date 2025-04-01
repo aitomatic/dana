@@ -1,11 +1,13 @@
 """Reasoning executor implementation."""
 
 from typing import List
+
+from dxa.common.utils.resource_executor import ResourceExecutor
 from ..executor import Executor
 from .reasoning import Reasoning
 from .reasoning_strategy import ReasoningStrategy
 from .reasoning_factory import ReasoningFactory
-from ..execution_types import ExecutionNode, ExecutionSignal
+from ..execution_types import ExecutionNode, ExecutionSignal, ExecutionSignalType
 from ..execution_context import ExecutionContext
 
 class ReasoningExecutor(Executor[ReasoningStrategy, Reasoning, ReasoningFactory]):
@@ -101,7 +103,21 @@ class ReasoningExecutor(Executor[ReasoningStrategy, Reasoning, ReasoningFactory]
                         f"Please provide a detailed analysis and reasoning for this task, "
                         f"ensuring your response aligns with all levels of the objective hierarchy."
                     )
-                    
+
+                    tool_executor = ResourceExecutor()
+                    tool_responses = await tool_executor.execute_resources(prompt, context)
+
+                    if tool_responses:
+                        tool_responses_text = "\n".join([
+                            f"Tool: {resp['tool_name']}\nResponse: {resp['response']}"
+                            for resp in tool_responses
+                        ])
+
+                        prompt = (
+                            f"{prompt}\n\n"
+                            f"<tool_calling>\n{tool_responses_text}\n</tool_calling>"
+                        )
+                        
                     response = await context.reasoning_llm.query({
                         "prompt": prompt,
                         "system_prompt": (
@@ -119,6 +135,10 @@ class ReasoningExecutor(Executor[ReasoningStrategy, Reasoning, ReasoningFactory]
                         print("================")
                         print(response["content"])
         
-        # For now, just return an empty list of signals
-        return []
+        # return a list of signals
+        return [ExecutionSignal(
+            type=ExecutionSignalType.DATA_RESULT,
+            content=response["content"]
+        )]
+
     

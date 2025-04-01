@@ -1,6 +1,8 @@
 """Execution context for DXA."""
 
 from typing import Optional, TYPE_CHECKING, cast, Dict, Any, Tuple
+
+from dxa.agent.resource.base_resource import BaseResource
 from .execution_types import ExecutionNode
 if TYPE_CHECKING:
     from ..agent import AgentState, WorldState, ExecutionState
@@ -22,13 +24,15 @@ class ExecutionContext:
                  current_workflow: Optional['Workflow'] = None,
                  current_plan: Optional['Plan'] = None,
                  current_reasoning: Optional['Reasoning'] = None,
-                 global_context: Optional[Dict[str, Any]] = None
+                 global_context: Optional[Dict[str, Any]] = None,
+                 resources: Dict[str, BaseResource] = None
                  ):
         """Initialize execution context."""
         # State management
         self.agent_state = agent_state
         self.world_state = world_state
         self.execution_state = execution_state
+        self.resources = resources
 
         # Current execution graphs
         self.current_workflow = current_workflow

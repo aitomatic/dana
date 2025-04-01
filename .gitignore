@@ -16,3 +16,8 @@ dxa.egg-info/*
 flake8_issues.txt
 .env.swp
 .gitignore.swp
+uv.lock
+.cursorrules
+proposal/*
+notebooks/*
+memory-bank/*

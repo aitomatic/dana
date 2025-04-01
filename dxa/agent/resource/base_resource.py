@@ -23,7 +23,7 @@ Example:
 
 from abc import ABC
 from dataclasses import dataclass
-from typing import Dict, Any, Optional, Union
+from typing import Dict, Any, List, Optional, Union
 from ...common import DXA_LOGGER
 
 class ResourceError(Exception):
@@ -139,3 +139,82 @@ class BaseResource(ABC):
             if key in sanitized:
                 sanitized[key] = "***REDACTED***"
         return sanitized
+    
+    async def get_tool_strings(
+        self, 
+        resource_id: str,
+        **kwargs
+    ) -> List[Dict[str, Any]]:
+        """Format a resource into OpenAI function specification.
+        
+        Args:
+            resource: Resource instance to format
+            **kwargs: Additional keyword arguments
+            
+        Returns:
+            OpenAI function specification list
+        """
+        query_params = self.query.__annotations__
+        properties = {}
+        required = []
+
+        type_map = {
+            Dict: "object",
+            str: "string",
+            int: "integer",
+            float: "number",
+            bool: "boolean"
+        }
+
+        for param_name, param_type in query_params.items():
+            if param_name == "return":
+                continue
+
+            required.append(param_name)
+
+            # Check if parameter is Optional[T] by examining Union type with None
+            is_optional = (hasattr(param_type, "__origin__") and 
+                         param_type.__origin__ is Union and
+                         type(None) in param_type.__args__)
+
+            # Extract the actual type from Optional if present
+            actual_type = param_type.__args__[0] if is_optional else param_type
+
+            # Get schema type, defaulting to string if type not in map
+            param_schema_type = type_map.get(actual_type, "string")
+
+            # Make optional params accept null for flexibility
+            if is_optional:
+                param_schema_type = [param_schema_type, "null"]
+
+            properties[param_name] = {
+                "type": param_schema_type,
+                "description": f"{param_name} parameter"
+            }
+
+        # Build function name based on whether this is an agent resource
+        function_name = f"{resource_id}__query"
+        description = self.description or self.query.__doc__
+
+        agent_id = kwargs.get("agent_id")
+        if agent_id:
+            function_name = f"{resource_id}__query__{agent_id}"
+
+        agent_description = kwargs.get("agent_description")
+        if agent_description:
+            description = agent_description
+
+        return [{
+            "type": "function",
+            "function": {
+                "name": function_name,
+                "description": description,
+                "parameters": {
+                    "type": "object",
+                    "properties": properties,
+                    "required": required,
+                    "additionalProperties": False
+                },
+                "strict": True
+            }
+        }]

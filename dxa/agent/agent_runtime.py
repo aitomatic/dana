@@ -2,6 +2,7 @@
 
 from typing import Any, TYPE_CHECKING
 
+
 from ..execution.workflow import WorkflowExecutor, WorkflowStrategy, Workflow
 from ..execution.planning import PlanStrategy
 from ..execution.reasoning import ReasoningStrategy
@@ -21,9 +22,7 @@ class AgentRuntime:
         self.agent = agent
 
         # Initialize executors with strategies
-        self.workflow_executor = WorkflowExecutor(workflow_strategy=workflow_strategy,
-                                                  planning_strategy=planning_strategy,
-                                                  reasoning_strategy=reasoning_strategy)
+        self.workflow_executor = WorkflowExecutor(strategy=workflow_strategy)
 
     async def execute(self, workflow: Workflow, context: ExecutionContext) -> Any:
         """Execute workflow and return result."""

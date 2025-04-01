@@ -300,7 +300,8 @@ class Executor(Loggable, ABC, Generic[StrategyT, GraphT, FactoryT]):
                 current_workflow=context.current_workflow,
                 current_plan=context.current_plan,
                 current_reasoning=context.current_reasoning,
-                global_context=context.global_context
+                global_context=context.global_context,
+                resources=context.resources
             )
         except Exception as e:
             raise ExecutionError("Context building failed") from e
@@ -552,3 +553,5 @@ class Executor(Loggable, ABC, Generic[StrategyT, GraphT, FactoryT]):
         self.logger.info(
             f"Starting {self.graph_class.__name__.lower()} execution with {len(graph.nodes)} nodes"
         ) 
+
+    
