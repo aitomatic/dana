@@ -2,7 +2,7 @@
 
 from typing import List
 
-from dxa.common.utils.resource_executor import ResourceExecutor
+from dxa.agent.resource.resource_executor import ResourceExecutor
 from ..executor import Executor
 from .reasoning import Reasoning
 from .reasoning_strategy import ReasoningStrategy

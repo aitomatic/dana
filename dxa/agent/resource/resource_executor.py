@@ -78,7 +78,7 @@ class ResourceExecutor:
         # Layer-specific system prompts
         prompts = {
             "workflow": """You are a workflow planning assistant. Use tools to gather relevant information.""",
-            "plan": """You are a plan execution assistant. Use tools to execute steps effectively.""",
+            "plan": """You are a plan execution assistant. Use tools to gather relevant information to create a plan. Especially tool that retrieve the synthesized or heuristic data from the internet.""",
             "reasoning": """You are a reasoning assistant. Use tools when necessary to complete tasks."""
         }
         return prompts.get(layer, prompts["reasoning"])
