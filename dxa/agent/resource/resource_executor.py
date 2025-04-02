@@ -83,18 +83,6 @@ class ResourceExecutor:
         }
         return prompts.get(layer, prompts["reasoning"])
 
-    def _format_prompt_with_tool_results(self, original_prompt: str, tool_responses: List[Dict]) -> str:
-        """Format prompt with tool results."""
-        if not tool_responses:
-            return original_prompt
-
-        tool_responses_text = "\n".join([
-            f"Tool: {resp['tool_name']}\nResponse: {resp['response']}"
-            for resp in tool_responses
-        ])
-
-        return f"{original_prompt}\n\nRelevant context retrieved from tools:\n{tool_responses_text}"
-
     async def _query_llm(
         self,
         llm: LLMResource, 
