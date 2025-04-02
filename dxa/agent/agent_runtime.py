@@ -35,7 +35,7 @@ class AgentRuntime:
         assert context.reasoning_llm is not None    
 
         # Execute workflow with context
-        signals = await self.workflow_executor.execute_workflow(workflow, context)
+        signals = await self.workflow_executor.execute(workflow, context)
 
         # Get final result from signals
         for signal in reversed(signals):
