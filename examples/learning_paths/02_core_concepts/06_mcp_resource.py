@@ -8,9 +8,9 @@ Demonstrates:
 
 import asyncio
 import os
-from typing import Dict, Any
+from typing import cast
 from dxa.agent import Agent
-from dxa.agent.resource import McpLocalResource, McpRemoteResource
+from dxa.agent.resource import McpLocalResource
 from dxa.common import DXA_LOGGER
 
 # Configure logging
@@ -84,7 +84,8 @@ async def run_gdrive_example():
     # Example: Using google drive service
     print("\n=== Step 1: Discovering Available Tools ===")
     print("Querying available Google Drive tools...")
-    tools = await agent.resources["gdrive"].list_tools()
+    resource = cast(McpLocalResource, agent.resources["gdrive"])
+    tools = await resource.list_tools()
     print(f"Found {len(tools)} available tools")
     
     for tool in tools:
@@ -107,6 +108,11 @@ async def run_gdrive_example():
         }
     })
     print('-' * 50)
+
+    assert gdrive_response is not None, "gdrive_response is None"
+    assert gdrive_response.content is not None, "gdrive_response.content is None"
+    assert gdrive_response.content.content is not None, "gdrive_response.content.content is None"
+    assert len(gdrive_response.content.content) > 0, "gdrive_response.content.content is empty"
     documents = _extract_files_from_gdrive_search_response(gdrive_response.content.content[0].text)
     print("\nSearch Results:")
     for doc in documents:
