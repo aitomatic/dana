@@ -1,7 +1,6 @@
 """Workflow executor implementation."""
 
 from typing import Optional
-
 from ..executor import Executor
 from .workflow import Workflow
 from .workflow_strategy import WorkflowStrategy
@@ -34,3 +33,4 @@ class WorkflowExecutor(Executor[WorkflowStrategy, Workflow, WorkflowFactory]):
         if lower_executor is None:
             lower_executor = PlanExecutor(PlanStrategy.DEFAULT)
         super().__init__(strategy, lower_executor)
+        

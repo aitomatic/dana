@@ -2,8 +2,6 @@
 
 from typing import List, Optional
 from dataclasses import dataclass, field
-
-from dxa.agent.resource.base_resource import BaseResource
 from ...execution import Workflow, Objective, ExecutionSignal, ExecutionNode, Plan
 from .base_state import BaseState
 
@@ -15,7 +13,6 @@ class AgentState(BaseState):
     current_workflow: Optional['Workflow'] = None
     signals: List[ExecutionSignal] = field(default_factory=list)
     current_step_index: int = 0
-    resources: List[BaseResource] = field(default_factory=list)
 
     def set_objective(self, objective: Objective) -> None:
         """Set current objective."""
