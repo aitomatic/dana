@@ -44,7 +44,8 @@ class Agent:
     # pylint: disable=too-many-instance-attributes
     def __init__(self, name: Optional[str] = None, description: Optional[str] = None):
         self._name = name or "agent"
-        self._description = description or "Agent responsible for executing tasks and coordinating activities based on available information"
+        self._description = description or "Agent responsible for executing tasks and " \
+                                           "coordinating activities based on available information"
         self._state = AgentState()
         self._agent_llm = None  # Default LLM
         self._workflow_llm = None  # Specialized LLMs
