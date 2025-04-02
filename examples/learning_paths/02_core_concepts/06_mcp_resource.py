@@ -26,6 +26,7 @@ def _extract_files_from_gdrive_search_response(text):
     Returns:
         List[Dict[str, str]]: List of documents with id, name and type
     """
+    print("\nProcessing Google Drive search response...")
     documents = []
     lines = text.split('\n')
     
@@ -53,11 +54,15 @@ def _extract_files_from_gdrive_search_response(text):
             'name': name,
             'type': doc_type
         })
-        
+    
+    print(f"Found {len(documents)} documents in the search results")
     return documents
 
 async def run_gdrive_example():
     """Run the gdrive example"""
+    print("\n=== Starting Google Drive MCP Resource Example ===")
+    print("Initializing Google Drive MCP resource...")
+    
     gdrive = McpLocalResource(
         name="gdrive",
         connection_params={
@@ -71,24 +76,29 @@ async def run_gdrive_example():
         }
     )
 
+    print("Creating agent with Google Drive resource...")
     agent = Agent("MCP-Demo-Agent").with_resources({
         "gdrive": gdrive
     })
 
     # Example: Using google drive service
-    print("===================== Listing tools ======================")
+    print("\n=== Step 1: Discovering Available Tools ===")
+    print("Querying available Google Drive tools...")
     tools = await agent.resources["gdrive"].list_tools()
+    print(f"Found {len(tools)} available tools")
+    
     for tool in tools:
-        print(f"\nTool name: {tool.name}")
+        print(f"\nTool: {tool.name}")
         print(f"Description: {tool.description}")
-        print(f"Parameters:")
+        print("Parameters:")
         for param_name, param_details in tool.inputSchema['properties'].items():
             print(f"  - {param_name}: {param_details['description']}")
             if param_details.get('optional'):
                 print("    (Optional)")
-        print(f"Required parameters: {', '.join(tool.inputSchema['required'])} \n")
+        print(f"Required parameters: {', '.join(tool.inputSchema['required'])}")
     
-    print("\n===================== Search files in Google Drive ======================")
+    print("\n=== Step 2: Searching Google Drive ===")
+    print("Executing search query for 'dxa'...")
     gdrive_response = await agent.resources["gdrive"].query({
         "tool": "gdrive_search",
         "arguments": {
@@ -98,12 +108,16 @@ async def run_gdrive_example():
     })
     print('-' * 50)
     documents = _extract_files_from_gdrive_search_response(gdrive_response.content.content[0].text)
+    print("\nSearch Results:")
     for doc in documents:
         print(f"ID: {doc['id']}")
         print(f"Name: {doc['name']}")
         print(f"Type: {doc['type']}")
         print('-' * 50)
 
+    print("\n=== Step 3: File Reading (Commented Out) ===")
+    print("Note: The file reading functionality is commented out to avoid potential issues.")
+    print("To read a file, uncomment the code block below and provide a valid file ID.")
     # print("\n===================== Read file from Google Drive ======================")
     # gdrive_response = await agent.resources["gdrive"].query({
     #     "tool": "gdrive_read_file",
@@ -115,6 +129,9 @@ async def run_gdrive_example():
 
 async def run_mysql_example():
     """Run the mysql example"""
+    print("\n=== Starting MySQL MCP Resource Example ===")
+    print("Initializing MySQL MCP resource...")
+    
     mysql = McpLocalResource(
         name="mysql",
         connection_params={
@@ -123,22 +140,25 @@ async def run_mysql_example():
         }
     )
 
+    print("Creating agent with MySQL resource...")
     agent = Agent("MCP-Demo-Agent").with_resources({
         "mysql": mysql
     })
-
+    print("Note: MySQL example is a placeholder. Add your MySQL operations here.")
 
 async def main():
-
     """Main function demonstrating MCP resource usage"""
+    print("=== MCP Resource Examples ===")
+    print("This example demonstrates how to use MCP (Model Control Protocol) resources")
+    print("with DXA, including both local and remote services.")
     
     await run_gdrive_example()
-
     await run_mysql_example()
 
-    # https://github.com/cr7258/elasticsearch-mcp-server
+    print("\n=== Additional Examples ===")
+    print("Note: Elasticsearch example is available at:")
+    print("https://github.com/cr7258/elasticsearch-mcp-server")
     # await run_elasticsearch_example()
-
 
 if __name__ == "__main__":
     asyncio.run(main())
