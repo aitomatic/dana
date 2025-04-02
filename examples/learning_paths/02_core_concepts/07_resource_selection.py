@@ -31,10 +31,10 @@ Expected output:
 - The final result will be a comprehensive plan combining all gathered information
 """
 
+from typing import Dict, Any
 from dxa.agent import Agent
 from dxa.agent.resource import BaseResource, AgentResource
 from dxa.agent.resource.mcp import McpLocalResource
-from typing import Dict, Any
 
 print("\n=== Starting Resource Selection Example ===")
 print("This example demonstrates how an agent can intelligently select and use different resources")
@@ -108,6 +108,8 @@ class TransportResource(BaseResource):
         }
 
 def main():
+    """Main function to run the resource selection example."""
+
     print("\n=== Step 1: Initializing Resources ===")
     print("Creating custom resources for restaurant and transport services...")
     
