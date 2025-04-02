@@ -127,38 +127,14 @@ async def run_gdrive_example():
     # })
     # print(f"File content: {gdrive_response.content}")
 
-async def run_mysql_example():
-    """Run the mysql example"""
-    print("\n=== Starting MySQL MCP Resource Example ===")
-    print("Initializing MySQL MCP resource...")
-    
-    mysql = McpLocalResource(
-        name="mysql",
-        connection_params={
-            "command": "npx",
-            "args": ["-y", "@h1deya/mcp-server-mysql"]
-        }
-    )
-
-    print("Creating agent with MySQL resource...")
-    agent = Agent("MCP-Demo-Agent").with_resources({
-        "mysql": mysql
-    })
-    print("Note: MySQL example is a placeholder. Add your MySQL operations here.")
 
 async def main():
     """Main function demonstrating MCP resource usage"""
     print("=== MCP Resource Examples ===")
     print("This example demonstrates how to use MCP (Model Control Protocol) resources")
-    print("with DXA, including both local and remote services.")
     
     await run_gdrive_example()
-    await run_mysql_example()
 
-    print("\n=== Additional Examples ===")
-    print("Note: Elasticsearch example is available at:")
-    print("https://github.com/cr7258/elasticsearch-mcp-server")
-    # await run_elasticsearch_example()
 
 if __name__ == "__main__":
     asyncio.run(main())
