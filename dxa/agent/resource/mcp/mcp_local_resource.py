@@ -1,6 +1,6 @@
 """MCP local resource using stdio transport (matches mcp_client.py pattern)"""
 
-from typing import Dict, Any, List, Optional, Union, Literal
+from typing import Dict, Any, List, Optional, Union, Literal, cast
 from dataclasses import dataclass
 import uuid
 from mcp import ClientSession, StdioServerParameters, Tool
@@ -12,7 +12,7 @@ from ....common import DXA_LOGGER
 class McpLocalConnectionParams:
     """Parameters for connecting to a local MCP resource via stdio"""
     connection_type: Literal['stdio'] = 'stdio'
-    server_id: str = None
+    server_id: str = ""
     command: Optional[str] = None
     args: Optional[list] = None
     env: Optional[Dict[str, str]] = None
@@ -20,7 +20,11 @@ class McpLocalConnectionParams:
 class McpLocalResource(BaseResource):
     """MCP resource for local stdio tool execution with optional exposure"""
     
-    def __init__(self, name: str, connection_params: Optional[Union[McpLocalConnectionParams, Dict[str, Any]]] = None, expose: bool = False, **params):
+    def __init__(self,
+                 name: str,
+                 connection_params: Optional[Union[McpLocalConnectionParams, Dict[str, Any]]] = None,
+                 expose: bool = False,
+                 **params):
         super().__init__(name)
         self.logger = DXA_LOGGER.getLogger(__class__.__name__)
         self.server_id = str(uuid.uuid4())[:8]  # Generate unique ID for this server
@@ -48,6 +52,11 @@ class McpLocalResource(BaseResource):
             self.command = params.get("command", "python3")
             self.args = [params.get("server_script")]
 
+        if self.args is None:
+            self.args = []
+        
+        self.args = cast(List[str], self.args)
+
         self.server_params = StdioServerParameters(
             command=self.command,
             args=self.args,
@@ -58,7 +67,6 @@ class McpLocalResource(BaseResource):
     async def initialize(self) -> None:
         """Initialize the resource and start server"""
         await super().initialize()
-        
 
     async def query(self, request: Dict[str, Any]) -> ResourceResponse:
         """Handle tool execution request matching mcp_client.py flow"""
@@ -102,9 +110,8 @@ class McpLocalResource(BaseResource):
                     await session.initialize()
                     result = await session.list_tools()
                     return result.tools
-
         except Exception as e:  # pylint: disable=broad-except
-            self.logger.error("Tool listing failed", exc_info=True)
+            self.logger.error(f"Tool listing failed: {e}", exc_info=True)
             return []
         
     async def get_tool_strings(

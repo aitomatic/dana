@@ -25,7 +25,7 @@ class ExecutionContext:
                  current_plan: Optional['Plan'] = None,
                  current_reasoning: Optional['Reasoning'] = None,
                  global_context: Optional[Dict[str, Any]] = None,
-                 resources: Dict[str, BaseResource] = None
+                 resources: Optional[Dict[str, BaseResource]] = None
                  ):
         """Initialize execution context."""
         # State management
