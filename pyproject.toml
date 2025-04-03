@@ -9,3 +9,7 @@ description = "Domain-Expert Agent Framework"
 
 [tool.setuptools]
 packages = ["dxa"]
+
+[tool.ruff]
+line-length = 120
+
