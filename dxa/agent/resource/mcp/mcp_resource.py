@@ -2,8 +2,7 @@
 
 import uuid
 from dataclasses import dataclass
-from enum import Enum
-from typing import Any, Dict, List, Optional, Sequence, Union, cast
+from typing import Any, Dict, List, Optional, Sequence, Union, cast, Literal
 
 from mcp import ClientSession, StdioServerParameters, Tool
 from mcp.client.stdio import get_default_environment, stdio_client
@@ -13,15 +12,31 @@ from ....common import Loggable
 from ..base_resource import BaseResource, ResourceResponse
 
 
-class McpTransportType(Enum):
-    """Type of transport to use for MCP communication."""
-    STDIO = "stdio"  # Local communication using standard input/output
-    HTTP = "http"    # Remote communication using HTTP/SSE
-
-
 @dataclass
 class StdioTransportParams:
-    """Parameters for STDIO transport."""
+    """Parameters for STDIO transport.
+    
+    Args:
+        server_script: Path to the Python script that will be executed as the MCP server.
+            This script should implement the MCP server protocol over standard input/output.
+        command: Command to execute the server script (default: "python3").
+            This is the interpreter or executable that will run the server_script.
+        args: Optional list of additional arguments to pass to the command.
+            If not provided, only the server_script will be passed as an argument.
+        env: Optional dictionary of environment variables to set for the server process.
+            These will be merged with the default environment variables.
+        stdio_config: Optional additional configuration for STDIO transport.
+            This can include settings specific to the STDIO communication protocol.
+            Common parameters include:
+            - buffer_size: Size of the read/write buffers (default: 8192)
+            - encoding: Text encoding for communication (default: "utf-8")
+            - line_buffering: Whether to use line buffering (default: True)
+            - timeout: Timeout for read/write operations in seconds
+            
+            The STDIO transport is ideal for local MCP servers that run in the same process
+            or on the same machine. It uses standard input/output streams for communication,
+            making it simple to set up and debug.
+    """
     server_script: str
     command: str = "python3"
     args: Optional[Sequence[str]] = None
@@ -31,17 +46,32 @@ class StdioTransportParams:
 
 @dataclass
 class HttpTransportParams:
-    """Parameters for HTTP transport."""
-    url: str
-    headers: Optional[Dict[str, Any]] = None
-    timeout: float = 5.0
-    sse_read_timeout: float = 60 * 5
-    sse_config: Optional[Dict[str, Any]] = None
-
-
-@dataclass
-class HttpServerParameters:
-    """Parameters for HTTP server connection."""
+    """Parameters for HTTP transport.
+    
+    Args:
+        url: URL for the HTTP endpoint
+        headers: Optional dictionary of HTTP headers
+        timeout: Connection timeout in seconds for initial HTTP connection establishment.
+            This is a relatively short timeout (default: 5.0s) used for the basic HTTP
+            request/response cycle.
+        sse_read_timeout: Server-Sent Events (SSE) read timeout in seconds.
+            This is a longer timeout (default: 300s/5min) used for maintaining the SSE
+            connection and receiving data over time. SSE connections are long-lived
+            and may receive data for extended periods.
+        sse_config: Optional additional configuration for SSE transport.
+            Common parameters include:
+            - retry_interval: Time to wait between reconnection attempts (default: 1.0s)
+            - max_retries: Maximum number of reconnection attempts (default: 3)
+            - backoff_factor: Multiplier for retry interval after each attempt
+            - event_types: List of SSE event types to listen for
+            - keep_alive: Whether to send keep-alive messages (default: True)
+            - keep_alive_interval: Interval for keep-alive messages in seconds
+            
+            The HTTP transport with SSE is ideal for remote MCP servers that need to
+            maintain long-lived connections for real-time updates. SSE allows the server
+            to push data to the client asynchronously, making it suitable for streaming
+            responses and long-running operations.
+    """
     url: str
     headers: Optional[Dict[str, Any]] = None
     timeout: float = 5.0
@@ -50,7 +80,24 @@ class HttpServerParameters:
 
 
 class McpResource(BaseResource, Loggable):
-    """MCP resource that can use either stdio or HTTP transport."""
+    """MCP resource that can use either stdio or HTTP transport.
+    
+    The Model Context Protocol (MCP) allows applications to provide context for LLMs
+    in a standardized way, separating the concerns of providing context from the
+    actual LLM interaction.
+    
+    MCP servers can expose:
+    - Resources: Data that can be loaded into the LLM's context (similar to GET endpoints)
+    - Tools: Functions that the LLM can call to take actions (similar to POST endpoints)
+    - Prompts: Reusable templates for LLM interactions
+    
+    This resource implementation supports connecting to MCP servers using either:
+    - STDIO transport: For local MCP servers running in the same process or machine
+    - HTTP transport with SSE: For remote MCP servers that need long-lived connections
+    
+    The resource handles all MCP protocol messages and lifecycle events, making it
+    easy to integrate MCP servers into your application.
+    """
 
     def __init__(
         self,
@@ -71,8 +118,13 @@ class McpResource(BaseResource, Loggable):
                 - HttpTransportParams: For HTTP transport with fields:
                     - url: URL for the HTTP endpoint
                     - headers: Optional dictionary of HTTP headers
-                    - timeout: Connection timeout in seconds (default: 5.0)
-                    - sse_read_timeout: SSE read timeout in seconds (default: 300)
+                    - timeout: Connection timeout in seconds for initial HTTP connection establishment.
+                        This is a relatively short timeout (default: 5.0s) used for the basic HTTP
+                        request/response cycle.
+                    - sse_read_timeout: Server-Sent Events (SSE) read timeout in seconds.
+                        This is a longer timeout (default: 300s/5min) used for maintaining the SSE
+                        connection and receiving data over time. SSE connections are long-lived
+                        and may receive data for extended periods.
                     - sse_config: Optional additional configuration for SSE transport
         """
         super().__init__(name)
@@ -85,15 +137,13 @@ class McpResource(BaseResource, Loggable):
         else:
             # Default to stdio transport with required server_script
             raise ValueError("transport_params is required")
-            
-        # Set transport type based on params
-        self.transport_type = (
-            McpTransportType.STDIO if isinstance(self.transport_params, StdioTransportParams)
-            else McpTransportType.HTTP
-        )
         
         # Create server params
-        if self.transport_type == McpTransportType.STDIO:
+        # Note: There's a distinction between transport_params (user-facing configuration)
+        # and server_params (internal parameters used by the MCP library):
+        # - For STDIO: We use StdioServerParameters from the MCP library
+        # - For HTTP: We use a dictionary that's passed directly to sse_client
+        if isinstance(self.transport_params, StdioTransportParams):
             env = get_default_environment()
             env["PYDEVD_DISABLE_FILE_VALIDATION"] = "1"
             
@@ -105,7 +155,7 @@ class McpResource(BaseResource, Loggable):
             if not all(isinstance(arg, str) for arg in args):
                 raise ValueError("All args must be strings")
 
-            self.server_params: Union[StdioServerParameters, HttpServerParameters] = StdioServerParameters(
+            self.server_params: Union[StdioServerParameters, Dict[str, Any]] = StdioServerParameters(
                 command=stdio_params.command,
                 args=list(args),
                 env=env,
@@ -113,41 +163,130 @@ class McpResource(BaseResource, Loggable):
             )
         else:  # HTTP
             http_params = cast(HttpTransportParams, self.transport_params)
-            self.server_params: Union[StdioServerParameters, HttpServerParameters] = HttpServerParameters(
-                url=http_params.url,
-                headers=http_params.headers,
-                timeout=http_params.timeout,
-                sse_read_timeout=http_params.sse_read_timeout,
-                sse_config=http_params.sse_config
-            )
+            self.server_params: Union[StdioServerParameters, Dict[str, Any]] = {
+                "url": http_params.url,
+                "headers": http_params.headers,
+                "timeout": http_params.timeout,
+                "sse_read_timeout": http_params.sse_read_timeout,
+                **(http_params.sse_config or {})
+            }
+    
+    @property
+    def transport_type(self) -> Literal["stdio", "http"]:
+        """Get the transport type used by this resource.
+        
+        Returns:
+            "stdio" for STDIO transport or "http" for HTTP transport
+        """
+        return "stdio" if isinstance(self.transport_params, StdioTransportParams) else "http"
 
     async def query(self, request: Dict[str, Any]) -> ResourceResponse:
-        """Handle tool execution request.
+        """Execute a tool on the MCP server.
+        
+        This method sends a request to the MCP server to execute a specific tool with the provided arguments.
+        The method handles the connection to the server based on the transport type (stdio or http) and
+        returns the result of the tool execution.
         
         Args:
-            request: Tool execution request with tool name and arguments
+            request: Tool execution request with the following structure:
+                {
+                    "tool": "tool_name",  # Name of the MCP tool to call
+                    "arguments": {        # Dictionary of arguments for the tool
+                        "param1": value1,
+                        "param2": value2,
+                        ...
+                    }
+                }
+                
+                The "tool" field is required and must match the name of a tool exposed by the MCP server.
+                The "arguments" field is optional and contains the parameters for the tool.
+                If "arguments" is not provided, an empty dictionary will be used.
             
         Returns:
-            ResourceResponse with execution results
+            ResourceResponse with execution results. The response includes:
+            - success: Boolean indicating if the tool execution was successful
+            - content: The result of the tool execution if successful
+            - error: Error message if the execution failed
+            
+        Raises:
+            Exception: If there is an error connecting to the MCP server or executing the tool.
+                     The exception is caught and returned as part of the ResourceResponse.
+            
+        Examples:
+            Basic usage with a simple tool:
+            ```python
+            response = await mcp_resource.query({
+                "tool": "calculate_bmi",
+                "arguments": {"weight_kg": 70, "height_m": 1.75}
+            })
+            
+            if response.success:
+                print(f"BMI: {response.content}")
+            else:
+                print(f"Error: {response.error}")
+            ```
+            
+            Calling a tool without arguments:
+            ```python
+            response = await mcp_resource.query({
+                "tool": "get_current_time"
+            })
+            
+            if response.success:
+                print(f"Current time: {response.content}")
+            ```
+            
+            Error handling with try-except:
+            ```python
+            try:
+                response = await mcp_resource.query({
+                    "tool": "process_data",
+                    "arguments": {"data": large_dataset}
+                })
+                
+                if response.success:
+                    process_result(response.content)
+                else:
+                    handle_error(response.error)
+            except Exception as e:
+                print(f"Unexpected error: {e}")
+            ```
+            
+            Discovering available tools first:
+            ```python
+            # First, discover available tools
+            tools = await mcp_resource.list_tools()
+            
+            # Find a specific tool
+            target_tool = next((tool for tool in tools if tool.name == "analyze_text"), None)
+            
+            if target_tool:
+                # Check required parameters
+                required_params = target_tool.inputSchema.get("required", [])
+                
+                # Prepare arguments
+                arguments = {param: value for param, value in params.items() 
+                            if param in required_params or param in target_tool.inputSchema.get("properties", {})}
+                
+                # Execute the tool
+                response = await mcp_resource.query({
+                    "tool": target_tool.name,
+                    "arguments": arguments
+                })
+            else:
+                print("Tool not found")
+            ```
         """
         self.debug("Starting MCP query: %s", request)
         try:
-            if self.transport_type == McpTransportType.STDIO:
+            if self.transport_type == "stdio":
                 assert isinstance(self.server_params, StdioServerParameters)
                 async with stdio_client(self.server_params) as (read, write):
                     async with ClientSession(read, write) as session:
                         return await self._execute_query(session, request)
-            else:
-                assert isinstance(self.server_params, HttpServerParameters)
-                # Convert HttpServerParameters to dict for sse_client
-                server_params_dict = {
-                    "url": self.server_params.url,
-                    "headers": self.server_params.headers,
-                    "timeout": self.server_params.timeout,
-                    "sse_read_timeout": self.server_params.sse_read_timeout,
-                    **(self.server_params.sse_config or {})
-                }
-                async with sse_client(**server_params_dict) as streams:
+            else:  # http
+                assert isinstance(self.server_params, dict)
+                async with sse_client(**self.server_params) as streams:
                     async with ClientSession(*streams) as session:
                         return await self._execute_query(session, request)
         except Exception as e:
@@ -185,28 +324,40 @@ class McpResource(BaseResource, Loggable):
     async def list_tools(self) -> List[Tool]:
         """List all available tools from the MCP server.
         
+        This method discovers all tools exposed by the MCP server. Each tool has:
+        - name: The name of the tool
+        - description: A description of what the tool does
+        - inputSchema: JSON Schema describing the tool's parameters
+        
+        Tools are the primary way for LLMs to take actions through an MCP server.
+        They are similar to POST endpoints in a REST API - they perform computation
+        and can have side effects.
+        
         Returns:
             List of available tools with their schemas
+            
+        Example:
+            ```python
+            tools = await mcp_resource.list_tools()
+            for tool in tools:
+                print(f"Tool: {tool.name}")
+                print(f"Description: {tool.description}")
+                print("Parameters:")
+                for param_name, param_details in tool.inputSchema["properties"].items():
+                    print(f"  - {param_name}: {param_details.get('type')}")
+            ```
         """
         try:
-            if self.transport_type == McpTransportType.STDIO:
+            if self.transport_type == "stdio":
                 assert isinstance(self.server_params, StdioServerParameters)
                 async with stdio_client(self.server_params) as (read, write):
                     async with ClientSession(read, write) as session:
                         await session.initialize()
                         result = await session.list_tools()
                         return result.tools
-            else:
-                assert isinstance(self.server_params, HttpServerParameters)
-                # Convert HttpServerParameters to dict for sse_client
-                server_params_dict = {
-                    "url": self.server_params.url,
-                    "headers": self.server_params.headers,
-                    "timeout": self.server_params.timeout,
-                    "sse_read_timeout": self.server_params.sse_read_timeout,
-                    **(self.server_params.sse_config or {})
-                }
-                async with sse_client(**server_params_dict) as streams:
+            else:  # http
+                assert isinstance(self.server_params, dict)
+                async with sse_client(**self.server_params) as streams:
                     async with ClientSession(*streams) as session:
                         await session.initialize()
                         result = await session.list_tools()
@@ -275,29 +426,33 @@ class McpResource(BaseResource, Loggable):
 
         return tool_strings
 
-    def get_connection_params(self) -> Dict[str, Any]:
-        """Get connection parameters for this resource.
+    def get_transport_params(self) -> Union[StdioTransportParams, HttpTransportParams]:
+        """Get transport parameters for this resource.
         
-        This method is used to expose the connection parameters to other resources,
+        This method is used to expose the transport parameters to other resources,
         allowing them to connect to this resource's MCP server.
         
         Returns:
-            Dict containing connection parameters
+            A copy of the original transport parameters object (StdioTransportParams or HttpTransportParams)
+            that can be used to create a new McpResource instance without affecting the original.
         """
-        if self.transport_type == McpTransportType.STDIO:
-            assert isinstance(self.server_params, StdioServerParameters)
-            return {
-                "transport_type": "stdio",
-                "command": self.server_params.command,
-                "args": self.server_params.args,
-                "env": self.server_params.env,
-            }
+        if isinstance(self.transport_params, StdioTransportParams):
+            # Create a copy of StdioTransportParams
+            stdio_params = self.transport_params
+            return StdioTransportParams(
+                server_script=stdio_params.server_script,
+                command=stdio_params.command,
+                args=list(stdio_params.args) if stdio_params.args else None,
+                env=stdio_params.env.copy() if stdio_params.env else None,
+                stdio_config=stdio_params.stdio_config.copy() if stdio_params.stdio_config else None
+            )
         else:
-            assert isinstance(self.server_params, HttpServerParameters)
-            return {
-                "transport_type": "http",
-                "url": self.server_params.url,
-                "headers": self.server_params.headers,
-                "timeout": self.server_params.timeout,
-                "sse_read_timeout": self.server_params.sse_read_timeout,
-            } 
+            # Create a copy of HttpTransportParams
+            http_params = self.transport_params
+            return HttpTransportParams(
+                url=http_params.url,
+                headers=http_params.headers.copy() if http_params.headers else None,
+                timeout=http_params.timeout,
+                sse_read_timeout=http_params.sse_read_timeout,
+                sse_config=http_params.sse_config.copy() if http_params.sse_config else None
+            ) 

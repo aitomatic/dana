@@ -6,7 +6,7 @@ from .expert_resource import ExpertResource
 from .human_resource import HumanResource
 from .llm_resource import LLMResource
 from .mcp import (
-    McpResource, McpTransportType, StdioTransportParams, HttpTransportParams,
+    McpResource, StdioTransportParams, HttpTransportParams,
     BaseMcpService, McpEchoService
 )
 from .resource_factory import ResourceFactory
@@ -20,7 +20,6 @@ __all__ = [
     "ResourceFactory",
     "HumanResource",
     "McpResource",
-    "McpTransportType",
     "StdioTransportParams",
     "HttpTransportParams",
     "BaseMcpService",

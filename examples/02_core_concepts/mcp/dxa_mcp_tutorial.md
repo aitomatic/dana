@@ -150,7 +150,7 @@ Create a new Python file named `my_mcp_client.py` with the following code:
 """A simple MCP client that interacts with our server."""
 
 import asyncio
-from dxa.agent.resource.mcp import McpResource, McpTransportType, McpConnectionParams
+from dxa.agent.resource.mcp import McpResource, StdioTransportParams, HttpTransportParams
 
 async def main():
     """Run the MCP client to interact with our server."""
@@ -159,10 +159,8 @@ async def main():
     # Create a local MCP resource that connects to our server
     mcp_resource = McpResource(
         name="my_mcp_resource",
-        connection_params=McpConnectionParams(
-            transport_type=McpTransportType.STDIO,
-            command="python", 
-            args=["/path/to/my_mcp_server.py"]
+        transport_params=StdioTransportParams(
+            server_script="my_mcp_server.py"
         ),
     )
     
@@ -216,8 +214,7 @@ For remote MCP servers using HTTP transport, you need to provide different conne
 # Create a remote MCP resource
 remote_resource = McpResource(
     name="remote_mcp_resource",
-    connection_params=McpConnectionParams(
-        transport_type=McpTransportType.HTTP,
+    transport_params=HttpTransportParams(
         url="https://mcp.example.com",
         timeout=5.0,
         headers={"Authorization": "Bearer your-token"}
@@ -226,7 +223,7 @@ remote_resource = McpResource(
 ```
 
 The key differences for remote servers are:
-- Use `McpTransportType.HTTP` for transport type
+- Use `HttpTransportParams` instead of `StdioTransportParams`
 - Provide a URL instead of command and args
 - Optionally specify timeout and headers
 - No need for environment variables
@@ -288,10 +285,8 @@ You can pass environment variables to local MCP servers:
 ```python
 mcp_resource = McpResource(
     name="my_mcp_resource",
-    connection_params=McpConnectionParams(
-        transport_type=McpTransportType.STDIO,
-        command="python",
-        args=["/path/to/my_mcp_server.py"],
+    transport_params=StdioTransportParams(
+        server_script="my_mcp_server.py",
         env={"MY_VAR": "my_value"}
     ),
 )
