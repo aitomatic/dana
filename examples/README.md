@@ -64,7 +64,7 @@ Before running any examples:
 3. Configure logging (optional):
 
    ```python
-   from dxa.common.utils.logging import DXA_LOGGER
+   from dxa.common import DXA_LOGGER
    DXA_LOGGER.configure(
        level=DXA_LOGGER.DEBUG,
        console=True,

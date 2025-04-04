@@ -1,9 +1,9 @@
 """Example demonstrating natural language to workflow conversion."""
 
 import asyncio
-from dxa.agent.agent import Agent
-from dxa.common.utils.logging.dxa_logger import DXA_LOGGER
-from dxa.execution.workflow.workflow_factory import WorkflowFactory
+from dxa.agent import Agent
+from dxa.common import DXA_LOGGER
+from dxa.execution import WorkflowFactory
 
 
 async def run_nl_to_workflow_with_intervention(nl: str):

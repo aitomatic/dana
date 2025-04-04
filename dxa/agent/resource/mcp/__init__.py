@@ -1,17 +1,15 @@
 """MCP resource implementation. """
 
-from .mcp_config import MCPConfig
-from .mcp_local_resource import McpLocalResource
-from .mcp_remote_resource import McpRemoteResource
-from .mcp_services import (
-    BaseMcpService,
-    McpEchoService,
-)
+from .mcp_resource import McpResource, McpTransportType, McpConnectionParams
+from .base_mcp_service import BaseMcpService
+from .mcp_echo_service import McpEchoService
+# from .mcp_weather_service import McpWeatherService
 
 __all__ = [
-    "McpLocalResource",
-    "McpRemoteResource",
+    "McpResource",
+    "McpTransportType",
+    "McpConnectionParams",
     "BaseMcpService",
     "McpEchoService",
-    "MCPConfig",
+    # "McpWeatherService",
 ]

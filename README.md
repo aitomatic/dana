@@ -153,7 +153,7 @@ result = await executor.execute(workflow, context)
 
 # Advanced Usage with Custom Workflows
 from dxa.execution import ExecutionNode
-from dxa.common.utils.logging import DXA_LOGGER
+from dxa.common import DXA_LOGGER
 
 # Configure logging
 DXA_LOGGER.configure(level=DXA_LOGGER.DEBUG, console=True)
@@ -268,7 +268,7 @@ Unauthorized copying, transfer, or reproduction of this software, via any medium
 ### Basic Usage
 
 ```python
-from dxa.common.utils.logging import DXA_LOGGER
+from dxa.common import DXA_LOGGER
 
 DXA_LOGGER.info("Application started")
 DXA_LOGGER.log_llm(
@@ -281,7 +281,7 @@ DXA_LOGGER.log_llm(
 ### Advanced Configuration
 
 ```python
-from dxa.common.utils.logging import DXA_LOGGER
+from dxa.common import DXA_LOGGER
 
 # Configure logging with options
 DXA_LOGGER.configure(

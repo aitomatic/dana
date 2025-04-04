@@ -40,7 +40,7 @@ to ensure proper imports regardless of how it's started.
 
 # Note that this will be executed as a separate process, so
 # we need to use absolute module references.
-from dxa.agent.resource.mcp.mcp_services import BaseMcpService
+from dxa.agent.resource import BaseMcpService
 
 
 class McpEchoServer(BaseMcpService):
@@ -57,9 +57,13 @@ class McpEchoServer(BaseMcpService):
 
     Example usage in an MCP resource:
     ```python
-    echo = McpLocalResource(
+    echo = McpResource(
         name="echo",
-        connection_params={"command": "python", "args": ["mcp_echo.py"]},
+        connection_params=McpConnectionParams(
+            transport_type=McpTransportType.STDIO,
+            command="python",
+            args=["mcp_echo.py"]
+        ),
     )
     response = await echo.query({"tool": "echo", "arguments": {"message": "Hello!"}})
     ```

@@ -3,12 +3,14 @@
 
 import asyncio
 
-from dxa.agent.resource import LLMResource
-from dxa.agent.state import AgentState, WorldState, ExecutionState
-from dxa.execution.workflow.workflow_factory import WorkflowFactory
-from dxa.execution.workflow.workflow_executor import WorkflowExecutor
-from dxa.execution import ExecutionContext
-from dxa.execution.execution_types import ExecutionSignalType, Objective
+from dxa.agent import LLMResource, AgentState, WorldState, ExecutionState
+from dxa.execution import (
+    WorkflowFactory,
+    WorkflowExecutor,
+    ExecutionContext,
+    ExecutionSignalType,
+    Objective
+)
 
 async def main():
     """Run a simple DXA workflow."""

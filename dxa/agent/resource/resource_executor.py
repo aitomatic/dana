@@ -4,9 +4,10 @@ import json
 import logging
 from typing import Any, Dict, List, Optional, Union
 
-from dxa.agent.resource.base_resource import BaseResource
-from dxa.agent.resource.llm_resource import LLMResource
-from dxa.execution.execution_context import ExecutionContext
+from .base_resource import BaseResource
+from .llm_resource import LLMResource
+from .mcp import McpResource
+from ...execution import ExecutionContext
 
 logger = logging.getLogger("dxa.common.utils.tool_executor")
 
@@ -56,7 +57,9 @@ class ResourceExecutor:
             return []
 
         # Execute tools and get responses
-        return await self._execute_tools(response["tools_used"], context.resources)
+        if isinstance(resources, dict):
+            return await self._execute_tools(response["tools_used"], resources)
+        return []
 
     async def _get_tool_strings(self, resources: Dict[str, BaseResource]) -> List[Dict]:
         """Get tools from context."""
@@ -103,7 +106,7 @@ class ResourceExecutor:
             temperature: Temperature for LLM generation
             
         Returns:
-            LLM response
+            LLM response with generated text and tool usage info
         """
         request = {
             "prompt": prompt,
@@ -168,7 +171,7 @@ class ResourceExecutor:
 
         print(f"resource_type: {resource_type}")
 
-        if resource_type in ('McpLocalResource', 'McpRemoteResource'):
+        if isinstance(resource, McpResource):
             return await resource.query({'tool': tool_name, 'arguments': params})
 
         if resource_type == 'AgentResource':

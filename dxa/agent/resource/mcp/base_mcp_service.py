@@ -4,7 +4,7 @@ import functools
 from abc import ABC
 from typing import Literal, Optional
 from mcp.server.fastmcp import FastMCP
-from dxa.common import DXA_LOGGER
+from ....common import DXA_LOGGER
 
 # This is to pass into derived classes to use because "self" is not set when called by the MCP framework
 _SERVER = FastMCP("FastMCP Server")
@@ -39,12 +39,11 @@ class BaseMcpService(ABC):
                 return func(*args, **kwargs)
 
             if _SERVER is not None:
-                # Don’t register if tool name already registered in _TOOL_NAMES
+                # Don't register if tool name already registered in _TOOL_NAMES
                 if name not in _TOOL_NAMES:
                     _SERVER.add_tool(wrapper_tool, name=name, description=description)
                     _TOOL_NAMES.append(name)
 
             return wrapper_tool
 
-        return decorator_tool
-    
+        return decorator_tool 

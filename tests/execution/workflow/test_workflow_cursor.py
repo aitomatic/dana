@@ -3,9 +3,8 @@
 from unittest.mock import Mock
 import pytest
 
-from dxa.common.graph import NodeType
-from dxa.execution.execution_context import ExecutionContext
-from dxa.execution.workflow.workflow_factory import WorkflowFactory
+from dxa.common import NodeType
+from dxa.execution import ExecutionContext, WorkflowFactory
 
 @pytest.fixture
 def mock_llm():  # pylint: disable=redefined-outer-name

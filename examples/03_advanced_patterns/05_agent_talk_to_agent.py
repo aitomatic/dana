@@ -1,7 +1,6 @@
 import asyncio
 import json
-from dxa.agent import Agent
-from dxa.agent.resource import McpLocalResource, McpRemoteResource
+from dxa.agent import Agent, McpResource, McpTransportType, McpConnectionParams
 from dxa.common import DXA_LOGGER
 
 # Configure logging
@@ -18,12 +17,13 @@ async def setup_agents():
     
     # Create the research agent with exposed MCP server
     research_agent = Agent("research-agent").with_resources({
-        "research": McpLocalResource(
+        "research": McpResource(
             name="research",
-            connection_params={
-                "command": "python3",
-                "args": [RESEARCH_SERVICE_SCRIPT]
-            },
+            connection_params=McpConnectionParams(
+                transport_type=McpTransportType.STDIO,
+                command="python3",
+                args=[RESEARCH_SERVICE_SCRIPT]
+            ),
             expose=True
         )
     })
@@ -34,16 +34,17 @@ async def setup_agents():
     # Get connection parameters from the research agent
     research_local_connection_params = research_agent.resources["research"].get_connection_params()
     reasoning_agent = Agent("reasoning-agent").with_resources({
-        "reasoning": McpLocalResource(
+        "reasoning": McpResource(
             name="reasoning",
-            connection_params={
-                "command": "python3",
-                "args": [REASONING_SERVICE_SCRIPT]
-            },
+            connection_params=McpConnectionParams(
+                transport_type=McpTransportType.STDIO,
+                command="python3",
+                args=[REASONING_SERVICE_SCRIPT]
+            ),
             expose=True
         ),
         # Connect to research agent's MCP server using its connection parameters
-        "research": McpLocalResource(
+        "research": McpResource(
             name="research",
             connection_params=research_local_connection_params
         )
@@ -57,20 +58,21 @@ async def setup_agents():
     
     # Create the execution agent with connections to other agents
     execution_agent = Agent("execution-agent").with_resources({
-        "execution": McpLocalResource(
+        "execution": McpResource(
             name="execution",
-            connection_params={
-                "command": "python3",
-                "args": [EXECUTION_SERVICE_SCRIPT]
-            }
+            connection_params=McpConnectionParams(
+                transport_type=McpTransportType.STDIO,
+                command="python3",
+                args=[EXECUTION_SERVICE_SCRIPT]
+            )
         ),
         # Connect to reasoning agent's MCP server using its connection parameters
-        "reasoning": McpLocalResource(
+        "reasoning": McpResource(
             name="reasoning",
             connection_params=reasoning_local_connection_params
         ),
         # Also connect to research agent's MCP server
-        "research": McpLocalResource(
+        "research": McpResource(
             name="research",
             connection_params=research_local_connection_params
         )

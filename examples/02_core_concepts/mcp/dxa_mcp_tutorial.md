@@ -85,7 +85,7 @@ Create a new Python file named `my_mcp_server.py` with the following code:
 ```python
 """A simple MCP server that provides basic tools."""
 
-from dxa.agent.resource.mcp.mcp_services import BaseMcpService
+from dxa.agent.resource.mcp import BaseMcpService
 
 class MyMcpServer(BaseMcpService):
     """Simple MCP server implementation with basic tools."""
@@ -133,12 +133,13 @@ Here are the essential components for connecting to an MCP server:
 
 #### Connection Requirements
 
-1. **MCP Resource Object**: Create a custom resource class that extends `McpLocalResource`
+1. **MCP Resource Object**: Create a custom resource class that extends `McpResource`
 2. **Connection Parameters**: Specify how to connect to the server
 
 #### Connection Parameters
 
 For local MCP (stdio) servers, you need to provide:
+- **Transport Type**: The type of transport to use (STDIO for local, HTTP for remote)
 - **Command**: The executable to run (usually `python`)
 - **Args**: Command-line arguments, including the server script path
 - **Environment Variables**: Optional environment variables for the server process
@@ -149,19 +150,20 @@ Create a new Python file named `my_mcp_client.py` with the following code:
 """A simple MCP client that interacts with our server."""
 
 import asyncio
-from dxa.agent.resource import McpLocalResource
+from dxa.agent.resource.mcp import McpResource, McpTransportType, McpConnectionParams
 
 async def main():
     """Run the MCP client to interact with our server."""
     print("Starting MCP Client...")
     
     # Create a local MCP resource that connects to our server
-    mcp_resource = McpLocalResource(
+    mcp_resource = McpResource(
         name="my_mcp_resource",
-        connection_params={
-            "command": "python", 
-            "args": ["/path/to/my_mcp_server.py"]
-        },
+        connection_params=McpConnectionParams(
+            transport_type=McpTransportType.STDIO,
+            command="python", 
+            args=["/path/to/my_mcp_server.py"]
+        ),
     )
     
     # Initialize the connection
@@ -206,188 +208,153 @@ response = await mcp_resource.query({
 })
 ```
 
-### 3.2 Run the Client
+### 3.2 Remote MCP Servers
 
-In a new terminal window, activate your virtual environment and run the client:
-
-```bash
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-python my_mcp_client.py
-```
-
-The client will automatically start the MCP server in a separated process using the specified command (`python`) and arguments (`/path/to/my_mcp_server.py`) from the connection_params and connect to it. 
-
-### 3.3 MCP Client Example
-- [06_mcp_resource.py](./02_core_concepts/06_mcp_resource.py)
-
-## 4. Using MCP in Agent
-
-Now let's explore how to use MCP in a real agent-based application. We'll create a simple agent that uses our MCP server to perform operations.
-
-### 4.1 Create an Agent Application
-
-Create a file named `my_agent_app.py` with the following code:
+For remote MCP servers using HTTP transport, you need to provide different connection parameters:
 
 ```python
-""""An agent application that uses MCP resources."""
-
-from dxa.agent import Agent
-from dxa.agent.resource import McpLocalResource
-
-
-def main():
-    """Run an agent that uses MCP resources."""
-    print("Starting Agent Application...")
-    # Set up our MCP resource
-    mcp_resource = McpLocalResource(
-        name="calculator",
-        connection_params={
-            "command": "python", 
-            "args": ["my_mcp_server.py"]
-        },
-    )
-    
-    
-    # Create an agent
-    agent = Agent(name="mcp_agent")
-    # Set up an LLM resource (required for agent operations)
-    agent.with_llm({"model": "openai:gpt-4o-mini", "temperature": 0.7, "max_tokens": 1000})
-    # Add the MCP resource to the agent
-    agent.with_resources({mcp_resource.name: mcp_resource})
-    
-    # Example 1: Simple calculation query
-    print("\nExample 1: Simple Calculation")
-    result = agent.ask("What is 15 + 27?")
-    print(f"Calculation result: {result}")
-    
-    print("\nAgent operations completed successfully.")
-
-if __name__ == "__main__":
-    main()
+# Create a remote MCP resource
+remote_resource = McpResource(
+    name="remote_mcp_resource",
+    connection_params=McpConnectionParams(
+        transport_type=McpTransportType.HTTP,
+        url="https://mcp.example.com",
+        timeout=5.0,
+        headers={"Authorization": "Bearer your-token"}
+    ),
+)
 ```
 
-### 4.2 Run the Agent Application
+The key differences for remote servers are:
+- Use `McpTransportType.HTTP` for transport type
+- Provide a URL instead of command and args
+- Optionally specify timeout and headers
+- No need for environment variables
 
-In a terminal window (while keeping the server running), run the agent application:
+### 3.3 Error Handling
 
-```bash
-python my_agent_app.py
-```
-
-### 4.3 Example
-- [07_resource_selection.py](./02_core_concepts/07_resource_selection.py)
-
-
-## 5. Advanced MCP Usage
-
-DXA's MCP implementation is designed to be flexible and extensible. Beyond creating your own MCP servers, you can leverage existing solutions for added functionality.
-
-### 5.1 Connecting to Open Source MCP Servers
-
-The MCP ecosystem includes community-maintained servers that you can use directly with your DXA agents.
+Always implement proper error handling when working with MCP resources:
 
 ```python
-import asyncio
-from dxa.agent.resource import McpLocalResource
-
-async def main():
-    """Connect to an open source MCP server."""
-    
-    # Connect to a community-maintained weather server
-    weather_server = McpLocalResource(
-        name="weather",
-        connection_params={
-            "command": "npx",
-            "args": ["-y", "@h1deya/mcp-server-weather"],
-        },
-    )
-    
-    # List available tools
-    tools = await weather_server.list_tools()
-    print(f"Available weather tools: {[tool.name for tool in tools]}")
-    
-    # Get weather forecast
-    forecast = await weather_server.query({
-        "tool": "get-forecast",
-        "arguments": {"latitude": 37.7749, "longitude": -122.4194},
+try:
+    response = await mcp_resource.query({
+        "tool": "tool_name",
+        "arguments": {"param": "value"}
     })
-    
-    print(f"Forecast: {forecast.content}")
-
-if __name__ == "__main__":
-    asyncio.run(main())
+    if response.success:
+        print(f"Tool execution successful: {response.content}")
+    else:
+        print(f"Tool execution failed: {response.error}")
+except Exception as e:
+    print(f"Error occurred: {e}")
 ```
 
-#### Advantages of Open Source MCP Servers:
+## 4. Advanced MCP Features
 
-1. **Ready-to-use functionality**: Access specialized tools without writing custom code
-2. **Community maintenance**: Benefit from bug fixes and improvements from the community
-3. **Standardized interfaces**: Consistent API design following MCP specifications
-4. **Reduced development time**: Quickly integrate complex capabilities into your agents
+### 4.1 Tool Discovery
 
-### 5.2 Connecting to Remote MCP Servers (SSE)
-
-For production applications, you may want to connect to remote MCP servers using Server-Sent Events (SSE). This allows for secure, scalable, and real-time communication.
+MCP provides a way to discover available tools at runtime:
 
 ```python
-import asyncio
-from dxa.agent.resource import McpRemoteResource
-
-async def main():
-    """Connect to a remote MCP server using SSE."""
-    
-    # Create a remote MCP resource with SSE connection
-    remote_resource = McpRemoteResource(
-        name="remote_service",
-        url="https://mcp.example.com/service",
-        connection_params={
-            "transport": "sse",
-            "headers": {
-                "Authorization": "Bearer your_api_key_here"
-            },
-            "timeout": 30  # seconds
-        }
-    )
-    
-    try:
-        await remote_resource.initialize()
-        
-        # Get available tools
-        tools = await remote_resource.list_tools()
-        print(f"Available remote tools: {[tool.name for tool in tools]}")
-        
-        # Execute a tool
-        result = await remote_resource.query({
-            "tool": "analyze_data",
-            "arguments": {"data_id": "12345"}
-        })
-        
-        print(f"Analysis result: {result.content}")
-    finally:
-        # Clean up resources
-        await remote_resource.cleanup()
-
-if __name__ == "__main__":
-    asyncio.run(main())
+# List all available tools
+tools = await mcp_resource.list_tools()
+for tool in tools:
+    print(f"Tool: {tool.name}")
+    print(f"Description: {tool.description}")
+    print("Parameters:")
+    for param_name, param_details in tool.inputSchema["properties"].items():
+        print(f"  - {param_name}: {param_details.get('type')}")
 ```
 
-#### Advantages of Remote MCP Servers with SSE:
+### 4.2 Tool Schema Validation
 
-1. **Real-time communication**: SSE enables push notifications from server to client
-2. **Scalability**: Remote servers can handle high volumes of concurrent requests
-3. **Security**: Centralized authentication and authorization
-4. **Resource efficiency**: Offload computation to dedicated servers
-5. **Deployment flexibility**: Update server functionality without modifying clients
-6. **Streaming responses**: Receive partial results as they become available
+MCP automatically validates tool arguments against their schemas:
 
-### 5.3 Practical Applications
+```python
+# This will fail if the arguments don't match the schema
+try:
+    response = await mcp_resource.query({
+        "tool": "add",
+        "arguments": {"a": "not a number", "b": 7}  # Will fail validation
+    })
+except Exception as e:
+    print(f"Validation error: {e}")
+```
 
-Combining these approaches allows for building sophisticated agent systems:
+### 4.3 Environment Variables
 
-- Use open source MCP servers for common capabilities like weather data, search, or translation
-- Deploy custom MCP servers for organization-specific functionality
-- Leverage remote MCP servers for computationally intensive or high-availability requirements
+You can pass environment variables to local MCP servers:
 
-## Conclusion
+```python
+mcp_resource = McpResource(
+    name="my_mcp_resource",
+    connection_params=McpConnectionParams(
+        transport_type=McpTransportType.STDIO,
+        command="python",
+        args=["/path/to/my_mcp_server.py"],
+        env={"MY_VAR": "my_value"}
+    ),
+)
+```
 
-You've now learned how to create and use MCP servers and clients in the DXA framework. This powerful pattern allows you to extend your agents with custom tools and services, enabling more complex and specialized capabilities.
+## 5. Best Practices
+
+1. **Server Design**
+   - Keep servers focused on specific functionality
+   - Implement proper error handling
+   - Use type hints and docstrings
+   - Follow the single responsibility principle
+
+2. **Client Usage**
+   - Always initialize resources before use
+   - Implement proper error handling
+   - Use appropriate timeouts for remote servers
+   - Validate tool arguments before calling
+
+3. **Security**
+   - Use HTTPS for remote servers
+   - Implement proper authentication
+   - Validate all inputs
+   - Use environment variables for sensitive data
+
+4. **Performance**
+   - Keep tool implementations efficient
+   - Use appropriate timeouts
+   - Implement connection pooling for remote servers
+   - Cache tool results when appropriate
+
+## 6. Troubleshooting
+
+Common issues and solutions:
+
+1. **Connection Issues**
+   - Check server is running
+   - Verify connection parameters
+   - Check network connectivity for remote servers
+   - Verify environment variables
+
+2. **Tool Execution Errors**
+   - Check tool arguments match schema
+   - Verify server implementation
+   - Check server logs
+   - Validate input data
+
+3. **Performance Issues**
+   - Check server resource usage
+   - Verify network connectivity
+   - Implement caching if appropriate
+   - Use connection pooling
+
+## 7. Next Steps
+
+1. Explore the example MCP servers in the codebase
+2. Create your own MCP server for specific functionality
+3. Integrate MCP resources into your agents
+4. Implement advanced features like streaming and batching
+
+## 8. Additional Resources
+
+- [MCP Specification](https://modelcontextprotocol.io/specification)
+- [DXA Documentation](https://dxa.docs.aitomatic.com)
+- [Example MCP Servers](https://github.com/aitomatic/dxa/tree/main/examples)
+- [Community Resources](https://community.aitomatic.com)
