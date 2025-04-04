@@ -3,7 +3,7 @@
 import uuid
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Sequence, Union, cast
 
 from mcp import ClientSession, StdioServerParameters, Tool
 from mcp.client.stdio import get_default_environment, stdio_client
@@ -20,18 +20,23 @@ class McpTransportType(Enum):
 
 
 @dataclass
-class McpConnectionParams:
-    """Parameters for connecting to an MCP resource."""
-    transport_type: McpTransportType
-    # Process-specific params
-    command: Optional[str] = None
+class StdioTransportParams:
+    """Parameters for STDIO transport."""
+    server_script: str
+    command: str = "python3"
     args: Optional[Sequence[str]] = None
     env: Optional[Dict[str, str]] = None
-    # HTTP-specific params
-    url: Optional[str] = None
-    timeout: Optional[float] = 5.0
+    stdio_config: Optional[Dict[str, Any]] = None
+
+
+@dataclass
+class HttpTransportParams:
+    """Parameters for HTTP transport."""
+    url: str
     headers: Optional[Dict[str, Any]] = None
+    timeout: float = 5.0
     sse_read_timeout: float = 60 * 5
+    sse_config: Optional[Dict[str, Any]] = None
 
 
 class McpResource(BaseResource, Loggable):
@@ -40,105 +45,71 @@ class McpResource(BaseResource, Loggable):
     def __init__(
         self,
         name: str,
-        connection_params: Optional[Union[McpConnectionParams, Dict[str, Any]]] = None,
-        **params,
+        transport_params: Optional[Union[StdioTransportParams, HttpTransportParams]] = None,
     ):
         """Initialize MCP resource.
         
         Args:
             name: Resource name
-            connection_params: Connection parameters for either stdio or HTTP transport
-            **params: Additional parameters passed to transport
+            transport_params: Transport-specific parameters. Must be either:
+                - StdioTransportParams: For STDIO transport with fields:
+                    - server_script: Path to the Python script to execute
+                    - command: Command to execute (default: "python3")
+                    - args: Optional list of arguments for the command
+                    - env: Optional dictionary of environment variables
+                    - stdio_config: Optional additional configuration for STDIO transport
+                - HttpTransportParams: For HTTP transport with fields:
+                    - url: URL for the HTTP endpoint
+                    - headers: Optional dictionary of HTTP headers
+                    - timeout: Connection timeout in seconds (default: 5.0)
+                    - sse_read_timeout: SSE read timeout in seconds (default: 300)
+                    - sse_config: Optional additional configuration for SSE transport
         """
         super().__init__(name)
         Loggable.__init__(self)
         self.server_id = str(uuid.uuid4())[:8]
 
-        # Parse connection params
-        if isinstance(connection_params, McpConnectionParams):
-            self.transport_type = connection_params.transport_type
-            if self.transport_type == McpTransportType.STDIO:
-                env = get_default_environment()
-                env["PYDEVD_DISABLE_FILE_VALIDATION"] = "1"
-                if connection_params.env:
-                    env.update(connection_params.env)
-                if "env" in params:
-                    env.update(params["env"])
-
-                server_script = params.get("server_script")
-                if not server_script:
-                    raise ValueError("server_script is required for stdio transport")
-
-                self.server_params = StdioServerParameters(
-                    command=connection_params.command or "python3",
-                    args=list(connection_params.args or [server_script]),
-                    env=env,
-                    **params.get("stdio_config", {})
-                )
-            else:  # HTTP
-                if not connection_params.url:
-                    raise ValueError("URL is required for HTTP transport")
-                self.server_params = {
-                    "url": connection_params.url,
-                    "headers": connection_params.headers,
-                    "timeout": connection_params.timeout,
-                    "sse_read_timeout": connection_params.sse_read_timeout,
-                    **params.get("sse_config", {})
-                }
-        elif isinstance(connection_params, dict):
-            # Handle dict params similarly
-            self.transport_type = McpTransportType(connection_params.get("transport_type", "stdio"))
-            if self.transport_type == McpTransportType.STDIO:
-                env = get_default_environment()
-                env["PYDEVD_DISABLE_FILE_VALIDATION"] = "1"
-                if "env" in connection_params:
-                    env.update(connection_params["env"])
-                if "env" in params:
-                    env.update(params["env"])
-
-                server_script = params.get("server_script")
-                if not server_script:
-                    raise ValueError("server_script is required for stdio transport")
-
-                args = connection_params.get("args", [server_script])
-                if not all(isinstance(arg, str) for arg in args):
-                    raise ValueError("All args must be strings")
-
-                self.server_params = StdioServerParameters(
-                    command=connection_params.get("command", "python3"),
-                    args=list(args),
-                    env=env,
-                    **params.get("stdio_config", {})
-                )
-            else:  # HTTP
-                url = connection_params.get("url")
-                if not url:
-                    raise ValueError("URL is required for HTTP transport")
-                self.server_params = {
-                    "url": url,
-                    "headers": connection_params.get("headers"),
-                    "timeout": connection_params.get("timeout", 5.0),
-                    "sse_read_timeout": connection_params.get("sse_read_timeout", 60 * 5),
-                    **params.get("sse_config", {})
-                }
+        # Parse transport params
+        if isinstance(transport_params, (StdioTransportParams, HttpTransportParams)):
+            self.transport_params = transport_params
         else:
-            # Default to stdio transport
-            self.transport_type = McpTransportType.STDIO
+            # Default to stdio transport with required server_script
+            raise ValueError("transport_params is required")
+            
+        # Set transport type based on params
+        self.transport_type = (
+            McpTransportType.STDIO if isinstance(self.transport_params, StdioTransportParams)
+            else McpTransportType.HTTP
+        )
+        
+        # Create server params
+        if self.transport_type == McpTransportType.STDIO:
             env = get_default_environment()
             env["PYDEVD_DISABLE_FILE_VALIDATION"] = "1"
-            if "env" in params:
-                env.update(params["env"])
+            
+            stdio_params = cast(StdioTransportParams, self.transport_params)
+            if stdio_params.env:
+                env.update(stdio_params.env)
 
-            server_script = params.get("server_script")
-            if not server_script:
-                raise ValueError("server_script is required for stdio transport")
+            args = stdio_params.args or [stdio_params.server_script]
+            if not all(isinstance(arg, str) for arg in args):
+                raise ValueError("All args must be strings")
 
             self.server_params = StdioServerParameters(
-                command=params.get("command", "python3"),
-                args=[server_script],
+                command=stdio_params.command,
+                args=list(args),
                 env=env,
-                **params.get("stdio_config", {})
+                **(stdio_params.stdio_config or {})
             )
+        else:  # HTTP
+            http_params = cast(HttpTransportParams, self.transport_params)
+            self.server_params = {
+                "url": http_params.url,
+                "headers": http_params.headers,
+                "timeout": http_params.timeout,
+                "sse_read_timeout": http_params.sse_read_timeout,
+                **(http_params.sse_config or {})
+            }
 
     async def query(self, request: Dict[str, Any]) -> ResourceResponse:
         """Handle tool execution request.

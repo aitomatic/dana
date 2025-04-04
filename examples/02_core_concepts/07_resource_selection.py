@@ -39,8 +39,7 @@ from dxa.agent.resource import (
     BaseResource,
     ResourceResponse,
     McpResource,
-    McpTransportType,
-    McpConnectionParams
+    StdioTransportParams,
 )
 
 print("\n=== Starting Resource Selection Example ===")
@@ -52,7 +51,7 @@ print("based on the task requirements.\n")
 MCP_SERVICE_NAME = "weather_mcp_service"
 MCP_TOOL_NAME = "get_forecast"
 MCP_TOOL_ARGUMENTS = {"latitude": 37.7749, "longitude": -122.4194}
-MCP_SERVICE_SCRIPT = "dxa/agent/resource/mcp/mcp_services/mcp_weather_service.py"
+MCP_SERVICE_SCRIPT = "dxa/agent/resource/mcp/mcp_weather_service.py"
 MCP_SCRIPT_COMMAND = "python3"
 
 
@@ -127,8 +126,8 @@ def main():
     print("\nInitializing weather MCP service...")
     weather = McpResource(
         name=MCP_SERVICE_NAME,
-        connection_params=McpConnectionParams(
-            transport_type=McpTransportType.STDIO,
+        transport_params=StdioTransportParams(
+            server_script=MCP_SERVICE_SCRIPT,
             command=MCP_SCRIPT_COMMAND,
             args=[MCP_SERVICE_SCRIPT]
         )

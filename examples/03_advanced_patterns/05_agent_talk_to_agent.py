@@ -1,6 +1,7 @@
 import asyncio
 import json
-from dxa.agent import Agent, McpResource, McpTransportType, McpConnectionParams
+from dxa.agent import Agent
+from dxa.agent.resource import McpResource, StdioTransportParams
 from dxa.common import DXA_LOGGER
 
 # Configure logging
@@ -19,12 +20,11 @@ async def setup_agents():
     research_agent = Agent("research-agent").with_resources({
         "research": McpResource(
             name="research",
-            connection_params=McpConnectionParams(
-                transport_type=McpTransportType.STDIO,
+            transport_params=StdioTransportParams(
+                server_script=RESEARCH_SERVICE_SCRIPT,
                 command="python3",
                 args=[RESEARCH_SERVICE_SCRIPT]
-            ),
-            expose=True
+            )
         )
     })
     
@@ -32,21 +32,31 @@ async def setup_agents():
     await research_agent.resources["research"].initialize()
     
     # Get connection parameters from the research agent
-    research_local_connection_params = research_agent.resources["research"].get_connection_params()
+    research_local_connection_params = {
+        "command": "python3",
+        "args": [RESEARCH_SERVICE_SCRIPT],
+        "env": {}
+    }
+    
+    # Create the reasoning agent with its own MCP server and connection to research agent
     reasoning_agent = Agent("reasoning-agent").with_resources({
         "reasoning": McpResource(
             name="reasoning",
-            connection_params=McpConnectionParams(
-                transport_type=McpTransportType.STDIO,
+            transport_params=StdioTransportParams(
+                server_script=REASONING_SERVICE_SCRIPT,
                 command="python3",
                 args=[REASONING_SERVICE_SCRIPT]
-            ),
-            expose=True
+            )
         ),
         # Connect to research agent's MCP server using its connection parameters
         "research": McpResource(
             name="research",
-            connection_params=research_local_connection_params
+            transport_params=StdioTransportParams(
+                server_script=research_local_connection_params.get("args", [""])[0],
+                command=research_local_connection_params.get("command", "python3"),
+                args=research_local_connection_params.get("args", []),
+                env=research_local_connection_params.get("env", {})
+            )
         )
     })
     
@@ -54,14 +64,18 @@ async def setup_agents():
     await reasoning_agent.resources["reasoning"].initialize()
     
     # Get connection parameters from the reasoning agent
-    reasoning_local_connection_params = reasoning_agent.resources["reasoning"].get_connection_params()
+    reasoning_local_connection_params = {
+        "command": "python3",
+        "args": [REASONING_SERVICE_SCRIPT],
+        "env": {}
+    }
     
     # Create the execution agent with connections to other agents
     execution_agent = Agent("execution-agent").with_resources({
         "execution": McpResource(
             name="execution",
-            connection_params=McpConnectionParams(
-                transport_type=McpTransportType.STDIO,
+            transport_params=StdioTransportParams(
+                server_script=EXECUTION_SERVICE_SCRIPT,
                 command="python3",
                 args=[EXECUTION_SERVICE_SCRIPT]
             )
@@ -69,12 +83,22 @@ async def setup_agents():
         # Connect to reasoning agent's MCP server using its connection parameters
         "reasoning": McpResource(
             name="reasoning",
-            connection_params=reasoning_local_connection_params
+            transport_params=StdioTransportParams(
+                server_script=reasoning_local_connection_params.get("args", [""])[0],
+                command=reasoning_local_connection_params.get("command", "python3"),
+                args=reasoning_local_connection_params.get("args", []),
+                env=reasoning_local_connection_params.get("env", {})
+            )
         ),
         # Also connect to research agent's MCP server
         "research": McpResource(
             name="research",
-            connection_params=research_local_connection_params
+            transport_params=StdioTransportParams(
+                server_script=research_local_connection_params.get("args", [""])[0],
+                command=research_local_connection_params.get("command", "python3"),
+                args=research_local_connection_params.get("args", []),
+                env=research_local_connection_params.get("env", {})
+            )
         )
     })
     
