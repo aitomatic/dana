@@ -36,7 +36,7 @@ Prerequisites:
 import asyncio
 from pathlib import Path
 
-from dxa.agent.resource import McpResource, McpTransportType, McpConnectionParams, ResourceResponse
+from dxa.agent.resource import McpResource, StdioTransportParams, HttpTransportParams, ResourceResponse
 from dxa.common import DXA_LOGGER
 
 # Configure logging
@@ -67,8 +67,8 @@ async def run_local_server_example():
     # Create a local MCP resource using our custom echo server
     echo = McpResource(
         name="echo",
-        connection_params=McpConnectionParams(
-            transport_type=McpTransportType.STDIO,
+        transport_params=StdioTransportParams(
+            server_script=MCP_ECHO_SERVER_SCRIPT,
             command="python",
             args=[MCP_ECHO_SERVER_SCRIPT]
         ),
@@ -123,8 +123,8 @@ async def run_local_sqlite_server_example():
     # Create a local MCP resource using our custom sqlite server
     sqlite_resource = McpResource(
         name="sqlite",
-        connection_params=McpConnectionParams(
-            transport_type=McpTransportType.STDIO,
+        transport_params=StdioTransportParams(
+            server_script=MCP_SQLITE_SERVER_SCRIPT,
             command="python",
             args=[MCP_SQLITE_SERVER_SCRIPT],
             env={"SQLITE_DB_PATH": str(Path(MCP_SQLITE_SERVER_SCRIPT).parent / "mcp_sqlite.db")}
@@ -232,8 +232,8 @@ async def run_community_server_example():
     # This example uses a hypothetical community server
     weather = McpResource(
         name="weather",
-        connection_params=McpConnectionParams(
-            transport_type=McpTransportType.STDIO,
+        transport_params=StdioTransportParams(
+            server_script="npx",
             command="npx",
             args=["-y", "@h1deya/mcp-server-weather"]
         ),
@@ -291,9 +291,10 @@ async def run_remote_server_example():
     # Create a remote MCP resource with SSE support
     remote = McpResource(
         name="remote",
-        connection_params=McpConnectionParams(
-            transport_type=McpTransportType.HTTP,
-            url="https://mcp.aitomatic.com/weather"
+        transport_params=HttpTransportParams(
+            url="https://mcp.aitomatic.com/weather",
+            timeout=5.0,
+            sse_read_timeout=60 * 5
         ),
     )
 

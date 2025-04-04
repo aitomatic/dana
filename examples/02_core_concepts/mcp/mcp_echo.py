@@ -59,8 +59,8 @@ class McpEchoServer(BaseMcpService):
     ```python
     echo = McpResource(
         name="echo",
-        connection_params=McpConnectionParams(
-            transport_type=McpTransportType.STDIO,
+        transport_params=StdioTransportParams(
+            server_script="mcp_echo.py",
             command="python",
             args=["mcp_echo.py"]
         ),

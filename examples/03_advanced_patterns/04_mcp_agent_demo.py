@@ -8,7 +8,7 @@ Demonstrates:
 
 import asyncio
 from dxa.agent import Agent
-from dxa.agent.resource.mcp import McpResource, McpTransportType, McpConnectionParams
+from dxa.agent.resource import McpResource, StdioTransportParams, HttpTransportParams
 from dxa.common import DXA_LOGGER
 
 DXA_LOGGER.basicConfig(level=DXA_LOGGER.DEBUG)
@@ -27,16 +27,15 @@ async def main():
     agent = Agent("MCP-Using-Agent").with_resources({
         MCP_SERVICE_NAME: McpResource(
             name=MCP_SERVICE_NAME,
-            connection_params=McpConnectionParams(
-                transport_type=McpTransportType.STDIO,
+            transport_params=StdioTransportParams(
+                server_script=MCP_SERVICE_SCRIPT,
                 command=MCP_SCRIPT_COMMAND,
                 args=[MCP_SERVICE_SCRIPT]
             )
         ),
         "remote_time": McpResource(
             name="remote_time",
-            connection_params=McpConnectionParams(
-                transport_type=McpTransportType.HTTP,
+            transport_params=HttpTransportParams(
                 url="http://time.service/mcp",
                 timeout=5.0
             )

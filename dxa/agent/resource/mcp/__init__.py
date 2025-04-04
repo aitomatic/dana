@@ -1,6 +1,6 @@
 """MCP resource implementation. """
 
-from .mcp_resource import McpResource, McpTransportType, McpConnectionParams
+from .mcp_resource import McpResource, McpTransportType, StdioTransportParams, HttpTransportParams
 from .base_mcp_service import BaseMcpService
 from .mcp_echo_service import McpEchoService
 # from .mcp_weather_service import McpWeatherService
@@ -8,7 +8,8 @@ from .mcp_echo_service import McpEchoService
 __all__ = [
     "McpResource",
     "McpTransportType",
-    "McpConnectionParams",
+    "StdioTransportParams",
+    "HttpTransportParams",
     "BaseMcpService",
     "McpEchoService",
     # "McpWeatherService",

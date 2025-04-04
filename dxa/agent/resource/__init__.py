@@ -5,7 +5,10 @@ from .base_resource import BaseResource, ResourceResponse
 from .expert_resource import ExpertResource
 from .human_resource import HumanResource
 from .llm_resource import LLMResource
-from .mcp import McpResource, McpTransportType, McpConnectionParams, BaseMcpService, McpEchoService
+from .mcp import (
+    McpResource, McpTransportType, StdioTransportParams, HttpTransportParams,
+    BaseMcpService, McpEchoService
+)
 from .resource_factory import ResourceFactory
 from .wot_resource import WoTResource
 from .resource_executor import ResourceExecutor
@@ -18,7 +21,8 @@ __all__ = [
     "HumanResource",
     "McpResource",
     "McpTransportType",
-    "McpConnectionParams",
+    "StdioTransportParams",
+    "HttpTransportParams",
     "BaseMcpService",
     "McpEchoService",
     "WoTResource",

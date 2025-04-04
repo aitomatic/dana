@@ -12,7 +12,6 @@ from .resource import (
     LLMResource,
     McpResource,
     McpTransportType,
-    McpConnectionParams,
     BaseMcpService,
     McpEchoService,
     ResourceResponse,
@@ -20,7 +19,9 @@ from .resource import (
     HumanResource,
     ExpertResource,
     WoTResource,
-    ResourceExecutor
+    ResourceExecutor,
+    StdioTransportParams,
+    HttpTransportParams,
 )
 
 
@@ -38,7 +39,6 @@ __all__ = [
     "LLMResource",
     "McpResource",
     "McpTransportType",
-    "McpConnectionParams",
     "BaseMcpService",
     "McpEchoService",
     "ResourceResponse",
@@ -46,5 +46,7 @@ __all__ = [
     "HumanResource",
     "ExpertResource",
     "WoTResource",
-    "ResourceExecutor"
+    "ResourceExecutor",
+    "StdioTransportParams",
+    "HttpTransportParams",
 ]
