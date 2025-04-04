@@ -39,6 +39,16 @@ class HttpTransportParams:
     sse_config: Optional[Dict[str, Any]] = None
 
 
+@dataclass
+class HttpServerParameters:
+    """Parameters for HTTP server connection."""
+    url: str
+    headers: Optional[Dict[str, Any]] = None
+    timeout: float = 5.0
+    sse_read_timeout: float = 60 * 5
+    sse_config: Optional[Dict[str, Any]] = None
+
+
 class McpResource(BaseResource, Loggable):
     """MCP resource that can use either stdio or HTTP transport."""
 
@@ -95,7 +105,7 @@ class McpResource(BaseResource, Loggable):
             if not all(isinstance(arg, str) for arg in args):
                 raise ValueError("All args must be strings")
 
-            self.server_params = StdioServerParameters(
+            self.server_params: Union[StdioServerParameters, HttpServerParameters] = StdioServerParameters(
                 command=stdio_params.command,
                 args=list(args),
                 env=env,
@@ -103,13 +113,13 @@ class McpResource(BaseResource, Loggable):
             )
         else:  # HTTP
             http_params = cast(HttpTransportParams, self.transport_params)
-            self.server_params = {
-                "url": http_params.url,
-                "headers": http_params.headers,
-                "timeout": http_params.timeout,
-                "sse_read_timeout": http_params.sse_read_timeout,
-                **(http_params.sse_config or {})
-            }
+            self.server_params: Union[StdioServerParameters, HttpServerParameters] = HttpServerParameters(
+                url=http_params.url,
+                headers=http_params.headers,
+                timeout=http_params.timeout,
+                sse_read_timeout=http_params.sse_read_timeout,
+                sse_config=http_params.sse_config
+            )
 
     async def query(self, request: Dict[str, Any]) -> ResourceResponse:
         """Handle tool execution request.
@@ -128,8 +138,16 @@ class McpResource(BaseResource, Loggable):
                     async with ClientSession(read, write) as session:
                         return await self._execute_query(session, request)
             else:
-                assert isinstance(self.server_params, dict)
-                async with sse_client(**self.server_params) as streams:
+                assert isinstance(self.server_params, HttpServerParameters)
+                # Convert HttpServerParameters to dict for sse_client
+                server_params_dict = {
+                    "url": self.server_params.url,
+                    "headers": self.server_params.headers,
+                    "timeout": self.server_params.timeout,
+                    "sse_read_timeout": self.server_params.sse_read_timeout,
+                    **(self.server_params.sse_config or {})
+                }
+                async with sse_client(**server_params_dict) as streams:
                     async with ClientSession(*streams) as session:
                         return await self._execute_query(session, request)
         except Exception as e:
@@ -179,8 +197,16 @@ class McpResource(BaseResource, Loggable):
                         result = await session.list_tools()
                         return result.tools
             else:
-                assert isinstance(self.server_params, dict)
-                async with sse_client(**self.server_params) as streams:
+                assert isinstance(self.server_params, HttpServerParameters)
+                # Convert HttpServerParameters to dict for sse_client
+                server_params_dict = {
+                    "url": self.server_params.url,
+                    "headers": self.server_params.headers,
+                    "timeout": self.server_params.timeout,
+                    "sse_read_timeout": self.server_params.sse_read_timeout,
+                    **(self.server_params.sse_config or {})
+                }
+                async with sse_client(**server_params_dict) as streams:
                     async with ClientSession(*streams) as session:
                         await session.initialize()
                         result = await session.list_tools()
@@ -267,11 +293,11 @@ class McpResource(BaseResource, Loggable):
                 "env": self.server_params.env,
             }
         else:
-            assert isinstance(self.server_params, dict)
+            assert isinstance(self.server_params, HttpServerParameters)
             return {
                 "transport_type": "http",
-                "url": self.server_params["url"],
-                "headers": self.server_params.get("headers"),
-                "timeout": self.server_params.get("timeout", 5.0),
-                "sse_read_timeout": self.server_params.get("sse_read_timeout", 60 * 5),
+                "url": self.server_params.url,
+                "headers": self.server_params.headers,
+                "timeout": self.server_params.timeout,
+                "sse_read_timeout": self.server_params.sse_read_timeout,
             } 
