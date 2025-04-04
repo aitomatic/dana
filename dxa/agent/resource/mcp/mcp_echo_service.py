@@ -2,7 +2,7 @@
 
 # Note that this will be excuted as a separate process, so
 # we need to use absolute module references.
-from dxa.agent.resource.mcp.mcp_services import BaseMcpService
+from .base_mcp_service import BaseMcpService
 
 class McpEchoService(BaseMcpService):
     """MCP Echo Service"""
@@ -19,4 +19,4 @@ class McpEchoService(BaseMcpService):
 
 
 if __name__ == "__main__":
-    McpEchoService().run()
+    McpEchoService().run() 

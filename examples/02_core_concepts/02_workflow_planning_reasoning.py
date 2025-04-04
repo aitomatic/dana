@@ -19,10 +19,9 @@ from dxa.execution import (
     WorkflowExecutor,
     ExecutionContext, Objective, ExecutionNode, ExecutionSignal
 )
-from dxa.execution.workflow import Workflow
-from dxa.common.graph import NodeType
-from dxa.agent.resource import LLMResource
-from dxa.common.utils.logging import DXA_LOGGER
+from dxa.execution import Workflow
+from dxa.common import NodeType, DXA_LOGGER
+from dxa.agent import LLMResource
 
 # Configure logging
 DXA_LOGGER.configure(

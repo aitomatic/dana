@@ -34,8 +34,14 @@ Expected output:
 from typing import Any, Dict
 
 from dxa.agent import Agent
-from dxa.agent.resource import AgentResource, BaseResource, ResourceResponse
-from dxa.agent.resource.mcp import McpLocalResource
+from dxa.agent.resource import (
+    AgentResource,
+    BaseResource,
+    ResourceResponse,
+    McpResource,
+    McpTransportType,
+    McpConnectionParams
+)
 
 print("\n=== Starting Resource Selection Example ===")
 print(
@@ -119,10 +125,13 @@ def main():
     print("✓ Restaurant and transport resources created")
 
     print("\nInitializing weather MCP service...")
-    weather = McpLocalResource(
+    weather = McpResource(
         name=MCP_SERVICE_NAME,
-        server_script=MCP_SERVICE_SCRIPT,
-        command=MCP_SCRIPT_COMMAND,
+        connection_params=McpConnectionParams(
+            transport_type=McpTransportType.STDIO,
+            command=MCP_SCRIPT_COMMAND,
+            args=[MCP_SERVICE_SCRIPT]
+        )
     )
     print("✓ Weather MCP service initialized")
 

@@ -40,7 +40,7 @@ import os
 from typing import Dict, Any, Optional, List, Tuple
 from pathlib import Path
 from dotenv import load_dotenv, find_dotenv
-from dxa.common.exceptions import ConfigurationError
+from ..exceptions import ConfigurationError
 
 try:
     import yaml

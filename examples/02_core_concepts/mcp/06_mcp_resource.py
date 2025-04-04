@@ -36,8 +36,7 @@ Prerequisites:
 import asyncio
 from pathlib import Path
 
-from dxa.agent.resource import McpLocalResource, McpRemoteResource
-from dxa.agent.resource.base_resource import ResourceResponse
+from dxa.agent.resource import McpResource, McpTransportType, McpConnectionParams, ResourceResponse
 from dxa.common import DXA_LOGGER
 
 # Configure logging
@@ -66,9 +65,13 @@ async def run_local_server_example():
     print("Initializing local echo MCP server...")
 
     # Create a local MCP resource using our custom echo server
-    echo = McpLocalResource(
+    echo = McpResource(
         name="echo",
-        connection_params={"command": "python", "args": [MCP_ECHO_SERVER_SCRIPT]},
+        connection_params=McpConnectionParams(
+            transport_type=McpTransportType.STDIO,
+            command="python",
+            args=[MCP_ECHO_SERVER_SCRIPT]
+        ),
     )
 
     # Example: Using local echo server
@@ -118,10 +121,14 @@ async def run_local_sqlite_server_example():
     print("Initializing local sqlite MCP server...")
 
     # Create a local MCP resource using our custom sqlite server
-    sqlite_resource = McpLocalResource(
+    sqlite_resource = McpResource(
         name="sqlite",
-        connection_params={"command": "python", "args": [MCP_SQLITE_SERVER_SCRIPT]},
-        env={"SQLITE_DB_PATH": str(Path(MCP_SQLITE_SERVER_SCRIPT).parent / "mcp_sqlite.db")},
+        connection_params=McpConnectionParams(
+            transport_type=McpTransportType.STDIO,
+            command="python",
+            args=[MCP_SQLITE_SERVER_SCRIPT],
+            env={"SQLITE_DB_PATH": str(Path(MCP_SQLITE_SERVER_SCRIPT).parent / "mcp_sqlite.db")}
+        ),
     )
 
     # Example: Using local sqlite server
@@ -223,12 +230,13 @@ async def run_community_server_example():
 
     # Create a local MCP resource using a community server
     # This example uses a hypothetical community server
-    weather = McpLocalResource(
+    weather = McpResource(
         name="weather",
-        connection_params={
-            "command": "npx",
-            "args": ["-y", "@h1deya/mcp-server-weather"],
-        },
+        connection_params=McpConnectionParams(
+            transport_type=McpTransportType.STDIO,
+            command="npx",
+            args=["-y", "@h1deya/mcp-server-weather"]
+        ),
     )
 
     # Example: Using community server
@@ -281,9 +289,12 @@ async def run_remote_server_example():
     print("Initializing remote MCP server with SSE...")
 
     # Create a remote MCP resource with SSE support
-    remote = McpRemoteResource(
+    remote = McpResource(
         name="remote",
-        url="https://mcp.aitomatic.com/weather",
+        connection_params=McpConnectionParams(
+            transport_type=McpTransportType.HTTP,
+            url="https://mcp.aitomatic.com/weather"
+        ),
     )
 
     print("\n=== STEP 1: Discovering Available Tools ===")

@@ -21,7 +21,8 @@ from .utils import (
     get_base_path,
     get_config_path,
     DXALogger,
-    DXA_LOGGER
+    DXA_LOGGER,
+    Loggable
 )
 from .graph import (
     Node,
@@ -59,6 +60,7 @@ __all__ = [
     'get_config_path',
     'DXALogger',
     'DXA_LOGGER',
+    'Loggable',
     
     # Graph
     'Node',

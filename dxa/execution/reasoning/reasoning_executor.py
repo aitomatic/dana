@@ -2,7 +2,6 @@
 
 from typing import List
 
-from dxa.agent.resource.resource_executor import ResourceExecutor
 from ..executor import Executor
 from .reasoning import Reasoning
 from .reasoning_strategy import ReasoningStrategy
@@ -104,6 +103,7 @@ class ReasoningExecutor(Executor[ReasoningStrategy, Reasoning, ReasoningFactory]
                         f"ensuring your response aligns with all levels of the objective hierarchy."
                     )
 
+                    from ...agent import ResourceExecutor
                     tool_executor = ResourceExecutor()
                     tool_responses = await tool_executor.execute_resources(prompt, context)
 

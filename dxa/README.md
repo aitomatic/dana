@@ -145,7 +145,7 @@ result = await executor.execute(workflow, context)
 ```python
 # Advanced Usage with Custom Workflows
 from dxa.execution import ExecutionNode
-from dxa.common.utils.logging import DXA_LOGGER
+from dxa.common import DXA_LOGGER
 
 # Configure logging
 DXA_LOGGER.configure(level=DXA_LOGGER.DEBUG, console=True)

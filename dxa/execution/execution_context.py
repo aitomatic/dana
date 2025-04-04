@@ -2,11 +2,9 @@
 
 from typing import Optional, TYPE_CHECKING, cast, Dict, Any, Tuple
 
-from dxa.agent.resource.base_resource import BaseResource
 from .execution_types import ExecutionNode
 if TYPE_CHECKING:
-    from ..agent import AgentState, WorldState, ExecutionState
-    from ..agent.resource import LLMResource
+    from ..agent import AgentState, WorldState, ExecutionState, BaseResource, LLMResource
     from .workflow import Workflow
     from .planning import Plan
     from .reasoning import Reasoning
@@ -25,7 +23,7 @@ class ExecutionContext:
                  current_plan: Optional['Plan'] = None,
                  current_reasoning: Optional['Reasoning'] = None,
                  global_context: Optional[Dict[str, Any]] = None,
-                 resources: Optional[Dict[str, BaseResource]] = None
+                 resources: Optional[Dict[str, 'BaseResource']] = None
                  ):
         """Initialize execution context."""
         # State management

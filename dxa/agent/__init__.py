@@ -6,11 +6,27 @@ from .agent_factory import AgentFactory
 from .capability import BaseCapability
 from .io import BaseIO
 from .state import AgentState, WorldState, ExecutionState
-from .resource import BaseResource, LLMResource
+from .resource import (
+    AgentResource,
+    BaseResource,
+    LLMResource,
+    McpResource,
+    McpTransportType,
+    McpConnectionParams,
+    BaseMcpService,
+    McpEchoService,
+    ResourceResponse,
+    ResourceFactory,
+    HumanResource,
+    ExpertResource,
+    WoTResource,
+    ResourceExecutor
+)
 
 
 __all__ = [
     "Agent",
+    "AgentResource",
     "AgentRuntime",
     "AgentFactory",
     "BaseCapability",
@@ -20,5 +36,15 @@ __all__ = [
     "ExecutionState",
     "BaseResource",
     "LLMResource",
+    "McpResource",
+    "McpTransportType",
+    "McpConnectionParams",
+    "BaseMcpService",
+    "McpEchoService",
+    "ResourceResponse",
+    "ResourceFactory",
+    "HumanResource",
+    "ExpertResource",
+    "WoTResource",
+    "ResourceExecutor"
 ]
-
