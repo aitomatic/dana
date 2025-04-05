@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Install pre-commit
+pip install pre-commit
+pre-commit install --hook-type post-checkout --hook-type post-merge --hook-type post-rewrite
+
 # Create a virtual environment
 python3 -m venv .venv
 
