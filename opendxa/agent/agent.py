@@ -19,7 +19,6 @@ Example:
 See dxa/agent/README.md for detailed design documentation.
 """
 
-import asyncio
 from typing import Dict, Union, Optional, Any
 from ..execution import (
     Workflow,
