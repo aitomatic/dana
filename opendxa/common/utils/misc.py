@@ -1,7 +1,7 @@
 """Miscellaneous utilities."""
 
 from importlib import import_module
-from typing import Type, Any, Optional
+from typing import Type, Any, Optional, Callable
 from pathlib import Path
 import inspect
 import asyncio
@@ -71,7 +71,7 @@ def get_config_path(for_class: Type[Any],
     # Build the full path with the file extension
     return get_base_path(for_class) / config_dir / f"{path}.{file_extension}"
 
-def check_asyncio_safe():
+def ensure_asyncio_safety():
     """Check and make sure asyncio is safe to use."""
     try:
         asyncio.get_running_loop()
@@ -82,3 +82,8 @@ def check_asyncio_safe():
     except RuntimeError:
         # We're not in an asyncio loop
         pass
+
+def safe_asyncio_run(func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
+    """Run a function in an asyncio loop."""
+    ensure_asyncio_safety()
+    return asyncio.run(func(*args, **kwargs))
