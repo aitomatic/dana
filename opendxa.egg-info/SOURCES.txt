@@ -1,7 +1,0 @@
-README.md
-pyproject.toml
-opendxa/__init__.py
-opendxa.egg-info/PKG-INFO
-opendxa.egg-info/SOURCES.txt
-opendxa.egg-info/dependency_links.txt
-opendxa.egg-info/top_level.txt
