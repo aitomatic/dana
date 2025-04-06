@@ -40,7 +40,7 @@ to ensure proper imports regardless of how it's started.
 
 # Note that this will be executed as a separate process, so
 # we need to use absolute module references.
-from dxa.agent.resource import BaseMcpService
+from opendxa.agent.resource import BaseMcpService
 
 
 class McpEchoServer(BaseMcpService):

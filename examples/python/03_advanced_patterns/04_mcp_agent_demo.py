@@ -7,9 +7,9 @@ Demonstrates:
 """
 
 import asyncio
-from dxa.agent import Agent
-from dxa.agent.resource import McpResource, StdioTransportParams, HttpTransportParams
-from dxa.common import DXA_LOGGER
+from opendxa.agent import Agent
+from opendxa.agent.resource import McpResource, StdioTransportParams, HttpTransportParams
+from opendxa.common import DXA_LOGGER
 
 DXA_LOGGER.basicConfig(level=DXA_LOGGER.DEBUG)
 logger = DXA_LOGGER.getLogger(__file__.rsplit('/', maxsplit=1)[-1])

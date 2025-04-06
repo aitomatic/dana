@@ -4,11 +4,11 @@
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
 
-# DXA Agent System
+# OpenDXA Agent System
 
-## dxa.agent Module
+## opendxa.agent Module
 
-The DXA agent system executes workflows by:
+The OpenDXA agent system executes workflows by:
 
 1. Converting workflows to executable plans
 2. Managing required resources
@@ -25,7 +25,7 @@ For detailed information about how workflows are executed, see the [Execution Sy
 
 ## User-Friendly Practices
 
-DXA's agent system is designed with user experience in mind, providing several features that make it easy to use and extend:
+OpenDXA's agent system is designed with user experience in mind, providing several features that make it easy to use and extend:
 
 1. **Model Context Protocol (MCP)**
    - Standardized interface for all external resources
@@ -59,7 +59,7 @@ DXA's agent system is designed with user experience in mind, providing several f
 
 ## Agent Factory
 
-The DXA framework provides a factory pattern for creating agents with common configurations. This simplifies agent creation while maintaining access to DXA's full capabilities.
+The OpenDXA framework provides a factory pattern for creating agents with common configurations. This simplifies agent creation while maintaining access to OpenDXA's full capabilities.
 
 ### Why Use AgentFactory
 
@@ -140,7 +140,7 @@ Agents track:
 
 ## State Components
 
-The DXA agent system uses a centralized state management approach to track the evolution of objectives and plans. This integrates with the [Planning System](../execution/planning/README.md) and [Reasoning System](../execution/reasoning/README.md) to maintain coherent agent state.
+The OpenDXA agent system uses a centralized state management approach to track the evolution of objectives and plans. This integrates with the [Planning System](../execution/planning/README.md) and [Reasoning System](../execution/reasoning/README.md) to maintain coherent agent state.
 
 ## Core State Components
 

@@ -2,13 +2,13 @@
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
 
-# DXA - Domain-Expert Agent
+# OpenDXA - Domain-Expert Agent
 
-The Domain-Expert Agent (DXA) is an intelligent agent architecture designed to tackle complex domain-specific tasks with human-like expertise. At its heart is a unique three-layer graph architecture that breaks down high-level objectives into executable actions through a Why-What-How paradigm.
+The Domain-Expert Agent (OpenDXA) is an intelligent agent architecture designed to tackle complex domain-specific tasks with human-like expertise. At its heart is a unique three-layer graph architecture that breaks down high-level objectives into executable actions through a Why-What-How paradigm.
 
 ## Architecture Overview
 
-DXA maps business workflows (WHY) to concrete plans (WHAT), which are then executed through standardized reasoning patterns (HOW). This hierarchical decomposition allows agents to maintain strategic alignment while adapting to changing conditions - similar to how human experts combine domain knowledge with practical execution.
+OpenDXA maps business workflows (WHY) to concrete plans (WHAT), which are then executed through standardized reasoning patterns (HOW). This hierarchical decomposition allows agents to maintain strategic alignment while adapting to changing conditions - similar to how human experts combine domain knowledge with practical execution.
 
 ```mermaid
 graph LR
@@ -103,7 +103,7 @@ graph TB
 
 ## Engineering Approaches
 
-DXA follows three key engineering principles that guide its architecture and implementation:
+OpenDXA follows three key engineering principles that guide its architecture and implementation:
 
 1. **Progressive Complexity**
    - Start with simple implementations
@@ -129,8 +129,8 @@ DXA follows three key engineering principles that guide its architecture and imp
 
 ```python
 # Simple Q&A
-from dxa.agent import Agent
-from dxa.agent.resource import LLMResource
+from opendxa.agent import Agent
+from opendxa.agent.resource import LLMResource
 answer = Agent().ask("What is quantum computing?")
 ```
 
@@ -138,9 +138,9 @@ answer = Agent().ask("What is quantum computing?")
 
 ```python
 # Basic Workflow Execution
-from dxa.execution import WorkflowExecutor, ExecutionContext
-from dxa.execution.workflow import Workflow
-from dxa.common.graph import NodeType
+from opendxa.execution import WorkflowExecutor, ExecutionContext
+from opendxa.execution.workflow import Workflow
+from opendxa.common.graph import NodeType
 
 # Create a workflow
 workflow = Workflow(objective="Analyze customer feedback")
@@ -164,8 +164,8 @@ result = await executor.execute(workflow, context)
 
 ```python
 # Advanced Usage with Custom Workflows
-from dxa.execution import ExecutionNode
-from dxa.common import DXA_LOGGER
+from opendxa.execution import ExecutionNode
+from opendxa.common import DXA_LOGGER
 
 # Configure logging
 DXA_LOGGER.configure(level=DXA_LOGGER.DEBUG, console=True)
@@ -190,7 +190,7 @@ workflow.add_edge_between("GATHER", "ANALYZE")
 ## Project Structure
 
 ```text
-dxa/
+opendxa/
 ├── agent/                  # Agent system
 │   ├── capability/        # Cognitive abilities
 │   ├── resource/         # External tools & services

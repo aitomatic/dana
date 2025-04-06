@@ -3,7 +3,7 @@
 import json
 from typing import Any, Dict, List, Optional
 
-from dxa.agent.resource.agent_resource import AgentResource
+from opendxa.agent.resource.agent_resource import AgentResource
 
 from ...common.resource import BaseResource, LLMResource, McpResource
 from ..execution_context import ExecutionContext

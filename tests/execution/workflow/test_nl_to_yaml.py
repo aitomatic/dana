@@ -1,9 +1,9 @@
 """Test natural language to YAML workflow implementation."""
 
 import unittest
-from dxa.execution import WorkflowFactory
-from dxa.execution import Workflow
-from dxa.common.graph import NodeType
+from opendxa.execution import WorkflowFactory
+from opendxa.execution import Workflow
+from opendxa.common.graph import NodeType
 
 class TestNLToYAML(unittest.TestCase):
     """Test natural language to YAML workflow implementation."""

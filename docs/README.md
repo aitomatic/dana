@@ -5,9 +5,9 @@
 </p>
 <!-- markdownlint-enable MD033 -->
 
-# DXA Documentation
+# OpenDXA Documentation
 
-Complete documentation for the DXA framework.
+Complete documentation for the OpenDXA framework.
 
 ## Structure
 
@@ -17,7 +17,7 @@ Complete documentation for the DXA framework.
 
 ## Documentation
 
-The primary documentation for the DXA framework is organized in several layers:
+The primary documentation for the OpenDXA framework is organized in several layers:
 
 1. **Framework Overview**
    - Main README.md - High-level overview and getting started
@@ -67,7 +67,7 @@ cat dxa/execution/workflow/README.md
 
 ### Process Automation
 
-The DXA Workflow system provides powerful process automation capabilities:
+The OpenDXA Workflow system provides powerful process automation capabilities:
 
 1. **Workflow Management**
    - Define complex workflows

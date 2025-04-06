@@ -16,9 +16,9 @@ import os
 import asyncio
 import logging
 
-from dxa.agent import Agent
-from dxa.agent.resource import LLMResource
-from dxa.common import DXA_LOGGER
+from opendxa.agent import Agent
+from opendxa.agent.resource import LLMResource
+from opendxa.common import DXA_LOGGER
 
 # Step 1: Configure logging
 DXA_LOGGER.configure(level=logging.INFO)

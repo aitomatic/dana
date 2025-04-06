@@ -4,9 +4,9 @@
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
 
-# DXA Examples
+# OpenDXA Examples
 
-This directory contains examples demonstrating different aspects of the DXA framework.
+This directory contains examples demonstrating different aspects of the OpenDXA framework.
 
 ## Directory Structure
 
@@ -22,7 +22,7 @@ examples/
 
 ## Getting Started
 
-The `getting_started/` directory contains basic examples that demonstrate fundamental DXA concepts:
+The `getting_started/` directory contains basic examples that demonstrate fundamental OpenDXA concepts:
 
 1. `01_hello_dxa.py` - Basic agent creation and usage
 2. `02_simple_workflow.py` - Creating and running a basic workflow
@@ -30,7 +30,7 @@ The `getting_started/` directory contains basic examples that demonstrate fundam
 
 ## Core Concepts
 
-The `core_concepts/` directory contains examples that demonstrate core DXA features:
+The `core_concepts/` directory contains examples that demonstrate core OpenDXA features:
 
 1. `01_workflow_planning.py` - Workflow and planning layer interaction
 2. `02_workflow_planning_reasoning.py` - Understanding the three-layer architecture
@@ -48,7 +48,7 @@ The `advanced/` directory contains complex examples and patterns:
 
 Before running any examples:
 
-1. Install DXA and its dependencies:
+1. Install OpenDXA and its dependencies:
 
    ```bash
    pip install -e .
@@ -64,7 +64,7 @@ Before running any examples:
 3. Configure logging (optional):
 
    ```python
-   from dxa.common import DXA_LOGGER
+   from opendxa.common import DXA_LOGGER
    DXA_LOGGER.configure(
        level=DXA_LOGGER.DEBUG,
        console=True,

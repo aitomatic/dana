@@ -1,9 +1,9 @@
 """System health monitoring example."""
 
 import asyncio
-from dxa.agent import Agent
-from dxa.execution.workflow.workflow_factory import WorkflowFactory
-from dxa.execution import PlanStrategy
+from opendxa.agent import Agent
+from opendxa.execution.workflow.workflow_factory import WorkflowFactory
+from opendxa.execution import PlanStrategy
 
 async def monitor_system():
     """Continuous system monitoring loop."""

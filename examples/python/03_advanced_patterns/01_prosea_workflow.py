@@ -3,10 +3,10 @@
 import asyncio
 import os
 
-from dxa.common import DXA_LOGGER
-from dxa.execution import WorkflowFactory, WorkflowExecutor
-from dxa.execution import ExecutionContext
-from dxa.agent.resource import LLMResource
+from opendxa.common import DXA_LOGGER
+from opendxa.execution import WorkflowFactory, WorkflowExecutor
+from opendxa.execution import ExecutionContext
+from opendxa.agent.resource import LLMResource
 
 # Configure logging
 DXA_LOGGER.basicConfig(

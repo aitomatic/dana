@@ -4,7 +4,7 @@ from contextlib import closing
 from pathlib import Path
 from typing import Any, Optional
 
-from dxa.agent.resource.mcp import BaseMcpService
+from opendxa.agent.resource.mcp import BaseMcpService
 
 _SELF: Optional["SqliteMcpServer"]
 

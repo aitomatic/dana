@@ -1,9 +1,9 @@
 """Tests for PlanFactory."""
 
-from dxa.execution.planning.plan_factory import PlanFactory
-from dxa.execution.planning.plan import Plan
-from dxa.execution.execution_types import Objective
-from dxa.common.graph import NodeType
+from opendxa.execution.planning.plan_factory import PlanFactory
+from opendxa.execution.planning.plan import Plan
+from opendxa.execution.execution_types import Objective
+from opendxa.common.graph import NodeType
 
 class TestPlanFactory:
     """Tests for PlanFactory."""

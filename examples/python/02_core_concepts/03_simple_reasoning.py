@@ -20,8 +20,8 @@ Related examples:
 - ../workflow/qa_approaches.py: Different approaches to question answering
 """
 
-from dxa.execution import ReasoningFactory
-from dxa.execution.execution_types import Objective
+from opendxa.execution import ReasoningFactory
+from opendxa.execution.execution_types import Objective
 
 def main():
     """Create and inspect a basic reasoning pattern.

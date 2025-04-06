@@ -15,13 +15,13 @@ The example implements a simple data analysis pipeline:
 import asyncio
 from typing import Dict, Any, Tuple
 
-from dxa.execution import (
+from opendxa.execution import (
     WorkflowExecutor,
     ExecutionContext, Objective, ExecutionNode, ExecutionSignal
 )
-from dxa.execution import Workflow
-from dxa.common import NodeType, DXA_LOGGER
-from dxa.agent import LLMResource
+from opendxa.execution import Workflow
+from opendxa.common import NodeType, DXA_LOGGER
+from opendxa.agent import LLMResource
 
 # Configure logging
 DXA_LOGGER.configure(

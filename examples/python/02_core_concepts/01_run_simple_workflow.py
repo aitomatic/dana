@@ -3,8 +3,8 @@
 
 import asyncio
 
-from dxa.agent import LLMResource, AgentState, WorldState, ExecutionState
-from dxa.execution import (
+from opendxa.agent import LLMResource, AgentState, WorldState, ExecutionState
+from opendxa.execution import (
     WorkflowFactory,
     WorkflowExecutor,
     ExecutionContext,

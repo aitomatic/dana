@@ -19,12 +19,12 @@ Use cases:
 """
 
 from typing import Dict, Any
-from dxa.agent import Agent
-from dxa.execution import PlanStrategy, WorkflowFactory
-from dxa.execution.workflow import Workflow
-from dxa.execution.execution_types import ExecutionNode, Objective
-from dxa.common.graph import NodeType
-from dxa.common import DXA_LOGGER
+from opendxa.agent import Agent
+from opendxa.execution import PlanStrategy, WorkflowFactory
+from opendxa.execution.workflow import Workflow
+from opendxa.execution.execution_types import ExecutionNode, Objective
+from opendxa.common.graph import NodeType
+from opendxa.common import DXA_LOGGER
 
 def direct_qa_with_ask(question: str) -> Dict[str, Any]:
     """Direct question-answer using the agent's ask method.

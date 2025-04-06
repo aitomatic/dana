@@ -1,8 +1,8 @@
 import asyncio
 import json
-from dxa.agent import Agent
-from dxa.agent.resource import McpResource, StdioTransportParams
-from dxa.common import DXA_LOGGER
+from opendxa.agent import Agent
+from opendxa.agent.resource import McpResource, StdioTransportParams
+from opendxa.common import DXA_LOGGER
 
 # Configure logging
 DXA_LOGGER.basicConfig(level=DXA_LOGGER.INFO)

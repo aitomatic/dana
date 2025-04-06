@@ -22,8 +22,8 @@ Related examples:
 """
 
 from typing import Dict, Any
-from dxa.execution import Pipeline
-from dxa.common import DXA_LOGGER
+from opendxa.execution import Pipeline
+from opendxa.common import DXA_LOGGER
 
 async def main():
     """Run a temperature monitoring pipeline.
