@@ -1,12 +1,13 @@
 """MCP Resource Example
 
-This example demonstrates how to use MCP (Model Control Protocol) resources in the DXA framework.
-MCP resources allow you to integrate external services and tools into your agents.
+This example demonstrates how to use the Model Context Protocol (MCP) resource
+to interact with external services through a standardized interface.
 
-Key concepts demonstrated:
-1. Creating and using local custom MCP servers
-2. Accessing community-created MCP servers
-3. Using Server-Sent Events (SSE) for remote MCP servers
+Key concepts:
+- Creating an MCP resource
+- Configuring transport parameters
+- Making MCP service calls
+- Handling responses
 
 What you'll learn:
 1. How to create and run a local MCP server
@@ -36,7 +37,8 @@ Prerequisites:
 import asyncio
 from pathlib import Path
 
-from dxa.agent.resource import McpResource, StdioTransportParams, HttpTransportParams, ResourceResponse
+from dxa.agent import Agent
+from dxa.common.resource import McpResource, StdioTransportParams, HttpTransportParams, ResourceResponse
 from dxa.common import DXA_LOGGER
 
 # Configure logging

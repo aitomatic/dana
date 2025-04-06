@@ -30,9 +30,10 @@ from ..execution import (
     ExecutionContext
 )
 from .capability import BaseCapability
-from .resource import BaseResource, LLMResource
-from .io import BaseIO, IOFactory
-from .state import AgentState, WorldState, ExecutionState
+from ..common.resource import BaseResource, LLMResource
+from ..common.state import WorldState, ExecutionState
+from .agent_state import AgentState
+from ..common.io import BaseIO, IOFactory
 
 from ..common.utils.config import load_agent_config
 from .agent_runtime import AgentRuntime

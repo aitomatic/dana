@@ -8,7 +8,7 @@ input/output operations while extending BaseResource functionality.
 from abc import abstractmethod
 from typing import Any, Dict, Optional
 import logging
-from ..resource.base_resource import BaseResource
+from ...common.resource.base_resource import BaseResource
 
 class BaseIO(BaseResource):
     """Base class for I/O resources.

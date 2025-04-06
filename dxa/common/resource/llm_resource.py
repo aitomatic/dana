@@ -4,7 +4,7 @@ from typing import Dict, Any, Optional, List
 import asyncio
 import aisuite as ai
 from openai import APIConnectionError, RateLimitError
-from ...common import DXA_LOGGER
+from ...common.utils.logging import DXA_LOGGER
 from ...common.exceptions import LLMError
 from .base_resource import BaseResource
 # from openai import AsyncClient

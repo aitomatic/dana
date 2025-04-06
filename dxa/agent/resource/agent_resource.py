@@ -24,11 +24,11 @@ Example:
 
 import asyncio
 from typing import Dict, Any, TYPE_CHECKING, List
-from .base_resource import BaseResource
+from ...common.resource import BaseResource
 from ...common.exceptions import ResourceError, ConfigurationError, AgentError
 
 if TYPE_CHECKING:
-    from dxa.agent import Agent  # Only used for type hints
+    from ..agent import Agent  # Only used for type hints
 
 class AgentResource(BaseResource):
     """Resource for accessing and coordinating agent interactions."""
@@ -44,7 +44,21 @@ class AgentResource(BaseResource):
         if not agents:
             raise ConfigurationError("Agents dictionary cannot be empty")
         self.agents = agents
-        self.initialize()
+
+    @classmethod
+    async def create(cls, name: str, agents: Dict[str, "Agent"]) -> "AgentResource":
+        """Create and initialize an agent resource.
+        
+        Args:
+            name: Resource identifier
+            agents: Dictionary mapping agent IDs to agent instances
+            
+        Returns:
+            Initialized AgentResource instance
+        """
+        resource = cls(name, agents)
+        await resource.initialize()
+        return resource
 
     async def query(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Query an agent from the registry.
@@ -134,6 +148,9 @@ class AgentResource(BaseResource):
         tool_strings = []
         agents = self.list_agents()
         for agent_id, agent_description in agents.items():
-            tool_strings.extend(await super().get_tool_strings(resource_id=resource_id, agent_id=agent_id, agent_description=agent_description))
+            tool_strings.extend(await super().get_tool_strings(
+                resource_id=resource_id, agent_id=agent_id,
+                agent_description=agent_description)
+            )
 
         return tool_strings

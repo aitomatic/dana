@@ -1,5 +1,3 @@
-<!-- markdownlint-disable MD041 -->
-<!-- markdownlint-disable MD033 -->
 <p align="center">
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
@@ -89,7 +87,7 @@ graph TB
    - State tracking and persistence
    - I/O handling and environmental interaction
 
-### Execution System
+### Execution System ([documentation](execution/README.md))
 
 1. **Components**
    - [Workflow](execution/workflow/README.md) - Process definition and control
@@ -102,6 +100,28 @@ graph TB
    - Hierarchical decomposition
    - Dynamic adaptation
    - Progress tracking
+
+## Engineering Approaches
+
+DXA follows three key engineering principles that guide its architecture and implementation:
+
+1. **Progressive Complexity**
+   - Start with simple implementations
+   - Add complexity incrementally
+   - Maintain clarity at each level
+   - Enable gradual learning curve
+
+2. **Composable Architecture**
+   - Mix and match components
+   - Highly customizable agents
+   - Flexible integration points
+   - Reusable building blocks
+
+3. **Clean Separation of Concerns**
+   - Clear component boundaries
+   - Well-defined interfaces
+   - Minimal dependencies
+   - Maintainable codebase
 
 ## Implementation Examples
 

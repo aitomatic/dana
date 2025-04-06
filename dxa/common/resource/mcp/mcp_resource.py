@@ -8,7 +8,7 @@ from mcp import ClientSession, StdioServerParameters, Tool
 from mcp.client.stdio import get_default_environment, stdio_client
 from mcp.client.sse import sse_client
 
-from ....common import Loggable
+from ....common.utils.logging import Loggable
 from ..base_resource import BaseResource, ResourceResponse
 
 

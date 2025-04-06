@@ -22,7 +22,7 @@ Related examples:
 """
 
 from dxa.agent import Agent
-from dxa.agent.resource import LLMResource
+from dxa.common.resource import LLMResource
 
 
 def create_basic_agent():

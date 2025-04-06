@@ -19,6 +19,22 @@ class ExecutionState(BaseState):
     node_results: Dict[str, Any] = field(default_factory=dict)
     execution_path: List[Tuple[str, str]] = field(default_factory=list)  # (from_node, to_node)
 
+    def initialize(self) -> None:
+        """Initialize execution state."""
+        super().initialize()
+        self.status = "IDLE"
+        self.current_step = None
+        self.current_node_id = None
+        self.initialized = True
+
+    def reset(self) -> None:
+        """Reset execution state to initial values."""
+        super().reset()
+        self.step_results.clear()
+        self.visited_nodes.clear()
+        self.node_results.clear()
+        self.execution_path.clear()
+
     def update_node(self, node_id: str, result: Any = None) -> None:
         """Update current node and record result."""
         if self.current_node_id:

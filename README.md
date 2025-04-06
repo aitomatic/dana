@@ -62,12 +62,30 @@ This architecture means you can:
 - Scale to complex domain-specific tasks
 - Maintain clean separation of concerns
 
+## Key Differentiators
+
+### Business/Strategic Differentiators
+1. **Three-Layer Architecture**: Maps business workflows to concrete plans to reasoning patterns, creating a natural progression from requirements to implementation
+2. **Domain Expertise Integration**: Specifically designed to embed domain expertise into agents, making it particularly valuable for specialized fields
+
+### Engineering Approaches
+1. **Progressive Complexity**: Start with simple implementations and progressively add complexity
+2. **Composable Architecture**: Mix and match components as needed for highly customized agents
+3. **Clean Separation of Concerns**: Maintain clear boundaries between different components
+
+### User-Friendly Practices
+1. **Model Context Protocol (MCP)**: Standardized interface for all external resources
+2. **Built-in Best Practices**: Pre-configured templates and patterns for common behaviors
+3. **Resource Management**: Robust handling with support for different transport types
+4. **Comprehensive Testing Support**: Encourages thorough testing at each layer
+5. **Documentation-First Approach**: Extensive documentation structure for effective use
+
 ## Component Overview
 
 DXA consists of several core components that work together:
 
-- **Agent System** - Executes workflows and manages resources
-- **Execution System** - Implements the 3-layer architecture
+- **Agent System** - Executes workflows and manages resources ([documentation](dxa/agent/README.md))
+- **Execution System** - Implements the 3-layer architecture ([documentation](dxa/execution/README.md))
 
 The Execution system is organized in a 3-layer architecture:
 

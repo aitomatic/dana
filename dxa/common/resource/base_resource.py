@@ -24,7 +24,7 @@ Example:
 from abc import ABC
 from dataclasses import dataclass
 from typing import Dict, Any, List, Optional, Union
-from ...common import DXA_LOGGER
+from ...common.utils.logging import DXA_LOGGER
 
 class ResourceError(Exception):
     """Base class for resource errors."""
@@ -174,11 +174,12 @@ class BaseResource(ABC):
 
             # Check if parameter is Optional[T] by examining Union type with None
             is_optional = (hasattr(param_type, "__origin__") and 
-                         param_type.__origin__ is Union and
-                         type(None) in param_type.__args__)
+                           hasattr(param_type, "__args__") and
+                           getattr(param_type, "__origin__") is Union and
+                           type(None) in getattr(param_type, "__args__", ()))
 
             # Extract the actual type from Optional if present
-            actual_type = param_type.__args__[0] if is_optional else param_type
+            actual_type = getattr(param_type, "__args__", (param_type,))[0] if is_optional else param_type
 
             # Get schema type, defaulting to string if type not in map
             param_schema_type = type_map.get(actual_type, "string")

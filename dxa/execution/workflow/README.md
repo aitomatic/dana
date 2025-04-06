@@ -99,6 +99,42 @@ classDiagram
 
 ### Integration Points
 
+## Common Usage Patterns
+
+DXA workflows support several common patterns for building intelligent agents:
+
+1. **Simple Q&A**
+   - Direct question answering
+   - Context-aware responses
+   - Knowledge integration
+   - Source tracking
+
+2. **Research Workflows**
+   - Information gathering
+   - Data synthesis
+   - Source validation
+   - Result formatting
+
+3. **Decision Making**
+   - Option evaluation
+   - Criteria weighting
+   - Risk assessment
+   - Action selection
+
+4. **Task Automation**
+   - Step sequencing
+   - Error handling
+   - State tracking
+   - Progress reporting
+
+5. **Complex Analysis**
+   - Multi-step reasoning
+   - Data transformation
+   - Result validation
+   - Report generation
+
+Each pattern can be customized and combined to create sophisticated agent behaviors while maintaining clarity and maintainability.
+
 ```python
 from dxa.execution.workflow import WorkflowFactory
 from dxa.execution import PlanStrategy

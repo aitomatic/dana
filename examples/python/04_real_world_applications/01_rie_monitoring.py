@@ -16,7 +16,7 @@ from pathlib import Path
 import yaml
 from dxa.agent import Agent
 from dxa.execution.workflow import WorkflowFactory
-from dxa.agent.state import AgentState, WorldState, ExecutionState
+from dxa.common.state import AgentState, WorldState, ExecutionState
 from dxa.execution.execution_context import ExecutionContext
 from dxa.common.graph.traversal import ContinuousTraversal
 from resources.mock_fdc import MockFDC
