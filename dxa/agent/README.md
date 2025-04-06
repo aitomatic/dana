@@ -15,11 +15,47 @@ The DXA agent system executes workflows by:
 3. Tracking execution state
 4. Adapting to new information
 
+For detailed information about how workflows are executed, see the [Execution System](../execution/README.md).
+
 ## Design Philosophy
 
 1. Simple things should be simple, complex things should be possible
 2. Composition over inheritance
 3. Smart defaults with explicit control when needed
+
+## User-Friendly Practices
+
+DXA's agent system is designed with user experience in mind, providing several features that make it easy to use and extend:
+
+1. **Model Context Protocol (MCP)**
+   - Standardized interface for all external resources
+   - Consistent tool integration
+   - Built-in schema validation
+   - Robust error handling
+
+2. **Built-in Best Practices**
+   - Pre-configured templates
+   - Common behavior patterns
+   - Optimized defaults
+   - Proven configurations
+
+3. **Resource Management**
+   - Robust error handling
+   - Multiple transport types
+   - Automatic cleanup
+   - State persistence
+
+4. **Comprehensive Testing**
+   - Unit test support
+   - Integration testing
+   - Performance benchmarks
+   - Error scenario coverage
+
+5. **Documentation-First**
+   - Clear API documentation
+   - Usage examples
+   - Best practices
+   - Troubleshooting guides
 
 ## Agent Factory
 

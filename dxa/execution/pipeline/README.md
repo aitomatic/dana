@@ -8,15 +8,16 @@
 
 ## Overview
 
-The Pipeline system provides a flexible framework for creating and executing data processing pipelines within DXA. It combines the Resource interface with graph-based execution to enable complex data flows between components.
+The Pipeline system provides a flexible framework for creating and executing data processing pipelines within DXA. It uses graph-based execution to enable complex data flows between components, while also functioning as a discoverable and manageable resource.
 
 ### Key Features
 
-- Data flow management between resources
+- Data flow management between components
 - Async execution with buffering
 - Type-safe node connections
 - Error handling and recovery
 - Monitoring and metrics
+- Resource discovery and management
 
 ## Architecture
 
@@ -28,43 +29,67 @@ graph TB
         M --> SK[Sink]
     end
     
-    subgraph Resources
-        IoT[IoT Resource]
-        ML[ML Resource]
-        DB[DB Resource]
-    end
-    
     subgraph Execution
         Exec[Executor]
         Buff[Buffers]
         Flow[Flow Control]
     end
     
-    Pipeline --> Resources
     Pipeline --> Execution
 ```
 
 ## Components
 
-### PipelineResource
+### Pipeline
 
-Combines `BaseResource` and `ExecutionGraph` to create a queryable pipeline:
+The Pipeline class inherits from both ExecutionGraph and BaseResource to provide dual functionality:
+
+1. As an ExecutionGraph, it manages data processing flow
+2. As a BaseResource, it can be discovered and used through the resource system
 
 ```python
-from dxa.execution.pipeline import PipelineResource
-from dxa.agent.resource import BaseResource
+from dxa.execution.pipeline import Pipeline
 
-# Create pipeline
-pipeline = PipelineResource("anomaly_detection")
+# Create pipeline as both a graph and a resource
+pipeline = Pipeline(
+    name="anomaly_detection",
+    objective="Detect anomalies in sensor data",
+    steps=[preprocess, detect_anomalies, store_results],
+    description="Pipeline for anomaly detection in sensor data"
+)
 
 # Add nodes
-pipeline.add_source(IoTSensorResource("sensor"))
-pipeline.add_transform(PreprocessResource("preprocessing"))
-pipeline.add_sink(OutputResource("results"))
+pipeline.add_node(PipelineNode(
+    node_id="source",
+    node_type=NodeType.SOURCE,
+    objective="Data source"
+))
 
-# Initialize and run
-await pipeline.initialize()
-result = await pipeline.query({"execute": True})
+pipeline.add_node(PipelineNode(
+    node_id="transform",
+    node_type=NodeType.TASK,
+    objective="Data transformation"
+))
+
+pipeline.add_node(PipelineNode(
+    node_id="sink",
+    node_type=NodeType.SINK,
+    objective="Data output"
+))
+
+# Connect nodes
+pipeline.add_edge("source", "transform")
+pipeline.add_edge("transform", "sink")
+
+# Execute pipeline
+context = PipelineContext()
+result = await pipeline.execute(context)
+
+# Or use as a resource
+response = await pipeline.query({
+    "data": input_data,
+    "options": {"context": context}
+})
 ```
 
 ### Node Types
@@ -98,182 +123,87 @@ sequenceDiagram
     participant M as Model
     participant SK as Sink
 
-    S->>B: Generate Data
-    B->>M: Batch Data
-    M->>SK: Process Results
-    SK->>Reasoning: Forward Data
+    S->>B: Send data
+    B->>M: Process data
+    M->>SK: Output results
 ```
 
-## Implementation
+## Resource Integration
 
-### Pipeline Configuration
+The Pipeline class inherits from BaseResource, making it a first-class resource in the DXA system:
 
-```python
-config = PipelineConfig(
-    name="anomaly_detection",
-    buffer_size=1000,
-    batch_size=32,
-    metadata={
-        "description": "IoT anomaly detection pipeline",
-        "version": "1.0"
-    }
-)
-```
+1. **Resource Interface**
+   - Implements standard resource methods (initialize, cleanup, query)
+   - Can be discovered and managed like other resources
+   - Supports resource configuration and status tracking
 
-### Node Configuration
+2. **Pipeline as Resource**
+   - Can be initialized and cleaned up through resource interface
+   - Accepts queries to execute pipeline processing
+   - Reports status and availability through resource methods
 
-```python
-# Add source with config
-pipeline.add_source(
-    IoTResource("sensor1"),
-    buffer_size=500,
-    batch_size=16,
-    input_schema={"value": "float"},
-    output_schema={"normalized": "float"}
-)
+3. **Example Resource Usage**
+   ```python
+   # Initialize pipeline as resource
+   await pipeline.initialize()
+   
+   # Execute pipeline through resource interface
+   response = await pipeline.query({
+       "data": input_data,
+       "options": {"batch_size": 100}
+   })
+   
+   # Clean up when done
+   await pipeline.cleanup()
+   ```
 
-# Add model with config
-pipeline.add_model(
-    AnomalyDetector("detector1"),
-    buffer_size=100,
-    input_schema={"normalized": "float"},
-    output_schema={"anomaly_score": "float"}
-)
-```
+## Execution Flow
 
-### Execution Context
+1. **Initialization**
+   - Create pipeline with nodes and edges
+   - Initialize pipeline as resource
+   - Set up execution buffers
 
-```python
-@dataclass
-class PipelineContext:
-    config: PipelineConfig
-    state: PipelineState
-    buffers: Dict[str, asyncio.Queue]
-```
+2. **Execution**
+   - Start from source nodes
+   - Process data through transform nodes
+   - Apply models and transformations
+   - Output results to sink nodes
 
-## Integration
-
-### With Reasoning System
-
-```python
-# In reasoning step
-pipeline = self.agent.resources.anomaly_pipeline
-result = await pipeline.query({
-    "execute": True,
-    "config": {
-        "window_size": 100,
-        "threshold": 0.95
-    }
-})
-```
-
-### With Resources
-
-```python
-# Create resources
-iot = IoTResource("sensor1", endpoint="mqtt://sensor1")
-model = ModelResource("anomaly_detector", model_path="models/detector.pkl")
-sink = ReasoningInputResource("reasoning_input")
-
-# Build pipeline
-pipeline = PipelineResource("anomaly_detection")
-pipeline.add_source(iot)
-pipeline.add_model(model)
-pipeline.add_sink(sink)
-```
-
-## Error Handling
-
-1. **Node Failures**
-   - Automatic retry
-   - Error signals
-   - State recovery
-
-2. **Data Validation**
-   - Schema checking
-   - Type validation
-   - Range checks
-
-3. **Resource Management**
-   - Buffer overflow protection
-   - Resource cleanup
-   - Connection management
-
-## Monitoring
-
-### Metrics
-
-- Throughput
-- Latency
-- Error rates
-- Buffer utilization
-- Resource usage
-
-### State Tracking
-
-```python
-@dataclass
-class PipelineState:
-    status: ExecutionNodeStatus
-    metrics: Dict[str, Any]
-    errors: Dict[str, Any]
-```
+3. **Completion**
+   - Clean up buffers
+   - Return final results
+   - Update execution state
 
 ## Best Practices
 
-1. **Pipeline Design**
-   - Clear data flow paths
-   - Appropriate buffer sizes
-   - Error handling at each stage
+1. **Pipeline Configuration**
+   - Set appropriate buffer sizes for data volume
+   - Configure batch processing if needed
+   - Provide clear objectives for nodes
 
-2. **Resource Management**
-   - Proper initialization
-   - Cleanup on completion
-   - Resource pooling when needed
+2. **Buffer Configuration**
+   - Configure buffers based on data volume
+   - Use streaming mode for continuous data
+   - Set appropriate timeouts for async operations
 
-3. **Performance**
-   - Batch processing
-   - Async operations
-   - Buffer management
+3. **Error Handling**
+   - Implement proper error handling in node steps
+   - Handle resource initialization errors
+   - Provide fallback behavior for failures
 
-## Future Development
+4. **Performance Optimization**
+   - Use appropriate batch sizes
+   - Configure buffer sizes based on memory constraints
+   - Profile pipeline execution for bottlenecks
 
-1. **Enhanced Features**
-   - Dynamic reconfiguration
-   - Hot-swappable nodes
-   - Advanced monitoring
+## See Also
 
-2. **Optimizations**
-   - Parallel processing
-   - Memory management
-   - Caching strategies
-
-3. **Integration**
-   - More resource types
-   - Visualization tools
-   - Management interface
-
-## Potential Improvements
-
-- Error Handling:
-  - The error handling in PipelineExecutor.execute_node() catches all exceptions, which could mask important errors
-  - Consider adding more specific error types and handling
-  - Add retry logic for transient failures
-
-- Buffer Management:
-  - The buffer cleanup in PipelineContext could be more robust
-  - Consider adding timeout mechanisms for buffer operations
-  - Add buffer overflow protection strategies
-
-- Monitoring & Metrics:
-  - Could expand buffer metrics to include throughput, latency
-  - Add pipeline-level metrics
-  - Consider adding hooks for external monitoring systems
-
-- Resource Management:
-  - No explicit resource cleanup in some areas
-  - Could benefit from context manager pattern
-  - Consider adding resource limits
+- [Execution System](../README.md) - Overview of the execution system
+- [Workflow System](../workflow/README.md) - Process definition and control
+- [Planning System](../planning/README.md) - Strategic decomposition
+- [Reasoning System](../reasoning/README.md) - Tactical execution
+- [Agent System](../../agent/README.md) - Agent components and resources
 
 ---
 

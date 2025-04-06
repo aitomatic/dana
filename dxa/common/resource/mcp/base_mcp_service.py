@@ -4,7 +4,7 @@ import functools
 from abc import ABC
 from typing import Literal, Optional
 from mcp.server.fastmcp import FastMCP
-from ....common import DXA_LOGGER
+from ....common.utils.logging import DXA_LOGGER
 
 # This is to pass into derived classes to use because "self" is not set when called by the MCP framework
 _SERVER = FastMCP("FastMCP Server")

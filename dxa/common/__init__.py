@@ -4,7 +4,6 @@ from .exceptions import (
     DXAError,
     ConfigurationError,
     LLMError,
-    ResourceError,
     NetworkError,
     WebSocketError,
     ReasoningError,
@@ -12,6 +11,10 @@ from .exceptions import (
     CommunicationError,
     ValidationError,
     StateError
+)
+from .io import (
+    BaseIO,
+    IOFactory
 )
 from .utils import (
     load_agent_config,
@@ -36,13 +39,34 @@ from .graph import (
     TopologicalTraversal,
     GraphVisualizer,
 )
+from .state import (
+    BaseState,
+    WorldState,
+    ExecutionState,
+    StateManager
+)
+from .resource import (
+    BaseResource,
+    ResourceConfig,
+    ResourceResponse,
+    ResourceError,
+    ResourceUnavailableError,
+    LLMResource,
+    McpResource,
+    BaseMcpService,
+    McpEchoService,
+    HumanResource,
+    WoTResource,
+    ResourceExecutor,
+    StdioTransportParams,
+    HttpTransportParams,
+)
 
 __all__ = [
     # Errors
     'DXAError',
     'ConfigurationError',
     'LLMError',
-    'ResourceError',
     'NetworkError',
     'WebSocketError',
     'ReasoningError',
@@ -50,7 +74,11 @@ __all__ = [
     'CommunicationError',
     'ValidationError',
     'StateError',
-    
+
+    # IO
+    'BaseIO',
+    'IOFactory',
+
     # Utils
     'load_agent_config',
     'LLMInteractionAnalyzer',
@@ -73,4 +101,26 @@ __all__ = [
     'DepthFirstTraversal', 
     'TopologicalTraversal',
     'GraphVisualizer',
+    
+    # State
+    'BaseState',
+    'WorldState',
+    'ExecutionState',
+    'StateManager',
+    
+    # Resource
+    'BaseResource',
+    'ResourceConfig',
+    'ResourceResponse',
+    'ResourceError',
+    'ResourceUnavailableError',
+    'LLMResource',
+    'McpResource',
+    'BaseMcpService',
+    'McpEchoService',
+    'HumanResource',
+    'WoTResource',
+    'ResourceExecutor',
+    'StdioTransportParams',
+    'HttpTransportParams',
 ]

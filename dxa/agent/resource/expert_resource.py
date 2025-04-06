@@ -14,7 +14,7 @@ Features:
     - Automatic system prompt generation
 
 Example:
-    from dxa.core.capabilities.expertise import DomainExpertise
+    from dxa.agent.capability.domain_expertise import DomainExpertise
 
     expertise = DomainExpertise(
         name="Mathematics",
@@ -35,10 +35,10 @@ Example:
 
 from dataclasses import dataclass
 from typing import Dict, Any, Optional
-from .llm_resource import LLMConfig
+from ...common.resource import BaseResource, ResourceResponse, ResourceConfig
+from ...common.resource.llm_resource import LLMConfig
 from ..capability.domain_expertise import DomainExpertise
-from .base_resource import BaseResource, ResourceResponse, ResourceConfig
-from ..io import IOFactory
+from ...common.io import IOFactory
 
 
 @dataclass

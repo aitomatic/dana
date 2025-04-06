@@ -2,8 +2,8 @@
 
 from typing import List, Optional
 from dataclasses import dataclass, field
-from ...execution import Workflow, Objective, ExecutionSignal, ExecutionNode, Plan
-from .base_state import BaseState
+from ..execution import Workflow, Objective, ExecutionSignal, ExecutionNode, Plan
+from ..common.state.base_state import BaseState
 
 @dataclass
 class AgentState(BaseState):

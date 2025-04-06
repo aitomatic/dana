@@ -47,6 +47,34 @@ graph TB
     end
 ```
 
+## Resource Integration
+
+The resource system provides a standardized way to integrate external tools and services through the Model Context Protocol (MCP):
+
+1. **Standardized Interface**
+   - Consistent API for all resources
+   - Type-safe interactions
+   - Schema validation
+   - Error handling
+
+2. **Transport Types**
+   - STDIO for local resources
+   - HTTP for remote services
+   - Custom transport support
+   - Connection management
+
+3. **Tool Discovery**
+   - Runtime tool discovery
+   - Schema inspection
+   - Capability detection
+   - Version compatibility
+
+4. **Error Handling**
+   - Graceful degradation
+   - Retry mechanisms
+   - Timeout handling
+   - Resource cleanup
+
 ## Usage Guide
 
 ### Basic LLM Usage

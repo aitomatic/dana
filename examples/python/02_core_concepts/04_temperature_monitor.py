@@ -2,13 +2,15 @@
 
 This example demonstrates how to create and execute a simple data processing pipeline
 in the DXA framework. The pipeline reads temperature data from a simulated sensor,
-analyzes it, and reports the results.
+analyzes it, and reports the results. It also shows how the pipeline can be used
+both as an execution graph and as a discoverable resource.
 
 Key concepts:
 - Pipeline creation and configuration
+- Pipeline as both execution graph and resource
 - Asynchronous data processing
 - Step-by-step data transformation
-- Pipeline execution
+- Pipeline execution and querying
 
 Learning path: Core Concepts
 Complexity: Intermediate
@@ -30,8 +32,8 @@ async def main():
     
     This function demonstrates:
     1. Creating a pipeline with multiple processing steps
-    2. Defining data transformation functions
-    3. Executing the pipeline asynchronously
+    2. Executing the pipeline as an execution graph
+    3. Querying the pipeline as a resource
     
     The pipeline consists of three stages:
     - read_sensor: Simulates reading data from a temperature sensor
@@ -96,17 +98,28 @@ async def main():
         return data
 
     # Create pipeline with the defined steps
-    # Each step will be executed in sequence, with the output of one step
-    # becoming the input to the next step
+    # The pipeline inherits from both ExecutionGraph and BaseResource
     pipeline = Pipeline(
         name="temp_monitor",
-        steps=[read_sensor, analyze, report]
+        objective="Monitor and analyze temperature data",
+        steps=[read_sensor, analyze, report],
+        description="Pipeline for monitoring temperature sensor data"
     )
     
-    # Execute pipeline (context will be auto-created if needed)
-    # This runs the pipeline once; for continuous monitoring, you would
-    # typically put this in a loop with a delay
-    await pipeline.execute()
+    # Step 1: Execute the pipeline as an execution graph
+    result = await pipeline.execute()
+    print("\nExecution result:", result)
+    
+    # Step 2: Use the pipeline as a resource
+    # Initialize the pipeline resource
+    await pipeline.initialize()
+    
+    # Query the pipeline
+    response = await pipeline.query({})
+    print("\nQuery result:", response.content)
+    
+    # Clean up the pipeline resource
+    await pipeline.cleanup()
         
 
 if __name__ == "__main__":

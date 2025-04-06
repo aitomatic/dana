@@ -8,6 +8,7 @@ from .reasoning_strategy import ReasoningStrategy
 from .reasoning_factory import ReasoningFactory
 from ..execution_types import ExecutionNode, ExecutionSignal, ExecutionSignalType
 from ..execution_context import ExecutionContext
+from ...common.resource import ResourceExecutor
 
 class ReasoningExecutor(Executor[ReasoningStrategy, Reasoning, ReasoningFactory]):
     """Executor for reasoning layer tasks.
@@ -103,7 +104,6 @@ class ReasoningExecutor(Executor[ReasoningStrategy, Reasoning, ReasoningFactory]
                         f"ensuring your response aligns with all levels of the objective hierarchy."
                     )
 
-                    from ...agent import ResourceExecutor
                     tool_executor = ResourceExecutor()
                     tool_responses = await tool_executor.execute_resources(prompt, context)
 

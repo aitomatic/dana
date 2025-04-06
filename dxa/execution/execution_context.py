@@ -4,7 +4,9 @@ from typing import Optional, TYPE_CHECKING, cast, Dict, Any, Tuple
 
 from .execution_types import ExecutionNode
 if TYPE_CHECKING:
-    from ..agent import AgentState, WorldState, ExecutionState, BaseResource, LLMResource
+    from ..agent import AgentState
+    from ..common.state import WorldState, ExecutionState
+    from ..common.resource import BaseResource, LLMResource
     from .workflow import Workflow
     from .planning import Plan
     from .reasoning import Reasoning
