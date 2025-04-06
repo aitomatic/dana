@@ -57,7 +57,6 @@ from .resource import (
     McpEchoService,
     HumanResource,
     WoTResource,
-    ResourceExecutor,
     StdioTransportParams,
     HttpTransportParams,
 )
@@ -120,7 +119,6 @@ __all__ = [
     'McpEchoService',
     'HumanResource',
     'WoTResource',
-    'ResourceExecutor',
     'StdioTransportParams',
     'HttpTransportParams',
 ]
