@@ -1,28 +1,26 @@
 """DXA agent module."""
 
 from .agent import Agent
-from .agent_runtime import AgentRuntime
 from .agent_factory import AgentFactory
+from .agent_runtime import AgentRuntime
 from .capability import BaseCapability
 from .io import BaseIO
-from .state import AgentState, WorldState, ExecutionState
 from .resource import (
     AgentResource,
-    BaseResource,
-    LLMResource,
-    McpResource,
     BaseMcpService,
-    McpEchoService,
-    ResourceResponse,
-    ResourceFactory,
-    HumanResource,
+    BaseResource,
     ExpertResource,
-    WoTResource,
-    ResourceExecutor,
-    StdioTransportParams,
     HttpTransportParams,
+    HumanResource,
+    LLMResource,
+    McpEchoService,
+    McpResource,
+    ResourceFactory,
+    ResourceResponse,
+    StdioTransportParams,
+    WoTResource,
 )
-
+from .state import AgentState, ExecutionState, WorldState
 
 __all__ = [
     "Agent",
@@ -44,7 +42,6 @@ __all__ = [
     "HumanResource",
     "ExpertResource",
     "WoTResource",
-    "ResourceExecutor",
     "StdioTransportParams",
     "HttpTransportParams",
 ]
