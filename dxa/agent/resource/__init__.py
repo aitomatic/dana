@@ -5,19 +5,15 @@ from .base_resource import BaseResource, ResourceResponse
 from .expert_resource import ExpertResource
 from .human_resource import HumanResource
 from .llm_resource import LLMResource
-from .mcp import (
-    McpResource, StdioTransportParams, HttpTransportParams,
-    BaseMcpService, McpEchoService
-)
+from .mcp import BaseMcpService, HttpTransportParams, McpEchoService, McpResource, StdioTransportParams
 from .resource_factory import ResourceFactory
 from .wot_resource import WoTResource
-from .resource_executor import ResourceExecutor
 
 __all__ = [
-    "BaseResource",
-    "LLMResource",
-    "ExpertResource",
     "ResourceFactory",
+    "BaseResource",
+    "ExpertResource",
+    "LLMResource",
     "HumanResource",
     "McpResource",
     "StdioTransportParams",
@@ -27,5 +23,4 @@ __all__ = [
     "WoTResource",
     "AgentResource",
     "ResourceResponse",
-    "ResourceExecutor",
 ]
