@@ -36,7 +36,6 @@ Example:
 from dataclasses import dataclass
 from typing import Dict, Any, Optional
 from ...common.resource import BaseResource, ResourceResponse, ResourceConfig
-from ...common.resource.llm_resource import LLMConfig
 from ..capability.domain_expertise import DomainExpertise
 from ...common.io import IOFactory
 
@@ -46,7 +45,7 @@ class ExpertConfig(ResourceConfig):
     """Expert-specific configuration."""
     expertise: Optional[DomainExpertise] = None
     confidence_threshold: float = 0.7
-    llm_config: Optional[LLMConfig] = None
+    llm_config: Optional[Dict[str, Any]] = None
 
 
 @dataclass
@@ -66,12 +65,12 @@ class ExpertResource(BaseResource):
                  expertise: Optional[DomainExpertise] = None,
                  system_prompt: Optional[str] = None,
                  confidence_threshold: float = 0.7,
-                 llm_config: Optional[LLMConfig] = None):
+                 llm_config: Optional[Dict[str, Any]] = None):
         super().__init__(name)
         self.expertise = expertise
         self.system_prompt = system_prompt
         self.confidence_threshold = confidence_threshold
-        self.llm_config = llm_config
+        self.llm_config = llm_config or {}
         self._io = IOFactory.create_io("console")
 
     async def initialize(self) -> None:

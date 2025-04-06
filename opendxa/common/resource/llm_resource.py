@@ -2,6 +2,7 @@
 
 from typing import Dict, Any, Optional, List
 import asyncio
+import os
 import aisuite as ai
 from openai import APIConnectionError, RateLimitError
 from ...common.utils.logging import DXA_LOGGER
@@ -9,15 +10,30 @@ from ...common.exceptions import LLMError
 from .base_resource import BaseResource
 # from openai import AsyncClient
 
-# _DEFAULT_MODEL = "openai:gpt-4o"
-_DEFAULT_MODEL = "deepseek:deepseek-chat"
 
-class LLMConfig:
+class _deprecated_LLMConfig:
     """Configuration for LLM instances using AISuite."""
-    
+
+    _DEFAULT_MODEL = "deepseek:deepseek-chat"
+
+    def get_default_model(self) -> str:
+        """Get the default model by checking the environment variable."""
+        if "OPENDXA_DEFAULT_MODEL" in os.environ:
+            return os.environ["OPENDXA_DEFAULT_MODEL"]
+        elif "DEEPSEEK_API_KEY" in os.environ:
+            return "deepseek:deepseek-chat"
+        elif "ANTHROPIC_API_KEY" in os.environ:
+            return "anthropic:claude-3-5-sonnet"
+        elif "OPENAI_API_KEY" in os.environ:
+            return "openai:gpt-4o"
+        elif "OPENAI_API_KEY" in os.environ:
+            return "openai:gpt-4o"
+
+        return self._DEFAULT_MODEL
+
     def __init__(
         self,
-        model: str = _DEFAULT_MODEL,
+        model: Optional[str] = None,
         providers: Optional[Dict[str, Dict[str, Any]]] = None,
         temperature: float = 0.7,
         max_tokens: Optional[int] = None,
@@ -38,7 +54,7 @@ class LLMConfig:
             retry_delay: Initial delay between retries in seconds
             **kwargs: Additional configuration parameters
         """
-        self.model = model
+        self.model = model or self.get_default_model()
         self.providers = providers or {}
         self.temperature = temperature
         self.max_tokens = max_tokens
@@ -48,7 +64,7 @@ class LLMConfig:
         self.additional_params = kwargs
 
     @classmethod
-    def from_dict(cls, config: Optional[Dict[str, Any]] = None) -> 'LLMConfig':
+    def from_dict(cls, config: Optional[Dict[str, Any]] = None) -> '_deprecated_LLMConfig':
         """Build LLMConfig from dictionary."""
         if not config:
             return cls()
@@ -69,6 +85,23 @@ class LLMConfig:
 class LLMResource(BaseResource):
     """LLM resource implementation using AISuite."""
     
+    _DEFAULT_MODEL = "deepseek:deepseek-chat"
+
+    def _get_default_model(self) -> str:
+        """Get the default model by checking the environment variable."""
+        if "OPENDXA_DEFAULT_MODEL" in os.environ:
+            return os.environ["OPENDXA_DEFAULT_MODEL"]
+        elif "DEEPSEEK_API_KEY" in os.environ:
+            return "deepseek:deepseek-chat"
+        elif "ANTHROPIC_API_KEY" in os.environ:
+            return "anthropic:claude-3-5-sonnet"
+        elif "OPENAI_API_KEY" in os.environ:
+            return "openai:gpt-4o"
+        elif "OPENAI_API_KEY" in os.environ:
+            return "openai:gpt-4o"
+
+        return self._DEFAULT_MODEL
+
     def __init__(self, name: Optional[str] = None, config: Optional[Dict[str, Any]] = None):
         """Initialize LLM resource.
         
@@ -87,7 +120,7 @@ class LLMResource(BaseResource):
 
         super().__init__(name)
         self.config = config or {}
-        self.model = self.config.get("model", _DEFAULT_MODEL)
+        self.model = self.config.get("model", self._get_default_model())
         self.provider_configs = self.config.get("providers", {})
         self._client: Optional[ai.Client] = None
         self.max_retries = int(self.config.get("max_retries", 3))
@@ -101,7 +134,6 @@ class LLMResource(BaseResource):
         # Add a file handler if not already present
         if not self.conversation_logger.logger.handlers:
             # Create logs directory if it doesn't exist
-            import os
             os.makedirs("logs", exist_ok=True)
             
             # Add file handler
