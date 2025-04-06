@@ -14,7 +14,6 @@ from .mcp import (
     BaseMcpService, McpEchoService
 )
 from .wot_resource import WoTResource
-from .resource_executor import ResourceExecutor
 
 __all__ = [
     "BaseResource",
@@ -30,5 +29,4 @@ __all__ = [
     "BaseMcpService",
     "McpEchoService",
     "WoTResource",
-    "ResourceExecutor",
 ]
