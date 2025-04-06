@@ -1,9 +1,9 @@
 """Complex research workflow example."""
 
 import asyncio
-from dxa.agent import Agent
-from dxa.execution.workflow.workflow_factory import WorkflowFactory
-from dxa.execution import WorkflowStrategy, ReasoningStrategy
+from opendxa.agent import Agent
+from opendxa.execution.workflow.workflow_factory import WorkflowFactory
+from opendxa.execution import WorkflowStrategy, ReasoningStrategy
 
 def create_research_workflow():
     """Create predefined research steps."""

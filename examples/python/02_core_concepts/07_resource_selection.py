@@ -33,8 +33,8 @@ Expected output:
 
 from typing import Any, Dict
 
-from dxa.agent import Agent
-from dxa.agent.resource import (
+from opendxa.agent import Agent
+from opendxa.agent.resource import (
     AgentResource,
     BaseResource,
     ResourceResponse,

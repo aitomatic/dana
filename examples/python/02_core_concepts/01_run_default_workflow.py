@@ -19,14 +19,14 @@ by formalizing the relationship between layers while maintaining the same functi
 import asyncio
 import sys
 
-from dxa.execution import (
+from opendxa.execution import (
     WorkflowFactory,
     OptimalWorkflowExecutor,
     ExecutionContext,
     Objective
 )
-from dxa.common import DXA_LOGGER
-from dxa.agent import LLMResource
+from opendxa.common import DXA_LOGGER
+from opendxa.agent import LLMResource
 
 async def setup_logging():
     """Set up logging configuration."""

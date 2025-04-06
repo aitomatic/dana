@@ -3,9 +3,9 @@ Example demonstrating how to create a basic planning pattern.
 """
 
 from typing import cast
-from dxa.execution import PlanFactory
-from dxa.execution.execution_types import Objective
-from dxa.execution.planning import Plan
+from opendxa.execution import PlanFactory
+from opendxa.execution.execution_types import Objective
+from opendxa.execution.planning import Plan
 
 def main():
     """Create and inspect a basic planning pattern."""

@@ -14,11 +14,11 @@ Key concepts:
 import asyncio
 from pathlib import Path
 import yaml
-from dxa.agent import Agent
-from dxa.execution.workflow import WorkflowFactory
-from dxa.common.state import AgentState, WorldState, ExecutionState
-from dxa.execution.execution_context import ExecutionContext
-from dxa.common.graph.traversal import ContinuousTraversal
+from opendxa.agent import Agent
+from opendxa.execution.workflow import WorkflowFactory
+from opendxa.common.state import AgentState, WorldState, ExecutionState
+from opendxa.execution.execution_context import ExecutionContext
+from opendxa.common.graph.traversal import ContinuousTraversal
 from resources.mock_fdc import MockFDC
 
 async def load_knowledge():

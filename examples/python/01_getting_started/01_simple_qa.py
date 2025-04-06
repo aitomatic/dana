@@ -21,8 +21,8 @@ Related examples:
 - 03_qa_approaches.py: Different approaches to question answering
 """
 
-from dxa.agent import Agent
-from dxa.common.resource import LLMResource
+from opendxa.agent import Agent
+from opendxa.common.resource import LLMResource
 
 
 def create_basic_agent():

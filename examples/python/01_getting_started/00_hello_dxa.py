@@ -19,7 +19,7 @@ Related examples:
 - 02_default_workflow.py: Creating a basic workflow
 """
 
-from dxa.agent import Agent
+from opendxa.agent import Agent
 
 
 def main():

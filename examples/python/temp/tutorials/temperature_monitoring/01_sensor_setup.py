@@ -18,7 +18,7 @@ import logging
 from typing import Dict, Any, List
 from datetime import datetime
 
-from dxa.common import DXA_LOGGER
+from opendxa.common import DXA_LOGGER
 
 # Step 1: Configure logging
 DXA_LOGGER.configure(level=logging.INFO)

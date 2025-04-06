@@ -19,7 +19,7 @@ Related examples:
 - run_default_workflow.py: Running the default workflow
 """
 
-from dxa.execution import WorkflowFactory
+from opendxa.execution import WorkflowFactory
 
 
 def main():

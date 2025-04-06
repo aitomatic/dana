@@ -6,8 +6,8 @@ It shows different ways to create and customize LLM resources for your agents.
 
 import asyncio
 import os
-from dxa.agent import Agent
-from dxa.common.resource import LLMResource
+from opendxa.agent import Agent
+from opendxa.common.resource import LLMResource
 
 async def main():
     """Example of using LLMResource with multiple providers."""

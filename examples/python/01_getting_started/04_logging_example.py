@@ -1,7 +1,7 @@
 """Demonstrates both basic and advanced DXALogger usage."""
 
 import time
-from dxa.common import DXA_LOGGER
+from opendxa.common import DXA_LOGGER
 
 def demo_basic_usage():
     """Simplest possible logging setup"""

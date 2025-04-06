@@ -4,11 +4,11 @@
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
 
-# DXA Test Suite
+# OpenDXA Test Suite
 
-## dxa.tests Module
+## opendxa.tests Module
 
-Comprehensive test coverage for the DXA framework.
+Comprehensive test coverage for the OpenDXA framework.
 
 ## Test Organization
 

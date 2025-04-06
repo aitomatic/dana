@@ -37,9 +37,9 @@ Prerequisites:
 import asyncio
 from pathlib import Path
 
-from dxa.agent import Agent
-from dxa.common.resource import McpResource, StdioTransportParams, HttpTransportParams, ResourceResponse
-from dxa.common import DXA_LOGGER
+from opendxa.agent import Agent
+from opendxa.common.resource import McpResource, StdioTransportParams, HttpTransportParams, ResourceResponse
+from opendxa.common import DXA_LOGGER
 
 # Configure logging
 DXA_LOGGER.basicConfig(level=DXA_LOGGER.DEBUG)

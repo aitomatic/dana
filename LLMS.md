@@ -68,17 +68,17 @@ OpenDXA is a framework for building intelligent agents with domain expertise usi
 
 ### Project Structure
 ```
-dxa/                    # Main package
-├── agent/              # Agent implementation
-│   ├── capability/     # Agent capabilities (memory, expertise)
+opendxa/               # Main package
+├── agent/             # Agent implementation
+│   ├── capability/    # Agent capabilities (memory, expertise)
 │   ├── io/            # Input/output handlers
 │   ├── resource/      # External resource integration
 │   └── state/         # State management
-├── common/             # Shared utilities
+├── common/            # Shared utilities
 │   ├── graph/         # Graph data structures
 │   ├── logging/       # Logging configuration
 │   └── utils/         # Utility functions
-├── execution/          # Execution system
+├── execution/         # Execution system
 │   ├── pipeline/      # Pipeline execution
 │   ├── planning/      # Strategic planning
 │   ├── reasoning/     # Reasoning patterns
@@ -105,15 +105,15 @@ docs/                 # Documentation
 The project uses a hierarchical README structure:
 
 - **Root README.md**: Project overview, installation, architecture
-- **dxa/README.md**: Framework architecture and components
-- **dxa/agent/README.md**: Agent system documentation
-- **dxa/execution/README.md**: Execution system documentation
-- **dxa/agent/capability/README.md**: Capability system
-- **dxa/agent/resource/README.md**: Resource system and MCP
-- **dxa/execution/workflow/README.md**: Workflow layer
-- **dxa/execution/planning/README.md**: Planning layer
-- **dxa/execution/reasoning/README.md**: Reasoning layer
-- **dxa/execution/pipeline/README.md**: Pipeline layer
+- **opendxa/README.md**: Framework architecture and components
+- **opendxa/agent/README.md**: Agent system documentation
+- **opendxa/execution/README.md**: Execution system documentation
+- **opendxa/agent/capability/README.md**: Capability system
+- **opendxa/agent/resource/README.md**: Resource system and MCP
+- **opendxa/execution/workflow/README.md**: Workflow layer
+- **opendxa/execution/planning/README.md**: Planning layer
+- **opendxa/execution/reasoning/README.md**: Reasoning layer
+- **opendxa/execution/pipeline/README.md**: Pipeline layer
 - **examples/README.md**: Examples overview and tutorials
 
 ### Type Information

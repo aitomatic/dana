@@ -1,8 +1,8 @@
 """Test agent strategy configuration."""
 
-from dxa.agent import Agent
-from dxa.execution import WorkflowStrategy
-from dxa.execution import PlanStrategy
+from opendxa.agent import Agent
+from opendxa.execution import WorkflowStrategy
+from opendxa.execution import PlanStrategy
 
 def test_workflow_is_plan_strategy_propagation():
     """Test that WORKFLOW_IS_PLAN strategy sets both workflow and planning."""
