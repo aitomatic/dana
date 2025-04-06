@@ -1,24 +1,17 @@
 """Reasoning executor implementation."""
 
 import json
-import logging
 from typing import Any, Dict, List, Optional
 
 from dxa.agent.resource.agent_resource import AgentResource
 
-from ...agent.resource.base_resource import BaseResource
-from ...agent.resource.llm_resource import LLMResource
-from ...agent.resource.mcp import McpResource
+from ...common.resource import BaseResource, LLMResource, McpResource
 from ..execution_context import ExecutionContext
 from ..execution_types import ExecutionNode, ExecutionSignal, ExecutionSignalType
 from ..executor import Executor
 from .reasoning import Reasoning
 from .reasoning_factory import ReasoningFactory
 from .reasoning_strategy import ReasoningStrategy
-
-logger = logging.getLogger("dxa.execution.reasoning.reasoning_executor")
-
-
 class ReasoningExecutor(Executor[ReasoningStrategy, Reasoning, ReasoningFactory]):
     """Executor for reasoning layer tasks.
     This executor handles the reasoning layer of execution, which is
@@ -127,7 +120,8 @@ class ReasoningExecutor(Executor[ReasoningStrategy, Reasoning, ReasoningFactory]
                     response = await self._llm_query(
                         llm=context.reasoning_llm,
                         prompt=prompt,
-                        system_prompt="You are executing a reasoning task. Provide clear, logical analysis and reasoning.",
+                        system_prompt="You are executing a reasoning task. Provide clear, "
+                                      "logical analysis and reasoning.",
                         tools=[],
                         max_tokens=1000,
                         temperature=0.7,
@@ -228,14 +222,14 @@ class ReasoningExecutor(Executor[ReasoningStrategy, Reasoning, ReasoningFactory]
                 try:
                     resource_name, *_, tool_name = function_name.split("__")
                 except ValueError:
-                    logger.warning(
+                    self.warning(
                         f"Invalid function name format: {function_name}, expected [resource_name]__query__[tool_name]"
                     )
                     continue
 
                 resource = resources.get(resource_name)
                 if not resource:
-                    logger.warning(f"Resource not found: {resource_name}")
+                    self.warning(f"Resource not found: {resource_name}")
                     continue
 
                 params = tool.function.arguments
@@ -248,10 +242,10 @@ class ReasoningExecutor(Executor[ReasoningStrategy, Reasoning, ReasoningFactory]
             return tool_responses
 
         except json.JSONDecodeError as e:
-            logger.info(f"Failed to parse tool arguments as JSON: {e}")
+            self.info(f"Failed to parse tool arguments as JSON: {e}")
             return []
         except Exception as e:
-            logger.error(f"Error calling tool: {e}")
+            self.error(f"Error calling tool: {e}")
             return []
 
     async def _call_resource(self, resource: BaseResource, tool_name: Optional[str], params: Dict[str, Any]) -> Any:
