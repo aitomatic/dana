@@ -8,6 +8,7 @@ from .agent_state import AgentState
 from .resource import (
     AgentResource,
     ExpertResource,
+    ResourceFactory,
 )
 
 __all__ = [
@@ -18,4 +19,5 @@ __all__ = [
     "BaseCapability",
     "AgentState",
     "ExpertResource",
+    "ResourceFactory",
 ]

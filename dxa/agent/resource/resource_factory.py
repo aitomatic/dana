@@ -1,9 +1,9 @@
 """Factory for creating DXA resources."""
 
 from typing import Dict, Any
-from ..common.resource.base_resource import BaseResource
-from ..common.resource.llm_resource import LLMResource
-from ..agent.resource.expert_resource import ExpertResource
+from ...common.resource.base_resource import BaseResource
+from ...common.resource.llm_resource import LLMResource
+from .expert_resource import ExpertResource
 
 class ResourceFactory:
     """Creates resources based on type."""
