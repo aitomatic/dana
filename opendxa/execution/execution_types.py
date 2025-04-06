@@ -68,6 +68,16 @@ class ExecutionNode(Node):
         "mode": "streaming"
     })
 
+    def __hash__(self) -> int:
+        """Make node hashable by id."""
+        return hash(self.node_id)
+    
+    def __eq__(self, other: object) -> bool:
+        """Nodes are equal if they have the same id."""
+        if not isinstance(other, ExecutionNode):
+            return NotImplemented
+        return self.node_id == other.node_id
+
     # pylint: disable=too-many-arguments
     def __init__(self,
                  node_id: str,
@@ -79,8 +89,13 @@ class ExecutionNode(Node):
                  metadata: Optional[Dict[str, Any]] = None,
                  requires: Optional[Dict[str, Any]] = None,
                  provides: Optional[Dict[str, Any]] = None):
+        # Convert objective to string description if needed
         description = objective if isinstance(objective, str) else objective.current
+        
+        # Call the base class's __init__ method
         super().__init__(node_id=node_id, node_type=node_type, description=description, metadata=metadata or {})
+        
+        # Set ExecutionNode-specific attributes
         self.objective = objective if isinstance(objective, Objective) else Objective(objective)
         self.status = status
         self.step = step
@@ -123,6 +138,17 @@ class ExecutionEdge(Edge):
     """Edge with execution-specific attributes."""
     condition: Optional[str] = None
     state_updates: Dict[str, Any] = field(default_factory=dict)
+
+    def __init__(self,
+                 source: Union[str, Node],
+                 target: Union[str, Node],
+                 condition: Optional[str] = None,
+                 state_updates: Optional[Dict[str, Any]] = None,
+                 metadata: Optional[Dict[str, Any]] = None):
+        """Initialize the edge."""
+        super().__init__(source, target, metadata)
+        self.condition = condition
+        self.state_updates = state_updates or {}
 
 class ExecutionSignalType(Enum):
     """Types of execution signals.
