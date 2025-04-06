@@ -12,7 +12,7 @@ Key Components:
 - ChainOfThoughtReasoning: Provides step-by-step reasoning patterns
 
 Example:
-    >>> from dxa import DomainExpertise, ExpertResource
+    >>> from opendxa import DomainExpertise, ExpertResource
     >>> expertise = DomainExpertise(
     ...     name="mathematics",
     ...     description="Expert in algebra and calculus",

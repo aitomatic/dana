@@ -14,7 +14,7 @@ Features:
     - Automatic system prompt generation
 
 Example:
-    from dxa.agent.capability.domain_expertise import DomainExpertise
+    from opendxa.agent.capability.domain_expertise import DomainExpertise
 
     expertise = DomainExpertise(
         name="Mathematics",

@@ -109,7 +109,7 @@ class BaseLLM:
         self.retry_delay = retry_delay
         self._client: Optional[AsyncOpenAI] = None
         
-        self.logger = logging.getLogger(f"dxa.llm.{name}")
+        self.logger = logging.getLogger(f"opendxa.llm.{name}")
         self.logger_extra = {
             "llm_name": self.name,
             "model": self.model_name,
