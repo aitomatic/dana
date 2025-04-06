@@ -22,7 +22,7 @@ class DXALogger:
     ERROR = logging.ERROR
 
     @classmethod
-    def getLogger(cls, name: str = "dxa") -> 'DXALogger':
+    def getLogger(cls, name: str = "opendxa") -> 'DXALogger':
         """Convenience method to get a new logger instance"""
         return dxa_logging.getLogger(name)
 
@@ -31,7 +31,7 @@ class DXALogger:
         """Convenience method to configure the logger"""
         dxa_logging.basicConfig(**kwargs)
 
-    def __init__(self, name: str = "dxa", prefix: Optional[str] = None, log_data: bool = False):
+    def __init__(self, name: str = "opendxa", prefix: Optional[str] = None, log_data: bool = False):
         self.logger = logging.getLogger(name)
         self.prefix = prefix  # Store prefix at logger level
         # Clear existing handlers to prevent inheritance
@@ -188,7 +188,7 @@ class dxa_logging:
 
     """DXA Logging"""
     @staticmethod
-    def getLogger(name: str = "dxa") -> DXALogger:
+    def getLogger(name: str = "opendxa") -> DXALogger:
         """Module-level getter following standard logging interface"""
         new_logger = DXALogger(name)
         new_logger.configure(**dxa_logging._STANDARD_CONFIG)

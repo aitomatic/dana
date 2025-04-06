@@ -108,7 +108,7 @@ class Executor(Loggable, ABC, Generic[StrategyT, GraphT, FactoryT]):
         self.lower_executor = lower_executor
         
         # Initialize Loggable with appropriate logger name
-        super().__init__(logger_name=f"dxa.execution.{self.graph_class.__name__.lower()}")
+        super().__init__(logger_name=f"opendxa.execution.{self.graph_class.__name__.lower()}")
     
     @property
     def strategy(self) -> StrategyT:

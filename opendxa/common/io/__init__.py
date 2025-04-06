@@ -6,7 +6,7 @@ This package provides various I/O resource implementations, including:
 
 Example:
     ```python
-    from dxa.common.io import ConsoleIO, WebSocketIO
+    from opendxa.common.io import ConsoleIO, WebSocketIO
 
     # Using console I/O
     async with ConsoleIO() as io:

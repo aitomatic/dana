@@ -1,12 +1,12 @@
 """Reasoning configuration management."""
 
 import logging
+from io import StringIO
 from typing import Dict, Union, Optional
 from pathlib import Path
 import yaml
-from io import StringIO
 
-logger = logging.getLogger("dxa.execution.reasoning")
+logger = logging.getLogger("opendxa.execution.reasoning")
 
 class ReasoningConfig:
     """Manages reasoning configuration loading and access."""

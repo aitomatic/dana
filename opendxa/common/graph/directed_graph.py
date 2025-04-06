@@ -13,7 +13,7 @@ if TYPE_CHECKING:
         TraversalStrategy,
         TopologicalTraversal
     )
-_CURSOR_CLASS_NAME = "dxa.common.graph.traversal.Cursor"
+_CURSOR_CLASS_NAME = "opendxa.common.graph.traversal.Cursor"
 
 class NodeType(Enum):
     """Base node types for all graphs."""

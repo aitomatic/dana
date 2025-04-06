@@ -56,13 +56,13 @@ class Loggable(ABC):
                 # For execution layer classes, extract the layer name if available
                 layer = getattr(self, "layer", None)
                 if layer and hasattr(self, "layer"):
-                    logger_name = f"dxa.execution.{layer}"
+                    logger_name = f"opendxa.execution.{layer}"
                 else:
                     # Create name from module path, ensuring dxa prefix
-                    if module.startswith("dxa."):
+                    if module.startswith("opendxa."):
                         logger_name = f"{module}.{cls.__name__}"
                     else:
-                        logger_name = f"dxa.{module}.{cls.__name__}"
+                        logger_name = f"opendxa.{module}.{cls.__name__}"
             else:
                 logger_name = cls.__name__
         
@@ -108,10 +108,10 @@ class Loggable(ABC):
         """Get a logger for class-level (static) methods."""
         # Create name from module path, ensuring dxa prefix
         module = cls.__module__
-        if module.startswith("dxa."):
+        if module.startswith("opendxa."):
             logger_name = f"{module}.{cls.__name__}"
         else:
-            logger_name = f"dxa.{module}.{cls.__name__}"
+            logger_name = f"opendxa.{module}.{cls.__name__}"
             
         logger = DXA_LOGGER.getLogger(logger_name)
         

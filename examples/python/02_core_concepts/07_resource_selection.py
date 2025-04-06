@@ -51,7 +51,7 @@ print("based on the task requirements.\n")
 MCP_SERVICE_NAME = "weather_mcp_service"
 MCP_TOOL_NAME = "get_forecast"
 MCP_TOOL_ARGUMENTS = {"latitude": 37.7749, "longitude": -122.4194}
-MCP_SERVICE_SCRIPT = "dxa/agent/resource/mcp/mcp_weather_service.py"
+MCP_SERVICE_SCRIPT = "opendxa/agent/resource/mcp/mcp_weather_service.py"
 MCP_SCRIPT_COMMAND = "python3"
 
 
