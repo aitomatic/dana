@@ -71,7 +71,6 @@ def get_config_path(for_class: Type[Any],
     # Build the full path with the file extension
     return get_base_path(for_class) / config_dir / f"{path}.{file_extension}"
 
-
 def check_asyncio_safe():
     """Check and make sure asyncio is safe to use."""
     try:

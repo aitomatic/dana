@@ -37,7 +37,7 @@ from ..common.io import BaseIO, IOFactory
 
 from ..common.utils.config import load_agent_config
 from .agent_runtime import AgentRuntime
-
+from ..common.utils.misc import check_asyncio_safe
 # pylint: disable=too-many-public-methods
 class Agent:
     """Main agent interface with built-in execution management."""
@@ -331,6 +331,7 @@ class Agent:
 
     def run(self, workflow: Workflow) -> Any:
         """Run an workflow."""
+        check_asyncio_safe()
         return asyncio.run(self.async_run(workflow))
 
     def ask(self, question: str) -> Any:
