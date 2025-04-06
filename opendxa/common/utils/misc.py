@@ -4,6 +4,8 @@ from importlib import import_module
 from typing import Type, Any, Optional
 from pathlib import Path
 import inspect
+import asyncio
+import nest_asyncio
 
 def get_class_by_name(class_path: str) -> Type[Any]:
     """Get class by its fully qualified name.
@@ -68,3 +70,16 @@ def get_config_path(for_class: Type[Any],
     
     # Build the full path with the file extension
     return get_base_path(for_class) / config_dir / f"{path}.{file_extension}"
+
+
+def check_asyncio_safe():
+    """Check and make sure asyncio is safe to use."""
+    try:
+        asyncio.get_running_loop()
+        # We're in a running event loop (e.g., iPython notebook)
+        # For notebooks, we need to ensure we have the result
+        # One approach is to use a helper function to wait for the task
+        nest_asyncio.apply()
+    except RuntimeError:
+        # We're not in an asyncio loop
+        pass

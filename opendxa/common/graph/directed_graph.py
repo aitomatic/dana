@@ -63,6 +63,17 @@ class Edge:
         if not isinstance(other, Edge):
             return NotImplemented
         return self.source == other.source and self.target == other.target
+    
+    def __init__(self, source: Union[str, Node], target: Union[str, Node], metadata: Optional[Dict[str, Any]] = None):
+        if isinstance(source, Node):
+            self.source = source.node_id
+        else:
+            self.source = source
+        if isinstance(target, Node):
+            self.target = target.node_id
+        else:
+            self.target = target
+        self.metadata = metadata or {}
 
 # pylint: disable=too-many-instance-attributes
 class DirectedGraph:

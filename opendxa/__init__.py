@@ -23,6 +23,10 @@ Example:
     ... )
 """
 
+from .agent import Agent
 from .common.utils import DXA_LOGGER
 
-__all__ = ['DXA_LOGGER']
+__all__ = [
+    'DXA_LOGGER',
+    'Agent'
+]
