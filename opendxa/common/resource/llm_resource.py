@@ -94,9 +94,7 @@ class LLMResource(BaseResource):
         elif "DEEPSEEK_API_KEY" in os.environ:
             return "deepseek:deepseek-chat"
         elif "ANTHROPIC_API_KEY" in os.environ:
-            return "anthropic:claude-3-5-sonnet"
-        elif "OPENAI_API_KEY" in os.environ:
-            return "openai:gpt-4o"
+            return "anthropic:claude-3-5-sonnet-20241022"
         elif "OPENAI_API_KEY" in os.environ:
             return "openai:gpt-4o"
 
@@ -231,11 +229,14 @@ class LLMResource(BaseResource):
                 # Log usage statistics if available
                 if hasattr(response, 'usage'):
                     usage = response.usage
-                    self.conversation_logger.info(
-                        f"USAGE: prompt_tokens={usage.prompt_tokens}, "
-                        f"completion_tokens={usage.completion_tokens}, "
-                        f"total_tokens={usage.total_tokens}"
-                    )
+                    if hasattr(usage, 'prompt_tokens') and \
+                        hasattr(usage, 'completion_tokens') and \
+                            hasattr(usage, 'total_tokens'):
+                        self.conversation_logger.info(
+                            f"USAGE: prompt_tokens={usage.prompt_tokens}, "
+                            f"completion_tokens={usage.completion_tokens}, "
+                            f"total_tokens={usage.total_tokens}"
+                        )
 
                 return {
                     "content": content,

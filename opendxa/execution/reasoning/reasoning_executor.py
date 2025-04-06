@@ -51,41 +51,41 @@ class ReasoningExecutor(Executor[ReasoningStrategy, Reasoning, ReasoningFactory]
         plan_node = context.get_current_plan_node()
 
         # Print execution hierarchy with indentation
-        print("\nExecution Hierarchy:")
-        print("===================")
+        self.info("\nExecution Hierarchy:")
+        self.info("===================")
 
         # Workflow node (top level)
         if workflow_node:
-            print("Workflow Node:")
-            print(f"  ID: {workflow_node.node_id}")
-            print(f"  Type: {workflow_node.node_type}")
-            print(f"  Description: {workflow_node.description}")
-            print(f"  Status: {workflow_node.status}")
+            self.info("Workflow Node:")
+            self.info(f"  ID: {workflow_node.node_id}")
+            self.info(f"  Type: {workflow_node.node_type}")
+            self.info(f"  Description: {workflow_node.description}")
+            self.info(f"  Status: {workflow_node.status}")
             workflow_obj = context.current_workflow.objective if context.current_workflow else None
-            print(f"  Workflow Objective: {workflow_obj.current if workflow_obj else 'None'}")
-            print(f"  Node Objective: {workflow_node.objective.current if workflow_node.objective else 'None'}")
+            self.info(f"  Workflow Objective: {workflow_obj.current if workflow_obj else 'None'}")
+            self.info(f"  Node Objective: {workflow_node.objective.current if workflow_node.objective else 'None'}")
 
             # Plan node (middle level)
             if plan_node:
-                print("\n  Plan Node:")
-                print(f"    ID: {plan_node.node_id}")
-                print(f"    Type: {plan_node.node_type}")
-                print(f"    Description: {plan_node.description}")
-                print(f"    Status: {plan_node.status}")
+                self.info("\n  Plan Node:")
+                self.info(f"    ID: {plan_node.node_id}")
+                self.info(f"    Type: {plan_node.node_type}")
+                self.info(f"    Description: {plan_node.description}")
+                self.info(f"    Status: {plan_node.status}")
                 plan_obj = context.current_plan.objective if context.current_plan else None
-                print(f"    Plan Objective: {plan_obj.current if plan_obj else 'None'}")
-                print(f"    Node Objective: {plan_node.objective.current if plan_node.objective else 'None'}")
+                self.info(f"    Plan Objective: {plan_obj.current if plan_obj else 'None'}")
+                self.info(f"    Node Objective: {plan_node.objective.current if plan_node.objective else 'None'}")
 
                 # Reasoning node (bottom level)
-                print("\n    Reasoning Node:")
-                print(f"      ID: {node.node_id}")
-                print(f"      Type: {node.node_type}")
-                print(f"      Description: {node.description}")
-                print(f"      Status: {node.status}")
+                self.info("\n    Reasoning Node:")
+                self.info(f"      ID: {node.node_id}")
+                self.info(f"      Type: {node.node_type}")
+                self.info(f"      Description: {node.description}")
+                self.info(f"      Status: {node.status}")
                 reasoning_obj = context.current_reasoning.objective if context.current_reasoning else None
-                print(f"      Reasoning Objective: {reasoning_obj.current if reasoning_obj else 'None'}")
-                print(f"      Node Objective: {node.objective.current if node.objective else 'None'}")
-                print(f"      Metadata: {node.metadata}")
+                self.info(f"      Reasoning Objective: {reasoning_obj.current if reasoning_obj else 'None'}")
+                self.info(f"      Node Objective: {node.objective.current if node.objective else 'None'}")
+                self.info(f"      Metadata: {node.metadata}")
 
                 # Make LLM call with the reasoning node's objective
                 if context.reasoning_llm and node.objective:
@@ -128,9 +128,9 @@ class ReasoningExecutor(Executor[ReasoningStrategy, Reasoning, ReasoningFactory]
                     )
 
                     if response and "content" in response:
-                        print("\nReasoning Result:")
-                        print("================")
-                        print(response["content"])
+                        self.info("\nReasoning Result:")
+                        self.info("================")
+                        self.info(response["content"])
 
                         return [ExecutionSignal(type=ExecutionSignalType.DATA_RESULT, content=response["content"])]
 
