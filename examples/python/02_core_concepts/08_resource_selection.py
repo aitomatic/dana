@@ -36,30 +36,22 @@ from typing import Any, Dict
 from opendxa.agent import Agent
 from opendxa.agent.resource import (
     AgentResource,
-    BaseResource,
-    ResourceResponse,
-    McpResource,
-    StdioTransportParams,
 )
+from opendxa.common.resource.base_resource import BaseResource, ResourceResponse
+from opendxa.common.resource.mcp.mcp_resource import McpResource, StdioTransportParams
 
 print("\n=== Starting Resource Selection Example ===")
-print(
-    "This example demonstrates how an agent can intelligently select and use different resources"
-)
+print("This example demonstrates how an agent can intelligently select and use different resources")
 print("based on the task requirements.\n")
 
-MCP_SERVICE_NAME = "weather_mcp_service"
-MCP_TOOL_NAME = "get_forecast"
-MCP_TOOL_ARGUMENTS = {"latitude": 37.7749, "longitude": -122.4194}
-MCP_SERVICE_SCRIPT = "opendxa/agent/resource/mcp/mcp_weather_service.py"
-MCP_SCRIPT_COMMAND = "python3"
+WEATHER_SERVICE_NAME = "weather_mcp_service"
+WEATHER_TOOL_NAME = "get_forecast"
+WEATHER_TOOL_ARGUMENTS = {"latitude": 37.7749, "longitude": -122.4194}
+WEATHER_SERVICE_SCRIPT = "opendxa/common/resource/mcp/mcp_weather_service.py"
 
 
-class RestaurantResource(BaseResource):
+class RestaurantOptions(BaseResource):
     """Resource for finding and booking restaurants."""
-
-    def __init__(self, name: str):
-        super().__init__(name, "Provides access to restaurant information and booking")
 
     async def query(self, request: Dict[str, Any]) -> ResourceResponse:
         # Mock implementation - would call restaurant API
@@ -88,11 +80,8 @@ class RestaurantResource(BaseResource):
         )
 
 
-class TransportResource(BaseResource):
+class TransportOptions(BaseResource):
     """Resource for checking transportation options."""
-
-    def __init__(self, name: str):
-        super().__init__(name, "Provides access to transportation information")
 
     async def query(self, request: Dict[str, Any]) -> ResourceResponse:
         # Mock implementation - would call transport API
@@ -119,79 +108,50 @@ def main():
     print("Creating custom resources for restaurant and transport services...")
 
     # Initialize resources
-    restaurant = RestaurantResource(name="restaurant_service")
-    transport = TransportResource(name="transport_service")
+    restaurant_options = RestaurantOptions(name="restaurant_service", description="Provides access to restaurant information and booking")
+    transport_options = TransportOptions(name="transport_service", description="Provides access to transportation information")
     print("✓ Restaurant and transport resources created")
 
     print("\nInitializing weather MCP service...")
-    weather = McpResource(
-        name=MCP_SERVICE_NAME,
-        transport_params=StdioTransportParams(
-            server_script=MCP_SERVICE_SCRIPT,
-            command=MCP_SCRIPT_COMMAND,
-            args=[MCP_SERVICE_SCRIPT]
-        )
-    )
+    weather = McpResource(name=WEATHER_SERVICE_NAME, transport_params=StdioTransportParams(server_script=WEATHER_SERVICE_SCRIPT))
     print("✓ Weather MCP service initialized")
 
     print("\n=== Step 2: Creating Specialized Agents ===")
     print("Setting up planner and researcher agents with specific roles...")
 
     # Create specialized agents
-    planner_agent = Agent(
-        "planner",
-        "Agent responsible for creating structured plans and coordinating "
-        "activities based on available information",
-    )
-    planner_agent.with_llm(
-        {"model": "openai:gpt-4o-mini", "temperature": 0.7, "max_tokens": 1000}
+    planner = AgentResource(
+        name="planner",
+        description="Agent responsible for creating structured plans and coordinating activities based on available information",
+        agent=Agent("planner").with_llm({"model": "openai:gpt-4o-mini", "temperature": 0.7, "max_tokens": 1000}),
     )
     print("✓ Planner agent created and configured")
 
-    researcher_agent = Agent(
-        "researcher",
-        "Agent focused on gathering, analyzing and synthesizing information "
-        "from multiple sources to support decision making",
+    researcher = AgentResource(
+        name="researcher",
+        description="Agent focused on gathering, analyzing and synthesizing information from multiple sources to support decision making",
+        agent=Agent("researcher").with_llm({"model": "openai:gpt-4o-mini", "temperature": 0.7, "max_tokens": 1000}),
     )
-    researcher_agent.with_llm(
-        {"model": "openai:gpt-4o-mini", "temperature": 0.7, "max_tokens": 1000}
-    )
-    print("✓ Researcher agent created and configured")
 
-    print("\n=== Step 3: Creating Agent Pool ===")
-    print("Combining specialized agents into a resource pool...")
-
-    # Create agent resource
-    agent_pool = AgentResource(
-        "agent_pool", {"planner": planner_agent, "researcher": researcher_agent}
-    )
-    print("✓ Agent pool created with planner and researcher agents")
-
-    print("\n=== Step 4: Setting Up Main Agent ===")
+    print("\n=== Step 3: Setting Up Main Agent ===")
     print("Creating main planning assistant with all resources...")
 
     # Create main agent with all resources
     agent = Agent("planning_assistant")
+    agent.with_llm({"model": "openai:gpt-4o-mini", "temperature": 0.7, "max_tokens": 1000})
     agent.with_resources(
         {
             "weather": weather,
-            "restaurant": restaurant,
-            "transport": transport,
-            "agents": agent_pool,
+            "restaurant_options": restaurant_options,
+            "transport_options": transport_options,
+            "planner": planner,
+            "researcher": researcher,
         }
     )
     print("✓ Main agent created with all resources attached")
 
-    # Configure LLM with more specific parameters
-    agent.with_llm(
-        {"model": "openai:gpt-4o-mini", "temperature": 0.7, "max_tokens": 1000}
-    )
-    print("✓ LLM configured for the main agent")
-
     print("\n=== Step 5: Processing User Query ===")
-    print(
-        "The agent will now process the query and select appropriate resources for each task..."
-    )
+    print("The agent will now process the query and select appropriate resources for each task...")
 
     query = (
         "I'm in San Francisco and would like to plan a nice out-of-town trip. "
@@ -205,11 +165,6 @@ def main():
     print("-" * 50)
     print(query)
     print("-" * 50)
-
-    print("\nExpected Resource Selection:")
-    print("1. Task 1: Will use researcher agent to gather information")
-    print("2. Task 2: Will use weather MCP service to get forecast")
-    print("3. Task 3: Will use restaurant resource for recommendations")
 
     print("\nProcessing query...")
     result = agent.ask(query)
