@@ -2,85 +2,12 @@
 
 import asyncio
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 import aisuite as ai
 from openai import APIConnectionError, RateLimitError
-
 from ...common.exceptions import LLMError
-from ...common.utils.logging import DXA_LOGGER
 from .base_resource import BaseResource
-
-# from openai import AsyncClient
-
-
-class _deprecated_LLMConfig:
-    """Configuration for LLM instances using AISuite."""
-
-    _DEFAULT_MODEL = "deepseek:deepseek-chat"
-
-    def get_default_model(self) -> str:
-        """Get the default model by checking the environment variable."""
-        if "OPENDXA_DEFAULT_MODEL" in os.environ:
-            return os.environ["OPENDXA_DEFAULT_MODEL"]
-        elif "DEEPSEEK_API_KEY" in os.environ:
-            return "deepseek:deepseek-chat"
-        elif "ANTHROPIC_API_KEY" in os.environ:
-            return "anthropic:claude-3-5-sonnet"
-        elif "OPENAI_API_KEY" in os.environ:
-            return "openai:gpt-4o"
-        elif "OPENAI_API_KEY" in os.environ:
-            return "openai:gpt-4o"
-
-        return self._DEFAULT_MODEL
-
-    def __init__(
-        self,
-        model: Optional[str] = None,
-        providers: Optional[Dict[str, Dict[str, Any]]] = None,
-        temperature: float = 0.7,
-        max_tokens: Optional[int] = None,
-        top_p: float = 1.0,
-        max_retries: int = 3,
-        retry_delay: float = 1.0,
-        **kwargs: Any,
-    ) -> None:
-        """Initialize LLM configuration.
-
-        Args:
-            model: Model identifier in format "provider:model" (e.g. "openai:gpt-4")
-            providers: Dictionary of provider configurations
-            temperature: Float between 0 and 1
-            max_tokens: Maximum tokens to generate
-            top_p: Nucleus sampling parameter
-            max_retries: Maximum number of retries for failed requests
-            retry_delay: Initial delay between retries in seconds
-            **kwargs: Additional configuration parameters
-        """
-        self.model = model or self.get_default_model()
-        self.providers = providers or {}
-        self.temperature = temperature
-        self.max_tokens = max_tokens
-        self.top_p = top_p
-        self.max_retries = max_retries
-        self.retry_delay = retry_delay
-        self.additional_params = kwargs
-
-    @classmethod
-    def from_dict(cls, config: Optional[Dict[str, Any]] = None) -> "_deprecated_LLMConfig":
-        """Build LLMConfig from dictionary."""
-        if not config:
-            return cls()
-
-        # Extract known parameters
-        known_params = {"model", "providers", "temperature", "max_tokens", "top_p", "max_retries", "retry_delay"}
-        config_params = {k: v for k, v in config.items() if k in known_params}
-
-        # Pass remaining parameters as additional_params
-        additional_params = {k: v for k, v in config.items() if k not in known_params}
-
-        return cls(**config_params, **additional_params)
-
 
 class LLMResource(BaseResource):
     """LLM resource implementation using AISuite."""
@@ -124,22 +51,17 @@ class LLMResource(BaseResource):
         self.max_retries = int(self.config.get("max_retries", 3))
         self.retry_delay = float(self.config.get("retry_delay", 1.0))
         # self._async_client = AsyncClient()
-
-        # Create a dedicated logger for LLM conversations
-        self.conversation_logger = DXA_LOGGER.getLogger("llm_conversation")
-        self.conversation_logger.logger.setLevel(DXA_LOGGER.INFO)
-
-        # Add a file handler if not already present
-        if not self.conversation_logger.logger.handlers:
+        
+        # Add a file handler to the existing logger if needed
+        import logging
+        if not any(isinstance(h, logging.FileHandler) for h in self.logger.logger.handlers):
             # Create logs directory if it doesn't exist
             os.makedirs("logs", exist_ok=True)
-
-            # Add file handler
-            import logging
-
+            
+            # Add file handler with the same format as before
             file_handler = logging.FileHandler("logs/llm_conversation.log")
             file_handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
-            self.conversation_logger.logger.addHandler(file_handler)
+            self.logger.logger.addHandler(file_handler)
 
     async def initialize(self) -> None:
         """Initialize the AISuite client."""
@@ -162,7 +84,7 @@ class LLMResource(BaseResource):
                 - additional parameters
 
         Returns:
-            Dictionary with "content", "model", and  "usage", and "tools_used" keys.
+            Dictionary with "content", "model", and  "usage", and "requested_tools" keys.
         """
         if not self._client:
             await self.initialize()
@@ -177,9 +99,8 @@ class LLMResource(BaseResource):
             raise ValueError("'Prompt' is required")
 
         # Log the prompt being sent to the LLM
-        # self.conversation_logger.info(f"PROMPT TO {self.model}:\n{'-' * 80}\n{request.get('prompt')}\n{'-' * 80}")
-        self.conversation_logger.info(f"PROMPT TO {self.model}:\n{'-' * 80}\n{messages}\n{'-' * 80}")
-
+        self.logger.info(f"PROMPT TO {self.model}:\n{'-' * 80}\n{messages}\n{'-' * 80}")
+        
         request_params = {
             "temperature": float(self.config.get("temperature", 0.7)),
             "top_p": float(self.config.get("top_p", 1.0)),
@@ -207,34 +128,36 @@ class LLMResource(BaseResource):
                 # Use aisuite's standardized response format
                 # handle tool calls
                 reasoning = None
-                tools_used = None
+                requested_tools = None
                 if hasattr(response, "choices") and hasattr(response.choices[0].message, "tool_calls"):
-                    tools_used = response.choices[0].message.tool_calls
+                    requested_tools = response.choices[0].message.tool_calls
                     reasoning = response.choices[0].finish_reason
                 elif hasattr(response, "reasoning_content"):
                     reasoning = response.reasoning_content
                 elif hasattr(response, "choices") and hasattr(response.choices[0].message, "reasoning_content"):
                     reasoning = response.choices[0].message.reasoning_content
 
-                content = response.choices[0].message.content if hasattr(response, "choices") else response.content
-                if tools_used:
+                content = response.choices[0].message.content if hasattr(response, 'choices') else response.content
+                
+                if requested_tools:
                     # Format tool calls into a readable list
                     tool_list = []
-                    for tool in tools_used:
+                    for tool in requested_tools:
                         tool_info = f"{tool.function.name}: {tool.function.arguments}"
                         tool_list.append(tool_info)
 
                     content = f"{reasoning}:\n\n" + "\n".join(tool_list)
 
                 # Log the response from the LLM
-                self.conversation_logger.info(f"RESPONSE FROM {self.model}:\n{'-' * 80}\n{content}\n{'-' * 80}")
-
+                self.logger.info(f"RESPONSE FROM {self.model}:\n{'-' * 80}\n{content}\n{'-' * 80}")
+                
                 # Log usage statistics if available
                 if hasattr(response, "usage"):
                     usage = response.usage
-                    if hasattr(usage, "prompt_tokens") \
-                            and hasattr(usage, "completion_tokens") and hasattr(usage, "total_tokens"):
-                        self.conversation_logger.info(
+                    if hasattr(usage, 'prompt_tokens') and \
+                        hasattr(usage, 'completion_tokens') and \
+                            hasattr(usage, 'total_tokens'):
+                        self.logger.info(
                             f"USAGE: prompt_tokens={usage.prompt_tokens}, "
                             f"completion_tokens={usage.completion_tokens}, "
                             f"total_tokens={usage.total_tokens}"
@@ -246,7 +169,7 @@ class LLMResource(BaseResource):
                     "usage": getattr(response, "usage", None),
                     # Include any thinking content if present
                     "reasoning": reasoning,
-                    "tools_used": tools_used,
+                    "requested_tools": requested_tools,
                 }
 
             except (APIConnectionError, RateLimitError) as e:
@@ -264,56 +187,6 @@ class LLMResource(BaseResource):
                 raise LLMError(f"Unexpected response structure: {str(e)}") from e
 
         raise LLMError("Max retries exceeded")
-
-    async def conversational_query(self, messages: List[Dict[str, Any]], model: str = "gpt-4o") -> Dict[str, Any]:
-        """Currently, this one only used for Prosea workflow."""
-        # Log the conversation messages being sent to the LLM
-        self.conversation_logger.info(f"CONVERSATION WITH {model}:\n{'-' * 80}")
-        for msg in messages:
-            role = msg.get("role", "unknown")
-            content = msg.get("content", "")
-            self.conversation_logger.info(f"[{role.upper()}]: {content}\n{'-' * 40}")
-
-        response = None
-        while response is None:
-            try:
-                """
-                response = await asyncio.wait_for(
-                    self._async_client.chat.completions.create(
-                        model=model,
-                        messages=messages,
-                        temperature=0.0,
-                        max_tokens=2000,
-                    ),
-                    timeout=20  # 20 seconds
-                )
-                """
-            except asyncio.TimeoutError:
-                print("Timeout reached for GPT-4o call. Retrying...")
-                self.conversation_logger.warning("Timeout reached for GPT-4o call. Retrying...")
-
-        # Use aisuite's standardized response format
-        reasoning = None
-        if hasattr(response, "reasoning_content"):
-            reasoning = response.reasoning_content
-        elif hasattr(response, "choices") and hasattr(response.choices[0].message, "reasoning_content"):
-            reasoning = response.choices[0].message.reasoning_content
-
-        content = response.choices[0].message.content if hasattr(response, "choices") else response.content
-
-        # Log the response from the LLM
-        self.conversation_logger.info(f"[ASSISTANT]: {content}\n{'-' * 80}")
-
-        # Log usage statistics if available
-        if hasattr(response, "usage"):
-            usage = response.usage
-            self.conversation_logger.info(
-                f"USAGE: prompt_tokens={usage.prompt_tokens}, "
-                f"completion_tokens={usage.completion_tokens}, "
-                f"total_tokens={usage.total_tokens}"
-            )
-
-        return {"content": content, "model": model, "usage": getattr(response, "usage", None), "reasoning": reasoning}
 
     async def cleanup(self) -> None:
         """Cleanup resources."""
