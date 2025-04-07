@@ -1,0 +1,45 @@
+# Disable rule MD013 - Line length
+MD013: false
+line-length: false
+
+# Disable rule MD022 - Blanks around headings
+MD022: false
+blanks-around-headings: false
+
+# Lists should be surrounded by blank lines
+MD032: true
+blanks-around-lists: true
+
+# Disable rule MD033 - No inline HTML
+MD033: false
+no-inline-html: false
+
+# Disable rule MD041 - First line in file should be a top-level heading
+MD041: false
+first-line-heading: false
+first-line-h1: false
+
+# Most common optional rules
+MD024: false        # Multiple headings with the same content
+no-duplicate-heading: false
+
+MD025: true         # Multiple top-level headings in the same document
+single-title: true
+
+MD026: false        # Trailing punctuation in heading
+trailing-punctuation: false
+
+MD029: false        # Ordered list item prefix
+ol-prefix: false
+
+MD031: true         # Fenced code blocks should be surrounded by blank lines
+blanks-around-fences: true
+
+MD032: true         # Lists should be surrounded by blank lines
+blanks-around-lists: true
+
+MD034: false        # Bare URL used
+no-bare-urls: false
+
+MD040: false        # Fenced code blocks should have a language specified
+fenced-code-language: false

@@ -13,3 +13,4 @@ pyyaml
 seaborn
 structlog
 websockets
+nest-asyncio

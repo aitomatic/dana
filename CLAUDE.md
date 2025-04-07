@@ -1,4 +1,4 @@
-# DXA (Domain-Expert Agent) Framework
+# OpenDXA (Domain-Expert Agent) Framework
 
 ## Build/Test/Lint Commands
 
@@ -16,13 +16,13 @@ pytest tests/execution/planning/test_plan_factory.py
 pytest tests/execution/planning/test_plan_factory.py::TestPlanFactory::test_create_plan
 
 # Run tests with coverage
-pytest --cov=dxa
+pytest --cov=opendxa
 
 # Format code
-black dxa/
+black opendxa/
 
 # Type checking
-mypy dxa/
+mypy opendxa/
 ```
 
 ## Code Style Guidelines
@@ -32,7 +32,7 @@ mypy dxa/
 - **Types**: Use type hints throughout; import from `typing` module
 - **Classes**: PascalCase for classes; inherit from `Loggable` for standardized logging
 - **Variables**: snake_case for methods/variables, UPPER_CASE for constants
-- **Error Handling**: Use custom exceptions from `dxa.common.exceptions`
+- **Error Handling**: Use custom exceptions from `opendxa.common.exceptions`
 - **Testing**: Test classes named `Test{ClassName}`, methods as `test_{descriptive_name}`
 - **Logging**: Use the `Loggable` base class for consistent logging patterns
 
