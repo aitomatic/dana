@@ -2,7 +2,7 @@
 
 import asyncio
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 import aisuite as ai
 from openai import APIConnectionError, RateLimitError
@@ -187,56 +187,6 @@ class LLMResource(BaseResource):
                 raise LLMError(f"Unexpected response structure: {str(e)}") from e
 
         raise LLMError("Max retries exceeded")
-
-    async def conversational_query(self, messages: List[Dict[str, Any]], model: str = "gpt-4o") -> Dict[str, Any]:
-        """Currently, this one only used for Prosea workflow."""
-        # Log the conversation messages being sent to the LLM
-        self.logger.info(f"CONVERSATION WITH {model}:\n{'-' * 80}")
-        for msg in messages:
-            role = msg.get('role', 'unknown')
-            content = msg.get('content', '')
-            self.logger.info(f"[{role.upper()}]: {content}\n{'-' * 40}")
-        
-        response = None
-        while response is None:
-            try:
-                """
-                response = await asyncio.wait_for(
-                    self._async_client.chat.completions.create(
-                        model=model,
-                        messages=messages,
-                        temperature=0.0,
-                        max_tokens=2000,
-                    ),
-                    timeout=20  # 20 seconds
-                )
-                """
-            except asyncio.TimeoutError:
-                print("Timeout reached for GPT-4o call. Retrying...")
-                self.logger.warning("Timeout reached for GPT-4o call. Retrying...")
-        
-        # Use aisuite's standardized response format
-        reasoning = None
-        if hasattr(response, "reasoning_content"):
-            reasoning = response.reasoning_content
-        elif hasattr(response, "choices") and hasattr(response.choices[0].message, "reasoning_content"):
-            reasoning = response.choices[0].message.reasoning_content
-
-        content = response.choices[0].message.content if hasattr(response, "choices") else response.content
-
-        # Log the response from the LLM
-        self.logger.info(f"[ASSISTANT]: {content}\n{'-' * 80}")
-        
-        # Log usage statistics if available
-        if hasattr(response, "usage"):
-            usage = response.usage
-            self.logger.info(
-                f"USAGE: prompt_tokens={usage.prompt_tokens}, "
-                f"completion_tokens={usage.completion_tokens}, "
-                f"total_tokens={usage.total_tokens}"
-            )
-
-        return {"content": content, "model": model, "usage": getattr(response, "usage", None), "reasoning": reasoning}
 
     async def cleanup(self) -> None:
         """Cleanup resources."""
