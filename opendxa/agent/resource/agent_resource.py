@@ -7,150 +7,117 @@ This resource provides a standardized interface for:
 
 Example:
     ```python
-    # Create resource with agents
-    agents = {
-        "researcher": Agent("researcher").with_reasoning("cot"),
-        "analyst": Agent("analyst").with_reasoning("ooda")
-    }
-    resource = AgentResource("agent_pool", agents)
+    # Create researcher agent resource
+    researcher = Agent("researcher")
+    researcher.with_llm({"model": "gpt-4", "temperature": 0.7})
+    researcher_resource = AgentResource(
+        name="researcher",
+        description="Agent for gathering and analyzing information",
+        agent=researcher
+    )
 
-    # Query specific agent
-    response = await resource.query({
-        "agent_id": "researcher",
-        "query": {"topic": "AI trends"}
+    # Query the researcher agent
+    response = await researcher_resource.query({
+        "request": "Research the latest developments in AI safety",
     })
     ```
 """
 
 import asyncio
-from typing import Dict, Any, TYPE_CHECKING, List
-from ...common.resource import BaseResource
-from ...common.exceptions import ResourceError, ConfigurationError, AgentError
+from typing import TYPE_CHECKING, Any, Dict, List
+
+from opendxa.common.utils.misc import safe_asyncio_run
+
+from ...common.exceptions import AgentError, ConfigurationError, ResourceError
+from ...common.resource import BaseResource, ResourceResponse
 
 if TYPE_CHECKING:
     from ..agent import Agent  # Only used for type hints
 
+
 class AgentResource(BaseResource):
     """Resource for accessing and coordinating agent interactions."""
-    
-    def __init__(self, name: str, agents: Dict[str, "Agent"]):
+
+    def __init__(self, name: str, agent: "Agent", description: str):
         """Initialize agent resource.
-        
+
         Args:
             name: Resource identifier
-            agents: Dictionary mapping agent IDs to agent instances
+            agent: Agent instance
         """
-        super().__init__(name)
-        if not agents:
-            raise ConfigurationError("Agents dictionary cannot be empty")
-        self.agents = agents
+        super().__init__(name, description)
+        self.agent = agent
+        safe_asyncio_run(self.initialize)
 
     @classmethod
-    async def create(cls, name: str, agents: Dict[str, "Agent"]) -> "AgentResource":
+    async def create(cls, name: str, agent: "Agent", description: str) -> "AgentResource":
         """Create and initialize an agent resource.
-        
+
         Args:
             name: Resource identifier
-            agents: Dictionary mapping agent IDs to agent instances
-            
+            agent: Agent instance
+            description: Resource description
+
         Returns:
             Initialized AgentResource instance
         """
-        resource = cls(name, agents)
+        resource = cls(name, agent, description)
         await resource.initialize()
         return resource
 
-    async def query(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    async def query(self, request: Dict[str, Any]) -> ResourceResponse:
         """Query an agent from the registry.
-        
+
         Args:
-            request: Query parameters including agent_id and query
-            
+            request: Query parameters
+
         Returns:
             Response from the agent
-            
+
         Raises:
             ResourceError: If agent query fails
-            ConfigurationError: If agent_id is invalid
             AgentError: If agent execution fails
         """
-        agent_id = request.get("agent_id")
-        if not agent_id:
-            raise ConfigurationError("agent_id is required")
-            
-        agent = self.agents.get(agent_id)
-        if not agent:
-            raise ConfigurationError(f"Agent not found: {agent_id}")
-        
-        try:    
+        try:
             loop = asyncio.get_event_loop()
-            response = await loop.run_in_executor(None, agent.ask, request.get("query", {}).get("request", ""))
-            return {"response": response, "success": True}
+            response = await loop.run_in_executor(None, self.agent.ask, request.get("request", ""))
+            return ResourceResponse(success=True, content=response)
         except AgentError as e:
-            raise ResourceError(f"Agent {agent_id} execution failed") from e
+            raise ResourceError("Agent execution failed") from e
         except (ValueError, KeyError) as e:
-            raise ConfigurationError(f"Invalid query format for agent {agent_id}") from e
+            raise ConfigurationError("Invalid query format") from e
 
     async def initialize(self) -> None:
         """Initialize all agents in registry.
-        
+
         Raises:
             ResourceError: If initialization fails
             AgentError: If agent initialization fails
         """
-        for agent_id, agent in self.agents.items():
-            try:
-                await agent.initialize()
-            except (AgentError, ValueError) as e:
-                raise ResourceError(f"Failed to initialize agent {agent_id}") from e
+        try:
+            await self.agent.initialize()
+        except (AgentError, ValueError) as e:
+            raise ResourceError("Failed to initialize agent") from e
 
-    def list_agents(self) -> Dict[str, str]:
-        """List all agents in the registry."""
-        return {
-            f"{agent_id}": agent.description
-            for agent_id, agent in self.agents.items()
-        }
-    
     async def cleanup(self) -> None:
         """Clean up all agents in registry concurrently."""
-        cleanup_tasks = []
-        for agent_id, agent in self.agents.items():
-            task = asyncio.create_task(self._cleanup_agent(agent_id, agent))
-            cleanup_tasks.append(task)
-        
-        results = await asyncio.gather(*cleanup_tasks, return_exceptions=True)
-        errors = [str(e) for e in results if isinstance(e, Exception)]
-        
-        if errors:
-            raise ResourceError("\n".join(errors))
-
-    async def _cleanup_agent(self, agent_id: str, agent: "Agent") -> None:
         try:
-            await agent.cleanup()
+            await self.agent.cleanup()
         except (AgentError, ValueError) as e:
-            raise ResourceError(f"Failed to cleanup agent {agent_id}: {str(e)}") from e
-        
-    async def get_tool_strings(
-        self, 
-        resource_id: str,
-        **kwargs
-    ) -> List[Dict[str, Any]]:
+            raise ResourceError("Failed to cleanup agent") from e
+
+    async def get_tool_strings(self, resource_id: str, **kwargs) -> List[Dict[str, Any]]:
         """Format a resource into OpenAI function specification.
-        
+
         Args:
             resource: Resource instance to format
             **kwargs: Additional keyword arguments
-            
+
         Returns:
             OpenAI function specification list
         """
 
         tool_strings = []
-        agents = self.list_agents()
-        for agent_id, agent_description in agents.items():
-            tool_strings.extend(await super().get_tool_strings(
-                resource_id=resource_id, agent_id=agent_id,
-                agent_description=agent_description)
-            )
+        tool_strings.extend(await super().get_tool_strings(resource_id=resource_id))
 
         return tool_strings

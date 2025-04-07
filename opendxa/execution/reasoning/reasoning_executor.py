@@ -3,8 +3,6 @@
 import json
 from typing import Any, Dict, List, Optional
 
-from opendxa.agent.resource.agent_resource import AgentResource
-
 from ...common.resource import BaseResource, LLMResource, McpResource
 from ..execution_context import ExecutionContext
 from ..execution_types import ExecutionNode, ExecutionSignal, ExecutionSignalType
@@ -12,6 +10,8 @@ from ..executor import Executor
 from .reasoning import Reasoning
 from .reasoning_factory import ReasoningFactory
 from .reasoning_strategy import ReasoningStrategy
+
+
 class ReasoningExecutor(Executor[ReasoningStrategy, Reasoning, ReasoningFactory]):
     """Executor for reasoning layer tasks.
     This executor handles the reasoning layer of execution, which is
@@ -120,8 +120,7 @@ class ReasoningExecutor(Executor[ReasoningStrategy, Reasoning, ReasoningFactory]
                     response = await self._llm_query(
                         llm=context.reasoning_llm,
                         prompt=prompt,
-                        system_prompt="You are executing a reasoning task. Provide clear, "
-                                      "logical analysis and reasoning.",
+                        system_prompt="You are executing a reasoning task. Provide clear, logical analysis and reasoning.",
                         tools=[],
                         max_tokens=1000,
                         temperature=0.7,
@@ -222,9 +221,7 @@ class ReasoningExecutor(Executor[ReasoningStrategy, Reasoning, ReasoningFactory]
                 try:
                     resource_name, *_, tool_name = function_name.split("__")
                 except ValueError:
-                    self.warning(
-                        f"Invalid function name format: {function_name}, expected [resource_name]__query__[tool_name]"
-                    )
+                    self.warning(f"Invalid function name format: {function_name}, expected [resource_name]__query__[tool_name]")
                     continue
 
                 resource = resources.get(resource_name)
@@ -242,7 +239,7 @@ class ReasoningExecutor(Executor[ReasoningStrategy, Reasoning, ReasoningFactory]
             return tool_responses
 
         except json.JSONDecodeError as e:
-            self.info(f"Failed to parse tool arguments as JSON: {e}")
+            self.error(f"Failed to parse tool arguments as JSON: {e}")
             return []
         except Exception as e:
             self.error(f"Error calling tool: {e}")
@@ -266,7 +263,4 @@ class ReasoningExecutor(Executor[ReasoningStrategy, Reasoning, ReasoningFactory]
         if isinstance(resource, McpResource):
             return await resource.query({"tool": tool_name, "arguments": params})
 
-        if isinstance(resource, AgentResource):
-            return await resource.query({"agent_id": tool_name, "query": params})
-
-        return await resource.query(**params) if isinstance(params, dict) else await resource.query(params)
+        return await resource.query(params)

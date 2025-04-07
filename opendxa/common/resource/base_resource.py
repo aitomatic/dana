@@ -197,14 +197,6 @@ class BaseResource(ABC):
         function_name = f"{resource_id}__query"
         description = self.description or self.query.__doc__
 
-        agent_id = kwargs.get("agent_id")
-        if agent_id:
-            function_name = f"{resource_id}__query__{agent_id}"
-
-        agent_description = kwargs.get("agent_description")
-        if agent_description:
-            description = agent_description
-
         return [{
             "type": "function",
             "function": {
