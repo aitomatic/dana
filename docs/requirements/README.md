@@ -1,6 +1,6 @@
-# Domain Expert Agent (DXA) Requirements Documentation
+# Domain Expert Agent (OpenDXA) Requirements Documentation
 
-This directory contains requirements specifications for different DXA deployment scenarios.
+This directory contains requirements specifications for different OpenDXA deployment scenarios.
 
 ## Scenarios
 
@@ -15,7 +15,7 @@ This directory contains requirements specifications for different DXA deployment
 - [Tokyo Electron (TEL)](TEL.md)
   - Enhanced collaboration framework
   - Critical issue resolution
-  - DXA framework integration
+  - OpenDXA framework integration
   - Use case development
   - Product quality and experience
 

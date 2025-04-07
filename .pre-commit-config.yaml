@@ -1,0 +1,10 @@
+repos:
+  - repo: local
+    hooks:
+      - id: make-files-readonly
+        name: Make files read-only
+        entry: bash -c 'git ls-files "examples/notebooks/**" | xargs chmod -w'
+        language: system
+        pass_filenames: false
+        # Run this hook after checkout, merge, and rebase operations
+        stages: [post-checkout, post-merge, post-rewrite]
