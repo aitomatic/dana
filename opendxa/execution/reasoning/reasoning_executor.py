@@ -262,7 +262,7 @@ class ReasoningExecutor(Executor[ReasoningStrategy, Reasoning, ReasoningFactory]
     async def _query_requested_resources(
         self, 
         requested_resources: List[Any], 
-        resources: Dict[str, BaseResource]
+        available_resources: Dict[str, BaseResource]
     ) -> List[Dict]:
         """Execute resources using provided resources.
         
@@ -271,15 +271,15 @@ class ReasoningExecutor(Executor[ReasoningStrategy, Reasoning, ReasoningFactory]
 
         Args:
             requested_resources: List of resources to execute (from LLM's "requested_tools")
-            resources: Dictionary of available resources
+            available_resources: Dictionary of available resources
 
         Returns:
             List of resource responses
         """
         try:
             resource_responses = []
-            for resource in requested_resources:
-                function_name = resource.function.name
+            for requested_resource in requested_resources:
+                function_name = requested_resource.function.name
                 try:
                     # Parse the function name to extract resource name and tool name
                     # Format: [resource_name]__query__[tool_name]
@@ -291,16 +291,16 @@ class ReasoningExecutor(Executor[ReasoningStrategy, Reasoning, ReasoningFactory]
                     )
                     continue
 
-                resource_obj = resources.get(resource_name)
-                if not resource_obj:
+                my_resource = available_resources.get(resource_name)
+                if not my_resource:
                     self.warning(f"Resource not found: {resource_name}")
                     continue
 
-                params = resource.function.arguments
+                params = requested_resource.function.arguments
                 if isinstance(params, str):
                     params = json.loads(params)
 
-                response = await self._query_one_resource(resource_obj, tool_name, params)
+                response = await self._query_one_resource(my_resource, tool_name, params)
                 resource_responses.append({"resource_name": function_name, "response": response})
 
             return resource_responses
