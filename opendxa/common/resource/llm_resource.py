@@ -9,77 +9,6 @@ from openai import APIConnectionError, RateLimitError
 from ...common.exceptions import LLMError
 from .base_resource import BaseResource
 
-# from openai import AsyncClient
-
-
-class _deprecated_LLMConfig:
-    """Configuration for LLM instances using AISuite."""
-
-    _DEFAULT_MODEL = "deepseek:deepseek-chat"
-
-    def get_default_model(self) -> str:
-        """Get the default model by checking the environment variable."""
-        if "OPENDXA_DEFAULT_MODEL" in os.environ:
-            return os.environ["OPENDXA_DEFAULT_MODEL"]
-        elif "DEEPSEEK_API_KEY" in os.environ:
-            return "deepseek:deepseek-chat"
-        elif "ANTHROPIC_API_KEY" in os.environ:
-            return "anthropic:claude-3-5-sonnet"
-        elif "OPENAI_API_KEY" in os.environ:
-            return "openai:gpt-4o"
-        elif "OPENAI_API_KEY" in os.environ:
-            return "openai:gpt-4o"
-
-        return self._DEFAULT_MODEL
-
-    def __init__(
-        self,
-        model: Optional[str] = None,
-        providers: Optional[Dict[str, Dict[str, Any]]] = None,
-        temperature: float = 0.7,
-        max_tokens: Optional[int] = None,
-        top_p: float = 1.0,
-        max_retries: int = 3,
-        retry_delay: float = 1.0,
-        **kwargs: Any,
-    ) -> None:
-        """Initialize LLM configuration.
-
-        Args:
-            model: Model identifier in format "provider:model" (e.g. "openai:gpt-4")
-            providers: Dictionary of provider configurations
-            temperature: Float between 0 and 1
-            max_tokens: Maximum tokens to generate
-            top_p: Nucleus sampling parameter
-            max_retries: Maximum number of retries for failed requests
-            retry_delay: Initial delay between retries in seconds
-            **kwargs: Additional configuration parameters
-        """
-        self.model = model or self.get_default_model()
-        self.providers = providers or {}
-        self.temperature = temperature
-        self.max_tokens = max_tokens
-        self.top_p = top_p
-        self.max_retries = max_retries
-        self.retry_delay = retry_delay
-        self.additional_params = kwargs
-
-    @classmethod
-    def from_dict(cls, config: Optional[Dict[str, Any]] = None) -> "_deprecated_LLMConfig":
-        """Build LLMConfig from dictionary."""
-        if not config:
-            return cls()
-
-        # Extract known parameters
-        known_params = {"model", "providers", "temperature", "max_tokens", "top_p", "max_retries", "retry_delay"}
-        config_params = {k: v for k, v in config.items() if k in known_params}
-
-        # Pass remaining parameters as additional_params
-        additional_params = {k: v for k, v in config.items() if k not in known_params}
-
-        return cls(**config_params, **additional_params)
-
-
 class LLMResource(BaseResource):
     """LLM resource implementation using AISuite."""
 
@@ -155,7 +84,7 @@ class LLMResource(BaseResource):
                 - additional parameters
 
         Returns:
-            Dictionary with "content", "model", and  "usage", and "tools_used" keys.
+            Dictionary with "content", "model", and  "usage", and "requested_tools" keys.
         """
         if not self._client:
             await self.initialize()
@@ -199,9 +128,9 @@ class LLMResource(BaseResource):
                 # Use aisuite's standardized response format
                 # handle tool calls
                 reasoning = None
-                tools_used = None
+                requested_tools = None
                 if hasattr(response, "choices") and hasattr(response.choices[0].message, "tool_calls"):
-                    tools_used = response.choices[0].message.tool_calls
+                    requested_tools = response.choices[0].message.tool_calls
                     reasoning = response.choices[0].finish_reason
                 elif hasattr(response, "reasoning_content"):
                     reasoning = response.reasoning_content
@@ -210,10 +139,10 @@ class LLMResource(BaseResource):
 
                 content = response.choices[0].message.content if hasattr(response, 'choices') else response.content
                 
-                if tools_used:
+                if requested_tools:
                     # Format tool calls into a readable list
                     tool_list = []
-                    for tool in tools_used:
+                    for tool in requested_tools:
                         tool_info = f"{tool.function.name}: {tool.function.arguments}"
                         tool_list.append(tool_info)
 
@@ -240,7 +169,7 @@ class LLMResource(BaseResource):
                     "usage": getattr(response, "usage", None),
                     # Include any thinking content if present
                     "reasoning": reasoning,
-                    "tools_used": tools_used,
+                    "requested_tools": requested_tools,
                 }
 
             except (APIConnectionError, RateLimitError) as e:
