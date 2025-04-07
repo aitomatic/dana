@@ -184,7 +184,7 @@ class ReasoningExecutor(Executor[ReasoningStrategy, Reasoning, ReasoningFactory]
             # (translated to tools in _query_llm_once)
             response = await self._query_llm_once(
                 llm=llm,
-                prompt=current_prompt,
+                prompt=prompt,
                 system_prompt=system_prompt,
                 available_resources=resource_strings,
                 max_tokens=max_tokens,
@@ -213,7 +213,7 @@ class ReasoningExecutor(Executor[ReasoningStrategy, Reasoning, ReasoningFactory]
                              f"<tool_calling_results>\n{resource_result_text}\n</tool_calling_results>"
             
             # Add a specific instruction for the next iteration
-            current_prompt += (
+            prompt = current_prompt + (
                 "\n\nBased on these tool results, continue your reasoning. "
                 "You can request additional tools if needed to complete your task."
             )
