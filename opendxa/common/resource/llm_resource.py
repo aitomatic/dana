@@ -5,7 +5,6 @@ import asyncio
 import os
 import aisuite as ai
 from openai import APIConnectionError, RateLimitError
-from ...common.utils.logging import DXA_LOGGER
 from ...common.exceptions import LLMError
 from .base_resource import BaseResource
 # from openai import AsyncClient
@@ -125,22 +124,16 @@ class LLMResource(BaseResource):
         self.retry_delay = float(self.config.get("retry_delay", 1.0))
         # self._async_client = AsyncClient()
         
-        # Create a dedicated logger for LLM conversations
-        self.conversation_logger = DXA_LOGGER.getLogger("llm_conversation")
-        self.conversation_logger.logger.setLevel(DXA_LOGGER.INFO)
-        
-        # Add a file handler if not already present
-        if not self.conversation_logger.logger.handlers:
+        # Add a file handler to the existing logger if needed
+        import logging
+        if not any(isinstance(h, logging.FileHandler) for h in self.logger.logger.handlers):
             # Create logs directory if it doesn't exist
             os.makedirs("logs", exist_ok=True)
             
-            # Add file handler
-            import logging
+            # Add file handler with the same format as before
             file_handler = logging.FileHandler("logs/llm_conversation.log")
-            file_handler.setFormatter(logging.Formatter(
-                '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-            ))
-            self.conversation_logger.logger.addHandler(file_handler)
+            file_handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
+            self.logger.logger.addHandler(file_handler)
 
     async def initialize(self) -> None:
         """Initialize the AISuite client."""
@@ -178,8 +171,7 @@ class LLMResource(BaseResource):
             raise ValueError("'Prompt' is required")
 
         # Log the prompt being sent to the LLM
-        # self.conversation_logger.info(f"PROMPT TO {self.model}:\n{'-' * 80}\n{request.get('prompt')}\n{'-' * 80}")
-        self.conversation_logger.info(f"PROMPT TO {self.model}:\n{'-' * 80}\n{messages}\n{'-' * 80}")
+        self.logger.info(f"PROMPT TO {self.model}:\n{'-' * 80}\n{messages}\n{'-' * 80}")
         
         request_params = {
             "temperature": float(self.config.get("temperature", 0.7)),
@@ -223,8 +215,17 @@ class LLMResource(BaseResource):
 
                 content = response.choices[0].message.content if hasattr(response, 'choices') else response.content
                 
+                if tools_used:
+                    # Format tool calls into a readable list
+                    tool_list = []
+                    for tool in tools_used:
+                        tool_info = f"{tool.function.name}: {tool.function.arguments}"
+                        tool_list.append(tool_info)
+
+                    content = f"{reasoning}:\n\n" + "\n".join(tool_list)
+
                 # Log the response from the LLM
-                self.conversation_logger.info(f"RESPONSE FROM {self.model}:\n{'-' * 80}\n{content}\n{'-' * 80}")
+                self.logger.info(f"RESPONSE FROM {self.model}:\n{'-' * 80}\n{content}\n{'-' * 80}")
                 
                 # Log usage statistics if available
                 if hasattr(response, 'usage'):
@@ -232,7 +233,7 @@ class LLMResource(BaseResource):
                     if hasattr(usage, 'prompt_tokens') and \
                         hasattr(usage, 'completion_tokens') and \
                             hasattr(usage, 'total_tokens'):
-                        self.conversation_logger.info(
+                        self.logger.info(
                             f"USAGE: prompt_tokens={usage.prompt_tokens}, "
                             f"completion_tokens={usage.completion_tokens}, "
                             f"total_tokens={usage.total_tokens}"
@@ -266,11 +267,11 @@ class LLMResource(BaseResource):
     async def conversational_query(self, messages: List[Dict[str, Any]], model: str = "gpt-4o") -> Dict[str, Any]:
         """Currently, this one only used for Prosea workflow."""
         # Log the conversation messages being sent to the LLM
-        self.conversation_logger.info(f"CONVERSATION WITH {model}:\n{'-' * 80}")
+        self.logger.info(f"CONVERSATION WITH {model}:\n{'-' * 80}")
         for msg in messages:
             role = msg.get('role', 'unknown')
             content = msg.get('content', '')
-            self.conversation_logger.info(f"[{role.upper()}]: {content}\n{'-' * 40}")
+            self.logger.info(f"[{role.upper()}]: {content}\n{'-' * 40}")
         
         response = None
         while response is None:
@@ -288,7 +289,7 @@ class LLMResource(BaseResource):
                 """
             except asyncio.TimeoutError:
                 print("Timeout reached for GPT-4o call. Retrying...")
-                self.conversation_logger.warning("Timeout reached for GPT-4o call. Retrying...")
+                self.logger.warning("Timeout reached for GPT-4o call. Retrying...")
         
         # Use aisuite's standardized response format
         reasoning = None
@@ -300,12 +301,12 @@ class LLMResource(BaseResource):
         content = response.choices[0].message.content if hasattr(response, 'choices') else response.content
         
         # Log the response from the LLM
-        self.conversation_logger.info(f"[ASSISTANT]: {content}\n{'-' * 80}")
+        self.logger.info(f"[ASSISTANT]: {content}\n{'-' * 80}")
         
         # Log usage statistics if available
         if hasattr(response, 'usage'):
             usage = response.usage
-            self.conversation_logger.info(
+            self.logger.info(
                 f"USAGE: prompt_tokens={usage.prompt_tokens}, "
                 f"completion_tokens={usage.completion_tokens}, "
                 f"total_tokens={usage.total_tokens}"
