@@ -35,9 +35,6 @@ ol-prefix: false
 MD031: true         # Fenced code blocks should be surrounded by blank lines
 blanks-around-fences: true
 
-MD032: true         # Lists should be surrounded by blank lines
-blanks-around-lists: true
-
 MD034: false        # Bare URL used
 no-bare-urls: false
 

@@ -240,28 +240,47 @@ OpenDXA provides distinct advantages in several key areas when compared to other
 opendxa/                # Project root
 ├── opendxa/            # Main package
 │   ├── agent/          # Agent implementation
-│   │   ├── capability/ # Agent capabilities
-│   │   ├── io/         # I/O handlers
-│   │   ├── resource/   # External resources
-│   │   └── state/      # State management
+│   │   ├── capability/ # Agent capabilities (memory, expertise)
+│   │   ├── resource/   # Agent-specific resources
+│   │   ├── agent.py    # Core Agent class
+│   │   ├── agent_factory.py  # Agent creation factories
+│   │   ├── agent_runtime.py  # Agent execution runtime
+│   │   └── agent_state.py    # Agent state management
 │   ├── common/         # Shared utilities
+│   │   ├── graph/      # Graph data structures
+│   │   ├── io/         # Input/Output handlers
+│   │   ├── resource/   # External resources
+│   │   │   ├── mcp/    # Model Context Protocol
+│   │   │   ├── llm_resource.py  # LLM integration
+│   │   │   └── human_resource.py  # Human-in-the-loop
+│   │   ├── state/      # State management
 │   │   └── utils/      # Utility functions
-│   │       └── logging.py  # Logging configuration
-│   ├── factory/        # Factory components
+│   │       └── logging/  # Logging system
 │   └── execution/      # Execution system
 │       ├── pipeline/   # Pipeline execution
-│       │   └── executor.py # WorkflowExecutor
 │       ├── planning/   # Strategic planning
-│       ├── workflow/   # Process workflows
-│       │   └── workflow.py # Workflow implementation
-│       └── reasoning/  # Reasoning patterns
+│       │   └── yaml/   # YAML-based plan templates
+│       ├── reasoning/  # Reasoning implementation
+│       │   └── yaml/   # YAML-based reasoning templates
+│       └── workflow/   # Process workflows
+│           └── yaml/   # YAML-based workflow templates
 │
 ├── examples/           # Usage examples
-│   └── learning_paths/ # Tutorial examples
+│   ├── python/         # Python script examples
+│   │   ├── 01_getting_started/  # Basic usage
+│   │   ├── 02_core_concepts/    # Core architecture
+│   │   ├── 03_advanced_patterns/  # Advanced usage
+│   │   └── 04_real_world_applications/  # Real-world use cases
+│   └── tutorials/      # Jupyter notebook tutorials
+│       ├── 01_getting_started/  # Introduction
+│       ├── 02_core_concepts/    # Core layers
+│       ├── 03_advanced_topics/  # Advanced features
+│       └── 04_real_world_applications/  # Industry applications
 │
 ├── tests/              # Test suite
 │
 └── docs/               # Documentation
+    └── requirements/   # Industry-specific requirements
 ```
 
 ## Contributing
