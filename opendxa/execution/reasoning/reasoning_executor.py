@@ -209,8 +209,8 @@ class ReasoningExecutor(Executor[ReasoningStrategy, Reasoning, ReasoningFactory]
             )
             
             # Enhance the prompt with resource results
-            current_prompt = f"{prompt}\n\n<tool_calling_results>\n{resource_result_text}\n" \
-                                "</tool_calling_results>"
+            current_prompt = f"{current_prompt}\n\n" \
+                             f"<tool_calling_results>\n{resource_result_text}\n</tool_calling_results>"
             
             # Add a specific instruction for the next iteration
             current_prompt += (
