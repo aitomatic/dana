@@ -232,7 +232,8 @@ class LLMResource(BaseResource):
                 # Log usage statistics if available
                 if hasattr(response, "usage"):
                     usage = response.usage
-                    if hasattr(usage, "prompt_tokens") and hasattr(usage, "completion_tokens") and hasattr(usage, "total_tokens"):
+                    if hasattr(usage, "prompt_tokens") \
+                            and hasattr(usage, "completion_tokens") and hasattr(usage, "total_tokens"):
                         self.conversation_logger.info(
                             f"USAGE: prompt_tokens={usage.prompt_tokens}, "
                             f"completion_tokens={usage.completion_tokens}, "

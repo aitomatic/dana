@@ -120,7 +120,8 @@ class ReasoningExecutor(Executor[ReasoningStrategy, Reasoning, ReasoningFactory]
                     response = await self._llm_query(
                         llm=context.reasoning_llm,
                         prompt=prompt,
-                        system_prompt="You are executing a reasoning task. Provide clear, logical analysis and reasoning.",
+                        system_prompt="You are executing a reasoning task. "
+                                      "Provide clear, logical analysis and reasoning.",
                         tools=[],
                         max_tokens=1000,
                         temperature=0.7,
@@ -136,6 +137,7 @@ class ReasoningExecutor(Executor[ReasoningStrategy, Reasoning, ReasoningFactory]
         # If no response was generated, return an empty result
         return [ExecutionSignal(type=ExecutionSignalType.DATA_RESULT, content={})]
 
+    # TODO: think about this architecturally a bit more
     async def _utilize_resources(
         self,
         prompt: str,
@@ -221,7 +223,8 @@ class ReasoningExecutor(Executor[ReasoningStrategy, Reasoning, ReasoningFactory]
                 try:
                     resource_name, *_, tool_name = function_name.split("__")
                 except ValueError:
-                    self.warning(f"Invalid function name format: {function_name}, expected [resource_name]__query__[tool_name]")
+                    self.warning(f"Invalid function name format: {function_name}, "
+                                  "expected [resource_name]__query__[tool_name]")
                     continue
 
                 resource = resources.get(resource_name)
