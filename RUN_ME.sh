@@ -1,4 +1,5 @@
 #!/bin/bash
+# Run with "source ./RUN_ME.sh"
 
 # Create a virtual environment
 python3 -m venv .venv

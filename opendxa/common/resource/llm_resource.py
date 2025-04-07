@@ -1,12 +1,14 @@
 """LLM resource implementation."""
 
-from typing import Dict, Any, Optional, List
 import asyncio
 import os
+from typing import Any, Dict, List, Optional
+
 import aisuite as ai
 from openai import APIConnectionError, RateLimitError
 from ...common.exceptions import LLMError
 from .base_resource import BaseResource
+
 # from openai import AsyncClient
 
 
@@ -39,10 +41,10 @@ class _deprecated_LLMConfig:
         top_p: float = 1.0,
         max_retries: int = 3,
         retry_delay: float = 1.0,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Initialize LLM configuration.
-        
+
         Args:
             model: Model identifier in format "provider:model" (e.g. "openai:gpt-4")
             providers: Dictionary of provider configurations
@@ -63,27 +65,24 @@ class _deprecated_LLMConfig:
         self.additional_params = kwargs
 
     @classmethod
-    def from_dict(cls, config: Optional[Dict[str, Any]] = None) -> '_deprecated_LLMConfig':
+    def from_dict(cls, config: Optional[Dict[str, Any]] = None) -> "_deprecated_LLMConfig":
         """Build LLMConfig from dictionary."""
         if not config:
             return cls()
-            
+
         # Extract known parameters
-        known_params = {
-            'model', 'providers', 'temperature', 'max_tokens',
-            'top_p', 'max_retries', 'retry_delay'
-        }
+        known_params = {"model", "providers", "temperature", "max_tokens", "top_p", "max_retries", "retry_delay"}
         config_params = {k: v for k, v in config.items() if k in known_params}
-        
+
         # Pass remaining parameters as additional_params
         additional_params = {k: v for k, v in config.items() if k not in known_params}
-        
+
         return cls(**config_params, **additional_params)
 
 
 class LLMResource(BaseResource):
     """LLM resource implementation using AISuite."""
-    
+
     _DEFAULT_MODEL = "deepseek:deepseek-chat"
 
     def _get_default_model(self) -> str:
@@ -101,7 +100,7 @@ class LLMResource(BaseResource):
 
     def __init__(self, name: Optional[str] = None, config: Optional[Dict[str, Any]] = None):
         """Initialize LLM resource.
-        
+
         Args:
             name: Resource name
             config: Configuration dictionary containing:
@@ -141,20 +140,20 @@ class LLMResource(BaseResource):
             # Handle backward compatibility for top-level api_key
             if "api_key" in self.config and "openai" not in self.provider_configs:
                 self.provider_configs["openai"] = {"api_key": self.config["api_key"]}
-            
+
             self._client = ai.Client(provider_configs=self.provider_configs)
             self.logger.info("LLM client initialized successfully for model: %s", self.model)
 
     async def query(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Send query to LLM.
-        
+
         Args:
             request: Dictionary with:
                 - prompt: The user message
                 - system_prompt: Optional system prompt
                 - tools: Optional list of resources to use as tools
                 - additional parameters
-        
+
         Returns:
             Dictionary with "content", "model", and  "usage", and "tools_used" keys.
         """
@@ -184,10 +183,10 @@ class LLMResource(BaseResource):
         # Add tools if provided in the request
         if "tools" in request and request["tools"]:
             request_params["tools"] = request["tools"]
-        
+
         # Merge with request-specific params
         request_params.update(request.get("parameters", {}))
-        
+
         # Filter out None values
         request_params = {k: v for k, v in request_params.items() if v is not None}
 
@@ -195,22 +194,18 @@ class LLMResource(BaseResource):
             try:
                 assert self._client is not None
                 # Let aisuite handle the provider-specific response processing
-                response = self._client.chat.completions.create(
-                    model=self.model,
-                    messages=messages,
-                    **request_params
-                )
+                response = self._client.chat.completions.create(model=self.model, messages=messages, **request_params)
 
                 # Use aisuite's standardized response format
                 # handle tool calls
                 reasoning = None
                 tools_used = None
-                if hasattr(response, 'choices') and hasattr(response.choices[0].message, 'tool_calls'):
+                if hasattr(response, "choices") and hasattr(response.choices[0].message, "tool_calls"):
                     tools_used = response.choices[0].message.tool_calls
                     reasoning = response.choices[0].finish_reason
-                elif hasattr(response, 'reasoning_content'):
+                elif hasattr(response, "reasoning_content"):
                     reasoning = response.reasoning_content
-                elif hasattr(response, 'choices') and hasattr(response.choices[0].message, 'reasoning_content'):
+                elif hasattr(response, "choices") and hasattr(response.choices[0].message, "reasoning_content"):
                     reasoning = response.choices[0].message.reasoning_content
 
                 content = response.choices[0].message.content if hasattr(response, 'choices') else response.content
@@ -228,7 +223,7 @@ class LLMResource(BaseResource):
                 self.logger.info(f"RESPONSE FROM {self.model}:\n{'-' * 80}\n{content}\n{'-' * 80}")
                 
                 # Log usage statistics if available
-                if hasattr(response, 'usage'):
+                if hasattr(response, "usage"):
                     usage = response.usage
                     if hasattr(usage, 'prompt_tokens') and \
                         hasattr(usage, 'completion_tokens') and \
@@ -242,16 +237,16 @@ class LLMResource(BaseResource):
                 return {
                     "content": content,
                     "model": self.model,  # Use our model string since it's guaranteed to exist
-                    "usage": getattr(response, 'usage', None),
+                    "usage": getattr(response, "usage", None),
                     # Include any thinking content if present
                     "reasoning": reasoning,
-                    "tools_used": tools_used
+                    "tools_used": tools_used,
                 }
 
             except (APIConnectionError, RateLimitError) as e:
                 if attempt >= self.max_retries:
                     raise e
-                delay = self.retry_delay * (2 ** attempt)
+                delay = self.retry_delay * (2**attempt)
                 self.logger.warning("Retrying in %.1fs (attempt %d/%d)", delay, attempt + 1, self.max_retries)
                 await asyncio.sleep(delay)
             except ValueError as e:
@@ -263,7 +258,7 @@ class LLMResource(BaseResource):
                 raise LLMError(f"Unexpected response structure: {str(e)}") from e
 
         raise LLMError("Max retries exceeded")
-    
+
     async def conversational_query(self, messages: List[Dict[str, Any]], model: str = "gpt-4o") -> Dict[str, Any]:
         """Currently, this one only used for Prosea workflow."""
         # Log the conversation messages being sent to the LLM
@@ -293,31 +288,26 @@ class LLMResource(BaseResource):
         
         # Use aisuite's standardized response format
         reasoning = None
-        if hasattr(response, 'reasoning_content'):
+        if hasattr(response, "reasoning_content"):
             reasoning = response.reasoning_content
-        elif hasattr(response, 'choices') and hasattr(response.choices[0].message, 'reasoning_content'):
+        elif hasattr(response, "choices") and hasattr(response.choices[0].message, "reasoning_content"):
             reasoning = response.choices[0].message.reasoning_content
-        
-        content = response.choices[0].message.content if hasattr(response, 'choices') else response.content
-        
+
+        content = response.choices[0].message.content if hasattr(response, "choices") else response.content
+
         # Log the response from the LLM
         self.logger.info(f"[ASSISTANT]: {content}\n{'-' * 80}")
         
         # Log usage statistics if available
-        if hasattr(response, 'usage'):
+        if hasattr(response, "usage"):
             usage = response.usage
             self.logger.info(
                 f"USAGE: prompt_tokens={usage.prompt_tokens}, "
                 f"completion_tokens={usage.completion_tokens}, "
                 f"total_tokens={usage.total_tokens}"
             )
-            
-        return {
-            "content": content,
-            "model": model,
-            "usage": getattr(response, 'usage', None),
-            "reasoning": reasoning
-        }
+
+        return {"content": content, "model": model, "usage": getattr(response, "usage", None), "reasoning": reasoning}
 
     async def cleanup(self) -> None:
         """Cleanup resources."""
