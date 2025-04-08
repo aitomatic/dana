@@ -10,24 +10,39 @@ This directory contains requirements specifications for different OpenDXA deploy
   - Fab equipment fault diagnosis
   - RIE chamber monitoring
   - SPC/FDC data analysis
-  - SEMIKONG LLM integration
+  - Process parameter optimization
 
-- [Tokyo Electron (TEL)](TEL.md)
-  - Enhanced collaboration framework
-  - Critical issue resolution
-  - OpenDXA framework integration
-  - Use case development
-  - Product quality and experience
+- [Batch Process Automation](BATCH-PROCESS-AUTOMATION.md)
+  - Specialty chemicals manufacturing
+  - Process optimization
+  - Quality control
+  - Resource allocation
 
-- [Taiwan Semiconductor (TSMC)](TSMC.md)
-  - Framework delivery with MCP integration
-  - Data source integration
-  - Knowledge extraction and management
-  - Problem solving capabilities
-  - Development and release cycle
+- [Visual Defect Analysis](VISUAL-DEFECT-ANALSYSIS.md)
+  - Product quality inspection
+  - Defect classification
+  - Root cause analysis
+  - Quality assurance
 
-- [Industrial Automation](INDUSTRIAL-AUTOMATION.md)
-  - *Documentation in progress*
+### Semiconductor
+
+- [FAB Log Analysis](FAB-LOG-ANALYSIS.md)
+  - System log analysis
+  - Error detection
+  - Parameter validation
+  - Troubleshooting support
+
+- [Fabless FAE Support](FABLESS-FAE-SUPPORT.md)
+  - Design implementation guidance
+  - Technical consultation
+  - Parameter validation
+  - Documentation support
+
+- [Fabless Customer Support](FABLESS-CUSTOMER-SUPPORT.md)
+  - Circuit design consultation
+  - Technical documentation support
+  - Parameter validation
+  - Design optimization guidance
 
 ### Utilities & Infrastructure
 
@@ -37,37 +52,46 @@ This directory contains requirements specifications for different OpenDXA deploy
   - Blueprint-based diagnosis
   - Grid topology analysis
 
-### Customer Support
+### Enterprise
 
-- [Fabless Design Support](FABLESS-CUSTOMER-SUPPORT.md)
-  - Circuit design consultation
-  - Technical documentation support
-  - Parameter validation
-  - Design optimization guidance
+- [Enterprise Interface Guide](ENTERPRISE-INTERFACE-GUIDE.md)
+  - Screenshot analysis
+  - Data validation
+  - Error troubleshooting
+  - Form requirement guidance
 
-### General Documentation
-
-- [Manufacturer Overview](MANUFACTURER.md)
-  - *Documentation in progress*
+- [Visual Part Matching](VISUAL-PART-MATCHING.md)
+  - Parts identification
+  - Inventory lookup
+  - Replacement part finding
+  - Maintenance support
 
 ## Document Structure
 
 Each scenario document follows a consistent format:
+- Business/Technical Problem Statement
+  - Persona
+  - Use Case
+  - Scenario
 - Scenario Overview
-- System Architecture
-- Process Flows
+- System Components
+- Example Scenarios
+- Solution Architecture
+- Integration Details
 - Success Criteria
 - Performance Metrics
-- Key Capabilities
 
 ## Status
 
 | Document | Status | Last Updated |
 |----------|---------|--------------|
-| FAB-FAULT-DIAGNOSIS.md | Complete | - |
-| UTILITY-FAULT-DIAGNOSIS.md | Complete | - |
-| FABLESS-CUSTOMER-SUPPORT.md | Complete | - |
-| INDUSTRIAL-AUTOMATION.md | Pending | - |
-| MANUFACTURER.md | Pending | - |
-| TEL.md | Complete | 2024-03-05 |
-| TSMC.md | Complete | 2024-03-05 |
+| FAB-FAULT-DIAGNOSIS.md | Complete | 2024-04-08 |
+| UTILITY-FAULT-DIAGNOSIS.md | Complete | 2024-04-08 |
+| BATCH-PROCESS-AUTOMATION.md | Complete | 2024-04-08 |
+| FAB-LOG-ANALYSIS.md | Complete | 2024-04-08 |
+| VISUAL-DEFECT-ANALSYSIS.md | Complete | 2024-04-08 |
+| VISUAL-PART-MATCHING.md | Complete | 2024-04-08 |
+| ENTERPRISE-INTERFACE-GUIDE.md | Complete | 2024-04-08 |
+| FABLESS-FAE-SUPPORT.md | Complete | 2024-04-08 |
+| FABLESS-CUSTOMER-SUPPORT.md | Complete | 2024-04-08 |
+| TEMPLATE.md | Complete | 2024-04-08 |
