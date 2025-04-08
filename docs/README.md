@@ -7,84 +7,45 @@
 
 # OpenDXA Documentation
 
-Complete documentation for the OpenDXA framework.
+This documentation provides guides and references for implementing and using the OpenDXA framework. For a comprehensive overview of the OpenDXA architecture and features, please refer to the [main README](../opendxa/README.md).
 
-## Structure
+## Documentation Structure
 
-- **requirements/**: Domain-specific requirements documentation
-- **dxa.html**: API reference HTML documentation
-- **README.md**: Framework overview and getting started guide
-
-## Documentation
-
-The primary documentation for the OpenDXA framework is organized in several layers:
-
-1. **Framework Overview**
-   - Main README.md - High-level overview and getting started
-   - dxa/README.md - Detailed system architecture
-   - examples/README.md - Usage patterns and tutorials
-
-2. **Component Documentation**
-   - Each module has its own README.md
-   - Code is documented with comprehensive docstrings
-   - Examples demonstrate usage patterns
-
-3. **API Reference**
-   - Generated HTML documentation (dxa.html)
-   - Type hints and docstrings
-   - Usage examples
-
-```bash
-# View framework overview
-cat README.md
-
-# View system architecture
-cat dxa/README.md
-
-# View component documentation
-cat dxa/agent/README.md
-cat dxa/execution/workflow/README.md
+```text
+docs/
+├── requirements/           # Domain-specific requirements
+│   ├── README.md         # Overview of domain requirements
+│   ├── TEMPLATE.md       # Documentation template
+│   └── ...              # Domain-specific requirement files
+└── README.md           # This file
 ```
 
-## System Documentation
+## Documentation Layers
 
-- [Agent System](../dxa/agent/README.md)
-  - [Core Components](../dxa/agent/README.md#core-components)
-  - [Capabilities](../dxa/agent/capability/README.md)
-  - [Resources](../dxa/agent/resource/README.md)
-  - [IO System](../dxa/agent/io/README.md)
-  - [State System](../dxa/agent/state/README.md)
+1. **Framework Overview**
+   - [Main README](../opendxa/README.md) - High-level overview and getting started
+   - [Architecture Overview](../opendxa/README.md#architecture-overview)
+   - [Implementation Examples](../opendxa/README.md#implementation-examples)
 
-- [Execution System](../dxa/execution/README.md)
-  - [Workflow Layer](../dxa/execution/workflow/README.md)
-  - [Planning Layer](../dxa/execution/planning/README.md)
-  - [Reasoning Layer](../dxa/execution/reasoning/README.md)
-  - [Pipeline Layer](../dxa/execution/pipeline/README.md)
+2. **Domain Requirements**
+   - [Domain Requirements Overview](requirements/README.md)
+   - [Template](requirements/TEMPLATE.md)
 
-- [Common Utilities](../dxa/common/README.md)
-  - [Logging](../dxa/common/utils/logging.py)
-  - [Graph Utilities](../dxa/common/graph.py)
+3. **Technical Documentation**
+   - [Agent System](../opendxa/agent/README.md)
+   - [Execution System](../opendxa/execution/README.md)
+   - [Common Utilities](../opendxa/common/README.md)
 
-### Process Automation
+## License
 
-The OpenDXA Workflow system provides powerful process automation capabilities:
+OpenDXA is licensed under the Apache License 2.0. See the [LICENSE](../LICENSE) file for details.
 
-1. **Workflow Management**
-   - Define complex workflows
-   - Manage dependencies
-   - Handle data flow
-   - Track execution state
+---
 
-2. **Planning and Reasoning**
-   - Strategic decomposition
-   - Tactical execution
-   - Dynamic adaptation
-   - Progress monitoring
+<p align="center">
+Copyright © 2024 Aitomatic, Inc. All rights reserved.
+</p>
 
-3. **Integration Features**
-   - External system integration
-   - Resource management
-   - State persistence
-   - Error handling
-
-See [Workflow Documentation](../dxa/execution/workflow/README.md) for details.
+<p align="center">
+<a href="https://aitomatic.com">https://aitomatic.com</a>
+</p>

@@ -12,22 +12,47 @@ This scenario describes how a Domain Expert Agent (DXA) performs root-cause anal
   <img src="https://www.electricaltechnology.org/wp-content/uploads/2021/10/Classification-of-Electric-Power-Distribution-Network-Systems.png" alt="Grid Distribution System" width="70%" />
 </p>
 
-## Grid Station Alarm Analysis
+## Business/Technical Problem Statement
 
-**Actor:** Grid Operator + Diagnostic Expert DXA
-**Goal:** Determine precise root cause of grid control system alarms
+### Persona
+**David Wilson, Grid Operator**
+- 15+ years experience in electrical grid operations
+- Responsible for monitoring and maintaining grid stability
+- Must ensure continuous power supply while preventing system failures
+- Works across multiple substations and grid sections
+- Reports to the Grid Operations Manager
 
-### Context
+### Use Case
+David needs to quickly diagnose and resolve alarms in the electrical grid base station to prevent power outages and system failures. He must analyze alarm data, determine root causes, and implement appropriate corrective actions to maintain grid stability and ensure continuous power supply.
 
-- Base station environment with grid control equipment
-- Alarm triggered by subsystem malfunction
-- DXA has access to:
-  - Grid configuration knowledge base
-  - Equipment blueprints (PDF format)
-  - Control system documentation
-  - Historical alarm patterns
-  - Real-time sensor/telemetry data
-  - Grid topology and connection diagrams
+### Scenario
+During a routine monitoring shift, David receives multiple alarms from a critical substation. He needs to:
+1. Review the alarm data and system status
+2. Analyze the grid configuration and topology
+3. Identify potential root causes based on historical data
+4. Determine if immediate intervention is required
+5. Recommend specific corrective actions
+6. Document his findings for the maintenance team
+
+David is under pressure to diagnose and resolve the issue quickly as the affected substation serves a critical load and any delay could lead to power outages. He needs a system that can help him analyze complex alarm data rapidly and provide actionable insights.
+
+## Scenario Overview
+
+The Domain Expert Agent (DXA) assists grid operators in diagnosing and resolving alarms in electrical grid base stations, ensuring continuous power supply and system stability.
+
+### Grid Station Components
+
+1. **Alarm System**
+   - Real-time monitoring
+   - Alarm classification
+   - Severity assessment
+   - Historical tracking
+
+2. **Knowledge Base**
+   - Grid configuration data
+   - Equipment blueprints
+   - Control system documentation
+   - Historical alarm patterns
 
 <p align="center">
   <img src="https://i.ytimg.com/vi/Na-7jCAwUBY/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLABpvlXlngGliKP9hKajbKHyzltTA" alt="Grid Utility Station Context" width="50%" />
