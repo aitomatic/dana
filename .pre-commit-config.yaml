@@ -3,7 +3,8 @@ repos:
     hooks:
       - id: make-files-readonly
         name: Make files read-only
-        entry: bash -c 'git ls-files "examples/tutorials/**" | xargs chmod -w'
+        # entry: bash -c 'git ls-files "examples/tutorials/**" | xargs chmod -w'
+        entry: bash -c 'echo "Searching for files..."; FILES=$(git ls-files "examples/tutorials/**"); if [ -z "$FILES" ]; then echo "No files found"; else echo "Files found:"; echo "$FILES"; echo "Making read-only..."; echo "$FILES" | xargs chmod -w; fi'
         language: system
         pass_filenames: false
         # Run this hook after checkout, merge, and rebase operations
