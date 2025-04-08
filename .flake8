@@ -1,5 +1,5 @@
 [flake8]
-max-line-length = 120
+max-line-length = 140
 # W291: Trailing whitespace
 # W293: Blank line contains whitespace
 # W504: Line break occurred after a binary operator

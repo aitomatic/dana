@@ -12,20 +12,48 @@ This scenario describes how a Field Application Engineer (FAE), supported by a D
   <img src="https://phisonblog.com/wp-content/uploads/2023/03/1507431_WPICDesignProcess_01_112222.jpg" alt="IC Design Process Flow" width="50%" />
 </p>
 
-## Circuit Design Support Consultation
+## Business/Technical Problem Statement
 
-**Actor:** Field Application Engineer (FAE) + Design Expert DXA  
-**Goal:** Guide customer to successful system design implementation using company's IC
+### Persona
+**Thomas Lee, Field Application Engineer (FAE)**
+- 8+ years experience in semiconductor design and implementation
+- Responsible for supporting customers in implementing designs with company devices
+- Must ensure successful customer implementations while minimizing support time
+- Works with multiple customers and product lines
+- Reports to the Technical Support Manager
 
-### Context
+### Use Case
+Thomas needs to assist customers in successfully implementing new designs using the company's semiconductor devices. He must provide accurate technical guidance, troubleshoot implementation issues, and ensure customers can effectively use the company's products in their designs.
 
-- Customer (circuit/system designer) seeks design guidance
-- FAE leads customer interaction via call/web meeting
-- DXA has access to:
-  - Internal IC documentation and application notes
-  - Public datasheets and reference designs
-  - Historical design consultations
-  - Circuit design expertise knowledge base
+### Scenario
+Thomas receives a support request from a customer who is struggling to implement a new design using the company's latest microcontroller. He needs to:
+1. Review the customer's design specifications and implementation plan
+2. Identify potential issues or optimization opportunities
+3. Analyze compatibility with the company's device requirements
+4. Develop a solution or recommendation
+5. Provide clear implementation guidance
+6. Document the interaction for future reference
+
+Thomas is under pressure to resolve the issue quickly as the customer is on a tight development schedule and needs to get their product to market soon. He needs a system that can help him analyze design specifications, identify potential issues, and provide accurate implementation guidance.
+
+## Scenario Overview
+
+The Domain Expert Agent (DXA) supports Field Application Engineers (FAEs) in providing technical assistance to customers implementing IC designs, ensuring successful product integration and customer satisfaction.
+
+### System Components
+
+1. **Design Support System**
+   - Parameter engine
+   - Validation agent
+   - Plan analyzer
+   - Documentation manager
+   - Implementation tracker
+
+2. **Knowledge Base**
+   - Internal IC documentation
+   - Public datasheets
+   - Reference designs
+   - Historical design consultations
 
 <p align="center">
   <img src="https://www.powersystemsdesign.com/images/articles/1384946982Illustration_YoleSermaPressrelease_March2013.jpg" alt="Semiconductor Industry Structure" width="50%" />

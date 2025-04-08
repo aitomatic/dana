@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenDXA Architecture Visualization</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        header {
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 1rem;
+            text-align: center;
+        }
+        .logo {
+            max-width: 300px;
+            margin-bottom: 1rem;
+        }
+        h1 {
+            color: #333;
+            margin: 0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        canvas {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            margin: 2rem 0;
+            width: 100%;
+            height: 600px;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        button {
+            background-color: #4a6cf7;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #3a5ce5;
+        }
+        .description {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+        .description h2 {
+            margin-top: 0;
+            color: #4a6cf7;
+        }
+        .description ul {
+            padding-left: 1.5rem;
+        }
+        .description li {
+            margin-bottom: 0.5rem;
+        }
+        footer {
+            text-align: center;
+            padding: 1rem;
+            background-color: #333;
+            color: #fff;
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" class="logo">
+        <h1>OpenDXA Architecture Visualization</h1>
+    </header>
+    
+    <div class="container">
+        <div class="controls">
+            <button id="resetBtn">Reset View</button>
+            <button id="zoomInBtn">Zoom In</button>
+            <button id="zoomOutBtn">Zoom Out</button>
+            <button id="toggleLayersBtn">Toggle Layers</button>
+        </div>
+        
+        <canvas id="architectureCanvas"></canvas>
+        
+        <div class="description">
+            <h2>OpenDXA Architecture</h2>
+            <p>OpenDXA (Domain-Expert Agent) is an intelligent agent architecture designed to tackle complex domain-specific tasks with human-like expertise. The architecture is based on a three-layer graph structure that breaks down high-level objectives into executable actions through a Why-What-How paradigm.</p>
+            
+            <h3>Key Components</h3>
+            <ul>
+                <li><strong>Workflow Layer (WHY)</strong> - Maps business objectives to strategic plans</li>
+                <li><strong>Planning Layer (WHAT)</strong> - Decomposes strategic plans into tactical actions</li>
+                <li><strong>Reasoning Layer (HOW)</strong> - Executes actions using standardized reasoning patterns</li>
+            </ul>
+            
+            <h3>Agent System</h3>
+            <ul>
+                <li><strong>Agent Factory & Runtime</strong> - Creates and manages agent instances</li>
+                <li><strong>Capabilities</strong> - Cognitive abilities for task execution</li>
+                <li><strong>Resources</strong> - Tools and services used by agents</li>
+                <li><strong>IO System</strong> - Handles environmental interaction</li>
+                <li><strong>State System</strong> - Manages execution state</li>
+            </ul>
+            
+            <h3>Execution System</h3>
+            <ul>
+                <li><strong>Workflow</strong> - Process definition and control</li>
+                <li><strong>Planning</strong> - Strategic decomposition</li>
+                <li><strong>Reasoning</strong> - Tactical execution</li>
+                <li><strong>Pipeline</strong> - Execution flow management</li>
+            </ul>
+        </div>
+    </div>
+    
+    <footer>
+        <p>Copyright © 2024 Aitomatic, Inc. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Canvas setup
+        const canvas = document.getElementById('architectureCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set canvas size
+        function resizeCanvas() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+        }
+        
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+        
+        // Architecture components
+        const components = {
+            workflowLayer: {
+                name: 'Workflow Layer (WHY)',
+                x: canvas.width / 2,
+                y: 100,
+                width: 600,
+                height: 80,
+                color: '#f9f9f9',
+                borderColor: '#4a6cf7',
+                nodes: [
+                    { name: 'Launch New Product', x: 150, y: 140 },
+                    { name: 'Market Research', x: 300, y: 140 },
+                    { name: 'Product Development', x: 450, y: 140 },
+                    { name: 'Market Launch', x: 600, y: 140 }
+                ]
+            },
+            planningLayer: {
+                name: 'Planning Layer (WHAT)',
+                x: canvas.width / 2,
+                y: 250,
+                width: 600,
+                height: 80,
+                color: '#f0f7ff',
+                borderColor: '#4a6cf7',
+                nodes: [
+                    { name: 'Analyze Competitors', x: 150, y: 290 },
+                    { name: 'Survey Customers', x: 300, y: 290 },
+                    { name: 'Synthesize Findings', x: 450, y: 290 },
+                    { name: 'Create Report', x: 600, y: 290 }
+                ]
+            },
+            reasoningLayer: {
+                name: 'Reasoning Layer (HOW)',
+                x: canvas.width / 2,
+                y: 400,
+                width: 600,
+                height: 80,
+                color: '#f0fff7',
+                borderColor: '#4a6cf7',
+                nodes: [
+                    { name: 'Observe', x: 150, y: 440 },
+                    { name: 'Orient', x: 300, y: 440 },
+                    { name: 'Decide', x: 450, y: 440 },
+                    { name: 'Act', x: 600, y: 440 }
+                ]
+            },
+            agentSystem: {
+                name: 'Agent System',
+                x: 150,
+                y: 550,
+                width: 200,
+                height: 150,
+                color: '#fff7f0',
+                borderColor: '#4a6cf7',
+                nodes: [
+                    { name: 'Agent Factory', x: 150, y: 580 },
+                    { name: 'Capabilities', x: 150, y: 610 },
+                    { name: 'Resources', x: 150, y: 640 },
+                    { name: 'IO System', x: 150, y: 670 }
+                ]
+            },
+            executionSystem: {
+                name: 'Execution System',
+                x: 450,
+                y: 550,
+                width: 200,
+                height: 150,
+                color: '#fff7f0',
+                borderColor: '#4a6cf7',
+                nodes: [
+                    { name: 'Workflow', x: 450, y: 580 },
+                    { name: 'Planning', x: 450, y: 610 },
+                    { name: 'Reasoning', x: 450, y: 640 },
+                    { name: 'Pipeline', x: 450, y: 670 }
+                ]
+            }
+        };
+        
+        // Drawing functions
+        function drawRect(x, y, width, height, color, borderColor, text) {
+            ctx.fillStyle = color;
+            ctx.strokeStyle = borderColor;
+            ctx.lineWidth = 2;
+            
+            // Draw rounded rectangle
+            const radius = 10;
+            ctx.beginPath();
+            ctx.moveTo(x - width/2 + radius, y - height/2);
+            ctx.lineTo(x + width/2 - radius, y - height/2);
+            ctx.quadraticCurveTo(x + width/2, y - height/2, x + width/2, y - height/2 + radius);
+            ctx.lineTo(x + width/2, y + height/2 - radius);
+            ctx.quadraticCurveTo(x + width/2, y + height/2, x + width/2 - radius, y + height/2);
+            ctx.lineTo(x - width/2 + radius, y + height/2);
+            ctx.quadraticCurveTo(x - width/2, y + height/2, x - width/2, y + height/2 - radius);
+            ctx.lineTo(x - width/2, y - height/2 + radius);
+            ctx.quadraticCurveTo(x - width/2, y - height/2, x - width/2 + radius, y - height/2);
+            ctx.closePath();
+            
+            ctx.fill();
+            ctx.stroke();
+            
+            // Draw text
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(text, x, y);
+        }
+        
+        function drawNode(x, y, text) {
+            ctx.fillStyle = '#fff';
+            ctx.strokeStyle = '#4a6cf7';
+            ctx.lineWidth = 2;
+            
+            // Draw circle
+            ctx.beginPath();
+            ctx.arc(x, y, 15, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            
+            // Draw text
+            ctx.fillStyle = '#333';
+            ctx.font = '14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(text, x, y + 30);
+        }
+        
+        function drawConnection(x1, y1, x2, y2, color = '#4a6cf7') {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            
+            // Draw arrow
+            const angle = Math.atan2(y2 - y1, x2 - x1);
+            const arrowLength = 10;
+            
+            ctx.beginPath();
+            ctx.moveTo(x2, y2);
+            ctx.lineTo(
+                x2 - arrowLength * Math.cos(angle - Math.PI / 6),
+                y2 - arrowLength * Math.sin(angle - Math.PI / 6)
+            );
+            ctx.moveTo(x2, y2);
+            ctx.lineTo(
+                x2 - arrowLength * Math.cos(angle + Math.PI / 6),
+                y2 - arrowLength * Math.sin(angle + Math.PI / 6)
+            );
+            ctx.stroke();
+        }
+        
+        function drawDashedConnection(x1, y1, x2, y2, color = '#4a6cf7') {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([5, 5]);
+            
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.stroke();
+            
+            // Reset line dash
+            ctx.setLineDash([]);
+        }
+        
+        // Draw the architecture
+        function drawArchitecture() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw layers
+            for (const key in components) {
+                const component = components[key];
+                
+                // Draw main component
+                drawRect(component.x, component.y, component.width, component.height, component.color, component.borderColor, component.name);
+                
+                // Draw nodes
+                component.nodes.forEach(node => {
+                    drawNode(node.x, node.y, node.name);
+                });
+            }
+            
+            // Draw connections between workflow nodes
+            for (let i = 0; i < components.workflowLayer.nodes.length - 1; i++) {
+                const node1 = components.workflowLayer.nodes[i];
+                const node2 = components.workflowLayer.nodes[i + 1];
+                drawConnection(node1.x, node1.y, node2.x, node2.y);
+            }
+            
+            // Draw connections between planning nodes
+            for (let i = 0; i < components.planningLayer.nodes.length - 1; i++) {
+                const node1 = components.planningLayer.nodes[i];
+                const node2 = components.planningLayer.nodes[i + 1];
+                drawConnection(node1.x, node1.y, node2.x, node2.y);
+            }
+            
+            // Draw connections between reasoning nodes
+            for (let i = 0; i < components.reasoningLayer.nodes.length - 1; i++) {
+                const node1 = components.reasoningLayer.nodes[i];
+                const node2 = components.reasoningLayer.nodes[i + 1];
+                drawConnection(node1.x, node1.y, node2.x, node2.y);
+            }
+            
+            // Draw connections between layers
+            drawDashedConnection(
+                components.workflowLayer.nodes[1].x, 
+                components.workflowLayer.nodes[1].y, 
+                components.planningLayer.nodes[0].x, 
+                components.planningLayer.nodes[0].y
+            );
+            
+            drawDashedConnection(
+                components.planningLayer.nodes[0].x, 
+                components.planningLayer.nodes[0].y, 
+                components.reasoningLayer.nodes[0].x, 
+                components.reasoningLayer.nodes[0].y
+            );
+            
+            // Draw connections to agent and execution systems
+            drawConnection(
+                components.workflowLayer.x, 
+                components.workflowLayer.y + components.workflowLayer.height/2, 
+                components.agentSystem.x, 
+                components.agentSystem.y - components.agentSystem.height/2
+            );
+            
+            drawConnection(
+                components.workflowLayer.x, 
+                components.workflowLayer.y + components.workflowLayer.height/2, 
+                components.executionSystem.x, 
+                components.executionSystem.y - components.executionSystem.height/2
+            );
+        }
+        
+        // Initialize
+        drawArchitecture();
+        
+        // Button event listeners
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            // Reset view (for future implementation)
+            drawArchitecture();
+        });
+        
+        document.getElementById('zoomInBtn').addEventListener('click', () => {
+            // Zoom in (for future implementation)
+            alert('Zoom in functionality will be implemented in a future version');
+        });
+        
+        document.getElementById('zoomOutBtn').addEventListener('click', () => {
+            // Zoom out (for future implementation)
+            alert('Zoom out functionality will be implemented in a future version');
+        });
+        
+        document.getElementById('toggleLayersBtn').addEventListener('click', () => {
+            // Toggle layers (for future implementation)
+            alert('Layer toggling functionality will be implemented in a future version');
+        });
+    </script>
+</body>
+</html>

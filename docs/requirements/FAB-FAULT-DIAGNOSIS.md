@@ -10,6 +10,30 @@
   <img src="https://www.tel.com/product/pv8va20000001bxe-img/pv8va20000001bzt.jpg" alt="Tokyo Electron Tactras Etch System" width="50%" />
 </p>
 
+## Business/Technical Problem Statement
+
+### Persona
+**Michael Chen, Semiconductor Process Engineer**
+- 10+ years experience in semiconductor manufacturing
+- Responsible for monitoring and troubleshooting RIE (Reactive Ion Etch) equipment
+- Must maintain high throughput while ensuring process quality
+- Works across multiple tools and process types
+- Reports to the Fab Engineering Manager
+
+### Use Case
+Michael needs to continuously monitor RIE equipment for process issues and diagnose faults in real-time. He must identify potential problems before they impact production, determine root causes, and recommend appropriate corrective actions to prevent downtime and quality issues.
+
+### Scenario
+During a routine process check, Michael notices unusual behavior in one of the RIE tools. He needs to:
+1. Review real-time SPC and FDC data from the affected tool
+2. Analyze parameter trends for anomalies
+3. Identify potential root causes based on historical data
+4. Determine if immediate intervention is required
+5. Recommend specific corrective actions
+6. Document his findings for the maintenance team
+
+Michael is under pressure to diagnose and resolve the issue quickly as the affected tool is critical to the current production lot. He needs a system that can help him monitor complex process data continuously and provide actionable insights when issues arise.
+
 ## Scenario Overview
 
 The system monitors a single semiconductor etcher (RIE) through continuous SPC and FDC IoT data streams. The Domain Expert Agent (DXA) acts as a 24/7 virtual expert, monitoring for various process issues:
