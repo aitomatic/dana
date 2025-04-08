@@ -21,3 +21,4 @@ uv.lock
 proposal/*
 notebooks/*
 memory-bank/*
+.coverage
