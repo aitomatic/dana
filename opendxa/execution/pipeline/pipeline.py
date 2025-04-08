@@ -45,7 +45,7 @@ class PipelineNode(ExecutionNode, Loggable):
 
     def __post_init__(self):
         """Initialize Loggable after dataclass initialization."""
-        super().__init__()
+        Loggable.__init__(self)
 
     async def _identity(self, data: Any) -> Any:
         """Identity function."""
