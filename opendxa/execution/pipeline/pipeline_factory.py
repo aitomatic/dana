@@ -7,14 +7,13 @@ from typing import Dict, Any, Callable, List, Optional
 import asyncio
 from datetime import datetime
 import json
-import logging
 import numpy as np
 from ...common import DXA_LOGGER
+from ...common.utils.logging.loggable import Loggable
 from ..execution_factory import ExecutionFactory
 from .pipeline import Pipeline
-logger = logging.getLogger(__name__)
 
-class PipelineFactory(ExecutionFactory):
+class PipelineFactory(ExecutionFactory, Loggable):
     """Factory for creating pipelines."""
 
     graph_class = Pipeline
@@ -260,4 +259,3 @@ class PipelineFactory(ExecutionFactory):
                 features = tf.convert_to_tensor([features], dtype=tf.float32)
             prediction = model(features)[0]
             return {**data, output_key: prediction.numpy().tolist()} 
-

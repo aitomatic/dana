@@ -5,16 +5,20 @@ from typing import Dict, Any, Optional
 import asyncio
 from datetime import datetime
 from ..execution_context import ExecutionContext
-from ...common import DXA_LOGGER
+from ...common.utils.logging.loggable import Loggable
 
 @dataclass
-class PipelineContext(ExecutionContext):
+class PipelineContext(ExecutionContext, Loggable):
     """Context for pipeline execution with buffer management."""
     
     # Buffer management
     buffers: Dict[str, asyncio.Queue] = field(default_factory=dict)
     buffer_metrics: Dict[str, Dict[str, Any]] = field(default_factory=dict)
     buffer_data: Dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self):
+        """Initialize Loggable after dataclass initialization."""
+        Loggable.__init__(self)
 
     async def setup_buffer(self, node_id: str, size: int = 1000) -> None:
         """Setup buffer for node."""
@@ -30,7 +34,7 @@ class PipelineContext(ExecutionContext):
         if node_id in self.buffers:
             buffer = self.buffers[node_id]
             if buffer.full():
-                DXA_LOGGER.warning("Buffer %s full", node_id, size=buffer.qsize())
+                self.warning("Buffer %s full", node_id, size=buffer.qsize())
             await buffer.put(data)
             self.buffer_metrics[node_id]["messages_processed"] += 1
             self.buffer_metrics[node_id]["last_activity"] = datetime.now()
@@ -48,7 +52,7 @@ class PipelineContext(ExecutionContext):
 
     async def cleanup_buffers(self) -> None:
         """Cleanup all buffers."""
-        DXA_LOGGER.debug("Cleaning up pipeline buffers (count: %d)", len(self.buffers))
+        self.debug("Cleaning up pipeline buffers (count: %d)", len(self.buffers))
         for buffer in self.buffers.values():
             while not buffer.empty():
                 try:

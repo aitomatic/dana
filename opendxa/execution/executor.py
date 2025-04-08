@@ -23,7 +23,7 @@ class ExecutionError(Exception):
     """Base exception for all execution errors."""
     pass
 
-class Executor(Loggable, ABC, Generic[StrategyT, GraphT, FactoryT]):
+class Executor(ABC, Loggable, Generic[StrategyT, GraphT, FactoryT]):
     """Base class for all executors in the execution system.
     
     The Executor class provides common execution logic for all layers
@@ -108,7 +108,7 @@ class Executor(Loggable, ABC, Generic[StrategyT, GraphT, FactoryT]):
         self.lower_executor = lower_executor
         
         # Initialize Loggable with appropriate logger name
-        super().__init__(logger_name=f"opendxa.execution.{self.graph_class.__name__.lower()}")
+        Loggable.__init__(self, logger_name=f"opendxa.execution.{self.graph_class.__name__.lower()}")
     
     @property
     def strategy(self) -> StrategyT:

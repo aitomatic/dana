@@ -21,18 +21,33 @@ Example:
             pass
 """
 
-from abc import ABC
 from dataclasses import dataclass
-from typing import Dict, Any, List, Optional, Union
-from ...common.utils.logging import DXA_LOGGER
+from typing import Any, Dict, List, Optional, Union
+
+from opendxa.common.utils.logging.loggable import Loggable
+
+@dataclass
+class ResourceConfig:
+    """Configuration for a resource."""
+    name: str
+    description: Optional[str] = None
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'ResourceConfig':
+        """Create a ResourceConfig from a dictionary."""
+        return cls(**data)
 
 class ResourceError(Exception):
     """Base class for resource errors."""
     def __init__(self, message: str, original_error: Optional[Exception] = None):
         super().__init__(message)
         self.original_error = original_error
-        DXA_LOGGER.error("Resource error occurred", 
-                            extra={"error": message, "exception": original_error})
+        # Use class logger for error logging
+        logger = Loggable.get_class_logger()
+        logger.error(
+            "Resource error occurred",
+            extra={"error": message, "exception": original_error}
+        )
 
 class ResourceUnavailableError(ResourceError):
     """Error raised when resource is unavailable."""
@@ -43,28 +58,13 @@ class ResourceAccessError(ResourceError):
     pass
 
 @dataclass
-class ResourceConfig:
-    """Base configuration for all resources."""
-    name: str
-    description: Optional[str] = None
-
-    @classmethod
-    def from_dict(cls, config_dict: Dict[str, Any]) -> 'ResourceConfig':
-        """Create config from dictionary."""
-        return cls(**{
-            k: v for k, v in config_dict.items()
-            # pylint: disable=no-member
-            if k in cls.__dataclass_fields__
-        })
-
-@dataclass
 class ResourceResponse:
     """Base response for all resources."""
     success: bool = True
     content: Optional[Any] = None  # Added MCP-compatible field
     error: Optional[str] = None
 
-class BaseResource(ABC):
+class BaseResource(Loggable):
     """Abstract base resource."""
 
     def __init__(
@@ -80,6 +80,9 @@ class BaseResource(ABC):
             description: Optional resource description
             config: Either a ResourceConfig object or a dict that can be converted to one
         """
+        # Initialize Loggable first to ensure logger is available
+        super().__init__()
+        
         if isinstance(resource_config, dict):
             self.config = ResourceConfig.from_dict(resource_config)
         elif isinstance(resource_config, ResourceConfig):
@@ -90,7 +93,6 @@ class BaseResource(ABC):
         self.name = name or self.config.name
         self.description = self.config.description or "No description provided"
         self._is_available = False  # will only be True after initialization
-        self.logger = DXA_LOGGER.getChild(f"resource.{self.__class__.__name__}")
 
     @property
     def is_available(self) -> bool:
@@ -100,28 +102,28 @@ class BaseResource(ABC):
     async def initialize(self) -> None:
         """Initialize resource."""
         self._is_available = True
-        self.logger.info(f"Initializing resource [{self.name}]")
+        self.info(f"Initializing resource [{self.name}]")
         # Resource-specific initialization logic
-        self.logger.debug(f"Resource [{self.name}] initialized successfully")
+        self.debug(f"Resource [{self.name}] initialized successfully")
 
     async def cleanup(self) -> None:
         """Cleanup resource."""
         self._is_available = False
-        self.logger.info(f"Cleaning up resource [{self.name}]")
+        self.info(f"Cleaning up resource [{self.name}]")
         # Resource-specific cleanup logic
-        self.logger.debug(f"Resource [{self.name}] cleanup completed")
+        self.debug(f"Resource [{self.name}] cleanup completed")
 
     # pylint: disable=unused-argument
     async def query(self, request: Dict[str, Any]) -> ResourceResponse:
         """Query resource."""
         if not self._is_available:
             raise ResourceUnavailableError(f"Resource {self.name} not initialized")
-        self.logger.debug(f"Resource [{self.name}] received query: {self._sanitize_log_data(request)}")
+        self.debug(f"Resource [{self.name}] received query: {self._sanitize_log_data(request)}")
         return ResourceResponse(success=True)
 
     def can_handle(self, request: Dict[str, Any]) -> bool:
         """Check if resource can handle request."""
-        self.logger.debug(f"Checking if [{self.name}] can handle request")
+        self.debug(f"Checking if [{self.name}] can handle request")
         return False
 
     async def __aenter__(self) -> 'BaseResource':

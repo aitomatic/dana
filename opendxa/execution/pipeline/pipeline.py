@@ -27,13 +27,13 @@ from ...execution import (
 )
 from ...common.resource import BaseResource, ResourceResponse, ResourceConfig, ResourceUnavailableError
 from .pipeline_context import PipelineContext
-from ...common import DXA_LOGGER
+from ...common.utils.logging.loggable import Loggable
 
 # A pipeline step is just an async function that processes data
 PipelineStep = Callable[[Dict[str, Any]], Awaitable[Dict[str, Any]]]
 
 @dataclass
-class PipelineNode(ExecutionNode):
+class PipelineNode(ExecutionNode, Loggable):
     """Pipeline node that executes a step."""
 
     step: Optional[PipelineStep] = None
@@ -42,6 +42,10 @@ class PipelineNode(ExecutionNode):
         "size": 1000,
         "mode": "streaming"
     })
+
+    def __post_init__(self):
+        """Initialize Loggable after dataclass initialization."""
+        Loggable.__init__(self)
 
     async def _identity(self, data: Any) -> Any:
         """Identity function."""
@@ -78,7 +82,7 @@ class PipelineNode(ExecutionNode):
         result = await self.step(data)
         return result
 
-class Pipeline(ExecutionGraph, BaseResource):
+class Pipeline(ExecutionGraph, BaseResource, Loggable):
     """A data processing pipeline that also behaves as a resource.
     
     This class inherits from both ExecutionGraph and BaseResource, allowing it to:
@@ -116,6 +120,9 @@ class Pipeline(ExecutionGraph, BaseResource):
         
         # Initialize BaseResource
         BaseResource.__init__(self, name=name, description=description, resource_config=resource_config)
+        
+        # Initialize Loggable
+        Loggable.__init__(self)
         
         # Pipeline-specific initialization
         self.steps = steps
@@ -180,10 +187,10 @@ class Pipeline(ExecutionGraph, BaseResource):
             start_time = perf_counter()
             result = await self._execute()
             duration = perf_counter() - start_time
-            DXA_LOGGER.info("Completed pipeline '%s' in %.2f seconds", self.name, duration)
+            self.info("Completed pipeline '%s' in %.2f seconds", self.name, duration)
             return result
         except Exception as e:
-            DXA_LOGGER.error("Pipeline '%s' failed: %s", self.name, str(e))
+            self.error("Pipeline '%s' failed: %s", self.name, str(e))
             raise
 
     async def _execute(self) -> Dict[str, Any]:
@@ -239,7 +246,7 @@ class Pipeline(ExecutionGraph, BaseResource):
         for node_id, node in self.nodes.items():
             if isinstance(node, PipelineNode) and node.buffer_config["enabled"]:
                 buffer_size = node.buffer_config["size"]
-                DXA_LOGGER.debug("Setting up buffer for %s with size %d", node_id, buffer_size)
+                self.debug("Setting up buffer for %s with size %d", node_id, buffer_size)
                 await context.setup_buffer(node_id, buffer_size)
                 
         self._buffers_initialized = True
@@ -247,7 +254,7 @@ class Pipeline(ExecutionGraph, BaseResource):
     async def cleanup_node_buffers(self, context: ExecutionContext) -> None:
         """Cleanup buffers for all nodes."""
         context = cast(PipelineContext, context)
-        DXA_LOGGER.debug("Cleaning up all buffers")
+        self.debug("Cleaning up all buffers")
         await context.cleanup_buffers()
 
     async def send_data_signal(
@@ -326,7 +333,7 @@ class Pipeline(ExecutionGraph, BaseResource):
         await super().initialize()
         
         # Pipeline-specific initialization
-        self.logger.info(f"Initializing pipeline resource [{self.name}]")
+        self.info(f"Initializing pipeline resource [{self.name}]")
         # Additional initialization if needed
         
     async def cleanup(self) -> None:
@@ -375,7 +382,7 @@ class Pipeline(ExecutionGraph, BaseResource):
                 content={"result": result, "input_data": input_data}
             )
         except Exception as e:
-            self.logger.error(f"Error executing pipeline: {str(e)}")
+            self.error(f"Error executing pipeline: {str(e)}")
             return ResourceResponse(
                 success=False,
                 error=str(e)
