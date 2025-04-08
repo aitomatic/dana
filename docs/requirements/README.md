@@ -1,7 +1,5 @@
 # Domain Expert Agent (OpenDXA) Requirements Documentation
-# Domain Expert Agent (OpenDXA) Requirements Documentation
 
-This directory contains requirements specifications for different OpenDXA deployment scenarios.
 This directory contains requirements specifications for different OpenDXA deployment scenarios.
 
 ## Scenarios
