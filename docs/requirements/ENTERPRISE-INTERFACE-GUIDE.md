@@ -138,31 +138,26 @@ sequenceDiagram
 ## Solution Architecture
 
 ```mermaid
-graph TB
-    subgraph "Input Layer"
-        S[Screenshots]
-        T[Templates]
-        E[Error Codes]
-        R[Requirements]
-    end
-    
-    subgraph "DXA Core"
-        D[DXA System]
-        D <--> SP[Screenshot Processor]
-        D <--> EA[Element Analyzer]
-        D <--> VA[Validation Analyzer]
-        D <--> GA[Guidance Analyzer]
-    end
-    
-    subgraph "Output Layer"
-        V[Validation]
-        R[Resolution]
-        G[Guidance]
-        D[Documentation]
-    end
-
-    S & T & E & R --> D
-    D --> V & R & G & D
+graph TD
+    A[User] -->|Takes Screenshot| B[Interface Analysis]
+    B -->|Analyzes| C[Data Validation]
+    B -->|Analyzes| D[Error Resolution]
+    C -->|Validates| E[Data Entry]
+    D -->|Resolves| F[Error Messages]
+    E -->|Updates| G[Database]
+    F -->|Updates| G
+    G -->|Provides| H[Historical Data]
+    H -->|Informs| B
+    I[DXA System] -->|Processes| B
+    I -->|Generates| J[Action Plan]
+    J -->|Executes| K[Actions]
+    K -->|Updates| G
+    L[Interface Templates] -->|Provides| M[Field Requirements]
+    M -->|Informs| C
+    N[Error Code Database] -->|Provides| O[Error Patterns]
+    O -->|Informs| D
+    DOC[Documentation] -->|Provides| Q[User Guides]
+    Q -->|Informs| A
 ```
 
 ### 1. Input Components
