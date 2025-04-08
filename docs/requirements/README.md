@@ -18,7 +18,7 @@ This directory contains requirements specifications for different OpenDXA deploy
   - Quality control
   - Resource allocation
 
-- [Visual Defect Analysis](VISUAL-DEFECT-ANALSYSIS.md)
+- [Visual Defect Analysis](VISUAL-DEFECT-ANALYSIS.md)
   - Product quality inspection
   - Defect classification
   - Root cause analysis
@@ -89,7 +89,7 @@ Each scenario document follows a consistent format:
 | UTILITY-FAULT-DIAGNOSIS.md | Complete | 2024-04-08 |
 | BATCH-PROCESS-AUTOMATION.md | Complete | 2024-04-08 |
 | FAB-LOG-ANALYSIS.md | Complete | 2024-04-08 |
-| VISUAL-DEFECT-ANALSYSIS.md | Complete | 2024-04-08 |
+| VISUAL-DEFECT-ANALYSIS.md | Complete | 2024-04-08 |
 | VISUAL-PART-MATCHING.md | Complete | 2024-04-08 |
 | ENTERPRISE-INTERFACE-GUIDE.md | Complete | 2024-04-08 |
 | FABLESS-FAE-SUPPORT.md | Complete | 2024-04-08 |
