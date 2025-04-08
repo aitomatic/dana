@@ -15,7 +15,7 @@
 
 ### Persona
 **Jennifer Martinez, Process Engineer**
-- 7+ years experience in specialty chemicals manufacturing
+- 7+ years of experience in specialty chemicals manufacturing
 - Responsible for optimizing batch processes and ensuring product quality
 - Must maintain consistent product quality while maximizing throughput
 - Works across multiple production lines and product types
