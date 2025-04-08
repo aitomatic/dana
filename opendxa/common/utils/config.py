@@ -38,11 +38,11 @@ Configuration Sources (in order of precedence):
 """
 
 import os
-from typing import Dict, Any, Optional, List, Tuple
+from typing import Dict, Any, Optional, List, Tuple, ClassVar
 from pathlib import Path
 from dotenv import load_dotenv, find_dotenv
 from ..exceptions import ConfigurationError
-from .logging.loggable import Loggable
+from .configurable import Configurable
 
 try:
     import yaml
@@ -53,23 +53,48 @@ except ImportError:  # pragma: no cover
 # Load .env file at module import. The usecwd=True is to forde the .env file to be in the current working directory.
 load_dotenv(find_dotenv(usecwd=True), override=True)
 
-class ConfigManager(Loggable):
+class ConfigManager(Configurable):
     """Configuration manager for DXA."""
+
+    # Class-level default configuration
+    default_config: ClassVar[Dict[str, Any]] = {
+        "api_key": None,
+        "model": "gpt-4",
+        "resources": [],
+        "reasoning": {
+            "strategy": "cot",
+            "max_steps": 10
+        },
+        "logging": {
+            "level": "INFO",
+            "dir": "logs",
+            "format": "text",
+            "max_bytes": 1000000,
+            "backup_count": 5,
+            "console_output": True
+        }
+    }
 
     def __init__(self):
         """Initialize configuration manager."""
         super().__init__()
         self._yaml_cache: List[Tuple[str, Any]] = []
 
-    def _validate_config(self, config: Dict[str, Any]) -> None:
-        """Validate configuration dictionary."""
-        # Validate field types only
-        resources = config.get("resources", [])
+    def _validate_config(self) -> None:
+        """Validate configuration.
+        
+        This method extends the base Configurable validation with agent-specific checks.
+        """
+        # Call base class validation first
+        super()._validate_config()
+        
+        # Validate field types
+        resources = self.config.get("resources", [])
         if not isinstance(resources, list):
             self.error("Invalid type for field 'resources': expected list")
             raise ConfigurationError("'resources' must be a list")
             
-        reasoning = config.get("reasoning", {})
+        reasoning = self.config.get("reasoning", {})
         if not isinstance(reasoning, dict):
             self.error("Invalid type for field 'reasoning': expected dict")
             raise ConfigurationError("'reasoning' must be a dictionary")
@@ -154,16 +179,11 @@ class ConfigManager(Loggable):
             FileNotFoundError: If config file does not exist
             ValueError: If config values are invalid
         """
-        # Load defaults
-        config = {
-            "api_key": os.getenv("OPENAI_API_KEY"),
-            "model": "gpt-4",
-            "resources": [],
-            "reasoning": {
-                "strategy": "cot",
-                "max_steps": 10
-            }
-        }
+        # Start with default config
+        config = self.default_config.copy()
+        
+        # Update with environment variables
+        config["api_key"] = os.getenv("OPENAI_API_KEY")
         
         # Load from file if provided
         if config_path:
@@ -179,22 +199,21 @@ class ConfigManager(Loggable):
             try:
                 file_config = self.load_yaml_config(path)
                 # Validate before updating
-                self._validate_config(file_config)
+                self.config = file_config
+                self._validate_config()
                 config.update(file_config)
             except ValueError as e:
                 raise ConfigurationError(str(e)) from e
                 
         # Apply and validate overrides
         try:
-            self._validate_config(overrides)
+            self.config = overrides
+            self._validate_config()
             config.update(overrides)
         except ValueError as e:
             raise ConfigurationError("Invalid override values") from e
             
-        # Final validation of complete config
-        self._validate_config(config)
-            
-        # Add logging config
+        # Update logging config from environment
         config["logging"] = {
             "level": str.split(os.getenv("LOG_LEVEL", "INFO"))[0],
             "dir": str.split(os.getenv("LOG_DIR", "logs"))[0],

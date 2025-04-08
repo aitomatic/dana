@@ -22,20 +22,42 @@ Example:
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Union
-
-from opendxa.common.utils.logging.loggable import Loggable
+from typing import Dict, Any, Optional, List, Union
+from ...common.utils.logging.loggable import Loggable
+from ...common.utils.configurable import Configurable
 
 @dataclass
-class ResourceConfig:
+class ResourceConfig(Configurable):
     """Configuration for a resource."""
     name: str
     description: Optional[str] = None
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'ResourceConfig':
-        """Create a ResourceConfig from a dictionary."""
-        return cls(**data)
+    def get_default_config(cls) -> Dict[str, Any]:
+        """Get default configuration."""
+        return {
+            "name": "",
+            "description": None
+        }
+
+    def _validate_config(self) -> None:
+        """Validate the configuration.
+        
+        This method extends the base Configurable validation with resource-specific checks.
+        """
+        # Call base class validation first
+        super()._validate_config()
+        
+        # Validate resource-specific fields
+        if "name" not in self.config:
+            raise ValueError("Resource configuration must have a 'name' field")
+            
+        if "description" not in self.config:
+            raise ValueError("Resource configuration must have a 'description' field")
+            
+        # Validate resource name
+        if not self.config["name"]:
+            raise ValueError("Resource name cannot be empty")
 
 class ResourceError(Exception):
     """Base class for resource errors."""
@@ -71,7 +93,7 @@ class BaseResource(Loggable):
         self,
         name: str,
         description: Optional[str] = None,
-        resource_config: Optional[Union[Dict[str, Any], ResourceConfig]] = None
+        resource_config: Optional[Dict[str, Any]] = None
     ):
         """Initialize resource.
 

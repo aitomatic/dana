@@ -1,13 +1,27 @@
 """Reasoning configuration management."""
 
-from io import StringIO
-from typing import Dict, Union, Optional
+from typing import Dict, Union, Optional, ClassVar, Any
 from pathlib import Path
-import yaml
-from ...common.utils.logging import Loggable
+from ...common.utils.configurable import Configurable
 
-class ReasoningConfig(Loggable):
+class ReasoningConfig(Configurable):
     """Manages reasoning configuration loading and access."""
+    
+    # Class-level default configuration
+    default_config: ClassVar[Dict[str, Any]] = {
+        "name": "default",
+        "description": "Default reasoning pattern",
+        "nodes": [
+            {"id": "ANALYZE", "description": "Analyze the task"},
+            {"id": "REASON", "description": "Reason about the solution"},
+            {"id": "CONCLUDE", "description": "Conclude with an answer"}
+        ],
+        "prompts": {
+            "ANALYZE": "Analyze the following task:\n\n{objective}",
+            "REASON": "Reason about the solution:\n\n{objective}",
+            "CONCLUDE": "Conclude with an answer:\n\n{objective}"
+        }
+    }
     
     def __init__(self, config_path: Optional[Union[str, Path]] = None):
         """Initialize reasoning configuration.
@@ -15,45 +29,30 @@ class ReasoningConfig(Loggable):
         Args:
             config_path: Optional path to config file. If None, uses default.
         """
-        super().__init__()  # Initialize Loggable
-        self.config = self._load_config(config_path)
-    
-    def _load_config(self, config_path: Optional[Union[str, Path]] = None) -> Dict:
-        """Load reasoning configuration from YAML file.
-        
-        Args:
-            config_path: Optional path to config file. If None, uses default.
-            
-        Returns:
-            Dictionary containing the configuration
-        """
         if config_path is None:
             config_path = Path(__file__).parent / "yaml" / "default.yaml"
+        super().__init__(config_path=config_path)
+    
+    def _validate_config(self) -> None:
+        """Validate configuration.
+        
+        This method extends the base Configurable validation with reasoning-specific checks.
+        """
+        # Call base class validation first
+        super()._validate_config()
+        
+        # Validate required fields
+        if not self.config.get("name"):
+            raise ValueError("Configuration must have a 'name' field")
             
-        try:
-            if isinstance(config_path, (str, Path)):
-                with open(config_path, encoding="utf-8") as f:
-                    data = yaml.safe_load(f)
-            else:
-                data = yaml.safe_load(StringIO(str(config_path)))
-        except Exception as e:
-            self.warning(f"Failed to load reasoning config: {e}. Using default configuration.")
-            data = {
-                "name": "default",
-                "description": "Default reasoning pattern",
-                "nodes": [
-                    {"id": "ANALYZE", "description": "Analyze the task"},
-                    {"id": "REASON", "description": "Reason about the solution"},
-                    {"id": "CONCLUDE", "description": "Conclude with an answer"}
-                ],
-                "prompts": {
-                    "ANALYZE": "Analyze the following task:\n\n{objective}",
-                    "REASON": "Reason about the solution:\n\n{objective}",
-                    "CONCLUDE": "Conclude with an answer:\n\n{objective}"
-                }
-            }
+        if not self.config.get("description"):
+            raise ValueError("Configuration must have a 'description' field")
             
-        return data
+        if not self.config.get("nodes"):
+            raise ValueError("Configuration must have a 'nodes' field")
+            
+        if not self.config.get("prompts"):
+            raise ValueError("Configuration must have a 'prompts' field")
     
     def get_prompt(self, prompt_ref: str) -> Optional[str]:
         """Get a prompt template by reference.

@@ -1,7 +1,7 @@
 """Common utilities and shared functionality for DXA."""
 
 from .exceptions import (
-    DXAError,
+    OpenDXAError,
     ConfigurationError,
     LLMError,
     NetworkError,
@@ -63,7 +63,7 @@ from .resource import (
 
 __all__ = [
     # Errors
-    'DXAError',
+    'OpenDXAError',
     'ConfigurationError',
     'LLMError',
     'NetworkError',
