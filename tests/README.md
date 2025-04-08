@@ -42,7 +42,7 @@ pytest tests/execution/planning/test_plan_factory.py
 pytest tests/execution/planning/test_plan_factory.py::TestPlanFactory::test_create_plan
 
 # Run with coverage
-pytest --cov=dxa
+pytest --cov=opendxa
 
 # Run with verbose output
 pytest -v
