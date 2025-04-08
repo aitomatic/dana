@@ -1,13 +1,12 @@
 """Loggable abstract base class for standardized logging across the codebase."""
 
-from abc import ABC
 import logging
 from typing import Optional, Any
 
 from .dxa_logger import DXA_LOGGER
 
 
-class Loggable(ABC):
+class Loggable():
     """Base class for objects that need logging capabilities.
     
     Classes inheriting from Loggable automatically get a configured logger

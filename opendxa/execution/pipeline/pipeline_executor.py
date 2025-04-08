@@ -12,7 +12,6 @@ from .pipeline import PipelineNode, Pipeline
 from .pipeline_context import PipelineContext
 from .pipeline_strategy import PipelineStrategy
 from .pipeline_factory import PipelineFactory
-from ...common import DXA_LOGGER
 
 class PipelineExecutor(Executor[PipelineStrategy, Pipeline, PipelineFactory]):
     """Executes pipeline steps in sequence."""
@@ -35,17 +34,28 @@ class PipelineExecutor(Executor[PipelineStrategy, Pipeline, PipelineFactory]):
         """
         super().__init__(strategy=strategy)
 
-    async def execute(self, pipeline: 'Pipeline', context: 'PipelineContext') -> List[ExecutionSignal]:
+    async def execute(
+        self,
+        graph: 'Pipeline',
+        context: 'PipelineContext',
+        prev_signals: Optional[List[ExecutionSignal]] = None,
+        upper_signals: Optional[List[ExecutionSignal]] = None,
+        lower_signals: Optional[List[ExecutionSignal]] = None
+    ) -> List[ExecutionSignal]:
         """Execute the entire pipeline.
         
         Args:
             pipeline: The pipeline to execute
             context: The execution context
+            prev_signals: Previous execution signals
+            upper_signals: Signals from upper layer
+            lower_signals: Signals from lower layer
             
         Returns:
             List of execution signals from the terminal node
         """
-        DXA_LOGGER.info("Executing pipeline '%s'", pipeline.name)
+        pipeline = cast(Pipeline, graph)
+        self.info("Executing pipeline '%s'", pipeline.name)
         start_time = perf_counter()
         
         # Get the start node and execute the pipeline
@@ -68,7 +78,7 @@ class PipelineExecutor(Executor[PipelineStrategy, Pipeline, PipelineFactory]):
             current_node_id = next_node.node_id
             
         duration = perf_counter() - start_time
-        DXA_LOGGER.info("Pipeline '%s' execution completed in %.4fs", pipeline.name, duration)
+        self.info("Pipeline '%s' execution completed in %.4fs", pipeline.name, duration)
         return signals
 
     async def execute_node(
@@ -85,7 +95,7 @@ class PipelineExecutor(Executor[PipelineStrategy, Pipeline, PipelineFactory]):
 
         node = cast(PipelineNode, node)
         context = cast(PipelineContext, context)
-        DXA_LOGGER.info("Executing pipeline node %s of type %s", node.node_id, node.node_type)
+        self.info("Executing pipeline node %s of type %s", node.node_id, node.node_type)
         try:
             data = {}  # Initialize with empty dict as default
 
@@ -111,14 +121,14 @@ class PipelineExecutor(Executor[PipelineStrategy, Pipeline, PipelineFactory]):
             duration = perf_counter() - start_time
             data_keys = list(result.keys())
             
-            if DXA_LOGGER.log_data:
-                DXA_LOGGER.debug(
+            if self.logger.log_data:
+                self.debug(
                     "Node %s completed in %.4fs with data keys: %s. Result data: %s",
                     node.node_id, duration, data_keys, result
                 )
             else:
                 result_sample = str(result)[:100]
-                DXA_LOGGER.debug(
+                self.debug(
                     "Node %s completed in %.4fs with data keys: %s. Result sample: %s",
                     node.node_id, duration, data_keys, result_sample
                 )
@@ -127,7 +137,7 @@ class PipelineExecutor(Executor[PipelineStrategy, Pipeline, PipelineFactory]):
             return [self.create_result_signal(node.node_id, result)]
 
         except Exception as e:  # pylint: disable=broad-except
-            DXA_LOGGER.error("Node %s failed: %s", node.node_id, str(e))
+            self.error("Node %s failed: %s", node.node_id, str(e))
             return [self._create_error_signal(node.node_id, str(e))]
 
     def create_graph_from_upper_node(

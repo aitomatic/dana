@@ -7,7 +7,6 @@ input/output operations while extending BaseResource functionality.
 
 from abc import abstractmethod
 from typing import Any, Dict, Optional
-import logging
 from ...common.resource.base_resource import BaseResource
 
 class BaseIO(BaseResource):
@@ -15,15 +14,11 @@ class BaseIO(BaseResource):
 
     This abstract class defines the interface for handling input/output operations
     in DXA while providing resource capabilities.
-
-    Attributes:
-        logger: A logging instance for the I/O implementation
     """
 
     def __init__(self, name: str, description: Optional[str] = None):
         """Initialize base I/O with logging and resource capabilities."""
         super().__init__(name, description)
-        self.logger = logging.getLogger(self.__class__.__name__)
 
     @abstractmethod
     async def send(self, message: Any) -> None:

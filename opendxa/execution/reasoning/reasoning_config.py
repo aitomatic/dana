@@ -1,14 +1,12 @@
 """Reasoning configuration management."""
 
-import logging
 from io import StringIO
 from typing import Dict, Union, Optional
 from pathlib import Path
 import yaml
+from ...common.utils.logging import Loggable
 
-logger = logging.getLogger("opendxa.execution.reasoning")
-
-class ReasoningConfig:
+class ReasoningConfig(Loggable):
     """Manages reasoning configuration loading and access."""
     
     def __init__(self, config_path: Optional[Union[str, Path]] = None):
@@ -17,6 +15,7 @@ class ReasoningConfig:
         Args:
             config_path: Optional path to config file. If None, uses default.
         """
+        super().__init__()  # Initialize Loggable
         self.config = self._load_config(config_path)
     
     def _load_config(self, config_path: Optional[Union[str, Path]] = None) -> Dict:
@@ -38,7 +37,7 @@ class ReasoningConfig:
             else:
                 data = yaml.safe_load(StringIO(str(config_path)))
         except Exception as e:
-            logger.warning(f"Failed to load reasoning config: {e}. Using default configuration.")
+            self.warning(f"Failed to load reasoning config: {e}. Using default configuration.")
             data = {
                 "name": "default",
                 "description": "Default reasoning pattern",
