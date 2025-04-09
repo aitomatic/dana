@@ -1,5 +1,17 @@
 # OpenDXA (Domain-Expert Agent) Framework
 
+> **Note:** This codebase is actively evolving. Some documentation may not reflect the latest changes.
+
+## Setup and Installation
+
+```bash
+# Initial setup (creates virtual environment and installs dependencies)
+source ./RUN_ME.sh
+
+# Subsequent activations after initial setup
+source ./VENV.sh
+```
+
 ## Build/Test/Lint Commands
 
 ```bash
@@ -23,7 +35,16 @@ black opendxa/
 
 # Type checking
 mypy opendxa/
+
+# Linting
+ruff check opendxa/
 ```
+
+## Dependencies
+
+- **Core LLM Libraries**: OpenAI, Anthropic, Azure, Google, Groq, HuggingFace, Ollama
+- **Additional Libraries**: matplotlib, pandas, pytest, PyYAML, seaborn, structlog, websockets
+- **MCP Support**: Model Context Protocol for standardized interface to external resources
 
 ## Code Style Guidelines
 
@@ -41,3 +62,4 @@ mypy opendxa/
 - 3-layer execution framework: Workflows → Plans → Reasoning
 - Modular resource design with agent capabilities and resources
 - Strong typing with factory pattern for component creation
+- Built-in support for Model Context Protocol (MCP) integration
