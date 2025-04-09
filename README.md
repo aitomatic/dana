@@ -279,6 +279,9 @@ opendxa/                # Project root
 │
 ├── tests/              # Test suite
 │
+├── contrib/            # Experimental and contributed code
+│   └── README.md       # Contrib directory guidelines
+│
 └── docs/               # Documentation
     └── requirements/   # Industry-specific requirements
 ```

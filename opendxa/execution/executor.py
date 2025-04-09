@@ -2,7 +2,7 @@
 
 from abc import ABC
 from enum import Enum
-from typing import Generic, List, Optional, Type, TypeVar, Any, cast, Dict, Union
+from typing import Generic, List, Optional, Type, TypeVar, cast, Union
 
 from ..common.utils.logging import Loggable
 from .execution_context import ExecutionContext
@@ -124,10 +124,7 @@ class Executor(ABC, Loggable, Generic[StrategyT, GraphT, FactoryT]):
     async def execute(
         self,
         graph: GraphT,
-        context: ExecutionContext,
-        prev_signals: Optional[List[ExecutionSignal]] = None,
-        upper_signals: Optional[List[ExecutionSignal]] = None,
-        lower_signals: Optional[List[ExecutionSignal]] = None
+        context: ExecutionContext
     ) -> List[ExecutionSignal]:
         """Execute a graph using common execution logic."""
         # Set current graph
@@ -155,10 +152,7 @@ class Executor(ABC, Loggable, Generic[StrategyT, GraphT, FactoryT]):
             # Execute current node
             node_signals = await self.execute_node(
                 cast(ExecutionNode, node),
-                context,
-                prev_signals=signals,
-                upper_signals=upper_signals,
-                lower_signals=lower_signals
+                context
             )
             signals.extend(node_signals)
         
@@ -167,10 +161,7 @@ class Executor(ABC, Loggable, Generic[StrategyT, GraphT, FactoryT]):
     async def execute_node(
         self,
         node: ExecutionNode,
-        context: ExecutionContext,
-        prev_signals: Optional[List[ExecutionSignal]] = None,
-        upper_signals: Optional[List[ExecutionSignal]] = None,
-        lower_signals: Optional[List[ExecutionSignal]] = None
+        context: ExecutionContext
     ) -> List[ExecutionSignal]:
         """Execute a node in the execution graph."""
         try:
@@ -194,8 +185,7 @@ class Executor(ABC, Loggable, Generic[StrategyT, GraphT, FactoryT]):
             
             # Phase 3: Build context
             execution_context = self.build_execution_context(
-                context, node, prev_signals=prev_signals,
-                upper_signals=upper_signals, lower_signals=lower_signals
+                context, node
             )
             
             # Phase 4: Execute node
@@ -263,10 +253,7 @@ class Executor(ABC, Loggable, Generic[StrategyT, GraphT, FactoryT]):
         self,
         context: ExecutionContext,
         node: ExecutionNode,
-        parent_node: Optional[ExecutionNode] = None,
-        prev_signals: Optional[List[ExecutionSignal]] = None,
-        upper_signals: Optional[List[ExecutionSignal]] = None,
-        lower_signals: Optional[List[ExecutionSignal]] = None
+        parent_node: Optional[ExecutionNode] = None
     ) -> ExecutionContext:
         """Build execution context for a node."""
         try:
@@ -278,14 +265,6 @@ class Executor(ABC, Loggable, Generic[StrategyT, GraphT, FactoryT]):
                 "metadata": node.metadata or {}
             }
             
-            # Add previous outputs if available
-            if prev_signals:
-                layer_context["previous_outputs"] = {
-                    signal.content.get("node"): signal.content.get("result")
-                    for signal in prev_signals
-                    if signal.type == ExecutionSignalType.DATA_RESULT
-                }
-                
             # Update node metadata with layer context
             node.metadata[f"{self.graph_class.__name__.lower()}_context"] = layer_context
             
@@ -429,74 +408,6 @@ class Executor(ABC, Loggable, Generic[StrategyT, GraphT, FactoryT]):
             if edge.target not in graph.nodes:
                 raise ExecutionError(f"Edge target {edge.target} not in graph")
                 
-    # Signal Processing
-    def _process_previous_signals(self, signals: List[ExecutionSignal]) -> Dict[str, Any]:
-        """Process previous signals to extract outputs."""
-        try:
-            # Validate signals
-            if not signals:
-                return {}
-                
-            # Process signals by type
-            result_signals = []
-            error_signals = []
-            control_signals = []
-            
-            for signal in signals:
-                if signal.type == ExecutionSignalType.DATA_RESULT:
-                    result_signals.append(signal)
-                elif signal.type == ExecutionSignalType.CONTROL_ERROR:
-                    error_signals.append(signal)
-                elif signal.type in [
-                    ExecutionSignalType.CONTROL_STATE_CHANGE,
-                    ExecutionSignalType.CONTROL_COMPLETE,
-                    ExecutionSignalType.CONTROL_SKIP,
-                    ExecutionSignalType.CONTROL_GRAPH_START,
-                    ExecutionSignalType.CONTROL_GRAPH_END
-                ]:
-                    control_signals.append(signal)
-                    
-            # Handle error signals first
-            if error_signals:
-                self._handle_error_signals(error_signals)
-                
-            # Process control signals
-            self._process_control_signals(control_signals)
-            
-            # Extract results
-            return {
-                str(signal.content.get("node")): signal.content.get("result")
-                for signal in result_signals
-            }
-            
-        except Exception as e:
-            raise ExecutionError("Failed to process signals") from e
-            
-    def _handle_error_signals(self, error_signals: List[ExecutionSignal]) -> None:
-        """Handle error signals from previous execution."""
-        for signal in error_signals:
-            node_id = signal.content.get("node")
-            error_msg = signal.content.get("error", "Unknown error")
-            self.logger.error(f"Error in node {node_id}: {error_msg}")
-            
-            # Update node status if graph is available
-            if self.graph and isinstance(node_id, str) and node_id in self.graph.nodes:
-                self.graph.update_node_status(node_id, ExecutionNodeStatus.FAILED)
-                
-    def _process_control_signals(self, control_signals: List[ExecutionSignal]) -> None:
-        """Process control signals from previous execution."""
-        for signal in control_signals:
-            if signal.type == ExecutionSignalType.CONTROL_STATE_CHANGE:
-                # Update graph metadata if available
-                if self.graph and "metadata" in signal.content:
-                    self.graph.metadata.update(signal.content["metadata"])
-                    
-            elif signal.type == ExecutionSignalType.CONTROL_COMPLETE:
-                # Handle step completion
-                if node_id := signal.content.get("node"):
-                    if self.graph and node_id in self.graph.nodes:
-                        self.graph.update_node_status(node_id, ExecutionNodeStatus.COMPLETED)
-                        
     # Error Handling
     def _handle_error(
         self,

@@ -1,53 +1,53 @@
 """Common exceptions for DXA."""
 
-class DXAError(Exception):
+class OpenDXAError(Exception):
     """Base class for DXA exceptions."""
     pass
 
-class ConfigurationError(DXAError):
+class ConfigurationError(OpenDXAError):
     """Configuration related errors."""
     pass
 
-class LLMError(DXAError):
+class LLMError(OpenDXAError):
     """LLM related errors."""
     pass 
 
-class ResourceError(DXAError):
+class ResourceError(OpenDXAError):
     """Resource related errors."""
     pass
 
-class NetworkError(DXAError):
+class NetworkError(OpenDXAError):
     """Network related errors."""
     pass
 
-class WebSocketError(DXAError):
+class WebSocketError(OpenDXAError):
     """WebSocket related errors."""
     pass
 
-class ReasoningError(DXAError):
+class ReasoningError(OpenDXAError):
     """Reasoning related errors."""
     pass
 
-class AgentError(DXAError):
+class AgentError(OpenDXAError):
     """Agent related errors."""
     pass
 
-class CommunicationError(DXAError):
+class CommunicationError(OpenDXAError):
     """Communication related errors."""
     pass
 
-class ValidationError(DXAError):
+class ValidationError(OpenDXAError):
     """Validation related errors."""
     pass
 
-class StateError(DXAError):
+class StateError(OpenDXAError):
     """State related errors."""
     pass
 
-class DXAMemoryError(DXAError):
+class DXAMemoryError(OpenDXAError):
     """Memory related errors."""
     pass
 
-class DXAContextError(DXAError):
+class DXAContextError(OpenDXAError):
     """Context related errors."""
     pass

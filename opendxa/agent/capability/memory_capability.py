@@ -24,7 +24,7 @@ from typing import Dict, Any, Optional, List
 from datetime import datetime
 from dataclasses import dataclass, field
 from .base_capability import BaseCapability
-from ...common.exceptions import DXAError, DXAMemoryError
+from ...common.exceptions import OpenDXAError, DXAMemoryError
 
 @dataclass
 class MemoryEntry:
@@ -138,7 +138,7 @@ class MemoryCapability(BaseCapability):
                 "stored_at": entry.timestamp
             }
             
-        except DXAError as e:
+        except OpenDXAError as e:
             return {
                 "success": False,
                 "error": str(e)
@@ -182,7 +182,7 @@ class MemoryCapability(BaseCapability):
                 ]
             }
             
-        except DXAError as e:
+        except OpenDXAError as e:
             return {
                 "success": False,
                 "error": str(e)
@@ -201,7 +201,7 @@ class MemoryCapability(BaseCapability):
                 "success": True,
                 "working_memory": self._working_memory
             }
-        except DXAError as e:
+        except OpenDXAError as e:
             return {
                 "success": False,
                 "error": str(e)
@@ -224,7 +224,7 @@ class MemoryCapability(BaseCapability):
                 "success": True,
                 "cleared_count": initial_count - len(self._memories)
             }
-        except DXAError as e:
+        except OpenDXAError as e:
             return {
                 "success": False,
                 "error": str(e)

@@ -52,19 +52,13 @@ class OptimalWorkflowExecutor(WorkflowExecutor):
     async def execute_workflow(
         self,
         workflow: ExecutionGraph,
-        context: ExecutionContext,
-        prev_signals: Optional[List[ExecutionSignal]] = None,
-        upper_signals: Optional[List[ExecutionSignal]] = None,
-        lower_signals: Optional[List[ExecutionSignal]] = None
+        context: ExecutionContext
     ) -> List[ExecutionSignal]:
         """Execute a workflow graph with optimized three-layer pattern.
         
         Args:
             workflow: The workflow graph to execute
             context: Execution context
-            prev_signals: Previous execution signals
-            upper_signals: Signals from upper layer
-            lower_signals: Signals from lower layer
             
         Returns:
             List of execution signals
@@ -81,10 +75,7 @@ class OptimalWorkflowExecutor(WorkflowExecutor):
         # Execute the graph
         return await self.execute(
             workflow,
-            context,
-            prev_signals,
-            upper_signals,
-            lower_signals
+            context
         )
     
     async def _execute_node_core(

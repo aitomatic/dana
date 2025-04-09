@@ -1,19 +1,32 @@
 """Configuration utilities for execution components."""
 
-import inspect
 from pathlib import Path
-from typing import Dict, Any, Optional, Type
+from typing import Dict, Any, Optional, Type, ClassVar, Union
 from ..common.utils import load_yaml_config, get_config_path
+from ..common.utils.configurable import Configurable
+from ..common.exceptions import ConfigurationError
 
 
-class ExecutionConfig:
+class ExecutionConfig(Configurable):
     """Centralized configuration management for all execution components."""
     
-    @classmethod
-    def get_base_path(cls) -> Path:
-        """Get base path for execution components."""
-        return Path(inspect.getfile(cls)).parent
+    # Class-level default configuration
+    default_config: ClassVar[Dict[str, Any]] = {
+        "base_path": None,
+        "config_dir": "yaml",
+        "default_config_file": "default",
+        "file_extension": "yaml"
+    }
     
+    def __init__(self, config_path: Optional[Union[str, Path]] = None, **overrides):
+        """Initialize execution config.
+        
+        Args:
+            config_path: Optional path to config file
+            **overrides: Configuration overrides
+        """
+        super().__init__(config_path=config_path, **overrides)
+        
     @classmethod
     def get_yaml_path(cls, for_class: Optional[Type[Any]] = None, path: Optional[str] = None) -> Path:
         """Get path to a configuration file."""
@@ -147,7 +160,6 @@ class ExecutionConfig:
             return custom_prompts.get(prompt_ref, "")
         
         # If all else fails, return empty string
-        # print(f"Warning: Prompt '{prompt_name}' not found in config '{config_path}'")
         return ""
     
     @classmethod
@@ -198,55 +210,12 @@ class ExecutionConfig:
             if raw_prompt_text:
                 # For display purposes only, show the objective
                 display_text = raw_prompt_text
-                if "{objective}" in display_text and objective:
-                    display_text = display_text.replace("{objective}", f"{{objective}} (Will be: \"{objective}\")")
-                
-                # For planning prompt, show what previous_output will be
-                if "{previous_output}" in display_text:
-                    display_text = display_text.replace("{previous_output}",
-                                                        "{previous_output} (Will be output from previous step)")
-                    
-                # For backward compatibility
-                if "{problem_analysis}" in display_text:
-                    display_text = display_text.replace("{problem_analysis}",
-                                                        "{problem_analysis} (Will be output from ANALYZE step)")
-                    
-                if "{reasoning_result}" in display_text:
-                    display_text = display_text.replace("{reasoning_result}",
-                                                        "{reasoning_result} (Will be output from execution steps)")
-                        
+                if objective:
+                    display_text = f"Objective: {objective}\n\n{display_text}"
                 return display_text
         
-        # If we get here, we didn't find a matching prompt in the config
-        # Try custom prompts as a last resort
-        if custom_prompts and prompt_ref in custom_prompts:
-            raw_prompt_text = custom_prompts.get(prompt_ref, "")
-            
-            if raw_prompt_text:
-                # For display purposes only, show the objective
-                display_text = raw_prompt_text
-                if "{objective}" in display_text and objective:
-                    display_text = display_text.replace("{objective}", f"{{objective}} (Will be: \"{objective}\")")
-                
-                # For planning prompt, show what previous_output will be
-                if "{previous_output}" in display_text:
-                    display_text = display_text.replace("{previous_output}",
-                                                        "{previous_output} (Will be output from previous step)")
-                    
-                # For backward compatibility
-                if "{problem_analysis}" in display_text:
-                    display_text = display_text.replace("{problem_analysis}",
-                                                        "{problem_analysis} (Will be output from ANALYZE step)")
-                    
-                if "{reasoning_result}" in display_text:
-                    display_text = display_text.replace("{reasoning_result}",
-                                                        "{reasoning_result} (Will be output from execution steps)")
-                        
-                return display_text
-        
-        # If all else fails, return empty string
         return ""
-
+    
     @classmethod
     def format_node_description(cls, description: str, prompt_ref: str, 
                                 custom_prompts: Optional[Dict[str, str]] = None) -> str:
@@ -266,3 +235,35 @@ class ExecutionConfig:
         
         # Otherwise, return the description as is
         return description
+
+    def _validate_config(self) -> None:
+        """Validate configuration.
+        
+        This method extends the base Configurable validation with execution-specific checks.
+        """
+        # Call base class validation first
+        super()._validate_config()
+        
+        # Validate execution-specific fields
+        if not self.config.get("config_dir"):
+            raise ValueError("config_dir must be set")
+            
+        if not self.config.get("default_config_file"):
+            raise ValueError("default_config_file must be set")
+            
+        if not self.config.get("file_extension"):
+            raise ValueError("file_extension must be set")
+            
+        if self.config["file_extension"] not in ["yaml", "yml"]:
+            raise ValueError("file_extension must be 'yaml' or 'yml'")
+        
+        # Validate field types
+        resources = self.config.get("resources", [])
+        if not isinstance(resources, list):
+            self.error("Invalid type for field 'resources': expected list")
+            raise ConfigurationError("'resources' must be a list")
+            
+        reasoning = self.config.get("reasoning", {})
+        if not isinstance(reasoning, dict):
+            self.error("Invalid type for field 'reasoning': expected dict")
+            raise ConfigurationError("'reasoning' must be a dictionary")

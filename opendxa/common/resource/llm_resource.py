@@ -2,7 +2,7 @@
 
 import asyncio
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union, Callable
 
 import aisuite as ai
 from openai import APIConnectionError, RateLimitError
@@ -31,17 +31,24 @@ class LLMResource(BaseResource):
         """Initialize LLM resource.
 
         Args:
-            name: Resource name
+            name: Resource name.
             config: Configuration dictionary containing:
-                - model: Model identifier in format "provider:model" (e.g. "openai:gpt-4")
-                - providers: Dictionary of provider configurations
-                - temperature: Float between 0 and 1
-                - api_key: Optional API key (will use environment variables if not provided)
-                - additional provider-specific parameters
+                - model: Model identifier in format "provider:model" (e.g. "openai:gpt-4").
+                - providers: Dictionary of provider configurations.
+                - temperature: Float between 0 and 1, controlling the randomness of the LLM's output.
+                - api_key: Optional API key (will use environment variables if not provided).
+                - mock_llm_call: Optional flag or function for mocking LLM responses.
+                  If 'mock_llm_call' is a callable, it will be called with the request
+                  and its return value will be used as the response.
+                  If 'mock_llm_call' is set but not callable, the '_mock_llm_query' method
+                  will be used, which returns a basic response echoing the prompt.
+                - max_retries: Maximum number of retry attempts for LLM queries.
+                - retry_delay: Delay in seconds between retry attempts.
+                - additional provider-specific parameters.
         """
 
         if name is None:
-            name = "default_llm"
+            name = "default_llm_resource"
 
         super().__init__(name)
         self.config = config or {}
@@ -50,6 +57,7 @@ class LLMResource(BaseResource):
         self._client: Optional[ai.Client] = None
         self.max_retries = int(self.config.get("max_retries", 3))
         self.retry_delay = float(self.config.get("retry_delay", 1.0))
+        self._mock_llm_call = self.config.get("mock_llm_call", None)
         # self._async_client = AsyncClient()
         
         # Add a file handler to the existing logger if needed
@@ -74,18 +82,25 @@ class LLMResource(BaseResource):
             self.logger.info("LLM client initialized successfully for model: %s", self.model)
 
     async def query(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """Send query to LLM.
+        """Send query to LLM or use mock if set.
 
         Args:
             request: Dictionary with:
                 - prompt: The user message
                 - system_prompt: Optional system prompt
                 - tools: Optional list of resources to use as tools
+                - max_retries: Optional integer to override the default max_retries value.
                 - additional parameters
 
         Returns:
-            Dictionary with "content", "model", and  "usage", and "requested_tools" keys.
+            Dictionary with "content", "model", "usage", and "requested_tools" keys.
         """
+        # Check for mock flag or function
+        if callable(self._mock_llm_call):
+            return await self._mock_llm_call(request)
+        elif self._mock_llm_call:
+            return await self._mock_llm_query(request)
+
         if not self._client:
             await self.initialize()
 
@@ -119,7 +134,10 @@ class LLMResource(BaseResource):
         # Filter out None values
         request_params = {k: v for k, v in request_params.items() if v is not None}
 
-        for attempt in range(self.max_retries + 1):
+        # Use max_retries from request if provided, otherwise use default
+        max_retries = request.get('max_retries', self.max_retries)
+
+        for attempt in range(max_retries + 1):
             try:
                 assert self._client is not None
                 # Let aisuite handle the provider-specific response processing
@@ -173,10 +191,10 @@ class LLMResource(BaseResource):
                 }
 
             except (APIConnectionError, RateLimitError) as e:
-                if attempt >= self.max_retries:
+                if attempt >= max_retries:
                     raise e
                 delay = self.retry_delay * (2**attempt)
-                self.logger.warning("Retrying in %.1fs (attempt %d/%d)", delay, attempt + 1, self.max_retries)
+                self.logger.warning("Retrying in %.1fs (attempt %d/%d)", delay, attempt + 1, max_retries)
                 await asyncio.sleep(delay)
             except ValueError as e:
                 # Handle configuration/model format errors
@@ -187,6 +205,26 @@ class LLMResource(BaseResource):
                 raise LLMError(f"Unexpected response structure: {str(e)}") from e
 
         raise LLMError("Max retries exceeded")
+
+    def with_mock_llm_call(self, mock_llm_call: Union[bool, Callable[[Dict[str, Any]], Dict[str, Any]]]) -> 'LLMResource':
+        """Set the mock LLM call function."""
+        if isinstance(mock_llm_call, Callable) or isinstance(mock_llm_call, bool):
+            self._mock_llm_call = mock_llm_call
+        else:
+            raise ValueError("mock_llm_call must be a Callable or a boolean")
+
+        return self
+
+    async def _mock_llm_query(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Return a mock response echoing the prompt."""
+        prompt = request.get('prompt', '')
+        return {
+            "content": f"Echo: {prompt}",
+            "model": self.model,
+            "usage": None,
+            "reasoning": None,
+            "requested_tools": None,
+        }
 
     async def cleanup(self) -> None:
         """Cleanup resources."""
