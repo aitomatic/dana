@@ -10,8 +10,8 @@ configs
 configs/*
 logs
 logs/*
-*dxa.egg-info
-*dxa.egg-info/*
+*.egg-info
+*.egg-info/*
 .aider*
 flake8_issues.txt
 .env.swp
