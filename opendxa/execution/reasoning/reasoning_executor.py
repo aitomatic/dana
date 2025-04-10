@@ -175,28 +175,37 @@ class ReasoningExecutor(BaseExecutor[ReasoningStrategy, Reasoning, ReasoningFact
         ]
 
         # Add workflow nodes sequence
-        for i, node in enumerate(workflow_nodes.values(), 1):
-            is_current = node.node_id == workflow_node.node_id if workflow_node else False
-            current_marker = " [CURRENT]" if is_current else ""
+        for i, workflow_node_iter in enumerate(workflow_nodes.values(), 1):
+            is_current_workflow = (
+                workflow_node_iter.node_id == workflow_node.node_id 
+                if workflow_node_iter and workflow_node 
+                else False
+            )
+            current_marker = " [CURRENT]" if is_current_workflow else ""
             prompt_parts.extend([
-                f"{i}. {node.node_type}: {node.description}{current_marker}",
-                f"   - Objective: {node.objective.current if node.objective else 'None'}",
-                f"   - Status: {node.status}",
+                f"{i}. {workflow_node_iter.node_type}: {workflow_node_iter.description}{current_marker}",
+                f"   - Objective: {workflow_node_iter.objective.current if workflow_node_iter.objective else 'None'}",
+                f"   - Status: {workflow_node_iter.status}",
             ])
 
             # If this is the current workflow node, show its plan sequence
-            if is_current and plan_nodes:
+            if is_current_workflow and plan_nodes:
                 prompt_parts.extend([
                     "",
                     "   Plan Sequence:"
                 ])
-                for j, plan_node in enumerate(plan_nodes.values(), 1):
-                    is_current_plan = plan_node.node_id == plan_node.node_id if plan_node else False
+                for j, plan_node_iter in enumerate(plan_nodes.values(), 1):
+                    current_plan_node = context.get_current_plan_node()
+                    is_current_plan = (
+                        plan_node_iter.node_id == current_plan_node.node_id 
+                        if plan_node_iter and current_plan_node 
+                        else False
+                    )
                     current_plan_marker = " [CURRENT]" if is_current_plan else ""
                     prompt_parts.extend([
-                        f"   {j}. {plan_node.node_type}: {plan_node.description}{current_plan_marker}",
-                        f"      - Objective: {plan_node.objective.current if plan_node.objective else 'None'}",
-                        f"      - Status: {plan_node.status}",
+                        f"   {j}. {plan_node_iter.node_type}: {plan_node_iter.description}{current_plan_marker}",
+                        f"      - Objective: {plan_node_iter.objective.current if plan_node_iter.objective else 'None'}",
+                        f"      - Status: {plan_node_iter.status}",
                     ])
                 prompt_parts.append("")
 
