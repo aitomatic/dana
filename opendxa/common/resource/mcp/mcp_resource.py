@@ -1,8 +1,9 @@
 """MCP resource implementation using either stdio or HTTP transport."""
 
 import uuid
-from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Sequence, Union, cast, Literal
+from typing import Any, Dict, List, Optional, Union, cast, Literal, TypeVar, Callable
+import functools
+import asyncio
 
 from mcp import ClientSession, StdioServerParameters, Tool
 from mcp.client.stdio import get_default_environment, stdio_client
@@ -10,74 +11,40 @@ from mcp.client.sse import sse_client
 
 from ....common.utils.logging import Loggable
 from ..base_resource import BaseResource, ResourceResponse
+from .mcp_config import McpConfig, McpConfigError, StdioTransportParams, HttpTransportParams
 
 
-@dataclass
-class StdioTransportParams:
-    """Parameters for STDIO transport.
+T = TypeVar('T')
+
+def with_retries(retries: int = 3, delay: float = 1.0):
+    """Decorator for adding retry logic to async functions.
     
     Args:
-        server_script: Path to the Python script that will be executed as the MCP server.
-            This script should implement the MCP server protocol over standard input/output.
-        command: Command to execute the server script (default: "python3").
-            This is the interpreter or executable that will run the server_script.
-        args: Optional list of additional arguments to pass to the command.
-            If not provided, only the server_script will be passed as an argument.
-        env: Optional dictionary of environment variables to set for the server process.
-            These will be merged with the default environment variables.
-        stdio_config: Optional additional configuration for STDIO transport.
-            This can include settings specific to the STDIO communication protocol.
-            Common parameters include:
-            - buffer_size: Size of the read/write buffers (default: 8192)
-            - encoding: Text encoding for communication (default: "utf-8")
-            - line_buffering: Whether to use line buffering (default: True)
-            - timeout: Timeout for read/write operations in seconds
-            
-            The STDIO transport is ideal for local MCP servers that run in the same process
-            or on the same machine. It uses standard input/output streams for communication,
-            making it simple to set up and debug.
+        retries: Number of retry attempts
+        delay: Delay between retries in seconds
+        
+    Returns:
+        Decorated function with retry logic
     """
-    server_script: str
-    command: str = "python3"
-    args: Optional[Sequence[str]] = None
-    env: Optional[Dict[str, str]] = None
-    stdio_config: Optional[Dict[str, Any]] = None
-
-
-@dataclass
-class HttpTransportParams:
-    """Parameters for HTTP transport.
-    
-    Args:
-        url: URL for the HTTP endpoint
-        headers: Optional dictionary of HTTP headers
-        timeout: Connection timeout in seconds for initial HTTP connection establishment.
-            This is a relatively short timeout (default: 5.0s) used for the basic HTTP
-            request/response cycle.
-        sse_read_timeout: Server-Sent Events (SSE) read timeout in seconds.
-            This is a longer timeout (default: 300s/5min) used for maintaining the SSE
-            connection and receiving data over time. SSE connections are long-lived
-            and may receive data for extended periods.
-        sse_config: Optional additional configuration for SSE transport.
-            Common parameters include:
-            - retry_interval: Time to wait between reconnection attempts (default: 1.0s)
-            - max_retries: Maximum number of reconnection attempts (default: 3)
-            - backoff_factor: Multiplier for retry interval after each attempt
-            - event_types: List of SSE event types to listen for
-            - keep_alive: Whether to send keep-alive messages (default: True)
-            - keep_alive_interval: Interval for keep-alive messages in seconds
+    def decorator(func: Callable[..., T]) -> Callable[..., T]:
+        @functools.wraps(func)
+        async def wrapper(*args, **kwargs) -> T:
+            attempt = 0
+            last_error = None
             
-            The HTTP transport with SSE is ideal for remote MCP servers that need to
-            maintain long-lived connections for real-time updates. SSE allows the server
-            to push data to the client asynchronously, making it suitable for streaming
-            responses and long-running operations.
-    """
-    url: str
-    headers: Optional[Dict[str, Any]] = None
-    timeout: float = 5.0
-    sse_read_timeout: float = 60 * 5
-    sse_config: Optional[Dict[str, Any]] = None
+            while attempt < retries:
+                try:
+                    return await func(*args, **kwargs)
+                except Exception as e:
+                    attempt += 1
+                    last_error = e
+                    if attempt < retries:
+                        await asyncio.sleep(delay)
+                    
+            raise last_error
 
+        return wrapper
+    return decorator
 
 class McpResource(BaseResource, Loggable):
     """MCP resource that can use either stdio or HTTP transport.
@@ -98,6 +65,58 @@ class McpResource(BaseResource, Loggable):
     The resource handles all MCP protocol messages and lifecycle events, making it
     easy to integrate MCP servers into your application.
     """
+
+    @classmethod
+    def from_config(cls, name: str, config: Union[str, Dict[str, Any]]) -> "McpResource":
+        """Create McpResource instance from configuration.
+        
+        This is a convenience method to create an MCP resource from a JSON configuration file
+        or a configuration dictionary.
+        
+        Args:
+            name: Name to give the resource
+            config: Either:
+                - Path to a configuration file containing mcpServers
+                - Configuration dictionary for a single server (will be wrapped in mcpServers)
+            
+        Returns:
+            Configured McpResource instance
+            
+        Example:
+            ```python
+            # From file with multiple servers
+            resource = McpResource.from_config("weather", "config.json")
+            
+            # From dictionary - STDIO transport
+            config = {
+                "command": "npx",
+                "args": ["-y", "@modelcontextprotocol/server-filesystem", "/Users/ctn/"]
+            }
+            resource = McpResource.from_config("filesystem", config)
+            
+            # From dictionary - HTTP transport
+            config = {
+                "url": "https://api.weather.com/mcp",
+                "headers": {"Authorization": "Bearer token"}
+            }
+            resource = McpResource.from_config("weather", config)
+            ```
+        """
+        try:
+            if isinstance(config, str):
+                # If it's a file path, use it directly
+                config_manager = McpConfig(config)
+            else:
+                # If it's a dict, wrap it in mcpServers structure
+                config_manager = McpConfig({
+                    "mcpServers": {
+                        name: config
+                    }
+                })
+            transport_params = config_manager.get_transport_params(name)
+            return cls(name=name, transport_params=transport_params)
+        except McpConfigError as e:
+            raise ValueError(f"Failed to create MCP resource from config: {e}") from e
 
     def __init__(
         self,
@@ -180,6 +199,7 @@ class McpResource(BaseResource, Loggable):
         """
         return "stdio" if isinstance(self.transport_params, StdioTransportParams) else "http"
 
+    @with_retries(retries=3, delay=1.0)
     async def query(self, request: Dict[str, Any]) -> ResourceResponse:
         """Execute a tool on the MCP server.
         
@@ -293,8 +313,9 @@ class McpResource(BaseResource, Loggable):
             self.error("Tool execution failed", exc_info=True)
             return ResourceResponse(success=False, error=str(e))
 
+    @with_retries(retries=3, delay=1.0)
     async def _execute_query(self, session: ClientSession, request: Dict[str, Any]) -> ResourceResponse:
-        """Execute query through MCP session.
+        """Execute query through MCP session with automatic retries.
         
         Args:
             session: Active MCP client session
@@ -307,8 +328,32 @@ class McpResource(BaseResource, Loggable):
         arguments = request.get("arguments", {})
         # Prepend arguments with 'self' for instance methods
         arguments = {"self": None, **arguments}
-        result = await session.call_tool(request["tool"], arguments)
-        return ResourceResponse(success=True, content=result)
+        
+        try:
+            result = await session.call_tool(request["tool"], arguments)
+            
+            # Handle progress reporting if available
+            if isinstance(result, dict) and "progress" in result:
+                progress = result["progress"]
+                total = result.get("total", 100)
+                percentage = (progress / total) * 100
+                self.info(f"Progress: {progress}/{total} ({percentage:.1f}%)")
+            
+            # Handle streaming responses
+            if isinstance(result, (list, tuple)) and len(result) > 0:
+                if isinstance(result[0], tuple) and result[0][0] == "stream":
+                    # Process streaming response
+                    stream_data = []
+                    for item in result:
+                        if isinstance(item, tuple) and item[0] == "stream":
+                            stream_data.append(item[1])
+                    result = "".join(stream_data)
+            
+            return ResourceResponse(success=True, content=result)
+            
+        except Exception as e:
+            self.error(f"Tool execution failed: {str(e)}", exc_info=True)
+            return ResourceResponse(success=False, error=str(e))
 
     def can_handle(self, request: Dict[str, Any]) -> bool:
         """Check if request can be handled by this resource.
@@ -335,17 +380,6 @@ class McpResource(BaseResource, Loggable):
         
         Returns:
             List of available tools with their schemas
-            
-        Example:
-            ```python
-            tools = await mcp_resource.list_tools()
-            for tool in tools:
-                print(f"Tool: {tool.name}")
-                print(f"Description: {tool.description}")
-                print("Parameters:")
-                for param_name, param_details in tool.inputSchema["properties"].items():
-                    print(f"  - {param_name}: {param_details.get('type')}")
-            ```
         """
         try:
             if self.transport_type == "stdio":
@@ -354,14 +388,35 @@ class McpResource(BaseResource, Loggable):
                     async with ClientSession(read, write) as session:
                         await session.initialize()
                         result = await session.list_tools()
-                        return result.tools
+                        
+                        # Process tools response
+                        tools = []
+                        if hasattr(result, "tools"):
+                            # Direct tools attribute
+                            tools.extend(result.tools)
+                        elif isinstance(result, (list, tuple)):
+                            # Tuple format response
+                            for item in result:
+                                if isinstance(item, tuple) and item[0] == "tools":
+                                    for tool in item[1]:
+                                        if isinstance(tool, Tool):
+                                            tools.append(tool)
+                                        else:
+                                            # Create Tool instance if needed
+                                            tools.append(Tool(
+                                                name=tool.get("name", ""),
+                                                description=tool.get("description", ""),
+                                                inputSchema=tool.get("inputSchema", {})
+                                            ))
+                        
+                        return tools
             else:  # http
                 assert isinstance(self.server_params, dict)
                 async with sse_client(**self.server_params) as streams:
                     async with ClientSession(*streams) as session:
                         await session.initialize()
                         result = await session.list_tools()
-                        return result.tools
+                        return result.tools if hasattr(result, "tools") else []
         except Exception as e:
             self.error(f"Tool listing failed: {e}", exc_info=True)
             return []
