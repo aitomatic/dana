@@ -20,7 +20,7 @@ from opendxa.execution import (
 from opendxa.common import NodeType
 
 @pytest.fixture
-def mock_llm_resources() -> Dict[str, LLMResource]:
+def llm_resource_fixtures() -> Dict[str, LLMResource]:
     """Create mock LLMs for each layer."""
     return {
         "workflow": LLMResource(name="workflow_llm").with_mock_llm_call(True),
@@ -29,18 +29,18 @@ def mock_llm_resources() -> Dict[str, LLMResource]:
     }
 
 @pytest.fixture
-def test_agent(mock_llm_resources: Dict[str, LLMResource]) -> Agent:
+def agent_fixture(llm_resource_fixtures: Dict[str, LLMResource]) -> Agent:
     """Create an agent configured with mock LLMs for each layer."""
     return Agent(name="test_agent")\
-        .with_workflow_llm(mock_llm_resources["workflow"])\
-        .with_planning_llm(mock_llm_resources["planning"])\
-        .with_reasoning_llm(mock_llm_resources["reasoning"])\
+        .with_workflow_llm(llm_resource_fixtures["workflow"])\
+        .with_planning_llm(llm_resource_fixtures["planning"])\
+        .with_reasoning_llm(llm_resource_fixtures["reasoning"])\
         .with_workflow(WorkflowStrategy.DEFAULT)\
         .with_planning(PlanStrategy.DEFAULT)\
         .with_reasoning(ReasoningStrategy.DEFAULT)
 
 @pytest.fixture
-def test_workflow() -> Workflow:
+def workflow_fixture() -> Workflow:
     """Create a simple workflow for testing."""
     workflow = Workflow(
         name="test_workflow",
@@ -85,9 +85,9 @@ def test_workflow() -> Workflow:
 
 @pytest.mark.asyncio
 async def test_end_to_end_execution(
-    test_agent: Agent,
-    test_workflow: Workflow,
-    mock_llm_resources: Dict[str, LLMResource]
+    agent_fixture: Agent,
+    workflow_fixture: Workflow,
+    llm_resource_fixtures: Dict[str, LLMResource]
 ):
     """Test end-to-end execution flow through all layers.
     
@@ -117,7 +117,7 @@ async def test_end_to_end_execution(
     }
     """
     # Run the workflow
-    result = await test_agent.async_run(test_workflow)
+    result = await agent_fixture.async_run(workflow_fixture)
     
     # Verify basic result structure
     assert result is not None
@@ -140,4 +140,10 @@ async def test_end_to_end_execution(
     
     # Verify requested_tools field
     assert result["requested_tools"] is None or isinstance(result["requested_tools"], list)
+
+    # Verify that llms are set up for mock calls
+    # pylint: disable=protected-access
+    assert llm_resource_fixtures["workflow"]._mock_llm_call is True
+    assert llm_resource_fixtures["planning"]._mock_llm_call is True
+    assert llm_resource_fixtures["reasoning"]._mock_llm_call is True
     
