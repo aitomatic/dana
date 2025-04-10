@@ -97,6 +97,61 @@ classDiagram
     }
 ```
 
+### Layer Architecture
+
+The DXA Workflow System implements a three-layer architecture (WPR - Workflow-Planning-Reasoning) where each layer has a specific responsibility and level of abstraction:
+
+```mermaid
+graph TB
+    subgraph "WPR Architecture"
+        W[Workflow Layer<br>WHY] --> P[Planning Layer<br>WHAT]
+        P --> R[Reasoning Layer<br>HOW]
+    end
+    
+    subgraph "External Systems"
+        A[Agent System] --> W
+        RS[Resources] --> R
+        ST[State] --> W
+    end
+```
+
+#### Layer Responsibilities
+
+1. **Workflow Layer (WHY)**
+   - Highest level of abstraction
+   - Focuses on business objectives and process flow
+   - Translates business objectives into structured workflows
+   - Manages process flow and dependencies
+   - Handles high-level state transitions
+   - Coordinates with external systems
+
+2. **Planning Layer (WHAT)**
+   - Translates workflows into concrete, executable steps
+   - Breaks down workflows into actionable steps
+   - Manages step dependencies
+   - Handles data flow between steps
+   - Optimizes execution order
+
+3. **Reasoning Layer (HOW)**
+   - Executes the actual work using thinking patterns
+   - Implements specific reasoning strategies
+   - Processes execution signals
+   - Manages execution context
+   - Handles resource allocation
+
+#### Layer Interaction
+
+1. **Signal Flow**
+   - Workflow → Planning: Objectives and constraints
+   - Planning → Reasoning: Step specifications
+   - Reasoning → Planning → Workflow: Results and state updates
+
+2. **State Management**
+   - Each layer maintains its own state
+   - State changes propagate through signals
+   - Context is shared between layers as needed
+   - Error handling occurs at the appropriate layer
+
 ### Integration Points
 
 ## Common Usage Patterns

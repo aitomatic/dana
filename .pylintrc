@@ -11,4 +11,5 @@
 # W1203: Use lazy % formatting in logging functions
 # W0718: Catching too general exception Exception
 # C0415: Import outside toplevel
-disable=C0303,C0304,W0107,C0301,C0413,C0103,R0903,E0401,R0917,W1203,W0718,C0415
+# W0621: Redefinition of name from outer scope
+disable=C0303,C0304,W0107,C0301,C0413,C0103,R0903,E0401,R0917,W1203,W0718,C0415,W0621

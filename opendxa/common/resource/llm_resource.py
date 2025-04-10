@@ -1,19 +1,41 @@
 """LLM resource implementation."""
 
-import asyncio
 import os
-from typing import Any, Dict, Optional, Union, Callable
+from typing import Any, Dict, Optional, Union, Callable, List
+import json
 
 import aisuite as ai
-from openai import APIConnectionError, RateLimitError
 from ...common.exceptions import LLMError
 from .base_resource import BaseResource
+from .mcp import McpResource
+from .base_resource import QueryStrategy
 
 class LLMResource(BaseResource):
     """LLM resource implementation using AISuite."""
 
     _DEFAULT_MODEL = "deepseek:deepseek-chat"
 
+    # ===== Core Resource Methods =====
+    async def initialize(self) -> None:
+        """Initialize the AISuite client."""
+        if not self._client:
+            # Handle backward compatibility for top-level api_key
+            if "api_key" in self.config and "openai" not in self.provider_configs:
+                self.provider_configs["openai"] = {"api_key": self.config["api_key"]}
+
+            self._client = ai.Client(provider_configs=self.provider_configs)
+            self.info("LLM client initialized successfully for model: %s", self.model)
+
+    async def cleanup(self) -> None:
+        """Cleanup resources."""
+        if self._client:
+            self._client = None
+
+    def can_handle(self, request: Dict[str, Any]) -> bool:
+        """Check if request contains prompt."""
+        return "prompt" in request
+
+    # ===== Initialization and Configuration =====
     def _get_default_model(self) -> str:
         """Get the default model by checking the environment variable."""
         if "OPENDXA_DEFAULT_MODEL" in os.environ:
@@ -46,7 +68,6 @@ class LLMResource(BaseResource):
                 - retry_delay: Delay in seconds between retry attempts.
                 - additional provider-specific parameters.
         """
-
         if name is None:
             name = "default_llm_resource"
 
@@ -58,47 +79,128 @@ class LLMResource(BaseResource):
         self.max_retries = int(self.config.get("max_retries", 3))
         self.retry_delay = float(self.config.get("retry_delay", 1.0))
         self._mock_llm_call = self.config.get("mock_llm_call", None)
-        # self._async_client = AsyncClient()
-        
-        # Add a file handler to the existing logger if needed
-        import logging
-        if not any(isinstance(h, logging.FileHandler) for h in self.logger.logger.handlers):
-            # Create logs directory if it doesn't exist
-            os.makedirs("logs", exist_ok=True)
-            
-            # Add file handler with the same format as before
-            file_handler = logging.FileHandler("logs/llm_conversation.log")
-            file_handler.setFormatter(logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s"))
-            self.logger.logger.addHandler(file_handler)
 
-    async def initialize(self) -> None:
-        """Initialize the AISuite client."""
-        if not self._client:
-            # Handle backward compatibility for top-level api_key
-            if "api_key" in self.config and "openai" not in self.provider_configs:
-                self.provider_configs["openai"] = {"api_key": self.config["api_key"]}
-
-            self._client = ai.Client(provider_configs=self.provider_configs)
-            self.logger.info("LLM client initialized successfully for model: %s", self.model)
-
+    # ===== Query Methods =====
     async def query(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """Send query to LLM or use mock if set.
+        """Query the LLM with the given request.
+
+        This method determines whether to use iterative or single-shot querying based on
+        the request parameters and available resources.
 
         Args:
-            request: Dictionary with:
+            request: Dictionary containing:
                 - prompt: The user message
                 - system_prompt: Optional system prompt
-                - tools: Optional list of resources to use as tools
-                - max_retries: Optional integer to override the default max_retries value.
+                - available_resources: Optional list of BaseResource objects to use as tools
+                - max_iterations: Optional maximum number of resource calling iterations
+                - max_tokens: Optional maximum tokens for response
+                - temperature: Optional temperature for generation
                 - additional parameters
 
         Returns:
-            Dictionary with "content", "model", "usage", and "requested_tools" keys.
+            Dictionary with "content", "model", "usage".
+        """
+        # Use iterative querying if tools are provided, otherwise use single-shot
+        response = await self._query_iterative(request)
+        return response or {}
+
+    async def _query_iterative(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Query the LLM with support for iterative resource calling.
+        
+        This method allows the LLM to request resources, receive their results, and then
+        potentially request more resources based on those results, up to a maximum number
+        of iterations.
+        
+        Note: The LLM API uses "tools" terminology for resources.
+
+        Args:
+            request: Dictionary containing:
+                - prompt: The user message
+                - system_prompt: Optional system prompt
+                - available_resources: List of available BaseResource objects
+                - max_iterations: Maximum number of resource calling iterations (default: 3)
+                - max_tokens: Optional maximum tokens for response
+                - temperature: Optional temperature for generation
+                - additional parameters
+            
+        Returns:
+            Final LLM response with all resource results incorporated
+        """
+        # Initialize variables for the loop
+        if self.get_query_strategy() == QueryStrategy.ITERATIVE:
+            max_iterations = self.get_query_max_iterations()
+        else:
+            max_iterations = 1
+
+        # Add a system prompt that encourages resource use if not provided
+        system_prompt = request.get("system_prompt", (
+            "You are an assistant. Use tools when necessary to complete tasks. "
+            "After receiving tool results, you can request additional tools if needed."
+        ))
+        
+        # Main loop for iterative resource calling
+        current_prompt = request["prompt"]
+        iteration = 0
+        while iteration < max_iterations:
+            iteration += 1
+            self.info(f"Resource calling iteration {iteration}/{max_iterations}")
+            
+            # Make the LLM query with available resources
+            response = await self._query_once({
+                "prompt": current_prompt,
+                "system_prompt": system_prompt,
+                "available_resources": request.get("available_resources", {}),
+                "max_tokens": request.get("max_tokens"),
+                "temperature": request.get("temperature", 0.7),
+            })
+            
+            # Check if the underlying LLM requested tools
+            requested_tools = response.get("requested_tools")
+            if not requested_tools or len(requested_tools) == 0:
+                self.info("No more tools requested, returning final response")
+                return response
+            
+            # Format tool results for the next iteration
+            tool_result_text = "\n".join(
+                [f"Tool: {tool.function.name}\nResponse: {tool.function.arguments}" 
+                 for tool in requested_tools]
+            )
+
+            # Enhance the prompt with tool results
+            current_prompt = f"{current_prompt}\n\n" \
+                           f"<tool_calling_results>\n{tool_result_text}\n</tool_calling_results>"
+            
+            # Add a specific instruction for the next iteration
+            current_prompt += (
+                "\n\nBased on these tool results, continue your reasoning. "
+                "You can request additional tools if needed to complete your task."
+            )
+        
+        # If we've reached the maximum iterations, return the final response
+        self.info(f"Reached maximum iterations ({max_iterations}), returning final response")
+        return response or {}
+
+    async def _query_once(self, request: Dict[str, Any]) -> Dict[str, Any]:
+        """Query the LLM with the given prompt and resources.
+
+        Args:
+            request: Dictionary containing:
+                - prompt: The user message
+                - system_prompt: Optional system prompt
+                - available_resources: Optional list of BaseResource objects to use as tools
+                - max_tokens: Optional maximum tokens for response
+                - temperature: Optional temperature for generation
+                - additional parameters
+
+        Returns:
+            Dictionary with "content", "model", "usage", and optionally "requested_tools" keys.
         """
         # Check for mock flag or function
         if callable(self._mock_llm_call):
+            # If mock_llm_call is a callable, call it with the request
             return await self._mock_llm_call(request)
         elif self._mock_llm_call:
+            # If mock_llm_call is a boolean, call our built-in mock function
             return await self._mock_llm_query(request)
 
         if not self._client:
@@ -114,98 +216,218 @@ class LLMResource(BaseResource):
             raise ValueError("'Prompt' is required")
 
         # Log the prompt being sent to the LLM
-        self.logger.info(f"PROMPT TO {self.model}:\n{'-' * 80}\n{messages}\n{'-' * 80}")
+        self.info(f"PROMPT TO {self.model}:\n{'-' * 80}\n{messages}\n{'-' * 80}")
         
         request_params = {
-            "temperature": float(self.config.get("temperature", 0.7)),
+            "temperature": float(request.get("temperature", self.config.get("temperature", 0.7))),
             "top_p": float(self.config.get("top_p", 1.0)),
-            "max_tokens": self.config.get("max_tokens"),
+            "max_tokens": request.get("max_tokens", self.config.get("max_tokens")),
             "frequency_penalty": self.config.get("frequency_penalty"),
             "presence_penalty": self.config.get("presence_penalty"),
         }
 
-        # Add tools if provided in the request
-        if "tools" in request and request["tools"]:
-            request_params["tools"] = request["tools"]
-
-        # Merge with request-specific params
-        request_params.update(request.get("parameters", {}))
+        # Add tool strings for resources if provided in the request
+        if "available_resources" in request and request["available_resources"]:
+            assert isinstance(request["available_resources"], Dict), "available_resources must be a dictionary"
+            request_params["tools"] = await self._get_tool_strings(request["available_resources"])
 
         # Filter out None values
         request_params = {k: v for k, v in request_params.items() if v is not None}
 
-        # Use max_retries from request if provided, otherwise use default
-        max_retries = request.get('max_retries', self.max_retries)
+        try:
+            assert self._client is not None
+            # Let aisuite handle the provider-specific response processing
+            response = self._client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                **request_params
+            )
 
-        for attempt in range(max_retries + 1):
-            try:
-                assert self._client is not None
-                # Let aisuite handle the provider-specific response processing
-                response = self._client.chat.completions.create(model=self.model, messages=messages, **request_params)
+            # Use aisuite's standardized response format
+            # handle tool calls
+            reasoning = None
+            requested_tools = None
+            if hasattr(response, "choices") and hasattr(response.choices[0].message, "tool_calls"):
+                requested_tools = response.choices[0].message.tool_calls
+                reasoning = response.choices[0].finish_reason
+            elif hasattr(response, "reasoning_content"):
+                reasoning = response.reasoning_content
+            elif hasattr(response, "choices") and hasattr(response.choices[0].message, "reasoning_content"):
+                reasoning = response.choices[0].message.reasoning_content
 
-                # Use aisuite's standardized response format
-                # handle tool calls
-                reasoning = None
-                requested_tools = None
-                if hasattr(response, "choices") and hasattr(response.choices[0].message, "tool_calls"):
-                    requested_tools = response.choices[0].message.tool_calls
-                    reasoning = response.choices[0].finish_reason
-                elif hasattr(response, "reasoning_content"):
-                    reasoning = response.reasoning_content
-                elif hasattr(response, "choices") and hasattr(response.choices[0].message, "reasoning_content"):
-                    reasoning = response.choices[0].message.reasoning_content
+            content = response.choices[0].message.content if hasattr(response, 'choices') else response.content
+            
+            if requested_tools:
+                # Format tool calls into a readable list
+                tool_list = []
+                for tool in requested_tools:
+                    tool_info = f"{tool.function.name}: {tool.function.arguments}"
+                    tool_list.append(tool_info)
 
-                content = response.choices[0].message.content if hasattr(response, 'choices') else response.content
-                
-                if requested_tools:
-                    # Format tool calls into a readable list
-                    tool_list = []
-                    for tool in requested_tools:
-                        tool_info = f"{tool.function.name}: {tool.function.arguments}"
-                        tool_list.append(tool_info)
+                content = f"{reasoning}:\n\n" + "\n".join(tool_list)
 
-                    content = f"{reasoning}:\n\n" + "\n".join(tool_list)
+            # Log the response from the LLM
+            self.info(f"RESPONSE FROM {self.model}:\n{'-' * 80}\n{content}\n{'-' * 80}")
+            
+            # Log usage statistics if available
+            if hasattr(response, "usage"):
+                usage = response.usage
+                if hasattr(usage, 'prompt_tokens') and \
+                    hasattr(usage, 'completion_tokens') and \
+                        hasattr(usage, 'total_tokens'):
+                    self.info(
+                        f"USAGE: prompt_tokens={usage.prompt_tokens}, "
+                        f"completion_tokens={usage.completion_tokens}, "
+                        f"total_tokens={usage.total_tokens}"
+                    )
 
-                # Log the response from the LLM
-                self.logger.info(f"RESPONSE FROM {self.model}:\n{'-' * 80}\n{content}\n{'-' * 80}")
-                
-                # Log usage statistics if available
-                if hasattr(response, "usage"):
-                    usage = response.usage
-                    if hasattr(usage, 'prompt_tokens') and \
-                        hasattr(usage, 'completion_tokens') and \
-                            hasattr(usage, 'total_tokens'):
-                        self.logger.info(
-                            f"USAGE: prompt_tokens={usage.prompt_tokens}, "
-                            f"completion_tokens={usage.completion_tokens}, "
-                            f"total_tokens={usage.total_tokens}"
-                        )
+            return {
+                "content": content,
+                "model": self.model,  # Use our model string since it's guaranteed to exist
+                "usage": getattr(response, "usage", None),
+                # Include any thinking content if present
+                "reasoning": reasoning,
+                "requested_tools": requested_tools,
+            }
 
-                return {
-                    "content": content,
-                    "model": self.model,  # Use our model string since it's guaranteed to exist
-                    "usage": getattr(response, "usage", None),
-                    # Include any thinking content if present
-                    "reasoning": reasoning,
-                    "requested_tools": requested_tools,
+        except Exception as e:
+            self.error("Error querying LLM: %s", str(e))
+            raise LLMError(f"Error querying LLM: {str(e)}") from e
+
+    async def _get_tool_strings(self, resources: Dict[str, BaseResource]) -> List[Dict[str, Any]]:
+        """Get tool strings for the list of resources.
+
+        Args:
+            resources: Dictionary of available resources
+
+        Returns:
+            List of tool specifications for the underlying LLM to use
+        """
+        resource_strings: List[Dict[str, Any]] = []
+        for resource_id, resource in resources.items():
+            resource_strings.extend(await resource.get_tool_strings(resource_id))
+        return resource_strings
+
+    # ===== Resource Tool Handling =====
+    def deprecated_get_resource_tools(self, resources: Dict[str, BaseResource]) -> List[Dict[str, Any]]:
+        """Get tools from resources in the format expected by the LLM API.
+
+        This method converts our internal resource representation into the format
+        expected by the LLM API's tool calling interface.
+
+        Args:
+            resources: Dictionary of available resources
+
+        Returns:
+            List of tools in LLM API format
+        """
+        tools = []
+        for resource_name, resource in resources.items():
+            # Get the resource's schema
+            schema = resource.get_schema()
+            if not schema:
+                continue
+
+            # Convert the schema to the LLM API's tool format
+            for tool_name, tool_schema in schema.items():
+                # Create the function description
+                function_desc = {
+                    "name": f"{resource_name}__query__{tool_name}",
+                    "description": tool_schema.get("description", ""),
+                    "parameters": tool_schema.get("parameters", {})
                 }
 
-            except (APIConnectionError, RateLimitError) as e:
-                if attempt >= max_retries:
-                    raise e
-                delay = self.retry_delay * (2**attempt)
-                self.logger.warning("Retrying in %.1fs (attempt %d/%d)", delay, attempt + 1, max_retries)
-                await asyncio.sleep(delay)
-            except ValueError as e:
-                # Handle configuration/model format errors
-                raise e
-            except AttributeError as e:
-                # Handle response structure mismatches
-                self.logger.error("Unexpected response structure from provider: %s", str(e))
-                raise LLMError(f"Unexpected response structure: {str(e)}") from e
+                # Add the tool to the list
+                tools.append({
+                    "type": "function",
+                    "function": function_desc
+                })
 
-        raise LLMError("Max retries exceeded")
+        return tools
 
+    async def _query_one_resource(
+        self,
+        resource: BaseResource,
+        tool_name: Optional[str],
+        params: Dict[str, Any]
+    ) -> Any:
+        """Execute a resource with appropriate calling conventions.
+        
+        This method handles the execution of a resource's functionality (which the LLM API calls a "tool").
+        We maintain the "resources" terminology internally for consistency.
+
+        Handles different resource types (MCP, Agent, Base) with their specific
+        calling patterns while maintaining a clean interface.
+
+        Args:
+            resource: Resource to call
+            tool_name: Name of the tool to execute (from LLM's function name)
+            params: Dictionary of parameters to pass to the resource
+
+        Returns:
+            Resource response
+        """
+        # For MCP resources, we need to use a specific format
+        if isinstance(resource, McpResource):
+            return await resource.query({"tool": tool_name, "arguments": params})
+
+        # For other resources, we can pass the parameters directly
+        return await resource.query(params)
+
+    async def _query_requested_resources(
+        self, 
+        requested_resources: List[Any], 
+        available_resources: Dict[str, BaseResource]
+    ) -> List[Dict]:
+        """Execute resources using provided resources.
+        
+        This method processes resources requested by the LLM (which the LLM API calls "tools").
+        We maintain the "resources" terminology internally for consistency.
+
+        Args:
+            requested_resources: List of resources to execute (from LLM's "requested_tools")
+            available_resources: Dictionary of available resources
+
+        Returns:
+            List of resource responses
+        """
+        try:
+            resource_responses = []
+            for requested_resource in requested_resources:
+                function_name = requested_resource.function.name
+                try:
+                    # Parse the function name to extract resource name and tool name
+                    # Format: [resource_name]__query__[tool_name]
+                    resource_name, *_, tool_name = function_name.split("__")
+                except ValueError:
+                    self.warning(
+                        f"Invalid function name format: {function_name}, "
+                        "expected [resource_name]__query__[tool_name]"
+                    )
+                    continue
+
+                my_resource = available_resources.get(resource_name)
+                if not my_resource:
+                    self.warning(f"Resource not found: {resource_name}")
+                    continue
+
+                params = requested_resource.function.arguments
+                if isinstance(params, str):
+                    params = json.loads(params)
+
+                response = await self._query_one_resource(my_resource, tool_name, params)
+                resource_responses.append({"resource_name": function_name, "response": response})
+
+            return resource_responses
+
+        except json.JSONDecodeError as e:
+            self.error(f"Failed to parse resource arguments as JSON: {e}")
+            return []
+        except Exception as e:
+            self.error(f"Error querying resource: {e}")
+            return []
+
+    # ===== Error Handling and Utilities =====
     def with_mock_llm_call(self, mock_llm_call: Union[bool, Callable[[Dict[str, Any]], Dict[str, Any]]]) -> 'LLMResource':
         """Set the mock LLM call function."""
         if isinstance(mock_llm_call, Callable) or isinstance(mock_llm_call, bool):
@@ -216,21 +438,14 @@ class LLMResource(BaseResource):
         return self
 
     async def _mock_llm_query(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """Return a mock response echoing the prompt."""
+        """Return a mock response that matches the real implementation structure."""
         prompt = request.get('prompt', '')
+        
+        # Create a mock response that matches the real implementation
         return {
-            "content": f"Echo: {prompt}",
+            "content": f"Mock response for: {prompt}",
             "model": self.model,
             "usage": None,
             "reasoning": None,
-            "requested_tools": None,
+            "requested_tools": None
         }
-
-    async def cleanup(self) -> None:
-        """Cleanup resources."""
-        if self._client:
-            self._client = None
-
-    def can_handle(self, request: Dict[str, Any]) -> bool:
-        """Check if request contains prompt."""
-        return "prompt" in request

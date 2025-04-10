@@ -8,159 +8,175 @@
 
 ## Overview
 
-The OpenDXA Execution System implements the three-layer architecture that maps business workflows to concrete plans to reasoning patterns. This system is responsible for translating high-level objectives into executable actions through a structured approach to agent execution.
+The OpenDXA Execution System provides a framework for executing tasks through a layered architecture. It manages the translation of high-level objectives into executable actions through structured execution patterns.
 
 ## Architecture
 
-The Execution System consists of four main components:
+The Execution System consists of multiple layers that work together to execute tasks:
 
-1. **[Workflow Layer](workflow/README.md)** - Defines what agents can do (WHY)
-   - Translates process specifications into executable workflow graphs
-   - Provides natural language interfaces for workflow definition
-   - Manages workflow structure and validation
+1. **Graph-Based Execution**
+   - Directed graphs represent execution flows
+   - Nodes represent executable steps
+   - Edges define dependencies and transitions
 
-2. **[Planning Layer](planning/README.md)** - Converts workflows to executable plans (WHAT)
-   - Transforms high-level workflows into concrete steps
-   - Manages dependencies between steps
-   - Handles data flow between nodes
-
-3. **[Reasoning Layer](reasoning/README.md)** - Executes plans with thinking patterns (HOW)
-   - Implements specific reasoning strategies
-   - Processes execution signals
-   - Manages state and context
-
-4. **[Pipeline Layer](pipeline/README.md)** - Orchestrates execution flow
-   - Coordinates between layers
+2. **Execution Context**
    - Manages execution state
+   - Provides resources for execution
    - Handles communication between components
+
+3. **Signal-Based Communication**
+   - Standardized data passing
+   - Control flow management
+   - Error handling
 
 ## Layer Interaction
 
 ```mermaid
 graph TB
     subgraph "Execution System"
-        W[Workflow Layer<br>WHY] --> P[Planning Layer<br>WHAT]
-        P --> R[Reasoning Layer<br>HOW]
-        PL[Pipeline Layer] --> W
-        PL --> P
-        PL --> R
+        E[Execution Layer] --> C[Context]
+        C --> S[Signals]
+        S --> E
     end
     
     subgraph "External Systems"
-        A[Agent System] --> PL
-        RS[Resources] --> R
-        ST[State] --> PL
+        A[Agent System] --> E
+        RS[Resources] --> C
+        ST[State] --> C
     end
 ```
 
 ## Key Concepts
 
-### Workflow Layer
+### Execution Graph
 
-The Workflow Layer translates business objectives into structured workflows:
+The base execution structure:
 
-- **Workflow**: A directed graph representing a process
-- **ExecutionNode**: Individual steps in a workflow
+- **Graph**: Directed graph representing execution flow
+- **Node**: Individual steps in execution
 - **NodeType**: Different types of nodes (START, TASK, END)
-- **Objective**: Goal definition for workflows and nodes
+- **Edge**: Connections between nodes
 
-### Planning Layer
+### Execution Context
 
-The Planning Layer converts workflows into executable plans:
+Manages execution state and resources:
 
-- **Plan**: A sequence of concrete steps to execute
-- **Step**: An individual action to perform
-- **Dependency**: Relationship between steps
-- **DataFlow**: Information passing between steps
+- **Context**: Execution environment
+- **Resources**: Available capabilities
+- **State**: Current execution state
+- **Metadata**: Additional context information
 
-### Reasoning Layer
+### Execution Signal
 
-The Reasoning Layer executes plans using thinking patterns:
+Standardized communication between components:
 
-- **ReasoningStrategy**: Approach to executing steps
-- **ExecutionSignal**: Communication between components
-- **Context**: Information needed for execution
-- **Result**: Output from step execution
+- **Signal**: Data and control information
+- **Type**: Signal category (DATA, CONTROL)
+- **Result**: Execution output
+- **Status**: Execution state
 
-### Pipeline Layer
+### Layer Awareness
 
-The Pipeline Layer orchestrates the execution flow:
+The execution system is designed to be layer-aware, allowing different layers to interact while maintaining separation of concerns:
 
-- **WorkflowExecutor**: Main execution engine
-- **ExecutionContext**: Manages execution state and resources
-- **ExecutionSignal**: Communication between layers
-- **ExecutionStatus**: Current state of execution
+1. **Layer Identification**
+   - Each layer has a unique identifier
+   - Layers can query their position in the hierarchy
+   - Context maintains layer-specific information
+
+2. **Layer Interaction**
+   - Upper layers delegate to lower layers
+   - Results flow back up through the hierarchy
+   - Each layer processes results according to its role
+
+3. **Layer Independence**
+   - Layers can be used independently
+   - Custom layer implementations are supported
+   - Layer-specific strategies can be configured
+
+### Derived Classes
+
+The base execution system is extended by specialized implementations:
+
+- [Workflow](workflow/README.md) - Process execution
+- [Pipeline](pipeline/README.md) - Data flow execution
+
+## Execution Signal Design
+
+The execution system uses signals for communication between components. Signals provide a standardized way to pass data and control information:
+
+```python
+@dataclass
+class ExecutionSignal:
+    type: ExecutionSignalType  # For control flow and error handling
+    result: Dict[str, Any]    # For the actual data
+```
+
+### Signal Types
+
+Base signal types include:
+- `DATA_RESULT`: Node output data
+- `CONTROL_ERROR`: Error information
+- `CONTROL_START`: Node begins execution
+- `CONTROL_COMPLETE`: Node completed
+- `CONTROL_SKIP`: Node was skipped
+
+### Result Structure
+
+Signals contain a result dictionary with:
+```python
+{
+    "node": str,           # ID of the node that produced the result
+    "content": Any,        # The actual result data
+    "status": str,         # Status of the execution
+    "metadata": Dict       # Optional context
+}
+```
+
+### Example Usage
+
+```python
+# Create a result signal
+signal = ExecutionSignal(
+    type=ExecutionSignalType.DATA_RESULT,
+    result={
+        "node": "node_id",
+        "content": "actual result",
+        "status": "completed"
+    }
+)
+```
 
 ## Usage Examples
 
-### Basic Workflow Execution
+### Basic Execution
 
 ```python
-from dxa.execution import WorkflowExecutor, ExecutionContext
-from dxa.execution.workflow import Workflow
+from dxa.execution import ExecutionContext, ExecutionGraph
 from dxa.common.graph import NodeType
 from dxa.agent.resource import LLMResource
 
-# Create a workflow
-workflow = Workflow(objective="Analyze customer feedback")
-workflow.add_node(ExecutionNode(
-    node_id="ANALYZE",
+# Create an execution graph
+graph = ExecutionGraph(objective="Execute task")
+graph.add_node(ExecutionNode(
+    node_id="TASK",
     node_type=NodeType.TASK,
-    objective="Analyze feedback data"
+    objective="Execute step"
 ))
 
 # Set up execution
 context = ExecutionContext(
-    reasoning_llm=LLMResource(),
-    planning_llm=LLMResource(),
-    workflow_llm=LLMResource()
+    resources={"llm": LLMResource()}
 )
-executor = WorkflowExecutor()
-result = await executor.execute(workflow, context)
-```
-
-### Advanced Workflow with Planning
-
-```python
-from dxa.execution import PlanStrategy
-from dxa.execution.workflow import WorkflowFactory
-
-# Create a complex workflow
-workflow = WorkflowFactory.create_sequential_workflow(
-    objective="Research quantum computing",
-    commands=[
-        "Gather recent papers",
-        "Analyze methodologies",
-        "Synthesize findings",
-        "Create summary report"
-    ]
-)
-
-# Execute with hierarchical planning
-executor = WorkflowExecutor(plan_strategy=PlanStrategy.HIERARCHICAL)
-result = await executor.execute(workflow, context)
-```
-
-### Custom Reasoning Strategy
-
-```python
-from dxa.execution import ReasoningStrategy
-from dxa.agent import Agent
-
-# Configure agent with custom reasoning
-agent = Agent(name="researcher")\
-    .with_reasoning(ReasoningStrategy.CHAIN_OF_THOUGHT)
-
-# Execute workflow
-result = agent.run(workflow)
+result = await graph.execute(context)
 ```
 
 ## Design Principles
 
 1. **Separation of Concerns**
-   - Each layer has a specific responsibility
    - Clear interfaces between components
-   - Minimal dependencies between layers
+   - Minimal dependencies
+   - Focused responsibilities
 
 2. **Progressive Complexity**
    - Start with simple implementations
@@ -168,8 +184,8 @@ result = agent.run(workflow)
    - Maintain clarity at each level
 
 3. **Flexible Execution**
-   - Support for different execution strategies
-   - Adaptable to changing requirements
+   - Support for different strategies
+   - Adaptable to requirements
    - Extensible for custom behaviors
 
 4. **State Management**
@@ -198,10 +214,6 @@ The Execution System integrates with the Agent System through:
 
 ## See Also
 
-- [Workflow System](workflow/README.md) - Process definition and control
-- [Planning System](planning/README.md) - Strategic decomposition
-- [Reasoning System](reasoning/README.md) - Tactical execution
-- [Pipeline System](pipeline/README.md) - Execution orchestration
 - [Agent System](../agent/README.md) - Agent components
 
 ---
