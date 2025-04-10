@@ -1,31 +1,31 @@
 """Execution context for DXA."""
 
 from typing import Optional, TYPE_CHECKING, cast, Dict, Any, Tuple
-
+from ..common.state import WorldState, ExecutionState
+from ..common.resource import BaseResource, LLMResource
 from .execution_types import ExecutionNode
+
 if TYPE_CHECKING:
-    from ..agent import AgentState
-    from ..common.state import WorldState, ExecutionState
-    from ..common.resource import BaseResource, LLMResource
     from .workflow import Workflow
     from .planning import Plan
     from .reasoning import Reasoning
+    from ..agent.agent_state import AgentState
 
 class ExecutionContext:
     """Execution context for all execution layers."""
 
     def __init__(self, 
-                 workflow_llm: 'LLMResource',
-                 planning_llm: 'LLMResource',
-                 reasoning_llm: 'LLMResource',
+                 workflow_llm: Optional[LLMResource] = None,
+                 planning_llm: Optional[LLMResource] = None,
+                 reasoning_llm: Optional[LLMResource] = None,
                  agent_state: Optional['AgentState'] = None,
-                 world_state: Optional['WorldState'] = None,
-                 execution_state: Optional['ExecutionState'] = None,
+                 world_state: Optional[WorldState] = None,
+                 execution_state: Optional[ExecutionState] = None,
                  current_workflow: Optional['Workflow'] = None,
                  current_plan: Optional['Plan'] = None,
                  current_reasoning: Optional['Reasoning'] = None,
                  global_context: Optional[Dict[str, Any]] = None,
-                 resources: Optional[Dict[str, 'BaseResource']] = None
+                 resources: Optional[Dict[str, BaseResource]] = None
                  ):
         """Initialize execution context."""
         # State management
@@ -40,9 +40,9 @@ class ExecutionContext:
         self.current_reasoning = current_reasoning
 
         # LLM resources
-        self.workflow_llm = workflow_llm or planning_llm or reasoning_llm
-        self.planning_llm = planning_llm or reasoning_llm
-        self.reasoning_llm = reasoning_llm
+        self.workflow_llm = workflow_llm or planning_llm or reasoning_llm or LLMResource()
+        self.planning_llm = planning_llm or self.workflow_llm
+        self.reasoning_llm = reasoning_llm or self.workflow_llm
         
         # Global context and results storage
         self.global_context = global_context or {}

@@ -2,7 +2,7 @@
 
 from time import perf_counter
 from typing import Optional, List, cast
-from ...execution.executor import Executor
+from ..base_executor import BaseExecutor
 from ...execution import (
     ExecutionNode,
     ExecutionSignal, ExecutionContext,
@@ -13,7 +13,7 @@ from .pipeline_context import PipelineContext
 from .pipeline_strategy import PipelineStrategy
 from .pipeline_factory import PipelineFactory
 
-class PipelineExecutor(Executor[PipelineStrategy, Pipeline, PipelineFactory]):
+class PipelineExecutor(BaseExecutor[PipelineStrategy, Pipeline, PipelineFactory]):
     """Executes pipeline steps in sequence."""
 
     # Class attributes for layer configuration

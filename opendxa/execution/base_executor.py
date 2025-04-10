@@ -23,7 +23,7 @@ class ExecutionError(Exception):
     """Base exception for all execution errors."""
     pass
 
-class Executor(ABC, Loggable, Generic[StrategyT, GraphT, FactoryT]):
+class BaseExecutor(ABC, Loggable, Generic[StrategyT, GraphT, FactoryT]):
     """Base class for all executors in the execution system.
     
     The Executor class provides common execution logic for all layers
@@ -88,7 +88,7 @@ class Executor(ABC, Loggable, Generic[StrategyT, GraphT, FactoryT]):
     def __init__(
         self,
         strategy: Optional[StrategyT] = None,
-        lower_executor: Optional['Executor'] = None
+        lower_executor: Optional['BaseExecutor'] = None
     ):
         """Initialize executor.
         

@@ -27,6 +27,11 @@ class DXALogger:
         return dxa_logging.getLogger(name)
 
     @classmethod
+    def setLevel(cls, level: int):
+        """Convenience method to set the logging level"""
+        DXA_LOGGER.logger.setLevel(level)
+
+    @classmethod
     def basicConfig(cls, **kwargs):
         """Convenience method to configure the logger"""
         dxa_logging.basicConfig(**kwargs)
