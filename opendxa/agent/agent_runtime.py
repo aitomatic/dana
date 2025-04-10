@@ -1,10 +1,10 @@
 """Agent runtime for execution orchestration."""
 
-from typing import Any, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING, Optional
 
-from ..execution.workflow import WorkflowExecutor, WorkflowStrategy, Workflow
-from ..execution.planning import PlanStrategy
-from ..execution.reasoning import ReasoningStrategy
+from ..execution.workflow import WorkflowExecutor, Workflow
+from ..execution.planning import PlanExecutor
+from ..execution.reasoning import ReasoningExecutor
 from ..execution.execution_context import ExecutionContext
 from ..execution.execution_types import ExecutionSignalType
 if TYPE_CHECKING:
@@ -14,13 +14,18 @@ class AgentRuntime:
     """Manages agent execution, coordinating between layers."""
 
     def __init__(self, agent: 'Agent',
-                 workflow_strategy: WorkflowStrategy = WorkflowStrategy.DEFAULT,
-                 planning_strategy: PlanStrategy = PlanStrategy.DEFAULT,
-                 reasoning_strategy: ReasoningStrategy = ReasoningStrategy.DEFAULT):
+                 workflow_executor: Optional[WorkflowExecutor] = None,
+                 planning_executor: Optional[PlanExecutor] = None,
+                 reasoning_executor: Optional[ReasoningExecutor] = None):
         self.agent = agent
 
         # Initialize executors with strategies
-        self.workflow_executor = WorkflowExecutor(strategy=workflow_strategy)
+        self.reasoning_executor = reasoning_executor or \
+            ReasoningExecutor(strategy=agent.reasoning_strategy)
+        self.planning_executor = planning_executor or \
+            PlanExecutor(strategy=agent.planning_strategy, lower_executor=self.reasoning_executor)
+        self.workflow_executor = workflow_executor or \
+            WorkflowExecutor(strategy=agent.workflow_strategy, lower_executor=self.planning_executor)
 
     async def execute(self, workflow: Workflow, context: ExecutionContext) -> Any:
         """Execute workflow and return result."""

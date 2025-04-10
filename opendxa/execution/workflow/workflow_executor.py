@@ -1,13 +1,13 @@
 """Workflow executor implementation."""
 
 from typing import Optional
-from ..executor import Executor
+from ..base_executor import BaseExecutor
 from .workflow import Workflow
 from .workflow_strategy import WorkflowStrategy
 from .workflow_factory import WorkflowFactory
 from ..planning import PlanExecutor, PlanStrategy
 
-class WorkflowExecutor(Executor[WorkflowStrategy, Workflow, WorkflowFactory]):
+class WorkflowExecutor(BaseExecutor[WorkflowStrategy, Workflow, WorkflowFactory]):
     """Executor for workflow layer tasks.
     
     This executor handles the workflow layer of execution, which is
@@ -23,7 +23,7 @@ class WorkflowExecutor(Executor[WorkflowStrategy, Workflow, WorkflowFactory]):
 
     def __init__(self, 
                  strategy: WorkflowStrategy = WorkflowStrategy.DEFAULT,
-                 lower_executor: Optional['Executor'] = None):
+                 lower_executor: Optional['BaseExecutor'] = None):
         """Initialize the workflow executor.
         
         Args:

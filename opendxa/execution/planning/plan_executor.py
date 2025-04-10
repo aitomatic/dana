@@ -1,13 +1,13 @@
 """Plan executor implementation."""
 
 from typing import Optional
-from ..executor import Executor
+from ..base_executor import BaseExecutor
 from .plan import Plan
 from .plan_strategy import PlanStrategy
 from ..reasoning import ReasoningExecutor, ReasoningStrategy
 from .plan_factory import PlanFactory
 
-class PlanExecutor(Executor[PlanStrategy, Plan, PlanFactory]):
+class PlanExecutor(BaseExecutor[PlanStrategy, Plan, PlanFactory]):
     """Executor for planning layer tasks."""
     
     # Required class attributes
@@ -19,7 +19,7 @@ class PlanExecutor(Executor[PlanStrategy, Plan, PlanFactory]):
 
     def __init__(self, 
                  strategy: PlanStrategy = PlanStrategy.DEFAULT,
-                 lower_executor: Optional['Executor'] = None):
+                 lower_executor: Optional['BaseExecutor'] = None):
         """Initialize the plan executor.
         
         Args:

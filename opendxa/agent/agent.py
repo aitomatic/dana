@@ -33,12 +33,12 @@ from ..common.resource import BaseResource, LLMResource
 from ..common.state import WorldState, ExecutionState
 from .agent_state import AgentState
 from ..common.io import BaseIO, IOFactory
-
+from ..common.utils.logging import Loggable
 from ..common.utils.config import load_agent_config
 from .agent_runtime import AgentRuntime
 from ..common.utils.misc import safe_asyncio_run
 # pylint: disable=too-many-public-methods
-class Agent:
+class Agent(Loggable):
     """Main agent interface with built-in execution management."""
 
     # pylint: disable=too-many-instance-attributes
@@ -61,6 +61,8 @@ class Agent:
         self._workflow_strategy = WorkflowStrategy.DEFAULT
         self._planning_strategy = PlanStrategy.DEFAULT
         self._reasoning_strategy = ReasoningStrategy.DEFAULT
+
+        Loggable.__init__(self)
 
     @property
     def workflow_strategy(self) -> WorkflowStrategy:
@@ -269,12 +271,7 @@ class Agent:
         self._reasoning_strategy = self._reasoning_strategy or ReasoningStrategy.DEFAULT
 
         # Create runtime with strategies
-        self._runtime = AgentRuntime(
-            self,
-            workflow_strategy=self._workflow_strategy,
-            planning_strategy=self._planning_strategy,
-            reasoning_strategy=self._reasoning_strategy
-        )
+        self._runtime = AgentRuntime(self)
 
         return self
 
