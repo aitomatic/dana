@@ -14,7 +14,7 @@ class TestLLMResource(unittest.TestCase):
         async def run_test():
             prompt = "Test prompt"
             response = await llm_resource.query({"prompt": prompt})  # Ensure this is awaited
-            self.assertEqual(response["content"], f"Echo: {prompt}")
+            self.assertEqual(response["content"], f"Mock response for: {prompt}")
 
         asyncio.run(run_test())
 

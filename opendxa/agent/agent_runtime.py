@@ -36,6 +36,7 @@ class AgentRuntime:
         signals = await self.workflow_executor.execute(workflow, context)
 
         # Get final result from signals
+        # TODO: Handle multiple signals
         for signal in reversed(signals):
             if signal.type == ExecutionSignalType.DATA_RESULT:
                 return signal.content

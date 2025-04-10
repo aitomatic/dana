@@ -21,10 +21,16 @@ Example:
             pass
 """
 
+from enum import Enum, auto
 from dataclasses import dataclass
 from typing import Dict, Any, Optional, List, Union
 from ...common.utils.logging.loggable import Loggable
 from ...common.utils.configurable import Configurable
+
+class QueryStrategy(Enum):
+    """Resource querying strategies."""
+    ONCE = auto()       # Single query without iteration
+    ITERATIVE = auto()  # Iterative querying with resource integration
 
 @dataclass
 class ResourceConfig(Configurable):
@@ -147,7 +153,17 @@ class BaseResource(Loggable):
         """Check if resource can handle request."""
         self.debug(f"Checking if [{self.name}] can handle request")
         return False
+    
+    def get_query_strategy(self) -> QueryStrategy:
+        """Get the query strategy for the resource."""
+        assert self.config is not None, "Resource config is not set"
+        return QueryStrategy(self.config.get("query_strategy", QueryStrategy.ONCE))
 
+    def get_query_max_iterations(self) -> int:
+        """Get the maximum number of iterations for the resource. Default is 3."""
+        assert self.config is not None, "Resource config is not set"
+        return self.config.get("query_max_iterations", 3)
+    
     async def __aenter__(self) -> 'BaseResource':
         await self.initialize()
         return self

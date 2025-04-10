@@ -41,3 +41,13 @@ no-bare-urls: false
 
 MD040: false        # Fenced code blocks should have a language specified
 fenced-code-language: false
+
+MD047: false        # Single trailing newline
+single-trailing-newline: false
+
+MD009: false        # Trailing spaces
+no-trailing-spaces: false
+
+MD012: false        # Multiple blank lines
+no-multiple-blanks: false
+
