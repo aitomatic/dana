@@ -21,16 +21,17 @@ Example:
             pass
 """
 
+import uuid
 from enum import Enum, auto
 from dataclasses import dataclass
-from typing import Dict, Any, Optional, List, Union
+from typing import Dict, Any, Optional, Union, List, Tuple
 from ...common.utils.logging.loggable import Loggable
 from ...common.utils.configurable import Configurable
 
 class QueryStrategy(Enum):
     """Resource querying strategies."""
-    ONCE = auto()       # Single query without iteration
-    ITERATIVE = auto()  # Iterative querying with resource integration
+    ONCE = auto()       # Single query without iteration, default for most resources
+    ITERATIVE = auto()  # Iterative querying - default, e.g., for LLMResource
 
 @dataclass
 class ResourceConfig(Configurable):
@@ -109,7 +110,7 @@ class BaseResource(Loggable):
             config: Either a ResourceConfig object or a dict that can be converted to one
         """
         # Initialize Loggable first to ensure logger is available
-        super().__init__()
+        Loggable.__init__(self)
         
         if isinstance(resource_config, dict):
             self.config = ResourceConfig.from_dict(resource_config)
@@ -121,11 +122,19 @@ class BaseResource(Loggable):
         self.name = name or self.config.name
         self.description = self.config.description or "No description provided"
         self._is_available = False  # will only be True after initialization
+        self._resource_id = str(uuid.uuid4())[:8]
 
     @property
     def is_available(self) -> bool:
         """Check if resource is currently available."""
         return self._is_available
+
+    @property
+    def resource_id(self) -> str:
+        """Get the resource ID."""
+        if self._resource_id is None:
+            self._resource_id = str(uuid.uuid4())[:8]
+        return self._resource_id
 
     async def initialize(self) -> None:
         """Initialize resource."""
@@ -180,19 +189,14 @@ class BaseResource(Loggable):
                 sanitized[key] = "***REDACTED***"
         return sanitized
     
-    async def get_tool_strings(
-        self, 
-        resource_id: str,
-        **kwargs
-    ) -> List[Dict[str, Any]]:
+    async def as_function_calls(self) -> List[Dict[str, Any]]:
         """Format a resource into OpenAI function specification.
         
         Args:
             resource: Resource instance to format
-            **kwargs: Additional keyword arguments
             
         Returns:
-            OpenAI function specification list
+            List of OpenAI function specifications
         """
         query_params = self.query.__annotations__
         properties = {}
@@ -234,13 +238,13 @@ class BaseResource(Loggable):
             }
 
         # Build function name based on whether this is an agent resource
-        function_name = f"{resource_id}__query"
+        function_name = f"{self.resource_id}__query"
         description = self.description or self.query.__doc__
 
-        return [{
+        function_call = {
             "type": "function",
             "function": {
-                "name": function_name,
+                "name": self._get_name_id_function_string(self.name, self.resource_id, function_name),
                 "description": description,
                 "parameters": {
                     "type": "object",
@@ -250,4 +254,16 @@ class BaseResource(Loggable):
                 },
                 "strict": True
             }
-        }]
+        }
+        self.info(f"Function call: {function_call}")
+        return function_call
+
+    def _get_name_id_function_string(self, name: str, the_id: str, function_name: str) -> str:
+        """Get the name-id-function string."""
+        result = f"{name}-{the_id}-{function_name}"
+        self.info(f"Name-id-function string: {result}")
+        return result
+
+    def _parse_name_id_function_string(self, name_id_function_string: str) -> Tuple[str, str, str]:
+        """Parse the name-id-function string."""
+        return name_id_function_string.split("-")

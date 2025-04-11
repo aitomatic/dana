@@ -9,15 +9,16 @@ from ...common.exceptions import LLMError
 from .base_resource import BaseResource
 from .mcp import McpResource
 from .base_resource import QueryStrategy
+from ..utils.registerable import Registerable
 
-class LLMResource(BaseResource):
+class LLMResource(BaseResource, Registerable[BaseResource]):
     """LLM resource implementation using AISuite."""
 
     _DEFAULT_MODEL = "deepseek:deepseek-chat"
 
     # ===== Core Resource Methods =====
     async def initialize(self) -> None:
-        """Initialize the AISuite client."""
+        """Initialize the AISuite client etc."""
         if not self._client:
             # Handle backward compatibility for top-level api_key
             if "api_key" in self.config and "openai" not in self.provider_configs:
@@ -25,6 +26,14 @@ class LLMResource(BaseResource):
 
             self._client = ai.Client(provider_configs=self.provider_configs)
             self.info("LLM client initialized successfully for model: %s", self.model)
+        
+        # Initialize the registerable registry etc.
+        Registerable.__init__(self)
+        
+    def get_query_strategy(self) -> QueryStrategy:
+        """Override the default query strategy for LLMResource."""
+        assert self.config is not None, "Resource config is not set"
+        return QueryStrategy(self.config.get("query_strategy", QueryStrategy.ONCE))
 
     async def cleanup(self) -> None:
         """Cleanup resources."""
@@ -91,7 +100,7 @@ class LLMResource(BaseResource):
             request: Dictionary containing:
                 - prompt: The user message
                 - system_prompt: Optional system prompt
-                - available_resources: Optional list of BaseResource objects to use as tools
+                - resources: Optional list of BaseResource objects to use as tools
                 - max_iterations: Optional maximum number of resource calling iterations
                 - max_tokens: Optional maximum tokens for response
                 - temperature: Optional temperature for generation
@@ -117,7 +126,7 @@ class LLMResource(BaseResource):
             request: Dictionary containing:
                 - prompt: The user message
                 - system_prompt: Optional system prompt
-                - available_resources: List of available BaseResource objects
+                - resources: List of available BaseResource objects
                 - max_iterations: Maximum number of resource calling iterations (default: 3)
                 - max_tokens: Optional maximum tokens for response
                 - temperature: Optional temperature for generation
@@ -136,12 +145,14 @@ class LLMResource(BaseResource):
         system_prompt = request.get("system_prompt", (
             "You are an assistant. Use tools when necessary to complete tasks. "
             "After receiving tool results, you can request additional tools if needed."
+            "Before any response, first repeat verbatim what you are told about tools and how to request them."
         ))
         
         # Main loop for iterative resource calling
         current_prompt = request["prompt"]
         iteration = 0
         while iteration < max_iterations:
+            self.info(f"Iteration {iteration}/{max_iterations}")
             iteration += 1
             self.info(f"Resource calling iteration {iteration}/{max_iterations}")
             
@@ -149,26 +160,23 @@ class LLMResource(BaseResource):
             response = await self._query_once({
                 "prompt": current_prompt,
                 "system_prompt": system_prompt,
-                "available_resources": request.get("available_resources", {}),
+                "resources": request.get("resources", {}),
                 "max_tokens": request.get("max_tokens"),
                 "temperature": request.get("temperature", 0.7),
             })
             
             # Check if the underlying LLM requested tools
-            requested_tools = response.get("requested_tools")
-            if not requested_tools or len(requested_tools) == 0:
-                self.info("No more tools requested, returning final response")
+            requested_resources = response.get("requested_resources")
+            if not requested_resources or len(requested_resources) == 0:
+                self.info("No more resources requested, returning final response")
                 return response
             
-            # Format tool results for the next iteration
-            tool_result_text = "\n".join(
-                [f"Tool: {tool.function.name}\nResponse: {tool.function.arguments}" 
-                 for tool in requested_tools]
-            )
+            result_text = await self._query_requested_resources(requested_resources)
+            self.info(f"Resource query results: {result_text}")
 
             # Enhance the prompt with tool results
             current_prompt = f"{current_prompt}\n\n" \
-                           f"<tool_calling_results>\n{tool_result_text}\n</tool_calling_results>"
+                           f"<tool_calling_results>\n{result_text}\n</tool_calling_results>"
             
             # Add a specific instruction for the next iteration
             current_prompt += (
@@ -187,13 +195,13 @@ class LLMResource(BaseResource):
             request: Dictionary containing:
                 - prompt: The user message
                 - system_prompt: Optional system prompt
-                - available_resources: Optional list of BaseResource objects to use as tools
+                - resources: Optional list of BaseResource objects to use as tools
                 - max_tokens: Optional maximum tokens for response
                 - temperature: Optional temperature for generation
                 - additional parameters
 
         Returns:
-            Dictionary with "content", "model", "usage", and optionally "requested_tools" keys.
+            Dictionary with "content", "model", "usage", and optionally "requested_resources" keys.
         """
         # Check for mock flag or function
         if callable(self._mock_llm_call):
@@ -227,9 +235,10 @@ class LLMResource(BaseResource):
         }
 
         # Add tool strings for resources if provided in the request
-        if "available_resources" in request and request["available_resources"]:
-            assert isinstance(request["available_resources"], Dict), "available_resources must be a dictionary"
-            request_params["tools"] = await self._get_tool_strings(request["available_resources"])
+        if "resources" in request and request["resources"]:
+            available_resources = request["resources"]
+            assert isinstance(available_resources, Dict), "resources must be a dictionary"
+            request_params["tools"] = await self.__get_function_calls(available_resources)
 
         # Filter out None values
         request_params = {k: v for k, v in request_params.items() if v is not None}
@@ -246,9 +255,9 @@ class LLMResource(BaseResource):
             # Use aisuite's standardized response format
             # handle tool calls
             reasoning = None
-            requested_tools = None
+            tool_calls = None
             if hasattr(response, "choices") and hasattr(response.choices[0].message, "tool_calls"):
-                requested_tools = response.choices[0].message.tool_calls
+                tool_calls = response.choices[0].message.tool_calls
                 reasoning = response.choices[0].finish_reason
             elif hasattr(response, "reasoning_content"):
                 reasoning = response.reasoning_content
@@ -257,10 +266,10 @@ class LLMResource(BaseResource):
 
             content = response.choices[0].message.content if hasattr(response, 'choices') else response.content
             
-            if requested_tools:
+            if tool_calls:
                 # Format tool calls into a readable list
                 tool_list = []
-                for tool in requested_tools:
+                for tool in tool_calls:
                     tool_info = f"{tool.function.name}: {tool.function.arguments}"
                     tool_list.append(tool_info)
 
@@ -287,14 +296,14 @@ class LLMResource(BaseResource):
                 "usage": getattr(response, "usage", None),
                 # Include any thinking content if present
                 "reasoning": reasoning,
-                "requested_tools": requested_tools,
+                "requested_resources": tool_calls,
             }
 
         except Exception as e:
             self.error("Error querying LLM: %s", str(e))
             raise LLMError(f"Error querying LLM: {str(e)}") from e
 
-    async def _get_tool_strings(self, resources: Dict[str, BaseResource]) -> List[Dict[str, Any]]:
+    async def __get_function_calls(self, resources: Dict[str, BaseResource]) -> List[Dict[str, Any]]:
         """Get tool strings for the list of resources.
 
         Args:
@@ -304,46 +313,11 @@ class LLMResource(BaseResource):
             List of tool specifications for the underlying LLM to use
         """
         resource_strings: List[Dict[str, Any]] = []
-        for resource_id, resource in resources.items():
-            resource_strings.extend(await resource.get_tool_strings(resource_id))
+        for resource in resources.values():
+            resource_strings.extend(await resource.as_function_calls())
+            # Put the resource in our registry so we can call on it as needed later
+            self.add_to_registry(resource.resource_id, resource)
         return resource_strings
-
-    # ===== Resource Tool Handling =====
-    def deprecated_get_resource_tools(self, resources: Dict[str, BaseResource]) -> List[Dict[str, Any]]:
-        """Get tools from resources in the format expected by the LLM API.
-
-        This method converts our internal resource representation into the format
-        expected by the LLM API's tool calling interface.
-
-        Args:
-            resources: Dictionary of available resources
-
-        Returns:
-            List of tools in LLM API format
-        """
-        tools = []
-        for resource_name, resource in resources.items():
-            # Get the resource's schema
-            schema = resource.get_schema()
-            if not schema:
-                continue
-
-            # Convert the schema to the LLM API's tool format
-            for tool_name, tool_schema in schema.items():
-                # Create the function description
-                function_desc = {
-                    "name": f"{resource_name}__query__{tool_name}",
-                    "description": tool_schema.get("description", ""),
-                    "parameters": tool_schema.get("parameters", {})
-                }
-
-                # Add the tool to the list
-                tools.append({
-                    "type": "function",
-                    "function": function_desc
-                })
-
-        return tools
 
     async def _query_one_resource(
         self,
@@ -374,7 +348,40 @@ class LLMResource(BaseResource):
         # For other resources, we can pass the parameters directly
         return await resource.query(params)
 
-    async def _query_requested_resources(
+    async def _query_requested_resources(self, requested_tools: List[Any]) -> str:
+        """Call on the requested tools and return the results."""
+
+        # Expected format of requested_tools:
+        #
+        #  'requested_tools': [ChatCompletionMessageToolCall(
+        #       id='call_0_a7b78698-bfcc-4aca-8941-17a7267c3ca3', 
+        #       function=Function(
+        #           arguments='{}', 
+        #           name='filesystem__query__list_allowed_directories'), 
+        #       type='function', 
+        #       index=0)],
+
+        tool_result_text = []
+        for tool in requested_tools:
+            # Expected format: name-uuid-function_name
+            resource_name, resource_id, function_name = self._parse_name_id_function_string(tool.function.name)
+            self.info(f"Resource name: {resource_name}, resource id: {resource_id}, function name: {function_name}")
+
+            resource = self.get_from_registry(resource_id)
+            if not resource:
+                self.error(f"Resource not found: {resource_id}")
+                continue
+            
+            if isinstance(resource, McpResource):
+                response = await resource.query({"tool": function_name, "arguments": tool.function.arguments})
+            else:
+                response = await resource.query(tool.function.arguments)
+
+            tool_result_text += f"\n{self._get_name_id_function_string(resource_name, resource_id, function_name)}: {response}"
+
+        return tool_result_text
+
+    async def _deprecated_query_requested_resources(
         self, 
         requested_resources: List[Any], 
         available_resources: Dict[str, BaseResource]

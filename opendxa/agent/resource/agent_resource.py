@@ -24,7 +24,7 @@ Example:
 """
 
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict, List
+from typing import TYPE_CHECKING, Any, Dict
 
 from opendxa.common.utils.misc import safe_asyncio_run
 
@@ -105,19 +105,3 @@ class AgentResource(BaseResource):
             await self.agent.cleanup()
         except (AgentError, ValueError) as e:
             raise ResourceError("Failed to cleanup agent") from e
-
-    async def get_tool_strings(self, resource_id: str, **kwargs) -> List[Dict[str, Any]]:
-        """Format a resource into OpenAI function specification.
-
-        Args:
-            resource: Resource instance to format
-            **kwargs: Additional keyword arguments
-
-        Returns:
-            OpenAI function specification list
-        """
-
-        tool_strings = []
-        tool_strings.extend(await super().get_tool_strings(resource_id=resource_id))
-
-        return tool_strings
