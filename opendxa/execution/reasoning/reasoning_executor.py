@@ -71,9 +71,10 @@ class ReasoningExecutor(BaseExecutor[ReasoningStrategy, Reasoning, ReasoningFact
                     prompt = self._build_llm_prompt(context)
 
                     # Log the prompt
-                    self.info("\nPrompt:")
+                    self.info("Prompt:")
                     self.info("=======")
                     self.info(prompt)
+                    self.info(f"Resources: {context.resources or {}}")
 
                     # Query the LLM with available resources
                     response = await context.reasoning_llm.query(request={
