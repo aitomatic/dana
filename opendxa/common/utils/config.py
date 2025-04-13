@@ -91,8 +91,8 @@ class ConfigManager(Configurable):
         # Validate field types
         available_resources = self.config.get("available_resources", [])
         if not isinstance(available_resources, list):
-            self.error("Invalid type for field 'resources': expected list")
-            raise ConfigurationError("'resources' must be a list")
+            self.error("Invalid type for field 'available_resources': expected list")
+            raise ConfigurationError("'available_resources' must be a list")
             
         reasoning = self.config.get("reasoning", {})
         if not isinstance(reasoning, dict):
