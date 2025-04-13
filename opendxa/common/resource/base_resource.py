@@ -262,7 +262,7 @@ class BaseResource(Configurable, Loggable):
             }
         }
         self.info(f"Function call: {function_call}")
-        return function_call
+        return [function_call]
 
     def _get_name_id_function_string(self, name: str, the_id: str, function_name: str) -> str:
         """Get the name-id-function string."""

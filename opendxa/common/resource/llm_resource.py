@@ -129,7 +129,8 @@ class LLMResource(BaseResource, Registerable[BaseResource]):
                 - temperature: Optional. Controls response randomness (0.0 to 1.0)
             
         Returns:
-            The final LLM response after all tool calls are complete.
+            Dict[str, Any]: The final LLM response after all tool calls are complete,
+            containing the assistant's message and any tool calls.
         """
         # Initialize variables for the loop
         if self.get_query_strategy() == QueryStrategy.ITERATIVE:
@@ -212,20 +213,22 @@ class LLMResource(BaseResource, Registerable[BaseResource]):
     async def _query_once(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Make a single call to the LLM with the given request.
         
-        This method uses the provided message history to make a single LLM call.
-        The message history is treated as read-only.
+        This method makes a single API call to the LLM using the provided message history.
+        The message history is treated as read-only and should contain the complete
+        conversation context including system prompts, user messages, and previous
+        tool calls and responses.
         
         Args:
             request: Dictionary containing:
-                - messages: List of messages, including all previous messages (read-only)
+                - message_history: List of previous messages (read-only)
                 - available_resources: Dictionary of available tools/resources
                 - max_tokens: Optional. Maximum tokens for the response
                 - temperature: Optional. Controls response randomness (0.0 to 1.0)
             
         Returns:
-            The complete LLM response object, including:
-            - choices[0].message: The assistant's message, which may contain tool_calls
-            - usage: Token usage statistics
+            Dict[str, Any]: The LLM response object containing:
+                - choices[0].message: The assistant's message, which may contain tool_calls
+                - usage: Token usage statistics
         """
         # Check for mock flag or function
         if callable(self._mock_llm_call):
@@ -358,16 +361,22 @@ class LLMResource(BaseResource, Registerable[BaseResource]):
     ) -> List[Dict[str, Any]]:
         """Call multiple requested tools and format their responses.
         
-        This method:
-        1. Processes each tool call request
-        2. Calls the corresponding tool for each request
-        3. Returns a list of tool response messages
+        This method processes each tool call request, executes the corresponding tool,
+        and returns properly formatted responses. Each response is formatted as:
+        {
+            "role": "tool",
+            "tool_call_id": "call_123",
+            "content": "{\"result\": \"value\"}"
+        }
         
         Args:
-            tool_calls: List of tool call objects from the LLM response
+            tool_calls: List of tool call objects from the LLM response, each containing:
+                - id: Unique identifier for the tool call
+                - function.name: Resource and function name in format "name-uuid-function"
+                - function.arguments: Arguments to pass to the tool
         
         Returns:
-            List of tool response messages, each containing:
+            List[Dict[str, Any]]: List of tool response messages, each containing:
                 - role: "tool"
                 - tool_call_id: Matches the id from the tool call request
                 - content: The JSON-serialized response from the tool

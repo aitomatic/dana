@@ -16,7 +16,12 @@ class Registerable(Generic[RegistryObjectType]):
         return self._registry[object_id]
     
     def add_to_registry(self, object_id: str, the_object: RegistryObjectType) -> None:
-        """Put an in my registry."""
+        """Add an object to the registry with the specified ID.
+        
+        Args:
+            object_id: Unique identifier for the object
+            the_object: The object to register
+        """
         self._registry[object_id] = the_object
     
     def remove_from_registry(self, object_id: str) -> None:
