@@ -60,7 +60,7 @@ class ConfigManager(Configurable):
     default_config: ClassVar[Dict[str, Any]] = {
         "api_key": None,
         "model": "gpt-4",
-        "resources": [],
+        "available_resources": [],
         "reasoning": {
             "strategy": "cot",
             "max_steps": 10
@@ -89,8 +89,8 @@ class ConfigManager(Configurable):
         super()._validate_config()
         
         # Validate field types
-        resources = self.config.get("resources", [])
-        if not isinstance(resources, list):
+        available_resources = self.config.get("available_resources", [])
+        if not isinstance(available_resources, list):
             self.error("Invalid type for field 'resources': expected list")
             raise ConfigurationError("'resources' must be a list")
             

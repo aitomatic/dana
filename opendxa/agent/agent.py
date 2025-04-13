@@ -307,7 +307,7 @@ class Agent(Loggable):
                 workflow_llm=self.workflow_llm,
                 planning_llm=self.planning_llm,
                 reasoning_llm=self.reasoning_llm,
-                resources=self.resources
+                available_resources=self.resources
             )
         else:
             # Update LLMs in provided context if not set

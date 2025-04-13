@@ -17,7 +17,7 @@ Features:
 """
 
 from time import perf_counter
-from typing import Dict, Any, Optional, List, Callable, Awaitable, cast, Union
+from typing import Dict, Any, Optional, List, Callable, Awaitable, cast
 from dataclasses import dataclass, field
 from ...common.graph import NodeType
 from ...execution import (
@@ -25,7 +25,7 @@ from ...execution import (
     ExecutionSignal, ExecutionContext,
     ExecutionSignalType
 )
-from ...common.resource import BaseResource, ResourceResponse, ResourceConfig, ResourceUnavailableError
+from ...common.resource import BaseResource, ResourceResponse, ResourceUnavailableError
 from .pipeline_context import PipelineContext
 from ...common.utils.logging.loggable import Loggable
 
@@ -102,7 +102,7 @@ class Pipeline(ExecutionGraph, BaseResource, Loggable):
         buffer_size: int = 1000,
         batch_size: Optional[int] = None,
         description: Optional[str] = None,
-        resource_config: Optional[Union[Dict[str, Any], ResourceConfig]] = None
+        config: Optional[Dict[str, Any]] = None
     ) -> None:
         """Initialize pipeline.
         
@@ -113,13 +113,13 @@ class Pipeline(ExecutionGraph, BaseResource, Loggable):
             buffer_size: Size of the buffer for data between steps
             batch_size: Optional batch size for processing
             description: Optional pipeline description
-            resource_config: Optional resource configuration
+            config: Optional resource configuration dictionary
         """
         # Initialize ExecutionGraph with objective and name
         ExecutionGraph.__init__(self, objective=objective, name=name)
         
-        # Initialize BaseResource
-        BaseResource.__init__(self, name=name, description=description, resource_config=resource_config)
+        # Initialize BaseResource with config
+        BaseResource.__init__(self, name=name, description=description, config=config)
         
         # Initialize Loggable
         Loggable.__init__(self)

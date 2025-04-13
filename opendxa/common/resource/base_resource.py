@@ -24,7 +24,7 @@ Example:
 import uuid
 from enum import Enum, auto
 from dataclasses import dataclass
-from typing import Dict, Any, Optional, Union, List, Tuple
+from typing import Dict, Any, Optional, Union, List, Tuple, ClassVar
 from ...common.utils.logging.loggable import Loggable
 from ...common.utils.configurable import Configurable
 
@@ -32,39 +32,6 @@ class QueryStrategy(Enum):
     """Resource querying strategies."""
     ONCE = auto()       # Single query without iteration, default for most resources
     ITERATIVE = auto()  # Iterative querying - default, e.g., for LLMResource
-
-@dataclass
-class ResourceConfig(Configurable):
-    """Configuration for a resource."""
-    name: str
-    description: Optional[str] = None
-
-    @classmethod
-    def get_default_config(cls) -> Dict[str, Any]:
-        """Get default configuration."""
-        return {
-            "name": "",
-            "description": None
-        }
-
-    def _validate_config(self) -> None:
-        """Validate the configuration.
-        
-        This method extends the base Configurable validation with resource-specific checks.
-        """
-        # Call base class validation first
-        super()._validate_config()
-        
-        # Validate resource-specific fields
-        if "name" not in self.config:
-            raise ValueError("Resource configuration must have a 'name' field")
-            
-        if "description" not in self.config:
-            raise ValueError("Resource configuration must have a 'description' field")
-            
-        # Validate resource name
-        if not self.config["name"]:
-            raise ValueError("Resource name cannot be empty")
 
 class ResourceError(Exception):
     """Base class for resource errors."""
@@ -93,36 +60,77 @@ class ResourceResponse:
     content: Optional[Any] = None  # Added MCP-compatible field
     error: Optional[str] = None
 
-class BaseResource(Loggable):
+class BaseResource(Configurable, Loggable):
     """Abstract base resource."""
+
+    # Class-level default configuration
+    default_config: ClassVar[Dict[str, Any]] = {
+        "name": "",
+        "description": None,
+        "query_strategy": QueryStrategy.ONCE,
+        "query_max_iterations": 3
+    }
 
     def __init__(
         self,
         name: str,
         description: Optional[str] = None,
-        resource_config: Optional[Dict[str, Any]] = None
+        config: Optional[Dict[str, Any]] = None
     ):
         """Initialize resource.
 
         Args:
             name: Resource name
             description: Optional resource description
-            config: Either a ResourceConfig object or a dict that can be converted to one
+            config: Optional additional configuration
         """
         # Initialize Loggable first to ensure logger is available
         Loggable.__init__(self)
         
-        if isinstance(resource_config, dict):
-            self.config = ResourceConfig.from_dict(resource_config)
-        elif isinstance(resource_config, ResourceConfig):
-            self.config = resource_config
-        else:
-            self.config = ResourceConfig(name=name, description=description)
+        # Initialize Configurable with the provided config
+        config_dict = config or {}
+        if name:
+            config_dict["name"] = name
+        if description:
+            config_dict["description"] = description
+        Configurable.__init__(self, **config_dict)
 
-        self.name = name or self.config.name
-        self.description = self.config.description or "No description provided"
+        self.name = self.config["name"]
+        self.description = self.config["description"] or "No description provided"
         self._is_available = False  # will only be True after initialization
         self._resource_id = str(uuid.uuid4())[:8]
+
+        self._query_strategy = self.config.get("query_strategy", QueryStrategy.ONCE)
+        self._query_max_iterations = self.config.get("query_max_iterations", 3)
+
+    def _validate_config(self) -> None:
+        """Validate the configuration.
+        
+        This method extends the base Configurable validation with resource-specific checks.
+        """
+        # Call base class validation first
+        super()._validate_config()
+        
+        # Validate resource-specific fields
+        if "name" not in self.config:
+            raise ValueError("Resource configuration must have a 'name' field")
+            
+        if "description" not in self.config:
+            raise ValueError("Resource configuration must have a 'description' field")
+            
+        # Validate resource name
+        if not self.config["name"]:
+            raise ValueError("Resource name cannot be empty")
+            
+        # Validate query strategy if present
+        if "query_strategy" in self.config:
+            if not isinstance(self.config["query_strategy"], QueryStrategy):
+                raise ValueError("query_strategy must be a QueryStrategy enum")
+                
+        # Validate max iterations if present
+        if "query_max_iterations" in self.config:
+            if not isinstance(self.config["query_max_iterations"], int):
+                raise ValueError("query_max_iterations must be an integer")
 
     @property
     def is_available(self) -> bool:
@@ -165,13 +173,11 @@ class BaseResource(Loggable):
     
     def get_query_strategy(self) -> QueryStrategy:
         """Get the query strategy for the resource."""
-        assert self.config is not None, "Resource config is not set"
-        return QueryStrategy(self.config.get("query_strategy", QueryStrategy.ONCE))
+        return self._query_strategy
 
     def get_query_max_iterations(self) -> int:
         """Get the maximum number of iterations for the resource. Default is 3."""
-        assert self.config is not None, "Resource config is not set"
-        return self.config.get("query_max_iterations", 3)
+        return self._query_max_iterations
     
     async def __aenter__(self) -> 'BaseResource':
         await self.initialize()

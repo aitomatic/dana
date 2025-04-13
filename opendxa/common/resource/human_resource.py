@@ -5,19 +5,10 @@ within the DXA framework. It includes configuration and response handling for hu
 """
 
 import asyncio
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, ClassVar
 from dataclasses import dataclass
 
-from .base_resource import BaseResource, ResourceConfig, ResourceResponse, ResourceError
-
-@dataclass
-class HumanConfig(ResourceConfig):
-    """Human resource configuration.
-
-    Attributes:
-        role (str): The role of the human resource, defaulting to "user".
-    """
-    role: str = "user"
+from .base_resource import BaseResource, ResourceResponse, ResourceError
 
 @dataclass 
 class HumanResponse(ResourceResponse):
@@ -42,19 +33,42 @@ class HumanResource(BaseResource):
         role (str): The role of the human resource.
         _is_available (bool): Indicates whether the resource is available for interaction.
     """
+
+    # Class-level default configuration
+    default_config: ClassVar[Dict[str, Any]] = {
+        "role": "user",
+        "description": "A human resource that can provide information"
+    }
     
-    def __init__(self, name: str, role: str = "user", description: str = "A human resource that can provide information"):
+    def __init__(
+        self,
+        name: str,
+        role: str = "user",
+        description: str = "A human resource that can provide information",
+        config: Optional[Dict[str, Any]] = None
+    ):
         """Initialize the HumanResource instance.
 
         Args:
             name (str): The name identifier for this human resource.
             role (str): The role of the human resource, defaulting to "user".
             description (str): The description of the human resource.
+            config: Optional additional configuration
         """
-        config = HumanConfig(name=name, role=role, description=description)
-        super().__init__(name=name, resource_config=config)
-        self.role = role
-        self._is_available = True 
+        # Build config dict from parameters
+        config_dict = config or {}
+        if role != "user":
+            config_dict["role"] = role
+        if description != "A human resource that can provide information":
+            config_dict["description"] = description
+
+        super().__init__(name=name, config=config_dict)
+        self._is_available = True
+
+    @property
+    def role(self) -> str:
+        """Get the role of the human resource."""
+        return self.config.get("role", "user")
 
     async def initialize(self) -> None:
         """Initialize the human resource.

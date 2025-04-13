@@ -25,14 +25,14 @@ class ExecutionContext:
                  current_plan: Optional['Plan'] = None,
                  current_reasoning: Optional['Reasoning'] = None,
                  global_context: Optional[Dict[str, Any]] = None,
-                 resources: Optional[Dict[str, BaseResource]] = None
+                 available_resources: Optional[Dict[str, BaseResource]] = None
                  ):
         """Initialize execution context."""
         # State management
         self.agent_state = agent_state
         self.world_state = world_state
         self.execution_state = execution_state
-        self.resources = resources
+        self.available_resources = available_resources
 
         # Current execution graphs
         self.current_workflow = current_workflow
