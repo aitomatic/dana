@@ -162,19 +162,30 @@ class LLMResource(BaseResource, Registerable[BaseResource]):
                 "messages": message_history  # Pass read-only message history
             })
             
-            response_message = response.choices[0].message
-            response_message_dict = {"role": response_message.role, "content": response_message.content}
+            if "choices" in response and len(response["choices"]) > 0:
+                response_message = response["choices"][0]["message"]
+            else:
+                response_message = response.choices[0].message
+
+            response_message_dict = {
+                "role": response_message["role"] if "role" in response_message else response_message.role,
+                "content": response_message["content"] if "content" in response_message else response_message.content
+            }
             message_history.append(response_message_dict)
             
             # Check if the LLM is requesting to use tools
-            has_tool_calls = hasattr(response_message, "tool_calls") and response_message.tool_calls
+            tool_calls = None
+            if "tool_calls" in response_message:
+                tool_calls = response_message["tool_calls"]
+            elif hasattr(response_message, "tool_calls"):
+                tool_calls = response_message.tool_calls
             
-            if has_tool_calls:
-                response_message_dict["tool_calls"] = response_message.tool_calls
+            if tool_calls:
+                response_message_dict["tool_calls"] = tool_calls
 
                 # Store the tool request message and get responses for all tool calls
                 self.info("LLM is requesting tools, storing tool request message and calling resources")
-                tool_call_responses = await self._call_requested_resources(response_message.tool_calls)
+                tool_call_responses = await self._call_requested_resources(tool_calls)
 
                 # Add tool responses to history
                 for tool_response in tool_call_responses:
@@ -188,7 +199,15 @@ class LLMResource(BaseResource, Registerable[BaseResource]):
         if iteration == max_iterations:
             self.info(f"Reached maximum iterations ({max_iterations}), returning final response")
 
-        return response.choices[0].message.content
+        if hasattr(response, "choices"):
+            # Convert to a Dict
+            return {
+                "choices": response.choices,
+                "usage": response.usage,
+                "model": response.model
+            }
+        else:
+            return response
 
     async def _query_once(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Make a single call to the LLM with the given request.
