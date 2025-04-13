@@ -280,7 +280,7 @@ class BaseExecutor(ABC, Loggable, Generic[StrategyT, GraphT, FactoryT]):
                 current_plan=context.current_plan,
                 current_reasoning=context.current_reasoning,
                 global_context=context.global_context,
-                resources=context.resources
+                available_resources=context.available_resources
             )
         except Exception as e:
             raise ExecutionError("Context building failed") from e

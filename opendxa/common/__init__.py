@@ -47,7 +47,6 @@ from .state import (
 )
 from .resource import (
     BaseResource,
-    ResourceConfig,
     ResourceResponse,
     ResourceError,
     ResourceUnavailableError,
@@ -109,7 +108,6 @@ __all__ = [
     
     # Resource
     'BaseResource',
-    'ResourceConfig',
     'ResourceResponse',
     'ResourceError',
     'ResourceUnavailableError',

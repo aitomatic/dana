@@ -24,8 +24,11 @@ Example:
 
     expert = ExpertResource(
         name="math_expert",
-        expertise=expertise,
-        config={"model": "gpt-4"}
+        config={
+            "expertise": expertise,
+            "model": "gpt-4",
+            "confidence_threshold": 0.7
+        }
     )
 
     response = await expert.query({
@@ -34,18 +37,10 @@ Example:
 """
 
 from dataclasses import dataclass
-from typing import Dict, Any, Optional
-from ...common.resource import BaseResource, ResourceResponse, ResourceConfig
+from typing import Dict, Any, Optional, ClassVar
+from ...common.resource.base_resource import BaseResource, ResourceResponse
 from ..capability.domain_expertise import DomainExpertise
 from ...common.io import IOFactory
-
-
-@dataclass
-class ExpertConfig(ResourceConfig):
-    """Expert-specific configuration."""
-    expertise: Optional[DomainExpertise] = None
-    confidence_threshold: float = 0.7
-    llm_config: Optional[Dict[str, Any]] = None
 
 
 @dataclass
@@ -59,19 +54,66 @@ class ExpertResponse(ResourceResponse):
 class ExpertResource(BaseResource):
     """Resource for interacting with human experts."""
 
-    # pylint: disable=too-many-arguments
-    def __init__(self,
-                 name: str,
-                 expertise: Optional[DomainExpertise] = None,
-                 system_prompt: Optional[str] = None,
-                 confidence_threshold: float = 0.7,
-                 llm_config: Optional[Dict[str, Any]] = None):
-        super().__init__(name)
-        self.expertise = expertise
-        self.system_prompt = system_prompt
-        self.confidence_threshold = confidence_threshold
-        self.llm_config = llm_config or {}
+    # Class-level default configuration
+    default_config: ClassVar[Dict[str, Any]] = {
+        "expertise": None,
+        "confidence_threshold": 0.7,
+        "system_prompt": None,
+        "llm_config": {}
+    }
+
+    def __init__(
+        self,
+        name: str,
+        expertise: Optional[DomainExpertise] = None,
+        system_prompt: Optional[str] = None,
+        confidence_threshold: float = 0.7,
+        llm_config: Optional[Dict[str, Any]] = None,
+        config: Optional[Dict[str, Any]] = None
+    ):
+        """Initialize expert resource.
+
+        Args:
+            name: Resource name
+            expertise: Optional domain expertise
+            system_prompt: Optional system prompt
+            confidence_threshold: Confidence threshold for responses
+            llm_config: Optional LLM configuration
+            config: Optional additional configuration
+        """
+        # Build config dict from parameters
+        config_dict = config or {}
+        if expertise:
+            config_dict["expertise"] = expertise
+        if system_prompt:
+            config_dict["system_prompt"] = system_prompt
+        if confidence_threshold != 0.7:
+            config_dict["confidence_threshold"] = confidence_threshold
+        if llm_config:
+            config_dict["llm_config"] = llm_config
+
+        super().__init__(name=name, config=config_dict)
         self._io = IOFactory.create_io("console")
+
+    @property
+    def expertise(self) -> Optional[DomainExpertise]:
+        """Get the domain expertise."""
+        return self.config.get("expertise")
+
+    @property
+    def confidence_threshold(self) -> float:
+        """Get the confidence threshold."""
+        return float(self.config.get("confidence_threshold", 0.7))
+
+    @property
+    def system_prompt(self) -> Optional[str]:
+        """Get the system prompt."""
+        return self.config.get("system_prompt")
+
+    @property
+    def llm_config(self) -> Dict[str, Any]:
+        """Get the LLM configuration."""
+        return self.config.get("llm_config", {})
 
     async def initialize(self) -> None:
         """Initialize IO for expert interaction."""

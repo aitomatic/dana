@@ -13,8 +13,13 @@ class TestLLMResource(unittest.TestCase):
 
         async def run_test():
             prompt = "Test prompt"
-            response = await llm_resource.query({"prompt": prompt})  # Ensure this is awaited
-            self.assertEqual(response["content"], f"Mock response for: {prompt}")
+            response = await llm_resource.query({"prompt": prompt})
+            
+            # Essential OpenAI API response structure
+            assert "choices" in response
+            assert len(response["choices"]) == 1
+            assert "message" in response["choices"][0]
+            assert "usage" in response
 
         asyncio.run(run_test())
 

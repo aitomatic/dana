@@ -3,7 +3,6 @@
 from .base_resource import (
     BaseResource,
     ResourceResponse,
-    ResourceConfig,
     ResourceError,
     ResourceUnavailableError
 )
@@ -17,7 +16,6 @@ from .wot_resource import WoTResource
 
 __all__ = [
     "BaseResource",
-    "ResourceConfig",
     "ResourceResponse",
     "ResourceError",
     "ResourceUnavailableError",

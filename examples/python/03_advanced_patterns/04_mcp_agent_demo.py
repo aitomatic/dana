@@ -44,11 +44,11 @@ async def main():
 
     # Execute queries
     logger.debug("Executing %s tool", MCP_TOOL_NAME)
-    response = await agent.resources[MCP_SERVICE_NAME].query({
+    response = await agent.available_resources[MCP_SERVICE_NAME].query({
         "tool": "ping"
     })
 
-    response = await agent.resources[MCP_SERVICE_NAME].query({
+    response = await agent.available_resources[MCP_SERVICE_NAME].query({
         "tool": "echo",
         "arguments": {"message": "Hello from DXA agent!"}
     })

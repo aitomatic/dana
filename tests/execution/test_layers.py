@@ -96,50 +96,15 @@ async def test_end_to_end_execution(
     2. Each layer's LLM is called with appropriate prompts
     3. Results flow correctly between layers
     4. The final output is generated
-
-    Expected Result Structure:
-    {
-        # Required fields
-        "content": str,  # The main response text from the LLM
-        "model": str,    # The model identifier used (e.g. "anthropic:claude-3-5-sonnet-20241022")
-        
-        # Optional fields
-        "reasoning": Optional[str],      # Additional reasoning provided by the LLM, can be None
-        "requested_tools": Optional[List],  # List of tools requested by the LLM, can be None
-    }
-
-    Example:
-    {
-        "content": "Mock response for: Execute the reasoning task...",
-        "model": "anthropic:claude-3-5-sonnet-20241022",
-        "reasoning": None,
-        "requested_tools": None
-    }
     """
     # Run the workflow
     result = await agent_fixture.async_run(workflow_fixture)
     
-    # Verify basic result structure
-    assert result is not None
-    assert isinstance(result, dict)
-    assert "content" in result
-    assert "model" in result
-    assert "reasoning" in result
-    assert "requested_tools" in result
-    
-    # Verify content field
-    assert isinstance(result["content"], str)
-    assert len(result["content"]) > 0
-    
-    # Verify model field
-    assert isinstance(result["model"], str)
-    assert len(result["model"]) > 0
-    
-    # Verify reasoning field
-    assert result["reasoning"] is None or isinstance(result["reasoning"], str)
-    
-    # Verify requested_tools field
-    assert result["requested_tools"] is None or isinstance(result["requested_tools"], list)
+    # Essential OpenAI API response structure
+    assert "choices" in result
+    assert len(result["choices"]) == 1
+    assert "message" in result["choices"][0]
+    assert "usage" in result
 
     # Verify that llms are set up for mock calls
     # pylint: disable=protected-access

@@ -10,7 +10,7 @@ from mcp.client.stdio import get_default_environment, stdio_client
 from mcp.client.sse import sse_client
 
 from ....common.utils.logging import Loggable
-from ..base_resource import BaseResource, ResourceResponse
+from ..base_resource import BaseResource, ResourceResponse, ResourceError
 from .mcp_config import McpConfig, McpConfigError, StdioTransportParams, HttpTransportParams
 
 
@@ -325,7 +325,18 @@ class McpResource(BaseResource, Loggable):
             ResourceResponse with execution results
         """
         await session.initialize()
+
         arguments = request.get("arguments", {})
+        if isinstance(arguments, str):
+            import json
+            try:
+                arguments = json.loads(arguments)
+            except json.JSONDecodeError as e:
+                raise ValueError("Arguments must be a dictionary") from e
+        
+        if not isinstance(arguments, dict):
+            raise ValueError("Arguments must be a dictionary")
+
         # Prepend arguments with 'self' for instance methods
         arguments = {"self": None, **arguments}
         
@@ -352,8 +363,7 @@ class McpResource(BaseResource, Loggable):
             return ResourceResponse(success=True, content=result)
             
         except Exception as e:
-            self.error(f"Tool execution failed: {str(e)}", exc_info=True)
-            return ResourceResponse(success=False, error=str(e))
+            raise ResourceError("Tool execution failed") from e
 
     def can_handle(self, request: Dict[str, Any]) -> bool:
         """Check if request can be handled by this resource.
@@ -421,13 +431,9 @@ class McpResource(BaseResource, Loggable):
             self.error(f"Tool listing failed: {e}", exc_info=True)
             return []
 
-    async def get_tool_strings(self, resource_id: str, **kwargs) -> List[Dict[str, Any]]:
-        """Format resource into OpenAI function specification.
+    async def as_function_calls(self) -> List[Dict[str, Any]]:
+        """Override to format MCP tools into OpenAI function specification.
         
-        Args:
-            resource_id: Resource identifier
-            **kwargs: Additional keyword arguments
-            
         Returns:
             OpenAI function specification list
         """
@@ -471,7 +477,7 @@ class McpResource(BaseResource, Loggable):
                 {
                     "type": "function",
                     "function": {
-                        "name": f"{resource_id}__query__{tool.name}",
+                        "name": self._get_name_id_function_string(self.name, self.resource_id, tool.name),
                         "description": tool.description,
                         "parameters": parameters,
                         "strict": True,

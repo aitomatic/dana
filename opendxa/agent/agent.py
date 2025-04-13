@@ -55,7 +55,7 @@ class Agent(Loggable):
         self._planner = None
         self._reasoner = None
         self._capabilities = None
-        self._resources = None
+        self._available_resources = None
         self._io = None
         self._runtime: Optional[AgentRuntime] = None
         self._workflow_strategy = WorkflowStrategy.DEFAULT
@@ -104,15 +104,15 @@ class Agent(Loggable):
         return self._agent_llm
 
     @property
-    def resources(self) -> Dict[str, BaseResource]:
-        """Get resources."""
-        if not self._resources:
-            self._resources = {}
-        return self._resources
+    def available_resources(self) -> Dict[str, BaseResource]:
+        """Get available resources. Resources are things I can access as needed."""
+        if not self._available_resources:
+            self._available_resources = {}
+        return self._available_resources
 
     @property
     def capabilities(self) -> Dict[str, BaseCapability]:
-        """Get capabilities."""
+        """Get capabilities. Capabilities are things I can do."""
         if not self._capabilities:
             self._capabilities = {}
         return self._capabilities
@@ -165,9 +165,9 @@ class Agent(Loggable):
 
     def with_resources(self, resources: Dict[str, BaseResource]) -> "Agent":
         """Add resources to agent."""
-        if not self._resources:
-            self._resources = {}
-        self._resources.update(resources)
+        if not self._available_resources:
+            self._available_resources = {}
+        self._available_resources.update(resources)
         return self
 
     def with_capabilities(self, capabilities: Dict[str, BaseCapability]) -> "Agent":
@@ -307,7 +307,7 @@ class Agent(Loggable):
                 workflow_llm=self.workflow_llm,
                 planning_llm=self.planning_llm,
                 reasoning_llm=self.reasoning_llm,
-                resources=self.resources
+                available_resources=self.available_resources
             )
         else:
             # Update LLMs in provided context if not set

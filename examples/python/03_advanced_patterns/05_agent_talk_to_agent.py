@@ -29,7 +29,7 @@ async def setup_agents():
     })
     
     # Initialize research agent resources to start the server
-    await research_agent.resources["research"].initialize()
+    await research_agent.available_resources["research"].initialize()
     
     # Get connection parameters from the research agent
     research_local_connection_params = {
@@ -61,7 +61,7 @@ async def setup_agents():
     })
     
     # Initialize reasoning agent resources
-    await reasoning_agent.resources["reasoning"].initialize()
+    await reasoning_agent.available_resources["reasoning"].initialize()
     
     # Get connection parameters from the reasoning agent
     reasoning_local_connection_params = {
@@ -103,7 +103,7 @@ async def setup_agents():
     })
     
     # Initialize execution agent resources
-    await execution_agent.resources["execution"].initialize()
+    await execution_agent.available_resources["execution"].initialize()
     
     return research_agent, reasoning_agent, execution_agent
 
@@ -282,7 +282,7 @@ async def main():
     finally:
         for agent in (research_agent, reasoning_agent, execution_agent):
             if agent:
-                for resource in agent.resources.values():
+                for resource in agent.available_resources.values():
                     await resource.cleanup()
 
 if __name__ == "__main__":
