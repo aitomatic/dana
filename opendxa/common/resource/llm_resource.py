@@ -11,6 +11,7 @@ from .base_resource import BaseResource, ResourceResponse
 from .mcp import McpResource
 from .base_resource import QueryStrategy
 from ..utils.registerable import Registerable
+from ..utils.misc import get_field
 
 class LLMResource(BaseResource, Registerable[BaseResource]):
     """LLM resource implementation using AISuite."""
@@ -163,38 +164,34 @@ class LLMResource(BaseResource, Registerable[BaseResource]):
                 "messages": message_history  # Pass read-only message history
             })
             
-            if "choices" in response and len(response["choices"]) > 0:
-                response_message = response["choices"][0]["message"]
-            else:
-                response_message = response.choices[0].message
+            choices = get_field(response, "choices", [])
+            response_message = get_field(choices[0], "message") if choices and len(choices) > 0 else None
 
-            response_message_dict = {
-                "role": response_message["role"] if "role" in response_message else response_message.role,
-                "content": response_message["content"] if "content" in response_message else response_message.content
-            }
-            message_history.append(response_message_dict)
-            
-            # Check if the LLM is requesting to use tools
-            tool_calls = None
-            if "tool_calls" in response_message:
-                tool_calls = response_message["tool_calls"]
-            elif hasattr(response_message, "tool_calls"):
-                tool_calls = response_message.tool_calls
-            
-            if tool_calls:
-                response_message_dict["tool_calls"] = tool_calls
-
-                # Store the tool request message and get responses for all tool calls
-                self.info("LLM is requesting tools, storing tool request message and calling resources")
-                tool_call_responses = await self._call_requested_resources(tool_calls)
-
-                # Add tool responses to history
-                for tool_response in tool_call_responses:
-                    message_history.append(tool_response)
-            else:
-                # If LLM is not requesting tools, we're done
-                self.info("LLM is not requesting tools, returning final response")
-                break
+            if response_message:
+                # Only add tool_calls if they exist and are a valid list
+                tool_calls = get_field(response_message, "tool_calls")
+                has_valid_tool_calls = tool_calls and isinstance(tool_calls, list)
+                
+                if has_valid_tool_calls:
+                    # Store the tool request message and get responses for all tool calls
+                    self.info("LLM is requesting tools, storing tool request message and calling resources")
+                    
+                    # First add the assistant message with all tool calls
+                    message_history.append({
+                        "role": get_field(response_message, "role"),
+                        "content": get_field(response_message, "content"),
+                        "tool_calls": tool_calls
+                    })
+                    
+                    # Get responses for all tool calls at once
+                    tool_responses = await self._call_requested_resources(tool_calls)
+                    if tool_responses:
+                        # Add all tool responses to the message history
+                        message_history.extend(tool_responses)
+                else:
+                    # If LLM is not requesting tools, we're done
+                    self.info("LLM is not requesting tools, returning final response")
+                    break
 
         # If we've reached the maximum iterations, return the final response
         if iteration == max_iterations:
@@ -241,14 +238,14 @@ class LLMResource(BaseResource, Registerable[BaseResource]):
         assert self._client is not None
 
         # Get message history (read-only)
-        messages = request.get("messages", [])
+        messages = get_field(request, "messages", [])
         if not messages:
             raise ValueError("messages must be provided and non-empty")
         
         # Build request parameters
         request_params = await self._build_request_params(
             request, 
-            request.get("available_resources")
+            get_field(request, "available_resources")
         )
 
         try:
@@ -408,11 +405,12 @@ class LLMResource(BaseResource, Registerable[BaseResource]):
                 response = await resource.query(tool_call.function.arguments)
 
             # Format the response as a proper tool response message
-            tool_call_responses.append({
-                "role": "tool",
-                "tool_call_id": tool_call.id,
-                "content": json.dumps(response) if not isinstance(response, str) else response
-            })
+            if response is not None:
+                tool_call_responses.append({
+                    "role": "tool",
+                    "tool_call_id": tool_call.id,
+                    "content": json.dumps(response) if not isinstance(response, str) else response
+                })
 
         return tool_call_responses
 

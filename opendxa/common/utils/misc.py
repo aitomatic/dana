@@ -1,7 +1,7 @@
 """Miscellaneous utilities."""
 
 from importlib import import_module
-from typing import Type, Any, Optional, Callable
+from typing import Type, Any, Optional, Callable, Union
 from pathlib import Path
 import inspect
 import asyncio
@@ -87,3 +87,18 @@ def safe_asyncio_run(func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any
     """Run a function in an asyncio loop."""
     ensure_asyncio_safety()
     return asyncio.run(func(*args, **kwargs))
+
+def get_field(obj: Union[dict, object], field_name: str, default: Any = None) -> Any:
+    """Get a field from either a dictionary or object.
+    
+    Args:
+        obj: The object or dictionary to get the field from
+        field_name: The name of the field to get
+        default: Default value to return if field is not found
+        
+    Returns:
+        The value of the field if found, otherwise the default value
+    """
+    if isinstance(obj, dict):
+        return obj.get(field_name, default)
+    return getattr(obj, field_name, default)
