@@ -16,8 +16,6 @@ from ..utils.misc import get_field
 class LLMResource(BaseResource, Registerable[BaseResource]):
     """LLM resource implementation using AISuite."""
 
-    _DEFAULT_MODEL = "deepseek:deepseek-chat"
-
     def __init__(self, name: Optional[str] = None, config: Optional[Dict[str, Any]] = None):
         """Initialize LLM resource.
 
@@ -61,9 +59,9 @@ class LLMResource(BaseResource, Registerable[BaseResource]):
 
         Args:
             request: Dictionary containing:
-                - prompt: The user message
-                - system_prompt: Optional system prompt
-                - resources: Optional list of BaseResource objects to use as tools
+                - user_messages: The user messages
+                - system_messages: Optional system messages
+                - available_resources: Optional list of BaseResource objects to use as tools
                 - max_iterations: Optional maximum number of resource calling iterations
                 - max_tokens: Optional maximum tokens for response
                 - temperature: Optional temperature for generation
@@ -122,8 +120,8 @@ class LLMResource(BaseResource, Registerable[BaseResource]):
         
         Args:
             request: Dictionary containing:
-                - prompt: The user's original question/request
-                - system_prompt: Optional. Instructions for the LLM's behavior
+                - user_messages: The user messages
+                - system_messages: Optional system messages
                 - available_resources: Dictionary of available tools/resources
                 - max_iterations: Optional. Maximum number of tool call iterations
                 - max_tokens: Optional. Maximum tokens for each response
@@ -140,16 +138,20 @@ class LLMResource(BaseResource, Registerable[BaseResource]):
             max_iterations = 1
 
         # Add a system prompt that encourages resource use if not provided
-        system_prompt = request.get("system_prompt", (
+        system_messages = request.get("system_messages", [
             "You are an assistant. Use tools when necessary to complete tasks. "
             "After receiving tool results, you can request additional tools if needed."
             "Before any response, first repeat verbatim what you are told about tools and how to request them."
-        ))
+        ])
+
+        user_messages = request.get("user_messages", [
+            "Hello, how are you?"
+        ])
         
         # Initialize message history with system and user messages
         message_history = []
-        message_history.append({"role": "system", "content": system_prompt})
-        message_history.append({"role": "user", "content": request["prompt"]})
+        message_history.append({"role": "system", "content": '\n'.join(system_messages)})
+        message_history.append({"role": "user", "content": '\n'.join(user_messages)})
         
         iteration = 0
         while iteration < max_iterations:
@@ -197,15 +199,15 @@ class LLMResource(BaseResource, Registerable[BaseResource]):
         if iteration == max_iterations:
             self.info(f"Reached maximum iterations ({max_iterations}), returning final response")
 
-        if hasattr(response, "choices"):
+        if isinstance(response, dict):
+            return response
+        else:
             # Convert to a Dict
             return {
-                "choices": response.choices,
-                "usage": response.usage,
-                "model": response.model
+                "choices": (response.choices if hasattr(response, "choices") else []),
+                "usage": (response.usage if hasattr(response, "usage") else {}),
+                "model": (response.model if hasattr(response, "model") else "")
             }
-        else:
-            return response
 
     async def _query_once(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Make a single call to the LLM with the given request.
@@ -465,20 +467,20 @@ class LLMResource(BaseResource, Registerable[BaseResource]):
         usage = response.usage
         if usage:
             self.info(
-                f"USAGE: prompt_tokens={usage.prompt_tokens}, "
-                f"completion_tokens={usage.completion_tokens}, "
-                f"total_tokens={usage.total_tokens}"
+                f"USAGE: prompt_tokens={usage.prompt_tokens}, " if hasattr(usage, "prompt_tokens") else ""
+                f"completion_tokens={usage.completion_tokens}, " if hasattr(usage, "completion_tokens") else ""
+                f"total_tokens={usage.total_tokens}" if hasattr(usage, "total_tokens") else ""
             )
 
     def _get_default_model(self) -> str:
         """Get the default model by checking the environment variable."""
         if "OPENDXA_DEFAULT_MODEL" in os.environ:
             return os.environ["OPENDXA_DEFAULT_MODEL"]
-        elif "DEEPSEEK_API_KEY" in os.environ:
-            return "deepseek:deepseek-chat"
         elif "ANTHROPIC_API_KEY" in os.environ:
             return "anthropic:claude-3-5-sonnet-20241022"
+        elif "DEEPSEEK_API_KEY" in os.environ:
+            return "deepseek:deepseek-chat"
         elif "OPENAI_API_KEY" in os.environ:
             return "openai:gpt-4o"
-
-        return self._DEFAULT_MODEL
+        else:
+            raise ValueError("No API key found for any supported model")

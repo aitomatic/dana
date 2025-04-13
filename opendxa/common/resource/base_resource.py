@@ -266,10 +266,10 @@ class BaseResource(Configurable, Loggable):
 
     def _get_name_id_function_string(self, name: str, the_id: str, function_name: str) -> str:
         """Get the name-id-function string."""
-        result = f"{name}-{the_id}-{function_name}"
-        self.info(f"Name-id-function string: {result}")
+        result = f"{name}__{the_id}__{function_name}"
+        # self.info(f"Name-id-function string: {result}")
         return result
 
     def _parse_name_id_function_string(self, name_id_function_string: str) -> Tuple[str, str, str]:
         """Parse the name-id-function string."""
-        return name_id_function_string.split("-")
+        return name_id_function_string.split("__")

@@ -35,14 +35,18 @@ from .agent_state import AgentState
 from ..common.io import BaseIO, IOFactory
 from ..common.utils.logging import Loggable
 from ..common.utils.config import load_agent_config
+from ..common.utils.configurable import Configurable
 from .agent_runtime import AgentRuntime
 from ..common.utils.misc import safe_asyncio_run
+
 # pylint: disable=too-many-public-methods
-class Agent(Loggable):
+class Agent(Configurable, Loggable):
     """Main agent interface with built-in execution management."""
 
     # pylint: disable=too-many-instance-attributes
     def __init__(self, name: Optional[str] = None, description: Optional[str] = None):
+        Configurable.__init__(self)
+
         self._name = name or "agent"
         self._description = description or "Agent responsible for executing tasks and " \
                                            "coordinating activities based on available information"
@@ -51,9 +55,8 @@ class Agent(Loggable):
         self._workflow_llm = None  # Specialized LLMs
         self._planning_llm = None
         self._reasoning_llm = None
-        self._config = {}
-        self._planner = None
-        self._reasoner = None
+        # self._planner = None
+        # self._reasoner = None
         self._capabilities = None
         self._available_resources = None
         self._io = None
@@ -92,16 +95,20 @@ class Agent(Loggable):
         return self._runtime
 
     @property
-    def config(self) -> Dict[str, Any]:
-        """Get configuration."""
-        return self._config
-
-    @property
     def agent_llm(self) -> LLMResource:
         """Get agent LLM."""
         if not self._agent_llm:
-            self._agent_llm = LLMResource(name=f"{self._name}_llm")
+            self._agent_llm = self._get_default_llm_resource()
         return self._agent_llm
+    
+    def _get_default_llm_resource(self):
+        """Get default LLM resource."""
+        return LLMResource(
+            name=f"{self._name}_llm",
+            config=(
+                {"model": self.config["model"]} if "model" in self.config else {}
+            )
+        )
 
     @property
     def available_resources(self) -> Dict[str, BaseResource]:
@@ -148,6 +155,11 @@ class Agent(Loggable):
     def name(self) -> str:
         """Get agent name."""
         return self._name
+
+    def with_model(self, model: str) -> "Agent":
+        """Configure agent model string name"""
+        self.config["model"] = model
+        return self
 
     def with_llm(self, llm: Union[Dict, str, LLMResource]) -> "Agent":
         """Configure agent LLM."""
@@ -263,7 +275,7 @@ class Agent(Loggable):
 
         # Validate minimal config
         if not self._agent_llm:
-            self.with_llm(LLMResource(name=f"{self._name}_llm"))
+            self.with_llm(self._get_default_llm_resource())
 
         # Set default strategies if not specified
         self._workflow_strategy = self._workflow_strategy or WorkflowStrategy.DEFAULT
