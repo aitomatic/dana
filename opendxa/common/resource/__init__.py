@@ -8,6 +8,7 @@ from .base_resource import (
 )
 from .human_resource import HumanResource
 from .llm_resource import LLMResource
+from .llm_result_resource import LLMResultResource
 from .mcp import (
     McpResource, StdioTransportParams, HttpTransportParams,
     BaseMcpService, McpEchoService
@@ -21,6 +22,7 @@ __all__ = [
     "ResourceUnavailableError",
     "LLMResource",
     "HumanResource",
+    "LLMResultResource",
     "McpResource",
     "StdioTransportParams",
     "HttpTransportParams",
