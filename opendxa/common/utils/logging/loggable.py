@@ -64,21 +64,21 @@ class Loggable:
         if prefix:
             self.logger.prefix = prefix
     
-    def debug(self, message: str, **context) -> None:
+    def debug(self, message: str, *args, **context) -> None:
         """Log a debug message."""
-        self.logger.debug(message, **context)
+        self.logger.debug(message, *args, **context)
     
-    def info(self, message: str, **context) -> None:
+    def info(self, message: str, *args, **context) -> None:
         """Log an info message."""
-        self.logger.info(message, **context)
+        self.logger.info(message, *args, **context)
     
-    def warning(self, message: str, **context) -> None:
+    def warning(self, message: str, *args, **context) -> None:
         """Log a warning message."""
-        self.logger.warning(message, **context)
+        self.logger.warning(message, *args, **context)
     
-    def error(self, message: str, **context) -> None:
+    def error(self, message: str, *args, **context) -> None:
         """Log an error message."""
-        self.logger.error(message, **context)
+        self.logger.error(message, *args, **context)
     
     @classmethod
     def get_class_logger(cls) -> 'Loggable':

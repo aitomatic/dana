@@ -431,7 +431,7 @@ class McpResource(BaseResource, Loggable):
             self.error(f"Tool listing failed: {e}", exc_info=True)
             return []
 
-    async def as_function_calls(self) -> List[Dict[str, Any]]:
+    def as_function_calls(self) -> List[Dict[str, Any]]:
         """Convert MCP tools into OpenAI function specifications.
         
         This method transforms MCP tools into a format that OpenAI's function calling API can understand.
@@ -481,7 +481,7 @@ class McpResource(BaseResource, Loggable):
                     - strict: Boolean enforcing strict parameter validation
         """
         tool_strings = []
-        mcp_tools = await self.list_tools()
+        mcp_tools = asyncio.run(self.list_tools())
 
         for tool in mcp_tools:
             # Copy and clean up base schema

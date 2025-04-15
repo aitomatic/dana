@@ -245,4 +245,22 @@ class ReasoningExecutor(BaseExecutor[ReasoningStrategy, Reasoning, ReasoningFact
         self.debug(f"Reasoning Strategy: {self.strategy}")
         system_messages.extend(self._build_reasoning_directives(self.strategy))
 
+        # Tell the LLM to call our final_result() function if the task is complete
+        system_messages.extend([
+            "",
+            "When the task is complete, call the final_result() function with the result,",
+            " if and only if that function is listed in the tools available to you.",
+            " If that tool is not available or you do not support tool-calling,",
+            " simply include in your response a 'final_result' in JSON format like this:",
+            "  {",
+            "    'final_result': {",
+            "      'content': The content of the result",
+            "      'status': The status of the result, @enum: success, error, partial",
+            "      'metadata': Optional metadata about the result",
+            "      'error': Optional error message if status is error",
+            "    }",
+            "  }",
+            "If the task is not complete, do not call or include 'final_result' in your response.",
+        ])
+
         return system_messages

@@ -8,6 +8,7 @@ import aisuite as ai
 from openai.types.chat import ChatCompletion
 from ...common.exceptions import LLMError
 from .base_resource import BaseResource, ResourceResponse
+from .llm_result_resource import LLMResultResource
 from .mcp import McpResource
 from .base_resource import QueryStrategy
 from ..utils.registerable import Registerable
@@ -70,6 +71,11 @@ class LLMResource(BaseResource, Registerable[BaseResource]):
         Returns:
             Dictionary with "content", "model", "usage".
         """
+        # Add a final_result tool to the available resources if it's not already there
+        available_resources = request.get("available_resources", {})
+        if "final_result" not in available_resources:
+            available_resources["final_result"] = LLMResultResource()
+
         # Use iterative querying if tools are provided, otherwise use single-shot
         response = await self._query_iterative(request)
         return response or {}
@@ -82,6 +88,7 @@ class LLMResource(BaseResource, Registerable[BaseResource]):
                 self.provider_configs["openai"] = {"api_key": self.config["api_key"]}
 
             self._client = ai.Client(provider_configs=self.provider_configs)
+            # TODO: Fix this
             self.info("LLM client initialized successfully for model: %s", self.model)
         
         # Initialize the registerable registry etc.
@@ -245,7 +252,7 @@ class LLMResource(BaseResource, Registerable[BaseResource]):
             raise ValueError("messages must be provided and non-empty")
         
         # Build request parameters
-        request_params = await self._build_request_params(
+        request_params = self._build_request_params(
             request, 
             get_field(request, "available_resources")
         )
@@ -311,7 +318,7 @@ class LLMResource(BaseResource, Registerable[BaseResource]):
         }
 
     # ===== Message and Request Building Methods =====
-    async def _build_request_params(self, request: Dict[str, Any], available_resources: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def _build_request_params(self, request: Dict[str, Any], available_resources: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Build the request parameters for the LLM call.
         
         Args:
@@ -332,12 +339,12 @@ class LLMResource(BaseResource, Registerable[BaseResource]):
         # Add tool strings for resources if provided
         if available_resources:
             assert isinstance(available_resources, Dict), "available_resources must be a dictionary"
-            request_params["tools"] = await self.__get_function_calls(available_resources)
+            request_params["tools"] = self.__get_function_calls(available_resources)
 
         # Filter out None values
         return {k: v for k, v in request_params.items() if v is not None}
 
-    async def __get_function_calls(self, resources: Dict[str, BaseResource]) -> List[Dict[str, Any]]:
+    def __get_function_calls(self, resources: Dict[str, BaseResource]) -> List[Dict[str, Any]]:
         """Get tool strings for the list of resources.
 
         Args:
@@ -348,7 +355,7 @@ class LLMResource(BaseResource, Registerable[BaseResource]):
         """
         resource_strings: List[Dict[str, Any]] = []
         for resource in resources.values():
-            resource_strings.extend(await resource.as_function_calls())
+            resource_strings.extend(resource.as_function_calls())
             # Put the resource in our registry so we can call on it as needed later
             self.add_to_registry(resource.resource_id, resource)
         return resource_strings

@@ -59,37 +59,37 @@ class DXALogger:
             return f"[{self.prefix}] {message}"
         return message
     
-    def info(self, message: str, **context):
+    def info(self, message: str, *args, **context):
         """Log informational message."""
         formatted = self._format_message(message)
         if self.log_data:
-            self.logger.info(formatted, extra=context)
+            self.logger.info(formatted, *args, extra=context)
         else:
-            self.logger.info(formatted)
+            self.logger.info(formatted, *args)
 
-    def debug(self, message: str, **context):
+    def debug(self, message: str, *args, **context):
         """Log debug message."""
         formatted = self._format_message(message)
         if self.log_data:
-            self.logger.debug(formatted, extra=context)
+            self.logger.debug(formatted, *args, extra=context)
         else:
-            self.logger.debug(formatted)
+            self.logger.debug(formatted, *args)
 
-    def warning(self, message: str, **context):
+    def warning(self, message: str, *args, **context):
         """Log warning message."""
         formatted = self._format_message(message)
         if self.log_data:
-            self.logger.warning(formatted, extra=context)
+            self.logger.warning(formatted, *args, extra=context)
         else:
-            self.logger.warning(formatted)
+            self.logger.warning(formatted, *args)
 
-    def error(self, message: str, **context):
+    def error(self, message: str, *args, **context):
         """Log error message."""
         formatted = self._format_message(message)
         if self.log_data:
-            self.logger.error(formatted, extra=context)
+            self.logger.error(formatted, *args, extra=context)
         else:
-            self.logger.error(formatted)
+            self.logger.error(formatted, *args)
 
     def getLogger(self, name: str) -> 'DXALogger':
         """Create a new logger instance with the given name."""
