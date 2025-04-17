@@ -24,7 +24,7 @@ Example:
 import uuid
 from enum import Enum, auto
 from dataclasses import dataclass
-from typing import Dict, Any, Optional, Union, List, Tuple, ClassVar, Callable
+from typing import Dict, Any, Optional, List, Tuple, ClassVar, Callable
 from ...common.utils.logging.loggable import Loggable
 from ...common.utils.configurable import Configurable
 
@@ -57,7 +57,7 @@ class ResourceAccessError(ResourceError):
 class ResourceResponse:
     """Resource response."""
     success: bool
-    content: Optional[Any] = None
+    content: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
 
 class BaseResource(Configurable, Loggable):
@@ -72,7 +72,7 @@ class BaseResource(Configurable, Loggable):
     }
 
     # Set to store function names marked for inclusion
-    _exposed_functions: ClassVar[set[str]] = set()
+    _tool_call_function_names: ClassVar[set[str]] = set()
 
     @staticmethod
     def tool_callable(func: Callable) -> Callable:
@@ -83,12 +83,15 @@ class BaseResource(Configurable, Loggable):
             async def my_function(self, param1: str) -> Dict[str, Any]:
                 pass
         """
-        # Get the class that owns this method
-        cls = func.__qualname__.split('.')[0]
-        if cls in globals():
-            resource_class = globals()[cls]
-            if isinstance(resource_class, type) and issubclass(resource_class, BaseResource):
-                resource_class._exposed_functions.add(func.__name__)
+        cls_name = func.__qualname__.split('.')[0]
+        cls_obj = globals().get(cls_name)
+
+        # pylint: disable=protected-access
+        if isinstance(cls_obj, type) and issubclass(cls_obj, BaseResource):
+            if not hasattr(cls_obj, "_tool_callable_functions"):
+                cls_obj._tool_call_function_names = set()
+            cls_obj._tool_call_function_names.add(func.__name__)
+
         return func
 
     def __init__(
@@ -122,6 +125,8 @@ class BaseResource(Configurable, Loggable):
 
         self._query_strategy = self.config.get("query_strategy", QueryStrategy.ONCE)
         self._query_max_iterations = self.config.get("query_max_iterations", 3)
+
+        self._tool_call_specs: Optional[List[Dict[str, Any]]] = None
 
     def _validate_config(self) -> None:
         """Validate the configuration.
@@ -183,7 +188,7 @@ class BaseResource(Configurable, Loggable):
     async def query(self, request: Dict[str, Any]) -> ResourceResponse:
         """Query resource."""
         if not self._is_available:
-            raise ResourceUnavailableError(f"Resource {self.name} not initialized")
+            return ResourceResponse(success=False, error=f"Resource {self.name} not initialized")
         self.debug(f"Resource [{self.name}] received query: {self._sanitize_log_data(request)}")
         return ResourceResponse(success=True)
 
@@ -216,7 +221,7 @@ class BaseResource(Configurable, Loggable):
                 sanitized[key] = "***REDACTED***"
         return sanitized
     
-    def as_function_calls(self) -> List[Dict[str, Any]]:
+    def _as_tool_call_specs(self) -> List[Dict[str, Any]]:
         """Format a resource into OpenAI function specifications.
         
         This method generates function specifications for all methods that should
@@ -225,27 +230,22 @@ class BaseResource(Configurable, Loggable):
         Returns:
             List of OpenAI function specifications
         """
-        function_specs = []
-        for function_name in self._get_function_names():
-            function_specs.append(self._generate_function_spec(function_name))
-        return function_specs
+        if self._tool_call_specs is None:
+            self._tool_call_specs = []
+            for function_name in self._tool_call_function_names:
+                self._tool_call_specs.append(self._generate_tool_call_spec(function_name))
+        return self._tool_call_specs
 
-    def _get_function_names(self) -> List[str]:
-        """Get list of function names to include in function specs.
+    def _generate_tool_call_spec(self, function_name: str) -> Dict[str, Any]:
+        """Generate tool-calling specification for a given method.
         
-        Returns:
-            List of function names marked with @tool_callable decorator
-        """
-        return list(self._exposed_functions)
-
-    def _generate_function_spec(self, function_name: str) -> Dict[str, Any]:
-        """Generate function specification for a given method.
-        
-        This method creates an OpenAI-compatible function specification by:
+        This method creates an OpenAI-compatible tool-calling specification by:
         1. Using type hints to determine parameter types and requirements
         2. Using only the @description field from docstring for function description
         3. Building the final schema structure
-        4. Extracting enum values from parameter docstrings if present
+        4. Using @schema annotations in docstrings to override parameter schemas
+
+        Limitation: we do not support Optional[T] or Union[T, None] in the method signature.
         
         Args:
             function_name: Name of the method to generate spec for
@@ -254,19 +254,21 @@ class BaseResource(Configurable, Loggable):
             OpenAI function specification
         """
         # Get the method object and its type annotations
-        method = getattr(self, function_name)
-        params = method.__annotations__
+        function = getattr(self, function_name)
+        params = function.__annotations__
         
         # Extract only the @description field from docstring
-        docstring = method.__doc__ or ""
+        docstring = function.__doc__ or ""
         description_lines = []
         in_description = False
         
-        # Parse docstring for description and parameter enums
-        param_enums = {}
+        # Parse docstring for description and parameter schemas
+        param_schemas = {}
         current_param = None
         in_args = False
         current_indent = 0
+        collecting_schema = False
+        schema_lines = []
         
         for line in docstring.split('\n'):
             line = line.rstrip()  # Keep leading whitespace
@@ -288,20 +290,52 @@ class BaseResource(Configurable, Loggable):
                 current_indent = len(line) - len(line.lstrip())
             elif in_args and stripped_line and len(line) - len(line.lstrip()) <= current_indent:
                 in_args = False
+                if collecting_schema:
+                    # Process collected schema
+                    try:
+                        import json
+                        schema = json.loads(''.join(schema_lines))
+                        param_schemas[current_param] = schema
+                    except json.JSONDecodeError as e:
+                        self.warning(f"Invalid JSON schema for parameter {current_param}: {e}")
+                    collecting_schema = False
+                    schema_lines = []
             elif in_args and stripped_line:
                 # Parse parameter line
-                if ':' in stripped_line and not stripped_line.startswith('@enum:'):
+                if ':' in stripped_line and not stripped_line.startswith('@schema:'):
+                    if collecting_schema:
+                        # Process collected schema
+                        try:
+                            import json
+                            schema = json.loads(''.join(schema_lines))
+                            param_schemas[current_param] = schema
+                        except json.JSONDecodeError as e:
+                            self.warning(f"Invalid JSON schema for parameter {current_param}: {e}")
+                        collecting_schema = False
+                        schema_lines = []
+                    
                     param_name = stripped_line.split(':')[0].strip()
                     current_param = param_name
-                elif current_param and stripped_line.startswith('@enum:'):
-                    enum_values = [v.strip() for v in stripped_line.replace('@enum:', '').split(',')]
-                    param_enums[current_param] = enum_values
+                elif current_param and stripped_line.startswith('@schema:'):
+                    collecting_schema = True
+                    schema_lines = [stripped_line.replace('@schema:', '').strip()]
+                elif collecting_schema:
+                    schema_lines.append(stripped_line)
+        
+        # Process any remaining schema
+        if collecting_schema:
+            try:
+                import json
+                schema = json.loads(''.join(schema_lines))
+                param_schemas[current_param] = schema
+            except json.JSONDecodeError as e:
+                self.warning(f"Invalid JSON schema for parameter {current_param}: {e}")
         
         # Join all description lines into a single string with a single space between words
         description = ' '.join(' '.join(description_lines).split()) if description_lines else None
         
         # Initialize schema components
-        properties = {}  # Will hold parameter definitions
+        parameters = {}  # Will hold parameter definitions
         required = []    # Will track required parameters
         
         # Map Python types to JSON Schema types
@@ -321,50 +355,41 @@ class BaseResource(Configurable, Loggable):
             if param_name == "return":
                 continue
 
-            # Add parameter to required list by default
-            required.append(param_name)
-            
-            # Check if parameter is Optional[T] or Union[T, None]
-            is_optional = (
-                hasattr(param_type, "__origin__") and 
-                hasattr(param_type, "__args__") and
-                getattr(param_type, "__origin__") is Union and
-                type(None) in getattr(param_type, "__args__", ())
-            )
-
             # Extract the actual type from Optional[T] or Union[T, None]
-            actual_type = getattr(param_type, "__args__", (param_type,))[0] if is_optional else param_type
+            actual_type = getattr(param_type, "__args__", (param_type,))[0]
             
-            # Handle complex types (Dict, List, etc.)
+            # Start with an empty schema object that we'll build up
+            param_schema = {}
+            
+            # Check if this is a complex type (Dict, List, etc.) or a simple type
             if hasattr(actual_type, "__origin__"):
-                if actual_type.__origin__ is Dict:
-                    param_schema_type = "object"
-                elif actual_type.__origin__ is List:
-                    param_schema_type = "array"
+                if actual_type.__origin__ in [Dict, dict] or type_map.get(actual_type, "string") == "object":
+                    # For object types, we need to specify that no additional properties are allowed
+                    # This ensures strict validation of the object structure
+                    param_schema.update({
+                        "type": "object",
+                        "properties": {},
+                        "additionalProperties": False,
+                        "required": []
+                    })
                 else:
-                    param_schema_type = type_map.get(actual_type, "string")
+                    # For List types, use "array", otherwise fall back to the type map
+                    param_schema["type"] = "array" if actual_type.__origin__ is List else type_map.get(actual_type, "string")
             else:
-                param_schema_type = type_map.get(actual_type, "string")
-            
-            # For optional parameters, make the type nullable
-            if is_optional:
-                param_schema_type = [param_schema_type, "null"]
-                # Remove from required list since it's optional
-                required.remove(param_name)
+                # For simple types, just use the type map
+                param_schema["type"] = type_map.get(actual_type, "string")
 
-            # Add parameter definition to properties
-            param_schema = {
-                "type": param_schema_type
-            }
+            # If this parameter has a custom schema from @schema annotation, use it
+            if param_name in param_schemas:
+                param_schema = param_schemas[param_name]
 
-            # Add enum values if specified in docstring
-            if param_name in param_enums:
-                param_schema["enum"] = param_enums[param_name]
+            # Add the completed schema to the parameters
+            parameters[param_name] = param_schema
 
-            properties[param_name] = param_schema
+            required.append(param_name)
 
         # Build the final function specification
-        return {
+        tool_call_spec = {
             "type": "function",
             "function": {
                 # Create unique function name combining resource name, ID, and function name
@@ -373,7 +398,7 @@ class BaseResource(Configurable, Loggable):
                 "description": description or self.description or "No description provided",
                 "parameters": {
                     "type": "object",
-                    "properties": properties,
+                    "properties": parameters,
                     "required": required,
                     # Prevent LLM from sending unexpected parameters
                     "additionalProperties": False
@@ -382,6 +407,9 @@ class BaseResource(Configurable, Loggable):
                 "strict": True
             }
         }
+
+        self.warning(f"Tool-call spec: {tool_call_spec}")
+        return tool_call_spec
 
     def _get_name_id_function_string(self, name: str, the_id: str, function_name: str) -> str:
         """Get the name-id-function string."""
@@ -392,3 +420,4 @@ class BaseResource(Configurable, Loggable):
     def _parse_name_id_function_string(self, name_id_function_string: str) -> Tuple[str, str, str]:
         """Parse the name-id-function string."""
         return name_id_function_string.split("__")
+    

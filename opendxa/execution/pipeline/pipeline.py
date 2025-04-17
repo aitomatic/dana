@@ -25,7 +25,7 @@ from ...execution import (
     ExecutionSignal, ExecutionContext,
     ExecutionSignalType
 )
-from ...common.resource import BaseResource, ResourceResponse, ResourceUnavailableError
+from ...common.resource import BaseResource, ResourceResponse
 from .pipeline_context import PipelineContext
 from ...common.utils.logging.loggable import Loggable
 
@@ -359,7 +359,7 @@ class Pipeline(ExecutionGraph, BaseResource, Loggable):
             ResourceResponse with the pipeline execution results
         """
         if not self._is_available:
-            raise ResourceUnavailableError(f"Pipeline resource {self.name} not initialized")
+            return ResourceResponse(success=False, error=f"Pipeline resource {self.name} not initialized")
         
         if request is None:
             request = {}

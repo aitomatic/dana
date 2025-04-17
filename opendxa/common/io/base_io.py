@@ -7,7 +7,7 @@ input/output operations while extending BaseResource functionality.
 
 from abc import abstractmethod
 from typing import Any, Dict, Optional
-from ...common.resource.base_resource import BaseResource
+from ...common.resource.base_resource import BaseResource, ResourceResponse
 
 class BaseIO(BaseResource):
     """Base class for I/O resources.
@@ -30,7 +30,7 @@ class BaseIO(BaseResource):
         """Receive message from IO channel."""
         pass
 
-    async def query(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    async def query(self, request: Dict[str, Any]) -> ResourceResponse:
         """Handle resource queries by mapping to send/receive.
 
         Args:
@@ -44,11 +44,12 @@ class BaseIO(BaseResource):
         """
         if "send" in request:
             await self.send(request["send"])
-            return {"success": True}
+            return ResourceResponse(success=True)
         if "receive" in request:
             response = await self.receive()
-            return {"success": True, "content": response}
-        raise ValueError("Invalid query - must specify send or receive")
+            return ResourceResponse(success=True, content={"response": response})
+        
+        return ResourceResponse(success=False, error="Invalid query - must specify send or receive")
 
     def can_handle(self, request: Dict[str, Any]) -> bool:
         """Check if request contains valid IO operations."""

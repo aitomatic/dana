@@ -248,19 +248,14 @@ class ReasoningExecutor(BaseExecutor[ReasoningStrategy, Reasoning, ReasoningFact
         # Tell the LLM to call our final_result() function if the task is complete
         system_messages.extend([
             "",
-            "When the task is complete, call the final_result() function with the result,",
-            " if and only if that function is listed in the tools available to you.",
-            " If that tool is not available or you do not support tool-calling,",
-            " simply include in your response a 'final_result' in JSON format like this:",
+            "When the task is complete, provide your response in JSON format with the following structure:",
             "  {",
-            "    'final_result': {",
-            "      'content': The content of the result",
-            "      'status': The status of the result, @enum: success, error, partial",
-            "      'metadata': Optional metadata about the result",
-            "      'error': Optional error message if status is error",
-            "    }",
+            "    'content': The content of the result",
+            "    'status': The status of the result, @enum: success, error, partial",
+            "    'metadata': Optional metadata about the result",
+            "    'error': Optional error message if status is error",
             "  }",
-            "If the task is not complete, do not call or include 'final_result' in your response.",
+            "If the task is not complete, continue with your analysis.",
         ])
 
         return system_messages

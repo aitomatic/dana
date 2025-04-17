@@ -120,7 +120,7 @@ class ExpertResource(BaseResource):
         self._io = IOFactory.create_io("console")  # Sync creation
         await self._io.initialize()  # Async init
 
-    async def query(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    async def query(self, request: Dict[str, Any]) -> ResourceResponse:
         """Get expert input."""
         if not self._io:
             await self.initialize()
@@ -128,10 +128,7 @@ class ExpertResource(BaseResource):
         # Ensure we pass a proper dictionary with prompt
         prompt = request.get("prompt") or ""
         response = await self._io.query({"prompt": prompt})
-        return {
-            "success": True,
-            "content": response
-        }
+        return response
 
     async def cleanup(self) -> None:
         """Cleanup IO."""

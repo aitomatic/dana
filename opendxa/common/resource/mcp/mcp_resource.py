@@ -431,7 +431,7 @@ class McpResource(BaseResource, Loggable):
             self.error(f"Tool listing failed: {e}", exc_info=True)
             return []
 
-    def as_function_calls(self) -> List[Dict[str, Any]]:
+    def as_tool_call_specs(self) -> List[Dict[str, Any]]:
         """Convert MCP tools into OpenAI function specifications.
         
         This method transforms MCP tools into a format that OpenAI's function calling API can understand.

@@ -8,7 +8,6 @@ import aisuite as ai
 from openai.types.chat import ChatCompletion
 from ...common.exceptions import LLMError
 from .base_resource import BaseResource, ResourceResponse
-from .llm_result_resource import LLMResultResource
 from .mcp import McpResource
 from .base_resource import QueryStrategy
 from ..utils.registerable import Registerable
@@ -16,6 +15,10 @@ from ..utils.misc import get_field
 
 class LLMResource(BaseResource, Registerable[BaseResource]):
     """LLM resource implementation using AISuite."""
+
+    # To avoid accidentally sending too much data to the LLM,
+    # we limit the total length of tool-call responses.
+    MAX_TOOL_CALL_RESPONSE_LENGTH = 10000
 
     def __init__(self, name: Optional[str] = None, config: Optional[Dict[str, Any]] = None):
         """Initialize LLM resource.
@@ -52,7 +55,7 @@ class LLMResource(BaseResource, Registerable[BaseResource]):
         self._query_max_iterations = self.config.get("query_max_iterations", 10)
 
     # ===== Public Interface Methods =====
-    async def query(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    async def query(self, request: Dict[str, Any]) -> ResourceResponse:
         """Query the LLM with the given request.
 
         This method determines whether to use iterative or single-shot querying based on
@@ -71,14 +74,10 @@ class LLMResource(BaseResource, Registerable[BaseResource]):
         Returns:
             Dictionary with "content", "model", "usage".
         """
-        # Add a final_result tool to the available resources if it's not already there
-        available_resources = request.get("available_resources", {})
-        if "final_result" not in available_resources:
-            available_resources["final_result"] = LLMResultResource()
 
         # Use iterative querying if tools are provided, otherwise use single-shot
         response = await self._query_iterative(request)
-        return response or {}
+        return ResourceResponse(success=True, content=response)
 
     async def initialize(self) -> None:
         """Initialize the AISuite client etc."""
@@ -140,7 +139,7 @@ class LLMResource(BaseResource, Registerable[BaseResource]):
         """
         # Initialize variables for the loop
         if self.get_query_strategy() == QueryStrategy.ITERATIVE:
-            max_iterations = self.get_query_max_iterations()
+            max_iterations = request.get("max_iterations", self.get_query_max_iterations())
         else:
             max_iterations = 1
 
@@ -148,7 +147,6 @@ class LLMResource(BaseResource, Registerable[BaseResource]):
         system_messages = request.get("system_messages", [
             "You are an assistant. Use tools when necessary to complete tasks. "
             "After receiving tool results, you can request additional tools if needed."
-            "Before any response, first repeat verbatim what you are told about tools and how to request them."
         ])
 
         user_messages = request.get("user_messages", [
@@ -165,6 +163,8 @@ class LLMResource(BaseResource, Registerable[BaseResource]):
             self.info(f"Resource calling iteration {iteration}/{max_iterations}")
             iteration += 1
             
+            # TODO: Guard rail the total message length before sending
+
             # Make the LLM query with available resources and message history
             response = await self._query_once({
                 "available_resources": request.get("available_resources", {}),
@@ -206,15 +206,11 @@ class LLMResource(BaseResource, Registerable[BaseResource]):
         if iteration == max_iterations:
             self.info(f"Reached maximum iterations ({max_iterations}), returning final response")
 
-        if isinstance(response, dict):
-            return response
-        else:
-            # Convert to a Dict
-            return {
-                "choices": (response.choices if hasattr(response, "choices") else []),
-                "usage": (response.usage if hasattr(response, "usage") else {}),
-                "model": (response.model if hasattr(response, "model") else "")
-            }
+        return response if isinstance(response, ResourceResponse) else {
+            "choices": (response.choices if hasattr(response, "choices") else []),
+            "usage": (response.usage if hasattr(response, "usage") else {}),
+            "model": (response.model if hasattr(response, "model") else "")
+        }
 
     async def _query_once(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Make a single call to the LLM with the given request.
@@ -353,17 +349,18 @@ class LLMResource(BaseResource, Registerable[BaseResource]):
         Returns:
             List of tool specifications for the underlying LLM to use
         """
-        resource_strings: List[Dict[str, Any]] = []
+        resource_dicts: List[Dict[str, Any]] = []
         for resource in resources.values():
-            resource_strings.extend(resource.as_function_calls())
+            resource_dicts.extend(resource.as_tool_call_specs())
             # Put the resource in our registry so we can call on it as needed later
             self.add_to_registry(resource.resource_id, resource)
-        return resource_strings
+        return resource_dicts
 
     # ===== Resource Calling Methods =====
     async def _call_requested_resources(
         self, 
-        tool_calls: List[Any]
+        tool_calls: List[Any],
+        max_response_length: Optional[int] = MAX_TOOL_CALL_RESPONSE_LENGTH
     ) -> List[Dict[str, Any]]:
         """Call multiple requested tools and format their responses.
         
@@ -391,7 +388,18 @@ class LLMResource(BaseResource, Registerable[BaseResource]):
             return []
 
         tool_call_responses: List[Dict[str, Any]] = []
+        total_response_length = 0
+        result_too_long_content = json.dumps({"error": "Result too long. Try something else."})
+
         for tool_call in tool_calls:
+            if total_response_length > max_response_length:
+                tool_call_responses.append({
+                    "role": "tool",
+                    "tool_call_id": tool_call.id,
+                    "content": result_too_long_content
+                })
+                continue
+
             # Expected format: name-uuid-function_name
             resource_name, resource_id, function_name = self._parse_name_id_function_string(tool_call.function.name)
             self.info(f"Resource name: {resource_name}, resource id: {resource_id}, function name: {function_name}")
@@ -415,11 +423,25 @@ class LLMResource(BaseResource, Registerable[BaseResource]):
 
             # Format the response as a proper tool response message
             if response is not None:
-                tool_call_responses.append({
-                    "role": "tool",
-                    "tool_call_id": tool_call.id,
-                    "content": json.dumps(response) if not isinstance(response, str) else response
-                })
+                content = json.dumps(response) if not isinstance(response, str) else response
+                total_response_length += len(content)
+                if total_response_length < max_response_length:
+                    tool_call_responses.append({
+                        "role": "tool",
+                        "tool_call_id": tool_call.id,
+                        "content": content
+                    })
+                else:
+                    # Update all existing tool call responses to indicate an error
+                    for tool_call_response in tool_call_responses:
+                        tool_call_response.update({
+                            "content": result_too_long_content
+                        })
+                    tool_call_responses.append({
+                        "role": "tool",
+                        "tool_call_id": tool_call.id,
+                        "content": result_too_long_content
+                    })
 
         return tool_call_responses
 

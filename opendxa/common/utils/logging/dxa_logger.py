@@ -49,6 +49,10 @@ class DXALogger:
             
         self._configured = True
     
+    def setBasicConfig(self, *args, **kwargs):
+        """Configure the logging system with basic settings."""
+        logging.basicConfig(*args, **kwargs)
+        
     def setLevel(self, level: int):
         """Set the logging level."""
         self.logger.setLevel(level)
