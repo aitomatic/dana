@@ -8,7 +8,13 @@
 
 ## dxa.agent.capability Module
 
-The capability layer provides core cognitive abilities to DXA agents, building on top of the [resource system](../resource/README.md) to create higher-level, more cognitively-aligned interfaces. While resources provide raw functionality (databases, APIs, tools), capabilities represent how an agent thinks and learns. The two primary capabilities - Memory and Domain-Expertise - are fundamental to creating agents that can learn from experience and apply specialized knowledge.
+The capability layer provides core cognitive abilities to DXA agents by combining resources with specialized logic and cognition. While resources provide raw functionality (databases, APIs, tools), capabilities represent how an agent thinks, learns, and applies knowledge to achieve specific goals.
+
+Key aspects of capabilities:
+- Build on top of resources to create higher-level, cognitively-aligned interfaces
+- Combine resources with specialized logic and workflows
+- Enable agents to perform complex tasks through orchestration of resources
+- Can share and reuse resources across different capabilities
 
 ## Design Philosophy
 
@@ -20,6 +26,7 @@ This principle guides our capability system design:
 - Natural knowledge interfaces
 - Composable capabilities
 - Extensible architecture
+- Resource reuse and sharing
 
 ## Architecture
 
@@ -27,23 +34,28 @@ This principle guides our capability system design:
 graph TB
     A[Capability] --> B[Memory]
     A --> C[Domain-Expertise]
+    A --> D[Planning]
+    A --> E[Reasoning]
     
     subgraph "Memory Types"
-        B --> D[Short-term]
-        B --> E[Long-term]
-        B --> F[Working]
+        B --> F[Short-term]
+        B --> G[Long-term]
+        B --> H[Working]
     end
     
     subgraph "Expertise Types"
-        C --> G[Knowledge Base]
-        C --> H[Skill Sets]
-        C --> I[Experience]
+        C --> I[Knowledge Base]
+        C --> J[Skill Sets]
+        C --> K[Experience]
     end
     
-    D -.-> J[Volatile]
-    E -.-> K[Persistent]
-    G -.-> L[Vector DB]
-    H -.-> M[Function Library]
+    subgraph "Resources"
+        L[Vector DB] -.-> I
+        M[Key-Value Store] -.-> F
+        N[Time Series DB] -.-> G
+        O[Function Registry] -.-> J
+        P[Learning System] -.-> K
+    end
 ```
 
 ## Usage Guide
@@ -66,11 +78,11 @@ await agent.memory.short_term.add("current_context", context)
 ### Advanced Memory Management
 
 ```python
-# Configured memory system
+# Configured memory system with specific resources
 agent = Agent("analyst")\
     .with_memory(
-        short_term={"capacity": 100, "decay_rate": 0.1},
-        long_term={"storage": "persistent", "index": "semantic"},
+        short_term={"storage": "redis", "capacity": 100, "decay_rate": 0.1},
+        long_term={"storage": "vector_db", "index": "semantic"},
         working={"size": "adaptive"}
     )
 
@@ -87,15 +99,18 @@ async with agent.memory.working_session() as session:
 ### Domain Expertise
 
 ```python
-# Specialized knowledge domain
+# Specialized knowledge domain with resource configuration
 agent = Agent("medical_assistant")\
     .with_expertise("medical", {
-        "knowledge_base": "medical_corpus",
+        "knowledge_base": {
+            "type": "vector_db",
+            "config": {"index": "medical_corpus"}
+        },
         "credentials": ["general_practice"],
         "specializations": ["diagnosis", "treatment"]
     })
 
-# Expert reasoning
+# Expert reasoning using configured resources
 result = await agent.run({
     "task": "diagnose",
     "symptoms": symptoms_list,
@@ -112,11 +127,11 @@ class Capability:
     """Base class for all capabilities."""
     
     async def initialize(self, config: Dict[str, Any]) -> None:
-        """Set up capability with configuration."""
+        """Set up capability with configuration and required resources."""
         raise NotImplementedError
         
     async def apply(self, context: Context) -> Result:
-        """Use capability in given context."""
+        """Use capability in given context, orchestrating resources as needed."""
         raise NotImplementedError
 ```
 
@@ -127,6 +142,7 @@ Memory capabilities build on storage resources:
 ```python
 class MemoryCapability(Capability):
     async def initialize(self, config):
+        # Initialize required resources
         self.short_term = VolatileStore(config.get("short_term", {}))
         self.long_term = PersistentStore(config.get("long_term", {}))
         self.working = WorkingMemory(config.get("working", {}))
@@ -145,12 +161,13 @@ Domain expertise builds on knowledge resources:
 ```python
 class DomainExpertise(Capability):
     async def initialize(self, config):
+        # Initialize required resources
         self.knowledge = VectorDB(config.get("knowledge_base"))
         self.skills = FunctionRegistry(config.get("skills"))
         self.experience = ExperienceTracker(config.get("experience"))
         
     async def apply_expertise(self, task: Task) -> Solution:
-        """Apply domain knowledge to solve task."""
+        """Apply domain knowledge to solve task using configured resources."""
         relevant = await self.knowledge.search(task.context)
         solution = await self.skills.execute(task.action, relevant)
         await self.experience.record(task, solution)
@@ -171,6 +188,16 @@ Capabilities are implemented using underlying resources:
    - Function registries for skills
    - Learning systems for adaptation
 
+3. Planning Uses:
+   - LLMs for strategy generation
+   - State stores for tracking progress
+   - Resource managers for allocation
+
+4. Reasoning Uses:
+   - LLMs for logical inference
+   - Knowledge bases for context
+   - Memory systems for recall
+
 ## Testing and Validation
 
 Capabilities should verify:
@@ -187,6 +214,12 @@ Capabilities should verify:
    - Learning curves
    - Performance metrics
 
+3. Resource Integration
+   - Resource availability
+   - Error handling
+   - Performance impact
+   - Resource sharing
+
 ## Best Practices
 
 1. Memory Management
@@ -201,11 +234,12 @@ Capabilities should verify:
    - Test skill implementations
    - Track performance
 
-3. Integration
+3. Resource Integration
    - Compose capabilities cleanly
    - Handle resource dependencies
    - Manage state properly
    - Monitor usage patterns
+   - Share resources efficiently
 
 ## Common Patterns
 
@@ -219,7 +253,7 @@ async with agent.memory.context(task_id) as ctx:
     result = await agent.process(task, ctx)
 ```
 
-1. Experience Tracking
+2. Experience Tracking
 
 ```python
 # Record and learn from experiences
@@ -243,7 +277,7 @@ result, confidence = await agent.expertise.apply({
 })
 ```
 
-1. Skill Learning
+2. Skill Learning
 
 ```python
 # Learn new skills from experience

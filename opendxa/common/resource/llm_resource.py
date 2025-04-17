@@ -351,7 +351,7 @@ class LLMResource(BaseResource, Registerable[BaseResource]):
         """
         resource_dicts: List[Dict[str, Any]] = []
         for resource in resources.values():
-            resource_dicts.extend(resource.as_tool_call_specs())
+            resource_dicts.extend(resource.as_tool_call_specs(resource.resource_id))
             # Put the resource in our registry so we can call on it as needed later
             self.add_to_registry(resource.resource_id, resource)
         return resource_dicts

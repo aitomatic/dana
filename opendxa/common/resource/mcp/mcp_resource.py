@@ -431,8 +431,8 @@ class McpResource(BaseResource, Loggable):
             self.error(f"Tool listing failed: {e}", exc_info=True)
             return []
 
-    def as_tool_call_specs(self) -> List[Dict[str, Any]]:
-        """Convert MCP tools into OpenAI function specifications.
+    def as_tool_call_specs(self, my_id: str) -> List[Dict[str, Any]]:
+        """Override to convert all MCP tools under this resource into OpenAI function specifications.
         
         This method transforms MCP tools into a format that OpenAI's function calling API can understand.
         It performs several important transformations:
@@ -526,7 +526,7 @@ class McpResource(BaseResource, Loggable):
             tool_strings.append({
                 "type": "function",
                 "function": {
-                    "name": self._get_name_id_function_string(self.name, self.resource_id, tool.name),
+                    "name": self._get_name_id_function_string(self.name, my_id, tool.name),
                     "description": tool.description,
                     "parameters": parameters,
                     "strict": True,

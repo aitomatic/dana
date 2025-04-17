@@ -68,6 +68,31 @@ The OpenDXA framework provides a factory pattern for creating agents with common
 - Maintains consistent initialization across applications
 - Enables quick starts with progressive enhancement
 
+### Core Concepts
+
+1. **Resources** - Things an agent has access to:
+   - Tools (APIs, databases, external services)
+   - Data stores (vector DBs, key-value stores)
+   - Models (LLMs, specialized ML models)
+   - Interfaces (I/O handlers, communication channels)
+   - An agent can have access to multiple resources simultaneously
+   - Resources can be accessed directly or through capabilities
+
+2. **Capabilities** - Things an agent can do:
+   - Higher-level cognitive functions
+   - Composed of resources + specific cognition
+   - Examples: Memory, Domain Expertise, Planning, Reasoning
+   - Each capability combines resources with specialized logic
+   - An agent can have multiple capabilities working together
+   - Capabilities can share and reuse the same resources
+
+3. **Relationship**:
+   - Resources provide raw functionality
+   - Capabilities build on resources to create higher-level abilities
+   - Capabilities orchestrate resources to achieve specific goals
+   - Multiple capabilities can share the same resources
+   - A single agent can combine multiple capabilities to achieve complex tasks
+
 ### Usage
 
 ```python
