@@ -20,6 +20,7 @@ See dxa/agent/README.md for detailed design documentation.
 """
 
 from typing import Dict, Union, Optional, Any
+from dataclasses import dataclass
 from ..execution import (
     Workflow,
     WorkflowFactory,
@@ -29,7 +30,7 @@ from ..execution import (
     ExecutionContext
 )
 from .capability import BaseCapability
-from ..common.resource import BaseResource, LLMResource
+from ..common.resource import BaseResource, LLMResource, ResourceResponse
 from ..common.state import WorldState, ExecutionState
 from .agent_state import AgentState
 from ..common.io import BaseIO, IOFactory
@@ -38,6 +39,41 @@ from ..common.utils.config import load_agent_config
 from ..common.utils.configurable import Configurable
 from .agent_runtime import AgentRuntime
 from ..common.utils.misc import safe_asyncio_run
+
+@dataclass
+class AgentResponse:
+    """Response from an agent operation.
+    
+    This class can handle converting from various data structures into a standardized
+    agent response format.
+    """
+    success: bool
+    content: Optional[Dict[str, Any]] = None
+    error: Optional[str] = None
+
+    @classmethod
+    def new_instance(cls, response: Union[ResourceResponse, Dict[str, Any], Any]) -> 'AgentResponse':
+        """Create a new AgentResponse instance from a ResourceResponse or similar structure.
+        
+        Args:
+            response: The response to convert, which should have success, content, and error attributes
+            
+        Returns:
+            AgentResponse instance
+        """
+        if isinstance(response, ResourceResponse):
+            return AgentResponse(
+                success=response.success,
+                content=response.content,
+                error=response.error
+            )
+        else:
+            return AgentResponse(
+                success=True,
+                content=response,
+                error=None
+            )
+
 
 # pylint: disable=too-many-public-methods
 class Agent(Configurable, Loggable):
@@ -306,7 +342,7 @@ class Agent(Configurable, Loggable):
         """Cleanup agent when exiting context."""
         await self.cleanup()
 
-    async def async_run(self, workflow: Workflow, context: Optional[ExecutionContext] = None) -> Any:
+    async def async_run(self, workflow: Workflow, context: Optional[ExecutionContext] = None) -> AgentResponse:
         """Execute an objective."""
         self._initialize()
 
@@ -335,13 +371,13 @@ class Agent(Configurable, Loggable):
         assert context.reasoning_llm is not None
 
         async with self:  # For cleanup
-            return await self.runtime.execute(workflow, context)
+            return AgentResponse.new_instance(await self.runtime.execute(workflow, context))
 
-    def run(self, workflow: Workflow) -> Any:
+    def run(self, workflow: Workflow) -> AgentResponse:
         """Run an workflow."""
         return safe_asyncio_run(self.async_run, workflow)
 
-    def ask(self, question: str) -> Any:
+    def ask(self, question: str) -> AgentResponse:
         """Ask a question to the agent."""
         workflow = WorkflowFactory.create_basic_workflow(question, ["query"])
         return self.run(workflow)

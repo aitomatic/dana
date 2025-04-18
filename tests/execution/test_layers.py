@@ -7,7 +7,7 @@ using mock LLMs to avoid external API calls.
 from typing import Dict
 import pytest
 
-from opendxa.agent import Agent
+from opendxa.agent import Agent, AgentResponse
 from opendxa.execution.workflow import Workflow
 from opendxa.common.resource import LLMResource
 from opendxa.execution import (
@@ -101,10 +101,10 @@ async def test_end_to_end_execution(
     result = await agent_fixture.async_run(workflow_fixture)
     
     # Essential OpenAI API response structure
-    assert "choices" in result
-    assert len(result["choices"]) == 1
-    assert "message" in result["choices"][0]
-    assert "usage" in result
+    assert isinstance(result, AgentResponse)
+    assert result.success
+    assert result.content is not None
+    assert result.error is None
 
     # Verify that llms are set up for mock calls
     # pylint: disable=protected-access

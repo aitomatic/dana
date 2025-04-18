@@ -112,7 +112,8 @@ from .agent import (
     BaseCapability,
     AgentState,
     ExpertResource,
-    ResourceFactory
+    ResourceFactory,
+    AgentResponse
 )
 
 __all__ = [
@@ -173,7 +174,8 @@ __all__ = [
     'BaseCapability',
     'AgentState',
     'ExpertResource',   
-    "ResourceFactory",
+    'ResourceFactory',
+    'AgentResponse',
 
     # Execution
     "ExecutionContext",

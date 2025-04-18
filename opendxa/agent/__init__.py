@@ -1,6 +1,6 @@
 """DXA agent module."""
 
-from .agent import Agent
+from .agent import Agent, AgentResponse
 from .agent_factory import AgentFactory
 from .agent_runtime import AgentRuntime
 from .capability import BaseCapability
@@ -13,6 +13,7 @@ from .resource import (
 
 __all__ = [
     "Agent",
+    "AgentResponse",
     "AgentResource",
     "AgentRuntime",
     "AgentFactory",
