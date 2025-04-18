@@ -2,8 +2,8 @@
 
 from typing import List, Optional
 
-from ..execution_graph import ExecutionGraph
-from ..execution_types import Objective, ExecutionNode, ObjectiveStatus
+from opendxa.base.execution.execution_graph import ExecutionGraph
+from opendxa.base.execution.execution_types import Objective, ExecutionNode, ObjectiveStatus
 
 class Plan(ExecutionGraph):
     """Concrete execution steps (WHAT layer)."""

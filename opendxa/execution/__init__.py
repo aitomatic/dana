@@ -1,14 +1,42 @@
-"""Execution module for DXA."""
+"""Execution System for OpenDXA.
 
-from .execution_types import (
-    Objective, ObjectiveStatus,
-    ExecutionNode, ExecutionEdge,
-    ExecutionNodeStatus,
-    ExecutionSignal, ExecutionSignalType,
-)
-from .execution_context import ExecutionContext
-from .execution_graph import ExecutionGraph
-from .pipeline import (
+This module implements the three-layer architecture for executing agent workflows:
+
+1. Workflow Layer (WHY)
+   - Defines what agents can do
+   - Manages high-level workflow execution
+   - Handles workflow strategies and optimization
+
+2. Planning Layer (WHAT)
+   - Converts workflows into concrete plans
+   - Manages dependencies between steps
+   - Handles data flow between nodes
+
+3. Reasoning Layer (HOW)
+   - Executes plans with specific reasoning strategies
+   - Processes execution signals
+   - Manages state and context
+
+The execution system also includes a Pipeline layer that orchestrates the execution flow,
+managing the interaction between different layers and components.
+
+For detailed documentation, see:
+- Execution Documentation: https://github.com/aitomatic/opendxa/blob/main/opendxa/execution/README.md
+
+Example:
+    >>> from opendxa.execution import Workflow, WorkflowExecutor
+    >>> from opendxa.execution.workflow import ExecutionNode, NodeType
+    >>> workflow = Workflow(objective="Analyze customer feedback")
+    >>> workflow.add_node(ExecutionNode(
+    ...     node_id="ANALYZE",
+    ...     node_type=NodeType.TASK,
+    ...     objective="Analyze feedback data"
+    ... ))
+    >>> executor = WorkflowExecutor()
+    >>> result = await executor.execute(workflow)
+"""
+
+from opendxa.execution.pipeline import (
     Pipeline,
     PipelineFactory,
     PipelineExecutor,
@@ -16,20 +44,20 @@ from .pipeline import (
     PipelineNode,
     PipelineStrategy,
 )
-from .workflow import (
+from opendxa.execution.workflow import (
     Workflow,
     WorkflowFactory,
     WorkflowExecutor,
     WorkflowStrategy,
     OptimalWorkflowExecutor,
 )
-from .planning import (
+from opendxa.execution.planning import (
     Plan,
     PlanFactory,
     PlanExecutor,
     PlanStrategy,
 )
-from .reasoning import (
+from opendxa.execution.reasoning import (
     Reasoning,
     ReasoningFactory,
     ReasoningExecutor,
@@ -37,26 +65,17 @@ from .reasoning import (
 )
 
 __all__ = [
-    'Objective',
-    'ObjectiveStatus',
-    'ExecutionGraph',
-    'ExecutionSignal',
-    'ExecutionSignalType',
-    'ExecutionNode',
-    'ExecutionEdge',
-    'ExecutionNodeStatus',
-    'ExecutionContext',
+    'Pipeline',
+    'PipelineFactory',
+    'PipelineExecutor',
+    'PipelineContext',
     'PipelineNode',
+    'PipelineStrategy',
     'Workflow',
     'WorkflowFactory',
     'WorkflowExecutor',
     'OptimalWorkflowExecutor',
     'WorkflowStrategy',
-    'Pipeline',
-    'PipelineFactory',
-    'PipelineExecutor',
-    'PipelineContext',
-    'PipelineStrategy',
     'Plan',
     'PlanFactory',
     'PlanStrategy',

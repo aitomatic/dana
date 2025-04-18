@@ -21,24 +21,26 @@ See dxa/agent/README.md for detailed design documentation.
 
 from typing import Dict, Union, Optional, Any
 from dataclasses import dataclass
-from ..execution import (
+from opendxa.base.execution import (
+    ExecutionContext
+)
+from opendxa.execution import (
     Workflow,
     WorkflowFactory,
     WorkflowStrategy,
     PlanStrategy,
     ReasoningStrategy,
-    ExecutionContext
 )
-from .capability import BaseCapability
-from ..common.resource import BaseResource, LLMResource, ResourceResponse
-from ..common.state import WorldState, ExecutionState
-from .agent_state import AgentState
-from ..common.io import BaseIO, IOFactory
-from ..common.utils.logging import Loggable
-from ..common.utils.config import load_agent_config
-from ..common.utils.configurable import Configurable
-from .agent_runtime import AgentRuntime
-from ..common.utils.misc import safe_asyncio_run
+from opendxa.base.capability import BaseCapability
+from opendxa.base.resource import BaseResource, LLMResource, ResourceResponse
+from opendxa.base.state import WorldState, ExecutionState
+from opendxa.agent.agent_state import AgentState
+from opendxa.common.io import BaseIO, IOFactory
+from opendxa.common.mixins.configurable import Configurable
+from opendxa.common.mixins.loggable import Loggable
+from opendxa.agent.agent_runtime import AgentRuntime
+from opendxa.common.config_manager import load_agent_config
+from opendxa.common.utils.misc import safe_asyncio_run
 
 @dataclass
 class AgentResponse:

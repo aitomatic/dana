@@ -24,10 +24,12 @@ Example:
 import uuid
 from enum import Enum, auto
 from dataclasses import dataclass
-from typing import Dict, Any, Optional, ClassVar
-from ...common.utils.logging.loggable import Loggable
-from ...common.utils.configurable import Configurable
-from ...common.utils.tool_callable import ToolCallable
+from typing import Dict, Any, Optional, ClassVar, TypeVar
+from opendxa.common.mixins.loggable import Loggable
+from opendxa.common.mixins.configurable import Configurable
+from opendxa.common.mixins.tool_callable import ToolCallable
+
+T = TypeVar('T', bound='BaseResource')
 
 class QueryStrategy(Enum):
     """Resource querying strategies."""

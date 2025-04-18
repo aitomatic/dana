@@ -2,9 +2,9 @@
 
 from typing import Optional, cast
 
-from ..execution_types import Objective
-from .reasoning import Reasoning
-from ..execution_factory import ExecutionFactory
+from opendxa.base.execution.execution_types import Objective
+from opendxa.execution.reasoning.reasoning import Reasoning
+from opendxa.base.execution.execution_factory import ExecutionFactory
 
 class ReasoningFactory(ExecutionFactory[Reasoning]):
     """Creates reasoning pattern instances."""

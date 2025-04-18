@@ -3,7 +3,7 @@
 from typing import Optional
 import logging
 
-from .dxa_logger import DXA_LOGGER
+from opendxa.common.utils.logging.dxa_logger import DXA_LOGGER
 
 
 class Loggable:

@@ -1,7 +1,7 @@
 """MCP resource implementation using either stdio or HTTP transport."""
 
 import uuid
-from typing import Any, Dict, List, Optional, Union, cast, Literal, TypeVar, Callable
+from typing import Any, Dict, List, Optional, Union, Literal, TypeVar, Callable, cast
 import functools
 import asyncio
 
@@ -9,9 +9,9 @@ from mcp import ClientSession, StdioServerParameters, Tool
 from mcp.client.stdio import get_default_environment, stdio_client
 from mcp.client.sse import sse_client
 
-from ....common.utils.logging import Loggable
-from ..base_resource import BaseResource, ResourceResponse, ResourceError
-from .mcp_config import McpConfig, McpConfigError, StdioTransportParams, HttpTransportParams
+from opendxa.common.mixins.loggable import Loggable
+from opendxa.base.resource.base_resource import BaseResource, ResourceResponse, ResourceError
+from opendxa.base.resource.mcp.mcp_config import McpConfig, McpConfigError, StdioTransportParams, HttpTransportParams
 
 
 T = TypeVar('T')

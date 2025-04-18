@@ -1,11 +1,11 @@
 """Plan executor implementation."""
 
 from typing import Optional
-from ..base_executor import BaseExecutor
-from .plan import Plan
-from .plan_strategy import PlanStrategy
-from ..reasoning import ReasoningExecutor, ReasoningStrategy
-from .plan_factory import PlanFactory
+from opendxa.base.execution.base_executor import BaseExecutor
+from opendxa.execution.planning.plan import Plan
+from opendxa.execution.planning.plan_strategy import PlanStrategy
+from opendxa.execution.reasoning import ReasoningExecutor, ReasoningStrategy
+from opendxa.execution.planning.plan_factory import PlanFactory
 
 class PlanExecutor(BaseExecutor[PlanStrategy, Plan, PlanFactory]):
     """Executor for planning layer tasks."""

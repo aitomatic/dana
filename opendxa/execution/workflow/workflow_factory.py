@@ -3,10 +3,10 @@
 from typing import Dict, Any, Optional, Union, cast, List
 from pathlib import Path
 
-from ..execution_types import Objective, ExecutionNode
-from ..execution_factory import ExecutionFactory
-from .workflow import Workflow
-from ...common.graph import NodeType
+from opendxa.base.execution.execution_types import Objective, ExecutionNode
+from opendxa.base.execution.execution_factory import ExecutionFactory
+from opendxa.execution.workflow.workflow import Workflow
+from opendxa.common.graph import NodeType
 
 class WorkflowFactory(ExecutionFactory[Workflow]):
     """Creates workflow graph instances."""

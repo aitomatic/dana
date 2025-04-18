@@ -18,10 +18,10 @@ Example:
     ```
 """
 
-from .base_io import BaseIO
-from .console_io import ConsoleIO
-from .websocket_io import WebSocketIO
-from .io_factory import IOFactory
+from opendxa.common.io.base_io import BaseIO
+from opendxa.common.io.console_io import ConsoleIO
+from opendxa.common.io.websocket_io import WebSocketIO
+from opendxa.common.io.io_factory import IOFactory
 
 __all__ = [
     'BaseIO',

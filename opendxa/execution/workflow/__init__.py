@@ -7,11 +7,11 @@ FlowGraphs are directed graphs that represent workflows where:
 - Validation ensures proper graph structure
 """
 
-from .workflow_factory import WorkflowFactory
-from .workflow import Workflow
-from .workflow_executor import WorkflowExecutor
-from .optimal_workflow_executor import OptimalWorkflowExecutor
-from .workflow_strategy import WorkflowStrategy
+from opendxa.execution.workflow.workflow_factory import WorkflowFactory
+from opendxa.execution.workflow.workflow import Workflow
+from opendxa.execution.workflow.workflow_executor import WorkflowExecutor
+from opendxa.execution.workflow.optimal_workflow_executor import OptimalWorkflowExecutor
+from opendxa.execution.workflow.workflow_strategy import WorkflowStrategy
 
 __all__ = [
     "Workflow",

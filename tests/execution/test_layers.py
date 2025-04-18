@@ -7,17 +7,18 @@ using mock LLMs to avoid external API calls.
 from typing import Dict
 import pytest
 
-from opendxa.agent import Agent, AgentResponse
-from opendxa.execution.workflow import Workflow
-from opendxa.common.resource import LLMResource
-from opendxa.execution import (
+from opendxa import (
+    Agent,
+    AgentResponse,
+    Workflow,
     WorkflowStrategy,
     PlanStrategy,
     ReasoningStrategy,
     ExecutionNode,
-    ExecutionEdge
+    ExecutionEdge,
+    LLMResource,
+    NodeType,
 )
-from opendxa.common import NodeType
 
 @pytest.fixture
 def llm_resource_fixtures() -> Dict[str, LLMResource]:

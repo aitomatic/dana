@@ -2,8 +2,7 @@
 
 import unittest
 import asyncio
-from opendxa.common.resource.llm_resource import LLMResource
-from opendxa.common.resource.base_resource import ResourceResponse
+from opendxa import LLMResource, ResourceResponse
 
 class TestLLMResource(unittest.TestCase):
     """Test the LLMResource class."""

@@ -1,28 +1,24 @@
-"""Optimal workflow executor implementation.
-
-This module provides an optimized workflow executor that implements
-a three-layer execution pattern with planning ahead and node optimization.
-"""
+"""Optimal workflow executor implementation."""
 
 import json
 import logging
 from typing import List, Dict, Any, Optional
-from ...common.graph import (
+from opendxa.common.graph import (
     Node,
 )
-from ..execution_graph import ExecutionGraph
-from ..execution_context import ExecutionContext
-from ..execution_types import (
+from opendxa.base.execution.execution_graph import ExecutionGraph
+from opendxa.base.execution.execution_context import ExecutionContext
+from opendxa.base.execution.execution_types import (
     ExecutionSignal,
     ExecutionSignalType,
     Objective,
 )
-from ..planning import PlanExecutor
-from ..reasoning import ReasoningExecutor
-from .workflow_executor import WorkflowExecutor
-from .workflow_strategy import WorkflowStrategy
-from ..planning import PlanStrategy
-from ..reasoning import ReasoningStrategy
+from opendxa.execution.planning import PlanExecutor
+from opendxa.execution.reasoning import ReasoningExecutor
+from opendxa.execution.workflow.workflow_executor import WorkflowExecutor
+from opendxa.execution.workflow.workflow_strategy import WorkflowStrategy
+from opendxa.execution.planning import PlanStrategy
+from opendxa.execution.reasoning import ReasoningStrategy
 
 logger = logging.getLogger(__name__)
 

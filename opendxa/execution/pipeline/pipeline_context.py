@@ -4,8 +4,8 @@ from dataclasses import dataclass, field
 from typing import Dict, Any, Optional
 import asyncio
 from datetime import datetime
-from ..execution_context import ExecutionContext
-from ...common.utils.logging.loggable import Loggable
+from opendxa.base.execution import ExecutionContext
+from opendxa.common.mixins.loggable import Loggable
 
 @dataclass
 class PipelineContext(ExecutionContext, Loggable):

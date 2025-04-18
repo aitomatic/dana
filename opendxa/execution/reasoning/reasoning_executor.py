@@ -2,12 +2,12 @@
 
 from typing import List
 
-from ..execution_context import ExecutionContext
-from ..execution_types import ExecutionNode, ExecutionSignal, ExecutionSignalType
-from ..base_executor import BaseExecutor
-from .reasoning import Reasoning
-from .reasoning_factory import ReasoningFactory
-from .reasoning_strategy import ReasoningStrategy
+from opendxa.base.execution.execution_context import ExecutionContext
+from opendxa.base.execution.execution_types import ExecutionNode, ExecutionSignal, ExecutionSignalType
+from opendxa.base.execution.base_executor import BaseExecutor
+from opendxa.execution.reasoning.reasoning import Reasoning
+from opendxa.execution.reasoning.reasoning_factory import ReasoningFactory
+from opendxa.execution.reasoning.reasoning_strategy import ReasoningStrategy
 
 
 class ReasoningExecutor(BaseExecutor[ReasoningStrategy, Reasoning, ReasoningFactory]):

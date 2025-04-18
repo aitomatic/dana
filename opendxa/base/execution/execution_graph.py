@@ -1,18 +1,24 @@
 """Execution graph implementation."""
 
-from typing import Dict, Any, Optional, Union, List, cast, TYPE_CHECKING, Type, Tuple
-from pathlib import Path
-from dataclasses import dataclass
+# Standard library imports
 from datetime import datetime
-from ..common.utils.config import load_yaml_config
-from ..common.graph import DirectedGraph, Node, Edge, NodeType
-from .execution_types import (
+from pathlib import Path
+from typing import Dict, Any, Optional, Union, List, cast, TYPE_CHECKING, Type, Tuple
+from dataclasses import dataclass
+
+# Third-party imports
+from opendxa.common.config_manager import load_yaml_config
+from opendxa.common.graph import DirectedGraph, Node, Edge, NodeType
+
+# Local imports
+from opendxa.base.execution.execution_types import (
     Objective, ExecutionNode,
     ExecutionNodeStatus, ExecutionSignal, ExecutionSignalType,
     ExecutionEdge
 )
+
 if TYPE_CHECKING:
-    from .execution_context import ExecutionContext
+    from opendxa.base.execution.execution_context import ExecutionContext
 
 # pylint: disable=too-many-public-methods
 @dataclass
@@ -29,8 +35,8 @@ class ExecutionGraph(DirectedGraph):
         else:
             self._objective = objective
         self.name = name
-        self._metadata = {"layer": layer}
-        self.history: List[Dict] = []
+        self._metadata: Dict[str, Any] = {"layer": layer}
+        self.history: List[Dict[str, Any]] = []
         self._context: Optional['ExecutionContext'] = None
     
     @property
@@ -194,7 +200,7 @@ class ExecutionGraph(DirectedGraph):
             prompt_text = graph.metadata['prompts'][node_id]
         else:
             # Fall back to standard prompt resolution
-            from .execution_config import ExecutionConfig  # pylint: disable=import-outside-toplevel
+            from opendxa.base.execution.execution_config import ExecutionConfig  # pylint: disable=import-outside-toplevel
             prompt_ref = node_data.get('prompt', node_id)
             prompt_text = ExecutionConfig.get_prompt(for_class=cls,
                                                      config_path=config_path,
@@ -229,7 +235,7 @@ class ExecutionGraph(DirectedGraph):
 
         if config_path is None or not config_path.exists():
             if config_name:
-                from .execution_config import ExecutionConfig  # pylint: disable=import-outside-toplevel
+                from opendxa.base.execution.execution_config import ExecutionConfig  # pylint: disable=import-outside-toplevel
                 
                 # Handle dot notation in config_name
                 if "." in config_name and not config_name.endswith(('.yaml', '.yml')):
@@ -385,25 +391,41 @@ class ExecutionGraph(DirectedGraph):
         self._context = context
 
     def process_signal(self, signal: ExecutionSignal) -> List[ExecutionSignal]:
-        """Process execution signals."""
-        new_signals = []
+        """Process execution signals.
+        
+        Args:
+            signal: The signal to process
+            
+        Returns:
+            List[ExecutionSignal]: List of new signals generated during processing
+            
+        Raises:
+            ValueError: If signal content is invalid
+        """
+        new_signals: List[ExecutionSignal] = []
         
         if signal.type == ExecutionSignalType.CONTROL_STATE_CHANGE:
             # Common state updates
-            self.metadata.update(signal.content.get("metadata", {}))
+            metadata = signal.content.get("metadata", {})
+            if not isinstance(metadata, dict):
+                raise ValueError("Signal metadata must be a dictionary")
+            self.metadata.update(metadata)
             
         elif signal.type == ExecutionSignalType.CONTROL_COMPLETE:
             # Common step completion handling
-            if node_id := signal.content.get("node"):
-                self.update_node_status(node_id, ExecutionNodeStatus.COMPLETED)
-                new_signals.append(ExecutionSignal(
-                    type=ExecutionSignalType.CONTROL_STATE_CHANGE,
-                    content={
-                        "component": self.metadata.get("layer", "execution"),
-                        "type": "step_completed",
-                        "node": node_id
-                    }
-                ))
+            node_id = signal.content.get("node")
+            if not node_id:
+                raise ValueError("Signal content must contain 'node' field")
+                
+            self.update_node_status(node_id, ExecutionNodeStatus.COMPLETED)
+            new_signals.append(ExecutionSignal(
+                type=ExecutionSignalType.CONTROL_STATE_CHANGE,
+                content={
+                    "component": self.metadata.get("layer", "execution"),
+                    "type": "step_completed",
+                    "node": node_id
+                }
+            ))
         
         return new_signals
 
@@ -417,19 +439,31 @@ class ExecutionGraph(DirectedGraph):
         return art + status_summary
 
     def update_node_status(self, node_id: str, status: ExecutionNodeStatus) -> None:
-        """Update node status and record in history."""
-        if node_id in self.nodes:
-            node = cast(ExecutionNode, self.nodes[node_id])
-            old_status = node.status
-            node.status = status
-            self.history.append({
-                'timestamp': datetime.now(),
-                'node': node_id,
-                'status_change': {
-                    'from': old_status,
-                    'to': status
-                }
-            })
+        """Update node status and record in history.
+        
+        Args:
+            node_id: ID of the node to update
+            status: New status for the node
+            
+        Raises:
+            ValueError: If node does not exist
+        """
+        if node_id not in self.nodes:
+            raise ValueError(f"Node {node_id} does not exist")
+            
+        node = cast(ExecutionNode, self.nodes[node_id])
+        old_status = node.status
+        node.status = status
+        
+        # Record status change in history
+        self.history.append({
+            'timestamp': datetime.now(),
+            'node': node_id,
+            'status_change': {
+                'from': old_status,
+                'to': status
+            }
+        })
 
     # pylint: disable=unused-argument
     def get_valid_transitions(self, node_id: str, context: Optional['ExecutionContext'] = None) -> List[ExecutionNode]:
@@ -469,7 +503,12 @@ class ExecutionGraph(DirectedGraph):
         )
 
     def validate(self) -> None:
-        """Validate execution graph structure."""
+        """Validate execution graph structure.
+        
+        Raises:
+            ValueError: If the graph structure is invalid
+            RuntimeError: If buffer configuration is invalid
+        """
         # Check for single start node
         start_nodes = [
             node for node in self.nodes.values()
@@ -487,18 +526,23 @@ class ExecutionGraph(DirectedGraph):
         try:
             list(iter(self))
         except ValueError as e:
-            raise ValueError("Invalid graph structure: " + str(e)) from e
+            raise ValueError(f"Invalid graph structure: {str(e)}") from e
 
-        # Add buffer validation
+        # Validate buffer configuration
         for node in self.nodes.values():
+            node = cast(ExecutionNode, node)
             if node.buffer_config["enabled"]:
                 if node.buffer_config["size"] <= 0:
-                    raise ValueError(f"Invalid buffer size for node {node.node_id}")
+                    raise ValueError(f"Invalid buffer size for node {node.node_id}: size must be positive")
                 if node.buffer_config["mode"] not in ["streaming", "batch"]:
-                    raise ValueError(f"Invalid buffer mode for node {node.node_id}")
+                    raise ValueError(f"Invalid buffer mode for node {node.node_id}: must be 'streaming' or 'batch'")
 
     def to_dict(self) -> Dict[str, Any]:
-        """Convert execution graph to dictionary representation."""
+        """Convert execution graph to dictionary representation.
+        
+        Returns:
+            Dict[str, Any]: Dictionary containing graph state, metadata, nodes, edges and history
+        """
         return {
             'objective': self._objective.current if self._objective else None,
             'metadata': self.metadata,
@@ -524,7 +568,18 @@ class ExecutionGraph(DirectedGraph):
         }
 
     def update_graph(self, new_graph: 'ExecutionGraph', reason: str) -> None:
-        """Update graph while preserving execution state."""
+        """Update graph while preserving execution state.
+        
+        Args:
+            new_graph: New graph to merge with current graph
+            reason: Reason for the update
+            
+        Raises:
+            ValueError: If new_graph is not an ExecutionGraph
+        """
+        if not isinstance(new_graph, ExecutionGraph):
+            raise ValueError("new_graph must be an ExecutionGraph instance")
+            
         self.history.append({
             'timestamp': datetime.now(),
             'reason': reason,
@@ -569,7 +624,25 @@ class ExecutionGraph(DirectedGraph):
         return True
 
     def add_transition(self, source: str, target: str, condition: Optional[str] = None, **kwargs) -> ExecutionEdge:
-        """Add a transition between steps."""
+        """Add a transition between steps.
+        
+        Args:
+            source: Source node ID
+            target: Target node ID
+            condition: Optional condition for the edge
+            **kwargs: Additional edge properties
+            
+        Returns:
+            ExecutionEdge: The created edge
+            
+        Raises:
+            ValueError: If source or target node does not exist
+        """
+        if source not in self.nodes:
+            raise ValueError(f"Source node {source} does not exist")
+        if target not in self.nodes:
+            raise ValueError(f"Target node {target} does not exist")
+            
         edge = ExecutionEdge(
             source=source,
             target=target,
@@ -597,7 +670,17 @@ class ExecutionGraph(DirectedGraph):
             node.metadata["validation"] = validation_type
 
     def update_pattern_state(self, state: Dict[str, Any]) -> None:
-        """Update pattern-specific state."""
+        """Update pattern-specific state.
+        
+        Args:
+            state: New state to set
+            
+        Raises:
+            ValueError: If state is not a dictionary
+        """
+        if not isinstance(state, dict):
+            raise ValueError("Pattern state must be a dictionary")
+            
         self.metadata["pattern_state"] = state
         self.history.append({
             "timestamp": datetime.now(),
@@ -630,8 +713,19 @@ class ExecutionGraph(DirectedGraph):
             target_id: Target node ID
             condition: Optional condition for the edge
             state_updates: Optional state updates for the edge
+            
+        Raises:
+            ValueError: If source or target node does not exist
         """
-        edge = ExecutionEdge(source=source_id, target=target_id, 
-                             condition=condition, 
-                             state_updates=state_updates or {})
+        if source_id not in self.nodes:
+            raise ValueError(f"Source node {source_id} does not exist")
+        if target_id not in self.nodes:
+            raise ValueError(f"Target node {target_id} does not exist")
+            
+        edge = ExecutionEdge(
+            source=source_id, 
+            target=target_id, 
+            condition=condition, 
+            state_updates=state_updates or {}
+        )
         self.add_edge(edge)

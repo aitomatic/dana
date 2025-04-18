@@ -8,10 +8,10 @@ import asyncio
 from datetime import datetime
 import json
 import numpy as np
-from ...common import DXA_LOGGER
-from ...common.utils.logging.loggable import Loggable
-from ..execution_factory import ExecutionFactory
-from .pipeline import Pipeline
+from opendxa.common.utils.logging import DXA_LOGGER
+from opendxa.common.mixins.loggable import Loggable
+from opendxa.base.execution import ExecutionFactory
+from opendxa.execution.pipeline.pipeline import Pipeline
 
 class PipelineFactory(ExecutionFactory, Loggable):
     """Factory for creating pipelines."""

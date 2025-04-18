@@ -7,7 +7,7 @@ input/output operations while extending BaseResource functionality.
 
 from abc import abstractmethod
 from typing import Any, Dict, Optional
-from ...common.resource.base_resource import BaseResource, ResourceResponse
+from opendxa.base.resource import BaseResource, ResourceResponse
 
 class BaseIO(BaseResource):
     """Base class for I/O resources.

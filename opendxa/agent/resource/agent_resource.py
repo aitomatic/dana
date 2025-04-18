@@ -26,13 +26,12 @@ Example:
 import asyncio
 from typing import TYPE_CHECKING, Any, Dict
 
+from opendxa.common.exceptions import AgentError, ResourceError
+from opendxa.base.resource.base_resource import BaseResource, ResourceResponse
 from opendxa.common.utils.misc import safe_asyncio_run
 
-from ...common.exceptions import AgentError, ResourceError
-from ...common.resource import BaseResource, ResourceResponse
-
 if TYPE_CHECKING:
-    from ..agent import Agent  # Only used for type hints
+    from opendxa.agent.agent import Agent  # Only used for type hints
 
 
 class AgentResource(BaseResource):

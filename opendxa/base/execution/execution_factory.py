@@ -2,7 +2,7 @@
 
 from typing import Dict, Optional, Union, Type, TypeVar, Generic, cast, List
 from pathlib import Path
-from ..common.graph import NodeType
+from opendxa.common.graph import NodeType
 from .execution_types import Objective, ExecutionNode
 from .execution_graph import ExecutionGraph
 

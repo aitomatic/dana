@@ -1,11 +1,12 @@
 """Workflow executor implementation."""
 
 from typing import Optional
-from ..base_executor import BaseExecutor
-from .workflow import Workflow
-from .workflow_strategy import WorkflowStrategy
-from .workflow_factory import WorkflowFactory
-from ..planning import PlanExecutor, PlanStrategy
+from opendxa.base.execution.base_executor import BaseExecutor
+from opendxa.execution.workflow.workflow import Workflow
+from opendxa.execution.workflow.workflow_strategy import WorkflowStrategy
+from opendxa.execution.workflow.workflow_factory import WorkflowFactory
+from opendxa.execution.planning.plan_executor import PlanExecutor
+from opendxa.execution.planning.plan_strategy import PlanStrategy
 
 class WorkflowExecutor(BaseExecutor[WorkflowStrategy, Workflow, WorkflowFactory]):
     """Executor for workflow layer tasks.

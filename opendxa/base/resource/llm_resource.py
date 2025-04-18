@@ -1,19 +1,18 @@
 """LLM resource implementation."""
 
-import os
 import json
-from typing import Any, Dict, Optional, Union, Callable, List
+from typing import Any, Dict, Optional, Union, Callable, List, TypeVar
 
 import aisuite as ai
 from openai.types.chat import ChatCompletion
-from ...common.exceptions import LLMError
-from .base_resource import BaseResource, ResourceResponse
-from .mcp import McpResource
-from .base_resource import QueryStrategy
-from ..utils.registerable import Registerable
-from ..utils.misc import get_field
+from opendxa.common.exceptions import LLMError
+from opendxa.base.resource.base_resource import BaseResource, ResourceResponse, QueryStrategy
+from opendxa.common.mixins.registerable import Registerable
+from opendxa.common.utils.misc import get_field
 
-class LLMResource(BaseResource, Registerable[BaseResource]):
+T = TypeVar('T', bound=BaseResource)
+
+class LLMResource(BaseResource, Registerable[T]):
     """LLM resource implementation using AISuite."""
 
     # To avoid accidentally sending too much data to the LLM,
@@ -49,7 +48,7 @@ class LLMResource(BaseResource, Registerable[BaseResource]):
         self._client: Optional[ai.Client] = None
         self.max_retries = int(self.config.get("max_retries", 3))
         self.retry_delay = float(self.config.get("retry_delay", 1.0))
-        self._mock_llm_call = self.config.get("mock_llm_call", None)
+        self._mock_llm_call: Optional[Union[bool, Callable[[Dict[str, Any]], Dict[str, Any]]]] = self.config.get("mock_llm_call", None)
         # By default, use iterative querying for tool-calling LLMs
         self._query_strategy = self.config.get("query_strategy", QueryStrategy.ITERATIVE)
         self._query_max_iterations = self.config.get("query_max_iterations", 10)
@@ -154,7 +153,7 @@ class LLMResource(BaseResource, Registerable[BaseResource]):
         ])
         
         # Initialize message history with system and user messages
-        message_history = []
+        message_history: List[Dict[str, Any]] = []
         message_history.append({"role": "system", "content": '\n'.join(system_messages)})
         message_history.append({"role": "user", "content": '\n'.join(user_messages)})
         
@@ -248,202 +247,130 @@ class LLMResource(BaseResource, Registerable[BaseResource]):
             raise ValueError("messages must be provided and non-empty")
         
         # Build request parameters
-        request_params = self._build_request_params(
-            request, 
-            get_field(request, "available_resources")
-        )
-
-        try:
-            # Log the request
-            self._log_llm_request(messages)
+        params = self._build_request_params(request)
         
-            response = self._client.chat.completions.create(
-                model=self.model,
-                messages=messages,
-                **request_params
-            )
-
-            # Log the response
+        # Make the API call
+        try:
+            response = await self._client.chat.completions.create(**params)
             self._log_llm_response(response)
-            
             return response
-
         except Exception as e:
-            self.error("Error querying LLM: %s", str(e))
-            raise LLMError("Error querying LLM") from e
+            self.error("LLM query failed: %s", str(e))
+            raise LLMError(f"LLM query failed: {str(e)}") from e
 
     async def _mock_llm_query(self, request: Dict[str, Any]) -> Dict[str, Any]:
-        """Return a mock response that matches the OpenAI API response format.
+        """Mock LLM query for testing purposes.
         
-        The response structure matches what we get from the real API:
-        {
-            "choices": [
-                {
-                    "message": {
-                        "role": "assistant",
-                        "content": "Mock response",
-                        "tool_calls": None  # Or a list of tool calls if needed
-                    }
-                }
-            ],
-            "usage": {
-                "prompt_tokens": 0,
-                "completion_tokens": 0,
-                "total_tokens": 0
-            }
-        }
+        Args:
+            request: Dictionary containing the request parameters
+            
+        Returns:
+            Dict[str, Any]: Mock response
         """
-        prompt = request.get('prompt', '')
-        
-        # Create a mock response that matches the OpenAI API format
+        messages = get_field(request, "messages", [])
+        if not messages:
+            raise ValueError("messages must be provided and non-empty")
+            
+        # Get the last user message
+        last_message = next((msg for msg in reversed(messages) if msg["role"] == "user"), None)
+        if not last_message:
+            raise ValueError("No user message found in message history")
+            
+        # Create a mock response
         return {
-            "choices": [
-                {
-                    "message": {
-                        "role": "assistant",
-                        "content": f"Mock response for: {prompt}",
-                        "tool_calls": None
-                    }
+            "choices": [{
+                "message": {
+                    "role": "assistant",
+                    "content": f"Mock response to: {last_message['content']}",
+                    "tool_calls": []
                 }
-            ],
+            }],
             "usage": {
                 "prompt_tokens": 0,
                 "completion_tokens": 0,
                 "total_tokens": 0
-            }
+            },
+            "model": "mock-model"
         }
 
-    # ===== Message and Request Building Methods =====
     def _build_request_params(self, request: Dict[str, Any], available_resources: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """Build the request parameters for the LLM call.
+        """Build request parameters for LLM API call.
         
         Args:
             request: Dictionary containing request parameters
-            available_resources: Optional dictionary of available tools/resources
+            available_resources: Optional dictionary of available resources
             
         Returns:
-            Dictionary of request parameters with None values filtered out.
+            Dict[str, Any]: Dictionary of request parameters
         """
-        request_params = {
-            "temperature": float(request.get("temperature", self.config.get("temperature", 0.7))),
-            "top_p": float(self.config.get("top_p", 1.0)),
-            "max_tokens": request.get("max_tokens", self.config.get("max_tokens")),
-            "frequency_penalty": self.config.get("frequency_penalty"),
-            "presence_penalty": self.config.get("presence_penalty"),
+        params = {
+            "model": self.model,
+            "messages": get_field(request, "messages", []),
+            "temperature": request.get("temperature", 0.7),
+            "max_tokens": request.get("max_tokens"),
         }
-
-        # Add tool strings for resources if provided
+        
         if available_resources:
-            assert isinstance(available_resources, Dict), "available_resources must be a dictionary"
-            request_params["tools"] = self.__get_function_calls(available_resources)
-
-        # Filter out None values
-        return {k: v for k, v in request_params.items() if v is not None}
+            params["functions"] = self.__get_function_calls(available_resources)
+            
+        return params
 
     def __get_function_calls(self, resources: Dict[str, BaseResource]) -> List[Dict[str, Any]]:
-        """Get tool strings for the list of resources.
-
+        """Get function calls from available resources.
+        
         Args:
             resources: Dictionary of available resources
-
+            
         Returns:
-            List of tool specifications for the underlying LLM to use
+            List[Dict[str, Any]]: List of function call definitions
         """
-        resource_dicts: List[Dict[str, Any]] = []
-        for resource in resources.values():
-            resource_dicts.extend(resource.as_tool_call_specs(resource.resource_id))
-            # Put the resource in our registry so we can call on it as needed later
-            self.add_to_registry(resource.resource_id, resource)
-        return resource_dicts
+        function_calls = []
+        for _, resource in resources.items():
+            if hasattr(resource, "get_function_calls"):
+                function_calls.extend(resource.get_function_calls())
+        return function_calls
 
-    # ===== Resource Calling Methods =====
     async def _call_requested_resources(
         self, 
         tool_calls: List[Any],
         max_response_length: Optional[int] = MAX_TOOL_CALL_RESPONSE_LENGTH
     ) -> List[Dict[str, Any]]:
-        """Call multiple requested tools and format their responses.
-        
-        This method processes each tool call request, executes the corresponding tool,
-        and returns properly formatted responses. Each response is formatted as:
-        {
-            "role": "tool",
-            "tool_call_id": "call_123",
-            "content": "{\"result\": \"value\"}"
-        }
+        """Call requested resources and get responses.
         
         Args:
-            tool_calls: List of tool call objects from the LLM response, each containing:
-                - id: Unique identifier for the tool call
-                - function.name: Resource and function name in format "name-uuid-function"
-                - function.arguments: Arguments to pass to the tool
-        
-        Returns:
-            List[Dict[str, Any]]: List of tool response messages, each containing:
-                - role: "tool"
-                - tool_call_id: Matches the id from the tool call request
-                - content: The JSON-serialized response from the tool
-        """
-        if not tool_calls:
-            return []
-
-        tool_call_responses: List[Dict[str, Any]] = []
-        total_response_length = 0
-        result_too_long_content = json.dumps({"error": "Result too long. Try something else."})
-
-        for tool_call in tool_calls:
-            if total_response_length > max_response_length:
-                tool_call_responses.append({
-                    "role": "tool",
-                    "tool_call_id": tool_call.id,
-                    "content": result_too_long_content
-                })
-                continue
-
-            # Expected format: name-uuid-function_name
-            resource_name, resource_id, function_name = self._parse_name_id_function_string(tool_call.function.name)
-            self.info(f"Resource name: {resource_name}, resource id: {resource_id}, function name: {function_name}")
-
-            resource = self.get_from_registry(resource_id)
-            if not resource:
-                self.error(f"Resource not found: {resource_id}")
-                continue
+            tool_calls: List of tool calls to make
+            max_response_length: Optional maximum length for tool responses
             
-            if isinstance(resource, McpResource):
-                response = await resource.query({"tool": function_name, "arguments": tool_call.function.arguments})
-                if isinstance(response, ResourceResponse) and response.content:
-                    # Get at the lower-level MCP Tool response content
-                    if hasattr(response.content, 'content') and isinstance(response.content.content, list):
-                        # Extract text content from the first content item
-                        response = response.content.content[0].text
-                    else:
-                        response = response.content
-            else:
-                response = await resource.query(tool_call.function.arguments)
-
-            # Format the response as a proper tool response message
-            if response is not None:
-                content = json.dumps(response) if not isinstance(response, str) else response
-                total_response_length += len(content)
-                if total_response_length < max_response_length:
-                    tool_call_responses.append({
-                        "role": "tool",
-                        "tool_call_id": tool_call.id,
-                        "content": content
-                    })
-                else:
-                    # Update all existing tool call responses to indicate an error
-                    for tool_call_response in tool_call_responses:
-                        tool_call_response.update({
-                            "content": result_too_long_content
-                        })
-                    tool_call_responses.append({
-                        "role": "tool",
-                        "tool_call_id": tool_call.id,
-                        "content": result_too_long_content
-                    })
-
-        return tool_call_responses
+        Returns:
+            List[Dict[str, Any]]: List of tool responses
+        """
+        responses = []
+        for tool_call in tool_calls:
+            try:
+                response = await self._call_one_resource(
+                    tool_call.get("resource"),
+                    tool_call.get("name"),
+                    tool_call.get("arguments", {})
+                )
+                
+                # Truncate response if needed
+                if max_response_length and isinstance(response, str):
+                    response = response[:max_response_length]
+                    
+                responses.append({
+                    "role": "tool",
+                    "name": tool_call.get("name"),
+                    "content": response
+                })
+            except Exception as e:
+                self.error("Tool call failed: %s", str(e))
+                responses.append({
+                    "role": "tool",
+                    "name": tool_call.get("name"),
+                    "content": f"Error: {str(e)}"
+                })
+                
+        return responses
 
     async def _call_one_resource(
         self,
@@ -451,65 +378,48 @@ class LLMResource(BaseResource, Registerable[BaseResource]):
         tool_name: Optional[str],
         params: Dict[str, Any]
     ) -> Any:
-        """Execute a resource with appropriate calling conventions.
+        """Call a single resource.
         
-        This method handles the execution of a resource's functionality (which the LLM API calls a "tool").
-        We maintain the "resource" terminology internally for consistency.
-
-        Handles different resource types (MCP, Agent, Base) with their specific
-        calling patterns while maintaining a clean interface.
-
         Args:
-            resource: Resource to call
-            tool_name: Name of the tool to execute (from LLM's function name)
-            params: Dictionary of parameters to pass to the resource
-
+            resource: The resource to call
+            tool_name: Optional name of the tool to call
+            params: Parameters for the tool call
+            
         Returns:
-            Resource response
+            Any: Response from the resource
         """
-        # For MCP resources, we need to use a specific format
-        if isinstance(resource, McpResource):
-            return await resource.query({"tool": tool_name, "arguments": params})
+        if not resource:
+            raise ValueError("Resource must be provided")
+            
+        if not tool_name:
+            raise ValueError("Tool name must be provided")
+            
+        try:
+            return await resource.query(params)
+        except Exception as e:
+            self.error("Resource query failed: %s", str(e))
+            raise
 
-        # For other resources, we can pass the parameters directly
-        return await resource.query(params)
-
-    # ===== Logging and Utility Methods =====
     def _log_llm_request(self, request: Dict[str, Any]) -> None:
-        """Log the LLM request.
+        """Log LLM request.
         
         Args:
-            request: The request object from the LLM API call
+            request: Dictionary containing request parameters
         """
-        self.info(f"REQUEST TO {self.model}:\n{'-' * 80}\n{request}\n{'-' * 80}")
+        self.debug("LLM request: %s", json.dumps(request, indent=2))
 
     def _log_llm_response(self, response: ChatCompletion) -> None:
-        """Log the LLM response and usage statistics.
+        """Log LLM response.
         
         Args:
-            response: The response object from the LLM API call
+            response: ChatCompletion object containing the response
         """
-        # Log the response from the LLM
-        self.info(f"RESPONSE FROM {self.model}:\n{'-' * 80}\n{response}\n{'-' * 80}")
-        
-        # Log usage statistics if available
-        usage = response.usage
-        if usage:
-            self.info(
-                f"USAGE: prompt_tokens={usage.prompt_tokens}, " if hasattr(usage, "prompt_tokens") else ""
-                f"completion_tokens={usage.completion_tokens}, " if hasattr(usage, "completion_tokens") else ""
-                f"total_tokens={usage.total_tokens}" if hasattr(usage, "total_tokens") else ""
-            )
+        self.debug("LLM response: %s", json.dumps(response.model_dump(), indent=2))
 
     def _get_default_model(self) -> str:
-        """Get the default model by checking the environment variable."""
-        if "OPENDXA_DEFAULT_MODEL" in os.environ:
-            return os.environ["OPENDXA_DEFAULT_MODEL"]
-        elif "ANTHROPIC_API_KEY" in os.environ:
-            return "anthropic:claude-3-5-sonnet-20241022"
-        elif "DEEPSEEK_API_KEY" in os.environ:
-            return "deepseek:deepseek-chat"
-        elif "OPENAI_API_KEY" in os.environ:
-            return "openai:gpt-4o"
-        else:
-            raise ValueError("No API key found for any supported model")
+        """Get default model identifier.
+        
+        Returns:
+            str: Default model identifier
+        """
+        return "openai:gpt-4"

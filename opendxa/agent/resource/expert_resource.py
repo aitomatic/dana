@@ -38,9 +38,9 @@ Example:
 
 from dataclasses import dataclass
 from typing import Dict, Any, Optional, ClassVar
-from ...common.resource.base_resource import BaseResource, ResourceResponse
-from ..capability.domain_expertise import DomainExpertise
-from ...common.io import IOFactory
+from opendxa.base.resource.base_resource import BaseResource, ResourceResponse
+from opendxa.agent.capability.domain_expertise import DomainExpertise
+from opendxa.common.io import IOFactory
 
 
 @dataclass

@@ -1,7 +1,6 @@
 """DXA Logging"""
 
-from .dxa_logger import DXALogger, DXA_LOGGER
-from .log_analysis import LLMInteractionAnalyzer
-from .loggable import Loggable
+from opendxa.common.utils.logging.dxa_logger import DXALogger, DXA_LOGGER
+from opendxa.common.utils.logging.log_analysis import LLMInteractionAnalyzer
 
-__all__ = ["DXALogger", "DXA_LOGGER", "LLMInteractionAnalyzer", "Loggable"]
+__all__ = ["DXALogger", "DXA_LOGGER", "LLMInteractionAnalyzer"]

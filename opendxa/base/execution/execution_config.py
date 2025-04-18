@@ -2,9 +2,10 @@
 
 from pathlib import Path
 from typing import Dict, Any, Optional, Type, ClassVar, Union
-from ..common.utils import load_yaml_config, get_config_path
-from ..common.utils.configurable import Configurable
-from ..common.exceptions import ConfigurationError
+from opendxa.common.config_manager import load_yaml_config
+from opendxa.common.utils import get_config_path
+from opendxa.common.mixins.configurable import Configurable
+from opendxa.common.exceptions import ConfigurationError
 
 
 class ExecutionConfig(Configurable):

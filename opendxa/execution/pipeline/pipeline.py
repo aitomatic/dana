@@ -19,15 +19,15 @@ Features:
 from time import perf_counter
 from typing import Dict, Any, Optional, List, Callable, Awaitable, cast
 from dataclasses import dataclass, field
-from ...common.graph import NodeType
-from ...execution import (
+from opendxa.common.graph import NodeType
+from opendxa.base.resource import BaseResource, ResourceResponse
+from opendxa.common.mixins.loggable import Loggable
+from opendxa.base.execution import (
     ExecutionGraph, ExecutionNode, ExecutionEdge,
     ExecutionSignal, ExecutionContext,
     ExecutionSignalType
 )
-from ...common.resource import BaseResource, ResourceResponse
 from .pipeline_context import PipelineContext
-from ...common.utils.logging.loggable import Loggable
 
 # A pipeline step is just an async function that processes data
 PipelineStep = Callable[[Dict[str, Any]], Awaitable[Dict[str, Any]]]
