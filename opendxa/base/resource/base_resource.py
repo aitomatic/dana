@@ -24,9 +24,12 @@ Example:
 import uuid
 from enum import Enum, auto
 from dataclasses import dataclass
-from typing import Dict, Any, Optional, Union, List, Tuple, ClassVar
-from ...common.utils.logging.loggable import Loggable
-from ...common.utils.configurable import Configurable
+from typing import Dict, Any, Optional, ClassVar, TypeVar
+from opendxa.common.mixins.loggable import Loggable
+from opendxa.common.mixins.configurable import Configurable
+from opendxa.common.mixins.tool_callable import ToolCallable
+
+T = TypeVar('T', bound='BaseResource')
 
 class QueryStrategy(Enum):
     """Resource querying strategies."""
@@ -35,6 +38,7 @@ class QueryStrategy(Enum):
 
 class ResourceError(Exception):
     """Base class for resource errors."""
+
     def __init__(self, message: str, original_error: Optional[Exception] = None):
         super().__init__(message)
         self.original_error = original_error
@@ -55,12 +59,12 @@ class ResourceAccessError(ResourceError):
 
 @dataclass
 class ResourceResponse:
-    """Base response for all resources."""
-    success: bool = True
-    content: Optional[Any] = None  # Added MCP-compatible field
+    """Resource response."""
+    success: bool
+    content: Optional[Dict[str, Any]] = None
     error: Optional[str] = None
 
-class BaseResource(Configurable, Loggable):
+class BaseResource(Configurable, Loggable, ToolCallable):
     """Abstract base resource."""
 
     # Class-level default configuration
@@ -86,7 +90,7 @@ class BaseResource(Configurable, Loggable):
         """
         # Initialize Loggable first to ensure logger is available
         Loggable.__init__(self)
-        
+        ToolCallable.__init__(self)
         # Initialize Configurable with the provided config
         config_dict = config or {}
         if name:
@@ -105,28 +109,28 @@ class BaseResource(Configurable, Loggable):
 
     def _validate_config(self) -> None:
         """Validate the configuration.
-        
+
         This method extends the base Configurable validation with resource-specific checks.
         """
         # Call base class validation first
         super()._validate_config()
-        
+
         # Validate resource-specific fields
         if "name" not in self.config:
             raise ValueError("Resource configuration must have a 'name' field")
-            
+
         if "description" not in self.config:
             raise ValueError("Resource configuration must have a 'description' field")
-            
+
         # Validate resource name
         if not self.config["name"]:
             raise ValueError("Resource name cannot be empty")
-            
+
         # Validate query strategy if present
         if "query_strategy" in self.config:
             if not isinstance(self.config["query_strategy"], QueryStrategy):
                 raise ValueError("query_strategy must be a QueryStrategy enum")
-                
+
         # Validate max iterations if present
         if "query_max_iterations" in self.config:
             if not isinstance(self.config["query_max_iterations"], int):
@@ -159,10 +163,11 @@ class BaseResource(Configurable, Loggable):
         self.debug(f"Resource [{self.name}] cleanup completed")
 
     # pylint: disable=unused-argument
+    @ToolCallable.tool
     async def query(self, request: Dict[str, Any]) -> ResourceResponse:
         """Query resource."""
         if not self._is_available:
-            raise ResourceUnavailableError(f"Resource {self.name} not initialized")
+            return ResourceResponse(success=False, error=f"Resource {self.name} not initialized")
         self.debug(f"Resource [{self.name}] received query: {self._sanitize_log_data(request)}")
         return ResourceResponse(success=True)
 
@@ -170,7 +175,7 @@ class BaseResource(Configurable, Loggable):
         """Check if resource can handle request."""
         self.debug(f"Checking if [{self.name}] can handle request")
         return False
-    
+
     def get_query_strategy(self) -> QueryStrategy:
         """Get the query strategy for the resource."""
         return self._query_strategy
@@ -178,13 +183,6 @@ class BaseResource(Configurable, Loggable):
     def get_query_max_iterations(self) -> int:
         """Get the maximum number of iterations for the resource. Default is 3."""
         return self._query_max_iterations
-    
-    async def __aenter__(self) -> 'BaseResource':
-        await self.initialize()
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
-        await self.cleanup()
 
     def _sanitize_log_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Sanitize sensitive data before logging"""
@@ -194,82 +192,10 @@ class BaseResource(Configurable, Loggable):
             if key in sanitized:
                 sanitized[key] = "***REDACTED***"
         return sanitized
-    
-    async def as_function_calls(self) -> List[Dict[str, Any]]:
-        """Format a resource into OpenAI function specification.
-        
-        Args:
-            resource: Resource instance to format
-            
-        Returns:
-            List of OpenAI function specifications
-        """
-        query_params = self.query.__annotations__
-        properties = {}
-        required = []
 
-        type_map = {
-            Dict: "object",
-            str: "string",
-            int: "integer",
-            float: "number",
-            bool: "boolean"
-        }
+    async def __aenter__(self) -> 'BaseResource':
+        await self.initialize()
+        return self
 
-        for param_name, param_type in query_params.items():
-            if param_name == "return":
-                continue
-
-            required.append(param_name)
-
-            # Check if parameter is Optional[T] by examining Union type with None
-            is_optional = (hasattr(param_type, "__origin__") and 
-                           hasattr(param_type, "__args__") and
-                           getattr(param_type, "__origin__") is Union and
-                           type(None) in getattr(param_type, "__args__", ()))
-
-            # Extract the actual type from Optional if present
-            actual_type = getattr(param_type, "__args__", (param_type,))[0] if is_optional else param_type
-
-            # Get schema type, defaulting to string if type not in map
-            param_schema_type = type_map.get(actual_type, "string")
-
-            # Make optional params accept null for flexibility
-            if is_optional:
-                param_schema_type = [param_schema_type, "null"]
-
-            properties[param_name] = {
-                "type": param_schema_type,
-                "description": f"{param_name} parameter"
-            }
-
-        # Build function name based on whether this is an agent resource
-        function_name = f"{self.resource_id}__query"
-        description = self.description or self.query.__doc__
-
-        function_call = {
-            "type": "function",
-            "function": {
-                "name": self._get_name_id_function_string(self.name, self.resource_id, function_name),
-                "description": description,
-                "parameters": {
-                    "type": "object",
-                    "properties": properties,
-                    "required": required,
-                    "additionalProperties": False
-                },
-                "strict": True
-            }
-        }
-        self.info(f"Function call: {function_call}")
-        return [function_call]
-
-    def _get_name_id_function_string(self, name: str, the_id: str, function_name: str) -> str:
-        """Get the name-id-function string."""
-        result = f"{name}-{the_id}-{function_name}"
-        self.info(f"Name-id-function string: {result}")
-        return result
-
-    def _parse_name_id_function_string(self, name_id_function_string: str) -> Tuple[str, str, str]:
-        """Parse the name-id-function string."""
-        return name_id_function_string.split("-")
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+        await self.cleanup()

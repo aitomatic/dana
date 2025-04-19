@@ -26,4 +26,4 @@ class Registerable(Generic[RegistryObjectType]):
     
     def remove_from_registry(self, object_id: str) -> None:
         """Remove an object from my registry."""
-        del self._registry[object_id]
+        del self._registry[object_id] 

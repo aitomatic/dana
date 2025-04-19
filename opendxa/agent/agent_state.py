@@ -2,8 +2,11 @@
 
 from typing import List, Optional
 from dataclasses import dataclass, field
-from ..execution import Workflow, Objective, ExecutionSignal, ExecutionNode, Plan
-from ..common.state.base_state import BaseState
+
+from opendxa.base.execution.execution_types import Objective, ExecutionSignal, ExecutionNode
+from opendxa.execution.workflow import Workflow
+from opendxa.execution.planning.plan import Plan
+from opendxa.base.state.base_state import BaseState
 
 @dataclass
 class AgentState(BaseState):

@@ -2,16 +2,16 @@
 
 from time import perf_counter
 from typing import Optional, List, cast
-from ..base_executor import BaseExecutor
-from ...execution import (
+from opendxa.base.execution import BaseExecutor
+from opendxa.base.execution import (
     ExecutionNode,
     ExecutionSignal, ExecutionContext,
     ExecutionSignalType
 )
-from .pipeline import PipelineNode, Pipeline
-from .pipeline_context import PipelineContext
-from .pipeline_strategy import PipelineStrategy
-from .pipeline_factory import PipelineFactory
+from opendxa.execution.pipeline.pipeline import PipelineNode, Pipeline
+from opendxa.execution.pipeline.pipeline_context import PipelineContext
+from opendxa.execution.pipeline.pipeline_strategy import PipelineStrategy
+from opendxa.execution.pipeline.pipeline_factory import PipelineFactory
 
 class PipelineExecutor(BaseExecutor[PipelineStrategy, Pipeline, PipelineFactory]):
     """Executes pipeline steps in sequence."""

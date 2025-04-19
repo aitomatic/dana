@@ -2,8 +2,8 @@
 
 from typing import List, Optional, Union
 
-from ..execution_graph import ExecutionGraph
-from ..execution_types import Objective, ExecutionSignal
+from opendxa.base.execution.execution_graph import ExecutionGraph
+from opendxa.base.execution.execution_types import Objective, ExecutionSignal
 
 
 class Workflow(ExecutionGraph):

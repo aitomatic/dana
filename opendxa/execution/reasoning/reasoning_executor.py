@@ -2,12 +2,12 @@
 
 from typing import List
 
-from ..execution_context import ExecutionContext
-from ..execution_types import ExecutionNode, ExecutionSignal, ExecutionSignalType
-from ..base_executor import BaseExecutor
-from .reasoning import Reasoning
-from .reasoning_factory import ReasoningFactory
-from .reasoning_strategy import ReasoningStrategy
+from opendxa.base.execution.execution_context import ExecutionContext
+from opendxa.base.execution.execution_types import ExecutionNode, ExecutionSignal, ExecutionSignalType
+from opendxa.base.execution.base_executor import BaseExecutor
+from opendxa.execution.reasoning.reasoning import Reasoning
+from opendxa.execution.reasoning.reasoning_factory import ReasoningFactory
+from opendxa.execution.reasoning.reasoning_strategy import ReasoningStrategy
 
 
 class ReasoningExecutor(BaseExecutor[ReasoningStrategy, Reasoning, ReasoningFactory]):
@@ -68,19 +68,20 @@ class ReasoningExecutor(BaseExecutor[ReasoningStrategy, Reasoning, ReasoningFact
                 # Make LLM call with the reasoning node's objective
                 if context.reasoning_llm and node.objective:
                     # Build the prompt using the new method
-                    prompt = self._build_llm_prompt(context)
+                    user_messages = self._build_user_messages(context)
+                    system_messages = self._build_system_messages()
 
                     # Log the prompt
                     self.info("Prompt:")
                     self.info("=======")
-                    self.info(prompt)
+                    self.info(user_messages)
                     self.info(f"Resources: {context.available_resources or {}}")
 
                     # Query the LLM with available resources
 
                     response = await context.reasoning_llm.query(request={
-                        "prompt": prompt,
-                        "system_prompt": "You are executing a reasoning task. Provide clear, logical analysis and reasoning.",
+                        "user_messages": user_messages,
+                        "system_messages": system_messages,
                         "available_resources": context.available_resources or {},
                         "max_iterations": 3,
                         "max_tokens": 1000,
@@ -97,7 +98,7 @@ class ReasoningExecutor(BaseExecutor[ReasoningStrategy, Reasoning, ReasoningFact
         # If no response was generated, return an empty result
         return [ExecutionSignal(type=ExecutionSignalType.DATA_RESULT, content={})]
 
-    def _build_reasoning_prompt(self, strategy: ReasoningStrategy) -> List[str]:
+    def _build_reasoning_directives(self, strategy: ReasoningStrategy) -> List[str]:
         """Build the reasoning strategy section of the prompt.
 
         Args:
@@ -106,7 +107,8 @@ class ReasoningExecutor(BaseExecutor[ReasoningStrategy, Reasoning, ReasoningFact
         Returns:
             List of strings for the reasoning strategy section
         """
-        result = []
+        result = ["Here is your reasoning strategy:"]
+
         if strategy == ReasoningStrategy.TREE_OF_THOUGHT:
             result.extend([
                 "Reasoning: Following tree-of-thought strategy:",
@@ -141,19 +143,19 @@ class ReasoningExecutor(BaseExecutor[ReasoningStrategy, Reasoning, ReasoningFact
             ])
         
         result.extend([
-            "",
             "Repeat the above process exactly 3 times, or until you are confident that the task is complete and the objective is met."
+            "At the end, you must always provide an assessement of whether the objective has been met or not."
         ])
         return result
 
-    def _build_llm_prompt(self, context: ExecutionContext) -> str:
-        """Build the LLM prompt for the reasoning node.
+    def _build_user_messages(self, context: ExecutionContext) -> List[str]:
+        """Build the user messages for the reasoning node.
 
         Args:
             context: The execution context
 
         Returns:
-            The LLM context for the reasoning node
+            The user messages for the reasoning node
         """
         # Get parent nodes
         workflow_node = context.get_current_workflow_node()
@@ -167,13 +169,12 @@ class ReasoningExecutor(BaseExecutor[ReasoningStrategy, Reasoning, ReasoningFact
         workflow_nodes = context.current_workflow.nodes if context.current_workflow else {}
         plan_nodes = context.current_plan.nodes if context.current_plan else {}
 
-        prompt_parts = [
-            "OVERVIEW:",
-            f"Overall Workflow Objective: {workflow_obj.current if workflow_obj else 'None'}",
-            f"Overall Plan Objective: {plan_obj.current if plan_obj else 'None'}",
+        user_messages = [
+            "WORKFLOW OVERVIEW:",
+            f"- Overall Workflow Objective: {workflow_obj.current if workflow_obj else 'None'}",
+            f"- Overall Plan Objective: {plan_obj.current if plan_obj else 'None'}",
             "",
-            "EXECUTION HIERARCHY:",
-            "------------------",
+            "EXECUTION GRAPH:",
         ]
 
         # Add workflow nodes sequence
@@ -184,7 +185,7 @@ class ReasoningExecutor(BaseExecutor[ReasoningStrategy, Reasoning, ReasoningFact
                 else False
             )
             current_marker = " [CURRENT]" if is_current_workflow else ""
-            prompt_parts.extend([
+            user_messages.extend([
                 f"{i}. {workflow_node_iter.node_type}: {workflow_node_iter.description}{current_marker}",
                 f"   - Objective: {workflow_node_iter.objective.current if workflow_node_iter.objective else 'None'}",
                 f"   - Status: {workflow_node_iter.status}",
@@ -192,7 +193,7 @@ class ReasoningExecutor(BaseExecutor[ReasoningStrategy, Reasoning, ReasoningFact
 
             # If this is the current workflow node, show its plan sequence
             if is_current_workflow and plan_nodes:
-                prompt_parts.extend([
+                user_messages.extend([
                     "",
                     "   Plan Sequence:"
                 ])
@@ -204,38 +205,57 @@ class ReasoningExecutor(BaseExecutor[ReasoningStrategy, Reasoning, ReasoningFact
                         else False
                     )
                     current_plan_marker = " [CURRENT]" if is_current_plan else ""
-                    prompt_parts.extend([
+                    user_messages.extend([
                         f"   {j}. {plan_node_iter.node_type}: {plan_node_iter.description}{current_plan_marker}",
                         f"      - Objective: {plan_node_iter.objective.current if plan_node_iter.objective else 'None'}",
                         f"      - Status: {plan_node_iter.status}",
                     ])
-                prompt_parts.append("")
 
-        prompt_parts.extend([
+        user_messages.extend([
             "",
             "CURRENT EXECUTION CONTEXT:",
-            "------------------------",
-            "You are operating within a three-layer execution hierarchy: Workflow -> Plan -> Reasoning.",
-            "",
-            "Current Position:",
             f"- Workflow: {workflow_node.description if workflow_node else 'None'} ({workflow_node.status if workflow_node else 'None'})",
             f"- Plan: {plan_node.description if plan_node else 'None'} ({plan_node.status if plan_node else 'None'})",
         ])
 
-        # Add reasoning strategy section
-        self.debug(f"Reasoning Strategy: {self.strategy}")
-        prompt_parts.extend([""])
-        prompt_parts.extend(self._build_reasoning_prompt(self.strategy))
+        return user_messages
 
-        prompt_parts.extend([
+    def _build_system_messages(self) -> List[str]:
+        """Build the system messages for the reasoning node.
+
+        Returns:
+            The system messages for the reasoning node
+        """
+        system_messages = []
+        system_messages.extend([
+            "You are executing a reasoning task. Provide clear, logical analysis and reasoning.",
+            "You are operating within a three-layer execution hierarchy: Workflow -> Plan -> Reasoning.",
+            "The Workflow layer is typically specified by the human operator",
+            "The Plan layer is typically generated dynamically to accomplish the objective",
+            "The Reasoning layer is typically a choice of several fundamental strategies, e.g., "
+            "chain-of-thought, tree-of-thought, reflection, OODA loop, etc.",
             "",
-            "Your task is to execute the reasoning layer task while keeping in mind:",
-            "1. The broader workflow context and its objectives",
-            "2. The specific plan that this reasoning task is part of",
-            "3. The immediate reasoning task requirements",
+            "You are currently in the Reasoning layer. Execute the reasoning task while keeping in mind:",
+            " 1. The broader workflow context and its objectives",
+            " 2. The specific plan that this reasoning task is part of",
+            " 3. The immediate reasoning task requirements",
             "",
-            "Ensure your response aligns with all levels of the hierarchy and contributes to achieving the overall workflow objectives."
         ])
 
-        return "\n".join(prompt_parts)
-       
+        self.debug(f"Reasoning Strategy: {self.strategy}")
+        system_messages.extend(self._build_reasoning_directives(self.strategy))
+
+        # Tell the LLM to call our final_result() function if the task is complete
+        system_messages.extend([
+            "",
+            "When the task is complete, provide your response in JSON format with the following structure:",
+            "  {",
+            "    'content': The content of the result",
+            "    'status': The status of the result, @enum: success, error, partial",
+            "    'metadata': Optional metadata about the result",
+            "    'error': Optional error message if status is error",
+            "  }",
+            "If the task is not complete, continue with your analysis.",
+        ])
+
+        return system_messages

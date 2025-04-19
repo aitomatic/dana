@@ -26,13 +26,12 @@ Example:
 import asyncio
 from typing import TYPE_CHECKING, Any, Dict
 
+from opendxa.common.exceptions import AgentError, ResourceError
+from opendxa.base.resource.base_resource import BaseResource, ResourceResponse
 from opendxa.common.utils.misc import safe_asyncio_run
 
-from ...common.exceptions import AgentError, ConfigurationError, ResourceError
-from ...common.resource import BaseResource, ResourceResponse
-
 if TYPE_CHECKING:
-    from ..agent import Agent  # Only used for type hints
+    from opendxa.agent.agent import Agent  # Only used for type hints
 
 
 class AgentResource(BaseResource):
@@ -81,11 +80,11 @@ class AgentResource(BaseResource):
         try:
             loop = asyncio.get_event_loop()
             response = await loop.run_in_executor(None, self.agent.ask, request.get("request", ""))
-            return ResourceResponse(success=True, content=response)
+            return ResourceResponse(success=True, content={"response": response})
         except AgentError as e:
             raise ResourceError("Agent execution failed") from e
         except (ValueError, KeyError) as e:
-            raise ConfigurationError("Invalid query format") from e
+            return ResourceResponse(success=False, error=f"Invalid query format: {e}")
 
     async def initialize(self) -> None:
         """Initialize all agents in registry.

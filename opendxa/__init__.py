@@ -1,87 +1,85 @@
-"""Domain-Expert Agent (DXA) framework.
+"""Domain-Expert Agent (OpenDXA) Framework.
 
-DXA is a framework for building domain-expert agents that combine:
-- Domain-specific expertise
-- LLM-powered reasoning
-- Interactive capabilities
+OpenDXA is an intelligent agent architecture that combines domain expertise with LLM-powered reasoning
+through a unique three-layer graph architecture:
 
-Key Components:
-- StateManager: Manages agent state and conversation history
-- DomainExpertise: Defines areas of expertise and capabilities
-- ExpertResource: Implements domain-expert behavior
-- ChainOfThoughtReasoning: Provides step-by-step reasoning patterns
+1. Workflow Layer (WHY) - Defines what agents can do, from simple Q&A to complex research patterns
+2. Planning Layer (WHAT) - Breaks down workflows into concrete, executable steps
+3. Reasoning Layer (HOW) - Executes each step using appropriate thinking patterns
+
+The framework enables building intelligent agents with domain expertise, powered by Large Language Models (LLMs).
+It provides a clean separation of concerns and allows for progressive complexity, starting from simple
+implementations and scaling to complex domain-specific tasks.
+
+For detailed documentation, installation instructions, and examples, see:
+- Project README: https://github.com/aitomatic/opendxa/blob/main/opendxa/README.md
+- Agent Documentation: https://github.com/aitomatic/opendxa/blob/main/opendxa/agent/README.md
+- Execution Documentation: https://github.com/aitomatic/opendxa/blob/main/opendxa/execution/README.md
 
 Example:
-    >>> from opendxa import DomainExpertise, ExpertResource
-    >>> expertise = DomainExpertise(
-    ...     name="mathematics",
-    ...     description="Expert in algebra and calculus",
-    ...     capabilities=["equation solving", "differentiation"],
-    ...     keywords=["solve", "calculate", "equation"],
-    ...     requirements=["mathematical expression"],
-    ...     example_queries=["solve x^2 + 2x + 1 = 0"]
-    ... )
+    >>> from opendxa.agent import Agent
+    >>> from opendxa.agent.resource import LLMResource
+    >>> answer = Agent().ask("What is quantum computing?")
 """
 
-from .common import (
+from opendxa.common import (
     AgentError,
     BaseIO,
-    BaseMcpService,
-    BaseResource,
-    BaseState,
     BreadthFirstTraversal,
     CommunicationError,
+    ConfigManager,
     ConfigurationError,
     Cursor,
     DXA_LOGGER,
     DepthFirstTraversal,
     DirectedGraph,
     Edge,
-    ExecutionState,
     GraphVisualizer,
-    HttpTransportParams,
-    HumanResource,
     IOFactory,
     LLMError,
     LLMInteractionAnalyzer,
     LLMInteractionVisualizer,
-    LLMResource,
     Loggable,
-    McpEchoService,
-    McpResource,
     NetworkError,
     Node,
     NodeType,
     OpenDXAError,
     ReasoningError,
-    ResourceError,
-    ResourceResponse,
-    ResourceUnavailableError,
     StateError,
-    StateManager,
-    StdioTransportParams,
     TopologicalTraversal,
     TraversalStrategy,
+    ToolCallable,
     ValidationError,
     WebSocketError,
-    WoTResource,
-    WorldState,
     get_base_path,
     get_class_by_name,
     get_config_path,
     load_agent_config,
+    load_yaml_config,
 )
 
-from .execution import (
+from opendxa.base import (
+    BaseCapability,
+    BaseExecutor,
+    BaseResource,
+    BaseState,
     ExecutionContext,
-    ExecutionEdge,
     ExecutionGraph,
     ExecutionNode,
-    ExecutionNodeStatus,
+    ExecutionEdge,
     ExecutionSignal,
     ExecutionSignalType,
+    ExecutionState,
+    ExecutionFactory,
+    ExecutionNodeStatus,
     Objective,
     ObjectiveStatus,
+    LLMResource,
+    ResourceResponse,
+    WorldState,
+)
+
+from opendxa.execution import (
     OptimalWorkflowExecutor,
     Pipeline,
     PipelineContext,
@@ -103,90 +101,74 @@ from .execution import (
     WorkflowStrategy,
 )
 
-from .agent import (
+from opendxa.agent import (
     Agent,
-    AgentResource,
-    AgentRuntime,
     AgentFactory,
-    BaseCapability,
+    AgentResource,
+    AgentResponse,
+    AgentRuntime,
     AgentState,
     ExpertResource,
-    ResourceFactory
+    ResourceFactory,
 )
 
 __all__ = [
     # Common
     'AgentError',
     'BaseIO',
-    'BaseMcpService',
-    'BaseResource',
-    'BaseState',
     'BreadthFirstTraversal',
     'CommunicationError',
+    'ConfigManager',
     'ConfigurationError',
     'Cursor',
     'DXA_LOGGER',
-    'DepthFirstTraversal', 
+    'DepthFirstTraversal',
     'DirectedGraph',
     'Edge',
-    'ExecutionState',
     'GraphVisualizer',
-    'HttpTransportParams',
-    'HumanResource',
     'IOFactory',
     'LLMError',
     'LLMInteractionAnalyzer',
     'LLMInteractionVisualizer',
-    'LLMResource',
     'Loggable',
-    'McpEchoService',
-    'McpResource',
     'NetworkError',
     'Node',
     'NodeType',
     'OpenDXAError',
     'ReasoningError',
-    'ResourceError',
-    'ResourceResponse',
-    'ResourceUnavailableError',
     'StateError',
-    'StateManager',
-    'StdioTransportParams',
     'TopologicalTraversal',
     'TraversalStrategy',
+    'ToolCallable',
     'ValidationError',
     'WebSocketError',
-    'WoTResource',
-    'WorldState',
     'get_base_path',
     'get_class_by_name',
     'get_config_path',
     'load_agent_config',
+    'load_yaml_config',
 
-    # Agent
-    'Agent',
-    'AgentResource',
-    'AgentRuntime',
-    'AgentFactory',
+    # Base
     'BaseCapability',
-    'AgentState',
-    'ExpertResource',   
-    "ResourceFactory",
+    'BaseExecutor',
+    'BaseResource',
+    'BaseState',
+    'ExecutionContext',
+    'ExecutionGraph',
+    'ExecutionNode',
+    'ExecutionEdge',
+    'ExecutionSignal',
+    'ExecutionSignalType',
+    'ExecutionState',
+    'ExecutionFactory',
+    'ExecutionNodeStatus',
+    'Objective',
+    'ObjectiveStatus',
+    'LLMResource',
+    'ResourceResponse',
+    'WorldState',
 
     # Execution
-    "ExecutionContext",
-    "ExecutionEdge",
-    "ExecutionGraph",
-    "ExecutionNode",
-    "ExecutionSignal",
-    "ExecutionSignalType",
-    "Objective",
-    "ObjectiveStatus",
-    "Workflow",
-    "WorkflowExecutor",
-    "WorkflowFactory",
-    'ExecutionContext',
-    'ExecutionNodeStatus',
     'OptimalWorkflowExecutor',
     'Pipeline',
     'PipelineContext',
@@ -206,4 +188,14 @@ __all__ = [
     'WorkflowExecutor',
     'WorkflowFactory',
     'WorkflowStrategy',
+
+    # Agent
+    'Agent',
+    'AgentFactory',
+    'AgentResource',
+    'AgentResponse',
+    'AgentRuntime',
+    'AgentState',
+    'ExpertResource',
+    'ResourceFactory',
 ]

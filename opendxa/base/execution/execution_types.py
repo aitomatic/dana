@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import Dict, Any, Optional, List, Callable, Awaitable, Union
 from datetime import datetime
 from enum import Enum
-from ..common.graph import Node, Edge, NodeType
+from opendxa.common.graph import Node, Edge, NodeType
 
 class ExecutionNodeStatus(Enum):
     """Status of execution nodes."""
@@ -32,11 +32,22 @@ class Objective:
     current: str
     status: ObjectiveStatus = ObjectiveStatus.INITIAL
     context: Dict[str, Any] = field(default_factory=dict)
-    history: List[Dict] = field(default_factory=list)
+    history: List[Dict[str, Any]] = field(default_factory=list)
 
     def __init__(self, objective: Optional[str] = None):
+        """Initialize objective.
+        
+        Args:
+            objective: Initial objective text
+            
+        Raises:
+            ValueError: If objective is empty string
+        """
         if not objective:
             objective = str(ObjectiveStatus.NONE_PROVIDED)
+        elif not isinstance(objective, str):
+            raise ValueError("Objective must be a string")
+            
         self.original = objective
         self.current = objective
         self.status = ObjectiveStatus.INITIAL
@@ -44,7 +55,21 @@ class Objective:
         self.history = []
 
     def evolve(self, new_understanding: str, reason: str) -> None:
-        """Evolve the objective."""
+        """Evolve the objective.
+        
+        Args:
+            new_understanding: New understanding of the objective
+            reason: Reason for the evolution
+            
+        Raises:
+            ValueError: If new_understanding is not a string or is empty
+            ValueError: If reason is not a string or is empty
+        """
+        if not isinstance(new_understanding, str) or not new_understanding:
+            raise ValueError("New understanding must be a non-empty string")
+        if not isinstance(reason, str) or not reason:
+            raise ValueError("Reason must be a non-empty string")
+            
         self.history.append({
             "previous": self.current,
             "new": new_understanding,
@@ -78,31 +103,61 @@ class ExecutionNode(Node):
             return NotImplemented
         return self.node_id == other.node_id
 
-    # pylint: disable=too-many-arguments
     def __init__(self,
                  node_id: str,
                  node_type: NodeType,
                  objective: Union[str, Objective],
                  status: ExecutionNodeStatus = ExecutionNodeStatus.NONE,
-                 step: Optional[Any] = None,
+                 step: Optional[Callable[[Dict[str, Any]], Awaitable[Dict[str, Any]]]] = None,
                  result: Optional[Dict[str, Any]] = None,
                  metadata: Optional[Dict[str, Any]] = None,
                  requires: Optional[Dict[str, Any]] = None,
                  provides: Optional[Dict[str, Any]] = None):
+        """Initialize execution node.
+        
+        Args:
+            node_id: Unique identifier for the node
+            node_type: Type of the node
+            objective: Objective for the node
+            status: Initial status of the node
+            step: Optional step function
+            result: Optional result dictionary
+            metadata: Optional metadata dictionary
+            requires: Optional requirements dictionary
+            provides: Optional provides dictionary
+            
+        Raises:
+            ValueError: If node_id is empty
+            ValueError: If objective is invalid
+        """
+        if not node_id:
+            raise ValueError("Node ID cannot be empty")
+            
         # Convert objective to string description if needed
-        description = objective if isinstance(objective, str) else objective.current
+        if isinstance(objective, str):
+            description = objective
+            objective_obj = Objective(objective)
+        elif isinstance(objective, Objective):
+            description = objective.current
+            objective_obj = objective
+        else:
+            raise ValueError("Objective must be a string or Objective instance")
         
         # Call the base class's __init__ method
         super().__init__(node_id=node_id, node_type=node_type, description=description, metadata=metadata or {})
         
         # Set ExecutionNode-specific attributes
-        self.objective = objective if isinstance(objective, Objective) else Objective(objective)
+        self.objective = objective_obj
         self.status = status
         self.step = step
         self.result = result
         self.requires = requires or {}
         self.provides = provides or {}
-        self.buffer_config = {}
+        self.buffer_config = {
+            "enabled": False,
+            "size": 1000,
+            "mode": "streaming"
+        }
     
     def get_prompt(self) -> Optional[str]:
         """Get the prompt for the node."""
@@ -186,5 +241,22 @@ class ExecutionSignal:
     timestamp: datetime = field(default_factory=datetime.now)
 
 class ExecutionError(Exception):
-    """Exception for execution errors."""
-    pass
+    """Exception for execution errors.
+    
+    Attributes:
+        message: Error message
+        node_id: Optional ID of the node where error occurred
+        signal: Optional signal that caused the error
+    """
+    def __init__(self, message: str, node_id: Optional[str] = None, signal: Optional[ExecutionSignal] = None):
+        """Initialize execution error.
+        
+        Args:
+            message: Error message
+            node_id: Optional ID of the node where error occurred
+            signal: Optional signal that caused the error
+        """
+        super().__init__(message)
+        self.message = message
+        self.node_id = node_id
+        self.signal = signal

@@ -1,8 +1,9 @@
 """Capability factory."""
 
 
-from .base_capability import BaseCapability
-from .memory_capability import MemoryCapability
+from opendxa.base.capability.base_capability import BaseCapability
+from opendxa.agent.capability.memory_capability import MemoryCapability
+
 class CapabilityFactory:
     """Capability factory."""
     @classmethod

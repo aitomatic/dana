@@ -38,9 +38,9 @@ Example:
 
 from dataclasses import dataclass
 from typing import Dict, Any, Optional, ClassVar
-from ...common.resource.base_resource import BaseResource, ResourceResponse
-from ..capability.domain_expertise import DomainExpertise
-from ...common.io import IOFactory
+from opendxa.base.resource.base_resource import BaseResource, ResourceResponse
+from opendxa.agent.capability.domain_expertise import DomainExpertise
+from opendxa.common.io import IOFactory
 
 
 @dataclass
@@ -120,7 +120,7 @@ class ExpertResource(BaseResource):
         self._io = IOFactory.create_io("console")  # Sync creation
         await self._io.initialize()  # Async init
 
-    async def query(self, request: Dict[str, Any]) -> Dict[str, Any]:
+    async def query(self, request: Dict[str, Any]) -> ResourceResponse:
         """Get expert input."""
         if not self._io:
             await self.initialize()
@@ -128,10 +128,7 @@ class ExpertResource(BaseResource):
         # Ensure we pass a proper dictionary with prompt
         prompt = request.get("prompt") or ""
         response = await self._io.query({"prompt": prompt})
-        return {
-            "success": True,
-            "content": response
-        }
+        return response
 
     async def cleanup(self) -> None:
         """Cleanup IO."""

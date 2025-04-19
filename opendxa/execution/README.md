@@ -6,9 +6,200 @@
 
 # OpenDXA Execution System
 
+The OpenDXA Execution System provides specialized implementations and advanced features for executing tasks in the OpenDXA framework. It builds upon the base execution framework to deliver domain-specific functionality and enhanced execution patterns.
+
 ## Overview
 
-The OpenDXA Execution System provides a framework for executing tasks through a layered architecture. It manages the translation of high-level objectives into executable actions through structured execution patterns.
+The Execution System extends the base framework with:
+
+- Specialized executor implementations
+- Advanced execution patterns
+- Domain-specific functionality
+- Enhanced graph operations
+- Sophisticated signal handling
+
+```mermaid
+graph TD
+    A[ExecutionSystem] --> B[Specialized Executors]
+    A --> C[Advanced Patterns]
+    A --> D[Domain Features]
+    B --> B1[TaskExecutor]
+    B --> B2[AgentExecutor]
+    C --> C1[Parallel Execution]
+    C --> C2[Conditional Flows]
+    D --> D1[Domain Knowledge]
+    D --> D2[Expert Integration]
+```
+
+## Key Components
+
+### 1. TaskExecutor
+
+Specialized executor for task-based execution:
+
+```python
+class TaskExecutor(BaseExecutor):
+    """Executor for task-based execution."""
+    
+    def __init__(self, task: Task, resources: Dict[str, Any]):
+        self.task = task
+        self.resources = resources
+        
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
+        # Execute task with specialized handling
+        result = await self._execute_task(context)
+        return ExecutionResult(
+            success=True,
+            data=result,
+            metadata={"task_id": self.task.id}
+        )
+```
+
+### 2. AgentExecutor
+
+Executor for agent-based execution:
+
+```python
+class AgentExecutor(BaseExecutor):
+    """Executor for agent-based execution."""
+    
+    def __init__(self, agent: Agent, capabilities: List[Capability]):
+        self.agent = agent
+        self.capabilities = capabilities
+        
+    async def execute(self, context: ExecutionContext) -> ExecutionResult:
+        # Execute with agent capabilities
+        result = await self._execute_with_agent(context)
+        return ExecutionResult(
+            success=True,
+            data=result,
+            metadata={"agent_id": self.agent.id}
+        )
+```
+
+### 3. ExecutionManager
+
+Advanced execution management:
+
+```python
+class ExecutionManager:
+    """Manages execution of tasks and agents."""
+    
+    def __init__(self, config: ExecutionConfig):
+        self.config = config
+        self.executors = {}
+        self.graphs = {}
+        
+    async def execute_graph(self, graph: ExecutionGraph) -> ExecutionResult:
+        """Execute a graph with advanced features."""
+        return await self._execute_with_features(graph)
+        
+    async def parallel_execute(self, tasks: List[Task]) -> List[ExecutionResult]:
+        """Execute tasks in parallel."""
+        return await self._execute_parallel(tasks)
+```
+
+### 4. SignalProcessor
+
+Enhanced signal processing:
+
+```python
+class SignalProcessor:
+    """Processes execution signals with advanced features."""
+    
+    def __init__(self, handlers: Dict[SignalType, SignalHandler]):
+        self.handlers = handlers
+        
+    async def process_signal(self, signal: ExecutionSignal) -> None:
+        """Process signal with specialized handling."""
+        await self._process_with_features(signal)
+        
+    async def handle_error(self, error: Exception) -> None:
+        """Handle errors with advanced recovery."""
+        await self._handle_with_recovery(error)
+```
+
+## Usage Guide
+
+### Basic Execution
+
+```python
+from opendxa.execution import TaskExecutor, ExecutionManager
+
+# Create executor
+executor = TaskExecutor(task=my_task, resources=resources)
+
+# Execute task
+result = await executor.execute(context)
+
+# Use execution manager
+manager = ExecutionManager(config=config)
+graph_result = await manager.execute_graph(graph)
+```
+
+### Advanced Execution
+
+```python
+from opendxa.execution import AgentExecutor, ParallelExecutor
+
+# Create agent executor
+agent_executor = AgentExecutor(agent=my_agent, capabilities=capabilities)
+
+# Execute with agent
+result = await agent_executor.execute(context)
+
+# Parallel execution
+parallel_executor = ParallelExecutor(executors=[executor1, executor2])
+results = await parallel_executor.execute(context)
+```
+
+### Signal Handling
+
+```python
+from opendxa.execution import SignalProcessor, ExecutionSignal
+
+# Create processor
+processor = SignalProcessor(handlers=handlers)
+
+# Process signals
+await processor.process_signal(ExecutionSignal(
+    type=SignalType.TASK_COMPLETE,
+    result={"data": "result"}
+))
+```
+
+## Best Practices
+
+1. **Executor Selection**
+   - Choose appropriate executor type
+   - Configure resources properly
+   - Handle dependencies correctly
+
+2. **Advanced Features**
+   - Use parallel execution when appropriate
+   - Implement conditional flows
+   - Handle complex scenarios
+
+3. **Signal Management**
+   - Use appropriate signal types
+   - Implement proper handlers
+   - Handle errors gracefully
+
+4. **Resource Management**
+   - Manage resources efficiently
+   - Handle resource dependencies
+   - Clean up resources properly
+
+## Integration with Base Framework
+
+The execution system builds upon the base execution framework (`opendxa.base.execution`). While the base framework provides the foundation, this system adds:
+
+- Specialized implementations
+- Advanced execution patterns
+- Domain-specific features
+- Enhanced management capabilities
+
+For more information on the foundational aspects, see the [Base Execution Framework Documentation](../base/execution/README.md).
 
 ## Architecture
 

@@ -1,18 +1,18 @@
 """DXA resource module."""
 
-from .base_resource import (
+from opendxa.base.resource.base_resource import (
     BaseResource,
     ResourceResponse,
     ResourceError,
     ResourceUnavailableError
 )
-from .human_resource import HumanResource
-from .llm_resource import LLMResource
-from .mcp import (
+from opendxa.base.resource.human_resource import HumanResource
+from opendxa.base.resource.llm_resource import LLMResource
+from opendxa.base.resource.mcp import (
     McpResource, StdioTransportParams, HttpTransportParams,
     BaseMcpService, McpEchoService
 )
-from .wot_resource import WoTResource
+from opendxa.base.resource.wot_resource import WoTResource
 
 __all__ = [
     "BaseResource",

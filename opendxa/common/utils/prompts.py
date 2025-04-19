@@ -2,7 +2,7 @@
 
 from typing import Dict, Union
 from pathlib import Path
-from .config import load_yaml_config
+from ..config import load_yaml_config
 
 class Prompts:
     """Generic prompt management utility."""

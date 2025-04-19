@@ -2,7 +2,7 @@
 
 from typing import Dict, Union, Optional, ClassVar, Any
 from pathlib import Path
-from ...common.utils.configurable import Configurable
+from opendxa.common.mixins.configurable import Configurable
 
 class ReasoningConfig(Configurable):
     """Manages reasoning configuration loading and access."""

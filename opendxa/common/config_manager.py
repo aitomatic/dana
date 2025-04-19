@@ -41,8 +41,8 @@ import os
 from typing import Dict, Any, Optional, List, Tuple, ClassVar
 from pathlib import Path
 from dotenv import load_dotenv, find_dotenv
-from ..exceptions import ConfigurationError
-from .configurable import Configurable
+from opendxa.common.exceptions import ConfigurationError
+from opendxa.common.mixins.configurable import Configurable
 
 try:
     import yaml

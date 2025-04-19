@@ -28,16 +28,17 @@ class WoTResource(BaseResource):
         """Interact with WoT Thing."""
         required_params = ["thing_id", "interaction_type", "operation"]
         if not all(p in request for p in required_params):
-            raise ResourceError("Missing required WoT parameters")
+            return ResourceResponse(success=False, error="Missing required WoT parameters")
 
         thing = self.things.get(request["thing_id"])
         if not thing:
-            raise ResourceError(f"Thing not found: {request['thing_id']}")
+            return ResourceResponse(success=False, error=f"Thing not found: {request['thing_id']}")
 
         try:
-            return await self._handle_interaction(thing, request)
+            result = await self._handle_interaction(thing, request)
+            return ResourceResponse(success=True, content=result)
         except aiohttp.ClientError as e:
-            raise ResourceError(f"WoT communication failed: {str(e)}") from e
+            return ResourceResponse(success=False, error=f"WoT communication failed: {str(e)}")
 
     async def _handle_interaction(self, thing: Dict[str, Any], request: Dict) -> ResourceResponse:
         """Execute WoT interaction based on type."""

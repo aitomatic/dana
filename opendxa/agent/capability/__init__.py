@@ -1,11 +1,9 @@
 """Core capabilities for DXA agents."""
 
-from .base_capability import BaseCapability
-from .domain_expertise import DomainExpertise
-from .memory_capability import MemoryCapability
+from opendxa.agent.capability.domain_expertise import DomainExpertise
+from opendxa.agent.capability.memory_capability import MemoryCapability
 
 __all__ = [
-    'BaseCapability',
     'DomainExpertise',
-    'MemoryCapability'
+    'MemoryCapability',
 ] 

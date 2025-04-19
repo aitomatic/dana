@@ -1,11 +1,13 @@
 """Test workflow factory."""
 
 import unittest
-from opendxa.execution import WorkflowFactory
-from opendxa.execution import ExecutionNodeStatus
-from opendxa.common.graph import NodeType
-from opendxa.execution import Workflow
-from opendxa.execution import Objective
+from opendxa import (
+    WorkflowFactory,
+    ExecutionNodeStatus,
+    NodeType,
+    Workflow,
+    Objective
+)
 
 class TestWorkflowFactory(unittest.TestCase):
     """Test workflow factory."""

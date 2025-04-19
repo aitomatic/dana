@@ -3,8 +3,8 @@
 from typing import Dict, Any, Union, TextIO, Type
 from pathlib import Path
 import yaml
-from ..utils.config import load_yaml_config
-from .directed_graph import DirectedGraph, Node, Edge, NodeType
+from opendxa.common.config_manager import load_yaml_config
+from opendxa.common.graph.directed_graph import DirectedGraph, Node, Edge, NodeType
 
 class GraphSerializer:
     """Base graph serialization."""

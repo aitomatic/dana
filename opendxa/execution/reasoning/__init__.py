@@ -19,10 +19,10 @@ Supporting Types:
     ObjectiveState: Objective tracking
 """
 
-from .reasoning import Reasoning
-from .reasoning_factory import ReasoningFactory
-from .reasoning_strategy import ReasoningStrategy
-from .reasoning_executor import ReasoningExecutor
+from opendxa.execution.reasoning.reasoning import Reasoning
+from opendxa.execution.reasoning.reasoning_factory import ReasoningFactory
+from opendxa.execution.reasoning.reasoning_strategy import ReasoningStrategy
+from opendxa.execution.reasoning.reasoning_executor import ReasoningExecutor
 
 __all__ = [
     'Reasoning',

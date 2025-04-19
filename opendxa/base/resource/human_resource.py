@@ -95,26 +95,23 @@ class HumanResource(BaseResource):
         """
         return self._is_available and isinstance(request, dict)
 
-    async def query(self, request: Dict[str, Any]) -> HumanResponse:
+    async def query(self, request: Dict[str, Any]) -> ResourceResponse:
         """Query the human resource for input.
 
         Args:
             request (Dict[str, Any]): The request containing query parameters.
 
         Returns:
-            HumanResponse: The response from the human resource.
-
-        Raises:
-            ResourceError: If the resource is unavailable or the request format is invalid.
+            ResourceResponse: The response from the human resource.
         """
         if not self.can_handle(request):
-            raise ResourceError("Resource unavailable or invalid request format")
+            return ResourceResponse(success=False, error="Resource unavailable or invalid request format")
 
         try:
             response = await self._get_human_input(request)
-            return HumanResponse(response=response)
+            return ResourceResponse(success=True, content={"response": response})
         except Exception as e:
-            raise ResourceError(f"Failed to get human input: {str(e)}") from e
+            return ResourceResponse(success=False, error=f"Failed to get human input: {e}")
 
     async def _get_human_input(self, request: Dict[str, Any]) -> str:
         """Get input from the human user.

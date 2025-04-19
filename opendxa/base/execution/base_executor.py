@@ -4,15 +4,17 @@ from abc import ABC
 from enum import Enum
 from typing import Generic, List, Optional, Type, TypeVar, cast, Union
 
-from ..common.utils.logging import Loggable
-from .execution_context import ExecutionContext
-from .execution_graph import ExecutionGraph
-from .execution_factory import ExecutionFactory
-from .execution_types import (
-    ExecutionNode, ExecutionSignal,
-    ExecutionNodeStatus, ExecutionSignalType
+from opendxa.common.mixins.loggable import Loggable
+from opendxa.common.graph import NodeType
+from opendxa.base.execution.execution_context import ExecutionContext
+from opendxa.base.execution.execution_graph import ExecutionGraph
+from opendxa.base.execution.execution_factory import ExecutionFactory
+from opendxa.base.execution.execution_types import (
+    ExecutionNode,
+    ExecutionSignal,
+    ExecutionNodeStatus,
+    ExecutionSignalType,
 )
-from ..common.graph import NodeType
 
 # Type variables for generic type parameters
 StrategyT = TypeVar('StrategyT', bound=Enum)
@@ -204,8 +206,8 @@ class BaseExecutor(ABC, Loggable, Generic[StrategyT, GraphT, FactoryT]):
         except Exception as e:
             # Set to FAILED on error
             node.status = ExecutionNodeStatus.FAILED
-            # _handle_error will always return a List[ExecutionSignal] when create_signal=True
-            return self._handle_error(node, e, create_signal=True) or []
+            # return self._handle_error(node, e, create_signal=True) or []
+            raise e
             
     async def _execute_node_core(self, node: ExecutionNode, context: ExecutionContext) -> List[ExecutionSignal]:
         """Execute a node by delegating to the lower executor."""
@@ -255,7 +257,7 @@ class BaseExecutor(ABC, Loggable, Generic[StrategyT, GraphT, FactoryT]):
         node: ExecutionNode,
         parent_node: Optional[ExecutionNode] = None
     ) -> ExecutionContext:
-        """Build execution context for a node."""
+        """Build execution context for a node, just before executing on that node."""
         try:
             # Create layer-specific context
             layer_context = {
@@ -290,7 +292,7 @@ class BaseExecutor(ABC, Loggable, Generic[StrategyT, GraphT, FactoryT]):
         signals: List[ExecutionSignal],
         node: Optional[ExecutionNode] = None
     ) -> List[ExecutionSignal]:
-        """Process execution signals."""
+        """Process execution signals after executing on a node."""
         try:
             # Handle error signals
             error_signals = [
@@ -448,7 +450,7 @@ class BaseExecutor(ABC, Loggable, Generic[StrategyT, GraphT, FactoryT]):
         node: ExecutionNode,
         upper_graph: ExecutionGraph
     ) -> Optional[GraphT]:
-        """Create a graph for this layer from an upper layer node."""
+        """Part of _execute_node_core: Create a graph for this layer from an upper layer node, just before executing on that graph."""
         try:
             # Create a basic graph with START -> TASK -> END using the factory
             return self._factory_class.create_basic_graph(

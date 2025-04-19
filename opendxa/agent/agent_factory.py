@@ -1,7 +1,7 @@
 """Factory for creating DXA agents."""
 
 from typing import Dict, Any
-from .agent import Agent
+from opendxa.agent.agent import Agent
 
 class AgentFactory:
     """Creates and configures DXA agents."""

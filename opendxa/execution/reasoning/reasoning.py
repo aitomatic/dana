@@ -3,8 +3,8 @@
 from abc import ABC
 from typing import Optional
 
-from ..execution_graph import ExecutionGraph
-from ..execution_types import Objective, ObjectiveStatus
+from opendxa.base.execution.execution_graph import ExecutionGraph
+from opendxa.base.execution.execution_types import Objective, ObjectiveStatus
 
 class Reasoning(ExecutionGraph, ABC):
     """Pattern for reasoning about execution (HOW layer)."""

@@ -1,6 +1,51 @@
-"""Common utilities and shared functionality for DXA."""
+"""Common Utilities and Shared Functionality for OpenDXA.
 
-from .exceptions import (
+This module provides shared utilities and functionality used across the OpenDXA framework:
+
+1. Configuration Management
+   - ConfigManager for managing configuration
+   - YAML configuration loading
+   - Agent-specific configuration
+
+2. Error Handling
+   - Custom exceptions for different error types
+   - Error hierarchy and categorization
+
+3. Input/Output System
+   - BaseIO for standardized I/O operations
+   - IOFactory for creating I/O handlers
+
+4. Utility Functions
+   - LLM interaction analysis and visualization
+   - Path and configuration utilities
+   - Logging system
+
+5. Mixins
+   - Loggable for logging capabilities
+   - ToolCallable for tool integration
+   - Configurable for configuration support
+   - Registerable for component registration
+
+6. Graph Operations
+   - Node and Edge data structures
+   - Graph traversal strategies
+   - Graph visualization
+
+For detailed documentation, see:
+- Common Utilities Documentation: https://github.com/aitomatic/opendxa/blob/main/opendxa/common/README.md
+
+Example:
+    >>> from opendxa.common import DXA_LOGGER, ConfigManager
+    >>> DXA_LOGGER.configure(level=DXA_LOGGER.DEBUG, console=True)
+    >>> config = ConfigManager().load_config("agent_config.yaml")
+"""
+
+from opendxa.common.config_manager import (
+    ConfigManager,
+    load_agent_config,
+    load_yaml_config
+)
+from opendxa.common.exceptions import (
     OpenDXAError,
     ConfigurationError,
     LLMError,
@@ -12,12 +57,11 @@ from .exceptions import (
     ValidationError,
     StateError
 )
-from .io import (
+from opendxa.common.io import (
     BaseIO,
     IOFactory
 )
-from .utils import (
-    load_agent_config,
+from opendxa.common.utils import (
     LLMInteractionAnalyzer,
     LLMInteractionVisualizer,
     get_class_by_name,
@@ -25,9 +69,14 @@ from .utils import (
     get_config_path,
     DXALogger,
     DXA_LOGGER,
-    Loggable
 )
-from .graph import (
+from opendxa.common.mixins import (
+    Loggable,
+    ToolCallable,
+    Configurable,
+    Registerable
+)
+from opendxa.common.graph import (
     Node,
     Edge,
     NodeType,
@@ -39,28 +88,13 @@ from .graph import (
     TopologicalTraversal,
     GraphVisualizer,
 )
-from .state import (
-    BaseState,
-    WorldState,
-    ExecutionState,
-    StateManager
-)
-from .resource import (
-    BaseResource,
-    ResourceResponse,
-    ResourceError,
-    ResourceUnavailableError,
-    LLMResource,
-    McpResource,
-    BaseMcpService,
-    McpEchoService,
-    HumanResource,
-    WoTResource,
-    StdioTransportParams,
-    HttpTransportParams,
-)
 
 __all__ = [
+    # Config
+    'ConfigManager',
+    'load_agent_config',
+    'load_yaml_config',
+
     # Errors
     'OpenDXAError',
     'ConfigurationError',
@@ -78,7 +112,6 @@ __all__ = [
     'IOFactory',
 
     # Utils
-    'load_agent_config',
     'LLMInteractionAnalyzer',
     'LLMInteractionVisualizer',
     'get_class_by_name',
@@ -86,8 +119,13 @@ __all__ = [
     'get_config_path',
     'DXALogger',
     'DXA_LOGGER',
+
+    # Mixins
     'Loggable',
-    
+    'ToolCallable',
+    'Configurable',
+    'Registerable',
+
     # Graph
     'Node',
     'Edge',
@@ -99,24 +137,4 @@ __all__ = [
     'DepthFirstTraversal', 
     'TopologicalTraversal',
     'GraphVisualizer',
-    
-    # State
-    'BaseState',
-    'WorldState',
-    'ExecutionState',
-    'StateManager',
-    
-    # Resource
-    'BaseResource',
-    'ResourceResponse',
-    'ResourceError',
-    'ResourceUnavailableError',
-    'LLMResource',
-    'McpResource',
-    'BaseMcpService',
-    'McpEchoService',
-    'HumanResource',
-    'WoTResource',
-    'StdioTransportParams',
-    'HttpTransportParams',
 ]

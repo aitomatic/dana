@@ -1,7 +1,7 @@
 """MCP resource implementation using either stdio or HTTP transport."""
 
 import uuid
-from typing import Any, Dict, List, Optional, Union, cast, Literal, TypeVar, Callable
+from typing import Any, Dict, List, Optional, Union, Literal, TypeVar, Callable, cast
 import functools
 import asyncio
 
@@ -9,9 +9,9 @@ from mcp import ClientSession, StdioServerParameters, Tool
 from mcp.client.stdio import get_default_environment, stdio_client
 from mcp.client.sse import sse_client
 
-from ....common.utils.logging import Loggable
-from ..base_resource import BaseResource, ResourceResponse, ResourceError
-from .mcp_config import McpConfig, McpConfigError, StdioTransportParams, HttpTransportParams
+from opendxa.common.mixins.loggable import Loggable
+from opendxa.base.resource.base_resource import BaseResource, ResourceResponse, ResourceError
+from opendxa.base.resource.mcp.mcp_config import McpConfig, McpConfigError, StdioTransportParams, HttpTransportParams
 
 
 T = TypeVar('T')
@@ -431,14 +431,57 @@ class McpResource(BaseResource, Loggable):
             self.error(f"Tool listing failed: {e}", exc_info=True)
             return []
 
-    async def as_function_calls(self) -> List[Dict[str, Any]]:
-        """Override to format MCP tools into OpenAI function specification.
+    def as_tool_call_specs(self, my_id: str) -> List[Dict[str, Any]]:
+        """Override to convert all MCP tools under this resource into OpenAI function specifications.
+        
+        This method transforms MCP tools into a format that OpenAI's function calling API can understand.
+        It performs several important transformations:
+        
+        1. Schema Cleanup:
+           - Removes MCP-specific fields (like 'self' references)
+           - Simplifies the schema to only include essential properties
+           - Makes non-required fields nullable to provide flexibility
+           - Removes JSON Schema specific fields (like $schema)
+        
+        2. Parameter Validation:
+           - Enforces strict parameter validation
+           - Prevents the LLM from sending unexpected parameters
+           - Ensures type safety for required parameters
+        
+        3. Function Naming:
+           - Creates unique function names by combining resource name, ID, and tool name
+           - Ensures no naming conflicts between different resources or tools
+        
+        The resulting function specifications follow OpenAI's expected format:
+        {
+            "type": "function",
+            "function": {
+                "name": "resource_name__resource_id__tool_name",
+                "description": "tool description",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "param1": {"type": "string", "description": "..."},
+                        "param2": {"type": ["number", "null"], "description": "..."}
+                    },
+                    "required": ["param1"],
+                    "additionalProperties": False
+                },
+                "strict": True
+            }
+        }
         
         Returns:
-            OpenAI function specification list
+            List[Dict[str, Any]]: List of OpenAI function specifications, each containing:
+                - type: Always "function"
+                - function: Function specification with:
+                    - name: Unique function identifier
+                    - description: Tool description
+                    - parameters: Cleaned and simplified parameter schema
+                    - strict: Boolean enforcing strict parameter validation
         """
         tool_strings = []
-        mcp_tools = await self.list_tools()
+        mcp_tools = asyncio.run(self.list_tools())
 
         for tool in mcp_tools:
             # Copy and clean up base schema
@@ -447,10 +490,10 @@ class McpResource(BaseResource, Loggable):
             # Remove 'self' references if present
             if "properties" in parameters:
                 properties = parameters["properties"]
-                if "self" in properties:
-                    del properties["self"]
-                    if "required" in parameters:
-                        parameters["required"].remove("self")
+                # Use dict.pop() to safely remove 'self' and handle the required list in one operation
+                if properties.pop("self", None) is not None and "required" in parameters:
+                    # Use list comprehension to filter out 'self' from required fields
+                    parameters["required"] = [field for field in parameters["required"] if field != "self"]
 
             # Process properties if they exist
             if "properties" in parameters and "required" in parameters:
@@ -461,29 +504,34 @@ class McpResource(BaseResource, Loggable):
                 for field_name, field_props in properties.items():
                     if field_name not in required_fields and "type" in field_props:
                         field_type = field_props["type"]
-                        field_props["type"] = ([field_type] if isinstance(field_type, str) else field_type) + ["null"]
+                        # More Pythonic way to handle type conversion
+                        field_props["type"] = [field_type] if isinstance(field_type, str) else [*field_type, "null"]
                         parameters["required"].append(field_name)
 
                 # Clean up property definitions to only include essential keys
-                allowed_keys = {"description", "title", "type"}
-                for prop in properties.values():
-                    prop_keys = set(prop.keys())
-                    for key in prop_keys - allowed_keys:
-                        del prop[key]
+                allowed_keys = {"description", "title", "type", "items"}
+                properties.update({
+                    prop_name: {k: v for k, v in prop.items() if k in allowed_keys}
+                    for prop_name, prop in properties.items()
+                })
 
+            # Remove $schema as it's a JSON Schema specific field that's not needed for OpenAI function calling.
+            parameters.pop("$schema", None)
+
+            # Enforce strict parameter validation to prevent the LLM from sending unexpected parameters
+            # that could cause errors in the MCP tool execution.
             parameters["additionalProperties"] = False
 
-            tool_strings.append(
-                {
-                    "type": "function",
-                    "function": {
-                        "name": self._get_name_id_function_string(self.name, self.resource_id, tool.name),
-                        "description": tool.description,
-                        "parameters": parameters,
-                        "strict": True,
-                    },
+            # Use dictionary unpacking for cleaner function specification
+            tool_strings.append({
+                "type": "function",
+                "function": {
+                    "name": self._get_name_id_function_string(self.name, my_id, tool.name),
+                    "description": tool.description,
+                    "parameters": parameters,
+                    "strict": True,
                 }
-            )
+            })
 
         return tool_strings
 

@@ -11,7 +11,7 @@ from io import StringIO
 from pathlib import Path
 import inspect
 import yaml
-from .logging.loggable import Loggable
+from opendxa.common.mixins.loggable import Loggable
 
 @dataclass
 class Configurable(Loggable):
@@ -163,4 +163,4 @@ class Configurable(Loggable):
             path: Path to save configuration
         """
         with open(path, 'w', encoding='utf-8') as f:
-            yaml.safe_dump(self.config, f)
+            yaml.safe_dump(self.config, f) 

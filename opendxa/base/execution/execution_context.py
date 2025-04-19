@@ -1,15 +1,15 @@
 """Execution context for DXA."""
 
-from typing import Optional, TYPE_CHECKING, cast, Dict, Any, Tuple
-from ..common.state import WorldState, ExecutionState
-from ..common.resource import BaseResource, LLMResource
-from .execution_types import ExecutionNode
+from typing import Optional, TYPE_CHECKING, Dict, Any, Tuple, cast
+from opendxa.base.state import WorldState, ExecutionState
+from opendxa.base.resource import BaseResource, LLMResource
+from opendxa.base.execution.execution_types import ExecutionNode
 
 if TYPE_CHECKING:
-    from .workflow import Workflow
-    from .planning import Plan
-    from .reasoning import Reasoning
-    from ..agent.agent_state import AgentState
+    from opendxa.execution.workflow import Workflow
+    from opendxa.execution.planning import Plan
+    from opendxa.execution.reasoning import Reasoning
+    from opendxa.agent.agent_state import AgentState
 
 class ExecutionContext:
     """Execution context for all execution layers."""
@@ -27,12 +27,29 @@ class ExecutionContext:
                  global_context: Optional[Dict[str, Any]] = None,
                  available_resources: Optional[Dict[str, BaseResource]] = None
                  ):
-        """Initialize execution context."""
+        """Initialize execution context.
+        
+        Args:
+            workflow_llm: LLM resource for workflow execution
+            planning_llm: LLM resource for planning
+            reasoning_llm: LLM resource for reasoning
+            agent_state: Current agent state
+            world_state: Current world state
+            execution_state: Current execution state
+            current_workflow: Current workflow
+            current_plan: Current plan
+            current_reasoning: Current reasoning
+            global_context: Global context dictionary
+            available_resources: Available resources dictionary
+            
+        Raises:
+            ValueError: If any required resource is invalid
+        """
         # State management
         self.agent_state = agent_state
         self.world_state = world_state
         self.execution_state = execution_state
-        self.available_resources = available_resources
+        self.available_resources = available_resources or {}
 
         # Current execution graphs
         self.current_workflow = current_workflow
@@ -54,25 +71,50 @@ class ExecutionContext:
         ] = {}
         
     def get_current_workflow_node(self) -> Optional[ExecutionNode]:
-        """Get the current workflow node."""
+        """Get the current workflow node.
+        
+        Returns:
+            Optional[ExecutionNode]: Current workflow node if exists
+        """
         if self.current_workflow:
             return cast(ExecutionNode, self.current_workflow.get_current_node())
         return None
     
     def get_current_plan_node(self) -> Optional[ExecutionNode]:
-        """Get current plan node."""
+        """Get current plan node.
+        
+        Returns:
+            Optional[ExecutionNode]: Current plan node if exists
+        """
         if self.current_plan:
             return cast(ExecutionNode, self.current_plan.get_current_node())
         return None
         
     def get_current_reasoning_node(self) -> Optional[ExecutionNode]:
-        """Get current reasoning node."""
+        """Get current reasoning node.
+        
+        Returns:
+            Optional[ExecutionNode]: Current reasoning node if exists
+        """
         if self.current_reasoning:
             return cast(ExecutionNode, self.current_reasoning.get_current_node())
         return None
 
     def update_workflow_result(self, node_id: str, result: Dict[str, Any]) -> None:
-        """Update results for a workflow node."""
+        """Update results for a workflow node.
+        
+        Args:
+            node_id: ID of the workflow node
+            result: Result dictionary to store
+            
+        Raises:
+            ValueError: If node_id is empty or result is not a dictionary
+        """
+        if not node_id:
+            raise ValueError("Node ID cannot be empty")
+        if not isinstance(result, dict):
+            raise ValueError("Result must be a dictionary")
+            
         self.workflow_results[node_id] = result
     
     def update_plan_result(
@@ -81,7 +123,21 @@ class ExecutionContext:
         plan_id: str, 
         result: Dict[str, Any]
     ) -> None:
-        """Update results for a plan node."""
+        """Update results for a plan node.
+        
+        Args:
+            workflow_id: ID of the workflow
+            plan_id: ID of the plan
+            result: Result dictionary to store
+            
+        Raises:
+            ValueError: If any ID is empty or result is not a dictionary
+        """
+        if not workflow_id or not plan_id:
+            raise ValueError("Workflow ID and Plan ID cannot be empty")
+        if not isinstance(result, dict):
+            raise ValueError("Result must be a dictionary")
+            
         self.plan_results[(workflow_id, plan_id)] = result
     
     def update_reasoning_result(
@@ -91,15 +147,55 @@ class ExecutionContext:
         reasoning_id: str, 
         result: Dict[str, Any]
     ) -> None:
-        """Update results for a reasoning node."""
+        """Update results for a reasoning node.
+        
+        Args:
+            workflow_id: ID of the workflow
+            plan_id: ID of the plan
+            reasoning_id: ID of the reasoning
+            result: Result dictionary to store
+            
+        Raises:
+            ValueError: If any ID is empty or result is not a dictionary
+        """
+        if not workflow_id or not plan_id or not reasoning_id:
+            raise ValueError("Workflow ID, Plan ID and Reasoning ID cannot be empty")
+        if not isinstance(result, dict):
+            raise ValueError("Result must be a dictionary")
+            
         self.reasoning_results[(workflow_id, plan_id, reasoning_id)] = result
     
     def get_workflow_result(self, node_id: str) -> Optional[Dict[str, Any]]:
-        """Get results for a specific workflow node."""
+        """Get results for a specific workflow node.
+        
+        Args:
+            node_id: ID of the workflow node
+            
+        Returns:
+            Optional[Dict[str, Any]]: Result dictionary if exists
+            
+        Raises:
+            ValueError: If node_id is empty
+        """
+        if not node_id:
+            raise ValueError("Node ID cannot be empty")
         return self.workflow_results.get(node_id)
     
     def get_plan_results_for_workflow(self, workflow_id: str) -> Dict[str, Dict[str, Any]]:
-        """Get all plan results for a specific workflow node."""
+        """Get all plan results for a specific workflow node.
+        
+        Args:
+            workflow_id: ID of the workflow
+            
+        Returns:
+            Dict[str, Dict[str, Any]]: Dictionary of plan results
+            
+        Raises:
+            ValueError: If workflow_id is empty
+        """
+        if not workflow_id:
+            raise ValueError("Workflow ID cannot be empty")
+            
         return {
             plan_id: result 
             for (wf_id, plan_id), result in self.plan_results.items() 
@@ -111,7 +207,21 @@ class ExecutionContext:
         workflow_id: str, 
         plan_id: str
     ) -> Dict[str, Dict[str, Any]]:
-        """Get all reasoning results for a specific plan node."""
+        """Get all reasoning results for a specific plan node.
+        
+        Args:
+            workflow_id: ID of the workflow
+            plan_id: ID of the plan
+            
+        Returns:
+            Dict[str, Dict[str, Any]]: Dictionary of reasoning results
+            
+        Raises:
+            ValueError: If workflow_id or plan_id is empty
+        """
+        if not workflow_id or not plan_id:
+            raise ValueError("Workflow ID and Plan ID cannot be empty")
+            
         return {
             reasoning_id: result 
             for (wf_id, p_id, reasoning_id), result in self.reasoning_results.items() 
@@ -119,7 +229,11 @@ class ExecutionContext:
         }
     
     def build_llm_context(self) -> Dict[str, Any]:
-        """Build context for LLM call."""
+        """Build context for LLM call.
+        
+        Returns:
+            Dict[str, Any]: Dictionary containing LLM context
+        """
         # Get current workflow and plan IDs safely
         workflow_node = self.get_current_workflow_node()
         plan_node = self.get_current_plan_node()

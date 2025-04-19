@@ -2,13 +2,13 @@
 
 from typing import Any, TYPE_CHECKING, Optional
 
-from ..execution.workflow import WorkflowExecutor, Workflow
-from ..execution.planning import PlanExecutor
-from ..execution.reasoning import ReasoningExecutor
-from ..execution.execution_context import ExecutionContext
-from ..execution.execution_types import ExecutionSignalType
+from opendxa.execution.workflow import WorkflowExecutor, Workflow
+from opendxa.execution.planning import PlanExecutor
+from opendxa.execution.reasoning import ReasoningExecutor
+from opendxa.base.execution.execution_context import ExecutionContext
+from opendxa.base.execution.execution_types import ExecutionSignalType
 if TYPE_CHECKING:
-    from ..agent import Agent
+    from opendxa.agent.agent import Agent
 
 class AgentRuntime:
     """Manages agent execution, coordinating between layers."""
