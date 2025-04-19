@@ -272,13 +272,11 @@ class BaseExecutor(ABC, Loggable, Generic[StrategyT, GraphT, FactoryT]):
             
             # Create new execution context
             return ExecutionContext(
-                workflow_llm=context.workflow_llm,
                 planning_llm=context.planning_llm,
                 reasoning_llm=context.reasoning_llm,
                 agent_state=context.agent_state,
                 world_state=context.world_state,
                 execution_state=context.execution_state,
-                current_workflow=context.current_workflow,
                 current_plan=context.current_plan,
                 current_reasoning=context.current_reasoning,
                 global_context=context.global_context,

@@ -102,11 +102,10 @@
         
         <div class="description">
             <h2>OpenDXA Architecture</h2>
-            <p>OpenDXA (Domain-Expert Agent) is an intelligent agent architecture designed to tackle complex domain-specific tasks with human-like expertise. The architecture is based on a three-layer graph structure that breaks down high-level objectives into executable actions through a Why-What-How paradigm.</p>
+            <p>OpenDXA (Domain-Expert Agent) is an intelligent agent architecture designed to tackle complex domain-specific tasks with human-like expertise. The architecture is based on a two-layer structure that breaks down high-level objectives into executable actions through a What-How paradigm.</p>
             
             <h3>Key Components</h3>
             <ul>
-                <li><strong>Workflow Layer (WHY)</strong> - Maps business objectives to strategic plans</li>
                 <li><strong>Planning Layer (WHAT)</strong> - Decomposes strategic plans into tactical actions</li>
                 <li><strong>Reasoning Layer (HOW)</strong> - Executes actions using standardized reasoning patterns</li>
             </ul>
@@ -122,10 +121,46 @@
             
             <h3>Execution System</h3>
             <ul>
-                <li><strong>Workflow</strong> - Process definition and control</li>
                 <li><strong>Planning</strong> - Strategic decomposition</li>
                 <li><strong>Reasoning</strong> - Tactical execution</li>
                 <li><strong>Pipeline</strong> - Execution flow management</li>
+            </ul>
+
+            <h3>Tutorial Structure</h3>
+            <ul>
+                <li><strong>Getting Started</strong>
+                    <ul>
+                        <li>Introduction to OpenDXA</li>
+                        <li>Simple Plans</li>
+                        <li>Agent Configuration</li>
+                    </ul>
+                </li>
+                <li><strong>Core Concepts</strong>
+                    <ul>
+                        <li>Planning Layer</li>
+                        <li>Reasoning Layer</li>
+                        <li>Execution Context</li>
+                        <li>Capabilities</li>
+                        <li>Resources</li>
+                        <li>Tool Calling</li>
+                        <li>MCP Resource</li>
+                        <li>Smart Resource Selection</li>
+                    </ul>
+                </li>
+                <li><strong>Advanced Topics</strong>
+                    <ul>
+                        <li>Custom Agents</li>
+                        <li>Advanced Planning</li>
+                        <li>Advanced Reasoning</li>
+                    </ul>
+                </li>
+                <li><strong>Real-World Applications</strong>
+                    <ul>
+                        <li>Semiconductor Manufacturing</li>
+                        <li>General Manufacturing</li>
+                        <li>Financial Applications</li>
+                    </ul>
+                </li>
             </ul>
         </div>
     </div>
@@ -150,265 +185,159 @@
         
         // Architecture components
         const components = {
-            workflowLayer: {
-                name: 'Workflow Layer (WHY)',
-                x: canvas.width / 2,
-                y: 100,
-                width: 600,
-                height: 80,
-                color: '#f9f9f9',
-                borderColor: '#4a6cf7',
-                nodes: [
-                    { name: 'Launch New Product', x: 150, y: 140 },
-                    { name: 'Market Research', x: 300, y: 140 },
-                    { name: 'Product Development', x: 450, y: 140 },
-                    { name: 'Market Launch', x: 600, y: 140 }
-                ]
-            },
             planningLayer: {
                 name: 'Planning Layer (WHAT)',
                 x: canvas.width / 2,
-                y: 250,
+                y: 100,
                 width: 600,
                 height: 80,
                 color: '#f0f7ff',
                 borderColor: '#4a6cf7',
                 nodes: [
-                    { name: 'Analyze Competitors', x: 150, y: 290 },
-                    { name: 'Survey Customers', x: 300, y: 290 },
-                    { name: 'Synthesize Findings', x: 450, y: 290 },
-                    { name: 'Create Report', x: 600, y: 290 }
+                    { name: 'Analyze Competitors', x: 150, y: 140 },
+                    { name: 'Survey Customers', x: 300, y: 140 },
+                    { name: 'Synthesize Findings', x: 450, y: 140 },
+                    { name: 'Create Report', x: 600, y: 140 }
                 ]
             },
             reasoningLayer: {
                 name: 'Reasoning Layer (HOW)',
                 x: canvas.width / 2,
-                y: 400,
+                y: 250,
                 width: 600,
                 height: 80,
                 color: '#f0fff7',
                 borderColor: '#4a6cf7',
                 nodes: [
-                    { name: 'Observe', x: 150, y: 440 },
-                    { name: 'Orient', x: 300, y: 440 },
-                    { name: 'Decide', x: 450, y: 440 },
-                    { name: 'Act', x: 600, y: 440 }
+                    { name: 'Observe', x: 150, y: 290 },
+                    { name: 'Orient', x: 300, y: 290 },
+                    { name: 'Decide', x: 450, y: 290 },
+                    { name: 'Act', x: 600, y: 290 }
                 ]
             },
             agentSystem: {
                 name: 'Agent System',
                 x: 150,
-                y: 550,
+                y: 400,
                 width: 200,
-                height: 150,
+                height: 120,
                 color: '#fff7f0',
                 borderColor: '#4a6cf7',
                 nodes: [
-                    { name: 'Agent Factory', x: 150, y: 580 },
-                    { name: 'Capabilities', x: 150, y: 610 },
-                    { name: 'Resources', x: 150, y: 640 },
-                    { name: 'IO System', x: 150, y: 670 }
-                ]
-            },
-            executionSystem: {
-                name: 'Execution System',
-                x: 450,
-                y: 550,
-                width: 200,
-                height: 150,
-                color: '#fff7f0',
-                borderColor: '#4a6cf7',
-                nodes: [
-                    { name: 'Workflow', x: 450, y: 580 },
-                    { name: 'Planning', x: 450, y: 610 },
-                    { name: 'Reasoning', x: 450, y: 640 },
-                    { name: 'Pipeline', x: 450, y: 670 }
+                    { name: 'Agent Factory', x: 200, y: 440 },
+                    { name: 'Capabilities', x: 200, y: 470 },
+                    { name: 'Resources', x: 200, y: 500 }
                 ]
             }
         };
         
         // Drawing functions
-        function drawRect(x, y, width, height, color, borderColor, text) {
-            ctx.fillStyle = color;
-            ctx.strokeStyle = borderColor;
+        function drawComponent(component) {
+            // Draw main box
+            ctx.fillStyle = component.color;
+            ctx.strokeStyle = component.borderColor;
             ctx.lineWidth = 2;
+            ctx.fillRect(
+                component.x - component.width / 2,
+                component.y - component.height / 2,
+                component.width,
+                component.height
+            );
+            ctx.strokeRect(
+                component.x - component.width / 2,
+                component.y - component.height / 2,
+                component.width,
+                component.height
+            );
             
-            // Draw rounded rectangle
-            const radius = 10;
-            ctx.beginPath();
-            ctx.moveTo(x - width/2 + radius, y - height/2);
-            ctx.lineTo(x + width/2 - radius, y - height/2);
-            ctx.quadraticCurveTo(x + width/2, y - height/2, x + width/2, y - height/2 + radius);
-            ctx.lineTo(x + width/2, y + height/2 - radius);
-            ctx.quadraticCurveTo(x + width/2, y + height/2, x + width/2 - radius, y + height/2);
-            ctx.lineTo(x - width/2 + radius, y + height/2);
-            ctx.quadraticCurveTo(x - width/2, y + height/2, x - width/2, y + height/2 - radius);
-            ctx.lineTo(x - width/2, y - height/2 + radius);
-            ctx.quadraticCurveTo(x - width/2, y - height/2, x - width/2 + radius, y - height/2);
-            ctx.closePath();
-            
-            ctx.fill();
-            ctx.stroke();
-            
-            // Draw text
+            // Draw name
             ctx.fillStyle = '#333';
             ctx.font = 'bold 16px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText(text, x, y);
+            ctx.fillText(component.name, component.x, component.y - 20);
+            
+            // Draw nodes
+            component.nodes.forEach(node => {
+                ctx.fillStyle = '#fff';
+                ctx.strokeStyle = '#4a6cf7';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, 8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+                
+                ctx.fillStyle = '#333';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'left';
+                ctx.fillText(node.name, node.x + 15, node.y + 4);
+            });
         }
         
-        function drawNode(x, y, text) {
-            ctx.fillStyle = '#fff';
+        function drawConnections() {
             ctx.strokeStyle = '#4a6cf7';
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 1;
             
-            // Draw circle
-            ctx.beginPath();
-            ctx.arc(x, y, 15, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
+            // Connect planning to reasoning
+            components.planningLayer.nodes.forEach((planNode, i) => {
+                const reasonNode = components.reasoningLayer.nodes[i];
+                ctx.beginPath();
+                ctx.moveTo(planNode.x, planNode.y + 8);
+                ctx.lineTo(reasonNode.x, reasonNode.y - 8);
+                ctx.stroke();
+            });
             
-            // Draw text
-            ctx.fillStyle = '#333';
-            ctx.font = '14px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText(text, x, y + 30);
+            // Connect reasoning to agent system
+            components.reasoningLayer.nodes.forEach(reasonNode => {
+                components.agentSystem.nodes.forEach(agentNode => {
+                    ctx.beginPath();
+                    ctx.moveTo(reasonNode.x, reasonNode.y + 8);
+                    ctx.lineTo(agentNode.x - 8, agentNode.y);
+                    ctx.stroke();
+                });
+            });
         }
         
-        function drawConnection(x1, y1, x2, y2, color = '#4a6cf7') {
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 2;
-            
-            ctx.beginPath();
-            ctx.moveTo(x1, y1);
-            ctx.lineTo(x2, y2);
-            ctx.stroke();
-            
-            // Draw arrow
-            const angle = Math.atan2(y2 - y1, x2 - x1);
-            const arrowLength = 10;
-            
-            ctx.beginPath();
-            ctx.moveTo(x2, y2);
-            ctx.lineTo(
-                x2 - arrowLength * Math.cos(angle - Math.PI / 6),
-                y2 - arrowLength * Math.sin(angle - Math.PI / 6)
-            );
-            ctx.moveTo(x2, y2);
-            ctx.lineTo(
-                x2 - arrowLength * Math.cos(angle + Math.PI / 6),
-                y2 - arrowLength * Math.sin(angle + Math.PI / 6)
-            );
-            ctx.stroke();
-        }
-        
-        function drawDashedConnection(x1, y1, x2, y2, color = '#4a6cf7') {
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 2;
-            ctx.setLineDash([5, 5]);
-            
-            ctx.beginPath();
-            ctx.moveTo(x1, y1);
-            ctx.lineTo(x2, y2);
-            ctx.stroke();
-            
-            // Reset line dash
-            ctx.setLineDash([]);
-        }
-        
-        // Draw the architecture
-        function drawArchitecture() {
-            // Clear canvas
+        function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Draw layers
-            for (const key in components) {
-                const component = components[key];
-                
-                // Draw main component
-                drawRect(component.x, component.y, component.width, component.height, component.color, component.borderColor, component.name);
-                
-                // Draw nodes
-                component.nodes.forEach(node => {
-                    drawNode(node.x, node.y, node.name);
-                });
-            }
+            // Draw components
+            Object.values(components).forEach(component => {
+                drawComponent(component);
+            });
             
-            // Draw connections between workflow nodes
-            for (let i = 0; i < components.workflowLayer.nodes.length - 1; i++) {
-                const node1 = components.workflowLayer.nodes[i];
-                const node2 = components.workflowLayer.nodes[i + 1];
-                drawConnection(node1.x, node1.y, node2.x, node2.y);
-            }
-            
-            // Draw connections between planning nodes
-            for (let i = 0; i < components.planningLayer.nodes.length - 1; i++) {
-                const node1 = components.planningLayer.nodes[i];
-                const node2 = components.planningLayer.nodes[i + 1];
-                drawConnection(node1.x, node1.y, node2.x, node2.y);
-            }
-            
-            // Draw connections between reasoning nodes
-            for (let i = 0; i < components.reasoningLayer.nodes.length - 1; i++) {
-                const node1 = components.reasoningLayer.nodes[i];
-                const node2 = components.reasoningLayer.nodes[i + 1];
-                drawConnection(node1.x, node1.y, node2.x, node2.y);
-            }
-            
-            // Draw connections between layers
-            drawDashedConnection(
-                components.workflowLayer.nodes[1].x, 
-                components.workflowLayer.nodes[1].y, 
-                components.planningLayer.nodes[0].x, 
-                components.planningLayer.nodes[0].y
-            );
-            
-            drawDashedConnection(
-                components.planningLayer.nodes[0].x, 
-                components.planningLayer.nodes[0].y, 
-                components.reasoningLayer.nodes[0].x, 
-                components.reasoningLayer.nodes[0].y
-            );
-            
-            // Draw connections to agent and execution systems
-            drawConnection(
-                components.workflowLayer.x, 
-                components.workflowLayer.y + components.workflowLayer.height/2, 
-                components.agentSystem.x, 
-                components.agentSystem.y - components.agentSystem.height/2
-            );
-            
-            drawConnection(
-                components.workflowLayer.x, 
-                components.workflowLayer.y + components.workflowLayer.height/2, 
-                components.executionSystem.x, 
-                components.executionSystem.y - components.executionSystem.height/2
-            );
+            // Draw connections
+            drawConnections();
         }
         
-        // Initialize
-        drawArchitecture();
-        
-        // Button event listeners
+        // Event listeners
         document.getElementById('resetBtn').addEventListener('click', () => {
-            // Reset view (for future implementation)
-            drawArchitecture();
+            resizeCanvas();
+            draw();
         });
         
         document.getElementById('zoomInBtn').addEventListener('click', () => {
-            // Zoom in (for future implementation)
-            alert('Zoom in functionality will be implemented in a future version');
+            canvas.width *= 1.2;
+            canvas.height *= 1.2;
+            draw();
         });
         
         document.getElementById('zoomOutBtn').addEventListener('click', () => {
-            // Zoom out (for future implementation)
-            alert('Zoom out functionality will be implemented in a future version');
+            canvas.width /= 1.2;
+            canvas.height /= 1.2;
+            draw();
         });
         
+        let showLayers = true;
         document.getElementById('toggleLayersBtn').addEventListener('click', () => {
-            // Toggle layers (for future implementation)
-            alert('Layer toggling functionality will be implemented in a future version');
+            showLayers = !showLayers;
+            Object.values(components).forEach(component => {
+                component.color = showLayers ? component.color : '#fff';
+            });
+            draw();
         });
+        
+        // Initial draw
+        draw();
     </script>
 </body>
 </html>
