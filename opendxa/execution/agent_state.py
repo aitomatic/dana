@@ -49,4 +49,4 @@ class AgentState(BaseState):
         try:
             return self.plan.nodes[step_keys[self.current_step_index]]
         except (IndexError, KeyError):
-            return None
+            return None 

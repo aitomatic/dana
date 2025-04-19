@@ -79,6 +79,8 @@ from opendxa.base import (
 )
 
 from opendxa.execution import (
+    AgentRuntime,
+    AgentState,
     Pipeline,
     PipelineContext,
     PipelineExecutor,
@@ -100,8 +102,6 @@ from opendxa.agent import (
     AgentFactory,
     AgentResource,
     AgentResponse,
-    AgentRuntime,
-    AgentState,
     ExpertResource,
     ResourceFactory,
 )
@@ -163,6 +163,8 @@ __all__ = [
     'WorldState',
 
     # Execution
+    'AgentRuntime',
+    'AgentState',
     'Pipeline',
     'PipelineContext',
     'PipelineExecutor',
@@ -178,14 +180,11 @@ __all__ = [
     'ReasoningFactory',
     'ReasoningStrategy',
 
-
     # Agent
     'Agent',
     'AgentFactory',
     'AgentResource',
     'AgentResponse',
-    'AgentRuntime',
-    'AgentState',
     'ExpertResource',
     'ResourceFactory',
 ]

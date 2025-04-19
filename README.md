@@ -40,7 +40,20 @@ First things first, set up your development environment:
 
 ## What is OpenDXA?
 
-OpenDXA is a framework for building intelligent agents powered by Large Language Models (LLMs). It specializes in embedding domain expertise into agents through a unique three-layer architecture that maps business workflows to concrete plans to reasoning patterns:
+OpenDXA is a framework for building intelligent agents powered by Large Language Models (LLMs). It specializes in embedding domain expertise into agents through a unique architecture that combines declarative and imperative aspects:
+
+1. **Declarative Aspect (Agent)**
+   - Defines what the agent can do
+   - Owns and describes capabilities
+   - Specifies available knowledge and expertise
+   - Receives tasks and objectives
+
+2. **Imperative Aspect (AgentRuntime)**
+   - Thin layer connecting Agent to Planning
+   - Simply invokes the Planner
+   - No additional responsibilities
+
+This architecture maps business workflows to concrete plans to reasoning patterns through three layers:
 
 1. **Workflows (WHY)** define what agents can do - from simple Q&A to complex research patterns
 2. **Plans (WHAT)** break down workflows into concrete, executable steps
@@ -48,11 +61,24 @@ OpenDXA is a framework for building intelligent agents powered by Large Language
 
 ```mermaid
 graph TB
-    subgraph "Layer Architecture"
-        direction LR
-        W[Workflow Layer<br>WHY] --> P[Planning Layer<br>WHAT]
-        P --> R[Reasoning Layer<br>HOW]
+    subgraph "Declarative (Agent)"
+        A[Agent] --> C[Capabilities]
+        C --> K[Knowledge]
+        C --> E[Expertise]
+        C --> T[Tools]
     end
+
+    subgraph "Imperative (AgentRuntime)"
+        AR[AgentRuntime] --> P[Planning]
+        P --> R[Reasoning]
+        P --> C
+        R --> C
+    end
+
+    Task --> A
+    A --> AR
+    AR --> Results
+    Results --> C
 ```
 
 This architecture means you can:
@@ -256,6 +282,7 @@ opendxa/                # Project root
 │   │   ├── state/      # State management
 │   │   └── utils/      # Utility functions
 │   │       └── logging/  # Logging system
+│   │
 │   └── execution/      # Execution system
 │       ├── pipeline/   # Pipeline execution
 │       ├── planning/   # Strategic planning

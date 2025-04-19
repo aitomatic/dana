@@ -51,6 +51,8 @@ from opendxa.execution.reasoning import (
     ReasoningExecutor,
     ReasoningStrategy,
 )
+from opendxa.execution.agent_runtime import AgentRuntime
+from opendxa.execution.agent_state import AgentState
 
 __all__ = [
     'Pipeline',
@@ -67,4 +69,6 @@ __all__ = [
     'ReasoningFactory',
     'ReasoningStrategy',
     'ReasoningExecutor',
+    'AgentRuntime',
+    'AgentState',
 ]

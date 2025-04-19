@@ -29,15 +29,15 @@ from opendxa.execution import (
     PlanFactory,
     PlanStrategy,
     ReasoningStrategy,
+    AgentRuntime,
+    AgentState,
 )
 from opendxa.base.capability import BaseCapability
 from opendxa.base.resource import BaseResource, LLMResource, ResourceResponse
 from opendxa.base.state import WorldState, ExecutionState
-from opendxa.agent.agent_state import AgentState
 from opendxa.common.io import BaseIO, IOFactory
 from opendxa.common.mixins.configurable import Configurable
 from opendxa.common.mixins.loggable import Loggable
-from opendxa.agent.agent_runtime import AgentRuntime
 from opendxa.common.config_manager import load_agent_config
 from opendxa.common.utils.misc import safe_asyncio_run
 
