@@ -3,9 +3,8 @@
 OpenDXA is an intelligent agent architecture that combines domain expertise with LLM-powered reasoning
 through a unique three-layer graph architecture:
 
-1. Workflow Layer (WHY) - Defines what agents can do, from simple Q&A to complex research patterns
-2. Planning Layer (WHAT) - Breaks down workflows into concrete, executable steps
-3. Reasoning Layer (HOW) - Executes each step using appropriate thinking patterns
+1. Planning Layer (WHAT) - Breaks down workflows into concrete, executable steps
+2. Reasoning Layer (HOW) - Executes each step using appropriate thinking patterns
 
 The framework enables building intelligent agents with domain expertise, powered by Large Language Models (LLMs).
 It provides a clean separation of concerns and allows for progressive complexity, starting from simple
@@ -80,7 +79,6 @@ from opendxa.base import (
 )
 
 from opendxa.execution import (
-    OptimalWorkflowExecutor,
     Pipeline,
     PipelineContext,
     PipelineExecutor,
@@ -95,10 +93,6 @@ from opendxa.execution import (
     ReasoningExecutor,
     ReasoningFactory,
     ReasoningStrategy,
-    Workflow,
-    WorkflowExecutor,
-    WorkflowFactory,
-    WorkflowStrategy,
 )
 
 from opendxa.agent import (
@@ -169,7 +163,6 @@ __all__ = [
     'WorldState',
 
     # Execution
-    'OptimalWorkflowExecutor',
     'Pipeline',
     'PipelineContext',
     'PipelineExecutor',
@@ -184,10 +177,7 @@ __all__ = [
     'ReasoningExecutor',
     'ReasoningFactory',
     'ReasoningStrategy',
-    'Workflow',
-    'WorkflowExecutor',
-    'WorkflowFactory',
-    'WorkflowStrategy',
+
 
     # Agent
     'Agent',

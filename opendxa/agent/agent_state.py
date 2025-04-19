@@ -4,7 +4,6 @@ from typing import List, Optional
 from dataclasses import dataclass, field
 
 from opendxa.base.execution.execution_types import Objective, ExecutionSignal, ExecutionNode
-from opendxa.execution.workflow import Workflow
 from opendxa.execution.planning.plan import Plan
 from opendxa.base.state.base_state import BaseState
 
@@ -13,7 +12,6 @@ class AgentState(BaseState):
     """Manages agent execution state."""
     objective: Optional[Objective] = None
     plan: Optional[Plan] = None
-    current_workflow: Optional['Workflow'] = None
     signals: List[ExecutionSignal] = field(default_factory=list)
     current_step_index: int = 0
 

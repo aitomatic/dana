@@ -14,35 +14,46 @@ This directory contains examples demonstrating different aspects of the OpenDXA 
 examples/
 ├── getting_started/      # Basic examples for new users
 ├── core_concepts/        # Examples of core DXA features
-├── advanced/            # Complex patterns and integrations
-├── learning_paths/      # Tutorial examples
-├── workflow/           # Workflow-specific examples
-└── tutorials/          # Detailed tutorials
+├── advanced_topics/      # Complex patterns and integrations
+└── real_world_applications/  # Real-world use cases
 ```
 
 ## Getting Started
 
 The `getting_started/` directory contains basic examples that demonstrate fundamental OpenDXA concepts:
 
-1. `01_hello_dxa.py` - Basic agent creation and usage
-2. `02_simple_workflow.py` - Creating and running a basic workflow
-3. `03_qa_approaches.py` - Different question-answering patterns
+1. `01_introduction_to_dxa.ipynb` - Introduction to OpenDXA
+2. `02_simple_plans.ipynb` - Creating and running basic plans
+3. `03_agent_configuration.ipynb` - Configuring agents with different settings
 
 ## Core Concepts
 
 The `core_concepts/` directory contains examples that demonstrate core OpenDXA features:
 
-1. `01_workflow_planning.py` - Workflow and planning layer interaction
-2. `02_workflow_planning_reasoning.py` - Understanding the three-layer architecture
-3. `03_execution_context.py` - Managing execution context and resources
+1. `01_planning_layer.ipynb` - Understanding the planning layer
+2. `02_reasoning_layer.ipynb` - Understanding the reasoning layer
+3. `03_execution_context.ipynb` - Managing execution context and resources
+4. `04_capabilities.ipynb` - Working with agent capabilities
+5. `05_resources.ipynb` - Managing and using resources
+6. `06_tool_calling.ipynb` - Making resource methods callable
+7. `07_mcp_resource.ipynb` - Working with MCP resources
+8. `08_smart_resource_selection.ipynb` - Smart resource selection strategies
 
-## Advanced
+## Advanced Topics
 
-The `advanced/` directory contains complex examples and patterns:
+The `advanced_topics/` directory contains complex examples and patterns:
 
-1. `01_custom_executors.py` - Creating custom executors
-2. `02_complex_workflows.py` - Complex workflow patterns
-3. `03_integration.py` - Integration with external systems
+1. `01_custom_agents.ipynb` - Creating custom agents
+2. `02_advanced_planning.ipynb` - Advanced planning strategies
+3. `03_advanced_reasoning.ipynb` - Advanced reasoning strategies
+
+## Real-World Applications
+
+The `real_world_applications/` directory contains examples of OpenDXA in real-world scenarios:
+
+1. `01_semiconductor_manufacturing.ipynb` - Semiconductor manufacturing applications
+2. `02_general_manufacturing.ipynb` - General manufacturing applications
+3. `03_financial_applications.ipynb` - Financial applications
 
 ## Prerequisites
 
@@ -78,7 +89,7 @@ Each example can be run directly with Python:
 
 ```bash
 # Run a specific example
-python examples/getting_started/01_hello_dxa.py
+python examples/getting_started/01_introduction_to_dxa.py
 
 # Run all examples in a directory
 python -m pytest examples/getting_started/
@@ -87,9 +98,9 @@ python -m pytest examples/getting_started/
 ## Learning Path
 
 1. Start with the getting_started examples to understand basic concepts
-2. Move to core_concepts to learn about DXA's architecture
-3. Explore advanced examples for complex use cases
-4. Follow learning_paths for structured tutorials
+2. Move to core_concepts to learn about DXA's 2-layer architecture
+3. Explore advanced_topics for complex patterns
+4. Study real_world_applications for practical use cases
 
 ## Troubleshooting
 
@@ -100,17 +111,23 @@ Common issues and solutions:
    - Check your network connection
    - Ensure you have sufficient API credits
 
-2. **Workflow Execution Errors**
-   - Check the workflow structure is valid
-   - Verify all required nodes are present
-   - Ensure proper edge connections
-   - Check execution context setup
+2. **Planning Layer Issues**
+   - Check the plan structure is valid
+   - Verify all required steps are present
+   - Ensure proper resource selection
+   - Validate planning strategy configuration
 
-3. **Context Management**
+3. **Reasoning Layer Issues**
+   - Verify reasoning strategy is properly configured
+   - Check resource availability
+   - Ensure proper execution context
+   - Validate reasoning results
+
+4. **Context Management**
    - Verify execution context is properly initialized
    - Check resource availability
    - Ensure proper cleanup
-   - Validate LLM resource configuration
+   - Validate resource configuration
 
 ## Contributing
 

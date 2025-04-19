@@ -45,55 +45,49 @@ class ReasoningExecutor(BaseExecutor[ReasoningStrategy, Reasoning, ReasoningFact
             List of execution signals
         """
         # Get parent nodes
-        workflow_node = context.get_current_workflow_node()
         plan_node = context.get_current_plan_node()
 
         # Print concise execution hierarchy
         self.info("\nExecution Context:")
         self.info("=================")
         
-        if workflow_node:
-            workflow_obj = context.current_workflow.objective if context.current_workflow else None
-            self.info(f"Workflow: {workflow_node.node_type} - {workflow_node.description}")
-            self.info(f"  Objective: {workflow_obj.current if workflow_obj else 'None'}")
+        if plan_node:
+            plan_obj = context.current_plan.objective if context.current_plan else None
+            self.info(f"Plan: {plan_node.node_type} - {plan_node.description}")
+            self.info(f"  Objective: {plan_obj.current if plan_obj else 'None'}")
 
-            if plan_node:
-                plan_obj = context.current_plan.objective if context.current_plan else None
-                self.info(f"  Plan: {plan_node.node_type} - {plan_node.description}")
-                self.info(f"    Objective: {plan_obj.current if plan_obj else 'None'}")
+            self.info(f"  Reasoning: {node.node_type} - {node.description}")
+            self.info(f"    Objective: {node.objective.current if node.objective else 'None'}")
 
-                self.info(f"    Reasoning: {node.node_type} - {node.description}")
-                self.info(f"      Objective: {node.objective.current if node.objective else 'None'}")
+            # Make LLM call with the reasoning node's objective
+            if context.reasoning_llm and node.objective:
+                # Build the prompt using the new method
+                user_messages = self._build_user_messages(context)
+                system_messages = self._build_system_messages()
 
-                # Make LLM call with the reasoning node's objective
-                if context.reasoning_llm and node.objective:
-                    # Build the prompt using the new method
-                    user_messages = self._build_user_messages(context)
-                    system_messages = self._build_system_messages()
+                # Log the prompt
+                self.info("Prompt:")
+                self.info("=======")
+                self.info(user_messages)
+                self.info(f"Resources: {context.available_resources or {}}")
 
-                    # Log the prompt
-                    self.info("Prompt:")
-                    self.info("=======")
-                    self.info(user_messages)
-                    self.info(f"Resources: {context.available_resources or {}}")
+                # Query the LLM with available resources
 
-                    # Query the LLM with available resources
+                response = await context.reasoning_llm.query(request={
+                    "user_messages": user_messages,
+                    "system_messages": system_messages,
+                    "available_resources": context.available_resources or {},
+                    "max_iterations": 3,
+                    "max_tokens": 1000,
+                    "temperature": 0.7,
+                })
 
-                    response = await context.reasoning_llm.query(request={
-                        "user_messages": user_messages,
-                        "system_messages": system_messages,
-                        "available_resources": context.available_resources or {},
-                        "max_iterations": 3,
-                        "max_tokens": 1000,
-                        "temperature": 0.7,
-                    })
+                response = response or {}
+                self.info("\nReasoning Result:")
+                self.info("================")
+                self.info(str(response))
 
-                    response = response or {}
-                    self.info("\nReasoning Result:")
-                    self.info("================")
-                    self.info(str(response))
-
-                    return [ExecutionSignal(type=ExecutionSignalType.DATA_RESULT, content=response)]
+                return [ExecutionSignal(type=ExecutionSignalType.DATA_RESULT, content=response)]
 
         # If no response was generated, return an empty result
         return [ExecutionSignal(type=ExecutionSignalType.DATA_RESULT, content={})]
@@ -157,64 +151,36 @@ class ReasoningExecutor(BaseExecutor[ReasoningStrategy, Reasoning, ReasoningFact
         Returns:
             The user messages for the reasoning node
         """
-        # Get parent nodes
-        workflow_node = context.get_current_workflow_node()
+        # Get current plan node and overall plan information
         plan_node = context.get_current_plan_node()
-
-        # Get overall workflow and plan information
-        workflow_obj = context.current_workflow.objective if context.current_workflow else None
         plan_obj = context.current_plan.objective if context.current_plan else None
-
-        # Get all workflow and plan nodes
-        workflow_nodes = context.current_workflow.nodes if context.current_workflow else {}
         plan_nodes = context.current_plan.nodes if context.current_plan else {}
 
         user_messages = [
-            "WORKFLOW OVERVIEW:",
-            f"- Overall Workflow Objective: {workflow_obj.current if workflow_obj else 'None'}",
+            "PLAN OVERVIEW:",
             f"- Overall Plan Objective: {plan_obj.current if plan_obj else 'None'}",
             "",
             "EXECUTION GRAPH:",
         ]
 
-        # Add workflow nodes sequence
-        for i, workflow_node_iter in enumerate(workflow_nodes.values(), 1):
-            is_current_workflow = (
-                workflow_node_iter.node_id == workflow_node.node_id 
-                if workflow_node_iter and workflow_node 
+        # Add plan nodes sequence
+        for i, plan_node_iter in enumerate(plan_nodes.values(), 1):
+            current_plan_node = context.get_current_plan_node()
+            is_current_plan = (
+                plan_node_iter.node_id == current_plan_node.node_id 
+                if plan_node_iter and current_plan_node 
                 else False
             )
-            current_marker = " [CURRENT]" if is_current_workflow else ""
+            current_marker = " [CURRENT]" if is_current_plan else ""
             user_messages.extend([
-                f"{i}. {workflow_node_iter.node_type}: {workflow_node_iter.description}{current_marker}",
-                f"   - Objective: {workflow_node_iter.objective.current if workflow_node_iter.objective else 'None'}",
-                f"   - Status: {workflow_node_iter.status}",
+                f"{i}. {plan_node_iter.node_type}: {plan_node_iter.description}{current_marker}",
+                f"   - Objective: {plan_node_iter.objective.current if plan_node_iter.objective else 'None'}",
+                f"   - Status: {plan_node_iter.status}",
             ])
-
-            # If this is the current workflow node, show its plan sequence
-            if is_current_workflow and plan_nodes:
-                user_messages.extend([
-                    "",
-                    "   Plan Sequence:"
-                ])
-                for j, plan_node_iter in enumerate(plan_nodes.values(), 1):
-                    current_plan_node = context.get_current_plan_node()
-                    is_current_plan = (
-                        plan_node_iter.node_id == current_plan_node.node_id 
-                        if plan_node_iter and current_plan_node 
-                        else False
-                    )
-                    current_plan_marker = " [CURRENT]" if is_current_plan else ""
-                    user_messages.extend([
-                        f"   {j}. {plan_node_iter.node_type}: {plan_node_iter.description}{current_plan_marker}",
-                        f"      - Objective: {plan_node_iter.objective.current if plan_node_iter.objective else 'None'}",
-                        f"      - Status: {plan_node_iter.status}",
-                    ])
 
         user_messages.extend([
             "",
             "CURRENT EXECUTION CONTEXT:",
-            f"- Workflow: {workflow_node.description if workflow_node else 'None'} ({workflow_node.status if workflow_node else 'None'})",
             f"- Plan: {plan_node.description if plan_node else 'None'} ({plan_node.status if plan_node else 'None'})",
         ])
 
@@ -229,16 +195,14 @@ class ReasoningExecutor(BaseExecutor[ReasoningStrategy, Reasoning, ReasoningFact
         system_messages = []
         system_messages.extend([
             "You are executing a reasoning task. Provide clear, logical analysis and reasoning.",
-            "You are operating within a three-layer execution hierarchy: Workflow -> Plan -> Reasoning.",
-            "The Workflow layer is typically specified by the human operator",
+            "You are operating within a two-layer execution hierarchy: Plan -> Reasoning.",
             "The Plan layer is typically generated dynamically to accomplish the objective",
             "The Reasoning layer is typically a choice of several fundamental strategies, e.g., "
             "chain-of-thought, tree-of-thought, reflection, OODA loop, etc.",
             "",
             "You are currently in the Reasoning layer. Execute the reasoning task while keeping in mind:",
-            " 1. The broader workflow context and its objectives",
-            " 2. The specific plan that this reasoning task is part of",
-            " 3. The immediate reasoning task requirements",
+            " 1. The specific plan that this reasoning task is part of",
+            " 2. The immediate reasoning task requirements",
             "",
         ])
 

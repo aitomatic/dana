@@ -1,18 +1,13 @@
 """Execution System for OpenDXA.
 
-This module implements the three-layer architecture for executing agent workflows:
+This module implements the two-layer architecture for executing agent workflows:
 
-1. Workflow Layer (WHY)
-   - Defines what agents can do
-   - Manages high-level workflow execution
-   - Handles workflow strategies and optimization
-
-2. Planning Layer (WHAT)
-   - Converts workflows into concrete plans
+1. Planning Layer (WHAT)
+   - Converts tasks into concrete plans
    - Manages dependencies between steps
    - Handles data flow between nodes
 
-3. Reasoning Layer (HOW)
+2. Reasoning Layer (HOW)
    - Executes plans with specific reasoning strategies
    - Processes execution signals
    - Manages state and context
@@ -24,16 +19,16 @@ For detailed documentation, see:
 - Execution Documentation: https://github.com/aitomatic/opendxa/blob/main/opendxa/execution/README.md
 
 Example:
-    >>> from opendxa.execution import Workflow, WorkflowExecutor
-    >>> from opendxa.execution.workflow import ExecutionNode, NodeType
-    >>> workflow = Workflow(objective="Analyze customer feedback")
-    >>> workflow.add_node(ExecutionNode(
+    >>> from opendxa.execution import Plan, PlanExecutor
+    >>> from opendxa.execution.planning import ExecutionNode, NodeType
+    >>> plan = Plan(objective="Analyze customer feedback")
+    >>> plan.add_node(ExecutionNode(
     ...     node_id="ANALYZE",
     ...     node_type=NodeType.TASK,
     ...     objective="Analyze feedback data"
     ... ))
-    >>> executor = WorkflowExecutor()
-    >>> result = await executor.execute(workflow)
+    >>> executor = PlanExecutor()
+    >>> result = await executor.execute(plan)
 """
 
 from opendxa.execution.pipeline import (
@@ -43,13 +38,6 @@ from opendxa.execution.pipeline import (
     PipelineContext,
     PipelineNode,
     PipelineStrategy,
-)
-from opendxa.execution.workflow import (
-    Workflow,
-    WorkflowFactory,
-    WorkflowExecutor,
-    WorkflowStrategy,
-    OptimalWorkflowExecutor,
 )
 from opendxa.execution.planning import (
     Plan,
@@ -71,11 +59,6 @@ __all__ = [
     'PipelineContext',
     'PipelineNode',
     'PipelineStrategy',
-    'Workflow',
-    'WorkflowFactory',
-    'WorkflowExecutor',
-    'OptimalWorkflowExecutor',
-    'WorkflowStrategy',
     'Plan',
     'PlanFactory',
     'PlanStrategy',

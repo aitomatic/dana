@@ -7,44 +7,85 @@
 
 # OpenDXA Documentation
 
-This documentation provides guides and references for implementing and using the OpenDXA framework. For a comprehensive overview of the OpenDXA architecture and features, please refer to the [main README](../opendxa/README.md).
+This directory contains the official documentation for OpenDXA (Domain-Expert Agent), an intelligent agent architecture designed for complex domain-specific tasks.
+
+## Architecture Overview
+
+OpenDXA is built on a two-layer architecture that breaks down high-level objectives into executable actions through a What-How paradigm:
+
+1. **Planning Layer (WHAT)**
+   - Decomposes strategic plans into tactical actions
+   - Handles task decomposition and sequencing
+   - Manages high-level decision making
+
+2. **Reasoning Layer (HOW)**
+   - Executes actions using standardized reasoning patterns
+   - Handles tactical decision making
+   - Manages resource allocation and execution
 
 ## Documentation Structure
 
-```text
-docs/
-├── requirements/           # Domain-specific requirements
-│   ├── README.md         # Overview of domain requirements
-│   ├── TEMPLATE.md       # Documentation template
-│   └── ...              # Domain-specific requirement files
-└── README.md           # This file
-```
+### Getting Started
+- [Introduction to OpenDXA](examples/01_getting_started/01_introduction_to_dxa.ipynb)
+- [Simple Plans](examples/01_getting_started/02_simple_plans.ipynb)
+- [Agent Configuration](examples/01_getting_started/03_agent_configuration.ipynb)
 
-## Documentation Layers
+### Core Concepts
+- [Planning Layer](examples/02_core_concepts/01_planning_layer.ipynb)
+- [Reasoning Layer](examples/02_core_concepts/02_reasoning_layer.ipynb)
+- [Execution Context](examples/02_core_concepts/03_execution_context.ipynb)
+- [Capabilities](examples/02_core_concepts/04_capabilities.ipynb)
+- [Resources](examples/02_core_concepts/05_resources.ipynb)
+- [Tool Calling](examples/02_core_concepts/06_tool_calling.ipynb)
+- [MCP Resource](examples/02_core_concepts/07_mcp_resource.ipynb)
+- [Smart Resource Selection](examples/02_core_concepts/08_smart_resource_selection.ipynb)
 
-1. **Framework Overview**
-   - [Main README](../opendxa/README.md) - High-level overview and getting started
-   - [Architecture Overview](../opendxa/README.md#architecture-overview)
-   - [Implementation Examples](../opendxa/README.md#implementation-examples)
+### Advanced Topics
+- [Custom Agents](examples/03_advanced_topics/01_custom_agents.ipynb)
+- [Advanced Planning](examples/03_advanced_topics/02_advanced_planning.ipynb)
+- [Advanced Reasoning](examples/03_advanced_topics/03_advanced_reasoning.ipynb)
 
-2. **Domain Requirements**
-   - [Domain Requirements Overview](requirements/README.md)
-   - [Template](requirements/TEMPLATE.md)
+### Real-World Applications
+- [Semiconductor Manufacturing](examples/04_real_world_applications/01_semiconductor_manufacturing.ipynb)
+- [General Manufacturing](examples/04_real_world_applications/02_general_manufacturing.ipynb)
+- [Financial Applications](examples/04_real_world_applications/03_financial_applications.ipynb)
 
-3. **Technical Documentation**
-   - [Agent System](../opendxa/agent/README.md)
-   - [Execution System](../opendxa/execution/README.md)
-   - [Common Utilities](../opendxa/common/README.md)
+## Key Components
+
+### Agent System
+- **Agent Factory & Runtime**: Creates and manages agent instances
+- **Capabilities**: Cognitive abilities for task execution
+- **Resources**: Tools and services used by agents
+- **IO System**: Handles environmental interaction
+- **State System**: Manages execution state
+
+### Execution System
+- **Planning**: Strategic decomposition
+- **Reasoning**: Tactical execution
+- **Pipeline**: Execution flow management
+
+## Requirements
+
+- Python 3.8 or higher
+- OpenDXA package installed
+- Understanding of basic AI/ML concepts
+- Familiarity with Python programming
+
+## Contributing
+
+We welcome contributions to the documentation! Please follow these guidelines:
+
+1. Ensure all examples are up-to-date with the latest OpenDXA version
+2. Include clear explanations and comments in code examples
+3. Follow the existing documentation structure
+4. Test all examples before submitting
+5. Update the README.md if adding new sections
 
 ## License
 
-OpenDXA is licensed under the Apache License 2.0. See the [LICENSE](../LICENSE) file for details.
+Copyright © 2024 Aitomatic, Inc. All rights reserved.
 
 ---
-
-<p align="center">
-Copyright © 2024 Aitomatic, Inc. All rights reserved.
-</p>
 
 <p align="center">
 <a href="https://aitomatic.com">https://aitomatic.com</a>

@@ -6,7 +6,6 @@ from opendxa.base.resource import BaseResource, LLMResource
 from opendxa.base.execution.execution_types import ExecutionNode
 
 if TYPE_CHECKING:
-    from opendxa.execution.workflow import Workflow
     from opendxa.execution.planning import Plan
     from opendxa.execution.reasoning import Reasoning
     from opendxa.agent.agent_state import AgentState
@@ -21,7 +20,6 @@ class ExecutionContext:
                  agent_state: Optional['AgentState'] = None,
                  world_state: Optional[WorldState] = None,
                  execution_state: Optional[ExecutionState] = None,
-                 current_workflow: Optional['Workflow'] = None,
                  current_plan: Optional['Plan'] = None,
                  current_reasoning: Optional['Reasoning'] = None,
                  global_context: Optional[Dict[str, Any]] = None,
@@ -52,7 +50,6 @@ class ExecutionContext:
         self.available_resources = available_resources or {}
 
         # Current execution graphs
-        self.current_workflow = current_workflow
         self.current_plan = current_plan
         self.current_reasoning = current_reasoning
 
@@ -63,23 +60,13 @@ class ExecutionContext:
         
         # Global context and results storage
         self.global_context = global_context or {}
-        self.workflow_results: Dict[str, Dict[str, Any]] = {}  # node_id -> results
+        self.plan_results: Dict[str, Dict[str, Any]] = {}  # node_id -> results
         self.plan_results: Dict[Tuple[str, str], Dict[str, Any]] = {}  # (workflow_id, plan_id) -> results
         self.reasoning_results: Dict[
             Tuple[str, str, str],  # (workflow_id, plan_id, reasoning_id)
             Dict[str, Any]
         ] = {}
         
-    def get_current_workflow_node(self) -> Optional[ExecutionNode]:
-        """Get the current workflow node.
-        
-        Returns:
-            Optional[ExecutionNode]: Current workflow node if exists
-        """
-        if self.current_workflow:
-            return cast(ExecutionNode, self.current_workflow.get_current_node())
-        return None
-    
     def get_current_plan_node(self) -> Optional[ExecutionNode]:
         """Get current plan node.
         
@@ -115,7 +102,7 @@ class ExecutionContext:
         if not isinstance(result, dict):
             raise ValueError("Result must be a dictionary")
             
-        self.workflow_results[node_id] = result
+        self.plan_results[node_id] = result
     
     def update_plan_result(
         self, 
@@ -165,11 +152,11 @@ class ExecutionContext:
             
         self.reasoning_results[(workflow_id, plan_id, reasoning_id)] = result
     
-    def get_workflow_result(self, node_id: str) -> Optional[Dict[str, Any]]:
-        """Get results for a specific workflow node.
+    def get_plan_result(self, node_id: str) -> Optional[Dict[str, Any]]:
+        """Get results for a specific plan node.
         
         Args:
-            node_id: ID of the workflow node
+            node_id: ID of the plan node
             
         Returns:
             Optional[Dict[str, Any]]: Result dictionary if exists
@@ -179,38 +166,15 @@ class ExecutionContext:
         """
         if not node_id:
             raise ValueError("Node ID cannot be empty")
-        return self.workflow_results.get(node_id)
-    
-    def get_plan_results_for_workflow(self, workflow_id: str) -> Dict[str, Dict[str, Any]]:
-        """Get all plan results for a specific workflow node.
-        
-        Args:
-            workflow_id: ID of the workflow
-            
-        Returns:
-            Dict[str, Dict[str, Any]]: Dictionary of plan results
-            
-        Raises:
-            ValueError: If workflow_id is empty
-        """
-        if not workflow_id:
-            raise ValueError("Workflow ID cannot be empty")
-            
-        return {
-            plan_id: result 
-            for (wf_id, plan_id), result in self.plan_results.items() 
-            if wf_id == workflow_id
-        }
+        return self.plan_results.get(node_id)
     
     def get_reasoning_results_for_plan(
         self, 
-        workflow_id: str, 
         plan_id: str
     ) -> Dict[str, Dict[str, Any]]:
         """Get all reasoning results for a specific plan node.
         
         Args:
-            workflow_id: ID of the workflow
             plan_id: ID of the plan
             
         Returns:
@@ -219,13 +183,13 @@ class ExecutionContext:
         Raises:
             ValueError: If workflow_id or plan_id is empty
         """
-        if not workflow_id or not plan_id:
-            raise ValueError("Workflow ID and Plan ID cannot be empty")
+        if not plan_id:
+            raise ValueError("Plan ID cannot be empty")
             
         return {
             reasoning_id: result 
             for (wf_id, p_id, reasoning_id), result in self.reasoning_results.items() 
-            if wf_id == workflow_id and p_id == plan_id
+            if p_id == plan_id
         }
     
     def build_llm_context(self) -> Dict[str, Any]:
@@ -235,23 +199,19 @@ class ExecutionContext:
             Dict[str, Any]: Dictionary containing LLM context
         """
         # Get current workflow and plan IDs safely
-        workflow_node = self.get_current_workflow_node()
         plan_node = self.get_current_plan_node()
         reasoning_node = self.get_current_reasoning_node()
         
-        workflow_id = workflow_node.node_id if workflow_node else ""
         plan_id = plan_node.node_id if plan_node else ""
         
         return {
             "global_context": self.global_context,
             "current": {
-                "workflow": workflow_node.to_dict() if workflow_node else None,
                 "plan": plan_node.to_dict() if plan_node else None,
                 "reasoning": reasoning_node.to_dict() if reasoning_node else None
             },
             "results": {
-                "workflow": self.workflow_results,
-                "plan": self.get_plan_results_for_workflow(workflow_id),
-                "reasoning": self.get_reasoning_results_for_plan(workflow_id, plan_id)
+                "plan": self.get_plan_result(plan_id),
+                "reasoning": self.get_reasoning_results_for_plan(plan_id)
             }
         }

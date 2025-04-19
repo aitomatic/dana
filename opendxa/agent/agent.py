@@ -25,9 +25,8 @@ from opendxa.base.execution import (
     ExecutionContext
 )
 from opendxa.execution import (
-    Workflow,
-    WorkflowFactory,
-    WorkflowStrategy,
+    Plan,
+    PlanFactory,
     PlanStrategy,
     ReasoningStrategy,
 )
@@ -99,16 +98,10 @@ class Agent(Configurable, Loggable):
         self._available_resources = None
         self._io = None
         self._runtime: Optional[AgentRuntime] = None
-        self._workflow_strategy = WorkflowStrategy.DEFAULT
         self._planning_strategy = PlanStrategy.DEFAULT
         self._reasoning_strategy = ReasoningStrategy.DEFAULT
 
         Loggable.__init__(self)
-
-    @property
-    def workflow_strategy(self) -> WorkflowStrategy:
-        """Get workflow strategy."""
-        return self._workflow_strategy or WorkflowStrategy.DEFAULT
 
     @property
     def planning_strategy(self) -> PlanStrategy:
@@ -232,30 +225,14 @@ class Agent(Configurable, Loggable):
         self._io = io
         return self
 
-    def with_workflow(self, strategy: WorkflowStrategy) -> 'Agent':
-        """Configure workflow strategy."""
-        self._workflow_strategy = strategy
-        if strategy == WorkflowStrategy.WORKFLOW_IS_PLAN:
-            # This requires the plan to be aware of the same strategy.
-            self._planning_strategy = PlanStrategy.WORKFLOW_IS_PLAN
-        return self
-
     def with_planning(self, strategy: PlanStrategy) -> 'Agent':
         """Configure planning strategy."""
         self._planning_strategy = strategy
-        if strategy == PlanStrategy.WORKFLOW_IS_PLAN:
-            # This requires the workflow to be aware of the same strategy.
-            self._workflow_strategy = WorkflowStrategy.WORKFLOW_IS_PLAN
         return self
 
     def with_reasoning(self, strategy: ReasoningStrategy) -> 'Agent':
         """Configure reasoning strategy."""
         self._reasoning_strategy = strategy
-        return self
-
-    def with_workflow_llm(self, llm: Union[Dict, str, LLMResource]) -> "Agent":
-        """Configure workflow LLM."""
-        self._workflow_llm = self._create_llm(llm, "workflow_llm")
         return self
 
     def with_planning_llm(self, llm: Union[Dict, str, LLMResource]) -> "Agent":
@@ -316,7 +293,6 @@ class Agent(Configurable, Loggable):
             self.with_llm(self._get_default_llm_resource())
 
         # Set default strategies if not specified
-        self._workflow_strategy = self._workflow_strategy or WorkflowStrategy.DEFAULT
         self._planning_strategy = self._planning_strategy or PlanStrategy.DEFAULT
         self._reasoning_strategy = self._reasoning_strategy or ReasoningStrategy.DEFAULT
 
@@ -344,7 +320,7 @@ class Agent(Configurable, Loggable):
         """Cleanup agent when exiting context."""
         await self.cleanup()
 
-    async def async_run(self, workflow: Workflow, context: Optional[ExecutionContext] = None) -> AgentResponse:
+    async def async_run(self, plan: Plan, context: Optional[ExecutionContext] = None) -> AgentResponse:
         """Execute an objective."""
         self._initialize()
 
@@ -354,32 +330,28 @@ class Agent(Configurable, Loggable):
                 agent_state=self.state,
                 world_state=WorldState(),
                 execution_state=ExecutionState(),
-                workflow_llm=self.workflow_llm,
                 planning_llm=self.planning_llm,
                 reasoning_llm=self.reasoning_llm,
                 available_resources=self.available_resources
             )
         else:
             # Update LLMs in provided context if not set
-            if not context.workflow_llm:
-                context.workflow_llm = self.workflow_llm
             if not context.planning_llm:
                 context.planning_llm = self.planning_llm
             if not context.reasoning_llm:
                 context.reasoning_llm = self.reasoning_llm
         
-        assert context.workflow_llm is not None
         assert context.planning_llm is not None
         assert context.reasoning_llm is not None
 
         async with self:  # For cleanup
-            return AgentResponse.new_instance(await self.runtime.execute(workflow, context))
+            return AgentResponse.new_instance(await self.runtime.execute(plan, context))
 
-    def run(self, workflow: Workflow) -> AgentResponse:
-        """Run an workflow."""
-        return safe_asyncio_run(self.async_run, workflow)
+    def run(self, plan: Plan) -> AgentResponse:
+        """Run an plan."""
+        return safe_asyncio_run(self.async_run, plan)
 
     def ask(self, question: str) -> AgentResponse:
         """Ask a question to the agent."""
-        workflow = WorkflowFactory.create_basic_workflow(question, ["query"])
-        return self.run(workflow)
+        plan = PlanFactory.create_basic_plan(question, ["query"])
+        return self.run(plan)
