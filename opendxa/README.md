@@ -4,104 +4,321 @@
 
 # OpenDXA - Domain-Expert Agent
 
-The Domain-Expert Agent (OpenDXA) is an intelligent agent architecture designed to tackle complex domain-specific tasks with human-like expertise. At its heart is a unique three-layer graph architecture that breaks down high-level objectives into executable actions through a Why-What-How paradigm.
+The Domain-Expert Agent (OpenDXA) is an intelligent agent architecture designed to tackle complex domain-specific tasks with human-like expertise. At its heart is a unique architecture that combines declarative capabilities with imperative execution through a clear separation of concerns.
 
-## Architecture Overview
+## Core Concepts
 
-OpenDXA maps business workflows (WHY) to concrete plans (WHAT), which are then executed through standardized reasoning patterns (HOW). This hierarchical decomposition allows agents to maintain strategic alignment while adapting to changing conditions - similar to how human experts combine domain knowledge with practical execution.
+### Architecture Overview
 
-```mermaid
-graph LR
-    subgraph "Graph Mapping"
-        direction LR
-        G1[High-level Graph] --> G2[Detailed Graph]
-        G2 --> G3[Execution Graph]
-    end
+OpenDXA's architecture is built around two core aspects:
 
-    subgraph "Layer Architecture"
-        direction LR
-        W[Workflow Layer<br>WHY] --> P[Planning Layer<br>WHAT]
-        P --> R[Reasoning Layer<br>HOW]
-    end
-```
+1. **Declarative Aspect (Agent)**
+   - Defines what the agent can do
+   - Owns and describes capabilities
+   - Specifies available knowledge and expertise
+   - Receives tasks and objectives
 
-### Layer Mapping Example
+2. **Imperative Aspect (AgentRuntime)**
+   - Thin layer connecting Agent to Planning
+   - Simply invokes the Planner
+   - No additional responsibilities
 
 ```mermaid
 graph TB
-    subgraph "Reasoning Layer (HOW)"
-        direction LR
-        R1[Observe<br>Gather Data] --> R2[Orient<br>Analyze Context]
-        R2 --> R3[Decide<br>Choose Action]
-        R3 --> R4[Act<br>Execute]
-        R4 --> R1
+    subgraph "Declarative (Agent)"
+        A[Agent] --> C[Capabilities]
+        C --> K[Knowledge]
+        C --> E[Expertise]
+        C --> T[Tools]
     end
 
-    subgraph "Planning Layer (WHAT)"
-        direction LR
-        P1[Analyze Competitors] --> P2[Survey Customers]
-        P2 --> P3[Synthesize Findings]
-        P3 --> P4[Create Report]
+    subgraph "Imperative (AgentRuntime)"
+        AR[AgentRuntime] --> P[Planning]
+        P --> R[Reasoning]
+        P --> C
+        R --> C
     end
 
-   subgraph "Workflow Layer (WHY)"
-        direction LR
-        W1[Launch New Product] --> W2[Market Research]
-        W2 --> W3[Product Development]
-        W3 --> W4[Market Launch]
-    end
-
-    W2 -.->|Maps to| P1
-    P1 -.->|Maps to| R1
-
-    style W1 fill:#f9f,stroke:#333
-    style W2 fill:#f9f,stroke:#333
-    style W3 fill:#f9f,stroke:#333
-    style W4 fill:#f9f,stroke:#333
-    
-    style P1 fill:#bbf,stroke:#333
-    style P2 fill:#bbf,stroke:#333
-    style P3 fill:#bbf,stroke:#333
-    style P4 fill:#bbf,stroke:#333
-    
-    style R1 fill:#bfb,stroke:#333
-    style R2 fill:#bfb,stroke:#333
-    style R3 fill:#bfb,stroke:#333
-    style R4 fill:#bfb,stroke:#333
+    Task --> A
+    A --> AR
+    AR --> Results
+    Results --> C
 ```
 
-## System Architecture
+### Core Components
 
-### Agent System ([documentation](agent/README.md))
+| Component | Role | Relationship |
+|-----------|------|--------------|
+| Agent | Declarative/Descriptive | Owns Capabilities, Receives Tasks |
+| AgentRuntime | Imperative/Executive | Contains Planning & Reasoning |
+| Capabilities | Bridge | Owned by Agent, Used by AgentRuntime |
+| Planning | Strategic | Part of AgentRuntime |
+| Reasoning | Tactical | Part of AgentRuntime |
+
+## Interaction Patterns
+
+### Basic Interaction Pattern
+
+The heart of OpenDXA is a consistent Planning-Capability interaction pattern:
+
+1. **Basic Interaction Loop**:
+   - Planning asks Capability: "How to solve X?"
+   - Capability responds with either:
+     a. **Direct Answer**: Complete solution (terminal)
+     b. **Executable Plan**: Steps to solution (recursive)
+
+2. **Recursive Nature**:
+   - For each step in a plan:
+     - Same Planning-Capability interaction
+     - All resolution through Capabilities
+     - Natural termination at direct answers
+
+3. **Key Aspects**:
+   - Consistent interaction pattern throughout
+   - All knowledge access through Capabilities
+   - Fundamental capabilities prevent unnecessary recursion
+   - Natural termination at direct answers
+
+### Single Agent Scenarios
+
+#### 1. Simple Task
+
+```mermaid
+sequenceDiagram
+    participant T as Task
+    participant A as Agent
+    participant AR as AgentRuntime
+    participant P as Planning
+    participant R as Reasoning
+    participant C as Capabilities
+    participant Res as Resources
+
+    T->>A: Receive Task
+    A->>AR: Forward Task
+    AR->>P: Invoke Planner
+    P->>C: How to solve Task?
+    C->>C: Lookup Knowledge
+    C-->>P: Return Direct Answer
+    P->>R: Execute Answer
+    R->>C: Apply Knowledge
+    C->>Res: query(Resource)
+    Res-->>C: Resource Response
+    C-->>R: Execute Step
+    R-->>P: Return Results
+    P-->>AR: Return Results
+    AR-->>A: Update State
+    A-->>C: Improve Capabilities
+```
+
+#### 2. Complex Task
+
+```mermaid
+sequenceDiagram
+    participant T as Task
+    participant A as Agent
+    participant AR as AgentRuntime
+    participant P as Planning
+    participant R as Reasoning
+    participant C as Capabilities
+    participant Res as Resources
+
+    T->>A: Receive Complex Task
+    A->>AR: Forward Task
+    AR->>P: Invoke Planner
+    P->>C: How to solve Task?
+    C->>C: Lookup Knowledge
+    C-->>P: Return Plan
+    Note over C,P: Plan includes:<br/>- Subtask 1<br/>- Subtask 2<br/>- Subtask 3
+    loop For Each Subtask
+        P->>C: How to solve Subtask?
+        C->>C: Lookup Knowledge
+        C-->>P: Return Direct Answer
+        P->>R: Execute Answer
+        R->>C: Apply Knowledge
+        C->>Res: query(Resource)
+        Res-->>C: Resource Response
+        C-->>R: Execute Step
+        R-->>P: Return Results
+    end
+    P-->>AR: Return Combined Results
+    AR-->>A: Update State
+    A-->>C: Improve Capabilities
+```
+
+### Multi-Agent Scenarios
+
+OpenDXA supports three main types of multi-agent interactions:
+
+1. **Separate Tasks**
+   - Multiple Agents working on different, independent tasks
+   - Each Agent operates in its own domain
+   - No coordination needed
+   - Like different specialists in different fields
+
+```mermaid
+sequenceDiagram
+    participant T1 as Task 1
+    participant T2 as Task 2
+    participant A1 as Agent 1
+    participant A2 as Agent 2
+    participant AR1 as AgentRuntime 1
+    participant AR2 as AgentRuntime 2
+    participant P1 as Planning 1
+    participant P2 as Planning 2
+    participant C1 as Capabilities 1
+    participant C2 as Capabilities 2
+
+    T1->>A1: Receive Task
+    T2->>A2: Receive Task
+    A1->>AR1: Forward Task
+    A2->>AR2: Forward Task
+    AR1->>P1: Invoke Planner
+    AR2->>P2: Invoke Planner
+    P1->>C1: How to solve Task?
+    P2->>C2: How to solve Task?
+    C1-->>P1: Return Answer
+    C2-->>P2: Return Answer
+    Note over A1,A2: Agents operate independently<br/>in their own domains
+```
+
+2. **Collaborative Tasks**
+   - Multiple Agents working together on same task
+   - Agents with complementary capabilities
+   - Need to coordinate and share knowledge
+   - Like a team of specialists working together
+
+```mermaid
+sequenceDiagram
+    participant T as Task
+    participant A1 as Agent 1
+    participant A2 as Agent 2
+    participant AR1 as AgentRuntime 1
+    participant AR2 as AgentRuntime 2
+    participant P1 as Planning 1
+    participant P2 as Planning 2
+    participant C1 as Capabilities 1
+    participant C2 as Capabilities 2
+
+    T->>A1: Receive Task
+    A1->>AR1: Forward Task
+    AR1->>P1: Invoke Planner
+    P1->>C1: How to solve Task?
+    C1-->>P1: Return Plan
+    Note over C1,P1: Plan requires capabilities<br/>from Agent 2
+    P1->>A2: Request Help
+    A2->>AR2: Forward Request
+    AR2->>P2: Invoke Planner
+    P2->>C2: How to help?
+    C2-->>P2: Return Answer
+    P2-->>P1: Return Results
+    P1-->>AR1: Return Combined Results
+```
+
+3. **Hierarchical Tasks**
+   - One Agent delegating to other Agents
+   - Parent Agent breaks down task
+   - Child Agents handle specific aspects
+   - Results flow back up the hierarchy
+
+```mermaid
+sequenceDiagram
+    participant T as Task
+    participant PA as Parent Agent
+    participant CA1 as Child Agent 1
+    participant CA2 as Child Agent 2
+    participant PAR as Parent Runtime
+    participant CAR1 as Child Runtime 1
+    participant CAR2 as Child Runtime 2
+    participant PP as Parent Planning
+    participant CP1 as Child Planning 1
+    participant CP2 as Child Planning 2
+
+    T->>PA: Receive Task
+    PA->>PAR: Forward Task
+    PAR->>PP: Invoke Planner
+    PP->>PP: Break Down Task
+    PP->>CA1: Delegate Subtask 1
+    PP->>CA2: Delegate Subtask 2
+    CA1->>CAR1: Forward Subtask
+    CA2->>CAR2: Forward Subtask
+    CAR1->>CP1: Invoke Planner
+    CAR2->>CP2: Invoke Planner
+    CP1-->>PP: Return Results
+    CP2-->>PP: Return Results
+    PP-->>PAR: Return Combined Results
+```
+
+## Architecture Details
+
+### System Architecture
+
+#### Agent System ([documentation](agent/README.md))
 
 1. **Core Components**
-   - Agent Factory & Runtime ([documentation](agent/README.md))
-   - [Capabilities](agent/capability/README.md) - Cognitive abilities
-   - [Resources](agent/resource/README.md) - Tools and services
-   - IO System - Environmental interaction
+   - Agent - Declarative interface
+   - AgentRuntime - Imperative execution
+   - Capabilities - Agent abilities and knowledge
    - State System - Execution state management
 
 2. **Key Features**
-   - Factory patterns for quick creation
-   - Resource and capability management
+   - Clear separation of declarative and imperative aspects
+   - Capability-based architecture
    - State tracking and persistence
-   - I/O handling and environmental interaction
+   - Adaptive execution
 
-### Execution System ([documentation](execution/README.md))
+#### Execution System ([documentation](execution/README.md))
 
 1. **Components**
-   - [Workflow](execution/workflow/README.md) - Process definition and control
-   - [Planning](execution/planning/README.md) - Strategic decomposition
-   - [Reasoning](execution/reasoning/README.md) - Tactical execution
-   - [Pipeline](execution/pipeline/README.md) - Execution flow management
+   - Planning - Strategic decomposition
+   - Reasoning - Tactical execution
 
 2. **Key Features**
-   - Graph-based execution
-   - Hierarchical decomposition
+   - Hierarchical execution
    - Dynamic adaptation
    - Progress tracking
+   - Capability utilization
 
-## Engineering Approaches
+### Motivation
+
+The Agent->Capabilities->Resources architecture provides two key benefits:
+
+1. **Composable Capabilities**
+   - An Agent can comprise multiple Capabilities
+   - Each Capability represents a distinct area of expertise or functionality
+   - Capabilities can be added, removed, or updated independently
+   - Enables building specialized agents by combining relevant Capabilities
+
+2. **Hierarchical Knowledge Organization**
+   - Capabilities can be hierarchically deep
+   - Allows natural division of knowledge bases
+   - Enables compartmentalization of expertise
+   - Supports both broad and deep knowledge organization
+   - Makes it easy to manage and apply knowledge:
+     * Knowledge is organized by capability
+     * Each capability knows how to apply its knowledge
+     * Knowledge updates are localized to relevant capabilities
+     * Capabilities can combine knowledge from multiple sources
+
+For example:
+```mermaid
+graph TB
+    A[Agent] --> C1[Medical Capability]
+    A --> C2[Legal Capability]
+    A --> C3[Technical Capability]
+    
+    C1 --> K1[Medical Knowledge Base]
+    C1 --> K2[Patient Records]
+    
+    C2 --> K3[Legal Database]
+    C2 --> K4[Case Law]
+    
+    C3 --> K5[Technical Documentation]
+    C3 --> K6[Code Repository]
+```
+
+## Implementation
+
+### Engineering Approaches
 
 OpenDXA follows three key engineering principles that guide its architecture and implementation:
 
@@ -123,9 +340,9 @@ OpenDXA follows three key engineering principles that guide its architecture and
    - Minimal dependencies
    - Maintainable codebase
 
-## Implementation Examples
+### Implementation Examples
 
-### Basic Usage
+#### Basic Usage
 
 ```python
 # Simple Q&A
@@ -134,7 +351,7 @@ from opendxa.agent.resource import LLMResource
 answer = Agent().ask("What is quantum computing?")
 ```
 
-### Workflow Execution
+#### Workflow Execution
 
 ```python
 # Basic Workflow Execution
@@ -160,7 +377,7 @@ executor = WorkflowExecutor()
 result = await executor.execute(workflow, context)
 ```
 
-### Advanced Usage
+#### Advanced Usage
 
 ```python
 # Advanced Usage with Custom Workflows
