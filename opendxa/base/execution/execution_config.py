@@ -38,63 +38,6 @@ class ExecutionConfig(Configurable):
         super().__init__(config_path=config_path, **overrides)
         
     @classmethod
-    def get_yaml_path(cls, path: Optional[str] = None) -> Path:
-        """Get path to a configuration file.
-        
-        Args:
-            path: Path to config file, which can be:
-                 - A full path to a YAML file
-                 - A relative path with dots (e.g., "workflow.default")
-                 - A relative path with slashes (e.g., "workflow/default")
-            
-        Returns:
-            Path to the configuration file
-            
-        Raises:
-            ValueError: If path is invalid or file not found
-        """
-        if not path:
-            return cls.get_config_path(
-                config_dir="yaml",
-                default_config_file="default",
-                file_extension="yaml"
-            )
-            
-        # Handle full paths to YAML files
-        if str(path).endswith(('.yaml', '.yml')):
-            config_path = Path(path)
-            if not config_path.exists():
-                raise ValueError(f"Configuration file not found: {config_path}")
-            return config_path
-            
-        # Convert dot notation to slashes if needed
-        if "." in str(path) and not path.endswith(".yaml") and not path.endswith(".yml"):
-            path = str(path).replace(".", "/")
-            
-        # Try both .yaml and .yml extensions
-        yaml_path = cls.get_config_path(
-            path=f"{path}.yaml",
-            config_dir="yaml",
-            default_config_file="default",
-            file_extension="yaml"
-        )
-        
-        if yaml_path.exists():
-            return yaml_path
-            
-        yml_path = cls.get_config_path(
-            path=f"{path}.yml",
-            config_dir="yaml",
-            default_config_file="default",
-            file_extension="yaml"
-        )
-        
-        if not yml_path.exists():
-            raise ValueError(f"Configuration file not found: {path} (tried .yaml and .yml)")
-            
-        return yml_path
-    
-    @classmethod
     def load_config(cls, path: Optional[str] = None) -> Dict[str, Any]:
         """Load configuration from YAML file.
         

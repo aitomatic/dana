@@ -74,8 +74,10 @@ from opendxa.base import (
     ObjectiveStatus,
     LLMResource,
     ResourceResponse,
+    QueryResponse,
     WorldState,
 )
+
 
 from opendxa.execution import (
     AgentRuntime,

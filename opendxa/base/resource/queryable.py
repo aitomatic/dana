@@ -4,22 +4,15 @@ from typing import Optional, Any, Dict
 from dataclasses import dataclass
 from enum import Enum, auto
 from opendxa.common.mixins.tool_callable import ToolCallable
-
+from opendxa.common.types import BaseResponse
 class QueryStrategy(Enum):
     """Resource querying strategies."""
     ONCE = auto()       # Single query without iteration, default for most resources
     ITERATIVE = auto()  # Iterative querying - default, e.g., for LLMResource
 
 @dataclass
-class QueryResponse:
+class QueryResponse(BaseResponse):
     """Base class for all query responses."""
-    success: bool
-    error: Optional[Exception] = None
-
-@dataclass
-class QueryResult(QueryResponse):
-    """Result of a query."""
-    result: Optional[Dict[str, Any]] = None
 
 class Queryable(ToolCallable):
     """Mixin for queryable objects that can be called as tools.
@@ -37,13 +30,13 @@ class Queryable(ToolCallable):
         self._query_max_iterations = self._query_max_iterations or 3
 
     @ToolCallable.tool
-    async def query(self, params: Optional[Dict[str, Any]] = None) -> QueryResult:
+    async def query(self, params: Optional[Dict[str, Any]] = None) -> QueryResponse:
         """Query the Queryable object.
 
         Args:
             params: The parameters to query the Queryable object with.
         """
-        return QueryResult(success=True, result=params, error=None)
+        return QueryResponse(success=True, content=params, error=None)
 
     def get_query_strategy(self) -> QueryStrategy:
         """Get the query strategy for the resource."""

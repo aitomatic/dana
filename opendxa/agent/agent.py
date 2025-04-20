@@ -84,8 +84,8 @@ class Agent(Configurable, Loggable, Capable):
     def __init__(self, name: Optional[str] = None, description: Optional[str] = None):
         Configurable.__init__(self)
 
-        self._name = name or "agent"
-        self._description = description or "Agent responsible for executing tasks and " \
+        self.name = name or "agent"
+        self.description = description or "Agent responsible for executing tasks and " \
                                            "coordinating activities based on available information"
         self._state = AgentState()
         self._agent_llm = None  # Default LLM
@@ -136,7 +136,7 @@ class Agent(Configurable, Loggable, Capable):
     def _get_default_llm_resource(self):
         """Get default LLM resource."""
         return LLMResource(
-            name=f"{self._name}_llm",
+            name=f"{self.name}_llm",
             config=(
                 {"model": self.config["model"]} if "model" in self.config else {}
             )
@@ -178,16 +178,6 @@ class Agent(Configurable, Loggable, Capable):
         """Get reasoning LLM or fallback to default."""
         return self._reasoning_llm or self.agent_llm
     
-    @property
-    def description(self) -> str:
-        """Get agent description."""
-        return self._description
-
-    @property
-    def name(self) -> str:
-        """Get agent name."""
-        return self._name
-
     def with_model(self, model: str) -> "Agent":
         """Configure agent model string name"""
         self.config["model"] = model
@@ -200,11 +190,11 @@ class Agent(Configurable, Loggable, Capable):
         elif isinstance(llm, str):
             config = load_agent_config("llm")
             config["model"] = llm
-            self._agent_llm = LLMResource(name=f"{self._name}_llm", config=config)
+            self._agent_llm = LLMResource(name=f"{self.name}_llm", config=config)
         elif isinstance(llm, Dict):
             config = load_agent_config("llm")
             config.update(llm)
-            self._agent_llm = LLMResource(name=f"{self._name}_llm", config=config)
+            self._agent_llm = LLMResource(name=f"{self.name}_llm", config=config)
         return self
 
     def with_resources(self, resources: Dict[str, BaseResource]) -> "Agent":
@@ -273,11 +263,11 @@ class Agent(Configurable, Loggable, Capable):
         if isinstance(llm, str):
             config = load_agent_config("llm")
             config["model"] = llm
-            return LLMResource(name=f"{self._name}_{name}", config=config)
+            return LLMResource(name=f"{self.name}_{name}", config=config)
         if isinstance(llm, Dict):
             config = load_agent_config("llm")
             config.update(llm)
-            return LLMResource(name=f"{self._name}_{name}", config=config)
+            return LLMResource(name=f"{self.name}_{name}", config=config)
         raise ValueError(f"Invalid LLM configuration: {llm}")
 
     def _initialize(self) -> 'Agent':

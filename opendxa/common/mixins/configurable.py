@@ -12,18 +12,64 @@ import inspect
 import yaml
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.exceptions import ConfigurationError
+import logging
+from opendxa.common.utils.misc import load_yaml_config
 
 T = TypeVar('T')
 
+# Configure logger
+logger = logging.getLogger(__name__)
+
 @dataclass
 class Configurable(Loggable):
-    """Base class for configurable components.
+    """Base class for configurable components in DXA.
     
-    This class provides common configuration management functionality:
-    - YAML file loading with defaults
+    This class provides a unified interface for configuration management across DXA components.
+    It handles loading, validating, and accessing configuration from multiple sources.
+    
+    Configuration Location:
+    The configuration path is determined by the location of the class definition:
+    - If MyComponent is defined in /path/to/opendxa/base/execution/my_component.py
+    - Then its config files will be in /path/to/opendxa/base/execution/yaml/
+    - And its default config will be /path/to/opendxa/base/execution/yaml/my_component.yaml
+    
+    This means each configurable component's configuration is co-located with its code,
+    making it easy to find and maintain related configurations. The default config file
+    name is automatically derived from the module file name to maintain consistency with
+    the physical file organization.
+    
+    Configuration Directory Structure:
+    - Base path: Directory containing the class definition (e.g., /path/to/opendxa/base/execution/)
+    - Config directory: 'yaml' subdirectory under base path (e.g., /path/to/opendxa/base/execution/yaml/)
+    - Default config: '{module_name}.yaml' in config directory (e.g., /path/to/opendxa/base/execution/yaml/my_component.yaml)
+    
+    Key Features:
+    - YAML file loading with defaults and overrides
     - Configuration validation
+    - Path resolution for config files
     - Configuration access methods
     - Logging integration
+    
+    Usage:
+        class MyComponent(Configurable):
+            default_config = {
+                "setting1": "default_value",
+                "setting2": 42
+            }
+            
+            def __init__(self, config_path=None, **overrides):
+                super().__init__(config_path=config_path, **overrides)
+    
+    Configuration Sources (in order of precedence):
+    1. Runtime overrides (passed as kwargs)
+    2. YAML configuration file
+    3. Default values (from default_config)
+    
+    Path Resolution:
+    - Absolute paths: Used as-is
+    - Relative paths: Resolved relative to the config directory
+    - Dot notation: Converted to slashes (e.g., "planning.default" -> "planning/default.yaml")
+    - File extensions: Tries .yaml and .yml if not specified
     
     Attributes:
         config: The current configuration dictionary
@@ -48,7 +94,7 @@ class Configurable(Loggable):
         cls,
         path: Optional[Union[str, Path]] = None,
         config_dir: str = "yaml",
-        default_config_file: str = "default",
+        default_config_file: Optional[str] = None,
         file_extension: str = "yaml"
     ) -> Path:
         """Get path to a configuration file.
@@ -56,7 +102,7 @@ class Configurable(Loggable):
         Args:
             path: Optional path to config file
             config_dir: Directory containing config files
-            default_config_file: Default config file name
+            default_config_file: Default config file name. If None, uses the module file name.
             file_extension: Config file extension
             
         Returns:
@@ -68,6 +114,10 @@ class Configurable(Loggable):
         try:
             # If path is None, use default config
             if path is None:
+                # Use module file name as default if not specified
+                if default_config_file is None:
+                    module_file = inspect.getfile(cls)
+                    default_config_file = Path(module_file).stem
                 return cls.get_base_path() / config_dir / f"{default_config_file}.{file_extension}"
             
             # Convert to Path if string
@@ -331,4 +381,142 @@ class Configurable(Loggable):
             with open(actual_path, 'w', encoding='utf-8') as f:
                 yaml.safe_dump(self.config, f)
         except Exception as e:
-            raise ConfigurationError(f"Failed to save configuration to {path}: {e}") from e 
+            raise ConfigurationError(f"Failed to save configuration to {path}: {e}") from e
+
+    @classmethod
+    def get_yaml_path(cls, path: Optional[str] = None) -> Path:
+        """Get path to a configuration file.
+        
+        Args:
+            path: Path to config file, which can be:
+                 - A full path to a YAML file
+                 - A relative path with dots (e.g., "planning.default")
+                 - A relative path with slashes (e.g., "planning/default")
+            
+        Returns:
+            Path to the configuration file
+            
+        Raises:
+            ValueError: If path is invalid or file not found
+        """
+        if not path:
+            # Use module file name as default if no path provided
+            module_file = inspect.getfile(cls)
+            default_config_file = Path(module_file).stem
+            return cls.get_config_path(
+                config_dir="yaml",
+                default_config_file=default_config_file,
+                file_extension="yaml"
+            )
+            
+        # Handle full paths to YAML files
+        if str(path).endswith(('.yaml', '.yml')):
+            config_path = Path(path)
+            if not config_path.exists():
+                raise ValueError(f"Configuration file not found: {config_path}")
+            return config_path
+            
+        # Convert dot notation to slashes if needed
+        if "." in str(path) and not path.endswith(".yaml") and not path.endswith(".yml"):
+            path = str(path).replace(".", "/")
+            
+        # Try both .yaml and .yml extensions
+        yaml_path = cls.get_config_path(
+            path=f"{path}.yaml",
+            config_dir="yaml",
+            default_config_file=None,  # Let get_config_path use module name
+            file_extension="yaml"
+        )
+        
+        if yaml_path.exists():
+            return yaml_path
+            
+        yml_path = cls.get_config_path(
+            path=f"{path}.yml",
+            config_dir="yaml",
+            default_config_file=None,  # Let get_config_path use module name
+            file_extension="yaml"
+        )
+        
+        if not yml_path.exists():
+            raise ValueError(f"Configuration file not found: {path} (tried .yaml and .yml)")
+            
+        return yml_path 
+
+    @classmethod
+    def get_prompt(cls,
+                   config_path: Optional[str] = None,
+                   prompt_ref: Optional[str] = None, 
+                   custom_prompts: Optional[Dict[str, str]] = None) -> str:
+        """Get prompt by reference.
+        
+        Args:
+            config_path: Path to config file relative to the config directory
+                 (e.g., "workflow/default" or "workflow/basic/prosea")
+            prompt_ref: Reference to prompt in format "path/to/config.prompt_name"
+                       (e.g., "default.DEFINE" or "basic/prosea.ANALYZE")
+            custom_prompts: Optional custom prompts to override defaults
+            
+        Returns:
+            Raw prompt text
+            
+        Raises:
+            ValueError: If prompt reference is invalid
+        """
+        if not prompt_ref:
+            return ""
+            
+        prompt_ref = str(prompt_ref)
+        
+        # Try custom prompts first
+        if custom_prompts and prompt_ref in custom_prompts:
+            return custom_prompts[prompt_ref]
+            
+        # Extract prompt name and config path
+        if "." not in prompt_ref:
+            logger.warning("Prompt reference must be in format 'config_name.prompt_name', got '%s'", prompt_ref)
+            return ""
+            
+        config_path, prompt_name = prompt_ref.rsplit(".", maxsplit=1)
+        
+        try:
+            # Load the config
+            config = cls.load_config(path=config_path)
+            
+            # Look for the prompt in the config
+            if config and "prompts" in config:
+                prompts = config.get("prompts", {})
+                return prompts.get(prompt_name, "")
+                
+        except Exception as e:
+            logger.warning("Failed to load prompt '%s': %s", prompt_ref, str(e))
+            
+        return "" 
+
+    @classmethod
+    def load_config(cls, path: Optional[str] = None) -> Dict[str, Any]:
+        """Load configuration from YAML file.
+        
+        Args:
+            path: Full path to config file, OR relative to the config directory
+                 (e.g., "workflow/default" or "workflow/basic/prosea")
+            
+        Returns:
+            Loaded configuration dictionary
+            
+        Raises:
+            ConfigurationError: If configuration cannot be loaded
+            ValueError: If configuration is invalid
+        """
+        try:
+            config_path = cls.get_yaml_path(path=path)
+            config = load_yaml_config(config_path)
+            
+            # Validate basic structure
+            if not isinstance(config, dict):
+                raise ValueError(f"Configuration must be a dictionary, got {type(config)}")
+                
+            return config
+            
+        except Exception as e:
+            raise ValueError(f"Failed to load configuration from {path}: {str(e)}") from e 

@@ -2,8 +2,17 @@
 
 from abc import ABC
 from typing import Dict, Any, Optional
+from dataclasses import dataclass, field
 from opendxa.common.mixins.identifiable import Identifiable
-from opendxa.base.capability.capable import CapabilityApplicationResult
+
+
+@dataclass
+class CapabilityApplicationResult:
+    """Result of applying a capability."""
+    success: bool
+    result: Dict[str, Any] = field(default_factory=dict)
+    error: Optional[Exception] = None
+
 
 class BaseCapability(ABC, Identifiable):
     """Base class for agent capabilities."""

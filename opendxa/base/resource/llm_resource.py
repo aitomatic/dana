@@ -7,7 +7,7 @@ import aisuite as ai
 from openai.types.chat import ChatCompletion
 from opendxa.common.exceptions import LLMError
 from opendxa.base.resource.base_resource import BaseResource, ResourceResponse, QueryStrategy
-from opendxa.base.resource.queryable import QueryResult
+from opendxa.base.resource.queryable import QueryResponse
 from opendxa.common.utils.misc import get_field
 
 class LLMResource(BaseResource):
@@ -52,7 +52,7 @@ class LLMResource(BaseResource):
         self._query_max_iterations = self.config.get("query_max_iterations", 10)
 
     # ===== Public Interface Methods =====
-    async def query(self, params: Optional[Dict[str, Any]] = None) -> QueryResult:
+    async def query(self, params: Optional[Dict[str, Any]] = None) -> QueryResponse:
         """Query the LLM with the given request.
 
         This method determines whether to use iterative or single-shot querying based on
@@ -69,12 +69,12 @@ class LLMResource(BaseResource):
                 - additional parameters
 
         Returns:
-            QueryResult with "content", "model", "usage".
+            QueryResponse with "content", "model", "usage".
         """
 
         # Use iterative querying if tools are provided, otherwise use single-shot
         response = await self._query_iterative(params)
-        return QueryResult(success=True, result=response)
+        return QueryResponse(success=True, content=response)
 
     async def initialize(self) -> None:
         """Initialize the AISuite client etc."""

@@ -165,7 +165,7 @@ class ExecutionFactory(Generic[GraphT]):
                 raise ValueError(f"Configuration file not found: {config_path}")
             
             try:
-                graph = cls.graph_class.from_execution_yaml(
+                graph = cls.graph_class.from_yaml_file(
                     config_path=config_path,
                     objective=objective,
                     custom_prompts=custom_prompts
@@ -175,7 +175,7 @@ class ExecutionFactory(Generic[GraphT]):
         else:
             # Use the standard path resolution
             try:
-                graph = cls.graph_class.from_execution_yaml(
+                graph = cls.graph_class.from_yaml_file(
                     config_name=config_name,
                     objective=objective,
                     custom_prompts=custom_prompts

@@ -1,8 +1,7 @@
 """Mixin for capable objects."""
 
 from typing import Optional, List, Any, Dict
-from dataclasses import dataclass, field
-from opendxa.base.capability.base_capability import BaseCapability
+from opendxa.base.capability.base_capability import BaseCapability, CapabilityApplicationResult
 from opendxa.common.mixins.tool_callable import ToolCallable
 
 
@@ -19,14 +18,6 @@ class CapabilityNotFoundError(CapabilityError):
 class CapabilityAlreadyExistsError(CapabilityError):
     """Raised when trying to add a duplicate capability."""
     pass
-
-
-@dataclass
-class CapabilityApplicationResult:
-    """Result of applying a capability."""
-    success: bool
-    result: Dict[str, Any] = field(default_factory=dict)
-    error: Optional[Exception] = None
 
 
 class Capable(ToolCallable):

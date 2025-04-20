@@ -73,7 +73,7 @@ class ReasoningExecutor(BaseExecutor[ReasoningStrategy, Reasoning, ReasoningFact
 
                 # Query the LLM with available resources
 
-                response = await context.reasoning_llm.query(request={
+                response = await context.reasoning_llm.query(params={
                     "user_messages": user_messages,
                     "system_messages": system_messages,
                     "available_resources": context.available_resources or {},

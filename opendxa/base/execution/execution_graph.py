@@ -5,12 +5,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, Optional, Union, List, cast, TYPE_CHECKING, Type, Tuple
 from dataclasses import dataclass
-import yaml
 
 # Third-party imports
 from opendxa.common.utils.misc import load_yaml_config
 from opendxa.common.graph import DirectedGraph, Node, Edge, NodeType
-from opendxa.common.exceptions import ConfigurationError
 
 # Local imports
 from opendxa.base.execution.execution_types import (
@@ -88,13 +86,13 @@ class ExecutionGraph(DirectedGraph):
             self.metadata["strategy"] = strategy
     
     @classmethod
-    def from_execution_yaml(cls,
-                            config_name: Optional[str] = None,
-                            config_path: Optional[Union[str, Path]] = None,
-                            objective: Optional[Objective] = None,
-                            custom_prompts: Optional[Dict[str, str]] = None) -> 'ExecutionGraph':
+    def from_yaml_file(cls,
+                       config_name: Optional[str] = None,
+                       config_path: Optional[Union[str, Path]] = None,
+                       objective: Optional[Objective] = None,
+                       custom_prompts: Optional[Dict[str, str]] = None) -> 'ExecutionGraph':
         """Create execution graph from YAML data or file.
-
+        
         Args:
             config_name: Name of the config to load, OR ...
             config_path: Path to the YAML file to load.
@@ -102,8 +100,8 @@ class ExecutionGraph(DirectedGraph):
             custom_prompts: Custom prompts to use for the graph.
         """
         # Load YAML data
-        yaml_data, config_path = cls._load_execution_yaml(config_name=config_name, config_path=config_path)
-
+        yaml_data, config_path = cls._load_yaml_file(config_name=config_name, config_path=config_path)
+        
         # Create graph
         graph = cls(
             objective=objective or Objective(yaml_data.get('description', '')),
@@ -202,12 +200,12 @@ class ExecutionGraph(DirectedGraph):
             prompt_text = graph.metadata['prompts'][node_id]
         else:
             # Fall back to standard prompt resolution
-            from opendxa.base.execution.execution_config import ExecutionConfig  # pylint: disable=import-outside-toplevel
             prompt_ref = node_data.get('prompt', node_id)
-            prompt_text = ExecutionConfig.get_prompt(for_class=cls,
-                                                     config_path=config_path,
-                                                     prompt_ref=prompt_ref,
-                                                     custom_prompts=custom_prompts)
+            prompt_text = cls.get_prompt(
+                config_path=config_path,
+                prompt_ref=prompt_ref,
+                custom_prompts=custom_prompts
+            )
 
         # Store the prompt in metadata
         metadata['prompt'] = prompt_text
@@ -226,9 +224,9 @@ class ExecutionGraph(DirectedGraph):
         graph.add_node(node)
 
     @classmethod
-    def _load_execution_yaml(cls,
-                             config_name: Optional[str] = None,
-                             config_path: Optional[Union[str, Path]] = None) -> Tuple[Dict[str, Any], Optional[str]]:
+    def _load_yaml_file(cls,
+                        config_name: Optional[str] = None,
+                        config_path: Optional[Union[str, Path]] = None) -> Tuple[Dict[str, Any], Optional[str]]:
         """Load YAML data from file or use provided dictionary."""
         
         # Prefer config path if provided
@@ -237,52 +235,21 @@ class ExecutionGraph(DirectedGraph):
 
         if config_path is None or not config_path.exists():
             if config_name:
-                from opendxa.base.execution.execution_config import ExecutionConfig  # pylint: disable=import-outside-toplevel
-                
-                # Handle dot notation in config_name
+                # Convert dot notation to slashes if needed
                 if "." in config_name and not config_name.endswith(('.yaml', '.yml')):
-                    # Convert dots to slashes
-                    path_parts = config_name.split(".")
-                    path = "/".join(path_parts)
-                    
-                    # Try with .yaml extension
-                    yaml_path = Path(ExecutionConfig.get_base_path()) / "yaml" / f"{path}.yaml"
-                    if yaml_path.exists():
-                        config_path = yaml_path
-                    else:
-                        # Try with .yml extension
-                        yml_path = Path(ExecutionConfig.get_base_path()) / "yaml" / f"{path}.yml"
-                        if yml_path.exists():
-                            config_path = yml_path
-                        else:
-                            # Fall back to standard path resolution
-                            config_path = ExecutionConfig.get_yaml_path(cls, config_name)
-                else:
-                    # Standard path resolution
-                    config_path = ExecutionConfig.get_yaml_path(cls, config_name)
+                    config_name = config_name.replace(".", "/")
+                
+                # Use get_config_path to resolve the path
+                config_path = cls.get_config_path(
+                    path=config_name,
+                    config_dir="yaml",
+                    default_config_file=None,  # Let get_config_path use module name
+                    file_extension="yaml"
+                )
             else:
                 raise ValueError("No config path or name provided")
 
-        # If the path doesn't exist, try to fix it
-        if not config_path.exists():
-            # Check if the path is in the form of basic/sequential/yaml.yaml
-            # and try to fix it to basic/sequential.yaml
-            parts = str(config_path).split('/')
-            if len(parts) >= 3 and parts[-1] == "yaml.yaml":
-                # Remove the last two parts and replace with the second-to-last part + .yaml
-                fixed_path = '/'.join(parts[:-2]) + '/' + parts[-2] + '.yaml'
-                if Path(fixed_path).exists():
-                    config_path = Path(fixed_path)
-            # Check if the path is in the form of test_config_yml/yml.yaml
-            # and try to fix it to test_config_yml.yml
-            elif len(parts) >= 2 and parts[-1] == "yml.yaml":
-                # Try removing the last part and use the directory name with .yml extension
-                fixed_path = '/'.join(parts[:-1]) + '.yml'
-                if Path(fixed_path).exists():
-                    config_path = Path(fixed_path)
-
         data = load_yaml_config(config_path)
-
         return data, str(config_path) if config_path else None
 
     @classmethod

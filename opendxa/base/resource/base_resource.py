@@ -25,7 +25,7 @@ from dataclasses import dataclass
 from typing import Dict, Any, Optional, ClassVar, TypeVar
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.mixins.configurable import Configurable
-from opendxa.base.resource.queryable import Queryable, QueryResponse, QueryResult, QueryStrategy
+from opendxa.base.resource.queryable import Queryable, QueryStrategy, QueryResponse
 T = TypeVar('T', bound='BaseResource')
 
 class ResourceError(Exception):
@@ -52,8 +52,6 @@ class ResourceAccessError(ResourceError):
 @dataclass
 class ResourceResponse(QueryResponse):
     """Resource response."""
-    content: Optional[Dict[str, Any]] = None
-    error: Optional[Exception] = None  # Override to maintain backward compatibility
 
     @classmethod
     def error_response(cls, message: str) -> 'ResourceResponse':
@@ -159,16 +157,16 @@ class BaseResource(Configurable, Loggable, Queryable):
         # Resource-specific cleanup logic
         self.debug(f"Resource [{self.name}] cleanup completed")
 
-    async def query(self, params: Optional[Dict[str, Any]] = None) -> QueryResult:
+    async def query(self, params: Optional[Dict[str, Any]] = None) -> ResourceResponse:
         """Query resource.
 
         Args:
             params: The parameters to query the resource with.
         """
         if not self._is_available:
-            return QueryResult(success=False, error=f"Resource {self.name} not available")
+            return ResourceResponse(success=False, error=f"Resource {self.name} not available")
         self.debug(f"Resource [{self.name}] received query: {self._sanitize_log_data(params)}")
-        return QueryResult(success=True, result=params, error=None)
+        return ResourceResponse(success=True, content=params, error=None)
 
     def can_handle(self, request: Dict[str, Any]) -> bool:
         """Check if resource can handle request."""
