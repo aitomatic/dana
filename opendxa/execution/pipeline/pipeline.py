@@ -359,7 +359,7 @@ class Pipeline(ExecutionGraph, BaseResource, Loggable):
             ResourceResponse with the pipeline execution results
         """
         if not self._is_available:
-            return ResourceResponse(success=False, error=f"Pipeline resource {self.name} not initialized")
+            return ResourceResponse.error_response(f"Pipeline resource {self.name} not initialized")
         
         if request is None:
             request = {}
@@ -383,10 +383,7 @@ class Pipeline(ExecutionGraph, BaseResource, Loggable):
             )
         except Exception as e:
             self.error(f"Error executing pipeline: {str(e)}")
-            return ResourceResponse(
-                success=False,
-                error=str(e)
-            )
+            return ResourceResponse.error_response(str(e))
             
     def can_handle(self, request: Dict[str, Any]) -> bool:
         """Check if the pipeline can handle this request.

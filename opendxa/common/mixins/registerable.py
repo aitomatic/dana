@@ -1,29 +1,39 @@
 """Objects that have a registry for other objects"""
 
-from typing import Dict, TypeVar, Generic, Any
+from typing import Dict
+from opendxa.common.mixins.identifiable import Identifiable
 
-RegistryObjectType = TypeVar('RegistryObjectType', bound=Any)
+class Registerable(Identifiable):
+    """Objects that have a class registry for members of the class."""
 
-class Registerable(Generic[RegistryObjectType]):
-    """Objects that have a registry for other objects"""
-    def __init__(self):
-        self._registry: Dict[str, RegistryObjectType] = {}
+    __registry: Dict[str, 'Registerable'] = {}
 
-    def get_from_registry(self, object_id: str) -> RegistryObjectType:
+    @classmethod
+    def get_from_registry(cls, object_id: str) -> 'Registerable':
         """Get a resource from the registry."""
-        if object_id not in self._registry:
+        if object_id not in cls.__registry:
             raise ValueError(f"Object {object_id} not found in registry")
-        return self._registry[object_id]
+        return cls.__registry[object_id]
     
-    def add_to_registry(self, object_id: str, the_object: RegistryObjectType) -> None:
+    @classmethod
+    def add_object_to_registry(cls, the_object: 'Registerable') -> None:
         """Add an object to the registry with the specified ID.
         
         Args:
             object_id: Unique identifier for the object
             the_object: The object to register
         """
-        self._registry[object_id] = the_object
+        cls.__registry[the_object.id] = the_object
     
-    def remove_from_registry(self, object_id: str) -> None:
+    @classmethod    
+    def remove_object_from_registry(cls, object_id: str) -> None:
         """Remove an object from my registry."""
-        del self._registry[object_id] 
+        del cls.__registry[object_id] 
+
+    def add_to_registry(self) -> None:
+        """Add myself to my registry."""
+        self.__class__.add_object_to_registry(self)
+
+    def remove_from_registry(self) -> None:
+        """Remove myself from my registry."""
+        self.__class__.remove_object_from_registry(self.id)

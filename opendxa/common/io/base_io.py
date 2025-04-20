@@ -49,7 +49,7 @@ class BaseIO(BaseResource):
             response = await self.receive()
             return ResourceResponse(success=True, content={"response": response})
         
-        return ResourceResponse(success=False, error="Invalid query - must specify send or receive")
+        return ResourceResponse.error_response("Invalid query - must specify send or receive")
 
     def can_handle(self, request: Dict[str, Any]) -> bool:
         """Check if request contains valid IO operations."""

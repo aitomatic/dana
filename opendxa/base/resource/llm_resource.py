@@ -1,18 +1,16 @@
 """LLM resource implementation."""
 
 import json
-from typing import Any, Dict, Optional, Union, Callable, List, TypeVar
+from typing import Any, Dict, Optional, Union, Callable, List
 
 import aisuite as ai
 from openai.types.chat import ChatCompletion
 from opendxa.common.exceptions import LLMError
 from opendxa.base.resource.base_resource import BaseResource, ResourceResponse, QueryStrategy
-from opendxa.common.mixins.registerable import Registerable
+from opendxa.base.resource.queryable import QueryResult
 from opendxa.common.utils.misc import get_field
 
-T = TypeVar('T', bound=BaseResource)
-
-class LLMResource(BaseResource, Registerable[T]):
+class LLMResource(BaseResource):
     """LLM resource implementation using AISuite."""
 
     # To avoid accidentally sending too much data to the LLM,
@@ -54,14 +52,14 @@ class LLMResource(BaseResource, Registerable[T]):
         self._query_max_iterations = self.config.get("query_max_iterations", 10)
 
     # ===== Public Interface Methods =====
-    async def query(self, request: Dict[str, Any]) -> ResourceResponse:
+    async def query(self, params: Optional[Dict[str, Any]] = None) -> QueryResult:
         """Query the LLM with the given request.
 
         This method determines whether to use iterative or single-shot querying based on
         the request parameters and available resources.
 
         Args:
-            request: Dictionary containing:
+            params: Dictionary containing:
                 - user_messages: The user messages
                 - system_messages: Optional system messages
                 - available_resources: Optional list of BaseResource objects to use as tools
@@ -71,12 +69,12 @@ class LLMResource(BaseResource, Registerable[T]):
                 - additional parameters
 
         Returns:
-            Dictionary with "content", "model", "usage".
+            QueryResult with "content", "model", "usage".
         """
 
         # Use iterative querying if tools are provided, otherwise use single-shot
-        response = await self._query_iterative(request)
-        return ResourceResponse(success=True, content=response)
+        response = await self._query_iterative(params)
+        return QueryResult(success=True, result=response)
 
     async def initialize(self) -> None:
         """Initialize the AISuite client etc."""
@@ -89,9 +87,6 @@ class LLMResource(BaseResource, Registerable[T]):
             # TODO: Fix this
             self.info("LLM client initialized successfully for model: %s", self.model)
         
-        # Initialize the registerable registry etc.
-        Registerable.__init__(self)
-
     async def cleanup(self) -> None:
         """Cleanup resources."""
         if self._client:
@@ -247,11 +242,11 @@ class LLMResource(BaseResource, Registerable[T]):
             raise ValueError("messages must be provided and non-empty")
         
         # Build request parameters
-        params = self._build_request_params(request)
+        request = self._build_request_params(request)
         
         # Make the API call
         try:
-            response = await self._client.chat.completions.create(**params)
+            response = await self._client.chat.completions.create(**request)
             self._log_llm_response(response)
             return response
         except Exception as e:

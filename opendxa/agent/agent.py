@@ -38,8 +38,8 @@ from opendxa.base.state import WorldState, ExecutionState
 from opendxa.common.io import BaseIO, IOFactory
 from opendxa.common.mixins.configurable import Configurable
 from opendxa.common.mixins.loggable import Loggable
-from opendxa.common.config_manager import load_agent_config
-from opendxa.common.utils.misc import safe_asyncio_run
+from opendxa.common.utils.misc import safe_asyncio_run, load_agent_config
+from opendxa.base.capability.capable import Capable
 
 @dataclass
 class AgentResponse:
@@ -77,7 +77,7 @@ class AgentResponse:
 
 
 # pylint: disable=too-many-public-methods
-class Agent(Configurable, Loggable):
+class Agent(Configurable, Loggable, Capable):
     """Main agent interface with built-in execution management."""
 
     # pylint: disable=too-many-instance-attributes
@@ -102,6 +102,7 @@ class Agent(Configurable, Loggable):
         self._reasoning_strategy = ReasoningStrategy.DEFAULT
 
         Loggable.__init__(self)
+        Capable.__init__(self, self._capabilities)
 
     @property
     def planning_strategy(self) -> PlanStrategy:

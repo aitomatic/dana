@@ -10,6 +10,7 @@ from mcp.client.stdio import get_default_environment, stdio_client
 from mcp.client.sse import sse_client
 
 from opendxa.common.mixins.loggable import Loggable
+from opendxa.common.mixins.tool_callable import ToolCallable
 from opendxa.base.resource.base_resource import BaseResource, ResourceResponse, ResourceError
 from opendxa.base.resource.mcp.mcp_config import McpConfig, McpConfigError, StdioTransportParams, HttpTransportParams
 
@@ -46,7 +47,7 @@ def with_retries(retries: int = 3, delay: float = 1.0):
         return wrapper
     return decorator
 
-class McpResource(BaseResource, Loggable):
+class McpResource(BaseResource, Loggable, ToolCallable):
     """MCP resource that can use either stdio or HTTP transport.
     
     The Model Context Protocol (MCP) allows applications to provide context for LLMs
@@ -311,7 +312,7 @@ class McpResource(BaseResource, Loggable):
                         return await self._execute_query(session, request)
         except Exception as e:
             self.error("Tool execution failed", exc_info=True)
-            return ResourceResponse(success=False, error=str(e))
+            return ResourceResponse.error_response(str(e))
 
     @with_retries(retries=3, delay=1.0)
     async def _execute_query(self, session: ClientSession, request: Dict[str, Any]) -> ResourceResponse:
@@ -526,7 +527,7 @@ class McpResource(BaseResource, Loggable):
             tool_strings.append({
                 "type": "function",
                 "function": {
-                    "name": self._get_name_id_function_string(self.name, my_id, tool.name),
+                    "name": self.get_name_id_function_string(function_name=tool.name),
                     "description": tool.description,
                     "parameters": parameters,
                     "strict": True,

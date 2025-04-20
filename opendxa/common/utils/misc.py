@@ -1,11 +1,152 @@
 """Miscellaneous utilities."""
 
 from importlib import import_module
-from typing import Type, Any, Optional, Callable, Union
+from typing import Type, Any, Optional, Callable, Union, Dict
 from pathlib import Path
+from functools import lru_cache
+import os
 import inspect
 import asyncio
 import nest_asyncio
+import yaml
+from opendxa.common.exceptions import ConfigurationError
+
+# Default agent configuration
+DEFAULT_AGENT_CONFIG: Dict[str, Any] = {
+    "api_key": None,
+    "model": "gpt-4",
+    "available_resources": [],
+    "reasoning": {
+        "strategy": "cot",
+        "max_steps": 10
+    },
+    "logging": {
+        "level": "INFO",
+        "dir": "logs",
+        "format": "text",
+        "max_bytes": 1000000,
+        "backup_count": 5,
+        "console_output": True
+    }
+}
+
+def load_agent_config(
+    agent_type: str,
+    config_path: Optional[str] = None,
+    **overrides
+) -> Dict[str, Any]:
+    """Load and validate agent configuration.
+    
+    Args:
+        agent_type: Type of agent to create
+        config_path: Optional path to YAML config file
+        **overrides: Configuration overrides
+        
+    Returns:
+        Dict containing agent configuration
+        
+    Raises:
+        ConfigurationError: If configuration is invalid
+        FileNotFoundError: If config file does not exist
+        ValueError: If config values are invalid
+    """
+    # Start with default config
+    config = DEFAULT_AGENT_CONFIG.copy()
+    
+    # Update with environment variables
+    config["api_key"] = os.getenv("OPENAI_API_KEY")
+    
+    # Load from file if provided
+    if config_path:
+        path = Path(config_path)
+        if not path.exists():
+            raise FileNotFoundError(f"Config file not found: {path}")
+            
+        if path.suffix not in ('.yaml', '.yml'):
+            raise ConfigurationError("Config file must be .yaml or .yml")
+            
+        try:
+            file_config = load_yaml_config(path)
+            # Validate before updating
+            _validate_agent_config(file_config)
+            config.update(file_config)
+        except ValueError as e:
+            raise ConfigurationError(str(e)) from e
+            
+    # Apply and validate overrides
+    try:
+        _validate_agent_config(overrides)
+        config.update(overrides)
+    except ValueError as e:
+        raise ConfigurationError("Invalid override values") from e
+        
+    # Update logging config from environment
+    config["logging"] = {
+        "level": str.split(os.getenv("LOG_LEVEL", "INFO"))[0],
+        "dir": str.split(os.getenv("LOG_DIR", "logs"))[0],
+        "format": str.split(os.getenv("LOG_FORMAT", "text"))[0],
+        "max_bytes": int(str.split(os.getenv("LOG_MAX_BYTES", "1000000"))[0]),
+        "backup_count": int(str.split(os.getenv("LOG_BACKUP_COUNT", "5"))[0]),
+        "console_output": str.split(os.getenv("LOG_CONSOLE_OUTPUT", "true"))[0].lower() == "true"
+    }
+        
+    return config
+
+def _validate_agent_config(config: Dict[str, Any]) -> None:
+    """Validate agent configuration.
+    
+    Args:
+        config: Configuration to validate
+        
+    Raises:
+        ValueError: If configuration is invalid
+    """
+    # Validate field types
+    available_resources = config.get("available_resources", [])
+    if not isinstance(available_resources, list):
+        raise ValueError("'available_resources' must be a list")
+        
+    reasoning = config.get("reasoning", {})
+    if not isinstance(reasoning, dict):
+        raise ValueError("'reasoning' must be a dictionary")
+
+@lru_cache(maxsize=128)
+def load_yaml_config(path: Union[str, Path]) -> Dict[str, Any]:
+    """Load YAML file with caching.
+    
+    Args:
+        path: Path to YAML file
+        
+    Returns:
+        Loaded configuration dictionary
+        
+    Raises:
+        FileNotFoundError: If config file does not exist
+        yaml.YAMLError: If YAML parsing fails
+    """
+    if not isinstance(path, Path):
+        path = Path(path)
+        
+    if not path.exists():
+        # Try different extensions if needed
+        path = _resolve_yaml_path(path)
+        
+    with open(path, encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+def _resolve_yaml_path(path: Path) -> Path:
+    """Helper to resolve path with different YAML extensions."""
+    # Try .yaml extension
+    yaml_path = path.with_suffix('.yaml')
+    if yaml_path.exists():
+        return yaml_path
+        
+    # Try .yml extension
+    yml_path = path.with_suffix('.yml')
+    if yml_path.exists():
+        return yml_path
+        
+    raise FileNotFoundError(f"YAML file not found: {path}")
 
 def get_class_by_name(class_path: str) -> Type[Any]:
     """Get class by its fully qualified name.

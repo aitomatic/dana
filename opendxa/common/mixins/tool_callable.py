@@ -13,12 +13,15 @@ Example:
 
 from typing import Dict, Any, Set, ClassVar, Optional, List, Callable, TypeVar
 from dataclasses import dataclass
+from abc import abstractmethod
+from mcp.types import Tool
+from opendxa.common.mixins.registerable import Registerable
 
 # Type variable for the decorated function
 F = TypeVar('F', bound=Callable[..., Any])
 
 @dataclass
-class ToolCallable:
+class ToolCallable(Registerable):
     """A mixin class that provides tool-callable functionality to classes.
     
     This class can be used as a mixin to add tool-callable functionality to any class.
@@ -38,7 +41,7 @@ class ToolCallable:
     _tool_call_specs: Optional[List[Dict[str, Any]]] = None
     
     @classmethod
-    def tool_callable(cls, func: F) -> F:
+    def tool_callable_function(cls, func: F) -> F:
         """Decorator to mark a function as callable by the LLM as a tool.
         
         Args:
@@ -54,4 +57,14 @@ class ToolCallable:
         return func
     
     # Alias for shorter decorator usage
-    tool = tool_callable 
+    tool = tool_callable_function 
+
+    @abstractmethod
+    async def list_tools(self) -> List[Tool]:
+        """List all tools available to the agent."""
+        pass
+
+    @abstractmethod
+    def as_tool_call_specs(self, my_id: str) -> List[Dict[str, Any]]:
+        """Convert the tool-callable functions to a list of tool call specifications."""
+        pass
