@@ -2,6 +2,7 @@
 
 import json
 from typing import Any, Dict, Optional, Union, Callable, List
+import os
 
 import aisuite as ai
 from openai.types.chat import ChatCompletion
@@ -85,8 +86,11 @@ class LLMResource(BaseResource):
                 self.provider_configs["openai"] = {"api_key": self.config["api_key"]}
 
             self._client = ai.Client(provider_configs=self.provider_configs)
-            # TODO: Fix this
-            self.info("LLM client initialized successfully for model: %s", self.model)
+            # Only log if we have a model
+            if self.model:
+                self.info("LLM client initialized successfully for model: %s", self.model)
+            else:
+                self.info("LLM client initialized without a model")
         
     async def cleanup(self) -> None:
         """Cleanup resources."""
@@ -309,12 +313,15 @@ class LLMResource(BaseResource):
             Dict[str, Any]: Dictionary of request parameters
         """
         params = {
-            "model": self.model,
             "messages": get_field(request, "messages", []),
             "temperature": request.get("temperature", 0.7),
             "max_tokens": request.get("max_tokens"),
         }
         
+        # Only add model if it's available
+        if self.model:
+            params["model"] = self.model
+            
         if available_resources:
             params["functions"] = self._get_openai_functions(available_resources)
             

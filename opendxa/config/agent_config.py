@@ -62,28 +62,19 @@ class AgentConfig:
         # Update logging config from environment
         self._update_logging_from_env()
     
-    def _find_first_available_model(self) -> str:
+    def _find_first_available_model(self) -> Optional[str]:
         """Find the first available model based on API keys.
         
         Returns:
-            Name of the first model that has all required API keys available
-            
-        Raises:
-            ValueError: If no models are available
+            Name of the first model that has all required API keys available, or None if no models are available
         """
         for model_config in self.config["preferred_models"]:
             # Check if all required API keys are available
             if all(os.getenv(key) for key in model_config["required_api_keys"]):
                 return model_config["name"]
                 
-        # If we get here, no models are available
-        raise ValueError(
-            "No models available. Please set one of the following API keys:\n" +
-            "\n".join(
-                f"- {', '.join(model['required_api_keys'])} for {model['name']}"
-                for model in self.config["preferred_models"]
-            )
-        )
+        # If we get here, no models are available - return None
+        return None
     
     def _load_from_file(self, config_path: str) -> None:
         """Load configuration from JSON file.
