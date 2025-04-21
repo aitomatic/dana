@@ -7,8 +7,9 @@ import aisuite as ai
 from openai.types.chat import ChatCompletion
 from opendxa.common.exceptions import LLMError
 from opendxa.base.resource.base_resource import BaseResource, ResourceResponse, QueryStrategy
-from opendxa.base.resource.queryable import QueryResponse
 from opendxa.common.utils.misc import get_field
+from opendxa.common.mixins.tool_callable import ToolCallable, OpenAIFunctionCall
+from opendxa.common.mixins.registerable import Registerable
 
 class LLMResource(BaseResource):
     """LLM resource implementation using AISuite."""
@@ -52,7 +53,7 @@ class LLMResource(BaseResource):
         self._query_max_iterations = self.config.get("query_max_iterations", 10)
 
     # ===== Public Interface Methods =====
-    async def query(self, params: Optional[Dict[str, Any]] = None) -> QueryResponse:
+    async def query(self, params: Optional[Dict[str, Any]] = None) -> ResourceResponse:
         """Query the LLM with the given request.
 
         This method determines whether to use iterative or single-shot querying based on
@@ -74,7 +75,7 @@ class LLMResource(BaseResource):
 
         # Use iterative querying if tools are provided, otherwise use single-shot
         response = await self._query_iterative(params)
-        return QueryResponse(success=True, content=response)
+        return ResourceResponse(success=True, content=response)
 
     async def initialize(self) -> None:
         """Initialize the AISuite client etc."""
@@ -151,6 +152,11 @@ class LLMResource(BaseResource):
         message_history: List[Dict[str, Any]] = []
         message_history.append({"role": "system", "content": '\n'.join(system_messages)})
         message_history.append({"role": "user", "content": '\n'.join(user_messages)})
+
+        # Register all resources in the registry
+        available_resources = request.get("available_resources", {})
+        for resource in available_resources.values():
+            resource.add_to_registry()
         
         iteration = 0
         while iteration < max_iterations:
@@ -172,7 +178,7 @@ class LLMResource(BaseResource):
 
             if response_message:
                 # Only add tool_calls if they exist and are a valid list
-                tool_calls = get_field(response_message, "tool_calls")
+                tool_calls: List[OpenAIFunctionCall] = get_field(response_message, "tool_calls")
                 has_valid_tool_calls = tool_calls and isinstance(tool_calls, list)
                 
                 if has_valid_tool_calls:
@@ -187,7 +193,7 @@ class LLMResource(BaseResource):
                     })
                     
                     # Get responses for all tool calls at once
-                    tool_responses = await self._call_requested_resources(tool_calls)
+                    tool_responses = await self._call_requested_tools(tool_calls)
                     if tool_responses:
                         # Add all tool responses to the message history
                         message_history.extend(tool_responses)
@@ -199,6 +205,10 @@ class LLMResource(BaseResource):
         # If we've reached the maximum iterations, return the final response
         if iteration == max_iterations:
             self.info(f"Reached maximum iterations ({max_iterations}), returning final response")
+
+        # Unregister all resources in the registry (to avoid memory leaks)
+        for resource in available_resources.values():
+            resource.remove_from_registry()
 
         return response if isinstance(response, ResourceResponse) else {
             "choices": (response.choices if hasattr(response, "choices") else []),
@@ -246,7 +256,7 @@ class LLMResource(BaseResource):
         
         # Make the API call
         try:
-            response = await self._client.chat.completions.create(**request)
+            response = self._client.chat.completions.create(**request)
             self._log_llm_response(response)
             return response
         except Exception as e:
@@ -306,47 +316,100 @@ class LLMResource(BaseResource):
         }
         
         if available_resources:
-            params["functions"] = self.__get_function_calls(available_resources)
+            params["functions"] = self._get_openai_functions(available_resources)
             
         return params
 
-    def __get_function_calls(self, resources: Dict[str, BaseResource]) -> List[Dict[str, Any]]:
-        """Get function calls from available resources.
+    def _get_openai_functions(self, resources: Dict[str, BaseResource]) -> List[OpenAIFunctionCall]:
+        """Get OpenAI functions from available resources.
         
         Args:
             resources: Dictionary of available resources
             
         Returns:
-            List[Dict[str, Any]]: List of function call definitions
+            List[OpenAIFunctionCall]: List of tool definitions
         """
-        function_calls = []
+        functions = []
         for _, resource in resources.items():
-            if hasattr(resource, "get_function_calls"):
-                function_calls.extend(resource.get_function_calls())
-        return function_calls
+            functions.extend(resource.list_openai_functions())
+        return functions
 
-    async def _call_requested_resources(
+    async def _call_requested_tools(
         self, 
-        tool_calls: List[Any],
+        tool_calls: List[OpenAIFunctionCall],
         max_response_length: Optional[int] = MAX_TOOL_CALL_RESPONSE_LENGTH
-    ) -> List[Dict[str, Any]]:
+    ) -> List[ResourceResponse]:
         """Call requested resources and get responses.
         
+        This method handles tool calls from the LLM, executing each requested tool
+        and collecting their responses.
+        
+        Expected Tool Call Format:
+            The format of tool calls is defined by the ToolCallable mixin, which
+            converts tool definitions into OpenAI's function calling format.
+            
+            Each tool call should be a dictionary with:
+            {
+                "type": "function",
+                "function": {
+                    "name": str,  # Format: "{resource_name}__{resource_id}__{tool_name}"
+                    "arguments": str  # JSON string of parameter values
+                }
+            }
+            
+            Example:
+            {
+                "type": "function",
+                "function": {
+                    "name": "search__123__query",
+                    "arguments": '{"query": "find documents", "limit": 5}'
+                }
+            }
+            
+            The method will:
+            1. Parse the function name to identify resource and tool
+            2. Parse the arguments from JSON string to Python dict
+            3. Call the appropriate tool with the arguments
+            4. Collect and return all responses
+            
+            Each response will be in OpenAI's tool response format:
+            {
+                "role": "tool",
+                "name": str,  # The original function name
+                "content": str  # The tool's response or error message
+            }
+        
         Args:
-            tool_calls: List of tool calls to make
+            tool_calls: List of tool calls from the LLM
             max_response_length: Optional maximum length for tool responses
             
         Returns:
-            List[Dict[str, Any]]: List of tool responses
+            List[ResourceResponse]: List of tool responses in OpenAI format
         """
-        responses = []
+        responses: List[ResourceResponse] = []
         for tool_call in tool_calls:
             try:
-                response = await self._call_one_resource(
-                    tool_call.get("resource"),
-                    tool_call.get("name"),
-                    tool_call.get("arguments", {})
+                # Get the function name and arguments
+                function_name = tool_call["function"]["name"]
+                arguments = json.loads(tool_call["function"]["arguments"])
+                
+                # Parse the function name to get the resource name, id, and tool name
+                resource_name, resource_id, tool_name = ToolCallable.parse_name_id_function_string(
+                    function_name
                 )
+                
+                # Get the resource
+                resource: Optional[ToolCallable] = Registerable.get_from_registry(resource_id)
+                if resource is None:
+                    self.warning(f"Resource {resource_name} with id {resource_id} not found")
+                    continue
+                
+                if not isinstance(resource, ToolCallable):
+                    self.warning(f"Resource {resource_name} with id {resource_id} is not a ToolCallable")
+                    continue
+                
+                # Call the tool
+                response = await resource.call_tool(tool_name, arguments)
                 
                 # Truncate response if needed
                 if max_response_length and isinstance(response, str):
@@ -354,46 +417,18 @@ class LLMResource(BaseResource):
                     
                 responses.append({
                     "role": "tool",
-                    "name": tool_call.get("name"),
+                    "name": function_name,
                     "content": response
                 })
             except Exception as e:
                 self.error("Tool call failed: %s", str(e))
                 responses.append({
                     "role": "tool",
-                    "name": tool_call.get("name"),
+                    "name": function_name,
                     "content": f"Error: {str(e)}"
                 })
                 
         return responses
-
-    async def _call_one_resource(
-        self,
-        resource: BaseResource,
-        tool_name: Optional[str],
-        params: Dict[str, Any]
-    ) -> Any:
-        """Call a single resource.
-        
-        Args:
-            resource: The resource to call
-            tool_name: Optional name of the tool to call
-            params: Parameters for the tool call
-            
-        Returns:
-            Any: Response from the resource
-        """
-        if not resource:
-            raise ValueError("Resource must be provided")
-            
-        if not tool_name:
-            raise ValueError("Tool name must be provided")
-            
-        try:
-            return await resource.query(params)
-        except Exception as e:
-            self.error("Resource query failed: %s", str(e))
-            raise
 
     def _log_llm_request(self, request: Dict[str, Any]) -> None:
         """Log LLM request.
@@ -409,7 +444,7 @@ class LLMResource(BaseResource):
         Args:
             response: ChatCompletion object containing the response
         """
-        self.debug("LLM response: %s", json.dumps(response.model_dump(), indent=2))
+        self.debug("LLM response: %s", str(response))
 
     def _get_default_model(self) -> str:
         """Get default model identifier.
@@ -417,4 +452,4 @@ class LLMResource(BaseResource):
         Returns:
             str: Default model identifier
         """
-        return "openai:gpt-4"
+        return "openai:gpt-4o-mini"

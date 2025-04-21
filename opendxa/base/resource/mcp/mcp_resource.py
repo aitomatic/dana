@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Union, Literal, TypeVar, Callable,
 import functools
 import asyncio
 
-from mcp import ClientSession, StdioServerParameters, Tool
+from mcp import ClientSession, StdioServerParameters, Tool as McpTool
 from mcp.client.stdio import get_default_environment, stdio_client
 from mcp.client.sse import sse_client
 
@@ -201,7 +201,7 @@ class McpResource(BaseResource, Loggable, ToolCallable):
         return "stdio" if isinstance(self.transport_params, StdioTransportParams) else "http"
 
     @with_retries(retries=3, delay=1.0)
-    async def query(self, request: Dict[str, Any]) -> ResourceResponse:
+    async def query(self, params: Optional[Dict[str, Any]] = None) -> ResourceResponse:
         """Execute a tool on the MCP server.
         
         This method sends a request to the MCP server to execute a specific tool with the provided arguments.
@@ -209,7 +209,7 @@ class McpResource(BaseResource, Loggable, ToolCallable):
         returns the result of the tool execution.
         
         Args:
-            request: Tool execution request with the following structure:
+            params: Tool execution request with the following structure:
                 {
                     "tool": "tool_name",  # Name of the MCP tool to call
                     "arguments": {        # Dictionary of arguments for the tool
@@ -298,18 +298,18 @@ class McpResource(BaseResource, Loggable, ToolCallable):
                 print("Tool not found")
             ```
         """
-        self.debug("Starting MCP query: %s", request)
+        self.debug("Starting MCP query: %s", params)
         try:
             if self.transport_type == "stdio":
                 assert isinstance(self.server_params, StdioServerParameters)
                 async with stdio_client(self.server_params) as (read, write):
                     async with ClientSession(read, write) as session:
-                        return await self._execute_query(session, request)
+                        return await self._execute_query(session, params)
             else:  # http
                 assert isinstance(self.server_params, dict)
                 async with sse_client(**self.server_params) as streams:
                     async with ClientSession(*streams) as session:
-                        return await self._execute_query(session, request)
+                        return await self._execute_query(session, params)
         except Exception as e:
             self.error("Tool execution failed", exc_info=True)
             return ResourceResponse.error_response(str(e))
@@ -376,8 +376,14 @@ class McpResource(BaseResource, Loggable, ToolCallable):
             True if request contains tool execution pattern
         """
         return "tool" in request
+    
+    def list_mcp_tools(self) -> List[McpTool]:
+        """Override to get all tools from the MCP server instead of my functions."""
+        return asyncio.run(self.list_tools())
 
-    async def list_tools(self) -> List[Tool]:
+    __mcp_tool_list_cache: Optional[List[McpTool]] = None
+
+    async def list_tools(self) -> List[McpTool]:
         """List all available tools from the MCP server.
         
         This method discovers all tools exposed by the MCP server. Each tool has:
@@ -392,6 +398,9 @@ class McpResource(BaseResource, Loggable, ToolCallable):
         Returns:
             List of available tools with their schemas
         """
+        if self.__mcp_tool_list_cache is not None:
+            return self.__mcp_tool_list_cache
+
         try:
             if self.transport_type == "stdio":
                 assert isinstance(self.server_params, StdioServerParameters)
@@ -410,131 +419,29 @@ class McpResource(BaseResource, Loggable, ToolCallable):
                             for item in result:
                                 if isinstance(item, tuple) and item[0] == "tools":
                                     for tool in item[1]:
-                                        if isinstance(tool, Tool):
+                                        if isinstance(tool, McpTool):
                                             tools.append(tool)
                                         else:
                                             # Create Tool instance if needed
-                                            tools.append(Tool(
+                                            tools.append(McpTool(
                                                 name=tool.get("name", ""),
                                                 description=tool.get("description", ""),
                                                 inputSchema=tool.get("inputSchema", {})
                                             ))
                         
-                        return tools
+                        self.__mcp_tool_list_cache = tools
+                        return self.__mcp_tool_list_cache
             else:  # http
                 assert isinstance(self.server_params, dict)
                 async with sse_client(**self.server_params) as streams:
                     async with ClientSession(*streams) as session:
                         await session.initialize()
                         result = await session.list_tools()
-                        return result.tools if hasattr(result, "tools") else []
+                        self.__mcp_tool_list_cache = result.tools if hasattr(result, "tools") else []
+                        return self.__mcp_tool_list_cache
         except Exception as e:
             self.error(f"Tool listing failed: {e}", exc_info=True)
             return []
-
-    def as_tool_call_specs(self, my_id: str) -> List[Dict[str, Any]]:
-        """Override to convert all MCP tools under this resource into OpenAI function specifications.
-        
-        This method transforms MCP tools into a format that OpenAI's function calling API can understand.
-        It performs several important transformations:
-        
-        1. Schema Cleanup:
-           - Removes MCP-specific fields (like 'self' references)
-           - Simplifies the schema to only include essential properties
-           - Makes non-required fields nullable to provide flexibility
-           - Removes JSON Schema specific fields (like $schema)
-        
-        2. Parameter Validation:
-           - Enforces strict parameter validation
-           - Prevents the LLM from sending unexpected parameters
-           - Ensures type safety for required parameters
-        
-        3. Function Naming:
-           - Creates unique function names by combining resource name, ID, and tool name
-           - Ensures no naming conflicts between different resources or tools
-        
-        The resulting function specifications follow OpenAI's expected format:
-        {
-            "type": "function",
-            "function": {
-                "name": "resource_name__resource_id__tool_name",
-                "description": "tool description",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "param1": {"type": "string", "description": "..."},
-                        "param2": {"type": ["number", "null"], "description": "..."}
-                    },
-                    "required": ["param1"],
-                    "additionalProperties": False
-                },
-                "strict": True
-            }
-        }
-        
-        Returns:
-            List[Dict[str, Any]]: List of OpenAI function specifications, each containing:
-                - type: Always "function"
-                - function: Function specification with:
-                    - name: Unique function identifier
-                    - description: Tool description
-                    - parameters: Cleaned and simplified parameter schema
-                    - strict: Boolean enforcing strict parameter validation
-        """
-        tool_strings = []
-        mcp_tools = asyncio.run(self.list_tools())
-
-        for tool in mcp_tools:
-            # Copy and clean up base schema
-            parameters = tool.inputSchema.copy()
-
-            # Remove 'self' references if present
-            if "properties" in parameters:
-                properties = parameters["properties"]
-                # Use dict.pop() to safely remove 'self' and handle the required list in one operation
-                if properties.pop("self", None) is not None and "required" in parameters:
-                    # Use list comprehension to filter out 'self' from required fields
-                    parameters["required"] = [field for field in parameters["required"] if field != "self"]
-
-            # Process properties if they exist
-            if "properties" in parameters and "required" in parameters:
-                properties = parameters["properties"]
-                required_fields = parameters["required"]
-
-                # Make non-required fields nullable and add to required list
-                for field_name, field_props in properties.items():
-                    if field_name not in required_fields and "type" in field_props:
-                        field_type = field_props["type"]
-                        # More Pythonic way to handle type conversion
-                        field_props["type"] = [field_type] if isinstance(field_type, str) else [*field_type, "null"]
-                        parameters["required"].append(field_name)
-
-                # Clean up property definitions to only include essential keys
-                allowed_keys = {"description", "title", "type", "items"}
-                properties.update({
-                    prop_name: {k: v for k, v in prop.items() if k in allowed_keys}
-                    for prop_name, prop in properties.items()
-                })
-
-            # Remove $schema as it's a JSON Schema specific field that's not needed for OpenAI function calling.
-            parameters.pop("$schema", None)
-
-            # Enforce strict parameter validation to prevent the LLM from sending unexpected parameters
-            # that could cause errors in the MCP tool execution.
-            parameters["additionalProperties"] = False
-
-            # Use dictionary unpacking for cleaner function specification
-            tool_strings.append({
-                "type": "function",
-                "function": {
-                    "name": self.get_name_id_function_string(function_name=tool.name),
-                    "description": tool.description,
-                    "parameters": parameters,
-                    "strict": True,
-                }
-            })
-
-        return tool_strings
 
     def get_transport_params(self) -> Union[StdioTransportParams, HttpTransportParams]:
         """Get transport parameters for this resource.
@@ -565,4 +472,16 @@ class McpResource(BaseResource, Loggable, ToolCallable):
                 timeout=http_params.timeout,
                 sse_read_timeout=http_params.sse_read_timeout,
                 sse_config=http_params.sse_config.copy() if http_params.sse_config else None
-            ) 
+            )
+    
+    def call_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Any:
+        """Call a tool with the given name and arguments.
+        
+        Args:
+            tool_name: The name of the tool to call
+            arguments: The arguments to pass to the tool
+        """
+        return self.query({
+            "tool": tool_name,
+            "arguments": arguments
+        })

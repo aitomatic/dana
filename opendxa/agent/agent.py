@@ -38,20 +38,15 @@ from opendxa.base.state import WorldState, ExecutionState
 from opendxa.common.io import BaseIO, IOFactory
 from opendxa.common.mixins.configurable import Configurable
 from opendxa.common.mixins.loggable import Loggable
-from opendxa.common.utils.misc import safe_asyncio_run, load_agent_config
+from opendxa.common.utils.misc import safe_asyncio_run
 from opendxa.base.capability.capable import Capable
+from opendxa.base.resource.queryable import QueryResponse
+from opendxa.config.agent_config import AgentConfig
 
 @dataclass
-class AgentResponse:
-    """Response from an agent operation.
+class AgentResponse(ResourceResponse):
+    """Response from an agent operation."""
     
-    This class can handle converting from various data structures into a standardized
-    agent response format.
-    """
-    success: bool
-    content: Optional[Dict[str, Any]] = None
-    error: Optional[str] = None
-
     @classmethod
     def new_instance(cls, response: Union[ResourceResponse, Dict[str, Any], Any]) -> 'AgentResponse':
         """Create a new AgentResponse instance from a ResourceResponse or similar structure.
@@ -62,7 +57,7 @@ class AgentResponse:
         Returns:
             AgentResponse instance
         """
-        if isinstance(response, ResourceResponse):
+        if isinstance(response, ResourceResponse) or isinstance(response, QueryResponse):
             return AgentResponse(
                 success=response.success,
                 content=response.content,
@@ -92,14 +87,15 @@ class Agent(Configurable, Loggable, Capable):
         self._workflow_llm = None  # Specialized LLMs
         self._planning_llm = None
         self._reasoning_llm = None
-        # self._planner = None
-        # self._reasoner = None
         self._capabilities = None
         self._available_resources = None
         self._io = None
         self._runtime: Optional[AgentRuntime] = None
         self._planning_strategy = PlanStrategy.DEFAULT
         self._reasoning_strategy = ReasoningStrategy.DEFAULT
+
+        # Initialize configuration
+        self._config = AgentConfig()
 
         Loggable.__init__(self)
         Capable.__init__(self, self._capabilities)
@@ -137,9 +133,7 @@ class Agent(Configurable, Loggable, Capable):
         """Get default LLM resource."""
         return LLMResource(
             name=f"{self.name}_llm",
-            config=(
-                {"model": self.config["model"]} if "model" in self.config else {}
-            )
+            config={"model": self._config.get("model")}
         )
 
     @property
@@ -180,7 +174,7 @@ class Agent(Configurable, Loggable, Capable):
     
     def with_model(self, model: str) -> "Agent":
         """Configure agent model string name"""
-        self.config["model"] = model
+        self._config.update({"model": model})
         return self
 
     def with_llm(self, llm: Union[Dict, str, LLMResource]) -> "Agent":
@@ -188,13 +182,15 @@ class Agent(Configurable, Loggable, Capable):
         if isinstance(llm, LLMResource):
             self._agent_llm = llm
         elif isinstance(llm, str):
-            config = load_agent_config("llm")
-            config["model"] = llm
-            self._agent_llm = LLMResource(name=f"{self.name}_llm", config=config)
+            self._agent_llm = LLMResource(
+                name=f"{self.name}_llm",
+                config={"model": llm}
+            )
         elif isinstance(llm, Dict):
-            config = load_agent_config("llm")
-            config.update(llm)
-            self._agent_llm = LLMResource(name=f"{self.name}_llm", config=config)
+            self._agent_llm = LLMResource(
+                name=f"{self.name}_llm",
+                config=llm
+            )
         return self
 
     def with_resources(self, resources: Dict[str, BaseResource]) -> "Agent":
@@ -236,38 +232,20 @@ class Agent(Configurable, Loggable, Capable):
         self._reasoning_llm = self._create_llm(llm, "reasoning_llm")
         return self
 
-    # def with_mcp(self, config: Dict[str, Any]) -> 'Agent':
-    #     """Add MCP resource to agent."""
-    #     return self.with_resources({
-    #         "mcp": MCPResource(
-    #             name="mcp_gateway",
-    #             endpoint=config["endpoint"],
-    #             context_config=config.get("context")
-    #         )
-    #     })
-
-    # def with_wot(self, config: Dict[str, Any]) -> 'Agent':
-    #     """Add WoT resource to agent."""
-    #     return self.with_resources({
-    #         "wot": WoTResource(
-    #             name="wot_gateway",
-    #             directory_endpoint=config["directory"],
-    #             thing_description=config.get("thing_description")
-    #         )
-    #     })
-
     def _create_llm(self, llm: Union[Dict, str, LLMResource], name: str) -> LLMResource:
         """Create LLM from various input types."""
         if isinstance(llm, LLMResource):
             return llm
         if isinstance(llm, str):
-            config = load_agent_config("llm")
-            config["model"] = llm
-            return LLMResource(name=f"{self.name}_{name}", config=config)
+            return LLMResource(
+                name=f"{self.name}_{name}",
+                config={"model": llm}
+            )
         if isinstance(llm, Dict):
-            config = load_agent_config("llm")
-            config.update(llm)
-            return LLMResource(name=f"{self.name}_{name}", config=config)
+            return LLMResource(
+                name=f"{self.name}_{name}",
+                config=llm
+            )
         raise ValueError(f"Invalid LLM configuration: {llm}")
 
     def _initialize(self) -> 'Agent':

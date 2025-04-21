@@ -58,7 +58,6 @@ from opendxa.common.io import (
 )
 from opendxa.common.utils import (
     load_yaml_config,
-    load_agent_config,
     safe_asyncio_run,
     LLMInteractionAnalyzer,
     LLMInteractionVisualizer,
@@ -106,7 +105,6 @@ __all__ = [
 
     # Utils
     'safe_asyncio_run',
-    'load_agent_config',
     'load_yaml_config',
     'LLMInteractionAnalyzer',
     'LLMInteractionVisualizer',

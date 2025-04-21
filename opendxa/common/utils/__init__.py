@@ -6,7 +6,6 @@ from opendxa.common.utils.misc import (
     get_base_path,
     get_config_path,
     safe_asyncio_run,
-    load_agent_config,
     load_yaml_config
 )
 from opendxa.common.utils.logging.log_analysis import LLMInteractionAnalyzer
@@ -22,6 +21,5 @@ __all__ = [
     'get_base_path',
     'get_config_path',
     'safe_asyncio_run',
-    'load_agent_config',
     'load_yaml_config'
 ]

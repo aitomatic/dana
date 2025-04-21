@@ -52,7 +52,6 @@ from opendxa.common import (
     get_base_path,
     get_class_by_name,
     get_config_path,
-    load_agent_config,
     load_yaml_config,
 )
 
@@ -139,7 +138,6 @@ __all__ = [
     'get_base_path',
     'get_class_by_name',
     'get_config_path',
-    'load_agent_config',
     'load_yaml_config',
 
     # Base
