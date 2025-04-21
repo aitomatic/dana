@@ -10,34 +10,8 @@ import json
 class AgentConfig:
     """Agent configuration with defaults and loading logic."""
     
-    # Default configuration
-    DEFAULT_CONFIG: ClassVar[Dict[str, Any]] = {
-        "preferred_models": [
-            {
-                "name": "openai:gpt-4o-mini",
-                "required_api_keys": ["OPENAI_API_KEY"]
-            },
-            {
-                "name": "anthropic:claude-3-opus-20240229",
-                "required_api_keys": ["ANTHROPIC_API_KEY"]
-            },
-            {
-                "name": "anthropic:claude-3-sonnet-20240229",
-                "required_api_keys": ["ANTHROPIC_API_KEY"]
-            },
-            {
-                "name": "openai:gpt-3.5-turbo",
-                "required_api_keys": ["OPENAI_API_KEY"]
-            },
-            {
-                "name": "azure:gpt-4",
-                "required_api_keys": ["AZURE_OPENAI_API_KEY", "AZURE_OPENAI_ENDPOINT"]
-            }
-        ],
-        "model": None,  # Will be set to first available model
-        "temperature": 0.7,
-        "max_tokens": 2000
-    }
+    # Default configuration will be loaded from file
+    DEFAULT_CONFIG: ClassVar[Dict[str, Any]] = None
     
     def __init__(self, config_path: Optional[str] = None, **overrides):
         """Initialize agent configuration.
@@ -46,6 +20,10 @@ class AgentConfig:
             config_path: Optional path to JSON config file
             **overrides: Configuration overrides
         """
+        # Load default config if not already loaded
+        if self.__class__.DEFAULT_CONFIG is None:
+            self.__class__.DEFAULT_CONFIG = self._load_default_config()
+        
         # Start with default config
         self.config = self.__class__.DEFAULT_CONFIG.copy()
         
@@ -61,6 +39,30 @@ class AgentConfig:
         
         # Update logging config from environment
         self._update_logging_from_env()
+    
+    def _load_default_config(self) -> Dict[str, Any]:
+        """Load default configuration from JSON file.
+        
+        Returns:
+            Dictionary containing the default configuration
+            
+        Raises:
+            FileNotFoundError: If default config file cannot be found
+            ValueError: If file is not JSON or JSON is invalid
+        """
+        config_dir = Path(__file__).parent
+        default_config_path = config_dir / "default_config.json"
+        
+        if not default_config_path.exists():
+            raise FileNotFoundError(f"Default config file not found: {default_config_path}")
+            
+        try:
+            with open(default_config_path, encoding="utf-8") as f:
+                return json.load(f)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON in default config file: {default_config_path}") from e
+        except Exception as e:
+            raise ValueError(f"Failed to load default config from {default_config_path}") from e
     
     def _find_first_available_model(self) -> Optional[str]:
         """Find the first available model based on API keys.

@@ -348,7 +348,7 @@ See [Agent Documentation](../../agent/README.md) for integration details.
 ---
 
 <p align="center">
-Copyright © 2024 Aitomatic, Inc. All rights reserved.
+Copyright © 2025 Aitomatic, Inc. Licensed under the MIT License.
 </p>
 
 <p align="center">

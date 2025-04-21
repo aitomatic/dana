@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from opendxa.common.mixins.tool_callable import ToolCallable
 from opendxa.common.types import BaseResponse
+
 class QueryStrategy(Enum):
     """Resource querying strategies."""
     ONCE = auto()       # Single query without iteration, default for most resources
@@ -44,4 +45,4 @@ class Queryable(ToolCallable):
 
     def get_query_max_iterations(self) -> int:
         """Get the maximum number of iterations for the resource. Default is 3."""
-        return self._query_max_iterations
+        return self._query_max_iterations 

@@ -210,11 +210,11 @@ The agent capability system extends the base capability framework (`opendxa.base
 
 For more information on the foundational interfaces, see the [Base Capability Documentation](../base/capability/README.md).
 
----
+## License
 
-<p align="center">
-Copyright © 2024 Aitomatic, Inc. All rights reserved.
-</p>
+This project is licensed under the MIT License - see the [LICENSE](../../LICENSE) file for details.
+
+---
 
 <p align="center">
 <a href="https://aitomatic.com">https://aitomatic.com</a>

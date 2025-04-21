@@ -64,8 +64,15 @@ from opendxa.base.resource import (
     LLMResource,
     ResourceResponse,
     QueryResponse,
-    StorageBackedResource,
-    StorageEntry,
+)
+
+from opendxa.base.db import (
+    BaseDBModel,
+    KnowledgeDBModel,
+    MemoryDBModel,
+    BaseDBStorage,
+    SqlDBStorage,
+    VectorDBStorage
 )
 
 __all__ = [
@@ -88,6 +95,11 @@ __all__ = [
     "LLMResource",
     "ResourceResponse",
     "QueryResponse",
-    "StorageBackedResource",
-    "StorageEntry",
+    # Database
+    'BaseDBModel',
+    'KnowledgeDBModel',
+    'MemoryDBModel',
+    'BaseDBStorage',
+    'SqlDBStorage',
+    'VectorDBStorage',
 ]

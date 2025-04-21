@@ -13,6 +13,14 @@
             "required_api_keys": ["ANTHROPIC_API_KEY"]
         },
         {
+            "name": "deepseek:deepseek-chat",
+            "required_api_keys": ["DEEPSEEK_API_KEY"]
+        },
+        {
+            "name": "deepseek:deepseek-coder",
+            "required_api_keys": ["DEEPSEEK_API_KEY"]
+        },
+        {
             "name": "openai:gpt-3.5-turbo",
             "required_api_keys": ["OPENAI_API_KEY"]
         },
@@ -20,5 +28,8 @@
             "name": "azure:gpt-4",
             "required_api_keys": ["AZURE_OPENAI_API_KEY", "AZURE_OPENAI_ENDPOINT"]
         }
-    ]
+    ],
+    "model": null,
+    "temperature": 0.7,
+    "max_tokens": 2000
 } 

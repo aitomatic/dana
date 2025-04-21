@@ -358,3 +358,13 @@ def process_execution_results(signals: list[ExecutionSignal]):
             results[signal.content.get('node')] = signal.content['result']
     return results
 ```
+
+---
+
+<p align="center">
+Copyright © 2025 Aitomatic, Inc. Licensed under the MIT License.
+</p>
+
+<p align="center">
+<a href="https://aitomatic.com">https://aitomatic.com</a>
+</p>

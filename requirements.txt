@@ -12,5 +12,6 @@ python-dotenv
 pyyaml
 seaborn
 structlog
+sqlalchemy
 websockets
 nest_asyncio

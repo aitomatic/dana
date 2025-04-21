@@ -25,7 +25,7 @@ from dataclasses import dataclass
 from typing import Dict, Any, Optional, ClassVar, TypeVar
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.mixins.configurable import Configurable
-from opendxa.base.resource.queryable import Queryable, QueryStrategy, QueryResponse
+from opendxa.common.mixins.queryable import Queryable, QueryStrategy, QueryResponse
 T = TypeVar('T', bound='BaseResource')
 
 class ResourceError(Exception):

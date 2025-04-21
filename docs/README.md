@@ -83,7 +83,7 @@ We welcome contributions to the documentation! Please follow these guidelines:
 
 ## License
 
-Copyright © 2024 Aitomatic, Inc. All rights reserved.
+Copyright © 2025 Aitomatic, Inc. Licensed under the MIT License.
 
 ---
 
