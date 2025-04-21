@@ -2,7 +2,6 @@
 
 import json
 from typing import Any, Dict, Optional, Union, Callable, List
-import os
 
 import aisuite as ai
 from openai.types.chat import ChatCompletion
