@@ -40,7 +40,7 @@ from opendxa.common.mixins.configurable import Configurable
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.utils.misc import safe_asyncio_run
 from opendxa.base.capability.capable import Capable
-from opendxa.base.resource.queryable import QueryResponse
+from opendxa.common.mixins.queryable import QueryResponse
 from opendxa.config.agent_config import AgentConfig
 
 @dataclass

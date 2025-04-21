@@ -13,8 +13,14 @@ from opendxa.base.resource.mcp import (
     BaseMcpService, McpEchoService
 )
 from opendxa.base.resource.wot_resource import WoTResource
-from opendxa.base.resource.queryable import QueryResponse
-from opendxa.base.resource.storage_backed_resource import StorageBackedResource, StorageEntry
+from opendxa.base.resource.kb_resource import KBResource
+from opendxa.base.resource.memory_resource import (
+    MemoryResource,
+    LTMemoryResource,
+    STMemoryResource,
+    PermMemoryResource
+)
+from opendxa.common.mixins.queryable import QueryResponse
 
 __all__ = [
     "BaseResource",
@@ -29,7 +35,10 @@ __all__ = [
     "BaseMcpService",
     "McpEchoService",
     "WoTResource",
+    "KBResource",
+    "MemoryResource",
+    "LTMemoryResource",
+    "STMemoryResource",
+    "PermMemoryResource",
     "QueryResponse",
-    "StorageBackedResource",
-    "StorageEntry",
 ]

@@ -77,6 +77,22 @@ from opendxa.base import (
     WorldState,
 )
 
+from opendxa.base.resource import (
+    KBResource,
+    MemoryResource,
+    LTMemoryResource,
+    STMemoryResource,
+    PermMemoryResource,
+)
+
+from opendxa.base.db import (
+    BaseDBModel,
+    KnowledgeDBModel,
+    MemoryDBModel,
+    BaseDBStorage,
+    SqlDBStorage,
+    VectorDBStorage,
+)
 
 from opendxa.execution import (
     AgentRuntime,
@@ -104,9 +120,6 @@ from opendxa.agent import (
     AgentResponse,
     ExpertResource,
     ResourceFactory,
-    KnowledgeBaseResource,
-    LongTermMemoryResource,
-    ShortTermMemoryResource
 )
 
 __all__ = [
@@ -164,6 +177,21 @@ __all__ = [
     'QueryResponse',
     'WorldState',
 
+    # Base Resource
+    'KBResource',
+    'MemoryResource',
+    'LTMemoryResource',
+    'STMemoryResource',
+    'PermMemoryResource',
+
+    # Base DB
+    'BaseDBModel',
+    'KnowledgeDBModel',
+    'MemoryDBModel',
+    'BaseDBStorage',
+    'SqlDBStorage',
+    'VectorDBStorage',
+
     # Execution
     'AgentRuntime',
     'AgentState',
@@ -189,7 +217,4 @@ __all__ = [
     'AgentResponse',
     'ExpertResource',
     'ResourceFactory',
-    'KnowledgeBaseResource',
-    'LongTermMemoryResource',
-    'ShortTermMemoryResource'
 ]

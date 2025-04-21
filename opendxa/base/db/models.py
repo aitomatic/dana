@@ -1,41 +1,64 @@
-from datetime import datetime
-from sqlalchemy import Column, Integer, String, JSON, DateTime, Index, Float
-from sqlalchemy.sql import func
-from sqlalchemy.orm import declarative_base
+"""Database models for the OpenDXA system.
 
-Base = declarative_base()
+This module contains SQLAlchemy models that define the specific database schema
+for memory and knowledge storage.
 
-class BaseEntry(Base):
-    """Base class for all storage entries."""
-    __abstract__ = True
-    
-    id = Column(Integer, primary_key=True)
-    created_at = Column(DateTime, server_default=func.now())
-    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+It includes models for knowledge and short-term, long-term, and permanent memory models along
+with their respective table names.
+"""
 
-class KnowledgeEntry(BaseEntry):
-    """Model for knowledge entries."""
-    __tablename__ = "knowledge"
+from datetime import datetime, UTC
+from sqlalchemy import Column, String, Float, DateTime, JSON, Index
+from opendxa.common.db.models import BaseDBModel
+
+class KnowledgeDBModel(BaseDBModel):
+    """Model for structured knowledge storage."""
+    __tablename__ = 'knowledge_base'
     
     key = Column(String, nullable=False, unique=True)
     value = Column(JSON, nullable=False)
-    metadata = Column(JSON)
+    knowledge_metadata = Column(JSON, nullable=True)
     
     __table_args__ = (
         Index('idx_knowledge_key', 'key'),
     )
 
-class MemoryEntry(BaseEntry):
-    """Model for memory entries."""
-    __tablename__ = "memories"
+class MemoryDBModel(BaseDBModel):
+    """Base model for memory storage."""
+    __abstract__ = True
     
-    content = Column(JSON, nullable=False)
-    context = Column(JSON)
+    content = Column(String, nullable=False)
+    context = Column(JSON, nullable=True)
     importance = Column(Float, default=1.0)
     decay_rate = Column(Float, default=0.1)
-    last_accessed = Column(DateTime, server_default=func.now())
+    last_accessed = Column(DateTime, default=datetime.now(UTC))
+
+class STMemoryDBModel(MemoryDBModel):
+    """Model for short-term memory storage."""
+    __tablename__ = 'st_memory'
+    
+    decay_rate = Column(Float, default=0.2)
     
     __table_args__ = (
-        Index('idx_memory_importance', 'importance'),
-        Index('idx_memory_last_accessed', 'last_accessed'),
-    ) 
+        Index('idx_st_memory_importance', 'importance'),
+    )
+    
+class LTMemoryDBModel(MemoryDBModel):
+    """Model for long-term memory storage."""
+    __tablename__ = 'lt_memory'
+    
+    decay_rate = Column(Float, default=0.01)
+    
+    __table_args__ = (
+        Index('idx_lt_memory_importance', 'importance'),
+    )
+    
+class PermanentMemoryDBModel(MemoryDBModel):
+    """Model for permanent memory storage."""
+    __tablename__ = 'perm_memory'
+    
+    decay_rate = Column(Float, default=0.0)
+    
+    __table_args__ = (
+        Index('idx_perm_memory_importance', 'importance'),
+    )

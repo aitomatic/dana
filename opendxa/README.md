@@ -456,15 +456,9 @@ For external users or organizations interested in collaborating with Aitomatic o
 
 ## License
 
-This software is proprietary and confidential. Copyright © 2024 Aitomatic, Inc. All rights reserved.
-
-Unauthorized copying, transfer, or reproduction of this software, via any medium, is strictly prohibited. This software is protected by copyright law and international treaties.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
-
-<p align="center">
-Copyright © 2024 Aitomatic, Inc. All rights reserved.
-</p>
 
 <p align="center">
 <a href="https://aitomatic.com">https://aitomatic.com</a>

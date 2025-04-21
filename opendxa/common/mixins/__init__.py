@@ -7,10 +7,12 @@ from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.mixins.tool_callable import ToolCallable
 from opendxa.common.mixins.configurable import Configurable
 from opendxa.common.mixins.registerable import Registerable
+from opendxa.common.mixins.queryable import Queryable
 
 __all__ = [
     'Loggable',
     'ToolCallable',
     'Configurable',
-    'Registerable'
+    'Registerable',
+    'Queryable'
 ] 
