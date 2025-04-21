@@ -10,7 +10,7 @@ OpenDXA is a Python framework that enables building intelligent multi-agent syst
 
 ## License
 
-OpenDXA is released under the [MIT License](LICENSE).
+OpenDXA is released under the [MIT License](LICENSE.md).
 
 ## Related Concepts
 
@@ -306,7 +306,7 @@ For external users or organizations interested in collaborating with Aitomatic o
 
 ## License
 
-This software is proprietary and confidential. Copyright © 2024 Aitomatic, Inc. All rights reserved.
+This software is proprietary and confidential. Copyright © 2025 Aitomatic, Inc. All rights reserved.
 
 Unauthorized copying, transfer, or reproduction of this software, via any medium, is strictly prohibited. This software is protected by copyright law and international treaties.
 
