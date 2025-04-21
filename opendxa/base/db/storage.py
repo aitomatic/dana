@@ -23,5 +23,6 @@ class KnowledgeDBStorage(SqlDBStorage[KnowledgeDBModel]):
         # which are stored in SQL databases. This ensures that the storage
         # mechanism is correctly configured for handling knowledge data.
         super().__init__(KnowledgeDBModel, connection_string)
+
 class MemoryDBStorage(VectorDBStorage[M]):
     """Storage for memory entries."""

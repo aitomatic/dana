@@ -72,7 +72,7 @@ Memory Decay Mechanism:
         - A memory with importance 1.0 would decay to 0.81
 """
 
-from typing import Dict, Any, Optional, TypeVar, Generic
+from typing import Dict, Any, Optional, TypeVar, Generic, Type
 import asyncio
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
@@ -95,6 +95,8 @@ class MemoryResource(BaseResource, Generic[ModelType, StorageType]):
         name: str,
         description: Optional[str] = None,
         config: Optional[Dict[str, Any]] = None,
+        storage: Optional[StorageType] = None,
+        model_class: Optional[Type[ModelType]] = None,
         default_importance: float = 1.0,
         default_decay_rate: float = 0.1,
         default_retrieve_limit: int = 10,
@@ -113,13 +115,15 @@ class MemoryResource(BaseResource, Generic[ModelType, StorageType]):
             decay_interval: Interval in seconds between decay operations
         """
         super().__init__(name, description, config)
-        self._storage = StorageType
+        self._storage = storage
+        self._model_class = model_class
         self._default_importance = default_importance
         self._default_decay_rate = default_decay_rate
         self._default_retrieve_limit = default_retrieve_limit
         self._decay_interval = decay_interval
         self._last_decay_time: Optional[datetime] = None
         self._decay_lock = asyncio.Lock()
+        self._half_life: Optional[float] = None
         self._executor = ThreadPoolExecutor(max_workers=1)
         
         # Validate decay parameters
@@ -131,6 +135,10 @@ class MemoryResource(BaseResource, Generic[ModelType, StorageType]):
         Raises:
             ValueError: If decay parameters are invalid
         """
+        if self._default_decay_rate == 0:
+            # Permanent memory
+            return
+
         if not 0 < self._default_decay_rate < 1:
             raise ValueError("Decay rate must be between 0 and 1")
         
@@ -139,9 +147,10 @@ class MemoryResource(BaseResource, Generic[ModelType, StorageType]):
         
         # Calculate expected half-life based on decay rate
         # Using the formula: t_1/2 = -ln(2) / ln(1 - decay_rate)
-        import math
-        half_life = -math.log(2) / math.log(1 - self._default_decay_rate)
-        expected_interval = self._decay_interval / half_life
+        if self.half_life < float('inf'):
+            expected_interval = self._decay_interval / self.half_life
+        else:
+            expected_interval = 0
         
         # Warn if the interval seems too long or too short
         if expected_interval > 10:  # More than 10 intervals to reach half-life
@@ -178,6 +187,17 @@ class MemoryResource(BaseResource, Generic[ModelType, StorageType]):
         self._validate_decay_parameters()
         self.info(f"Decay rate updated to {value} for resource [{self.name}]")
     
+    @property
+    def half_life(self) -> float:
+        """Get the current half-life in seconds."""
+        if self._half_life is None:
+            import math
+            if self._default_decay_rate > 0 and self._default_decay_rate < 1:
+                self._half_life = -math.log(2) / math.log(1 - self._default_decay_rate)
+            else:
+                self._half_life = float('inf')
+        return self._half_life
+
     @property
     def decay_interval(self) -> int:
         """Get the current decay interval in seconds."""
@@ -311,15 +331,22 @@ class MemoryResource(BaseResource, Generic[ModelType, StorageType]):
         """
         try:
             await self._maybe_decay()  # Check for decay before storing
-            memory = ModelType(
+            self.warning(f"self._model_class: {self._model_class}")
+            # Create a new instance of the model class
+            memory = self._model_class(
                 content=content,
                 context=context,
                 importance=importance or self._default_importance,
                 decay_rate=decay_rate or self._default_decay_rate
             )
+            self.warning(f"Storing memory: {memory}")
+            print(f"self._storage: {self._storage}")
+            die
+            return ResourceResponse(success=True, content={"content": content})
             self._storage.store(memory)
             return ResourceResponse(success=True, content={"content": content})
         except Exception as e:
+            die
             return ResourceResponse.error_response(f"Failed to store memory: {str(e)}")
     
     async def retrieve(
@@ -418,8 +445,14 @@ class LTMemoryResource(MemoryResource[LTMemoryDBModel, MemoryDBStorage[LTMemoryD
             name=name,
             description=description,
             config=config,
+            storage=MemoryDBStorage[LTMemoryDBModel](
+                vector_db_url=config.get("vector_db_url"),
+                embedding_model=config.get("embedding_model"),
+                db_model_class=LTMemoryDBModel,
+            ),
+            model_class=LTMemoryDBModel,
             default_importance=2.0,
-            default_decay_rate=0.01,  # 1% decay per day
+            default_decay_rate=0.001,  # 0.1% decay per second
             default_retrieve_limit=10,
             decay_interval=86400  # 24 hours
         )
@@ -461,10 +494,16 @@ class STMemoryResource(MemoryResource[STMemoryDBModel, MemoryDBStorage[STMemoryD
             name=name,
             description=description,
             config=config,
+            storage=MemoryDBStorage[STMemoryDBModel](
+                vector_db_url=config.get("vector_db_url"),
+                embedding_model=config.get("embedding_model"),
+                db_model_class=STMemoryDBModel,
+            ),
+            model_class=STMemoryDBModel,
             default_importance=0.5,
-            default_decay_rate=0.1,  # 10% decay per 6 hours
+            default_decay_rate=0.01,  # % per second
             default_retrieve_limit=5,
-            decay_interval=21600  # 6 hours
+            decay_interval=3600  # 1 hour
         )
     
     def can_handle(self, request: Dict[str, Any]) -> bool:
@@ -504,6 +543,12 @@ class PermMemoryResource(MemoryResource[PermanentMemoryDBModel, MemoryDBStorage[
             name=name,
             description=description,
             config=config,
+            storage=MemoryDBStorage[PermanentMemoryDBModel](
+                vector_db_url=config.get("vector_db_url"),
+                embedding_model=config.get("embedding_model"),
+                db_model_class=PermanentMemoryDBModel,
+            ),
+            model_class=PermanentMemoryDBModel,
             default_importance=3.0,
             default_decay_rate=0.0,  # No decay
             default_retrieve_limit=20,
