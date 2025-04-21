@@ -4,7 +4,7 @@
 
 # OpenDXA - Domain-Expert Agent
 
-The Domain-Expert Agent (OpenDXA) is an intelligent agent architecture designed to tackle complex domain-specific tasks with human-like expertise. At its heart is a unique architecture that combines declarative capabilities with imperative execution through a clear separation of concerns.
+The Domain-Expert Agent (OpenDXA) is an intelligent agent architecture designed to tackle complex domain-specific tasks with human-like expertise. At its heart is a unique architecture that combines declarative capabilities with imperative execution through a clear separation of concerns. The framework features advanced memory management with both short-term and long-term memory capabilities, enabling agents to learn from interactions and maintain context over extended periods. It includes robust knowledge-base management for structured storage and retrieval of domain knowledge, with support for versioning, evolution, and integration with external knowledge sources.
 
 ## Core Concepts
 

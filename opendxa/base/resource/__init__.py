@@ -14,6 +14,7 @@ from opendxa.base.resource.mcp import (
 )
 from opendxa.base.resource.wot_resource import WoTResource
 from opendxa.base.resource.queryable import QueryResponse
+from opendxa.base.resource.storage_backed_resource import StorageBackedResource, StorageEntry
 
 __all__ = [
     "BaseResource",
@@ -29,4 +30,6 @@ __all__ = [
     "McpEchoService",
     "WoTResource",
     "QueryResponse",
+    "StorageBackedResource",
+    "StorageEntry",
 ]

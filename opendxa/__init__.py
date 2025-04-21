@@ -104,6 +104,9 @@ from opendxa.agent import (
     AgentResponse,
     ExpertResource,
     ResourceFactory,
+    KnowledgeBaseResource,
+    LongTermMemoryResource,
+    ShortTermMemoryResource
 )
 
 __all__ = [
@@ -158,6 +161,7 @@ __all__ = [
     'ObjectiveStatus',
     'LLMResource',
     'ResourceResponse',
+    'QueryResponse',
     'WorldState',
 
     # Execution
@@ -185,4 +189,7 @@ __all__ = [
     'AgentResponse',
     'ExpertResource',
     'ResourceFactory',
+    'KnowledgeBaseResource',
+    'LongTermMemoryResource',
+    'ShortTermMemoryResource'
 ]

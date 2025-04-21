@@ -25,6 +25,9 @@ from opendxa.agent.resource import (
     AgentResource,
     ExpertResource,
     ResourceFactory,
+    KnowledgeBaseResource,
+    LongTermMemoryResource,
+    ShortTermMemoryResource
 )
 
 __all__ = [
@@ -34,4 +37,7 @@ __all__ = [
     "AgentFactory",
     "ExpertResource",
     "ResourceFactory",
+    "KnowledgeBaseResource",
+    "LongTermMemoryResource",
+    "ShortTermMemoryResource"
 ]

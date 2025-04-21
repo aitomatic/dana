@@ -6,7 +6,11 @@
 
 # OpenDXA - Domain-Expert Agent Framework
 
-OpenDXA is a Python framework that enables building intelligent multi-agent systems with domain expertise, powered by Large Language Models (LLMs). For detailed documentation, see the [main documentation](opendxa/README.md).
+OpenDXA is a Python framework that enables building intelligent multi-agent systems with domain expertise, powered by Large Language Models (LLMs). The framework features advanced memory management with both short-term and long-term memory capabilities, enabling agents to learn from interactions and maintain context over extended periods. It includes robust knowledge-base management for structured storage and retrieval of domain knowledge, with support for versioning, evolution, and integration with external knowledge sources. For detailed documentation, see the [main documentation](opendxa/README.md).
+
+## License
+
+OpenDXA is released under the [MIT License](LICENSE).
 
 ## Related Concepts
 
