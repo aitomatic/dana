@@ -64,6 +64,8 @@ from opendxa.base.resource import (
     LLMResource,
     ResourceResponse,
     QueryResponse,
+    StorageBackedResource,
+    StorageEntry,
 )
 
 __all__ = [
@@ -86,4 +88,6 @@ __all__ = [
     "LLMResource",
     "ResourceResponse",
     "QueryResponse",
+    "StorageBackedResource",
+    "StorageEntry",
 ]
