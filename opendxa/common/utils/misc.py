@@ -1,11 +1,51 @@
 """Miscellaneous utilities."""
 
 from importlib import import_module
-from typing import Type, Any, Optional, Callable, Union
+from typing import Type, Any, Optional, Callable, Union, Dict
 from pathlib import Path
+from functools import lru_cache
 import inspect
 import asyncio
 import nest_asyncio
+import yaml
+
+@lru_cache(maxsize=128)
+def load_yaml_config(path: Union[str, Path]) -> Dict[str, Any]:
+    """Load YAML file with caching.
+    
+    Args:
+        path: Path to YAML file
+        
+    Returns:
+        Loaded configuration dictionary
+        
+    Raises:
+        FileNotFoundError: If config file does not exist
+        yaml.YAMLError: If YAML parsing fails
+    """
+    if not isinstance(path, Path):
+        path = Path(path)
+        
+    if not path.exists():
+        # Try different extensions if needed
+        path = _resolve_yaml_path(path)
+        
+    with open(path, encoding="utf-8") as f:
+        return yaml.safe_load(f)
+
+def _resolve_yaml_path(path: Path) -> Path:
+    """Helper to resolve path with different YAML extensions."""
+    # Try .yaml extension
+    yaml_path = path.with_suffix('.yaml')
+    if yaml_path.exists():
+        return yaml_path
+        
+    # Try .yml extension
+    yml_path = path.with_suffix('.yml')
+    if yml_path.exists():
+        return yml_path
+        
+    raise FileNotFoundError(f"YAML file not found: {path}")
 
 def get_class_by_name(class_path: str) -> Type[Any]:
     """Get class by its fully qualified name.

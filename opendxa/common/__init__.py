@@ -40,11 +40,6 @@ Example:
     >>> config = ConfigManager().load_config("agent_config.yaml")
 """
 
-from opendxa.common.config_manager import (
-    ConfigManager,
-    load_agent_config,
-    load_yaml_config
-)
 from opendxa.common.exceptions import (
     OpenDXAError,
     ConfigurationError,
@@ -62,6 +57,8 @@ from opendxa.common.io import (
     IOFactory
 )
 from opendxa.common.utils import (
+    load_yaml_config,
+    safe_asyncio_run,
     LLMInteractionAnalyzer,
     LLMInteractionVisualizer,
     get_class_by_name,
@@ -90,11 +87,6 @@ from opendxa.common.graph import (
 )
 
 __all__ = [
-    # Config
-    'ConfigManager',
-    'load_agent_config',
-    'load_yaml_config',
-
     # Errors
     'OpenDXAError',
     'ConfigurationError',
@@ -112,6 +104,8 @@ __all__ = [
     'IOFactory',
 
     # Utils
+    'safe_asyncio_run',
+    'load_yaml_config',
     'LLMInteractionAnalyzer',
     'LLMInteractionVisualizer',
     'get_class_by_name',

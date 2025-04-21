@@ -61,7 +61,7 @@ class MemoryCapability(BaseCapability):
         self._memories: List[MemoryEntry] = []
         self._working_memory: Dict[str, Any] = {}
 
-    async def use(
+    async def apply(
         self,
         context: Dict[str, Any],
         **kwargs

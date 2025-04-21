@@ -6,24 +6,105 @@
 
 # OpenDXA - Domain-Expert Agent Framework
 
-OpenDXA is a Python framework that enables building intelligent agents with domain expertise, powered by Large Language Models (LLMs).
+OpenDXA is a Python framework that enables building intelligent multi-agent systems with domain expertise, powered by Large Language Models (LLMs). For detailed documentation, see the [main documentation](opendxa/README.md).
+
+## Related Concepts
+
+OpenDXA integrates with and supports several key protocols in the AI and agent development space:
+
+- **A2A (Agent-to-Agent)**: Google's framework for enabling direct communication and collaboration between AI agents, focusing on structured interactions and task delegation. OpenDXA supports A2A for agent communication and coordination.
+
+- **MCP (Model Context Protocol)**: Anthropic's protocol for managing context and state in AI systems, providing a standardized way to handle conversation history and system state. OpenDXA implements MCP for robust context management.
+
+- **NLIP (Natural Language Interface Protocol)**: ECMA's standard for natural language interfaces, defining how systems should interpret and respond to human language inputs. OpenDXA significantly leverages NLIP as a unified protocol to translate and federate between A2A, MCP, and other agentic communication protocols, enabling seamless interoperability between different agent frameworks.
+
+These protocols form the foundation of OpenDXA's communication and collaboration capabilities, with NLIP serving as the unifying layer that enables protocol translation and federation.
+
+## What is OpenDXA?
+
+OpenDXA is a framework for building intelligent agents powered by Large Language Models (LLMs). Its architecture is built around a clear distinction between description and execution:
+
+1. **Description Layer**
+   - Defines what the agent knows and can do
+   - Manages knowledge bases and capabilities
+   - Handles domain expertise and resources
+   - Provides structured access to agent capabilities
+
+2. **Execution Layer**
+   - Implements planning and reasoning
+   - Executes tasks using available capabilities
+   - Manages state and context
+   - Coordinates multi-agent interactions
+
+This architecture is complemented by built-in knowledge-base management, enabling:
+- Structured storage and retrieval of domain knowledge
+- Versioning and evolution of knowledge bases
+- Integration with external knowledge sources
+- Efficient querying and reasoning over knowledge
+
+```mermaid
+graph TB
+    subgraph "Description Layer"
+        KB[Knowledge Base]
+        C[Capabilities]
+        E[Expertise]
+        R[Resources]
+    end
+
+    subgraph "Execution Layer"
+        P[Planning]
+        RE[Reasoning]
+        S[State]
+    end
+
+    KB --> P
+    C --> P
+    E --> RE
+    R --> RE
+    P --> RE
+    RE --> S
+    S --> P
+```
+
+This architecture means you can:
+- Start with simple knowledge bases and capabilities
+- Gradually expand domain expertise
+- Scale to complex multi-agent systems
+- Maintain clear separation between what agents know and how they act
+
+## Key Differentiators
+
+### Business/Strategic Differentiators
+1. **Description-Execution Architecture**: Clear separation between what agents know and how they act, enabling better maintainability and scalability
+2. **Knowledge-Base Management**: Built-in support for structured knowledge management and evolution
+3. **Domain Expertise Integration**: Specifically designed to embed domain expertise into agents, making it particularly valuable for specialized fields
+
+### Engineering Approaches
+1. **Progressive Complexity**: Start with simple implementations and progressively add complexity
+2. **Composable Architecture**: Mix and match components as needed for highly customized agents
+3. **Clean Separation of Concerns**: Maintain clear boundaries between description and execution layers
+
+### User-Friendly Practices
+1. **Model Context Protocol (MCP)**: Standardized interface for all external resources
+2. **Built-in Best Practices**: Pre-configured templates and patterns for common behaviors
+3. **Resource Management**: Robust handling with support for different transport types
+4. **Comprehensive Testing Support**: Encourages thorough testing at each layer
+5. **Documentation-First Approach**: Extensive documentation structure for effective use
 
 ## Getting Started
 
 First things first, set up your development environment:
 
 ```bash
-# Set up development environment
-% ./setup_env.sh
+# Clone the repository
+git clone git@github.com:aitomatic/opendxa.git
+cd opendxa
 
-# Activate virtual environment
-% source .venv/bin/activate
+# Set up development environment (includes virtual environment, dependencies, and pre-commit hooks)
+source ./RUN_ME.sh
 
-# Include this package in your environment
-% pip install -e .
-
-# Then try running the tests
-% pytest tests
+# Or if you just need to activate the virtual environment and install the package
+source ./VENV.sh
 ```
 
 ## Contents
@@ -37,85 +118,6 @@ First things first, set up your development environment:
 - [Project Structure](#project-structure)
 - [Contributing](#contributing)
 - [Logging](#logging)
-
-## What is OpenDXA?
-
-OpenDXA is a framework for building intelligent agents powered by Large Language Models (LLMs). It specializes in embedding domain expertise into agents through a unique three-layer architecture that maps business workflows to concrete plans to reasoning patterns:
-
-1. **Workflows (WHY)** define what agents can do - from simple Q&A to complex research patterns
-2. **Plans (WHAT)** break down workflows into concrete, executable steps
-3. **Reasoning (HOW)** executes each step using appropriate thinking patterns
-
-```mermaid
-graph TB
-    subgraph "Layer Architecture"
-        direction LR
-        W[Workflow Layer<br>WHY] --> P[Planning Layer<br>WHAT]
-        P --> R[Reasoning Layer<br>HOW]
-    end
-```
-
-This architecture means you can:
-
-- Start simple (like basic Q&A)
-- Add capabilities progressively
-- Scale to complex domain-specific tasks
-- Maintain clean separation of concerns
-
-## Key Differentiators
-
-### Business/Strategic Differentiators
-1. **Three-Layer Architecture**: Maps business workflows to concrete plans to reasoning patterns, creating a natural progression from requirements to implementation
-2. **Domain Expertise Integration**: Specifically designed to embed domain expertise into agents, making it particularly valuable for specialized fields
-
-### Engineering Approaches
-1. **Progressive Complexity**: Start with simple implementations and progressively add complexity
-2. **Composable Architecture**: Mix and match components as needed for highly customized agents
-3. **Clean Separation of Concerns**: Maintain clear boundaries between different components
-
-### User-Friendly Practices
-1. **Model Context Protocol (MCP)**: Standardized interface for all external resources
-2. **Built-in Best Practices**: Pre-configured templates and patterns for common behaviors
-3. **Resource Management**: Robust handling with support for different transport types
-4. **Comprehensive Testing Support**: Encourages thorough testing at each layer
-5. **Documentation-First Approach**: Extensive documentation structure for effective use
-
-## Component Overview
-
-OpenDXA consists of several core components that work together:
-
-- **Agent System** - Executes workflows and manages resources ([documentation](opendxa/agent/README.md))
-- **Execution System** - Implements the 3-layer architecture ([documentation](opendxa/execution/README.md))
-
-The Execution system is organized in a 3-layer architecture:
-
-- **Workflow Layer** (`opendxa.execution.workflow`) - Defines what agents can do (WHY)
-  - `Workflow` - Main workflow container
-  - `ExecutionNode` - Individual workflow steps
-  - `NodeType` - Different types of nodes (START, TASK, END)
-  - `Objective` - Goal definition for workflows and nodes
-
-- **Planning Layer** (`opendxa.execution.planning`) - Converts workflows to executable plans (WHAT)
-  - Converts high-level workflows into concrete steps
-  - Manages dependencies between steps
-  - Handles data flow between nodes
-
-- **Reasoning Layer** (`opendxa.execution.reasoning`) - Executes plans with thinking patterns (HOW)
-  - Implements specific reasoning strategies
-  - Processes execution signals
-  - Manages state and context
-
-- **Pipeline Layer** (`opendxa.execution.pipeline`) - Orchestrates execution flow
-  - `WorkflowExecutor` - Main execution engine
-  - `ExecutionContext` - Manages execution state and resources
-  - `ExecutionSignal` - Communication between layers
-
-Agents have modular components for different functionalities:
-
-- **Capability System** (`opendxa.agent.capability`) - Defines agent abilities like memory, expertise
-- **Resource System** (`opendxa.agent.resource`) - Integrates external tools and services
-- **IO System** (`opendxa.agent.io`) - Handles input and output for the agent
-- **State System** (`opendxa.agent.state`) - Manages agent and execution state
 
 ## Key Features
 
@@ -256,6 +258,7 @@ opendxa/                # Project root
 │   │   ├── state/      # State management
 │   │   └── utils/      # Utility functions
 │   │       └── logging/  # Logging system
+│   │
 │   └── execution/      # Execution system
 │       ├── pipeline/   # Pipeline execution
 │       ├── planning/   # Strategic planning

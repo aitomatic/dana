@@ -84,7 +84,7 @@ class AgentResource(BaseResource):
         except AgentError as e:
             raise ResourceError("Agent execution failed") from e
         except (ValueError, KeyError) as e:
-            return ResourceResponse(success=False, error=f"Invalid query format: {e}")
+            return ResourceResponse.error_response(f"Invalid query format: {e}")
 
     async def initialize(self) -> None:
         """Initialize all agents in registry.

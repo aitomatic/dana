@@ -1,0 +1,24 @@
+{
+    "preferred_models": [
+        {
+            "name": "openai:gpt-4o-mini",
+            "required_api_keys": ["OPENAI_API_KEY"]
+        },
+        {
+            "name": "anthropic:claude-3-opus-20240229",
+            "required_api_keys": ["ANTHROPIC_API_KEY"]
+        },
+        {
+            "name": "anthropic:claude-3-sonnet-20240229",
+            "required_api_keys": ["ANTHROPIC_API_KEY"]
+        },
+        {
+            "name": "openai:gpt-3.5-turbo",
+            "required_api_keys": ["OPENAI_API_KEY"]
+        },
+        {
+            "name": "azure:gpt-4",
+            "required_api_keys": ["AZURE_OPENAI_API_KEY", "AZURE_OPENAI_ENDPOINT"]
+        }
+    ]
+} 

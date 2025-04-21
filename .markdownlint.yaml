@@ -1,3 +1,7 @@
+# Disable rule MD004 - Unordered list style
+MD004: false
+ul-style: false
+
 # Disable rule MD013 - Line length
 MD013: false
 line-length: false

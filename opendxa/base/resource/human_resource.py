@@ -105,13 +105,13 @@ class HumanResource(BaseResource):
             ResourceResponse: The response from the human resource.
         """
         if not self.can_handle(request):
-            return ResourceResponse(success=False, error="Resource unavailable or invalid request format")
+            return ResourceResponse.error_response("Resource unavailable or invalid request format")
 
         try:
             response = await self._get_human_input(request)
             return ResourceResponse(success=True, content={"response": response})
         except Exception as e:
-            return ResourceResponse(success=False, error=f"Failed to get human input: {e}")
+            return ResourceResponse.error_response(f"Failed to get human input: {e}")
 
     async def _get_human_input(self, request: Dict[str, Any]) -> str:
         """Get input from the human user.

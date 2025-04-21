@@ -21,20 +21,12 @@ Example:
             pass
 """
 
-import uuid
-from enum import Enum, auto
 from dataclasses import dataclass
 from typing import Dict, Any, Optional, ClassVar, TypeVar
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.mixins.configurable import Configurable
-from opendxa.common.mixins.tool_callable import ToolCallable
-
+from opendxa.base.resource.queryable import Queryable, QueryStrategy, QueryResponse
 T = TypeVar('T', bound='BaseResource')
-
-class QueryStrategy(Enum):
-    """Resource querying strategies."""
-    ONCE = auto()       # Single query without iteration, default for most resources
-    ITERATIVE = auto()  # Iterative querying - default, e.g., for LLMResource
 
 class ResourceError(Exception):
     """Base class for resource errors."""
@@ -58,13 +50,22 @@ class ResourceAccessError(ResourceError):
     pass
 
 @dataclass
-class ResourceResponse:
+class ResourceResponse(QueryResponse):
     """Resource response."""
-    success: bool
-    content: Optional[Dict[str, Any]] = None
-    error: Optional[str] = None
 
-class BaseResource(Configurable, Loggable, ToolCallable):
+    @classmethod
+    def error_response(cls, message: str) -> 'ResourceResponse':
+        """Create an error response with a ResourceError.
+        
+        Args:
+            message: Error message
+            
+        Returns:
+            ResourceResponse with error set to a ResourceError
+        """
+        return cls(success=False, error=ResourceError(message))
+
+class BaseResource(Configurable, Loggable, Queryable):
     """Abstract base resource."""
 
     # Class-level default configuration
@@ -90,7 +91,7 @@ class BaseResource(Configurable, Loggable, ToolCallable):
         """
         # Initialize Loggable first to ensure logger is available
         Loggable.__init__(self)
-        ToolCallable.__init__(self)
+
         # Initialize Configurable with the provided config
         config_dict = config or {}
         if name:
@@ -99,13 +100,14 @@ class BaseResource(Configurable, Loggable, ToolCallable):
             config_dict["description"] = description
         Configurable.__init__(self, **config_dict)
 
+        self._is_available = False  # will only be True after initialization
+
         self.name = self.config["name"]
         self.description = self.config["description"] or "No description provided"
-        self._is_available = False  # will only be True after initialization
-        self._resource_id = str(uuid.uuid4())[:8]
 
         self._query_strategy = self.config.get("query_strategy", QueryStrategy.ONCE)
         self._query_max_iterations = self.config.get("query_max_iterations", 3)
+        Queryable.__init__(self)
 
     def _validate_config(self) -> None:
         """Validate the configuration.
@@ -141,13 +143,6 @@ class BaseResource(Configurable, Loggable, ToolCallable):
         """Check if resource is currently available."""
         return self._is_available
 
-    @property
-    def resource_id(self) -> str:
-        """Get the resource ID."""
-        if self._resource_id is None:
-            self._resource_id = str(uuid.uuid4())[:8]
-        return self._resource_id
-
     async def initialize(self) -> None:
         """Initialize resource."""
         self._is_available = True
@@ -162,27 +157,21 @@ class BaseResource(Configurable, Loggable, ToolCallable):
         # Resource-specific cleanup logic
         self.debug(f"Resource [{self.name}] cleanup completed")
 
-    # pylint: disable=unused-argument
-    @ToolCallable.tool
-    async def query(self, request: Dict[str, Any]) -> ResourceResponse:
-        """Query resource."""
+    async def query(self, params: Optional[Dict[str, Any]] = None) -> ResourceResponse:
+        """Query resource.
+
+        Args:
+            params: The parameters to query the resource with.
+        """
         if not self._is_available:
-            return ResourceResponse(success=False, error=f"Resource {self.name} not initialized")
-        self.debug(f"Resource [{self.name}] received query: {self._sanitize_log_data(request)}")
-        return ResourceResponse(success=True)
+            return ResourceResponse(success=False, error=f"Resource {self.name} not available")
+        self.debug(f"Resource [{self.name}] received query: {self._sanitize_log_data(params)}")
+        return ResourceResponse(success=True, content=params, error=None)
 
     def can_handle(self, request: Dict[str, Any]) -> bool:
         """Check if resource can handle request."""
-        self.debug(f"Checking if [{self.name}] can handle request")
+        self.debug(f"Checking if [{self.name}] can handle {self._sanitize_log_data(request)}")
         return False
-
-    def get_query_strategy(self) -> QueryStrategy:
-        """Get the query strategy for the resource."""
-        return self._query_strategy
-
-    def get_query_max_iterations(self) -> int:
-        """Get the maximum number of iterations for the resource. Default is 3."""
-        return self._query_max_iterations
 
     def _sanitize_log_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Sanitize sensitive data before logging"""

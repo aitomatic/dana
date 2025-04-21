@@ -4,11 +4,12 @@ from typing import Dict, List, Optional, Iterator, Any, Union, TextIO, TYPE_CHEC
 from pathlib import Path
 from enum import Enum
 from dataclasses import dataclass, field
-from ..utils import get_class_by_name
+from opendxa.common.utils import get_class_by_name
+from opendxa.common.mixins.configurable import Configurable
 if TYPE_CHECKING:
-    from .visualizer import GraphVisualizer
-    from .serializer import GraphSerializer
-    from .traversal import (
+    from opendxa.common.graph.visualizer import GraphVisualizer
+    from opendxa.common.graph.serializer import GraphSerializer
+    from opendxa.common.graph.traversal import (
         Cursor,
         TraversalStrategy,
         TopologicalTraversal
@@ -76,7 +77,7 @@ class Edge:
         self.metadata = metadata or {}
 
 # pylint: disable=too-many-instance-attributes
-class DirectedGraph:
+class DirectedGraph(Configurable):
     """Pure directed graph implementation."""
     def __init__(self):
         self._nodes: Dict[str, Node] = {}

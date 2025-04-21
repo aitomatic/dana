@@ -2,8 +2,19 @@
 
 from abc import ABC
 from typing import Dict, Any, Optional
+from dataclasses import dataclass, field
+from opendxa.common.mixins.identifiable import Identifiable
 
-class BaseCapability(ABC):
+
+@dataclass
+class CapabilityApplicationResult:
+    """Result of applying a capability."""
+    success: bool
+    result: Dict[str, Any] = field(default_factory=dict)
+    error: Optional[Exception] = None
+
+
+class BaseCapability(ABC, Identifiable):
     """Base class for agent capabilities."""
 
     def __init__(self, name: str, description: Optional[str] = None):
@@ -30,9 +41,11 @@ class BaseCapability(ABC):
         """Disable this capability."""
         self._is_enabled = False
 
-    def use(self, context: Dict[str, Any], **kwargs) -> Dict[str, Any]:
-        """Use this capability."""
-        raise NotImplementedError
+    def apply(self, request: Dict[str, Any]) -> CapabilityApplicationResult:
+        """Apply this capability."""
+        if not self._is_enabled:
+            return CapabilityApplicationResult(success=False, result=request, error=f"Capability {self.name} is not enabled")
+        return CapabilityApplicationResult(success=True, result=request, error=None)
 
     def can_handle(self, request: Dict[str, Any]) -> bool:
         """Check if capability can handle request."""

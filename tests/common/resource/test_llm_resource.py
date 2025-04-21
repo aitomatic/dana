@@ -2,7 +2,7 @@
 
 import unittest
 import asyncio
-from opendxa import LLMResource, ResourceResponse
+from opendxa import LLMResource, QueryResponse
 
 class TestLLMResource(unittest.TestCase):
     """Test the LLMResource class."""
@@ -16,7 +16,7 @@ class TestLLMResource(unittest.TestCase):
             response = await llm_resource.query({"prompt": prompt})
             
             # Essential OpenAI API response structure
-            assert isinstance(response, ResourceResponse)
+            assert isinstance(response, QueryResponse)
             assert response.success
             assert response.content is not None
             assert response.error is None
