@@ -192,7 +192,7 @@ class LLMResource(BaseResource):
                     message_history.append({
                         "role": get_field(response_message, "role"),
                         "content": get_field(response_message, "content"),
-                        "tool_calls": tool_calls
+                        "tool_calls": [i.model_dump() if hasattr(i, "model_dump") else i for i in tool_calls]
                     })
                     
                     # Get responses for all tool calls at once
@@ -316,13 +316,16 @@ class LLMResource(BaseResource):
             "temperature": request.get("temperature", 0.7),
             "max_tokens": request.get("max_tokens"),
         }
+
+        if not available_resources:
+            available_resources = get_field(request, "available_resources", {})
         
         # Only add model if it's available
         if self.model:
             params["model"] = self.model
             
         if available_resources:
-            params["functions"] = self._get_openai_functions(available_resources)
+            params["tools"] = self._get_openai_functions(available_resources)
             
         return params
 
@@ -396,8 +399,8 @@ class LLMResource(BaseResource):
         for tool_call in tool_calls:
             try:
                 # Get the function name and arguments
-                function_name = tool_call["function"]["name"]
-                arguments = json.loads(tool_call["function"]["arguments"])
+                function_name = tool_call.function.name
+                arguments = json.loads(tool_call.function.arguments)
                 
                 # Parse the function name to get the resource name, id, and tool name
                 resource_name, resource_id, tool_name = ToolCallable.parse_name_id_function_string(
@@ -424,14 +427,18 @@ class LLMResource(BaseResource):
                 responses.append({
                     "role": "tool",
                     "name": function_name,
-                    "content": response
+                    "content": response,
+                    "tool_call_id" : tool_call.id 
+                    # NOTE : role=tool need to have tool_call_id and tool_call_id should appear in assistant message
                 })
             except Exception as e:
                 self.error("Tool call failed: %s", str(e))
                 responses.append({
                     "role": "tool",
                     "name": function_name,
-                    "content": f"Error: {str(e)}"
+                    "content": f"Error: {str(e)}",
+                    "tool_call_id" : tool_call.id 
+                    # NOTE : role=tool need to have tool_call_id and tool_call_id should appear in assistant message
                 })
                 
         return responses

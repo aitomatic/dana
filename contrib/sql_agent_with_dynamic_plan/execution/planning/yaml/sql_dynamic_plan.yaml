@@ -1,0 +1,76 @@
+# Default planning configuration
+name: SQL Planning
+description: "SQL Planner to construct a SQL query to answer the question"
+
+# Define nodes in the plan
+nodes:
+  - id: UNDERSTAND
+    description: "Understand the Requirements Clearly"
+
+  - id: ANALYZE
+    description: "Analyze the database schema"
+
+  - id: BREAKDOWN
+    description: "Break Down the Query Logically"
+
+  - id: WRITE_DYNAMIC
+    description: "Break Down the Query Logically"
+    
+  - id: OPTIMIZE
+    description: "Optimize for Performance"
+    
+# Define prompts used in nodes
+prompts:
+  UNDERSTAND: |
+    You are a SQL Expert. Your goal is to generate complex SQL queries to answer user's question.
+    Question : {{objective}}
+    
+    Make sure you understand the question clearly by :
+    - Clarify the question: Make sure you fully understand what data the user needs.
+    - Determine the output: What should the final result look like? What fields? What format?
+    - Identify the business logic: Know the rules behind filtering, aggregation, grouping, etc.
+
+  ANALYZE: |
+    You are a SQL Expert. Your goal is to generate complex SQL queries to answer user's question.
+    Question : {{objective}}
+    
+    Based on the question, analyze the database schema by using the tools provided:
+    - Identify involved tables: Which tables contain the necessary data?
+    - Understand relationships: Look at foreign keys, primary keys, and table joins.
+    - Review constraints and indexes: Helps in understanding how best to filter or join.
+
+  BREAKDOWN: |
+    You are a SQL Expert. Your goal is to generate complex SQL queries to answer user's question.
+    Question : {{objective}}
+    Analyze : {{ANALYZE}}
+    
+    Break down the query by following these steps:
+    1. Start with the base table: Choose the table with the core data.
+    2. Start with smallest valid subquery, verifying each step produces correct intermediate results.
+    3. Treat the query like a proof in logic: every clause should be justified.
+    4. Layer joins step-by-step: Add related tables one at a time.
+    5. Apply filters early: Helps reduce data volume and improves performance.
+
+    
+  WRITE_DYNAMIC: |
+    You are a SQL Expert. Your goal is to generate complex SQL queries to answer user's question.
+    Question : {{objective}}
+    Breakdown : {{BREAKDOWN}}
+    
+    Based on the breakdown, write the SQL query for the question following these rules:
+    - Use CTEs (Common Table Expressions) or subqueries to simplify.
+    - Start with smallest valid subquery, verifying each step produces correct intermediate results.
+    - Alias everything: Helps in readability and reduces errors.
+    - Use meaningful names for columns and derived fields.
+    - Treat the query like a proof in logic: every clause should be justified.
+    
+  OPTIMIZE: |
+    You are a SQL Expert. Your goal is to generate complex SQL queries to answer user's question.
+    Question : {{objective}}
+    SQL : {{WRITE_DYNAMIC}}
+    
+    Optimize the SQL query for performance by following these rules:
+    - Limit result set while testing (LIMIT clause).
+    - Check execution plan (e.g., EXPLAIN) to see if indexes are being used.
+    - Avoid SELECT * **— always specify columns.
+    

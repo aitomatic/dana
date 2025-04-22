@@ -44,6 +44,7 @@ from typing import Dict, Any, Set, ClassVar, Optional, List, Callable, TypeVar, 
 from dataclasses import dataclass
 from mcp.types import Tool as McpTool
 from opendxa.common.mixins.registerable import Registerable
+from collections.abc import Sequence
 
 # Type variable for the decorated function
 F = TypeVar('F', bound=Callable[..., Any])
@@ -171,7 +172,11 @@ class ToolCallable(Registerable):
             return self.__mcp_tool_list_cache
 
         mcp_tools = []
-        for func_name in self._tool_callable_functions:
+        # NOTE :  You add both `Capable.apply_capability` and `Queryable.query` to cls._tool_callable_functions
+        # This will cause error because resource doesn't have `apply_capability`
+        for func_name in self._tool_callable_functions: 
+            if not hasattr(self, func_name):
+                continue
             func = getattr(self, func_name)
             type_hints = get_type_hints(func)
             
@@ -342,7 +347,7 @@ class ToolCallable(Registerable):
         
         for mcp_tool in mcp_tools:
             # Get the input schema
-            parameters = mcp_tool.get("inputSchema", {}).copy()
+            parameters = getattr(mcp_tool, "inputSchema", {}).copy()
             
             # Remove 'self' references if present
             if "properties" in parameters:
@@ -362,10 +367,11 @@ class ToolCallable(Registerable):
                 for field_name, field_props in properties.items():
                     if field_name not in required_fields and "type" in field_props:
                         field_type = field_props["type"]
-                        field_props["type"] = (
-                            [field_type] if isinstance(field_type, str) 
-                            else [*field_type, "null"]
-                        )
+                        if isinstance(field_type, str):
+                            field_props["type"] = [field_type, "null"]
+                        # Only add null if field_type doesn't contain "null"
+                        elif isinstance(field_type, Sequence) and not any([item == "null" for item in field_type]): 
+                            field_props["type"] = [*field_type, "null"]
                 
                 # Clean up property definitions
                 allowed_keys = {"description", "title", "type", "items"}
@@ -387,10 +393,10 @@ class ToolCallable(Registerable):
             openai_functions.append({
                 "type": "function",
                 "function": {
-                    "name": self.build_name_id_function_string(self.name, self.id, mcp_tool["name"]),
-                    "description": mcp_tool["description"],
+                    "name": self.build_name_id_function_string(self.name, self.id, mcp_tool.name),
+                    "description": mcp_tool.description,
                     "parameters": parameters,
-                    "strict": True
+                    "strict": True # NOTE : strict=True doesn't work with type ['string', 'null']
                 }
             })
         
