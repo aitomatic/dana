@@ -1,14 +1,20 @@
+"""
+Dynamic Plan Executor
+
+This is a customized PlanExecutor that can create a dynamic plan graph for a given node.
+
+"""
+from typing import List, cast
 from opendxa.execution.planning import PlanExecutor
 from opendxa.execution.planning import Plan
 from opendxa.base.execution.execution_context import ExecutionContext
-from opendxa.base.execution.execution_types import ExecutionNode,ExecutionSignal, NodeType
+from opendxa.base.execution.execution_types import ExecutionNode, ExecutionSignal, NodeType
 from opendxa.base.execution.base_executor import ExecutionError
-from typing import List, cast
+
 
 class DynamicPlanExecutor(PlanExecutor):
+    """Dynamic Plan Executor."""
 
-        
-    
     async def execute(
         self,
         graph: Plan,
@@ -37,7 +43,7 @@ class DynamicPlanExecutor(PlanExecutor):
             if node is None:
                 break
 
-            if node.node_type in (NodeType.START, NodeType.END): # Skip start and end nodes
+            if node.node_type in (NodeType.START, NodeType.END):  # Skip start and end nodes
                 continue
 
             if node.objective:
@@ -78,12 +84,12 @@ class DynamicPlanExecutor(PlanExecutor):
         
         return await self.lower_executor.execute(lower_graph, context)
 
-    def _find_variable_in_text(self, text:str):
+    def _find_variable_in_text(self, text: str):
         """Find all variables in the text."""
         import re
         return re.findall(r'({{\s*(\w+)\s*}})', text)
 
-    def _fill_objective_variables(self, node: ExecutionNode, graph:Plan, context: ExecutionContext) -> str:
+    def _fill_objective_variables(self, node: ExecutionNode, graph: Plan, context: ExecutionContext) -> str:
         """Fill the objective variables in the text."""
         current_objective = node.objective.current if node.objective else None
         if current_objective is None:
@@ -93,7 +99,7 @@ class DynamicPlanExecutor(PlanExecutor):
             if variable_name == "objective":
                 current_objective = current_objective.replace(variable_text, graph.objective.current)
             elif variable_name in context.global_context:
-                current_objective =current_objective.replace(variable_text, str(context.global_context[variable_name]))
+                current_objective = current_objective.replace(variable_text, str(context.global_context[variable_name]))
         return current_objective
 
     async def _create_dynamic_plan_graph(self, node: ExecutionNode, context: ExecutionContext) -> Plan:

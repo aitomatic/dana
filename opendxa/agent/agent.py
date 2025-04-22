@@ -42,6 +42,8 @@ from opendxa.common.utils.misc import safe_asyncio_run
 from opendxa.base.capability.capable import Capable
 from opendxa.common.mixins.queryable import QueryResponse
 from opendxa.config.agent_config import AgentConfig
+from opendxa.execution.planning import PlanExecutor
+from opendxa.execution.reasoning import ReasoningExecutor
 
 @dataclass
 class AgentResponse(ResourceResponse):
@@ -93,6 +95,8 @@ class Agent(Configurable, Loggable, Capable):
         self._runtime: Optional[AgentRuntime] = None
         self._planning_strategy = PlanStrategy.DEFAULT
         self._reasoning_strategy = ReasoningStrategy.DEFAULT
+        self._planning_executor = PlanExecutor(strategy=self._planning_strategy)
+        self._reasoning_executor = ReasoningExecutor(strategy=self._reasoning_strategy)
 
         # Initialize configuration
         self._config = AgentConfig()
@@ -212,14 +216,20 @@ class Agent(Configurable, Loggable, Capable):
         self._io = io
         return self
 
-    def with_planning(self, strategy: PlanStrategy) -> 'Agent':
+    def with_planning(self, strategy: Optional[PlanStrategy] = None, planner: Optional[PlanExecutor] = None) -> 'Agent':
         """Configure planning strategy."""
-        self._planning_strategy = strategy
+        if strategy:
+            self._planning_strategy = strategy
+        if planner:
+            self._planning_executor = planner
         return self
 
-    def with_reasoning(self, strategy: ReasoningStrategy) -> 'Agent':
+    def with_reasoning(self, strategy: Optional[ReasoningStrategy] = None, reasoner: Optional[ReasoningExecutor] = None) -> 'Agent':
         """Configure reasoning strategy."""
-        self._reasoning_strategy = strategy
+        if strategy:
+            self._reasoning_strategy = strategy
+        if reasoner:
+            self._reasoning_executor = reasoner
         return self
 
     def with_planning_llm(self, llm: Union[Dict, str, LLMResource]) -> "Agent":
@@ -266,7 +276,7 @@ class Agent(Configurable, Loggable, Capable):
         self._reasoning_strategy = self._reasoning_strategy or ReasoningStrategy.DEFAULT
 
         # Create runtime with strategies
-        self._runtime = AgentRuntime(self)
+        self._runtime = AgentRuntime(self, self._planning_executor, self._reasoning_executor)
 
         return self
 

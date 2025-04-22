@@ -162,7 +162,7 @@ class ExecutionFactory(Generic[GraphT]):
                     config_path = config_dir / f"{config_name}.yml"
                     
             if not config_path.exists():
-                raise ValueError(f"Configuration file not found: {config_path}")
+                raise ValueError(f"Configuration file not found: {config_path}. CWD={Path.cwd()}")
             
             try:
                 graph = cls.graph_class.from_yaml_file(

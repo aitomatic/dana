@@ -172,7 +172,7 @@ class ToolCallable(Registerable):
             return self.__mcp_tool_list_cache
 
         mcp_tools = []
-        # NOTE :  You add both `Capable.apply_capability` and `Queryable.query` to cls._tool_callable_functions
+        # TODO: NOTE :  You add both `Capable.apply_capability` and `Queryable.query` to cls._tool_callable_functions
         # This will cause error because resource doesn't have `apply_capability`
         for func_name in self._tool_callable_functions: 
             if not hasattr(self, func_name):
@@ -396,7 +396,7 @@ class ToolCallable(Registerable):
                     "name": self.build_name_id_function_string(self.name, self.id, mcp_tool.name),
                     "description": mcp_tool.description,
                     "parameters": parameters,
-                    "strict": True # NOTE : strict=True doesn't work with type ['string', 'null']
+                    "strict": True  # TODO: NOTE: strict=True doesn't work with type ['string', 'null']
                 }
             })
         

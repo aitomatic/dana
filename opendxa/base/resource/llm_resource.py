@@ -197,9 +197,7 @@ class LLMResource(BaseResource):
                     
                     # Get responses for all tool calls at once
                     tool_responses = await self._call_requested_tools(tool_calls)
-                    if tool_responses:
-                        # Add all tool responses to the message history
-                        message_history.extend(tool_responses)
+                    message_history.extend(tool_responses)
                 else:
                     # If LLM is not requesting tools, we're done
                     self.info("LLM is not requesting tools, returning final response")
@@ -423,13 +421,16 @@ class LLMResource(BaseResource):
                 # Truncate response if needed
                 if max_response_length and isinstance(response, str):
                     response = response[:max_response_length]
+                
+                # Convert response to JSON string to ensure JSON-serializability
+                if hasattr(response, "to_json") and callable(response.to_json):
+                    response = response.to_json()
                     
                 responses.append({
                     "role": "tool",
                     "name": function_name,
                     "content": response,
-                    "tool_call_id" : tool_call.id 
-                    # NOTE : role=tool need to have tool_call_id and tool_call_id should appear in assistant message
+                    "tool_call_id": tool_call.id 
                 })
             except Exception as e:
                 self.error("Tool call failed: %s", str(e))
@@ -437,8 +438,7 @@ class LLMResource(BaseResource):
                     "role": "tool",
                     "name": function_name,
                     "content": f"Error: {str(e)}",
-                    "tool_call_id" : tool_call.id 
-                    # NOTE : role=tool need to have tool_call_id and tool_call_id should appear in assistant message
+                    "tool_call_id": tool_call.id 
                 })
                 
         return responses

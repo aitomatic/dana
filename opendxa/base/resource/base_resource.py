@@ -93,21 +93,22 @@ class BaseResource(Configurable, Loggable, Queryable):
         Loggable.__init__(self)
 
         # Initialize Configurable with the provided config
-        config_dict = config or {}
+        config = config or {}
         if name:
-            config_dict["name"] = name
+            config["name"] = name
         if description:
-            config_dict["description"] = description
-        Configurable.__init__(self, **config_dict)
+            config["description"] = description
+        Configurable.__init__(self, **config)
 
-        self._is_available = False  # will only be True after initialization
-
-        self.name = self.config["name"]
-        self.description = self.config["description"] or "No description provided"
-
+        # Initialize Queryable
         self._query_strategy = self.config.get("query_strategy", QueryStrategy.ONCE)
         self._query_max_iterations = self.config.get("query_max_iterations", 3)
         Queryable.__init__(self)
+
+        # Other initializations
+        self._is_available = False  # will only be True after initialization
+        self.name = self.config["name"]
+        self.description = self.config["description"] or "No description provided"
 
     def _validate_config(self) -> None:
         """Validate the configuration.
