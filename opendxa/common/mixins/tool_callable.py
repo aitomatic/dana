@@ -40,11 +40,10 @@ Example:
             pass
 """
 
-from typing import Dict, Any, Set, ClassVar, Optional, List, Callable, TypeVar, get_type_hints, get_origin, get_args, Union, Tuple
-from dataclasses import dataclass
+from collections.abc import Sequence
+from typing import Dict, Any, Set, Optional, List, Callable, TypeVar, get_type_hints, get_origin, get_args, Union, Tuple, Type
 from mcp.types import Tool as McpTool
 from opendxa.common.mixins.registerable import Registerable
-from collections.abc import Sequence
 
 # Type variable for the decorated function
 F = TypeVar('F', bound=Callable[..., Any])
@@ -92,7 +91,6 @@ def _type_to_schema(type_hint: Any) -> Dict[str, Any]:
     }
     return {"type": type_map.get(type_hint, "string")}
 
-@dataclass
 class ToolCallable(Registerable):
     """A mixin class that provides tool-callable functionality to classes.
     
@@ -106,14 +104,21 @@ class ToolCallable(Registerable):
                 pass
     """
     
-    # Class variable to store tool-callable function names
-    _tool_callable_functions: ClassVar[Set[str]] = set()
+    # Class-level cache for tool function names
+    _tool_callable_function_caches: Dict[Type['ToolCallable'], Set[str]] = {}
     
-    # Cache for tool call specifications
-    _tool_call_specs: Optional[List[Dict[str, Any]]] = None
-    
+    def __init__(self):
+        """Initialize the ToolCallable mixin.
+        
+        This constructor initializes the MCP tool list cache,
+        and OpenAI function list cache.
+        """
+        self.__mcp_tool_list_cache: Optional[List[McpTool]] = None
+        self.__openai_function_list_cache: Optional[List[OpenAIFunctionCall]] = None
+        super().__init__()
+ 
     @classmethod
-    def tool_callable_function(cls, func: F) -> F:
+    def tool_callable_decorator(cls, func: F) -> F:
         """Decorator to mark a function as callable by the LLM as a tool.
         
         Args:
@@ -123,15 +128,13 @@ class ToolCallable(Registerable):
             The decorated function
         """
         func_name = func.__name__
-        if not hasattr(cls, '_tool_callable_functions'):
-            cls._tool_callable_functions = set()
-        cls._tool_callable_functions.add(func_name)
+        if cls not in cls._tool_callable_function_caches:
+            cls._tool_callable_function_caches[cls] = set()
+        cls._tool_callable_function_caches[cls].add(func_name)
         return func
     
     # Alias for shorter decorator usage
-    tool = tool_callable_function 
-
-    __mcp_tool_list_cache: Optional[List[McpTool]] = None
+    tool = tool_callable_decorator
 
     def list_mcp_tools(self) -> List[McpTool]:
         """List all tools available to the agent.
@@ -172,9 +175,9 @@ class ToolCallable(Registerable):
             return self.__mcp_tool_list_cache
 
         mcp_tools = []
-        # TODO: NOTE :  You add both `Capable.apply_capability` and `Queryable.query` to cls._tool_callable_functions
-        # This will cause error because resource doesn't have `apply_capability`
-        for func_name in self._tool_callable_functions: 
+        my_class = self.__class__
+        # pylint: disable=protected-access
+        for func_name in my_class._tool_callable_function_caches[my_class]: 
             if not hasattr(self, func_name):
                 continue
             func = getattr(self, func_name)
@@ -255,8 +258,6 @@ class ToolCallable(Registerable):
             ))
         self.__mcp_tool_list_cache = mcp_tools
         return mcp_tools
-
-    __openai_function_list_cache: Optional[List[OpenAIFunctionCall]] = None
 
     def list_openai_functions(self) -> List[OpenAIFunctionCall]:
         """List all tools available to the agent."""
@@ -454,5 +455,7 @@ class ToolCallable(Registerable):
             tool_name: The name of the tool to call
             arguments: The arguments to pass to the tool
         """
+        if not hasattr(self, tool_name):
+            raise ValueError(f"Tool {tool_name} not found in {self.__class__.__name__}")
         func = getattr(self, tool_name)
         return func(**arguments)
