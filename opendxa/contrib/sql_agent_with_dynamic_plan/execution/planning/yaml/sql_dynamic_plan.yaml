@@ -70,7 +70,6 @@ prompts:
     SQL : {{WRITE_DYNAMIC}}
     
     Optimize the SQL query for performance by following these rules:
-    - Limit result set while testing (LIMIT clause).
-    - Check execution plan (e.g., EXPLAIN) to see if indexes are being used.
+    - Reduce nested subqueries or replace them with joins if more efficient.
     - Avoid SELECT * **— always specify columns.
     

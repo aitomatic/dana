@@ -3,10 +3,10 @@ Dummy RAG Resource
 
 This is a dummy RAG resource that returns a static schema of existing tables.
 """
+
 # from opendxa.contrib.sql_agent_with_dynamic_plan.base.resource import BaseResource
-from typing import Dict, Any, Optional
-from opendxa.base.resource import BaseResource
-from opendxa.base.resource import ResourceResponse
+
+from opendxa.base.resource import BaseResource, ResourceResponse
 
 table_schemas = """
 ### product_combo_input.prod_combo_churn_food_user_in_transport_pool_by_nb_transactions
@@ -106,21 +106,23 @@ description : This table contains transaction records related to ride-hailing se
 usage : The table is used for analyzing ride-hailing transactions, user behavior, service performance, and operational metrics, enabling insights into demand, trip efficiency, and user satisfaction.
 """
 
+
 class SampleSchemaResource(BaseResource):
     """Dummy RAG Resource."""
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    async def query(self, params: Optional[Dict[str, Any]] = None) -> ResourceResponse:
-        """Query the resource."""
+    async def query(self, params: str) -> ResourceResponse:  # NOTE : Unable to serialize with type Dict[str, Any]
+        """Retrieve Schema of Existing Tables."""
         return ResourceResponse(success=True, content=table_schemas)
-    
+
     async def bad_query(self, text: str) -> str:
         """Retrieve Schema of Existing Tables.
-        
+
         Args:
             text: Any text for similarity search with RAG
-            
+
         Returns:
             str : Schema of Existing Tables in text format
         """
