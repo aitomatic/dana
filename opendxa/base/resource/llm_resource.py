@@ -418,28 +418,24 @@ class LLMResource(BaseResource):
                 # Call the tool
                 response = await resource.call_tool(tool_name, arguments)
                 
+                # Convert response to JSON string to ensure JSON-serializability
+                if hasattr(response, "to_json") and callable(response.to_json):
+                    response = response.to_json()
+
                 # Truncate response if needed
                 if max_response_length and isinstance(response, str):
                     response = response[:max_response_length]
                 
-                # Convert response to JSON string to ensure JSON-serializability
-                if hasattr(response, "to_json") and callable(response.to_json):
-                    response = response.to_json()
-                    
-                responses.append({
-                    "role": "tool",
-                    "name": function_name,
-                    "content": response,
-                    "tool_call_id": tool_call.id 
-                })
             except Exception as e:
-                self.error("Tool call failed: %s", str(e))
-                responses.append({
-                    "role": "tool",
-                    "name": function_name,
-                    "content": f"Error: {str(e)}",
-                    "tool_call_id": tool_call.id 
-                })
+                response = f"Tool call failed: {str(e)}"
+                self.error(response)
+
+            responses.append({
+                "role": "tool",
+                "name": function_name,
+                "content": response,
+                "tool_call_id": tool_call.id 
+            })
                 
         return responses
 
