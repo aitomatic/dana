@@ -24,7 +24,10 @@ class Registerable(Identifiable):
     def get_from_registry(cls, object_id: str) -> 'Registerable':
         """Get a resource from the registry."""
         registry = cls._get_registry()
-        if object_id not in registry:
+        if object_id not in registry: # NOTE: If the object is not found in the current registry, check all other registries
+            for _, other_registry in cls._registries.items():
+                if object_id in other_registry:
+                    return other_registry[object_id]
             raise ValueError(f"Object {object_id} not found in registry for {cls.__name__}")
         return registry[object_id]
     
