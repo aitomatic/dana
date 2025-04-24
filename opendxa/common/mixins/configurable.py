@@ -307,11 +307,6 @@ class Configurable(Loggable):
         Raises:
             ConfigurationError: If configuration is invalid
         """
-        if not self.config.get("base_path"):
-            self.config["base_path"] = self.get_base_path()
-            
-        self._validate_path("base_path", must_exist=True)
-        
         # Basic structure validation
         if not isinstance(self.config, dict):
             raise ConfigurationError("Configuration must be a dictionary")

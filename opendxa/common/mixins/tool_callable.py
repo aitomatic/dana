@@ -41,7 +41,8 @@ Example:
 """
 
 from collections.abc import Sequence
-from typing import Dict, Any, Set, Optional, List, Callable, TypeVar, get_type_hints, get_origin, get_args, Union, Tuple, Type
+from typing import Dict, Any, Set, Optional, List, Callable, TypeVar, get_type_hints, get_origin, get_args, Union, Tuple
+import inspect
 from mcp.types import Tool as McpTool
 from opendxa.common.mixins.registerable import Registerable
 
@@ -104,8 +105,8 @@ class ToolCallable(Registerable):
                 pass
     """
     
-    # Class-level cache for tool function names
-    _tool_callable_function_caches: Dict[Type['ToolCallable'], Set[str]] = {}
+    # Class-level set of all tool function names
+    _all_tool_callable_function_names: Set[str] = set()
     
     def __init__(self):
         """Initialize the ToolCallable mixin.
@@ -113,24 +114,31 @@ class ToolCallable(Registerable):
         This constructor initializes the MCP tool list cache,
         and OpenAI function list cache.
         """
-        self.__mcp_tool_list_cache: Optional[List[McpTool]] = None
-        self.__openai_function_list_cache: Optional[List[OpenAIFunctionCall]] = None
+        self._tool_callable_function_cache: Set[str] = set()  # computed in __post_init__
+        self.__mcp_tool_list_cache: Optional[List[McpTool]] = None  # computed lazily in list_mcp_tools
+        self.__openai_function_list_cache: Optional[List[OpenAIFunctionCall]] = None  # computed lazily in list_openai_functions
         super().__init__()
- 
+        self.__post_init__()
+        
+    def __post_init__(self):
+        """Scan the instance's methods for tool decorators and register them."""
+        for name, method in inspect.getmembers(self.__class__, predicate=inspect.isfunction):
+            if name.startswith('_'):
+                continue  # Skip private methods (those starting with _)
+            
+            # Quick check if this function name is in our tool set
+            if name in self._all_tool_callable_function_names:
+                # Verify it has our decorator by checking for the marker attribute
+                if hasattr(method, '_is_tool_callable'):
+                    self._tool_callable_function_cache.add(name)
+
     @classmethod
     def tool_callable_decorator(cls, func: F) -> F:
-        """Decorator to mark a function as callable by the LLM as a tool.
-        
-        Args:
-            func: The function to be marked as tool-callable
-            
-        Returns:
-            The decorated function
-        """
-        func_name = func.__name__
-        if cls not in cls._tool_callable_function_caches:
-            cls._tool_callable_function_caches[cls] = set()
-        cls._tool_callable_function_caches[cls].add(func_name)
+        """Decorator to mark a function as callable by the LLM as a tool."""
+        # Add the function name to our class-level set
+        cls._all_tool_callable_function_names.add(func.__name__)
+        # Mark the function with our decorator
+        func._is_tool_callable = True
         return func
     
     # Alias for shorter decorator usage
@@ -175,11 +183,8 @@ class ToolCallable(Registerable):
             return self.__mcp_tool_list_cache
 
         mcp_tools = []
-        my_class = self.__class__
         # pylint: disable=protected-access
-        for func_name in my_class._tool_callable_function_caches[my_class]: 
-            if not hasattr(self, func_name):
-                continue
+        for func_name in self._tool_callable_function_cache: 
             func = getattr(self, func_name)
             type_hints = get_type_hints(func)
             
