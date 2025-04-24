@@ -138,7 +138,7 @@ class ToolCallable(Registerable):
         # Add the function name to our class-level set
         cls._all_tool_callable_function_names.add(func.__name__)
         # Mark the function with our decorator
-        func._is_tool_callable = True
+        func._is_tool_callable = True  # pylint: disable=protected-access
         return func
     
     # Alias for shorter decorator usage

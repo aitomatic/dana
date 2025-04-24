@@ -1,7 +1,6 @@
 """Tests for the Identifiable mixin."""
 
 import uuid
-import pytest
 from opendxa.common.mixins.identifiable import Identifiable
 
 # pylint: disable=missing-function-docstring

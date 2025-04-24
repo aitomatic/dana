@@ -6,8 +6,10 @@ input/output operations while extending BaseResource functionality.
 """
 
 from abc import abstractmethod
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 from opendxa.base.resource import BaseResource, ResourceResponse
+from opendxa.common.mixins import ToolCallable
+from opendxa.common.mixins.queryable import QueryParams
 
 class BaseIO(BaseResource):
     """Base class for I/O resources.
@@ -30,7 +32,8 @@ class BaseIO(BaseResource):
         """Receive message from IO channel."""
         pass
 
-    async def query(self, request: Dict[str, Any]) -> ResourceResponse:
+    @ToolCallable.tool
+    async def query(self, params: QueryParams = None) -> ResourceResponse:
         """Handle resource queries by mapping to send/receive.
 
         Args:
@@ -42,15 +45,15 @@ class BaseIO(BaseResource):
         Raises:
             ValueError: If neither send nor receive specified
         """
-        if "send" in request:
-            await self.send(request["send"])
+        if "send" in params:
+            await self.send(params["send"])
             return ResourceResponse(success=True)
-        if "receive" in request:
+        if "receive" in params:
             response = await self.receive()
             return ResourceResponse(success=True, content={"response": response})
         
         return ResourceResponse.error_response("Invalid query - must specify send or receive")
 
-    def can_handle(self, request: Dict[str, Any]) -> bool:
+    def can_handle(self, params: QueryParams) -> bool:
         """Check if request contains valid IO operations."""
-        return "send" in request or "receive" in request
+        return "send" in params or "receive" in params

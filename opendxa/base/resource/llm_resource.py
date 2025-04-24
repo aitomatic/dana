@@ -10,7 +10,7 @@ from opendxa.base.resource.base_resource import BaseResource, ResourceResponse, 
 from opendxa.common.utils.misc import get_field
 from opendxa.common.mixins.tool_callable import ToolCallable, OpenAIFunctionCall
 from opendxa.common.mixins.registerable import Registerable
-
+from opendxa.common.mixins.queryable import QueryParams
 class LLMResource(BaseResource):
     """LLM resource implementation using AISuite."""
 
@@ -53,7 +53,8 @@ class LLMResource(BaseResource):
         self._query_max_iterations = self.config.get("query_max_iterations", 10)
 
     # ===== Public Interface Methods =====
-    async def query(self, params: Optional[Dict[str, Any]] = None) -> ResourceResponse:
+    @ToolCallable.tool
+    async def query(self, params: QueryParams = None) -> ResourceResponse:
         """Query the LLM with the given request.
 
         This method determines whether to use iterative or single-shot querying based on

@@ -26,6 +26,9 @@ from typing import Dict, Any, Optional, ClassVar, TypeVar
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.mixins.configurable import Configurable
 from opendxa.common.mixins.queryable import Queryable, QueryStrategy, QueryResponse
+from opendxa.common.mixins import ToolCallable
+from opendxa.common.mixins.queryable import QueryParams
+
 T = TypeVar('T', bound='BaseResource')
 
 class ResourceError(Exception):
@@ -65,7 +68,7 @@ class ResourceResponse(QueryResponse):
         """
         return cls(success=False, error=ResourceError(message))
 
-class BaseResource(Configurable, Loggable, Queryable):
+class BaseResource(Configurable, Queryable, Loggable):
     """Abstract base resource."""
 
     # Class-level default configuration
@@ -89,7 +92,7 @@ class BaseResource(Configurable, Loggable, Queryable):
             description: Optional resource description
             config: Optional additional configuration
         """
-        # Initialize Loggable first to ensure logger is available
+        # Initialize fLoggable irst to ensure logger is available
         Loggable.__init__(self)
 
         # Initialize Configurable with the provided config
@@ -158,7 +161,8 @@ class BaseResource(Configurable, Loggable, Queryable):
         # Resource-specific cleanup logic
         self.debug(f"Resource [{self.name}] cleanup completed")
 
-    async def query(self, params: Optional[Dict[str, Any]] = None) -> ResourceResponse:
+    @ToolCallable.tool
+    async def query(self, params: QueryParams = None) -> ResourceResponse:
         """Query resource.
 
         Args:
@@ -169,9 +173,9 @@ class BaseResource(Configurable, Loggable, Queryable):
         self.debug(f"Resource [{self.name}] received query: {self._sanitize_log_data(params)}")
         return ResourceResponse(success=True, content=params, error=None)
 
-    def can_handle(self, request: Dict[str, Any]) -> bool:
+    def can_handle(self, params: QueryParams) -> bool:
         """Check if resource can handle request."""
-        self.debug(f"Checking if [{self.name}] can handle {self._sanitize_log_data(request)}")
+        self.debug(f"Checking if [{self.name}] can handle {self._sanitize_log_data(params)}")
         return False
 
     def _sanitize_log_data(self, data: Dict[str, Any]) -> Dict[str, Any]:

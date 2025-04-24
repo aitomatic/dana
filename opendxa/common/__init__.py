@@ -71,7 +71,10 @@ from opendxa.common.mixins import (
     Loggable,
     ToolCallable,
     Configurable,
-    Registerable
+    Registerable,
+    Identifiable,
+    Queryable,
+    QueryResponse,
 )
 from opendxa.common.graph import (
     Node,
@@ -119,6 +122,9 @@ __all__ = [
     'ToolCallable',
     'Configurable',
     'Registerable',
+    'Identifiable',
+    'Queryable',
+    'QueryResponse',
 
     # Graph
     'Node',

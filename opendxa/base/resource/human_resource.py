@@ -8,7 +8,9 @@ import asyncio
 from typing import Dict, Any, Optional, ClassVar
 from dataclasses import dataclass
 
-from .base_resource import BaseResource, ResourceResponse, ResourceError
+from opendxa.base.resource.base_resource import BaseResource, ResourceResponse, ResourceError
+from opendxa.common.mixins import ToolCallable
+from opendxa.common.mixins.queryable import QueryParams
 
 @dataclass 
 class HumanResponse(ResourceResponse):
@@ -95,7 +97,8 @@ class HumanResource(BaseResource):
         """
         return self._is_available and isinstance(request, dict)
 
-    async def query(self, request: Dict[str, Any]) -> ResourceResponse:
+    @ToolCallable.tool
+    async def query(self, params: QueryParams = None) -> ResourceResponse:
         """Query the human resource for input.
 
         Args:
@@ -104,20 +107,20 @@ class HumanResource(BaseResource):
         Returns:
             ResourceResponse: The response from the human resource.
         """
-        if not self.can_handle(request):
+        if not self.can_handle(params):
             return ResourceResponse.error_response("Resource unavailable or invalid request format")
 
         try:
-            response = await self._get_human_input(request)
+            response = await self._get_human_input(params)
             return ResourceResponse(success=True, content={"response": response})
         except Exception as e:
             return ResourceResponse.error_response(f"Failed to get human input: {e}")
 
-    async def _get_human_input(self, request: Dict[str, Any]) -> str:
+    async def _get_human_input(self, params: QueryParams = None) -> str:
         """Get input from the human user.
 
         Args:
-            request (Dict[str, Any]): The request containing query parameters.
+            params (QueryParams): The query parameters.
 
         Returns:
             str: The response provided by the human.
@@ -126,7 +129,7 @@ class HumanResource(BaseResource):
             ResourceError: If input cannot be obtained.
         """
         try:
-            prompt = request.get("prompt", "Please provide input")
+            prompt = params.get("prompt", "Please provide input")
             loop = asyncio.get_event_loop()
             response = await loop.run_in_executor(None, input, f"{prompt}\n> ")
             return response

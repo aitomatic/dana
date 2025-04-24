@@ -15,6 +15,8 @@ class QueryStrategy(Enum):
     ITERATIVE = auto()  # Iterative querying - default, e.g., for LLMResource
 
 
+QueryParams = Optional[Dict[str, Any]]
+
 @dataclass
 class QueryResponse(BaseResponse):
     """Base class for all query responses."""
@@ -36,7 +38,7 @@ class Queryable(ToolCallable):
         self._query_max_iterations = getattr(self, "_query_max_iterations", 3)
 
     @ToolCallable.tool
-    async def query(self, params: Optional[Dict[str, Any]] = None) -> QueryResponse:
+    async def query(self, params: QueryParams = None) -> QueryResponse:
         """Query the Queryable object.
 
         Args:
