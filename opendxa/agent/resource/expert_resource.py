@@ -41,6 +41,8 @@ from typing import Dict, Any, Optional, ClassVar
 from opendxa.base.resource.base_resource import BaseResource, ResourceResponse
 from opendxa.agent.capability.domain_expertise import DomainExpertise
 from opendxa.common.io import IOFactory
+from opendxa.common.mixins import ToolCallable
+from opendxa.common.mixins.queryable import QueryParams
 
 
 @dataclass
@@ -120,13 +122,14 @@ class ExpertResource(BaseResource):
         self._io = IOFactory.create_io("console")  # Sync creation
         await self._io.initialize()  # Async init
 
-    async def query(self, request: Dict[str, Any]) -> ResourceResponse:
+    @ToolCallable.tool
+    async def query(self, params: QueryParams = None) -> ResourceResponse:
         """Get expert input."""
         if not self._io:
             await self.initialize()
 
         # Ensure we pass a proper dictionary with prompt
-        prompt = request.get("prompt") or ""
+        prompt = params.get("prompt") or ""
         response = await self._io.query({"prompt": prompt})
         return response
 

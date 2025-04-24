@@ -4,36 +4,42 @@ from typing import Dict
 from opendxa.common.mixins.identifiable import Identifiable
 
 class Registerable(Identifiable):
-    """Objects that have a class registry for members of the class."""
+    """Objects that have a global registry for all registerable objects."""
 
-    __registry: Dict[str, 'Registerable'] = {}
+    # Single global registry for all registerable objects
+    _registry: Dict[str, 'Registerable'] = {}
 
     @classmethod
     def get_from_registry(cls, object_id: str) -> 'Registerable':
         """Get a resource from the registry."""
-        if object_id not in cls.__registry:
+        if object_id not in cls._registry:
             raise ValueError(f"Object {object_id} not found in registry")
-        return cls.__registry[object_id]
+        return cls._registry[object_id]
     
     @classmethod
     def add_object_to_registry(cls, the_object: 'Registerable') -> None:
         """Add an object to the registry with the specified ID.
         
         Args:
-            object_id: Unique identifier for the object
             the_object: The object to register
         """
-        cls.__registry[the_object.id] = the_object
+        cls._registry[the_object.id] = the_object
     
     @classmethod    
     def remove_object_from_registry(cls, object_id: str) -> None:
-        """Remove an object from my registry."""
-        del cls.__registry[object_id] 
+        """Remove an object from the registry.
+        
+        Args:
+            object_id: ID of the object to remove
+        """
+        if object_id not in cls._registry:
+            raise ValueError(f"Object {object_id} not found in registry")
+        del cls._registry[object_id]
 
     def add_to_registry(self) -> None:
-        """Add myself to my registry."""
+        """Add myself to the registry."""
         self.__class__.add_object_to_registry(self)
 
     def remove_from_registry(self) -> None:
-        """Remove myself from my registry."""
+        """Remove myself from the registry."""
         self.__class__.remove_object_from_registry(self.id)

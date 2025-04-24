@@ -20,7 +20,6 @@ from opendxa.base.resource.memory_resource import (
     STMemoryResource,
     PermMemoryResource
 )
-from opendxa.common.mixins.queryable import QueryResponse
 
 __all__ = [
     "BaseResource",
@@ -40,5 +39,4 @@ __all__ = [
     "LTMemoryResource",
     "STMemoryResource",
     "PermMemoryResource",
-    "QueryResponse",
 ]

@@ -22,7 +22,6 @@ class PlanFactory(ExecutionFactory[Plan]):
         """Create a plan instance."""
         return cast(Plan, cls.create_basic_graph(objective, name))
     
-
     @classmethod
     def create_plan_by_name(
         cls,

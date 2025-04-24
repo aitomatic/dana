@@ -63,7 +63,6 @@ from opendxa.base.resource import (
     BaseResource,
     LLMResource,
     ResourceResponse,
-    QueryResponse,
 )
 
 from opendxa.base.db import (
@@ -94,7 +93,6 @@ __all__ = [
     "BaseResource",
     "LLMResource",
     "ResourceResponse",
-    "QueryResponse",
     # Database
     'BaseDBModel',
     'KnowledgeDBModel',

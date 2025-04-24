@@ -27,7 +27,7 @@ class BaseMcpService(ABC):
         _SERVER.run(transport=self.transport) 
 
     @classmethod
-    def tool(cls, name: str | None = None, description: str | None = None):
+    def mcp_tool(cls, name: str | None = None, description: str | None = None):
         """Decorator to register the function as a tool"""
         def decorator_tool(func):
 
