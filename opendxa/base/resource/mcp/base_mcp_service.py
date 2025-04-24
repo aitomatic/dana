@@ -16,7 +16,7 @@ class BaseMcpService(ABC):
 
     def __init__(self, transport: Literal['stdio', 'sse'] = 'stdio') -> None:
         """Initialize"""
-        self.logger = DXA_LOGGER.getLogger(__file__.rsplit('/', maxsplit=1)[-1])
+        self.logger = DXA_LOGGER.getLogger(self)
         self.transport: Literal['stdio', 'sse'] = transport
         global _SELF  # pylint: disable=global-statement
         _SELF = self

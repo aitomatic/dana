@@ -3,7 +3,7 @@ Simplified DXALogger with core logging functionality.
 """
 
 import logging
-from typing import Optional
+from typing import Optional, Any, Union
 
 class DXALogger:
     """Simple logger with prefix support."""
@@ -53,9 +53,30 @@ class DXALogger:
         """Configure the logging system with basic settings."""
         logging.basicConfig(*args, **kwargs)
         
-    def setLevel(self, level: int):
-        """Set the logging level."""
-        self.logger.setLevel(level)
+    def setLevel(self, level: int, scope: Optional[str] = None):
+        """Set the logging level with configurable scope.
+        
+        Args:
+            level: The logging level to set (e.g., logging.DEBUG, logging.INFO)
+            scope: Optional scope parameter:
+                  - None: Set level only for this logger instance
+                  - "*": Set level for all loggers created by this DXA_LOGGER instance
+                  - "opendxa": Set level for all loggers starting with "opendxa"
+                  - "opendxa.agent": Set level for all loggers starting with "opendxa.agent"
+        """
+        if scope is None:
+            # Set level only for this logger instance
+            self.logger.setLevel(level)
+        elif scope == "*":
+            # Set level for all loggers created by this DXA_LOGGER instance
+            for logger_name in logging.Logger.manager.loggerDict:
+                if isinstance(logging.getLogger(logger_name), logging.Logger):
+                    logging.getLogger(logger_name).setLevel(level)
+        else:
+            # Set level for all loggers starting with the given scope
+            for logger_name in logging.Logger.manager.loggerDict:
+                if logger_name.startswith(scope):
+                    logging.getLogger(logger_name).setLevel(level)
     
     def _format_message(self, message: str) -> str:
         """Add prefix to message if configured."""
@@ -95,9 +116,22 @@ class DXALogger:
         else:
             self.logger.error(formatted, *args)
 
-    def getLogger(self, name: str) -> 'DXALogger':
-        """Create a new logger instance with the given name."""
-        return DXALogger(name, self.prefix)
+    def getLogger(self, name_or_obj: Union[str, Any]) -> 'DXALogger':
+        """Create a new logger instance.
+        
+        Args:
+            name_or_obj: Either a string name for the logger, or an object to create a logger for.
+                        If an object is provided, the logger name will be based on the object's
+                        class module and name.
+                        
+        Returns:
+            DXALogger instance
+        """
+        if isinstance(name_or_obj, str):
+            return DXALogger(name_or_obj, self.prefix)
+        else:
+            cls = name_or_obj.__class__
+            return DXALogger(f"{cls.__module__}.{cls.__name__}", self.prefix)
 
 # Create global logger instance
 DXA_LOGGER = DXALogger("opendxa")

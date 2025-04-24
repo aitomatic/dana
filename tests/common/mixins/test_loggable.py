@@ -34,7 +34,7 @@ class TestLoggable:
             console=True,
             level=logging.DEBUG,
             log_data=False,
-            fmt="%(asctime)s - [OpenDXA %(name)s] %(levelname)s - %(message)s",
+            fmt="%(asctime)s - [%(name)s] %(levelname)s - %(message)s",
             datefmt="%H:%M:%S"
         )
     
@@ -49,9 +49,9 @@ class TestLoggable:
         Loggable(log_data=True)
         mock_logger.configure.assert_called_once_with(
             console=True,
-            level=logging.WARNING,
+            level=logging.INFO,
             log_data=True,
-            fmt="%(asctime)s - [OpenDXA %(name)s] %(levelname)s - %(message)s",
+            fmt="%(asctime)s - [%(name)s] %(levelname)s - %(message)s",
             datefmt="%H:%M:%S"
         )
     

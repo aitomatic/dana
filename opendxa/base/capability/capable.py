@@ -20,7 +20,7 @@ class CapabilityAlreadyExistsError(CapabilityError):
     pass
 
 
-class Capable(ToolCallable):
+class Capable():
     """Mixin for capable objects."""
 
     def __init__(self, capabilities: Optional[List[BaseCapability]] = None):

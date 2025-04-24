@@ -22,11 +22,11 @@ Supporting Types:
 from opendxa.execution.reasoning.reasoning import Reasoning
 from opendxa.execution.reasoning.reasoning_factory import ReasoningFactory
 from opendxa.execution.reasoning.reasoning_strategy import ReasoningStrategy
-from opendxa.execution.reasoning.reasoning_executor import ReasoningExecutor
+from opendxa.execution.reasoning.reasoner import Reasoner
 
 __all__ = [
     'Reasoning',
     'ReasoningFactory',
     'ReasoningStrategy',
-    'ReasoningExecutor',
+    'Reasoner',
 ] 

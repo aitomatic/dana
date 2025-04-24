@@ -19,7 +19,7 @@ For detailed documentation, see:
 - Execution Documentation: https://github.com/aitomatic/opendxa/blob/main/opendxa/execution/README.md
 
 Example:
-    >>> from opendxa.execution import Plan, PlanExecutor
+    >>> from opendxa.execution import Plan, Planner
     >>> from opendxa.execution.planning import ExecutionNode, NodeType
     >>> plan = Plan(objective="Analyze customer feedback")
     >>> plan.add_node(ExecutionNode(
@@ -27,8 +27,7 @@ Example:
     ...     node_type=NodeType.TASK,
     ...     objective="Analyze feedback data"
     ... ))
-    >>> executor = PlanExecutor()
-    >>> result = await executor.execute(plan)
+    >>> executor = Planner()
 """
 
 from opendxa.execution.pipeline import (
@@ -42,13 +41,13 @@ from opendxa.execution.pipeline import (
 from opendxa.execution.planning import (
     Plan,
     PlanFactory,
-    PlanExecutor,
+    Planner,
     PlanStrategy,
 )
 from opendxa.execution.reasoning import (
     Reasoning,
     ReasoningFactory,
-    ReasoningExecutor,
+    Reasoner,
     ReasoningStrategy,
 )
 from opendxa.execution.agent_runtime import AgentRuntime
@@ -64,11 +63,11 @@ __all__ = [
     'Plan',
     'PlanFactory',
     'PlanStrategy',
-    'PlanExecutor',
+    'Planner',
     'Reasoning',
     'ReasoningFactory',
     'ReasoningStrategy',
-    'ReasoningExecutor',
+    'Reasoner',
     'AgentRuntime',
     'AgentState',
 ]

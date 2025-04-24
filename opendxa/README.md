@@ -4,80 +4,215 @@
 
 # OpenDXA - Domain-Expert Agent
 
-The Domain-Expert Agent (OpenDXA) is an intelligent agent architecture designed to tackle complex domain-specific tasks with human-like expertise. At its heart is a unique architecture that combines declarative capabilities with imperative execution through a clear separation of concerns. The framework features advanced memory management with both short-term and long-term memory capabilities, enabling agents to learn from interactions and maintain context over extended periods. It includes robust knowledge-base management for structured storage and retrieval of domain knowledge, with support for versioning, evolution, and integration with external knowledge sources.
+The Domain-Expert Agent (OpenDXA) is an intelligent agent architecture designed to tackle complex domain-specific tasks with human-like expertise. At its heart is a unique architecture that combines declarative knowledge with imperative execution through a clear separation of concerns. The framework features advanced memory management with both short-term and long-term memory knowledge, enabling agents to learn from interactions and maintain context over extended periods. It includes robust knowledge-base management for structured storage and retrieval of domain knowledge, with support for versioning, evolution, and integration with external knowledge sources.
+
+## Architecture Overview
+
+The Domain-Expert Agent architecture is built around two fundamental aspects:
+
+1. **Declarative Aspect**
+   - Defines what the agent knows
+   - Manages knowledge and resources
+   - Handles domain expertise
+   - Provides structured access to knowledge
+
+2. **Imperative Aspect**
+   - Implements planning and reasoning
+   - Executes tasks using available knowledge
+   - Manages state and context
+   - Coordinates multi-agent interactions
+
+This architecture is complemented by built-in knowledge management, enabling:
+- Structured storage and retrieval of domain knowledge
+- Versioning and evolution of knowledge
+- Integration with external knowledge sources
+- Efficient querying and reasoning over knowledge
+
+```mermaid
+graph LR
+    subgraph DA["Declarative Aspect"]
+        K[Knowledge]
+        R[Resources]
+        K --> R
+    end
+
+    subgraph IA["Imperative Aspect"]
+        P[Planning]
+        RE[Reasoning]
+        P --- RE
+    end
+
+    subgraph S["State"]
+        WS[WorldState]
+        AS[AgentState]
+        WS --- AS
+    end
+
+    DA --> IA
+    IA --> S
+```
+
+This architecture means you can:
+- Start with simple knowledge bases
+- Gradually expand domain expertise
+- Scale to complex multi-agent systems
+- Maintain clear separation between what agents know and how they act
+
+## Knowledge Structure
+
+### Technical Knowledge
+
+```mermaid
+graph TD
+    subgraph "Technical Knowledge"
+        direction TB
+        TK1[Data Processing]
+        TK2[Language Understanding]
+    end
+
+    subgraph "Data Processing"
+        direction TB
+        DP1[Analysis]
+        DP2[Time Series]
+        DP3[Pattern Recognition]
+    end
+
+    subgraph "Analysis"
+        direction TB
+        AN1[Statistical Analysis]
+        AN2[Predictive Modeling]
+        AN3[Anomaly Detection]
+    end
+
+    subgraph "Language Understanding"
+        direction TB
+        LU1[NLP]
+        LU2[Text Processing]
+        LU3[Document Analysis]
+    end
+
+    TK1 --> DP1
+    TK1 --> DP2
+    TK1 --> DP3
+    DP1 --> AN1
+    DP1 --> AN2
+    DP1 --> AN3
+    TK2 --> LU1
+    TK2 --> LU2
+    TK2 --> LU3
+```
+
+### Domain Knowledge
+
+```mermaid
+graph TD
+    subgraph "Domain Knowledge"
+        direction TB
+        DK1[Semiconductor]
+        DK2[Manufacturing]
+    end
+
+    subgraph "Semiconductor"
+        direction TB
+        SC1[Process Control]
+        SC2[Yield Analysis]
+        SC3[Equipment Monitoring]
+    end
+
+    subgraph "Process Control"
+        direction TB
+        PC1[Recipe Optimization]
+        PC2[Parameter Control]
+        PC3[Process Stability]
+    end
+
+    subgraph "Manufacturing"
+        direction TB
+        MF1[Quality Control]
+        MF2[Production Optimization]
+        MF3[Supply Chain]
+    end
+
+    DK1 --> SC1
+    DK1 --> SC2
+    DK1 --> SC3
+    SC1 --> PC1
+    SC1 --> PC2
+    SC1 --> PC3
+    DK2 --> MF1
+    DK2 --> MF2
+    DK2 --> MF3
+```
 
 ## Core Concepts
 
-### Architecture Overview
+1. **Knowledge**
+   - Structured representation of domain expertise
+   - Hierarchical organization of technical and domain knowledge
+   - Versioned and evolvable knowledge bases
+   - Integration with external knowledge sources
 
-OpenDXA's architecture is built around two core aspects:
+2. **Planning**
+   - Task decomposition and sequencing
+   - Resource allocation and optimization
+   - Handling of constraints and dependencies
+   - Dynamic plan adaptation
 
-1. **Declarative Aspect (Agent)**
-   - Defines what the agent can do
-   - Owns and describes capabilities
-   - Specifies available knowledge and expertise
-   - Receives tasks and objectives
+3. **Reasoning**
+   - Logical inference and deduction
+   - Pattern recognition and analysis
+   - Decision making under uncertainty
+   - Multi-agent coordination
 
-2. **Imperative Aspect (AgentRuntime)**
-   - Thin layer connecting Agent to Planning
-   - Simply invokes the Planner
-   - No additional responsibilities
-
-```mermaid
-graph TB
-    subgraph "Declarative (Agent)"
-        A[Agent] --> C[Capabilities]
-        C --> K[Knowledge]
-        C --> E[Expertise]
-        C --> T[Tools]
-    end
-
-    subgraph "Imperative (AgentRuntime)"
-        AR[AgentRuntime] --> P[Planning]
-        P --> R[Reasoning]
-        P --> C
-        R --> C
-    end
-
-    Task --> A
-    A --> AR
-    AR --> Results
-    Results --> C
-```
-
-### Core Components
-
-| Component | Role | Relationship |
-|-----------|------|--------------|
-| Agent | Declarative/Descriptive | Owns Capabilities, Receives Tasks |
-| AgentRuntime | Imperative/Executive | Contains Planning & Reasoning |
-| Capabilities | Bridge | Owned by Agent, Used by AgentRuntime |
-| Planning | Strategic | Part of AgentRuntime |
-| Reasoning | Tactical | Part of AgentRuntime |
+4. **State Management**
+   - World state tracking
+   - Agent state maintenance
+   - Context preservation
+   - History and memory management
 
 ## Interaction Patterns
 
 ### Basic Interaction Pattern
 
-The heart of OpenDXA is a consistent Planning-Capability interaction pattern:
+The heart of OpenDXA is a consistent Planning-Knowledge interaction pattern:
 
 1. **Basic Interaction Loop**:
-   - Planning asks Capability: "How to solve X?"
-   - Capability responds with either:
-     a. **Direct Answer**: Complete solution (terminal)
-     b. **Executable Plan**: Steps to solution (recursive)
+   - Planning asks Knowledge: "How to solve X?"
+   - Knowledge responds with one of three types:
+
+     a. **Terminal** (Complete Solution)
+        * Direct answer available in knowledge base
+        * No further decomposition needed
+        * Ready for immediate execution
+
+     b. **Recursive** (Decomposable Solution)
+        * Solution exists but requires multiple steps (with known workflows)
+        * Each step may need further resolution
+        * Natural hierarchical decomposition
+
+     c. **Fallback** (Incomplete Solution)
+        * No direct solution in knowledge base
+        * Requires Reasoning to derive solution
+        * Results stored for future reference
 
 2. **Recursive Nature**:
    - For each step in a plan:
-     - Same Planning-Capability interaction
-     - All resolution through Capabilities
-     - Natural termination at direct answers
+     - Same Planning-Knowledge interaction
+     - All resolution through Knowledge
+     - Natural termination at Complete Solutions
+   - For Incomplete Solutions:
+     - Planning delegates to Reasoning
+     - Reasoning attempts to derive solution
+     - Results are stored back in Knowledge
+     - Future queries can use stored solutions
 
 3. **Key Aspects**:
    - Consistent interaction pattern throughout
-   - All knowledge access through Capabilities
-   - Fundamental capabilities prevent unnecessary recursion
-   - Natural termination at direct answers
+   - All knowledge access through Knowledge
+   - Natural termination at Complete Solutions
+   - Hierarchical decomposition for complex tasks
+   - Continuous learning through Reasoning
+   - Knowledge base evolution over time
 
 ### Single Agent Scenarios
 
@@ -90,24 +225,24 @@ sequenceDiagram
     participant AR as AgentRuntime
     participant P as Planning
     participant R as Reasoning
-    participant C as Capabilities
+    participant K as Knowledge
     participant Res as Resources
 
     T->>A: Receive Task
     A->>AR: Forward Task
     AR->>P: Invoke Planner
-    P->>C: How to solve Task?
-    C->>C: Lookup Knowledge
-    C-->>P: Return Direct Answer
+    P->>K: How to solve Task?
+    K->>K: Lookup Knowledge
+    K-->>P: Return Direct Answer
     P->>R: Execute Answer
-    R->>C: Apply Knowledge
-    C->>Res: query(Resource)
-    Res-->>C: Resource Response
-    C-->>R: Execute Step
+    R->>K: Apply Knowledge
+    K->>Res: query(Resource)
+    Res-->>K: Resource Response
+    K-->>R: Execute Step
     R-->>P: Return Results
     P-->>AR: Return Results
     AR-->>A: Update State
-    A-->>C: Improve Capabilities
+    A-->>K: Improve Knowledge
 ```
 
 #### 2. Complex Task
@@ -119,30 +254,30 @@ sequenceDiagram
     participant AR as AgentRuntime
     participant P as Planning
     participant R as Reasoning
-    participant C as Capabilities
+    participant K as Knowledge
     participant Res as Resources
 
     T->>A: Receive Complex Task
     A->>AR: Forward Task
     AR->>P: Invoke Planner
-    P->>C: How to solve Task?
-    C->>C: Lookup Knowledge
-    C-->>P: Return Plan
-    Note over C,P: Plan includes:<br/>- Subtask 1<br/>- Subtask 2<br/>- Subtask 3
+    P->>K: How to solve Task?
+    K->>K: Lookup Knowledge
+    K-->>P: Return Plan
+    Note over K,P: Plan includes:<br/>- Subtask 1<br/>- Subtask 2<br/>- Subtask 3
     loop For Each Subtask
-        P->>C: How to solve Subtask?
-        C->>C: Lookup Knowledge
-        C-->>P: Return Direct Answer
+        P->>K: How to solve Subtask?
+        K->>K: Lookup Knowledge
+        K-->>P: Return Direct Answer
         P->>R: Execute Answer
-        R->>C: Apply Knowledge
-        C->>Res: query(Resource)
-        Res-->>C: Resource Response
-        C-->>R: Execute Step
+        R->>K: Apply Knowledge
+        K->>Res: query(Resource)
+        Res-->>K: Resource Response
+        K-->>R: Execute Step
         R-->>P: Return Results
     end
     P-->>AR: Return Combined Results
     AR-->>A: Update State
-    A-->>C: Improve Capabilities
+    A-->>K: Improve Knowledge
 ```
 
 ### Multi-Agent Scenarios
@@ -165,8 +300,8 @@ sequenceDiagram
     participant AR2 as AgentRuntime 2
     participant P1 as Planning 1
     participant P2 as Planning 2
-    participant C1 as Capabilities 1
-    participant C2 as Capabilities 2
+    participant K1 as Knowledge 1
+    participant K2 as Knowledge 2
 
     T1->>A1: Receive Task
     T2->>A2: Receive Task
@@ -174,16 +309,16 @@ sequenceDiagram
     A2->>AR2: Forward Task
     AR1->>P1: Invoke Planner
     AR2->>P2: Invoke Planner
-    P1->>C1: How to solve Task?
-    P2->>C2: How to solve Task?
-    C1-->>P1: Return Answer
-    C2-->>P2: Return Answer
+    P1->>K1: How to solve Task?
+    P2->>K2: How to solve Task?
+    K1-->>P1: Return Answer
+    K2-->>P2: Return Answer
     Note over A1,A2: Agents operate independently<br/>in their own domains
 ```
 
 2. **Collaborative Tasks**
    - Multiple Agents working together on same task
-   - Agents with complementary capabilities
+   - Agents with complementary knowledge
    - Need to coordinate and share knowledge
    - Like a team of specialists working together
 
@@ -196,20 +331,20 @@ sequenceDiagram
     participant AR2 as AgentRuntime 2
     participant P1 as Planning 1
     participant P2 as Planning 2
-    participant C1 as Capabilities 1
-    participant C2 as Capabilities 2
+    participant K1 as Knowledge 1
+    participant K2 as Knowledge 2
 
     T->>A1: Receive Task
     A1->>AR1: Forward Task
     AR1->>P1: Invoke Planner
-    P1->>C1: How to solve Task?
-    C1-->>P1: Return Plan
-    Note over C1,P1: Plan requires capabilities<br/>from Agent 2
+    P1->>K1: How to solve Task?
+    K1-->>P1: Return Plan
+    Note over K1,P1: Plan requires knowledge<br/>from Agent 2
     P1->>A2: Request Help
     A2->>AR2: Forward Request
     AR2->>P2: Invoke Planner
-    P2->>C2: How to help?
-    C2-->>P2: Return Answer
+    P2->>K2: How to help?
+    K2-->>P2: Return Answer
     P2-->>P1: Return Results
     P1-->>AR1: Return Combined Results
 ```
@@ -257,12 +392,12 @@ sequenceDiagram
 1. **Core Components**
    - Agent - Declarative interface
    - AgentRuntime - Imperative execution
-   - Capabilities - Agent abilities and knowledge
+   - Knowledge - Agent abilities and knowledge
    - State System - Execution state management
 
 2. **Key Features**
    - Clear separation of declarative and imperative aspects
-   - Capability-based architecture
+   - Knowledge-based architecture
    - State tracking and persistence
    - Adaptive execution
 
@@ -276,43 +411,43 @@ sequenceDiagram
    - Hierarchical execution
    - Dynamic adaptation
    - Progress tracking
-   - Capability utilization
+   - Knowledge utilization
 
 ### Motivation
 
-The Agent->Capabilities->Resources architecture provides two key benefits:
+The Agent->Knowledge->Resources architecture provides two key benefits:
 
-1. **Composable Capabilities**
-   - An Agent can comprise multiple Capabilities
-   - Each Capability represents a distinct area of expertise or functionality
-   - Capabilities can be added, removed, or updated independently
-   - Enables building specialized agents by combining relevant Capabilities
+1. **Composable Knowledge**
+   - An Agent can comprise multiple Knowledge bases
+   - Each Knowledge base represents a distinct area of expertise or functionality
+   - Knowledge can be added, removed, or updated independently
+   - Enables building specialized agents by combining relevant Knowledge
 
 2. **Hierarchical Knowledge Organization**
-   - Capabilities can be hierarchically deep
+   - Knowledge can be hierarchically deep
    - Allows natural division of knowledge bases
    - Enables compartmentalization of expertise
    - Supports both broad and deep knowledge organization
    - Makes it easy to manage and apply knowledge:
-     * Knowledge is organized by capability
-     * Each capability knows how to apply its knowledge
-     * Knowledge updates are localized to relevant capabilities
-     * Capabilities can combine knowledge from multiple sources
+     * Knowledge is organized by domain
+     * Each knowledge base knows how to apply its knowledge
+     * Knowledge updates are localized to relevant domains
+     * Knowledge can combine information from multiple sources
 
 For example:
 ```mermaid
 graph TB
-    A[Agent] --> C1[Medical Capability]
-    A --> C2[Legal Capability]
-    A --> C3[Technical Capability]
+    A[Agent] --> C1[Medical Knowledge Base]
+    A --> C2[Legal Knowledge Base]
+    A --> C3[Technical Knowledge Base]
     
     C1 --> K1[Medical Knowledge Base]
     C1 --> K2[Patient Records]
     
-    C2 --> K3[Legal Database]
+    C2 --> K3[Legal Knowledge Base]
     C2 --> K4[Case Law]
     
-    C3 --> K5[Technical Documentation]
+    C3 --> K5[Technical Knowledge Base]
     C3 --> K6[Code Repository]
 ```
 

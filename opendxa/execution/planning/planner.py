@@ -4,10 +4,10 @@ from typing import Optional
 from opendxa.base.execution.base_executor import BaseExecutor
 from opendxa.execution.planning.plan import Plan
 from opendxa.execution.planning.plan_strategy import PlanStrategy
-from opendxa.execution.reasoning import ReasoningExecutor, ReasoningStrategy
+from opendxa.execution.reasoning import Reasoner, ReasoningStrategy
 from opendxa.execution.planning.plan_factory import PlanFactory
 
-class PlanExecutor(BaseExecutor[PlanStrategy, Plan, PlanFactory]):
+class Planner(BaseExecutor[PlanStrategy, Plan, PlanFactory]):
     """Executor for planning layer tasks."""
     
     # Required class attributes
@@ -27,6 +27,6 @@ class PlanExecutor(BaseExecutor[PlanStrategy, Plan, PlanFactory]):
             reasoning_strategy: Strategy for reasoning execution
         """
         if lower_executor is None:
-            lower_executor = ReasoningExecutor(ReasoningStrategy.DEFAULT)
+            lower_executor = Reasoner(ReasoningStrategy.DEFAULT)
         super().__init__(strategy, lower_executor)
     

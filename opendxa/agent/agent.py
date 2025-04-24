@@ -42,8 +42,9 @@ from opendxa.common.utils.misc import safe_asyncio_run
 from opendxa.base.capability.capable import Capable
 from opendxa.common.mixins.queryable import QueryResponse
 from opendxa.config.agent_config import AgentConfig
-from opendxa.execution.planning import PlanExecutor
-from opendxa.execution.reasoning import ReasoningExecutor
+from opendxa.execution.planning import Planner
+from opendxa.execution.reasoning import Reasoner
+from opendxa.common.mixins.tool_callable import ToolCallable
 
 @dataclass
 class AgentResponse(ResourceResponse):
@@ -74,35 +75,35 @@ class AgentResponse(ResourceResponse):
 
 
 # pylint: disable=too-many-public-methods
-class Agent(Configurable, Loggable, Capable):
+class Agent(Configurable, Capable, ToolCallable):
     """Main agent interface with built-in execution management."""
 
     # pylint: disable=too-many-instance-attributes
     def __init__(self, name: Optional[str] = None, description: Optional[str] = None):
-        Configurable.__init__(self)
-
+        """Initialize agent with optional name and description."""
+        super().__init__()
         self.name = name or "agent"
-        self.description = description or "Agent responsible for executing tasks and " \
-                                           "coordinating activities based on available information"
-        self._state = AgentState()
-        self._agent_llm = None  # Default LLM
-        self._workflow_llm = None  # Specialized LLMs
+        self.description = description or "An agent that can execute tasks"
+        self._llm = None
+        self._planning_executor = None
+        self._reasoner = None
+        self._resources = {}
+        self._capabilities = {}
+        self._io = None
+        self._state = None
+        self._runtime = None
         self._planning_llm = None
         self._reasoning_llm = None
-        self._capabilities = None
-        self._available_resources = None
-        self._io = None
-        self._runtime: Optional[AgentRuntime] = None
-        self._planning_strategy = PlanStrategy.DEFAULT
+        self._workflow_llm = None
         self._reasoning_strategy = ReasoningStrategy.DEFAULT
-        self._planning_executor = PlanExecutor(strategy=self._planning_strategy)
-        self._reasoning_executor = ReasoningExecutor(strategy=self._reasoning_strategy)
+        self._planning_strategy = PlanStrategy.DEFAULT
 
         # Initialize configuration
         self._config = AgentConfig()
 
         Loggable.__init__(self)
         Capable.__init__(self, self._capabilities)
+        ToolCallable.__init__(self)
 
     @property
     def planning_strategy(self) -> PlanStrategy:
@@ -129,9 +130,9 @@ class Agent(Configurable, Loggable, Capable):
     @property
     def agent_llm(self) -> LLMResource:
         """Get agent LLM."""
-        if not self._agent_llm:
-            self._agent_llm = self._get_default_llm_resource()
-        return self._agent_llm
+        if not self._llm:
+            self._llm = self._get_default_llm_resource()
+        return self._llm
     
     def _get_default_llm_resource(self):
         """Get default LLM resource."""
@@ -143,9 +144,9 @@ class Agent(Configurable, Loggable, Capable):
     @property
     def available_resources(self) -> Dict[str, BaseResource]:
         """Get available resources. Resources are things I can access as needed."""
-        if not self._available_resources:
-            self._available_resources = {}
-        return self._available_resources
+        if not self._resources:
+            self._resources = {}
+        return self._resources
 
     @property
     def capabilities(self) -> Dict[str, BaseCapability]:
@@ -184,14 +185,14 @@ class Agent(Configurable, Loggable, Capable):
     def with_llm(self, llm: Union[Dict, str, LLMResource]) -> "Agent":
         """Configure agent LLM."""
         if isinstance(llm, LLMResource):
-            self._agent_llm = llm
+            self._llm = llm
         elif isinstance(llm, str):
-            self._agent_llm = LLMResource(
+            self._llm = LLMResource(
                 name=f"{self.name}_llm",
                 config={"model": llm}
             )
         elif isinstance(llm, Dict):
-            self._agent_llm = LLMResource(
+            self._llm = LLMResource(
                 name=f"{self.name}_llm",
                 config=llm
             )
@@ -199,9 +200,9 @@ class Agent(Configurable, Loggable, Capable):
 
     def with_resources(self, resources: Dict[str, BaseResource]) -> "Agent":
         """Add resources to agent."""
-        if not self._available_resources:
-            self._available_resources = {}
-        self._available_resources.update(resources)
+        if not self._resources:
+            self._resources = {}
+        self._resources.update(resources)
         return self
 
     def with_capabilities(self, capabilities: Dict[str, BaseCapability]) -> "Agent":
@@ -216,7 +217,7 @@ class Agent(Configurable, Loggable, Capable):
         self._io = io
         return self
 
-    def with_planning(self, strategy: Optional[PlanStrategy] = None, planner: Optional[PlanExecutor] = None) -> 'Agent':
+    def with_planning(self, strategy: Optional[PlanStrategy] = None, planner: Optional[Planner] = None) -> 'Agent':
         """Configure planning strategy."""
         if strategy:
             self._planning_strategy = strategy
@@ -224,12 +225,12 @@ class Agent(Configurable, Loggable, Capable):
             self._planning_executor = planner
         return self
 
-    def with_reasoning(self, strategy: Optional[ReasoningStrategy] = None, reasoner: Optional[ReasoningExecutor] = None) -> 'Agent':
-        """Configure reasoning strategy."""
+    def with_reasoning(self, strategy: Optional[ReasoningStrategy] = None, reasoner: Optional[Reasoner] = None) -> 'Agent':
+        """Configure reasoning strategy and executor."""
         if strategy:
             self._reasoning_strategy = strategy
         if reasoner:
-            self._reasoning_executor = reasoner
+            self._reasoner = reasoner
         return self
 
     def with_planning_llm(self, llm: Union[Dict, str, LLMResource]) -> "Agent":
@@ -259,25 +260,19 @@ class Agent(Configurable, Loggable, Capable):
         raise ValueError(f"Invalid LLM configuration: {llm}")
 
     def _initialize(self) -> 'Agent':
-        """Internal initialization of agent configuration and runtime.
-
-        This method is idempotent - safe to call multiple times.
-        Only initializes if not already initialized.
-        """
-        if self._runtime:
-            return self  # Already initialized
-
-        # Validate minimal config
-        if not self._agent_llm:
-            self.with_llm(self._get_default_llm_resource())
-
-        # Set default strategies if not specified
-        self._planning_strategy = self._planning_strategy or PlanStrategy.DEFAULT
-        self._reasoning_strategy = self._reasoning_strategy or ReasoningStrategy.DEFAULT
-
-        # Create runtime with strategies
-        self._runtime = AgentRuntime(self, self._planning_executor, self._reasoning_executor)
-
+        """Initialize agent components."""
+        if not self._llm:
+            self._llm = self._get_default_llm_resource()
+        if not self._planning_executor:
+            self._planning_executor = Planner(strategy=self._planning_strategy)
+        if not self._reasoner:
+            self._reasoner = Reasoner(strategy=self._reasoning_strategy)
+        if not self._io:
+            self._io = IOFactory.create_io()
+        if not self._state:
+            self._state = AgentState()
+        if not self._runtime:
+            self._runtime = AgentRuntime(self, self._planning_executor, self._reasoner)
         return self
 
     async def cleanup(self) -> None:
