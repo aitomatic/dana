@@ -47,7 +47,7 @@ class Loggable:
         # Configure the logger
         self.logger.configure(
             console=True,
-            level=level or logging.INFO,
+            level=level or logging.WARNING,
             log_data=log_data,
             fmt="%(asctime)s - [%(name)s] %(levelname)s - %(message)s",
             datefmt="%H:%M:%S"

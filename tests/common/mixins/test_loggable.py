@@ -49,7 +49,7 @@ class TestLoggable:
         Loggable(log_data=True)
         mock_logger.configure.assert_called_once_with(
             console=True,
-            level=logging.INFO,
+            level=logging.WARNING,
             log_data=True,
             fmt="%(asctime)s - [%(name)s] %(levelname)s - %(message)s",
             datefmt="%H:%M:%S"

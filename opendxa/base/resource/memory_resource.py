@@ -331,7 +331,7 @@ class MemoryResource(BaseResource, Generic[ModelType, StorageType]):
         """
         try:
             await self._maybe_decay()  # Check for decay before storing
-            self.warning(f"self._model_class: {self._model_class}")
+            self.info(f"self._model_class: {self._model_class}")
             # Create a new instance of the model class
             memory = self._model_class(
                 content=content,
@@ -339,14 +339,11 @@ class MemoryResource(BaseResource, Generic[ModelType, StorageType]):
                 importance=importance or self._default_importance,
                 decay_rate=decay_rate or self._default_decay_rate
             )
-            self.warning(f"Storing memory: {memory}")
-            print(f"self._storage: {self._storage}")
-            die
+            self.info(f"Storing memory: {memory}")
             return ResourceResponse(success=True, content={"content": content})
             self._storage.store(memory)
             return ResourceResponse(success=True, content={"content": content})
         except Exception as e:
-            die
             return ResourceResponse.error_response(f"Failed to store memory: {str(e)}")
     
     async def retrieve(
