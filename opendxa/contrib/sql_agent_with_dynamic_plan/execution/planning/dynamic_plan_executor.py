@@ -1,18 +1,18 @@
 """
 Dynamic Plan Executor
 
-This is a customized PlanExecutor that can create a dynamic plan graph for a given node.
+This is a customized Planner that can create a dynamic plan graph for a given node.
 
 """
 from typing import List, cast
-from opendxa.execution.planning import PlanExecutor
+from opendxa.execution.planning import Planner
 from opendxa.execution.planning import Plan
 from opendxa.base.execution.execution_context import ExecutionContext
 from opendxa.base.execution.execution_types import ExecutionNode, ExecutionSignal, NodeType
 from opendxa.base.execution.base_executor import ExecutionError
 
 
-class DynamicPlanExecutor(PlanExecutor):
+class DynamicPlanExecutor(Planner):
     """Dynamic Plan Executor."""
 
     async def execute(

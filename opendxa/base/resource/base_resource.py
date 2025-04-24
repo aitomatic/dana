@@ -68,7 +68,7 @@ class ResourceResponse(QueryResponse):
         """
         return cls(success=False, error=ResourceError(message))
 
-class BaseResource(Configurable, Queryable, Loggable):
+class BaseResource(Configurable, Queryable, ToolCallable, Loggable):
     """Abstract base resource."""
 
     # Class-level default configuration
@@ -107,6 +107,9 @@ class BaseResource(Configurable, Queryable, Loggable):
         self._query_strategy = self.config.get("query_strategy", QueryStrategy.ONCE)
         self._query_max_iterations = self.config.get("query_max_iterations", 3)
         Queryable.__init__(self)
+
+        # Initialize ToolCallable
+        ToolCallable.__init__(self)
 
         # Other initializations
         self._is_available = False  # will only be True after initialization

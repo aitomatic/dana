@@ -58,6 +58,7 @@ from opendxa.common import (
     get_class_by_name,
     get_config_path,
     load_yaml_config,
+    safe_asyncio_run,
 )
 
 from opendxa.base import (
@@ -108,11 +109,11 @@ from opendxa.execution import (
     PipelineNode,
     PipelineStrategy,
     Plan,
-    PlanExecutor,
+    Planner,
     PlanFactory,
     PlanStrategy,
     Reasoning,
-    ReasoningExecutor,
+    Reasoner,
     ReasoningFactory,
     ReasoningStrategy,
 )
@@ -164,7 +165,7 @@ __all__ = [
     'get_class_by_name',
     'get_config_path',
     'load_yaml_config',
-
+    'safe_asyncio_run',
     # Base
     'BaseCapability',
     'BaseExecutor',
@@ -210,11 +211,11 @@ __all__ = [
     'PipelineNode',
     'PipelineStrategy',
     'Plan',
-    'PlanExecutor',
+    'Planner',
     'PlanFactory',
     'PlanStrategy',
     'Reasoning',
-    'ReasoningExecutor',
+    'Reasoner',
     'ReasoningFactory',
     'ReasoningStrategy',
 

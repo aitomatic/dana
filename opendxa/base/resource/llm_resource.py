@@ -42,7 +42,7 @@ class LLMResource(BaseResource):
 
         super().__init__(name)
         self.config = config or {}
-        self.model = self.config.get("model", self._get_default_model())
+        self.model = self.config.get("model", None)
         self.provider_configs = self.config.get("providers", {})
         self._client: Optional[ai.Client] = None
         self.max_retries = int(self.config.get("max_retries", 3))
@@ -106,7 +106,7 @@ class LLMResource(BaseResource):
         if isinstance(mock_llm_call, Callable) or isinstance(mock_llm_call, bool):
             self._mock_llm_call = mock_llm_call
         else:
-            raise ValueError("mock_llm_call must be a Callable or a boolean")
+            raise LLMError("mock_llm_call must be a Callable or a boolean")
 
         return self
 
@@ -248,10 +248,13 @@ class LLMResource(BaseResource):
             await self.initialize()
         assert self._client is not None
 
+        if not self.model:
+            raise LLMError("No LLM model specified. Did you forget to set the API key in .env or your environment?")
+
         # Get message history (read-only)
         messages = get_field(request, "messages", [])
         if not messages:
-            raise ValueError("messages must be provided and non-empty")
+            raise LLMError("messages must be provided and non-empty")
         
         # Build request parameters
         request = self._build_request_params(request)
@@ -276,12 +279,12 @@ class LLMResource(BaseResource):
         """
         messages = get_field(request, "messages", [])
         if not messages:
-            raise ValueError("messages must be provided and non-empty")
+            raise LLMError("messages must be provided and non-empty")
             
         # Get the last user message
         last_message = next((msg for msg in reversed(messages) if msg["role"] == "user"), None)
         if not last_message:
-            raise ValueError("No user message found in message history")
+            raise LLMError("No user message found in message history")
             
         # Create a mock response
         return {
@@ -456,6 +459,7 @@ class LLMResource(BaseResource):
         """
         self.debug("LLM response: %s", str(response))
 
+    # TODO: deprecate this
     def _get_default_model(self) -> str:
         """Get default model identifier.
         

@@ -10,7 +10,7 @@ from opendxa.execution.reasoning.reasoning_factory import ReasoningFactory
 from opendxa.execution.reasoning.reasoning_strategy import ReasoningStrategy
 
 
-class ReasoningExecutor(BaseExecutor[ReasoningStrategy, Reasoning, ReasoningFactory]):
+class Reasoner(BaseExecutor[ReasoningStrategy, Reasoning, ReasoningFactory]):
     """Executor for reasoning layer tasks.
     This executor handles the reasoning layer of execution, which is
     responsible for executing individual reasoning tasks using LLMs.

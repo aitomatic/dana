@@ -6,194 +6,163 @@
 
 # Agent Capability System
 
-The Agent Capability System builds upon the base capability framework to provide specialized, domain-specific capabilities for OpenDXA agents. It extends the foundational interfaces with concrete implementations, advanced resource management, and domain expertise integration.
+The Agent Capability System provides the bridge between Agents and Resources, enabling agents to access and utilize various resources through well-defined capabilities. Capabilities serve as the interface through which Planning and Reasoning interact with Resources.
 
 ## Overview
 
 The Agent Capability System provides:
 
-- Specialized capability implementations
-- Advanced resource management
-- Domain expertise integration
-- Memory and knowledge management
+- Resource access through capabilities
+- Knowledge and expertise integration
+- Memory management
+- Tool access and execution
 - Capability composition and orchestration
 
 ```mermaid
 graph TB
-    A[Agent Capability] --> B[Memory]
-    A --> C[Domain Expertise]
-    A --> D[Planning]
-    A --> E[Reasoning]
-    
-    subgraph "Memory Types"
-        B --> F[Short-term]
-        B --> G[Long-term]
-        B --> H[Working]
+    subgraph "Agent"
+        A[Agent] --> C[Capabilities]
     end
-    
-    subgraph "Expertise Types"
-        C --> I[Knowledge Base]
-        C --> J[Skill Sets]
-        C --> K[Experience]
-    end
-    
+
     subgraph "Resources"
-        L[Vector DB] -.-> I
-        M[Key-Value Store] -.-> F
-        N[Time Series DB] -.-> G
-        O[Function Registry] -.-> J
-        P[Learning System] -.-> K
+        R1[MemoryResources]
+        R2[KnowledgeBaseResources]
+        R3[DatabaseResources]
+        R4[ToolResources]
     end
+
+    subgraph "AgentRuntime"
+        P[Planning] --> C
+        R[Reasoning] --> C
+    end
+
+    C --> R1
+    C --> R2
+    C --> R3
+    C --> R4
 ```
 
 ## Key Components
 
 ### 1. Memory Capability
 
-The memory capability provides different types of memory management:
+The memory capability provides access to memory resources:
 
 ```python
 class MemoryCapability(BaseCapability):
     """Memory management capability for agents."""
     
     async def initialize(self, config):
-        self.short_term = VolatileStore(config.get("short_term", {}))
-        self.long_term = PersistentStore(config.get("long_term", {}))
-        self.working = WorkingMemory(config.get("working", {}))
+        self.memory = MemoryResource(config)
         
-    async def store(self, key: str, value: Any, memory_type: str = "auto"):
-        """Store information with automatic memory type selection."""
-        if memory_type == "auto":
-            memory_type = self._determine_memory_type(value)
-        await getattr(self, memory_type).store(key, value)
+    async def store(self, key: str, value: Any):
+        """Store information in memory."""
+        await self.memory.store(key, value)
+        
+    async def recall(self, key: str) -> Any:
+        """Recall information from memory."""
+        return await self.memory.recall(key)
 ```
 
-### 2. Domain Expertise
+### 2. Knowledge Capability
 
-Domain expertise capabilities integrate specialized knowledge:
+Knowledge capabilities provide access to knowledge base resources:
 
 ```python
-class DomainExpertise(BaseCapability):
-    """Domain-specific expertise capability."""
+class KnowledgeCapability(BaseCapability):
+    """Knowledge access capability."""
     
     async def initialize(self, config):
-        self.knowledge = VectorDB(config.get("knowledge_base"))
-        self.skills = FunctionRegistry(config.get("skills"))
-        self.experience = ExperienceTracker(config.get("experience"))
+        self.knowledge = KnowledgeBaseResource(config)
         
-    async def apply_expertise(self, task: Task) -> Solution:
-        """Apply domain knowledge to solve task."""
-        relevant = await self.knowledge.search(task.context)
-        solution = await self.skills.execute(task.action, relevant)
-        await self.experience.record(task, solution)
-        return solution
+    async def query(self, query: str) -> List[Knowledge]:
+        """Query knowledge base."""
+        return await self.knowledge.search(query)
 ```
 
-### 3. Capability Composition
+### 3. Tool Capability
 
-Capabilities can be composed to create more complex behaviors:
+Tool capabilities provide access to external tools and services:
 
 ```python
-class CompositeCapability(BaseCapability):
-    """Capability that combines multiple capabilities."""
+class ToolCapability(BaseCapability):
+    """Tool access capability."""
     
     async def initialize(self, config):
-        self.capabilities = {}
-        for cap_name, cap_config in config.get("capabilities", {}).items():
-            self.capabilities[cap_name] = await self._initialize_capability(
-                cap_name,
-                cap_config
-            )
-            
-    async def apply(self, context):
-        results = {}
-        for name, capability in self.capabilities.items():
-            results[name] = await capability.apply(context)
-        return self._combine_results(results)
+        self.tools = ToolResource(config)
+        
+    async def execute(self, tool_name: str, params: Dict) -> Any:
+        """Execute a tool with parameters."""
+        return await self.tools.execute(tool_name, params)
 ```
 
 ## Usage Guide
 
-### Basic Memory Operations
+### Basic Capability Usage
 
 ```python
-# Simple memory usage
+# Configure agent with capabilities
 agent = Agent("assistant")\
-    .with_memory()  # Default memory configuration
+    .with_capability("memory", MemoryCapability())\
+    .with_capability("knowledge", KnowledgeCapability())\
+    .with_capability("tools", ToolCapability())
 
-# Store and recall
-await agent.memory.store("user_preference", "dark_mode")
-preference = await agent.memory.recall("user_preference")
-
-# Short-term memory automatically manages relevance
-await agent.memory.short_term.add("current_context", context)
+# Capabilities are accessed through planning and reasoning
+result = await agent.execute(
+    objective="Answer question",
+    plan_strategy=PlanStrategy.DEFAULT,
+    reasoning_strategy=ReasoningStrategy.DEFAULT
+)
 ```
 
-### Domain Expertise
+### Resource Access
 
 ```python
-# Specialized knowledge domain
-agent = Agent("medical_assistant")\
-    .with_expertise("medical", {
-        "knowledge_base": {
-            "type": "vector_db",
-            "config": {"index": "medical_corpus"}
-        },
-        "credentials": ["general_practice"],
-        "specializations": ["diagnosis", "treatment"]
-    })
+# Access resources through capabilities
+memory = agent.capabilities["memory"]
+knowledge = agent.capabilities["knowledge"]
+tools = agent.capabilities["tools"]
 
-# Expert reasoning
-result = await agent.run({
-    "task": "diagnose",
-    "symptoms": symptoms_list,
-    "context": patient_history
-})
+# Use resources
+await memory.store("context", current_context)
+facts = await knowledge.query("relevant facts")
+result = await tools.execute("calculator", {"operation": "add", "values": [1, 2]})
 ```
 
 ### Capability Composition
 
 ```python
 # Create a composite capability
-class AnalysisCapability(CompositeCapability):
+class AnalysisCapability(BaseCapability):
     def __init__(self):
-        super().__init__({
-            "capabilities": {
-                "memory": {"type": "memory"},
-                "expertise": {"type": "domain_expertise"},
-                "reasoning": {"type": "reasoning"}
-            }
-        })
+        super().__init__()
+        self.memory = MemoryCapability()
+        self.knowledge = KnowledgeCapability()
+        self.tools = ToolCapability()
         
     async def analyze(self, data):
-        # Use composed capabilities
-        context = await self.capabilities["memory"].get_context()
-        expertise = await self.capabilities["expertise"].apply_expertise(data)
-        result = await self.capabilities["reasoning"].reason(expertise, context)
+        # Use multiple capabilities
+        context = await self.memory.recall("current_context")
+        facts = await self.knowledge.query(data)
+        result = await self.tools.execute("analyzer", {"data": data, "context": context})
         return result
 ```
 
 ## Best Practices
 
-1. **Memory Management**
-   - Use appropriate memory types
-   - Implement decay strategies
-   - Maintain context relevance
-   - Clean up stale data
+1. **Resource Access**
+   - Access resources only through capabilities
+   - Handle resource errors gracefully
+   - Clean up resources when done
+   - Monitor resource usage
 
-2. **Expertise Development**
-   - Define clear domains
-   - Validate knowledge bases
-   - Test skill implementations
-   - Track performance
-
-3. **Resource Integration**
-   - Compose capabilities cleanly
+2. **Capability Design**
+   - Define clear interfaces
    - Handle resource dependencies
    - Manage state properly
-   - Monitor usage patterns
+   - Document usage patterns
 
-4. **Capability Composition**
+3. **Composition**
    - Design for reusability
    - Maintain clear boundaries
    - Handle dependencies
@@ -201,12 +170,12 @@ class AnalysisCapability(CompositeCapability):
 
 ## Integration with Base Framework
 
-The agent capability system extends the base capability framework (`opendxa.base.capability`) by providing:
+The agent capability system extends the base capability framework by providing:
 
-- Concrete implementations of base interfaces
-- Specialized capability types
-- Advanced resource management
-- Domain-specific functionality
+- Resource access through capabilities
+- Integration with Planning and Reasoning
+- Standardized resource interfaces
+- Capability composition patterns
 
 For more information on the foundational interfaces, see the [Base Capability Documentation](../base/capability/README.md).
 

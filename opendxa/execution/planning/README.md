@@ -1,287 +1,263 @@
-<!-- markdownlint-disable MD041 -->
-<!-- markdownlint-disable MD033 -->
 <p align="center">
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
 
 # Planning System
 
-## dxa.core.planning Module
-
-The planning layer is the strategic brain of the DXA agent system, responsible for understanding objectives and generating executable plans. While the [reasoning layer](../reasoning/README.md) determines how to think about individual steps, planning decides what steps to take. It manages the evolution of both objectives and plans, adapting to new information and changing circumstances. This strategic oversight ensures that agents maintain progress toward goals while efficiently using available resources.
-
-## Design Philosophy
-
-> Simple things should be easy, complex things should be possible.
-
-This principle guides our planning system design:
-
-- Direct planning for simple tasks (one-step plans)
-- Sequential planning for clear workflows
-- Hierarchical planning for complex goals
-- Dynamic planning for adaptive scenarios
-
-Each pattern builds on the same foundation but adds strategic capability where needed.
+The planning system is a core component of OpenDXA's Imperative Aspect, responsible for generating and managing executable plans based on objectives and available knowledge. It works in conjunction with the reasoning system to ensure effective task execution.
 
 ## Architecture
 
 ```mermaid
-graph TB
-    A[Planning Pattern] --> B[Direct]
-    A --> C[Sequential]
-    A --> D[Hierarchical]
-    A --> E[Dynamic]
-    
-    subgraph "Strategic Complexity"
-        B --> C
-        C --> D
-        D --> E
+graph LR
+    subgraph DA["Declarative Aspect"]
+        K[Knowledge]
+        R[Resources]
+        K --> R
     end
-    
-    subgraph "Objective Management"
-        B -.- F[Fixed]
-        C -.- G[Linear Evolution]
-        D -.- H[Tree Structure]
-        E -.- I[Network Adaptation]
+
+    subgraph IA["Imperative Aspect"]
+        P[Planning]
+        RE[Reasoning]
+        P --- RE
     end
+
+    subgraph S["State"]
+        WS[WorldState]
+        AS[AgentState]
+        WS --- AS
+    end
+
+    DA --> IA
+    IA --> S
 ```
 
-## Usage Guide
+## Knowledge Structure
 
-### Simple Task
+### Technical Knowledge
 
-```python
-# Direct planning for immediate execution
-agent = Agent("assistant")\
-    .with_planning("direct")
-result = await agent.run("Summarize this text")
+```mermaid
+graph TD
+    subgraph "Technical Knowledge"
+        direction TB
+        TK1[Data Processing]
+        TK2[Language Understanding]
+    end
+
+    subgraph "Data Processing"
+        direction TB
+        DP1[Analysis]
+        DP2[Time Series]
+        DP3[Pattern Recognition]
+    end
+
+    subgraph "Analysis"
+        direction TB
+        AN1[Statistical Analysis]
+        AN2[Predictive Modeling]
+        AN3[Anomaly Detection]
+    end
+
+    subgraph "Language Understanding"
+        direction TB
+        LU1[NLP]
+        LU2[Text Processing]
+        LU3[Document Analysis]
+    end
+
+    TK1 --> DP1
+    TK1 --> DP2
+    TK1 --> DP3
+    DP1 --> AN1
+    DP1 --> AN2
+    DP1 --> AN3
+    TK2 --> LU1
+    TK2 --> LU2
+    TK2 --> LU3
 ```
 
-### Complex Workflow
+### Domain Knowledge
 
-```python
-# Sequential planning for multi-step tasks
-agent = Agent("researcher")\
-    .with_planning("sequential")\
-    .with_resources({
-        "search": SearchResource(),    # Find information
-        "memory": MemoryResource()     # Track progress
-    })
+```mermaid
+graph TD
+    subgraph "Domain Knowledge"
+        direction TB
+        DK1[Semiconductor]
+        DK2[Manufacturing]
+    end
 
-result = await agent.run({
-    "objective": "Research quantum computing impact",
-    "requirements": [
-        "find_key_papers",
-        "analyze_trends",
-        "synthesize_findings"
-    ]
-})
+    subgraph "Semiconductor"
+        direction TB
+        SC1[Process Control]
+        SC2[Yield Analysis]
+        SC3[Equipment Monitoring]
+    end
+
+    subgraph "Process Control"
+        direction TB
+        PC1[Recipe Optimization]
+        PC2[Parameter Control]
+        PC3[Process Stability]
+    end
+
+    subgraph "Manufacturing"
+        direction TB
+        MF1[Quality Control]
+        MF2[Production Optimization]
+        MF3[Supply Chain]
+    end
+
+    DK1 --> SC1
+    DK1 --> SC2
+    DK1 --> SC3
+    SC1 --> PC1
+    SC1 --> PC2
+    SC1 --> PC3
+    DK2 --> MF1
+    DK2 --> MF2
+    DK2 --> MF3
 ```
 
-### Hierarchical Goals
+## Planning Patterns
 
+The planning system supports four fundamental patterns, each building on the previous to handle increasing complexity:
+
+1. **Direct Planning**
+   - Single-step execution
+   - Fixed objectives
+   - Minimal overhead
+   - Best for simple, well-defined tasks
+
+2. **Sequential Planning**
+   - Linear workflows
+   - Clear dependencies
+   - Progress tracking
+   - Best for multi-step tasks with known sequences
+
+3. **Hierarchical Planning**
+   - Goal decomposition
+   - Nested objectives
+   - Resource delegation
+   - Best for complex, structured goals
+
+4. **Dynamic Planning**
+   - Adaptive replanning
+   - Objective evolution
+   - Resource reallocation
+   - Best for uncertain or changing environments
+
+## Usage Examples
+
+### Direct Planning
 ```python
-# Hierarchical planning for complex objectives
-agent = Agent("project_manager")\
-    .with_planning("hierarchical")\
-    .with_resources({
-        "tasks": TaskManager(),
-        "team": TeamResource()
-    })
+from opendxa.execution.planning import DirectPlanner
+from opendxa.execution.context import ExecutionContext
 
-result = await agent.run({
-    "objective": "Launch new product",
-    "subgoals": {
+planner = DirectPlanner()
+context = ExecutionContext(
+    objective="Summarize this text",
+    capabilities=["text_analysis"]
+)
+plan = await planner.create_plan(context)
+```
+
+### Sequential Planning
+```python
+from opendxa.execution.planning import SequentialPlanner
+
+planner = SequentialPlanner()
+context = ExecutionContext(
+    objective="Research quantum computing",
+    capabilities=["search", "analysis", "synthesis"],
+    requirements=["find_papers", "analyze_trends", "synthesize_findings"]
+)
+plan = await planner.create_plan(context)
+```
+
+### Hierarchical Planning
+```python
+from opendxa.execution.planning import HierarchicalPlanner
+
+planner = HierarchicalPlanner()
+context = ExecutionContext(
+    objective="Launch new product",
+    capabilities=["research", "development", "marketing"],
+    subgoals={
         "research": ["market", "competition"],
         "development": ["prototype", "testing"],
         "launch": ["marketing", "distribution"]
     }
-})
+)
+plan = await planner.create_plan(context)
 ```
 
-### Adaptive Scenarios
-
+### Dynamic Planning
 ```python
-# Dynamic planning for evolving situations
-agent = Agent("incident_manager")\
-    .with_planning("dynamic")\
-    .with_resources({
-        "monitor": SystemMonitor(),
-        "alerts": AlertSystem(),
-        "actions": ActionEngine()
-    })
+from opendxa.execution.planning import DynamicPlanner
 
-async with agent:
-    await agent.run({
-        "objective": "Maintain system health",
-        "adaptation_rules": {
-            "high_load": "scale_resources",
-            "errors": "activate_fallback",
-            "attacks": "enhance_security"
-        }
-    })
+planner = DynamicPlanner()
+context = ExecutionContext(
+    objective="Maintain system health",
+    capabilities=["monitoring", "scaling", "security"],
+    adaptation_rules={
+        "high_load": "scale_resources",
+        "errors": "activate_fallback",
+        "attacks": "enhance_security"
+    }
+)
+plan = await planner.create_plan(context)
+```
+
+## Implementation Details
+
+### Core Components
+
+1. **Planning Pattern Base**
+```python
+class PlanningPattern:
+    """Base class for all planning patterns."""
+    
+    async def create_plan(self, context: ExecutionContext) -> Plan:
+        """Generate a plan for the given execution context."""
+        raise NotImplementedError
+        
+    async def update_plan(self, plan: Plan, state: ExecutionState) -> Plan:
+        """Update plan based on execution state."""
+        raise NotImplementedError
+```
+
+2. **Plan Structure**
+```python
+class Plan:
+    """Represents an executable plan."""
+    
+    def __init__(self):
+        self.steps: List[Step]
+        self.dependencies: Dict[str, List[str]]
+        self.resources: Dict[str, Resource]
+        self.metrics: Dict[str, Metric]
 ```
 
 ### Pattern Selection Guide
 
-Choose your planning pattern based on:
+Choose a planning pattern based on:
 
-1. Objective Complexity
+1. **Objective Complexity**
    - Single goal → Direct
    - Linear sequence → Sequential
    - Nested goals → Hierarchical
    - Evolving goals → Dynamic
 
-2. Environmental Stability
+2. **Environmental Stability**
    - Static, known → Direct/Sequential
    - Partially known → Hierarchical
    - Highly dynamic → Dynamic
 
-3. Resource Management
+3. **Resource Management**
    - Fixed resources → Direct
    - Staged allocation → Sequential
    - Hierarchical sharing → Hierarchical
    - Dynamic reallocation → Dynamic
-
-## Planning Patterns
-
-1. Direct Planning
-   - Single-step plans
-   - Fixed objectives
-   - Immediate execution
-   - Minimal overhead
-
-2. Sequential Planning
-   - Linear workflows
-   - Clear dependencies
-   - Progress tracking
-   - Resource staging
-
-3. Hierarchical Planning
-   - Goal decomposition
-   - Nested objectives
-   - Resource delegation
-   - Parallel execution
-
-4. Dynamic Planning
-   - Adaptive replanning
-   - Objective evolution
-   - Resource reallocation
-   - Real-time adjustment
-
-## Implementation Details
-
-### Pattern Structure
-
-```python
-class PlanningPattern:
-    """Base class for all planning patterns."""
-    
-    async def create_plan(self, objective: Objective) -> Plan:
-        """Generate a plan for the given objective."""
-        raise NotImplementedError
-        
-    async def update_plan(self, plan: Plan, signals: List[Signal]) -> Plan:
-        """Update plan based on execution signals."""
-        raise NotImplementedError
-```
-
-### Objective Management
-
-Each planning pattern manages:
-
-- Original intent
-- Current objective state
-- Success criteria
-- Evolution history
-
-### Plan Management
-
-Plans include:
-
-- Step sequences
-- Resource requirements
-- Progress metrics
-- Adaptation rules
-
-## Pattern Details
-
-### Direct Planning
-
-Best for: Simple, single-objective tasks
-
-```python
-class DirectPlanning(PlanningPattern):
-    async def create_plan(self, objective):
-        return Plan(steps=[{
-            "action": "execute",
-            "input": objective.current
-        }])
-```
-
-### Sequential Planning
-
-Best for: Clear, linear workflows
-
-Steps:
-
-1. Break down objective
-2. Order dependencies
-3. Allocate resources
-4. Track completion
-
-```python
-class SequentialPlanning(PlanningPattern):
-    async def create_plan(self, objective):
-        steps = await self._decompose_objective(objective)
-        dependencies = self._analyze_dependencies(steps)
-        return Plan(
-            steps=steps,
-            dependencies=dependencies
-        )
-```
-
-### Hierarchical Planning
-
-Best for: Complex, nested objectives
-
-Process:
-
-1. Create goal tree
-2. Assign resources
-3. Set dependencies
-4. Enable parallel execution
-
-```python
-class HierarchicalPlanning(PlanningPattern):
-    async def create_plan(self, objective):
-        goal_tree = await self._create_goal_tree(objective)
-        resources = await self._allocate_resources(goal_tree)
-        return Plan(
-            steps=self._flatten_tree(goal_tree),
-            resources=resources
-        )
-```
-
-### Dynamic Planning
-
-Best for: Evolving situations
-
-Features:
-
-1. Continuous monitoring
-2. Adaptive replanning
-3. Resource reallocation
-4. Progress optimization
-
-```python
-class DynamicPlanning(PlanningPattern):
-    async def update_plan(self, plan, signals):
-        impact = await self._assess_impact(signals)
-        if self._needs_replanning(impact):
-            return await self._create_new_plan(plan.objective, impact)
-        return await self._adjust_current_plan(plan, impact)
-```
 
 ## Integration with Reasoning
 

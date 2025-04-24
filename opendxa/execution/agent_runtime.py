@@ -2,8 +2,8 @@
 
 from typing import Any, TYPE_CHECKING, Optional
 
-from opendxa.execution.planning import PlanExecutor, Plan
-from opendxa.execution.reasoning import ReasoningExecutor
+from opendxa.execution.planning import Planner, Plan
+from opendxa.execution.reasoning import Reasoner
 from opendxa.base.execution.execution_context import ExecutionContext
 from opendxa.base.execution.execution_types import ExecutionSignalType
 if TYPE_CHECKING:
@@ -13,15 +13,15 @@ class AgentRuntime:
     """Manages agent execution, coordinating between layers."""
 
     def __init__(self, agent: 'Agent',
-                 planning_executor: Optional[PlanExecutor] = None,
-                 reasoning_executor: Optional[ReasoningExecutor] = None):
+                 planning_executor: Optional[Planner] = None,
+                 reasoner: Optional[Reasoner] = None):
         self.agent = agent
 
         # Initialize executors with strategies
-        self.reasoning_executor = reasoning_executor or \
-            ReasoningExecutor(strategy=agent.reasoning_strategy)
+        self.reasoner = reasoner or \
+            Reasoner(strategy=agent.reasoning_strategy)
         self.planning_executor = planning_executor or \
-            PlanExecutor(strategy=agent.planning_strategy, lower_executor=self.reasoning_executor)
+            Planner(strategy=agent.planning_strategy, lower_executor=self.reasoner)
 
     async def execute(self, plan: Plan, context: ExecutionContext) -> Any:
         """Execute plan and return result."""

@@ -39,16 +39,56 @@ Provides registration capabilities for components that need to be discoverable a
 ### Identifiable
 Adds unique identification capabilities to objects, enabling tracking and referencing of specific instances.
 
+### Capable
+Adds capabilities management capabilities to objects.
+
 ## Mixin Hierarchy
 
 ```mermaid
 classDiagram
     direction BT
+    class Agent {
+        +name
+        +description
+        +tools
+        +run()
+        +ask()
+    }
+
+    class BaseResource {
+        +name
+        +description
+        +query()
+    }
+
+    class McpResource {
+        +name
+        +description
+        +transport_type
+        +query()
+        +list_tools()
+        +call_tool()
+    }
+
+    class BaseCapability {
+        +name
+        +description
+        +is_enabled
+        +enable()
+        +disable()
+        +apply()
+        +can_handle()
+    }
+
+    class Capable {
+        +capabilities
+        +add_capability()
+        +remove_capability()
+        +has_capability()
+        +get_capability()
+    }
+
     class Configurable {
-        +debug()
-        +info()
-        +warning()
-        +error()
         +get()
         +set()
         +update()
@@ -93,42 +133,68 @@ classDiagram
         +set_id()
     }
 
-    class BaseResource {
-        +name
-        +description
-        +initialize()
-        +cleanup()
-        +query()
-    }
-
-    class McpResource {
-        +name
-        +description
-        +transport_type
-        +query()
-        +list_tools()
-        +call_tool()
-    }
-
-    Loggable <|-- Configurable
-    ToolCallable <|-- Queryable
+    Configurable <|-- Agent
+    ToolCallable <|-- Agent
+    Capable <|-- Agent
     Configurable <|-- BaseResource
     Queryable <|-- BaseResource
+    ToolCallable <|-- BaseResource
     BaseResource <|-- McpResource
+    ToolCallable <|-- BaseCapability
+    Configurable <|-- BaseCapability
+    Registerable <|-- ToolCallable
+    Loggable <|-- ToolCallable
+    Identifiable <|-- Registerable
 ```
 
-## Usage Example
+## Usage Examples
 
+### Basic Usage
 ```python
-from opendxa.common.mixins import Loggable, Configurable, Queryable
+from opendxa.common.mixins import Loggable, Identifiable, Configurable
 
-class MyComponent(Loggable, Configurable, Queryable):
-    def __init__(self, config_path=None, **overrides):
-        super().__init__(config_path=config_path, **overrides)
-        
-    async def query(self, params=None):
-        self.info("Processing query with params: %s", params)
-        return QueryResponse(success=True, content=params)
+class MyResource(Loggable, Identifiable, Configurable):
+    def __init__(self):
+        Loggable.__init__(self)
+        Identifiable.__init__(self)
+        Configurable.__init__(self)
+        # Your initialization code here
+```
+
+### Advanced Usage
+```python
+from opendxa.common.mixins import (
+    Loggable,
+    Identifiable,
+    Configurable,
+    Registerable,
+    Queryable,
+    ToolCallable
+)
+
+class AdvancedResource(Loggable, Identifiable, Configurable, Registerable, Queryable, ToolCallable):
+    def __init__(self):
+        Loggable.__init__(self)
+        Identifiable.__init__(self)
+        Configurable.__init__(self)
+        Registerable.__init__(self)
+        Queryable.__init__(self)
+        ToolCallable.__init__(self)
+        # Your initialization code here
+```
+
+### Agent Usage
+```python
+from opendxa.common.mixins import Configurable, Loggable, ToolCallable
+from opendxa.base.capability import Capable
+
+class Agent(Configurable, Loggable, Capable, ToolCallable):
+    def __init__(self):
+        Configurable.__init__(self)
+        Loggable.__init__(self)
+        Capable.__init__(self)
+        ToolCallable.__init__(self)
+        # Agent initialization code here
 ```
 
 ## Best Practices

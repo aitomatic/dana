@@ -41,22 +41,15 @@ class Loggable:
             log_data: Whether to log data payloads (default: False).
             level: Optional logging level. If not provided, inherits from parent.
         """
-        # Get the class that's actually being instantiated (not Loggable)
-        cls = self.__class__
-        
-        # If no custom logger name, use just the class name
-        if logger_name is None:
-            logger_name = cls.__name__
-        
-        # Initialize logger using DXA_LOGGER
-        self.logger = DXA_LOGGER.getLogger(logger_name)
+        # Initialize logger using either custom name or object's class module and name
+        self.logger = DXA_LOGGER.getLogger(logger_name or self)
         
         # Configure the logger
         self.logger.configure(
             console=True,
             level=level or logging.WARNING,
             log_data=log_data,
-            fmt="%(asctime)s - [OpenDXA %(name)s] %(levelname)s - %(message)s",
+            fmt="%(asctime)s - [%(name)s] %(levelname)s - %(message)s",
             datefmt="%H:%M:%S"
         )
         

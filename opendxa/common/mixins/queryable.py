@@ -22,18 +22,15 @@ class QueryResponse(BaseResponse):
     """Base class for all query responses."""
 
 
-class Queryable(ToolCallable):
-    """Mixin for queryable objects that can be called as tools.
-
-    This mixin enables resources to be both queried directly and called as tools
-    within the tool-calling ecosystem. The query() method is automatically exposed
-    as a tool through the ToolCallable interface, allowing Queryable objects to
-    be seamlessly integrated into tool-calling systems.
+class Queryable():
+    """Mixin for queryable objects.
+      Note that the @ToolCallable.tool decorator must be applied to the instance
+      query() method to expose it as a tool; the decorator is not inherited
+      automatically.
     """
 
     def __init__(self):
         """Initialize the Queryable object."""
-        ToolCallable.__init__(self)
         self._query_strategy = getattr(self, "_query_strategy", QueryStrategy.ONCE)
         self._query_max_iterations = getattr(self, "_query_max_iterations", 3)
 

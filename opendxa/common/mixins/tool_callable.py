@@ -45,6 +45,7 @@ from typing import Dict, Any, Set, Optional, List, Callable, TypeVar, get_type_h
 import inspect
 from mcp.types import Tool as McpTool
 from opendxa.common.mixins.registerable import Registerable
+from opendxa.common.mixins.loggable import Loggable
 
 # Type variable for the decorated function
 F = TypeVar('F', bound=Callable[..., Any])
@@ -92,7 +93,7 @@ def _type_to_schema(type_hint: Any) -> Dict[str, Any]:
     }
     return {"type": type_map.get(type_hint, "string")}
 
-class ToolCallable(Registerable):
+class ToolCallable(Registerable, Loggable):
     """A mixin class that provides tool-callable functionality to classes.
     
     This class can be used as a mixin to add tool-callable functionality to any class.
@@ -117,7 +118,8 @@ class ToolCallable(Registerable):
         self._tool_callable_function_cache: Set[str] = set()  # computed in __post_init__
         self.__mcp_tool_list_cache: Optional[List[McpTool]] = None  # computed lazily in list_mcp_tools
         self.__openai_function_list_cache: Optional[List[OpenAIFunctionCall]] = None  # computed lazily in list_openai_functions
-        super().__init__()
+        Registerable.__init__(self)
+        Loggable.__init__(self)
         self.__post_init__()
         
     def __post_init__(self):

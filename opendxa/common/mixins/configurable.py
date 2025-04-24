@@ -5,23 +5,18 @@ It unifies common configuration patterns like loading from YAML, validation,
 and access methods.
 """
 
-from dataclasses import dataclass
 import logging
 from typing import Dict, Any, Optional, Union, ClassVar, Type, TypeVar, List
 from pathlib import Path
 import inspect
 import yaml
-from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.exceptions import ConfigurationError
 from opendxa.common.utils.misc import load_yaml_config
+from opendxa.common.utils.logging.dxa_logger import DXA_LOGGER
 
 T = TypeVar('T')
 
-# Configure logger
-logger = logging.getLogger(__name__)
-
-@dataclass
-class Configurable(Loggable):
+class Configurable():
     """Base class for configurable components in DXA.
     
     This class provides a unified interface for configuration management across DXA components.
@@ -31,7 +26,7 @@ class Configurable(Loggable):
     The configuration path is determined by the location of the class definition:
     - If MyComponent is defined in /path/to/opendxa/base/execution/my_component.py
     - Then its config files will be in /path/to/opendxa/base/execution/yaml/
-    - And its default config will be /path/to/opendxa/base/execution/yaml/my_component.yaml
+    - And its default config will be in /path/to/opendxa/base/execution/yaml/my_component.yaml
     
     This means each configurable component's configuration is co-located with its code,
     making it easy to find and maintain related configurations. The default config file
@@ -172,7 +167,9 @@ class Configurable(Loggable):
         Raises:
             ConfigurationError: If configuration is invalid
         """
-        super().__init__()  # Initialize Loggable
+        super().__init__()
+        # Initialize logger using the object's class module and name
+        self._logger = DXA_LOGGER.getLogger(self)
         self.config = self._load_config(config_path)
         self._apply_overrides(overrides)
         self._validate_config()
@@ -210,7 +207,7 @@ class Configurable(Loggable):
         except yaml.YAMLError as e:
             raise ConfigurationError(f"Invalid YAML format in configuration file: {config_path}") from e
         except Exception as e:
-            self.warning(f"Failed to load config: {e}. Using default configuration.")
+            self._logger.warning(f"Failed to load config: {e}. Using default configuration.")
             return self.default_config.copy()
             
     def _apply_overrides(self, overrides: Dict[str, Any]) -> None:
@@ -469,7 +466,10 @@ class Configurable(Loggable):
             
         # Extract prompt name and config path
         if "." not in prompt_ref:
-            logger.warning("Prompt reference must be in format 'config_name.prompt_name', got '%s'", prompt_ref)
+            logging.getLogger(f"{cls.__module__}.{cls.__name__}").warning(
+                "Prompt reference must be in format 'config_name.prompt_name', got '%s'", 
+                prompt_ref
+            )
             return ""
             
         config_path, prompt_name = prompt_ref.rsplit(".", maxsplit=1)
@@ -484,9 +484,13 @@ class Configurable(Loggable):
                 return prompts.get(prompt_name, "")
                 
         except Exception as e:
-            logger.warning("Failed to load prompt '%s': %s", prompt_ref, str(e))
+            logging.getLogger(f"{cls.__module__}.{cls.__name__}").warning(
+                "Failed to load prompt '%s': %s", 
+                prompt_ref, 
+                str(e)
+            )
             
-        return "" 
+        return ""
 
     @classmethod
     def load_config(cls, path: Optional[str] = None) -> Dict[str, Any]:

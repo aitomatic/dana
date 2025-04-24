@@ -3,7 +3,8 @@
 from abc import ABC
 from typing import Dict, Any, Optional
 from dataclasses import dataclass, field
-from opendxa.common.mixins.identifiable import Identifiable
+from opendxa.common.mixins.tool_callable import ToolCallable
+from opendxa.common.mixins.configurable import Configurable
 
 
 @dataclass
@@ -14,7 +15,7 @@ class CapabilityApplicationResult:
     error: Optional[Exception] = None
 
 
-class BaseCapability(ABC, Identifiable):
+class BaseCapability(ABC, ToolCallable, Configurable):
     """Base class for agent capabilities."""
 
     def __init__(self, name: str, description: Optional[str] = None):
@@ -27,6 +28,8 @@ class BaseCapability(ABC, Identifiable):
         self.name = name
         self.description = description or "No description provided"
         self._is_enabled = True
+        ToolCallable.__init__(self)
+        Configurable.__init__(self)
 
     @property
     def is_enabled(self) -> bool:

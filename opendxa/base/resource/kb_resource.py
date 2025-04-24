@@ -74,7 +74,6 @@ class KBResource(BaseResource):
     def __init__(
         self,
         name: str,
-        storage: KnowledgeDBStorage,
         description: Optional[str] = None,
         config: Optional[Dict[str, Any]] = None
     ):
@@ -82,12 +81,11 @@ class KBResource(BaseResource):
         
         Args:
             name: Resource name
-            storage: Knowledge storage implementation
             description: Optional resource description
             config: Optional additional configuration
         """
         super().__init__(name, description, config)
-        self._storage = storage
+        self._storage = KnowledgeDBStorage(connection_string=config.get("connection_string"))
     
     async def initialize(self) -> None:
         """Initialize the knowledge base resource."""

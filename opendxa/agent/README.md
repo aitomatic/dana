@@ -8,14 +8,12 @@
 
 ## opendxa.agent Module
 
-The OpenDXA agent system executes workflows by:
+The OpenDXA agent system executes tasks through a two-layer architecture:
 
-1. Converting workflows to executable plans
-2. Managing required resources
-3. Tracking execution state
-4. Adapting to new information
+1. Planning - Converting objectives into executable plans
+2. Reasoning - Executing plans and adapting to new information
 
-For detailed information about how workflows are executed, see the [Execution System](../execution/README.md).
+For detailed information about execution, see the [Execution System](../../base/execution/README.md).
 
 ## Design Philosophy
 
@@ -27,31 +25,25 @@ For detailed information about how workflows are executed, see the [Execution Sy
 
 OpenDXA's agent system is designed with user experience in mind, providing several features that make it easy to use and extend:
 
-1. **Model Context Protocol (MCP)**
-   - Standardized interface for all external resources
-   - Consistent tool integration
-   - Built-in schema validation
-   - Robust error handling
-
-2. **Built-in Best Practices**
+1. **Built-in Best Practices**
    - Pre-configured templates
    - Common behavior patterns
    - Optimized defaults
    - Proven configurations
 
-3. **Resource Management**
+2. **Resource Management**
    - Robust error handling
    - Multiple transport types
    - Automatic cleanup
    - State persistence
 
-4. **Comprehensive Testing**
+3. **Comprehensive Testing**
    - Unit test support
    - Integration testing
    - Performance benchmarks
    - Error scenario coverage
 
-5. **Documentation-First**
+4. **Documentation-First**
    - Clear API documentation
    - Usage examples
    - Best practices
@@ -70,15 +62,13 @@ The OpenDXA framework provides a factory pattern for creating agents with common
 
 ### Core Concepts
 
-1. **Resources** - Things an agent has access to:
-   - Tools (APIs, databases, external services)
-   - Data stores (vector DBs, key-value stores)
-   - Models (LLMs, specialized ML models)
-   - Interfaces (I/O handlers, communication channels)
-   - An agent can have access to multiple resources simultaneously
-   - Resources can be accessed directly or through capabilities
+1. **Agents** - The core execution units that:
+   - Possess capabilities to perform tasks
+   - Manage access to resources
+   - Execute workflows and plans
+   - Maintain state and context
 
-2. **Capabilities** - Things an agent can do:
+2. **Capabilities** - What an agent can do:
    - Higher-level cognitive functions
    - Composed of resources + specific cognition
    - Examples: Memory, Domain Expertise, Planning, Reasoning
@@ -86,65 +76,108 @@ The OpenDXA framework provides a factory pattern for creating agents with common
    - An agent can have multiple capabilities working together
    - Capabilities can share and reuse the same resources
 
-3. **Relationship**:
-   - Resources provide raw functionality
-   - Capabilities build on resources to create higher-level abilities
-   - Capabilities orchestrate resources to achieve specific goals
+3. **Resources** - What capabilities have access to:
+   - MemoryResources (short-term and long-term memory)
+   - KnowledgeBaseResources (domain knowledge, facts)
+   - DatabaseResources (structured data storage)
+   - ToolResources (APIs, external services)
+   - ModelResources (LLMs, specialized ML models)
+   - InterfaceResources (I/O handlers, communication channels)
+   - Resources can be accessed by multiple capabilities
+   - Resources provide raw functionality that capabilities build upon
+
+4. **Relationship**:
+   - Agents possess capabilities
+   - Capabilities access resources to perform their functions
    - Multiple capabilities can share the same resources
    - A single agent can combine multiple capabilities to achieve complex tasks
+   - Resources provide the foundation for capabilities to operate
+   - Capabilities orchestrate resources to achieve specific goals
+
+### Architecture Overview
+
+```mermaid
+graph TB
+    A[Agent] -->|possesses| C[Capabilities]
+    C -->|accesses| R[Resources]
+    
+    subgraph "Resource Types"
+        R1[MemoryResources]
+        R2[KnowledgeBaseResources]
+        R3[DatabaseResources]
+        R4[ToolResources]
+    end
+    
+    R --> R1
+    R --> R2
+    R --> R3
+    R --> R4
+    
+    style A fill:#f9f,stroke:#333,stroke-width:2px
+    style C fill:#bbf,stroke:#333,stroke-width:2px
+    style R fill:#bfb,stroke:#333,stroke-width:2px
+```
 
 ### Usage
 
 ```python
 from dxa.agent import Agent
 from dxa.agent.resource import LLMResource
-from dxa.execution import WorkflowFactory
+from dxa.base.execution import PlanStrategy, ReasoningStrategy
 
-# Simple workflow execution
+# Simple task execution
 answer = Agent().ask("What is quantum computing?")
 
-# Research workflow with resources
-workflow = WorkflowFactory.create_default_workflow("Research quantum computing")
+# Research task with resources
 agent = Agent(name="researcher").with_llm(LLMResource())
-result = agent.run(workflow)
-
-# Custom workflow execution
-workflow = WorkflowFactory.create_sequential_workflow(
-    objective="Research and synthesize findings", 
-    commands=[
-        "Research topic",
-        "Synthesize findings"
-    ]
+result = agent.execute(
+    objective="Research quantum computing",
+    plan_strategy=PlanStrategy.SEQUENTIAL,
+    reasoning_strategy=ReasoningStrategy.CHAIN_OF_THOUGHT
 )
 
+# Custom task execution
 agent = Agent(name="custom_agent").with_llm(LLMResource())
-result = agent.run(workflow)
+result = agent.execute(
+    objective="Research and synthesize findings",
+    plan_strategy=PlanStrategy.HIERARCHICAL,
+    reasoning_strategy=ReasoningStrategy.DOMAIN_SPECIFIC
+)
 ```
 
-## Workflow Execution
+## Execution System
 
-Agents execute workflows through:
+Agents execute tasks through a two-layer architecture:
 
 ```mermaid
 graph TB
-    W[Workflow] --> P[Planning]
-    P --> E[Execution]
-    R[Resources] --> E
-    
-    subgraph "Agent Runtime"
-        P
-        E
-        S[State]
+    subgraph "Declarative (Agent)"
+        A[Agent] --> C[Capabilities]
+        C --> K[Knowledge]
+        C --> E[Expertise]
+        C --> T[Tools]
     end
+
+    subgraph "Imperative (AgentRuntime)"
+        AR[AgentRuntime] --> P[Planning]
+        P --> R[Reasoning]
+        P --> C
+        R --> C
+    end
+
+    Task --> A
+    A --> AR
+    AR --> Results
+    Results --> C
 ```
 
 1. **Planning**
-   - Convert workflow to executable plan
+   - Convert objectives to executable plans
    - Allocate required resources
    - Set up execution state
 
-2. **Execution**
-   - Run workflow steps
+2. **Reasoning**
+   - Execute plans
    - Track progress
    - Handle state changes
    - Adapt to new information
@@ -153,51 +186,6 @@ graph TB
    - Manage LLM interactions
    - Control tool access
    - Handle I/O operations
-
-## State Management
-
-Agents track:
-
-- Workflow progress
-- Resource allocation
-- Execution context
-- Generated artifacts
-
-## State Components
-
-The OpenDXA agent system uses a centralized state management approach to track the evolution of objectives and plans. This integrates with the [Planning System](../execution/planning/README.md) and [Reasoning System](../execution/reasoning/README.md) to maintain coherent agent state.
-
-## Core State Components
-
-### Objective State
-
-- Current objective being pursued
-- History of objective evolution
-- Metadata (timestamps, reasons for changes)
-
-### Plan State  
-
-- Current execution plan
-- History of plan evolution
-- Plan metadata (completion status, timestamps)
-
-### Execution State
-
-- Active step in current plan
-- Results from completed steps
-- Resource allocations (managed via [Resource System](resource/README.md))
-
-## State Flow
-
-```mermaid
-graph TD
-    A[New Objective] --> B[Current Objective]
-    B --> C[Generate Plan]
-    C --> D[Current Plan]
-    D --> E[Execute Steps]
-    E --> F[Record Results]
-    F --> |New Info|B
-```
 
 ## Resource Integration
 
@@ -212,8 +200,12 @@ agent = Agent(name="assistant")\
         "human": HumanResource(name="user")
     })
 
-# Resources are available during workflow execution
-result = agent.run(workflow)
+# Resources are available during execution
+result = agent.execute(
+    objective="Assist with task",
+    plan_strategy=PlanStrategy.DEFAULT,
+    reasoning_strategy=ReasoningStrategy.DEFAULT
+)
 ```
 
 ### Domain-Specific Tasks
@@ -221,48 +213,20 @@ result = agent.run(workflow)
 ```python
 from dxa.agent import Agent
 from dxa.agent.resource import LLMResource
-from dxa.execution import PlanStrategy, ReasoningStrategy
-from dxa.execution import WorkflowFactory
+from dxa.base.execution import PlanStrategy, ReasoningStrategy
 
 # Advanced planning and reasoning configuration
 agent = Agent(name="optimizer")\
     .with_llm(LLMResource())\
     .with_planning(PlanStrategy.HIERARCHICAL)\
-    .with_reasoning(ReasoningStrategy.DEFAULT)
+    .with_reasoning(ReasoningStrategy.DOMAIN_SPECIFIC)
 
-workflow = WorkflowFactory.create_sequential_workflow(
+result = agent.execute(
     objective="Optimize system performance",
-    commands=[
-        "Profile code and identify bottlenecks",
-        "Optimize algorithms and tune parameters",
-        "Run benchmarks and verify results"
-    ]
+    plan_strategy=PlanStrategy.HIERARCHICAL,
+    reasoning_strategy=ReasoningStrategy.DOMAIN_SPECIFIC
 )
-
-result = await agent.async_run(workflow)
 ```
-
-### Pattern Selection Guide
-
-Choose patterns based on:
-
-1. **Task Complexity**
-   - Simple Q&A → DEFAULT Planning + DEFAULT Reasoning
-   - Multi-step Analysis → SEQUENTIAL Planning + Chain of Thought Reasoning
-   - Real-time Adaptation → DYNAMIC Planning + State-based Reasoning
-   - Domain Expertise → HIERARCHICAL Planning + Domain-specific Reasoning
-
-2. **Resource Requirements**
-   - Minimal → DEFAULT (LLM only)
-   - Memory Intensive → SEQUENTIAL Planning
-   - External Tools → WORKFLOW_IS_PLAN with custom resources
-   - Complex Processing → HIERARCHICAL Planning with specialized LLMs
-
-3. **Performance Needs**
-   - Quick Response → DEFAULT Planning strategies
-   - Verifiable Logic → SEQUENTIAL Planning with detailed reasoning
-   - Continuous Operation → DYNAMIC Planning with state tracking
-   - Optimal Solutions → HIERARCHICAL Planning with specialized reasoning
 
 ## Runtime System
 
@@ -271,11 +235,19 @@ The agent runtime manages execution flow and state:
 ```python
 # Using the agent as an async context manager
 async with agent as runtime_agent:
-    result = await runtime_agent.async_run(workflow)
+    result = await runtime_agent.async_execute(
+        objective="Process task",
+        plan_strategy=PlanStrategy.DEFAULT,
+        reasoning_strategy=ReasoningStrategy.DEFAULT
+    )
 
 # Manual initialization and cleanup
 await agent.initialize()
-result = await agent.async_run(workflow)
+result = await agent.async_execute(
+    objective="Process task",
+    plan_strategy=PlanStrategy.DEFAULT,
+    reasoning_strategy=ReasoningStrategy.DEFAULT
+)
 await agent.cleanup()
 ```
 
@@ -328,7 +300,7 @@ Agents provide:
 
 ## See Also
 
-- [Workflow System](../execution/workflow/README.md)
+- [Execution System](../../base/execution/README.md)
 - [Resource System](resource/README.md)
 - [Capability System](capability/README.md)
 - [Examples](../../examples/README.md)
