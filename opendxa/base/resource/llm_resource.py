@@ -10,7 +10,7 @@ from opendxa.base.resource.base_resource import BaseResource, ResourceResponse, 
 from opendxa.common.utils.misc import get_field
 from opendxa.common.mixins.tool_callable import ToolCallable, OpenAIFunctionCall
 from opendxa.common.mixins.registerable import Registerable
-
+from opendxa.common.mixins.queryable import QueryParams
 class LLMResource(BaseResource):
     """LLM resource implementation using AISuite."""
 
@@ -53,7 +53,8 @@ class LLMResource(BaseResource):
         self._query_max_iterations = self.config.get("query_max_iterations", 10)
 
     # ===== Public Interface Methods =====
-    async def query(self, params: Optional[Dict[str, Any]] = None) -> ResourceResponse:
+    @ToolCallable.tool
+    async def query(self, params: QueryParams = None) -> ResourceResponse:
         """Query the LLM with the given request.
 
         This method determines whether to use iterative or single-shot querying based on
@@ -192,14 +193,12 @@ class LLMResource(BaseResource):
                     message_history.append({
                         "role": get_field(response_message, "role"),
                         "content": get_field(response_message, "content"),
-                        "tool_calls": tool_calls
+                        "tool_calls": [i.model_dump() if hasattr(i, "model_dump") else i for i in tool_calls]
                     })
                     
                     # Get responses for all tool calls at once
                     tool_responses = await self._call_requested_tools(tool_calls)
-                    if tool_responses:
-                        # Add all tool responses to the message history
-                        message_history.extend(tool_responses)
+                    message_history.extend(tool_responses)
                 else:
                     # If LLM is not requesting tools, we're done
                     self.info("LLM is not requesting tools, returning final response")
@@ -316,13 +315,16 @@ class LLMResource(BaseResource):
             "temperature": request.get("temperature", 0.7),
             "max_tokens": request.get("max_tokens"),
         }
+
+        if not available_resources:
+            available_resources = get_field(request, "available_resources", {})
         
         # Only add model if it's available
         if self.model:
             params["model"] = self.model
             
         if available_resources:
-            params["functions"] = self._get_openai_functions(available_resources)
+            params["tools"] = self._get_openai_functions(available_resources)
             
         return params
 
@@ -396,8 +398,8 @@ class LLMResource(BaseResource):
         for tool_call in tool_calls:
             try:
                 # Get the function name and arguments
-                function_name = tool_call["function"]["name"]
-                arguments = json.loads(tool_call["function"]["arguments"])
+                function_name = tool_call.function.name
+                arguments = json.loads(tool_call.function.arguments)
                 
                 # Parse the function name to get the resource name, id, and tool name
                 resource_name, resource_id, tool_name = ToolCallable.parse_name_id_function_string(
@@ -417,22 +419,24 @@ class LLMResource(BaseResource):
                 # Call the tool
                 response = await resource.call_tool(tool_name, arguments)
                 
+                # Convert response to JSON string to ensure JSON-serializability
+                if hasattr(response, "to_json") and callable(response.to_json):
+                    response = response.to_json()
+
                 # Truncate response if needed
                 if max_response_length and isinstance(response, str):
                     response = response[:max_response_length]
-                    
-                responses.append({
-                    "role": "tool",
-                    "name": function_name,
-                    "content": response
-                })
+                
             except Exception as e:
-                self.error("Tool call failed: %s", str(e))
-                responses.append({
-                    "role": "tool",
-                    "name": function_name,
-                    "content": f"Error: {str(e)}"
-                })
+                response = f"Tool call failed: {str(e)}"
+                self.error(response)
+
+            responses.append({
+                "role": "tool",
+                "name": function_name,
+                "content": response,
+                "tool_call_id": tool_call.id 
+            })
                 
         return responses
 

@@ -11,7 +11,8 @@ consistency and maintainability.
 """
 
 from typing import Dict, Union, List, Optional, Any
-from dataclasses import dataclass
+from dataclasses import dataclass, asdict
+import json
 
 # Basic JSON-compatible types
 JsonPrimitive = Union[str, int, float, bool, None]
@@ -24,4 +25,12 @@ class BaseResponse:
     """Base response class."""
     success: bool
     error: Optional[str] = None
-    content: Optional[Dict[str, Any]] = None
+    content: Optional[Union[Dict[str, Any], str]] = None
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert the response to a dictionary."""
+        return asdict(self)
+
+    def to_json(self) -> str:
+        """Convert the response to a JSON string."""
+        return json.dumps(self.to_dict())

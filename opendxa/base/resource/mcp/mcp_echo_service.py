@@ -7,12 +7,12 @@ from .base_mcp_service import BaseMcpService
 class McpEchoService(BaseMcpService):
     """MCP Echo Service"""
     
-    @BaseMcpService.tool(name="echo", description="Echo service")
+    @BaseMcpService.mcp_tool(name="echo", description="Echo service")
     def echo(self, message: str) -> str:
         """Echo implementation matching simple server pattern"""
         return message
 
-    @BaseMcpService.tool(name="ping", description="Ping service")
+    @BaseMcpService.mcp_tool(name="ping", description="Ping service")
     def ping(self) -> str:
         """Ping implementation matching simple server pattern"""
         return "pong"

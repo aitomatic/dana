@@ -40,8 +40,9 @@ Example:
             pass
 """
 
-from typing import Dict, Any, Set, ClassVar, Optional, List, Callable, TypeVar, get_type_hints, get_origin, get_args, Union, Tuple
-from dataclasses import dataclass
+from collections.abc import Sequence
+from typing import Dict, Any, Set, Optional, List, Callable, TypeVar, get_type_hints, get_origin, get_args, Union, Tuple
+import inspect
 from mcp.types import Tool as McpTool
 from opendxa.common.mixins.registerable import Registerable
 
@@ -91,7 +92,6 @@ def _type_to_schema(type_hint: Any) -> Dict[str, Any]:
     }
     return {"type": type_map.get(type_hint, "string")}
 
-@dataclass
 class ToolCallable(Registerable):
     """A mixin class that provides tool-callable functionality to classes.
     
@@ -105,32 +105,44 @@ class ToolCallable(Registerable):
                 pass
     """
     
-    # Class variable to store tool-callable function names
-    _tool_callable_functions: ClassVar[Set[str]] = set()
+    # Class-level set of all tool function names
+    _all_tool_callable_function_names: Set[str] = set()
     
-    # Cache for tool call specifications
-    _tool_call_specs: Optional[List[Dict[str, Any]]] = None
-    
-    @classmethod
-    def tool_callable_function(cls, func: F) -> F:
-        """Decorator to mark a function as callable by the LLM as a tool.
+    def __init__(self):
+        """Initialize the ToolCallable mixin.
         
-        Args:
-            func: The function to be marked as tool-callable
-            
-        Returns:
-            The decorated function
+        This constructor initializes the MCP tool list cache,
+        and OpenAI function list cache.
         """
-        func_name = func.__name__
-        if not hasattr(cls, '_tool_callable_functions'):
-            cls._tool_callable_functions = set()
-        cls._tool_callable_functions.add(func_name)
+        self._tool_callable_function_cache: Set[str] = set()  # computed in __post_init__
+        self.__mcp_tool_list_cache: Optional[List[McpTool]] = None  # computed lazily in list_mcp_tools
+        self.__openai_function_list_cache: Optional[List[OpenAIFunctionCall]] = None  # computed lazily in list_openai_functions
+        super().__init__()
+        self.__post_init__()
+        
+    def __post_init__(self):
+        """Scan the instance's methods for tool decorators and register them."""
+        for name, method in inspect.getmembers(self.__class__, predicate=inspect.isfunction):
+            if name.startswith('_'):
+                continue  # Skip private methods (those starting with _)
+            
+            # Quick check if this function name is in our tool set
+            if name in self._all_tool_callable_function_names:
+                # Verify it has our decorator by checking for the marker attribute
+                if hasattr(method, '_is_tool_callable'):
+                    self._tool_callable_function_cache.add(name)
+
+    @classmethod
+    def tool_callable_decorator(cls, func: F) -> F:
+        """Decorator to mark a function as callable by the LLM as a tool."""
+        # Add the function name to our class-level set
+        cls._all_tool_callable_function_names.add(func.__name__)
+        # Mark the function with our decorator
+        func._is_tool_callable = True  # pylint: disable=protected-access
         return func
     
     # Alias for shorter decorator usage
-    tool = tool_callable_function 
-
-    __mcp_tool_list_cache: Optional[List[McpTool]] = None
+    tool = tool_callable_decorator
 
     def list_mcp_tools(self) -> List[McpTool]:
         """List all tools available to the agent.
@@ -171,7 +183,8 @@ class ToolCallable(Registerable):
             return self.__mcp_tool_list_cache
 
         mcp_tools = []
-        for func_name in self._tool_callable_functions:
+        # pylint: disable=protected-access
+        for func_name in self._tool_callable_function_cache: 
             func = getattr(self, func_name)
             type_hints = get_type_hints(func)
             
@@ -250,8 +263,6 @@ class ToolCallable(Registerable):
             ))
         self.__mcp_tool_list_cache = mcp_tools
         return mcp_tools
-
-    __openai_function_list_cache: Optional[List[OpenAIFunctionCall]] = None
 
     def list_openai_functions(self) -> List[OpenAIFunctionCall]:
         """List all tools available to the agent."""
@@ -342,7 +353,7 @@ class ToolCallable(Registerable):
         
         for mcp_tool in mcp_tools:
             # Get the input schema
-            parameters = mcp_tool.get("inputSchema", {}).copy()
+            parameters = getattr(mcp_tool, "inputSchema", {}).copy()
             
             # Remove 'self' references if present
             if "properties" in parameters:
@@ -362,10 +373,11 @@ class ToolCallable(Registerable):
                 for field_name, field_props in properties.items():
                     if field_name not in required_fields and "type" in field_props:
                         field_type = field_props["type"]
-                        field_props["type"] = (
-                            [field_type] if isinstance(field_type, str) 
-                            else [*field_type, "null"]
-                        )
+                        if isinstance(field_type, str):
+                            field_props["type"] = [field_type, "null"]
+                        # Only add null if field_type doesn't contain "null"
+                        elif isinstance(field_type, Sequence) and not any([item == "null" for item in field_type]): 
+                            field_props["type"] = [*field_type, "null"]
                 
                 # Clean up property definitions
                 allowed_keys = {"description", "title", "type", "items"}
@@ -387,10 +399,10 @@ class ToolCallable(Registerable):
             openai_functions.append({
                 "type": "function",
                 "function": {
-                    "name": self.build_name_id_function_string(self.name, self.id, mcp_tool["name"]),
-                    "description": mcp_tool["description"],
+                    "name": self.build_name_id_function_string(self.name, self.id, mcp_tool.name),
+                    "description": mcp_tool.description,
                     "parameters": parameters,
-                    "strict": True
+                    "strict": True  # TODO: NOTE: strict=True doesn't work with type ['string', 'null']
                 }
             })
         
@@ -448,5 +460,7 @@ class ToolCallable(Registerable):
             tool_name: The name of the tool to call
             arguments: The arguments to pass to the tool
         """
+        if not hasattr(self, tool_name):
+            raise ValueError(f"Tool {tool_name} not found in {self.__class__.__name__}")
         func = getattr(self, tool_name)
         return func(**arguments)

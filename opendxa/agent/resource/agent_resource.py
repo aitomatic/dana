@@ -24,11 +24,13 @@ Example:
 """
 
 import asyncio
-from typing import TYPE_CHECKING, Any, Dict
+from typing import TYPE_CHECKING
 
 from opendxa.common.exceptions import AgentError, ResourceError
 from opendxa.base.resource.base_resource import BaseResource, ResourceResponse
 from opendxa.common.utils.misc import safe_asyncio_run
+from opendxa.common.mixins import ToolCallable
+from opendxa.common.mixins.queryable import QueryParams
 
 if TYPE_CHECKING:
     from opendxa.agent.agent import Agent  # Only used for type hints
@@ -64,7 +66,8 @@ class AgentResource(BaseResource):
         await resource.initialize()
         return resource
 
-    async def query(self, request: Dict[str, Any]) -> ResourceResponse:
+    @ToolCallable.tool
+    async def query(self, params: QueryParams = None) -> ResourceResponse:
         """Query an agent from the registry.
 
         Args:

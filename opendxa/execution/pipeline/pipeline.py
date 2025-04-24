@@ -27,7 +27,8 @@ from opendxa.base.execution import (
     ExecutionSignal, ExecutionContext,
     ExecutionSignalType
 )
-from .pipeline_context import PipelineContext
+from opendxa.execution.pipeline.pipeline_context import PipelineContext
+from opendxa.common.mixins.queryable import QueryParams
 
 # A pipeline step is just an async function that processes data
 PipelineStep = Callable[[Dict[str, Any]], Awaitable[Dict[str, Any]]]
@@ -234,7 +235,7 @@ class Pipeline(ExecutionGraph, BaseResource, Loggable):
     async def setup_node_buffers(self, context: ExecutionContext) -> None:
         """Setup buffers for all nodes in pipeline."""
         if not isinstance(context, PipelineContext):
-            raise TypeError("Expected PipelineContext, got %s" % type(context))
+            raise TypeError(f"Expected PipelineContext, got {type(context)}")
             
         context = cast(PipelineContext, context)
         
@@ -347,7 +348,8 @@ class Pipeline(ExecutionGraph, BaseResource, Loggable):
         # Call BaseResource's cleanup
         await super().cleanup()
         
-    async def query(self, request: Optional[Dict[str, Any]] = None) -> ResourceResponse:
+    # This is NOT @ToolCallable.tool
+    async def query(self, params: QueryParams = None) -> ResourceResponse:
         """Execute the pipeline with the provided request data.
         
         Args:
@@ -361,13 +363,13 @@ class Pipeline(ExecutionGraph, BaseResource, Loggable):
         if not self._is_available:
             return ResourceResponse.error_response(f"Pipeline resource {self.name} not initialized")
         
-        if request is None:
-            request = {}
+        if params is None:
+            params = {}
             
         try:
             # Extract data and options from request
-            input_data = request.get("data", {})
-            options = request.get("options", {})
+            input_data = params.get("data", {})
+            options = params.get("options", {})
             
             # Create execution context if needed
             context = options.get("context")
@@ -385,7 +387,7 @@ class Pipeline(ExecutionGraph, BaseResource, Loggable):
             self.error(f"Error executing pipeline: {str(e)}")
             return ResourceResponse.error_response(str(e))
             
-    def can_handle(self, request: Dict[str, Any]) -> bool:
+    def can_handle(self, params: QueryParams) -> bool:
         """Check if the pipeline can handle this request.
         
         Args:
@@ -395,5 +397,5 @@ class Pipeline(ExecutionGraph, BaseResource, Loggable):
             True if the pipeline can handle this request
         """
         # Check if this is a pipeline request
-        request_type = request.get("type", "")
+        request_type = params.get("type", "")
         return request_type == "pipeline" or "pipeline" in request_type 

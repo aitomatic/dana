@@ -6,13 +6,13 @@ and access methods.
 """
 
 from dataclasses import dataclass
+import logging
 from typing import Dict, Any, Optional, Union, ClassVar, Type, TypeVar, List
 from pathlib import Path
 import inspect
 import yaml
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.exceptions import ConfigurationError
-import logging
 from opendxa.common.utils.misc import load_yaml_config
 
 T = TypeVar('T')
@@ -307,11 +307,6 @@ class Configurable(Loggable):
         Raises:
             ConfigurationError: If configuration is invalid
         """
-        if not self.config.get("base_path"):
-            self.config["base_path"] = self.get_base_path()
-            
-        self._validate_path("base_path", must_exist=True)
-        
         # Basic structure validation
         if not isinstance(self.config, dict):
             raise ConfigurationError("Configuration must be a dictionary")

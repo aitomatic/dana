@@ -1,23 +1,30 @@
 """Mixin for queryable objects."""
 
-from typing import Optional, Any, Dict
 from dataclasses import dataclass
 from enum import Enum, auto
+from typing import Any, Dict, Optional
+
 from opendxa.common.mixins.tool_callable import ToolCallable
 from opendxa.common.types import BaseResponse
 
+
 class QueryStrategy(Enum):
     """Resource querying strategies."""
-    ONCE = auto()       # Single query without iteration, default for most resources
+
+    ONCE = auto()  # Single query without iteration, default for most resources
     ITERATIVE = auto()  # Iterative querying - default, e.g., for LLMResource
+
+
+QueryParams = Optional[Dict[str, Any]]
 
 @dataclass
 class QueryResponse(BaseResponse):
     """Base class for all query responses."""
 
+
 class Queryable(ToolCallable):
     """Mixin for queryable objects that can be called as tools.
-    
+
     This mixin enables resources to be both queried directly and called as tools
     within the tool-calling ecosystem. The query() method is automatically exposed
     as a tool through the ToolCallable interface, allowing Queryable objects to
@@ -27,11 +34,11 @@ class Queryable(ToolCallable):
     def __init__(self):
         """Initialize the Queryable object."""
         ToolCallable.__init__(self)
-        self._query_strategy = self._query_strategy or QueryStrategy.ONCE
-        self._query_max_iterations = self._query_max_iterations or 3
+        self._query_strategy = getattr(self, "_query_strategy", QueryStrategy.ONCE)
+        self._query_max_iterations = getattr(self, "_query_max_iterations", 3)
 
     @ToolCallable.tool
-    async def query(self, params: Optional[Dict[str, Any]] = None) -> QueryResponse:
+    async def query(self, params: QueryParams = None) -> QueryResponse:
         """Query the Queryable object.
 
         Args:
@@ -45,4 +52,4 @@ class Queryable(ToolCallable):
 
     def get_query_max_iterations(self) -> int:
         """Get the maximum number of iterations for the resource. Default is 3."""
-        return self._query_max_iterations 
+        return self._query_max_iterations
