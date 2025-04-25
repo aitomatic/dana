@@ -10,9 +10,9 @@ from mcp.client.sse import sse_client
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.mixins.tool_callable import ToolCallable
-from opendxa.base.resource.base_resource import BaseResource, ResourceResponse, ResourceError
+from opendxa.base.resource.base_resource import BaseResource, ResourceError
 from opendxa.base.resource.mcp.mcp_config import McpConfig, McpConfigError, StdioTransportParams, HttpTransportParams
-from opendxa.common.mixins.queryable import QueryParams
+from opendxa.common.types import BaseRequest, BaseResponse
 from opendxa.common.utils.misc import Misc
 
 T = TypeVar('T')
@@ -202,7 +202,7 @@ class McpResource(BaseResource):
 
     @with_retries(retries=3, delay=1.0)
     @ToolCallable.tool
-    async def query(self, params: QueryParams = None) -> ResourceResponse:
+    async def query(self, request: BaseRequest = None) -> BaseResponse:
         """Execute a tool on the MCP server.
         
         This method sends a request to the MCP server to execute a specific tool with the provided arguments.
@@ -210,7 +210,7 @@ class McpResource(BaseResource):
         returns the result of the tool execution.
         
         Args:
-            params: Tool execution request with the following structure:
+            request: Tool execution request with the following structure:
                 {
                     "tool": "tool_name",  # Name of the MCP tool to call
                     "arguments": {        # Dictionary of arguments for the tool
@@ -225,14 +225,14 @@ class McpResource(BaseResource):
                 If "arguments" is not provided, an empty dictionary will be used.
             
         Returns:
-            ResourceResponse with execution results. The response includes:
+            BaseResponse with execution results. The response includes:
             - success: Boolean indicating if the tool execution was successful
             - content: The result of the tool execution if successful
             - error: Error message if the execution failed
             
         Raises:
             Exception: If there is an error connecting to the MCP server or executing the tool.
-                     The exception is caught and returned as part of the ResourceResponse.
+                     The exception is caught and returned as part of the BaseResponse.
             
         Examples:
             Basic usage with a simple tool:
@@ -287,7 +287,7 @@ class McpResource(BaseResource):
                 required_params = target_tool.inputSchema.get("required", [])
                 
                 # Prepare arguments
-                arguments = {param: value for param, value in params.items() 
+                arguments = {param: value for param, value in request.items() 
                             if param in required_params or param in target_tool.inputSchema.get("properties", {})}
                 
                 # Execute the tool
@@ -299,24 +299,24 @@ class McpResource(BaseResource):
                 print("Tool not found")
             ```
         """
-        self.debug("Starting MCP query: %s", params)
+        self.debug("Starting MCP query: %s", request)
         try:
             if self.transport_type == "stdio":
                 assert isinstance(self.server_params, StdioServerParameters)
                 async with stdio_client(self.server_params) as (read, write):
                     async with ClientSession(read, write) as session:
-                        return await self._execute_query(session, params)
+                        return await self._execute_query(session, request)
             else:  # http
                 assert isinstance(self.server_params, dict)
                 async with sse_client(**self.server_params) as streams:
                     async with ClientSession(*streams) as session:
-                        return await self._execute_query(session, params)
+                        return await self._execute_query(session, request)
         except Exception as e:
             self.error("Tool execution failed", exc_info=True)
-            return ResourceResponse.error_response(str(e))
+            return BaseResponse.error_response(str(e))
 
     @with_retries(retries=3, delay=1.0)
-    async def _execute_query(self, session: ClientSession, request: Dict[str, Any]) -> ResourceResponse:
+    async def _execute_query(self, session: ClientSession, request: Dict[str, Any]) -> BaseResponse:
         """Execute query through MCP session with automatic retries.
         
         Args:
@@ -324,7 +324,7 @@ class McpResource(BaseResource):
             request: Tool execution request
             
         Returns:
-            ResourceResponse with execution results
+            BaseResponse with execution results
         """
         await session.initialize()
 
@@ -362,7 +362,7 @@ class McpResource(BaseResource):
                             stream_data.append(item[1])
                     result = "".join(stream_data)
             
-            return ResourceResponse(success=True, content=result)
+            return BaseResponse(success=True, content=result)
             
         except Exception as e:
             raise ResourceError("Tool execution failed") from e

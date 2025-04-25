@@ -63,7 +63,7 @@ class DynamicPlanExecutor(Planner):
         """Parse node signals and return a dictionary of results."""
         results = []
         for signal in node_signals:
-            for choice in signal.content.content.get('choices', []):
+            for choice in signal.content.get('choices', []):
                 results.append(choice.message.content)
         return results
         

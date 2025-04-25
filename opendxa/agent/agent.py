@@ -20,7 +20,6 @@ See dxa/agent/README.md for detailed design documentation.
 """
 
 from typing import Dict, Union, Optional, Any
-from dataclasses import dataclass
 from opendxa.base.execution import (
     ExecutionContext
 )
@@ -33,26 +32,26 @@ from opendxa.execution import (
     AgentState,
 )
 from opendxa.base.capability import BaseCapability
-from opendxa.base.resource import BaseResource, LLMResource, ResourceResponse
-from opendxa.base.state import WorldState, ExecutionState
+from opendxa.base.resource import BaseResource, LLMResource
+from opendxa.base.state import WorldState
+from opendxa.base.execution import ExecutionState
 from opendxa.common.io import BaseIO, IOFactory
 from opendxa.common.mixins.configurable import Configurable
-from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.utils.misc import Misc
 from opendxa.base.capability.capable import Capable
-from opendxa.common.mixins.queryable import QueryResponse
 from opendxa.config.agent_config import AgentConfig
 from opendxa.execution.planning import Planner
 from opendxa.execution.reasoning import Reasoner
 from opendxa.common.mixins.tool_callable import ToolCallable
+from opendxa.common.types import BaseResponse
+from opendxa.base.execution.execution_types import ExecutionSignalType, ExecutionSignal
 
-@dataclass
-class AgentResponse(ResourceResponse):
+class AgentResponse(BaseResponse):
     """Response from an agent operation."""
     
     @classmethod
-    def new_instance(cls, response: Union[ResourceResponse, Dict[str, Any], Any]) -> 'AgentResponse':
-        """Create a new AgentResponse instance from a ResourceResponse or similar structure.
+    def new_instance(cls, response: Union[BaseResponse, Dict[str, Any], Any]) -> 'AgentResponse':
+        """Create a new AgentResponse instance from a BaseResponse or similar structure.
         
         Args:
             response: The response to convert, which should have success, content, and error attributes
@@ -60,11 +59,17 @@ class AgentResponse(ResourceResponse):
         Returns:
             AgentResponse instance
         """
-        if isinstance(response, ResourceResponse) or isinstance(response, QueryResponse):
+        if isinstance(response, BaseResponse):
             return AgentResponse(
                 success=response.success,
                 content=response.content,
                 error=response.error
+            )
+        elif isinstance(response, ExecutionSignal):
+            return AgentResponse(
+                success=False if response.type == ExecutionSignalType.CONTROL_ERROR else True,
+                content=response.content,
+                error=response.content.get("error", None)
             )
         else:
             return AgentResponse(
@@ -94,16 +99,11 @@ class Agent(Configurable, Capable, ToolCallable):
         self._runtime = None
         self._planning_llm = None
         self._reasoning_llm = None
-        self._workflow_llm = None
         self._reasoning_strategy = ReasoningStrategy.DEFAULT
         self._planning_strategy = PlanStrategy.DEFAULT
 
-        # Initialize configuration
+        # Initialize configuration with default config
         self._config = AgentConfig()
-
-        Loggable.__init__(self)
-        Capable.__init__(self, self._capabilities)
-        ToolCallable.__init__(self)
 
     @property
     def planning_strategy(self) -> PlanStrategy:
@@ -161,11 +161,6 @@ class Agent(Configurable, Capable, ToolCallable):
         if not self._io:
             self._io = IOFactory.create_io()
         return self._io
-
-    @property
-    def workflow_llm(self) -> LLMResource:
-        """Get workflow LLM or fallback to default."""
-        return self._workflow_llm or self.agent_llm
 
     @property
     def planning_llm(self) -> LLMResource:

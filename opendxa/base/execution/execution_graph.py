@@ -4,7 +4,6 @@
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, Optional, Union, List, cast, TYPE_CHECKING, Type, Tuple
-from dataclasses import dataclass
 
 # Third-party imports
 from opendxa.common.utils.misc import Misc
@@ -14,31 +13,24 @@ from opendxa.common.graph import DirectedGraph, Node, Edge, NodeType
 from opendxa.base.execution.execution_types import (
     Objective, ExecutionNode,
     ExecutionNodeStatus, ExecutionSignal, ExecutionSignalType,
-    ExecutionEdge
+    ExecutionEdge, NodeYamlConfig
 )
 
 if TYPE_CHECKING:
     from opendxa.base.execution.execution_context import ExecutionContext
 
 # pylint: disable=too-many-public-methods
-@dataclass
 class ExecutionGraph(DirectedGraph):
     """Base graph for all execution layers (WHY/WHAT/HOW)."""
     
-    def __init__(self, 
-                 objective: Optional[Union[str, Objective]] = None, 
-                 layer: str = "execution",
-                 name: Optional[str] = None):
+    def __init__(self, **data):
         super().__init__()
-        if isinstance(objective, str):
-            self._objective = Objective(objective)
-        else:
-            self._objective = objective
-        self.name = name
-        self._metadata: Dict[str, Any] = {"layer": layer}
-        self.history: List[Dict[str, Any]] = []
-        self._context: Optional['ExecutionContext'] = None
-    
+        self._objective = data.get('objective')
+        self.name = data.get('name')
+        self._metadata = data.get('metadata', {"layer": "execution"})
+        self.history = data.get('history', [])
+        self._context = data.get('context')
+
     @property
     def metadata(self) -> Dict[str, Any]:
         """Get metadata."""
@@ -85,6 +77,18 @@ class ExecutionGraph(DirectedGraph):
         if self.metadata:
             self.metadata["strategy"] = strategy
     
+    @classmethod
+    def _process_node_from_execution_yaml(cls, config: NodeYamlConfig) -> None:
+        """Process a single node from YAML data and add it to the graph."""
+        node_config = config.to_node_config()
+        node = ExecutionNode(
+            node_id=node_config.node_id,
+            node_type=node_config.node_type,
+            objective=node_config.objective,
+            metadata=node_config.metadata
+        )
+        config.graph.add_node(node)
+
     @classmethod
     def from_yaml_file(cls,
                        config_name: Optional[str] = None,
@@ -143,7 +147,14 @@ class ExecutionGraph(DirectedGraph):
             node_ids.append(node_id)
             
             # Process the node and add it to the graph
-            cls._process_node_from_execution_yaml(graph, node_data, node_id, config_path, custom_prompts)
+            config = NodeYamlConfig(
+                graph=graph,
+                node_data=node_data,
+                node_id=node_id,
+                config_path=config_path,
+                custom_prompts=custom_prompts
+            )
+            cls._process_node_from_execution_yaml(config)
         
         # Add END node if it doesn't exist
         if not has_end:
@@ -164,64 +175,6 @@ class ExecutionGraph(DirectedGraph):
                 graph.metadata[key] = value
         
         return graph
-
-    @classmethod
-    def _process_node_from_execution_yaml(cls,
-                                          graph: 'ExecutionGraph',
-                                          node_data: Dict[str, Any],
-                                          node_id: str,
-                                          config_path: Optional[str],
-                                          custom_prompts: Optional[Dict[str, str]]) -> None:
-        """Process a single node from YAML data and add it to the graph."""
-        objective = node_data.get('objective', '')
-        
-        # Determine node type
-        if 'type' not in node_data:
-            node_type = NodeType.TASK
-        else:
-            node_type = NodeType[node_data['type']]
-
-        # Prepare metadata
-        metadata = node_data.get('metadata', {})
-
-        # Ensure planning and reasoning strategies are included in metadata
-        if 'planning' in node_data:
-            metadata['planning'] = node_data['planning']
-        else:
-            metadata['planning'] = 'DEFAULT'
-
-        if 'reasoning' in node_data:
-            metadata['reasoning'] = node_data['reasoning']
-        else:
-            metadata['reasoning'] = 'DEFAULT'
-        
-        # Get prompt from YAML data if available
-        if 'prompts' in graph.metadata and node_id in graph.metadata['prompts']:
-            prompt_text = graph.metadata['prompts'][node_id]
-        else:
-            # Fall back to standard prompt resolution
-            prompt_ref = node_data.get('prompt', node_id)
-            prompt_text = cls.get_prompt(
-                config_path=config_path,
-                prompt_ref=prompt_ref,
-                custom_prompts=custom_prompts
-            )
-
-        # Store the prompt in metadata
-        metadata['prompt'] = prompt_text
-
-        # If no description, use the prompt text as the description
-        if not objective:
-            objective = prompt_text
-
-        # Create and add the node
-        node = ExecutionNode(
-            node_id=node_id,
-            node_type=node_type,
-            objective=objective,
-            metadata=metadata
-        )
-        graph.add_node(node)
 
     @classmethod
     def _load_yaml_file(cls,
@@ -478,6 +431,16 @@ class ExecutionGraph(DirectedGraph):
             ValueError: If the graph structure is invalid
             RuntimeError: If buffer configuration is invalid
         """
+        self._validate_start_end_nodes()
+        self._validate_graph_structure()
+        self._validate_buffer_config()
+
+    def _validate_start_end_nodes(self) -> None:
+        """Validate start and end nodes in the graph.
+        
+        Raises:
+            ValueError: If start/end node configuration is invalid
+        """
         # Check for single start node
         start_nodes = [
             node for node in self.nodes.values()
@@ -490,14 +453,25 @@ class ExecutionGraph(DirectedGraph):
         end_nodes = self.get_terminal_nodes()
         if not end_nodes:
             raise ValueError("Graph must have at least one END node")
+
+    def _validate_graph_structure(self) -> None:
+        """Validate the overall graph structure.
         
+        Raises:
+            ValueError: If the graph structure is invalid
+        """
         # Check for cycles (already handled by DirectedGraph.__iter__)
         try:
             list(iter(self))
         except ValueError as e:
             raise ValueError(f"Invalid graph structure: {str(e)}") from e
 
-        # Validate buffer configuration
+    def _validate_buffer_config(self) -> None:
+        """Validate buffer configuration for all nodes.
+        
+        Raises:
+            ValueError: If buffer configuration is invalid
+        """
         for node in self.nodes.values():
             node = cast(ExecutionNode, node)
             if node.buffer_config["enabled"]:
@@ -556,10 +530,6 @@ class ExecutionGraph(DirectedGraph):
         })
         self._merge_graph(new_graph)
         
-    def add_role(self, role: str) -> None:
-        """Add role to graph."""
-        self.metadata["role"] = role
-
     def _merge_graph(self, new_graph: 'ExecutionGraph') -> None:
         """Merge new graph while preserving node states."""
         self._objective = new_graph.objective
@@ -584,9 +554,14 @@ class ExecutionGraph(DirectedGraph):
                 new = cast(ExecutionNode, new_node)
                 new.buffer_config = current.buffer_config
 
+    def add_role(self, role: str) -> None:
+        """Add role to graph."""
+        self.metadata["role"] = role
+
     def create_signal(self, signal_type: str, content: Any) -> ExecutionSignal:
         """Create a signal with proper typing."""
-        return ExecutionSignal(ExecutionSignalType[signal_type], content)
+        content_dict = content if isinstance(content, dict) else {"data": content}
+        return ExecutionSignal(type=ExecutionSignalType[signal_type], content=content_dict)
 
     async def validate_result(self, result: Any) -> bool:
         """Validate execution result. Override for specific validation."""

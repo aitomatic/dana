@@ -70,7 +70,6 @@ from opendxa.common.mixins import (
     Registerable,
     Identifiable,
     Queryable,
-    QueryResponse,
 )
 from opendxa.common.graph import (
     Node,
@@ -83,6 +82,10 @@ from opendxa.common.graph import (
     DepthFirstTraversal, 
     TopologicalTraversal,
     GraphVisualizer,
+)
+from opendxa.common.types import (
+    BaseRequest,
+    BaseResponse,
 )
 
 __all__ = [
@@ -116,7 +119,6 @@ __all__ = [
     'Registerable',
     'Identifiable',
     'Queryable',
-    'QueryResponse',
 
     # Graph
     'Node',
@@ -129,4 +131,8 @@ __all__ = [
     'DepthFirstTraversal', 
     'TopologicalTraversal',
     'GraphVisualizer',
+
+    # Types
+    'BaseRequest',
+    'BaseResponse',
 ]

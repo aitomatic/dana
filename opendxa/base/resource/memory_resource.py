@@ -76,7 +76,8 @@ from typing import Dict, Any, Optional, TypeVar, Generic, Type
 import asyncio
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
-from opendxa.base.resource.base_resource import BaseResource, ResourceResponse
+from opendxa.base.resource.base_resource import BaseResource
+from opendxa.common.types import BaseResponse
 from opendxa.base.db.models import MemoryDBModel, STMemoryDBModel, LTMemoryDBModel, PermanentMemoryDBModel
 from opendxa.base.db.storage import MemoryDBStorage
 
@@ -317,7 +318,7 @@ class MemoryResource(BaseResource, Generic[ModelType, StorageType]):
         context: Optional[Dict] = None,
         importance: Optional[float] = None,
         decay_rate: Optional[float] = None
-    ) -> ResourceResponse:
+    ) -> BaseResponse:
         """Store a memory.
         
         Args:
@@ -327,7 +328,7 @@ class MemoryResource(BaseResource, Generic[ModelType, StorageType]):
             decay_rate: Optional decay rate (uses default if not provided)
             
         Returns:
-            ResourceResponse indicating success or failure
+            BaseResponse indicating success or failure
         """
         try:
             await self._maybe_decay()  # Check for decay before storing
@@ -340,17 +341,17 @@ class MemoryResource(BaseResource, Generic[ModelType, StorageType]):
                 decay_rate=decay_rate or self._default_decay_rate
             )
             self.info(f"Storing memory: {memory}")
-            return ResourceResponse(success=True, content={"content": content})
+            return BaseResponse(success=True, content={"content": content})
             self._storage.store(memory)
-            return ResourceResponse(success=True, content={"content": content})
+            return BaseResponse(success=True, content={"content": content})
         except Exception as e:
-            return ResourceResponse.error_response(f"Failed to store memory: {str(e)}")
+            return BaseResponse.error_response(f"Failed to store memory: {str(e)}")
     
     async def retrieve(
         self,
         query: Optional[str] = None,
         limit: Optional[int] = None
-    ) -> ResourceResponse:
+    ) -> BaseResponse:
         """Retrieve memories.
         
         Args:
@@ -358,7 +359,7 @@ class MemoryResource(BaseResource, Generic[ModelType, StorageType]):
             limit: Optional maximum number of memories to retrieve
             
         Returns:
-            ResourceResponse containing the retrieved memories
+            BaseResponse containing the retrieved memories
         """
         try:
             await self._maybe_decay()  # Check for decay before retrieving
@@ -366,11 +367,11 @@ class MemoryResource(BaseResource, Generic[ModelType, StorageType]):
                 query=query,
                 limit=limit or self._default_retrieve_limit
             )
-            return ResourceResponse(success=True, content=memories)
+            return BaseResponse(success=True, content=memories)
         except Exception as e:
-            return ResourceResponse.error_response(f"Failed to retrieve memories: {str(e)}")
+            return BaseResponse.error_response(f"Failed to retrieve memories: {str(e)}")
     
-    async def update_importance(self, memory_id: int, importance: float) -> ResourceResponse:
+    async def update_importance(self, memory_id: int, importance: float) -> BaseResponse:
         """Update the importance of a memory.
         
         Args:
@@ -378,14 +379,14 @@ class MemoryResource(BaseResource, Generic[ModelType, StorageType]):
             importance: New importance value
             
         Returns:
-            ResourceResponse indicating success or failure
+            BaseResponse indicating success or failure
         """
         try:
             await self._maybe_decay()  # Check for decay before updating
             self._storage.update_importance(memory_id, importance)
-            return ResourceResponse(success=True, content={"memory_id": memory_id, "importance": importance})
+            return BaseResponse(success=True, content={"memory_id": memory_id, "importance": importance})
         except Exception as e:
-            return ResourceResponse.error_response(f"Failed to update memory importance: {str(e)}")
+            return BaseResponse.error_response(f"Failed to update memory importance: {str(e)}")
     
     def get_decay_stats(self) -> Dict[str, Any]:
         """Get statistics about the decay process.

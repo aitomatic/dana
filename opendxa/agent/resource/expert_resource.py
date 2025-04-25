@@ -36,21 +36,21 @@ Example:
     })
 """
 
-from dataclasses import dataclass
 from typing import Dict, Any, Optional, ClassVar
-from opendxa.base.resource.base_resource import BaseResource, ResourceResponse
+from opendxa.base.resource.base_resource import BaseResource
+from opendxa.common.types import BaseRequest, BaseResponse
 from opendxa.agent.capability.domain_expertise import DomainExpertise
 from opendxa.common.io import IOFactory
 from opendxa.common.mixins import ToolCallable
-from opendxa.common.mixins.queryable import QueryParams
 
 
-@dataclass
-class ExpertResponse(ResourceResponse):
+class ExpertResponse(BaseResponse):
     """Expert-specific response extending base response."""
-    content: str = ""
-    usage: Optional[Dict[str, int]] = None
-    model: Optional[str] = None
+    def __init__(self, content: Any = None, usage: Optional[Dict[str, int]] = None, 
+                 model: Optional[str] = None):
+        super().__init__(content)
+        self.usage = usage
+        self.model = model
 
 
 class ExpertResource(BaseResource):
@@ -123,13 +123,13 @@ class ExpertResource(BaseResource):
         await self._io.initialize()  # Async init
 
     @ToolCallable.tool
-    async def query(self, params: QueryParams = None) -> ResourceResponse:
+    async def query(self, request: BaseRequest = None) -> BaseResponse:
         """Get expert input."""
         if not self._io:
             await self.initialize()
 
         # Ensure we pass a proper dictionary with prompt
-        prompt = params.get("prompt") or ""
+        prompt = request.get("prompt") or ""
         response = await self._io.query({"prompt": prompt})
         return response
 

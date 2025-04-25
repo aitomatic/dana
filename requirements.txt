@@ -1,6 +1,7 @@
 # aisuite[OpenAI, Anthropic, Azure, Google, AWS, Groq, Mistral, HuggingFace, Ollama, Sambanova, Watsonx]
 aisuite[openai,anthropic,azure,google,groq,huggingface,ollama]
 aiohttp
+fastapi
 matplotlib
 mcp
 openai

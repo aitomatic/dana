@@ -1,17 +1,24 @@
 """Agent configuration management."""
 
-from typing import Dict, Any, Optional, ClassVar
-from dataclasses import dataclass
 from pathlib import Path
 import os
 import json
+from typing import Dict, Any, Optional, ClassVar
+from pydantic import BaseModel, Field
+from opendxa.common.mixins.loggable import Loggable
 
-@dataclass
-class AgentConfig:
+class AgentConfig(BaseModel, Loggable):
     """Agent configuration with defaults and loading logic."""
     
     # Default configuration will be loaded from file
     DEFAULT_CONFIG: ClassVar[Dict[str, Any]] = None
+    
+    # Model fields
+    max_tokens: int = Field(default=2000)
+    model: Optional[str] = Field(default=None)
+    temperature: float = Field(default=0.7)
+    preferred_models: list = Field(default_factory=list)
+    logging: Dict[str, Any] = Field(default_factory=dict)
     
     def __init__(self, config_path: Optional[str] = None, **overrides):
         """Initialize agent configuration.
@@ -25,17 +32,22 @@ class AgentConfig:
             self.__class__.DEFAULT_CONFIG = self._load_default_config()
         
         # Start with default config
-        self.config = self.__class__.DEFAULT_CONFIG.copy()
+        config = self.__class__.DEFAULT_CONFIG.copy()
         
         # Load from file if provided
         if config_path:
             self._load_from_file(config_path)
             
         # Apply overrides
-        self.config.update(overrides)
+        config.update(overrides)
+        
+        # Initialize parent class with config
+        super().__init__(**config)
         
         # Find and set the first available model
-        self.config["model"] = self._find_first_available_model()
+        self.debug("Finding first available model...")
+        self.model = self._find_first_available_model()
+        self.debug(f"Selected model: {self.model}")
         
         # Update logging config from environment
         self._update_logging_from_env()
@@ -70,12 +82,22 @@ class AgentConfig:
         Returns:
             Name of the first model that has all required API keys available, or None if no models are available
         """
-        for model_config in self.config["preferred_models"]:
+        self.debug("Checking available API keys for model selection...")
+        for model_config in self.preferred_models:
+            model_name = model_config["name"]
+            required_keys = model_config["required_api_keys"]
+            self.debug(f"Checking model {model_name} with required keys: {required_keys}")
+            
             # Check if all required API keys are available
-            if all(os.getenv(key) for key in model_config["required_api_keys"]):
-                return model_config["name"]
+            available_keys = {key: bool(os.getenv(key)) for key in required_keys}
+            self.debug(f"Available keys: {available_keys}")
+            
+            if all(available_keys.values()):
+                self.debug(f"Found available model: {model_name}")
+                return model_name
                 
         # If we get here, no models are available - return None
+        self.warning("No models found with available API keys")
         return None
     
     def _load_from_file(self, config_path: str) -> None:
@@ -136,7 +158,8 @@ class AgentConfig:
         try:
             with open(path, encoding="utf-8") as f:
                 file_config = json.load(f)
-                self.config.update(file_config)
+                for key, value in file_config.items():
+                    setattr(self, key, value)
         except json.JSONDecodeError as e:
             raise ValueError(f"Invalid JSON in config file: {path}") from e
         except Exception as e:
@@ -153,7 +176,7 @@ class AgentConfig:
             except (ValueError, AttributeError):
                 return default
 
-        self.config["logging"] = {
+        self.logging = {
             "level": os.getenv("LOG_LEVEL", "INFO"),
             "dir": os.getenv("LOG_DIR", "logs"),
             "format": os.getenv("LOG_FORMAT", "text"),
@@ -164,8 +187,9 @@ class AgentConfig:
     
     def get(self, key: str, default: Any = None) -> Any:
         """Get a configuration value."""
-        return self.config.get(key, default)
+        return getattr(self, key, default)
     
     def update(self, config: Dict[str, Any]) -> None:
         """Update configuration with new values."""
-        self.config.update(config) 
+        for key, value in config.items():
+            setattr(self, key, value) 

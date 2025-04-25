@@ -2,7 +2,8 @@
 
 import pytest
 from opendxa.common.mixins.tool_callable import ToolCallable
-from opendxa.common.utils.misc import Misc
+from opendxa.common.mixins.tool_formats import ToolFormat
+import uuid
 
 # pylint: disable=missing-function-docstring
 # pylint: disable=missing-class-docstring
@@ -84,7 +85,7 @@ class TestToolCallable:
         functions = obj.list_openai_functions()
         assert len(functions) == 1
         function = functions[0]["function"]
-        assert function["name"] == ToolCallable.build_name_id_function_string(obj.name, obj.id, "test_tool")
+        assert function["name"] == ToolFormat.build_tool_name(obj.name, obj.id, "test_tool")
         assert function["description"] == "This is the description of the tool."
         assert "param1" in function["parameters"]["properties"]
     
@@ -106,7 +107,7 @@ class TestToolCallable:
     
     def test_parse_name_id_function_string(self):
         """Test parsing name-id-function string."""
-        resource_name, resource_id, tool_name = ToolCallable.parse_name_id_function_string(
+        resource_name, resource_id, tool_name = ToolFormat.parse_tool_name(
             "resource_name__resource_id__tool_name"
         )
         assert resource_name == "resource_name"
@@ -115,7 +116,7 @@ class TestToolCallable:
     
     def test_build_name_id_function_string(self):
         """Test building name-id-function string."""
-        result = ToolCallable.build_name_id_function_string(
+        result = ToolFormat.build_tool_name(
             "resource_name",
             "resource_id",
             "tool_name"
@@ -185,7 +186,7 @@ class TestToolCallable:
         function_name = functions[0]["function"]["name"]
         
         # Parse the function name to verify its components
-        resource_name, resource_id, tool_name = ToolCallable.parse_name_id_function_string(function_name)
+        resource_name, resource_id, tool_name = ToolFormat.parse_tool_name(function_name)
         
         # Verify the components
         assert resource_name == resource.name
@@ -195,5 +196,9 @@ class TestToolCallable:
         # Verify the format is correct
         assert function_name == f"{resource_name}__{resource_id}__{tool_name}"
         
-        # Verify the ID length is correct
-        assert len(Misc.generate_base64_uuid(len(resource_id))) == len(resource_id)
+        # Verify the ID is a valid UUID
+        try:
+            uuid.UUID(resource_id)
+        except ValueError:
+            assert False, f"Invalid UUID format: {resource_id}"
+

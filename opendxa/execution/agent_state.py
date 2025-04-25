@@ -1,18 +1,18 @@
 """Agent state management."""
 
 from typing import List, Optional
-from dataclasses import dataclass, field
 
 from opendxa.base.execution.execution_types import Objective, ExecutionSignal, ExecutionNode
 from opendxa.execution.planning.plan import Plan
 from opendxa.base.state.base_state import BaseState
 
-@dataclass
 class AgentState(BaseState):
     """Manages agent execution state."""
+    model_config = {"arbitrary_types_allowed": True}
+    
     objective: Optional[Objective] = None
     plan: Optional[Plan] = None
-    signals: List[ExecutionSignal] = field(default_factory=list)
+    signals: List[ExecutionSignal] = []
     current_step_index: int = 0
 
     def set_objective(self, objective: Objective) -> None:

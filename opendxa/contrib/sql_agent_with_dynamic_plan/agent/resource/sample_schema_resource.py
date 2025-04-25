@@ -6,9 +6,9 @@ This is a dummy RAG resource that returns a static schema of existing tables.
 
 # from opendxa.contrib.sql_agent_with_dynamic_plan.base.resource import BaseResource
 
-from opendxa.base.resource import BaseResource, ResourceResponse
+from opendxa.base.resource import BaseResource
 from opendxa.common.mixins import ToolCallable
-from opendxa.common.mixins.queryable import QueryParams
+from opendxa.common.types import BaseRequest, BaseResponse
 
 # flake8: noqa: E501
 table_schemas = """
@@ -117,17 +117,11 @@ class SampleSchemaResource(BaseResource):
         super().__init__(**kwargs)
 
     @ToolCallable.tool
-    async def query(self, params: QueryParams = None) -> ResourceResponse:
-        """@description Retrieve Schema of Existing Tables.
-
-        Args:
-            params: none needed
-
-        Returns:
-            str : Schema of Existing Tables in text format
-        """
-
-        return ResourceResponse(success=True, content=table_schemas)
+    async def query(self, request: BaseRequest = None) -> BaseResponse:
+        """Query the sample schema resource."""
+        if not request:
+            return BaseResponse(success=False, error="No request provided")
+        return BaseResponse(success=True, content=table_schemas)
 
     async def bad_query(self, text: str) -> str:
         """Retrieve Schema of Existing Tables.

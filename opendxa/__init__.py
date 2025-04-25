@@ -10,108 +10,148 @@ The framework enables building intelligent agents with domain expertise, powered
 It provides a clean separation of concerns and allows for progressive complexity, starting from simple
 implementations and scaling to complex domain-specific tasks.
 
-For detailed documentation, installation instructions, and examples, see:
-- Project README: https://github.com/aitomatic/opendxa/blob/main/opendxa/README.md
-- Agent Documentation: https://github.com/aitomatic/opendxa/blob/main/opendxa/agent/README.md
-- Execution Documentation: https://github.com/aitomatic/opendxa/blob/main/opendxa/execution/README.md
+Documentation:
+    For detailed documentation, installation instructions, and examples, see:
+    - Project README: https://github.com/aitomatic/opendxa/blob/main/opendxa/README.md
+    - Agent Documentation: https://github.com/aitomatic/opendxa/blob/main/opendxa/agent/README.md
+    - Execution Documentation: https://github.com/aitomatic/opendxa/blob/main/opendxa/execution/README.md
 
-Example:
+Usage:
+    The package is designed for simple, intuitive imports:
+    >>> from opendxa import Agent, LLMResource, Pipeline  # etc.
+
+    Each component can also be imported directly from its module:
     >>> from opendxa.agent import Agent
     >>> from opendxa.agent.resource import LLMResource
-    >>> answer = Agent().ask("What is quantum computing?")
+
+Import Pattern:
+    This project uses a simple import pattern to make the package easy to use.
+    The pattern follows these rules:
+
+    1. Each module has an __init__.py that:
+       - Imports symbols from its own files
+       - Imports symbols from its submodules
+       - Lists all symbols in __all__
+
+    2. No cross-module imports - modules can only import from:
+       - Their own files
+       - Their submodules
+
+    3. The top-level __init__.py is the only place where symbols from different
+       modules are combined
+
+    Implementation is done from the bottom up:
+    1. Start with leaf modules (no submodules)
+    2. Work up the tree, importing and re-exporting at each level
+    3. Finally, combine everything at the top level
 """
 
+from dotenv import load_dotenv
+
+# Load environment variables when package is imported
+load_dotenv()
+
 from opendxa.common import (
-    AgentError,
-    BaseIO,
-    BreadthFirstTraversal,
-    CommunicationError,
-    Configurable,
+    # Exceptions
+    OpenDXAError,
     ConfigurationError,
-    Cursor,
-    DXA_LOGGER,
-    DepthFirstTraversal,
-    DirectedGraph,
-    Edge,
-    GraphVisualizer,
-    IOFactory,
-    Identifiable,
     LLMError,
+    NetworkError,
+    WebSocketError,
+    ReasoningError,
+    AgentError,
+    CommunicationError,
+    ValidationError,
+    StateError,
+    # IO
+    BaseIO,
+    IOFactory,
+    # Utils
+    Misc,
     LLMInteractionAnalyzer,
     LLMInteractionVisualizer,
+    DXALogger,
+    DXA_LOGGER,
+    # Mixins
     Loggable,
-    Misc,
-    NetworkError,
-    Node,
-    NodeType,
-    OpenDXAError,
-    QueryResponse,
-    Queryable,
-    ReasoningError,
-    Registerable,
-    StateError,
     ToolCallable,
-    TopologicalTraversal,
+    Configurable,
+    Registerable,
+    Identifiable,
+    Queryable,
+    # Graph
+    Node,
+    Edge,
+    NodeType,
+    DirectedGraph,
+    Cursor,
     TraversalStrategy,
-    ValidationError,
-    WebSocketError,
+    BreadthFirstTraversal,
+    DepthFirstTraversal, 
+    TopologicalTraversal,
+    GraphVisualizer,
+    # Types
+    BaseRequest,
+    BaseResponse,
 )
 
 from opendxa.base import (
+    # Capability
     BaseCapability,
+
+    # Execution
     BaseExecutor,
-    BaseResource,
-    BaseState,
     ExecutionContext,
     ExecutionGraph,
     ExecutionNode,
-    ExecutionEdge,
+    ExecutionNodeStatus,
     ExecutionSignal,
     ExecutionSignalType,
-    ExecutionState,
-    ExecutionFactory,
-    ExecutionNodeStatus,
     Objective,
     ObjectiveStatus,
-    LLMResource,
-    ResourceResponse,
-    WorldState,
-)
+    ExecutionEdge,
+    ExecutionFactory,
+    ExecutionState,
 
-from opendxa.base.resource import (
+    # State
+    BaseState,
+    WorldState,
+
+    # Resource
+    BaseResource,
+    ResourceError,
+    ResourceUnavailableError,
+    LLMResource,
+    HumanResource,
+    McpResource,
+    StdioTransportParams,
+    HttpTransportParams,
+    BaseMcpService,
+    McpEchoService,
+    WoTResource,
     KBResource,
     MemoryResource,
     LTMemoryResource,
     STMemoryResource,
     PermMemoryResource,
 )
-
-from opendxa.base.db import (
-    BaseDBModel,
-    KnowledgeDBModel,
-    MemoryDBModel,
-    BaseDBStorage,
-    SqlDBStorage,
-    VectorDBStorage,
-)
-
 from opendxa.execution import (
-    AgentRuntime,
-    AgentState,
     Pipeline,
-    PipelineContext,
-    PipelineExecutor,
     PipelineFactory,
+    PipelineExecutor,
+    PipelineContext,
     PipelineNode,
     PipelineStrategy,
     Plan,
-    Planner,
     PlanFactory,
     PlanStrategy,
+    Planner,
     Reasoning,
-    Reasoner,
     ReasoningFactory,
     ReasoningStrategy,
+    Reasoner,
+    AgentRuntime,
+    AgentState,
 )
 
 from opendxa.agent import (
@@ -123,77 +163,80 @@ from opendxa.agent import (
     ResourceFactory,
 )
 
+from opendxa.config import (
+    AgentConfig,
+)
+
 __all__ = [
     # Common
-    'AgentError',
-    'BaseIO',
-    'BreadthFirstTraversal',
-    'CommunicationError',
-    'Configurable',
+    'OpenDXAError',
     'ConfigurationError',
-    'Cursor',
-    'DXA_LOGGER',
-    'DepthFirstTraversal',
-    'DirectedGraph',
-    'Edge',
-    'GraphVisualizer',
-    'IOFactory',
-    'Identifiable',
     'LLMError',
+    'NetworkError',
+    'WebSocketError',
+    'ReasoningError',
+    'AgentError',
+    'CommunicationError',
+    'ValidationError',
+    'StateError',
+    'BaseIO',
+    'IOFactory',
     'LLMInteractionAnalyzer',
     'LLMInteractionVisualizer',
-    'Loggable',
+    'DXALogger',
+    'DXA_LOGGER',
     'Misc',
-    'NetworkError',
-    'Node',
-    'NodeType',
-    'OpenDXAError',
-    'QueryResponse',
-    'Queryable',
-    'ReasoningError',
-    'Registerable',
-    'StateError',
+    'Loggable',
     'ToolCallable',
-    'TopologicalTraversal',
+    'Configurable',
+    'Registerable',
+    'Identifiable',
+    'Queryable',
+    'Node',
+    'Edge',
+    'NodeType',
+    'DirectedGraph',
+    'Cursor',
     'TraversalStrategy',
-    'ValidationError',
-    'WebSocketError',
+    'BreadthFirstTraversal',
+    'DepthFirstTraversal', 
+    'TopologicalTraversal',
+    'GraphVisualizer',
+    'BaseRequest',
+    'BaseResponse',
+
     # Base
     'BaseCapability',
     'BaseExecutor',
-    'BaseResource',
-    'BaseState',
     'ExecutionContext',
     'ExecutionGraph',
     'ExecutionNode',
-    'ExecutionEdge',
+    'ExecutionNodeStatus',
     'ExecutionSignal',
     'ExecutionSignalType',
-    'ExecutionState',
-    'ExecutionFactory',
-    'ExecutionNodeStatus',
     'Objective',
     'ObjectiveStatus',
-    'LLMResource',
-    'ResourceResponse',
+    'ExecutionEdge',
+    'ExecutionFactory',
+    'ExecutionState',
+    'BaseState',
     'WorldState',
-
-    # Base Resource
+    'BaseResource',
+    'ResourceError',
+    'ResourceUnavailableError',
+    'LLMResource',
+    'HumanResource',
+    'McpResource',
+    'StdioTransportParams',
+    'HttpTransportParams',
+    'BaseMcpService',
+    'McpEchoService',
+    'WoTResource',
     'KBResource',
     'MemoryResource',
     'LTMemoryResource',
     'STMemoryResource',
-    'PermMemoryResource',
-
-    # Base DB
-    'BaseDBModel',
-    'KnowledgeDBModel',
-    'MemoryDBModel',
-    'BaseDBStorage',
-    'SqlDBStorage',
-    'VectorDBStorage',
-
-    # Execution
+    'PermMemoryResource', 
     'AgentRuntime',
     'AgentState',
     'Pipeline',
@@ -202,10 +245,7 @@ __all__ = [
     'PipelineFactory',
     'PipelineNode',
     'PipelineStrategy',
-    'Plan',
     'Planner',
-    'PlanFactory',
-    'PlanStrategy',
     'Reasoning',
     'Reasoner',
     'ReasoningFactory',
@@ -218,4 +258,25 @@ __all__ = [
     'AgentResponse',
     'ExpertResource',
     'ResourceFactory',
+
+    # Config
+    'AgentConfig',
+
+    # Execution
+    'Pipeline',
+    'PipelineFactory',
+    'PipelineExecutor',
+    'PipelineContext',
+    'PipelineNode',
+    'PipelineStrategy',
+    'Plan',
+    'PlanFactory',
+    'PlanStrategy',
+    'Planner',
+    'Reasoning',
+    'ReasoningFactory',
+    'ReasoningStrategy',
+    'Reasoner',
+    'AgentRuntime',
+    'AgentState',
 ]

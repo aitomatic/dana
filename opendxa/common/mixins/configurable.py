@@ -5,18 +5,21 @@ It unifies common configuration patterns like loading from YAML, validation,
 and access methods.
 """
 
-import logging
 from typing import Dict, Any, Optional, Union, ClassVar, Type, TypeVar, List
 from pathlib import Path
 import inspect
 import yaml
+from dotenv import load_dotenv
 from opendxa.common.exceptions import ConfigurationError
 from opendxa.common.utils.misc import Misc
-from opendxa.common.utils.logging.dxa_logger import DXA_LOGGER
+from opendxa.common.mixins.loggable import Loggable
+
+# Load environment variables when module is imported
+load_dotenv()
 
 T = TypeVar('T')
 
-class Configurable():
+class Configurable(Loggable):
     """Base class for configurable components in DXA.
     
     This class provides a unified interface for configuration management across DXA components.
@@ -177,7 +180,6 @@ class Configurable():
         """
         super().__init__()
         # Initialize logger using the object's class module and name
-        self._logger = DXA_LOGGER.getLogger(self)
         self.config = self._load_config(config_path)
         self._apply_overrides(overrides)
         self._validate_config()
@@ -214,7 +216,7 @@ class Configurable():
         except yaml.YAMLError as e:
             raise ConfigurationError(f"Invalid YAML format in configuration file: {config_path}") from e
         except Exception as e:
-            self._logger.warning(f"Failed to load config: {e}. Using default configuration.")
+            self.warning(f"Failed to load config: {e}. Using default configuration.")
             return self.default_config.copy()
             
     def _apply_overrides(self, overrides: Dict[str, Any]) -> None:
@@ -473,7 +475,7 @@ class Configurable():
             
         # Extract prompt name and config path
         if "." not in prompt_ref:
-            logging.getLogger(f"{cls.__module__}.{cls.__name__}").warning(
+            Loggable.log_warning(
                 "Prompt reference must be in format 'config_name.prompt_name', got '%s'", 
                 prompt_ref
             )
@@ -491,7 +493,7 @@ class Configurable():
                 return prompts.get(prompt_name, "")
                 
         except Exception as e:
-            logging.getLogger(f"{cls.__module__}.{cls.__name__}").warning(
+            Loggable.log_error(
                 "Failed to load prompt '%s': %s", 
                 prompt_ref, 
                 str(e)

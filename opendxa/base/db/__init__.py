@@ -16,8 +16,7 @@ from opendxa.base.db.models import (
     MemoryDBModel,
 )
 
-from opendxa.common.db.storage import (
-    BaseDBStorage,
+from opendxa.base.db.storage import (
     SqlDBStorage,
     VectorDBStorage
 )
@@ -29,7 +28,6 @@ __all__ = [
     'MemoryDBModel',
     
     # Storage
-    'BaseDBStorage',
     'SqlDBStorage',
     'VectorDBStorage',
 ] 

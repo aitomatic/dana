@@ -13,6 +13,7 @@ from opendxa.base.execution.execution_types import (
     ExecutionSignalType,
 )
 from opendxa.base.execution.execution_factory import ExecutionFactory
+from opendxa.base.execution.execution_state import ExecutionState
 
 __all__ = [
     "BaseExecutor",
@@ -26,4 +27,5 @@ __all__ = [
     "ObjectiveStatus",
     "ExecutionEdge",
     "ExecutionFactory",
+    "ExecutionState",
 ]

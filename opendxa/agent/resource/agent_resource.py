@@ -27,10 +27,10 @@ import asyncio
 from typing import TYPE_CHECKING
 
 from opendxa.common.exceptions import AgentError, ResourceError
-from opendxa.base.resource.base_resource import BaseResource, ResourceResponse
+from opendxa.base.resource.base_resource import BaseResource
+from opendxa.common.types import BaseRequest, BaseResponse
 from opendxa.common.utils.misc import Misc
 from opendxa.common.mixins import ToolCallable
-from opendxa.common.mixins.queryable import QueryParams
 
 if TYPE_CHECKING:
     from opendxa.agent.agent import Agent  # Only used for type hints
@@ -67,11 +67,11 @@ class AgentResource(BaseResource):
         return resource
 
     @ToolCallable.tool
-    async def query(self, params: QueryParams = None) -> ResourceResponse:
+    async def query(self, request: BaseRequest = None) -> BaseResponse:
         """Query an agent from the registry.
 
         Args:
-            request: Query parameters
+            request: Query request
 
         Returns:
             Response from the agent
@@ -82,12 +82,12 @@ class AgentResource(BaseResource):
         """
         try:
             loop = asyncio.get_event_loop()
-            response = await loop.run_in_executor(None, self.agent.ask, params.get("request", ""))
-            return ResourceResponse(success=True, content={"response": response})
+            response = await loop.run_in_executor(None, self.agent.ask, request.get("request", ""))
+            return BaseResponse(success=True, content={"response": response})
         except AgentError as e:
             raise ResourceError("Agent execution failed") from e
         except (ValueError, KeyError) as e:
-            return ResourceResponse.error_response(f"Invalid query format: {e}")
+            return BaseResponse.error_response(f"Invalid query format: {e}")
 
     async def initialize(self) -> None:
         """Initialize all agents in registry.

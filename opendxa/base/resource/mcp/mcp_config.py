@@ -5,12 +5,11 @@ from JSON files or dictionaries. It supports both STDIO and HTTP transport confi
 """
 
 import json
-from dataclasses import dataclass
 from typing import Any, Dict, Union, List, Optional, Sequence
+from pydantic import BaseModel, Field
 
 
-@dataclass
-class StdioTransportParams:
+class StdioTransportParams(BaseModel):
     """Parameters for STDIO transport.
     
     Args:
@@ -34,21 +33,23 @@ class StdioTransportParams:
             or on the same machine. It uses standard input/output streams for communication,
             making it simple to set up and debug.
     """
-    server_script: str
-    command: str = "python3"
-    args: Optional[Sequence[str]] = None
-    env: Optional[Dict[str, str]] = None
-    stdio_config: Optional[Dict[str, Any]] = None
+    server_script: str = Field(
+        ...,
+        description="Path to the Python script that will be executed as the MCP server"
+    )
+    command: str = Field(default="python3", description="Command to execute the server script")
+    args: Optional[Sequence[str]] = Field(default=None, description="Optional list of additional arguments to pass to the command")
+    env: Optional[Dict[str, str]] = Field(default=None, description="Optional dictionary of environment variables to set for the server process")
+    stdio_config: Optional[Dict[str, Any]] = Field(default=None, description="Optional additional configuration for STDIO transport")
 
 
-@dataclass
-class HttpTransportParams:
+class HttpTransportParams(BaseModel):
     """Parameters for HTTP transport.
     
     Args:
         url: URL for the HTTP endpoint
         headers: Optional dictionary of HTTP headers
-        timeout: Connection timeout in seconds for initial HTTP connection establishment.
+        timeout: HTTP request timeout in seconds.
             This is a relatively short timeout (default: 5.0s) used for the basic HTTP
             request/response cycle.
         sse_read_timeout: Server-Sent Events (SSE) read timeout in seconds.
@@ -69,11 +70,11 @@ class HttpTransportParams:
             to push data to the client asynchronously, making it suitable for streaming
             responses and long-running operations.
     """
-    url: str
-    headers: Optional[Dict[str, Any]] = None
-    timeout: float = 5.0
-    sse_read_timeout: float = 60 * 5
-    sse_config: Optional[Dict[str, Any]] = None
+    url: str = Field(..., description="URL for the HTTP endpoint")
+    headers: Optional[Dict[str, Any]] = Field(default=None, description="Optional dictionary of HTTP headers")
+    timeout: float = Field(default=5.0, description="HTTP request timeout in seconds")
+    sse_read_timeout: float = Field(default=60 * 5, description="Server-Sent Events (SSE) read timeout in seconds")
+    sse_config: Optional[Dict[str, Any]] = Field(default=None, description="Optional additional configuration for SSE transport")
 
 class McpConfigError(Exception):
     """Base exception for MCP configuration errors."""

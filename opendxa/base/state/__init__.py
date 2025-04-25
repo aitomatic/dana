@@ -2,14 +2,12 @@
 State management for DXA.
 """
 
-from .base_state import BaseState
-from .world_state import WorldState
-from ...base.execution.execution_state import ExecutionState
-from .state_manager import StateManager
+from opendxa.base.state.base_state import BaseState
+from opendxa.base.state.world_state import WorldState
+from opendxa.base.state.state_manager import StateManager
 
 __all__ = [
     "BaseState",
     "WorldState",
-    "ExecutionState",
-    "StateManager"
+    "StateManager",
 ]

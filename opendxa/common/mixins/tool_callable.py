@@ -40,58 +40,47 @@ Example:
             pass
 """
 
-from collections.abc import Sequence
-from typing import Dict, Any, Set, Optional, List, Callable, TypeVar, get_type_hints, get_origin, get_args, Union, Tuple
 import inspect
-from mcp.types import Tool as McpTool
+from typing import Dict, Any, Set, Optional, List, Callable, TypeVar
+from pydantic import create_model
+from mcp import Tool as McpTool
 from opendxa.common.mixins.registerable import Registerable
 from opendxa.common.mixins.loggable import Loggable
+from opendxa.common.mixins.tool_formats import ToolFormat, McpToolFormat, OpenAIToolFormat
 
 # Type variable for the decorated function
 F = TypeVar('F', bound=Callable[..., Any])
 OpenAIFunctionCall = TypeVar('OpenAIFunctionCall', bound=Dict[str, Any])
 
-def _type_to_schema(type_hint: Any) -> Dict[str, Any]:
-    """Convert Python type hint to JSON Schema.
+def create_model_from_signature(func: Callable) -> Any:
+    """Create a Pydantic model from a function's signature.
     
     Args:
-        type_hint: Python type hint to convert
+        func: The function to create a model for
         
     Returns:
-        Dict[str, Any]: JSON Schema representation of the type
+        A Pydantic model class for the function's parameters
     """
-    origin = get_origin(type_hint)
-    args = get_args(type_hint)
+    sig = inspect.signature(func)
+    fields = {}
     
-    if origin is Union:
-        # Handle Optional[T] which is Union[T, None]
-        if len(args) == 2 and type(None) in args:
-            non_none_type = next(t for t in args if t is not type(None))
-            return _type_to_schema(non_none_type)
-        # Handle other unions
-        return {"type": [_type_to_schema(t)["type"] for t in args]}
+    for name, param in sig.parameters.items():
+        if name == 'self':
+            continue
+            
+        # Get the type annotation
+        annotation = param.annotation
+        if annotation == inspect.Parameter.empty:
+            annotation = Any
+            
+        # Get the default value
+        default = param.default
+        if default == inspect.Parameter.empty:
+            default = ...
+            
+        fields[name] = (annotation, default)
     
-    if origin is list or origin is List:
-        return {
-            "type": "array",
-            "items": _type_to_schema(args[0])
-        }
-    
-    if origin is dict or origin is Dict:
-        return {
-            "type": "object",
-            "additionalProperties": _type_to_schema(args[1])
-        }
-    
-    # Handle basic types
-    type_map = {
-        str: "string",
-        int: "integer",
-        float: "number",
-        bool: "boolean",
-        Any: "any"
-    }
-    return {"type": type_map.get(type_hint, "string")}
+    return create_model(f"{func.__name__}Params", **fields)
 
 class ToolCallable(Registerable, Loggable):
     """A mixin class that provides tool-callable functionality to classes.
@@ -116,10 +105,10 @@ class ToolCallable(Registerable, Loggable):
         and OpenAI function list cache.
         """
         self._tool_callable_function_cache: Set[str] = set()  # computed in __post_init__
+        self._params_model_cache: Dict[str, Any] = {}  # cache for parameter models
         self.__mcp_tool_list_cache: Optional[List[McpTool]] = None  # computed lazily in list_mcp_tools
         self.__openai_function_list_cache: Optional[List[OpenAIFunctionCall]] = None  # computed lazily in list_openai_functions
-        Registerable.__init__(self)
-        Loggable.__init__(self)
+        super().__init__()
         self.__post_init__()
         
     def __post_init__(self):
@@ -146,314 +135,93 @@ class ToolCallable(Registerable, Loggable):
     # Alias for shorter decorator usage
     tool = tool_callable_decorator
 
-    def list_mcp_tools(self) -> List[McpTool]:
-        """List all tools available to the agent.
+    def _parse_docstring(self, docstring: Optional[str]) -> str:
+        """Parse a docstring to extract the description.
         
-        This method converts Python functions marked with @tool into MCP Tool objects.
-        It extracts type information from function annotations and docstrings to build
-        the tool's input schema.
+        The description is taken from the @description: tag if present, otherwise
+        from the first part of the docstring before any parameter descriptions.
         
-        Tool Function Docstring Format:
-            The docstring of a tool function should follow this format:
+        Args:
+            docstring: The docstring to parse
             
-            '''@param1: A description of the first parameter.
-                This description can span multiple lines.
-                Indentation is preserved in the output.
-            
-            @description: A description of what the tool does.
-                This description can span multiple lines.
-                Indentation is preserved in the output.
-            
-            @param2: A description of the second parameter.
-                Multi-line descriptions are supported.
-                Each line after the first should be indented.
-            
-            @param3: A single line description.
-            '''
-            
-            The docstring should:
-            1. Include an @description: field for the tool's general description
-            2. List each parameter with @param_name: format
-            3. Support multi-line descriptions with proper indentation
-            4. Preserve newlines in the output schema
-            5. Fields can appear in any order
-        
         Returns:
-            List[Tool]: List of MCP Tool objects representing the available tools
+            The extracted description
         """
+        if not docstring:
+            return ""
+            
+        # Split into lines and remove leading/trailing whitespace
+        lines = [line.strip() for line in docstring.split('\n')]
+        
+        # First look for @description: tag
+        for line in lines:
+            if line.startswith('@description:'):
+                return line[len('@description:'):].strip()
+        
+        # If no @description: tag found, use the first part of the docstring
+        description_lines = []
+        for line in lines:
+            if line.startswith('@') or line.startswith('Args:'):
+                break
+            if line:  # Only add non-empty lines
+                description_lines.append(line)
+                
+        # Join the description lines and clean up
+        description = ' '.join(description_lines).strip()
+        return description
+
+    def _list_tools(self, format_converter: ToolFormat) -> List[Any]:
+        """Common base method for listing tools in any format.
+        
+        Args:
+            format_converter: A converter that transforms tool information into the desired format
+            
+        Returns:
+            List of tools in the requested format
+        """
+        tools = []
+        for func_name in self._tool_callable_function_cache:
+            func = getattr(self, func_name)
+            
+            # Get the Pydantic model for parameters from cache or create it
+            params_model = self._params_model_cache.get(func_name)
+            if params_model is None:
+                params_model = create_model_from_signature(func)
+                self._params_model_cache[func_name] = params_model
+            
+            # Get the schema from the Pydantic model
+            schema = params_model.model_json_schema()
+            
+            # Parse the docstring to get the description
+            description = self._parse_docstring(func.__doc__)
+            
+            # Convert to desired format
+            tool = format_converter.convert(
+                name=func_name,
+                description=description,
+                schema=schema
+            )
+            tools.append(tool)
+        
+        return tools
+
+    def list_mcp_tools(self) -> List[McpTool]:
+        """List all tools available to the agent in MCP format."""
         if self.__mcp_tool_list_cache is not None:
             return self.__mcp_tool_list_cache
 
-        mcp_tools = []
-        # pylint: disable=protected-access
-        for func_name in self._tool_callable_function_cache: 
-            func = getattr(self, func_name)
-            type_hints = get_type_hints(func)
-            
-            # Get parameter descriptions from docstring
-            doc = func.__doc__ or ""
-            param_docs = {}
-            tool_description = ""
-            if doc:
-                # Parse docstring for parameter descriptions using @ field format
-                current_param = None
-                current_desc = []
-                
-                for line in doc.split('\n'):
-                    line = line.strip()
-                    if not line:
-                        continue
-                        
-                    if line.startswith('@'):
-                        # Save previous param if exists
-                        if current_param:
-                            if current_param == "description":
-                                tool_description = '\n'.join(current_desc).strip()
-                            else:
-                                param_docs[current_param] = '\n'.join(current_desc).strip()
-                            current_desc = []
-                            
-                        # Start new param
-                        parts = line[1:].split(':', 1)
-                        if len(parts) == 2:
-                            current_param = parts[0].strip()
-                            current_desc = [parts[1].strip()]
-                        else:
-                            current_param = None
-                    elif current_param and line:
-                        # Continue description for current param
-                        current_desc.append(line)
-                        
-                # Save last param if exists
-                if current_param:
-                    if current_param == "description":
-                        tool_description = '\n'.join(current_desc).strip()
-                    else:
-                        param_docs[current_param] = '\n'.join(current_desc).strip()
-            
-            # Build schema
-            properties = {}
-            required = []
-            for param_name, param_type in type_hints.items():
-                if param_name == "return":
-                    continue
-                    
-                # Get type schema
-                type_schema = _type_to_schema(param_type)
-                
-                # Add description if available
-                if param_name in param_docs:
-                    type_schema["description"] = param_docs[param_name]
-                
-                # Check if parameter is optional
-                if get_origin(param_type) is Union and type(None) in get_args(param_type):
-                    type_schema["type"] = [type_schema["type"], "null"]
-                else:
-                    required.append(param_name)
-                
-                properties[param_name] = type_schema
-            
-            mcp_tools.append(McpTool(
-                name=func_name,
-                description=tool_description or func.__doc__ or "",
-                inputSchema={
-                    "type": "object",
-                    "properties": properties,
-                    "required": required,
-                    "additionalProperties": False
-                }
-            ))
-        self.__mcp_tool_list_cache = mcp_tools
-        return mcp_tools
+        self.__mcp_tool_list_cache = self._list_tools(McpToolFormat())
+        return self.__mcp_tool_list_cache
 
-    def list_openai_functions(self) -> List[OpenAIFunctionCall]:
-        """List all tools available to the agent."""
+    def list_openai_functions(self) -> List[Dict[str, Any]]:
+        """List all tools available to the agent in OpenAI format."""
         if self.__openai_function_list_cache is not None:
             return self.__openai_function_list_cache
 
-        mcp_tools = self.list_mcp_tools()
-        self.__openai_function_list_cache = self._convert_mcp_tools_to_openai_functions(mcp_tools)
+        self.__openai_function_list_cache = self._list_tools(
+            OpenAIToolFormat(self.name, self.id)
+        )
         return self.__openai_function_list_cache
-
-    def _convert_mcp_tools_to_openai_functions(
-        self,
-        mcp_tools: List[McpTool]
-    ) -> List[OpenAIFunctionCall]:
-        """Convert a list of tools to OpenAI's function calling format.
-        
-        Input Format (tools):
-            List of tool dictionaries, each with:
-            {
-                "name": str,                    # Tool name
-                "description": str,             # Tool description
-                "inputSchema": {                # JSON Schema for parameters
-                    "type": "object",
-                    "properties": {
-                        "param1": {
-                            "type": str | List[str],  # Parameter type
-                            "description": str,       # Parameter description
-                            "title": str,             # Optional parameter title
-                            "items": {                # For array types
-                                "type": str
-                            }
-                        },
-                        ...
-                    },
-                    "required": List[str],      # Required parameter names
-                    "$schema": str              # Optional JSON Schema reference
-                }
-            }
-        
-        Output Format:
-            List of OpenAI function specifications:
-            [
-                {
-                    "type": "function",
-                    "function": {
-                        "name": str,            # Namespaced as "{self.name}__{self.id}__{tool_name}"
-                        "description": str,     # Tool description
-                        "parameters": {         # Cleaned JSON Schema
-                            "type": "object",
-                            "properties": {
-                                "param1": {
-                                    "type": str | List[str],  # Type or union with "null"
-                                    "description": str,
-                                    "title": str,
-                                    "items": {
-                                        "type": str
-                                    }
-                                },
-                                ...
-                            },
-                            "required": List[str],
-                            "additionalProperties": False
-                        },
-                        "strict": True
-                    }
-                },
-                ...
-            ]
-        
-        Transformations Applied:
-        1. Schema Cleanup:
-           - Removes 'self' references from properties
-           - Updates required fields list
-        2. Property Processing:
-           - Makes non-required fields nullable
-           - Cleans up property definitions to essential keys
-        3. Schema Validation:
-           - Removes $schema field
-           - Enforces strict parameter validation
-        
-        Args:
-            mcp_tools: List of tools to convert
-            
-        Returns:
-            List of OpenAI function specifications
-        """
-        openai_functions: List[OpenAIFunctionCall] = []
-        
-        for mcp_tool in mcp_tools:
-            # Get the input schema
-            parameters = getattr(mcp_tool, "inputSchema", {}).copy()
-            
-            # Remove 'self' references if present
-            if "properties" in parameters:
-                properties = parameters["properties"]
-                if properties.pop("self", None) is not None and "required" in parameters:
-                    parameters["required"] = [
-                        field for field in parameters["required"] 
-                        if field != "self"
-                    ]
-            
-            # Process properties if they exist
-            if "properties" in parameters and "required" in parameters:
-                properties = parameters["properties"]
-                required_fields = parameters["required"]
-                
-                # Make non-required fields nullable
-                for field_name, field_props in properties.items():
-                    if field_name not in required_fields and "type" in field_props:
-                        field_type = field_props["type"]
-                        if isinstance(field_type, str):
-                            field_props["type"] = [field_type, "null"]
-                        # Only add null if field_type doesn't contain "null"
-                        elif isinstance(field_type, Sequence) and not any([item == "null" for item in field_type]): 
-                            field_props["type"] = [*field_type, "null"]
-                
-                # Clean up property definitions
-                allowed_keys = {"description", "title", "type", "items"}
-                properties.update({
-                    prop_name: {
-                        k: v for k, v in prop.items() 
-                        if k in allowed_keys
-                    }
-                    for prop_name, prop in properties.items()
-                })
-            
-            # Remove JSON Schema specific fields
-            parameters.pop("$schema", None)
-            
-            # Enforce strict parameter validation
-            parameters["additionalProperties"] = False
-            
-            # Create OpenAI function specification
-            openai_functions.append({
-                "type": "function",
-                "function": {
-                    "name": self.build_name_id_function_string(self.name, self.id, mcp_tool.name),
-                    "description": mcp_tool.description,
-                    "parameters": parameters,
-                    "strict": True  # TODO: NOTE: strict=True doesn't work with type ['string', 'null']
-                }
-            })
-        
-        return openai_functions
-
-    @classmethod
-    def parse_name_id_function_string(cls, function_name: str) -> Tuple[str, str, str]:
-        """Parse a function name string into its components.
-        
-        The function name string is expected to be in the format:
-        "{resource_name}__{resource_id}__{tool_name}"
-        
-        Args:
-            function_name: The function name string to parse
-            
-        Returns:
-            Tuple of (resource_name, resource_id, tool_name)
-            
-        Raises:
-            ValueError: If the function name is not in the expected format
-        """
-        parts = function_name.split("__")
-        if len(parts) != 3:
-            raise ValueError(
-                f"Function name must be in format 'resource_name__resource_id__tool_name', got: {function_name}"
-            )
-        return tuple(parts)
-
-    @classmethod
-    def build_name_id_function_string(cls, resource_name: str, resource_id: str, tool_name: str) -> str:
-        """Build a function name string from its components.
-        
-        The function name string will be in the format:
-        "{resource_name}__{resource_id}__{tool_name}"
-        
-        Args:
-            resource_name: Name of the resource
-            resource_id: ID of the resource
-            tool_name: Name of the tool
-            
-        Returns:
-            Function name string in the format "resource_name__resource_id__tool_name"
-            
-        Raises:
-            ValueError: If any component contains "__" which would break the format
-        """
-        if any("__" in component for component in (resource_name, resource_id, tool_name)):
-            raise ValueError("Resource name, ID, and tool name cannot contain '__'")
-        return f"{resource_name}__{resource_id}__{tool_name}"
     
     def call_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Any:
         """Call a tool with the given name and arguments.

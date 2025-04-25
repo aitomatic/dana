@@ -1,137 +1,71 @@
-"""Human resource implementation.
+"""Human resource implementation for DXA.
 
-This module defines the HumanResource class, which handles human-in-the-loop interactions
-within the DXA framework. It includes configuration and response handling for human resources.
+This module provides a resource that allows interaction with human users through
+the console. It's useful for getting human input during execution.
+
+Classes:
+    HumanResource: Resource for getting human input
+    HumanResponse: Response type for human resource
 """
 
-import asyncio
-from typing import Dict, Any, Optional, ClassVar
-from dataclasses import dataclass
-
-from opendxa.base.resource.base_resource import BaseResource, ResourceResponse, ResourceError
-from opendxa.common.mixins import ToolCallable
-from opendxa.common.mixins.queryable import QueryParams
-
-@dataclass 
-class HumanResponse(ResourceResponse):
-    """Human resource response.
-
-    Attributes:
-        response (str): The response provided by the human.
-        success (bool): Indicates whether the operation was successful.
-        error (Optional[str]): An optional error message if the operation failed.
-    """
-    response: str = ""
-    success: bool = True
-    error: Optional[str] = None
+from typing import Optional
+from opendxa.common.types import BaseRequest, BaseResponse
+from opendxa.base.resource.base_resource import BaseResource
 
 class HumanResource(BaseResource):
-    """Resource representing human interaction.
+    """Resource for getting human input."""
 
-    This class manages the interaction with human users, allowing for input collection
-    and response handling.
-
-    Attributes:
-        role (str): The role of the human resource.
-        _is_available (bool): Indicates whether the resource is available for interaction.
-    """
-
-    # Class-level default configuration
-    default_config: ClassVar[Dict[str, Any]] = {
-        "role": "user",
-        "description": "A human resource that can provide information"
-    }
-    
-    def __init__(
-        self,
-        name: str,
-        role: str = "user",
-        description: str = "A human resource that can provide information",
-        config: Optional[Dict[str, Any]] = None
-    ):
-        """Initialize the HumanResource instance.
+    def __init__(self, name: str, description: Optional[str] = None):
+        """Initialize human resource.
 
         Args:
-            name (str): The name identifier for this human resource.
-            role (str): The role of the human resource, defaulting to "user".
-            description (str): The description of the human resource.
-            config: Optional additional configuration
+            name: Resource name
+            description: Optional resource description
         """
-        # Build config dict from parameters
-        config_dict = config or {}
-        if role != "user":
-            config_dict["role"] = role
-        if description != "A human resource that can provide information":
-            config_dict["description"] = description
-
-        super().__init__(name=name, config=config_dict)
+        super().__init__(name, description)
         self._is_available = True
 
-    @property
-    def role(self) -> str:
-        """Get the role of the human resource."""
-        return self.config.get("role", "user")
-
-    async def initialize(self) -> None:
-        """Initialize the human resource.
-
-        This method sets the resource as available for interaction.
-        """
-        self._is_available = True
-
-    async def cleanup(self) -> None:
-        """Clean up the human resource.
-
-        This method sets the resource as unavailable for interaction.
-        """
-        self._is_available = False
-
-    def can_handle(self, request: Dict[str, Any]) -> bool:
-        """Check if the request can be handled by the human resource.
+    def can_handle(self, request: BaseRequest) -> bool:
+        """Check if resource can handle request.
 
         Args:
-            request (Dict[str, Any]): The request to check.
+            request: The request to check
 
         Returns:
-            bool: True if the request can be handled, False otherwise.
+            bool: True if resource can handle request
         """
-        return self._is_available and isinstance(request, dict)
+        return (
+            isinstance(request, BaseRequest) and
+            isinstance(request.arguments, dict) and
+            "prompt" in request.arguments
+        )
 
-    @ToolCallable.tool
-    async def query(self, params: QueryParams = None) -> ResourceResponse:
-        """Query the human resource for input.
+    async def query(self, request: BaseRequest) -> BaseResponse:
+        """Get human input.
 
         Args:
-            request (Dict[str, Any]): The request containing query parameters.
+            request: The request containing the prompt
 
         Returns:
-            ResourceResponse: The response from the human resource.
+            BaseResponse: The response from the human resource.
         """
-        if not self.can_handle(params):
-            return ResourceResponse.error_response("Resource unavailable or invalid request format")
+        if not self._is_available or not self.can_handle(request):
+            return BaseResponse(success=False, error="Resource unavailable or invalid request format")
 
         try:
-            response = await self._get_human_input(params)
-            return ResourceResponse(success=True, content={"response": response})
+            response = await self._get_human_input(request.arguments["prompt"])
+            return BaseResponse(success=True, content={"response": response})
         except Exception as e:
-            return ResourceResponse.error_response(f"Failed to get human input: {e}")
+            return BaseResponse(success=False, error=f"Failed to get human input: {e}")
 
-    async def _get_human_input(self, params: QueryParams = None) -> str:
-        """Get input from the human user.
+    async def _get_human_input(self, prompt: str) -> str:
+        """Get input from human user.
 
         Args:
-            params (QueryParams): The query parameters.
+            prompt: The prompt to show to the user
 
         Returns:
-            str: The response provided by the human.
-
-        Raises:
-            ResourceError: If input cannot be obtained.
+            str: The user's input
         """
-        try:
-            prompt = params.get("prompt", "Please provide input")
-            loop = asyncio.get_event_loop()
-            response = await loop.run_in_executor(None, input, f"{prompt}\n> ")
-            return response
-        except Exception as e:
-            raise ResourceError("Failed to get human input") from e
+        print(f"\n{prompt}")
+        return input("> ")
