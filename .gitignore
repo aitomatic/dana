@@ -22,3 +22,4 @@ proposal/*
 notebooks/*
 memory-bank/*
 .coverage
+local_executor
