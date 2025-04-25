@@ -7,7 +7,7 @@ import aisuite as ai
 from openai.types.chat import ChatCompletion
 from opendxa.common.exceptions import LLMError
 from opendxa.base.resource.base_resource import BaseResource, ResourceResponse, QueryStrategy
-from opendxa.common.utils.misc import get_field
+from opendxa.common.utils.misc import Misc
 from opendxa.common.mixins.tool_callable import ToolCallable, OpenAIFunctionCall
 from opendxa.common.mixins.registerable import Registerable
 from opendxa.common.mixins.queryable import QueryParams
@@ -138,17 +138,17 @@ class LLMResource(BaseResource):
         """
         # Initialize variables for the loop
         if self.get_query_strategy() == QueryStrategy.ITERATIVE:
-            max_iterations = request.get("max_iterations", self.get_query_max_iterations())
+            max_iterations = Misc.get_field(request, "max_iterations", self.get_query_max_iterations())
         else:
             max_iterations = 1
 
         # Add a system prompt that encourages resource use if not provided
-        system_messages = request.get("system_messages", [
+        system_messages = Misc.get_field(request, "system_messages", [
             "You are an assistant. Use tools when necessary to complete tasks. "
             "After receiving tool results, you can request additional tools if needed."
         ])
 
-        user_messages = request.get("user_messages", [
+        user_messages = Misc.get_field(request, "user_messages", [
             "Hello, how are you?"
         ])
         
@@ -158,7 +158,7 @@ class LLMResource(BaseResource):
         message_history.append({"role": "user", "content": '\n'.join(user_messages)})
 
         # Register all resources in the registry
-        available_resources = request.get("available_resources", {})
+        available_resources = Misc.get_field(request, "available_resources", {})
         for resource in available_resources.values():
             resource.add_to_registry()
         
@@ -171,18 +171,18 @@ class LLMResource(BaseResource):
 
             # Make the LLM query with available resources and message history
             response = await self._query_once({
-                "available_resources": request.get("available_resources", {}),
-                "max_tokens": request.get("max_tokens"),
-                "temperature": request.get("temperature", 0.7),
+                "available_resources": Misc.get_field(request, "available_resources", {}),
+                "max_tokens": Misc.get_field(request, "max_tokens"),
+                "temperature": Misc.get_field(request, "temperature", 0.7),
                 "messages": message_history  # Pass read-only message history
             })
             
-            choices = get_field(response, "choices", [])
-            response_message = get_field(choices[0], "message") if choices and len(choices) > 0 else None
+            choices = Misc.get_field(response, "choices", [])
+            response_message = Misc.get_field(choices[0], "message") if choices and len(choices) > 0 else None
 
             if response_message:
                 # Only add tool_calls if they exist and are a valid list
-                tool_calls: List[OpenAIFunctionCall] = get_field(response_message, "tool_calls")
+                tool_calls: List[OpenAIFunctionCall] = Misc.get_field(response_message, "tool_calls")
                 has_valid_tool_calls = tool_calls and isinstance(tool_calls, list)
                 
                 if has_valid_tool_calls:
@@ -191,8 +191,8 @@ class LLMResource(BaseResource):
                     
                     # First add the assistant message with all tool calls
                     message_history.append({
-                        "role": get_field(response_message, "role"),
-                        "content": get_field(response_message, "content"),
+                        "role": Misc.get_field(response_message, "role"),
+                        "content": Misc.get_field(response_message, "content"),
                         "tool_calls": [i.model_dump() if hasattr(i, "model_dump") else i for i in tool_calls]
                     })
                     
@@ -252,7 +252,7 @@ class LLMResource(BaseResource):
             raise LLMError("No LLM model specified. Did you forget to set the API key in .env or your environment?")
 
         # Get message history (read-only)
-        messages = get_field(request, "messages", [])
+        messages = Misc.get_field(request, "messages", [])
         if not messages:
             raise LLMError("messages must be provided and non-empty")
         
@@ -277,7 +277,7 @@ class LLMResource(BaseResource):
         Returns:
             Dict[str, Any]: Mock response
         """
-        messages = get_field(request, "messages", [])
+        messages = Misc.get_field(request, "messages", [])
         if not messages:
             raise LLMError("messages must be provided and non-empty")
             
@@ -314,13 +314,13 @@ class LLMResource(BaseResource):
             Dict[str, Any]: Dictionary of request parameters
         """
         params = {
-            "messages": get_field(request, "messages", []),
-            "temperature": request.get("temperature", 0.7),
-            "max_tokens": request.get("max_tokens"),
+            "messages": Misc.get_field(request, "messages", []),
+            "temperature": Misc.get_field(request, "temperature", 0.7),
+            "max_tokens": Misc.get_field(request, "max_tokens"),
         }
 
         if not available_resources:
-            available_resources = get_field(request, "available_resources", {})
+            available_resources = Misc.get_field(request, "available_resources", {})
         
         # Only add model if it's available
         if self.model:

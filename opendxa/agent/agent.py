@@ -38,7 +38,7 @@ from opendxa.base.state import WorldState, ExecutionState
 from opendxa.common.io import BaseIO, IOFactory
 from opendxa.common.mixins.configurable import Configurable
 from opendxa.common.mixins.loggable import Loggable
-from opendxa.common.utils.misc import safe_asyncio_run
+from opendxa.common.utils.misc import Misc
 from opendxa.base.capability.capable import Capable
 from opendxa.common.mixins.queryable import QueryResponse
 from opendxa.config.agent_config import AgentConfig
@@ -323,7 +323,7 @@ class Agent(Configurable, Capable, ToolCallable):
 
     def run(self, plan: Plan) -> AgentResponse:
         """Run an plan."""
-        return safe_asyncio_run(self.async_run, plan)
+        return Misc.safe_asyncio_run(self.async_run, plan)
 
     def ask(self, question: str) -> AgentResponse:
         """Ask a question to the agent."""

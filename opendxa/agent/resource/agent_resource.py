@@ -28,7 +28,7 @@ from typing import TYPE_CHECKING
 
 from opendxa.common.exceptions import AgentError, ResourceError
 from opendxa.base.resource.base_resource import BaseResource, ResourceResponse
-from opendxa.common.utils.misc import safe_asyncio_run
+from opendxa.common.utils.misc import Misc
 from opendxa.common.mixins import ToolCallable
 from opendxa.common.mixins.queryable import QueryParams
 
@@ -48,7 +48,7 @@ class AgentResource(BaseResource):
         """
         super().__init__(name, description)
         self.agent = agent
-        safe_asyncio_run(self.initialize)
+        Misc.safe_asyncio_run(self.initialize)
 
     @classmethod
     async def create(cls, name: str, agent: "Agent", description: str) -> "AgentResource":
@@ -82,7 +82,7 @@ class AgentResource(BaseResource):
         """
         try:
             loop = asyncio.get_event_loop()
-            response = await loop.run_in_executor(None, self.agent.ask, request.get("request", ""))
+            response = await loop.run_in_executor(None, self.agent.ask, params.get("request", ""))
             return ResourceResponse(success=True, content={"response": response})
         except AgentError as e:
             raise ResourceError("Agent execution failed") from e

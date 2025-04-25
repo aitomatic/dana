@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import Dict, Any, Optional, ClassVar, Union, List, TypedDict
 import logging
-from opendxa.common.utils.misc import load_yaml_config
+from opendxa.common.utils.misc import Misc
 from opendxa.common.mixins.configurable import Configurable
 
 # Configure logger
@@ -54,7 +54,7 @@ class ExecutionConfig(Configurable):
         """
         try:
             config_path = cls.get_yaml_path(path=path)
-            config = load_yaml_config(config_path)
+            config = Misc.load_yaml_config(config_path)
             
             # Validate basic structure
             if not isinstance(config, dict):

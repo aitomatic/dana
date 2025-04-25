@@ -7,7 +7,7 @@ from typing import Dict, Any, Optional, Union, List, cast, TYPE_CHECKING, Type, 
 from dataclasses import dataclass
 
 # Third-party imports
-from opendxa.common.utils.misc import load_yaml_config
+from opendxa.common.utils.misc import Misc
 from opendxa.common.graph import DirectedGraph, Node, Edge, NodeType
 
 # Local imports
@@ -249,7 +249,7 @@ class ExecutionGraph(DirectedGraph):
             else:
                 raise ValueError("No config path or name provided")
 
-        data = load_yaml_config(config_path)
+        data = Misc.load_yaml_config(config_path)
         return data, str(config_path) if config_path else None
 
     @classmethod

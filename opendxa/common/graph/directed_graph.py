@@ -4,7 +4,7 @@ from typing import Dict, List, Optional, Iterator, Any, Union, TextIO, TYPE_CHEC
 from pathlib import Path
 from enum import Enum
 from dataclasses import dataclass, field
-from opendxa.common.utils import get_class_by_name
+from opendxa.common.utils.misc import Misc
 from opendxa.common.mixins.configurable import Configurable
 if TYPE_CHECKING:
     from opendxa.common.graph.visualizer import GraphVisualizer
@@ -222,7 +222,7 @@ class DirectedGraph(Configurable):
         """Get traversal cursor starting at given node."""
         if strategy is None:
             strategy = self._default_traversal
-        cursor_class = get_class_by_name(_CURSOR_CLASS_NAME)
+        cursor_class = Misc.get_class_by_name(_CURSOR_CLASS_NAME)
         return cursor_class(self, start_node, strategy)
 
     def get_current_node(self) -> Optional[Node]:
