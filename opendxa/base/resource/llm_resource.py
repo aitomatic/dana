@@ -91,15 +91,6 @@ class LLMResource(BaseResource):
             )
 
         try:
-            # Handle mock LLM call case
-            if self._mock_llm_call:
-                if callable(self._mock_llm_call):
-                    response = await self._mock_llm_call(request.arguments)
-                else:
-                    response = await self._mock_llm_query(request.arguments)
-                return BaseResponse(success=True, content=response)
-
-            # Regular LLM call case
             response = await self._query_iterative(request.arguments)
             return BaseResponse(success=True, content=response)
         except Exception as e:
@@ -183,9 +174,9 @@ class LLMResource(BaseResource):
             "After receiving tool results, you can request additional tools if needed."
         ])
 
-        user_messages = Misc.get_field(request, "user_messages", [
-            "Hello, how are you?"
-        ])
+        user_messages = Misc.get_field(request, "user_messages",
+                                       Misc.get_field(request, "messages",
+                                                      ["Hello, how are you?"]))
         
         # Initialize message history with system and user messages
         message_history: List[Dict[str, Any]] = []
@@ -218,9 +209,9 @@ class LLMResource(BaseResource):
             if response_message:
                 # Only add tool_calls if they exist and are a valid list
                 tool_calls: List[OpenAIFunctionCall] = Misc.get_field(response_message, "tool_calls")
-                has_valid_tool_calls = tool_calls and isinstance(tool_calls, list)
+                has_tool_calls = tool_calls and isinstance(tool_calls, list)
                 
-                if has_valid_tool_calls:
+                if has_tool_calls:
                     # Store the tool request message and get responses for all tool calls
                     self.info("LLM is requesting tools, storing tool request message and calling resources")
                     
@@ -446,10 +437,6 @@ class LLMResource(BaseResource):
                 resource: Optional[ToolCallable] = Registerable.get_from_registry(resource_id)
                 if resource is None:
                     self.warning(f"Resource {resource_name} with id {resource_id} not found")
-                    continue
-                
-                if not isinstance(resource, ToolCallable):
-                    self.warning(f"Resource {resource_name} with id {resource_id} is not a ToolCallable")
                     continue
                 
                 # Call the tool

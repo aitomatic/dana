@@ -74,7 +74,7 @@ class Reasoner(BaseExecutor[ReasoningStrategy, Reasoning, ReasoningFactory]):
 
                 # Query the LLM with available resources
                 request = BaseRequest(arguments={
-                    "messages": user_messages,
+                    "user_messages": user_messages,
                     "system_messages": system_messages,
                     "available_resources": context.available_resources or {},
                     "max_iterations": 3,

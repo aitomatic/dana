@@ -475,12 +475,12 @@ class McpResource(BaseResource):
                 sse_config=http_params.sse_config.copy() if http_params.sse_config else None
             )
     
-    def call_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Any:
-        """Call a tool with the given name and arguments.
+    def _call_tool_after_validation(self, tool_name: str, arguments: Any) -> Any:
+        """Call a tool with the given name and validated arguments.
         
         Args:
             tool_name: The name of the tool to call
-            arguments: The arguments to pass to the tool
+            arguments: The validated arguments to pass to the tool
         """
         return self.query({
             "tool": tool_name,

@@ -6,9 +6,11 @@ This is a dummy RAG resource that returns a static schema of existing tables.
 
 # from opendxa.contrib.sql_agent_with_dynamic_plan.base.resource import BaseResource
 
+from pydantic import BaseModel, Field
 from opendxa.base.resource import BaseResource
 from opendxa.common.mixins import ToolCallable
-from opendxa.common.types import BaseRequest, BaseResponse
+from opendxa.common.types import BaseResponse
+from typing import Dict, Any
 
 # flake8: noqa: E501
 table_schemas = """
@@ -115,12 +117,22 @@ class SampleSchemaResource(BaseResource):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+    
+    class QueryRequest(BaseModel):
+        """xxx Request for querying the sample schema resource."""
+        table_name: str = Field(description="The name of the table to be queried.")
 
     @ToolCallable.tool
-    async def query(self, request: BaseRequest = None) -> BaseResponse:
-        """Query the sample schema resource."""
-        if not request:
-            return BaseResponse(success=False, error="No request provided")
+    async def query(self, request: QueryRequest) -> BaseResponse:
+        """Query the sample schema resource.
+        
+        Args:
+            request: A dictionary containing the request parameters.
+                - table_name: A string containing the name of the table to be queried.
+
+        Returns:
+            A BaseResponse object containing the success status and content.
+        """
         return BaseResponse(success=True, content=table_schemas)
 
     async def bad_query(self, text: str) -> str:

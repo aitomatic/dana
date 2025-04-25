@@ -4,9 +4,26 @@ This module provides converters for different tool formats (MCP, OpenAI, etc.)
 that can be used with the ToolCallable mixin.
 """
 
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, Set
 from abc import ABC, abstractmethod
 from mcp import Tool as McpTool
+
+def _strip_fields(schema: Dict[str, Any], fields_to_strip: Set[str]) -> Dict[str, Any]:
+    """Recursively remove specified fields from a schema dictionary."""
+    if not isinstance(schema, dict):
+        return schema
+        
+    # Create a new dict without the specified fields
+    result = {k: v for k, v in schema.items() if k not in fields_to_strip}
+    
+    # Recursively process nested dictionaries
+    for key, value in result.items():
+        if isinstance(value, dict):
+            result[key] = _strip_fields(value, fields_to_strip)
+        elif isinstance(value, list):
+            result[key] = [_strip_fields(item, fields_to_strip) if isinstance(item, dict) else item for item in value]
+            
+    return result
 
 class ToolFormat(ABC):
     """Base class for tool format converters."""
@@ -72,42 +89,110 @@ class ToolFormat(ABC):
 
 class McpToolFormat(ToolFormat):
     """Converter for MCP tool format."""
+    def __init__(self, fields_to_strip: Set[str] = None):
+        """Initialize the MCP format converter.
+        
+        Args:
+            fields_to_strip: Set of field names to remove from the schema
+        """
+        self.fields_to_strip = fields_to_strip or {"title", "default", "additionalProperties"}
+        
     def convert(self, name: str, description: str, schema: Dict[str, Any]) -> McpTool:
         """Convert to MCP tool format.
         
         Returns:
             McpTool: Tool in MCP format
+
+            Example (after stripping defaults like title, default, additionalProperties):
+            {
+                "name": "get_weather",
+                "description": "Get the current weather for a given city.",
+                "inputSchema": {  # Note: This is the 'parameters' part of the input schema dict
+                    "type": "object",
+                    "properties": {
+                        "city": {
+                            "type": "string",
+                            "description": "The city to get the weather for."
+                        },
+                        "unit": {
+                            "type": "string",
+                            "enum": ["celsius", "fahrenheit"],
+                            "description": "Temperature unit."
+                        }
+                    },
+                    "required": ["city"]
+                }
+            }
         """
+        # Extract the parameters part of the schema provided by _list_tools
+        parameters_schema = schema.get("parameters", {})
+        # Strip unwanted fields
+        stripped_parameters_schema = _strip_fields(parameters_schema, self.fields_to_strip)
+        
         return McpTool(
             name=name,
             description=description,
-            inputSchema=schema
+            inputSchema=stripped_parameters_schema,  # Use the stripped parameters schema
         )
 
 class OpenAIToolFormat(ToolFormat):
     """Converter for OpenAI function format."""
-    def __init__(self, resource_name: str, resource_id: str):
+    def __init__(self, resource_name: str, resource_id: str, fields_to_strip: Set[str] = None):
         """Initialize the OpenAI format converter.
         
         Args:
             resource_name: Name of the resource
             resource_id: ID of the resource
+            fields_to_strip: Set of field names to remove from the schema
         """
         self.resource_name = resource_name
         self.resource_id = resource_id
+        self.fields_to_strip = fields_to_strip or {"title", "default", "additionalProperties"}
 
     def convert(self, name: str, description: str, schema: Dict[str, Any]) -> Dict[str, Any]:
         """Convert to OpenAI function format.
         
+        Args:
+            name: Name of the tool/function
+            description: Description of the tool/function
+            schema: JSON Schema for the tool's parameters
+            
         Returns:
             Dict[str, Any]: Function in OpenAI format
+
+            Example:
+            {
+                "type": "function",
+                "function": {
+                    "name": "get_weather",
+                    "description": "Get the current weather for a given city.",
+                    "parameters": {
+                        "type": "object",
+                        "properties": {
+                            "city": {
+                                "type": "string",
+                                "description": "The city to get the weather for."
+                            },
+                            "unit": {
+                                "type": "string",
+                                "enum": ["celsius", "fahrenheit"],
+                                "description": "Temperature unit."
+                            }
+                        },
+                        "required": ["city"]
+                    },
+                    "strict": True
+                }
+            }
         """
+        parameters_schema = schema.get("parameters", {})
+        stripped_parameters_schema = _strip_fields(parameters_schema, self.fields_to_strip)
         return {
             "type": "function",
             "function": {
                 "name": self.build_tool_name(self.resource_name, self.resource_id, name),
                 "description": description,
-                "parameters": schema,
-                "strict": True
+                "parameters": stripped_parameters_schema,
+                "strict": False  # Make it more lenient and less error-prone
             }
         } 

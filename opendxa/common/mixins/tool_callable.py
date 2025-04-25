@@ -33,16 +33,17 @@ Example:
         async def my_function(self, param1: str) -> Dict[str, Any]:
             '''A function that does something.
             
-            @param1: A multi-line description of param1
-                that continues on multiple lines
-                and can include more details.
+            Args:
+                param1: A multi-line description of param1
+                    that continues on multiple lines
+                    and can include more details.
             '''
             pass
 """
 
 import inspect
-from typing import Dict, Any, Set, Optional, List, Callable, TypeVar
-from pydantic import create_model
+from typing import Dict, Any, Set, Optional, List, Callable, TypeVar, Type
+from pydantic import create_model, BaseModel, ValidationError
 from mcp import Tool as McpTool
 from opendxa.common.mixins.registerable import Registerable
 from opendxa.common.mixins.loggable import Loggable
@@ -51,36 +52,6 @@ from opendxa.common.mixins.tool_formats import ToolFormat, McpToolFormat, OpenAI
 # Type variable for the decorated function
 F = TypeVar('F', bound=Callable[..., Any])
 OpenAIFunctionCall = TypeVar('OpenAIFunctionCall', bound=Dict[str, Any])
-
-def create_model_from_signature(func: Callable) -> Any:
-    """Create a Pydantic model from a function's signature.
-    
-    Args:
-        func: The function to create a model for
-        
-    Returns:
-        A Pydantic model class for the function's parameters
-    """
-    sig = inspect.signature(func)
-    fields = {}
-    
-    for name, param in sig.parameters.items():
-        if name == 'self':
-            continue
-            
-        # Get the type annotation
-        annotation = param.annotation
-        if annotation == inspect.Parameter.empty:
-            annotation = Any
-            
-        # Get the default value
-        default = param.default
-        if default == inspect.Parameter.empty:
-            default = ...
-            
-        fields[name] = (annotation, default)
-    
-    return create_model(f"{func.__name__}Params", **fields)
 
 class ToolCallable(Registerable, Loggable):
     """A mixin class that provides tool-callable functionality to classes.
@@ -105,7 +76,7 @@ class ToolCallable(Registerable, Loggable):
         and OpenAI function list cache.
         """
         self._tool_callable_function_cache: Set[str] = set()  # computed in __post_init__
-        self._params_model_cache: Dict[str, Any] = {}  # cache for parameter models
+        self._func_model_cache: Dict[str, Type[BaseModel]] = {}  # cache for function models
         self.__mcp_tool_list_cache: Optional[List[McpTool]] = None  # computed lazily in list_mcp_tools
         self.__openai_function_list_cache: Optional[List[OpenAIFunctionCall]] = None  # computed lazily in list_openai_functions
         super().__init__()
@@ -135,40 +106,100 @@ class ToolCallable(Registerable, Loggable):
     # Alias for shorter decorator usage
     tool = tool_callable_decorator
 
-    def _parse_docstring(self, docstring: Optional[str]) -> str:
-        """Parse a docstring to extract the description.
+    @classmethod
+    def _create_func_model(cls, func: Callable) -> Type[BaseModel]:
+        """Create a Pydantic model from a function's signature.
         
-        The description is taken from the @description: tag if present, otherwise
-        from the first part of the docstring before any parameter descriptions.
+        The fields dictionary maps parameter names to tuples of (type, default):
+        {
+            "param_name": (
+                type_annotation,  # The parameter's type annotation, or Any if not specified
+                default_value     # The parameter's default value, or ... if required
+            ),
+            ...
+        }
+        
+        For example, given a function:
+            def search(query: str, limit: int = 10) -> Dict[str, Any]:
+                pass
+        
+        The fields dictionary would be:
+        {
+            "query": (str, ...),     # Required parameter with type str
+            "limit": (int, 10)       # Optional parameter with type int and default 10
+        }
         
         Args:
-            docstring: The docstring to parse
+            func: The function to create a model for
             
         Returns:
-            The extracted description
+            A Pydantic model class for the function's parameters
         """
-        if not docstring:
-            return ""
-            
-        # Split into lines and remove leading/trailing whitespace
-        lines = [line.strip() for line in docstring.split('\n')]
+        sig = inspect.signature(func)
+        model = create_model(
+            f"{func.__name__}Params",
+            **{
+                name: (param.annotation if param.annotation != inspect.Parameter.empty else Any,
+                       param.default if param.default != inspect.Parameter.empty else ...)
+                for name, param in sig.parameters.items()
+                if name != 'self'
+            }
+        )
         
-        # First look for @description: tag
-        for line in lines:
-            if line.startswith('@description:'):
-                return line[len('@description:'):].strip()
+        # Store metadata on the model
+        model.__return_type__ = sig.return_annotation if sig.return_annotation != inspect.Signature.empty else Any
+        # We might remove setting __input_schema__ here later if it causes issues before flattening
+        model.__input_schema__ = model.model_json_schema()
         
-        # If no @description: tag found, use the first part of the docstring
-        description_lines = []
-        for line in lines:
-            if line.startswith('@') or line.startswith('Args:'):
-                break
-            if line:  # Only add non-empty lines
-                description_lines.append(line)
-                
-        # Join the description lines and clean up
-        description = ' '.join(description_lines).strip()
-        return description
+        return model
+
+    def _resolve_schema_refs(self, schema: Dict[str, Any]) -> Dict[str, Any]:
+        """Recursively resolve $ref references in a JSON schema dictionary."""
+        # Find definitions, preferring '$defs' over 'definitions'
+        defs_key = '$defs' if '$defs' in schema else 'definitions'
+        definitions = schema.get(defs_key, {})
+        
+        if not definitions:
+            return schema  # No definitions to resolve
+
+        resolved_definitions = {}  # Cache for already resolved definitions
+
+        def _resolve(item: Any) -> Any:
+            if isinstance(item, dict):
+                if '$ref' in item:
+                    ref_path = item['$ref']
+                    # Simple check for local refs like '#/$defs/ModelName'
+                    if ref_path.startswith(f'#/{defs_key}/'):
+                        def_name = ref_path.split('/')[-1]
+                        if def_name in resolved_definitions:
+                            return resolved_definitions[def_name]  # Return from cache
+                        if def_name in definitions:
+                            # Resolve the definition itself first
+                            resolved_def = _resolve(definitions[def_name])
+                            resolved_definitions[def_name] = resolved_def  # Cache it
+                            return resolved_def
+                        else:
+                            # Ref not found, return original ref dict or handle error
+                            self.warning(f"Schema reference {ref_path} not found in definitions.")
+                            return item 
+                    else:
+                        # Non-local or unknown ref format, ignore
+                        return item
+                else:
+                    # Recursively resolve values in the dict
+                    return {k: _resolve(v) for k, v in item.items()}
+            elif isinstance(item, list):
+                # Recursively resolve items in the list
+                return [_resolve(elem) for elem in item]
+            else:
+                # Primitive type, return as is
+                return item
+
+        # Resolve the main schema structure
+        resolved_schema = _resolve(schema)
+        # Remove the definitions section after resolving
+        resolved_schema.pop(defs_key, None)
+        return resolved_schema
 
     def _list_tools(self, format_converter: ToolFormat) -> List[Any]:
         """Common base method for listing tools in any format.
@@ -179,31 +210,38 @@ class ToolCallable(Registerable, Loggable):
         Returns:
             List of tools in the requested format
         """
-        tools = []
+        formatted_tools = []
         for func_name in self._tool_callable_function_cache:
             func = getattr(self, func_name)
             
             # Get the Pydantic model for parameters from cache or create it
-            params_model = self._params_model_cache.get(func_name)
-            if params_model is None:
-                params_model = create_model_from_signature(func)
-                self._params_model_cache[func_name] = params_model
+            func_model = self._func_model_cache.get(func_name)
+            if func_model is None:
+                func_model = self._create_func_model(func)
+                self._func_model_cache[func_name] = func_model
             
-            # Get the schema from the Pydantic model
-            schema = params_model.model_json_schema()
+            # Get the raw schema, potentially with $refs
+            raw_parameters_schema = func_model.model_json_schema()
             
-            # Parse the docstring to get the description
-            description = self._parse_docstring(func.__doc__)
+            # Resolve $refs to get a flattened schema
+            flattened_parameters_schema = self._resolve_schema_refs(raw_parameters_schema)
+            
+            # Create a generic function schema that can be converted to any format
+            function_schema = {
+                "name": func_name,
+                "description": func.__doc__,
+                "parameters": flattened_parameters_schema  # Use the flattened schema
+            }
             
             # Convert to desired format
-            tool = format_converter.convert(
+            formatted_tool = format_converter.convert(
                 name=func_name,
-                description=description,
-                schema=schema
+                description=function_schema["description"],
+                schema=function_schema
             )
-            tools.append(tool)
+            formatted_tools.append(formatted_tool)
         
-        return tools
+        return formatted_tools
 
     def list_mcp_tools(self) -> List[McpTool]:
         """List all tools available to the agent in MCP format."""
@@ -224,11 +262,38 @@ class ToolCallable(Registerable, Loggable):
         return self.__openai_function_list_cache
     
     def call_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Any:
-        """Call a tool with the given name and arguments.
+        """Call a tool with the given name and arguments, validating arguments first."""
+        if not hasattr(self, tool_name):
+            raise ValueError(f"Tool {tool_name} not found in {self.__class__.__name__}")
+        func = getattr(self, tool_name)
+        
+        # Get the Pydantic model for validation
+        func_model = self._func_model_cache.get(tool_name)
+        if func_model is None:
+            # Should ideally be cached by list_tools, but generate if needed
+            self.warning(f"Function model for {tool_name} not found in cache, generating.")
+            func_model = self._create_func_model(func)
+            self._func_model_cache[tool_name] = func_model
+            
+        try:
+            # Validate the incoming arguments against the model
+            validated_args_model = func_model(**arguments)
+            # Dump the validated model back to a dict for the function call
+            validated_args_dict = validated_args_model.model_dump()
+            # Call the actual tool function
+            return self._call_tool_after_validation(tool_name, validated_args_dict)
+
+        except ValidationError as e:
+            self.error(f"Tool call validation failed for {tool_name} with args {arguments}: {e}")
+            # Re-raise the validation error to indicate invalid arguments were provided
+            raise e
+
+    def _call_tool_after_validation(self, tool_name: str, arguments: Any) -> Any:
+        """Call a tool with the given name and validated arguments.
         
         Args:
             tool_name: The name of the tool to call
-            arguments: The arguments to pass to the tool
+            arguments: The validated arguments to pass to the tool
         """
         if not hasattr(self, tool_name):
             raise ValueError(f"Tool {tool_name} not found in {self.__class__.__name__}")
