@@ -1,6 +1,5 @@
 """MCP resource implementation using either stdio or HTTP transport."""
 
-import uuid
 from typing import Any, Dict, List, Optional, Union, Literal, TypeVar, Callable, cast
 import functools
 import asyncio
@@ -14,6 +13,7 @@ from opendxa.common.mixins.tool_callable import ToolCallable
 from opendxa.base.resource.base_resource import BaseResource, ResourceResponse, ResourceError
 from opendxa.base.resource.mcp.mcp_config import McpConfig, McpConfigError, StdioTransportParams, HttpTransportParams
 from opendxa.common.mixins.queryable import QueryParams
+from opendxa.common.utils.misc import Misc
 
 T = TypeVar('T')
 
@@ -149,7 +149,7 @@ class McpResource(BaseResource):
         """
         super().__init__(name)
         Loggable.__init__(self)
-        self.server_id = str(uuid.uuid4())[:8]
+        self.server_id = Misc.generate_base64_uuid(8)
 
         # Parse transport params
         if isinstance(transport_params, (StdioTransportParams, HttpTransportParams)):
