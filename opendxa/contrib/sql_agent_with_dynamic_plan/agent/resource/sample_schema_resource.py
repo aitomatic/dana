@@ -10,7 +10,6 @@ from pydantic import BaseModel, Field
 from opendxa.base.resource import BaseResource
 from opendxa.common.mixins import ToolCallable
 from opendxa.common.types import BaseResponse
-from typing import Dict, Any
 
 # flake8: noqa: E501
 table_schemas = """
@@ -134,14 +133,3 @@ class SampleSchemaResource(BaseResource):
             A BaseResponse object containing the success status and content.
         """
         return BaseResponse(success=True, content=table_schemas)
-
-    async def bad_query(self, text: str) -> str:
-        """Retrieve Schema of Existing Tables.
-
-        Args:
-            text: Any text for similarity search with RAG
-
-        Returns:
-            str : Schema of Existing Tables in text format
-        """
-        return table_schemas
