@@ -70,7 +70,7 @@ class BaseResource(Configurable, Queryable, ToolCallable):
         self.description = description or "No description provided"
         self.config = config or {}
         self._is_available = False
-        self.initialize()
+        # self.initialize()   # prefer lazy initialization
 
     @property
     def is_available(self) -> bool:

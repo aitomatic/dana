@@ -3,7 +3,6 @@
 import pytest
 from opendxa.common.mixins.tool_callable import ToolCallable
 from opendxa.common.mixins.tool_formats import ToolFormat
-import uuid
 
 # pylint: disable=missing-function-docstring
 # pylint: disable=missing-class-docstring
@@ -195,10 +194,12 @@ class TestToolCallable:
         
         # Verify the format is correct
         assert function_name == f"{resource_name}__{resource_id}__{tool_name}"
-        
-        # Verify the ID is a valid UUID
-        try:
-            uuid.UUID(resource_id)
-        except ValueError:
-            assert False, f"Invalid UUID format: {resource_id}"
+
+        # Verify the ID is a string of the expected length (base64 encoded)
+        assert isinstance(resource_id, str)
+        assert len(resource_id) == 8
+        # try:
+        #     uuid.UUID(resource_id) # ID is base64, not hex UUID
+        # except ValueError:
+        #     assert False, f"Invalid UUID format: {resource_id}"
 

@@ -180,8 +180,22 @@ class LLMResource(BaseResource):
         
         # Initialize message history with system and user messages
         message_history: List[Dict[str, Any]] = []
-        message_history.append({"role": "system", "content": '\n'.join(system_messages)})
-        message_history.append({"role": "user", "content": '\n'.join(user_messages)})
+        if system_messages:
+            # Ensure system messages are strings before joining
+            system_content = '\n'.join([str(msg) for msg in system_messages])
+            message_history.append({"role": "system", "content": system_content})
+            
+        if user_messages:
+            # Ensure user messages are dicts with 'role' and 'content'
+            for msg in user_messages:
+                if isinstance(msg, dict) and "role" in msg and "content" in msg:
+                    message_history.append(msg)
+                elif isinstance(msg, str):
+                    # If it's just a string, wrap it in the standard format
+                    message_history.append({"role": "user", "content": msg})
+                else:
+                    # Log a warning for unexpected format
+                    self.warning(f"Skipping unexpected user message format: {type(msg)}")
 
         # Register all resources in the registry
         available_resources = Misc.get_field(request, "available_resources", {})

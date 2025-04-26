@@ -214,6 +214,34 @@ class ToolCallable(Registerable, Loggable):
         for func_name in self._tool_callable_function_cache:
             func = getattr(self, func_name)
             
+            # Extract description from docstring using @description tag
+            docstring = inspect.getdoc(func) or ""
+            description_lines = []
+            in_description = False
+            if docstring:
+                lines = docstring.strip().split('\n')
+                for line in lines:
+                    stripped_line = line.strip()
+                    if stripped_line.startswith("@description:"):
+                        description_lines.append(stripped_line[len("@description:"):].strip())
+                        in_description = True
+                    elif in_description and stripped_line and not stripped_line.startswith("@"):
+                        description_lines.append(stripped_line)
+                    elif in_description and not stripped_line:
+                        # Allow empty lines within the description block
+                        description_lines.append(stripped_line)
+                    elif in_description:
+                        # Stop when another @tag is encountered
+                        in_description = False
+                
+                # If @description tag not found, use the first line of the docstring
+                if not description_lines and lines:
+                    description = lines[0].strip()
+                else:
+                    description = " ".join(description_lines).strip()
+            else:
+                description = "No description available."
+
             # Get the Pydantic model for parameters from cache or create it
             func_model = self._func_model_cache.get(func_name)
             if func_model is None:
@@ -229,14 +257,14 @@ class ToolCallable(Registerable, Loggable):
             # Create a generic function schema that can be converted to any format
             function_schema = {
                 "name": func_name,
-                "description": func.__doc__,
+                "description": description,  # Use parsed description
                 "parameters": flattened_parameters_schema  # Use the flattened schema
             }
             
             # Convert to desired format
             formatted_tool = format_converter.convert(
                 name=func_name,
-                description=function_schema["description"],
+                description=function_schema["description"],  # Use parsed description
                 schema=function_schema
             )
             formatted_tools.append(formatted_tool)

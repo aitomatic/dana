@@ -26,4 +26,4 @@ plan_graph = PlanFactory.create_plan_by_name("sql_dynamic_plan", objective=quest
 
 result = agent.run(plan_graph)
 print(result)
-print(result.content["choices"][0].message.content)
+# print(result.content["choices"][0].message.content)
