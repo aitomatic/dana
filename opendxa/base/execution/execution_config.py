@@ -2,20 +2,16 @@
 
 from pathlib import Path
 from typing import Dict, Any, Optional, ClassVar, Union, List, TypedDict
-import logging
-from opendxa.common.utils.misc import load_yaml_config
+from opendxa.common.utils.misc import Misc
 from opendxa.common.mixins.configurable import Configurable
-
-# Configure logger
-logger = logging.getLogger(__name__)
-
+from opendxa.common.mixins.loggable import Loggable
 class GraphConfig(TypedDict):
     """Type definition for graph configuration."""
     nodes: List[Dict[str, Any]]
     edges: List[Dict[str, Any]]
     metadata: Dict[str, Any]
 
-class ExecutionConfig(Configurable):
+class ExecutionConfig(Configurable, Loggable):
     """Centralized configuration management for all execution components."""
     
     # Class-level default configuration
@@ -54,7 +50,7 @@ class ExecutionConfig(Configurable):
         """
         try:
             config_path = cls.get_yaml_path(path=path)
-            config = load_yaml_config(config_path)
+            config = Misc.load_yaml_config(config_path)
             
             # Validate basic structure
             if not isinstance(config, dict):
@@ -96,7 +92,7 @@ class ExecutionConfig(Configurable):
             
         # Extract prompt name and config path
         if "." not in prompt_ref:
-            logger.warning("Prompt reference must be in format 'config_name.prompt_name', got '%s'", prompt_ref)
+            Loggable.warning(cls, "Prompt reference must be in format 'config_name.prompt_name', got '%s'", prompt_ref)
             return ""
             
         config_path, prompt_name = prompt_ref.rsplit(".", maxsplit=1)
@@ -111,7 +107,7 @@ class ExecutionConfig(Configurable):
                 return prompts.get(prompt_name, "")
                 
         except Exception as e:
-            logger.warning("Failed to load prompt '%s': %s", prompt_ref, str(e))
+            Loggable.warning(cls, "Failed to load prompt '%s': %s", prompt_ref, str(e))
             
         return ""
     

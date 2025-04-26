@@ -24,11 +24,10 @@ Example:
     ... )
 """
 
-from dataclasses import dataclass
 from typing import List
+from pydantic import BaseModel, Field
 
-@dataclass
-class DomainExpertise:
+class DomainExpertise(BaseModel):
     """Definition of a domain of expertise.
 
     This class encapsulates all the information needed to define an expert's
@@ -53,9 +52,9 @@ class DomainExpertise:
         ...     example_queries=["solve x^2 + 2x + 1 = 0"]
         ... )
     """
-    name: str                    # e.g., "mathematics"
-    description: str            # What this expert knows
-    capabilities: List[str]     # What this expert can do
-    keywords: List[str]         # Trigger words/phrases
-    requirements: List[str]     # What input this expert needs
-    example_queries: List[str]  # Example questions this expert can answer
+    name: str = Field(..., description="Domain identifier (e.g., 'mathematics')")
+    description: str = Field(..., description="Detailed description of the expert's knowledge domain")
+    capabilities: List[str] = Field(default_factory=list, description="Specific abilities and skills this expert has")
+    keywords: List[str] = Field(default_factory=list, description="Trigger words/phrases that indicate this expertise is needed")
+    requirements: List[str] = Field(default_factory=list, description="Required information or context for queries in this domain")
+    example_queries: List[str] = Field(default_factory=list, description="Sample questions demonstrating proper usage")

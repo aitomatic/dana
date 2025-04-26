@@ -2,17 +2,13 @@
 
 from abc import ABC
 from typing import Dict, Any, Optional
-from dataclasses import dataclass, field
 from opendxa.common.mixins.tool_callable import ToolCallable
 from opendxa.common.mixins.configurable import Configurable
+from opendxa.common.types import BaseRequest, BaseResponse
 
-
-@dataclass
-class CapabilityApplicationResult:
+class CapabilityApplicationResult(BaseResponse):
     """Result of applying a capability."""
-    success: bool
-    result: Dict[str, Any] = field(default_factory=dict)
-    error: Optional[Exception] = None
+    pass
 
 
 class BaseCapability(ABC, ToolCallable, Configurable):
@@ -44,7 +40,8 @@ class BaseCapability(ABC, ToolCallable, Configurable):
         """Disable this capability."""
         self._is_enabled = False
 
-    def apply(self, request: Dict[str, Any]) -> CapabilityApplicationResult:
+    @ToolCallable.tool
+    def apply(self, request: BaseRequest) -> CapabilityApplicationResult:
         """Apply this capability."""
         if not self._is_enabled:
             return CapabilityApplicationResult(success=False, result=request, error=f"Capability {self.name} is not enabled")

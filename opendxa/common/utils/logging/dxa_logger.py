@@ -4,6 +4,7 @@ Simplified DXALogger with core logging functionality.
 
 import logging
 from typing import Optional, Any, Union
+from functools import lru_cache
 
 class DXALogger:
     """Simple logger with prefix support."""
@@ -25,7 +26,7 @@ class DXALogger:
     def configure(
         self,
         level: int = logging.WARNING,
-        fmt: str = "%(asctime)s - [OpenDXA %(name)s] %(levelname)s - %(message)s",
+        fmt: str = "%(asctime)s - [%(name)s] %(levelname)s - %(message)s",
         datefmt: str = "%H:%M:%S",
         console: bool = True,
         log_data: bool = False
@@ -116,7 +117,7 @@ class DXALogger:
         else:
             self.logger.error(formatted, *args)
 
-    def getLogger(self, name_or_obj: Union[str, Any]) -> 'DXALogger':
+    def getLogger(self, name_or_obj: Union[str, Any], prefix: Optional[str] = None) -> 'DXALogger':
         """Create a new logger instance.
         
         Args:
@@ -128,10 +129,22 @@ class DXALogger:
             DXALogger instance
         """
         if isinstance(name_or_obj, str):
-            return DXALogger(name_or_obj, self.prefix)
+            return DXALogger(name_or_obj, prefix or self.prefix)
         else:
-            cls = name_or_obj.__class__
-            return DXALogger(f"{cls.__module__}.{cls.__name__}", self.prefix)
+            return DXALogger.getLoggerForClass(name_or_obj.__class__, prefix or self.prefix)
+    
+    @classmethod
+    @lru_cache(maxsize=32)
+    def getLoggerForClass(cls, for_class: Any, prefix: Optional[str] = None) -> 'DXALogger':
+        """Get a logger for a class.
+        
+        Args:
+            for_class: The class to get the logger for.
+            
+        Returns:
+            DXALogger instance
+        """
+        return DXALogger(f"{for_class.__module__}.{for_class.__name__}", prefix)
 
 # Create global logger instance
 DXA_LOGGER = DXALogger("opendxa")

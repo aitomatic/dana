@@ -18,9 +18,9 @@ Features:
 
 from time import perf_counter
 from typing import Dict, Any, Optional, List, Callable, Awaitable, cast
-from dataclasses import dataclass, field
 from opendxa.common.graph import NodeType
-from opendxa.base.resource import BaseResource, ResourceResponse
+from opendxa.base.resource import BaseResource
+from opendxa.common.types import BaseRequest, BaseResponse
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.base.execution import (
     ExecutionGraph, ExecutionNode, ExecutionEdge,
@@ -28,29 +28,12 @@ from opendxa.base.execution import (
     ExecutionSignalType
 )
 from opendxa.execution.pipeline.pipeline_context import PipelineContext
-from opendxa.common.mixins.queryable import QueryParams
 
 # A pipeline step is just an async function that processes data
 PipelineStep = Callable[[Dict[str, Any]], Awaitable[Dict[str, Any]]]
 
-@dataclass
 class PipelineNode(ExecutionNode, Loggable):
     """Pipeline node that executes a step."""
-
-    step: Optional[PipelineStep] = None
-    buffer_config: Dict[str, Any] = field(default_factory=lambda: {
-        "enabled": False,
-        "size": 1000,
-        "mode": "streaming"
-    })
-
-    def __post_init__(self):
-        """Initialize Loggable after dataclass initialization."""
-        Loggable.__init__(self)
-
-    async def _identity(self, data: Any) -> Any:
-        """Identity function."""
-        return data
 
     def __init__(
         self,
@@ -59,21 +42,21 @@ class PipelineNode(ExecutionNode, Loggable):
         objective: str,
         step: Optional[PipelineStep] = None,
         buffer_config: Optional[Dict[str, Any]] = None
-    ) -> None:
+    ):
         """Initialize pipeline node."""
         super().__init__(node_id=node_id, node_type=node_type, objective=objective)
+        Loggable.__init__(self)
+        
+        self.step = step or self._identity
+        self.buffer_config = buffer_config or {
+            "enabled": False,
+            "size": 1000,
+            "mode": "streaming"
+        }
 
-        if step is None:
-            step = cast(PipelineStep, self._identity)
-        self.step = step
-
-        if buffer_config is None:
-            buffer_config = {
-                "enabled": False,
-                "size": 1000,
-                "mode": "streaming"
-            }
-        self.buffer_config = buffer_config
+    def _identity(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """Identity function."""
+        return data
 
     async def execute(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Execute the pipeline step."""
@@ -349,27 +332,27 @@ class Pipeline(ExecutionGraph, BaseResource, Loggable):
         await super().cleanup()
         
     # This is NOT @ToolCallable.tool
-    async def query(self, params: QueryParams = None) -> ResourceResponse:
+    async def query(self, request: BaseRequest = None) -> BaseResponse:
         """Execute the pipeline with the provided request data.
         
         Args:
-            request: Dictionary containing:
+            request: BaseRequest containing:
                 - data: Input data for the pipeline
                 - options: Optional pipeline execution options
                 
         Returns:
-            ResourceResponse with the pipeline execution results
+            BaseResponse with the pipeline execution results
         """
         if not self._is_available:
-            return ResourceResponse.error_response(f"Pipeline resource {self.name} not initialized")
+            return BaseResponse.error_response(f"Pipeline resource {self.name} not initialized")
         
-        if params is None:
-            params = {}
+        if request is None:
+            request = BaseRequest()
             
         try:
             # Extract data and options from request
-            input_data = params.get("data", {})
-            options = params.get("options", {})
+            input_data = request.get("data", {})
+            options = request.get("options", {})
             
             # Create execution context if needed
             context = options.get("context")
@@ -379,15 +362,15 @@ class Pipeline(ExecutionGraph, BaseResource, Loggable):
             # Execute the pipeline with input data
             result = await self.execute(context)
             
-            return ResourceResponse(
+            return BaseResponse(
                 success=True,
                 content={"result": result, "input_data": input_data}
             )
         except Exception as e:
             self.error(f"Error executing pipeline: {str(e)}")
-            return ResourceResponse.error_response(str(e))
+            return BaseResponse.error_response(str(e))
             
-    def can_handle(self, params: QueryParams) -> bool:
+    def can_handle(self, request: BaseRequest) -> bool:
         """Check if the pipeline can handle this request.
         
         Args:
@@ -397,5 +380,4 @@ class Pipeline(ExecutionGraph, BaseResource, Loggable):
             True if the pipeline can handle this request
         """
         # Check if this is a pipeline request
-        request_type = params.get("type", "")
-        return request_type == "pipeline" or "pipeline" in request_type 
+        return True  # Pipeline can handle all requests 

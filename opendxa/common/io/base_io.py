@@ -7,9 +7,10 @@ input/output operations while extending BaseResource functionality.
 
 from abc import abstractmethod
 from typing import Any, Optional
-from opendxa.base.resource import BaseResource, ResourceResponse
+from opendxa.base.resource import BaseResource
 from opendxa.common.mixins import ToolCallable
-from opendxa.common.mixins.queryable import QueryParams
+from opendxa.common.types import BaseRequest, BaseResponse
+
 
 class BaseIO(BaseResource):
     """Base class for I/O resources.
@@ -33,11 +34,11 @@ class BaseIO(BaseResource):
         pass
 
     @ToolCallable.tool
-    async def query(self, params: QueryParams = None) -> ResourceResponse:
+    async def query(self, request: BaseRequest) -> BaseResponse:
         """Handle resource queries by mapping to send/receive.
 
         Args:
-            request: Dict with either "send" or "receive" key
+            request: Query request with either send or receive in arguments
 
         Returns:
             Dict with query results
@@ -45,15 +46,15 @@ class BaseIO(BaseResource):
         Raises:
             ValueError: If neither send nor receive specified
         """
-        if "send" in params:
-            await self.send(params["send"])
-            return ResourceResponse(success=True)
-        if "receive" in params:
+        if "send" in request.arguments:
+            await self.send(request.arguments["send"])
+            return BaseResponse(success=True)
+        if "receive" in request.arguments:
             response = await self.receive()
-            return ResourceResponse(success=True, content={"response": response})
+            return BaseResponse(success=True, content={"response": response})
         
-        return ResourceResponse.error_response("Invalid query - must specify send or receive")
+        return BaseResponse.error_response("Invalid query - must specify send or receive")
 
-    def can_handle(self, params: QueryParams) -> bool:
+    def can_handle(self, request: BaseRequest) -> bool:
         """Check if request contains valid IO operations."""
-        return "send" in params or "receive" in params
+        return "send" in request.arguments or "receive" in request.arguments

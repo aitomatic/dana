@@ -22,18 +22,29 @@ Example:
 
 from typing import Dict, Any, Optional, List
 from datetime import datetime
-from dataclasses import dataclass, field
+from pydantic import BaseModel, Field
 from ...base.capability.base_capability import BaseCapability
 from ...common.exceptions import OpenDXAError, DXAMemoryError
 
-@dataclass
-class MemoryEntry:
+class MemoryEntry(BaseModel):
     """A single memory entry."""
-    content: Any
-    timestamp: float = field(default_factory=lambda: datetime.now().timestamp())
-    metadata: Dict = field(default_factory=dict)
-    importance: float = 1.0  # Higher = more important
-    context: Dict = field(default_factory=dict)
+    content: Any = Field(..., description="The content of the memory")
+    timestamp: float = Field(
+        default_factory=lambda: datetime.now().timestamp(),
+        description="When the memory was created"
+    )
+    metadata: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional metadata about the memory"
+    )
+    importance: float = Field(
+        default=1.0,
+        description="Importance of the memory (higher = more important)"
+    )
+    context: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Contextual information for the memory"
+    )
 
 class MemoryCapability(BaseCapability):
     """Capability to manage agent's memory and state."""

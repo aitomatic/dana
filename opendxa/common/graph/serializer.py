@@ -3,7 +3,7 @@
 from typing import Dict, Any, Union, TextIO, Type
 from pathlib import Path
 import yaml
-from opendxa.common.utils.misc import load_yaml_config
+from opendxa.common.utils.misc import Misc
 from opendxa.common.graph.directed_graph import DirectedGraph, Node, Edge, NodeType
 
 class GraphSerializer:
@@ -67,7 +67,7 @@ class GraphSerializer:
     def from_yaml(self, stream: Union[str, TextIO, Path], graph_cls: Type[DirectedGraph]) -> DirectedGraph:
         """Load graph from YAML."""
         if isinstance(stream, (str, Path)):
-            data = load_yaml_config(stream)
+            data = Misc.load_yaml_config(stream)
         else:
             data = yaml.safe_load(stream)
         return self.from_dict(data, graph_cls) 

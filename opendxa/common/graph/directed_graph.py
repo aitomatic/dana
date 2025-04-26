@@ -3,8 +3,8 @@
 from typing import Dict, List, Optional, Iterator, Any, Union, TextIO, TYPE_CHECKING
 from pathlib import Path
 from enum import Enum
-from dataclasses import dataclass, field
-from opendxa.common.utils import get_class_by_name
+from pydantic import BaseModel, Field
+from opendxa.common.utils.misc import Misc
 from opendxa.common.mixins.configurable import Configurable
 if TYPE_CHECKING:
     from opendxa.common.graph.visualizer import GraphVisualizer
@@ -30,13 +30,12 @@ class NodeType(Enum):
     TRANSFORM = "TRANSFORM"     # Data transformations
     MODEL = "MODEL"             # ML model operations
 
-@dataclass
-class Node:
+class Node(BaseModel):
     """Base graph node."""
     node_id: str
-    node_type: NodeType = NodeType.NODE
-    description: str = ""
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    node_type: NodeType = Field(default=NodeType.NODE)
+    description: str = Field(default="")
+    metadata: Dict[str, Any] = Field(default_factory=dict)
 
     def __hash__(self) -> int:
         """Make node hashable by id."""
@@ -48,12 +47,29 @@ class Node:
             return NotImplemented
         return self.node_id == other.node_id
 
-@dataclass
-class Edge:
+class Edge(BaseModel):
     """Base graph edge."""
-    source: str  # Source node ID
-    target: str  # Target node ID
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    source: str
+    target: str
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+    condition: Optional[str] = None
+    state_updates: Dict[str, Any] = Field(default_factory=dict)
+
+    def __init__(self, source: Union[str, Node], target: Union[str, Node], 
+                 metadata: Optional[Dict[str, Any]] = None,
+                 condition: Optional[str] = None,
+                 state_updates: Optional[Dict[str, Any]] = None,
+                 **data):
+        source_id = source.node_id if isinstance(source, Node) else source
+        target_id = target.node_id if isinstance(target, Node) else target
+        super().__init__(
+            source=source_id,
+            target=target_id,
+            metadata=metadata or {},
+            condition=condition,
+            state_updates=state_updates or {},
+            **data
+        )
 
     def __hash__(self) -> int:
         """Make edge hashable by source/target pair."""
@@ -64,17 +80,6 @@ class Edge:
         if not isinstance(other, Edge):
             return NotImplemented
         return self.source == other.source and self.target == other.target
-    
-    def __init__(self, source: Union[str, Node], target: Union[str, Node], metadata: Optional[Dict[str, Any]] = None):
-        if isinstance(source, Node):
-            self.source = source.node_id
-        else:
-            self.source = source
-        if isinstance(target, Node):
-            self.target = target.node_id
-        else:
-            self.target = target
-        self.metadata = metadata or {}
 
 # pylint: disable=too-many-instance-attributes
 class DirectedGraph(Configurable):
@@ -222,7 +227,7 @@ class DirectedGraph(Configurable):
         """Get traversal cursor starting at given node."""
         if strategy is None:
             strategy = self._default_traversal
-        cursor_class = get_class_by_name(_CURSOR_CLASS_NAME)
+        cursor_class = Misc.get_class_by_name(_CURSOR_CLASS_NAME)
         return cursor_class(self, start_node, strategy)
 
     def get_current_node(self) -> Optional[Node]:

@@ -5,18 +5,21 @@ It unifies common configuration patterns like loading from YAML, validation,
 and access methods.
 """
 
-import logging
 from typing import Dict, Any, Optional, Union, ClassVar, Type, TypeVar, List
 from pathlib import Path
 import inspect
 import yaml
+from dotenv import load_dotenv
 from opendxa.common.exceptions import ConfigurationError
-from opendxa.common.utils.misc import load_yaml_config
-from opendxa.common.utils.logging.dxa_logger import DXA_LOGGER
+from opendxa.common.utils.misc import Misc
+from opendxa.common.mixins.loggable import Loggable
+
+# Load environment variables when module is imported
+load_dotenv()
 
 T = TypeVar('T')
 
-class Configurable():
+class Configurable(Loggable):
     """Base class for configurable components in DXA.
     
     This class provides a unified interface for configuration management across DXA components.
@@ -123,9 +126,17 @@ class Configurable():
             if path.is_absolute():
                 return path
             
-            # If path contains dots, convert to slashes
+            # Handle dot notation in path (but not in filename)
             if "." in str(path):
-                path = Path(str(path).replace(".", "/"))
+                # Split into path parts and filename
+                parts = str(path).split("/")
+                # Only convert dots to slashes in path parts, not in filename
+                converted_parts = []
+                for part in parts[:-1]:  # All parts except the last one
+                    converted_parts.append(part.replace(".", "/"))
+                # Add the filename as is
+                converted_parts.append(parts[-1])
+                path = Path("/".join(converted_parts))
             
             # Check for file extension
             if not path.suffix:
@@ -169,7 +180,6 @@ class Configurable():
         """
         super().__init__()
         # Initialize logger using the object's class module and name
-        self._logger = DXA_LOGGER.getLogger(self)
         self.config = self._load_config(config_path)
         self._apply_overrides(overrides)
         self._validate_config()
@@ -194,12 +204,11 @@ class Configurable():
             actual_path = self.get_config_path(config_path)
             
             # Load the config
-            with open(actual_path, encoding="utf-8") as f:
-                data = yaml.safe_load(f)
-                
+            config = Misc.load_yaml_config(actual_path)
+            
             # Merge with defaults
             config = self.default_config.copy()
-            config.update(data)
+            config.update(config)
             return config
             
         except FileNotFoundError as e:
@@ -207,7 +216,7 @@ class Configurable():
         except yaml.YAMLError as e:
             raise ConfigurationError(f"Invalid YAML format in configuration file: {config_path}") from e
         except Exception as e:
-            self._logger.warning(f"Failed to load config: {e}. Using default configuration.")
+            self.warning(f"Failed to load config: {e}. Using default configuration.")
             return self.default_config.copy()
             
     def _apply_overrides(self, overrides: Dict[str, Any]) -> None:
@@ -466,7 +475,7 @@ class Configurable():
             
         # Extract prompt name and config path
         if "." not in prompt_ref:
-            logging.getLogger(f"{cls.__module__}.{cls.__name__}").warning(
+            Loggable.log_warning(
                 "Prompt reference must be in format 'config_name.prompt_name', got '%s'", 
                 prompt_ref
             )
@@ -484,7 +493,7 @@ class Configurable():
                 return prompts.get(prompt_name, "")
                 
         except Exception as e:
-            logging.getLogger(f"{cls.__module__}.{cls.__name__}").warning(
+            Loggable.log_error(
                 "Failed to load prompt '%s': %s", 
                 prompt_ref, 
                 str(e)
@@ -509,7 +518,7 @@ class Configurable():
         """
         try:
             config_path = cls.get_yaml_path(path=path)
-            config = load_yaml_config(config_path)
+            config = Misc.load_yaml_config(config_path)
             
             # Validate basic structure
             if not isinstance(config, dict):

@@ -1,6 +1,5 @@
 """Tests for the Identifiable mixin."""
 
-import uuid
 from opendxa.common.mixins.identifiable import Identifiable
 
 # pylint: disable=missing-function-docstring
@@ -12,7 +11,7 @@ class TestIdentifiable:
         """Test initialization with no parameters."""
         obj = Identifiable()
         assert isinstance(obj.id, str)
-        assert uuid.UUID(obj.id)  # Verify it's a valid UUID
+        assert len(obj.id) == 8  # Verify the length of the base64 ID
         assert obj.name is not None
         assert obj.name.startswith(obj.__class__.__name__)
         assert obj.description is None
@@ -21,7 +20,7 @@ class TestIdentifiable:
         """Test initialization with name parameter."""
         obj = Identifiable(name="test_name")
         assert isinstance(obj.id, str)
-        assert uuid.UUID(obj.id)
+        assert len(obj.id) == 8
         assert obj.name == "test_name"
         assert obj.description is None
     
@@ -29,7 +28,7 @@ class TestIdentifiable:
         """Test initialization with description parameter."""
         obj = Identifiable(description="test_description")
         assert isinstance(obj.id, str)
-        assert uuid.UUID(obj.id)
+        assert len(obj.id) == 8
         assert obj.name is not None
         assert obj.name.startswith(obj.__class__.__name__)
         assert obj.description == "test_description"
@@ -38,7 +37,7 @@ class TestIdentifiable:
         """Test initialization with all parameters."""
         obj = Identifiable(name="test_name", description="test_description")
         assert isinstance(obj.id, str)
-        assert uuid.UUID(obj.id)
+        assert len(obj.id) == 8
         assert obj.name == "test_name"
         assert obj.description == "test_description"
     

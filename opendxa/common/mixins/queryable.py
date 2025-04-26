@@ -1,26 +1,16 @@
 """Mixin for queryable objects."""
 
-from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, Dict, Optional
-
+from typing import Any, Dict
 from opendxa.common.mixins.tool_callable import ToolCallable
-from opendxa.common.types import BaseResponse
-
+from opendxa.common.types import BaseRequest, BaseResponse
 
 class QueryStrategy(Enum):
-    """Resource querying strategies."""
-
-    ONCE = auto()  # Single query without iteration, default for most resources
-    ITERATIVE = auto()  # Iterative querying - default, e.g., for LLMResource
-
-
-QueryParams = Optional[Dict[str, Any]]
-
-@dataclass
-class QueryResponse(BaseResponse):
-    """Base class for all query responses."""
-
+    """Available query strategies."""
+    ONCE = auto()  # Query once
+    ITERATIVE = auto()  # Iterative query
+    SEMANTIC = auto()  # Semantic query with iteration
+    HYBRID = auto()  # Hybrid of direct and semantic
 
 class Queryable():
     """Mixin for queryable objects.
@@ -35,18 +25,22 @@ class Queryable():
         self._query_max_iterations = getattr(self, "_query_max_iterations", 3)
 
     @ToolCallable.tool
-    async def query(self, params: QueryParams = None) -> QueryResponse:
+    async def query(self, request: Dict[str, Any]) -> BaseResponse:
         """Query the Queryable object.
 
         Args:
-            params: The parameters to query the Queryable object with.
+            request: The request to query the Queryable object with.
         """
-        return QueryResponse(success=True, content=params, error=None)
+        # Convert dict to BaseRequest if needed
+        if isinstance(request, dict):
+            request = BaseRequest(arguments=request)
+            
+        return BaseResponse(success=True, content=request.arguments, error=None)
 
     def get_query_strategy(self) -> QueryStrategy:
         """Get the query strategy for the resource."""
         return self._query_strategy
 
     def get_query_max_iterations(self) -> int:
-        """Get the maximum number of iterations for the resource. Default is 3."""
+        """Get the maximum number of iterations for iterative querying."""
         return self._query_max_iterations

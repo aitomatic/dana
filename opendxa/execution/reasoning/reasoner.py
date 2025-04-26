@@ -5,6 +5,7 @@ from typing import List
 from opendxa.base.execution.execution_context import ExecutionContext
 from opendxa.base.execution.execution_types import ExecutionNode, ExecutionSignal, ExecutionSignalType
 from opendxa.base.execution.base_executor import BaseExecutor
+from opendxa.common.types import BaseRequest
 from opendxa.execution.reasoning.reasoning import Reasoning
 from opendxa.execution.reasoning.reasoning_factory import ReasoningFactory
 from opendxa.execution.reasoning.reasoning_strategy import ReasoningStrategy
@@ -54,10 +55,10 @@ class Reasoner(BaseExecutor[ReasoningStrategy, Reasoning, ReasoningFactory]):
         if plan_node:
             plan_obj = context.current_plan.objective if context.current_plan else None
             self.info(f"Plan: {plan_node.node_type} - {plan_node.description}")
-            self.info(f"  Objective: {plan_obj.current if plan_obj else 'None'}")
+            self.info(f"  Objective: {plan_obj if plan_obj else 'None'}")
 
             self.info(f"  Reasoning: {node.node_type} - {node.description}")
-            self.info(f"    Objective: {node.objective.current if node.objective else 'None'}")
+            self.info(f"    Objective: {node.objective if node.objective else 'None'}")
 
             # Make LLM call with the reasoning node's objective
             if context.reasoning_llm and node.objective:
@@ -72,8 +73,7 @@ class Reasoner(BaseExecutor[ReasoningStrategy, Reasoning, ReasoningFactory]):
                 self.info(f"Resources: {context.available_resources or {}}")
 
                 # Query the LLM with available resources
-
-                response = await context.reasoning_llm.query(params={
+                request = BaseRequest(arguments={
                     "user_messages": user_messages,
                     "system_messages": system_messages,
                     "available_resources": context.available_resources or {},
@@ -81,13 +81,17 @@ class Reasoner(BaseExecutor[ReasoningStrategy, Reasoning, ReasoningFactory]):
                     "max_tokens": 1000,
                     "temperature": 0.7,
                 })
+                response = await context.reasoning_llm.query(request)
+                response_content = response.content if response else {}
 
-                response = response or {}
                 self.info("\nReasoning Result:")
                 self.info("================")
-                self.info(str(response))
+                self.info(str(response_content))
 
-                return [ExecutionSignal(type=ExecutionSignalType.DATA_RESULT, content=response)]
+                return [ExecutionSignal(
+                    type=ExecutionSignalType.DATA_RESULT if response.success else ExecutionSignalType.CONTROL_ERROR,
+                    content=response_content
+                )]
 
         # If no response was generated, return an empty result
         return [ExecutionSignal(type=ExecutionSignalType.DATA_RESULT, content={})]
@@ -158,7 +162,7 @@ class Reasoner(BaseExecutor[ReasoningStrategy, Reasoning, ReasoningFactory]):
 
         user_messages = [
             "PLAN OVERVIEW:",
-            f"- Overall Plan Objective: {plan_obj.current if plan_obj else 'None'}",
+            f"- Overall Plan Objective: {plan_obj if plan_obj else 'None'}",
             "",
             "EXECUTION GRAPH:",
         ]
@@ -174,7 +178,7 @@ class Reasoner(BaseExecutor[ReasoningStrategy, Reasoning, ReasoningFactory]):
             current_marker = " [CURRENT]" if is_current_plan else ""
             user_messages.extend([
                 f"{i}. {plan_node_iter.node_type}: {plan_node_iter.description}{current_marker}",
-                f"   - Objective: {plan_node_iter.objective.current if plan_node_iter.objective else 'None'}",
+                f"   - Objective: {plan_node_iter.objective if plan_node_iter.objective else 'None'}",
                 f"   - Status: {plan_node_iter.status}",
             ])
 
