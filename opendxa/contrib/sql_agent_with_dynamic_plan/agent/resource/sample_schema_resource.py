@@ -128,14 +128,3 @@ class SampleSchemaResource(BaseResource):
         """
 
         return ResourceResponse(success=True, content=table_schemas)
-
-    async def bad_query(self, text: str) -> str:
-        """Retrieve Schema of Existing Tables.
-
-        Args:
-            text: Any text for similarity search with RAG
-
-        Returns:
-            str : Schema of Existing Tables in text format
-        """
-        return table_schemas
