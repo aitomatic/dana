@@ -54,14 +54,14 @@ class DXALogger:
         """Configure the logging system with basic settings."""
         logging.basicConfig(*args, **kwargs)
         
-    def setLevel(self, level: int, scope: Optional[str] = None):
+    def setLevel(self, level: int, scope: Optional[str] = "*"):
         """Set the logging level with configurable scope.
         
         Args:
             level: The logging level to set (e.g., logging.DEBUG, logging.INFO)
             scope: Optional scope parameter:
+                  - "*" (default): Set level for all loggers created by this DXA_LOGGER instance
                   - None: Set level only for this logger instance
-                  - "*": Set level for all loggers created by this DXA_LOGGER instance
                   - "opendxa": Set level for all loggers starting with "opendxa"
                   - "opendxa.agent": Set level for all loggers starting with "opendxa.agent"
         """
