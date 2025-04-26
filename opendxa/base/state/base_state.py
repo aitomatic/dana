@@ -1,22 +1,19 @@
 """Base state management."""
 
 from typing import Dict, Any
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 class BaseState(BaseModel):
     """Base class for all state management."""
     
     # Add at least one field
-    initialized: bool = False
-
-    def initialize(self) -> None:
-        """Initialize state. Override if needed."""
-        pass
+    artifacts: Dict[str, Any] = Field(default_factory=dict, description="The artifacts of the state")
+    blackboard: Dict[str, Any] = Field(default_factory=dict, description="The shared blackboard of the state")
 
     def reset(self) -> None:
         """Reset state to initial values. Override if needed."""
         # Reset all fields to their default values
-        for field_name, field_info in self.model_fields.items():
+        for field_name, field_info in type(self).model_fields.items():
             if field_info.default is not None:
                 setattr(self, field_name, field_info.default)
 

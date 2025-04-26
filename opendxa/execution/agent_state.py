@@ -1,8 +1,8 @@
 """Agent state management."""
 
 from typing import List, Optional
-
-from opendxa.base.execution.execution_types import Objective, ExecutionSignal, ExecutionNode
+from pydantic import Field
+from opendxa.base.execution.execution_types import Objective, ExecutionSignal
 from opendxa.execution.planning.plan import Plan
 from opendxa.base.state.base_state import BaseState
 
@@ -10,10 +10,11 @@ class AgentState(BaseState):
     """Manages agent execution state."""
     model_config = {"arbitrary_types_allowed": True}
     
-    objective: Optional[Objective] = None
-    plan: Optional[Plan] = None
-    signals: List[ExecutionSignal] = []
-    current_step_index: int = 0
+    objective: Optional[Objective] = Field(default=None, description="The current objective of the agent")
+    plan: Optional[Plan] = Field(default=None, description="The current plan of the agent")
+    signals: List[ExecutionSignal] = Field(default=[], description="The current signals of the agent")
+    timezone: str = Field(default="UTC", description="The timezone of the agent")
+    location: str = Field(default="", description="The location of the agent")
 
     def set_objective(self, objective: Objective) -> None:
         """Set current objective."""
@@ -22,7 +23,6 @@ class AgentState(BaseState):
     def set_plan(self, plan: Plan) -> None:
         """Set current plan."""
         self.plan = plan
-        self.current_step_index = 0
 
     def add_signal(self, signal: ExecutionSignal) -> None:
         """Add signal to state."""
@@ -35,18 +35,3 @@ class AgentState(BaseState):
     def clear_signals(self) -> None:
         """Clear all signals."""
         self.signals = []
-
-    def advance_step(self) -> None:
-        """Move to next step."""
-        self.current_step_index += 1
-
-    def get_current_step(self) -> Optional[ExecutionNode]:
-        """Safely get current step with validation."""
-        if not self.plan:
-            return None
-        
-        step_keys = [k for k in self.plan.nodes if k.startswith("step_")]
-        try:
-            return self.plan.nodes[step_keys[self.current_step_index]]
-        except (IndexError, KeyError):
-            return None 

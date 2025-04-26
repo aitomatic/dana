@@ -2,7 +2,8 @@
 
 from typing import Dict, Any, Optional, List
 from enum import Enum
-from pydantic import BaseModel, Field
+from pydantic import Field
+from opendxa.base.state.base_state import BaseState
 
 class ExecutionStatus(Enum):
     """Status of execution."""
@@ -11,18 +12,17 @@ class ExecutionStatus(Enum):
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
 
-class ExecutionState(BaseModel):
+class ExecutionState(BaseState):
     """Manages execution state."""
     model_config = {"arbitrary_types_allowed": True}
 
-    initialized: bool = False
-    status: ExecutionStatus = ExecutionStatus.IDLE
-    metadata: Dict[str, Any] = Field(default_factory=dict)
-    current_node_id: Optional[str] = None
-    step_results: Dict[str, Any] = Field(default_factory=dict)
-    visited_nodes: List[str] = Field(default_factory=list)
-    node_results: Dict[str, Any] = Field(default_factory=dict)
-    execution_path: List[tuple[str, str]] = Field(default_factory=list)
+    status: ExecutionStatus = Field(default=ExecutionStatus.IDLE, description="The status of the execution")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="The metadata of the execution")
+    current_node_id: Optional[str] = Field(default=None, description="The current node ID of the execution")
+    step_results: Dict[str, Any] = Field(default_factory=dict, description="The results of the execution steps")
+    visited_nodes: List[str] = Field(default_factory=list, description="The nodes visited by the execution")
+    node_results: Dict[str, Any] = Field(default_factory=dict, description="The results of the execution nodes")
+    execution_path: List[tuple[str, str]] = Field(default_factory=list, description="The path of the execution")
 
     def __init__(self, **data: Any) -> None:
         """Initialize execution state."""
@@ -35,7 +35,7 @@ class ExecutionState(BaseModel):
 
     def initialize(self) -> None:
         """Initialize execution state."""
-        self.initialized = True
+        self.status = ExecutionStatus.IDLE
 
     def reset(self) -> None:
         """Reset execution state to initial values."""

@@ -27,11 +27,11 @@ class ObjectiveStatus(Enum):
 
 class Objective(BaseModel):
     """Represents what needs to be achieved."""
-    original: str
-    current: str
-    status: ObjectiveStatus = ObjectiveStatus.INITIAL
-    context: Dict[str, Any] = Field(default_factory=dict)
-    history: List[Dict[str, Any]] = []
+    original: str = Field(description="The original objective")
+    current: str = Field(description="The current objective")
+    status: ObjectiveStatus = Field(default=ObjectiveStatus.INITIAL, description="The status of the objective")
+    context: Dict[str, Any] = Field(default_factory=dict, description="The context of the objective")
+    history: List[Dict[str, Any]] = Field(default=[], description="The history of the objective")
 
     def __init__(self, objective: Optional[str] = None, **data):
         """Initialize objective.
@@ -73,6 +73,7 @@ class Objective(BaseModel):
         if not isinstance(reason, str) or not reason:
             raise ValueError("Reason must be a non-empty string")
             
+        # pylint: disable=no-member
         self.history.append({
             "previous": self.current,
             "new": new_understanding,

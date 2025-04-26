@@ -8,6 +8,10 @@ from opendxa import Agent, PlanFactory, DXA_LOGGER
 from opendxa.contrib.sql_agent_with_dynamic_plan.agent.resource.sample_schema_resource import SampleSchemaResource
 from opendxa.contrib.sql_agent_with_dynamic_plan.execution.planning.dynamic_plan_executor import DynamicPlanExecutor
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 DXA_LOGGER.setLevel(DXA_LOGGER.DEBUG, "*")
 
 question = "What percentage of monthly platform active users are transport users?"
