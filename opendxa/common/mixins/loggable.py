@@ -42,21 +42,30 @@ class Loggable:
             level: Optional logging level. If not provided, inherits from parent.
         """
         # Initialize logger using either custom name or object's class module and name
-        self.logger = DXA_LOGGER.getLogger(logger_name or self)
-        
-        # Configure the logger
-        self.logger.configure(
+        self._logger = self.__instantiate_logger(logger_name, prefix, log_data, level)
+    
+    def __instantiate_logger(self,
+                             logger_name: Optional[str] = None,
+                             prefix: Optional[str] = None,
+                             log_data: bool = False,
+                             level: Optional[int] = None):
+        self._logger = DXA_LOGGER.getLogger(logger_name or self, prefix)
+        self._logger.configure(
             console=True,
             level=level or logging.WARNING,
             log_data=log_data,
             fmt="%(asctime)s - [%(name)s] %(levelname)s - %(message)s",
             datefmt="%H:%M:%S"
         )
-        
-        # Set prefix if provided
-        if prefix:
-            self.logger.prefix = prefix
+        return self._logger
     
+    @property
+    def logger(self):
+        """Get the logger for this instance"""
+        if not hasattr(self, '_logger'):
+            self._logger = self.__instantiate_logger()
+        return self._logger
+        
     def debug(self, message: str, *args, **context) -> None:
         """Log a debug message."""
         self.logger.debug(message, *args, **context)
@@ -74,6 +83,26 @@ class Loggable:
         self.logger.error(message, *args, **context)
     
     @classmethod
+    def log_debug(cls, message: str, *args, **context) -> None:
+        """Log a debug message."""
+        cls.get_class_logger().debug(message, *args, **context)
+        
+    @classmethod
+    def log_info(cls, message: str, *args, **context) -> None:
+        """Log an info message."""
+        cls.get_class_logger().info(message, *args, **context)
+        
+    @classmethod
+    def log_warning(cls, message: str, *args, **context) -> None:
+        """Log a warning message."""
+        cls.get_class_logger().warning(message, *args, **context)
+        
+    @classmethod
+    def log_error(cls, message: str, *args, **context) -> None:
+        """Log an error message."""
+        cls.get_class_logger().error(message, *args, **context)
+        
+    @classmethod
     def get_class_logger(cls) -> 'Loggable':
         """Get a logger for the class itself."""
-        return Loggable(cls.__name__) 
+        return DXA_LOGGER.getLoggerForClass(cls) 

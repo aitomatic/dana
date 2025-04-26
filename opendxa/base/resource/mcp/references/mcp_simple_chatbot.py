@@ -13,17 +13,21 @@ from mcp.client.stdio import stdio_client
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+    level=logging.DEBUG,  # Changed to DEBUG for more verbose output
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 
+logger = logging.getLogger(__name__)
 
 class Configuration:
     """Manages configuration and environment variables for the MCP client."""
 
     def __init__(self) -> None:
         """Initialize configuration with environment variables."""
+        logger.debug("Initializing Configuration...")
         self.load_env()
-        self.api_key = os.getenv("LLM_API_KEY")
+        self.api_key = os.getenv("OPENAI_API_KEY")
+        logger.debug(f"Loaded API key: {'present' if self.api_key else 'not present'}")
 
     @staticmethod
     def load_env() -> None:

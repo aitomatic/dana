@@ -2,7 +2,7 @@
 
 from typing import Dict, Union
 from pathlib import Path
-from ..config import load_yaml_config
+from opendxa.common.utils.misc import Misc
 
 class Prompts:
     """Generic prompt management utility."""
@@ -12,7 +12,7 @@ class Prompts:
         """Load prompts from YAML configuration."""
         # Handle different input types
         if isinstance(yaml_data, (str, Path)):
-            data = load_yaml_config(yaml_data)
+            data = Misc.load_yaml_config(yaml_data)
         else:
             data = yaml_data
             

@@ -195,12 +195,10 @@ class BaseExecutor(ABC, Loggable, Generic[StrategyT, GraphT, FactoryT]):
             
             # Phase 5: Process signals
             processed_signals = self._process_signals(signals, node)
-            
+
             # Phase 6: Post-execution cleanup
             await self._post_execute_node(node)
             
-            # Set to COMPLETED on success
-            node.status = ExecutionNodeStatus.COMPLETED
             return processed_signals
             
         except Exception as e:
@@ -298,6 +296,7 @@ class BaseExecutor(ABC, Loggable, Generic[StrategyT, GraphT, FactoryT]):
                 if signal.type == ExecutionSignalType.CONTROL_ERROR
             ]
             if error_signals:
+                node.status = ExecutionNodeStatus.FAILED
                 for signal in error_signals:
                     node_id = signal.content.get("node")
                     error_msg = signal.content.get("error", "Unknown error")

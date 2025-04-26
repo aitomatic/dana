@@ -2,9 +2,9 @@
 
 from typing import Dict, Any, Optional
 import aiohttp
-from opendxa.base.resource.base_resource import BaseResource, ResourceResponse, ResourceError
-from opendxa.common.mixins import ToolCallable
-from opendxa.common.mixins.queryable import QueryParams
+from opendxa.base.resource.base_resource import BaseResource
+from opendxa.common.mixins.tool_callable import ToolCallable
+from opendxa.common.types import BaseRequest, BaseResponse
 
 class WoTResource(BaseResource):
     """WoT resource handling Thing interactions."""
@@ -27,88 +27,65 @@ class WoTResource(BaseResource):
                 self.things = await resp.json()
 
     @ToolCallable.tool
-    async def query(self, params: QueryParams = None) -> ResourceResponse:
-        """Query WoT resource."""
-        if not self._is_available:
-            return ResourceResponse.error_response("WoT resource not available")
+    async def query(self, request: BaseRequest = None) -> BaseResponse:
+        """Get WOT input."""
+        if not self._io:
+            await self.initialize()
 
-        if not params.get("thing_id") or not params.get("interaction_type"):
-            return ResourceResponse.error_response("Missing required WoT parameters")
+        # Ensure we pass a proper dictionary with prompt
+        prompt = request.get("prompt") or ""
+        response = await self._io.query({"prompt": prompt})
+        return response
+
+    async def _handle_interaction(self, thing: Dict[str, Any], request: BaseRequest) -> BaseResponse:
+        """Handle WoT interaction based on type."""
+        interaction_type = request.get("interaction_type")
+        if interaction_type == "read_property":
+            return await self._read_property(thing, request)
+        elif interaction_type == "write_property":
+            return await self._write_property(thing, request)
+        elif interaction_type == "invoke_action":
+            return await self._invoke_action(thing, request)
+        else:
+            return BaseResponse.error_response(f"Unsupported interaction type: {interaction_type}")
+
+    async def _read_property(self, thing: Dict[str, Any], request: BaseRequest) -> BaseResponse:
+        """Read a property from a WoT thing."""
+        property_name = request.get("property_name")
+        if not property_name:
+            return BaseResponse.error_response("Missing property name")
 
         try:
-            thing = self.things.get(params["thing_id"])
-            if not thing:
-                return ResourceResponse.error_response(f"Thing not found: {params['thing_id']}")
+            value = thing["properties"][property_name]
+            return BaseResponse.success_response({"value": value})
+        except KeyError:
+            return BaseResponse.error_response(f"Property not found: {property_name}")
 
-            return await self._handle_interaction(thing, params)
-        except Exception as e:
-            return ResourceResponse.error_response(f"WoT communication failed: {str(e)}")
+    async def _write_property(self, thing: Dict[str, Any], request: BaseRequest) -> BaseResponse:
+        """Write a property to a WoT thing."""
+        property_name = request.get("property_name")
+        value = request.get("value")
+        if not property_name or value is None:
+            return BaseResponse.error_response("Missing property name or value")
 
-    async def _handle_interaction(self, thing: Dict[str, Any], params: QueryParams) -> ResourceResponse:
-        """Execute WoT interaction based on type."""
-        interaction_type = params["interaction_type"]
-        handler = {
-            "property": self._handle_property,
-            "action": self._handle_action,
-            "event": self._handle_event
-        }.get(interaction_type)
+        try:
+            thing["properties"][property_name] = value
+            return BaseResponse.success_response({"status": "success"})
+        except KeyError:
+            return BaseResponse.error_response(f"Property not found: {property_name}")
 
-        if not handler:
-            raise ResourceError(f"Invalid interaction type: {interaction_type}")
+    async def _invoke_action(self, thing: Dict[str, Any], request: BaseRequest) -> BaseResponse:
+        """Invoke an action on a WoT thing."""
+        action_name = request.get("action_name")
+        if not action_name:
+            return BaseResponse.error_response("Missing action name")
 
-        return await handler(thing, params)
-
-    async def _handle_property(self, thing: Dict[str, Any], params: QueryParams) -> ResourceResponse:
-        """Handle property read/write."""
-        property_name = params["property"]
-        url = f"{thing['base']}/properties/{property_name}"
-
-        if params["operation"] == "read":
-            assert self.session is not None
-            async with self.session.get(url) as resp:
-                return ResourceResponse(
-                    success=resp.status == 200,
-                    content=await resp.json(),
-                    error=None if resp.status == 200 else await resp.text()
-                )
-        
-        if params["operation"] == "write":
-            assert self.session is not None
-            async with self.session.put(url, json=params.get("value")) as resp:
-                return ResourceResponse(
-                    success=resp.status == 200,
-                    error=None if resp.status == 200 else await resp.text()
-                )
-
-        raise ResourceError(f"Invalid property operation: {params['operation']}")
-
-    async def _handle_action(self, thing: Dict[str, Any], params: QueryParams) -> ResourceResponse:
-        """Handle action invocation."""
-        action_name = params["action"]
-        url = f"{thing['base']}/actions/{action_name}"
-        
-        assert self.session is not None
-        async with self.session.post(
-            url,
-            json=params.get("parameters", {})
-        ) as resp:
-            return ResourceResponse(
-                success=resp.status == 200,
-                content=await resp.json(),
-                error=None if resp.status == 200 else await resp.text()
-            )
-
-    async def _handle_event(self, thing: Dict[str, Any], params: QueryParams) -> ResourceResponse:
-        """Handle event retrieval."""
-        event_name = params["event"]
-        url = f"{thing['base']}/events/{event_name}"
-        assert self.session is not None
-        async with self.session.get(url) as resp:
-            return ResourceResponse(
-                success=resp.status == 200,
-                content=await resp.json(),
-                error=None if resp.status == 200 else await resp.text()
-            )
+        try:
+            action = thing["actions"][action_name]
+            result = await action(request.get("parameters", {}))
+            return BaseResponse.success_response({"result": result})
+        except KeyError:
+            return BaseResponse.error_response(f"Action not found: {action_name}")
 
     async def cleanup(self) -> None:
         """Cleanup WoT connections."""

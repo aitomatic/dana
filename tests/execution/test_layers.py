@@ -94,6 +94,12 @@ async def test_end_to_end_execution(
     3. Results flow correctly between layers
     4. The final output is generated
     """
+    # Initialize the agent
+    await agent_fixture.initialize()
+    
+    # Set the objective in the agent state
+    agent_fixture.state.set_objective(plan_fixture.objective)
+    
     # Run the plan
     result = await agent_fixture.async_run(plan_fixture)
     

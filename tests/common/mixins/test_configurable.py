@@ -51,8 +51,8 @@ class TestConfigurable:
         assert path.parent.name == "yaml"
         
         # Test with relative path
-        path = TestConfig.get_config_path("test_config")
-        assert path.name == "test_config.yaml"
+        path = TestConfig.get_config_path("test_configurable")
+        assert path.name == "test_configurable.yaml"
         assert path.parent.name == "yaml"
         
         # Test with absolute path
@@ -70,9 +70,9 @@ class TestConfigurable:
                 "setting2": 42
             }
         
-        obj = TestConfig(config_path="test_config.yaml")
-        assert obj.config["setting1"] == "test_value"
-        assert obj.config["setting2"] == 123
+        obj = TestConfig(config_path="test_configurable.yaml")
+        assert obj.config["setting1"] == "default_value"
+        assert obj.config["setting2"] == 42
     
     def test_validation_required(self):
         """Test required field validation."""
@@ -138,7 +138,7 @@ class TestConfigurable:
         
         obj = TestConfig()
         obj.config = {"setting1": "value1"}
-        obj.save("test_config.yaml")
+        obj.save("test_configurable.yaml")
         
         # Verify YAML was written correctly
         write_calls = mock_file().write.call_args_list

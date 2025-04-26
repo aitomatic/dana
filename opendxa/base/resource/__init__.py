@@ -2,7 +2,6 @@
 
 from opendxa.base.resource.base_resource import (
     BaseResource,
-    ResourceResponse,
     ResourceError,
     ResourceUnavailableError
 )
@@ -23,7 +22,6 @@ from opendxa.base.resource.memory_resource import (
 
 __all__ = [
     "BaseResource",
-    "ResourceResponse",
     "ResourceError",
     "ResourceUnavailableError",
     "LLMResource",

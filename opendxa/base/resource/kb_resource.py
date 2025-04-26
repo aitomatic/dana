@@ -26,9 +26,9 @@ knowledge management features in the DXA system.
 """
 
 from typing import Dict, Any, Optional
-from opendxa.base.resource.base_resource import BaseResource, ResourceResponse
+from opendxa.common.types import BaseResponse
+from opendxa.base.resource.base_resource import BaseResource
 from opendxa.base.db.storage import KnowledgeDBStorage
-from opendxa.base.db import KnowledgeDBModel
 
 class KBResource(BaseResource):
     """Implementation of the knowledge base resource for DXA.
@@ -49,6 +49,7 @@ class KBResource(BaseResource):
         description (Optional[str]): Optional description of the resource
         config (Optional[Dict[str, Any]]): Optional configuration parameters
         _storage (KnowledgeStorage): The underlying storage implementation
+        _knowledge_base (Dict[str, Dict[str, Any]]): Internal storage for knowledge
     
     Example:
         >>> storage = KnowledgeStorage()
@@ -86,6 +87,7 @@ class KBResource(BaseResource):
         """
         super().__init__(name, description, config)
         self._storage = KnowledgeDBStorage(connection_string=config.get("connection_string"))
+        self._knowledge_base: Dict[str, Dict[str, Any]] = {}
     
     async def initialize(self) -> None:
         """Initialize the knowledge base resource."""
@@ -99,61 +101,64 @@ class KBResource(BaseResource):
         self._storage.cleanup()
         self.info(f"Knowledge base resource [{self.name}] cleaned up")
     
-    async def store(self, key: str, value: Any, metadata: Optional[Dict] = None) -> ResourceResponse:
+    async def store(self, key: str, value: Any, metadata: Optional[Dict] = None) -> BaseResponse:
         """Store knowledge in the knowledge base.
         
         Args:
-            key: Unique identifier for the knowledge
-            value: The knowledge content to store
+            key: The key to store the knowledge under
+            value: The value to store
             metadata: Optional metadata about the knowledge
             
         Returns:
-            ResourceResponse indicating success or failure
+            BaseResponse indicating success or failure
         """
         try:
-            knowledge = KnowledgeDBModel(
-                key=key,
-                value=value,
-                metadata=metadata
-            )
-            self._storage.store(knowledge)
-            return ResourceResponse(success=True, content={"key": key})
+            self._knowledge_base[key] = {
+                "value": value,
+                "metadata": metadata or {}
+            }
+            return BaseResponse(success=True, content={"key": key})
         except Exception as e:
-            return ResourceResponse.error_response(f"Failed to store knowledge: {str(e)}")
+            return BaseResponse(success=False, error=f"Failed to store knowledge: {str(e)}")
     
-    async def retrieve(self, key: Optional[str] = None, query: Optional[str] = None) -> ResourceResponse:
+    async def retrieve(self, key: Optional[str] = None, query: Optional[str] = None) -> BaseResponse:
         """Retrieve knowledge from the knowledge base.
         
         Args:
-            key: Optional specific key to retrieve
-            query: Optional query to filter results
+            key: Optional key to retrieve
+            query: Optional query string to search for
             
         Returns:
-            ResourceResponse containing the retrieved knowledge
+            BaseResponse containing the retrieved knowledge
         """
         try:
             if key:
-                result = self._storage.retrieve(key)
+                result = self._knowledge_base.get(key)
             else:
-                result = self._storage.retrieve(query=query)
-            return ResourceResponse(success=True, content=result)
+                # Simple query implementation - can be enhanced
+                result = {
+                    k: v for k, v in self._knowledge_base.items()
+                    if query and query.lower() in str(v).lower()
+                }
+            return BaseResponse(success=True, content=result)
         except Exception as e:
-            return ResourceResponse.error_response(f"Failed to retrieve knowledge: {str(e)}")
+            return BaseResponse(success=False, error=f"Failed to retrieve knowledge: {str(e)}")
     
-    async def delete(self, key: str) -> ResourceResponse:
+    async def delete(self, key: str) -> BaseResponse:
         """Delete knowledge from the knowledge base.
         
         Args:
-            key: The key of the knowledge to delete
+            key: The key to delete
             
         Returns:
-            ResourceResponse indicating success or failure
+            BaseResponse indicating success or failure
         """
         try:
-            self._storage.delete(key)
-            return ResourceResponse(success=True, content={"key": key})
+            if key in self._knowledge_base:
+                del self._knowledge_base[key]
+            return BaseResponse(success=True, content={"key": key})
         except Exception as e:
-            return ResourceResponse.error_response(f"Failed to delete knowledge: {str(e)}")
+            return BaseResponse(success=False, error=f"Failed to delete knowledge: {str(e)}")
     
     def can_handle(self, request: Dict[str, Any]) -> bool:
         """Check if the resource can handle the request.

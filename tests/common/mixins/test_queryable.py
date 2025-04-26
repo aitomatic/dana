@@ -1,7 +1,8 @@
 """Tests for the Queryable mixin."""
 
 import pytest
-from opendxa.common.mixins.queryable import Queryable, QueryStrategy, QueryResponse
+from opendxa.common.mixins.queryable import Queryable, QueryStrategy
+from opendxa.common.types import BaseResponse
 
 # pylint: disable=missing-function-docstring
 # pylint: disable=missing-class-docstring
@@ -29,10 +30,10 @@ class TestQueryable:
     async def test_query_with_no_params(self):
         """Test querying with no parameters."""
         obj = Queryable()
-        response = await obj.query()
-        assert isinstance(response, QueryResponse)
+        response = await obj.query({})
+        assert isinstance(response, BaseResponse)
         assert response.success
-        assert response.content is None
+        assert response.content == {}
         assert response.error is None
     
     @pytest.mark.asyncio
@@ -41,7 +42,7 @@ class TestQueryable:
         obj = Queryable()
         params = {"test": "value"}
         response = await obj.query(params)
-        assert isinstance(response, QueryResponse)
+        assert isinstance(response, BaseResponse)
         assert response.success
         assert response.content == params
         assert response.error is None

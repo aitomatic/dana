@@ -1,8 +1,10 @@
 """Mixin for capable objects."""
 
 from typing import Optional, List, Any, Dict
+from pydantic import BaseModel, Field
 from opendxa.base.capability.base_capability import BaseCapability, CapabilityApplicationResult
 from opendxa.common.mixins.tool_callable import ToolCallable
+from opendxa.common.types import BaseRequest
 
 
 class CapabilityError(Exception):
@@ -11,13 +13,13 @@ class CapabilityError(Exception):
 
 
 class CapabilityNotFoundError(CapabilityError):
-    """Raised when a capability is not found."""
+    """Error raised when a capability is not found."""
     pass
 
 
-class CapabilityAlreadyExistsError(CapabilityError):
-    """Raised when trying to add a duplicate capability."""
-    pass
+class CapabilityRequest(BaseModel):
+    """Request for applying a capability."""
+    parameters: Dict[str, Any] = Field(default_factory=dict)
 
 
 class Capable():
@@ -49,7 +51,7 @@ class Capable():
         return self._capabilities.copy()
 
     @ToolCallable.tool
-    def apply_capability(self, capability: BaseCapability, request: Optional[Dict[str, Any]] = None) -> CapabilityApplicationResult:
+    def apply_capability(self, capability: BaseCapability, request: Optional[BaseRequest] = None) -> CapabilityApplicationResult:
         """Apply a capability to the Capable object.
 
         Args:
@@ -62,33 +64,28 @@ class Capable():
         if not self.has_capability(capability):
             return CapabilityApplicationResult(
                 success=False,
-                result=request or {},
+                result=request.arguments if request else {},
                 error=CapabilityNotFoundError(f"Capability {capability.name} not found")
             )
-        return capability.apply(request or {})
+        return capability.apply(request.arguments if request else {})
 
     def has_capability(self, capability: BaseCapability) -> bool:
-        """Check if the Capable object has a specific capability.
-
+        """Check if capability exists.
+        
         Args:
-            capability: The BaseCapability object to check for.
-
+            capability: The capability to check for.
+            
         Returns:
-            True if the Capable object has the capability, False otherwise.
+            True if the capability exists, False otherwise.
         """
         return capability in self._capabilities
 
     def add_capability(self, capability: BaseCapability) -> None:
         """Add a capability to the Capable object.
-
+        
         Args:
-            capability: The BaseCapability object to add.
-
-        Raises:
-            CapabilityAlreadyExistsError: If the capability already exists.
+            capability: The capability to add.
         """
-        if self.has_capability(capability):
-            raise CapabilityAlreadyExistsError(f"Capability {capability.name} already exists")
         self._capabilities.append(capability)
 
     def remove_capability(self, capability: BaseCapability) -> None:

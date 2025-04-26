@@ -5,7 +5,6 @@ from typing import Any, TYPE_CHECKING, Optional
 from opendxa.execution.planning import Planner, Plan
 from opendxa.execution.reasoning import Reasoner
 from opendxa.base.execution.execution_context import ExecutionContext
-from opendxa.base.execution.execution_types import ExecutionSignalType
 if TYPE_CHECKING:
     from opendxa.agent.agent import Agent
 
@@ -38,11 +37,7 @@ class AgentRuntime:
 
         # Get final result from signals
         # TODO: Handle multiple signals
-        for signal in reversed(signals):
-            if signal.type == ExecutionSignalType.DATA_RESULT:
-                return signal.content
-
-        return None
+        return signals[-1] if len(signals) > 0 else None
 
     async def cleanup(self) -> None:
         """Cleanup runtime resources."""

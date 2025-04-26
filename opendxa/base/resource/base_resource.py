@@ -21,13 +21,12 @@ Example:
             pass
 """
 
-from dataclasses import dataclass
-from typing import Dict, Any, Optional, ClassVar, TypeVar
+from typing import Dict, Any, Optional, TypeVar
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.mixins.configurable import Configurable
-from opendxa.common.mixins.queryable import Queryable, QueryStrategy, QueryResponse
+from opendxa.common.mixins.queryable import Queryable
 from opendxa.common.mixins import ToolCallable
-from opendxa.common.mixins.queryable import QueryParams
+from opendxa.common.types import BaseRequest, BaseResponse
 
 T = TypeVar('T', bound='BaseResource')
 
@@ -52,133 +51,57 @@ class ResourceAccessError(ResourceError):
     """Error raised when resource access fails."""
     pass
 
-@dataclass
-class ResourceResponse(QueryResponse):
-    """Resource response."""
-
-    @classmethod
-    def error_response(cls, message: str) -> 'ResourceResponse':
-        """Create an error response with a ResourceError.
-        
-        Args:
-            message: Error message
-            
-        Returns:
-            ResourceResponse with error set to a ResourceError
-        """
-        return cls(success=False, error=ResourceError(message))
-
-class BaseResource(Configurable, Queryable, ToolCallable, Loggable):
+class BaseResource(Configurable, Queryable, ToolCallable):
     """Abstract base resource."""
 
-    # Class-level default configuration
-    default_config: ClassVar[Dict[str, Any]] = {
-        "name": "",
-        "description": None,
-        "query_strategy": QueryStrategy.ONCE,
-        "query_max_iterations": 3
-    }
-
-    def __init__(
-        self,
-        name: str,
-        description: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None
-    ):
-        """Initialize resource.
+    def __init__(self, name: str, description: Optional[str] = None, config: Optional[Dict[str, Any]] = None):
+        """Initialize base resource.
 
         Args:
             name: Resource name
             description: Optional resource description
             config: Optional additional configuration
         """
-        # Initialize fLoggable irst to ensure logger is available
-        Loggable.__init__(self)
-
-        # Initialize Configurable with the provided config
-        config = config or {}
-        if name:
-            config["name"] = name
-        if description:
-            config["description"] = description
-        Configurable.__init__(self, **config)
-
-        # Initialize Queryable
-        self._query_strategy = self.config.get("query_strategy", QueryStrategy.ONCE)
-        self._query_max_iterations = self.config.get("query_max_iterations", 3)
+        Configurable.__init__(self)
         Queryable.__init__(self)
-
-        # Initialize ToolCallable
         ToolCallable.__init__(self)
 
-        # Other initializations
-        self._is_available = False  # will only be True after initialization
-        self.name = self.config["name"]
-        self.description = self.config["description"] or "No description provided"
-
-    def _validate_config(self) -> None:
-        """Validate the configuration.
-
-        This method extends the base Configurable validation with resource-specific checks.
-        """
-        # Call base class validation first
-        super()._validate_config()
-
-        # Validate resource-specific fields
-        if "name" not in self.config:
-            raise ValueError("Resource configuration must have a 'name' field")
-
-        if "description" not in self.config:
-            raise ValueError("Resource configuration must have a 'description' field")
-
-        # Validate resource name
-        if not self.config["name"]:
-            raise ValueError("Resource name cannot be empty")
-
-        # Validate query strategy if present
-        if "query_strategy" in self.config:
-            if not isinstance(self.config["query_strategy"], QueryStrategy):
-                raise ValueError("query_strategy must be a QueryStrategy enum")
-
-        # Validate max iterations if present
-        if "query_max_iterations" in self.config:
-            if not isinstance(self.config["query_max_iterations"], int):
-                raise ValueError("query_max_iterations must be an integer")
+        self.name = name
+        self.description = description or "No description provided"
+        self.config = config or {}
+        self._is_available = False
+        # self.initialize()   # prefer lazy initialization
 
     @property
     def is_available(self) -> bool:
-        """Check if resource is currently available."""
+        """Check if resource is available."""
         return self._is_available
 
     async def initialize(self) -> None:
         """Initialize resource."""
         self._is_available = True
-        self.info(f"Initializing resource [{self.name}]")
-        # Resource-specific initialization logic
-        self.debug(f"Resource [{self.name}] initialized successfully")
+        self.info(f"Resource [{self.name}] initialized")
 
     async def cleanup(self) -> None:
-        """Cleanup resource."""
+        """Clean up resource."""
         self._is_available = False
-        self.info(f"Cleaning up resource [{self.name}]")
-        # Resource-specific cleanup logic
-        self.debug(f"Resource [{self.name}] cleanup completed")
+        self.info(f"Resource [{self.name}] cleaned up")
 
     @ToolCallable.tool
-    async def query(self, params: QueryParams = None) -> ResourceResponse:
+    async def query(self, request: BaseRequest) -> BaseResponse:
         """Query resource.
 
         Args:
-            params: The parameters to query the resource with.
+            request: The request to query the resource with.
         """
         if not self._is_available:
-            return ResourceResponse(success=False, error=f"Resource {self.name} not available")
-        self.debug(f"Resource [{self.name}] received query: {self._sanitize_log_data(params)}")
-        return ResourceResponse(success=True, content=params, error=None)
+            return BaseResponse(success=False, error=f"Resource {self.name} not available")
+        self.debug(f"Resource [{self.name}] received query: {self._sanitize_log_data(request.arguments)}")
+        return BaseResponse(success=True, content=request.arguments, error=None)
 
-    def can_handle(self, params: QueryParams) -> bool:
+    def can_handle(self, request: BaseRequest) -> bool:
         """Check if resource can handle request."""
-        self.debug(f"Checking if [{self.name}] can handle {self._sanitize_log_data(params)}")
+        self.debug(f"Checking if [{self.name}] can handle {self._sanitize_log_data(request.arguments)}")
         return False
 
     def _sanitize_log_data(self, data: Dict[str, Any]) -> Dict[str, Any]:

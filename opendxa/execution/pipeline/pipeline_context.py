@@ -1,24 +1,21 @@
 """Pipeline-specific execution context."""
 
-from dataclasses import dataclass, field
 from typing import Dict, Any, Optional
 import asyncio
 from datetime import datetime
 from opendxa.base.execution import ExecutionContext
 from opendxa.common.mixins.loggable import Loggable
 
-@dataclass
 class PipelineContext(ExecutionContext, Loggable):
     """Context for pipeline execution with buffer management."""
     
-    # Buffer management
-    buffers: Dict[str, asyncio.Queue] = field(default_factory=dict)
-    buffer_metrics: Dict[str, Dict[str, Any]] = field(default_factory=dict)
-    buffer_data: Dict[str, Any] = field(default_factory=dict)
-
-    def __post_init__(self):
-        """Initialize Loggable after dataclass initialization."""
+    def __init__(self):
+        """Initialize pipeline context."""
+        super().__init__()
         Loggable.__init__(self)
+        self.buffers: Dict[str, asyncio.Queue] = {}
+        self.buffer_metrics: Dict[str, Dict[str, Any]] = {}
+        self.buffer_data: Dict[str, Any] = {}
 
     async def setup_buffer(self, node_id: str, size: int = 1000) -> None:
         """Setup buffer for node."""

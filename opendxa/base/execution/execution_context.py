@@ -1,14 +1,15 @@
 """Execution context for DXA."""
 
 from typing import Optional, TYPE_CHECKING, Dict, Any, Tuple, cast
-from opendxa.base.state import WorldState, ExecutionState
-from opendxa.base.resource import BaseResource, LLMResource
+from opendxa.base.state.world_state import WorldState
+from opendxa.base.resource.base_resource import BaseResource
+from opendxa.base.resource.llm_resource import LLMResource
 from opendxa.base.execution.execution_types import ExecutionNode
-
+from opendxa.base.execution.execution_state import ExecutionState
 if TYPE_CHECKING:
     from opendxa.execution.planning import Plan
     from opendxa.execution.reasoning import Reasoning
-    from opendxa.agent.agent_state import AgentState
+    from opendxa.base.state import AgentState
 
 class ExecutionContext:
     """Execution context for all execution layers."""
