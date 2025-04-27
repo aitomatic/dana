@@ -50,10 +50,12 @@ from opendxa.base.execution import (
     ObjectiveStatus,
     ExecutionEdge,
     ExecutionFactory,
-    ExecutionState,
 )
 from opendxa.base.state import (
     BaseState,
+    StateManager,
+    ExecutionState,
+    AgentState,
     WorldState,
 )
 from opendxa.base.resource import (
@@ -92,10 +94,8 @@ __all__ = [
     'ExecutionEdge',
     'ExecutionFactory',
     'ExecutionState',
-
-    # State
+    'StateManager',
     'BaseState',
-    'WorldState',
 
     # Resource
     'BaseResource',
@@ -114,4 +114,11 @@ __all__ = [
     'LTMemoryResource',
     'STMemoryResource',
     'PermMemoryResource',
+
+    # State
+    'BaseState',
+    'StateManager',
+    'ExecutionState',
+    'AgentState',
+    'WorldState',
 ]

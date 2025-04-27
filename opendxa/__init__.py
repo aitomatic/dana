@@ -111,11 +111,6 @@ from opendxa.base import (
     ObjectiveStatus,
     ExecutionEdge,
     ExecutionFactory,
-    ExecutionState,
-
-    # State
-    BaseState,
-    WorldState,
 
     # Resource
     BaseResource,
@@ -134,6 +129,13 @@ from opendxa.base import (
     LTMemoryResource,
     STMemoryResource,
     PermMemoryResource,
+
+    # State
+    BaseState,
+    StateManager,
+    ExecutionState,
+    AgentState,
+    WorldState,
 )
 from opendxa.execution import (
     Pipeline,
@@ -151,7 +153,6 @@ from opendxa.execution import (
     ReasoningStrategy,
     Reasoner,
     AgentRuntime,
-    AgentState,
 )
 
 from opendxa.agent import (
@@ -219,8 +220,8 @@ __all__ = [
     'ExecutionEdge',
     'ExecutionFactory',
     'ExecutionState',
+    'StateManager',
     'BaseState',
-    'WorldState',
     'BaseResource',
     'ResourceError',
     'ResourceUnavailableError',
@@ -278,5 +279,5 @@ __all__ = [
     'ReasoningStrategy',
     'Reasoner',
     'AgentRuntime',
-    'AgentState',
+    'WorldState',
 ]

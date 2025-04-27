@@ -28,7 +28,6 @@ class AgentRuntime:
         context.current_plan = plan
 
         # Make sure there are LLMs for each layer in the context
-        assert context.workflow_llm is not None
         assert context.planning_llm is not None
         assert context.reasoning_llm is not None    
 

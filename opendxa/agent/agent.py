@@ -29,12 +29,14 @@ from opendxa.execution import (
     PlanStrategy,
     ReasoningStrategy,
     AgentRuntime,
+)
+from opendxa.base.state import (
     AgentState,
+    WorldState,
+    ExecutionState,
 )
 from opendxa.base.capability import BaseCapability
 from opendxa.base.resource import BaseResource, LLMResource
-from opendxa.base.state import WorldState
-from opendxa.base.execution import ExecutionState
 from opendxa.common.io import BaseIO, IOFactory
 from opendxa.common.mixins.configurable import Configurable
 from opendxa.common.utils.misc import Misc
@@ -101,8 +103,6 @@ class Agent(Configurable, Capable, ToolCallable):
         self._reasoning_llm = None
         self._reasoning_strategy = ReasoningStrategy.DEFAULT
         self._planning_strategy = PlanStrategy.DEFAULT
-
-        # Initialize configuration with default config
         self._config = AgentConfig()
 
     @property
@@ -301,17 +301,17 @@ class Agent(Configurable, Capable, ToolCallable):
                 execution_state=ExecutionState(),
                 planning_llm=self.planning_llm,
                 reasoning_llm=self.reasoning_llm,
-                available_resources=self.available_resources
+                available_resources=self.available_resources,
+                current_plan=plan
             )
         else:
-            # Update LLMs in provided context if not set
-            if not context.planning_llm:
+            # Update LLMs and plan in provided context if not set
+            if not hasattr(context, 'planning_llm') or context.planning_llm is None:
                 context.planning_llm = self.planning_llm
-            if not context.reasoning_llm:
+            if not hasattr(context, 'reasoning_llm') or context.reasoning_llm is None:
                 context.reasoning_llm = self.reasoning_llm
-        
-        assert context.planning_llm is not None
-        assert context.reasoning_llm is not None
+            if not hasattr(context, 'current_plan') or context.current_plan is None:
+                context.current_plan = plan
 
         async with self:  # For cleanup
             return AgentResponse.new_instance(await self.runtime.execute(plan, context))
