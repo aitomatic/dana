@@ -4,7 +4,13 @@
 
 # OpenDXA - Domain-Expert Agent Framework
 
-OpenDXA is a Python framework that enables building intelligent multi-agent systems with domain expertise, powered by Large Language Models (LLMs). The framework features advanced memory management with both short-term and long-term memory capabilities, enabling agents to learn from interactions and maintain context over extended periods. It includes robust knowledge-base management for structured storage and retrieval of domain knowledge, with support for versioning, evolution, and integration with external knowledge sources. For detailed documentation, see the [main documentation](opendxa/README.md).
+## Overview
+
+OpenDXA is a Python framework that enables building intelligent multi-agent systems with domain expertise, powered by Large Language Models (LLMs). The framework features advanced memory management with both short-term and long-term memory capabilities, enabling agents to learn from interactions and maintain context over extended periods. It includes robust knowledge-base management for structured storage and retrieval of domain knowledge, with support for versioning, evolution, and integration with external knowledge sources.
+
+A key concept in how LLMs interact with tools and external systems is **function calling**. LLMs can be instructed to output structured JSON data that specifies a function to be called and the arguments to pass to it. The receiving application (like one built with OpenDXA) then parses this JSON and executes the corresponding function, effectively allowing the LLM to "set variables" or trigger actions within the application's environment.
+
+For detailed documentation, see the [main documentation](opendxa/README.md).
 
 ## License
 
@@ -248,399 +254,50 @@ opendxa/                # Project root
 │   │   ├── resource/   # Agent-specific resources
 │   │   ├── agent.py    # Core Agent class
 │   │   ├── agent_factory.py  # Agent creation factories
-│   │   ├── agent_runtime.py  # Agent execution runtime
-│   │   └── agent_state.py    # Agent state management
-│   ├── common/         # Shared utilities
-│   │   ├── graph/      # Graph data structures
-│   │   ├── io/         # Input/Output handlers
-│   │   ├── resource/   # External resources
-│   │   │   ├── mcp/    # Model Context Protocol
-│   │   │   ├── llm_resource.py  # LLM integration
-│   │   │   └── human_resource.py  # Human-in-the-loop
-│   │   ├── state/      # State management
-│   │   └── utils/      # Utility functions
-│   │       └── logging/  # Logging system
-│   │
-│   └── execution/      # Execution system
-│       ├── pipeline/   # Pipeline execution
-│       ├── planning/   # Strategic planning
-│       │   └── yaml/   # YAML-based plan templates
-│       ├── reasoning/  # Reasoning implementation
-│       │   └── yaml/   # YAML-based reasoning templates
-│       └── workflow/   # Process workflows
-│           └── yaml/   # YAML-based workflow templates
-│
-├── examples/           # Usage examples
-│   ├── python/         # Python script examples
-│   │   ├── 01_getting_started/  # Basic usage
-│   │   ├── 02_core_concepts/    # Core architecture
-│   │   ├── 03_advanced_patterns/  # Advanced usage
-│   │   └── 04_real_world_applications/  # Real-world use cases
-│   └── tutorials/      # Jupyter notebook tutorials
-│       ├── 01_getting_started/  # Introduction
-│       ├── 02_core_concepts/    # Core layers
-│       ├── 03_advanced_topics/  # Advanced features
-│       └── 04_real_world_applications/  # Industry applications
-│
-├── tests/              # Test suite
-│
-├── contrib/            # Experimental and contributed code
-│   └── README.md       # Contrib directory guidelines
-│
-└── docs/               # Documentation
-    └── requirements/   # Industry-specific requirements
+│   │   └── ...         # Other agent components
+│   ├── common/         # Shared utilities and types
+│   ├── execution/      # Execution engine (planning, reasoning)
+│   │   ├── planning/   # Planning components
+│   │   ├── reasoning/  # Reasoning components
+│   │   ├── workflow/   # Workflow definition and management
+│   │   └── ...         # Other execution components
+│   ├── knowledge/      # Knowledge management components
+│   │   ├── knowledge_base.py # Core knowledge base implementation
+│   │   └── ...         # Other knowledge components
+│   ├── resource/       # General resource management
+│   └── ...             # Other top-level components
+├── examples/           # Usage examples and tutorials
+├── tests/              # Unit and integration tests
+├── docs/               # Documentation files (if separate)
+├── LICENSE.md          # Project license
+├── README.md           # This file
+├── RUN_ME.sh           # Development environment setup script
+└── VENV.sh             # Virtual environment activation script
 ```
 
 ## Contributing
 
-OpenDXA is proprietary software developed by Aitomatic, Inc. Contributions are limited to authorized Aitomatic employees and contractors. If you're an authorized contributor:
-
-1. Please ensure you have signed the necessary Confidentiality and IP agreements
-2. Follow the internal development guidelines
-3. Submit your changes through the company's approved development workflow
-4. Contact the project maintainers for access to the internal Contributing Guide
-
-For external users or organizations interested in collaborating with Aitomatic on OpenDXA development, please contact our business development team.
-
-## License
-
-This software is proprietary and confidential. Copyright © 2025 Aitomatic, Inc. All rights reserved.
-
-Unauthorized copying, transfer, or reproduction of this software, via any medium, is strictly prohibited. This software is protected by copyright law and international treaties.
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details on how to get started.
 
 ## Logging
 
-### Basic Usage
+OpenDXA uses a structured logging system. Configure it as follows:
 
 ```python
 from opendxa.common import DXA_LOGGER
 
-DXA_LOGGER.info("Application started")
-DXA_LOGGER.log_llm(
-    prompt="What is 2+2?",
-    response="4",
-    model="gpt-3.5"
-)
+# Configure logging level and output
+DXA_LOGGER.configure(level=DXA_LOGGER.INFO, console=True, filename="opendxa.log")
+
+# Use logger within the framework
+DXA_LOGGER.info("This is an info message.")
+DXA_LOGGER.debug("This is a debug message.")
 ```
 
-### Advanced Configuration
+## Support
 
-```python
-from opendxa.common import DXA_LOGGER
-
-# Configure logging with options
-DXA_LOGGER.configure(
-    level=DXA_LOGGER.DEBUG,
-    console=True,
-    log_data=True
-)
-
-# Get logger instance
-logger = DXA_LOGGER.getLogger(__name__)
-
-# Log execution signals
-def process_signals(signals):
-    for signal in signals:
-        logger.debug("Processing signal: %s", signal)
-```
-
-### Signal Processing
-
-```python
-from opendxa.execution import ExecutionSignal
-
-def process_execution_results(signals: list[ExecutionSignal]):
-    results = {}
-    for signal in signals:
-        if hasattr(signal, 'content') and 'result' in signal.content:
-            results[signal.content.get('node')] = signal.content['result']
-    return results
-```
+For questions or support, please open an issue on the [GitHub repository](https://github.com/aitomatic/opendxa/issues).
 
 ---
 
-<p align="center">
-Copyright © 2025 Aitomatic, Inc. Licensed under the MIT License.
-</p>
-
-<p align="center">
-<a href="https://aitomatic.com">https://aitomatic.com</a>
-</p>
-
-## Interaction Patterns
-
-### Basic Interaction Pattern
-
-The heart of OpenDXA is a consistent Planning-Knowledge interaction pattern:
-
-1. **Basic Interaction Loop**:
-   - Planning asks Knowledge: "How to solve X?"
-   - Knowledge responds with one of three types:
-     a. **Complete Solution** (Terminal)
-        * Direct answer available in knowledge base
-        * No further decomposition needed
-        * Ready for immediate execution
-     b. **Decomposable Solution** (Recursive)
-        * Solution exists but requires multiple steps
-        * Each step may need further resolution
-        * Natural hierarchical decomposition
-     c. **Incomplete Solution** (Fallback)
-        * No direct solution in knowledge base
-        * Requires Reasoning to derive solution
-        * Results stored for future reference
-
-2. **Recursive Nature**:
-   - For each step in a plan:
-     - Same Planning-Knowledge interaction
-     - All resolution through Knowledge
-     - Natural termination at Complete Solutions
-   - For Incomplete Solutions:
-     - Planning delegates to Reasoning
-     - Reasoning attempts to derive solution
-     - Results are stored back in Knowledge
-     - Future queries can use stored solutions
-
-3. **Key Aspects**:
-   - Consistent interaction pattern throughout
-   - All knowledge access through Knowledge
-   - Natural termination at Complete Solutions
-   - Hierarchical decomposition for complex tasks
-   - Continuous learning through Reasoning
-   - Knowledge base evolution over time
-
-### Single Agent Scenarios
-
-#### 1. Simple Task
-
-```mermaid
-sequenceDiagram
-    participant T as Task
-    participant A as Agent
-    participant AR as AgentRuntime
-    participant P as Planning
-    participant R as Reasoning
-    participant K as Knowledge
-    participant Res as Resources
-
-    T->>A: Receive Task
-    A->>AR: Forward Task
-    AR->>P: Invoke Planner
-    P->>K: How to solve Task?
-    K->>K: Lookup Knowledge
-    K-->>P: Return Direct Answer
-    P->>R: Execute Answer
-    R->>K: Apply Knowledge
-    K->>Res: query(Resource)
-    Res-->>K: Resource Response
-    K-->>R: Execute Step
-    R-->>P: Return Results
-    P-->>AR: Return Results
-    AR-->>A: Update State
-    A-->>K: Improve Knowledge
-```
-
-#### 2. Complex Task
-
-```mermaid
-sequenceDiagram
-    participant T as Task
-    participant A as Agent
-    participant AR as AgentRuntime
-    participant P as Planning
-    participant R as Reasoning
-    participant K as Knowledge
-    participant Res as Resources
-
-    T->>A: Receive Complex Task
-    A->>AR: Forward Task
-    AR->>P: Invoke Planner
-    P->>K: How to solve Task?
-    K->>K: Lookup Knowledge
-    K-->>P: Return Plan
-    Note over K,P: Plan includes:<br/>- Subtask 1<br/>- Subtask 2<br/>- Subtask 3
-    loop For Each Subtask
-        P->>K: How to solve Subtask?
-        K->>K: Lookup Knowledge
-        K-->>P: Return Direct Answer
-        P->>R: Execute Answer
-        R->>K: Apply Knowledge
-        K->>Res: query(Resource)
-        Res-->>K: Resource Response
-        K-->>R: Execute Step
-        R-->>P: Return Results
-    end
-    P-->>AR: Return Combined Results
-    AR-->>A: Update State
-    A-->>K: Improve Knowledge
-```
-
-### Multi-Agent Scenarios
-
-OpenDXA supports three main types of multi-agent interactions:
-
-1. **Separate Tasks**
-   - Multiple Agents working on different, independent tasks
-   - Each Agent operates in its own domain
-   - No coordination needed
-   - Like different specialists in different fields
-
-```mermaid
-sequenceDiagram
-    participant T1 as Task 1
-    participant T2 as Task 2
-    participant A1 as Agent 1
-    participant A2 as Agent 2
-    participant AR1 as AgentRuntime 1
-    participant AR2 as AgentRuntime 2
-    participant P1 as Planning 1
-    participant P2 as Planning 2
-    participant K1 as Knowledge 1
-    participant K2 as Knowledge 2
-
-    T1->>A1: Receive Task
-    T2->>A2: Receive Task
-    A1->>AR1: Forward Task
-    A2->>AR2: Forward Task
-    AR1->>P1: Invoke Planner
-    AR2->>P2: Invoke Planner
-    P1->>K1: How to solve Task?
-    P2->>K2: How to solve Task?
-    K1-->>P1: Return Answer
-    K2-->>P2: Return Answer
-    Note over A1,A2: Agents operate independently<br/>in their own domains
-```
-
-2. **Collaborative Tasks**
-   - Multiple Agents working together on same task
-   - Agents with complementary knowledge
-   - Need to coordinate and share knowledge
-   - Like a team of specialists working together
-
-```mermaid
-sequenceDiagram
-    participant T as Task
-    participant A1 as Agent 1
-    participant A2 as Agent 2
-    participant AR1 as AgentRuntime 1
-    participant AR2 as AgentRuntime 2
-    participant P1 as Planning 1
-    participant P2 as Planning 2
-    participant K1 as Knowledge 1
-    participant K2 as Knowledge 2
-
-    T->>A1: Receive Task
-    A1->>AR1: Forward Task
-    AR1->>P1: Invoke Planner
-    P1->>K1: How to solve Task?
-    K1-->>P1: Return Plan
-    Note over K1,P1: Plan requires knowledge<br/>from Agent 2
-    P1->>A2: Request Help
-    A2->>AR2: Forward Request
-    AR2->>P2: Invoke Planner
-    P2->>K2: How to help?
-    K2-->>P2: Return Answer
-    P2-->>P1: Return Results
-    P1-->>AR1: Return Combined Results
-```
-
-3. **Hierarchical Tasks**
-   - One Agent delegating to other Agents
-   - Parent Agent breaks down task
-   - Child Agents handle specific aspects
-   - Results flow back up the hierarchy
-
-```mermaid
-sequenceDiagram
-    participant T as Task
-    participant PA as Parent Agent
-    participant CA1 as Child Agent 1
-    participant CA2 as Child Agent 2
-    participant PAR as Parent Runtime
-    participant CAR1 as Child Runtime 1
-    participant CAR2 as Child Runtime 2
-    participant PP as Parent Planning
-    participant CP1 as Child Planning 1
-    participant CP2 as Child Planning 2
-
-    T->>PA: Receive Task
-    PA->>PAR: Forward Task
-    PAR->>PP: Invoke Planner
-    PP->>PP: Break Down Task
-    PP->>CA1: Delegate Subtask 1
-    PP->>CA2: Delegate Subtask 2
-    CA1->>CAR1: Forward Subtask
-    CA2->>CAR2: Forward Subtask
-    CAR1->>CP1: Invoke Planner
-    CAR2->>CP2: Invoke Planner
-    CP1-->>PP: Return Results
-    CP2-->>PP: Return Results
-    PP-->>PAR: Return Combined Results
-```
-
-## Architecture Details
-
-### System Architecture
-
-#### Agent System ([documentation](agent/README.md))
-
-1. **Core Components**
-   - Agent - Declarative interface
-   - AgentRuntime - Imperative execution
-   - Knowledge - Agent abilities and knowledge
-   - State System - Execution state management
-
-2. **Key Features**
-   - Clear separation of declarative and imperative aspects
-   - Knowledge-based architecture
-   - State tracking and persistence
-   - Adaptive execution
-
-#### Execution System ([documentation](execution/README.md))
-
-1. **Components**
-   - Planning - Strategic decomposition
-   - Reasoning - Tactical execution
-
-2. **Key Features**
-   - Hierarchical execution
-   - Dynamic adaptation
-   - Progress tracking
-   - Knowledge utilization
-
-### Motivation
-
-The Agent->Knowledge->Resources architecture provides two key benefits:
-
-1. **Composable Knowledge**
-   - An Agent can comprise multiple Knowledge bases
-   - Each Knowledge base represents a distinct area of expertise or functionality
-   - Knowledge can be added, removed, or updated independently
-   - Enables building specialized agents by combining relevant Knowledge
-
-2. **Hierarchical Knowledge Organization**
-   - Knowledge can be hierarchically deep
-   - Allows natural division of knowledge bases
-   - Enables compartmentalization of expertise
-   - Supports both broad and deep knowledge organization
-   - Makes it easy to manage and apply knowledge:
-     * Knowledge is organized by domain
-     * Each knowledge base knows how to apply its knowledge
-     * Knowledge updates are localized to relevant domains
-     * Knowledge can combine information from multiple sources
-
-For example:
-```mermaid
-graph TB
-    A[Agent] --> K1[Medical Knowledge]
-    A --> K2[Legal Knowledge]
-    A --> K3[Technical Knowledge]
-    
-    K1 --> KB1[Medical Knowledge Base]
-    K1 --> KB2[Patient Records]
-    
-    K2 --> KB3[Legal Database]
-    K2 --> KB4[Case Law]
-    
-    K3 --> KB5[Technical Documentation]
-    K3 --> KB6[Code Repository]
-```
+*© 2024 Aitomatic, Inc. All rights reserved.*

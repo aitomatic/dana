@@ -17,7 +17,6 @@ This module provides the foundational components and interfaces for the OpenDXA 
 3. State Management
    - BaseState for state management
    - WorldState for global state
-   - ExecutionState for execution-specific state
 
 4. Resource System
    - BaseResource for resource management
@@ -28,12 +27,17 @@ These base components provide the core abstractions and interfaces that other
 components build upon, ensuring consistency and extensibility across the framework.
 
 Example:
-    >>> from opendxa.base import BaseCapability, ExecutionContext
-    >>> from opendxa.base.resource import LLMResource
+    >>> from opendxa.base import ExecutionContext
+    >>> from opendxa.base.state import AgentState, WorldState, ExecutionState
+    >>> # LLMs are now typically managed by AgentRuntime, not passed directly to context
+    >>> agent_state = AgentState()
+    >>> world_state = WorldState()
+    >>> execution_state = ExecutionState()
     >>> context = ExecutionContext(
-    ...     reasoning_llm=LLMResource(),
-    ...     planning_llm=LLMResource(),
-    ...     workflow_llm=LLMResource()
+    ...     agent_state=agent_state,
+    ...     world_state=world_state,
+    ...     execution_state=execution_state
+    ...     # Optional state_handlers can be added here
     ... )
 """
 
@@ -54,9 +58,9 @@ from opendxa.base.execution import (
 from opendxa.base.state import (
     BaseState,
     StateManager,
-    ExecutionState,
     AgentState,
     WorldState,
+    ExecutionState,
 )
 from opendxa.base.resource import (
     BaseResource,
@@ -93,7 +97,6 @@ __all__ = [
     'ObjectiveStatus',
     'ExecutionEdge',
     'ExecutionFactory',
-    'ExecutionState',
     'StateManager',
     'BaseState',
 
@@ -118,7 +121,7 @@ __all__ = [
     # State
     'BaseState',
     'StateManager',
-    'ExecutionState',
     'AgentState',
     'WorldState',
+    'ExecutionState',
 ]

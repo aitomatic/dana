@@ -97,7 +97,7 @@ class AgentResource(BaseResource):
             AgentError: If agent initialization fails
         """
         try:
-            await self.agent.initialize()
+            await self.agent._initialize()
         except (AgentError, ValueError) as e:
             raise ResourceError("Failed to initialize agent") from e
 

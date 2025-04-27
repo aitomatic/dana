@@ -133,9 +133,9 @@ from opendxa.base import (
     # State
     BaseState,
     StateManager,
-    ExecutionState,
     AgentState,
     WorldState,
+    ExecutionState,
 )
 from opendxa.execution import (
     Pipeline,
@@ -215,11 +215,11 @@ __all__ = [
     'ExecutionNodeStatus',
     'ExecutionSignal',
     'ExecutionSignalType',
+    'ExecutionState',
     'Objective',
     'ObjectiveStatus',
     'ExecutionEdge',
     'ExecutionFactory',
-    'ExecutionState',
     'StateManager',
     'BaseState',
     'BaseResource',

@@ -84,7 +84,7 @@ class BaseState(BaseModel):
         final_key = parts[-1]
         
         try:
-            for i, part in enumerate(parts[:-1]):
+            for _, part in enumerate(parts[:-1]):
                 if not isinstance(current, dict):
                     raise KeyError(f"Intermediate path element is not a dictionary for key '{key}'")
                 parent = current
@@ -104,8 +104,46 @@ class BaseState(BaseModel):
                 
         except KeyError as e:
             raise KeyError(f"Invalid path or key not found for deletion: '{key}'") from e
-        except TypeError:  # Handle cases where value is not subscriptable (e.g., None)
-            raise KeyError(f"Invalid path for deletion: '{key}'")
+        except TypeError as e:  # Handle cases where value is not subscriptable (e.g., None)
+            raise KeyError(f"Invalid path for deletion: '{key}'") from e
+
+    def dump_state(self, flat: bool = False) -> Dict[str, Any]:
+        """Return a copy of the blackboard state.
+
+        Args:
+            flat: If True, return a flattened dictionary with dot notation keys.
+                  If False (default), return the nested dictionary structure.
+
+        Returns:
+            A dictionary representing the blackboard state.
+        """
+        if not flat:
+            # Return a nested copy to prevent external modification
+            return dict(self.blackboard)
+        else:
+            # Return a flattened copy
+            flat_dict = {}
+            
+            def _flatten(current_item: Any, prefix: str = ''):
+                if isinstance(current_item, dict):
+                    if not current_item:  # Handle empty dictionaries
+                        if prefix:
+                            flat_dict[prefix] = {}
+                    else:
+                        for key, value in current_item.items():
+                            new_key = f"{prefix}.{key}" if prefix else key
+                            _flatten(value, new_key)
+                else:
+                    # Ensure prefix exists before assignment
+                    if prefix:
+                        flat_dict[prefix] = current_item
+                    # Handle case where the root blackboard itself is not a dict (unlikely but safe)
+                    elif not isinstance(self.blackboard, dict):
+                        # Or decide on other handling, e.g., raise error or return empty
+                        pass  # Or flat_dict['root'] = current_item if desired
+            
+            _flatten(self.blackboard)
+            return flat_dict
 
     def reset(self) -> None:
         """Reset state to initial values. Override if needed."""

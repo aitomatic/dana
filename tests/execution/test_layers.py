@@ -95,7 +95,7 @@ async def test_end_to_end_execution(
     4. The final output is generated
     """
     # Initialize the agent
-    await agent_fixture.initialize()
+    agent_fixture._initialize()
     
     # Set the objective in the agent state
     agent_fixture.state.set_objective(plan_fixture.objective)
