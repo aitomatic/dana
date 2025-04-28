@@ -64,3 +64,5 @@ no-trailing-spaces: false
 MD012: false        # Multiple blank lines
 no-multiple-blanks: false
 
+MD058: false        # Blank lines around tables
+blanks-around-tables: false
