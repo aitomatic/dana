@@ -6,98 +6,50 @@
 
 ## Overview
 
-OpenDXA is a Python framework that enables building intelligent multi-agent systems with domain expertise, powered by Large Language Models (LLMs). The framework features advanced memory management with both short-term and long-term memory capabilities, enabling agents to learn from interactions and maintain context over extended periods. It includes robust knowledge-base management for structured storage and retrieval of domain knowledge, with support for versioning, evolution, and integration with external knowledge sources.
+OpenDXA is a Python framework that enables building intelligent multi-agent systems with domain expertise, powered by Large Language Models (LLMs). It focuses on:
 
-A key concept in how LLMs interact with tools and external systems is **function calling**. LLMs can be instructed to output structured JSON data that specifies a function to be called and the arguments to pass to it. The receiving application (like one built with OpenDXA) then parses this JSON and executes the corresponding function, effectively allowing the LLM to "set variables" or trigger actions within the application's environment.
+*   **Build Real Experts:** (Using your specific business knowledge - *Domain Expertise Integration*)
+*   **Unlock Company Knowledge:** (Connect to your existing data & docs - *Enterprise Knowledge Leverage*)
+*   **Manage Evolving Knowledge:** (Smart handling that keeps info current - *Adaptive Knowledge Management*)
+*   **Agents That Learn & Improve:** (Get better automatically over time - *Agent Learning & Adaptability*)
+*   **Reliable Answers from Your Data:** (Focus on accuracy & consistency - *Structured Knowledge Reliability*)
+*   **Clear Design (Know vs. Act):** (Easier to build & maintain - *Declarative + Imperative Architecture*)
+*   **Connect Different AI Systems:** (Works well with other tools/platforms - *Protocol Federation/NLIP*)
 
-For detailed documentation, see the [main documentation](opendxa/README.md).
+To immediately leverage domain expertise, you can also utilize Aitomatic's separate open-source [Domain Knowledge Base project]([link-to-knowledge-base-repo]) (provides both general technical knowledge and specific domain expertise, e.g., SOPs, taxonomies, specs), which is compatible with any agent framework, including OpenDXA.
+
+For detailed documentation on the OpenDXA framework itself, see the [main documentation](docs/README.md).
+
+> "The real race in AI is the race to get right context to have AI Agents solve the user's problem fully. Organizing or indexing the right data, understanding a domain deeply, getting enough activity for useful memory, and connecting to the right tools. This is the big prize."
+> 
+> — Aaron Levie, CEO of Box
+
+> "Domain expertise is key. It's the efficiency of focus."
+> 
+> — Christopher Nguyen, CEO of Aitomatic
 
 ## License
 
 OpenDXA is released under the [MIT License](LICENSE.md).
 
-## Related Concepts
+## Why OpenDXA?
 
-OpenDXA integrates with and supports several key protocols in the AI and agent development space:
+OpenDXA stands out by enabling you to build truly expert agents grounded in your specific domain knowledge.
 
-- **A2A (Agent-to-Agent)**: Google's framework for enabling direct communication and collaboration between AI agents, focusing on structured interactions and task delegation. OpenDXA supports A2A for agent communication and coordination.
+### For Business Users:
 
-- **MCP (Model Context Protocol)**: Anthropic's protocol for managing context and state in AI systems, providing a standardized way to handle conversation history and system state. OpenDXA implements MCP for robust context management.
+*   **Leverage Your *Existing* Knowledge Accurately:** Build agents that tap into your company's documents, databases, and expertise – *how?* using connectors and ingestion tools – ensuring relevance and high fidelity crucial for industrial or financial accuracy.
+*   **Embed Deep Domain Expertise:** Go beyond generic AI. Create reliable agents that understand and apply your specialized processes and terminology – *how?* through structured knowledge representation and rule definition – for consistent, compliant results.
+*   **Comprehensive & Adaptive Knowledge Management:** Manage the full lifecycle of knowledge. Build agents that learn and adapt as your knowledge base evolves – *how?* via built-in versioning, evolution tracking, and learning mechanisms – maintaining long-term value.
+*   **True Interoperability:** Seamlessly connect agents and systems, even those based on different underlying standards (like A2A, MCP) – *how?* by using NLIP as a translation layer – preventing vendor lock-in.
 
-- **NLIP (Natural Language Interface Protocol)**: ECMA's standard for natural language interfaces, defining how systems should interpret and respond to human language inputs. OpenDXA significantly leverages NLIP as a unified protocol to translate and federate between A2A, MCP, and other agentic communication protocols, enabling seamless interoperability between different agent frameworks.
+### For Engineering Users:
 
-These protocols form the foundation of OpenDXA's communication and collaboration capabilities, with NLIP serving as the unifying layer that enables protocol translation and federation.
-
-## What is OpenDXA?
-
-OpenDXA is a framework for building intelligent agents powered by Large Language Models (LLMs). Its architecture is built around a clear distinction between declarative and imperative aspects:
-
-1. **Declarative Aspect**
-   - Defines what the agent knows
-   - Manages knowledge and resources
-   - Handles domain expertise
-   - Provides structured access to knowledge
-
-2. **Imperative Aspect**
-   - Implements planning and reasoning
-   - Executes tasks using available knowledge
-   - Manages state and context
-   - Coordinates multi-agent interactions
-
-This architecture is complemented by built-in knowledge management, enabling:
-- Structured storage and retrieval of domain knowledge
-- Versioning and evolution of knowledge
-- Integration with external knowledge sources
-- Efficient querying and reasoning over knowledge
-
-```mermaid
-graph LR
-    subgraph DA["Declarative Aspect"]
-        K[Knowledge]
-        R[Resources]
-        K --> R
-    end
-
-    subgraph IA["Imperative Aspect"]
-        P[Planning]
-        RE[Reasoning]
-        P --- RE
-    end
-
-    subgraph S["State"]
-        WS[WorldState]
-        AS[AgentState]
-        WS --- AS
-    end
-
-    DA --> IA
-    IA --> S
-```
-
-This architecture means you can:
-- Start with simple knowledge bases
-- Gradually expand domain expertise
-- Scale to complex multi-agent systems
-- Maintain clear separation between what agents know and how they act
-
-## Key Differentiators
-
-### Business/Strategic Differentiators
-1. **Declarative-Imperative Architecture**: Clear separation between what agents know and how they act, enabling better maintainability and scalability
-2. **Knowledge Management**: Built-in support for structured knowledge management and evolution
-3. **Domain Expertise Integration**: Specifically designed to embed domain expertise into agents, making it particularly valuable for specialized fields
-
-### Engineering Approaches
-1. **Progressive Complexity**: Start with simple implementations and progressively add complexity
-2. **Composable Architecture**: Mix and match components as needed for highly customized agents
-3. **Clean Separation of Concerns**: Maintain clear boundaries between description and execution layers
-
-### User-Friendly Practices
-1. **Model Context Protocol (MCP)**: Standardized interface for all external resources
-2. **Built-in Best Practices**: Pre-configured templates and patterns for common behaviors
-3. **Resource Management**: Robust handling with support for different transport types
-4. **Comprehensive Testing Support**: Encourages thorough testing at each layer
-5. **Documentation-First Approach**: Extensive documentation structure for effective use
+*   **Integrate Diverse Enterprise Knowledge Sources:** Connect to and represent knowledge from various existing enterprise sources (docs, DBs, APIs) – *how?* using provided APIs and connectors designed for enterprise data formats – simplifying data integration.
+*   **Robust & Maintainable Architecture:** The clear separation between *what* an agent knows (declarative) and *how* it acts (imperative) – *how?* enforced by distinct framework modules – facilitates building complex, testable, reliable, and scalable systems, especially with structured knowledge.
+*   **Built-in Tools for Advanced Knowledge Management:** Utilize dedicated APIs for the full knowledge lifecycle (capture, structure, versioning, evolution, query) – *how?* through specific classes like `KnowledgeBase` and related utilities – supporting both structured and conceptual data for accuracy and consistency.
+*   **Framework Support for Controlled Learning:** Implement agent learning grounded in updates to the managed knowledge base – *how?* via patterns linking feedback loops to knowledge update mechanisms – enabling adaptation while maintaining consistency.
+*   **Solve Multi-Protocol Interoperability (NLIP Federation):** Leverage the NLIP implementation – *how?* through specific adapters and translators provided within the framework – to bridge communication between agents built on different standards (A2A, MCP).
 
 ## Getting Started
 
@@ -114,40 +66,6 @@ source ./RUN_ME.sh
 # Or if you just need to activate the virtual environment and install the package
 source ./VENV.sh
 ```
-
-## Contents
-
-- [What is OpenDXA?](#what-is-opendxa)
-- [Key Features](#key-features)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Documentation](#documentation)
-- [Framework Comparison](#strategic-framework-selection-matrix)
-- [Project Structure](#project-structure)
-- [Contributing](#contributing)
-- [Logging](#logging)
-
-## Key Features
-
-- **Domain Expertise Integration** - Embed expert knowledge into agent behavior
-- **Progressive Complexity** - Start simple, scale to complex tasks
-- **Composable Architecture** - Mix and match capabilities as needed
-- **Built-in Best Practices** - Pre-configured templates for common patterns
-- **Full Customization** - Complete control when needed
-
-## Installation
-
-```bash
-git clone <repository-url>
-cd opendxa
-bash setup_env.sh
-source venv/bin/activate  # Windows: source venv/Scripts/activate
-```
-
-Prerequisites:
-
-- Python 3.x
-- bash shell (Unix) or Git Bash (Windows)
 
 ## Quick Start
 
@@ -205,99 +123,25 @@ workflow.add_edge_between("GATHER", "ANALYZE")
 
 ## Documentation
 
-- **[Framework Overview](opendxa/README.md)** - Detailed system architecture
+For detailed architecture, core concepts, framework comparisons, and advanced usage, please see the **[Main Framework Documentation](docs/README.md)**.
+
+Further documentation:
+
 - **[Examples](examples/README.md)** - Usage patterns and tutorials
 - **[Agent Documentation](opendxa/agent/README.md)** - Agent components
 - **[Execution Documentation](opendxa/execution/README.md)** - Workflow, Planning, and Reasoning
 
-## Strategic Framework Selection Matrix
-
-OpenDXA provides distinct advantages in several key areas when compared to other agent frameworks:
-
-| Use Case | OpenDXA | LangChain | AutoGPT | BabyAGI |
-|----------|-----|-----------|----------|----------|
-| **Quick Start** | ✨ Template-based initialization | Direct chain construction | Command interface | Simple task queue |
-| **Simple Tasks** | ✨ Pre-configured templates | Chain composition | Command sequences | Task scheduling |
-| **Complex Tasks** | ✨ Full cognitive architecture | Multiple chains | Command sequences | Task recursion |
-| **Domain Expertise** | ✨ Built-in expertise system | Tool integration | Command-based tools | Task-based tools |
-| **Autonomous Operation** | ✨ Structured autonomy | Chain automation | Free-form commands | Task loops |
-| **Growth Path** | ✨ Seamless capability expansion | Chain rebuilding | New commands | New tasks |
-
-✨ = Optimal choice for category
-
-### Framework Selection Guide
-
-| Need | Best Choice | Why |
-|------|-------------|-----|
-| Fast Start | OpenDXA/LangChain | Equivalent simplicity with better growth |
-| Simple Tasks | OpenDXA/LangChain | Standard patterns with full power available |
-| Complex Systems | OpenDXA | Superior architecture and capabilities |
-| Expert Systems | OpenDXA | Native expertise and knowledge integration |
-| Autonomous Agents | OpenDXA/AutoGPT | Structured autonomy with better control |
-
-### Implementation Complexity
-
-| Framework | Initial | Growth | Maintenance |
-|-----------|---------|--------|-------------|
-| OpenDXA | Low | Linear | Low |
-| LangChain | Low | Step Function | Medium |
-| AutoGPT | Low | Limited | High |
-| BabyAGI | Low | Limited | Medium |
-
-## Project Structure
-
-```text
-opendxa/                # Project root
-├── opendxa/            # Main package
-│   ├── agent/          # Agent implementation
-│   │   ├── capability/ # Agent capabilities (memory, expertise)
-│   │   ├── resource/   # Agent-specific resources
-│   │   ├── agent.py    # Core Agent class
-│   │   ├── agent_factory.py  # Agent creation factories
-│   │   └── ...         # Other agent components
-│   ├── common/         # Shared utilities and types
-│   ├── execution/      # Execution engine (planning, reasoning)
-│   │   ├── planning/   # Planning components
-│   │   ├── reasoning/  # Reasoning components
-│   │   ├── workflow/   # Workflow definition and management
-│   │   └── ...         # Other execution components
-│   ├── knowledge/      # Knowledge management components
-│   │   ├── knowledge_base.py # Core knowledge base implementation
-│   │   └── ...         # Other knowledge components
-│   ├── resource/       # General resource management
-│   └── ...             # Other top-level components
-├── examples/           # Usage examples and tutorials
-├── tests/              # Unit and integration tests
-├── docs/               # Documentation files (if separate)
-├── LICENSE.md          # Project license
-├── README.md           # This file
-├── RUN_ME.sh           # Development environment setup script
-└── VENV.sh             # Virtual environment activation script
-```
-
 ## Contributing
 
 We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details on how to get started.
-
-## Logging
-
-OpenDXA uses a structured logging system. Configure it as follows:
-
-```python
-from opendxa.common import DXA_LOGGER
-
-# Configure logging level and output
-DXA_LOGGER.configure(level=DXA_LOGGER.INFO, console=True, filename="opendxa.log")
-
-# Use logger within the framework
-DXA_LOGGER.info("This is an info message.")
-DXA_LOGGER.debug("This is a debug message.")
-```
 
 ## Support
 
 For questions or support, please open an issue on the [GitHub repository](https://github.com/aitomatic/opendxa/issues).
 
 ---
-
-*© 2024 Aitomatic, Inc. All rights reserved.*
+<p align="center">
+Copyright © 2024 Aitomatic, Inc. Licensed under the [MIT License](LICENSE.md).
+<br/>
+<a href="https://aitomatic.com">https://aitomatic.com</a>
+</p>

@@ -10,6 +10,9 @@ line-length: false
 MD022: false
 blanks-around-headings: false
 
+MD030: false
+list-marker-space: false
+
 # Disable rule MD031 - Fenced code blocks should be surrounded by blank lines
 MD031: false
 blanks-around-fences: false

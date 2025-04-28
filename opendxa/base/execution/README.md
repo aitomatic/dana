@@ -104,6 +104,8 @@ class ExecutionContext:
         return self.resources.get(name)
 ```
 
+**Note:** For a detailed explanation of how `ExecutionContext` manages state and facilitates data flow between execution steps using `StateManager` and `ExecutionContextHelper`, please see the [Execution Context State Management and Data Flow](./CONTEXT_DATA_FLOW.md) documentation.
+
 ### 4. Execution Signal
 
 Standardized communication between components:

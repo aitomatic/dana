@@ -2,8 +2,8 @@
 
 This module provides a unified interface for accessing and modifying state within
 an execution context. It supports two types of state access:
-1. Direct state container access using dot notation
-2. Custom state handlers for special processing
+1. Direct state container access using dot notation (namespace.subkey)
+2. Custom state handlers for special processing based on namespace
 
 The helper class delegates actual state management to a StateManager instance
 while providing a clean, unified interface for the execution context.
@@ -31,17 +31,17 @@ class ExecutionContextHelper(Loggable):
     2. Custom State Handlers:
        - Special processing for certain state types
        - Handled by registered state handlers
-       - Example: 'plan.objective', 'plan.id'
+       - Example: 'plan.objective', 'plan.id' (if 'plan' namespace handler is registered)
 
     The helper follows a consistent state access pattern:
-    1. Parse key into prefix and subkey
-    2. Check for state handler first
+    1. Parse key into namespace and subkey
+    2. Check for state handler associated with the namespace first
     3. Fall back to StateManager for standard state access
 
     Usage:
         context = ExecutionContext(...)
         
-        # Define state handlers for custom prefixes
+        # Define state handlers for custom namespaces
         def handle_plan_get(key: str, default: Any) -> Any:
             return context.get_plan_state(key, default)
             
@@ -57,6 +57,7 @@ class ExecutionContextHelper(Loggable):
                 'execution': execution_state
             },
             state_handlers={
+                # Handler for the 'plan' namespace
                 'plan': {
                     'get': handle_plan_get,
                     'set': handle_plan_set
@@ -65,8 +66,8 @@ class ExecutionContextHelper(Loggable):
         )
         
         # Use the helper
-        value = helper.get('plan.objective')
-        helper.set('plan.objective', 'new objective')
+        value = helper.get('plan.objective') # Handled by custom 'plan' handler
+        helper.set('agent.user.name', 'value') # Handled by StateManager
     """
 
     def __init__(self, 
@@ -78,16 +79,16 @@ class ExecutionContextHelper(Loggable):
         The initialization process:
         1. Stores reference to ExecutionContext for custom state access
         2. Initializes StateManager with the provided containers
-        3. Stores state handlers for special state types
+        3. Stores state handlers for special state namespaces
         
         Args:
             context: Reference to the execution context
-            state_containers: Dictionary mapping prefixes to state containers.
+            state_containers: Dictionary mapping namespaces to state containers.
                             These will be managed by StateManager using dot notation.
-            state_handlers: Optional dictionary mapping prefixes to handler functions.
-                           Each prefix should map to a dictionary with 'get' and/or 'set'
+            state_handlers: Optional dictionary mapping namespaces to handler functions.
+                           Each namespace should map to a dictionary with 'get' and/or 'set'
                            keys mapping to handler functions.
-                           These will be called when accessing state with their prefix.
+                           These will be called when accessing state with their namespace.
         """
         super().__init__()
         if context is None:
@@ -97,19 +98,21 @@ class ExecutionContextHelper(Loggable):
         self._context = context
         
         # Create StateManager instance to handle standard state access
-        # This will manage dot notation access to the provided state containers
-        self._state_manager = StateManager(state_containers)
+        # This will manage dot notation access to the provided state containers.
+        # StateManager expects namespaces. Pass handlers separately if needed,
+        # or let StateManager handle its own handlers if logic changes.
+        self._state_manager = StateManager(state_containers, state_handlers=None)
         
-        # Store state handlers for special state types (e.g., plan)
-        # These will be called when accessing state with their prefix
+        # Store state handlers for special state types (e.g., plan namespace)
+        # These will be called when accessing state with their namespace
         self._state_handlers = state_handlers or {}
 
     def get(self, key: str, default: Any = None) -> Any:
         """Retrieve a value using a unified key string.
         
         The get operation follows this flow:
-        1. Parse the key into prefix and subkey
-        2. If prefix has a state handler, use it
+        1. Parse the key into namespace and subkey
+        2. If namespace has a state handler registered here, use it
         3. Otherwise, delegate to StateManager
         
         Args:
@@ -119,23 +122,23 @@ class ExecutionContextHelper(Loggable):
         Returns:
             The retrieved value, or the default value if not found
         """
-        # Split key into prefix and subkey (e.g., 'plan.objective' -> 'plan', 'objective')
-        prefix, subkey = self._parse_key(key)
+        # Split key into namespace and subkey (e.g., 'plan.objective' -> 'plan', 'objective')
+        namespace, subkey = self._parse_key(key)
         
-        # Check for state handler first
-        if prefix in self._state_handlers and 'get' in self._state_handlers[prefix]:
-            # Use state handler for this prefix (e.g., plan state)
-            return self._state_handlers[prefix]['get'](subkey, default)
+        # Check for state handler registered with this helper first
+        if namespace in self._state_handlers and 'get' in self._state_handlers[namespace]:
+            # Use state handler for this namespace (e.g., plan state)
+            return self._state_handlers[namespace]['get'](subkey, default)
             
-        # No state handler, use StateManager for standard state access
+        # No specific handler here, delegate to StateManager which handles its own containers/handlers
         return self._state_manager.get(key, default)
 
     def set(self, key: str, value: Any) -> None:
         """Set a value using a unified key string.
         
         The set operation follows this flow:
-        1. Parse the key into prefix and subkey
-        2. If prefix has a state handler, use it
+        1. Parse the key into namespace and subkey
+        2. If namespace has a state handler registered here, use it
         3. Otherwise, delegate to StateManager
         
         Args:
@@ -143,25 +146,25 @@ class ExecutionContextHelper(Loggable):
             value: The value to set
         
         Raises:
-            ValueError: If the key format is invalid or attempts to set read-only key
-            KeyError: If the prefix is unknown
-            ReferenceError: If trying to set 'plan.objective' but current_plan is None
+            ValueError: If the key format is invalid or attempts to set read-only key via handler
+            KeyError: If the namespace is unknown by StateManager (when delegated)
+            ReferenceError: If trying to set via a handler that requires specific context (e.g., 'plan.objective' but current_plan is None)
         """
-        # Split key into prefix and subkey
-        prefix, subkey = self._parse_key(key)
+        # Split key into namespace and subkey
+        namespace, subkey = self._parse_key(key)
         
-        # Check for state handler first
-        if prefix in self._state_handlers and 'set' in self._state_handlers[prefix]:
-            # Use state handler for this prefix (e.g., plan state)
-            self._state_handlers[prefix]['set'](subkey, value)
+        # Check for state handler registered with this helper first
+        if namespace in self._state_handlers and 'set' in self._state_handlers[namespace]:
+            # Use state handler for this namespace (e.g., plan state)
+            self._state_handlers[namespace]['set'](subkey, value)
         else:
-            # No state handler, use StateManager for standard state access
+            # No specific handler here, delegate to StateManager
             self._state_manager.set(key, value)
 
     def _parse_key(self, key: str) -> tuple[str, str]:
-        """Parse a key into prefix and subkey.
+        """Parse a key into namespace and subkey.
         
-        This method splits a dot-notation key into its prefix and subkey parts.
+        This method splits a dot-notation key into its namespace and subkey parts.
         For example:
             'plan.objective' -> ('plan', 'objective')
             'agent.user.name' -> ('agent', 'user.name')
@@ -170,12 +173,13 @@ class ExecutionContextHelper(Loggable):
             key: The key to parse (e.g., 'plan.id', 'agent.user.name')
             
         Returns:
-            Tuple of (prefix, subkey)
+            Tuple of (namespace, subkey)
             
         Raises:
             ValueError: If key format is invalid
         """
         parts = key.split('.', 1)
         if len(parts) != 2:
-            raise ValueError(f"Invalid key format: {key}. Expected 'prefix.subkey'")
-        return parts[0], parts[1]
+            raise ValueError(f"Invalid key format: {key}. Expected 'namespace.subkey'")
+        namespace, subkey = parts[0], parts[1]
+        return namespace, subkey
