@@ -100,22 +100,29 @@ For detailed framework comparisons, see [Framework Comparison](details/compariso
 - **Architecture**
   - [Architecture Overview](details/architecture.md) - Core concepts and design
   - [Interaction Patterns](details/interaction_patterns.md) - Agent communication and workflows
+
+- **Framework Comparison**
   - [Framework Comparison](details/comparison.md) - Comparison with other frameworks
 
+- **Framework Core**
+  - [Base Execution Concepts](details/base_execution.md) - Core execution interfaces and structures
+
 - **Agent System**
-  - [Agent Core](../opendxa/agent/README.md) - Factory and runtime
-  - [Capabilities](../opendxa/agent/capability/README.md) - Cognitive abilities
-  - [Resources](../opendxa/agent/resource/README.md) - Tools and services
+  - [Agent Core Concepts](details/agent_system.md) - Agent factory, core concepts (Agent, Capability, Resource)
+  - [Capability Concepts](details/capability_system.md) - BaseCapability interface and concepts
+  - [Resource Concepts](details/resource_system.md) - BaseResource, common types, MCP integration
   - [IO System](../opendxa/common/io/README.md) - Environmental interaction
   - [State System](../opendxa/base/state/README.md) - Execution state management
 
 - **Execution System**
-  - [Planning](../opendxa/execution/planning/README.md) - Strategic planning
-  - [Reasoning](../opendxa/execution/reasoning/README.md) - Tactical execution
-  - [Pipeline](../opendxa/execution/pipeline/README.md) - Execution orchestration
+  - [Planning Concepts](details/planning_system.md) - Strategic planning patterns and concepts
+  - [Reasoning Concepts](details/reasoning_system.md) - Tactical execution patterns and concepts
+  - [Pipeline Module Overview](../opendxa/execution/pipeline/README.md) - Module-level documentation
+  - [Pipeline System Concepts](details/pipeline_system.md) - Detailed concepts and usage
 
 - **Utilities**
   - [Logging](details/logging.md) - Logging configuration and usage
+  - [Mixins](details/mixins.md) - Reusable component functionalities
 
 - [Examples](../../examples/README.md) - Usage patterns and tutorials
 
@@ -130,13 +137,9 @@ DXA is proprietary software developed by Aitomatic, Inc. Contributions are limit
 
 For external users or organizations interested in collaborating with Aitomatic on DXA development, please contact our business development team.
 
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](../../LICENSE.md) file for details.
-
 ---
 <p align="center">
-Copyright © 2024 Aitomatic, Inc. Licensed under the [MIT License](../../LICENSE.md).
+Copyright © 2024 Aitomatic, Inc. Licensed under the <a href="../LICENSE.md">MIT License</a>.
 <br/>
 <a href="https://aitomatic.com">https://aitomatic.com</a>
 </p>

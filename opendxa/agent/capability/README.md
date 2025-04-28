@@ -181,14 +181,10 @@ The agent capability system extends the base capability framework by providing:
 
 For more information on the foundational interfaces, see the [Base Capability Documentation](../base/capability/README.md).
 
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](../../../LICENSE.md) file for details.
-
 ---
 
 <p align="center">
-Copyright © 2024 Aitomatic, Inc. Licensed under the [MIT License](../../../LICENSE.md).
+Copyright © 2024 Aitomatic, Inc. Licensed under the <a href="../../../LICENSE.md">MIT License</a>.
 <br/>
 <a href="https://aitomatic.com">https://aitomatic.com</a>
 </p>

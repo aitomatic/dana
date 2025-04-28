@@ -32,4 +32,11 @@ OpenDXA provides distinct advantages in several key areas when compared to other
 | OpenDXA | Low | Linear | Low |
 | LangChain | Low | Step Function | Medium |
 | AutoGPT | Low | Limited | High |
-| BabyAGI | Low | Limited | Medium | 
+| BabyAGI | Low | Limited | Medium |
+
+---
+<p align="center">
+Copyright © 2024 Aitomatic, Inc. Licensed under the <a href="../../LICENSE.md">MIT License</a>.
+<br/>
+<a href="https://aitomatic.com">https://aitomatic.com</a>
+</p> 

@@ -45,7 +45,7 @@ Note: Code in this directory is not subject to the same review process as the ma
 
 ---
 <p align="center">
-Copyright © 2024 Aitomatic, Inc. Licensed under the [MIT License](../LICENSE.md).
+Copyright © 2024 Aitomatic, Inc. Licensed under the <a href="../LICENSE.md">MIT License</a>.
 <br/>
 <a href="https://aitomatic.com">https://aitomatic.com</a>
 </p> 

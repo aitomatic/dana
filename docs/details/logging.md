@@ -31,3 +31,10 @@ See `opendxa/common/logger.py` for more configuration options, including:
 - Log rotation
 - Contextual logging
 - Performance optimization 
+
+---
+<p align="center">
+Copyright © 2024 Aitomatic, Inc. Licensed under the <a href="../../LICENSE.md">MIT License</a>.
+<br/>
+<a href="https://aitomatic.com">https://aitomatic.com</a>
+</p> 

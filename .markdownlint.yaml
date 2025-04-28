@@ -28,6 +28,9 @@ blanks-around-lists: false
 MD033: false
 no-inline-html: false
 
+MD036: false
+no-emphasis-as-heading: false
+
 # Disable rule MD041 - First line in file should be a top-level heading
 MD041: false
 first-line-heading: false

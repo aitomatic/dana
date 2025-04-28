@@ -4,9 +4,21 @@
 
 [Project Overview](../../../README.md) | [Main Documentation](../../../docs/README.md)
 
-# OpenDXA Mixins
+# Mixins Module (`opendxa.common.mixins`)
 
-OpenDXA's mixins provide a powerful and flexible way to add specific "abilities" to classes in a light yet principled manner. These mixins follow a consistent naming pattern ending in "-able" to indicate the capability they add to a class.
+This module provides reusable mixin classes that add common capabilities (like logging, configuration, identification) to other classes in the framework through multiple inheritance.
+
+For detailed explanations of the available mixins, their purpose, hierarchy, and usage patterns, please refer to the **[Mixin Classes Documentation](../../../docs/details/mixins.md)**.
+
+## Key Mixins
+
+- `Loggable`
+- `Configurable`
+- `Identifiable`
+- `Registerable`
+- `ToolCallable`
+- `Queryable`
+- `Capable`
 
 ## Overview
 

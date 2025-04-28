@@ -177,3 +177,10 @@ opendxa/
 │   └── reasoning/      # Reasoning patterns
 └── factory/            # Factory components
 ``` 
+
+---
+<p align="center">
+Copyright © 2024 Aitomatic, Inc. Licensed under the <a href="../../LICENSE.md">MIT License</a>.
+<br/>
+<a href="https://aitomatic.com">https://aitomatic.com</a>
+</p> 

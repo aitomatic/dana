@@ -142,7 +142,7 @@ For questions or support, please open an issue on the [GitHub repository](https:
 
 ---
 <p align="center">
-Copyright © 2024 Aitomatic, Inc. Licensed under the [MIT License](LICENSE.md).
+Copyright © 2024 Aitomatic, Inc. Licensed under the <a href="LICENSE.md">MIT License</a>.
 <br/>
 <a href="https://aitomatic.com">https://aitomatic.com</a>
 </p>
