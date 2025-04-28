@@ -29,12 +29,14 @@ from opendxa.execution import (
     PlanStrategy,
     ReasoningStrategy,
     AgentRuntime,
+)
+from opendxa.base.state import (
     AgentState,
+    WorldState,
+    ExecutionState
 )
 from opendxa.base.capability import BaseCapability
 from opendxa.base.resource import BaseResource, LLMResource
-from opendxa.base.state import WorldState
-from opendxa.base.execution import ExecutionState
 from opendxa.common.io import BaseIO, IOFactory
 from opendxa.common.mixins.configurable import Configurable
 from opendxa.common.utils.misc import Misc
@@ -101,9 +103,9 @@ class Agent(Configurable, Capable, ToolCallable):
         self._reasoning_llm = None
         self._reasoning_strategy = ReasoningStrategy.DEFAULT
         self._planning_strategy = PlanStrategy.DEFAULT
-
-        # Initialize configuration with default config
         self._config = AgentConfig()
+        self._initialized = False
+        self._resource_registry = {}
 
     @property
     def planning_strategy(self) -> PlanStrategy:
@@ -255,7 +257,10 @@ class Agent(Configurable, Capable, ToolCallable):
         raise ValueError(f"Invalid LLM configuration: {llm}")
 
     def _initialize(self) -> 'Agent':
-        """Initialize agent components."""
+        """Initialize agent components. Must be called at run-time."""
+        if self._initialized:
+            return self
+
         if not self._llm:
             self._llm = self._get_default_llm_resource()
         if not self._planning_executor:
@@ -267,7 +272,13 @@ class Agent(Configurable, Capable, ToolCallable):
         if not self._state:
             self._state = AgentState()
         if not self._runtime:
-            self._runtime = AgentRuntime(self, self._planning_executor, self._reasoner)
+            self._runtime = AgentRuntime(
+                agent=self,
+                planning_llm=self.planning_llm,
+                reasoning_llm=self.reasoning_llm
+            )
+
+        self._initialized = True
         return self
 
     async def cleanup(self) -> None:
@@ -276,13 +287,13 @@ class Agent(Configurable, Capable, ToolCallable):
             await self._runtime.cleanup()
             self._runtime: Optional[AgentRuntime] = None
 
-    async def initialize(self) -> None:
+    def initialize(self) -> 'Agent':
         """Public initialization method."""
-        self._initialize()
+        return self._initialize()
 
     async def __aenter__(self) -> 'Agent':
         """Initialize agent when entering context."""
-        await self.initialize()
+        self._initialize()
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
@@ -295,23 +306,42 @@ class Agent(Configurable, Capable, ToolCallable):
 
         # Create new context if none provided
         if context is None:
+            # Prepare state containers
+            agent_state = self.state
+            world_state = WorldState()  # Assuming a new WorldState is appropriate here
+            execution_state = ExecutionState()
+            
+            # Define state handlers, if needed
+            # Example: Handlers for plan state using the provided Plan object
+            def handle_plan_get(key: str, default: Any) -> Any:
+                return plan.get(key, default) if plan else default
+            
+            def handle_plan_set(key: str, value: Any) -> None:
+                if plan:
+                    plan.set(key, value)
+                else:
+                    raise ReferenceError("Cannot set plan state: no plan provided")
+            
+            state_handlers = {
+                'plan': {
+                    'get': handle_plan_get,
+                    'set': handle_plan_set
+                }
+                # Add other custom handlers if the agent requires them
+            }
+
             context = ExecutionContext(
-                agent_state=self.state,
-                world_state=WorldState(),
-                execution_state=ExecutionState(),
-                planning_llm=self.planning_llm,
-                reasoning_llm=self.reasoning_llm,
-                available_resources=self.available_resources
+                agent_state=agent_state,
+                world_state=world_state,
+                execution_state=execution_state,
+                state_handlers=state_handlers
             )
-        else:
-            # Update LLMs in provided context if not set
-            if not context.planning_llm:
-                context.planning_llm = self.planning_llm
-            if not context.reasoning_llm:
-                context.reasoning_llm = self.reasoning_llm
-        
-        assert context.planning_llm is not None
-        assert context.reasoning_llm is not None
+            # Set the current plan in the new context
+            context._current_plan = plan
+
+        # Ensure the plan is associated with the context
+        if context._current_plan is None:
+            raise ValueError("No plan associated with the context")
 
         async with self:  # For cleanup
             return AgentResponse.new_instance(await self.runtime.execute(plan, context))

@@ -2,16 +2,17 @@
 World state management.
 """
 
+from datetime import datetime, timezone
 from typing import Dict, Any
 from pydantic import Field
-from .base_state import BaseState
+from opendxa.base.state.base_state import BaseState
 
 class WorldState(BaseState):
     """Current knowledge and context for decision making."""
-    facts: Dict[str, Any] = Field(default_factory=dict)
-    context: Dict[str, Any] = Field(default_factory=dict)
-    artifacts: Dict[str, Any] = Field(default_factory=dict)
-
+    utc_timestamp: str = Field(default="", description="The current timestamp of the world state.")
+    
     def update(self, updates: Dict[str, Any]) -> None:
         """Update world state with new knowledge."""
+        # pylint: disable=no-member
         self.facts.update(updates)
+        self.utc_timestamp = datetime.now(timezone.utc).isoformat()

@@ -10,6 +10,12 @@ line-length: false
 MD022: false
 blanks-around-headings: false
 
+MD028: false
+no-blanks-blockquote: false
+
+MD030: false
+list-marker-space: false
+
 # Disable rule MD031 - Fenced code blocks should be surrounded by blank lines
 MD031: false
 blanks-around-fences: false
@@ -21,6 +27,9 @@ blanks-around-lists: false
 # Disable rule MD033 - No inline HTML
 MD033: false
 no-inline-html: false
+
+MD036: false
+no-emphasis-as-heading: false
 
 # Disable rule MD041 - First line in file should be a top-level heading
 MD041: false

@@ -55,7 +55,8 @@ class DynamicPlanExecutor(Planner):
                 context
             )
             signals.extend(node_signals)
-            context.global_context[node.node_id] = self._parse_node_signals(node_signals)
+            context.context_manager.set(f"execution.{node.node_id}", self._parse_node_signals(node_signals))
+            # context.global_context[node.node_id] = self._parse_node_signals(node_signals)
         
         return signals
     

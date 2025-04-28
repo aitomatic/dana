@@ -2,9 +2,23 @@
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
 
-# OpenDXA Mixins
+[Project Overview](../../../README.md) | [Main Documentation](../../../docs/README.md)
 
-OpenDXA's mixins provide a powerful and flexible way to add specific "abilities" to classes in a light yet principled manner. These mixins follow a consistent naming pattern ending in "-able" to indicate the capability they add to a class.
+# Mixins Module (`opendxa.common.mixins`)
+
+This module provides reusable mixin classes that add common capabilities (like logging, configuration, identification) to other classes in the framework through multiple inheritance.
+
+For detailed explanations of the available mixins, their purpose, hierarchy, and usage patterns, please refer to the **[Mixin Classes Documentation](../../../docs/details/mixins.md)**.
+
+## Key Mixins
+
+- `Loggable`
+- `Configurable`
+- `Identifiable`
+- `Registerable`
+- `ToolCallable`
+- `Queryable`
+- `Capable`
 
 ## Overview
 
@@ -207,3 +221,10 @@ class Agent(Configurable, Loggable, Capable, ToolCallable):
 ## License
 
 OpenDXA is released under the [MIT License](../../../LICENSE.md). 
+
+---
+<p align="center">
+Copyright © 2024 Aitomatic, Inc. Licensed under the [MIT License](../../../LICENSE.md).
+<br/>
+<a href="https://aitomatic.com">https://aitomatic.com</a>
+</p> 

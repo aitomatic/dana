@@ -255,34 +255,31 @@ class BaseExecutor(ABC, Loggable, Generic[StrategyT, GraphT, FactoryT]):
         node: ExecutionNode,
         parent_node: Optional[ExecutionNode] = None
     ) -> ExecutionContext:
-        """Build execution context for a node, just before executing on that node."""
-        try:
-            # Create layer-specific context
-            layer_context = {
-                "node_id": node.node_id,
-                "node_type": node.node_type,
-                "description": node.description,
-                "metadata": node.metadata or {}
-            }
+        """Build execution context for a node.
+        
+        This method constructs the execution context for a given node,
+        potentially inheriting or modifying state from the parent context.
+        LLMs are managed by AgentRuntime, not passed via context anymore.
+        
+        Args:
+            context: Current execution context
+            node: Node for which to build context
+            parent_node: Optional parent node
             
-            # Update node metadata with layer context
-            node.metadata[f"{self.graph_class.__name__.lower()}_context"] = layer_context
-            
-            # Create new execution context
-            return ExecutionContext(
-                planning_llm=context.planning_llm,
-                reasoning_llm=context.reasoning_llm,
-                agent_state=context.agent_state,
-                world_state=context.world_state,
-                execution_state=context.execution_state,
-                current_plan=context.current_plan,
-                current_reasoning=context.current_reasoning,
-                global_context=context.global_context,
-                available_resources=context.available_resources
-            )
-        except Exception as e:
-            raise ExecutionError("Context building failed") from e
-            
+        Returns:
+            New or modified execution context for the node
+        """
+        # Currently, we assume the context is shared and mutated.
+        # If isolated contexts per node are needed, this method
+        # would create a deep copy and modify it.
+        
+        # Example: Set node-specific info (if ExecutionContext supported it)
+        # context.set("current_node_id", node.node_id)
+        # context.set("current_node_type", node.node_type.value)
+        
+        # For now, just return the existing context
+        return context
+
     def _process_signals(
         self,
         signals: List[ExecutionSignal],

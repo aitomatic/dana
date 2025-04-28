@@ -1,6 +1,14 @@
 {
     "preferred_models": [
         {
+            "name": "groq:deepseek-r1-distill-llama-70b",
+            "required_api_keys": ["GROQ_API_KEY"]
+        },
+        {
+            "name": "groq:meta-llama/llama-4-maverick-17b-128e-instruct",
+            "required_api_keys": ["GROQ_API_KEY"]
+        },
+        {
             "name": "openai:gpt-4o-mini",
             "required_api_keys": ["OPENAI_API_KEY"]
         },
