@@ -10,6 +10,9 @@ line-length: false
 MD022: false
 blanks-around-headings: false
 
+MD028: false
+no-blanks-blockquote: false
+
 MD030: false
 list-marker-space: false
 

@@ -4,6 +4,8 @@
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
 
+[Project Overview](../../../README.md) | [Main Documentation](../../../docs/README.md)
+
 # DXA Pipeline System
 
 ## Overview
@@ -208,9 +210,7 @@ The Pipeline class inherits from BaseResource, making it a first-class resource 
 ---
 
 <p align="center">
-Copyright © 2025 Aitomatic, Inc. Licensed under the MIT License.
-</p>
-
-<p align="center">
+Copyright © 2024 Aitomatic, Inc. Licensed under the [MIT License](../../../LICENSE.md).
+<br/>
 <a href="https://aitomatic.com">https://aitomatic.com</a>
 </p>

@@ -4,6 +4,8 @@
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
 
+[Project Overview](../../../README.md) | [Main Documentation](../../../docs/README.md)
+
 # Base Capability Framework
 
 The Base Capability framework provides the foundational interfaces and abstractions for building capabilities in the OpenDXA system. It defines the core structure and behavior that all capabilities must implement, ensuring consistency and interoperability across the framework.
@@ -162,3 +164,10 @@ The base capability framework is designed to be extended by the agent capability
 - Specialized capabilities
 
 For more information on building specialized capabilities, see the [Agent Capability Documentation](../agent/capability/README.md).
+
+---
+<p align="center">
+Copyright © 2024 Aitomatic, Inc. Licensed under the [MIT License](../../../LICENSE.md).
+<br/>
+<a href="https://aitomatic.com">https://aitomatic.com</a>
+</p>

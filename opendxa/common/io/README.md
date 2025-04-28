@@ -4,9 +4,9 @@
 
 [Project Overview](../../../README.md) | [Main Documentation](../../../docs/README.md)
 
-# Agent Resource System
+# IO System Documentation
 
-(Placeholder for Agent Resource System documentation)
+(Placeholder for IO system documentation) 
 
 ---
 <p align="center">

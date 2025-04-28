@@ -2,6 +2,8 @@
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
 
+[Project Overview](../../../README.md) | [Main Documentation](../../../docs/README.md)
+
 # OpenDXA Mixins
 
 OpenDXA's mixins provide a powerful and flexible way to add specific "abilities" to classes in a light yet principled manner. These mixins follow a consistent naming pattern ending in "-able" to indicate the capability they add to a class.
@@ -207,3 +209,10 @@ class Agent(Configurable, Loggable, Capable, ToolCallable):
 ## License
 
 OpenDXA is released under the [MIT License](../../../LICENSE.md). 
+
+---
+<p align="center">
+Copyright © 2024 Aitomatic, Inc. Licensed under the [MIT License](../../../LICENSE.md).
+<br/>
+<a href="https://aitomatic.com">https://aitomatic.com</a>
+</p> 
