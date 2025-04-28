@@ -2,6 +2,9 @@
 MD004: false
 ul-style: false
 
+MD007: false
+ul-indent: false
+
 # Disable rule MD013 - Line length
 MD013: false
 line-length: false

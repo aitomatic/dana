@@ -6,6 +6,7 @@
 
 [Project Overview](../README.md)
 
+
 # OpenDXA - Domain-Expert Agent Framework Documentation
 
 This document provides a detailed overview of the OpenDXA framework's architecture, core concepts, features, and design philosophy. For a quick start and installation instructions, please refer to the project's [README.md](../README.md).
@@ -147,8 +148,10 @@ DXA is proprietary software developed by Aitomatic, Inc. Contributions are limit
 For external users or organizations interested in collaborating with Aitomatic on DXA development, please contact our business development team.
 
 ---
+
+---
 <p align="center">
-Copyright © 2024 Aitomatic, Inc. Licensed under the <a href="../LICENSE.md">MIT License</a>.
+Copyright © 2025 Aitomatic, Inc. Licensed under the <a href="../LICENSE.md">MIT License</a>.
 <br/>
 <a href="https://aitomatic.com">https://aitomatic.com</a>
 </p>

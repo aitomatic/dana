@@ -4,11 +4,10 @@
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
 
-# Semiconductor System Log Analysis Requirements
+[Project Overview](../../README.md)
 
-<p align="center">
-  <img src="https://www.semiconductor-digest.com/wp-content/uploads/2019/07/Log-Analysis.jpg" alt="System Log Analysis" width="70%" />
-</p>
+
+# Semiconductor System Log Analysis Requirements
 
 ## Scenario Overview
 
@@ -229,3 +228,10 @@ graph TB
 - Analysis generation time
 - Pattern matching precision
 - Solution relevance score
+
+---
+<p align="center">
+Copyright © 2025 Aitomatic, Inc. Licensed under the <a href="../../LICENSE.md">MIT License</a>.
+<br/>
+<a href="https://aitomatic.com">https://aitomatic.com</a>
+</p>

@@ -4,13 +4,12 @@
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
 
+[Project Overview](../../README.md)
+
+
 # Fabless Customer Design Support Scenario
 
 This scenario describes how a Field Application Engineer (FAE), supported by a Domain Expert Agent (DXA), assists customers in successfully implementing IC designs through technical consultation and documentation.
-
-<p align="center">
-  <img src="https://phisonblog.com/wp-content/uploads/2023/03/1507431_WPICDesignProcess_01_112222.jpg" alt="IC Design Process Flow" width="50%" />
-</p>
 
 ## Business/Technical Problem Statement
 
@@ -54,10 +53,6 @@ The Domain Expert Agent (DXA) supports Field Application Engineers (FAEs) in pro
    - Public datasheets
    - Reference designs
    - Historical design consultations
-
-<p align="center">
-  <img src="https://www.powersystemsdesign.com/images/articles/1384946982Illustration_YoleSermaPressrelease_March2013.jpg" alt="Semiconductor Industry Structure" width="50%" />
-</p>
 
 ### System Architecture
 
@@ -274,3 +269,10 @@ stateDiagram-v2
 - Offline analysis results
 - Sample design challenges
 - Alternative solution paths
+
+---
+<p align="center">
+Copyright © 2025 Aitomatic, Inc. Licensed under the <a href="../../LICENSE.md">MIT License</a>.
+<br/>
+<a href="https://aitomatic.com">https://aitomatic.com</a>
+</p>

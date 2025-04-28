@@ -1,6 +1,11 @@
+<!-- markdownlint-disable MD041 -->
+<!-- markdownlint-disable MD033 -->
 <p align="center">
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
+
+[Project Overview](../../README.md)
+
 
 # Execution Context State Management and Data Flow
 
@@ -203,11 +208,8 @@ Adhering to these conventions, especially for the core `agent`, `world`, and `ex
 The `ExecutionContext`, through its interaction with `ExecutionContextHelper` and `StateManager`, provides a robust and flexible mechanism for managing state during complex executions. By leveraging the `get`/`set` methods and conventions like `to_llm`/`from_llm`, developers can control the flow of information effectively within OpenDXA workflows.
 
 ---
-
 <p align="center">
-Copyright © 2025 Aitomatic, Inc. Licensed under the MIT License.
-</p>
-
-<p align="center">
+Copyright © 2025 Aitomatic, Inc. Licensed under the <a href="../../LICENSE.md">MIT License</a>.
+<br/>
 <a href="https://aitomatic.com">https://aitomatic.com</a>
-</p> 
+</p>

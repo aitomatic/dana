@@ -4,13 +4,12 @@
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
 
+[Project Overview](../../README.md)
+
+
 # Utility Fault Diagnosis Scenario
 
 This scenario describes how a Domain Expert Agent (DXA) performs root-cause analysis of alarms in an electrical grid base station, supporting grid operators in fault diagnosis and resolution.
-
-<p align="center">
-  <img src="https://www.electricaltechnology.org/wp-content/uploads/2021/10/Classification-of-Electric-Power-Distribution-Network-Systems.png" alt="Grid Distribution System" width="70%" />
-</p>
 
 ## Business/Technical Problem Statement
 
@@ -53,10 +52,6 @@ The Domain Expert Agent (DXA) assists grid operators in diagnosing and resolving
    - Equipment blueprints
    - Control system documentation
    - Historical alarm patterns
-
-<p align="center">
-  <img src="https://i.ytimg.com/vi/Na-7jCAwUBY/hq720.jpg?sqp=-oaymwEhCK4FEIIDSFryq4qpAxMIARUAAAAAGAElAADIQj0AgKJD&rs=AOn4CLABpvlXlngGliKP9hKajbKHyzltTA" alt="Grid Utility Station Context" width="50%" />
-</p>
 
 ### System Architecture
 
@@ -218,3 +213,10 @@ sequenceDiagram
 - Offline blueprint analysis results
 - Sample expert consultation workflow
 - Alternative fault scenarios
+
+---
+<p align="center">
+Copyright © 2025 Aitomatic, Inc. Licensed under the <a href="../../LICENSE.md">MIT License</a>.
+<br/>
+<a href="https://aitomatic.com">https://aitomatic.com</a>
+</p>

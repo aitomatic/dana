@@ -4,12 +4,10 @@
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
 
-# Batch Process Automation Requirements
+[Project Overview](../../README.md)
 
-<!-- markdownlint-disable-next-line no-inline-images -->
-<p align="center">
-    <img src="https://honeywell.scene7.com/is/image/honeywell/batch-automation-hero-img2" width="80%" alt="Batch Automation Process" width="80%" />
-</p>
+
+# Batch Process Automation Requirements
 
 ## Business/Technical Problem Statement
 
@@ -102,12 +100,6 @@ sequenceDiagram
   - Standard operating procedures
   - Batch quality parameters
   - Clean-in-place procedures
-
-<p align="center">
-    <img src="https://www.chemengghelp.com/wp-content/uploads/2022/06/image-2.png" width="50%" alt="Batch Process Flow Diagram">
-    <br/>
-    Batch Process: Reactor and Distillation Column Configuration
-</p>
 
 #### Challenge
 
@@ -267,3 +259,10 @@ graph TB
 - Network capacity utilization
 - Quality consistency across sites
 - Recipe IP protection
+
+---
+<p align="center">
+Copyright © 2025 Aitomatic, Inc. Licensed under the <a href="../../LICENSE.md">MIT License</a>.
+<br/>
+<a href="https://aitomatic.com">https://aitomatic.com</a>
+</p>
