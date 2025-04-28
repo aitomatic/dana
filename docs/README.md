@@ -22,6 +22,8 @@ OpenDXA is a Python framework that enables building intelligent multi-agent syst
 *   **Clear Design (Know vs. Act):** (Easier to build & maintain - *Declarative + Imperative Architecture*)
 *   **Connect Different AI Systems:** (Works well with other tools/platforms - *Protocol Federation/NLIP*)
 
+For our development plans and future capabilities, see the [Development Roadmap](ROADMAP.md).
+
 To immediately leverage domain expertise, you can also utilize Aitomatic's separate open-source [Domain Knowledge Base project]([link-to-knowledge-base-repo]) (provides both general technical knowledge and specific domain expertise, e.g., SOPs, taxonomies, specs), which is compatible with any agent framework, including OpenDXA.
 
 > "The real race in AI is the race to get right context to have AI Agents solve the user's problem fully. Organizing or indexing the right data, understanding a domain deeply, getting enough activity for useful memory, and connecting to the right tools. This is the big prize."
@@ -97,34 +99,41 @@ For detailed framework comparisons, see [Framework Comparison](details/compariso
 
 ## Documentation Map
 
+- **Getting Started**
+  - [Quick Start](getting-started/quickstart.md) - Your first OpenDXA agent
+  - [Core Concepts](getting-started/core-concepts.md) - Fundamental concepts
+  - [Examples](../../examples/README.md) - Usage patterns and tutorials
+
+- **Development Roadmap**
+  - [Roadmap](ROADMAP.md) - Planned development path and future capabilities
+
 - **Architecture**
-  - [Architecture Overview](details/architecture.md) - Core concepts and design
-  - [Interaction Patterns](details/interaction_patterns.md) - Agent communication and workflows
+  - [Overview](architecture/overview.md) - Core concepts and design
+  - [Declarative-Imperative](architecture/declarative-imperative.md) - Key architectural differentiator
+  - [Framework Comparison](architecture/comparison.md) - Comparison with other frameworks
 
-- **Framework Comparison**
-  - [Framework Comparison](details/comparison.md) - Comparison with other frameworks
+- **Knowledge Management**
+  - [Knowledge Management](knowledge/management.md) - Managing knowledge lifecycle
+  - [Domain Expertise](knowledge/domain-expertise.md) - Integrating domain knowledge
+  - [Knowledge Lifecycle](knowledge/lifecycle.md) - Evolution and versioning
 
-- **Framework Core**
-  - [Base Execution Concepts](details/base_execution.md) - Core execution interfaces and structures
+- **Components**
+  - [Agents](components/agents.md) - Agent factory and core concepts
+  - [Capabilities](components/capabilities.md) - BaseCapability interface
+  - [Resources](components/resources.md) - BaseResource and types
 
-- **Agent System**
-  - [Agent Core Concepts](details/agent_system.md) - Agent factory, core concepts (Agent, Capability, Resource)
-  - [Capability Concepts](details/capability_system.md) - BaseCapability interface and concepts
-  - [Resource Concepts](details/resource_system.md) - BaseResource, common types, MCP integration
-  - [IO System](../opendxa/common/io/README.md) - Environmental interaction
-  - [State System](../opendxa/base/state/README.md) - Execution state management
+- **Execution**
+  - [Base Execution](execution/base.md) - Core execution interfaces
+  - [Planning](execution/planning.md) - Strategic planning patterns
+  - [Reasoning](execution/reasoning.md) - Tactical execution patterns
+  - [Pipeline](execution/pipeline.md) - Detailed concepts and usage
 
-- **Execution System**
-  - [Planning Concepts](details/planning_system.md) - Strategic planning patterns and concepts
-  - [Reasoning Concepts](details/reasoning_system.md) - Tactical execution patterns and concepts
-  - [Pipeline Module Overview](../opendxa/execution/pipeline/README.md) - Module-level documentation
-  - [Pipeline System Concepts](details/pipeline_system.md) - Detailed concepts and usage
-
-- **Utilities**
-  - [Logging](details/logging.md) - Logging configuration and usage
-  - [Mixins](details/mixins.md) - Reusable component functionalities
-
-- [Examples](../../examples/README.md) - Usage patterns and tutorials
+- **Development**
+  - [Patterns](development/patterns/)
+    - [Composition](development/patterns/composition.md) - Building with components
+    - [Interaction](development/patterns/interaction.md) - Agent communication
+  - [State Management](development/state.md) - Execution state
+  - [Logging](development/logging.md) - Configuration and usage
 
 ## Contributing
 
