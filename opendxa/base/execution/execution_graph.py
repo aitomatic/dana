@@ -1,4 +1,8 @@
-"""Execution graph implementation."""
+"""Execution graph implementation for OpenDXA.
+
+This module provides the core graph structure used for execution planning
+and reasoning.
+"""
 
 # Standard library imports
 from datetime import datetime
@@ -15,9 +19,10 @@ from opendxa.base.execution.execution_types import (
     ExecutionNodeStatus, ExecutionSignal, ExecutionSignalType,
     ExecutionEdge, NodeYamlConfig
 )
+from opendxa.base.execution.runtime_context import RuntimeContext
 
 if TYPE_CHECKING:
-    from opendxa.base.execution.execution_context import ExecutionContext
+    from opendxa.base.execution.runtime_context import RuntimeContext
 
 # pylint: disable=too-many-public-methods
 class ExecutionGraph(DirectedGraph):
@@ -85,6 +90,7 @@ class ExecutionGraph(DirectedGraph):
             node_id=node_config.node_id,
             node_type=node_config.node_type,
             objective=node_config.objective,
+            description=node_config.description,
             metadata=node_config.metadata
         )
         config.graph.add_node(node)
@@ -303,12 +309,12 @@ class ExecutionGraph(DirectedGraph):
         graph.add_edge(end_edge)
 
     @property
-    def context(self) -> Optional['ExecutionContext']:
+    def context(self) -> Optional['RuntimeContext']:
         """Get execution context."""
         return self._context
 
     @context.setter 
-    def context(self, context: 'ExecutionContext') -> None:
+    def context(self, context: 'RuntimeContext') -> None:
         """Set execution context."""
         self._context = context
 
@@ -388,7 +394,7 @@ class ExecutionGraph(DirectedGraph):
         })
 
     # pylint: disable=unused-argument
-    def get_valid_transitions(self, node_id: str, context: Optional['ExecutionContext'] = None) -> List[ExecutionNode]:
+    def get_valid_transitions(self, node_id: str, context: Optional['RuntimeContext'] = None) -> List[ExecutionNode]:
         """Get valid next nodes based on edge conditions."""
         valid_nodes = []
         outgoing = cast(List[ExecutionEdge], self._outgoing[node_id])

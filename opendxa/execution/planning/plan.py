@@ -3,7 +3,7 @@
 from typing import List, Optional
 
 from opendxa.base.execution.execution_graph import ExecutionGraph
-from opendxa.base.execution.execution_types import Objective, ExecutionNode, ObjectiveStatus, ExecutionSignal
+from opendxa.base.execution.execution_types import Objective, ExecutionNode, ExecutionSignal
 
 class Plan(ExecutionGraph):
     """Concrete execution steps (WHAT layer)."""
@@ -11,7 +11,7 @@ class Plan(ExecutionGraph):
     def __init__(self, objective: Optional[Objective] = None, name: Optional[str] = None):
         """Initialize plan."""
         super().__init__(
-            objective=objective or Objective(str(ObjectiveStatus.NONE_PROVIDED)),
+            objective=objective or Objective("No objective provided"),
             name=name,
             layer="plan"
         )
@@ -19,6 +19,17 @@ class Plan(ExecutionGraph):
     @property
     def steps(self) -> List[ExecutionNode]:
         """Get plan steps."""
+        return list(self.nodes.values())
+
+    @property
+    def planning_nodes(self) -> List[ExecutionNode]:
+        """Get planning nodes."""
+        return list(self.nodes.values())
+
+    @property
+    def reasoning_nodes(self) -> List[ExecutionNode]:
+        """Get reasoning nodes."""
+        # For now, all nodes are treated as both planning and reasoning nodes
         return list(self.nodes.values())
 
     @property

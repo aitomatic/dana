@@ -21,7 +21,7 @@ See dxa/agent/README.md for detailed design documentation.
 
 from typing import Dict, Union, Optional, Any
 from opendxa.base.execution import (
-    ExecutionContext
+    RuntimeContext
 )
 from opendxa.execution import (
     Plan,
@@ -32,32 +32,28 @@ from opendxa.execution import (
 )
 from opendxa.base.state import (
     AgentState,
-    WorldState,
-    ExecutionState
 )
 from opendxa.base.capability import BaseCapability
 from opendxa.base.resource import BaseResource, LLMResource
 from opendxa.common.io import BaseIO, IOFactory
-from opendxa.common.mixins.configurable import Configurable
 from opendxa.common.utils.misc import Misc
 from opendxa.base.capability.capable import Capable
 from opendxa.config.agent_config import AgentConfig
 from opendxa.execution.planning import Planner
 from opendxa.execution.reasoning import Reasoner
-from opendxa.common.mixins.tool_callable import ToolCallable
 from opendxa.common.types import BaseResponse
 from opendxa.base.execution.execution_types import ExecutionSignalType, ExecutionSignal
 
 class AgentResponse(BaseResponse):
     """Response from an agent operation."""
-    
+
     @classmethod
     def new_instance(cls, response: Union[BaseResponse, Dict[str, Any], Any]) -> 'AgentResponse':
         """Create a new AgentResponse instance from a BaseResponse or similar structure.
-        
+
         Args:
             response: The response to convert, which should have success, content, and error attributes
-            
+
         Returns:
             AgentResponse instance
         """
@@ -82,15 +78,13 @@ class AgentResponse(BaseResponse):
 
 
 # pylint: disable=too-many-public-methods
-class Agent(Configurable, Capable, ToolCallable):
+class Agent(BaseResource, Capable):
     """Main agent interface with built-in execution management."""
 
     # pylint: disable=too-many-instance-attributes
     def __init__(self, name: Optional[str] = None, description: Optional[str] = None):
         """Initialize agent with optional name and description."""
-        super().__init__()
-        self.name = name or "agent"
-        self.description = description or "An agent that can execute tasks"
+        super().__init__(name=name, description=description)
         self._llm = None
         self._planning_executor = None
         self._reasoner = None
@@ -135,7 +129,7 @@ class Agent(Configurable, Capable, ToolCallable):
         if not self._llm:
             self._llm = self._get_default_llm_resource()
         return self._llm
-    
+
     def _get_default_llm_resource(self):
         """Get default LLM resource."""
         return LLMResource(
@@ -173,7 +167,7 @@ class Agent(Configurable, Capable, ToolCallable):
     def reasoning_llm(self) -> LLMResource:
         """Get reasoning LLM or fallback to default."""
         return self._reasoning_llm or self.agent_llm
-    
+
     def with_model(self, model: str) -> "Agent":
         """Configure agent model string name"""
         self._config.update({"model": model})
@@ -273,9 +267,7 @@ class Agent(Configurable, Capable, ToolCallable):
             self._state = AgentState()
         if not self._runtime:
             self._runtime = AgentRuntime(
-                agent=self,
-                planning_llm=self.planning_llm,
-                reasoning_llm=self.reasoning_llm
+                agent=self
             )
 
         self._initialized = True
@@ -287,7 +279,7 @@ class Agent(Configurable, Capable, ToolCallable):
             await self._runtime.cleanup()
             self._runtime: Optional[AgentRuntime] = None
 
-    def initialize(self) -> 'Agent':
+    async def initialize(self) -> 'Agent':
         """Public initialization method."""
         return self._initialize()
 
@@ -300,49 +292,9 @@ class Agent(Configurable, Capable, ToolCallable):
         """Cleanup agent when exiting context."""
         await self.cleanup()
 
-    async def async_run(self, plan: Plan, context: Optional[ExecutionContext] = None) -> AgentResponse:
+    async def async_run(self, plan: Plan, context: Optional[RuntimeContext] = None) -> AgentResponse:
         """Execute an objective."""
         self._initialize()
-
-        # Create new context if none provided
-        if context is None:
-            # Prepare state containers
-            agent_state = self.state
-            world_state = WorldState()  # Assuming a new WorldState is appropriate here
-            execution_state = ExecutionState()
-            
-            # Define state handlers, if needed
-            # Example: Handlers for plan state using the provided Plan object
-            def handle_plan_get(key: str, default: Any) -> Any:
-                return plan.get(key, default) if plan else default
-            
-            def handle_plan_set(key: str, value: Any) -> None:
-                if plan:
-                    plan.set(key, value)
-                else:
-                    raise ReferenceError("Cannot set plan state: no plan provided")
-            
-            state_handlers = {
-                'plan': {
-                    'get': handle_plan_get,
-                    'set': handle_plan_set
-                }
-                # Add other custom handlers if the agent requires them
-            }
-
-            context = ExecutionContext(
-                agent_state=agent_state,
-                world_state=world_state,
-                execution_state=execution_state,
-                state_handlers=state_handlers
-            )
-            # Set the current plan in the new context
-            context._current_plan = plan
-
-        # Ensure the plan is associated with the context
-        if context._current_plan is None:
-            raise ValueError("No plan associated with the context")
-
         async with self:  # For cleanup
             return AgentResponse.new_instance(await self.runtime.execute(plan, context))
 

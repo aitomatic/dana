@@ -87,3 +87,39 @@ class TestPlanFactory:
         
         # Check that the role is set in metadata
         assert plan.metadata.get("role") == role, "Role not properly set in metadata"
+
+    def test_from_yaml_with_metadata(self):
+        """Test creating a plan from YAML data with arbitrary metadata."""
+        test_data = {
+            "objective": "Test objective from YAML",
+            "author": "Test Author",
+            "version": "1.2.3",
+            "custom_config": {"setting1": True, "setting2": 123},
+            "nodes": [
+                {"id": "START", "type": "START", "objective": "Start"},
+                {"id": "TASK_A", "type": "TASK", "objective": "Task A"},
+                {"id": "END", "type": "END", "objective": "End"},
+            ],
+            "edges": [
+                {"source": "START", "target": "TASK_A"},
+                {"source": "TASK_A", "target": "END"},
+            ],
+        }
+        
+        plan = PlanFactory.from_yaml(test_data)
+        
+        assert isinstance(plan, Plan)
+        assert plan.objective.current == "Test objective from YAML"
+        
+        # Check that arbitrary metadata is stored
+        assert "author" in plan.metadata
+        assert plan.metadata["author"] == "Test Author"
+        assert "version" in plan.metadata
+        assert plan.metadata["version"] == "1.2.3"
+        assert "custom_config" in plan.metadata
+        assert plan.metadata["custom_config"] == {"setting1": True, "setting2": 123}
+        
+        # Check that standard keys are NOT in metadata
+        assert "objective" not in plan.metadata
+        assert "nodes" not in plan.metadata
+        assert "edges" not in plan.metadata

@@ -23,6 +23,8 @@ Example:
     ```
 """
 
+# TODO: deprecate this resource in favor of the Agent itself as a Resource
+
 import asyncio
 from typing import TYPE_CHECKING
 

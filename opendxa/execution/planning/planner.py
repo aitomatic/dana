@@ -1,16 +1,22 @@
 """Plan executor implementation."""
 
 from typing import List, Optional
+from opendxa.base.execution import RuntimeContext
+from opendxa.base.execution.execution_types import (
+    ExecutionNode,
+    ExecutionSignal,
+    ExecutionSignalType,
+    ExecutionNodeStatus
+)
 from opendxa.base.execution.base_executor import BaseExecutor, ExecutionError
-from opendxa.base.execution.execution_context import ExecutionContext
-from opendxa.base.execution.execution_types import ExecutionNode, ExecutionSignal
 from opendxa.base.resource import LLMResource
 from opendxa.execution.planning.plan import Plan
 from opendxa.execution.planning.plan_factory import PlanFactory
 from opendxa.execution.planning.plan_strategy import PlanStrategy
 from opendxa.execution.reasoning import Reasoner, ReasoningStrategy
+from opendxa.common.mixins.loggable import Loggable
 
-class Planner(BaseExecutor[PlanStrategy, Plan, PlanFactory]):
+class Planner(BaseExecutor, Loggable):
     """Executor for the planning layer."""
     
     # Required class attributes
@@ -38,7 +44,7 @@ class Planner(BaseExecutor[PlanStrategy, Plan, PlanFactory]):
         if self._planning_llm is None:
             self.warning("Planner initialized without an LLM resource.")
     
-    async def _execute_node_core(self, node: ExecutionNode, context: ExecutionContext) -> List[ExecutionSignal]:
+    async def _execute_node_core(self, node: ExecutionNode, context: RuntimeContext) -> List[ExecutionSignal]:
         """Execute a planning node by delegating to the lower executor (Reasoner).
         
         If the strategy requires direct LLM interaction at the planning level 
@@ -94,4 +100,39 @@ class Planner(BaseExecutor[PlanStrategy, Plan, PlanFactory]):
         self.warning("create_graph_from_upper_node called on Planner, which is unusual.")
         # Depending on context, maybe return a sub-plan or raise an error.
         return None 
+
+    async def execute_node(self, node: ExecutionNode, context: RuntimeContext) -> ExecutionSignal:
+        """Execute a planning node.
+        
+        Args:
+            node: The node to execute
+            context: The runtime context
+            
+        Returns:
+            The result of node execution
+        """
+        try:
+            # Update node status
+            node.status = ExecutionNodeStatus.IN_PROGRESS
+            context.update_execution_node(node.node_id)
+
+            # Execute node step if available
+            if node.step:
+                result = await node.step(context.get('temp', {}))
+                context.store_node_output(node.node_id, result)
+                node.result = result
+
+            # Update node status
+            node.status = ExecutionNodeStatus.COMPLETED
+            return ExecutionSignal(
+                type=ExecutionSignalType.COMPLETE,
+                content={"node_id": node.node_id, "result": node.result}
+            )
+
+        except Exception as e:
+            node.status = ExecutionNodeStatus.FAILED
+            return ExecutionSignal(
+                type=ExecutionSignalType.ERROR,
+                content={"node_id": node.node_id, "error": str(e)}
+            )
     

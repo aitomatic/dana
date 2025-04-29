@@ -46,8 +46,24 @@ class StateManager(Loggable):
         super().__init__()
         if not state_containers:
             raise ValueError("StateManager requires at least one state container")
+            
         self._state_containers = state_containers
         self._state_handlers = state_handlers or {}
+        
+        # Cache for parsed keys
+        self._key_cache = {}
+        
+        # Pre-compute valid namespaces
+        self._valid_namespaces = set(self._state_containers.keys()) | set(self._state_handlers.keys())
+        
+        # Pre-compute handler lookups
+        self._get_handlers = {}
+        self._set_handlers = {}
+        for namespace, handlers in self._state_handlers.items():
+            if 'get' in handlers:
+                self._get_handlers[namespace] = handlers['get']
+            if 'set' in handlers:
+                self._set_handlers[namespace] = handlers['set']
 
     def _parse_key(self, key: str) -> Tuple[str, str]:
         """Parse a key into namespace and subkey.
@@ -61,11 +77,16 @@ class StateManager(Loggable):
         Raises:
             ValueError: If key format is invalid
         """
+        if key in self._key_cache:
+            return self._key_cache[key]
+            
         parts = key.split('.', 1)
         if len(parts) != 2:
             raise ValueError(f"Invalid key format: {key}. Expected 'namespace.subkey'")
-        namespace, subkey = parts[0], parts[1]
-        return namespace, subkey
+            
+        result = (parts[0], parts[1])
+        self._key_cache[key] = result
+        return result
 
     def _handle_state_get(self, namespace: str, subkey: str, default: Any) -> Any:
         """Handle get operations for state container keys.
@@ -125,14 +146,16 @@ class StateManager(Loggable):
             self.logger.warning(str(e))
             return default
 
-        if namespace in self._state_handlers and 'get' in self._state_handlers[namespace]:
-            return self._state_handlers[namespace]['get'](subkey, default)
+        if namespace not in self._valid_namespaces:
+            self.logger.warning(f"Unknown namespace '{namespace}' in key '{key}'")
+            return default
+
+        if namespace in self._get_handlers:
+            return self._get_handlers[namespace](subkey, default)
         elif namespace in self._state_containers:
             return self._handle_state_get(namespace, subkey, default)
-        else:
-            allowed_namespaces = list(self._state_handlers.keys()) + list(self._state_containers.keys())
-            self.logger.warning(f"Unknown namespace '{namespace}' in key '{key}'. Allowed: {allowed_namespaces}")
-            return default
+            
+        return default
 
     def set(self, key: str, value: Any) -> None:
         """Set a value in the appropriate state container or handler.
@@ -156,19 +179,18 @@ class StateManager(Loggable):
             self.logger.error(str(e))
             raise
 
-        if namespace in self._state_handlers and 'set' in self._state_handlers[namespace]:
-            self._state_handlers[namespace]['set'](subkey, value)
+        if namespace not in self._valid_namespaces:
+            raise KeyError(f"Unknown namespace '{namespace}' in key '{key}'")
+
+        if namespace in self._set_handlers:
+            self._set_handlers[namespace](subkey, value)
         elif namespace in self._state_containers:
             self._handle_state_set(namespace, subkey, value)
         else:
-            allowed_namespaces = list(self._state_handlers.keys()) + list(self._state_containers.keys())
-            self.logger.error(f"Unknown namespace '{namespace}' in key '{key}'. Allowed: {allowed_namespaces}. Cannot set value.")
             raise KeyError(f"Invalid target namespace '{namespace}' for set operation.")
 
     def add_observation(self, content: str, source: str) -> None:
         """Add observation."""
-        # Assuming 'observations' and 'sources' are specific state containers/keys
-        # This method doesn't seem related to the general namespace concept directly
         if "observations" in self._state_containers:
             self._state_containers["observations"].append(content)
         else:

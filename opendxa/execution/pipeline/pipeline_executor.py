@@ -5,7 +5,7 @@ from typing import Optional, List, cast
 from opendxa.base.execution import BaseExecutor
 from opendxa.base.execution import (
     ExecutionNode,
-    ExecutionSignal, ExecutionContext,
+    ExecutionSignal, RuntimeContext,
     ExecutionSignalType
 )
 from opendxa.execution.pipeline.pipeline import PipelineNode, Pipeline
@@ -78,7 +78,7 @@ class PipelineExecutor(BaseExecutor[PipelineStrategy, Pipeline, PipelineFactory]
     async def execute_node(
         self,
         node: ExecutionNode,
-        context: ExecutionContext
+        context: RuntimeContext
     ) -> List[ExecutionSignal]:
         """Execute a pipeline step."""
         if not isinstance(node, PipelineNode):

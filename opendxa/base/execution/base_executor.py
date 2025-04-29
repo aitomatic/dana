@@ -6,7 +6,7 @@ from typing import Generic, List, Optional, Type, TypeVar, cast, Union
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.graph import NodeType
-from opendxa.base.execution.execution_context import ExecutionContext
+from opendxa.base.execution.runtime_context import RuntimeContext
 from opendxa.base.execution.execution_graph import ExecutionGraph
 from opendxa.base.execution.execution_factory import ExecutionFactory
 from opendxa.base.execution.execution_types import (
@@ -126,7 +126,7 @@ class BaseExecutor(ABC, Loggable, Generic[StrategyT, GraphT, FactoryT]):
     async def execute(
         self,
         graph: GraphT,
-        context: ExecutionContext
+        context: RuntimeContext
     ) -> List[ExecutionSignal]:
         """Execute a graph using common execution logic."""
         # Set current graph
@@ -163,7 +163,7 @@ class BaseExecutor(ABC, Loggable, Generic[StrategyT, GraphT, FactoryT]):
     async def execute_node(
         self,
         node: ExecutionNode,
-        context: ExecutionContext
+        context: RuntimeContext
     ) -> List[ExecutionSignal]:
         """Execute a node in the execution graph."""
         try:
@@ -186,12 +186,12 @@ class BaseExecutor(ABC, Loggable, Generic[StrategyT, GraphT, FactoryT]):
             node.status = ExecutionNodeStatus.IN_PROGRESS
             
             # Phase 3: Build context
-            execution_context = self.build_execution_context(
+            runtime_context = self.build_runtime_context(
                 context, node
             )
             
             # Phase 4: Execute node
-            signals = await self._execute_node_core(node, execution_context)
+            signals = await self._execute_node_core(node, runtime_context)
             
             # Phase 5: Process signals
             processed_signals = self._process_signals(signals, node)
@@ -207,7 +207,7 @@ class BaseExecutor(ABC, Loggable, Generic[StrategyT, GraphT, FactoryT]):
             # return self._handle_error(node, e, create_signal=True) or []
             raise e
             
-    async def _execute_node_core(self, node: ExecutionNode, context: ExecutionContext) -> List[ExecutionSignal]:
+    async def _execute_node_core(self, node: ExecutionNode, context: RuntimeContext) -> List[ExecutionSignal]:
         """Execute a node by delegating to the lower executor."""
         # Create graph for lower layer
         if self.lower_executor is None:
@@ -249,35 +249,37 @@ class BaseExecutor(ABC, Loggable, Generic[StrategyT, GraphT, FactoryT]):
         except Exception as e:
             raise ExecutionError("Node validation failed") from e
             
-    def build_execution_context(
+    def build_runtime_context(
         self,
-        context: ExecutionContext,
+        context: RuntimeContext,
         node: ExecutionNode,
         parent_node: Optional[ExecutionNode] = None
-    ) -> ExecutionContext:
-        """Build execution context for a node.
+    ) -> RuntimeContext:
+        """Build runtime context for a node.
         
-        This method constructs the execution context for a given node,
+        This method constructs the runtime context for a given node,
         potentially inheriting or modifying state from the parent context.
-        LLMs are managed by AgentRuntime, not passed via context anymore.
         
         Args:
-            context: Current execution context
+            context: Current runtime context
             node: Node for which to build context
-            parent_node: Optional parent node
+            parent_node: Optional parent node (currently unused)
             
         Returns:
-            New or modified execution context for the node
+            Modified runtime context for the node
         """
-        # Currently, we assume the context is shared and mutated.
-        # If isolated contexts per node are needed, this method
-        # would create a deep copy and modify it.
+        # Set node-specific state
+        context.execution_state.set("current_node_id", node.node_id)
+        context.execution_state.set("current_node_type", node.node_type.value)
         
-        # Example: Set node-specific info (if ExecutionContext supported it)
-        # context.set("current_node_id", node.node_id)
-        # context.set("current_node_type", node.node_type.value)
+        # If we have a parent node, inherit relevant state
+        if parent_node:
+            # Inherit execution state from parent
+            parent_state = context.execution_state.get_all()
+            for key, value in parent_state.items():
+                if not key.startswith("current_"):  # Don't inherit current node state
+                    context.execution_state.set(key, value)
         
-        # For now, just return the existing context
         return context
 
     def _process_signals(
@@ -355,7 +357,7 @@ class BaseExecutor(ABC, Loggable, Generic[StrategyT, GraphT, FactoryT]):
     def _set_graph_in_context(
         self, 
         graph: GraphT, 
-        context: ExecutionContext
+        context: RuntimeContext
     ) -> None:
         """Set the current graph in the execution context."""
         if context is None:

@@ -1,34 +1,30 @@
-"""Reasoning executor implementation."""
+"""Reasoning executor for OpenDXA."""
 
 import logging
 from typing import List, Optional
-
-from opendxa.base.execution.execution_context import ExecutionContext
+from opendxa.base.execution import RuntimeContext
 from opendxa.base.execution.execution_types import (
     ExecutionNode,
     ExecutionSignal,
     ExecutionSignalType,
+    ExecutionNodeStatus,
     Objective,
     ExecutionEdge,
 )
 from opendxa.base.execution.base_executor import BaseExecutor
-from opendxa.base.resource import LLMResource
 from opendxa.execution.reasoning.reasoning import Reasoning
 from opendxa.execution.reasoning.reasoning_factory import ReasoningFactory
 from opendxa.execution.reasoning.reasoning_strategy import ReasoningStrategy
 from opendxa.base.execution.execution_graph import ExecutionGraph
 from opendxa.common.graph import NodeType
 from opendxa.common.types import BaseRequest, BaseResponse
+from opendxa.common.mixins.loggable import Loggable
 
 
 log = logging.getLogger(__name__)
 
-class Reasoner(BaseExecutor[ReasoningStrategy, Reasoning, ReasoningFactory]):
-    """Executor for reasoning layer tasks.
-    This executor handles the reasoning layer of execution, which is
-    the bottom-most layer responsible for making actual calls to the LLM
-    using the strategy provided.
-    """
+class Reasoner(BaseExecutor, Loggable):
+    """Reasoning executor for OpenDXA."""
 
     # Required class attributes
     _strategy_type = ReasoningStrategy
@@ -37,21 +33,51 @@ class Reasoner(BaseExecutor[ReasoningStrategy, Reasoning, ReasoningFactory]):
     _factory_class = ReasoningFactory
     _depth = 2
 
-    def __init__(self, 
-                 strategy: Optional[ReasoningStrategy] = None, 
-                 reasoning_llm: Optional[LLMResource] = None):
-        """Initialize reasoner.
+    def __init__(self, strategy: Optional[str] = None):
+        """Initialize reasoning executor.
         
         Args:
-            strategy: Reasoning strategy
-            reasoning_llm: LLM resource for reasoning tasks
+            strategy: Optional reasoning strategy
         """
-        super().__init__(strategy=strategy)
-        self._reasoning_llm = reasoning_llm
-        if self._reasoning_llm is None:
-            self.warning("Reasoner initialized without an LLM resource.")
+        super().__init__()
+        self._strategy = strategy
 
-    async def _execute_node_core(self, node: ExecutionNode, context: ExecutionContext) -> List[ExecutionSignal]:
+    async def execute_node(self, node: ExecutionNode, context: RuntimeContext) -> ExecutionSignal:
+        """Execute a reasoning node.
+        
+        Args:
+            node: The node to execute
+            context: The runtime context
+            
+        Returns:
+            The result of node execution
+        """
+        try:
+            # Update node status
+            node.status = ExecutionNodeStatus.IN_PROGRESS
+            context.update_execution_node(node.node_id)
+
+            # Execute node step if available
+            if node.step:
+                result = await node.step(context.get('temp', {}))
+                context.store_node_output(node.node_id, result)
+                node.result = result
+
+            # Update node status
+            node.status = ExecutionNodeStatus.COMPLETED
+            return ExecutionSignal(
+                type=ExecutionSignalType.CONTROL_COMPLETE,
+                content={"node_id": node.node_id, "result": node.result}
+            )
+
+        except Exception as e:
+            node.status = ExecutionNodeStatus.FAILED
+            return ExecutionSignal(
+                type=ExecutionSignalType.CONTROL_ERROR,
+                content={"node_id": node.node_id, "error": str(e)}
+            )
+
+    async def _execute_node_core(self, node: ExecutionNode, context: RuntimeContext) -> List[ExecutionSignal]:
         """Execute a reasoning node using LLM.
 
         This is the bottom layer executor, so it handles the actual execution
@@ -64,16 +90,16 @@ class Reasoner(BaseExecutor[ReasoningStrategy, Reasoning, ReasoningFactory]):
         Returns:
             List of execution signals
         """
-        # Get parent nodes
-        plan_node = context.get_current_plan_node()
+        # Get current node ID from context
+        current_node_id = context.get('execution.current_node_id')
 
         # Print concise execution hierarchy
         self.info("\nExecution Context:")
         self.info("=================")
         
-        if plan_node:
-            plan_obj = context.current_plan.objective if hasattr(context, 'current_plan') and context.current_plan else None
-            self.info(f"Plan: {plan_node.node_type} - {plan_node.description}")
+        if current_node_id:
+            plan_obj = context.get('temp.objective')
+            self.info(f"Plan: {node.node_type} - {node.description}")
             self.info(f"  Objective: {plan_obj if plan_obj else 'None'}")
 
             self.info(f"  Reasoning: {node.node_type} - {node.description}")
@@ -112,8 +138,8 @@ class Reasoner(BaseExecutor[ReasoningStrategy, Reasoning, ReasoningFactory]):
             self.warning("No reasoning LLM or objective found, cannot execute reasoning node.")
             return []
 
-        # Fallback if plan_node is not found
-        self.warning("Plan node not found in context, cannot execute reasoning node.")
+        # Fallback if current_node_id is not found
+        self.warning("Current node ID not found in context, cannot execute reasoning node.")
         return []
 
     def _build_reasoning_directives(self, strategy: ReasoningStrategy) -> List[str]:
@@ -166,7 +192,7 @@ class Reasoner(BaseExecutor[ReasoningStrategy, Reasoning, ReasoningFactory]):
         ])
         return result
 
-    def _build_user_messages(self, context: ExecutionContext) -> List[str]:
+    def _build_user_messages(self, context: RuntimeContext) -> List[str]:
         """Build the user messages for the reasoning node.
 
         Args:
@@ -175,10 +201,10 @@ class Reasoner(BaseExecutor[ReasoningStrategy, Reasoning, ReasoningFactory]):
         Returns:
             The user messages for the reasoning node
         """
-        # Get current plan node and overall plan information
-        plan_node = context.get_current_plan_node()
-        plan_obj = context.current_plan.objective if context.current_plan else None
-        plan_nodes = context.current_plan.nodes if context.current_plan else {}
+        # Get current node ID and plan information from context
+        current_node_id = context.get('execution.current_node_id')
+        plan_obj = context.get('temp.objective')
+        plan_nodes = context.get('temp.plan_nodes', {})
 
         user_messages = [
             "PLAN OVERVIEW:",
@@ -188,24 +214,19 @@ class Reasoner(BaseExecutor[ReasoningStrategy, Reasoning, ReasoningFactory]):
         ]
 
         # Add plan nodes sequence
-        for i, plan_node_iter in enumerate(plan_nodes.values(), 1):
-            current_plan_node = context.get_current_plan_node()
-            is_current_plan = (
-                plan_node_iter.node_id == current_plan_node.node_id 
-                if plan_node_iter and current_plan_node 
-                else False
-            )
-            current_marker = " [CURRENT]" if is_current_plan else ""
+        for i, (node_id, node_data) in enumerate(plan_nodes.items(), 1):
+            is_current = node_id == current_node_id
+            current_marker = " [CURRENT]" if is_current else ""
             user_messages.extend([
-                f"{i}. {plan_node_iter.node_type}: {plan_node_iter.description}{current_marker}",
-                f"   - Objective: {plan_node_iter.objective if plan_node_iter.objective else 'None'}",
-                f"   - Status: {plan_node_iter.status}",
+                f"{i}. {node_data.get('node_type')}: {node_data.get('description')}{current_marker}",
+                f"   - Objective: {node_data.get('objective', 'None')}",
+                f"   - Status: {node_data.get('status', 'None')}",
             ])
 
         user_messages.extend([
             "",
             "CURRENT EXECUTION CONTEXT:",
-            f"- Plan: {plan_node.description if plan_node else 'None'} ({plan_node.status if plan_node else 'None'})",
+            f"- Current Node: {current_node_id if current_node_id else 'None'}",
         ])
 
         return user_messages
@@ -230,8 +251,8 @@ class Reasoner(BaseExecutor[ReasoningStrategy, Reasoning, ReasoningFactory]):
             "",
         ])
 
-        self.debug(f"Reasoning Strategy: {self.strategy}")
-        system_messages.extend(self._build_reasoning_directives(self.strategy))
+        self.debug(f"Reasoning Strategy: {self._strategy}")
+        system_messages.extend(self._build_reasoning_directives(self._strategy))
 
         # Tell the LLM to call our final_result() function if the task is complete
         system_messages.extend([

@@ -14,15 +14,23 @@ class ExecutionStatus(Enum):
     FAILED = "FAILED"
 
 class ExecutionState(BaseState):
-    """Manages execution state for a run.
+    """Pure state container for execution tracking.
     
-    Tracks:
-    - Current execution status
-    - Current node being executed
-    - Results from each node
-    - Execution history
-    - Visited nodes
-    - Execution path
+    This class maintains the essential state needed for execution:
+    - Current plan and reasoning graphs
+    - Execution status
+    - Current result from the last node execution
+    - Recent execution history
+    
+    The state is validated on updates and maintains a history of changes.
+    All state modifications should go through this class to ensure consistency.
+    
+    Attributes:
+        current_plan: The current plan being executed
+        current_reasoning: The current reasoning being applied
+        status: Current execution status (IDLE, RUNNING, etc.)
+        current_result: Result from the last node execution
+        recent_history: List of recent execution steps and state changes
     """
     
     status: ExecutionStatus = Field(default=ExecutionStatus.IDLE)

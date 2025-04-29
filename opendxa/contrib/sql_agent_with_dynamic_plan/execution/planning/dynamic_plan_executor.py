@@ -4,12 +4,12 @@ Dynamic Plan Executor
 This is a customized Planner that can create a dynamic plan graph for a given node.
 
 """
-from typing import List, cast
+from typing import Any, Dict, List, Optional, cast
 from opendxa.execution.planning import Planner
 from opendxa.execution.planning import Plan
-from opendxa.base.execution.execution_context import ExecutionContext
-from opendxa.base.execution.execution_types import ExecutionNode, ExecutionSignal, NodeType
-from opendxa.base.execution.base_executor import ExecutionError
+from opendxa.base.execution.runtime_context import RuntimeContext
+from opendxa.base.execution.base_executor import BaseExecutor, ExecutionError
+from opendxa.base.execution.execution_types import ExecutionNode, ExecutionSignal, NodeType, ExecutionStatus
 
 
 class DynamicPlanExecutor(Planner):
@@ -18,7 +18,7 @@ class DynamicPlanExecutor(Planner):
     async def execute(
         self,
         graph: Plan,
-        context: ExecutionContext
+        context: RuntimeContext
     ) -> List[ExecutionSignal]:
         """Execute a graph using common execution logic."""
         # Set current graph
@@ -68,7 +68,7 @@ class DynamicPlanExecutor(Planner):
                 results.append(choice.message.content)
         return results
         
-    async def _execute_node_core(self, node: ExecutionNode, context: ExecutionContext) -> List[ExecutionSignal]:
+    async def _execute_node_core(self, node: ExecutionNode, context: RuntimeContext) -> List[ExecutionSignal]:
         if self.lower_executor is None:
             raise ExecutionError("No lower executor available")
         
@@ -90,7 +90,7 @@ class DynamicPlanExecutor(Planner):
         import re
         return re.findall(r'({{\s*(\w+)\s*}})', text)
 
-    def _fill_objective_variables(self, node: ExecutionNode, graph: Plan, context: ExecutionContext) -> str:
+    def _fill_objective_variables(self, node: ExecutionNode, graph: Plan, context: RuntimeContext) -> str:
         """Fill the objective variables in the text."""
         current_objective = node.objective.current if node.objective else None
         if current_objective is None:
@@ -103,7 +103,7 @@ class DynamicPlanExecutor(Planner):
                 current_objective = current_objective.replace(variable_text, str(context.global_context[variable_name]))
         return current_objective
 
-    async def _create_dynamic_plan_graph(self, node: ExecutionNode, context: ExecutionContext) -> Plan:
+    async def _create_dynamic_plan_graph(self, node: ExecutionNode, context: RuntimeContext) -> Plan:
         """Create a dynamic plan graph for a given node.""" 
         # TODO : Implement this later
         current_objective = node.objective.current if node.objective else None

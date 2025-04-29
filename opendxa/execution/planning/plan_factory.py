@@ -142,19 +142,28 @@ class PlanFactory(ExecutionFactory[Plan]):
         if not objective and "objective" in data:
             objective = Objective(data["objective"])
         plan = cls.create_basic_graph(objective)
+
+        # Store metadata
+        predefined_keys = {"objective", "nodes", "edges"}
+        for key, value in data.items():
+            if key not in predefined_keys:
+                plan.metadata[key] = value
         
-        # Store prompts in metadata if present
-        if "prompts" in data:
-            plan.metadata["prompts"] = data["prompts"]
+        # Store prompts in metadata if present (kept for backward compatibility/clarity, though covered by above)
+        # if "prompts" in data:  # This block is now redundant due to the loop above but kept for clarity if desired
+        #    plan.metadata["prompts"] = data["prompts"]
             
         # Add nodes
         node_ids = []
         if "nodes" in data:
             for node_data in data["nodes"]:
+                node_objective = node_data.get("objective", "")
+                node_description = node_data.get("description", node_objective)
                 node = ExecutionNode(
                     node_id=node_data["id"],
                     node_type=NodeType[node_data["type"].upper()],
-                    objective=node_data.get("objective", "")
+                    objective=node_objective,
+                    description=node_description
                 )
                 plan.add_node(node)
                 node_ids.append(node.node_id)

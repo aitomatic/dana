@@ -1,17 +1,33 @@
-"""Pipeline-specific execution context."""
+"""Pipeline context for OpenDXA."""
 
 from typing import Dict, Any, Optional
 import asyncio
 from datetime import datetime
-from opendxa.base.execution import ExecutionContext
+from opendxa.base.execution import RuntimeContext
 from opendxa.common.mixins.loggable import Loggable
 
-class PipelineContext(ExecutionContext, Loggable):
-    """Context for pipeline execution with buffer management."""
-    
-    def __init__(self):
-        """Initialize pipeline context."""
-        super().__init__()
+class PipelineContext(RuntimeContext, Loggable):
+    """Context for pipeline execution."""
+
+    def __init__(self,
+                 agent_state: Optional[Dict[str, Any]] = None,
+                 world_state: Optional[Dict[str, Any]] = None,
+                 execution_state: Optional[Dict[str, Any]] = None,
+                 state_handlers: Optional[Dict[str, Dict[str, Any]]] = None):
+        """Initialize pipeline context.
+        
+        Args:
+            agent_state: Optional agent state
+            world_state: Optional world state
+            execution_state: Optional execution state
+            state_handlers: Optional state handlers
+        """
+        super().__init__(
+            agent_state=agent_state or {},
+            world_state=world_state or {},
+            execution_state=execution_state or {},
+            state_handlers=state_handlers or {}
+        )
         Loggable.__init__(self)
         self.buffers: Dict[str, asyncio.Queue] = {}
         self.buffer_metrics: Dict[str, Dict[str, Any]] = {}

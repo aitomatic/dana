@@ -8,7 +8,7 @@ This module provides the foundational components and interfaces for the OpenDXA 
 
 2. Execution System
    - BaseExecutor for execution management
-   - ExecutionContext for managing execution state
+   - RuntimeContext for managing execution state
    - ExecutionGraph for workflow representation
    - ExecutionNode and ExecutionEdge for workflow components
    - ExecutionSignal for inter-component communication
@@ -27,13 +27,13 @@ These base components provide the core abstractions and interfaces that other
 components build upon, ensuring consistency and extensibility across the framework.
 
 Example:
-    >>> from opendxa.base import ExecutionContext
+    >>> from opendxa.base import RuntimeContext
     >>> from opendxa.base.state import AgentState, WorldState, ExecutionState
     >>> # LLMs are now typically managed by AgentRuntime, not passed directly to context
     >>> agent_state = AgentState()
     >>> world_state = WorldState()
     >>> execution_state = ExecutionState()
-    >>> context = ExecutionContext(
+    >>> context = RuntimeContext(
     ...     agent_state=agent_state,
     ...     world_state=world_state,
     ...     execution_state=execution_state
@@ -44,14 +44,14 @@ Example:
 from opendxa.base.capability import BaseCapability
 from opendxa.base.execution import (
     BaseExecutor,
-    ExecutionContext,
+    RuntimeContext,
     ExecutionGraph,
     ExecutionNode,
     ExecutionNodeStatus,
+    ExecutionNodeType,
     ExecutionSignal,
     ExecutionSignalType,
     Objective,
-    ObjectiveStatus,
     ExecutionEdge,
     ExecutionFactory,
 )
@@ -87,14 +87,14 @@ __all__ = [
 
     # Execution
     'BaseExecutor',
-    'ExecutionContext',
+    'RuntimeContext',
     'ExecutionGraph',
     'ExecutionNode',
     'ExecutionNodeStatus',
+    'ExecutionNodeType',
     'ExecutionSignal',
     'ExecutionSignalType',
     'Objective',
-    'ObjectiveStatus',
     'ExecutionEdge',
     'ExecutionFactory',
     'StateManager',

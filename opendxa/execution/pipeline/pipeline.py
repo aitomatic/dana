@@ -24,7 +24,7 @@ from opendxa.common.types import BaseRequest, BaseResponse
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.base.execution import (
     ExecutionGraph, ExecutionNode, ExecutionEdge,
-    ExecutionSignal, ExecutionContext,
+    ExecutionSignal, RuntimeContext,
     ExecutionSignalType
 )
 from opendxa.execution.pipeline.pipeline_context import PipelineContext
@@ -123,7 +123,7 @@ class Pipeline(ExecutionGraph, BaseResource, Loggable):
         return self._context
 
     @context.setter
-    def context(self, context: ExecutionContext) -> None:
+    def context(self, context: RuntimeContext) -> None:
         """Set execution context."""
         if not isinstance(context, PipelineContext):
             raise TypeError("Pipeline requires PipelineContext")
@@ -201,7 +201,7 @@ class Pipeline(ExecutionGraph, BaseResource, Loggable):
         self.context = context
         await self.setup_node_buffers(context)
 
-    async def cleanup_buffers(self, context: ExecutionContext) -> None:
+    async def cleanup_buffers(self, context: RuntimeContext) -> None:
         """Cleanup pipeline buffers."""
         if self._cleaned_up:
             return
@@ -215,7 +215,7 @@ class Pipeline(ExecutionGraph, BaseResource, Loggable):
         edges = self.get_outgoing_edges(node_id)
         return [self.nodes[edge.target] for edge in edges]
 
-    async def setup_node_buffers(self, context: ExecutionContext) -> None:
+    async def setup_node_buffers(self, context: RuntimeContext) -> None:
         """Setup buffers for all nodes in pipeline."""
         if not isinstance(context, PipelineContext):
             raise TypeError(f"Expected PipelineContext, got {type(context)}")
@@ -235,7 +235,7 @@ class Pipeline(ExecutionGraph, BaseResource, Loggable):
                 
         self._buffers_initialized = True
 
-    async def cleanup_node_buffers(self, context: ExecutionContext) -> None:
+    async def cleanup_node_buffers(self, context: RuntimeContext) -> None:
         """Cleanup buffers for all nodes."""
         context = cast(PipelineContext, context)
         self.debug("Cleaning up all buffers")
@@ -246,7 +246,7 @@ class Pipeline(ExecutionGraph, BaseResource, Loggable):
         source: str,
         target: str,
         data: Any,
-        context: Optional[ExecutionContext] = None
+        context: Optional[RuntimeContext] = None
     ) -> ExecutionSignal:
         """Send data between nodes via signals."""
         signal = ExecutionSignal(
@@ -265,7 +265,7 @@ class Pipeline(ExecutionGraph, BaseResource, Loggable):
     async def receive_data_signal(
         self,
         node_id: str,
-        context: ExecutionContext
+        context: RuntimeContext
     ) -> Optional[ExecutionSignal]:
         """Receive data for a node via signals."""
         if node_id not in self.nodes:

@@ -1,12 +1,12 @@
-"""Dynamic plan executor that leverages ExecutionContext for state management."""
+"""Dynamic plan executor that leverages RuntimeContext for state management."""
 
 from typing import List, cast, Dict, Any
 from datetime import datetime
 import yaml
 from opendxa.execution.planning import Planner, Plan
-from opendxa.base.execution.execution_context import ExecutionContext, ExecutionStatus
-from opendxa.base.execution.execution_types import ExecutionNode, ExecutionSignal, NodeType
+from opendxa.base.execution.execution_types import ExecutionNode, ExecutionSignal, NodeType, ExecutionStatus
 from opendxa.base.execution.base_executor import ExecutionError
+from opendxa.base.execution.runtime_context import RuntimeContext
 
 class DynamicPlanExecutor2(Planner):
     """Executes plans dynamically with robust state management."""
@@ -38,7 +38,7 @@ class DynamicPlanExecutor2(Planner):
         plan.nodes = nodes
         return plan
 
-    def _replace_prompt_variables(self, prompt: str, node: ExecutionNode, context: ExecutionContext) -> str:
+    def _replace_prompt_variables(self, prompt: str, node: ExecutionNode, context: RuntimeContext) -> str:
         def replace_variables(text: str) -> str:
             if "{{agent." in text:
                 import re
@@ -50,14 +50,14 @@ class DynamicPlanExecutor2(Planner):
             return text
         return replace_variables(prompt)
 
-    def _store_llm_response(self, response: Dict[str, Any], node: ExecutionNode, context: ExecutionContext) -> None:
+    def _store_llm_response(self, response: Dict[str, Any], node: ExecutionNode, context: RuntimeContext) -> None:
         if not hasattr(node, 'from_llm'):
             return
         for key, path in node.from_llm.items():
             if key in response:
                 context.context_manager.set(path, response[key])
 
-    def _build_execution_prompt(self, node: ExecutionNode, context: ExecutionContext) -> Dict[str, Any]:
+    def _build_execution_prompt(self, node: ExecutionNode, context: RuntimeContext) -> Dict[str, Any]:
         if not hasattr(node, 'to_llm'):
             raise ExecutionError(f"Node {node.node_id} missing to_llm configuration")
         prompt_content = self._replace_prompt_variables(node.to_llm, node, context)
@@ -68,7 +68,7 @@ class DynamicPlanExecutor2(Planner):
             ]
         }
 
-    def _parse_execution_response(self, response: Dict[str, Any], node: ExecutionNode, context: ExecutionContext) -> Dict[str, Any]:
+    def _parse_execution_response(self, response: Dict[str, Any], node: ExecutionNode, context: RuntimeContext) -> Dict[str, Any]:
         try:
             content = response["choices"][0]["message"]["content"]
             if isinstance(content, str):
@@ -79,7 +79,7 @@ class DynamicPlanExecutor2(Planner):
         except (KeyError, IndexError, json.JSONDecodeError) as e:
             raise ExecutionError(f"Failed to parse execution response: {str(e)}")
 
-    async def execute(self, graph: Plan, context: ExecutionContext) -> List[ExecutionSignal]:
+    async def execute(self, graph: Plan, context: RuntimeContext) -> List[ExecutionSignal]:
         self._set_graph(graph)
         self._set_graph_in_context(graph, context)
         self._log_execution_start(graph)
@@ -105,7 +105,7 @@ class DynamicPlanExecutor2(Planner):
         
         return signals
 
-    def _store_node_results(self, node: ExecutionNode, signals: List[ExecutionSignal], context: ExecutionContext) -> None:
+    def _store_node_results(self, node: ExecutionNode, signals: List[ExecutionSignal], context: RuntimeContext) -> None:
         context.context_manager.set('execution.current_node_id', node.node_id)
         results = self._parse_node_signals(signals)
         context.context_manager.set(f'execution.node_results.{node.node_id}', results)
@@ -128,7 +128,7 @@ class DynamicPlanExecutor2(Planner):
                 results.append(content)
         return results
 
-    async def _execute_node_core(self, node: ExecutionNode, context: ExecutionContext) -> List[ExecutionSignal]:
+    async def _execute_node_core(self, node: ExecutionNode, context: RuntimeContext) -> List[ExecutionSignal]:
         if self.lower_executor is None:
             raise ExecutionError("No lower executor available")
         
@@ -160,7 +160,7 @@ class DynamicPlanExecutor2(Planner):
         import re
         return re.findall(r'({{\s*(\w+)\s*}})', text)
 
-    def _fill_objective_variables(self, node: ExecutionNode, graph: Plan, context: ExecutionContext) -> str:
+    def _fill_objective_variables(self, node: ExecutionNode, graph: Plan, context: RuntimeContext) -> str:
         current_objective = node.objective.current if node.objective else None
         if current_objective is None:
             raise ExecutionError("No current objective available")
@@ -175,7 +175,7 @@ class DynamicPlanExecutor2(Planner):
                     current_objective = current_objective.replace(variable_text, str(value))
         return current_objective
 
-    async def _create_dynamic_plan_graph(self, node: ExecutionNode, context: ExecutionContext) -> Plan:
+    async def _create_dynamic_plan_graph(self, node: ExecutionNode, context: RuntimeContext) -> Plan:
         current_objective = node.objective.current if node.objective else None
         if current_objective is None:
             raise ExecutionError("No current objective available")

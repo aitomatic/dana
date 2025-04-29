@@ -2,60 +2,62 @@
 name: default
 description: "Default planning pattern"
 
-# Define nodes in the plan
+# Define nodes in the planning process
 nodes:
   - id: ANALYZE
-    description: "Analyze the problem and identify key requirements"
+    description: "Analyze the problem and break it down into requirements"
     
   - id: DESIGN
-    description: "Design a solution approach based on the analysis"
+    description: "Design a solution architecture and approach"
     
   - id: IMPLEMENT
-    description: "Implement the solution"
+    description: "Implement the solution according to the design"
     
   - id: VERIFY
-    description: "Verify the solution meets all requirements"
+    description: "Verify the implementation against requirements"
 
 # Define prompts used in nodes
 prompts:
   ANALYZE: |
-    Analyze the following problem:
+    Take time to understand the following problem:
     
     {objective}
     
-    Identify:
-    1. Key requirements and constraints
-    2. Available resources and information
-    3. Success criteria for a solution
+    In your response:
+    1. Restate the problem in your own words
+    2. Identify what is being asked for
+    3. List any assumptions you need to make
+    4. Clarify any ambiguous aspects
     
   DESIGN: |
-    Based on your analysis, design a solution approach for:
+    Design a solution for:
     
     {objective}
     
-    Your design should include:
-    1. The overall architecture or framework
-    2. Key components and their relationships
-    3. Algorithms or methods to be used
-    4. Any trade-offs considered
+    In your design:
+    1. Break down the solution into components
+    2. Define interfaces between components
+    3. Specify data structures and algorithms
+    4. Consider edge cases and error handling
     
   IMPLEMENT: |
-    Implement your designed solution for:
+    Implement the solution for:
     
     {objective}
     
-    Provide:
-    1. The complete implementation
-    2. Explanations of key implementation decisions
-    3. How you've addressed the requirements
+    In your implementation:
+    1. Write clear, well-documented code
+    2. Follow best practices and patterns
+    3. Handle errors and edge cases
+    4. Include tests where appropriate
     
   VERIFY: |
-    Verify that your solution correctly addresses:
+    Verify the solution for:
     
     {objective}
     
-    Verification should include:
-    1. Testing against the requirements
-    2. Analysis of edge cases
-    3. Evaluation of performance and efficiency
-    4. Final summary of how the solution meets the objective 
+    In your verification:
+    1. Test against all requirements
+    2. Check for edge cases and errors
+    3. Validate performance and scalability
+    4. Document any limitations or tradeoffs 

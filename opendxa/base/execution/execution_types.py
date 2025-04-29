@@ -6,8 +6,8 @@ from enum import Enum
 from pydantic import BaseModel, Field, ConfigDict
 from opendxa.common.graph import Node, Edge, NodeType
 
-class ExecutionNodeStatus(Enum):
-    """Status of execution nodes."""
+class ExecutionNodeStatus(str, Enum):
+    """Status of an execution node."""
     NONE = "NONE"
     PENDING = "PENDING"
     IN_PROGRESS = "IN_PROGRESS"
@@ -16,20 +16,51 @@ class ExecutionNodeStatus(Enum):
     SKIPPED = "SKIPPED"
     BLOCKED = "BLOCKED"
 
-class ObjectiveStatus(Enum):
-    """Status of the current objective."""
-    INITIAL = "initial"
-    IN_PROGRESS = "in_progress"
-    NEEDS_CLARIFICATION = "needs_clarification"
-    COMPLETED = "completed"
-    FAILED = "failed"
-    NONE_PROVIDED = "none_provided"
+class ExecutionStatus(str, Enum):
+    """Status of an execution."""
+    PENDING = "PENDING"
+    RUNNING = "RUNNING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+    CANCELLED = "CANCELLED"
+
+class ExecutionResult(BaseModel):
+    """Result of an execution node or graph."""
+    node_id: str = Field(description="ID of the node that produced the result")
+    status: ExecutionNodeStatus = Field(description="Status of the execution")
+    content: Dict[str, Any] = Field(default_factory=dict, description="Result content")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Optional metadata")
+
+    def __init__(self,
+                 node_id: str,
+                 status: ExecutionNodeStatus,
+                 content: Optional[Dict[str, Any]] = None,
+                 metadata: Optional[Dict[str, Any]] = None):
+        """Initialize execution result.
+        
+        Args:
+            node_id: ID of the node that produced the result
+            status: Status of the execution
+            content: Optional result content
+            metadata: Optional metadata
+        """
+        super().__init__(
+            node_id=node_id,
+            status=status,
+            content=content or {},
+            metadata=metadata or {}
+        )
+
+class ExecutionNodeType(str, Enum):
+    """Types of execution nodes."""
+    TASK = "TASK"        # For any operation that needs to be performed
+    CONTROL = "CONTROL"  # For flow control (START, END)
+    DATA = "DATA"        # For data operations (transform, source, sink)
 
 class Objective(BaseModel):
     """Represents what needs to be achieved."""
     original: str = Field(description="The original objective")
     current: str = Field(description="The current objective")
-    status: ObjectiveStatus = Field(default=ObjectiveStatus.INITIAL, description="The status of the objective")
     context: Dict[str, Any] = Field(default_factory=dict, description="The context of the objective")
     history: List[Dict[str, Any]] = Field(default=[], description="The history of the objective")
 
@@ -44,14 +75,13 @@ class Objective(BaseModel):
             ValueError: If objective is empty string
         """
         if not objective:
-            objective = str(ObjectiveStatus.NONE_PROVIDED)
+            objective = "No objective provided"
         elif not isinstance(objective, str):
             raise ValueError("Objective must be a string")
             
         super().__init__(
             original=objective,
             current=objective,
-            status=ObjectiveStatus.INITIAL,
             context={},
             history=[],
             **data
@@ -90,11 +120,6 @@ class ExecutionNode(Node):
     result: Optional[Dict[str, Any]] = None
     requires: Dict[str, Any] = Field(default_factory=dict)
     provides: Dict[str, Any] = Field(default_factory=dict)
-    buffer_config: Dict[str, Any] = Field(default_factory=lambda: {
-        "enabled": False,
-        "size": 1000,
-        "mode": "streaming"
-    })
 
     def __hash__(self) -> int:
         """Make node hashable by id."""
@@ -138,21 +163,29 @@ class ExecutionNode(Node):
         if not node_id:
             raise ValueError("Node ID cannot be empty")
             
-        # Convert objective to string description if needed
+        # Store the original description from YAML if available in data
+        yaml_description = data.pop("description", None)
+
+        # Process objective
         if isinstance(objective, str):
-            description = objective
             objective_obj = Objective(objective)
         elif isinstance(objective, Objective):
-            description = objective.current
             objective_obj = objective
         else:
-            raise ValueError("Objective must be a string or Objective instance")
+            # Fallback: if objective is None or invalid, try using the yaml description
+            if yaml_description:
+                objective_obj = Objective(yaml_description)
+            else:
+                raise ValueError("Objective must be a string or Objective instance, or description must be provided in YAML")
+
+        # Use YAML description if provided, otherwise fallback to objective's current state
+        node_description = yaml_description if yaml_description is not None else objective_obj.current
         
         # Initialize Node base class
         super().__init__(
             node_id=node_id,
             node_type=node_type,
-            description=description,
+            description=node_description,  # Use the determined description
             metadata=metadata or {}
         )
         
@@ -163,11 +196,6 @@ class ExecutionNode(Node):
         self.result = result
         self.requires = requires or {}
         self.provides = provides or {}
-        self.buffer_config = data.get('buffer_config', {
-            "enabled": False,
-            "size": 1000,
-            "mode": "streaming"
-        })
 
     def get_prompt(self) -> Optional[str]:
         """Get the prompt for the node."""
@@ -191,62 +219,46 @@ class ExecutionNode(Node):
             "node_id": self.node_id,
             "node_type": self.node_type,
             "description": self.description,
+            "objective": self.objective.current if self.objective else None,
             "status": self.status,
             "metadata": self.metadata,
             "requires": self.requires,
-            "provides": self.provides,
-            "buffer_config": self.buffer_config
+            "provides": self.provides
         }
 
 class ExecutionEdge(Edge, BaseModel):
     """Edge with execution-specific attributes."""
-    condition: Optional[str] = None
-    state_updates: Dict[str, Any] = Field(default_factory=dict)
-
     def __init__(self,
                  source: Union[str, Node],
                  target: Union[str, Node],
-                 condition: Optional[str] = None,
-                 state_updates: Optional[Dict[str, Any]] = None,
                  metadata: Optional[Dict[str, Any]] = None,
                  **data):
-        """Initialize the edge."""
+        """Initialize execution edge.
+        
+        Args:
+            source: Source node or node ID
+            target: Target node or node ID
+            metadata: Optional metadata dictionary
+            **data: Additional data for Pydantic model
+        """
         super().__init__(
             source=source,
             target=target,
-            metadata=metadata,
-            condition=condition,
-            state_updates=state_updates or {},
+            metadata=metadata or {},
             **data
         )
 
 class ExecutionSignalType(Enum):
-    """Types of execution signals.
-
-    Categories:
-    - CONTROL_*: Execution control flow signals
-    - DATA_*: Direct node-to-node data transfer
-    - BUFFER_*: Buffer data transfer and management
-    """
-    # Control Flow - Node Status
-    CONTROL_START = "node_start"        # Node begins execution
-    CONTROL_COMPLETE = "node_complete"  # Node completed successfully
-    CONTROL_ERROR = "node_error"        # Node execution failed
-    CONTROL_SKIP = "node_skip"          # Node was skipped
-
-    # Control Flow - Graph Status
-    CONTROL_GRAPH_START = "graph_start"   # Graph execution started
-    CONTROL_GRAPH_END = "graph_end"       # Graph execution completed
-    CONTROL_STATE_CHANGE = "state_change"  # General execution state changes
-
-    # Data Flow - Direct
-    DATA_RESULT = "data_result"    # Node output data for next node
-
-    # Buffer Operations
-    BUFFER_DATA = "buffer_data"    # Data chunk for buffered transfer
-    BUFFER_FULL = "buffer_full"    # Buffer reached capacity
-    BUFFER_EMPTY = "buffer_empty"  # Buffer is empty
-    BUFFER_ERROR = "buffer_error"  # Buffer operation failed
+    """Types of execution signals."""
+    # Control Flow
+    CONTROL = "control"        # General control signal
+    CONTROL_ERROR = "control_error"  # Control-specific error signal
+    ERROR = "error"           # Error signal
+    COMPLETE = "complete"     # Completion signal
+    CONTROL_COMPLETE = "control_complete"  # Control-specific completion signal
+    
+    # Data Flow
+    DATA = "data"            # Data signal
 
 class ExecutionSignal(BaseModel):
     """Communication between execution layers."""
@@ -255,8 +267,15 @@ class ExecutionSignal(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.now)
 
 class ExecutionError(Exception):
-    """Base class for execution errors."""
+    """Base exception for execution errors."""
     def __init__(self, message: str, node_id: Optional[str] = None, signal: Optional[ExecutionSignal] = None):
+        """Initialize execution error.
+        
+        Args:
+            message: Error message
+            node_id: Optional node ID where error occurred
+            signal: Optional error signal
+        """
         super().__init__(message)
         self.node_id = node_id
         self.signal = signal
@@ -266,12 +285,8 @@ class NodeConfig(BaseModel):
     node_id: str
     node_type: NodeType
     objective: str
+    description: str = Field(default="")
     metadata: Dict[str, Any] = Field(default_factory=dict)
-    buffer_config: Dict[str, Any] = Field(default_factory=lambda: {
-        "enabled": False,
-        "size": 0,
-        "mode": "streaming"
-    })
 
 class NodeYamlConfig(BaseModel):
     """Configuration for processing a node from YAML."""
@@ -284,51 +299,31 @@ class NodeYamlConfig(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def to_node_config(self) -> NodeConfig:
-        """Convert YAML config to NodeConfig."""
-        objective = self.node_data.get('objective', '')
+        """Convert YAML config to node config, injecting node-specific prompt."""
         
-        # Determine node type
-        if 'type' not in self.node_data:
-            node_type = NodeType.TASK
-        else:
-            node_type = NodeType[self.node_data['type']]
-
-        # Prepare metadata
-        metadata = self.node_data.get('metadata', {})
-
-        # Ensure planning and reasoning strategies are included in metadata
-        if 'planning' in self.node_data:
-            metadata['planning'] = self.node_data['planning']
-        else:
-            metadata['planning'] = 'DEFAULT'
-
-        if 'reasoning' in self.node_data:
-            metadata['reasoning'] = self.node_data['reasoning']
-        else:
-            metadata['reasoning'] = 'DEFAULT'
+        # Start with metadata defined directly in the node's YAML
+        node_metadata = self.node_data.get("metadata", {}).copy()
         
-        # Get prompt from YAML data if available
-        if 'prompts' in self.graph.metadata and self.node_id in self.graph.metadata['prompts']:
-            prompt_text = self.graph.metadata['prompts'][self.node_id]
-        else:
-            # Fall back to standard prompt resolution
-            prompt_ref = self.node_data.get('prompt', self.node_id)
-            prompt_text = self.graph.get_prompt(
-                config_path=self.config_path,
-                prompt_ref=prompt_ref,
-                custom_prompts=self.custom_prompts
-            )
-
-        # Store the prompt in metadata
-        metadata['prompt'] = prompt_text
-
-        # If no description, use the prompt text as the description
-        if not objective:
-            objective = prompt_text
-
+        # Determine the correct prompt for this node
+        prompt = None
+        
+        # Priority 1: Custom prompts passed directly
+        if self.custom_prompts and self.node_id in self.custom_prompts:
+            prompt = self.custom_prompts[self.node_id]
+            
+        # Priority 2: Prompts defined in the graph's metadata (loaded from YAML)
+        elif self.graph and "prompts" in self.graph.metadata and self.node_id in self.graph.metadata["prompts"]:
+            prompt = self.graph.metadata["prompts"][self.node_id]
+            
+        # Priority 3: Prompt defined directly within the node's metadata in YAML (already handled by initial copy)
+        # If a prompt was found from graph/custom prompts, add/overwrite it in node_metadata
+        if prompt is not None:
+            node_metadata["prompt"] = prompt
+            
         return NodeConfig(
             node_id=self.node_id,
-            node_type=node_type,
-            objective=objective,
-            metadata=metadata
+            node_type=self.node_data.get("type", NodeType.TASK),
+            objective=self.node_data.get("objective", ""),
+            description=self.node_data.get("description", ""),
+            metadata=node_metadata  # Use the potentially updated metadata
         )
