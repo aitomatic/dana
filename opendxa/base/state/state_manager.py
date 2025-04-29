@@ -155,7 +155,7 @@ class StateManager(Loggable):
         elif namespace in self._state_containers:
             return self._handle_state_get(namespace, subkey, default)
             
-        return default
+            return default
 
     def set(self, key: str, value: Any) -> None:
         """Set a value in the appropriate state container or handler.
