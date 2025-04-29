@@ -43,7 +43,7 @@ from opendxa.execution.planning import Planner
 from opendxa.execution.reasoning import Reasoner
 from opendxa.common.types import BaseResponse
 from opendxa.base.execution.execution_types import ExecutionSignalType, ExecutionSignal
-
+from opendxa.common.mixins.tool_callable import ToolCallable
 class AgentResponse(BaseResponse):
     """Response from an agent operation."""
 
@@ -86,7 +86,7 @@ class Agent(BaseResource, Capable):
         """Initialize agent with optional name and description."""
         super().__init__(name=name, description=description)
         self._llm = None
-        self._planning_executor = None
+        self._planner = None
         self._reasoner = None
         self._resources = {}
         self._capabilities = {}
@@ -208,21 +208,25 @@ class Agent(BaseResource, Capable):
         self._io = io
         return self
 
+    @property
+    def planner(self) -> Planner:
+        """Get planner."""
+        return self._planner
+    
+    @property
+    def reasoner(self) -> Reasoner:
+        """Get reasoner."""
+        return self._reasoner
+
     def with_planning(self, strategy: Optional[PlanStrategy] = None, planner: Optional[Planner] = None) -> 'Agent':
         """Configure planning strategy."""
-        if strategy:
-            self._planning_strategy = strategy
-        if planner:
-            self._planning_executor = planner
-        return self
+        self._planner = planner or Planner(strategy=strategy or PlanStrategy.DEFAULT)
+        return self._planner
 
     def with_reasoning(self, strategy: Optional[ReasoningStrategy] = None, reasoner: Optional[Reasoner] = None) -> 'Agent':
         """Configure reasoning strategy and executor."""
-        if strategy:
-            self._reasoning_strategy = strategy
-        if reasoner:
-            self._reasoner = reasoner
-        return self
+        self._reasoner = reasoner or Reasoner(strategy=strategy or ReasoningStrategy.DEFAULT)
+        return self._reasoner
 
     def with_planning_llm(self, llm: Union[Dict, str, LLMResource]) -> "Agent":
         """Configure planning LLM."""
@@ -257,8 +261,8 @@ class Agent(BaseResource, Capable):
 
         if not self._llm:
             self._llm = self._get_default_llm_resource()
-        if not self._planning_executor:
-            self._planning_executor = Planner(strategy=self._planning_strategy)
+        if not self._planner:
+            self._planner = Planner(strategy=self._planning_strategy)
         if not self._reasoner:
             self._reasoner = Reasoner(strategy=self._reasoning_strategy)
         if not self._io:
@@ -266,9 +270,7 @@ class Agent(BaseResource, Capable):
         if not self._state:
             self._state = AgentState()
         if not self._runtime:
-            self._runtime = AgentRuntime(
-                agent=self
-            )
+            self._runtime = AgentRuntime(agent=self)
 
         self._initialized = True
         return self
@@ -306,3 +308,17 @@ class Agent(BaseResource, Capable):
         """Ask a question to the agent."""
         plan = PlanFactory.create_basic_plan(question, ["query"])
         return self.run(plan)
+
+    def runtime_context(self) -> RuntimeContext:
+        """Get the runtime context."""
+        return self.runtime.runtime_context
+
+    @ToolCallable.tool
+    def set_variable(self, name: str, value: Any) -> BaseResponse:
+        """Set a variable in the RuntimeContext."""
+        self.runtime.context.set_variable(name, value)
+        return BaseResponse(success=True, content=f"Variable {name} set to {value}")
+
+    async def query(self, request: BaseRequest) -> BaseResponse:
+        """Query the agent."""
+        return self.runtime.context.query(request)

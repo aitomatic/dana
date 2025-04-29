@@ -10,15 +10,15 @@ The runtime context provides a unified interface for accessing and modifying
 state across different containers and handlers.
 """
 
-import logging
-from typing import Optional, Dict, Any, List, Callable
+from typing import Optional, Dict, Any, List, Callable, TYPE_CHECKING
 from opendxa.base.state.agent_state import AgentState
 from opendxa.base.state.world_state import WorldState
 from opendxa.base.state.execution_state import ExecutionState, ExecutionStatus
 from opendxa.base.state.state_manager import StateManager
 from opendxa.common.mixins.loggable import Loggable
 
-log = logging.getLogger(__name__)
+if TYPE_CHECKING:
+    from opendxa.agent.agent import Agent
 
 class RuntimeContext(Loggable):
     """Interface for runtime operations and coordination.
@@ -56,6 +56,7 @@ class RuntimeContext(Loggable):
     """
 
     def __init__(self,
+                 agent: 'Agent',
                  agent_state: AgentState,
                  world_state: WorldState,
                  execution_state: ExecutionState,
@@ -204,22 +205,22 @@ class RuntimeContext(Loggable):
             result: The structured result dictionary from the node execution.
         """
         if not isinstance(result, dict):
-            log.warning(f"Cannot process output mappings for node '{node_id}' because result is not a dictionary.")
+            self.warning(f"Cannot process output mappings for node '{node_id}' because result is not a dictionary.")
             return
 
         for result_field, destination_string in result.items():
             if not isinstance(destination_string, str):
-                log.warning(f"Invalid destination '{destination_string}' for field '{result_field}' in node '{node_id}'. Skipping.")
+                self.warning(f"Invalid destination '{destination_string}' for field '{result_field}' in node '{node_id}'. Skipping.")
                 continue
                  
             value_to_store = result.get(result_field)
             if value_to_store is None:
                 if result_field not in result:
-                    log.warning(f"Field '{result_field}' not in result for node '{node_id}'. Skipping {destination_string}.")
+                    self.warning(f"Field '{result_field}' not in result for node '{node_id}'. Skipping {destination_string}.")
                     continue
             
             try:
                 self._state_manager.set(destination_string, value_to_store)
             except Exception as e:
-                log.error(f"Failed to store field '{result_field}' to '{destination_string}' for node '{node_id}': {e}")
+                self.error(f"Failed to store field '{result_field}' to '{destination_string}' for node '{node_id}': {e}")
                 continue

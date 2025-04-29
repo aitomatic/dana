@@ -3,14 +3,12 @@
 from typing import Any, Optional, TYPE_CHECKING
 from opendxa.base.execution import RuntimeContext
 from opendxa.base.execution.execution_types import ExecutionNode, ExecutionSignal, ExecutionSignalType
-from opendxa.execution.planning import Planner
-from opendxa.execution.reasoning import Reasoner
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.base.state import WorldState, ExecutionState
-
+from opendxa.execution.planning import Plan
+from opendxa.execution.planning import Planner
 if TYPE_CHECKING:
     from opendxa.agent.agent import Agent
-    from opendxa.execution.planning import Plan
 
 class AgentRuntime(Loggable):
     """Runtime for executing agent plans and managing execution flow."""
@@ -23,15 +21,20 @@ class AgentRuntime(Loggable):
         """
         super().__init__()
         self._agent = agent
-        self._planner = Planner()
-        self._reasoner = Reasoner()
 
-    def create_runtime_context(self, plan: 'Plan') -> RuntimeContext:
+    @property
+    def _planner(self) -> Planner:
+        """Convenience property for accessing the planner."""
+        return self._agent.planner
+    
+    @property
+    def _current_plan(self) -> Plan:
+        """Convenience property for accessing the current plan."""
+        return self._agent.planner.get_current_plan()
+
+    def create_runtime_context(self) -> RuntimeContext:
         """Create a new runtime context for plan execution.
         
-        Args:
-            plan: The plan to create context for
-            
         Returns:
             New runtime context
         """
@@ -40,9 +43,11 @@ class AgentRuntime(Loggable):
         execution_state = ExecutionState()
 
         def handle_plan_get(key: str, default: Any) -> Any:
+            plan = self._current_plan
             return plan.get(key, default) if plan else default
 
         def handle_plan_set(key: str, value: Any) -> None:
+            plan = self._current_plan
             if plan:
                 plan.set(key, value)
             else:
@@ -56,11 +61,12 @@ class AgentRuntime(Loggable):
         }
 
         return RuntimeContext(
+            agent=self._agent,
             agent_state=agent_state,
             world_state=world_state,
             execution_state=execution_state,
-            state_handlers=state_handlers
-            )
+            state_handlers=state_handlers,
+        )
 
     async def execute(self, plan: 'Plan', context: Optional[RuntimeContext] = None) -> Any:
         """Execute a plan.
@@ -73,19 +79,9 @@ class AgentRuntime(Loggable):
             The result of plan execution
         """
         if context is None:
-            context = self.create_runtime_context(plan)
+            context = self.create_runtime_context()
 
-        # Execute planning nodes
-        for node in plan.planning_nodes:
-            result = await self._execute_planning_node(node, context)
-            if result.type == ExecutionSignalType.CONTROL_ERROR:
-                return result
-
-        # Execute reasoning nodes
-        for node in plan.reasoning_nodes:
-            result = await self._execute_reasoning_node(node, context)
-            if result.type == ExecutionSignalType.CONTROL_ERROR:
-                return result
+        self._planner.execute(plan, context)
 
         return ExecutionSignal(
             type=ExecutionSignalType.CONTROL_COMPLETE,
@@ -102,19 +98,7 @@ class AgentRuntime(Loggable):
         Returns:
             The result of node execution
         """
-        return await self._planner.execute_node(node, context)
-
-    async def _execute_reasoning_node(self, node: ExecutionNode, context: RuntimeContext) -> ExecutionSignal:
-        """Execute a reasoning node.
-        
-        Args:
-            node: The node to execute
-            context: The runtime context
-            
-        Returns:
-            The result of node execution
-        """
-        return await self._reasoner.execute_node(node, context)
+        return await self._planner.execute(node, context)
 
     async def cleanup(self) -> None:
         """Clean up runtime resources."""
