@@ -1,138 +1,144 @@
 """Plan executor implementation."""
 
-from typing import List, Optional
+from typing import Optional, TYPE_CHECKING, Union
 from opendxa.base.execution import RuntimeContext
 from opendxa.base.execution.execution_types import (
     ExecutionNode,
     ExecutionSignal,
-    ExecutionSignalType,
-    ExecutionNodeStatus
+    ExecutionStatus,
 )
-from opendxa.base.execution.base_executor import BaseExecutor, ExecutionError
+from opendxa.base.execution.base_executor import BaseExecutor
 from opendxa.base.resource import LLMResource
 from opendxa.execution.planning.plan import Plan
 from opendxa.execution.planning.plan_factory import PlanFactory
 from opendxa.execution.planning.plan_strategy import PlanStrategy
-from opendxa.execution.reasoning import Reasoner, ReasoningStrategy
 from opendxa.common.mixins.loggable import Loggable
 
-class Planner(BaseExecutor, Loggable):
-    """Executor for the planning layer."""
-    
-    # Required class attributes
-    _strategy_type = PlanStrategy
-    _default_strategy = PlanStrategy.DEFAULT
-    graph_class = Plan
-    _factory_class = PlanFactory
-    _depth = 1
+# Avoid circular import for type hinting
+if TYPE_CHECKING:
+    from opendxa.execution.reasoning.reasoner import Reasoner 
 
-    def __init__(self, 
-                 strategy: Optional[PlanStrategy] = None, 
-                 lower_executor: Optional[BaseExecutor] = None,
-                 planning_llm: Optional[LLMResource] = None):
-        """Initialize planner.
+class Planner(BaseExecutor[Plan], Loggable):
+    """Executor for the planning layer of OpenDXA.
+    
+    Responsible for managing the execution of a Plan graph, which represents
+    a sequence of steps to achieve a higher-level objective. The Planner typically
+    delegates the execution of each step (node) in its Plan graph to a 
+    `lower_executor` (which could be another Planner or a Reasoner).
+
+    Initialization (`__init__`):
+        - strategy (PlanStrategy): Defines potential strategies for plan creation 
+          or execution (currently less utilized in the core delegation logic).
+        - lower_executor (Union[Planner, Reasoner]): The executor instance responsible 
+          for handling the execution of each node within this Planner's graph.
+        - llm (LLMResource): Optional language model. Not used in the default 
+          delegation logic but could be used by strategies for plan generation.
+        - factory (PlanFactory): Used by BaseExecutor for creating Plan graphs.
+
+    Execution (`execute_node_core`):
+        Receives:
+        - node (ExecutionNode): The specific node within this Planner's Plan graph 
+          (e.g., a single step like "Find flights"). `node.objective` defines 
+          the goal for this specific step.
+        - context (RuntimeContext): Passed down (mutably) through the execution chain. 
+          Used for accessing shared state via StateManager (`context.get`/`set`).
+        Core Logic:
+        - Calls `lower_executor.create_graph_from_upper_node` to generate the 
+          sub-graph needed to execute the current `node`.
+        - Calls `lower_executor.execute(sub_graph, context, upper_executor=self)` to 
+          run the sub-graph, passing itself as the `upper_executor` parameter.
+        - Updates its own `node.status` based on the result signal.
+
+    Hierarchy Context:
+        - Acts as a node in the execution hierarchy.
+        - Provides context to the `lower_executor` by passing `self` as the 
+          `upper_executor` parameter in the delegated `execute` call.
+        - `self.graph.objective`: Represents the overall goal of the Plan being executed.
+        - `node.objective`: Represents the specific goal of the current step being delegated, 
+          which forms the basis for the lower executor's graph objective.
+    """
+    
+    _factory_class = PlanFactory
+    
+    def __init__(
+        self,
+        strategy: PlanStrategy,
+        lower_executor: Union['Planner', 'Reasoner'],
+        llm: Optional[LLMResource] = None,
+        factory: Optional[PlanFactory] = None
+    ):
+        """Initialize the planner.
         
         Args:
-            strategy: Planning strategy
-            lower_executor: Executor for the lower (reasoning) layer
-            planning_llm: LLM resource for planning tasks
+            strategy: The planning strategy
+            lower_executor: The executor for the lower layer (Planner or Reasoner)
+            llm: Optional LLM resource
+            factory: Optional factory for creating graphs
         """
-        if lower_executor is None:
-            lower_executor = Reasoner(ReasoningStrategy.DEFAULT)
-        super().__init__(strategy=strategy, lower_executor=lower_executor)
-        self._planning_llm = planning_llm
-        if self._planning_llm is None:
-            self.warning("Planner initialized without an LLM resource.")
-    
-    async def _execute_node_core(self, node: ExecutionNode, context: RuntimeContext) -> List[ExecutionSignal]:
-        """Execute a planning node by delegating to the lower executor (Reasoner).
-        
-        If the strategy requires direct LLM interaction at the planning level 
-        (e.g., for plan refinement or high-level decision making), that logic
-        would be added here, potentially using self._planning_llm.
-        
-        Currently, it primarily orchestrates the lower layer.
-        """
-        if self.lower_executor is None:
-            raise ExecutionError("Planner requires a lower executor (Reasoner) to function.")
-            
-        if not self.graph:
-            # This should ideally not happen if execute is called correctly
-            raise ExecutionError("Planner has no current graph (Plan) to execute.")
+        super().__init__(factory=factory)
+        self._strategy = strategy
+        self.lower_executor: Union['Planner', 'Reasoner'] = lower_executor
 
-        # --- Check if Planning LLM is needed for this strategy/node --- 
-        # Example: If strategy involves plan refinement using an LLM
-        # if self.strategy == PlanStrategy.REFINE_WITH_LLM:
-        #     if not self._planning_llm:
-        #         raise ExecutionError("Planning strategy requires a planning_llm, but none was provided.")
-        #     # Build prompt for plan refinement
-        #     refinement_prompt = self._build_plan_refinement_prompt(node, context)
-        #     # Call planning LLM
-        #     refined_plan_data = await self._planning_llm.acall(refinement_prompt)
-        #     # Update node or context based on refinement
-        #     self._apply_plan_refinement(node, context, refined_plan_data)
-        #     # Potentially return signals indicating refinement
-        #     # return [ExecutionSignal(...)] 
-        
-        # --- Standard delegation to lower executor --- 
-        self.info(f"Planner delegating node {node.node_id} to lower executor.")
-        
-        # Create the graph for the lower layer (Reasoning Graph)
-        # The lower executor is responsible for creating its specific graph type
+    async def execute_node_core(
+        self,
+        node: ExecutionNode,
+        context: RuntimeContext
+    ) -> ExecutionSignal:
+        """Execute the core planning node logic by delegating to a lower executor.
+        WARNING: Passes the original mutable context down.
+        """
+        self.info(f"Planner delegating node {node.id} to lower executor.")
+
+        if not self.lower_executor:
+            self.error("Planner requires a lower_executor to be configured.")
+            return ExecutionSignal(
+                status=ExecutionStatus.FAILED,
+                content="Planner requires a lower_executor."
+            )
+
+        # Ensure the lower executor can create a graph from the node objective
+        # This assumes create_graph_from_upper_node sets the new graph's objective from node.objective
+        # We also now use self.graph, which is set by BaseExecutor.execute
         lower_graph = self.lower_executor.create_graph_from_upper_node(node, self.graph)
-        
+
         if not lower_graph:
-            self.error(f"Lower executor failed to create a graph for node {node.node_id}.")
-            # Return an error signal or raise?
-            raise ExecutionError(f"Lower executor could not create graph for node {node.node_id}")
+            self.error(f"Lower executor failed to create a graph for node {node.id}.")
+            node.status = ExecutionStatus.FAILED
+            return ExecutionSignal(
+                status=ExecutionStatus.FAILED,
+                content="Failed to create lower graph"
+            )
+
+        # Execute the lower graph, passing self as the upper_executor parameter
+        self.info(f"Executing lower graph {lower_graph.name or lower_graph.id} for node {node.id}")
+        try:
+            final_signal = await self.lower_executor.execute(
+                graph=lower_graph, 
+                context=context, 
+                upper_executor=self # Pass self directly
+            )
+        except Exception as lower_exec_error:
+             self.error(f"Error during lower_executor execution for node {node.id}: {lower_exec_error}", exc_info=True)
+             final_signal = ExecutionSignal(status=ExecutionStatus.FAILED, content=f"Lower execution failed: {lower_exec_error}")
+
+        self.info(f"Lower graph execution for node {node.id} finished with status: {final_signal.status}")
         
-        # Execute the lower graph using the lower executor
-        return await self.lower_executor.execute(lower_graph, context)
+        # Update the current planner node's status based on the final signal
+        if final_signal.status == ExecutionStatus.FAILED:
+            node.status = ExecutionStatus.FAILED
+        elif final_signal.status == ExecutionStatus.COMPLETED:
+            node.status = ExecutionStatus.COMPLETED
+        
+        self.info(f"Planner completed delegation for node {node.id} with status: {node.status}")
+
+        return final_signal
 
     def create_graph_from_upper_node(
         self,
         node: ExecutionNode,
-        upper_graph: Optional['Plan'] = None  # Type hint specific to Planner
+        upper_graph: Optional[Plan] = None
     ) -> Optional[Plan]:
-        """Planner typically doesn't create plans from upper nodes (it's the top layer executor)."""
-        # This method might be used if Planner was nested under another layer,
-        # but as the top domain executor, it usually receives a complete Plan.
+        """Planner typically doesn't create plans from upper nodes."""
         self.warning("create_graph_from_upper_node called on Planner, which is unusual.")
-        # Depending on context, maybe return a sub-plan or raise an error.
-        return None 
-
-    async def execute_node(self, node: ExecutionNode, context: RuntimeContext) -> ExecutionSignal:
-        """Execute a planning node.
-        
-        Args:
-            node: The node to execute
-            context: The runtime context
-            
-        Returns:
-            The result of node execution
-        """
-        try:
-            # Update node status
-            node.status = ExecutionNodeStatus.IN_PROGRESS
-            context.update_execution_node(node.node_id)
-
-            # Execute node step if available
-            if node.step:
-                result = await node.step(context.get('temp', {}))
-                context.store_node_output(node.node_id, result)
-                node.result = result
-
-            # Update node status
-            node.status = ExecutionNodeStatus.COMPLETED
-            return ExecutionSignal(
-                type=ExecutionSignalType.COMPLETE,
-                content={"node_id": node.node_id, "result": node.result}
-            )
-
-        except Exception as e:
-            node.status = ExecutionNodeStatus.FAILED
-            return ExecutionSignal(
-                type=ExecutionSignalType.ERROR,
-                content={"node_id": node.node_id, "error": str(e)}
-            )
+        return None
     

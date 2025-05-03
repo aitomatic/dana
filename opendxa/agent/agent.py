@@ -1,5 +1,19 @@
 """Agent implementation with progressive configuration.
 
+The Agent system follows a Declarative-Imperative pattern:
+
+1. Agent (Declarative Layer)
+   - Describes WHAT the agent is and can do
+   - Defines capabilities and resources
+   - Specifies configuration and identity
+   - Focuses on the agent's nature and potential
+
+2. AgentRuntime (Imperative Layer)
+   - Defines HOW the agent executes and manages state
+   - Controls execution flow and coordination
+   - Manages runtime behavior and state
+   - Focuses on the agent's operation and execution
+
 Core Components:
     - LLM: Required language model for reasoning
     - Reasoning: Strategy for approaching tasks
@@ -44,6 +58,8 @@ from opendxa.execution.reasoning import Reasoner
 from opendxa.common.types import BaseResponse
 from opendxa.base.execution.execution_types import ExecutionSignalType, ExecutionSignal
 from opendxa.common.mixins.tool_callable import ToolCallable
+from opendxa.common.types import BaseRequest
+
 class AgentResponse(BaseResponse):
     """Response from an agent operation."""
 
@@ -86,88 +102,59 @@ class Agent(BaseResource, Capable):
         """Initialize agent with optional name and description."""
         super().__init__(name=name, description=description)
         self._llm = None
-        self._planner = None
-        self._reasoner = None
         self._resources = {}
         self._capabilities = {}
         self._io = None
         self._state = None
         self._runtime = None
-        self._planning_llm = None
-        self._reasoning_llm = None
-        self._reasoning_strategy = ReasoningStrategy.DEFAULT
-        self._planning_strategy = PlanStrategy.DEFAULT
         self._config = AgentConfig()
         self._initialized = False
         self._resource_registry = {}
 
-    @property
-    def planning_strategy(self) -> PlanStrategy:
-        """Get planning strategy."""
-        return self._planning_strategy or PlanStrategy.DEFAULT
-
-    @property
-    def reasoning_strategy(self) -> ReasoningStrategy:
-        """Get reasoning strategy."""
-        return self._reasoning_strategy or ReasoningStrategy.DEFAULT
-
+    # ===== Core Properties =====
     @property
     def state(self) -> AgentState:
-        """Get agent state."""
+        """Property to get or initialize agent state."""
+        if not self._state:
+            self._state = AgentState()
         return self._state
 
     @property
     def runtime(self) -> AgentRuntime:
-        """Get agent runtime."""
+        """Property to get or initialize agent runtime."""
         if not self._runtime:
             raise ValueError("Agent runtime not initialized")
         return self._runtime
 
     @property
     def agent_llm(self) -> LLMResource:
-        """Get agent LLM."""
+        """Property to get or initialize agent LLM."""
         if not self._llm:
             self._llm = self._get_default_llm_resource()
         return self._llm
 
-    def _get_default_llm_resource(self):
-        """Get default LLM resource."""
-        return LLMResource(
-            name=f"{self.name}_llm",
-            config={"model": self._config.get("model")}
-        )
-
     @property
     def available_resources(self) -> Dict[str, BaseResource]:
-        """Get available resources. Resources are things I can access as needed."""
+        """Property to get or initialize available resources."""
         if not self._resources:
             self._resources = {}
         return self._resources
 
     @property
     def capabilities(self) -> Dict[str, BaseCapability]:
-        """Get capabilities. Capabilities are things I can do."""
+        """Property to get or initialize capabilities."""
         if not self._capabilities:
             self._capabilities = {}
         return self._capabilities
 
     @property
     def io(self) -> BaseIO:
-        """Get IO system."""
+        """Property to get or initialize IO system."""
         if not self._io:
             self._io = IOFactory.create_io()
         return self._io
 
-    @property
-    def planning_llm(self) -> LLMResource:
-        """Get planning LLM or fallback to default."""
-        return self._planning_llm or self.agent_llm
-
-    @property
-    def reasoning_llm(self) -> LLMResource:
-        """Get reasoning LLM or fallback to default."""
-        return self._reasoning_llm or self.agent_llm
-
+    # ===== Configuration Methods =====
     def with_model(self, model: str) -> "Agent":
         """Configure agent model string name"""
         self._config.update({"model": model})
@@ -208,35 +195,45 @@ class Agent(BaseResource, Capable):
         self._io = io
         return self
 
-    @property
-    def planner(self) -> Planner:
-        """Get planner."""
-        return self._planner
-    
-    @property
-    def reasoner(self) -> Reasoner:
-        """Get reasoner."""
-        return self._reasoner
-
-    def with_planning(self, strategy: Optional[PlanStrategy] = None, planner: Optional[Planner] = None) -> 'Agent':
-        """Configure planning strategy."""
-        self._planner = planner or Planner(strategy=strategy or PlanStrategy.DEFAULT)
-        return self._planner
-
-    def with_reasoning(self, strategy: Optional[ReasoningStrategy] = None, reasoner: Optional[Reasoner] = None) -> 'Agent':
-        """Configure reasoning strategy and executor."""
-        self._reasoner = reasoner or Reasoner(strategy=strategy or ReasoningStrategy.DEFAULT)
-        return self._reasoner
-
-    def with_planning_llm(self, llm: Union[Dict, str, LLMResource]) -> "Agent":
-        """Configure planning LLM."""
-        self._planning_llm = self._create_llm(llm, "planning_llm")
+    def with_planning(
+        self, 
+        strategy: Optional[PlanStrategy] = None, 
+        planner: Optional[Planner] = None,
+        llm: Optional[Union[Dict, str, LLMResource]] = None
+    ) -> 'Agent':
+        """Configure planning strategy and LLM.
+        
+        Args:
+            strategy: Planning strategy to use
+            planner: Optional planner instance to use
+            llm: Optional LLM configuration (dict, string, or LLMResource)
+        """
+        self.runtime.with_planning(strategy, planner, llm)
         return self
 
-    def with_reasoning_llm(self, llm: Union[Dict, str, LLMResource]) -> "Agent":
-        """Configure reasoning LLM."""
-        self._reasoning_llm = self._create_llm(llm, "reasoning_llm")
+    def with_reasoning(
+        self, 
+        strategy: Optional[ReasoningStrategy] = None, 
+        reasoner: Optional[Reasoner] = None,
+        llm: Optional[Union[Dict, str, LLMResource]] = None
+    ) -> 'Agent':
+        """Configure reasoning strategy and executor.
+        
+        Args:
+            strategy: Reasoning strategy to use
+            reasoner: Optional reasoner instance to use
+            llm: Optional LLM configuration (dict, string, or LLMResource)
+        """
+        self.runtime.with_reasoning(strategy, reasoner, llm)
         return self
+
+    # ===== Helper Methods =====
+    def _get_default_llm_resource(self):
+        """Get default LLM resource."""
+        return LLMResource(
+            name=f"{self.name}_llm",
+            config={"model": self._config.get("model")}
+        )
 
     def _create_llm(self, llm: Union[Dict, str, LLMResource], name: str) -> LLMResource:
         """Create LLM from various input types."""
@@ -254,6 +251,7 @@ class Agent(BaseResource, Capable):
             )
         raise ValueError(f"Invalid LLM configuration: {llm}")
 
+    # ===== Lifecycle Methods =====
     def _initialize(self) -> 'Agent':
         """Initialize agent components. Must be called at run-time."""
         if self._initialized:
@@ -261,12 +259,6 @@ class Agent(BaseResource, Capable):
 
         if not self._llm:
             self._llm = self._get_default_llm_resource()
-        if not self._planner:
-            self._planner = Planner(strategy=self._planning_strategy)
-        if not self._reasoner:
-            self._reasoner = Reasoner(strategy=self._reasoning_strategy)
-        if not self._io:
-            self._io = IOFactory.create_io()
         if not self._state:
             self._state = AgentState()
         if not self._runtime:
@@ -294,6 +286,7 @@ class Agent(BaseResource, Capable):
         """Cleanup agent when exiting context."""
         await self.cleanup()
 
+    # ===== Execution Methods =====
     async def async_run(self, plan: Plan, context: Optional[RuntimeContext] = None) -> AgentResponse:
         """Execute an objective."""
         self._initialize()
@@ -316,9 +309,9 @@ class Agent(BaseResource, Capable):
     @ToolCallable.tool
     def set_variable(self, name: str, value: Any) -> BaseResponse:
         """Set a variable in the RuntimeContext."""
-        self.runtime.context.set_variable(name, value)
+        self.runtime.runtime_context.set_variable(name, value)
         return BaseResponse(success=True, content=f"Variable {name} set to {value}")
 
     async def query(self, request: BaseRequest) -> BaseResponse:
         """Query the agent."""
-        return self.runtime.context.query(request)
+        return self.runtime.runtime_context.query(request)

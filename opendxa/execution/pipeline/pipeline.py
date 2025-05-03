@@ -9,6 +9,10 @@ This dual inheritance design supports a structure that has graph execution flow
 for data processing, but also behaves as a data resource that can be discovered,
 initialized, and used through the standard resource interface.
 
+Note: The Pipeline stack is separate from the Planning/Reasoning architecture.
+While Planning/Reasoning focuses on task decomposition and execution strategies,
+Pipeline focuses on data processing and transformation through a series of steps.
+
 Features:
 - Process data through a series of steps
 - Handle both function and resource-based steps
@@ -116,18 +120,6 @@ class Pipeline(ExecutionGraph, BaseResource, Loggable):
         self._cleaned_up = False
         self._buffers_initialized = False
         self._build_graph(steps)
-
-    @property
-    def context(self) -> Optional[PipelineContext]:
-        """Get execution context."""
-        return self._context
-
-    @context.setter
-    def context(self, context: RuntimeContext) -> None:
-        """Set execution context."""
-        if not isinstance(context, PipelineContext):
-            raise TypeError("Pipeline requires PipelineContext")
-        self._context = context
 
     def _build_graph(self, steps: List[PipelineStep]) -> None:
         """Build execution graph from steps."""

@@ -6,237 +6,194 @@ from opendxa.base.execution import RuntimeContext
 from opendxa.base.execution.execution_types import (
     ExecutionNode,
     ExecutionSignal,
-    ExecutionSignalType,
-    ExecutionNodeStatus,
-    Objective,
+    ExecutionStatus,
     ExecutionEdge,
 )
 from opendxa.base.execution.base_executor import BaseExecutor
+from opendxa.base.resource import LLMResource
 from opendxa.execution.reasoning.reasoning import Reasoning
 from opendxa.execution.reasoning.reasoning_factory import ReasoningFactory
 from opendxa.execution.reasoning.reasoning_strategy import ReasoningStrategy
 from opendxa.base.execution.execution_graph import ExecutionGraph
 from opendxa.common.graph import NodeType
-from opendxa.common.types import BaseRequest, BaseResponse
 from opendxa.common.mixins.loggable import Loggable
+from opendxa.common.types import BaseRequest
 
 
 log = logging.getLogger(__name__)
 
-class Reasoner(BaseExecutor, Loggable):
-    """Reasoning executor for OpenDXA."""
+class Reasoner(BaseExecutor[Reasoning], Loggable):
+    """Reasoning executor for OpenDXA.
+    
+    Responsible for executing fine-grained reasoning tasks, typically delegated
+    by a Planner. It often interacts with an LLM to perform the reasoning
+    based on a specified strategy and contextual information derived from the
+    execution hierarchy.
 
-    # Required class attributes
-    _strategy_type = ReasoningStrategy
-    _default_strategy = ReasoningStrategy.DEFAULT
-    graph_class = Reasoning
+    Initialization (`__init__`):
+        - strategy (ReasoningStrategy): Defines the method of reasoning (e.g., 
+          Chain-of-Thought). Used for constructing LLM prompts.
+        - llm (LLMResource): The language model instance used for reasoning.
+        - factory (ReasoningFactory): Used by BaseExecutor for graph creation.
+
+    Execution (`execute_node_core`):
+        Receives:
+        - node (ExecutionNode): The specific node within the Reasoner's own 
+          dynamically created graph. `node.objective` defines the immediate 
+          reasoning task, derived from the delegating Planner node's objective.
+        - context (RuntimeContext): Passed down the execution chain. Used to access 
+          shared state via the StateManager (`context.get`/`set`) and is passed 
+          to LLM interaction methods.
+        Core Logic:
+        - Primarily calls `_execute_with_llm` to perform the task.
+
+    LLM Interaction (`_execute_with_llm`, `_build_user/system_messages`):
+        - Builds prompts using information from:
+            - The current `node` (objective, description). 
+            - The specified `self._strategy`.
+            - The execution hierarchy reconstructed by traversing `self.upper_executor` links 
+              (accessing `upper_executor.graph.objective` at each level).
+            - Potentially other state retrieved via `context.get()`.
+        - Queries the `self._llm` resource.
+        - Returns the result in an ExecutionSignal.
+
+    Hierarchy Context:
+        - Relies on the `self.upper_executor: BaseExecutor` link (set temporarily by the 
+          calling Planner) to traverse *up* the execution chain.
+        - Accesses `executor.graph.objective` at each level during traversal to 
+          understand the broader goals.
+        - The Reasoner's own graph objective (`self.graph.objective`) reflects the 
+          specific task delegated by the immediate parent node.
+    """
+
     _factory_class = ReasoningFactory
-    _depth = 2
 
-    def __init__(self, strategy: Optional[str] = None):
-        """Initialize reasoning executor.
+    def __init__(
+        self,
+        strategy: ReasoningStrategy,
+        llm: Optional[LLMResource] = None,
+        factory: Optional[ReasoningFactory] = None
+    ):
+        """Initialize the reasoner.
         
         Args:
-            strategy: Optional reasoning strategy
+            strategy: The reasoning strategy
+            llm: Optional LLM resource
+            factory: Optional factory for creating graphs
         """
-        super().__init__()
+        super().__init__(factory=factory)
         self._strategy = strategy
+        self._llm = llm
 
-    async def execute_node(self, node: ExecutionNode, context: RuntimeContext) -> ExecutionSignal:
-        """Execute a reasoning node.
+    async def execute_node_core(
+        self,
+        node: ExecutionNode,
+        context: RuntimeContext
+    ) -> ExecutionSignal:
+        """Execute the core reasoning node logic."""
+        # Removed: current_node_id = context.get('execution.current_node_id')
+        # The 'node' parameter passed in *is* the current node.
+        
+        # Optional: Log context if desired. We can get parent info via upper_executor
+        self.info("\nExecuting Reasoning Node:")
+        self.info("========================")
+        self.info(f"  Node ID: {node.id}")
+        self.info(f"  Node Objective: {node.objective}")
+        if self.upper_executor and self.upper_executor.current_node:
+            upper_node = self.upper_executor.current_node
+            self.info(f"  Called by Planner Node: {upper_node.id} ({upper_node.objective})")
+        if self.upper_executor and self.upper_executor.graph:
+            upper_graph = self.upper_executor.graph
+            self.info(f"  Part of Plan Graph: {upper_graph.name or upper_graph.id} ({upper_graph.objective})")
+        
+        # Execute with LLM
+        # This is the main task of the Reasoner node
+        self.info(f"Passing node {node.id} to LLM execution.")
+        return await self._execute_with_llm(node, context)
+        
+        # Removed: Check for current_node_id and error branch, 
+        # as execute_node_core is always called with a valid node.
+
+    async def _execute_with_llm(
+        self,
+        node: ExecutionNode,
+        context: RuntimeContext
+    ) -> ExecutionSignal:
+        """Execute node with LLM interaction.
         
         Args:
             node: The node to execute
             context: The runtime context
             
         Returns:
-            The result of node execution
+            Execution signal with result
         """
-        try:
-            # Update node status
-            node.status = ExecutionNodeStatus.IN_PROGRESS
-            context.update_execution_node(node.node_id)
-
-            # Execute node step if available
-            if node.step:
-                result = await node.step(context.get('temp', {}))
-                context.store_node_output(node.node_id, result)
-                node.result = result
-
-            # Update node status
-            node.status = ExecutionNodeStatus.COMPLETED
+        if not self._llm:
+            self.error("Reasoner: No LLM configured for execution.")
             return ExecutionSignal(
-                type=ExecutionSignalType.CONTROL_COMPLETE,
-                content={"node_id": node.node_id, "result": node.result}
+                status=ExecutionStatus.FAILED,
+                content="No LLM configured"
             )
 
-        except Exception as e:
-            node.status = ExecutionNodeStatus.FAILED
-            return ExecutionSignal(
-                type=ExecutionSignalType.CONTROL_ERROR,
-                content={"node_id": node.node_id, "error": str(e)}
-            )
-
-    async def _execute_node_core(self, node: ExecutionNode, context: RuntimeContext) -> List[ExecutionSignal]:
-        """Execute a reasoning node using LLM.
-
-        This is the bottom layer executor, so it handles the actual execution
-        of reasoning tasks using LLMs.
-
-        Args:
-            node: The node to execute
-            context: The execution context
-
-        Returns:
-            List of execution signals
-        """
-        # Get current node ID from context
-        current_node_id = context.get('execution.current_node_id')
-
-        # Print concise execution hierarchy
-        self.info("\nExecution Context:")
-        self.info("=================")
+        # Build messages
+        user_messages = self._build_user_messages(node, context)
+        system_messages = self._build_system_messages(node, context)
         
-        if current_node_id:
-            plan_obj = context.get('temp.objective')
-            self.info(f"Plan: {node.node_type} - {node.description}")
-            self.info(f"  Objective: {plan_obj if plan_obj else 'None'}")
-
-            self.info(f"  Reasoning: {node.node_type} - {node.description}")
-            self.info(f"    Objective: {node.objective if node.objective else 'None'}")
-
-            # Make LLM call using the stored LLM resource
-            if self._reasoning_llm and node.objective:
-                # Build prompt components
-                user_messages = self._build_user_messages(context)
-                system_messages = self._build_system_messages()
-                
-                # Construct the request for the LLM query
-                request_args = {
-                    "user_messages": user_messages,
-                    "system_messages": system_messages,
-                    # Add other parameters like max_tokens, temperature if needed
-                    # "max_tokens": 1000,
-                    # "temperature": 0.7,
-                    # Pass available tools/resources if the strategy requires them
-                    # "available_resources": context.available_resources or {}
-                }
-                request = BaseRequest(arguments=request_args)
-                
-                # Call the LLM query method
-                response: BaseResponse = await self._reasoning_llm.query(request)
-                self.info(f"LLM Response: {response.content}")
-                
-                # Create a signal with the result
-                result_signal = ExecutionSignal(
-                    type=ExecutionSignalType.DATA_RESULT if response.success else ExecutionSignalType.CONTROL_ERROR,
-                    content=response.content  # Use the content from BaseResponse
-                )
-                return [result_signal]
-            
-            # No LLM or objective, return empty list or default signal?
-            self.warning("No reasoning LLM or objective found, cannot execute reasoning node.")
-            return []
-
-        # Fallback if current_node_id is not found
-        self.warning("Current node ID not found in context, cannot execute reasoning node.")
-        return []
-
-    def _build_reasoning_directives(self, strategy: ReasoningStrategy) -> List[str]:
-        """Build the reasoning strategy section of the prompt.
-
-        Args:
-            strategy: The reasoning strategy to use
-
-        Returns:
-            List of strings for the reasoning strategy section
-        """
-        result = ["Here is your reasoning strategy:"]
-
-        if strategy == ReasoningStrategy.TREE_OF_THOUGHT:
-            result.extend([
-                "Reasoning: Following tree-of-thought strategy:",
-                "  1. Identify multiple possible approaches to the problem",
-                "  2. Explore each approach systematically",
-                "  3. Evaluate the strengths and weaknesses of each path",
-                "  4. Select and refine the most promising solution"
-            ])
-        elif strategy == ReasoningStrategy.REFLECTION:
-            result.extend([
-                "Reasoning: Following reflection strategy:",
-                "  1. Analyze the problem and initial solution",
-                "  2. Critically evaluate the solution's effectiveness",
-                "  3. Identify potential improvements and refinements",
-                "  4. Implement and validate the enhanced solution"
-            ])
-        elif strategy == ReasoningStrategy.OODA:
-            result.extend([
-                "Reasoning: Following OODA loop strategy.",
-                "  1. Observe: Gather and analyze current context and requirements",
-                "  2. Orient: Understand the situation and identify key factors",
-                "  3. Decide: Formulate a clear approach and decision",
-                "  4. Act: Execute the reasoning task with the chosen approach",
-            ])
-        else:  # Default to CHAIN_OF_THOUGHT
-            result.extend([
-                "Reasoning: Following chain-of-thought strategy:",
-                "  1. Break down the problem into sequential steps",
-                "  2. Analyze each step carefully and thoroughly",
-                "  3. Connect the steps logically to form a coherent solution",
-                "  4. Verify the solution's completeness and correctness"
-            ])
+        # Create request
+        # TODO: Define a proper request structure if BaseRequest is too generic
+        request = BaseRequest(arguments={
+            "user_messages": user_messages,
+            "system_messages": system_messages,
+        })
         
-        result.extend([
-            "Repeat the above process exactly 3 times, or until you are confident that the task is complete and the objective is met."
-            "At the end, you must always provide an assessement of whether the objective has been met or not."
-        ])
-        return result
+        # Query LLM
+        self.debug(f"Querying LLM for node {node.node_id}...")
+        response = await self._llm.query(request)
+        self.debug(f"LLM response received for node {node.node_id}.")
+        
+        # Return signal
+        return ExecutionSignal(
+            status=ExecutionStatus.COMPLETED if response.success else ExecutionStatus.FAILED,
+            content=response.content
+        )
 
-    def _build_user_messages(self, context: RuntimeContext) -> List[str]:
-        """Build the user messages for the reasoning node.
+    def _build_user_messages(self, node: ExecutionNode, context: RuntimeContext) -> List[str]:
+        """Build user messages for reasoning using executor traversal."""
+        user_messages = []
+        user_messages.append("EXECUTION HIERARCHY (Parent Objectives):")
+        
+        hierarchy = []
+        executor: Optional[BaseExecutor] = self.upper_executor  # Start traversal from parent
+        while executor:
+            if executor.graph and executor.graph.objective:
+                # Prepend to get top-down order
+                hierarchy.insert(0, {
+                    'objective': executor.graph.objective,
+                    # Could add executor type later if needed: 'type': type(executor).__name__
+                })
+            # Traverse up the chain
+            executor = executor.upper_executor
 
-        Args:
-            context: The execution context
+        if not hierarchy:
+            user_messages.append("- Executing at the top level (no parent planners).")
+        else:
+            for i, frame in enumerate(hierarchy):
+                graph_objective = frame.get('objective')
+                obj_str = str(graph_objective.current) if hasattr(graph_objective, 'current') else str(graph_objective)
+                # executor_type = frame.get('type', 'Unknown') # If type added above
+                user_messages.append(f"- Level {i+1}: {obj_str}") 
 
-        Returns:
-            The user messages for the reasoning node
-        """
-        # Get current node ID and plan information from context
-        current_node_id = context.get('execution.current_node_id')
-        plan_obj = context.get('temp.objective')
-        plan_nodes = context.get('temp.plan_nodes', {})
-
-        user_messages = [
-            "PLAN OVERVIEW:",
-            f"- Overall Plan Objective: {plan_obj if plan_obj else 'None'}",
-            "",
-            "EXECUTION GRAPH:",
-        ]
-
-        # Add plan nodes sequence
-        for i, (node_id, node_data) in enumerate(plan_nodes.items(), 1):
-            is_current = node_id == current_node_id
-            current_marker = " [CURRENT]" if is_current else ""
-            user_messages.extend([
-                f"{i}. {node_data.get('node_type')}: {node_data.get('description')}{current_marker}",
-                f"   - Objective: {node_data.get('objective', 'None')}",
-                f"   - Status: {node_data.get('status', 'None')}",
-            ])
-
-        user_messages.extend([
-            "",
-            "CURRENT EXECUTION CONTEXT:",
-            f"- Current Node: {current_node_id if current_node_id else 'None'}",
-        ])
+        user_messages.append("\nCURRENT REASONING TASK:")
+        # The current node's objective defines the immediate task
+        node_objective_str = str(node.objective.current) if hasattr(node.objective, 'current') else str(node.objective)
+        user_messages.append(f"- Objective: {node_objective_str}")
+        user_messages.append(f"- Node ID: {node.id}")
+        user_messages.append(f"- Description: {node.description}")
 
         return user_messages
 
-    def _build_system_messages(self) -> List[str]:
-        """Build the system messages for the reasoning node.
-
-        Returns:
-            The system messages for the reasoning node
-        """
+    def _build_system_messages(self, node: ExecutionNode, context: RuntimeContext) -> List[str]:
+        """Build system messages for reasoning."""
         system_messages = []
         system_messages.extend([
             "You are executing a reasoning task. Provide clear, logical analysis and reasoning.",
@@ -269,48 +226,87 @@ class Reasoner(BaseExecutor, Loggable):
 
         return system_messages
 
+    def _build_reasoning_directives(self, strategy: ReasoningStrategy) -> List[str]:
+        """Build the reasoning strategy section of the prompt."""
+        result = []
+        
+        if strategy == ReasoningStrategy.TREE_OF_THOUGHT:
+            result.extend([
+                "Reasoning: Following tree-of-thought strategy:",
+                "  1. Generate multiple possible solutions",
+                "  2. Evaluate each solution branch",
+                "  3. Select the most promising branch",
+                "  4. Refine the selected solution"
+            ])
+        elif strategy == ReasoningStrategy.REFLECTION:
+            result.extend([
+                "Reasoning: Following reflection strategy:",
+                "  1. Analyze the current situation",
+                "  2. Identify potential improvements",
+                "  3. Implement improvements",
+                "  4. Verify effectiveness"
+            ])
+        elif strategy == ReasoningStrategy.OODA:
+            result.extend([
+                "Reasoning: Following OODA loop strategy:",
+                "  1. Observe the current situation",
+                "  2. Orient to the context",
+                "  3. Decide on a course of action",
+                "  4. Act on the decision"
+            ])
+        elif strategy == ReasoningStrategy.CHAIN_OF_THOUGHT:
+            result.extend([
+                "Reasoning: Following chain-of-thought strategy:",
+                "  1. Break down the problem into steps",
+                "  2. Solve each step sequentially",
+                "  3. Combine results to reach conclusion"
+            ])
+        else:
+            result.extend([
+                "Reasoning: Following default strategy:",
+                "  1. Analyze the problem",
+                "  2. Consider possible approaches",
+                "  3. Select and implement solution"
+            ])
+            
+        return result
+
     def create_graph_from_upper_node(
         self, 
         node: ExecutionNode, 
         upper_graph: Optional[ExecutionGraph] = None
     ) -> Optional[Reasoning]:
-        """Create a Reasoning graph based on an upper-level node (e.g., Plan node).
-        
-        This implementation creates a simple single-node graph for reasoning.
-        
-        Args:
-            node: The upper-level node (usually a Planning node).
-            upper_graph: The graph the node belongs to (optional).
-            
-        Returns:
-            A Reasoning instance or None if creation fails.
-        """
+        """Create a Reasoning graph based on an upper-level node."""
         self.info(f"Creating Reasoning graph for upper node: {node.node_id}")
         
-        # Create a new reasoning graph (using Reasoning class)
+        # Create a new reasoning graph
         reasoning_graph = Reasoning(
             name=f"Reasoning for {node.node_id}",
-            objective=node.objective  # Use the Objective object directly
+            objective=node.objective
         )
         
-        # Create a single reasoning node based on the upper node's objective
+        # TODO: Add logic to populate the reasoning graph based on node and strategy
+        # This might involve adding specific nodes (Observe, Orient, Decide, Act for OODA)
+        # or setting up the initial state for the chosen reasoning strategy.
+        # For now, returning a basic graph structure.
+        
+        start_node = ExecutionNode(node_id="START", node_type=NodeType.START, objective="Start Reasoning")
+        end_node = ExecutionNode(node_id="END", node_type=NodeType.END, objective="End Reasoning")
         reasoning_node = ExecutionNode(
-            node_id="REASON",  # Simple ID for the single reasoning task
-            node_type=NodeType.TASK,  # Treat reasoning as a task
-            objective=node.objective,  # Inherit objective
-            metadata=node.metadata  # Inherit metadata
+             node_id=f"reasoning_{node.node_id}", 
+             node_type=NodeType.TASK, 
+             description=f"Perform {self._strategy.name} reasoning for {node.description}",
+             objective=node.objective # Explicitly align with description
         )
-        
-        # Add START, reasoning node, and END
-        start_node = ExecutionNode(node_id="START", node_type=NodeType.START, objective=Objective("Start Reasoning"))
-        end_node = ExecutionNode(node_id="END", node_type=NodeType.END, objective=Objective("End Reasoning"))
-        
+
         reasoning_graph.add_node(start_node)
         reasoning_graph.add_node(reasoning_node)
         reasoning_graph.add_node(end_node)
         
-        # Connect nodes using ExecutionEdge objects
-        reasoning_graph.add_edge(ExecutionEdge(start_node, reasoning_node))
-        reasoning_graph.add_edge(ExecutionEdge(reasoning_node, end_node))
+        reasoning_graph.add_edge(ExecutionEdge(source=start_node.node_id, target=reasoning_node.node_id))
+        reasoning_graph.add_edge(ExecutionEdge(source=reasoning_node.node_id, target=end_node.node_id))
         
+        reasoning_graph.set_start_node_id(start_node.node_id)
+        reasoning_graph.set_end_node_id(end_node.node_id)
+
         return reasoning_graph

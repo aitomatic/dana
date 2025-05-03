@@ -1,12 +1,44 @@
-"""Agent runtime for executing plans and managing execution flow."""
+"""Agent runtime for executing plans and managing execution flow.
 
-from typing import Any, Optional, TYPE_CHECKING
+AgentRuntime is the Imperative/Executive layer in the Declarative-Imperative pattern:
+
+1. Role: Defines HOW the agent executes and manages state
+   - Controls execution flow and coordination
+   - Manages runtime behavior and state
+   - Focuses on the agent's operation and execution
+
+2. Responsibilities:
+   - Plan execution management
+   - Runtime state coordination
+   - Component lifecycle control
+   - Execution flow orchestration
+
+3. Configuration:
+   - Planning strategy and execution
+   - Reasoning strategy and execution
+   - Runtime state management
+   - Component coordination
+
+Example:
+    ```python
+    # Configure runtime components
+    runtime = AgentRuntime(agent)\\
+        .with_planning(strategy=PlanStrategy.DEFAULT)\\
+        .with_reasoning(strategy=ReasoningStrategy.DEFAULT)
+
+    # Execute plan with context
+    result = await runtime.execute(plan, context)
+    ```
+"""
+
+from typing import Any, Optional, TYPE_CHECKING, Union, Dict
 from opendxa.base.execution import RuntimeContext
-from opendxa.base.execution.execution_types import ExecutionNode, ExecutionSignal, ExecutionSignalType
+from opendxa.base.execution.execution_types import ExecutionSignal, ExecutionSignalType
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.base.state import WorldState, ExecutionState
-from opendxa.execution.planning import Plan
-from opendxa.execution.planning import Planner
+from opendxa.execution.planning import Plan, Planner, PlanStrategy
+from opendxa.execution.reasoning import Reasoner, ReasoningStrategy
+from opendxa.base.resource import LLMResource
 if TYPE_CHECKING:
     from opendxa.agent.agent import Agent
 
@@ -21,18 +53,142 @@ class AgentRuntime(Loggable):
         """
         super().__init__()
         self._agent = agent
+        self._runtime_context = None
+        self._planner = None
+        self._reasoner = None
+
+    # ===== Configuration Methods =====
+    def with_planning(
+        self, 
+        strategy: Optional[PlanStrategy] = None, 
+        planner: Optional[Planner] = None,
+        llm: Optional[Union[Dict, str, LLMResource]] = None
+    ) -> 'AgentRuntime':
+        """Configure planning strategy and LLM.
+        
+        If both planner and strategy are provided, updates the planner's strategy.
+        If only strategy is provided, creates a new planner with that strategy.
+        
+        Args:
+            strategy: Planning strategy to use
+            planner: Optional planner instance to use
+            llm: Optional LLM configuration (dict, string, or LLMResource)
+        """
+        if llm is not None:
+            llm_resource = self._create_llm(llm, "planning_llm")
+        else:
+            llm_resource = self._agent.agent_llm
+
+        if planner is not None:
+            # If planner is provided, update its strategy if strategy is also provided
+            if strategy is not None:
+                planner.strategy = strategy
+            if llm_resource is not None:
+                planner.llm = llm_resource
+            self.planner = planner
+        else:
+            # If no planner provided, create new one with strategy
+            self.planner = Planner(
+                strategy=strategy or PlanStrategy.DEFAULT,
+                llm=llm_resource
+            )
+        return self
+
+    def with_reasoning(
+        self, 
+        strategy: Optional[ReasoningStrategy] = None, 
+        reasoner: Optional[Reasoner] = None,
+        llm: Optional[Union[Dict, str, LLMResource]] = None
+    ) -> 'AgentRuntime':
+        """Configure reasoning strategy and LLM.
+        
+        If both reasoner and strategy are provided, updates the reasoner's strategy.
+        If only strategy is provided, creates a new reasoner with that strategy.
+        
+        Args:
+            strategy: Reasoning strategy to use
+            reasoner: Optional reasoner instance to use
+            llm: Optional LLM configuration (dict, string, or LLMResource)
+        """
+        if llm is not None:
+            llm_resource = self._create_llm(llm, "reasoning_llm")
+        else:
+            llm_resource = self._agent.agent_llm
+
+        if reasoner is not None:
+            if strategy is not None:
+                reasoner.strategy = strategy
+            if llm_resource is not None:
+                reasoner.llm = llm_resource
+            self.reasoner = reasoner
+        else:
+            self.reasoner = Reasoner(
+                strategy=strategy or ReasoningStrategy.DEFAULT,
+                llm=llm_resource
+            )
+        return self
+
+    def _create_llm(self, llm: Union[Dict, str, LLMResource], name: str) -> LLMResource:
+        """Create LLM from various input types."""
+        if isinstance(llm, LLMResource):
+            return llm
+        if isinstance(llm, str):
+            return LLMResource(
+                name=f"{self._agent.name}_{name}",
+                config={"model": llm}
+            )
+        if isinstance(llm, Dict):
+            return LLMResource(
+                name=f"{self._agent.name}_{name}",
+                config=llm
+            )
+        raise ValueError(f"Invalid LLM configuration: {llm}")
+
+    # ===== Properties =====
+    @property
+    def runtime_context(self) -> RuntimeContext:
+        """Get the runtime context."""
+        if self._runtime_context is None:
+            self._runtime_context = self.__create_runtime_context()
+        return self._runtime_context
+    
+    @property
+    def planner(self) -> Planner:
+        """Get the planner instance."""
+        if self._planner is None:
+            self._planner = Planner(
+                strategy=PlanStrategy.DEFAULT,
+                llm=self._agent.agent_llm
+            )
+        return self._planner
+
+    @planner.setter
+    def planner(self, planner: Optional[Planner]) -> None:
+        """Set the planner instance."""
+        self._planner = planner
 
     @property
-    def _planner(self) -> Planner:
-        """Convenience property for accessing the planner."""
-        return self._agent.planner
-    
+    def reasoner(self) -> Reasoner:
+        """Get the reasoner instance."""
+        if self._reasoner is None:
+            self._reasoner = Reasoner(
+                strategy=ReasoningStrategy.DEFAULT,
+                llm=self._agent.agent_llm
+            )
+        return self._reasoner
+
+    @reasoner.setter
+    def reasoner(self, reasoner: Optional[Reasoner]) -> None:
+        """Set the reasoner instance."""
+        self._reasoner = reasoner
+
     @property
     def _current_plan(self) -> Plan:
         """Convenience property for accessing the current plan."""
-        return self._agent.planner.get_current_plan()
+        return self.planner.get_current_plan()
 
-    def create_runtime_context(self) -> RuntimeContext:
+    # ===== Runtime Methods =====
+    def __create_runtime_context(self) -> RuntimeContext:
         """Create a new runtime context for plan execution.
         
         Returns:
@@ -68,39 +224,18 @@ class AgentRuntime(Loggable):
             state_handlers=state_handlers,
         )
 
-    async def execute(self, plan: 'Plan', context: Optional[RuntimeContext] = None) -> Any:
+    async def execute(self, plan: 'Plan') -> Any:
         """Execute a plan.
         
         Args:
             plan: The plan to execute
-            context: Optional runtime context. If None, a new one will be created.
             
         Returns:
             The result of plan execution
         """
-        if context is None:
-            context = self.create_runtime_context()
-
-        self._planner.execute(plan, context)
+        self.planner.execute(plan, self.runtime_context)
 
         return ExecutionSignal(
             type=ExecutionSignalType.CONTROL_COMPLETE,
             content={"success": True}
         )
-
-    async def _execute_planning_node(self, node: ExecutionNode, context: RuntimeContext) -> ExecutionSignal:
-        """Execute a planning node.
-        
-        Args:
-            node: The node to execute
-            context: The runtime context
-            
-        Returns:
-            The result of node execution
-        """
-        return await self._planner.execute(node, context)
-
-    async def cleanup(self) -> None:
-        """Clean up runtime resources."""
-        # Nothing to clean up for now
-        pass 

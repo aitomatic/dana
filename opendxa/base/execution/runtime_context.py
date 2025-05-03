@@ -10,75 +10,33 @@ The runtime context provides a unified interface for accessing and modifying
 state across different containers and handlers.
 """
 
-from typing import Optional, Dict, Any, List, Callable, TYPE_CHECKING
+from typing import Optional, Dict, Any, List, Callable
+from pydantic import BaseModel, Field
 from opendxa.base.state.agent_state import AgentState
 from opendxa.base.state.world_state import WorldState
 from opendxa.base.state.execution_state import ExecutionState, ExecutionStatus
 from opendxa.base.state.state_manager import StateManager
-from opendxa.common.mixins.loggable import Loggable
 
-if TYPE_CHECKING:
-    from opendxa.agent.agent import Agent
+class RuntimeContext(BaseModel):
+    """Holds the runtime context for execution, delegating state to StateManager."""
+    
+    # State Manager handles access to various state components
+    _state_manager: StateManager = Field(exclude=True)  # Exclude from Pydantic model fields
 
-class RuntimeContext(Loggable):
-    """Interface for runtime operations and coordination.
+    # Removed: Core execution state current_node_id 
+    # Removed: Flexible data storage _data
     
-    This class provides the interface for executing plans and nodes,
-    coordinating between plan and reasoning layers, and managing the
-    runtime flow. It does not maintain state directly, but instead
-    works with an ExecutionState instance to track execution progress.
-    
-    The context is responsible for:
-    - Executing plans from start to finish
-    - Executing individual nodes
-    - Coordinating between plan and reasoning layers
-    - Managing runtime flow and transitions
-    - Processing execution signals and events
-    
-    It should be used as the primary interface for all runtime operations,
-    while the ExecutionState handles state management. The context ensures
-    that state changes are properly coordinated and validated through the
-    ExecutionState instance.
-    
-    Example:
-        ```python
-        # Create state and context
-        state = ExecutionState()
-        context = RuntimeContext(state)
-        
-        # Execute a plan
-        plan = Plan(...)
-        await context.execute_plan(plan)
-        ```
-    
-    Attributes:
-        _state: The ExecutionState instance managing execution state
-    """
-
     def __init__(self,
-                 agent: 'Agent',
                  agent_state: AgentState,
                  world_state: WorldState,
                  execution_state: ExecutionState,
-                 state_handlers: Optional[Dict[str, Dict[str, Callable]]] = None):
-        """Initializes the execution context with state containers and handlers.
+                 state_handlers: Optional[Dict[str, Dict[str, Callable]]] = None,
+                 **data: Any  # Allow passing other Pydantic fields if needed
+                 ):
+        """Initializes the execution context with state containers and handlers."""
+        # Initialize Pydantic fields first if any were passed via data
+        super().__init__(**data)
         
-        The initialization process:
-        1. Creates state containers for agent, world, and execution state
-        2. Initializes StateManager with state containers and handlers
-        
-        Args:
-            agent_state: The agent state container
-            world_state: The world state container
-            execution_state: The execution state container
-            state_handlers: Optional dictionary mapping prefixes to handler functions.
-                           Each prefix should map to a dictionary with 'get' and/or 'set'
-                           keys mapping to handler functions.
-                           These will be called when accessing state with their prefix.
-        """
-        super().__init__()
-        self._state = execution_state
-
         # Initialize StateManager with state containers and handlers
         self._state_manager = StateManager(
             state_containers={
@@ -88,30 +46,16 @@ class RuntimeContext(Loggable):
             },
             state_handlers=state_handlers
         )
+        # NOTE: Removed self._state = execution_state as StateManager now holds it under 'execution'
 
-    def get(self, key: str, default: Any = None) -> Any:
-        """Retrieve a value using a unified key string.
-        
-        Args:
-            key: The unified key string (e.g., 'plan.id', 'agent.user.name')
-            default: The value to return if the key is not found
-
-        Returns:
-            The retrieved value, or the default value if not found
-        """
+    def get(self, key: str, default: Optional[Any] = None) -> Optional[Any]:
+        """Get a value from the context via the StateManager."""
+        # Delegate to StateManager
         return self._state_manager.get(key, default)
 
     def set(self, key: str, value: Any) -> None:
-        """Set a value using a unified key string.
-        
-        Args:
-            key: The unified key string (e.g., 'plan.objective', 'agent.user.name')
-            value: The value to set
-        
-        Raises:
-            ValueError: If the key format is invalid or attempts to set read-only key
-            KeyError: If the prefix is unknown
-        """
+        """Set a value in the context via the StateManager."""
+        # Delegate to StateManager
         self._state_manager.set(key, value)
 
     def _initialize_execution_state(self) -> None:
@@ -224,3 +168,15 @@ class RuntimeContext(Loggable):
             except Exception as e:
                 self.error(f"Failed to store field '{result_field}' to '{destination_string}' for node '{node_id}': {e}")
                 continue
+
+    def clone(self) -> 'RuntimeContext':
+        """Create a copy of the context.
+        WARNING: This performs a shallow copy of the state manager and underlying 
+        state containers by default with Pydantic copy. Deep state isolation 
+        might require custom cloning logic if needed.
+        """
+        new_context = self.model_copy(deep=False)  # Use shallow copy primarily
+        return new_context
+
+    # Allow arbitrary types for flexibility in underlying state containers if needed by StateManager
+    model_config = {"arbitrary_types_allowed": True}

@@ -6,34 +6,40 @@ from enum import Enum
 from pydantic import BaseModel, Field, ConfigDict
 from opendxa.common.graph import Node, Edge, NodeType
 
-class ExecutionNodeStatus(str, Enum):
-    """Status of an execution node."""
-    NONE = "NONE"
-    PENDING = "PENDING"
-    IN_PROGRESS = "IN_PROGRESS"
-    COMPLETED = "COMPLETED"
-    FAILED = "FAILED"
-    SKIPPED = "SKIPPED"
-    BLOCKED = "BLOCKED"
-
 class ExecutionStatus(str, Enum):
-    """Status of an execution."""
+    """Status of an execution or node.
+    
+    This enum represents all possible states in the execution system:
+    - Overall execution states (PENDING, RUNNING, COMPLETED, FAILED, CANCELLED)
+    - Node-specific states (IN_PROGRESS, SKIPPED, BLOCKED)
+    - Control flow states (NEXT, ERROR)
+    """
+    # Overall execution states
     PENDING = "PENDING"
     RUNNING = "RUNNING"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
     CANCELLED = "CANCELLED"
+    
+    # Node-specific states
+    IN_PROGRESS = "IN_PROGRESS"
+    SKIPPED = "SKIPPED"
+    BLOCKED = "BLOCKED"
+    
+    # Control flow states
+    NEXT = "NEXT"     # Move to next node
+    ERROR = "ERROR"   # Handle error and redirect
 
 class ExecutionResult(BaseModel):
     """Result of an execution node or graph."""
     node_id: str = Field(description="ID of the node that produced the result")
-    status: ExecutionNodeStatus = Field(description="Status of the execution")
+    status: ExecutionStatus = Field(description="Status of the execution")
     content: Dict[str, Any] = Field(default_factory=dict, description="Result content")
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Optional metadata")
 
     def __init__(self,
                  node_id: str,
-                 status: ExecutionNodeStatus,
+                 status: ExecutionStatus,
                  content: Optional[Dict[str, Any]] = None,
                  metadata: Optional[Dict[str, Any]] = None):
         """Initialize execution result.
@@ -68,74 +74,54 @@ class Objective(BaseModel):
         """Initialize objective.
         
         Args:
-            objective: Initial objective text
-            **data: Additional data for Pydantic model
-            
-        Raises:
-            ValueError: If objective is empty string
+            objective: The initial objective
+            **data: Additional data for the objective
         """
-        if not objective:
-            objective = "No objective provided"
-        elif not isinstance(objective, str):
-            raise ValueError("Objective must be a string")
-            
-        super().__init__(
-            original=objective,
-            current=objective,
-            context={},
-            history=[],
-            **data
-        )
+        if objective:
+            data["original"] = objective
+            data["current"] = objective
+        super().__init__(**data)
 
     def evolve(self, new_understanding: str, reason: str) -> None:
-        """Evolve the objective.
+        """Evolve the objective with new understanding.
         
         Args:
-            new_understanding: New understanding of the objective
-            reason: Reason for the evolution
-            
-        Raises:
-            ValueError: If new_understanding is not a string or is empty
-            ValueError: If reason is not a string or is empty
+            new_understanding: The new understanding of the objective
+            reason: The reason for the evolution
         """
-        if not isinstance(new_understanding, str) or not new_understanding:
-            raise ValueError("New understanding must be a non-empty string")
-        if not isinstance(reason, str) or not reason:
-            raise ValueError("Reason must be a non-empty string")
-            
         # pylint: disable=no-member
         self.history.append({
             "previous": self.current,
             "new": new_understanding,
             "reason": reason,
-            "timestamp": datetime.now()
+            "timestamp": datetime.now().isoformat()
         })
         self.current = new_understanding
 
 class ExecutionNode(Node):
     """Node with execution-specific attributes."""
     objective: Optional[Objective] = None
-    status: ExecutionNodeStatus = Field(default=ExecutionNodeStatus.NONE)
+    status: ExecutionStatus = Field(default=ExecutionStatus.PENDING)
     step: Optional[Callable[[Dict[str, Any]], Awaitable[Dict[str, Any]]]] = None
     result: Optional[Dict[str, Any]] = None
     requires: Dict[str, Any] = Field(default_factory=dict)
     provides: Dict[str, Any] = Field(default_factory=dict)
 
     def __hash__(self) -> int:
-        """Make node hashable by id."""
+        """Get hash of node."""
         return hash(self.node_id)
-    
+
     def __eq__(self, other: object) -> bool:
-        """Nodes are equal if they have the same id."""
+        """Check if nodes are equal."""
         if not isinstance(other, ExecutionNode):
-            return NotImplemented
+            return False
         return self.node_id == other.node_id
 
     def __init__(self,
                  node_id: str,
                  node_type: NodeType,
                  objective: Union[str, Objective],
-                 status: ExecutionNodeStatus = ExecutionNodeStatus.NONE,
+                 status: ExecutionStatus = ExecutionStatus.PENDING,
                  step: Optional[Callable[[Dict[str, Any]], Awaitable[Dict[str, Any]]]] = None,
                  result: Optional[Dict[str, Any]] = None,
                  metadata: Optional[Dict[str, Any]] = None,
@@ -149,78 +135,47 @@ class ExecutionNode(Node):
             node_type: Type of the node
             objective: Objective for the node
             status: Initial status of the node
-            step: Optional step function
-            result: Optional result dictionary
-            metadata: Optional metadata dictionary
-            requires: Optional requirements dictionary
-            provides: Optional provides dictionary
-            **data: Additional data for Pydantic model
-            
-        Raises:
-            ValueError: If node_id is empty
-            ValueError: If objective is invalid
+            step: Optional step function to execute
+            result: Optional result of execution
+            metadata: Optional metadata
+            requires: Optional requirements
+            provides: Optional provisions
+            **data: Additional data for the node
         """
-        if not node_id:
-            raise ValueError("Node ID cannot be empty")
-            
-        # Store the original description from YAML if available in data
-        yaml_description = data.pop("description", None)
-
-        # Process objective
         if isinstance(objective, str):
-            objective_obj = Objective(objective)
-        elif isinstance(objective, Objective):
-            objective_obj = objective
-        else:
-            # Fallback: if objective is None or invalid, try using the yaml description
-            if yaml_description:
-                objective_obj = Objective(yaml_description)
-            else:
-                raise ValueError("Objective must be a string or Objective instance, or description must be provided in YAML")
-
-        # Use YAML description if provided, otherwise fallback to objective's current state
-        node_description = yaml_description if yaml_description is not None else objective_obj.current
-        
-        # Initialize Node base class
+            objective = Objective(objective)
+            
         super().__init__(
             node_id=node_id,
             node_type=node_type,
-            description=node_description,  # Use the determined description
-            metadata=metadata or {}
+            objective=objective,
+            status=status,
+            step=step,
+            result=result,
+            metadata=metadata or {},
+            requires=requires or {},
+            provides=provides or {},
+            **data
         )
-        
-        # Set execution-specific attributes
-        self.objective = objective_obj
-        self.status = status
-        self.step = step
-        self.result = result
-        self.requires = requires or {}
-        self.provides = provides or {}
 
     def get_prompt(self) -> Optional[str]:
-        """Get the prompt for the node."""
-        if self.metadata:
-            return self.metadata['prompt']
-        return None
-    
+        """Get prompt from metadata if available."""
+        # pylint: disable=no-member
+        return self.metadata.get("prompt")
+
     @classmethod
     def set_prompt_in_metadata(cls, prompt: str, metadata: Dict[str, Any]) -> None:
-        """Set the prompt in the metadata."""
-        if metadata:
-            metadata['prompt'] = prompt
-            
+        """Set prompt in metadata."""
+        metadata["prompt"] = prompt
+
     def to_dict(self) -> Dict[str, Any]:
-        """Convert node to dictionary representation.
-        
-        Returns:
-            Dictionary containing node data
-        """
+        """Convert node to dictionary."""
         return {
             "node_id": self.node_id,
             "node_type": self.node_type,
-            "description": self.description,
             "objective": self.objective.current if self.objective else None,
             "status": self.status,
+            "result": self.result,
             "metadata": self.metadata,
             "requires": self.requires,
             "provides": self.provides
@@ -228,6 +183,7 @@ class ExecutionNode(Node):
 
 class ExecutionEdge(Edge, BaseModel):
     """Edge with execution-specific attributes."""
+
     def __init__(self,
                  source: Union[str, Node],
                  target: Union[str, Node],
@@ -236,45 +192,35 @@ class ExecutionEdge(Edge, BaseModel):
         """Initialize execution edge.
         
         Args:
-            source: Source node or node ID
-            target: Target node or node ID
-            metadata: Optional metadata dictionary
-            **data: Additional data for Pydantic model
+            source: Source node or its ID
+            target: Target node or its ID
+            metadata: Optional metadata
+            **data: Additional data for the edge
         """
         super().__init__(
-            source=source,
-            target=target,
+            source=source.node_id if isinstance(source, Node) else source,
+            target=target.node_id if isinstance(target, Node) else target,
             metadata=metadata or {},
             **data
         )
 
-class ExecutionSignalType(Enum):
-    """Types of execution signals."""
-    # Control Flow
-    CONTROL = "control"        # General control signal
-    CONTROL_ERROR = "control_error"  # Control-specific error signal
-    ERROR = "error"           # Error signal
-    COMPLETE = "complete"     # Completion signal
-    CONTROL_COMPLETE = "control_complete"  # Control-specific completion signal
-    
-    # Data Flow
-    DATA = "data"            # Data signal
-
 class ExecutionSignal(BaseModel):
-    """Communication between execution layers."""
-    type: ExecutionSignalType
-    content: Dict[str, Any]
-    timestamp: datetime = Field(default_factory=datetime.now)
+    """Signal for execution navigation."""
+    status: ExecutionStatus
+    message: str = Field(default="", description="Optional message (e.g., error details)")
+    node_id: Optional[str] = Field(default=None, description="Optional node ID")
+    content: Optional[Dict[str, Any]] = Field(default=None, description="Optional content")
 
 class ExecutionError(Exception):
-    """Base exception for execution errors."""
+    """Exception raised during execution."""
+    
     def __init__(self, message: str, node_id: Optional[str] = None, signal: Optional[ExecutionSignal] = None):
         """Initialize execution error.
         
         Args:
             message: Error message
-            node_id: Optional node ID where error occurred
-            signal: Optional error signal
+            node_id: Optional node ID
+            signal: Optional execution signal
         """
         super().__init__(message)
         self.node_id = node_id
@@ -299,31 +245,11 @@ class NodeYamlConfig(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def to_node_config(self) -> NodeConfig:
-        """Convert YAML config to node config, injecting node-specific prompt."""
-        
-        # Start with metadata defined directly in the node's YAML
-        node_metadata = self.node_data.get("metadata", {}).copy()
-        
-        # Determine the correct prompt for this node
-        prompt = None
-        
-        # Priority 1: Custom prompts passed directly
-        if self.custom_prompts and self.node_id in self.custom_prompts:
-            prompt = self.custom_prompts[self.node_id]
-            
-        # Priority 2: Prompts defined in the graph's metadata (loaded from YAML)
-        elif self.graph and "prompts" in self.graph.metadata and self.node_id in self.graph.metadata["prompts"]:
-            prompt = self.graph.metadata["prompts"][self.node_id]
-            
-        # Priority 3: Prompt defined directly within the node's metadata in YAML (already handled by initial copy)
-        # If a prompt was found from graph/custom prompts, add/overwrite it in node_metadata
-        if prompt is not None:
-            node_metadata["prompt"] = prompt
-            
+        """Convert to node config."""
         return NodeConfig(
             node_id=self.node_id,
-            node_type=self.node_data.get("type", NodeType.TASK),
-            objective=self.node_data.get("objective", ""),
+            node_type=self.node_data["type"],
+            objective=self.node_data["objective"],
             description=self.node_data.get("description", ""),
-            metadata=node_metadata  # Use the potentially updated metadata
+            metadata=self.node_data.get("metadata", {})
         )

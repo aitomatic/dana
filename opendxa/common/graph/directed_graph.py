@@ -85,6 +85,7 @@ class Edge(BaseModel):
 class DirectedGraph(Configurable):
     """Pure directed graph implementation."""
     def __init__(self):
+        super().__init__()
         self._nodes: Dict[str, Node] = {}
         self._edges: List[Edge] = []
         self._outgoing: Dict[str, List[Edge]] = {}
