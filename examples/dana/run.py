@@ -54,9 +54,6 @@ def run_example(example_path: str):
         # 1. Read
         print(f"{YELLOW}Reading from: {abs_example_path}{RESET}")
         dana_code = read_dana_program(abs_example_path)
-        print(f"{YELLOW}--- Code ---{RESET}")
-        print(f"{CYAN}{dana_code}{RESET}")
-        print(f"{YELLOW}------------{RESET}")
 
         # 2. Parse
         print(f"{YELLOW}Parsing...{RESET}")
