@@ -1,7 +1,9 @@
 """Mixin for capable objects."""
 
-from typing import Optional, List, Any, Dict
+from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, Field
+
 from opendxa.common.capability.base_capability import BaseCapability, CapabilityApplicationResult
 from opendxa.common.mixins.tool_callable import ToolCallable
 from opendxa.common.types import BaseRequest
@@ -64,7 +66,7 @@ class Capable():
         if not self.has_capability(capability):
             return CapabilityApplicationResult(
                 success=False,
-                result=request.arguments if request else {},
+                content=request.arguments if request else {},
                 error=CapabilityNotFoundError(f"Capability {capability.name} not found")
             )
         return capability.apply(request.arguments if request else {})

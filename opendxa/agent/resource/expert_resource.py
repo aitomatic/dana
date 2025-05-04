@@ -36,18 +36,22 @@ Example:
     })
 """
 
-from typing import Dict, Any, Optional, ClassVar
-from opendxa.base.resource.base_resource import BaseResource
-from opendxa.common.types import BaseRequest, BaseResponse
+from typing import Any, ClassVar, Dict, Optional
+
+# Local imports
 from opendxa.agent.capability.domain_expertise import DomainExpertise
+
+# First-party imports
 from opendxa.common.io import IOFactory
 from opendxa.common.mixins import ToolCallable
+from opendxa.common.resource import BaseResource
+from opendxa.common.types import BaseRequest, BaseResponse
 
 
 class ExpertResponse(BaseResponse):
     """Expert-specific response extending base response."""
-    def __init__(self, content: Any = None, usage: Optional[Dict[str, int]] = None, 
-                 model: Optional[str] = None):
+
+    def __init__(self, content: Any = None, usage: Optional[Dict[str, int]] = None, model: Optional[str] = None):
         super().__init__(content)
         self.usage = usage
         self.model = model
@@ -57,12 +61,7 @@ class ExpertResource(BaseResource):
     """Resource for interacting with human experts."""
 
     # Class-level default configuration
-    default_config: ClassVar[Dict[str, Any]] = {
-        "expertise": None,
-        "confidence_threshold": 0.7,
-        "system_prompt": None,
-        "llm_config": {}
-    }
+    default_config: ClassVar[Dict[str, Any]] = {"expertise": None, "confidence_threshold": 0.7, "system_prompt": None, "llm_config": {}}
 
     def __init__(
         self,
@@ -71,7 +70,7 @@ class ExpertResource(BaseResource):
         system_prompt: Optional[str] = None,
         confidence_threshold: float = 0.7,
         llm_config: Optional[Dict[str, Any]] = None,
-        config: Optional[Dict[str, Any]] = None
+        config: Optional[Dict[str, Any]] = None,
     ):
         """Initialize expert resource.
 

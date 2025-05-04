@@ -33,10 +33,12 @@ Example:
 
 from typing import TYPE_CHECKING, Any, Dict, Optional, Union
 
+# Local imports
+from opendxa.agent.dummy import ExecutionState, Plan, Planner, PlanStrategy, Reasoner, ReasoningStrategy, RuntimeContext, WorldState
+
+# First-party imports
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.resource import LLMResource
-from opendxa.dana.runtime.runtime_context import RuntimeContext
-from opendxa.dana.state import ExecutionState, WorldState
 
 if TYPE_CHECKING:
     from opendxa.agent.agent import Agent
@@ -212,4 +214,5 @@ class AgentRuntime(Loggable):
         """
         self.planner.execute(plan, self.runtime_context)
 
-        return ExecutionSignal(type=ExecutionSignalType.CONTROL_COMPLETE, content={"success": True})
+        # return ExecutionSignal(type=ExecutionSignalType.CONTROL_COMPLETE, content={"success": True})
+        return None

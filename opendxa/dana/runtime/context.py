@@ -44,6 +44,26 @@ class RuntimeContext:
             "execution_path": [],
         }
 
+    def __eq__(self, other: object) -> bool:
+        """Compare two RuntimeContext objects for equality.
+
+        Two RuntimeContext objects are considered equal if they have the same state
+        and registered resources.
+
+        Args:
+            other: The other RuntimeContext object to compare with
+
+        Returns:
+            True if the contexts are equal, False otherwise
+        """
+        if not isinstance(other, RuntimeContext):
+            return NotImplemented
+        return (
+            self._state == other._state
+            and self._resources.list() == other._resources.list()
+            and all(self._resources.get(name) == other._resources.get(name) for name in self._resources.list())
+        )
+
     def _validate_key(self, key: str) -> tuple[str, str]:
         """Validates key format (scope.variable) and splits it."""
         parts = key.split(".", 1)  # Split only on the first dot

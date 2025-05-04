@@ -33,25 +33,39 @@ Example:
 See dxa/agent/README.md for detailed design documentation.
 """
 
-from typing import Dict, Union, Optional, Any
-from opendxa.dana.runtime.runtime_context import RuntimeContext
-from opendxa.dana.state import AgentState
+from typing import Any, Dict, Optional, Union
+
+# Sorted first-party imports
+from opendxa.agent.agent_config import AgentConfig
 from opendxa.agent.agent_runtime import AgentRuntime
+from opendxa.agent.dummy import (
+    AgentState,
+    ExecutionSignal,
+    ExecutionSignalType,
+    Plan,
+    Planner,
+    PlanStrategy,
+    Reasoner,
+    ReasoningStrategy,
+    RuntimeContext,
+)
 from opendxa.common.capability import BaseCapability
-from opendxa.common.resource import BaseResource, LLMResource
-from opendxa.common.io import BaseIO, IOFactory
-from opendxa.common.utils.misc import Misc
 from opendxa.common.capability.capable import Capable
-from opendxa.config.agent_config import AgentConfig
-from opendxa.common.types import BaseResponse
+from opendxa.common.io import BaseIO, IOFactory
 from opendxa.common.mixins.tool_callable import ToolCallable
-from opendxa.common.types import BaseRequest
+from opendxa.common.resource import BaseResource, LLMResource
+from opendxa.common.types import BaseRequest, BaseResponse
+from opendxa.common.utils.misc import Misc
+
+# from opendxa.dana.runtime.runtime_context import RuntimeContext
+# from opendxa.dana.state import AgentState
+
 
 class AgentResponse(BaseResponse):
     """Response from an agent operation."""
 
     @classmethod
-    def new_instance(cls, response: Union[BaseResponse, Dict[str, Any], Any]) -> 'AgentResponse':
+    def new_instance(cls, response: Union[BaseResponse, Dict[str, Any], Any]) -> "AgentResponse":
         """Create a new AgentResponse instance from a BaseResponse or similar structure.
 
         Args:
@@ -61,23 +75,15 @@ class AgentResponse(BaseResponse):
             AgentResponse instance
         """
         if isinstance(response, BaseResponse):
-            return AgentResponse(
-                success=response.success,
-                content=response.content,
-                error=response.error
-            )
+            return AgentResponse(success=response.success, content=response.content, error=response.error)
         elif isinstance(response, ExecutionSignal):
             return AgentResponse(
                 success=False if response.type == ExecutionSignalType.CONTROL_ERROR else True,
                 content=response.content,
-                error=response.content.get("error", None)
+                error=response.content.get("error", None),
             )
         else:
-            return AgentResponse(
-                success=True,
-                content=response,
-                error=None
-            )
+            return AgentResponse(success=True, content=response, error=None)
 
 
 # pylint: disable=too-many-public-methods
@@ -152,15 +158,9 @@ class Agent(BaseResource, Capable):
         if isinstance(llm, LLMResource):
             self._llm = llm
         elif isinstance(llm, str):
-            self._llm = LLMResource(
-                name=f"{self.name}_llm",
-                config={"model": llm}
-            )
+            self._llm = LLMResource(name=f"{self.name}_llm", config={"model": llm})
         elif isinstance(llm, Dict):
-            self._llm = LLMResource(
-                name=f"{self.name}_llm",
-                config=llm
-            )
+            self._llm = LLMResource(name=f"{self.name}_llm", config=llm)
         return self
 
     def with_resources(self, resources: Dict[str, BaseResource]) -> "Agent":
@@ -183,13 +183,13 @@ class Agent(BaseResource, Capable):
         return self
 
     def with_planning(
-        self, 
-        strategy: Optional[PlanStrategy] = None, 
+        self,
+        strategy: Optional[PlanStrategy] = None,
         planner: Optional[Planner] = None,
-        llm: Optional[Union[Dict, str, LLMResource]] = None
-    ) -> 'Agent':
+        llm: Optional[Union[Dict, str, LLMResource]] = None,
+    ) -> "Agent":
         """Configure planning strategy and LLM.
-        
+
         Args:
             strategy: Planning strategy to use
             planner: Optional planner instance to use
@@ -199,13 +199,13 @@ class Agent(BaseResource, Capable):
         return self
 
     def with_reasoning(
-        self, 
-        strategy: Optional[ReasoningStrategy] = None, 
+        self,
+        strategy: Optional[ReasoningStrategy] = None,
         reasoner: Optional[Reasoner] = None,
-        llm: Optional[Union[Dict, str, LLMResource]] = None
-    ) -> 'Agent':
+        llm: Optional[Union[Dict, str, LLMResource]] = None,
+    ) -> "Agent":
         """Configure reasoning strategy and executor.
-        
+
         Args:
             strategy: Reasoning strategy to use
             reasoner: Optional reasoner instance to use
@@ -217,29 +217,20 @@ class Agent(BaseResource, Capable):
     # ===== Helper Methods =====
     def _get_default_llm_resource(self):
         """Get default LLM resource."""
-        return LLMResource(
-            name=f"{self.name}_llm",
-            config={"model": self._config.get("model")}
-        )
+        return LLMResource(name=f"{self.name}_llm", config={"model": self._config.get("model")})
 
     def _create_llm(self, llm: Union[Dict, str, LLMResource], name: str) -> LLMResource:
         """Create LLM from various input types."""
         if isinstance(llm, LLMResource):
             return llm
         if isinstance(llm, str):
-            return LLMResource(
-                name=f"{self.name}_{name}",
-                config={"model": llm}
-            )
+            return LLMResource(name=f"{self.name}_{name}", config={"model": llm})
         if isinstance(llm, Dict):
-            return LLMResource(
-                name=f"{self.name}_{name}",
-                config=llm
-            )
+            return LLMResource(name=f"{self.name}_{name}", config=llm)
         raise ValueError(f"Invalid LLM configuration: {llm}")
 
     # ===== Lifecycle Methods =====
-    def _initialize(self) -> 'Agent':
+    def _initialize(self) -> "Agent":
         """Initialize agent components. Must be called at run-time."""
         if self._initialized:
             return self
@@ -260,11 +251,11 @@ class Agent(BaseResource, Capable):
             await self._runtime.cleanup()
             self._runtime: Optional[AgentRuntime] = None
 
-    async def initialize(self) -> 'Agent':
+    async def initialize(self) -> "Agent":
         """Public initialization method."""
         return self._initialize()
 
-    async def __aenter__(self) -> 'Agent':
+    async def __aenter__(self) -> "Agent":
         """Initialize agent when entering context."""
         self._initialize()
         return self

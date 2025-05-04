@@ -21,11 +21,8 @@ Example:
 
 from opendxa.agent.agent import Agent, AgentResponse
 from opendxa.agent.agent_factory import AgentFactory
-from opendxa.agent.resource import (
-    AgentResource,
-    ExpertResource,
-    ResourceFactory
-)
+from opendxa.agent.capability import CapabilityFactory, DomainExpertise, MemoryCapability
+from opendxa.agent.resource import AgentResource, ExpertResource, ExpertResponse, ResourceFactory
 
 __all__ = [
     "Agent",
@@ -33,5 +30,9 @@ __all__ = [
     "AgentResource",
     "AgentFactory",
     "ExpertResource",
-    "ResourceFactory"
+    "ExpertResponse",
+    "ResourceFactory",
+    "CapabilityFactory",
+    "DomainExpertise",
+    "MemoryCapability",
 ]

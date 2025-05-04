@@ -15,6 +15,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 # Forward references for type hints
 Expression = Union["LiteralExpression", "Identifier", "BinaryExpression", "FunctionCall"]
+Statement = Union["Assignment", "LogStatement", "Conditional"]
 
 
 class BinaryOperator(Enum):

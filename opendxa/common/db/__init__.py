@@ -10,24 +10,21 @@ At this level, we do not distinguish between different types of Memories (ST, LT
 as they all use the same vector DB storage. That is handled at the Resource level.
 """
 
+from opendxa.common.db.base_storage import BaseDBStorage
 from opendxa.common.db.models import (
     BaseDBModel,
     KnowledgeDBModel,
     MemoryDBModel,
 )
-
-from opendxa.common.db.storage import (
-    SqlDBStorage,
-    VectorDBStorage
-)
+from opendxa.common.db.storage import KnowledgeDBStorage, MemoryDBStorage
 
 __all__ = [
     # Models
-    'BaseDBModel',
-    'KnowledgeDBModel',
-    'MemoryDBModel',
-    
+    "BaseDBModel",
+    "KnowledgeDBModel",
+    "MemoryDBModel",
     # Storage
-    'SqlDBStorage',
-    'VectorDBStorage',
-] 
+    "BaseDBStorage",
+    "KnowledgeDBStorage",
+    "MemoryDBStorage",
+]

@@ -87,6 +87,7 @@ ignore = [
     "E203",  # Whitespace before ':' (Black handles this)
     "E501",  # Line too long (we use the line-length parameter instead)
     "B008",  # Function call in default argument (common in web frameworks)
+    "B010",  # Setting attributes in class body (common in web frameworks)
 ]
 
 # Exclusion patterns
@@ -99,9 +100,15 @@ exclude = [
 
 # Disabled linters (in favor of Ruff)
 [tool.flake8]
-ignore = ["*"]
-exclude = ["*"]
+# ignore = ["*"]
+# exclude = ["*"]
 
 [tool.pylint.MASTER]
-disable-all = true
-ignore-patterns = [".*"]
+# disable-all = true
+# ignore-patterns = [".*"]
+
+# Pylance (Pyright)
+[tool.pyright]
+reportAttributeAccessIssue = false
+reportGeneralTypeIssues = false
+reportAssignmentType = false

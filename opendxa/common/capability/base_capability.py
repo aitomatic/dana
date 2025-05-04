@@ -1,13 +1,16 @@
 """Base capability for DXA."""
 
 from abc import ABC
-from typing import Dict, Any, Optional
-from opendxa.common.mixins.tool_callable import ToolCallable
+from typing import Any, Dict, Optional
+
 from opendxa.common.mixins.configurable import Configurable
+from opendxa.common.mixins.tool_callable import ToolCallable
 from opendxa.common.types import BaseRequest, BaseResponse
+
 
 class CapabilityApplicationResult(BaseResponse):
     """Result of applying a capability."""
+
     pass
 
 
@@ -44,8 +47,8 @@ class BaseCapability(ABC, ToolCallable, Configurable):
     def apply(self, request: BaseRequest) -> CapabilityApplicationResult:
         """Apply this capability."""
         if not self._is_enabled:
-            return CapabilityApplicationResult(success=False, result=request, error=f"Capability {self.name} is not enabled")
-        return CapabilityApplicationResult(success=True, result=request, error=None)
+            return CapabilityApplicationResult(success=False, content=request, error=f"Capability {self.name} is not enabled")
+        return CapabilityApplicationResult(success=True, content=request, error=None)
 
     def can_handle(self, request: Dict[str, Any]) -> bool:
         """Check if capability can handle request."""

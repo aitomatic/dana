@@ -16,9 +16,12 @@
         "editor.formatOnSave": false
     },
     "editor.defaultFormatter": "ms-python.black-formatter",
-    "pylint.enabled": false,
-    "flake8.enabled": false,
+    "pylint.enabled": true,
+    "flake8.enabled": true,
     "ruff.enable": true,
-    "editor.defaultFoldingRangeProvider": "ms-python.black-formatter"
+    "editor.defaultFoldingRangeProvider": "ms-python.black-formatter",
+    "python.analysis.diagnosticSeverityOverrides": {
+	"reportUndefinedVariable": "none"
+    }
 }
 

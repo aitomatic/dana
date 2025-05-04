@@ -91,6 +91,25 @@ class Interpreter:
         """Log a message with runtime information."""
         # Check if message should be logged based on current level
         if self._should_log(level):
+            # Evaluate any f-strings in the message
+            try:
+                # Replace {variable} with actual values
+                while "{" in message and "}" in message:
+                    start = message.find("{")
+                    end = message.find("}", start)
+                    if start == -1 or end == -1:
+                        break
+                    var_name = message[start + 1 : end]
+                    try:
+                        value = self._get_variable(var_name)
+                        message = message[:start] + str(value) + message[end + 1 :]
+                    except StateError:
+                        # If variable not found, leave it as is
+                        break
+            except Exception:
+                # If evaluation fails, use the original message
+                pass
+
             # Create log message
             log_msg = LogMessage(
                 timestamp=datetime.now().astimezone().strftime("%Y%m%d %H:%M:%S%z").replace("00", ""),

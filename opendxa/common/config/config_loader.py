@@ -1,0 +1,189 @@
+"""Configuration loading and management for OpenDXA.
+
+This module provides centralized configuration management using the ConfigLoader
+class. It supports loading configuration from 'opendxa_config.json' with a
+defined search order and allows overriding via the OPENDXA_CONFIG environment
+variable.
+
+Features:
+- Singleton pattern for consistent config access
+- Standardized path resolution for config files
+- Search order for 'opendxa_config.json': OPENDXA_CONFIG env var -> CWD -> Project Root
+- Clear error handling for config loading failures
+
+Example:
+    # Get config using the default search order
+    loader = ConfigLoader()
+    config = loader.get_default_config()
+
+    # If OPENDXA_CONFIG is set, it overrides the search order:
+    # export OPENDXA_CONFIG=/path/to/my_config.json
+    # python my_script.py
+    # Now loader.get_default_config() will load from /path/to/my_config.json
+"""
+
+import json
+import os
+from pathlib import Path
+from typing import Any, Dict
+
+from opendxa.common.exceptions import ConfigurationError
+
+
+class ConfigLoader:
+    """Centralized configuration loader with environment variable support and search order.
+
+    Implements the singleton pattern for consistent access. Loads configuration
+    from 'opendxa_config.json' based on a search hierarchy or an environment variable.
+
+    Search Hierarchy for 'opendxa_config.json' (used by get_default_config):
+    1. Path specified by the OPENDXA_CONFIG environment variable.
+    2. 'opendxa_config.json' in the Current Working Directory (CWD).
+    3. 'opendxa_config.json' in the project root directory.
+
+    Attributes:
+        _instance: Singleton instance of the ConfigLoader.
+        DEFAULT_CONFIG_FILENAME: The standard name for the configuration file.
+
+    Example:
+        >>> loader = ConfigLoader()
+        >>> # Loads config based on OPENDXA_CONFIG, CWD, or project root
+        >>> config = loader.get_default_config()
+
+        >>> # Load a specific, non-default config file from the project root
+        >>> other_config = loader.load_config("other_settings.json")
+    """
+
+    _instance = None
+    DEFAULT_CONFIG_FILENAME = "opendxa_config.json"
+
+    def __new__(cls):
+        """Ensure only one instance exists (singleton pattern)."""
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    @property
+    def config_dir(self) -> Path:
+        """Get the project root directory (base for configuration).
+
+        Returns:
+            Path object pointing to the project root directory.
+
+        Example:
+            >>> loader = ConfigLoader()
+            >>> root_dir = loader.config_dir
+            >>> print(root_dir) # doctest: +SKIP
+            /path/to/opendxa
+        """
+        # Assumes this file is in opendxa/common/config/
+        return Path(__file__).parent.parent.parent
+
+    def _load_config_from_path(self, path: Path) -> Dict[str, Any]:
+        """Loads and parses a JSON configuration file from a specific path.
+
+        Args:
+            path: The absolute Path object pointing to the config file.
+
+        Returns:
+            A dictionary containing the loaded configuration.
+
+        Raises:
+            ConfigurationError: If the file doesn't exist, isn't a file,
+                                or contains invalid JSON.
+        """
+        if not path.is_file():
+            raise ConfigurationError(f"Config path does not point to a valid file: {path}")
+
+        try:
+            with open(path, encoding="utf-8") as f:
+                return json.load(f)
+        except json.JSONDecodeError as e:
+            raise ConfigurationError(f"Invalid JSON in config file: {path}") from e
+        except Exception as e:
+            # Catch other potential issues like permission errors
+            raise ConfigurationError(f"Failed to load config from {path}: {e}") from e
+
+    def get_default_config(self) -> Dict[str, Any]:
+        """Gets the default configuration following the search hierarchy.
+
+        Searches for and loads 'opendxa_config.json' based on the following order:
+        1. Path specified by the OPENDXA_CONFIG environment variable.
+        2. 'opendxa_config.json' in the Current Working Directory (CWD).
+        3. 'opendxa_config.json' in the project root directory.
+
+        Returns:
+            A dictionary containing the loaded default configuration.
+
+        Raises:
+            ConfigurationError: If no configuration file is found in any of the
+                                specified locations or if loading/parsing fails.
+        """
+        config_path_env = os.getenv("OPENDXA_CONFIG")
+
+        # 1. Check Environment Variable
+        if config_path_env:
+            env_path = Path(config_path_env).resolve()
+            self.log_debug(
+                f"Attempting to load config from OPENDXA_CONFIG: {env_path}"
+            )  # Assuming Loggable mixin is added later or handled externally
+            try:
+                return self._load_config_from_path(env_path)
+            except ConfigurationError as e:
+                # Raise specific error if env var path fails
+                raise ConfigurationError(f"Failed to load config from OPENDXA_CONFIG ({env_path}): {e}")
+
+        # 2. Check Current Working Directory
+        cwd_path = Path.cwd() / self.DEFAULT_CONFIG_FILENAME
+        if cwd_path.is_file():
+            self.log_debug(f"Attempting to load config from CWD: {cwd_path}")  # Assuming Loggable mixin
+            # No try-except here, let _load_config_from_path handle errors
+            return self._load_config_from_path(cwd_path)
+
+        # 3. Check Project Root Directory
+        root_path = self.config_dir / self.DEFAULT_CONFIG_FILENAME
+        if root_path.is_file():
+            self.log_debug(f"Attempting to load config from project root: {root_path}")  # Assuming Loggable mixin
+            # No try-except here, let _load_config_from_path handle errors
+            return self._load_config_from_path(root_path)
+
+        # If not found anywhere
+        raise ConfigurationError(
+            f"Default config '{self.DEFAULT_CONFIG_FILENAME}' not found.\n"
+            f"Checked locations:\n"
+            f"- OPENDXA_CONFIG environment variable: (not set or failed)\n"
+            f"- Current Working Directory: {cwd_path}\n"
+            f"- Project Root: {root_path}"
+        )
+
+    def load_config(self, config_name: str) -> Dict[str, Any]:
+        """Loads a specific configuration file relative to the project root.
+
+        This method is intended for loading secondary configuration files,
+        not the main 'opendxa_config.json' (use get_default_config for that).
+
+        Args:
+            config_name: The name of the configuration file (e.g., 'tool_settings.json').
+
+        Returns:
+            A dictionary containing the loaded configuration.
+
+        Raises:
+            ConfigurationError: If the config file cannot be loaded or parsed.
+
+        Example:
+            >>> loader = ConfigLoader()
+            >>> tool_config = loader.load_config("tool_settings.json") # Looks for opendxa/tool_settings.json
+        """
+        config_path = self.config_dir / config_name
+        return self._load_config_from_path(config_path)
+
+    # Optional: Add logging if needed, requires Loggable mixin or similar
+    def log_debug(self, message: str):
+        # Simple placeholder, replace with actual logging if required
+        # print(f"DEBUG: {message}")
+        pass
+
+
+# Note: Removed get_config_path as its role is diminished and handled internally.
+# Note: Removed caching logic for simplicity. Can be added back if needed.
