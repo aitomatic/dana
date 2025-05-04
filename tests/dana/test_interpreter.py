@@ -14,6 +14,7 @@ from opendxa.dana.language.ast import (
     LiteralExpression,
     Location,
     LogLevel,
+    LogLevelSetStatement,
     LogStatement,
     Program,
 )
@@ -219,6 +220,7 @@ def test_expression_precedence():
 def test_log_statement():
     """Test log statement execution."""
     interpreter = Interpreter(RuntimeContext())
+    interpreter.set_log_level(LogLevel.INFO)  # Ensure INFO messages are printed by default
 
     # Test default INFO level
     with patch("builtins.print") as mock_print:
@@ -267,6 +269,37 @@ def test_log_level_threshold():
         assert mock_print.call_count == 2  # Only WARN and ERROR should be printed
         assert "WARN" in mock_print.call_args_list[0][0][0]
         assert "ERROR" in mock_print.call_args_list[1][0][0]
+
+
+def test_log_level_set_statement():
+    """Test log level set statement execution."""
+    interpreter = Interpreter(RuntimeContext())
+
+    # Test setting different log levels
+    for level in [LogLevel.DEBUG, LogLevel.INFO, LogLevel.WARN, LogLevel.ERROR]:
+        program = Program([LogLevelSetStatement(level=level)])
+        interpreter.execute_program(ParseResult(program=program))
+        assert interpreter.context.get("execution.log_level") == level.value
+
+        # Verify the log level affects message filtering
+        with patch("builtins.print") as mock_print:
+            program = Program(
+                [
+                    LogStatement(message=LiteralExpression(Literal("Debug message")), level=LogLevel.DEBUG),
+                    LogStatement(message=LiteralExpression(Literal("Info message")), level=LogLevel.INFO),
+                    LogStatement(message=LiteralExpression(Literal("Warn message")), level=LogLevel.WARN),
+                    LogStatement(message=LiteralExpression(Literal("Error message")), level=LogLevel.ERROR),
+                ]
+            )
+            interpreter.execute_program(ParseResult(program=program))
+            # Count how many messages should be printed based on the level
+            level_priorities = {LogLevel.DEBUG: 0, LogLevel.INFO: 1, LogLevel.WARN: 2, LogLevel.ERROR: 3}
+            expected_count = sum(
+                1
+                for log_level in [LogLevel.DEBUG, LogLevel.INFO, LogLevel.WARN, LogLevel.ERROR]
+                if level_priorities[log_level] >= level_priorities[level]
+            )
+            assert mock_print.call_count == expected_count
 
 
 def test_state_management():

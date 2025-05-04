@@ -10,6 +10,7 @@ from opendxa.dana.language.ast import (
     Identifier,
     LiteralExpression,
     LogLevel,
+    LogLevelSetStatement,
     LogStatement,
     Program,
 )
@@ -20,6 +21,7 @@ __all__ = [
     "Expression",
     "Assignment",
     "LogStatement",
+    "LogLevelSetStatement",
     "Conditional",
     "LiteralExpression",
     "Identifier",

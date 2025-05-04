@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from opendxa.dana.exceptions import ParseError, StateError
+from opendxa.dana.language.ast import LogLevel
 from opendxa.dana.language.parser import parse
 from opendxa.dana.runtime.context import RuntimeContext
 from opendxa.dana.runtime.interpreter import Interpreter
@@ -13,6 +14,7 @@ from opendxa.dana.runtime.interpreter import Interpreter
 def test_basic_fstring():
     """Test basic f-string functionality."""
     interpreter = Interpreter(RuntimeContext())
+    interpreter.set_log_level(LogLevel.INFO)  # Ensure INFO messages are printed
 
     # Test simple variable interpolation
     program = """

@@ -32,7 +32,7 @@ class TestREPL:
 
         # Mock transcoder and interpreter
         parse_result = ParseResult(program=MagicMock(), errors=[])
-        with patch("opendxa.dana.transcoder.transcoder.FaultTolerantTranscoder.transcode", return_value=parse_result):
+        with patch("opendxa.dana.transcoder.transcoder.FaultTolerantTranscoder.transcode", return_value=(parse_result, None)):
             self.repl.interpreter.execute_program.return_value = None
 
             await self.repl.execute(code)
@@ -47,7 +47,7 @@ class TestREPL:
 
         # Mock transcoder and interpreter
         parse_result = ParseResult(program=MagicMock(), errors=[])
-        with patch("opendxa.dana.transcoder.transcoder.FaultTolerantTranscoder.transcode", return_value=parse_result):
+        with patch("opendxa.dana.transcoder.transcoder.FaultTolerantTranscoder.transcode", return_value=(parse_result, None)):
             self.repl.interpreter.execute_program.return_value = None
 
             await self.repl.execute(code, initial_context)

@@ -15,6 +15,7 @@ from opendxa.dana.language.ast import (
     Literal,
     LiteralExpression,
     LogLevel,
+    LogLevelSetStatement,
     LogStatement,
     Program,
 )
@@ -43,6 +44,8 @@ class ParseResult(NamedTuple):
 ASSIGNMENT_REGEX = re.compile(r"^\s*([a-zA-Z_][a-zA-Z0-9_\.]*)\s*=\s*(-?\d+\.?\d*|[^#]*?)(?:\s*#.*)?$")
 # Updated Log Regex to capture content inside parentheses and optional level
 LOG_REGEX = re.compile(r"^\s*log(?:\.(debug|info|warn|error))?\((.*)\)\s*(?:#.*)?$")
+# Make LogLevelSet regex less strict to capture any string in quotes, validation happens later
+LOG_LEVEL_SET_REGEX = re.compile(r"^\s*log\.setLevel\(\s*\"([^\"]*)\"\s*\)\s*(?:#.*)?$")
 IF_REGEX = re.compile(r"^\s*if\s+(.*):\s*(?:#.*)?$")
 FUNCTION_CALL_REGEX = re.compile(r"^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\((.*)\)\s*(?:#.*)?$")
 
@@ -104,7 +107,7 @@ def parse_literal(value_str: str) -> Literal:
                     expr = parse_expression(expr_str)
                     parts.append(expr)
                 except ParseError as e:
-                    raise ParseError(f"Invalid expression in f-string: {str(e)}")
+                    raise ParseError("Invalid expression in f-string") from e
 
                 current_pos = brace_end
 
@@ -216,7 +219,7 @@ def parse_expression(expr_str: str) -> Union[LiteralExpression, Identifier, Bina
                 expr = parse_expression(expr_str)
                 parts.append(expr)
             except ParseError as e:
-                raise ParseError(f"Invalid expression in f-string: {str(e)}")
+                raise ParseError("Invalid expression in f-string") from e
 
             current_pos = brace_end
 
@@ -275,15 +278,17 @@ def parse_simple_expression(expr_str: str) -> Union[LiteralExpression, Identifie
     # Try parsing as a literal
     try:
         return LiteralExpression(literal=parse_literal(expr_str))
-    except ParseError:
+    except ParseError as e:
         # If not a literal, try as identifier
         if validate_identifier(expr_str):
             return Identifier(name=expr_str)
         # Pass original error message but add context if needed
-        raise ParseError(f"Invalid expression part: '{expr_str}'")
+        raise ParseError(f"Invalid expression part: '{expr_str}'") from e
 
 
-def parse_statement(line: str, line_num: int) -> Tuple[Optional[Union[Assignment, LogStatement, Conditional]], Optional[ParseError]]:
+def parse_statement(
+    line: str, line_num: int
+) -> Tuple[Optional[Union[Assignment, LogStatement, Conditional, LogLevelSetStatement]], Optional[ParseError]]:
     """Parse a single line into a Statement or error."""
     line_content = line  # Store original line content
 
@@ -294,6 +299,17 @@ def parse_statement(line: str, line_num: int) -> Tuple[Optional[Union[Assignment
     line = line.strip()
     if not line:
         return None, None
+
+    # Try matching log level set statement FIRST
+    log_level_set_match = LOG_LEVEL_SET_REGEX.match(line)
+    if log_level_set_match:
+        level_str = log_level_set_match.group(1)
+        try:
+            level = LogLevel[level_str.upper()]
+            return LogLevelSetStatement(level=level), None
+        except KeyError:
+            # Correctly report invalid log level if validation fails
+            return None, ParseError(f"Invalid log level: '{level_str}'", line_num, line_content)
 
     # Try matching log statement (updated logic)
     log_match = LOG_REGEX.match(line)
@@ -340,7 +356,7 @@ def parse_statement(line: str, line_num: int) -> Tuple[Optional[Union[Assignment
             else:
                 message_expr = parse_expression(message_expr_str)
 
-            level = LogLevel[level_str.upper()] if level_str else LogLevel.INFO
+            level = LogLevel[level_str.upper()] if level_str else LogLevel.INFO  # Default to INFO
             return LogStatement(message=message_expr, level=level), None
         except ParseError as e:
             # Add line info to the expression parsing error
@@ -378,7 +394,7 @@ def parse_statement(line: str, line_num: int) -> Tuple[Optional[Union[Assignment
 
 def parse(code: str) -> ParseResult:
     """Parse a DANA program string into an AST."""
-    statements: List[Union[Assignment, LogStatement, Conditional]] = []
+    statements: List[Union[Assignment, LogStatement, Conditional, LogLevelSetStatement]] = []
     errors: List[ParseError] = []
     lines = code.splitlines()
     current_conditional: Optional[Conditional] = None

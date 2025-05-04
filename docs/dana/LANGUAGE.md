@@ -77,6 +77,93 @@ if agent.credit.score < 600:
 
 ---
 
+## 📋 DANA Commands & Statements
+
+Here's a complete list of all valid DANA commands and statements:
+
+### 1. Variable Assignment
+```python
+variable = value
+scope.variable = value
+```
+
+### 2. Function Calls
+```python
+reason("prompt", context=scope)
+use("kb.entry.id")
+set("key", value)
+```
+
+### 3. Conditional Statements
+```python
+if condition:
+    # statements
+elif condition:
+    # statements
+else:
+    # statements
+```
+
+### 4. Logging Statements
+```python
+# Set log level
+log.setLevel("DEBUG")  # Options: DEBUG, INFO, WARN, ERROR
+
+# Log messages
+log("message")  # INFO level by default
+log.debug("message")
+log.info("message")
+log.warn("message")
+log.error("message")
+```
+
+### 5. Expressions
+```python
+# Literals
+"string"
+123
+4.56
+true
+false
+none
+
+# F-strings
+f"Value: {variable}"
+
+# Binary Operations
+a == b
+a != b
+a < b
+a > b
+a <= b
+a >= b
+a and b
+a or b
+a in b
+a + b
+a - b
+a * b
+a / b
+```
+
+### 6. Comments
+```python
+# This is a comment
+```
+
+### 7. State Scopes
+```python
+agent:     # Agent identity and long-term traits
+ltmem:     # Long-term memory
+stmem:     # Short-term memory
+temp:      # Ephemeral memory
+world:     # External facts
+execution: # Plan status
+custom:    # User-defined scopes
+```
+
+---
+
 ## 📘 State Model
 
 State variables are referenced using dot-scoped prefixes, organized by memory scope:
@@ -106,15 +193,43 @@ risk.temp_score = reason("Evaluate application risk", context=agent)
 * Nesting via indentation (Python-like)
 * Identifiers follow `[a-zA-Z_][a-zA-Z0-9_.]*`
 * Comments start with `#`
+* F-strings supported with `f"..."` syntax for string interpolation
 
 ---
 
 ## ✅ Types
 
-* **Strings**: "quoted"
+* **Strings**: "quoted" or f"interpolated {expression}"
 * **Numbers**: 123, 4.56
 * **Booleans**: true / false
-* **Lists**: \["a", "b"] (in limited expressions only)
+* **Lists**: ["a", "b"] (in limited expressions only)
+* **None**: null value
+
+---
+
+## 📝 Logging
+
+DANA supports logging statements with different severity levels and global log level configuration:
+
+```python
+# Set minimum level for log display
+log.setLevel("DEBUG")  # Options: DEBUG, INFO, WARN, ERROR
+
+# Log statements
+log("Basic message")  # INFO level by default
+log.debug("Debug message")
+log.info("Info message")
+log.warn("Warning message")
+log.error("Error message")
+```
+
+Log levels determine which messages are displayed:
+- DEBUG: Detailed information for debugging
+- INFO: General information about program execution
+- WARN: Warning messages for potentially harmful situations
+- ERROR: Error messages for serious problems
+
+Messages with a level lower than the set level will be filtered out. For example, if the level is set to "WARN", only WARN and ERROR messages will be displayed.
 
 ---
 
@@ -147,6 +262,7 @@ if world.system.temperature > 90:
     temp.eval = reason("Is this temperature abnormal?", context=world.system)
     if temp.eval == "yes":
         use("kb.maintenance.dispatch.v2")
+        log.warn(f"High temperature detected: {world.system.temperature}°C")
 ```
 
 ---
@@ -155,24 +271,28 @@ if world.system.temperature > 90:
 
 ```
 program       ::= statement+
-statement     ::= assignment | function_call | conditional | comment
+statement     ::= assignment | function_call | conditional | log_statement | comment
 assignment    ::= identifier '=' expression
-expression    ::= literal | identifier | function_call | binary_expression
+expression    ::= literal | identifier | function_call | binary_expression | fstring_expression
 function_call ::= 'reason' '(' string ',' 'context=' identifier ')'
                   | 'use' '(' string ')'
                   | 'set' '(' string ',' expression ')'
+log_statement ::= 'log' ('.' level)? '(' expression ')'
 conditional   ::= 'if' expression ':' NEWLINE INDENT program DEDENT [ 'else:' NEWLINE INDENT program DEDENT ]
 comment       ::= '#' .*
 
 identifier    ::= [a-zA-Z_][a-zA-Z0-9_.]*
-literal       ::= string | number | boolean
+literal       ::= string | number | boolean | none
+fstring_expression ::= 'f' string
 binary_expression ::= expression binary_op expression
-binary_op     ::= '==' | '!=' | '<' | '>' | '<=' | '>=' | 'and' | 'or' | 'in'
+binary_op     ::= '==' | '!=' | '<' | '>' | '<=' | '>=' | 'and' | 'or' | 'in' | '+' | '-' | '*' | '/'
+level         ::= 'debug' | 'info' | 'warn' | 'error'
 ```
 
 * All blocks must be indented consistently
 * No nested function calls (e.g. `if reason(...) == ...` not allowed)
 * One instruction per line
+* F-strings support expressions inside curly braces: `f"Value: {x}"`
 
 ---
 

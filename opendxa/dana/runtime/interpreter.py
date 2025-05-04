@@ -16,6 +16,7 @@ from opendxa.dana.language.ast import (
     Identifier,
     LiteralExpression,
     LogLevel,
+    LogLevelSetStatement,
     LogStatement,
     Program,
 )
@@ -73,7 +74,7 @@ class Interpreter:
     def __init__(self, context: RuntimeContext):
         self.context = context
         self._execution_id = str(uuid.uuid4())[:8]  # Short unique ID for this execution
-        self._log_level = LogLevel.INFO  # Default log level
+        self._log_level = LogLevel.WARN  # Default log level to WARN
 
         # Initialize execution state
         self.context.set("execution.id", self._execution_id)
@@ -174,7 +175,7 @@ class Interpreter:
             # Otherwise, use the private scope
             self.context.set(f"private.{name}", value)
 
-    def _execute_statement(self, statement: Union[Assignment, LogStatement, Conditional]) -> None:
+    def _execute_statement(self, statement: Union[Assignment, LogStatement, Conditional, LogLevelSetStatement]) -> None:
         """Execute a single DANA statement."""
         try:
             if isinstance(statement, Assignment):
@@ -185,6 +186,11 @@ class Interpreter:
             elif isinstance(statement, LogStatement):
                 message = self._evaluate_expression(statement.message)
                 self._log(str(message), statement.level)
+
+            elif isinstance(statement, LogLevelSetStatement):
+                self._log_level = statement.level
+                self.context.set("execution.log_level", statement.level.value)
+                self._log(f"Set log level to {statement.level.value}", LogLevel.DEBUG)
 
             elif isinstance(statement, Conditional):
                 condition = self._evaluate_expression(statement.condition)

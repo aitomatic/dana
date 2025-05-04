@@ -1,20 +1,20 @@
 """Defines the interface for the DANA Compiler (NL-to-Program)."""
 
 from abc import ABC, abstractmethod
-
-# Forward references for type hinting
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
-    from ..language.ast import Program
-    from ..runtime.runtime_context import RuntimeContext
+    from opendxa.dana.language.ast import Program
+    from opendxa.dana.runtime.context import RuntimeContext
 
 
 class CompilerInterface(ABC):
     """Interface for the Compiler responsible for generating DANA programs from NL objectives."""
+
     # This corresponds to the GMA concept
 
     @abstractmethod
-    async def compile(self, objective: str, context: 'RuntimeContext') -> 'Program':
+    async def compile(self, objective: str, context: "RuntimeContext") -> "Program":
         """Compiles a natural language objective into a DANA program AST, using the provided context."""
         pass
 
@@ -43,11 +43,11 @@ class CompilerInterface(ABC):
 
 #     def _build_prompt(self, objective: str, context: 'RuntimeContext') -> str:
 #         # Construct a detailed prompt using the template.
-#         # Include objective, context state (agent, world, execution), 
-#         # available resources/tools (context.resources.list()), 
+#         # Include objective, context state (agent, world, execution),
+#         # available resources/tools (context.resources.list()),
 #         # and the target DSL syntax/format.
 #         full_context_state = context.get_full_state()
 #         available_tools = context.resources.list()
 #         # Use self.prompt_template.format(...) or similar
 #         prompt = f"Objective: {objective}\nContext: {full_context_state}\nTools: {available_tools}\n---\nGenerate DANA program:"
-#         return prompt 
+#         return prompt

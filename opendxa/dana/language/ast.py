@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 # Forward references for type hints
 Expression = Union["LiteralExpression", "Identifier", "BinaryExpression", "FunctionCall"]
-Statement = Union["Assignment", "LogStatement", "Conditional"]
+Statement = Union["Assignment", "LogStatement", "Conditional", "LogLevelSetStatement"]
 
 
 class BinaryOperator(Enum):
@@ -126,8 +126,16 @@ class Conditional:
     """Represents a conditional statement in DANA."""
 
     condition: Expression
-    body: List[Union[Assignment, LogStatement, "Conditional"]]
+    body: List[Union[Assignment, LogStatement, "Conditional", "LogLevelSetStatement"]]
     line_num: int  # Line number where this conditional was defined
+    location: Optional[Location] = None
+
+
+@dataclass
+class LogLevelSetStatement:
+    """Represents a log level setting statement in DANA."""
+
+    level: LogLevel
     location: Optional[Location] = None
 
 

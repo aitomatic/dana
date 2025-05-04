@@ -5,6 +5,7 @@ from opendxa.dana.language.ast import (
     BinaryExpression,
     BinaryOperator,
     LiteralExpression,
+    LogLevelSetStatement,
     LogStatement,
     Program,
 )
@@ -152,6 +153,27 @@ def test_parse_log_statement():
     assert isinstance(stmt, LogStatement)
     assert isinstance(stmt.message, LiteralExpression)
     assert stmt.message.literal.value == "Hello, world!"
+
+
+def test_parse_log_level_set_statement():
+    """Test parsing a log level set statement."""
+    # Test with different log levels
+    for level in ["debug", "info", "warn", "error"]:
+        result = parse(f'log.setLevel("{level}")')
+        assert isinstance(result, ParseResult)
+        assert isinstance(result.program, Program)
+        assert len(result.program.statements) == 1
+        assert result.error is None
+
+        stmt = result.program.statements[0]
+        assert isinstance(stmt, LogLevelSetStatement)
+        assert stmt.level.value == level.upper()
+
+    # Test invalid log level
+    result = parse('log.setLevel("invalid")')
+    assert isinstance(result, ParseResult)
+    assert result.error is not None
+    assert "Invalid log level" in str(result.error)
 
 
 def test_parse_multiple_statements():

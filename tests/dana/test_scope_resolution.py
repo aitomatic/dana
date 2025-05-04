@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 
 from opendxa.dana.exceptions import StateError
+from opendxa.dana.language.ast import LogLevel
 from opendxa.dana.language.parser import parse
 from opendxa.dana.runtime.context import RuntimeContext
 from opendxa.dana.runtime.interpreter import Interpreter
@@ -20,6 +21,7 @@ def test_variable_scope_resolution():
     log(f"Value: {private.x}")
     """
     with patch("builtins.print") as mock_print:
+        interpreter.set_log_level(LogLevel.INFO)
         interpreter.execute_program(parse(program))
         mock_print.assert_called_once()
         assert "42" in mock_print.call_args[0][0]
@@ -31,6 +33,7 @@ def test_variable_scope_resolution():
     log(f"Value: {x}")
     """
     with patch("builtins.print") as mock_print:
+        interpreter.set_log_level(LogLevel.INFO)
         interpreter.execute_program(parse(program2))
         mock_print.assert_called_once()
         assert "42" in mock_print.call_args[0][0]
@@ -47,6 +50,7 @@ def test_fstring_variable_resolution():
     log(f"Name: {private.name}")
     """
     with patch("builtins.print") as mock_print:
+        interpreter.set_log_level(LogLevel.INFO)
         interpreter.execute_program(parse(program))
         mock_print.assert_called_once()
         assert "Alice" in mock_print.call_args[0][0]
@@ -58,6 +62,7 @@ def test_fstring_variable_resolution():
     log(f"Name: {name}")
     """
     with patch("builtins.print") as mock_print:
+        interpreter.set_log_level(LogLevel.INFO)
         interpreter.execute_program(parse(program2))
         mock_print.assert_called_once()
         assert "Bob" in mock_print.call_args[0][0]
@@ -99,6 +104,7 @@ def test_nested_scope_resolution():
     log(f"Value: {private.config.settings.value}")
     """
     with patch("builtins.print") as mock_print:
+        interpreter.set_log_level(LogLevel.INFO)
         interpreter.execute_program(parse(program))
         mock_print.assert_called_once()
         assert "42" in mock_print.call_args[0][0]
@@ -116,6 +122,7 @@ def test_variable_shadowing():
     log(f"Private: {x}, Group: {group.x}")
     """
     with patch("builtins.print") as mock_print:
+        interpreter.set_log_level(LogLevel.INFO)
         interpreter.execute_program(parse(program))
         mock_print.assert_called_once()
         output = mock_print.call_args[0][0]

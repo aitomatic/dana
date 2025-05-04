@@ -31,10 +31,11 @@ class TestFaultTolerantTranscoder(IsolatedAsyncioTestCase):
         # Mock parse to succeed directly
         mock_program = MagicMock()
         with patch("opendxa.dana.transcoder.transcoder.parse", return_value=ParseResult(program=mock_program, errors=[])):
-            result = await transcoder.transcode(code, self.context)
+            result, cleaned_code = await transcoder.transcode(code, self.context)
             self.assertTrue(result.is_valid)
             self.assertIsNotNone(result.program)
             self.assertEqual(result.program, mock_program)
+            self.assertIsNone(cleaned_code)  # No LLM cleaning was performed
 
     async def test_llm_query_failure(self):
         """Test when the initial parse fails and the LLM query itself fails."""
@@ -92,10 +93,11 @@ class TestFaultTolerantTranscoder(IsolatedAsyncioTestCase):
             llm_success_response = BaseResponse(success=True, content={"choices": [mock_choice]})
             self.llm.query.return_value = llm_success_response
 
-            result = await self.transcoder.transcode(original_code, self.context)
+            result, cleaned_code_returned = await self.transcoder.transcode(original_code, self.context)
 
             self.assertTrue(result.is_valid)
             self.assertEqual(result.program, mock_program)
+            self.assertEqual(cleaned_code_returned, cleaned_code)  # Check that the cleaned code is returned
             # Check parse was called twice
             self.assertEqual(mock_parse.call_count, 2)
             mock_parse.assert_any_call(original_code)

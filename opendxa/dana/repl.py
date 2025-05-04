@@ -57,7 +57,10 @@ class REPL:
             parse_result: ParseResult
             if self.transcoder:
                 try:
-                    parse_result = await self.transcoder.transcode(program_source, self.context)
+                    # transcode now returns a tuple (ParseResult, str | None)
+                    parse_result, cleaned_code = await self.transcoder.transcode(program_source, self.context)
+                    if cleaned_code:
+                        self.logger.info("LLM generated DANA code:\n%s", cleaned_code)
                     if not parse_result.is_valid:
                         raise DanaError(f"Invalid program after transcoding: {parse_result.error}")
                 except TranscoderError as e:
