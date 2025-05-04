@@ -19,6 +19,7 @@ authors = [
 dependencies = [
     # HTTP and API clients
     "aiohttp",
+    "aioconsole",
     "websockets",
     
     # AI/LLM services
