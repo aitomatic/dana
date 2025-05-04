@@ -8,7 +8,8 @@ python3 -m venv .venv
 source .venv/bin/activate
 
 # Install opendxa library in dev mode
-pip install -e .
+pip install -e ".[dev]"
+
 
 # Install pre-commit
 pip install pre-commit

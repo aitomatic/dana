@@ -1,3 +1,6 @@
+#
+# Keep this for remote linting e.g., by GitHub
+#
 [flake8]
 max-line-length = 140
 # W291: Trailing whitespace

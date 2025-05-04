@@ -7,7 +7,7 @@ input/output operations while extending BaseResource functionality.
 
 from abc import abstractmethod
 from typing import Any, Optional
-from opendxa.base.resource import BaseResource
+from opendxa.common.resource import BaseResource
 from opendxa.common.mixins import ToolCallable
 from opendxa.common.types import BaseRequest, BaseResponse
 

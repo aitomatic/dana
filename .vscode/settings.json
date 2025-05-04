@@ -1,4 +1,23 @@
 {
+    "files.associations": { "*.dana": "python" },
     "python.analysis.typeCheckingMode": "basic",
-    "python.analysis.autoImportCompletions": true
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.extraPaths": ["./opendxa"],
+    "python.analysis.diagnosticSeverityOverrides": {
+        "reportUndefinedVariable": "none",
+        "reportMissingImports": "none"
+    },
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.fixAll.ruff": "explicit",
+        "source.organizeImports.ruff": "explicit"
+    },
+    "[dana]": {
+        "editor.formatOnSave": false
+    },
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "pylint.enabled": false,
+    "flake8.enabled": false,
+    "ruff.enable": true
 }
+

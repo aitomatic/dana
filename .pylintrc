@@ -1,3 +1,6 @@
+#
+# Keep this for remote linting e.g., by GitHub
+#
 [MESSAGES CONTROL]
 # C0303: Trailing whitespace
 # C0304: Final newline missing

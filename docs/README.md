@@ -113,6 +113,9 @@ For detailed framework comparisons, see [Framework Comparison](details/compariso
   - [Declarative-Imperative](architecture/declarative-imperative.md) - Key architectural differentiator
   - [Framework Comparison](architecture/comparison.md) - Comparison with other frameworks
 
+- **DANA Language**
+  - [Specification](dana_language.md) - Syntax and semantics of the DANA language
+
 - **Knowledge Management**
   - [Knowledge Management](knowledge/management.md) - Managing knowledge lifecycle
   - [Domain Expertise](knowledge/domain-expertise.md) - Integrating domain knowledge

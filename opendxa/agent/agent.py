@@ -34,29 +34,16 @@ See dxa/agent/README.md for detailed design documentation.
 """
 
 from typing import Dict, Union, Optional, Any
-from opendxa.base.execution import (
-    RuntimeContext
-)
-from opendxa.execution import (
-    Plan,
-    PlanFactory,
-    PlanStrategy,
-    ReasoningStrategy,
-    AgentRuntime,
-)
-from opendxa.base.state import (
-    AgentState,
-)
-from opendxa.base.capability import BaseCapability
-from opendxa.base.resource import BaseResource, LLMResource
+from opendxa.dana.runtime.runtime_context import RuntimeContext
+from opendxa.dana.state import AgentState
+from opendxa.agent.agent_runtime import AgentRuntime
+from opendxa.common.capability import BaseCapability
+from opendxa.common.resource import BaseResource, LLMResource
 from opendxa.common.io import BaseIO, IOFactory
 from opendxa.common.utils.misc import Misc
-from opendxa.base.capability.capable import Capable
+from opendxa.common.capability.capable import Capable
 from opendxa.config.agent_config import AgentConfig
-from opendxa.execution.planning import Planner
-from opendxa.execution.reasoning import Reasoner
 from opendxa.common.types import BaseResponse
-from opendxa.base.execution.execution_types import ExecutionSignalType, ExecutionSignal
 from opendxa.common.mixins.tool_callable import ToolCallable
 from opendxa.common.types import BaseRequest
 

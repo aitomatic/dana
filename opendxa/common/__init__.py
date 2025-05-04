@@ -87,6 +87,23 @@ from opendxa.common.types import (
     BaseRequest,
     BaseResponse,
 )
+from opendxa.common.capability import (
+    BaseCapability,
+    Capable,
+)
+from opendxa.common.resource import (
+    BaseResource,
+    ResourceError,
+    ResourceUnavailableError,
+    LLMResource,
+    HumanResource,
+    McpResource,
+    StdioTransportParams,
+    HttpTransportParams,
+    BaseMcpService,
+    McpEchoService,
+    WoTResource,
+)
 
 __all__ = [
     # Errors
@@ -131,6 +148,23 @@ __all__ = [
     'DepthFirstTraversal', 
     'TopologicalTraversal',
     'GraphVisualizer',
+
+    # Capability
+    'BaseCapability',
+    'Capable',
+
+    # Resource
+    'BaseResource',
+    'ResourceError',
+    'ResourceUnavailableError',
+    'LLMResource',
+    'HumanResource',
+    'McpResource',
+    'StdioTransportParams',
+    'HttpTransportParams',
+    'BaseMcpService',
+    'McpEchoService',
+    'WoTResource',
 
     # Types
     'BaseRequest',

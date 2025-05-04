@@ -1,0 +1,33 @@
+# Example 3: Multiple Scopes and Organization
+# This example demonstrates:
+# - Using different scopes for organizing data
+# - Mixing different types of values in different scopes
+# - Hierarchical state organization
+# - How the final state is represented in JSON
+
+log("--- Running Multiple Scopes Example ---")
+log("Demonstrating assignments to various scopes: sensor1, sensor2, status, temp, world.")
+
+# Temperature readings in different scopes
+log("Assigning temperatures to sensor1 and sensor2 scopes.")
+sensor1.temp = 25
+sensor2.temp = -10
+
+# Status messages
+log("Assigning status strings to the status scope.")
+status.sensor1 = "active"
+status.sensor2 = "standby"
+
+# Temporary calculations
+log("Assigning temporary values to the temp scope.")
+temp.avg = 7
+temp.diff = 35
+
+# Mixed scopes and types
+log("Assigning mixed types to the world scope.")
+world.temperature = 20
+world.status = "normal"
+world.id = 42
+
+log("Expected final state: JSON structure with all assigned scopes and values.")
+log("--- Finished Multiple Scopes Example ---") 
