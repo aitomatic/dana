@@ -1,47 +1,43 @@
 """Unit tests for the DANA language context."""
 
-import unittest
-import sys
-import os
+import pytest
 
-# Add the parent directory to the Python path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from opendxa.dana.exceptions import RuntimeError
+from opendxa.dana.runtime.runtime_context import RuntimeContext
 
-from opendxa.dana.state.context import RuntimeContext
-from opendxa.dana.exceptions import StateError
 
-class TestRuntimeContext(unittest.TestCase):
-    """Test cases for the RuntimeContext class."""
+def test_set_and_get_variable():
+    """Test setting and getting variables in different scopes."""
+    ctx = RuntimeContext()
 
-    def setUp(self):
-        """Set up a fresh context for each test."""
-        self.context = RuntimeContext()
+    # Test agent scope
+    ctx.set("agent:name", "Alice")
+    assert ctx.get("agent:name") == "Alice"
 
-    def test_set_and_get_variable(self):
-        """Test setting and getting a variable in the context."""
-        # Test setting a variable
-        self.context.set("temp.x", 42)
-        
-        # Test getting the variable
-        value = self.context.get("temp.x")
-        self.assertEqual(value, 42)
+    # Test world scope
+    ctx.set("world:temperature", 25)
+    assert ctx.get("world:temperature") == 25
 
-    def test_get_nonexistent_variable(self):
-        """Test getting a variable that doesn't exist."""
-        with self.assertRaisesRegex(StateError, "Scope or path 'temp.nonexistent' not found: 'temp' does not exist"):
-            self.context.get("temp.nonexistent")
+    # Test execution scope
+    ctx.set("execution:status", "running")
+    assert ctx.get("execution:status") == "running"
 
-    def test_set_variable_invalid_scope(self):
-        """Test setting a variable with an invalid scope."""
-        # The current implementation allows any scope name, so this test needs to be updated
-        self.context.set("invalid.x", 42)  # This should work
-        value = self.context.get("invalid.x")
-        self.assertEqual(value, 42)
 
-    def test_set_variable_invalid_name(self):
-        """Test setting a variable with an invalid name."""
-        with self.assertRaisesRegex(StateError, "Invalid state key 'temp.'. Must be in 'scope.variable' format."):
-            self.context.set("temp.", 42)
+def test_get_nonexistent_variable():
+    """Test getting a nonexistent variable."""
+    ctx = RuntimeContext()
+    assert ctx.get("agent:nonexistent") is None
 
-if __name__ == '__main__':
-    unittest.main() 
+
+def test_set_variable_invalid_scope():
+    """Test setting a variable with an invalid scope."""
+    ctx = RuntimeContext()
+    with pytest.raises(RuntimeError):
+        ctx.set("invalid:key", "value")
+
+
+def test_set_variable_invalid_name():
+    """Test setting a variable with an invalid name."""
+    ctx = RuntimeContext()
+    with pytest.raises(RuntimeError):
+        ctx.set("agent:", "value")  # Empty name

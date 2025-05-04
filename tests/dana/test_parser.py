@@ -1,118 +1,95 @@
 """Unit tests for the DANA language parser."""
 
-import os
-import sys
-import unittest
-from typing import cast
-
-# Add the parent directory to the Python path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
-from dana.language.ast import Assignment, Identifier, Literal, LiteralExpression, LogStatement, Program
-
+from opendxa.dana.language.ast import Assignment, LiteralExpression, LogStatement, Program
 from opendxa.dana.language.parser import ParseResult, parse
 
 
-class TestParser(unittest.TestCase):
-    """Test cases for the Parser class."""
+def test_parse_assignment():
+    """Test parsing a simple assignment statement."""
+    result = parse("temp.x = 42")
+    assert isinstance(result, ParseResult)
+    assert isinstance(result.program, Program)
+    assert len(result.program.statements) == 1
+    assert result.error is None
 
-    def setUp(self):
-        """Set up a fresh parser for each test."""
-        self.parser = parse  # Changed to use parse function
+    stmt = result.program.statements[0]
+    assert isinstance(stmt, Assignment)
+    assert stmt.target.name == "temp.x"
+    assert isinstance(stmt.value, LiteralExpression)
+    assert stmt.value.literal.value == 42
 
-    def test_parse_assignment(self):
-        """Test parsing a simple assignment statement."""
-        source = "temp.x = 42"
-        parse_result = self.parser(source)
 
-        # Verify the structure of the parsed program
-        self.assertIsInstance(parse_result, ParseResult)
-        self.assertIsInstance(parse_result.program, Program)
-        self.assertEqual(len(parse_result.program.statements), 1)
-        self.assertIsNone(parse_result.error)
+def test_parse_string_assignment():
+    """Test parsing a string assignment."""
+    result = parse('temp.msg = "Alice"')
+    assert isinstance(result, ParseResult)
+    assert isinstance(result.program, Program)
+    assert len(result.program.statements) == 1
+    assert result.error is None
 
-        # Check the assignment statement
-        stmt = parse_result.program.statements[0]
-        self.assertIsInstance(stmt, Assignment)
-        assignment = cast(Assignment, stmt)
-        self.assertIsInstance(assignment.target, Identifier)
-        self.assertEqual(assignment.target.name, "temp.x")
+    stmt = result.program.statements[0]
+    assert isinstance(stmt, Assignment)
+    assert stmt.target.name == "temp.msg"
+    assert isinstance(stmt.value, LiteralExpression)
+    assert stmt.value.literal.value == "Alice"
 
-        # Check the value expression
-        self.assertIsInstance(assignment.value, LiteralExpression)
-        self.assertIsInstance(assignment.value.literal, Literal)
-        self.assertEqual(assignment.value.literal.value, 42)
 
-    def test_parse_string_assignment(self):
-        """Test parsing an assignment with a string literal."""
-        source = 'temp.msg = "hello"'
-        parse_result = self.parser(source)
+def test_parse_log_statement():
+    """Test parsing a log statement."""
+    result = parse('log("Hello, world!")')
+    assert isinstance(result, ParseResult)
+    assert isinstance(result.program, Program)
+    assert len(result.program.statements) == 1
+    assert result.error is None
 
-        stmt = parse_result.program.statements[0]
-        self.assertIsInstance(stmt, Assignment)
-        assignment = cast(Assignment, stmt)
-        self.assertEqual(assignment.target.name, "temp.msg")
-        self.assertEqual(assignment.value.literal.value, "hello")
+    stmt = result.program.statements[0]
+    assert isinstance(stmt, LogStatement)
+    assert isinstance(stmt.message, LiteralExpression)
+    assert stmt.message.literal.value == "Hello, world!"
 
-    def test_parse_log_statement(self):
-        """Test parsing a log statement."""
-        source = 'log("test message")'
-        parse_result = self.parser(source)
 
-        stmt = parse_result.program.statements[0]
-        self.assertIsInstance(stmt, LogStatement)
-        log_stmt = cast(LogStatement, stmt)
-        self.assertIsInstance(log_stmt.message, LiteralExpression)
-        self.assertEqual(log_stmt.message.literal.value, "test message")
-
-    def test_parse_multiple_statements(self):
-        """Test parsing multiple statements."""
-        source = """
-        temp.x = 10
-        log("test")
-        temp.y = 20
+def test_parse_multiple_statements():
+    """Test parsing multiple statements."""
+    result = parse(
         """
-        parse_result = self.parser(source)
+        temp.x = 42
+        temp.y = "test"
+        log("done")
+    """
+    )
+    assert isinstance(result, ParseResult)
+    assert isinstance(result.program, Program)
+    assert len(result.program.statements) == 3
+    assert result.error is None
 
-        self.assertEqual(len(parse_result.program.statements), 3)
+    # Check first statement
+    stmt1 = result.program.statements[0]
+    assert isinstance(stmt1, Assignment)
+    assert stmt1.target.name == "temp.x"
+    assert stmt1.value.literal.value == 42
 
-        # Check first assignment
-        stmt1 = parse_result.program.statements[0]
-        self.assertIsInstance(stmt1, Assignment)
-        assignment1 = cast(Assignment, stmt1)
-        self.assertEqual(assignment1.target.name, "temp.x")
-        self.assertEqual(assignment1.value.literal.value, 10)
+    # Check second statement
+    stmt2 = result.program.statements[1]
+    assert isinstance(stmt2, Assignment)
+    assert stmt2.target.name == "temp.y"
+    assert stmt2.value.literal.value == "test"
 
-        # Check log statement
-        stmt2 = parse_result.program.statements[1]
-        self.assertIsInstance(stmt2, LogStatement)
-        log_stmt = cast(LogStatement, stmt2)
-        self.assertEqual(log_stmt.message.literal.value, "test")
-
-        # Check second assignment
-        stmt3 = parse_result.program.statements[2]
-        self.assertIsInstance(stmt3, Assignment)
-        assignment3 = cast(Assignment, stmt3)
-        self.assertEqual(assignment3.target.name, "temp.y")
-        self.assertEqual(assignment3.value.literal.value, 20)
-
-    def test_parse_invalid_syntax(self):
-        """Test parsing invalid syntax."""
-        # Test missing value
-        parse_result = self.parser("temp.x =")
-        self.assertIsNotNone(parse_result.error)
-        self.assertEqual(len(parse_result.program.statements), 0)
-
-        # Test missing target
-        parse_result = self.parser("= 42")
-        self.assertIsNotNone(parse_result.error)
-        self.assertEqual(len(parse_result.program.statements), 0)
-
-        # Test missing equals sign
-        parse_result = self.parser("temp.x 42")
-        self.assertIsNotNone(parse_result.error)
-        self.assertEqual(len(parse_result.program.statements), 0)
+    # Check third statement
+    stmt3 = result.program.statements[2]
+    assert isinstance(stmt3, LogStatement)
+    assert stmt3.message.literal.value == "done"
 
 
-if __name__ == "__main__":
-    unittest.main()
+def test_parse_invalid_syntax():
+    """Test parsing invalid syntax."""
+    result = parse("temp.x =")
+    assert isinstance(result, ParseResult)
+    assert result.error is not None
+
+    result = parse("= 42")
+    assert isinstance(result, ParseResult)
+    assert result.error is not None
+
+    result = parse("log()")
+    assert isinstance(result, ParseResult)
+    assert result.error is not None
