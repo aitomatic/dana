@@ -1,13 +1,10 @@
 """DANA Runtime: Executes parsed AST nodes."""
 
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Optional
 
-# Only import specific nodes needed for this iteration
-from opendxa.dana.language.ast import (
-    Program, Statement, Assignment, Expression, LiteralExpression,
-    LogStatement
-)
-from opendxa.dana.exceptions import InterpretError, StateError  # Import StateError too
+from opendxa.dana.exceptions import InterpretError, StateError
+from opendxa.dana.language.ast import Assignment, Expression, LiteralExpression, LogStatement, Program, Statement
+from opendxa.dana.language.parser import ParseResult
 from opendxa.dana.state.context import RuntimeContext
 
 # Conditional import for type hinting only
@@ -15,20 +12,34 @@ if TYPE_CHECKING:
     # No RuntimeContext import needed here anymore
     pass
 
+
 class Interpreter:
     """Interprets and executes DANA AST nodes."""
 
-    def __init__(self, context: RuntimeContext = None):
+    def __init__(self, context: Optional[RuntimeContext] = None):
         """Initializes the interpreter with a runtime context."""
         self.context = context if context is not None else RuntimeContext()
 
-    def execute_program(self, program: Program) -> None:
-        """Executes a full DANA program, node by node."""
-        if not isinstance(program, Program):
-            raise InterpretError(f"Expected a Program node, got {type(program).__name__}")
+    def execute_program(self, parse_result: ParseResult) -> None:
+        """Executes a DANA program, node by node.
+
+        Args:
+            parse_result: Result of parsing the program, containing:
+                - program: The Program to execute
+                - error: Any ParseError encountered during parsing
+        """
+        if not isinstance(parse_result.program, Program):
+            raise InterpretError(f"Expected a Program node, got {type(parse_result.program).__name__}")
+
         try:
-            for statement in program.statements:
+            # Execute the partial program
+            for statement in parse_result.program.statements:
                 self.execute_statement(statement)
+
+            # If there was a parse error, display it after executing valid statements
+            if parse_result.error:
+                print(f"DANA Error: {parse_result.error}")
+
         except (InterpretError, StateError) as e:
             # TODO: Enhance error reporting with line numbers if AST nodes store them
             print(f"Runtime Error: {e}")
@@ -73,4 +84,4 @@ class Interpreter:
         # elif isinstance(expression, VariableReference):
         #     return self.context.get(expression.name)
         else:
-            raise InterpretError(f"Unsupported expression type for evaluation: {type(expression).__name__}") 
+            raise InterpretError(f"Unsupported expression type for evaluation: {type(expression).__name__}")
