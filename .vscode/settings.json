@@ -18,6 +18,7 @@
     "editor.defaultFormatter": "ms-python.black-formatter",
     "pylint.enabled": false,
     "flake8.enabled": false,
-    "ruff.enable": true
+    "ruff.enable": true,
+    "editor.defaultFoldingRangeProvider": "ms-python.black-formatter"
 }
 

@@ -1,24 +1,112 @@
 """DANA Runtime: Executes parsed AST nodes."""
 
-from typing import TYPE_CHECKING, Any, Optional
+import uuid
+from dataclasses import dataclass
+from datetime import datetime
+from typing import TYPE_CHECKING, Any, Union
 
-from opendxa.dana.exceptions import InterpretError, StateError
-from opendxa.dana.language.ast import Assignment, Expression, LiteralExpression, LogStatement, Program, Statement
+from opendxa.dana.exceptions import InterpretError, RuntimeError, StateError
+from opendxa.dana.language.ast import (
+    Assignment,
+    BinaryExpression,
+    BinaryOperator,
+    Conditional,
+    FStringExpression,
+    FunctionCall,
+    Identifier,
+    LiteralExpression,
+    LogLevel,
+    LogStatement,
+    Program,
+)
 from opendxa.dana.language.parser import ParseResult
-from opendxa.dana.state.context import RuntimeContext
+from opendxa.dana.runtime.context import RuntimeContext
 
 # Conditional import for type hinting only
 if TYPE_CHECKING:
     # No RuntimeContext import needed here anymore
     pass
 
+# ANSI color codes
+COLORS = {
+    LogLevel.DEBUG: "\033[36m",  # Cyan
+    LogLevel.INFO: "\033[32m",  # Green
+    LogLevel.WARN: "\033[33m",  # Yellow
+    LogLevel.ERROR: "\033[31m",  # Red
+}
+RESET = "\033[0m"  # Reset color
+
+
+@dataclass
+class LogMessage:
+    """Represents a log message with runtime information."""
+
+    timestamp: str
+    execution_id: str
+    level: str
+    scope: str
+    message: str
+
+    def __str__(self) -> str:
+        color = COLORS.get(LogLevel(self.level), "")
+        return f"[opendxa.dana {self.timestamp}] {color}{self.message} | {self.execution_id} | {self.level} | {self.scope}{RESET}"
+
+
+def format_error_location(node: Any) -> str:
+    """Format location information for error messages."""
+    if not hasattr(node, "location") or not node.location:
+        return ""
+    line, column, source_text = node.location
+    # Add padding to align the column indicator
+    padding = " " * (column - 1)
+    return f"\nAt line {line}, column {column}:\n{source_text}\n{padding}^"
+
+
+def format_log_message(timestamp: str, execution_id: str, level: str, scope: str, message: str) -> str:
+    """Format a log message with runtime information."""
+    return f"[DANA Runtime] {timestamp} | {execution_id} | {level} | {scope} | {message}"
+
 
 class Interpreter:
-    """Interprets and executes DANA AST nodes."""
+    """Interpreter for executing DANA programs."""
 
-    def __init__(self, context: Optional[RuntimeContext] = None):
-        """Initializes the interpreter with a runtime context."""
-        self.context = context if context is not None else RuntimeContext()
+    def __init__(self, context: RuntimeContext):
+        self.context = context
+        self._execution_id = str(uuid.uuid4())[:8]  # Short unique ID for this execution
+        self._log_level = LogLevel.INFO  # Default log level
+
+        # Initialize execution state
+        self.context.set("execution.id", self._execution_id)
+        self.context.set("execution.log_level", self._log_level.value)
+
+    def _should_log(self, level: LogLevel) -> bool:
+        """Check if a message with the given level should be logged."""
+        # Define log level priorities (higher number = higher priority)
+        level_priorities = {LogLevel.DEBUG: 0, LogLevel.INFO: 1, LogLevel.WARN: 2, LogLevel.ERROR: 3}
+
+        # Only log if the message level is at or above the current threshold
+        return level_priorities[level] >= level_priorities[self._log_level]
+
+    def _log(self, message: str, level: LogLevel = LogLevel.INFO) -> None:
+        """Log a message with runtime information."""
+        # Check if message should be logged based on current level
+        if self._should_log(level):
+            # Create log message
+            log_msg = LogMessage(
+                timestamp=datetime.now().astimezone().strftime("%Y%m%d %H:%M:%S%z").replace("00", ""),
+                execution_id=self._execution_id,
+                level=level.value,
+                scope="execution",  # Use execution scope for logging
+                message=message,
+            )
+
+            # Print formatted message
+            print(str(log_msg))
+
+    def set_log_level(self, level: LogLevel) -> None:
+        """Set the global log level threshold."""
+        self._log_level = level
+        self.context.set("execution.log_level", level.value)
 
     def execute_program(self, parse_result: ParseResult) -> None:
         """Executes a DANA program, node by node.
@@ -31,57 +119,136 @@ class Interpreter:
         if not isinstance(parse_result.program, Program):
             raise InterpretError(f"Expected a Program node, got {type(parse_result.program).__name__}")
 
+        if parse_result.error:
+            raise parse_result.error
+
         try:
             # Execute the partial program
             for statement in parse_result.program.statements:
-                self.execute_statement(statement)
+                self._execute_statement(statement)
 
-            # If there was a parse error, display it after executing valid statements
-            if parse_result.error:
-                print(f"DANA Error: {parse_result.error}")
-
-        except (InterpretError, StateError) as e:
-            # TODO: Enhance error reporting with line numbers if AST nodes store them
-            print(f"Runtime Error: {e}")
-            # Decide whether to stop execution or continue
-            raise  # Re-raise for now
+        except (InterpretError, StateError, RuntimeError) as e:
+            self._log_level = LogLevel.ERROR
+            self.context.set("execution.log_level", LogLevel.ERROR.value)
+            raise e from None
         except Exception as e:
-            print(f"Unexpected Runtime Error: {e}")
-            raise  # Re-raise unexpected errors
+            # Wrap unexpected Python errors in RuntimeError
+            self._log_level = LogLevel.ERROR
+            self.context.set("execution.log_level", LogLevel.ERROR.value)
+            raise RuntimeError(f"Unexpected Python error during execution: {type(e).__name__}: {e}") from e
 
-    def execute_statement(self, statement: Statement) -> None:
-        """Executes a single statement node by dispatching to visitor methods."""
-        if isinstance(statement, Assignment):
-            self.visit_Assignment(statement)
-        elif isinstance(statement, LogStatement):
-            self.visit_LogStatement(statement)
-        else:
-            raise InterpretError(f"Unsupported statement type for execution: {type(statement).__name__}")
+    def _get_variable(self, name: str) -> Any:
+        """Get a variable value from the context."""
+        try:
+            # If the name already contains a dot, use it as is
+            if "." in name:
+                return self.context.get(name)
+            # Otherwise, use the private scope
+            return self.context.get(f"private.{name}")
+        except StateError as e:
+            # Re-raise with the same message but preserve the original error type
+            raise StateError(str(e))
 
-    def visit_Assignment(self, node: Assignment) -> None:
-        """Handles execution of an Assignment statement."""
-        value_to_assign = self._evaluate_expression(node.value)
-        target_key = node.target.name
-        # print(f"DEBUG: Assigning {target_key} = {repr(value_to_assign)}") # Optional debug
-        self.context.set(target_key, value_to_assign)
+    def _set_variable(self, name: str, value: Any) -> None:
+        """Set a variable value in the context."""
+        try:
+            # If the name already contains a dot, use it as is
+            if "." in name:
+                self.context.set(name, value)
+            else:
+                # Otherwise, use the private scope
+                self.context.set(f"private.{name}", value)
+        except StateError as e:
+            # Re-raise with the same message but preserve the original error type
+            raise StateError(str(e))
 
-    def visit_LogStatement(self, node: LogStatement) -> None:
-        """Handles execution of a LogStatement."""
-        # In Iteration 1, message is always a LiteralExpression with a string
-        if isinstance(node.message, LiteralExpression) and isinstance(node.message.literal.value, str):
-            message_to_log = node.message.literal.value
-            print(f"[DANA Log] {message_to_log}")
-        else:
-            # Should not happen with current parser, but good practice
-            raise TypeError("Log statement currently only supports string literals.")
+    def _execute_statement(self, statement: Union[Assignment, LogStatement, Conditional]) -> None:
+        """Execute a single DANA statement."""
+        try:
+            if isinstance(statement, Assignment):
+                value = self._evaluate_expression(statement.value)
+                self._set_variable(statement.target.name, value)
+                self._log(f"Set {statement.target.name} = {value}", LogLevel.DEBUG)
 
-    def _evaluate_expression(self, expression: Expression) -> Any:
-        """Evaluates an expression node and returns its value."""
-        if isinstance(expression, LiteralExpression):
-            # For Iteration 1, the only expression is a LiteralExpression
-            return expression.literal.value
-        # Add other expression types (VariableReference, BinaryOp, FunctionCall) later
-        # elif isinstance(expression, VariableReference):
-        #     return self.context.get(expression.name)
-        else:
-            raise InterpretError(f"Unsupported expression type for evaluation: {type(expression).__name__}")
+            elif isinstance(statement, LogStatement):
+                message = self._evaluate_expression(statement.message)
+                self._log(str(message), statement.level)
+
+            elif isinstance(statement, Conditional):
+                condition = self._evaluate_expression(statement.condition)
+                if condition:
+                    for body_stmt in statement.body:
+                        self._execute_statement(body_stmt)
+
+        except (RuntimeError, StateError):
+            raise
+        except Exception as e:
+            error_msg = f"Error executing statement: {type(e).__name__}: {e}"
+            error_msg += format_error_location(statement)
+            raise RuntimeError(error_msg) from e
+
+    def _evaluate_expression(self, expr: Union[LiteralExpression, Identifier, BinaryExpression, FunctionCall]) -> Any:
+        """Evaluate a DANA expression node."""
+        try:
+            if isinstance(expr, LiteralExpression):
+                if isinstance(expr.literal.value, FStringExpression):
+                    # Evaluate f-string
+                    result = ""
+                    for part in expr.literal.value.parts:
+                        if isinstance(part, str):
+                            result += part
+                        else:
+                            # Evaluate the expression and convert to string
+                            value = self._evaluate_expression(part)
+                            result += str(value)
+                    return result
+                return expr.literal.value
+            elif isinstance(expr, Identifier):
+                try:
+                    return self._get_variable(expr.name)
+                except StateError:
+                    error_msg = f"Variable not found: {expr.name}"
+                    error_msg += format_error_location(expr)
+                    raise StateError(error_msg) from None
+            elif isinstance(expr, BinaryExpression):
+                left = self._evaluate_expression(expr.left)
+                right = self._evaluate_expression(expr.right)
+
+                try:
+                    if expr.operator == BinaryOperator.ADD:
+                        # Handle string concatenation by converting non-string values to strings
+                        if isinstance(left, str) or isinstance(right, str):
+                            return str(left) + str(right)
+                        return left + right
+                    elif expr.operator == BinaryOperator.SUBTRACT:
+                        return left - right
+                    elif expr.operator == BinaryOperator.MULTIPLY:
+                        return left * right
+                    elif expr.operator == BinaryOperator.DIVIDE:
+                        if right == 0:
+                            error_msg = "Division by zero"
+                            error_msg += format_error_location(expr)
+                            raise StateError(error_msg)
+                        return left / right
+                    else:
+                        error_msg = f"Unsupported binary operator: {expr.operator}"
+                        error_msg += format_error_location(expr)
+                        raise RuntimeError(error_msg)
+                except (TypeError, ValueError) as e:
+                    error_msg = f"Error in binary operation: {str(e)}"
+                    error_msg += format_error_location(expr)
+                    raise RuntimeError(error_msg) from e
+            elif isinstance(expr, FunctionCall):
+                error_msg = "Function calls are not yet implemented"
+                error_msg += format_error_location(expr)
+                raise RuntimeError(error_msg)
+            else:
+                error_msg = f"Unsupported expression type: {type(expr).__name__}"
+                error_msg += format_error_location(expr)
+                raise RuntimeError(error_msg)
+        except (RuntimeError, StateError):
+            raise
+        except Exception as e:
+            error_msg = f"Error evaluating expression: {type(e).__name__}: {e}"
+            error_msg += format_error_location(expr)
+            raise RuntimeError(error_msg) from e

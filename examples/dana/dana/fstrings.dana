@@ -1,0 +1,28 @@
+# Example: F-strings
+# Demonstrates the use of f-strings in DANA.
+
+# Basic variable interpolation
+name = "World"
+log(f"Hello {name}")
+
+# Expression interpolation
+x = 5
+y = 3
+log(f"Sum: {x + y}")
+log(f"Product: {x * y}")
+
+# Multiple interpolations
+group.status.phase = "Running"
+log(f"Phase: {group.status.phase}, X: {x}, Y: {y}")
+
+# Nested expressions
+log(f"Complex: {x + (y * 2)}")
+
+# String concatenation
+first = "Hello"
+second = "World"
+log(f"{first} {second}")
+
+# Boolean expressions
+is_valid = true
+log(f"Status: {is_valid}")

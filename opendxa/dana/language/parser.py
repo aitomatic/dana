@@ -1,7 +1,7 @@
 """Parser for DANA language."""
 
 import re
-from typing import List, NamedTuple, Optional, Tuple
+from typing import List, NamedTuple, Optional, Tuple, Union
 
 from opendxa.dana.exceptions import ParseError
 from opendxa.dana.language.ast import (
@@ -9,14 +9,14 @@ from opendxa.dana.language.ast import (
     BinaryExpression,
     BinaryOperator,
     Conditional,
-    Expression,
+    FStringExpression,
     FunctionCall,
     Identifier,
     Literal,
     LiteralExpression,
+    LogLevel,
     LogStatement,
     Program,
-    Statement,
 )
 from opendxa.dana.language.types import validate_identifier
 
@@ -29,10 +29,12 @@ class ParseResult(NamedTuple):
 
 
 # Regex patterns for different statement types
-ASSIGNMENT_REGEX = re.compile(r"^\s*([a-zA-Z_][a-zA-Z0-9_]*\.[a-zA-Z_][a-zA-Z0-9_]*)\s*=\s*(.*)$")
-LOG_REGEX = re.compile(r"^\s*log\(\s*\"(.*)\"\s*\)\s*$")
-IF_REGEX = re.compile(r"^\s*if\s+(.*):\s*$")
-FUNCTION_CALL_REGEX = re.compile(r"^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\((.*)\)\s*$")
+# Allow nested identifiers like scope.sub.var and end-of-line comments
+ASSIGNMENT_REGEX = re.compile(r"^\s*([a-zA-Z_][a-zA-Z0-9_\.]*)\s*=\s*(-?\d+\.?\d*|[^#]*?)(?:\s*#.*)?$")
+# Updated Log Regex to capture content inside parentheses and optional level
+LOG_REGEX = re.compile(r"^\s*log(?:\.(debug|info|warn|error))?\((.*)\)\s*(?:#.*)?$")
+IF_REGEX = re.compile(r"^\s*if\s+(.*):\s*(?:#.*)?$")
+FUNCTION_CALL_REGEX = re.compile(r"^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\((.*)\)\s*(?:#.*)?$")
 
 
 def parse_literal(value_str: str) -> Literal:
@@ -45,64 +47,294 @@ def parse_literal(value_str: str) -> Literal:
     if value_str.lower() == "false":
         return Literal(value=False)
 
+    # Check for float values
+    if "." in value_str and value_str.replace(".", "", 1).isdigit():
+        return Literal(value=float(value_str))
+
     # Check for integers
     if value_str.isdigit() or (value_str.startswith("-") and value_str[1:].isdigit()):
         return Literal(value=int(value_str))
 
     # Check for quoted strings
     if value_str.startswith('"') and value_str.endswith('"'):
+        # Check if it's an f-string
+        if value_str.startswith('f"') or value_str.startswith("f'"):
+            # Remove the f and quotes
+            content = value_str[2:-1]
+            parts = []
+            current_pos = 0
+            while current_pos < len(content):
+                # Find the next {
+                brace_start = content.find("{", current_pos)
+                if brace_start == -1:
+                    # No more expressions, add remaining text
+                    parts.append(content[current_pos:])
+                    break
+
+                # Add text before the {
+                if brace_start > current_pos:
+                    parts.append(content[current_pos:brace_start])
+
+                # Find the matching }
+                brace_level = 1
+                brace_end = brace_start + 1
+                while brace_end < len(content) and brace_level > 0:
+                    if content[brace_end] == "{":
+                        brace_level += 1
+                    elif content[brace_end] == "}":
+                        brace_level -= 1
+                    brace_end += 1
+
+                if brace_level > 0:
+                    raise ParseError("Unmatched { in f-string")
+
+                # Parse the expression inside {}
+                expr_str = content[brace_start + 1 : brace_end - 1]
+                try:
+                    expr = parse_expression(expr_str)
+                    parts.append(expr)
+                except ParseError as e:
+                    raise ParseError(f"Invalid expression in f-string: {str(e)}")
+
+                current_pos = brace_end
+
+            return Literal(value=FStringExpression(parts=parts))
+
+        # Regular string
         return Literal(value=value_str[1:-1])
 
     raise ParseError(f"Invalid literal value: '{value_str}'")
 
 
-def parse_expression(expr_str: str) -> Expression:
+def tokenize_expression(expr_str: str) -> List[str]:
+    """Split an expression into tokens while preserving operators, parentheses, and string literals."""
+    tokens = []
+    pos = 0
+    n = len(expr_str)
+    operators = {"+", "-", "*", "/"}
+    whitespace = re.compile(r"\s+")
+
+    while pos < n:
+        # Skip whitespace
+        match = whitespace.match(expr_str, pos)
+        if match:
+            pos = match.end()
+            continue
+
+        char = expr_str[pos]
+
+        # String literals
+        if char == '"':
+            start = pos
+            pos += 1
+            while pos < n and expr_str[pos] != '"':
+                # TODO: Handle escape characters if needed later
+                pos += 1
+            if pos < n and expr_str[pos] == '"':
+                pos += 1
+                tokens.append(expr_str[start:pos])
+            else:
+                raise ParseError(f"Unterminated string literal starting at position {start}")
+            continue
+
+        # Check for negative numbers
+        if char == "-" and pos + 1 < n and expr_str[pos + 1].isdigit():
+            # This is a negative number
+            start = pos
+            pos += 1  # Skip the minus sign
+            while pos < n and (expr_str[pos].isdigit() or expr_str[pos] == "."):
+                pos += 1
+            tokens.append(expr_str[start:pos])
+            continue
+
+        # Operators and Parentheses
+        if char in operators or char in "()":
+            tokens.append(char)
+            pos += 1
+            continue
+
+        # Numbers (int/float) or Identifiers
+        start = pos
+        while pos < n and not expr_str[pos].isspace() and expr_str[pos] not in operators and expr_str[pos] not in '()"':
+            pos += 1
+        tokens.append(expr_str[start:pos])
+
+    return tokens
+
+
+def parse_expression(expr_str: str) -> Union[LiteralExpression, Identifier, BinaryExpression, FunctionCall]:
     """Parse an expression string into an Expression node."""
     expr_str = expr_str.strip()
+    if not expr_str:
+        raise ParseError("Empty expression")
 
-    # Check for function calls
-    func_match = FUNCTION_CALL_REGEX.match(expr_str)
-    if func_match:
-        func_name, args_str = func_match.groups()
-        # For now, only support reason() with context
-        if func_name == "reason":
-            context_match = re.match(r"context\s*=\s*([a-zA-Z_][a-zA-Z0-9_\.]*)", args_str)
-            if not context_match:
-                raise ParseError("reason() requires context parameter")
-            context = context_match.group(1)
-            return FunctionCall(name="reason", args={"context": context})
-        raise ParseError(f"Unsupported function: {func_name}")
+    # Check for f-string
+    if expr_str.startswith('f"') or expr_str.startswith("f'"):
+        # Parse as f-string
+        content = expr_str[2:-1]  # Remove f" and "
+        parts = []
+        current_pos = 0
+        while current_pos < len(content):
+            # Find the next {
+            brace_start = content.find("{", current_pos)
+            if brace_start == -1:
+                # No more expressions, add remaining text
+                if current_pos < len(content):
+                    parts.append(content[current_pos:])
+                break
 
-    # Check for binary expressions
-    for op in BinaryOperator:
-        if f" {op.value} " in expr_str:
-            left, right = expr_str.split(f" {op.value} ", 1)
-            return BinaryExpression(left=parse_expression(left), operator=op, right=parse_expression(right))
+            # Add text before the {
+            if brace_start > current_pos:
+                parts.append(content[current_pos:brace_start])
 
-    # Check for identifiers
-    if "." in expr_str and validate_identifier(expr_str):
-        return Identifier(name=expr_str)
+            # Find the matching }
+            brace_level = 1
+            brace_end = brace_start + 1
+            while brace_end < len(content) and brace_level > 0:
+                if content[brace_end] == "{":
+                    brace_level += 1
+                elif content[brace_end] == "}":
+                    brace_level -= 1
+                brace_end += 1
+
+            if brace_level > 0:
+                raise ParseError("Unmatched { in f-string")
+
+            # Parse the expression inside {}
+            expr_str = content[brace_start + 1 : brace_end - 1]
+            try:
+                expr = parse_expression(expr_str)
+                parts.append(expr)
+            except ParseError as e:
+                raise ParseError(f"Invalid expression in f-string: {str(e)}")
+
+            current_pos = brace_end
+
+        return LiteralExpression(literal=Literal(value=FStringExpression(parts=parts)))
+
+    # Operator precedence mapping
+    operators = {"*": BinaryOperator.MULTIPLY, "/": BinaryOperator.DIVIDE, "+": BinaryOperator.ADD, "-": BinaryOperator.SUBTRACT}
+
+    tokens = tokenize_expression(expr_str)
+
+    def evaluate(tokens: List[str]) -> Union[LiteralExpression, Identifier, BinaryExpression, FunctionCall]:
+        if not tokens:
+            raise ParseError("Empty expression")
+
+        # Handle parentheses first
+        if len(tokens) >= 2 and tokens[0] == "(" and tokens[-1] == ")":
+            inner_tokens = tokens[1:-1]
+            if not inner_tokens:
+                raise ParseError("Empty parentheses")
+            return evaluate(inner_tokens)
+
+        if len(tokens) == 1:
+            return parse_simple_expression(tokens[0])
+
+        # Find the operator with lowest precedence outside parentheses
+        lowest_prec = float("inf")
+        lowest_idx = -1
+        paren_level = 0
+
+        for i, token in enumerate(tokens):
+            if token == "(":
+                paren_level += 1
+            elif token == ")":
+                paren_level -= 1
+            elif token in operators and paren_level == 0:
+                prec = 1 if token in ["+", "-"] else 2
+                if prec <= lowest_prec:
+                    lowest_prec = prec
+                    lowest_idx = i
+
+        if lowest_idx == -1:
+            return parse_simple_expression(tokens[0])
+
+        # Split at the operator and evaluate both sides
+        left = evaluate(tokens[:lowest_idx])
+        right = evaluate(tokens[lowest_idx + 1 :])
+        return BinaryExpression(left=left, operator=operators[tokens[lowest_idx]], right=right)
+
+    return evaluate(tokens)
+
+
+def parse_simple_expression(expr_str: str) -> Union[LiteralExpression, Identifier]:
+    """Parse a simple expression (literal or identifier)."""
+    expr_str = expr_str.strip()
 
     # Try parsing as a literal
     try:
         return LiteralExpression(literal=parse_literal(expr_str))
     except ParseError:
-        raise ParseError(f"Invalid expression: {expr_str}")
+        # If not a literal, try as identifier
+        if validate_identifier(expr_str):
+            return Identifier(name=expr_str)
+        # Pass original error message but add context if needed
+        raise ParseError(f"Invalid expression part: '{expr_str}'")
 
 
-def parse_statement(line: str, line_num: int) -> Tuple[Optional[Statement], Optional[ParseError]]:
+def parse_statement(line: str, line_num: int) -> Tuple[Optional[Union[Assignment, LogStatement, Conditional]], Optional[ParseError]]:
     """Parse a single line into a Statement or error."""
+    line_content = line  # Store original line content
+
+    # Strip comments from the line
+    if "#" in line:
+        line = line[: line.index("#")].rstrip()
+
     line = line.strip()
-    if not line or line.startswith("#"):
+    if not line:
         return None, None
 
-    # Try matching log statement
+    # Try matching log statement (updated logic)
     log_match = LOG_REGEX.match(line)
     if log_match:
-        message_str = log_match.group(1)
-        message_literal = Literal(value=message_str)
-        message_expr = LiteralExpression(literal=message_literal)
-        return LogStatement(message=message_expr), None
+        level_str, message_expr_str = log_match.groups()
+        message_expr_str = message_expr_str.strip()
+        if not message_expr_str:
+            return None, ParseError("Log statement cannot have empty message", line_num, line_content)
+        try:
+            # Find the position of the identifier in the f-string
+            if message_expr_str.startswith('f"') or message_expr_str.startswith("f'"):
+                # Parse as f-string
+                content = message_expr_str[2:-1]  # Remove f" and "
+                brace_start = content.find("{")
+                if brace_start != -1:
+                    # Find the matching }
+                    brace_level = 1
+                    brace_end = brace_start + 1
+                    while brace_end < len(content) and brace_level > 0:
+                        if content[brace_end] == "{":
+                            brace_level += 1
+                        elif content[brace_end] == "}":
+                            brace_level -= 1
+                        brace_end += 1
+
+                    if brace_level > 0:
+                        raise ParseError("Unmatched { in f-string")
+
+                    # Extract the identifier
+                    identifier = content[brace_start + 1 : brace_end - 1].strip()
+                    # Calculate the column position (add 4 for 'log(' and 2 for 'f"')
+                    column = line.find(message_expr_str) + 4 + 2 + brace_start + 1
+
+                    # Create location information for the identifier
+                    location = (line_num, column, line_content)
+
+                    # Parse the expression with location information
+                    message_expr = parse_expression(message_expr_str)
+                    if isinstance(message_expr, LiteralExpression) and isinstance(message_expr.literal.value, FStringExpression):
+                        for part in message_expr.literal.value.parts:
+                            if isinstance(part, Identifier) and part.name == identifier:
+                                part.location = location
+
+            else:
+                message_expr = parse_expression(message_expr_str)
+
+            level = LogLevel[level_str.upper()] if level_str else LogLevel.INFO
+            return LogStatement(message=message_expr, level=level), None
+        except ParseError as e:
+            # Add line info to the expression parsing error
+            return None, ParseError(str(e), line_num, line_content)
 
     # Try matching if statement
     if_match = IF_REGEX.match(line)
@@ -112,7 +344,8 @@ def parse_statement(line: str, line_num: int) -> Tuple[Optional[Statement], Opti
             condition = parse_expression(condition_str)
             return Conditional(condition=condition, body=[]), None
         except ParseError as e:
-            return None, ParseError(f"Line {line_num}: Invalid condition: {str(e)}")
+            # Add line info to the expression parsing error
+            return None, ParseError(str(e), line_num, line_content)
 
     # Try matching assignment
     assign_match = ASSIGNMENT_REGEX.match(line)
@@ -120,20 +353,22 @@ def parse_statement(line: str, line_num: int) -> Tuple[Optional[Statement], Opti
         target_str, value_str = assign_match.groups()
 
         if not validate_identifier(target_str):
-            return None, ParseError(f"Line {line_num}: Invalid target identifier format '{target_str}'")
+            return None, ParseError(f"Invalid target identifier format '{target_str}'", line_num, line_content)
 
         try:
-            value = parse_expression(value_str)
+            value = parse_expression(value_str.strip())  # Strip any trailing whitespace
             return Assignment(target=Identifier(name=target_str), value=value), None
         except ParseError as e:
-            return None, ParseError(f"Line {line_num}: {str(e)}")
+            # Add line info to the expression parsing error
+            return None, ParseError(str(e), line_num, line_content)
 
-    return None, ParseError(f"Line {line_num}: Invalid syntax")
+    # General invalid syntax if nothing matched
+    return None, ParseError("Invalid syntax", line_num, line_content)
 
 
 def parse(code: str) -> ParseResult:
     """Parse a DANA program string into an AST."""
-    statements: List[Statement] = []
+    statements: List[Union[Assignment, LogStatement, Conditional]] = []
     lines = code.splitlines()
     current_conditional: Optional[Conditional] = None
 

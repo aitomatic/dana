@@ -9,23 +9,23 @@ log("This example contains several syntax errors. Execution should stop at the f
 
 # Missing value error
 log("Attempting assignment with missing value (EXPECTED ERROR)")
-temp.x = 
+private.x = 
 
 # --- Execution should not reach here --- 
 log("This log should NOT appear.")
 
 # Missing equals sign error
-temp.y 42
+private.y 42
 
 # Invalid scope format error (no dot)
-tempz = 100
+privatez = 100
 
 # Invalid variable name error (empty after dot)
-temp. = 200
+private. = 200
 
 # Invalid value error (unquoted string)
-temp.msg = hello world
+private.msg = hello world
 
 # This one is valid, to test recovery
 # Note: The parser will stop at the first error above
-temp.valid = "ok" 
+private.valid = "ok" 

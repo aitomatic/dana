@@ -1,0 +1,30 @@
+# Example: Log Levels
+# Demonstrates the use of different log levels.
+
+# Default level (INFO)
+log("This is a default INFO message")
+
+# Debug level
+log.debug("This is a debug message")
+
+# Info level (explicit)
+log.info("This is an info message")
+
+# Warning level
+log.warn("This is a warning message")
+
+# Error level
+log.error("This is an error message")
+
+# Mix log levels with state changes
+group.status.phase = "Starting"
+log.debug("Debug: Phase set to Starting")
+
+group.status.phase = "Running"
+log.info("Info: Phase set to Running")
+
+group.status.phase = "Warning"
+log.warn("Warn: Phase set to Warning")
+
+group.status.phase = "Error"
+log.error("Error: Phase set to Error")

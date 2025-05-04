@@ -5,13 +5,16 @@ This module defines the AST nodes used to represent DANA programs.
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 # Forward references not strictly needed for Iteration 1 AST structure itself
 # from typing import TYPE_CHECKING
 # if TYPE_CHECKING:
 #     from opendxa.dana.state.context import RuntimeContext
 #     from opendxa.dana.runtime.interpreter import Interpreter
+
+# Forward references for type hints
+Expression = Union["LiteralExpression", "Identifier", "BinaryExpression", "FunctionCall"]
 
 
 class BinaryOperator(Enum):
@@ -26,29 +29,23 @@ class BinaryOperator(Enum):
     AND = "and"
     OR = "or"
     IN = "in"
+    ADD = "+"
+    SUBTRACT = "-"
+    MULTIPLY = "*"
+    DIVIDE = "/"
 
 
-# Base class for all AST nodes (optional, but can be useful)
-@dataclass
-class ASTNode:
-    """Base class for all AST nodes."""
+class LogLevel(Enum):
+    """Log levels supported in DANA."""
 
-    pass
-
-
-# --- Base Nodes ---
-@dataclass
-class Statement(ASTNode):
-    """Base class for all statements."""
-
-    pass
+    DEBUG = "DEBUG"
+    INFO = "INFO"
+    WARN = "WARN"
+    ERROR = "ERROR"
 
 
-@dataclass
-class Expression(ASTNode):
-    """Base class for all expressions."""
-
-    pass
+# Location is stored as (line, column, source_text)
+Location = Tuple[int, int, str]
 
 
 # --- Literals and Identifiers ---
@@ -56,71 +53,91 @@ class Expression(ASTNode):
 class Literal:
     """Represents a literal value in DANA."""
 
-    value: Union[int, str, bool]
+    value: Union[int, float, str, bool, None, "FStringExpression"]
+    location: Optional[Location] = None
 
 
 @dataclass
-class LiteralExpression(Expression):
+class LiteralExpression:
     """Represents a literal expression in DANA."""
 
     literal: Literal
+    location: Optional[Location] = None
 
 
 @dataclass
-class Identifier(Expression):
+class FStringExpression:
+    """Represents an f-string expression in DANA."""
+
+    parts: List[Union[str, Expression]]  # Either literal strings or expressions to evaluate
+    location: Optional[Location] = None
+
+
+@dataclass
+class Identifier:
     """Represents an identifier in DANA."""
 
     name: str
+    location: Optional[Location] = None
 
 
 # --- Expressions ---
 @dataclass
-class BinaryExpression(Expression):
-    """Represents a binary expression in DANA."""
-
-    left: Expression
-    operator: BinaryOperator
-    right: Expression
-
-
-@dataclass
-class FunctionCall(Expression):
+class FunctionCall:
     """Represents a function call in DANA."""
 
     name: str
     args: Dict[str, Any]
+    location: Optional[Location] = None
+
+
+@dataclass
+class BinaryExpression:
+    """Represents a binary expression in DANA."""
+
+    left: Union[LiteralExpression, Identifier, "BinaryExpression", FunctionCall]
+    operator: BinaryOperator
+    right: Union[LiteralExpression, Identifier, "BinaryExpression", FunctionCall]
+    location: Optional[Location] = None
 
 
 # --- Statements ---
 @dataclass
-class Assignment(Statement):
+class Assignment:
     """Represents an assignment statement in DANA."""
 
     target: Identifier
-    value: Expression
+    value: Union[LiteralExpression, Identifier, BinaryExpression, FunctionCall]
+    location: Optional[Location] = None
 
 
 @dataclass
-class LogStatement(Statement):
+class LogStatement:
     """Represents a log statement in DANA."""
 
-    message: LiteralExpression
+    message: Union[LiteralExpression, Identifier, BinaryExpression, FunctionCall]
+    level: LogLevel = LogLevel.INFO  # Default to INFO level
+    location: Optional[Location] = None
 
 
 @dataclass
-class Conditional(Statement):
+class Conditional:
     """Represents a conditional statement in DANA."""
 
-    condition: Expression
-    body: List[Statement]
+    condition: Union[LiteralExpression, Identifier, BinaryExpression, FunctionCall]
+    body: List[Union[Assignment, LogStatement, "Conditional"]]
+    location: Optional[Location] = None
 
 
 # --- Program Structure ---
 @dataclass
-class Program(ASTNode):
+class Program:
     """Represents a complete DANA program."""
 
-    statements: List[Statement]
+    statements: List[Union[Assignment, LogStatement, Conditional]]
+    source_text: str = ""  # Store the original program text
+    location: Optional[Location] = None
 
-    def __init__(self, statements):
+    def __init__(self, statements, source_text: str = ""):
         self.statements = statements
+        self.source_text = source_text

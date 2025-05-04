@@ -47,22 +47,24 @@ def check_type_compatibility(expected: DanaType, actual: DanaType) -> bool:
 
 
 def validate_identifier(name: str) -> bool:
-    """Validate an identifier name follows DANA syntax rules."""
+    """Validate an identifier name follows DANA syntax rules.
+
+    Allows multi-part identifiers like scope.subscope.variable.
+    """
     if not name:
         return False
 
-    # Check for valid scope.variable format
     parts = name.split(".")
-    if len(parts) != 2:
+    if not parts:  # Should not happen if name is not empty, but safe check
         return False
 
-    scope, variable = parts
-
-    # Check scope and variable names
-    for part in [scope, variable]:
-        if not part[0].isalpha() and part[0] != "_":
+    # Check each part of the identifier
+    for part in parts:
+        if not part:  # Check for empty parts (e.g., "scope..variable")
             return False
-        if not all(c.isalnum() or c == "_" for c in part):
+        if not part[0].isalpha() and part[0] != "_":  # Must start with letter or underscore
+            return False
+        if not all(c.isalnum() or c == "_" for c in part):  # Must contain only letters, numbers, underscores
             return False
 
     return True

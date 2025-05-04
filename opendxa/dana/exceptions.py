@@ -10,7 +10,15 @@ class DanaError(Exception):
 class ParseError(DanaError):
     """Error during DANA program parsing."""
 
-    pass
+    def __init__(self, message: str, line_num: int | None = None, line_content: str | None = None):
+        self.line_num = line_num
+        self.line_content = line_content
+        full_message = message
+        if line_num is not None:
+            full_message = f"ParseError on line {line_num}: {message}"
+            if line_content is not None:
+                full_message += f"\n  > {line_content.strip()}"
+        super().__init__(full_message)
 
 
 class ValidationError(DanaError):
@@ -115,4 +123,4 @@ class InterpretError(DanaError):
 class KBError(DanaError):
     """Error related to Knowledge Base access or loading."""
 
-    pass
+    pass 

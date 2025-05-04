@@ -6,28 +6,28 @@
 # - How the final state is represented in JSON
 
 log("--- Running Multiple Scopes Example ---")
-log("Demonstrating assignments to various scopes: sensor1, sensor2, status, temp, world.")
+log("Demonstrating assignments to various standard scopes: private, group, global, execution.")
 
-# Temperature readings in different scopes
-log("Assigning temperatures to sensor1 and sensor2 scopes.")
-sensor1.temp = 25
-sensor2.temp = -10
+# Private scope (agent-specific data)
+log("Assigning values to private scope.")
+private.sensor1.temp = 25
+private.sensor2.temp = -10
 
-# Status messages
-log("Assigning status strings to the status scope.")
-status.sensor1 = "active"
-status.sensor2 = "standby"
+# Group scope (shared data)
+log("Assigning values to group scope.")
+group.status.sensor1 = "active"
+group.status.sensor2 = "standby"
 
-# Temporary calculations
-log("Assigning temporary values to the temp scope.")
-temp.avg = 7
-temp.diff = 35
+# Global scope (world state)
+log("Assigning values to global scope.")
+global.temperature = 20 # type: ignore
+global.status = "normal" # type: ignore
+global.id = 42 # type: ignore
 
-# Mixed scopes and types
-log("Assigning mixed types to the world scope.")
-world.temperature = 20
-world.status = "normal"
-world.id = 42
+# Execution scope (runtime state)
+log("Assigning values to execution scope.")
+execution.step = 1
+execution.phase = "running"
 
 log("Expected final state: JSON structure with all assigned scopes and values.")
-log("--- Finished Multiple Scopes Example ---") 
+log("--- Finished Multiple Scopes Example ---")
