@@ -15,9 +15,28 @@ class ParseError(DanaError):
         self.line_content = line_content
         full_message = message
         if line_num is not None:
-            full_message = f"ParseError on line {line_num}: {message}"
+            full_message = f"DANA Error (line {line_num}): {message}"
             if line_content is not None:
-                full_message += f"\n  > {line_content.strip()}"
+                # Find the position of the error in the line
+                line_with_caret = line_content.rstrip()
+                error_pos = 0
+
+                if "=" in line_with_caret:
+                    # For assignment errors, point after the equals sign
+                    error_pos = line_with_caret.find("=") + 1
+                    # Skip any whitespace after the equals
+                    while error_pos < len(line_with_caret) and line_with_caret[error_pos].isspace():
+                        error_pos += 1
+                else:
+                    # For other errors, point to the end of the content
+                    error_pos = len(line_with_caret.strip())
+
+                # Don't point into comments
+                if "#" in line_with_caret:
+                    error_pos = min(error_pos, line_with_caret.index("#") - 1)
+
+                # Insert the caret at the error position
+                full_message += f"\n  > {line_with_caret[:error_pos]}^{line_with_caret[error_pos:]}"
         super().__init__(full_message)
 
 
@@ -123,4 +142,4 @@ class InterpretError(DanaError):
 class KBError(DanaError):
     """Error related to Knowledge Base access or loading."""
 
-    pass 
+    pass

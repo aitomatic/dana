@@ -25,7 +25,17 @@ class ParseResult(NamedTuple):
     """Result of parsing a DANA program."""
 
     program: Program
-    error: Optional[ParseError] = None
+    errors: List[ParseError] = []
+
+    @property
+    def is_valid(self) -> bool:
+        """Check if parsing was successful (no errors)."""
+        return len(self.errors) == 0
+
+    @property
+    def error(self) -> Optional[ParseError]:
+        """Get the first error if any exist, for backward compatibility."""
+        return self.errors[0] if self.errors else None
 
 
 # Regex patterns for different statement types
@@ -342,7 +352,7 @@ def parse_statement(line: str, line_num: int) -> Tuple[Optional[Union[Assignment
         condition_str = if_match.group(1)
         try:
             condition = parse_expression(condition_str)
-            return Conditional(condition=condition, body=[]), None
+            return Conditional(condition=condition, body=[], line_num=line_num), None
         except ParseError as e:
             # Add line info to the expression parsing error
             return None, ParseError(str(e), line_num, line_content)
@@ -369,30 +379,42 @@ def parse_statement(line: str, line_num: int) -> Tuple[Optional[Union[Assignment
 def parse(code: str) -> ParseResult:
     """Parse a DANA program string into an AST."""
     statements: List[Union[Assignment, LogStatement, Conditional]] = []
+    errors: List[ParseError] = []
     lines = code.splitlines()
     current_conditional: Optional[Conditional] = None
+    first_error_line = None
 
     for line_num, line in enumerate(lines, 1):
+        # Skip empty lines and comments
+        if not line.strip() or line.strip().startswith("#"):
+            continue
+
         statement, error = parse_statement(line, line_num)
         if error:
-            return ParseResult(program=Program(statements=statements), error=error)
+            errors.append(error)
+            if first_error_line is None:
+                first_error_line = line_num
+            continue  # Skip this line but continue parsing
 
-        if statement:
-            if current_conditional:
-                if isinstance(statement, Conditional):
-                    # Nested if - not supported yet
-                    return ParseResult(
-                        program=Program(statements=statements), error=ParseError(f"Line {line_num}: Nested conditionals not supported")
-                    )
-                current_conditional.body.append(statement)
-            else:
-                if isinstance(statement, Conditional):
-                    current_conditional = statement
+        # Only add statements that come before the first error
+        if first_error_line is None or line_num < first_error_line:
+            if statement:
+                if current_conditional:
+                    if isinstance(statement, Conditional):
+                        # Nested if - not supported yet
+                        errors.append(ParseError(f"Line {line_num}: Nested conditionals not supported"))
+                        if first_error_line is None:
+                            first_error_line = line_num
+                        continue
+                    current_conditional.body.append(statement)
                 else:
-                    statements.append(statement)
+                    if isinstance(statement, Conditional):
+                        current_conditional = statement
+                    else:
+                        statements.append(statement)
 
     # Add any pending conditional to the statements
-    if current_conditional:
+    if current_conditional and (first_error_line is None or current_conditional.line_num < first_error_line):
         statements.append(current_conditional)
 
-    return ParseResult(program=Program(statements=statements))
+    return ParseResult(program=Program(statements=statements), errors=errors)

@@ -124,8 +124,9 @@ class LogStatement:
 class Conditional:
     """Represents a conditional statement in DANA."""
 
-    condition: Union[LiteralExpression, Identifier, BinaryExpression, FunctionCall]
+    condition: Expression
     body: List[Union[Assignment, LogStatement, "Conditional"]]
+    line_num: int  # Line number where this conditional was defined
     location: Optional[Location] = None
 
 

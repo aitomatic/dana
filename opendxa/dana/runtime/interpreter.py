@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Union
 
-from opendxa.dana.exceptions import InterpretError, RuntimeError, StateError
+from opendxa.dana.exceptions import InterpretError, ParseError, RuntimeError, StateError
 from opendxa.dana.language.ast import (
     Assignment,
     BinaryExpression,
@@ -114,20 +114,21 @@ class Interpreter:
         Args:
             parse_result: Result of parsing the program, containing:
                 - program: The Program to execute
-                - error: Any ParseError encountered during parsing
+                - errors: List of ParseErrors encountered during parsing
         """
         if not isinstance(parse_result.program, Program):
             raise InterpretError(f"Expected a Program node, got {type(parse_result.program).__name__}")
 
-        if parse_result.error:
-            raise parse_result.error
-
         try:
-            # Execute the partial program
+            # Execute all statements that come before the first error
             for statement in parse_result.program.statements:
                 self._execute_statement(statement)
 
-        except (InterpretError, StateError, RuntimeError) as e:
+            # If there are any parse errors, stop at the first one
+            if parse_result.errors:
+                raise parse_result.errors[0]
+
+        except (InterpretError, StateError, RuntimeError, ParseError) as e:
             self._log_level = LogLevel.ERROR
             self.context.set("execution.log_level", LogLevel.ERROR.value)
             raise e from None
@@ -135,32 +136,24 @@ class Interpreter:
             # Wrap unexpected Python errors in RuntimeError
             self._log_level = LogLevel.ERROR
             self.context.set("execution.log_level", LogLevel.ERROR.value)
-            raise RuntimeError(f"Unexpected Python error during execution: {type(e).__name__}: {e}") from e
+            raise RuntimeError(str(e)) from e
 
     def _get_variable(self, name: str) -> Any:
         """Get a variable value from the context."""
-        try:
-            # If the name already contains a dot, use it as is
-            if "." in name:
-                return self.context.get(name)
-            # Otherwise, use the private scope
-            return self.context.get(f"private.{name}")
-        except StateError as e:
-            # Re-raise with the same message but preserve the original error type
-            raise StateError(str(e))
+        # If the name already contains a dot, use it as is
+        if "." in name:
+            return self.context.get(name)
+        # Otherwise, use the private scope
+        return self.context.get(f"private.{name}")
 
     def _set_variable(self, name: str, value: Any) -> None:
         """Set a variable value in the context."""
-        try:
-            # If the name already contains a dot, use it as is
-            if "." in name:
-                self.context.set(name, value)
-            else:
-                # Otherwise, use the private scope
-                self.context.set(f"private.{name}", value)
-        except StateError as e:
-            # Re-raise with the same message but preserve the original error type
-            raise StateError(str(e))
+        # If the name already contains a dot, use it as is
+        if "." in name:
+            self.context.set(name, value)
+        else:
+            # Otherwise, use the private scope
+            self.context.set(f"private.{name}", value)
 
     def _execute_statement(self, statement: Union[Assignment, LogStatement, Conditional]) -> None:
         """Execute a single DANA statement."""
