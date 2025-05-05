@@ -22,6 +22,7 @@ from opendxa.dana.language.ast import (
     LogLevelSetStatement,
     LogStatement,
     Program,
+    WhileLoop,
 )
 from opendxa.dana.language.visitor import ASTVisitor
 
@@ -406,6 +407,32 @@ class TypeCheckVisitor(ASTVisitor):
         
         return DanaType.STRING
     
+    def visit_while_loop(self, node: WhileLoop, context=None) -> DanaType:
+        """Visit a WhileLoop node and check types.
+        
+        Args:
+            node: The WhileLoop node to check
+            context: Additional context data (unused)
+            
+        Returns:
+            The type of the while loop (always ANY)
+        """
+        # Check that the condition is a boolean
+        condition_type = self.visit_node(node.condition)
+        if condition_type != DanaType.BOOL and condition_type != DanaType.ANY:
+            self.errors.append(
+                TypeError(
+                    f"While loop condition must be a boolean, got {condition_type.value}",
+                    node.location
+                )
+            )
+        
+        # Check all statements in the body
+        for stmt in node.body:
+            self.visit_node(stmt)
+        
+        return DanaType.ANY
+        
     def visit_node(self, node: Any, context=None) -> DanaType:
         """Visit any node and dispatch to the appropriate method.
         
@@ -426,6 +453,8 @@ class TypeCheckVisitor(ASTVisitor):
             return self.visit_log_level_set_statement(node, context)
         elif isinstance(node, Conditional):
             return self.visit_conditional(node, context)
+        elif isinstance(node, WhileLoop):
+            return self.visit_while_loop(node, context)
         elif isinstance(node, BinaryExpression):
             return self.visit_binary_expression(node, context)
         elif isinstance(node, LiteralExpression):

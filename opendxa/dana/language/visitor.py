@@ -6,7 +6,7 @@ without modifying the node classes themselves.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional
 
 from opendxa.dana.language.ast import (
     Assignment,
@@ -20,16 +20,17 @@ from opendxa.dana.language.ast import (
     LogLevelSetStatement,
     LogStatement,
     Program,
+    WhileLoop,
 )
 
 
 class ASTVisitor(ABC):
     """Abstract base class for AST visitors.
-    
+
     This class defines the interface for visitors that traverse and operate on
     DANA AST nodes. Concrete visitor implementations should inherit from this
     class and implement the visit methods for each node type they want to handle.
-    
+
     Node types that don't have a specific visit method will use the generic
     visit_node method.
     """
@@ -57,6 +58,11 @@ class ASTVisitor(ABC):
     @abstractmethod
     def visit_conditional(self, node: Conditional, context: Optional[Dict[str, Any]] = None) -> Any:
         """Visit a Conditional node."""
+        pass
+        
+    @abstractmethod
+    def visit_while_loop(self, node: WhileLoop, context: Optional[Dict[str, Any]] = None) -> Any:
+        """Visit a WhileLoop node."""
         pass
 
     @abstractmethod
@@ -92,7 +98,7 @@ class ASTVisitor(ABC):
     @abstractmethod
     def visit_node(self, node: Any, context: Optional[Dict[str, Any]] = None) -> Any:
         """Generic visit method for any node type.
-        
+
         This method is called when no specific visit method exists for a node type.
         """
         pass
@@ -118,6 +124,8 @@ class NodeVisitorMixin:
             return visitor.visit_log_level_set_statement(self, context)
         elif isinstance(self, Conditional):
             return visitor.visit_conditional(self, context)
+        elif isinstance(self, WhileLoop):
+            return visitor.visit_while_loop(self, context)
         elif isinstance(self, BinaryExpression):
             return visitor.visit_binary_expression(self, context)
         elif isinstance(self, LiteralExpression):
@@ -136,15 +144,15 @@ class NodeVisitorMixin:
 
 def accept(node: Any, visitor: ASTVisitor, context: Optional[Dict[str, Any]] = None) -> Any:
     """Function to make AST nodes accept a visitor without modifying the node classes.
-    
+
     This function allows the visitor pattern to be used without changing the
     original AST node classes, maintaining backward compatibility.
-    
+
     Args:
         node: The AST node to visit
         visitor: The visitor to apply to the node
         context: Optional context to pass to the visitor
-        
+
     Returns:
         The result of applying the visitor to the node
     """
@@ -158,6 +166,8 @@ def accept(node: Any, visitor: ASTVisitor, context: Optional[Dict[str, Any]] = N
         return visitor.visit_log_level_set_statement(node, context)
     elif isinstance(node, Conditional):
         return visitor.visit_conditional(node, context)
+    elif isinstance(node, WhileLoop):
+        return visitor.visit_while_loop(node, context)
     elif isinstance(node, BinaryExpression):
         return visitor.visit_binary_expression(node, context)
     elif isinstance(node, LiteralExpression):

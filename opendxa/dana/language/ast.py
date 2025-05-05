@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 # Forward references for type hints
 Expression = Union["LiteralExpression", "Identifier", "BinaryExpression", "FunctionCall"]
-Statement = Union["Assignment", "LogStatement", "Conditional", "LogLevelSetStatement"]
+Statement = Union["Assignment", "LogStatement", "Conditional", "WhileLoop", "LogLevelSetStatement"]
 
 
 class BinaryOperator(Enum):
@@ -34,6 +34,7 @@ class BinaryOperator(Enum):
     SUBTRACT = "-"
     MULTIPLY = "*"
     DIVIDE = "/"
+    MODULO = "%"
 
 
 class LogLevel(Enum):
@@ -126,8 +127,18 @@ class Conditional:
     """Represents a conditional statement in DANA."""
 
     condition: Expression
-    body: List[Union[Assignment, LogStatement, "Conditional", "LogLevelSetStatement"]]
+    body: List[Union[Assignment, LogStatement, "Conditional", "WhileLoop", "LogLevelSetStatement"]]
     line_num: int  # Line number where this conditional was defined
+    location: Optional[Location] = None
+
+
+@dataclass
+class WhileLoop:
+    """Represents a while loop statement in DANA."""
+
+    condition: Expression
+    body: List[Union[Assignment, LogStatement, "Conditional", "WhileLoop", "LogLevelSetStatement"]]
+    line_num: int  # Line number where this while loop was defined
     location: Optional[Location] = None
 
 
@@ -144,7 +155,7 @@ class LogLevelSetStatement:
 class Program:
     """Represents a complete DANA program."""
 
-    statements: List[Union[Assignment, LogStatement, Conditional]]
+    statements: List[Union[Assignment, LogStatement, Conditional, WhileLoop]]
     source_text: str = ""  # Store the original program text
     location: Optional[Location] = None
 

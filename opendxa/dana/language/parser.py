@@ -18,6 +18,7 @@ from opendxa.dana.language.ast import (
     LogLevelSetStatement,
     LogStatement,
     Program,
+    WhileLoop,
 )
 from opendxa.dana.language.types import validate_identifier
 
@@ -47,6 +48,7 @@ LOG_REGEX = re.compile(r"^\s*log(?:\.(debug|info|warn|error))?\((.*)\)\s*(?:#.*)
 # Make LogLevelSet regex less strict to capture any string in quotes, validation happens later
 LOG_LEVEL_SET_REGEX = re.compile(r"^\s*log\.setLevel\(\s*\"([^\"]*)\"\s*\)\s*(?:#.*)?$")
 IF_REGEX = re.compile(r"^\s*if\s+(.*):\s*(?:#.*)?$")
+WHILE_REGEX = re.compile(r"^\s*while\s+(.*):\s*(?:#.*)?$")
 FUNCTION_CALL_REGEX = re.compile(r"^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\((.*)\)\s*(?:#.*)?$")
 
 
@@ -124,7 +126,7 @@ def tokenize_expression(expr_str: str) -> List[str]:
     tokens = []
     pos = 0
     n = len(expr_str)
-    operators = {"+", "-", "*", "/"}
+    operators = {"+", "-", "*", "/", "<", ">", "=", "!", "%"}  # All possible operator characters
     whitespace = re.compile(r"\s+")
 
     while pos < n:
@@ -162,6 +164,26 @@ def tokenize_expression(expr_str: str) -> List[str]:
 
         # Operators and Parentheses
         if char in operators or char in "()":
+            # Check for multi-character operators like <=, >=, ==, !=
+            if pos + 1 < n:
+                if char == '<' and expr_str[pos + 1] == '=':
+                    tokens.append("<=")
+                    pos += 2
+                    continue
+                elif char == '>' and expr_str[pos + 1] == '=':
+                    tokens.append(">=")
+                    pos += 2
+                    continue
+                elif char == '=' and expr_str[pos + 1] == '=':
+                    tokens.append("==")
+                    pos += 2
+                    continue
+                elif char == '!' and expr_str[pos + 1] == '=':
+                    tokens.append("!=")
+                    pos += 2
+                    continue
+            
+            # Single character operators
             tokens.append(char)
             pos += 1
             continue
@@ -245,6 +267,17 @@ def parse_expression(expr_str: str) -> Union[LiteralExpression, Identifier, Bina
             return parse_simple_expression(tokens[0])
 
         # Find the operator with lowest precedence outside parentheses
+        # Define all operators and their precedence
+        all_operators = {
+            # Arithmetic operators (higher precedence)
+            "*": 3, "/": 3, "%": 3,
+            "+": 2, "-": 2,
+            # Comparison operators (lowest precedence)
+            "<": 1, ">": 1, "<=": 1, ">=": 1, "==": 1, "!=": 1,
+            # Logical operators
+            "and": 0, "or": 0
+        }
+        
         lowest_prec = float("inf")
         lowest_idx = -1
         paren_level = 0
@@ -254,8 +287,9 @@ def parse_expression(expr_str: str) -> Union[LiteralExpression, Identifier, Bina
                 paren_level += 1
             elif token == ")":
                 paren_level -= 1
-            elif token in operators and paren_level == 0:
-                prec = 1 if token in ["+", "-"] else 2
+            elif token in all_operators and paren_level == 0:
+                prec = all_operators[token]
+                # For equal precedence, prefer leftmost (left-to-right associativity)
                 if prec <= lowest_prec:
                     lowest_prec = prec
                     lowest_idx = i
@@ -265,8 +299,33 @@ def parse_expression(expr_str: str) -> Union[LiteralExpression, Identifier, Bina
 
         # Split at the operator and evaluate both sides
         left = evaluate(tokens[:lowest_idx])
-        right = evaluate(tokens[lowest_idx + 1 :])
-        return BinaryExpression(left=left, operator=operators[tokens[lowest_idx]], right=right)
+        right = evaluate(tokens[lowest_idx + 1:])
+        
+        # Map operators to BinaryOperator enum values
+        operator_map = {
+            "+": BinaryOperator.ADD,
+            "-": BinaryOperator.SUBTRACT,
+            "*": BinaryOperator.MULTIPLY,
+            "/": BinaryOperator.DIVIDE,
+            "%": BinaryOperator.MODULO,  # Add modulo operator
+            "<": BinaryOperator.LESS_THAN,
+            ">": BinaryOperator.GREATER_THAN,
+            "<=": BinaryOperator.LESS_EQUALS,
+            ">=": BinaryOperator.GREATER_EQUALS,
+            "==": BinaryOperator.EQUALS,
+            "!=": BinaryOperator.NOT_EQUALS,
+            "and": BinaryOperator.AND,
+            "or": BinaryOperator.OR
+        }
+        
+        # Get the operator
+        op = tokens[lowest_idx]
+        binary_op = operator_map.get(op)
+        
+        if not binary_op:
+            raise ParseError(f"Unsupported operator: {op}")
+        
+        return BinaryExpression(left=left, operator=binary_op, right=right)
 
     return evaluate(tokens)
 
@@ -288,7 +347,7 @@ def parse_simple_expression(expr_str: str) -> Union[LiteralExpression, Identifie
 
 def parse_statement(
     line: str, line_num: int
-) -> Tuple[Optional[Union[Assignment, LogStatement, Conditional, LogLevelSetStatement]], Optional[ParseError]]:
+) -> Tuple[Optional[Union[Assignment, LogStatement, Conditional, WhileLoop, LogLevelSetStatement]], Optional[ParseError]]:
     """Parse a single line into a Statement or error."""
     line_content = line  # Store original line content
 
@@ -373,6 +432,18 @@ def parse_statement(
             # Add line info to the expression parsing error
             return None, ParseError(str(e), line_num, line_content)
 
+    # Try matching while statement
+    while_match = WHILE_REGEX.match(line)
+    if while_match:
+        condition_str = while_match.group(1)
+        try:
+            # Parse the expression, this now properly handles binary operators
+            condition = parse_expression(condition_str)
+            return WhileLoop(condition=condition, body=[], line_num=line_num), None
+        except ParseError as e:
+            # Add line info to the expression parsing error
+            return None, ParseError(str(e), line_num, line_content)
+
     # Try matching assignment
     assign_match = ASSIGNMENT_REGEX.match(line)
     if assign_match:
@@ -397,14 +468,21 @@ def parse(code: str) -> ParseResult:
     statements: List[Union[Assignment, LogStatement, Conditional, LogLevelSetStatement]] = []
     errors: List[ParseError] = []
     lines = code.splitlines()
-    current_conditional: Optional[Conditional] = None
+    # Use a stack to track nested conditionals
+    conditional_stack: List[Conditional] = []
     first_error_line = None
-
+    
+    # Calculate indentation level for each line
+    indented_lines = []
     for line_num, line in enumerate(lines, 1):
-        # Skip empty lines and comments
         if not line.strip() or line.strip().startswith("#"):
-            continue
-
+            continue  # Skip empty lines and comments
+        
+        # Count leading whitespace to determine indentation level
+        indent = len(line) - len(line.lstrip())
+        indented_lines.append((line_num, line, indent))
+    
+    for line_num, line, indent in indented_lines:
         statement, error = parse_statement(line, line_num)
         if error:
             errors.append(error)
@@ -415,22 +493,34 @@ def parse(code: str) -> ParseResult:
         # Only add statements that come before the first error
         if first_error_line is None or line_num < first_error_line:
             if statement:
+                # Check if we need to pop conditionals based on indentation
+                while conditional_stack and indent <= conditional_stack[-1][1]:
+                    # Pop the current conditional
+                    conditional_stack.pop()
+                
+                # Get the current conditional if we have one
+                current_conditional = conditional_stack[-1][0] if conditional_stack else None
+                
                 if current_conditional:
-                    if isinstance(statement, Conditional):
-                        # Nested if - not supported yet
-                        errors.append(ParseError(f"Line {line_num}: Nested conditionals not supported"))
-                        if first_error_line is None:
-                            first_error_line = line_num
-                        continue
-                    current_conditional.body.append(statement)
-                else:
-                    if isinstance(statement, Conditional):
-                        current_conditional = statement
+                    # We're inside a conditional block
+                    if isinstance(statement, (Conditional, WhileLoop)):
+                        # This is a nested block structure
+                        current_conditional.body.append(statement)
+                        # Push this block onto the stack with its indentation
+                        conditional_stack.append((statement, indent))
                     else:
+                        # This is a regular statement inside a conditional
+                        current_conditional.body.append(statement)
+                else:
+                    # We're at the top level
+                    if isinstance(statement, (Conditional, WhileLoop)):
+                        # This is a new top-level block structure
+                        conditional_stack.append((statement, indent))
+                        statements.append(statement)
+                    else:
+                        # This is a regular top-level statement
                         statements.append(statement)
 
-    # Add any pending conditional to the statements
-    if current_conditional and (first_error_line is None or current_conditional.line_num < first_error_line):
-        statements.append(current_conditional)
+    # All conditionals should be properly added to statements already
 
     return ParseResult(program=Program(statements=statements), errors=errors)

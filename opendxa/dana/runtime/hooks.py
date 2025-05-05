@@ -7,7 +7,7 @@ without modifying the core interpreter code.
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Set, Union
 
-from opendxa.dana.language.ast import Assignment, Conditional, LogStatement, Program
+from opendxa.dana.language.ast import Assignment, Conditional, LogStatement, Program, WhileLoop
 
 
 class HookType(Enum):
@@ -32,6 +32,10 @@ class HookType(Enum):
     # Expression-level hooks
     BEFORE_EXPRESSION = "before_expression"  # Called before evaluating an expression
     AFTER_EXPRESSION = "after_expression"    # Called after evaluating an expression
+    
+    # Loop hooks
+    BEFORE_LOOP = "before_loop"  # Called before executing a loop
+    AFTER_LOOP = "after_loop"    # Called after executing a loop
     
     # Error hooks
     ON_ERROR = "on_error"  # Called when an error occurs

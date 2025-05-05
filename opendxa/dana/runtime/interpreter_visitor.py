@@ -24,6 +24,7 @@ from opendxa.dana.language.ast import (
     LogLevelSetStatement,
     LogStatement,
     Program,
+    WhileLoop,
 )
 from opendxa.dana.language.parser import ParseResult
 from opendxa.dana.language.visitor import ASTVisitor
@@ -188,11 +189,44 @@ class InterpreterVisitor(ASTVisitor):
             condition = self.visit_node(node.condition, context)
             if condition:
                 for body_stmt in node.body:
+                    # Support nested conditionals by visiting them too
                     self.visit_node(body_stmt, context)
         except Exception as e:
             if isinstance(e, (RuntimeError, StateError)):
                 raise
             error_msg = f"Error executing conditional: {type(e).__name__}: {e}"
+            error_msg += format_error_location(node)
+            raise RuntimeError(error_msg) from e
+            
+    def visit_while_loop(self, node: WhileLoop, context: Optional[Dict[str, Any]] = None) -> None:
+        """Visit a WhileLoop node, repeatedly executing the body while the condition is true."""
+        try:
+            # Execute the loop
+            max_iterations = 1000  # Prevent infinite loops
+            iteration_count = 0
+            
+            # Loop as long as the condition is true
+            while True:
+                # Evaluate the condition
+                condition = self.visit_node(node.condition, context)
+                
+                # If condition is false, break out of the loop
+                if not bool(condition):
+                    break
+                    
+                # Check for max iterations to prevent infinite loops
+                iteration_count += 1
+                if iteration_count > max_iterations:
+                    self._log(f"Max iterations ({max_iterations}) reached in while loop, breaking", LogLevel.WARN)
+                    break
+                
+                # Execute all statements in the body
+                for body_stmt in node.body:
+                    self.visit_node(body_stmt, context)
+        except Exception as e:
+            if isinstance(e, (RuntimeError, StateError)):
+                raise
+            error_msg = f"Error executing while loop: {type(e).__name__}: {e}"
             error_msg += format_error_location(node)
             raise RuntimeError(error_msg) from e
 
@@ -217,6 +251,12 @@ class InterpreterVisitor(ASTVisitor):
                     error_msg += format_error_location(node)
                     raise StateError(error_msg)
                 return left / right
+            elif node.operator == BinaryOperator.MODULO:
+                if right == 0:
+                    error_msg = "Modulo by zero"
+                    error_msg += format_error_location(node)
+                    raise StateError(error_msg)
+                return left % right
             elif node.operator == BinaryOperator.EQUALS:
                 return left == right
             elif node.operator == BinaryOperator.NOT_EQUALS:
@@ -329,6 +369,8 @@ class InterpreterVisitor(ASTVisitor):
             return self.visit_log_level_set_statement(node, context)
         elif isinstance(node, Conditional):
             return self.visit_conditional(node, context)
+        elif isinstance(node, WhileLoop):
+            return self.visit_while_loop(node, context)
         elif isinstance(node, BinaryExpression):
             return self.visit_binary_expression(node, context)
         elif isinstance(node, LiteralExpression):

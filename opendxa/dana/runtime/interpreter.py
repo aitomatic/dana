@@ -19,6 +19,7 @@ from opendxa.dana.language.ast import (
     LogLevelSetStatement,
     LogStatement,
     Program,
+    WhileLoop,
 )
 from opendxa.dana.language.parser import ParseResult
 from opendxa.dana.runtime.context import RuntimeContext
@@ -260,7 +261,7 @@ class Interpreter:
             # Otherwise, use the private scope
             self.context.set(f"private.{name}", value)
 
-    def _execute_statement(self, statement: Union[Assignment, LogStatement, Conditional, LogLevelSetStatement]) -> None:
+    def _execute_statement(self, statement: Union[Assignment, LogStatement, Conditional, WhileLoop, LogLevelSetStatement]) -> None:
         """Execute a single DANA statement."""
         # Create hook context
         hook_context = {
@@ -316,13 +317,50 @@ class Interpreter:
                 # Add condition result to context for hooks
                 cond_context = {**hook_context, "condition_result": condition}
                 
-                if condition:
+                # Only execute the conditional body if the condition evaluates to a truthy value
+                if bool(condition):
+                    # Simply execute each statement in the body
+                    # Since our parser properly handles nested conditionals now, this is cleaner
                     for body_stmt in statement.body:
                         self._execute_statement(body_stmt)
                 
                 # Execute after conditional hooks
                 if has_hooks(HookType.AFTER_CONDITIONAL):
                     execute_hook(HookType.AFTER_CONDITIONAL, cond_context)
+                    
+            elif isinstance(statement, WhileLoop):
+                # Create hook context for the while loop
+                hook_context_while = {**hook_context, "loop_type": "while"}
+                
+                # Execute before while loop hooks
+                if has_hooks(HookType.BEFORE_LOOP):
+                    execute_hook(HookType.BEFORE_LOOP, hook_context_while)
+                
+                # Execute the loop
+                max_iterations = 1000  # Prevent infinite loops
+                iteration_count = 0
+                
+                # Loop as long as the condition is true
+                while True:
+                    # Evaluate the condition
+                    condition = self._evaluate_expression(statement.condition)
+                    
+                    # If condition is false, break out of the loop
+                    if not bool(condition):
+                        break
+                        
+                    # Check for max iterations to prevent infinite loops
+                    iteration_count += 1
+                    if iteration_count > max_iterations:
+                        self._log(f"Max iterations ({max_iterations}) reached in while loop, breaking", LogLevel.WARN)
+                        break
+                    
+                    # Execute all statements in the body
+                    for body_stmt in statement.body:
+                        self._execute_statement(body_stmt)
+                if has_hooks(HookType.AFTER_LOOP):
+                    hook_context_while["iterations"] = iteration_count
+                    execute_hook(HookType.AFTER_LOOP, hook_context_while)
             
             # Execute after statement hooks
             if has_hooks(HookType.AFTER_STATEMENT):
@@ -398,6 +436,12 @@ class Interpreter:
                             error_msg += format_error_location(expr)
                             raise StateError(error_msg)
                         return left / right
+                    elif expr.operator == BinaryOperator.MODULO:
+                        if right == 0:
+                            error_msg = "Modulo by zero"
+                            error_msg += format_error_location(expr)
+                            raise StateError(error_msg)
+                        return left % right
                     elif expr.operator == BinaryOperator.EQUALS:
                         return left == right
                     elif expr.operator == BinaryOperator.NOT_EQUALS:
