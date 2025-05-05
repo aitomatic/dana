@@ -53,6 +53,8 @@ async def main():
         print("\nExample: export OPENAI_API_KEY=your_key_here")
     # --- End LLM Initialization ---
 
+    llm = None
+
     # Initialize REPL
     # Pass the initialized llm resource if available
     repl = REPL(llm_resource=llm, log_level=LogLevel.INFO)  # Use INFO for execution logs

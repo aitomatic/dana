@@ -25,13 +25,12 @@ from openai.types.chat import ChatCompletion
 
 from opendxa.common.config.config_loader import ConfigLoader
 from opendxa.common.exceptions import (
-    ConfigurationError, 
-    LLMError, 
-    LLMProviderError, 
-    LLMRateLimitError, 
-    LLMAuthenticationError, 
+    ConfigurationError,
+    LLMAuthenticationError,
     LLMContextLengthError,
-    LLMResponseError
+    LLMError,
+    LLMProviderError,
+    LLMRateLimitError,
 )
 from opendxa.common.mixins.queryable import QueryStrategy
 from opendxa.common.mixins.registerable import Registerable
@@ -362,9 +361,9 @@ class LLMResource(BaseResource):
                 max_tokens=Misc.get_field(request, "max_tokens"),
                 preserve_system_messages=True,
                 preserve_latest_messages=4,
-                safety_margin=200
+                safety_margin=200,
             )
-            
+
             # Logging the token count for debugging
             token_count = sum(TokenManagement.estimate_message_tokens(msg) for msg in message_history)
             self.debug(f"Sending messages with estimated token count: {token_count}")
@@ -445,7 +444,7 @@ class LLMResource(BaseResource):
             Dict[str, Any]: The LLM response object containing:
                 - choices[0].message: The assistant's message, which may contain tool_calls
                 - usage: Token usage statistics
-                
+
         Raises:
             LLMContextLengthError: If the messages exceed the context window.
             LLMRateLimitError: If rate limits are exceeded.
@@ -483,24 +482,26 @@ class LLMResource(BaseResource):
         except Exception as e:
             error_message = str(e)
             self.error("LLM query failed: %s", error_message)
-            
+
             # Determine the provider from the model
             provider = "unknown"
             if self.model and ":" in self.model:
                 provider = self.model.split(":", 1)[0]
-            
+
             # Extract HTTP status code if available
             status_code = None
-            status_match = re.search(r'status[\s_]*code[:\s]+(\d+)', error_message, re.IGNORECASE)
+            status_match = re.search(r"status[\s_]*code[:\s]+(\d+)", error_message, re.IGNORECASE)
             if status_match:
                 status_code = int(status_match.group(1))
-            
+
             # Classify the error based on message patterns and status codes
             if any(term in error_message.lower() for term in ["context length", "token limit", "too many tokens", "maximum context"]):
                 raise LLMContextLengthError(provider, status_code, error_message) from e
             elif any(term in error_message.lower() for term in ["rate limit", "ratelimit", "too many requests", "429"]):
                 raise LLMRateLimitError(provider, status_code, error_message) from e
-            elif any(term in error_message.lower() for term in ["authenticate", "authentication", "unauthorized", "auth", "api key", "401"]):
+            elif any(
+                term in error_message.lower() for term in ["authenticate", "authentication", "unauthorized", "auth", "api key", "401"]
+            ):
                 raise LLMAuthenticationError(provider, status_code, error_message) from e
             elif "invalid_request_error" in error_message.lower() or "bad request" in error_message.lower():
                 raise LLMProviderError(provider, status_code, error_message) from e

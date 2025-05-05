@@ -11,6 +11,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from opendxa.common.types import BaseRequest
+from opendxa.common.utils.misc import Misc
 from opendxa.dana.exceptions import InterpretError, RuntimeError, StateError
 from opendxa.dana.language.ast import (
     Assignment,
@@ -314,31 +315,32 @@ class Interpreter(ASTVisitor):
         """
         # Get the LLM resource, or create a default one if not available
         try:
-            llm = self.context.get_resource("llm")
+            llm = self.context.get_resource("reason_llm")
         except StateError:
-            llm = None
-
-        if not llm:
             try:
+                llm = self.context.get_resource("llm")
+            except StateError:
                 from opendxa.common.resource.llm_resource import LLMResource
 
                 # Create a default LLM resource
                 self._log("No LLM resource found, creating a default one", LogLevel.WARN)
-                llm = LLMResource(name="default_llm")
-                await llm.initialize()  # Ensure resource is initialized
+                llm = LLMResource(name="reason_llm")
 
                 # Register it with the context
-                self.context.register_resource("llm", llm)
-                self._log("Default LLM resource registered", LogLevel.INFO)
-            except Exception as e:
-                error_msg = (
-                    f"Failed to create default LLM resource: {str(e)}.\n"
-                    "To use reason() statements, you need to configure an LLM resource:\n"
-                    "1. Set environment variables (e.g., OPENAI_API_KEY, ANTHROPIC_API_KEY)\n"
-                    "2. Or register an LLM resource with the context using: context.register_resource('llm', llm_resource)"
-                )
-                self._log(error_msg, LogLevel.ERROR)
-                raise RuntimeError(error_msg)
+                self.context.register_resource("reason_llm", llm)
+                self._log("reason_llm resource registered", LogLevel.INFO)
+
+        if llm:
+            await llm.initialize()  # Ensure resource is initialized
+        else:
+            error_msg = (
+                "Failed to create default LLM resource.\n"
+                "To use reason() statements, you need to configure an LLM resource:\n"
+                "1. Set environment variables (e.g., OPENAI_API_KEY, ANTHROPIC_API_KEY)\n"
+                "2. Or register an LLM resource with the context using: context.register_resource('llm', llm_resource)"
+            )
+            self._log(error_msg, LogLevel.ERROR)
+            raise RuntimeError(error_msg)
 
         # Prepare the context data to include with the prompt
         context_data = {}
@@ -396,13 +398,12 @@ class Interpreter(ASTVisitor):
 
             # If it's a completion-style response with choices
             if isinstance(content, dict) and "choices" in content:
-                result = content["choices"][0]["message"]["content"]
+                result = content["choices"][0]
+                result = Misc.get_field(result, "message")
+                result = Misc.get_field(result, "content")
             # If it's a direct content response
             elif isinstance(content, dict) and "content" in content:
-                result = content["content"]
-            # Fall back to the full response
-            else:
-                result = content
+                result = Misc.get_field(content, "content", content)
 
             # Format conversion if needed
             if format_type == "json" and isinstance(result, str):
@@ -415,7 +416,7 @@ class Interpreter(ASTVisitor):
             return result
 
         except Exception as e:
-            raise RuntimeError(f"Error during LLM reasoning: {str(e)}")
+            raise RuntimeError("Error during LLM reasoning") from e
 
     def _visit_reason_statement_sync(self, node: ReasonStatement, context: Optional[Dict[str, Any]] = None) -> None:
         """Synchronous version of visit_reason_statement for tests and REPL."""
@@ -426,16 +427,16 @@ class Interpreter(ASTVisitor):
             # Execute before reason hooks if they exist
             if has_hooks(HookType.BEFORE_REASON):
                 execute_hook(HookType.BEFORE_REASON, hook_context)
-            
+
             # Evaluate the prompt
             prompt_value = self.visit_node(node.prompt, context)
             prompt_str = str(prompt_value)  # Convert to string if it's not already
-            
+
             # Extract context variable names
             context_vars = []
             if node.context:
                 context_vars = [ident.name for ident in node.context]
-            
+
             # Execute the reasoning
             try:
                 # Create a new event loop
@@ -443,12 +444,10 @@ class Interpreter(ASTVisitor):
                 asyncio.set_event_loop(loop)
                 try:
                     # Run the reasoning
-                    result = loop.run_until_complete(
-                        self._perform_reasoning(prompt_str, context_vars, node.options)
-                    )
+                    result = loop.run_until_complete(self._perform_reasoning(prompt_str, context_vars, node.options))
                 finally:
                     loop.close()
-                
+
                 # If we have a target variable, store the result
                 if node.target:
                     self._set_variable(node.target.name, result)
@@ -458,29 +457,29 @@ class Interpreter(ASTVisitor):
                         result_str = json.dumps(result, indent=2)
                     else:
                         result_str = str(result)
-                        
+
                     # Log at most the first 500 characters to avoid huge log entries
                     preview = result_str[:500] + "..." if len(result_str) > 500 else result_str
                     self._log(f"Reasoning result: {preview}", LogLevel.INFO)
-                
+
                 # Create result context for the hook
                 result_context = {**hook_context, "result": result}
-                
+
                 # Execute after reason hooks if they exist
                 if has_hooks(HookType.AFTER_REASON):
                     execute_hook(HookType.AFTER_REASON, result_context)
-                    
+
             except Exception as e:
                 self._log(f"Error in reason statement: {str(e)}", LogLevel.ERROR)
-                raise RuntimeError(f"Reasoning error: {str(e)}")
-                
+                raise RuntimeError("Reasoning error") from e
+
         except Exception as e:
             if isinstance(e, (RuntimeError, StateError)):
                 raise
             error_msg = f"Error executing reason statement: {type(e).__name__}: {e}"
             error_msg += format_error_location(node)
             raise RuntimeError(error_msg) from e
-    
+
     async def visit_reason_statement(self, node: ReasonStatement, context: Optional[Dict[str, Any]] = None) -> None:
         """Visit a ReasonStatement node, executing the reasoning operation using an LLM."""
         # Create hook context
@@ -537,7 +536,7 @@ class Interpreter(ASTVisitor):
 
             except Exception as e:
                 self._log(f"Error in reason statement: {str(e)}", LogLevel.ERROR)
-                raise RuntimeError(f"Reasoning error: {str(e)}")
+                raise RuntimeError("Reasoning error") from e
 
         except Exception as e:
             if isinstance(e, (RuntimeError, StateError)):
