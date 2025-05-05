@@ -1,5 +1,6 @@
 """DANA REPL: Read-Eval-Print Loop for executing and managing DANA programs."""
 
+import asyncio
 import logging
 from typing import Any, Dict, Optional
 
@@ -33,7 +34,17 @@ class REPL:
         self.logger.setLevel(logging.INFO)  # Python logging level
 
         self.context = context or RuntimeContext()
-        self.transcoder = FaultTolerantTranscoder(llm_resource) if llm_resource else None
+
+        # Set up LLM resource if provided
+        if llm_resource:
+            # Register the LLM resource with the runtime context for reason() statements
+            self.context.register_resource("llm", llm_resource)
+            # Initialize transcoder with the same LLM resource
+            self.transcoder = FaultTolerantTranscoder(llm_resource)
+        else:
+            self.transcoder = None
+
+        # Initialize interpreter with the context
         self.interpreter = Interpreter(self.context)
         self.interpreter.set_log_level(log_level)  # DANA log level
 
@@ -88,8 +99,28 @@ class REPL:
                     self.logger.error(f"Failed to parse program: {pe}")
                     raise DanaError(f"Failed to parse program: {pe}") from pe
 
-            # Execute the program
-            self.interpreter.execute_program(parse_result)
+            # Execute the program - wrap in try/except for better async error handling
+            try:
+                self.interpreter.execute_program(parse_result)
+            except RuntimeError as e:
+                if "Cannot run the event loop while another loop is running" in str(e):
+                    # This is a special case for reason() statements in an async context
+                    # We'll create and use our own event loop for this execution
+                    self.logger.debug("Detected event loop issue with reasoning statements, using alternate approach")
+                    # Recreate a nested event loop for the reasoning operation
+                    loop = asyncio.new_event_loop()
+                    try:
+                        # Run _visit_reason_statement_sync on all reason statements in the program
+                        from opendxa.dana.language.ast import ReasonStatement
+
+                        for stmt in parse_result.program.statements:
+                            if isinstance(stmt, ReasonStatement):
+                                self.interpreter._visit_reason_statement_sync(stmt)
+                    finally:
+                        loop.close()
+                else:
+                    # For other runtime errors, just re-raise
+                    raise
 
         except DanaError as e:
             # Handle DanaError, including the specific one for double failure.

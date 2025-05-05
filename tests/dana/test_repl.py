@@ -7,7 +7,7 @@ import pytest
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.dana.exceptions import DanaError
 from opendxa.dana.language.parser import ParseError, ParseResult
-from opendxa.dana.repl import REPL
+from opendxa.dana.runtime.repl import REPL
 from opendxa.dana.runtime.context import RuntimeContext
 from opendxa.dana.runtime.interpreter import Interpreter, LogLevel
 from opendxa.dana.transcoder.transcoder import TranscoderError

@@ -84,6 +84,17 @@ dana/
 ├── examples/        # Sample programs
 ```
 
+## 🔧 Architecture Notes
+
+The DANA runtime uses the **visitor pattern** for execution, which provides a more maintainable and extensible architecture:
+
+- **Visitor Pattern**: AST nodes are traversed using dedicated visit methods, allowing clean separation of node types and operations
+- **LLM Integration**: Direct access to AI reasoning via the `reason()` statement
+- **Runtime Context**: Manages state across execution through structured scopes
+- **Hook System**: Extensible event system for customizing behavior at key execution points
+
+> **Note**: The legacy non-visitor interpreter implementation is deprecated and will be removed in a future release. All new development should use the visitor pattern implementation.
+
 ---
 
 ## 📦 Public API

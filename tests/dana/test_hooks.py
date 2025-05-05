@@ -115,7 +115,7 @@ def test_statement_hooks():
     # Clean up any existing hooks
     clear_hooks()
     
-    # Create an interpreter
+    # Create a standard interpreter
     context = RuntimeContext()
     interpreter = create_interpreter(context)
     
@@ -261,13 +261,13 @@ def test_error_hooks():
 
 
 def test_hook_with_visitor_pattern():
-    """Test that hooks work with the visitor pattern interpreter."""
+    """Test that hooks work with the interpreter."""
     # Clean up any existing hooks
     clear_hooks()
     
-    # Create an interpreter with visitor pattern
+    # Create an interpreter
     context = RuntimeContext()
-    interpreter = create_interpreter(context, use_visitor=True)
+    interpreter = create_interpreter(context)
     
     executed = {
         "before_program": 0,

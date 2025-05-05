@@ -1,11 +1,17 @@
-"""DANA Runtime: Executes parsed AST nodes."""
+"""DANA Runtime Interpreter.
 
+This module provides the main Interpreter implementation for executing DANA programs.
+It traverses the AST and executes each node according to DANA language semantics.
+"""
+
+import asyncio
+import json
 import uuid
-from dataclasses import dataclass
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional
 
-from opendxa.dana.exceptions import InterpretError, ParseError, RuntimeError, StateError
+from opendxa.common.types import BaseRequest
+from opendxa.dana.exceptions import InterpretError, RuntimeError, StateError
 from opendxa.dana.language.ast import (
     Assignment,
     BinaryExpression,
@@ -14,25 +20,20 @@ from opendxa.dana.language.ast import (
     FStringExpression,
     FunctionCall,
     Identifier,
+    Literal,
     LiteralExpression,
     LogLevel,
     LogLevelSetStatement,
     LogStatement,
     Program,
+    ReasonStatement,
     WhileLoop,
 )
 from opendxa.dana.language.parser import ParseResult
+from opendxa.dana.language.visitor import ASTVisitor
 from opendxa.dana.runtime.context import RuntimeContext
 from opendxa.dana.runtime.function_registry import call_function, has_function
 from opendxa.dana.runtime.hooks import HookType, execute_hook, has_hooks
-
-# Conditional import for type hinting only
-if TYPE_CHECKING:
-    # No RuntimeContext import needed here anymore
-    pass
-
-# Feature flag to control whether to use the visitor pattern by default
-USE_VISITOR_PATTERN = False
 
 # ANSI color codes
 COLORS = {
@@ -42,21 +43,6 @@ COLORS = {
     LogLevel.ERROR: "\033[31m",  # Red
 }
 RESET = "\033[0m"  # Reset color
-
-
-@dataclass
-class LogMessage:
-    """Represents a log message with runtime information."""
-
-    timestamp: str
-    execution_id: str
-    level: str
-    scope: str
-    message: str
-
-    def __str__(self) -> str:
-        color = COLORS.get(LogLevel(self.level), "")
-        return f"[opendxa.dana {self.timestamp}] {color}{self.message} | {self.execution_id} | {self.level} | {self.scope}{RESET}"
 
 
 def format_error_location(node: Any) -> str:
@@ -69,39 +55,26 @@ def format_error_location(node: Any) -> str:
     return f"\nAt line {line}, column {column}:\n{source_text}\n{padding}^"
 
 
-def format_log_message(timestamp: str, execution_id: str, level: str, scope: str, message: str) -> str:
-    """Format a log message with runtime information."""
-    return f"[DANA Runtime] {timestamp} | {execution_id} | {level} | {scope} | {message}"
-
-
-class Interpreter:
+class Interpreter(ASTVisitor):
     """Interpreter for executing DANA programs.
-    
-    This class can use either the traditional approach or the visitor pattern
-    for executing DANA programs, depending on the use_visitor flag.
+
+    This class traverses the AST and executes each node according to the DANA
+    language semantics, managing state through the runtime context.
     """
 
-    def __init__(self, context: RuntimeContext, use_visitor: bool = USE_VISITOR_PATTERN):
+    def __init__(self, context: RuntimeContext):
         """Initialize the interpreter with a runtime context.
-        
+
         Args:
             context: The runtime context for state management
-            use_visitor: Whether to use the visitor pattern (default based on global flag)
         """
         self.context = context
         self._execution_id = str(uuid.uuid4())[:8]  # Short unique ID for this execution
         self._log_level = LogLevel.WARN  # Default log level to WARN
-        self._use_visitor = use_visitor
-        self._visitor = None
 
         # Initialize execution state
         self.context.set("execution.id", self._execution_id)
         self.context.set("execution.log_level", self._log_level.value)
-        
-        # Lazily load the visitor if needed to avoid circular imports
-        if self._use_visitor:
-            from opendxa.dana.runtime.interpreter_visitor import InterpreterVisitor
-            self._visitor = InterpreterVisitor(context)
 
     def _should_log(self, level: LogLevel) -> bool:
         """Check if a message with the given level should be logged."""
@@ -113,11 +86,6 @@ class Interpreter:
 
     def _log(self, message: str, level: LogLevel = LogLevel.INFO) -> None:
         """Log a message with runtime information."""
-        # If using visitor, delegate to it
-        if self._use_visitor and self._visitor:
-            self._visitor._log(message, level)
-            return
-            
         # Check if message should be logged based on current level
         if self._should_log(level):
             # Evaluate any f-strings in the message
@@ -139,110 +107,59 @@ class Interpreter:
                 # If evaluation fails, use the original message
                 pass
 
-            # Create log message
-            log_msg = LogMessage(
-                timestamp=datetime.now().astimezone().strftime("%Y%m%d %H:%M:%S%z").replace("00", ""),
-                execution_id=self._execution_id,
-                level=level.value,
-                scope="execution",  # Use execution scope for logging
-                message=message,
-            )
-
-            # Print formatted message
-            print(str(log_msg))
+            # Format and print the log message
+            timestamp = datetime.now().astimezone().strftime("%Y%m%d %H:%M:%S%z").replace("00", "")
+            color = COLORS.get(level, "")
+            print(f"[opendxa.dana {timestamp}] {color}{message} | {self._execution_id} | {level.value} | execution{RESET}")
 
     def set_log_level(self, level: LogLevel) -> None:
         """Set the global log level threshold."""
         self._log_level = level
         self.context.set("execution.log_level", level.value)
-        
-        # If using visitor, also set its log level
-        if self._use_visitor and self._visitor:
-            self._visitor.set_log_level(level)
 
     def execute_program(self, parse_result: ParseResult) -> None:
-        """Executes a DANA program, node by node.
+        """Execute a DANA program.
 
         Args:
-            parse_result: Result of parsing the program, containing:
-                - program: The Program to execute
-                - errors: List of ParseErrors encountered during parsing
-                
+            parse_result: Result of parsing the program
+
         Raises:
             InterpretError: If a program is not provided
             Various exceptions: For errors during execution
         """
-        # Create hook context
-        hook_context = {
-            "interpreter": self,
-            "context": self.context,
-            "program": parse_result.program,
-            "errors": parse_result.errors
-        }
-        
-        # Execute before program hooks
-        if has_hooks(HookType.BEFORE_PROGRAM):
-            execute_hook(HookType.BEFORE_PROGRAM, hook_context)
-            
-        if self._use_visitor and self._visitor:
-            # Delegate to visitor implementation
-            try:
-                self._visitor.execute_program(parse_result)
-            except Exception as e:
-                # Ensure error handling is consistent with traditional approach
-                self._log_level = LogLevel.ERROR
-                self.context.set("execution.log_level", LogLevel.ERROR.value)
-                
-                # Execute error hooks
-                if has_hooks(HookType.ON_ERROR):
-                    error_context = {**hook_context, "error": e}
-                    execute_hook(HookType.ON_ERROR, error_context)
-                    
-                raise e
-                
-            # Execute after program hooks
-            if has_hooks(HookType.AFTER_PROGRAM):
-                execute_hook(HookType.AFTER_PROGRAM, hook_context)
-                
-            return
-            
         if not isinstance(parse_result.program, Program):
             raise InterpretError(f"Expected a Program node, got {type(parse_result.program).__name__}")
 
+        # Create hook context for program hooks
+        hook_context = {"interpreter": self, "context": self.context, "program": parse_result.program, "errors": parse_result.errors}
+
+        # Execute before program hooks
+        if has_hooks(HookType.BEFORE_PROGRAM):
+            execute_hook(HookType.BEFORE_PROGRAM, hook_context)
+
         try:
             # Execute all statements that come before the first error
-            for statement in parse_result.program.statements:
-                self._execute_statement(statement)
+            self.visit_program(parse_result.program)
 
             # If there are any parse errors, stop at the first one
             if parse_result.errors:
                 raise parse_result.errors[0]
-                
+
             # Execute after program hooks
             if has_hooks(HookType.AFTER_PROGRAM):
                 execute_hook(HookType.AFTER_PROGRAM, hook_context)
 
-        except (InterpretError, StateError, RuntimeError, ParseError) as e:
-            self._log_level = LogLevel.ERROR
-            self.context.set("execution.log_level", LogLevel.ERROR.value)
-            
-            # Execute error hooks
-            if has_hooks(HookType.ON_ERROR):
-                error_context = {**hook_context, "error": e}
-                execute_hook(HookType.ON_ERROR, error_context)
-                
-            raise e from None
         except Exception as e:
-            # Wrap unexpected Python errors in RuntimeError
+            # Set log level to ERROR for any exceptions
             self._log_level = LogLevel.ERROR
             self.context.set("execution.log_level", LogLevel.ERROR.value)
-            
+
             # Execute error hooks
             if has_hooks(HookType.ON_ERROR):
                 error_context = {**hook_context, "error": e}
                 execute_hook(HookType.ON_ERROR, error_context)
-                
-            raise RuntimeError(str(e)) from e
+
+            raise e
 
     def _get_variable(self, name: str) -> Any:
         """Get a variable value from the context."""
@@ -261,307 +178,537 @@ class Interpreter:
             # Otherwise, use the private scope
             self.context.set(f"private.{name}", value)
 
-    def _execute_statement(self, statement: Union[Assignment, LogStatement, Conditional, WhileLoop, LogLevelSetStatement]) -> None:
-        """Execute a single DANA statement."""
-        # Create hook context
-        hook_context = {
-            "interpreter": self,
-            "context": self.context,
-            "statement": statement
-        }
-        
-        # Execute before statement hooks
-        if has_hooks(HookType.BEFORE_STATEMENT):
-            execute_hook(HookType.BEFORE_STATEMENT, hook_context)
-            
-        try:
-            if isinstance(statement, Assignment):
-                # Execute before assignment hooks
-                if has_hooks(HookType.BEFORE_ASSIGNMENT):
-                    execute_hook(HookType.BEFORE_ASSIGNMENT, hook_context)
-                    
-                value = self._evaluate_expression(statement.value)
-                self._set_variable(statement.target.name, value)
-                self._log(f"Set {statement.target.name} = {value}", LogLevel.DEBUG)
-                
-                # Execute after assignment hooks
-                if has_hooks(HookType.AFTER_ASSIGNMENT):
-                    assign_context = {**hook_context, "value": value}
-                    execute_hook(HookType.AFTER_ASSIGNMENT, assign_context)
+    # Visitor methods implementation
 
-            elif isinstance(statement, LogStatement):
-                # Execute before log hooks
-                if has_hooks(HookType.BEFORE_LOG):
-                    execute_hook(HookType.BEFORE_LOG, hook_context)
-                    
-                message = self._evaluate_expression(statement.message)
-                self._log(str(message), statement.level)
-                
-                # Execute after log hooks
-                if has_hooks(HookType.AFTER_LOG):
-                    log_context = {**hook_context, "message": message, "level": statement.level}
-                    execute_hook(HookType.AFTER_LOG, log_context)
+    def visit_program(self, node: Program, context: Optional[Dict[str, Any]] = None) -> None:
+        """Visit a Program node, executing all statements."""
+        for statement in node.statements:
+            # Create hook context for statement hooks
+            hook_context = {"visitor": self, "context": self.context, "statement": statement}
 
-            elif isinstance(statement, LogLevelSetStatement):
-                self._log_level = statement.level
-                self.context.set("execution.log_level", statement.level.value)
-                self._log(f"Set log level to {statement.level.value}", LogLevel.DEBUG)
+            # Execute before statement hooks
+            if has_hooks(HookType.BEFORE_STATEMENT):
+                execute_hook(HookType.BEFORE_STATEMENT, hook_context)
 
-            elif isinstance(statement, Conditional):
-                # Execute before conditional hooks
-                if has_hooks(HookType.BEFORE_CONDITIONAL):
-                    execute_hook(HookType.BEFORE_CONDITIONAL, hook_context)
-                    
-                condition = self._evaluate_expression(statement.condition)
-                
-                # Add condition result to context for hooks
-                cond_context = {**hook_context, "condition_result": condition}
-                
-                # Only execute the conditional body if the condition evaluates to a truthy value
-                if bool(condition):
-                    # Simply execute each statement in the body
-                    # Since our parser properly handles nested conditionals now, this is cleaner
-                    for body_stmt in statement.body:
-                        self._execute_statement(body_stmt)
-                
-                # Execute after conditional hooks
-                if has_hooks(HookType.AFTER_CONDITIONAL):
-                    execute_hook(HookType.AFTER_CONDITIONAL, cond_context)
-                    
-            elif isinstance(statement, WhileLoop):
-                # Create hook context for the while loop
-                hook_context_while = {**hook_context, "loop_type": "while"}
-                
-                # Execute before while loop hooks
-                if has_hooks(HookType.BEFORE_LOOP):
-                    execute_hook(HookType.BEFORE_LOOP, hook_context_while)
-                
-                # Execute the loop
-                max_iterations = 1000  # Prevent infinite loops
-                iteration_count = 0
-                
-                # Loop as long as the condition is true
-                while True:
-                    # Evaluate the condition
-                    condition = self._evaluate_expression(statement.condition)
-                    
-                    # If condition is false, break out of the loop
-                    if not bool(condition):
-                        break
-                        
-                    # Check for max iterations to prevent infinite loops
-                    iteration_count += 1
-                    if iteration_count > max_iterations:
-                        self._log(f"Max iterations ({max_iterations}) reached in while loop, breaking", LogLevel.WARN)
-                        break
-                    
-                    # Execute all statements in the body
-                    for body_stmt in statement.body:
-                        self._execute_statement(body_stmt)
-                if has_hooks(HookType.AFTER_LOOP):
-                    hook_context_while["iterations"] = iteration_count
-                    execute_hook(HookType.AFTER_LOOP, hook_context_while)
-            
+            # Execute the statement
+            self.visit_node(statement, context)
+
             # Execute after statement hooks
             if has_hooks(HookType.AFTER_STATEMENT):
                 execute_hook(HookType.AFTER_STATEMENT, hook_context)
 
-        except (RuntimeError, StateError) as e:
-            # Execute error hooks
-            if has_hooks(HookType.ON_ERROR):
-                error_context = {**hook_context, "error": e}
-                execute_hook(HookType.ON_ERROR, error_context)
-            raise
-        except Exception as e:
-            # Execute error hooks
-            if has_hooks(HookType.ON_ERROR):
-                error_context = {**hook_context, "error": e}
-                execute_hook(HookType.ON_ERROR, error_context)
-                
-            error_msg = f"Error executing statement: {type(e).__name__}: {e}"
-            error_msg += format_error_location(statement)
-            raise RuntimeError(error_msg) from e
-
-    def _evaluate_expression(self, expr: Union[LiteralExpression, Identifier, BinaryExpression, FunctionCall]) -> Any:
-        """Evaluate a DANA expression node."""
+    def visit_assignment(self, node: Assignment, context: Optional[Dict[str, Any]] = None) -> None:
+        """Visit an Assignment node, evaluating and storing the value."""
         # Create hook context
-        hook_context = {
-            "interpreter": self,
-            "context": self.context,
-            "expression": expr
-        }
-        
-        # Execute before expression hooks
-        if has_hooks(HookType.BEFORE_EXPRESSION):
-            execute_hook(HookType.BEFORE_EXPRESSION, hook_context)
-            
-        try:
-            if isinstance(expr, LiteralExpression):
-                if isinstance(expr.literal.value, FStringExpression):
-                    # Evaluate f-string
-                    result = ""
-                    for part in expr.literal.value.parts:
-                        if isinstance(part, str):
-                            result += part
-                        else:
-                            # Evaluate the expression and convert to string
-                            value = self._evaluate_expression(part)
-                            result += str(value)
-                    return result
-                return expr.literal.value
-            elif isinstance(expr, Identifier):
-                try:
-                    return self._get_variable(expr.name)
-                except StateError:
-                    error_msg = f"Variable not found: {expr.name}"
-                    error_msg += format_error_location(expr)
-                    raise StateError(error_msg) from None
-            elif isinstance(expr, BinaryExpression):
-                left = self._evaluate_expression(expr.left)
-                right = self._evaluate_expression(expr.right)
+        hook_context = {"visitor": self, "context": self.context, "statement": node}
 
-                try:
-                    if expr.operator == BinaryOperator.ADD:
-                        # Handle string concatenation by converting non-string values to strings
-                        if isinstance(left, str) or isinstance(right, str):
-                            return str(left) + str(right)
-                        return left + right
-                    elif expr.operator == BinaryOperator.SUBTRACT:
-                        return left - right
-                    elif expr.operator == BinaryOperator.MULTIPLY:
-                        return left * right
-                    elif expr.operator == BinaryOperator.DIVIDE:
-                        if right == 0:
-                            error_msg = "Division by zero"
-                            error_msg += format_error_location(expr)
-                            raise StateError(error_msg)
-                        return left / right
-                    elif expr.operator == BinaryOperator.MODULO:
-                        if right == 0:
-                            error_msg = "Modulo by zero"
-                            error_msg += format_error_location(expr)
-                            raise StateError(error_msg)
-                        return left % right
-                    elif expr.operator == BinaryOperator.EQUALS:
-                        return left == right
-                    elif expr.operator == BinaryOperator.NOT_EQUALS:
-                        return left != right
-                    elif expr.operator == BinaryOperator.LESS_THAN:
-                        return left < right
-                    elif expr.operator == BinaryOperator.GREATER_THAN:
-                        return left > right
-                    elif expr.operator == BinaryOperator.LESS_EQUALS:
-                        return left <= right
-                    elif expr.operator == BinaryOperator.GREATER_EQUALS:
-                        return left >= right
-                    elif expr.operator == BinaryOperator.AND:
-                        if not isinstance(left, bool) or not isinstance(right, bool):
-                            error_msg = "AND operator requires boolean operands"
-                            error_msg += format_error_location(expr)
-                            raise StateError(error_msg)
-                        return left and right
-                    elif expr.operator == BinaryOperator.OR:
-                        if not isinstance(left, bool) or not isinstance(right, bool):
-                            error_msg = "OR operator requires boolean operands"
-                            error_msg += format_error_location(expr)
-                            raise StateError(error_msg)
-                        return left or right
-                    elif expr.operator == BinaryOperator.IN:
-                        if not isinstance(right, (list, dict, str)):
-                            error_msg = "IN operator requires a list, dict, or string as right operand"
-                            error_msg += format_error_location(expr)
-                            raise StateError(error_msg)
-                        return left in right
-                    else:
-                        error_msg = f"Unsupported binary operator: {expr.operator}"
-                        error_msg += format_error_location(expr)
-                        raise RuntimeError(error_msg)
-                except (TypeError, ValueError) as e:
-                    error_msg = f"Error in binary operation: {str(e)}"
-                    error_msg += format_error_location(expr)
-                    raise RuntimeError(error_msg) from e
-            elif isinstance(expr, FunctionCall):
-                # Process function call using the function registry
-                try:
-                    # First check if this is a function call to a variable
-                    if "." not in expr.name and has_function(expr.name):
-                        # Convert arguments - in future this would handle proper parameter matching
-                        args = {}
-                        for key, value in expr.args.items():
-                            # Evaluate argument expressions if needed
-                            if isinstance(value, (LiteralExpression, Identifier, BinaryExpression, FunctionCall)):
-                                args[key] = self._evaluate_expression(value)
-                            else:
-                                args[key] = value
-                                
-                        # Call the function from the registry
-                        return call_function(expr.name, self.context, args)
-                    else:
-                        error_msg = f"Function '{expr.name}' is not registered"
-                        error_msg += format_error_location(expr)
-                        raise RuntimeError(error_msg)
-                except Exception as e:
-                    error_msg = f"Error calling function '{expr.name}': {str(e)}"
-                    error_msg += format_error_location(expr)
-                    raise RuntimeError(error_msg) from e
-            else:
-                error_msg = f"Unsupported expression type: {type(expr).__name__}"
-                error_msg += format_error_location(expr)
-                raise RuntimeError(error_msg)
-        except (RuntimeError, StateError) as e:
-            # Execute error hooks
-            if has_hooks(HookType.ON_ERROR):
-                error_context = {**hook_context, "error": e}
-                execute_hook(HookType.ON_ERROR, error_context)
-            raise
+        # Execute before assignment hooks
+        if has_hooks(HookType.BEFORE_ASSIGNMENT):
+            execute_hook(HookType.BEFORE_ASSIGNMENT, hook_context)
+
+        try:
+            # Evaluate the expression and store the value
+            value = self.visit_node(node.value, context)
+            self._set_variable(node.target.name, value)
+            self._log(f"Set {node.target.name} = {value}", LogLevel.DEBUG)
+
+            # Execute after assignment hooks with the value
+            if has_hooks(HookType.AFTER_ASSIGNMENT):
+                assign_context = {**hook_context, "value": value}
+                execute_hook(HookType.AFTER_ASSIGNMENT, assign_context)
+
         except Exception as e:
-            # Execute error hooks
-            if has_hooks(HookType.ON_ERROR):
-                error_context = {**hook_context, "error": e}
-                execute_hook(HookType.ON_ERROR, error_context)
-                
-            error_msg = f"Error evaluating expression: {type(e).__name__}: {e}"
-            error_msg += format_error_location(expr)
+            if isinstance(e, (RuntimeError, StateError)):
+                raise
+            error_msg = f"Error executing assignment: {type(e).__name__}: {e}"
+            error_msg += format_error_location(node)
             raise RuntimeError(error_msg) from e
-            
-        # Get the result
-        result = None
-        
-        if isinstance(expr, LiteralExpression):
-            if isinstance(expr.literal.value, FStringExpression):
-                # Result was already computed
-                pass
-            else:
-                result = expr.literal.value
-        elif isinstance(expr, Identifier):
+
+    def visit_log_statement(self, node: LogStatement, context: Optional[Dict[str, Any]] = None) -> None:
+        """Visit a LogStatement node, evaluating and logging the message."""
+        try:
+            message = self.visit_node(node.message, context)
+            self._log(str(message), node.level)
+        except Exception as e:
+            if isinstance(e, (RuntimeError, StateError)):
+                raise
+            error_msg = f"Error executing log statement: {type(e).__name__}: {e}"
+            error_msg += format_error_location(node)
+            raise RuntimeError(error_msg) from e
+
+    def visit_log_level_set_statement(self, node: LogLevelSetStatement, context: Optional[Dict[str, Any]] = None) -> None:
+        """Visit a LogLevelSetStatement node, setting the log level."""
+        try:
+            self._log_level = node.level
+            self.context.set("execution.log_level", node.level.value)
+            self._log(f"Set log level to {node.level.value}", LogLevel.DEBUG)
+        except Exception as e:
+            if isinstance(e, (RuntimeError, StateError)):
+                raise
+            error_msg = f"Error setting log level: {type(e).__name__}: {e}"
+            error_msg += format_error_location(node)
+            raise RuntimeError(error_msg) from e
+
+    def visit_conditional(self, node: Conditional, context: Optional[Dict[str, Any]] = None) -> None:
+        """Visit a Conditional node, evaluating the condition and executing the body if true."""
+        try:
+            condition = self.visit_node(node.condition, context)
+            if condition:
+                for body_stmt in node.body:
+                    # Support nested conditionals by visiting them too
+                    self.visit_node(body_stmt, context)
+        except Exception as e:
+            if isinstance(e, (RuntimeError, StateError)):
+                raise
+            error_msg = f"Error executing conditional: {type(e).__name__}: {e}"
+            error_msg += format_error_location(node)
+            raise RuntimeError(error_msg) from e
+
+    def visit_while_loop(self, node: WhileLoop, context: Optional[Dict[str, Any]] = None) -> None:
+        """Visit a WhileLoop node, repeatedly executing the body while the condition is true."""
+        try:
+            # Execute the loop
+            max_iterations = 1000  # Prevent infinite loops
+            iteration_count = 0
+
+            # Loop as long as the condition is true
+            while True:
+                # Evaluate the condition
+                condition = self.visit_node(node.condition, context)
+
+                # If condition is false, break out of the loop
+                if not bool(condition):
+                    break
+
+                # Check for max iterations to prevent infinite loops
+                iteration_count += 1
+                if iteration_count > max_iterations:
+                    self._log(f"Max iterations ({max_iterations}) reached in while loop, breaking", LogLevel.WARN)
+                    break
+
+                # Execute all statements in the body
+                for body_stmt in node.body:
+                    self.visit_node(body_stmt, context)
+        except Exception as e:
+            if isinstance(e, (RuntimeError, StateError)):
+                raise
+            error_msg = f"Error executing while loop: {type(e).__name__}: {e}"
+            error_msg += format_error_location(node)
+            raise RuntimeError(error_msg) from e
+
+    async def _perform_reasoning(
+        self, prompt: str, context_vars: Optional[List[str]] = None, options: Optional[Dict[str, Any]] = None
+    ) -> Any:
+        """Execute a reasoning operation by calling the LLM.
+
+        Args:
+            prompt: The reasoning prompt to send to the LLM
+            context_vars: Optional list of variable names to include as context
+            options: Optional parameters for the LLM call (temperature, format, etc.)
+
+        Returns:
+            The reasoning result from the LLM.
+
+        Raises:
+            RuntimeError: If the LLM resource is not available or if the query fails.
+        """
+        # Get the LLM resource, or create a default one if not available
+        try:
+            llm = self.context.get_resource("llm")
+        except StateError:
+            llm = None
+
+        if not llm:
             try:
-                result = self._get_variable(expr.name)
-            except StateError:
-                raise  # Already handled above
-        elif isinstance(expr, BinaryExpression):
-            # Result was computed above in try block
-            pass
-        elif isinstance(expr, FunctionCall):
-            # Result was computed above in try block
-            pass
-        
-        # Execute after expression hooks
-        if has_hooks(HookType.AFTER_EXPRESSION):
-            expr_context = {**hook_context, "result": result}
-            execute_hook(HookType.AFTER_EXPRESSION, expr_context)
+                from opendxa.common.resource.llm_resource import LLMResource
+
+                # Create a default LLM resource
+                self._log("No LLM resource found, creating a default one", LogLevel.WARN)
+                llm = LLMResource(name="default_llm")
+                await llm.initialize()  # Ensure resource is initialized
+
+                # Register it with the context
+                self.context.register_resource("llm", llm)
+                self._log("Default LLM resource registered", LogLevel.INFO)
+            except Exception as e:
+                error_msg = (
+                    f"Failed to create default LLM resource: {str(e)}.\n"
+                    "To use reason() statements, you need to configure an LLM resource:\n"
+                    "1. Set environment variables (e.g., OPENAI_API_KEY, ANTHROPIC_API_KEY)\n"
+                    "2. Or register an LLM resource with the context using: context.register_resource('llm', llm_resource)"
+                )
+                self._log(error_msg, LogLevel.ERROR)
+                raise RuntimeError(error_msg)
+
+        # Prepare the context data to include with the prompt
+        context_data = {}
+        if context_vars:
+            for var_name in context_vars:
+                try:
+                    # Get the variable value from context
+                    value = self._get_variable(var_name)
+                    # Add it to the context data
+                    context_data[var_name] = value
+                except StateError:
+                    self._log(f"Warning: Context variable '{var_name}' not found", LogLevel.WARN)
+
+        # Build the combined prompt with context
+        enriched_prompt = prompt
+        if context_data:
+            # Format the context as JSON for inclusion in the prompt
+            context_str = json.dumps(context_data, indent=2, default=str)
+            enriched_prompt = f"{prompt}\n\nContext:\n{context_str}"
+
+        # Prepare the LLM request
+        system_message = "You are a reasoning engine. Analyze the query and provide a thoughtful, accurate response."
+
+        # Add any format-specific instructions
+        format_type = options.get("format", "text") if options else "text"
+        if format_type == "json":
+            system_message += " Return your answer in valid JSON format."
+
+        # Set up the messages
+        messages = [{"role": "system", "content": system_message}, {"role": "user", "content": enriched_prompt}]
+
+        # Prepare other LLM parameters
+        params = {
+            "messages": messages,
+            "temperature": options.get("temperature", 0.7) if options else 0.7,
+        }
+
+        # Add max_tokens if specified
+        if options and "max_tokens" in options:
+            params["max_tokens"] = options["max_tokens"]
+
+        # Make the LLM call
+        try:
+            # Log the reasoning request
+            self._log(f"Reasoning: {prompt[:100]}{'...' if len(prompt) > 100 else ''}", LogLevel.DEBUG)
+
+            # Make the asynchronous LLM query
+            response = await llm.query(BaseRequest(arguments=params))
+
+            if not response.success:
+                raise RuntimeError(f"LLM reasoning failed: {response.error}")
+
+            # Extract the content from the response
+            content = response.content
+
+            # If it's a completion-style response with choices
+            if isinstance(content, dict) and "choices" in content:
+                result = content["choices"][0]["message"]["content"]
+            # If it's a direct content response
+            elif isinstance(content, dict) and "content" in content:
+                result = content["content"]
+            # Fall back to the full response
+            else:
+                result = content
+
+            # Format conversion if needed
+            if format_type == "json" and isinstance(result, str):
+                try:
+                    # Try to parse the result as JSON
+                    result = json.loads(result)
+                except json.JSONDecodeError:
+                    self._log(f"Warning: Could not parse LLM response as JSON: {result[:100]}", LogLevel.WARN)
+
+            return result
+
+        except Exception as e:
+            raise RuntimeError(f"Error during LLM reasoning: {str(e)}")
+
+    def _visit_reason_statement_sync(self, node: ReasonStatement, context: Optional[Dict[str, Any]] = None) -> None:
+        """Synchronous version of visit_reason_statement for tests and REPL."""
+        # Create hook context
+        hook_context = {"visitor": self, "context": self.context, "statement": node}
+
+        try:
+            # Execute before reason hooks if they exist
+            if has_hooks(HookType.BEFORE_REASON):
+                execute_hook(HookType.BEFORE_REASON, hook_context)
             
+            # Evaluate the prompt
+            prompt_value = self.visit_node(node.prompt, context)
+            prompt_str = str(prompt_value)  # Convert to string if it's not already
+            
+            # Extract context variable names
+            context_vars = []
+            if node.context:
+                context_vars = [ident.name for ident in node.context]
+            
+            # Execute the reasoning
+            try:
+                # Create a new event loop
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                try:
+                    # Run the reasoning
+                    result = loop.run_until_complete(
+                        self._perform_reasoning(prompt_str, context_vars, node.options)
+                    )
+                finally:
+                    loop.close()
+                
+                # If we have a target variable, store the result
+                if node.target:
+                    self._set_variable(node.target.name, result)
+                else:
+                    # Otherwise, log the result
+                    if isinstance(result, (dict, list)):
+                        result_str = json.dumps(result, indent=2)
+                    else:
+                        result_str = str(result)
+                        
+                    # Log at most the first 500 characters to avoid huge log entries
+                    preview = result_str[:500] + "..." if len(result_str) > 500 else result_str
+                    self._log(f"Reasoning result: {preview}", LogLevel.INFO)
+                
+                # Create result context for the hook
+                result_context = {**hook_context, "result": result}
+                
+                # Execute after reason hooks if they exist
+                if has_hooks(HookType.AFTER_REASON):
+                    execute_hook(HookType.AFTER_REASON, result_context)
+                    
+            except Exception as e:
+                self._log(f"Error in reason statement: {str(e)}", LogLevel.ERROR)
+                raise RuntimeError(f"Reasoning error: {str(e)}")
+                
+        except Exception as e:
+            if isinstance(e, (RuntimeError, StateError)):
+                raise
+            error_msg = f"Error executing reason statement: {type(e).__name__}: {e}"
+            error_msg += format_error_location(node)
+            raise RuntimeError(error_msg) from e
+    
+    async def visit_reason_statement(self, node: ReasonStatement, context: Optional[Dict[str, Any]] = None) -> None:
+        """Visit a ReasonStatement node, executing the reasoning operation using an LLM."""
+        # Create hook context
+        hook_context = {"visitor": self, "context": self.context, "statement": node}
+
+        try:
+            # Execute before reason hooks if they exist
+            if has_hooks(HookType.BEFORE_REASON):
+                execute_hook(HookType.BEFORE_REASON, hook_context)
+
+            # Evaluate the prompt
+            prompt_value = self.visit_node(node.prompt, context)
+            prompt_str = str(prompt_value)  # Convert to string if it's not already
+
+            # Extract context variable names
+            context_vars = []
+            if node.context:
+                context_vars = [ident.name for ident in node.context]
+
+            # Execute the reasoning
+            try:
+                # Use the existing event loop or create a new one
+                try:
+                    loop = asyncio.get_running_loop()
+                    # If we're already in an async context, await directly
+                    result = await self._perform_reasoning(prompt_str, context_vars, node.options)
+                except RuntimeError:
+                    # No running event loop - create one and run until complete
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    result = loop.run_until_complete(self._perform_reasoning(prompt_str, context_vars, node.options))
+                    loop.close()
+
+                # If we have a target variable, store the result
+                if node.target:
+                    self._set_variable(node.target.name, result)
+                else:
+                    # Otherwise, log the result
+                    if isinstance(result, (dict, list)):
+                        result_str = json.dumps(result, indent=2)
+                    else:
+                        result_str = str(result)
+
+                    # Log at most the first 500 characters to avoid huge log entries
+                    preview = result_str[:500] + "..." if len(result_str) > 500 else result_str
+                    self._log(f"Reasoning result: {preview}", LogLevel.INFO)
+
+                # Create result context for the hook
+                result_context = {**hook_context, "result": result}
+
+                # Execute after reason hooks if they exist
+                if has_hooks(HookType.AFTER_REASON):
+                    execute_hook(HookType.AFTER_REASON, result_context)
+
+            except Exception as e:
+                self._log(f"Error in reason statement: {str(e)}", LogLevel.ERROR)
+                raise RuntimeError(f"Reasoning error: {str(e)}")
+
+        except Exception as e:
+            if isinstance(e, (RuntimeError, StateError)):
+                raise
+            error_msg = f"Error executing reason statement: {type(e).__name__}: {e}"
+            error_msg += format_error_location(node)
+            raise RuntimeError(error_msg) from e
+
+    def visit_binary_expression(self, node: BinaryExpression, context: Optional[Dict[str, Any]] = None) -> Any:
+        """Visit a BinaryExpression node, evaluating the expression."""
+        try:
+            left = self.visit_node(node.left, context)
+            right = self.visit_node(node.right, context)
+
+            if node.operator == BinaryOperator.ADD:
+                # Handle string concatenation by converting non-string values to strings
+                if isinstance(left, str) or isinstance(right, str):
+                    return str(left) + str(right)
+                return left + right
+            elif node.operator == BinaryOperator.SUBTRACT:
+                return left - right
+            elif node.operator == BinaryOperator.MULTIPLY:
+                return left * right
+            elif node.operator == BinaryOperator.DIVIDE:
+                if right == 0:
+                    error_msg = "Division by zero"
+                    error_msg += format_error_location(node)
+                    raise StateError(error_msg)
+                return left / right
+            elif node.operator == BinaryOperator.MODULO:
+                if right == 0:
+                    error_msg = "Modulo by zero"
+                    error_msg += format_error_location(node)
+                    raise StateError(error_msg)
+                return left % right
+            elif node.operator == BinaryOperator.EQUALS:
+                return left == right
+            elif node.operator == BinaryOperator.NOT_EQUALS:
+                return left != right
+            elif node.operator == BinaryOperator.LESS_THAN:
+                return left < right
+            elif node.operator == BinaryOperator.GREATER_THAN:
+                return left > right
+            elif node.operator == BinaryOperator.LESS_EQUALS:
+                return left <= right
+            elif node.operator == BinaryOperator.GREATER_EQUALS:
+                return left >= right
+            elif node.operator == BinaryOperator.AND:
+                if not isinstance(left, bool) or not isinstance(right, bool):
+                    error_msg = "AND operator requires boolean operands"
+                    error_msg += format_error_location(node)
+                    raise StateError(error_msg)
+                return left and right
+            elif node.operator == BinaryOperator.OR:
+                if not isinstance(left, bool) or not isinstance(right, bool):
+                    error_msg = "OR operator requires boolean operands"
+                    error_msg += format_error_location(node)
+                    raise StateError(error_msg)
+                return left or right
+            elif node.operator == BinaryOperator.IN:
+                if not isinstance(right, (list, dict, str)):
+                    error_msg = "IN operator requires a list, dict, or string as right operand"
+                    error_msg += format_error_location(node)
+                    raise StateError(error_msg)
+                return left in right
+            else:
+                error_msg = f"Unsupported binary operator: {node.operator}"
+                error_msg += format_error_location(node)
+                raise RuntimeError(error_msg)
+        except Exception as e:
+            if isinstance(e, (RuntimeError, StateError)):
+                raise
+            error_msg = f"Error evaluating binary expression: {type(e).__name__}: {e}"
+            error_msg += format_error_location(node)
+            raise RuntimeError(error_msg) from e
+
+    def visit_literal_expression(self, node: LiteralExpression, context: Optional[Dict[str, Any]] = None) -> Any:
+        """Visit a LiteralExpression node, returning the literal value."""
+        if isinstance(node.literal.value, FStringExpression):
+            return self.visit_fstring_expression(node.literal.value, context)
+        return node.literal.value
+
+    def visit_identifier(self, node: Identifier, context: Optional[Dict[str, Any]] = None) -> Any:
+        """Visit an Identifier node, retrieving the variable value."""
+        try:
+            return self._get_variable(node.name)
+        except StateError:
+            error_msg = f"Variable not found: {node.name}"
+            error_msg += format_error_location(node)
+            raise StateError(error_msg) from None
+
+    def visit_function_call(self, node: FunctionCall, context: Optional[Dict[str, Any]] = None) -> Any:
+        """Visit a FunctionCall node, executing the function."""
+        try:
+            # First check if this is a function call to a variable
+            if "." not in node.name and has_function(node.name):
+                # Convert arguments - in future this would handle proper parameter matching
+                args = {}
+                for key, value in node.args.items():
+                    # Evaluate argument expressions if needed
+                    if isinstance(value, (LiteralExpression, Identifier, BinaryExpression, FunctionCall)):
+                        args[key] = self.visit_node(value, context)
+                    else:
+                        args[key] = value
+
+                # Call the function from the registry
+                return call_function(node.name, self.context, args)
+            else:
+                error_msg = f"Function '{node.name}' is not registered"
+                error_msg += format_error_location(node)
+                raise RuntimeError(error_msg)
+        except Exception as e:
+            if isinstance(e, (RuntimeError, StateError)):
+                raise
+            error_msg = f"Error calling function '{node.name}': {str(e)}"
+            error_msg += format_error_location(node)
+            raise RuntimeError(error_msg) from e
+
+    def visit_literal(self, node: Literal, context: Optional[Dict[str, Any]] = None) -> Any:
+        """Visit a Literal node, returning its value."""
+        if isinstance(node.value, FStringExpression):
+            return self.visit_fstring_expression(node.value, context)
+        return node.value
+
+    def visit_fstring_expression(self, node: FStringExpression, context: Optional[Dict[str, Any]] = None) -> str:
+        """Visit an FStringExpression node, evaluating all parts."""
+        result = ""
+        for part in node.parts:
+            if isinstance(part, str):
+                result += part
+            else:
+                value = self.visit_node(part, context)
+                result += str(value)
         return result
 
+    def visit_node(self, node: Any, context: Optional[Dict[str, Any]] = None) -> Any:
+        """Generic visit method that dispatches to specific methods based on node type."""
+        if isinstance(node, Program):
+            return self.visit_program(node, context)
+        elif isinstance(node, Assignment):
+            return self.visit_assignment(node, context)
+        elif isinstance(node, LogStatement):
+            return self.visit_log_statement(node, context)
+        elif isinstance(node, LogLevelSetStatement):
+            return self.visit_log_level_set_statement(node, context)
+        elif isinstance(node, Conditional):
+            return self.visit_conditional(node, context)
+        elif isinstance(node, WhileLoop):
+            return self.visit_while_loop(node, context)
+        elif isinstance(node, ReasonStatement):
+            # For tests and synchronous environments
+            # First make it synchronous again by removing async from visit_reason_statement
+            return self._visit_reason_statement_sync(node, context)
+        elif isinstance(node, BinaryExpression):
+            return self.visit_binary_expression(node, context)
+        elif isinstance(node, LiteralExpression):
+            return self.visit_literal_expression(node, context)
+        elif isinstance(node, Identifier):
+            return self.visit_identifier(node, context)
+        elif isinstance(node, FunctionCall):
+            return self.visit_function_call(node, context)
+        elif isinstance(node, Literal):
+            return self.visit_literal(node, context)
+        elif isinstance(node, FStringExpression):
+            return self.visit_fstring_expression(node, context)
+        else:
+            error_msg = f"Unsupported node type: {type(node).__name__}"
+            raise RuntimeError(error_msg)
 
-# Factory function to create an interpreter with an option to use the visitor pattern
-def create_interpreter(context: RuntimeContext, use_visitor: bool = USE_VISITOR_PATTERN) -> Interpreter:
-    """Create a new interpreter with the given context and visitor option.
-    
-    Args:
-        context: The runtime context to use
-        use_visitor: Whether to use the visitor pattern implementation
-        
-    Returns:
-        A new Interpreter instance
-    """
-    return Interpreter(context, use_visitor)
+
+# Factory function for creating interpreters
+def create_interpreter(context: RuntimeContext) -> Interpreter:
+    """Create a new interpreter with the given context."""
+    return Interpreter(context)

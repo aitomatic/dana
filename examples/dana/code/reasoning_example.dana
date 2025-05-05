@@ -1,0 +1,57 @@
+# DANA Example: LLM Reasoning with reason()
+# This example demonstrates how to use the reason() statement to access LLM capabilities
+
+# Set log level to INFO to see more details
+log_level INFO
+
+# Simple reasoning example without context
+log.info("Basic reasoning example:")
+result = reason("What is the relationship between temperature and pressure in a gas?")
+log.info(f"Basic reasoning result: {result}")
+
+# Example with context variables
+log.info("\nReasoning with context variables:")
+private.temperature_readings = [72, 75, 78, 80, 83, 82, 79, 76]
+private.equipment_type = "Industrial HVAC System"
+private.location = "Manufacturing Floor C"
+
+analysis = reason("Analyze this temperature pattern and recommend actions", 
+                context=[temperature_readings, equipment_type, location])
+log.info(f"Analysis results: {analysis}")
+
+# Using reason() with format specification for structured output
+log.info("\nReasoning with JSON format:")
+json_result = reason("Generate a maintenance checklist with 3 items", 
+                    context=[equipment_type], 
+                    format="json")
+log.info(f"JSON result type: {json_result}")
+
+# Using f-strings in reason() prompts
+log.info("\nReasoning with f-strings:")
+query_topic = "thermal expansion"
+explanation = reason(f"Explain the concept of {query_topic} in simple terms")
+log.info(f"Explanation of {query_topic}: {explanation}")
+
+# Using reason() in conditional logic
+log.info("\nReasoning in conditional logic:")
+temperature_threshold = 80
+if private.temperature_readings.max() > temperature_threshold:
+    assessment = reason(f"Is a temperature of {private.temperature_readings.max()}°F concerning for {equipment_type}?")
+    
+    if "yes" in assessment.lower():
+        log.warn(f"Temperature concern detected: {assessment}")
+    else:
+        log.info(f"Temperature assessment: {assessment}")
+else:
+    log.info("Temperature within normal range.")
+
+# Working with temperature parameter
+log.info("\nReasoning with different temperatures:")
+creative_ideas = reason("Suggest innovative ways to improve HVAC efficiency", temperature=0.9)
+log.info(f"Creative ideas (temp=0.9): {creative_ideas}")
+
+factual_analysis = reason("Suggest proven ways to improve HVAC efficiency", temperature=0.1)
+log.info(f"Factual analysis (temp=0.1): {factual_analysis}")
+
+# End of example
+log.info("\nReasoning example completed successfully.")

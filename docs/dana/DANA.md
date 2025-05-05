@@ -274,6 +274,130 @@ if stmem.login_attempts > 3:
 * ✅ Long/short-term memory is structured and unified
 
 ---
+## 🔍 Advantages of DANA
+
+DANA offers several unique capabilities that make certain tasks much easier compared to other agentic frameworks:
+
+1. Fine-grained control flow with AI reasoning integration
+
+```python
+if temp_reading > threshold:
+    diagnosis = reason("Analyze this temperature anomaly", context=system_state)
+    if "critical" in diagnosis:
+        alert_operator()
+      else:
+          log_event(diagnosis)
+```
+
+2. Unlike monolithic agent frameworks, DANA lets you precisely control when and how AI reasoning is applied.
+
+```python
+if temp_reading > threshold:
+    diagnosis = reason("Analyze this temperature anomaly", context=system_state)
+    if "critical" in diagnosis:
+        alert_operator()
+      else:
+          log_event(diagnosis)
+```
+
+3. Domain-specific validation and guardrails
+
+```python
+  # Auto-validates temperature ranges based on rules
+  temp = get_sensor_reading()
+  if temp > valid_temp_range.max:
+      log_error("Invalid reading, using last valid reading instead")
+      temp = last_valid_reading
+```
+
+4. DANA's type system and runtime validation make building domain guardrails straightforward.
+
+5. Hybrid deterministic/probabilistic execution
+
+```python
+  # Deterministic processing for critical components
+  error_code = extract_error_code(log_message)
+
+  # LLM reasoning for nuanced analysis
+  explanation = reason(f"Explain error code {error_code} in plain language")
+
+  # Deterministic action based on reasoned output
+  if "memory leak" in explanation:
+      restart_service(memory_monitor=True)
+```
+
+3. This hybrid approach is cumbersome in pure-LLM frameworks.
+
+4. Stateful execution with clear scoping
+
+```python
+  # Persist data across execution runs
+  global.error_count += 1
+
+  # Group-level state visible to specific components
+  group.last_maintenance = current_time()
+
+  # Private state for component isolation
+  private.calibration_factor = calculate_calibration()
+```
+
+4. DANA's explicit scoping system avoids the confusion of managing state in typical agent frameworks.
+
+5. Lightweight tooling that doesn't require complex setups
+
+```python
+  # Simple utility functions vs complex tool definitions
+  cleaned_data = cleanup_data(raw_data)
+
+  # Easy resource access
+  db = get_resource("database")
+  db.save(processed_data)
+```
+
+5. Many frameworks require verbose tool definitions; DANA makes simple operations simple.
+
+6. Clear error handling and recovery
+
+```python
+try:
+    result = reason("Analyze log patterns for anomalies", context=logs)
+  except RateLimitError:
+      log_warning("Rate limited, using cached analysis")
+      result = cached_analysis
+```
+
+7. Predictable error handling that integrates with standard programming patterns.
+
+8. Progressive elaboration with reasoning
+
+```python
+  # Start with high-level planning
+  plan = reason("Create a maintenance plan", context=equipment_state)
+
+  # Elaborate specific steps based on the plan
+  for step in plan.steps:
+      details = reason(f"Elaborate detailed procedure for: {step.description}")
+      log(f"Step {step.id}: {details}")
+```
+
+7. Other frameworks often can't easily mix planning and execution this way.
+
+8. Multi-agent coordination with explicit message passing
+
+```python
+  # Explicit coordination between specialized agents
+  data_analysis = reason("Analyze performance data", context=metrics)
+  recommendation = reason("Recommend optimizations based on this analysis",
+                          context=[data_analysis, system_constraints])
+  validation = reason("Validate this recommendation against safety guidelines",
+                      context=[recommendation, safety_rules])
+```
+
+8. This explicit coordination avoids the "agent hallucination" problems of more complex frameworks.
+
+DANA excels at bridging the gap between traditional programming and AI capabilities, making it especially powerful for industrial, scientific, and enterprise applications where reliability and explainability matter alongside AI capabilities.
+
+---
 
 ## 🤝 Relationship to OpenDXA
 
@@ -283,6 +407,135 @@ if stmem.login_attempts > 3:
 * The KB provides reusable domain logic to DXAs and GMAs
 
 ---
+
+## 🔧 DANA Language Features
+
+### LLM Integration with reason()
+
+The `reason()` statement provides direct access to LLM capabilities within DANA scripts, enabling AI reasoning as a first-class language feature.
+
+#### Syntax
+
+```
+[result_var = ]reason(prompt[, context=[var1, var2, ...]][, option1=value1, ...])
+```
+
+- `result_var`: Optional variable to store the result (if omitted, result is logged)
+- `prompt`: The text prompt to send to the LLM (string or expression)
+- `context`: Optional list of variables to include as context
+- `options`: Optional parameters for the LLM call
+
+#### Options
+
+- `format`: Output format (default: "text", can be "json" for structured data)
+- `temperature`: Controls randomness (0.0-1.0, default: 0.7)
+- `max_tokens`: Maximum tokens in the response
+
+#### Examples
+
+```dana
+# Basic usage - log the result
+reason("What is the capital of France?")
+
+# Assign result to a variable
+answer = reason("What is the capital of France?")
+
+# Use with context variables
+temperature_data = [72, 75, 78, 74, 72, 71, 68]
+equipment = "HVAC Unit 42"
+analysis = reason("Analyze this temperature data for anomalies", context=[temperature_data, equipment])
+
+# Specify format as JSON to get structured output
+json_result = reason("Generate a list of 3 fruit names with their colors", format="json")
+
+# Control temperature for more creative responses
+ideas = reason("Brainstorm 5 innovative uses for a paperclip", temperature=0.9)
+
+# Use with f-strings for dynamic prompts
+query_subject = "photosynthesis"
+explanation = reason(f"Explain {query_subject} in simple terms")
+```
+
+#### LLM Resource
+
+The `reason()` statement requires an LLM resource to function. For convenience, DANA will try to auto-instantiate an LLM resource if none is registered with the name "llm", but for production use, you should explicitly register an LLM resource:
+
+```python
+from opendxa.common.resource.llm_resource import LLMResource
+from opendxa.dana.runtime.context import RuntimeContext
+
+# Create a runtime context
+context = RuntimeContext()
+
+# Configure and register an LLM resource
+llm = LLMResource(
+    name="my_llm",
+    provider="anthropic",  # or "openai", "azure", etc.
+    model="claude-3-opus-20240229"
+)
+context.add_resource("llm", llm)
+
+# Now the reason() statements in your DANA code will use this LLM
+```
+
+##### Auto-Instantiation
+
+When a DANA script uses `reason()` without a registered LLM resource:
+
+1. It will attempt to create a default LLM resource on the first call
+2. This requires valid API keys in environment variables (like `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`)
+3. If auto-instantiation fails, you'll see an error like: `Error in reason statement: Resource not found: llm`
+
+The REPL will automatically register any LLM resource you provide for both transcoding and reasoning, making it easy to experiment with these features.
+
+##### Configuring LLM Resources
+
+To use `reason()` statements, you need to set up an LLM resource in one of these ways:
+
+1. **Environment Variables**: Set one of these in your environment:
+   - `OPENAI_API_KEY` (for OpenAI models)
+   - `ANTHROPIC_API_KEY` (for Claude models)
+   - `AZURE_OPENAI_API_KEY` (for Azure OpenAI models)
+   - `GROQ_API_KEY` (for Groq models)
+   - `GOOGLE_API_KEY` (for Google models)
+
+2. **Configuration File**: Create an `opendxa_config.json` file with preferred models:
+   ```json
+   {
+     "preferred_models": [
+       {
+         "name": "anthropic:claude-3-sonnet-20240229",
+         "required_api_keys": ["ANTHROPIC_API_KEY"]
+       },
+       {
+         "name": "openai:gpt-4o-mini",
+         "required_api_keys": ["OPENAI_API_KEY"]
+       }
+     ]
+   }
+   ```
+
+3. **Explicit Registration**: Manually create and register an LLM resource:
+   ```python
+   from opendxa.common.resource.llm_resource import LLMResource
+   from opendxa.dana.runtime.context import RuntimeContext
+   
+   context = RuntimeContext()
+   llm = LLMResource(name="reason_llm")
+   await llm.initialize()  # Always initialize before use
+   context.register_resource("llm", llm)
+   ```
+
+##### Troubleshooting Reason Statements
+
+If you see `Error in reason statement: Resource not found: llm`, check:
+
+1. Your environment variables are set correctly
+2. You have a valid API key for one of the supported LLM providers
+3. The LLM resource was properly initialized and registered
+4. Network connectivity to the LLM provider's API
+
+For more advanced LLM configurations, refer to the `LLMResource` class documentation.
 
 ## 📣 Contribute
 

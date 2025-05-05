@@ -124,9 +124,9 @@ def test_while_with_visitor_pattern():
     """Test that while loops work with the visitor pattern."""
     context = RuntimeContext()
     
-    # Use the visitor pattern
+    # Create interpreter
     from opendxa.dana.runtime.interpreter import create_interpreter
-    interpreter = create_interpreter(context, use_visitor=True)
+    interpreter = create_interpreter(context)
 
     # Set up a program with a while loop
     context.set("private.counter", 0)

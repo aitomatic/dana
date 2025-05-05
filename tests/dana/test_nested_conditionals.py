@@ -140,9 +140,9 @@ def test_nested_conditionals_with_visitor():
     """Test that nested conditionals work with the visitor pattern."""
     context = RuntimeContext()
     
-    # Use the visitor pattern
+    # Create interpreter
     from opendxa.dana.runtime.interpreter import create_interpreter
-    interpreter = create_interpreter(context, use_visitor=True)
+    interpreter = create_interpreter(context)
 
     # Set up a program with nested conditionals
     context.set("private.outer", True)

@@ -73,9 +73,9 @@ def test_interpreter_function_call():
     
     register_function("multiply", multiply)
     
-    # Create interpreter with visitor pattern (should work with both)
+    # Create interpreter
     context = RuntimeContext()
-    interpreter = create_interpreter(context, use_visitor=True)
+    interpreter = create_interpreter(context)
     
     # Skip this test for now until we properly implement function calling in DANA language
     # The test_function_registry_basics test already tests the underlying functionality

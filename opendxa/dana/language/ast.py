@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 # Forward references for type hints
 Expression = Union["LiteralExpression", "Identifier", "BinaryExpression", "FunctionCall"]
-Statement = Union["Assignment", "LogStatement", "Conditional", "WhileLoop", "LogLevelSetStatement"]
+Statement = Union["Assignment", "LogStatement", "Conditional", "WhileLoop", "LogLevelSetStatement", "ReasonStatement"]
 
 
 class BinaryOperator(Enum):
@@ -127,7 +127,7 @@ class Conditional:
     """Represents a conditional statement in DANA."""
 
     condition: Expression
-    body: List[Union[Assignment, LogStatement, "Conditional", "WhileLoop", "LogLevelSetStatement"]]
+    body: List[Union[Assignment, LogStatement, "Conditional", "WhileLoop", "LogLevelSetStatement", "ReasonStatement"]]
     line_num: int  # Line number where this conditional was defined
     location: Optional[Location] = None
 
@@ -137,7 +137,7 @@ class WhileLoop:
     """Represents a while loop statement in DANA."""
 
     condition: Expression
-    body: List[Union[Assignment, LogStatement, "Conditional", "WhileLoop", "LogLevelSetStatement"]]
+    body: List[Union[Assignment, LogStatement, "Conditional", "WhileLoop", "LogLevelSetStatement", "ReasonStatement"]]
     line_num: int  # Line number where this while loop was defined
     location: Optional[Location] = None
 
@@ -150,12 +150,27 @@ class LogLevelSetStatement:
     location: Optional[Location] = None
 
 
+@dataclass
+class ReasonStatement:
+    """Represents a reasoning statement in DANA.
+    
+    This statement calls the LLM to reason about the provided prompt,
+    optionally accessing contextual data from the DANA state.
+    """
+
+    prompt: Expression  # The reasoning prompt - can be a string literal or an expression
+    context: Optional[List[Identifier]] = None  # Optional list of context variables to include
+    target: Optional[Identifier] = None  # Optional target variable to store the result
+    options: Optional[Dict[str, Any]] = None  # Additional options like temperature, format, etc.
+    location: Optional[Location] = None
+
+
 # --- Program Structure ---
 @dataclass
 class Program:
     """Represents a complete DANA program."""
 
-    statements: List[Union[Assignment, LogStatement, Conditional, WhileLoop]]
+    statements: List[Union[Assignment, LogStatement, Conditional, WhileLoop, ReasonStatement, LogLevelSetStatement]]
     source_text: str = ""  # Store the original program text
     location: Optional[Location] = None
 

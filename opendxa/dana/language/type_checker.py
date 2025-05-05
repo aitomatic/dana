@@ -22,6 +22,7 @@ from opendxa.dana.language.ast import (
     LogLevelSetStatement,
     LogStatement,
     Program,
+    ReasonStatement,
     WhileLoop,
 )
 from opendxa.dana.language.visitor import ASTVisitor
@@ -433,6 +434,31 @@ class TypeCheckVisitor(ASTVisitor):
         
         return DanaType.ANY
         
+    def visit_reason_statement(self, node: ReasonStatement, context=None) -> DanaType:
+        """Visit a ReasonStatement node and check types.
+        
+        Args:
+            node: The ReasonStatement node to check
+            context: Additional context data (unused)
+            
+        Returns:
+            The type of the reason statement result (STRING or OBJECT depending on format)
+        """
+        # Check the prompt expression
+        self.visit_node(node.prompt)
+        
+        # Check context variables if present
+        if node.context:
+            for ident in node.context:
+                self.visit_node(ident)
+        
+        # Determine the return type based on format option
+        if node.options and 'format' in node.options and node.options['format'] == 'json':
+            return DanaType.OBJECT
+        
+        # Default return type is string
+        return DanaType.STRING
+        
     def visit_node(self, node: Any, context=None) -> DanaType:
         """Visit any node and dispatch to the appropriate method.
         
@@ -455,6 +481,8 @@ class TypeCheckVisitor(ASTVisitor):
             return self.visit_conditional(node, context)
         elif isinstance(node, WhileLoop):
             return self.visit_while_loop(node, context)
+        elif isinstance(node, ReasonStatement):
+            return self.visit_reason_statement(node, context)
         elif isinstance(node, BinaryExpression):
             return self.visit_binary_expression(node, context)
         elif isinstance(node, LiteralExpression):

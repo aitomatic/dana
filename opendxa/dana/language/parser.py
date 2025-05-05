@@ -1,7 +1,7 @@
 """Parser for DANA language."""
 
 import re
-from typing import List, NamedTuple, Optional, Tuple, Union
+from typing import Any, Dict, List, NamedTuple, Optional, Tuple, Union
 
 from opendxa.dana.exceptions import ParseError
 from opendxa.dana.language.ast import (
@@ -18,6 +18,7 @@ from opendxa.dana.language.ast import (
     LogLevelSetStatement,
     LogStatement,
     Program,
+    ReasonStatement,
     WhileLoop,
 )
 from opendxa.dana.language.types import validate_identifier
@@ -50,6 +51,8 @@ LOG_LEVEL_SET_REGEX = re.compile(r"^\s*log\.setLevel\(\s*\"([^\"]*)\"\s*\)\s*(?:
 IF_REGEX = re.compile(r"^\s*if\s+(.*):\s*(?:#.*)?$")
 WHILE_REGEX = re.compile(r"^\s*while\s+(.*):\s*(?:#.*)?$")
 FUNCTION_CALL_REGEX = re.compile(r"^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\((.*)\)\s*(?:#.*)?$")
+# Reason regex to capture variable assignment, prompt, and optional context and parameters
+REASON_REGEX = re.compile(r"^\s*(?:([a-zA-Z_][a-zA-Z0-9_\.]*)\s*=\s*)?reason\s*\(\s*(.*?)(?:\s*,\s*context\s*=\s*(\[[^\]]*\]|\{[^\}]*\}|[a-zA-Z_][a-zA-Z0-9_\.]*))?\s*(?:\s*,\s*([^\)]*))?\s*\)\s*(?:#.*)?$")
 
 
 def parse_literal(value_str: str) -> Literal:
@@ -345,9 +348,77 @@ def parse_simple_expression(expr_str: str) -> Union[LiteralExpression, Identifie
         raise ParseError(f"Invalid expression part: '{expr_str}'") from e
 
 
+def parse_reason_context(context_str: str) -> List[Identifier]:
+    """Parse the context argument of a reason statement.
+    
+    Args:
+        context_str: The context string from the reason statement.
+        
+    Returns:
+        A list of Identifier AST nodes representing context variables.
+    """
+    context = []
+    if not context_str:
+        return context
+        
+    # Strip whitespace
+    context_str = context_str.strip()
+    
+    # Handle list format [var1, var2, ...]
+    if context_str.startswith('[') and context_str.endswith(']'):
+        items = context_str[1:-1].split(',')
+        for item in items:
+            item = item.strip()
+            if item and validate_identifier(item):
+                context.append(Identifier(name=item))
+    # Handle single variable or scope references
+    elif validate_identifier(context_str):
+        context.append(Identifier(name=context_str))
+    
+    return context
+
+
+def parse_reason_options(options_str: str) -> Dict[str, Any]:
+    """Parse the options from a reason statement.
+    
+    Args:
+        options_str: The options string from the reason statement.
+        
+    Returns:
+        A dictionary of options for the reasoning call.
+    """
+    options = {}
+    if not options_str:
+        return options
+        
+    # Split options by commas
+    params = options_str.split(',')
+    for param in params:
+        param = param.strip()
+        if '=' in param:
+            key, value = param.split('=', 1)
+            key = key.strip()
+            value = value.strip()
+            
+            # Parse the value based on its format
+            if value.lower() in ('true', 'false'):
+                options[key] = value.lower() == 'true'
+            elif value.isdigit():
+                options[key] = int(value)
+            elif value.replace('.', '', 1).isdigit():
+                options[key] = float(value)
+            elif (value.startswith('"') and value.endswith('"')) or (value.startswith("'") and value.endswith("'")):
+                options[key] = value[1:-1]
+            else:
+                # Just store as string for runtime evaluation
+                options[key] = value
+    
+    return options
+
+
 def parse_statement(
     line: str, line_num: int
-) -> Tuple[Optional[Union[Assignment, LogStatement, Conditional, WhileLoop, LogLevelSetStatement]], Optional[ParseError]]:
+) -> Tuple[Optional[Union[Assignment, LogStatement, Conditional, WhileLoop, LogLevelSetStatement, ReasonStatement]], Optional[ParseError]]:
     """Parse a single line into a Statement or error."""
     line_content = line  # Store original line content
 
@@ -359,7 +430,40 @@ def parse_statement(
     if not line:
         return None, None
 
-    # Try matching log level set statement FIRST
+    # Try matching reason statement
+    reason_match = REASON_REGEX.match(line)
+    if reason_match:
+        variable_name, prompt_str, context_str, options_str = reason_match.groups()
+        
+        try:
+            # Parse prompt expression
+            prompt = parse_expression(prompt_str.strip())
+            
+            # Parse target (optional)
+            target = None
+            if variable_name:
+                if not validate_identifier(variable_name):
+                    return None, ParseError(f"Invalid target identifier: '{variable_name}'", line_num, line_content)
+                target = Identifier(name=variable_name)
+            
+            # Parse context (optional)
+            context = None
+            if context_str:
+                context = parse_reason_context(context_str)
+            
+            # Parse options (optional)
+            options = None
+            if options_str:
+                options = parse_reason_options(options_str)
+                
+            # Create and return the ReasonStatement
+            return ReasonStatement(prompt=prompt, target=target, context=context, options=options), None
+        except ParseError as e:
+            return None, ParseError(f"Error in reason statement: {str(e)}", line_num, line_content)
+        except Exception as e:
+            return None, ParseError(f"Unexpected error in reason statement: {str(e)}", line_num, line_content)
+    
+    # Try matching log level set statement
     log_level_set_match = LOG_LEVEL_SET_REGEX.match(line)
     if log_level_set_match:
         level_str = log_level_set_match.group(1)
@@ -465,7 +569,7 @@ def parse_statement(
 
 def parse(code: str) -> ParseResult:
     """Parse a DANA program string into an AST."""
-    statements: List[Union[Assignment, LogStatement, Conditional, LogLevelSetStatement]] = []
+    statements: List[Union[Assignment, LogStatement, Conditional, LogLevelSetStatement, ReasonStatement, WhileLoop]] = []
     errors: List[ParseError] = []
     lines = code.splitlines()
     # Use a stack to track nested conditionals

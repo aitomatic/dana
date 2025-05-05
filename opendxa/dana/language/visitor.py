@@ -20,6 +20,7 @@ from opendxa.dana.language.ast import (
     LogLevelSetStatement,
     LogStatement,
     Program,
+    ReasonStatement,
     WhileLoop,
 )
 
@@ -63,6 +64,11 @@ class ASTVisitor(ABC):
     @abstractmethod
     def visit_while_loop(self, node: WhileLoop, context: Optional[Dict[str, Any]] = None) -> Any:
         """Visit a WhileLoop node."""
+        pass
+        
+    @abstractmethod
+    def visit_reason_statement(self, node: ReasonStatement, context: Optional[Dict[str, Any]] = None) -> Any:
+        """Visit a ReasonStatement node."""
         pass
 
     @abstractmethod
@@ -126,6 +132,8 @@ class NodeVisitorMixin:
             return visitor.visit_conditional(self, context)
         elif isinstance(self, WhileLoop):
             return visitor.visit_while_loop(self, context)
+        elif isinstance(self, ReasonStatement):
+            return visitor.visit_reason_statement(self, context)
         elif isinstance(self, BinaryExpression):
             return visitor.visit_binary_expression(self, context)
         elif isinstance(self, LiteralExpression):
@@ -168,6 +176,8 @@ def accept(node: Any, visitor: ASTVisitor, context: Optional[Dict[str, Any]] = N
         return visitor.visit_conditional(node, context)
     elif isinstance(node, WhileLoop):
         return visitor.visit_while_loop(node, context)
+    elif isinstance(node, ReasonStatement):
+        return visitor.visit_reason_statement(node, context)
     elif isinstance(node, BinaryExpression):
         return visitor.visit_binary_expression(node, context)
     elif isinstance(node, LiteralExpression):

@@ -12,8 +12,8 @@ except ImportError:
 
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.dana.exceptions import DanaError
-from opendxa.dana.repl import REPL
 from opendxa.dana.runtime.interpreter import LogLevel
+from opendxa.dana.runtime.repl import REPL
 
 # Configure basic logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - [%(name)s] %(levelname)s - %(message)s")
@@ -27,20 +27,30 @@ async def main():
     print("Type DANA code or natural language. Type 'exit' or 'quit' to end.")
 
     # --- LLM Initialization (Optional) ---
-    # Set environment variables for your LLM API key (e.g., OPENAI_API_KEY)
-    # You might need to adjust LLMResource initialization based on your config
     llm = None
     try:
-        # Attempt to initialize LLM for transcoding features
-        print("Attempting to initialize LLM resource...")
-        # Make sure LLMResource uses config loading or has necessary env vars set
-        llm = LLMResource()
-        await llm.initialize()  # Ensure resource is initialized if needed by implementation
-        print("LLM resource initialized successfully.")
+        # Attempt to initialize LLM for transcoding and reasoning features
+        print("Initializing LLM resource...")
+        # LLMResource will use ConfigLoader and available API keys
+        llm = LLMResource(name="reason_llm")
+        await llm.initialize()
+        print(f"✅ LLM resource initialized successfully using model: {llm.model}")
+        print("✅ reason() statements and natural language transcoding are enabled.")
     except Exception as e:
-        print(f"Warning: Could not initialize LLM resource: {e}")
-        print("Natural language transcoding will be disabled.")
+        print(f"⚠️  Warning: LLM initialization failed despite finding API keys: {e}")
+        print("Details:", str(e))
         llm = None
+
+    if not llm:
+        print("\nTo enable reason() statements and transcoding, configure LLM API access:")
+        print("  1. Set one of these environment variables:")
+        print("     - OPENAI_API_KEY        (for OpenAI models)")
+        print("     - ANTHROPIC_API_KEY     (for Claude models)")
+        print("     - AZURE_OPENAI_API_KEY  (for Azure OpenAI models)")
+        print("     - GROQ_API_KEY          (for Groq models)")
+        print("     - GOOGLE_API_KEY        (for Google models)")
+        print("  2. Or configure in opendxa_config.json with preferred_models")
+        print("\nExample: export OPENAI_API_KEY=your_key_here")
     # --- End LLM Initialization ---
 
     # Initialize REPL

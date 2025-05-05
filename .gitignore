@@ -25,3 +25,4 @@ memory-bank/*
 .coverage
 local_executor
 **/.claude/settings.local.json
+.mypy_cache
