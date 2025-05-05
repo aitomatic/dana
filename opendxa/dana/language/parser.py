@@ -50,7 +50,7 @@ LOG_REGEX = re.compile(r"^\s*log(?:\.(debug|info|warn|error))?\((.*)\)\s*(?:#.*)
 LOG_LEVEL_SET_REGEX = re.compile(r"^\s*log\.setLevel\(\s*\"([^\"]*)\"\s*\)\s*(?:#.*)?$")
 IF_REGEX = re.compile(r"^\s*if\s+(.*):\s*(?:#.*)?$")
 WHILE_REGEX = re.compile(r"^\s*while\s+(.*):\s*(?:#.*)?$")
-FUNCTION_CALL_REGEX = re.compile(r"^\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\((.*)\)\s*(?:#.*)?$")
+FUNCTION_CALL_REGEX = re.compile(r"^\s*([a-zA-Z_][a-zA-Z0-9_\.]*)\s*\((.*)\)\s*(?:#.*)?$")
 # Reason regex to capture variable assignment, prompt, and optional context and parameters
 REASON_REGEX = re.compile(r"^\s*(?:([a-zA-Z_][a-zA-Z0-9_\.]*)\s*=\s*)?reason\s*\(\s*(.*?)(?:\s*,\s*context\s*=\s*(\[[^\]]*\]|\{[^\}]*\}|[a-zA-Z_][a-zA-Z0-9_\.]*))?\s*(?:\s*,\s*([^\)]*))?\s*\)\s*(?:#.*)?$")
 
@@ -418,7 +418,7 @@ def parse_reason_options(options_str: str) -> Dict[str, Any]:
 
 def parse_statement(
     line: str, line_num: int
-) -> Tuple[Optional[Union[Assignment, LogStatement, Conditional, WhileLoop, LogLevelSetStatement, ReasonStatement]], Optional[ParseError]]:
+) -> Tuple[Optional[Union[Assignment, LogStatement, Conditional, WhileLoop, LogLevelSetStatement, ReasonStatement, FunctionCall]], Optional[ParseError]]:
     """Parse a single line into a Statement or error."""
     line_content = line  # Store original line content
 
@@ -563,13 +563,59 @@ def parse_statement(
             # Add line info to the expression parsing error
             return None, ParseError(str(e), line_num, line_content)
 
+    # Try matching function call
+    function_call_match = FUNCTION_CALL_REGEX.match(line)
+    if function_call_match:
+        function_name, args_str = function_call_match.groups()
+        
+        try:
+            # Parse function arguments
+            args = {}
+            if args_str.strip():
+                # Split by commas, but handle nested parentheses
+                depth = 0
+                start = 0
+                arg_parts = []
+                
+                for i, char in enumerate(args_str):
+                    if char == '(' or char == '[' or char == '{':
+                        depth += 1
+                    elif char == ')' or char == ']' or char == '}':
+                        depth -= 1
+                    elif char == ',' and depth == 0:
+                        arg_parts.append(args_str[start:i])
+                        start = i + 1
+                
+                # Add the last part
+                if start <= len(args_str):
+                    arg_parts.append(args_str[start:])
+                
+                # Process each argument
+                for arg in arg_parts:
+                    arg = arg.strip()
+                    if '=' in arg:
+                        key, value_str = arg.split('=', 1)
+                        key = key.strip()
+                        value_str = value_str.strip()
+                        if value_str:
+                            value = parse_expression(value_str)
+                            args[key] = value
+            
+            return FunctionCall(name=function_name, args=args), None
+        except ParseError as e:
+            # Add line info to the expression parsing error
+            return None, ParseError(f"Error in function call: {str(e)}", line_num, line_content)
+        except Exception as e:
+            # Add line info to any other error
+            return None, ParseError(f"Unexpected error in function call: {str(e)}", line_num, line_content)
+
     # General invalid syntax if nothing matched
     return None, ParseError("Invalid syntax", line_num, line_content)
 
 
 def parse(code: str) -> ParseResult:
     """Parse a DANA program string into an AST."""
-    statements: List[Union[Assignment, LogStatement, Conditional, LogLevelSetStatement, ReasonStatement, WhileLoop]] = []
+    statements: List[Union[Assignment, LogStatement, Conditional, LogLevelSetStatement, ReasonStatement, WhileLoop, FunctionCall]] = []
     errors: List[ParseError] = []
     lines = code.splitlines()
     # Use a stack to track nested conditionals

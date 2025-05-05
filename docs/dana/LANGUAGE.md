@@ -41,13 +41,26 @@ temp.status = "ok"
 temp.result = reason("Explain this situation", context=world.system)
 ```
 
-### `reason(prompt: str, context: dict)`
+### `reason(prompt: str, context: list|var, temperature: float, format: str)`
 
-Invokes the LLM with the `prompt`, scoped to the `context` substate.
+Invokes the LLM with the `prompt`, optionally scoped to the `context` variables.
 Returns a value to be stored or checked.
 
 ```python
+# Basic usage
+temp.analysis = reason("Is this machine in a failure state?")
+
+# With context
 temp.analysis = reason("Is this machine in a failure state?", context=world)
+
+# With multiple context variables
+temp.analysis = reason("Analyze this situation", context=[sensor, metrics, history])
+
+# With temperature control
+temp.ideas = reason("Generate creative solutions", temperature=0.9)
+
+# With specific format (supports "json" or "text")
+temp.data = reason("List 3 potential causes", format="json")
 ```
 
 ### `use(id: str)`
@@ -89,32 +102,41 @@ scope.variable = value
 
 ### 2. Function Calls
 ```python
+# Reasoning with various parameters
+reason("prompt")
 reason("prompt", context=scope)
+reason("prompt", context=[var1, var2, var3])
+reason("prompt", temperature=0.8)
+reason("prompt", format="json")
+
+# Other function calls
 use("kb.entry.id")
 set("key", value)
 ```
 
-### 3. Conditional Statements
+### 3. Conditional and Loop Statements
 ```python
+# If/elif/else conditionals
 if condition:
     # statements
 elif condition:
     # statements
 else:
     # statements
+
+# While loops
+while condition:
+    # statements
 ```
 
 ### 4. Logging Statements
 ```python
 # Set log level
-log.setLevel("DEBUG")  # Options: DEBUG, INFO, WARN, ERROR
+log_level = DEBUG  # Options: DEBUG, INFO, WARN, ERROR
 
 # Log messages
 log("message")  # INFO level by default
-log.debug("message")
-log.info("message")
-log.warn("message")
-log.error("message")
+log(f"The temperature is {temp.value}")  # Supports f-strings
 ```
 
 ### 5. Expressions
@@ -213,14 +235,11 @@ DANA supports logging statements with different severity levels and global log l
 
 ```python
 # Set minimum level for log display
-log.setLevel("DEBUG")  # Options: DEBUG, INFO, WARN, ERROR
+log_level = DEBUG  # Options: DEBUG, INFO, WARN, ERROR
 
 # Log statements
 log("Basic message")  # INFO level by default
-log.debug("Debug message")
-log.info("Info message")
-log.warn("Warning message")
-log.error("Error message")
+log(f"The temperature is {temp.value}")  # With variable interpolation
 ```
 
 Log levels determine which messages are displayed:
@@ -230,6 +249,22 @@ Log levels determine which messages are displayed:
 - ERROR: Error messages for serious problems
 
 Messages with a level lower than the set level will be filtered out. For example, if the level is set to "WARN", only WARN and ERROR messages will be displayed.
+
+### How to Set Log Level
+
+```python
+# Set global log level to DEBUG
+log_level = DEBUG
+
+# Set global log level to INFO
+log_level = INFO
+
+# Set global log level to WARN
+log_level = WARN
+
+# Set global log level to ERROR
+log_level = ERROR
+```
 
 ---
 
@@ -248,21 +283,66 @@ Messages with a level lower than the set level will be filtered out. For example
 
 The following features are **intentionally deferred** to preserve DANA's simplicity and clarity in early implementation. They may be added later as use cases justify their complexity.
 
-* `loop`, `foreach`, `function` definitions
+* `foreach` loops
+* `function` definitions
 * Inline validations or constraints
 * Data types: JSON schema-based records
 * Policy flags (e.g., confidence threshold on `reason()`)
 
+### Recently Added Features
+
+* `while` loops - For repeating actions while a condition is true
+```python
+while temp.counter < 10:
+    temp.counter = temp.counter + 1
+    log(f"Counter is now {temp.counter}")
+```
+
+* Enhanced `reason()` function with additional parameters:
+  - `temperature` - Controls randomness of LLM output
+  - `format` - Allows specifying output format (e.g., "json", "text")
+  - Support for multiple context variables via lists
+
 ---
 
-## 🧪 Example Program
+## 🧪 Example Programs
+
+### Basic Reasoning Example
 
 ```python
 if world.system.temperature > 90:
     temp.eval = reason("Is this temperature abnormal?", context=world.system)
     if temp.eval == "yes":
         use("kb.maintenance.dispatch.v2")
-        log.warn(f"High temperature detected: {world.system.temperature}°C")
+        log(f"High temperature detected: {world.system.temperature}°C")
+```
+
+### Advanced Reasoning with Options
+
+```python
+// Use temperature parameter for more creative responses
+ideas = reason("Generate solution ideas for the issue", temperature=0.8)
+
+// Using the format parameter to get structured JSON
+analysis = reason("Analyze system state and list problems", 
+                 context=[world.sensors, world.alerts],
+                 format="json")
+
+// Present the analysis
+log(f"Analysis found {analysis.problem_count} problems")
+```
+
+### Using While Loops
+
+```python
+counter = 0
+while counter < 5:
+    log(f"Checking sensor {counter}")
+    reading = world.sensors[counter].value
+    if reading > threshold:
+        alert = reason(f"Analyze reading: {reading}", context=world.sensors[counter])
+        log(f"Analysis result: {alert}")
+    counter = counter + 1
 ```
 
 ---
@@ -271,22 +351,25 @@ if world.system.temperature > 90:
 
 ```
 program       ::= statement+
-statement     ::= assignment | function_call | conditional | log_statement | comment
+statement     ::= assignment | function_call | conditional | while_loop | log_statement | loglevel_statement | comment
 assignment    ::= identifier '=' expression
 expression    ::= literal | identifier | function_call | binary_expression | fstring_expression
-function_call ::= 'reason' '(' string ',' 'context=' identifier ')'
+function_call ::= 'reason' '(' string [',' 'context=' (identifier | list_expression)] [',' param '=' value]* ')'
                   | 'use' '(' string ')'
                   | 'set' '(' string ',' expression ')'
-log_statement ::= 'log' ('.' level)? '(' expression ')'
+log_statement ::= 'log' '(' expression ')'
+loglevel_statement ::= 'log_level' '=' level
 conditional   ::= 'if' expression ':' NEWLINE INDENT program DEDENT [ 'else:' NEWLINE INDENT program DEDENT ]
-comment       ::= '#' .*
+while_loop    ::= 'while' expression ':' NEWLINE INDENT program DEDENT
+comment       ::= ('//' | '#') .*
 
 identifier    ::= [a-zA-Z_][a-zA-Z0-9_.]*
 literal       ::= string | number | boolean | none
+list_expression ::= '[' expression (',' expression)* ']'
 fstring_expression ::= 'f' string
 binary_expression ::= expression binary_op expression
 binary_op     ::= '==' | '!=' | '<' | '>' | '<=' | '>=' | 'and' | 'or' | 'in' | '+' | '-' | '*' | '/'
-level         ::= 'debug' | 'info' | 'warn' | 'error'
+level         ::= 'DEBUG' | 'INFO' | 'WARN' | 'ERROR'
 ```
 
 * All blocks must be indented consistently

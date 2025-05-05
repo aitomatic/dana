@@ -631,7 +631,7 @@ class Interpreter(ASTVisitor):
     def visit_function_call(self, node: FunctionCall, context: Optional[Dict[str, Any]] = None) -> Any:
         """Visit a FunctionCall node, executing the function."""
         try:
-            # First check if this is a function call to a variable
+            # First check if this is a function call to a registered function
             if "." not in node.name and has_function(node.name):
                 # Convert arguments - in future this would handle proper parameter matching
                 args = {}
@@ -644,6 +644,68 @@ class Interpreter(ASTVisitor):
 
                 # Call the function from the registry
                 return call_function(node.name, self.context, args)
+            
+            # If the function name contains dots, it might be a Python object method call
+            elif "." in node.name:
+                # Try to resolve the object path
+                obj = None
+                parts = node.name.split(".")
+                
+                # Start by getting the base object
+                try:
+                    obj = self._get_variable(parts[0])
+                    
+                    # Navigate through the object attributes/methods
+                    for i, part in enumerate(parts[1:], start=1):
+                        if i == len(parts) - 1:
+                            # Last part is the method to call
+                            method = getattr(obj, part)
+                            
+                            # Convert arguments
+                            args_list = []
+                            kwargs = {}
+                            
+                            for key, value in node.args.items():
+                                # Evaluate argument expressions if needed
+                                if isinstance(value, (LiteralExpression, Identifier, BinaryExpression, FunctionCall)):
+                                    evaluated_value = self.visit_node(value, context)
+                                else:
+                                    evaluated_value = value
+                                
+                                # If the key is a position number, add to args_list
+                                if key.isdigit():
+                                    position = int(key)
+                                    # Expand args_list if needed
+                                    while len(args_list) <= position:
+                                        args_list.append(None)
+                                    args_list[position] = evaluated_value
+                                else:
+                                    # Otherwise it's a keyword argument
+                                    kwargs[key] = evaluated_value
+                            
+                            # Check if we have a callable
+                            if callable(method):
+                                return method(*args_list, **kwargs)
+                            else:
+                                error_msg = f"Object attribute '{part}' in '{node.name}' is not callable"
+                                error_msg += format_error_location(node)
+                                raise RuntimeError(error_msg)
+                        else:
+                            # Navigate to the next attribute
+                            obj = getattr(obj, part)
+                    
+                    # We should never reach this point due to the return in the last part
+                    return obj
+                
+                except (AttributeError, TypeError) as e:
+                    error_msg = f"Error accessing object or method in '{node.name}': {str(e)}"
+                    error_msg += format_error_location(node)
+                    raise RuntimeError(error_msg) from e
+                except StateError:
+                    error_msg = f"Variable not found in '{node.name}'"
+                    error_msg += format_error_location(node)
+                    raise RuntimeError(error_msg)
+            
             else:
                 error_msg = f"Function '{node.name}' is not registered"
                 error_msg += format_error_location(node)
@@ -697,6 +759,7 @@ class Interpreter(ASTVisitor):
         elif isinstance(node, Identifier):
             return self.visit_identifier(node, context)
         elif isinstance(node, FunctionCall):
+            # Handle Function Call both as expression and statement
             return self.visit_function_call(node, context)
         elif isinstance(node, Literal):
             return self.visit_literal(node, context)
