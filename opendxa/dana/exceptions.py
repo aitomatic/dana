@@ -139,6 +139,21 @@ class InterpretError(DanaError):
     pass
 
 
+class TypeError(DanaError):
+    """Error during type checking."""
+
+    def __init__(self, message: str, location=None):
+        self.location = location
+        full_message = message
+        if location:
+            line, column, source_text = location
+            full_message = f"Type error at line {line}, column {column}: {message}"
+            if source_text:
+                padding = " " * (column - 1)
+                full_message += f"\n{source_text}\n{padding}^"
+        super().__init__(full_message)
+
+
 class KBError(DanaError):
     """Error related to Knowledge Base access or loading."""
 

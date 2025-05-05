@@ -14,6 +14,7 @@ logs/*
 *.egg-info/*
 .aider*
 flake8_issues.txt
+*.swp
 .env.swp
 .gitignore.swp
 uv.lock
@@ -23,3 +24,4 @@ notebooks/*
 memory-bank/*
 .coverage
 local_executor
+**/.claude/settings.local.json
