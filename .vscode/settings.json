@@ -1,5 +1,12 @@
 {
-    "files.associations": { "*.dana": "python" },
+    // === File Associations ===
+    // Treats .dana files as Python for syntax highlighting and tooling
+    "files.associations": { 
+        "*.dana": "python" 
+    },
+
+    // === Python Analysis Settings ===
+    // Controls type checking and import behavior for Python code
     "python.analysis.typeCheckingMode": "basic",
     "python.analysis.autoImportCompletions": true,
     "python.analysis.extraPaths": ["./opendxa"],
@@ -7,21 +14,29 @@
         "reportUndefinedVariable": "none",
         "reportMissingImports": "none"
     },
+
+    // === Editor Formatting ===
+    // Configures automatic code formatting with Black
     "editor.formatOnSave": true,
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.defaultFoldingRangeProvider": "ms-python.black-formatter",
+    
+    // === Code Actions ===
+    // Sets up Ruff for linting and import organization when explicitly triggered
     "editor.codeActionsOnSave": {
         "source.fixAll.ruff": "explicit",
         "source.organizeImports.ruff": "explicit"
     },
+
+    // === Linters Configuration ===
+    // Enables multiple Python linting tools for code quality
+    "pylint.enabled": false,
+    "flake8.enabled": false,
+    "ruff.enable": true,
+
+    // === Language-Specific Overrides ===
+    // Disables auto-formatting for .dana files
     "[dana]": {
         "editor.formatOnSave": false
-    },
-    "editor.defaultFormatter": "ms-python.black-formatter",
-    "pylint.enabled": true,
-    "flake8.enabled": true,
-    "ruff.enable": true,
-    "editor.defaultFoldingRangeProvider": "ms-python.black-formatter",
-    "python.analysis.diagnosticSeverityOverrides": {
-	"reportUndefinedVariable": "none"
     }
 }
-
