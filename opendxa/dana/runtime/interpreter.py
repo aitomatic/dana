@@ -622,7 +622,30 @@ class Interpreter(ASTVisitor):
     def visit_identifier(self, node: Identifier, context: Optional[Dict[str, Any]] = None) -> Any:
         """Visit an Identifier node, retrieving the variable value."""
         try:
-            return self._get_variable(node.name)
+            # If the name contains dots, it might be an object attribute path
+            if "." in node.name:
+                parts = node.name.split(".")
+                
+                # Get the base object first (prefix with private. if needed)
+                base_name = parts[0]
+                if "." not in base_name:
+                    base_name = f"private.{base_name}"
+                
+                try:
+                    # Get the base object
+                    obj = self.context.get(base_name)
+                    
+                    # Navigate through attributes for remaining parts
+                    for part in parts[1:]:
+                        obj = getattr(obj, part)
+                    
+                    return obj
+                except (StateError, AttributeError):
+                    # Fall back to direct variable lookup if attribute path fails
+                    return self._get_variable(node.name)
+            else:
+                # No dots, use regular variable lookup
+                return self._get_variable(node.name)
         except StateError:
             error_msg = f"Variable not found: {node.name}"
             error_msg += format_error_location(node)
@@ -645,47 +668,96 @@ class Interpreter(ASTVisitor):
                 # Call the function from the registry
                 return call_function(node.name, self.context, args)
             
+            # First try to get the function directly as a variable (for lambda functions)
+            try:
+                # Convert all argument values first
+                processed_args = {}
+                for key, value in node.args.items():
+                    # Evaluate argument expressions if needed
+                    if isinstance(value, (LiteralExpression, Identifier, BinaryExpression, FunctionCall)):
+                        processed_args[key] = self.visit_node(value, context)
+                    else:
+                        processed_args[key] = value
+                
+                # Prepare positional and keyword arguments
+                args_list = []
+                kwargs = {}
+                for key, value in processed_args.items():
+                    # If the key is a position number, add to args_list
+                    if key.isdigit():
+                        position = int(key)
+                        # Expand args_list if needed
+                        while len(args_list) <= position:
+                            args_list.append(None)
+                        args_list[position] = value
+                    else:
+                        # Otherwise it's a keyword argument
+                        kwargs[key] = value
+                
+                # Try to get function as variable first (for lambda, etc.)
+                var_name = node.name
+                if "." not in var_name:
+                    var_name = f"private.{var_name}"
+                
+                func = self.context.get(var_name)
+                
+                if callable(func):
+                    result = func(*args_list, **kwargs)
+                    return result
+                    
+            except StateError:
+                # If not found as a variable, continue with normal processing
+                pass
+            
             # If the function name contains dots, it might be a Python object method call
-            elif "." in node.name:
+            if "." in node.name:
+                # Convert all argument values first
+                processed_args = {}
+                for key, value in node.args.items():
+                    # Evaluate argument expressions if needed
+                    if isinstance(value, (LiteralExpression, Identifier, BinaryExpression, FunctionCall)):
+                        processed_args[key] = self.visit_node(value, context)
+                    else:
+                        processed_args[key] = value
+                
+                # Prepare positional and keyword arguments
+                args_list = []
+                kwargs = {}
+                for key, value in processed_args.items():
+                    # If the key is a position number, add to args_list
+                    if key.isdigit():
+                        position = int(key)
+                        # Expand args_list if needed
+                        while len(args_list) <= position:
+                            args_list.append(None)
+                        args_list[position] = value
+                    else:
+                        # Otherwise it's a keyword argument
+                        kwargs[key] = value
+                
                 # Try to resolve the object path
-                obj = None
                 parts = node.name.split(".")
                 
                 # Start by getting the base object
                 try:
-                    obj = self._get_variable(parts[0])
+                    # Get the base object with private prefix if needed
+                    base_name = parts[0]
+                    if "." not in base_name:
+                        base_name = f"private.{base_name}"
                     
-                    # Navigate through the object attributes/methods
+                    obj = self.context.get(base_name)
+                    
+                    # Navigate through the object attributes to get the method
                     for i, part in enumerate(parts[1:], start=1):
                         if i == len(parts) - 1:
                             # Last part is the method to call
                             method = getattr(obj, part)
                             
-                            # Convert arguments
-                            args_list = []
-                            kwargs = {}
-                            
-                            for key, value in node.args.items():
-                                # Evaluate argument expressions if needed
-                                if isinstance(value, (LiteralExpression, Identifier, BinaryExpression, FunctionCall)):
-                                    evaluated_value = self.visit_node(value, context)
-                                else:
-                                    evaluated_value = value
-                                
-                                # If the key is a position number, add to args_list
-                                if key.isdigit():
-                                    position = int(key)
-                                    # Expand args_list if needed
-                                    while len(args_list) <= position:
-                                        args_list.append(None)
-                                    args_list[position] = evaluated_value
-                                else:
-                                    # Otherwise it's a keyword argument
-                                    kwargs[key] = evaluated_value
-                            
                             # Check if we have a callable
                             if callable(method):
-                                return method(*args_list, **kwargs)
+                                # IMPORTANT: Actually call the method and return the result
+                                result = method(*args_list, **kwargs)
+                                return result
                             else:
                                 error_msg = f"Object attribute '{part}' in '{node.name}' is not callable"
                                 error_msg += format_error_location(node)
@@ -694,9 +766,6 @@ class Interpreter(ASTVisitor):
                             # Navigate to the next attribute
                             obj = getattr(obj, part)
                     
-                    # We should never reach this point due to the return in the last part
-                    return obj
-                
                 except (AttributeError, TypeError) as e:
                     error_msg = f"Error accessing object or method in '{node.name}': {str(e)}"
                     error_msg += format_error_location(node)
@@ -707,7 +776,7 @@ class Interpreter(ASTVisitor):
                     raise RuntimeError(error_msg)
             
             else:
-                error_msg = f"Function '{node.name}' is not registered"
+                error_msg = f"Function '{node.name}' is not registered or found as variable"
                 error_msg += format_error_location(node)
                 raise RuntimeError(error_msg)
         except Exception as e:

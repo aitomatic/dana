@@ -1,28 +1,41 @@
+# Byte-compiled / cache files
+__pycache__/
+*.py[cod]
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
 .env
-.vscode/*.json
-.venv
-.venv/*
-__pycache__
-__pycache__/*
-# mcp
-# mcp/*
-configs
-configs/*
-logs
-logs/*
-*.egg-info
-*.egg-info/*
-.aider*
-flake8_issues.txt
-*.swp
 .env.swp
-.gitignore.swp
-uv.lock
-.cursorrules
-proposal/*
-notebooks/*
-memory-bank/*
+
+# Editor files
+*.swp
+.vscode/
+.vscode/*.json
+
+# Coverage and test outputs
 .coverage
+*.egg-info/
+flake8_issues.txt
+
+# Logs and runtime files
+logs/
 local_executor
+memory-bank/
+proposal/
+notebooks/
+uv.lock
+
+# Custom/Tool-specific files
+.aider*
+.claude
+.cursorrules
+.gitignore.swp
+# Claude tool settings
 **/.claude/settings.local.json
-.mypy_cache
+
+# MCP (uncomment if needed)
+# mcp/
+# configs/
+

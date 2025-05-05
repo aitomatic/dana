@@ -43,7 +43,8 @@ class ParseResult(NamedTuple):
 
 # Regex patterns for different statement types
 # Allow nested identifiers like scope.sub.var and end-of-line comments
-ASSIGNMENT_REGEX = re.compile(r"^\s*([a-zA-Z_][a-zA-Z0-9_\.]*)\s*=\s*(-?\d+\.?\d*|[^#]*?)(?:\s*#.*)?$")
+# Changed assignment regex to not be greedy and to be more specific about what it captures on the right side
+ASSIGNMENT_REGEX = re.compile(r"^\s*([a-zA-Z_][a-zA-Z0-9_\.]*)\s*=\s*([^#]+?)(?:\s*#.*)?$")
 # Updated Log Regex to capture content inside parentheses and optional level
 LOG_REGEX = re.compile(r"^\s*log(?:\.(debug|info|warn|error))?\((.*)\)\s*(?:#.*)?$")
 # Make LogLevelSet regex less strict to capture any string in quotes, validation happens later
@@ -556,12 +557,66 @@ def parse_statement(
         if not validate_identifier(target_str):
             return None, ParseError(f"Invalid target identifier format '{target_str}'", line_num, line_content)
 
-        try:
-            value = parse_expression(value_str.strip())  # Strip any trailing whitespace
-            return Assignment(target=Identifier(name=target_str), value=value), None
-        except ParseError as e:
-            # Add line info to the expression parsing error
-            return None, ParseError(str(e), line_num, line_content)
+        # Check if the value is a function call
+        value_str = value_str.strip()
+        function_call_match = re.match(r"([a-zA-Z_][a-zA-Z0-9_\.]*)\s*\((.*)\)\s*$", value_str)
+        
+        if function_call_match:
+            # This is a function call in an assignment, parse it as such
+            function_name, args_str = function_call_match.groups()
+            
+            try:
+                # Parse function arguments
+                args = {}
+                if args_str.strip():
+                    # Split by commas, but handle nested parentheses
+                    depth = 0
+                    start = 0
+                    arg_parts = []
+                    
+                    for i, char in enumerate(args_str):
+                        if char == '(' or char == '[' or char == '{':
+                            depth += 1
+                        elif char == ')' or char == ']' or char == '}':
+                            depth -= 1
+                        elif char == ',' and depth == 0:
+                            arg_parts.append(args_str[start:i])
+                            start = i + 1
+                    
+                    # Add the last part
+                    if start <= len(args_str):
+                        arg_parts.append(args_str[start:])
+                    
+                    # Process each argument
+                    for arg in arg_parts:
+                        arg = arg.strip()
+                        if '=' in arg:
+                            key, val_str = arg.split('=', 1)
+                            key = key.strip()
+                            val_str = val_str.strip()
+                            if val_str:
+                                val = parse_expression(val_str)
+                                args[key] = val
+                
+                # Create the function call
+                func_call = FunctionCall(name=function_name, args=args)
+                
+                # Return the assignment with the function call as its value
+                return Assignment(target=Identifier(name=target_str), value=func_call), None
+            except ParseError as e:
+                # Add line info to the expression parsing error
+                return None, ParseError(f"Error in function call: {str(e)}", line_num, line_content)
+            except Exception as e:
+                # Add line info to any other error
+                return None, ParseError(f"Unexpected error in function call: {str(e)}", line_num, line_content)
+        else:
+            # Regular expression value
+            try:
+                value = parse_expression(value_str)  # Already stripped
+                return Assignment(target=Identifier(name=target_str), value=value), None
+            except ParseError as e:
+                # Add line info to the expression parsing error
+                return None, ParseError(str(e), line_num, line_content)
 
     # Try matching function call
     function_call_match = FUNCTION_CALL_REGEX.match(line)
