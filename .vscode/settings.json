@@ -2,7 +2,7 @@
     // === File Associations ===
     // Treats .dana files as Python for syntax highlighting and tooling
     "files.associations": { 
-        "*.dana": "python" 
+        "*.na": "python" 
     },
 
     // === Python Analysis Settings ===

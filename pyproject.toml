@@ -93,7 +93,7 @@ ignore = [
 
 # Exclusion patterns
 exclude = [
-    "*.dana",
+    "*.na",
     ".git",
     ".venv",
     "opendxa.egg-info"

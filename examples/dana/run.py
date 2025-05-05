@@ -1,7 +1,7 @@
 """Runs DANA examples using the parser and interpreter.
 
 Can run specific examples by passing their paths as command-line arguments.
-If no arguments are given, runs all examples found in the 'code/' subdirectory.
+If no arguments are given, runs all examples found in the 'na/' subdirectory.
 """
 
 import glob
@@ -65,7 +65,7 @@ def run_example(example_path: str):
         interpreter = Interpreter(context=context)
 
         # Set log level to DEBUG for log_levels.dana example
-        if os.path.basename(abs_example_path) == "log_levels.dana":
+        if os.path.basename(abs_example_path) == "log_levels.na":
             interpreter.set_log_level(LogLevel.DEBUG)
 
         # 4. Interpret/Execute
@@ -92,8 +92,8 @@ def run_example(example_path: str):
 
 def find_examples():
     """Find all .dana files in the dana directory."""
-    dana_dir = os.path.join(os.path.dirname(__file__), "code")
-    example_paths = sorted(glob.glob(os.path.join(dana_dir, "*.dana")))
+    dana_dir = os.path.join(os.path.dirname(__file__), "na")
+    example_paths = sorted(glob.glob(os.path.join(dana_dir, "*.na")))
     return example_paths  # Returns paths relative to script location
 
 
