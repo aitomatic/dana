@@ -30,6 +30,7 @@ class TestReasonStatement(unittest.TestCase):
             success=True,
             content={"choices": [{"message": {"content": "This is a mock reasoning response"}}]}
         ))
+        self.mock_llm.initialize = AsyncMock()
         
         # Register the mock LLM resource
         self.context.register_resource("llm", self.mock_llm)
