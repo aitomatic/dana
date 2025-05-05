@@ -248,6 +248,36 @@ class Interpreter:
                             error_msg += format_error_location(expr)
                             raise StateError(error_msg)
                         return left / right
+                    elif expr.operator == BinaryOperator.EQUALS:
+                        return left == right
+                    elif expr.operator == BinaryOperator.NOT_EQUALS:
+                        return left != right
+                    elif expr.operator == BinaryOperator.LESS_THAN:
+                        return left < right
+                    elif expr.operator == BinaryOperator.GREATER_THAN:
+                        return left > right
+                    elif expr.operator == BinaryOperator.LESS_EQUALS:
+                        return left <= right
+                    elif expr.operator == BinaryOperator.GREATER_EQUALS:
+                        return left >= right
+                    elif expr.operator == BinaryOperator.AND:
+                        if not isinstance(left, bool) or not isinstance(right, bool):
+                            error_msg = "AND operator requires boolean operands"
+                            error_msg += format_error_location(expr)
+                            raise StateError(error_msg)
+                        return left and right
+                    elif expr.operator == BinaryOperator.OR:
+                        if not isinstance(left, bool) or not isinstance(right, bool):
+                            error_msg = "OR operator requires boolean operands"
+                            error_msg += format_error_location(expr)
+                            raise StateError(error_msg)
+                        return left or right
+                    elif expr.operator == BinaryOperator.IN:
+                        if not isinstance(right, (list, dict, str)):
+                            error_msg = "IN operator requires a list, dict, or string as right operand"
+                            error_msg += format_error_location(expr)
+                            raise StateError(error_msg)
+                        return left in right
                     else:
                         error_msg = f"Unsupported binary operator: {expr.operator}"
                         error_msg += format_error_location(expr)

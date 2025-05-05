@@ -1,0 +1,31 @@
+# Temperature Monitoring Demo
+# This program demonstrates basic DANA functionality by monitoring a simulated temperature sensor
+
+# Set initial temperature (simulated sensor reading)
+global.sensor.temperature = 95 # type: ignore
+
+# Log the current temperature
+log("Current temperature: {global.sensor.temperature}°F")
+
+# Check if temperature is too high
+if global.sensor.temperature > 100: # type: ignore
+    # Log a warning
+    log("WARNING: Temperature is too high!", level=WARN)
+
+    # Check if it's critically high
+    if global.sensor.temperature > 120: # type: ignore
+        log("CRITICAL: Temperature is critically high!", level=ERROR)
+        # Set an alert
+        execution.alerts.append("Critical temperature alert")
+    else:
+        # Set a warning
+        execution.alerts.append("High temperature warning")
+else:
+    # Log normal status
+    log("Temperature is within normal range", level=INFO)
+
+# Log any alerts that were generated
+if execution.alerts:
+    log("Generated alerts: {execution.alerts}")
+else:
+    log("No alerts generated")
