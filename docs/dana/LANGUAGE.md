@@ -331,6 +331,31 @@ Until then, soft failure + manual retry logic is preferred for clarity and contr
 
 ---
 
+## Recommendations for Improvement
+
+  1. Complete the Parser Generator Transition
+    - Fully implement and transition to the Lark-based parser
+    - This would make syntax extensions far more manageable
+    - Keep regex as fallback for backward compatibility
+  2. Enhance the Type System
+    - Introduce structured data types (records/objects)
+    - Add collections (lists, maps) as first-class citizens
+    - Consider gradual typing with optional annotations
+  3. Formalize Extension Points
+    - Develop a plugin system for language extensions
+    - Standardize the registration of new language features
+    - Create configuration-based extension loading
+  4. Strengthen Error Recovery
+    - Implement more robust error recovery during parsing
+    - Add a repair mechanism for common syntax mistakes
+    - Enhance debugging with better error visualization
+  5. Complete the Knowledge Base
+    - Develop the KB storage and retrieval mechanisms
+    - Integrate program fragments as reusable components
+    - Add versioning and dependency management
+
+---
+
 ## 📚 Related Modules
 
 * `dana.language.parser`: Converts text/JSON to AST

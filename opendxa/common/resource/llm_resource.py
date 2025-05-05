@@ -10,17 +10,29 @@ Features:
 - Explicit model override via constructor.
 - Runtime parameter overrides for LLM calls (temperature, max_tokens, etc.).
 - Tool/function calling integration.
+- Automatic context window enforcement to prevent token limit errors.
+- Enhanced error classification with specialized error types.
+- Token estimation and management for reliable LLM communication.
 """
 
 import json
 import os
+import re
 from typing import Any, Callable, Dict, List, Optional, Union, cast
 
 import aisuite as ai
 from openai.types.chat import ChatCompletion
 
 from opendxa.common.config.config_loader import ConfigLoader
-from opendxa.common.exceptions import ConfigurationError, LLMError
+from opendxa.common.exceptions import (
+    ConfigurationError, 
+    LLMError, 
+    LLMProviderError, 
+    LLMRateLimitError, 
+    LLMAuthenticationError, 
+    LLMContextLengthError,
+    LLMResponseError
+)
 from opendxa.common.mixins.queryable import QueryStrategy
 from opendxa.common.mixins.registerable import Registerable
 from opendxa.common.mixins.tool_callable import OpenAIFunctionCall, ToolCallable
@@ -28,6 +40,7 @@ from opendxa.common.mixins.tool_formats import ToolFormat
 from opendxa.common.resource.base_resource import BaseResource
 from opendxa.common.types import BaseRequest, BaseResponse
 from opendxa.common.utils.misc import Misc
+from opendxa.common.utils.token_management import TokenManagement
 
 # To avoid accidentally sending too much data to the LLM,
 # we limit the total length of tool-call responses.
@@ -342,7 +355,19 @@ class LLMResource(BaseResource):
             self.info(f"Resource calling iteration {iteration}/{max_iterations}")
             iteration += 1
 
-            # TODO: Guard rail the total message length before sending
+            # Guard rail the total message length before sending
+            message_history = TokenManagement.enforce_context_window(
+                messages=message_history,
+                model=self.model,
+                max_tokens=Misc.get_field(request, "max_tokens"),
+                preserve_system_messages=True,
+                preserve_latest_messages=4,
+                safety_margin=200
+            )
+            
+            # Logging the token count for debugging
+            token_count = sum(TokenManagement.estimate_message_tokens(msg) for msg in message_history)
+            self.debug(f"Sending messages with estimated token count: {token_count}")
 
             # Make the LLM query with available resources and message history
             response = await self._query_once(
@@ -420,6 +445,14 @@ class LLMResource(BaseResource):
             Dict[str, Any]: The LLM response object containing:
                 - choices[0].message: The assistant's message, which may contain tool_calls
                 - usage: Token usage statistics
+                
+        Raises:
+            LLMContextLengthError: If the messages exceed the context window.
+            LLMRateLimitError: If rate limits are exceeded.
+            LLMAuthenticationError: If authentication fails.
+            LLMProviderError: For other provider-specific errors.
+            LLMResponseError: If the response is invalid.
+            LLMError: For any other LLM-related errors.
         """
         # Check for mock flag or function
         if callable(self._mock_llm_call):
@@ -448,8 +481,32 @@ class LLMResource(BaseResource):
             self._log_llm_response(response)
             return response
         except Exception as e:
-            self.error("LLM query failed: %s", str(e))
-            raise LLMError(f"LLM query failed: {str(e)}") from e
+            error_message = str(e)
+            self.error("LLM query failed: %s", error_message)
+            
+            # Determine the provider from the model
+            provider = "unknown"
+            if self.model and ":" in self.model:
+                provider = self.model.split(":", 1)[0]
+            
+            # Extract HTTP status code if available
+            status_code = None
+            status_match = re.search(r'status[\s_]*code[:\s]+(\d+)', error_message, re.IGNORECASE)
+            if status_match:
+                status_code = int(status_match.group(1))
+            
+            # Classify the error based on message patterns and status codes
+            if any(term in error_message.lower() for term in ["context length", "token limit", "too many tokens", "maximum context"]):
+                raise LLMContextLengthError(provider, status_code, error_message) from e
+            elif any(term in error_message.lower() for term in ["rate limit", "ratelimit", "too many requests", "429"]):
+                raise LLMRateLimitError(provider, status_code, error_message) from e
+            elif any(term in error_message.lower() for term in ["authenticate", "authentication", "unauthorized", "auth", "api key", "401"]):
+                raise LLMAuthenticationError(provider, status_code, error_message) from e
+            elif "invalid_request_error" in error_message.lower() or "bad request" in error_message.lower():
+                raise LLMProviderError(provider, status_code, error_message) from e
+            else:
+                # Default case - generic LLM error
+                raise LLMError(f"LLM query failed: {error_message}") from e
 
     async def _mock_llm_query(self, request: Dict[str, Any]) -> Dict[str, Any]:
         """Mock LLM query for testing purposes.
