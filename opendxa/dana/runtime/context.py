@@ -2,7 +2,7 @@
 
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from opendxa.dana.exceptions import StateError
 from opendxa.dana.runtime.resource import ResourceRegistry
@@ -37,11 +37,7 @@ class RuntimeContext:
         # Initialize execution state
         self._state["execution"] = {
             "status": ExecutionStatus.IDLE,
-            "current_node_id": None,
-            "node_results": {},
             "history": [],
-            "visited_nodes": [],
-            "execution_path": [],
         }
 
     def __eq__(self, other: object) -> bool:
@@ -121,19 +117,6 @@ class RuntimeContext:
             current = current[part]
         return current
 
-    # Execution state management
-    def update_execution_node(self, node_id: str, result: Optional[Any] = None) -> None:
-        """Update current execution node and record result."""
-        exec_state = self._state["execution"]
-        if exec_state["current_node_id"]:
-            exec_state["execution_path"].append((exec_state["current_node_id"], node_id))
-
-        exec_state["current_node_id"] = node_id
-        exec_state["visited_nodes"].append(node_id)
-
-        if result is not None:
-            exec_state["node_results"][node_id] = result
-
     def add_execution_history(self, entry: Dict[str, Any]) -> None:
         """Add an entry to execution history."""
         entry["timestamp"] = datetime.now(timezone.utc).isoformat()
@@ -143,11 +126,7 @@ class RuntimeContext:
         """Reset execution state to initial values."""
         self._state["execution"] = {
             "status": ExecutionStatus.IDLE,
-            "current_node_id": None,
-            "node_results": {},
             "history": [],
-            "visited_nodes": [],
-            "execution_path": [],
         }
 
     def get_execution_status(self) -> ExecutionStatus:

@@ -56,23 +56,6 @@ def test_execution_state():
 
     # Test initial state
     assert ctx.get_execution_status() == ExecutionStatus.IDLE
-    assert ctx.get("execution.current_node_id") is None
-
-    # Test updating execution state
-    ctx.update_execution_node("node1", "result1")
-    assert ctx.get("execution.current_node_id") == "node1"
-    assert ctx.get("execution.node_results")["node1"] == "result1"
-
-    # Test execution path
-    ctx.update_execution_node("node2", "result2")
-    execution_path = ctx.get("execution.execution_path")
-    assert len(execution_path) == 1
-    assert execution_path[0] == ("node1", "node2")
-
-    # Test visited nodes
-    visited_nodes = ctx.get("execution.visited_nodes")
-    assert len(visited_nodes) == 2
-    assert visited_nodes == ["node1", "node2"]
 
     # Test execution history
     ctx.add_execution_history({"action": "test"})
@@ -88,11 +71,7 @@ def test_execution_state():
     # Test reset
     ctx.reset_execution_state()
     assert ctx.get_execution_status() == ExecutionStatus.IDLE
-    assert ctx.get("execution.current_node_id") is None
-    assert not ctx.get("execution.node_results")
     assert not ctx.get("execution.history")
-    assert not ctx.get("execution.visited_nodes")
-    assert not ctx.get("execution.execution_path")
 
 
 def test_resource_management():
