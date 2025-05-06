@@ -62,6 +62,8 @@ DANA programs access shared memory via namespaced keys:
 * `world:` — sensed external state
 * `execution:` — goals, status, logs
 * `temp:` — ephemeral local memory
+* `private:` — local scope variables
+* `system:` — runtime configuration (log levels, execution ID)
 
 ```python
 if world.sensor.temp > 100:
@@ -76,24 +78,46 @@ if world.sensor.temp > 100:
 
 ```text
 dana/
-├── runtime/         # Interpreter, instructions, context
-├── language/        # AST, parser, types, validation
-├── kb/              # Knowledge base: entries, loader, registry
-├── io/              # LLMs, tools, agent interfaces (pluggable)
-├── transcoder/      # NL ↔ Code compiler/explainer
-├── examples/        # Sample programs
+├── runtime/         # Core execution engine
+│   ├── interpreter.py    # AST visitor-based interpreter
+│   ├── context.py        # Runtime state management
+│   ├── function_registry.py  # Tool/function registration
+│   ├── hooks.py          # Event system for extensibility
+│   └── repl.py          # Interactive REPL implementation
+├── language/        # Language implementation
+│   ├── ast.py           # Abstract Syntax Tree nodes
+│   ├── parser.py        # Lark-based parser
+│   ├── type_checker.py  # Static type checking
+│   ├── visitor.py       # Visitor pattern implementation
+│   └── types.py         # Type system definitions
+├── transcoder/      # NL ↔ Code translation
+│   ├── transcoder.py    # Bidirectional translation
+│   ├── compiler.py      # NL to DANA compilation
+│   └── templates/       # Translation templates
+├── io/              # I/O interfaces
+├── exceptions.py    # Error handling
+└── __init__.py     # Public API
 ```
 
 ## 🔧 Architecture Notes
 
-The DANA runtime uses the **visitor pattern** for execution, which provides a more maintainable and extensible architecture:
+The DANA runtime uses a robust architecture combining several design patterns:
 
 - **Visitor Pattern**: AST nodes are traversed using dedicated visit methods, allowing clean separation of node types and operations
-- **LLM Integration**: Direct access to AI reasoning via the `reason()` statement
-- **Runtime Context**: Manages state across execution through structured scopes
-- **Hook System**: Extensible event system for customizing behavior at key execution points
+- **Hook System**: Extensible event system for customizing behavior at key execution points (before/after program, statements, errors)
+- **Context Management**: Hierarchical state management with namespaced scopes
+- **Function Registry**: Dynamic registration of tools and functions
+- **Type System**: Static type checking with runtime validation
+- **Logging System**: Configurable logging with color-coded levels (DEBUG, INFO, WARN, ERROR)
 
-> **Note**: The legacy non-visitor interpreter implementation is deprecated and will be removed in a future release. All new development should use the visitor pattern implementation.
+Key Features:
+- Asynchronous execution support
+- F-string interpolation in log messages
+- Error location tracking and formatting
+- Execution ID tracking for debugging
+- Comprehensive error handling with custom exceptions
+
+> **Note**: The runtime is designed to be extensible through hooks and function registration, allowing for custom behavior without modifying core code.
 
 ---
 
@@ -104,10 +128,17 @@ Designed for use inside agentic systems:
 ```python
 from dana import run, compile_nl, explain
 from dana.runtime.context import RuntimeContext
+from dana.runtime.interpreter import Interpreter
 
+# Basic usage
 program = compile_nl("If X is drifting, flag it.")
 ctx = RuntimeContext(agent=..., world=..., temp={})
 run(program, ctx)
+
+# Advanced usage with custom interpreter
+interpreter = Interpreter(ctx)
+interpreter.set_log_level(LogLevel.DEBUG)
+interpreter.execute_program(program)
 ```
 
 ---
@@ -132,7 +163,7 @@ DANA includes tools to:
 This enables:
 
 * Domain experts to author rules in English
-* Systems to explain what they’re doing
+* Systems to explain what they're doing
 * Co-creation and trust in AI workflows
 
 ---

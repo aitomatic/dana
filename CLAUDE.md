@@ -6,7 +6,7 @@
 
 ```bash
 # Initial setup (creates virtual environment and installs dependencies)
-source ./RUN_ME.sh
+source ./SOURCE_ME.sh
 
 # Subsequent activations after initial setup
 source ./VENV.sh
@@ -63,3 +63,85 @@ ruff check opendxa/
 - Modular resource design with agent capabilities and resources
 - Strong typing with factory pattern for component creation
 - Built-in support for Model Context Protocol (MCP) integration
+- DANA language for implementing agent reasoning and knowledge representation
+
+## DANA Language
+
+The Domain-Aware NeuroSymbolic Architecture (DANA) is a key component of OpenDXA:
+
+- **Language Features**: Strongly typed DSL with variables, conditionals, loops, and functions
+- **Runtime System**: Scoped execution context with standardized memory spaces
+- **LLM Integration**: Via `reason()` statements and transcoding capabilities
+- **File Extensions**: Use `.na` extension for DANA files
+- **State Management**: Explicit memory spaces (`agent`, `world`, `temp`, `execution`)
+
+## Directory Structure
+
+```
+opendxa/               # Main package
+├── agent/             # Agent implementation
+│   ├── capability/    # Agent capabilities (memory, expertise)
+│   ├── resource/      # External resource integration
+├── common/            # Shared utilities
+│   ├── capability/    # Base capability system
+│   ├── resource/      # Base resource system
+│   └── utils/         # Utility functions
+├── dana/              # DANA language implementation
+│   ├── io/            # DANA I/O handlers
+│   ├── language/      # DANA language parser and types
+│   ├── runtime/       # DANA runtime and interpreter
+│   └── transcoder/    # DANA transcoding capabilities
+├── danke/             # DANA Knowledge Engine
+└── __init__.py        # Package initialization
+```
+
+## Documentation Resources
+
+- **docs/**: Comprehensive documentation by topic
+- **examples/**: Usage examples and tutorials
+- **LLMS.md**: AI coder guide with detailed project information
+- **README.md**: Project overview and quick start guide
+
+## Common Tasks
+
+### Working with DANA
+
+```python
+from dana import run, compile_nl
+from dana.runtime.context import RuntimeContext
+
+# Create runtime context
+ctx = RuntimeContext(agent={}, world={}, temp={})
+
+# Run DANA code
+dana_code = """
+temp.result = reason("What is the meaning of life?")
+log.info("The meaning of life is {temp.result}")
+"""
+run(dana_code, ctx)
+
+# Compile natural language to DANA
+nl_prompt = "If temperature is over 100, alert operations"
+dana_code = compile_nl(nl_prompt)
+```
+
+### Creating a Custom Agent
+
+```python
+from opendxa.agent.agent import Agent
+from opendxa.agent.agent_config import AgentConfig
+
+# Create agent configuration
+config = AgentConfig(
+    id="my_agent",
+    name="My Custom Agent",
+    description="A custom agent for specific tasks"
+)
+
+# Initialize agent
+agent = Agent(config)
+
+# Add capabilities and resources
+agent.add_capability(...)
+agent.add_resource(...)
+```

@@ -198,6 +198,8 @@ State variables are referenced using dot-scoped prefixes, organized by memory sc
 | `temp:`      | Ephemeral memory (step-local, volatile)    |
 | `world:`     | External facts, observations               |
 | `execution:` | Plan status, logs, transient execution     |
+| `private:`   | Local scope variables                      |
+| `system:`    | Runtime configuration (log levels, ID)     |
 | *Custom:*    | User-defined scopes for isolated workflows |
 
 Users may define workflow-specific scopes for clarity and modularity. These are treated like named namespaces within the runtime, e.g.:
@@ -265,6 +267,59 @@ log_level = WARN
 # Set global log level to ERROR
 log_level = ERROR
 ```
+
+---
+
+## 🔧 LLM Integration
+
+### LLM Resource Configuration
+
+To use `reason()` statements, you need to set up an LLM resource in one of these ways:
+
+1. **Environment Variables**: Set one of these in your environment:
+   - `OPENAI_API_KEY` (for OpenAI models)
+   - `ANTHROPIC_API_KEY` (for Claude models)
+   - `AZURE_OPENAI_API_KEY` (for Azure OpenAI models)
+   - `GROQ_API_KEY` (for Groq models)
+   - `GOOGLE_API_KEY` (for Google models)
+
+2. **Configuration File**: Create an `opendxa_config.json` file with preferred models:
+   ```json
+   {
+     "preferred_models": [
+       {
+         "name": "anthropic:claude-3-sonnet-20240229",
+         "required_api_keys": ["ANTHROPIC_API_KEY"]
+       },
+       {
+         "name": "openai:gpt-4o-mini",
+         "required_api_keys": ["OPENAI_API_KEY"]
+       }
+     ]
+   }
+   ```
+
+3. **Explicit Registration**: Manually create and register an LLM resource:
+   ```python
+   from opendxa.common.resource.llm_resource import LLMResource
+   from opendxa.dana.runtime.context import RuntimeContext
+   
+   context = RuntimeContext()
+   llm = LLMResource(name="reason_llm")
+   await llm.initialize()  # Always initialize before use
+   context.register_resource("llm", llm)
+   ```
+
+### Troubleshooting Reason Statements
+
+If you see `Error in reason statement: Resource not found: llm`, check:
+
+1. Your environment variables are set correctly
+2. You have a valid API key for one of the supported LLM providers
+3. The LLM resource was properly initialized and registered
+4. Network connectivity to the LLM provider's API
+
+For more advanced LLM configurations, refer to the `LLMResource` class documentation.
 
 ---
 
