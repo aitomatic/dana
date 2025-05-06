@@ -6,14 +6,21 @@ from opendxa.dana.language.ast import (
     BinaryOperator,
     Conditional,
     Expression,
+    FStringExpression,
     FunctionCall,
     Identifier,
+    Literal,
     LiteralExpression,
     LogLevel,
     LogLevelSetStatement,
     LogStatement,
     Program,
+    ReasonStatement,
+    WhileLoop,
 )
+
+# Export parser components
+from opendxa.dana.language.parser import parse, ParseResult
 
 __all__ = [
     # AST
@@ -23,10 +30,18 @@ __all__ = [
     "LogStatement",
     "LogLevelSetStatement",
     "Conditional",
+    "WhileLoop",
+    "ReasonStatement",
     "LiteralExpression",
+    "Literal",
+    "FStringExpression",
     "Identifier",
     "BinaryExpression",
     "FunctionCall",
     "BinaryOperator",
     "LogLevel",
+    
+    # Parser
+    "parse",
+    "ParseResult",
 ]

@@ -95,11 +95,9 @@ def test_program_hooks():
     register_hook(HookType.AFTER_PROGRAM, after_program_hook)
     
     # Execute a program
-    program = """
-    private.a = 42
-    """
+    program = "private.a = 42"
     
-    result = parse(program)
+    result = parse(program, type_check=False)
     interpreter.execute_program(result)
     
     # Check that hooks were executed
@@ -148,11 +146,9 @@ def test_statement_hooks():
     register_hook(HookType.AFTER_ASSIGNMENT, after_assignment_hook)
     
     # Execute a program with one assignment
-    program = """
-    private.a = 42
-    """
+    program = "private.a = 42"
     
-    result = parse(program)
+    result = parse(program, type_check=False)
     interpreter.execute_program(result)
     
     # Check that hooks were executed the right number of times
@@ -192,11 +188,9 @@ def test_expression_hooks():
     register_hook(HookType.AFTER_EXPRESSION, after_expression_hook)
     
     # Execute a program with a binary expression
-    program = """
-    private.a = 40 + 2
-    """
+    program = "private.a = 40 + 2"
     
-    result = parse(program)
+    result = parse(program, type_check=False)
     
     # Run with hooks
     try:
@@ -241,11 +235,9 @@ def test_error_hooks():
     register_hook(HookType.ON_ERROR, on_error_hook)
     
     # Execute a program with an error (division by zero)
-    program = """
-    private.a = 42 / 0
-    """
+    program = "private.a = 42 / 0"
     
-    result = parse(program)
+    result = parse(program, type_check=False)
     
     # Should raise an exception
     with pytest.raises(Exception):
@@ -285,11 +277,9 @@ def test_hook_with_visitor_pattern():
     register_hook(HookType.AFTER_PROGRAM, after_program_hook)
     
     # Execute a program
-    program = """
-    private.a = 42
-    """
+    program = "private.a = 42"
     
-    result = parse(program)
+    result = parse(program, type_check=False)
     interpreter.execute_program(result)
     
     # Check that hooks were executed

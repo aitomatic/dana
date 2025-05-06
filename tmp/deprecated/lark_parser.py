@@ -1,12 +1,11 @@
-"""Grammar-based parser for DANA language.
+"""Parser implementation for DANA using Lark.
 
-This module provides a robust parser for DANA using the Lark parsing library.
-It offers good extensibility, error reporting, and maintainability.
+This module provides a robust grammar-based parser for DANA using the Lark parsing library.
+It offers better extensibility, error reporting, and maintainability than the regex-based parser.
 """
 
 import os
-import logging
-from typing import Any, Dict, List, NamedTuple, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 from pathlib import Path
 
 try:
@@ -25,7 +24,7 @@ except ImportError:
     class LarkError(Exception): pass
     class UnexpectedInput(Exception): pass
 
-from opendxa.dana.exceptions import ParseError, TypeError
+from opendxa.dana.exceptions import ParseError
 from opendxa.dana.language.ast import (
     Assignment,
     BinaryExpression,
@@ -43,32 +42,10 @@ from opendxa.dana.language.ast import (
     ReasonStatement,
     WhileLoop,
 )
+from opendxa.dana.language.parser import ParseResult
 
-
-# Create a logger for dana
-logger = logging.getLogger("dana")
-
-
-class ParseResult(NamedTuple):
-    """Result of parsing a DANA program."""
-
-    program: Program
-    errors: List[ParseError] = []
-
-    @property
-    def is_valid(self) -> bool:
-        """Check if parsing was successful (no errors)."""
-        return len(self.errors) == 0
-
-    @property
-    def error(self) -> Optional[ParseError]:
-        """Get the first error if any exist, for backward compatibility."""
-        return self.errors[0] if self.errors else None
-
-
-# Environment variable for controlling type checking
-ENV_TYPE_CHECK = "DANA_TYPE_CHECK"
-ENABLE_TYPE_CHECK = os.environ.get(ENV_TYPE_CHECK, "1").lower() in ["1", "true", "yes", "y"]
+# Feature flag for enabling Lark parser
+USE_LARK_PARSER = True
 
 
 class DanaIndenter(Indenter):
@@ -550,13 +527,13 @@ class GrammarParser:
                 # Create the transformer
                 self.transformer = DanaTransformer()
             except Exception as e:
-                logger.error(f"Failed to initialize Lark parser: {e}")
+                print(f"Failed to initialize Lark parser: {e}")
     
     def is_available(self) -> bool:
         """Check if the Lark parser is available and initialized."""
         return LARK_AVAILABLE and self.parser is not None
     
-    def parse(self, program_text: str) -> ParseResult:
+    def parse(self, program_text):
         """Parse a DANA program string into an AST.
         
         Args:
@@ -576,6 +553,10 @@ class GrammarParser:
         try:
             # Parse the program
             parse_tree = self.parser.parse(program_text)
+            
+            # Debug logging for specific test cases
+            if "user.name" in program_text or "else:" in program_text:
+                print(f"DEBUG: Parse tree: {parse_tree.pretty()}")
             
             # Transform the parse tree into AST nodes
             program = self.transformer.transform(parse_tree)
@@ -611,48 +592,44 @@ class GrammarParser:
             return ParseResult(program=empty_program, errors=errors)
 
 
-# Import for type checking
-from opendxa.dana.language.type_checker import check_types
-
 # Create a singleton instance of the grammar parser
-_parser = GrammarParser()
+_grammar_parser = GrammarParser()
 
 
-def parse(code: str, type_check: bool = None) -> ParseResult:
-    """Parse a DANA program string into an AST.
+def parse_with_grammar(program_text: str) -> ParseResult:
+    """Parse a DANA program using the grammar-based parser.
     
     Args:
-        code: The DANA code to parse
-        type_check: Whether to perform type checking. If None, uses the environment default.
+        program_text: The program text to parse
         
     Returns:
         A ParseResult containing the parsed program and any errors
     """
-    # Resolve type checking flag
-    do_type_check = ENABLE_TYPE_CHECK if type_check is None else type_check
+    # Debug print for troubleshooting specific cases
+    if "user.name" in program_text or "else:" in program_text:
+        print(f"DEBUG: Parsing with grammar: '{program_text}'")
+        
+    result = _grammar_parser.parse(program_text)
     
-    if not _parser.is_available():
-        logger.error("Parser is not available. Please install the lark-parser package.")
-        return ParseResult(
-            program=Program(statements=[]), 
-            errors=[ParseError("Parser is not available. Please install the lark-parser package.")]
-        )
-    
-    # Parse the code
-    result = _parser.parse(code)
-    
-    # Perform type checking if enabled and parsing was successful
-    if do_type_check and result.is_valid:
-        type_errors = check_types(result.program)
-        if type_errors:
-            # Add type errors to the result
-            result = ParseResult(
-                program=result.program,
-                errors=list(result.errors) + type_errors
-            )
-    
+    # Debug print for troubleshooting specific cases
+    if "user.name" in program_text or "else:" in program_text:
+        if not result.is_valid:
+            print(f"DEBUG: Parse failed with errors: {result.errors}")
+            
     return result
 
 
-
-
+def parse(program_text: str) -> ParseResult:
+    """Parse a DANA program string, using either grammar or regex-based parser.
+    
+    Args:
+        program_text: The program to parse
+        
+    Returns:
+        A ParseResult containing the parsed program and any errors
+    """
+    if USE_LARK_PARSER and _grammar_parser.is_available():
+        return parse_with_grammar(program_text)
+    else:
+        from opendxa.dana.language.parser import parse as regex_parse
+        return regex_parse(program_text)

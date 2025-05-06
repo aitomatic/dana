@@ -10,6 +10,7 @@ pandas
 pytest
 pytest-asyncio
 pytest-mock
+lark-parser
 python-dotenv
 pyyaml
 seaborn

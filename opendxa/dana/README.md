@@ -56,14 +56,28 @@ DANA can:
 
 ## 🧱 State Model
 
-DANA programs access shared memory via namespaced keys:
+DANA programs operate over a shared `RuntimeContext`, which is composed of three standard memory scopes:
 
-* `agent:` — beliefs, identity, preferences
-* `world:` — sensed external state
-* `execution:` — goals, status, logs
-* `temp:` — ephemeral local memory
-* `private:` — local scope variables
-* `system:` — runtime configuration (log levels, execution ID)
+| Scope      | Description                                |
+| ---------- | ------------------------------------------ |
+| `private:` | Private to the agent, resource, or tool itself |
+| `public:`  | Openly accessible world state (time, weather, etc.) |
+| `system:`  | System-related mechanical state with controlled access |
+
+The `RuntimeContext` enforces strict scope boundaries and provides controlled access to state variables through dot notation (e.g., `private.user.name`, `public.weather.temperature`, `system.status`).
+
+### Security Design
+
+**The `dana.runtime` module is the primary enforcer of security during the execution of a DANA program.** It manages the `RuntimeContext` for the duration of the execution and enforces access policies based on the defined scopes and program logic.
+
+| Security Concern            | Enforced By              | Mechanism                                      |
+| --------------------------- | ------------------------ | ---------------------------------------------- |
+| Scope restrictions          | `dana.runtime`           | Limits visible/writable scopes during execution |
+| State mutation permissions  | `dana.runtime`           | Controlled state updates via instructions      |
+| Tool/API usage validation   | `dana.runtime`           | Ensures `use` targets are valid/allowed        |
+| LLM output handling         | `dana.runtime`           | Manages `reason` call results and potential errors |
+| Execution logging           | `dana.runtime`           | Tracks execution steps within the DANA context |
+| Resource constraints        | `dana.runtime`           | (Optional) Limits execution steps, time, memory |
 
 ```python
 if world.sensor.temp > 100:

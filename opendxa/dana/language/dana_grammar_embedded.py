@@ -1,0 +1,128 @@
+"""Embedded DANA grammar definition.
+
+This module contains the embedded grammar definition for the DANA language.
+It's used as a fallback if the grammar file isn't found.
+
+NOTE: If you modify the grammar file (dana_grammar.lark), you should update this
+embedded grammar as well to ensure consistent behavior. You can do this by running:
+
+```bash
+cat opendxa/dana/language/dana_grammar.lark > opendxa/dana/language/dana_grammar_embedded.py.tmp
+echo '"""Embedded DANA grammar definition.
+
+This module contains the embedded grammar definition for the DANA language.
+It'\''s used as a fallback if the grammar file isn'\''t found.
+
+NOTE: If you modify the grammar file (dana_grammar.lark), you should update this
+embedded grammar as well to ensure consistent behavior. You can do this by running:
+
+```bash
+# ... [copy this section to a shell script]
+```
+
+"""
+
+# The DANA grammar definition in Lark format
+GRAMMAR = r"""' > opendxa/dana/language/dana_grammar_embedded.py
+cat opendxa/dana/language/dana_grammar_embedded.py.tmp >> opendxa/dana/language/dana_grammar_embedded.py
+echo '"""' >> opendxa/dana/language/dana_grammar_embedded.py
+rm opendxa/dana/language/dana_grammar_embedded.py.tmp
+```
+"""
+
+# The DANA grammar definition in Lark format
+GRAMMAR = r"""
+// DANA language grammar definition
+
+start: statement*
+
+statement: assignment
+        | log_statement
+        | conditional
+        | while_loop
+        | reason_statement
+        | log_level_set_statement
+        | function_call
+        | COMMENT
+        | _NL              // Skip empty lines
+
+assignment: identifier "=" expression
+
+log_statement: "log" ["." level] "(" expression ")"
+level: DEBUG | INFO | WARN | ERROR
+DEBUG: "debug"
+INFO: "info"
+WARN: "warn"
+ERROR: "error"
+
+conditional: if_part [else_part]
+if_part: "if" expression ":" _NL INDENT statement+ DEDENT
+else_part: "else" ":" _NL INDENT statement+ DEDENT
+
+while_loop: "while" expression ":" _NL INDENT statement+ DEDENT
+
+reason_statement: [identifier "="] "reason" "(" expression ["," "context" "=" context_arg] ["," options] ")"
+context_arg: identifier | "[" identifier_list "]"
+options: key_value ("," key_value)*
+key_value: CNAME "=" (STRING | NUMBER | BOOL)
+
+log_level_set_statement: "log" "." "setLevel" "(" STRING ")"
+
+function_call: identifier "(" [arg_list] ")"
+arg_list: (positional_args [","]) | (positional_args "," named_args) | named_args
+positional_args: expression ("," expression)*
+named_args: named_arg ("," named_arg)*
+named_arg: CNAME "=" expression
+
+// Expression grammar with operator precedence
+expression: or_expr
+
+or_expr: and_expr ("or" and_expr)*
+and_expr: comparison ("and" comparison)*
+comparison: sum_expr (comp_op sum_expr)*
+comp_op: EQ | NEQ | LT | GT | LTE | GTE
+EQ: "=="
+NEQ: "!="
+LT: "<"
+GT: ">"
+LTE: "<="
+GTE: ">="
+sum_expr: product (add_op product)*
+add_op: PLUS | MINUS
+PLUS: "+"
+MINUS: "-"
+product: atom (mul_op atom)*
+mul_op: MULT | DIV | MOD
+MULT: "*"
+DIV: "/"
+MOD: "%"
+
+atom: identifier
+    | literal
+    | "(" expression ")"
+    | function_call
+
+identifier: CNAME ("." CNAME)*
+identifier_list: identifier ("," identifier)*
+
+literal: STRING | NUMBER | BOOL | "null" | f_string
+
+f_string: "f" STRING
+
+// Terminals
+STRING: DOUBLE_QUOTE_STRING | SINGLE_QUOTE_STRING
+DOUBLE_QUOTE_STRING: /"[^"]*"/
+SINGLE_QUOTE_STRING: /'[^']*'/
+NUMBER: /[0-9]+(\.[0-9]+)?/
+BOOL: "true" | "false"
+CNAME: /[a-zA-Z_][a-zA-Z0-9_]*/
+COMMENT: /#[^\n]*/
+
+// Whitespace and indentation
+_NL: /\r?\n[\t ]*/
+WS: /[ \t]+/
+
+%ignore WS
+%ignore COMMENT
+%declare INDENT DEDENT
+"""

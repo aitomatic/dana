@@ -12,7 +12,7 @@ from opendxa.dana.language.ast import (
     LiteralExpression,
     Program,
 )
-from opendxa.dana.language.parser_factory import parse
+from opendxa.dana.language.parser import parse
 from opendxa.dana.language.type_checker import DanaType, TypeEnvironment, TypeCheckVisitor, check_types
 
 
@@ -132,10 +132,7 @@ def test_assignment_types():
 def test_type_checking_integration():
     """Test type checking integration with parser."""
     # Program with a type error
-    program = """
-    private.x = "hello"
-    private.y = private.x + 42  # Type error: string + number
-    """
+    program = "private.x = \"hello\"\nprivate.y = private.x + 42  # Type error: string + number"
     
     # Our current implementation doesn't require type errors for string + number
     # since it's a valid operation in DANA (string concatenation)
@@ -177,14 +174,7 @@ def test_comprehensive_type_checking():
     """Test type checking on a more complex program."""
     # For now, we'll just test that we can parse and execute a complex program
     # without breaking anything, rather than checking for specific type errors
-    program = """
-    private.a = 10
-    private.b = 20.5
-    private.c = private.a + private.b  # Should be float
-    private.d = "hello"
-    private.e = private.d + " world"  # Should be string
-    private.f = private.a < private.b  # Should be bool
-    """
+    program = "private.a = 10\nprivate.b = 20.5\nprivate.c = private.a + private.b  # Should be float\nprivate.d = \"hello\"\nprivate.e = private.d + \" world\"  # Should be string\nprivate.f = private.a < private.b  # Should be bool"
     
     # Parse with type checking enabled
     result = parse(program, type_check=True)

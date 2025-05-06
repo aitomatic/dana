@@ -3,7 +3,7 @@
 This module defines the AST nodes used to represent DANA programs.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -130,6 +130,7 @@ class Conditional:
     body: List[Union[Assignment, LogStatement, "Conditional", "WhileLoop", "LogLevelSetStatement", "ReasonStatement", FunctionCall]]
     line_num: int  # Line number where this conditional was defined
     location: Optional[Location] = None
+    else_body: List[Union[Assignment, LogStatement, "Conditional", "WhileLoop", "LogLevelSetStatement", "ReasonStatement", FunctionCall]] = field(default_factory=list)
 
 
 @dataclass

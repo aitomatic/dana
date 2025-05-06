@@ -190,23 +190,51 @@ custom:    # User-defined scopes
 
 State variables are referenced using dot-scoped prefixes, organized by memory scope:
 
-| Scope        | Description                                |
-| ------------ | ------------------------------------------ |
-| `agent:`     | Agent identity and long-term traits        |
-| `ltmem:`     | Long-term memory — historical records      |
-| `stmem:`     | Short-term memory — working session state  |
-| `temp:`      | Ephemeral memory (step-local, volatile)    |
-| `world:`     | External facts, observations               |
-| `execution:` | Plan status, logs, transient execution     |
-| `private:`   | Local scope variables                      |
-| `system:`    | Runtime configuration (log levels, ID)     |
-| *Custom:*    | User-defined scopes for isolated workflows |
+| Scope      | Description                                |
+| ---------- | ------------------------------------------ |
+| `private:` | Private to the agent, resource, or tool itself |
+| `public:`  | Openly accessible world state (time, weather, etc.) |
+| `system:`  | System-related mechanical state with controlled access |
 
-Users may define workflow-specific scopes for clarity and modularity. These are treated like named namespaces within the runtime, e.g.:
+The `RuntimeContext` enforces strict scope boundaries and provides controlled access to state variables through dot notation. For example:
 
 ```python
-risk.temp_score = reason("Evaluate application risk", context=agent)
+# Private scope - internal state
+private.user.name = "Alice"
+private.settings.temperature = 0.8
+
+# Public scope - shared world state
+public.weather.temperature = 72
+public.time.current = "2024-03-20T10:00:00Z"
+
+# System scope - runtime state
+system.status = "running"
+system.log_level = "DEBUG"
 ```
+
+### Scope Access Rules
+
+1. **Private Scope**
+   - Accessible only to the current agent/resource
+   - Used for internal state and temporary variables
+   - Default scope for unqualified variables
+
+2. **Public Scope**
+   - Accessible to all agents and resources
+   - Used for shared world state and observations
+   - Requires explicit scope prefix
+
+3. **System Scope**
+   - Controlled access for runtime configuration
+   - Used for execution status and logging
+   - Requires explicit scope prefix
+
+### State Management
+
+- Variables must be declared with their scope prefix
+- Nested paths are supported (e.g., `private.user.profile.name`)
+- Invalid scope access raises `StateError`
+- State changes are tracked in execution history
 
 ---
 

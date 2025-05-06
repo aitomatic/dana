@@ -56,7 +56,11 @@ dev = [
     "ruff",
     
     # Testing with coverage
-    "pytest-cov"
+    "pytest-cov",
+
+    # DANA agent programming language parser/interpreter
+    "lark",
+    "lark-parser"
 ]
 
 # Package configuration
