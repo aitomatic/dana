@@ -129,14 +129,24 @@ while condition:
     # statements
 ```
 
-### 4. Logging Statements
+### 4. Output Statements
 ```python
 # Set log level
 log_level = DEBUG  # Options: DEBUG, INFO, WARN, ERROR
 
-# Log messages
+# Log messages with levels and metadata
 log("message")  # INFO level by default
+log.debug("Debug information")
+log.info("Information message")
+log.warn("Warning message")
+log.error("Error message")
 log(f"The temperature is {temp.value}")  # Supports f-strings
+
+# Print messages to standard output (without log metadata)
+print("Hello, world!")
+print(42)
+print(variable_name)
+print("The result is: " + result)
 ```
 
 ### 5. Expressions

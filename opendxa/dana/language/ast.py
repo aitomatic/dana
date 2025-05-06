@@ -15,7 +15,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 # Forward references for type hints
 Expression = Union["LiteralExpression", "Identifier", "BinaryExpression", "FunctionCall"]
-Statement = Union["Assignment", "LogStatement", "Conditional", "WhileLoop", "LogLevelSetStatement", "ReasonStatement", "FunctionCall"]
+Statement = Union["Assignment", "LogStatement", "Conditional", "WhileLoop", "LogLevelSetStatement", "ReasonStatement", "FunctionCall", "PrintStatement"]
 
 
 class BinaryOperator(Enum):
@@ -119,6 +119,14 @@ class LogStatement:
 
     message: Union[LiteralExpression, Identifier, BinaryExpression, FunctionCall]
     level: LogLevel = LogLevel.INFO  # Default to INFO level
+    location: Optional[Location] = None
+
+
+@dataclass
+class PrintStatement:
+    """Represents a print statement in DANA."""
+
+    message: Expression
     location: Optional[Location] = None
 
 

@@ -1,0 +1,26 @@
+# DANA print statement example
+
+# Assign some variables
+x = 42
+message = "Hello, DANA!"
+
+# Print literals
+print("This is a print statement")
+print(123)
+print(3.14)
+
+# Print variables
+print(x)
+print(message)
+
+# Print expressions
+print(x + 10)
+print(message + " Welcome!")
+
+# Compare with log statements
+log("This is a log statement at INFO level")
+log.debug("This is a log statement at DEBUG level")
+
+# Print with a more complex expression
+y = 10
+print("The sum of " + x + " and " + y + " is " + (x + y))

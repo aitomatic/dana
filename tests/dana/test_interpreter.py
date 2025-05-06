@@ -302,6 +302,41 @@ def test_log_level_set_statement():
             assert mock_print.call_count == expected_count
 
 
+def test_print_statement(capfd):
+    """Test that print statements work correctly."""
+    from opendxa.dana.language.ast import PrintStatement
+    from opendxa.dana.language.parser import parse
+    
+    # Create an interpreter
+    context = RuntimeContext()
+    interpreter = Interpreter(context)
+    
+    # Execute a program with a print statement using AST nodes directly
+    program = Program(
+        [
+            Assignment(target=Identifier("private.x"), value=LiteralExpression(Literal(42))),
+            PrintStatement(message=Identifier("private.x")),
+            PrintStatement(message=LiteralExpression(Literal("Hello, world!"))),
+        ]
+    )
+    interpreter.execute_program(ParseResult(program=program))
+    
+    # Check the captured output
+    out, err = capfd.readouterr()
+    assert "42" in out
+    assert "Hello, world!" in out
+    
+    # Test using the parser
+    program_text = "y = 100\nprint(y)\nprint(\"Testing print\")"
+    result = parse(program_text, type_check=False)
+    interpreter.execute_program(result)
+    
+    # Check output again
+    out, err = capfd.readouterr()
+    assert "100" in out
+    assert "Testing print" in out
+
+
 def test_state_management():
     """Test state management in the interpreter."""
     interpreter = Interpreter(RuntimeContext())

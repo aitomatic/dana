@@ -9,6 +9,7 @@ statement: assignment
         | reason_statement
         | log_level_set_statement
         | function_call
+        | print_statement
         | COMMENT
         | _NL              // Skip empty lines
 
@@ -33,6 +34,8 @@ options: key_value ("," key_value)*
 key_value: CNAME "=" (STRING | NUMBER | BOOL)
 
 log_level_set_statement: "log" "." "setLevel" "(" STRING ")"
+
+print_statement: "print" "(" expression ")"
 
 function_call: identifier "(" [arg_list] ")"
 arg_list: (positional_args [","]) | (positional_args "," named_args) | named_args

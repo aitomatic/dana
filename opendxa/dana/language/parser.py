@@ -39,6 +39,7 @@ from opendxa.dana.language.ast import (
     LogLevel,
     LogLevelSetStatement,
     LogStatement,
+    PrintStatement,
     Program,
     ReasonStatement,
     WhileLoop,
@@ -249,6 +250,11 @@ class DanaTransformer(Transformer):
         except KeyError:
             # Return None for invalid log levels, handled in parser
             return None
+            
+    def print_statement(self, items):
+        """Transform a print statement rule into a PrintStatement node."""
+        message = items[0]
+        return PrintStatement(message=message)
     
     def function_call(self, items):
         """Transform a function call into a FunctionCall node."""

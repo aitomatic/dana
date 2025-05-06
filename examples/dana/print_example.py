@@ -1,0 +1,49 @@
+"""Example demonstrating the DANA print statement."""
+
+import os
+import sys
+from pathlib import Path
+
+# Add the parent directory to the path so we can import opendxa
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+
+from opendxa.dana.language.parser import parse
+from opendxa.dana.runtime.context import RuntimeContext
+from opendxa.dana.runtime.interpreter import create_interpreter
+
+
+def main():
+    """Run the DANA print example."""
+    print("Running DANA print example...\n")
+    
+    # Read the example file
+    example_file = Path(__file__).parent / 'na' / 'print_example.na'
+    with open(example_file, 'r') as f:
+        code = f.read()
+    
+    # Parse the code
+    print(f"Parsing code from {example_file}...\n")
+    result = parse(code, type_check=False)
+    
+    if not result.is_valid:
+        print("Error parsing code:")
+        for error in result.errors:
+            print(f"  {error}")
+        return
+    
+    # Create an interpreter and runtime context
+    context = RuntimeContext()
+    interpreter = create_interpreter(context)
+    
+    # Enable debug logging to see all log messages
+    os.environ["DANA_LOG_LEVEL"] = "DEBUG"
+    
+    # Execute the code
+    print("Executing code...\n")
+    interpreter.execute_program(result)
+    
+    print("\nDone!")
+
+
+if __name__ == "__main__":
+    main()

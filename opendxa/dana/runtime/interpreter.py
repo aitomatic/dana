@@ -26,6 +26,7 @@ from opendxa.dana.language.ast import (
     LogLevel,
     LogLevelSetStatement,
     LogStatement,
+    PrintStatement,
     Program,
     ReasonStatement,
     WhileLoop,
@@ -238,6 +239,29 @@ class Interpreter(ASTVisitor):
             if isinstance(e, (RuntimeError, StateError)):
                 raise
             error_msg = f"Error executing log statement: {type(e).__name__}: {e}"
+            error_msg += format_error_location(node)
+            raise RuntimeError(error_msg) from e
+            
+    def visit_print_statement(self, node: PrintStatement, context: Optional[Dict[str, Any]] = None) -> None:
+        """Visit a PrintStatement node, evaluating and printing the message."""
+        try:
+            message = self.visit_node(node.message, context)
+            
+            # Convert the message to a string
+            if message is None:
+                message_str = "None"
+            else:
+                message_str = str(message)
+            
+            # Print to stdout
+            print(message_str)
+            
+            # Also log at debug level
+            self._log(f"Printed: {message_str}", LogLevel.DEBUG)
+        except Exception as e:
+            if isinstance(e, (RuntimeError, StateError)):
+                raise
+            error_msg = f"Error executing print statement: {type(e).__name__}: {e}"
             error_msg += format_error_location(node)
             raise RuntimeError(error_msg) from e
 
@@ -817,6 +841,8 @@ class Interpreter(ASTVisitor):
             return self.visit_log_statement(node, context)
         elif isinstance(node, LogLevelSetStatement):
             return self.visit_log_level_set_statement(node, context)
+        elif isinstance(node, PrintStatement):
+            return self.visit_print_statement(node, context)
         elif isinstance(node, Conditional):
             return self.visit_conditional(node, context)
         elif isinstance(node, WhileLoop):
