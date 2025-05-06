@@ -2,7 +2,7 @@
 
 # Floats
 private.config.threshold = 0.75
-global.env.pi_approx = 3.14159 # type: ignore
+public.env.pi_approx = 3.14159  # Changed from global to public scope
 
 # Basic arithmetic
 private.stats.level = 5 + 3
@@ -16,7 +16,7 @@ private.calc.value2 = (1.5 + 2.5) * 3.0  # Expect 4.0 * 3.0 = 12.0
 
 # Log results
 log(f"Threshold: {private.config.threshold}")
-log(f"Pi Approx: {global.env.pi_approx}")  # type: ignore
+log(f"Pi Approx: {public.env.pi_approx}")  # Changed from global to public
 log(f"Level: {private.stats.level}")
 log(f"Score: {private.stats.score}")
 log(f"Bonus: {private.stats.bonus}")

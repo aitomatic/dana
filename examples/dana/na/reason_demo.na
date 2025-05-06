@@ -2,7 +2,7 @@
 # Note: This requires an LLM to be configured in your DANA runtime context
 
 # Set log level to see more information
-log_level INFO
+log.setLevel(INFO)
 
 # ----------------------------------------------------------------------------
 # 1. Basic reason() usage
@@ -19,8 +19,8 @@ reason("What is the capital of France?")
 # You can capture the output of reason() statements into variables
 
 log.info("\nASSIGNING TO VARIABLES EXAMPLE")
-capital_info = reason("List three interesting facts about Tokyo.")
-log.info(f"Stored reasoning result: {capital_info}")
+private.capital_info = reason("List three interesting facts about Tokyo.")
+log.info(f"Stored reasoning result: {private.capital_info}")
 
 # ----------------------------------------------------------------------------
 # 3. Passing context to reason()
@@ -30,27 +30,18 @@ log.info(f"Stored reasoning result: {capital_info}")
 log.info("\nCONTEXT EXAMPLE")
 
 # Variables to use as context
-temperature = 72.5
-humidity = 45.3
-pressure = 1013.2
-location = "Server Room A"
+private.temperature = 72.5
+private.humidity = 45.3
+private.pressure = 1013.2
+private.location = "Server Room A"
 
 # Method 1: Using f-strings to include context
-activity_suggestion = reason(f"""
-Given the following conditions:
-- Temperature: {temperature}°F
-- Humidity: {humidity}%
-- Pressure: {pressure} hPa
-- Location: {location}
-
-Is this environment within acceptable parameters for server operations?
-""")
-log.info(f"Environment assessment: {activity_suggestion}")
+private.activity_suggestion = reason(f"Is this server environment (temp: {private.temperature}F, humidity: {private.humidity}%, pressure: {private.pressure} hPa, location: {private.location}) within acceptable parameters for operations?")
+log.info(f"Environment assessment: {private.activity_suggestion}")
 
 # Method 2: Using the context parameter
-server_analysis = reason("Analyze these environmental conditions and suggest any actions needed", 
-                context=[temperature, humidity, pressure, location])
-log.info(f"Analysis result: {server_analysis}")
+private.server_analysis = reason("Analyze these environmental conditions and suggest any actions needed")
+log.info(f"Analysis result: {private.server_analysis}")
 
 # ----------------------------------------------------------------------------
 # 4. Using different format options
@@ -60,35 +51,33 @@ log.info(f"Analysis result: {server_analysis}")
 log.info("\nFORMAT EXAMPLE")
 
 # JSON format
-json_summary = reason("Create a summary of the current conditions with any potential issues", 
-                    context=[temperature, humidity, pressure, location],
-                    format="json")
-log.info(f"JSON result: {json_summary}")
+private.json_summary = reason("Create a summary of the current conditions with any potential issues")
+log.info(f"JSON result: {private.json_summary}")
 
 # Bullet points format
-bullets_result = reason("List three ways to optimize server room efficiency.", format="bullets")
-log.info(f"Bullet points: {bullets_result}")
+private.bullets_result = reason("List three ways to optimize server room efficiency.")
+log.info(f"Bullet points: {private.bullets_result}")
 
 # Custom format (here requesting a specific structure)
-custom_result = reason("Compare air cooling vs. liquid cooling for servers.", format="pros_and_cons")
-log.info(f"Custom format: {custom_result}")
+private.custom_result = reason("Compare air cooling vs. liquid cooling for servers.")
+log.info(f"Custom format: {private.custom_result}")
 
 # ----------------------------------------------------------------------------
-# 5. Error handling
+# 5. Simple error detection
 # ----------------------------------------------------------------------------
-# You can use try/except to handle potential errors from reason() calls
+# Check if reasoning worked
 
-log.info("\nERROR HANDLING EXAMPLE")
+log.info("\nERROR DETECTION EXAMPLE")
 
-try:
-    # This could fail if the LLM service is unavailable or other runtime issues
-    complex_reasoning = reason("Explain quantum computing's relevance to server optimization in 50 words.")
-    log.info(f"Success! Result: {complex_reasoning}")
-except Exception as e:
-    log.error(f"Error occurred during reasoning: {e}")
-    # You could implement fallback behavior here
-    fallback_response = "Unable to complete reasoning task. Using fallback response."
-    log.info(f"Using fallback: {fallback_response}")
+private.complex_reasoning = reason("Explain quantum computing's relevance to server optimization in 50 words.")
+log.info(f"Result: {private.complex_reasoning}")
+
+# Check if result is None or empty
+if private.complex_reasoning == None or private.complex_reasoning == "":
+    log.error("Reasoning failed - got empty result")
+    # Fallback behavior
+    private.fallback_response = "Unable to complete reasoning task. Using fallback response."
+    log.info(f"Using fallback: {private.fallback_response}")
 
 # ----------------------------------------------------------------------------
 # Advanced usage - Chaining reasoning
@@ -97,13 +86,12 @@ except Exception as e:
 
 log.info("\nCHAINING EXAMPLE")
 
-issue = reason("Identify a potential issue that might occur in a server room with the following conditions:", 
-              context=[temperature, humidity, pressure, location])
-solution = reason(f"Recommend a solution for this server room issue: {issue}")
-implementation = reason(f"Outline steps to implement this solution: {solution}")
+private.issue = reason("Identify a potential issue in a server room")
+private.solution = reason(f"Recommend a solution for this issue: {private.issue}")
+private.implementation = reason(f"Outline steps to implement this solution: {private.solution}")
 
-log.info(f"Identified issue: {issue}")
-log.info(f"Recommended solution: {solution}")
-log.info(f"Implementation steps: {implementation}")
+log.info(f"Identified issue: {private.issue}")
+log.info(f"Recommended solution: {private.solution}")
+log.info(f"Implementation steps: {private.implementation}")
 
 log.info("\nDEMONSTRATION COMPLETE")

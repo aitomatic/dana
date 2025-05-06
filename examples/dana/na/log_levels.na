@@ -17,14 +17,14 @@ log.warn("This is a warning message")
 log.error("This is an error message")
 
 # Mix log levels with state changes
-group.status.phase = "Starting"
+private.status.phase = "Starting"
 log.debug("Debug: Phase set to Starting")
 
-group.status.phase = "Running"
+private.status.phase = "Running"
 log.info("Info: Phase set to Running")
 
-group.status.phase = "Warning"
+private.status.phase = "Warning"
 log.warn("Warn: Phase set to Warning")
 
-group.status.phase = "Error"
+private.status.phase = "Error"
 log.error("Error: Phase set to Error")

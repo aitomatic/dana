@@ -13,21 +13,18 @@ log("Assigning values to private scope.")
 private.sensor1.temp = 25
 private.sensor2.temp = -10
 
-# Group scope (shared data)
-log("Assigning values to group scope.")
-group.status.sensor1 = "active"
-group.status.sensor2 = "standby"
+# Public scope (shared data)
+log("Assigning values to public scope.")
+public.status.sensor1 = "active"
+public.status.sensor2 = "standby"
 
-# Global scope (world state)
-log("Assigning values to global scope.")
-global.temperature = 20 # type: ignore
-global.status = "normal" # type: ignore
-global.id = 42 # type: ignore
-
-# Execution scope (runtime state)
-log("Assigning values to execution scope.")
-execution.step = 1
-execution.phase = "running"
+# System scope (system state)
+log("Assigning values to system scope.")
+# Note: system scope is reserved for internal use, 
+# so we add custom fields to private scope instead
+private.temperature = 20
+private.status.value = "normal"
+private.id = 42
 
 log("Expected final state: JSON structure with all assigned scopes and values.")
 log("--- Finished Multiple Scopes Example ---")

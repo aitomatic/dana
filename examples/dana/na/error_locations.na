@@ -1,5 +1,5 @@
 # Initialize private scope
-private.initialized = true
+private.initialized = True  # Now supporting Python-style booleans
 
 # Example 1: Division by zero
 # private.result = 10 / 0

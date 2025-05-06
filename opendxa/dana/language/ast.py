@@ -55,8 +55,32 @@ Location = Tuple[int, int, str]
 class Literal:
     """Represents a literal value in DANA."""
 
-    value: Union[int, float, str, bool, None, "FStringExpression"]
+    value: Union[int, float, str, bool, None, "FStringExpression", List[Any]]
     location: Optional[Location] = None
+    
+    @property
+    def type(self):
+        """Get the type of this literal.
+        
+        This is used during type checking to determine the type of literals.
+        """
+        # Need to check bool first since True and False are also instances of int
+        if isinstance(self.value, bool):
+            return "bool"
+        elif isinstance(self.value, str):
+            return "string"
+        elif isinstance(self.value, int):
+            return "int"
+        elif isinstance(self.value, float):
+            return "float"
+        elif self.value is None:
+            return "null"
+        elif hasattr(self.value, "__class__") and self.value.__class__.__name__ == "FStringExpression":
+            return "string"
+        elif isinstance(self.value, list):
+            return "array"
+        else:
+            return "any"
 
 
 @dataclass
@@ -65,6 +89,43 @@ class LiteralExpression:
 
     literal: Literal
     location: Optional[Location] = None
+    
+    @property
+    def value(self):
+        """Get the value of this literal expression.
+        
+        This is a convenience property that delegates to the literal's value.
+        """
+        return None if self.literal is None else self.literal.value
+    
+    @property
+    def type(self):
+        """Get the type of this literal expression.
+        
+        This is used during type checking to determine the type of literals.
+        """
+        if self.literal is None:
+            return None
+            
+        value = self.literal.value
+        
+        # Need to check bool first since True and False are also instances of int
+        if isinstance(value, bool):
+            return "bool"
+        elif isinstance(value, str):
+            return "string"
+        elif isinstance(value, int):
+            return "int"
+        elif isinstance(value, float):
+            return "float"
+        elif value is None:
+            return "null"
+        elif hasattr(value, "__class__") and value.__class__.__name__ == "FStringExpression":
+            return "string"
+        elif isinstance(value, list):
+            return "array"
+        else:
+            return "any"
 
 
 @dataclass

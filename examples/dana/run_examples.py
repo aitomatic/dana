@@ -106,8 +106,8 @@ if __name__ == "__main__":
         # Validate paths
         examples = []
         for path in examples_to_run_paths:
-            if not path.endswith(".dana"):
-                print(f"{RED}Warning: Skipping non-.dana file: {path}{RESET}")
+            if not (path.endswith(".dana") or path.endswith(".na")):
+                print(f"{RED}Warning: Skipping non-DANA file: {path} (must end with .na or .dana){RESET}")
                 continue
             if not os.path.exists(path):
                 # Try resolving relative to the script's location if not found directly

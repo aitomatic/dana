@@ -200,13 +200,46 @@ class DanaTransformer(Transformer):
             
         # Process optional context and options
         context = None
-        options = None
+        options = {}
         
+        # Process named arguments
         for item in rest:
-            if isinstance(item, list):
-                context = item
-            elif isinstance(item, dict):
-                options = item
+            if isinstance(item, tuple):
+                # Named argument
+                arg_name, arg_value = item
+                if arg_name == "context":
+                    # Handle context special case
+                    if isinstance(arg_value, Identifier):
+                        context = [arg_value]
+                    elif isinstance(arg_value, list):
+                        context = arg_value
+                    elif hasattr(arg_value, 'literal') and isinstance(arg_value.literal.value, list):
+                        # Handle array literal
+                        context = arg_value.literal.value
+                else:
+                    # Other options
+                    options[arg_name] = arg_value
+            elif isinstance(item, list):
+                # List of named arguments
+                for sub_item in item:
+                    if isinstance(sub_item, tuple):
+                        arg_name, arg_value = sub_item
+                        if arg_name == "context":
+                            # Handle context special case
+                            if isinstance(arg_value, Identifier):
+                                context = [arg_value]
+                            elif isinstance(arg_value, list):
+                                context = arg_value
+                            elif hasattr(arg_value, 'literal') and isinstance(arg_value.literal.value, list):
+                                # Handle array literal
+                                context = arg_value.literal.value
+                        else:
+                            # Other options
+                            options[arg_name] = arg_value
+        
+        # If options is empty, set it to None
+        if not options:
+            options = None
                 
         return ReasonStatement(
             prompt=prompt,
@@ -243,13 +276,34 @@ class DanaTransformer(Transformer):
     
     def log_level_set_statement(self, items):
         """Transform a log level set statement into a LogLevelSetStatement node."""
-        level_str = items[0].value.strip('"\'')
-        try:
-            level = LogLevel[level_str.upper()]
-            return LogLevelSetStatement(level=level)
-        except KeyError:
-            # Return None for invalid log levels, handled in parser
+        if not items:
             return None
+            
+        # Check what type of item we have
+        item = items[0]
+        
+        # Handle string literal (log.setLevel("INFO"))
+        if isinstance(item, Token) and item.type == 'STRING':
+            level_str = item.value.strip('"\'')
+            try:
+                level = LogLevel[level_str.upper()]
+                return LogLevelSetStatement(level=level)
+            except KeyError:
+                # Return None for invalid log levels, handled in parser
+                return None
+                
+        # Handle level token (log.setLevel(INFO))
+        elif hasattr(item, 'value'):
+            level_str = item.value.upper()
+            try:
+                level = LogLevel[level_str]
+                return LogLevelSetStatement(level=level)
+            except KeyError:
+                # Return None for invalid log levels, handled in parser
+                return None
+        
+        # If we got here, something went wrong
+        return None
             
     def print_statement(self, items):
         """Transform a print statement rule into a PrintStatement node."""
@@ -443,6 +497,30 @@ class DanaTransformer(Transformer):
     def atom(self, items):
         """Transform an atom rule into an Expression node."""
         return items[0]
+        
+    def TRUE(self, _):
+        """Transform a TRUE token into a LiteralExpression with value True."""
+        return LiteralExpression(literal=Literal(value=True))
+        
+    def FALSE(self, _):
+        """Transform a FALSE token into a LiteralExpression with value False."""
+        return LiteralExpression(literal=Literal(value=False))
+        
+    def array_literal(self, items):
+        """Transform an array literal into a LiteralExpression node."""
+        # If empty array, return empty list
+        if len(items) == 0:
+            return LiteralExpression(literal=Literal(value=[]))
+        
+        # If we have array items, extract them
+        array_items = items[0] if len(items) > 0 else []
+        
+        # Convert to a Literal node with a list value
+        return LiteralExpression(literal=Literal(value=array_items))
+        
+    def array_items(self, items):
+        """Transform array items into a list."""
+        return items
     
     def identifier(self, items):
         """Transform an identifier rule into an Identifier node."""
@@ -460,16 +538,116 @@ class DanaTransformer(Transformer):
     def f_string(self, items):
         """Transform an f-string rule into a LiteralExpression node with FStringExpression."""
         # Remove the 'f' and quotes
-        s = items[0].value[1:]  # Remove 'f'
+        s = items[0].value
         if s.startswith('"') and s.endswith('"'):
             s = s[1:-1]  # Remove quotes
+        elif s.startswith("'") and s.endswith("'"):
+            s = s[1:-1]  # Remove quotes
             
-        # Placeholder for f-string parsing
-        # In a real implementation, you would parse for {} expressions
-        # and build a proper FStringExpression
+        # Parse f-string for {expression} placeholders
+        parts = []
+        current_text = ""
+        i = 0
+        while i < len(s):
+            if s[i] == "{" and (i == 0 or s[i-1] != "\\"):
+                # Found start of expression
+                if current_text:
+                    parts.append(current_text)
+                    current_text = ""
+                
+                # Find the matching closing brace
+                brace_level = 1
+                start_idx = i + 1
+                expr_text = ""
+                
+                i += 1
+                while i < len(s) and brace_level > 0:
+                    if s[i] == "{" and s[i-1] != "\\":
+                        brace_level += 1
+                    elif s[i] == "}" and s[i-1] != "\\":
+                        brace_level -= 1
+                    
+                    if brace_level > 0:
+                        expr_text += s[i]
+                    
+                    i += 1
+                
+                if expr_text:
+                    expr_text = expr_text.strip()
+                    
+                    # Handle complex expressions and operations
+                    if "+" in expr_text:
+                        # Simple addition
+                        left, right = expr_text.split("+", 1)
+                        left = left.strip()
+                        right = right.strip()
+                        left_expr = Identifier(name=left) if "." in left or left.isalnum() else LiteralExpression(literal=self._parse_literal(left))
+                        right_expr = Identifier(name=right) if "." in right or right.isalnum() else LiteralExpression(literal=self._parse_literal(right))
+                        parts.append(BinaryExpression(left=left_expr, operator=BinaryOperator.ADD, right=right_expr))
+                    elif "-" in expr_text and not expr_text.startswith("-"):
+                        # Simple subtraction (not negative number)
+                        left, right = expr_text.split("-", 1)
+                        left = left.strip()
+                        right = right.strip()
+                        left_expr = Identifier(name=left) if "." in left or left.isalnum() else LiteralExpression(literal=self._parse_literal(left))
+                        right_expr = Identifier(name=right) if "." in right or right.isalnum() else LiteralExpression(literal=self._parse_literal(right))
+                        parts.append(BinaryExpression(left=left_expr, operator=BinaryOperator.SUBTRACT, right=right_expr))
+                    elif "*" in expr_text:
+                        # Simple multiplication
+                        left, right = expr_text.split("*", 1)
+                        left = left.strip()
+                        right = right.strip()
+                        left_expr = Identifier(name=left) if "." in left or left.isalnum() else LiteralExpression(literal=self._parse_literal(left))
+                        right_expr = Identifier(name=right) if "." in right or right.isalnum() else LiteralExpression(literal=self._parse_literal(right))
+                        parts.append(BinaryExpression(left=left_expr, operator=BinaryOperator.MULTIPLY, right=right_expr))
+                    elif "/" in expr_text:
+                        # Simple division
+                        left, right = expr_text.split("/", 1)
+                        left = left.strip()
+                        right = right.strip()
+                        left_expr = Identifier(name=left) if "." in left or left.isalnum() else LiteralExpression(literal=self._parse_literal(left))
+                        right_expr = Identifier(name=right) if "." in right or right.isalnum() else LiteralExpression(literal=self._parse_literal(right))
+                        parts.append(BinaryExpression(left=left_expr, operator=BinaryOperator.DIVIDE, right=right_expr))
+                    else:
+                        # Default to identifier
+                        parts.append(Identifier(name=expr_text))
+                
+            else:
+                current_text += s[i]
+                i += 1
+        
+        if current_text:
+            parts.append(current_text)
+            
         return LiteralExpression(
-            literal=Literal(value=FStringExpression(parts=[s]))
+            literal=Literal(value=FStringExpression(parts=parts))
         )
+        
+    def _parse_literal(self, text):
+        """Parse a simple literal value from text."""
+        text = text.strip()
+        
+        # Try numbers first
+        try:
+            if "." in text:
+                return Literal(value=float(text))
+            else:
+                return Literal(value=int(text))
+        except ValueError:
+            pass
+            
+        # Try boolean
+        if text.lower() == "true":
+            return Literal(value=True)
+        elif text.lower() == "false":
+            return Literal(value=False)
+            
+        # Try string (with quotes)
+        if (text.startswith('"') and text.endswith('"')) or (text.startswith("'") and text.endswith("'")):
+            return Literal(value=text[1:-1])
+            
+        # Default to string
+        return Literal(value=text)
     
     def _create_literal(self, token):
         """Create a Literal node from a token."""
@@ -593,8 +771,25 @@ class GrammarParser:
             
         except UnexpectedInput as e:
             # Create a detailed error message with location information
-            error_msg = f"Syntax error at line {e.line}, column {e.column}: {e.get_context(program_text)}"
-            errors.append(ParseError(error_msg, e.line, program_text.split('\n')[e.line-1]))
+            error_line = program_text.split('\n')[e.line-1] if e.line > 0 and e.line <= len(program_text.split('\n')) else ""
+            
+            # Improve error position reporting for assignment errors
+            column = e.column
+            adjusted_message = e.get_context(program_text)
+            
+            # If there's an equals sign in the line and error is after it
+            if "=" in error_line:
+                equals_pos = error_line.find("=")
+                if column > equals_pos and "#" in error_line[equals_pos:]:
+                    # It's likely a missing expression after equals sign
+                    # Adjust the error position to just after the equals sign
+                    comment_pos = error_line.find("#", equals_pos)
+                    if comment_pos > equals_pos and (comment_pos - equals_pos <= 3):
+                        column = equals_pos + 1
+                        adjusted_message = error_line + "\n" + " " * equals_pos + "^ Missing expression after equals sign"
+            
+            error_msg = f"Syntax error at line {e.line}, column {column}: {adjusted_message}"
+            errors.append(ParseError(error_msg, e.line, error_line))
             
             # Create an empty program as a fallback
             empty_program = Program(statements=[], source_text=program_text)
@@ -643,6 +838,27 @@ def parse(code: str, type_check: bool = None) -> ParseResult:
             program=Program(statements=[]), 
             errors=[ParseError("Parser is not available. Please install the lark-parser package.")]
         )
+    
+    # Pre-check for common syntax errors
+    lines = code.split('\n')
+    for i, line in enumerate(lines):
+        line_stripped = line.strip()
+        # Skip empty lines and comments
+        if not line_stripped or line_stripped.startswith('#'):
+            continue
+            
+        # Check for assignment with missing expression
+        if "=" in line_stripped and not line_stripped.endswith(":"):
+            pos = line.find("=")
+            rest = line[pos+1:].strip()
+            if not rest or rest.startswith("#"):
+                # Found a missing expression
+                error_msg = f"Syntax error at line {i+1}, column {pos+2}: Missing expression after equals sign"
+                error_line = line + "\n" + " " * pos + "^ Missing expression here"
+                return ParseResult(
+                    program=Program(statements=[], source_text=code),
+                    errors=[ParseError(error_msg, i+1, line)]
+                )
     
     # Parse the code
     result = _parser.parse(code)

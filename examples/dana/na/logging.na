@@ -4,13 +4,13 @@
 log("Starting program execution.")
 
 # Perform some assignments
-group.status.phase = "Initialization"
+private.status.phase = "Initialization"
 private.config.enabled = 1
 
 log("Configuration loaded.")
 
 # Update status
-group.status.phase = "Running"
+private.status.phase = "Running"
 private.temp.value = 99
 
 log("Processing complete.")

@@ -2,30 +2,33 @@
 # This program demonstrates basic DANA functionality by monitoring a simulated temperature sensor
 
 # Set initial temperature (simulated sensor reading)
-global.sensor.temperature = 95 # type: ignore
+private.sensor.temperature = 95
+
+# Initialize status variable
+private.status = "UNKNOWN"
 
 # Log the current temperature
-log("Current temperature: {global.sensor.temperature}°F")
+log(f"Current temperature: {private.sensor.temperature}°F")
 
 # Check if temperature is too high
-if global.sensor.temperature > 100: # type: ignore
+private.threshold_high = 100
+private.threshold_critical = 120
+
+if private.sensor.temperature > private.threshold_high:
     # Log a warning
-    log("WARNING: Temperature is too high!", level=WARN)
-
-    # Check if it's critically high
-    if global.sensor.temperature > 120: # type: ignore
-        log("CRITICAL: Temperature is critically high!", level=ERROR)
-        # Set an alert
-        execution.alerts.append("Critical temperature alert")
+    log.warn("WARNING: Temperature is too high!")
+    
+    # Set status based on severity
+    if private.sensor.temperature > private.threshold_critical:
+        private.status = "CRITICAL"
+        log.error("CRITICAL: Temperature is critically high!")
     else:
-        # Set a warning
-        execution.alerts.append("High temperature warning")
+        private.status = "WARNING"
+        log.warn("Warning: Temperature is elevated")
 else:
-    # Log normal status
-    log("Temperature is within normal range", level=INFO)
+    # Normal temperature
+    private.status = "NORMAL"
+    log.info("Temperature is within normal range")
 
-# Log any alerts that were generated
-if execution.alerts:
-    log("Generated alerts: {execution.alerts}")
-else:
-    log("No alerts generated")
+# Record the result
+log(f"Final temperature status: {private.status}")
