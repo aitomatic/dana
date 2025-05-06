@@ -1,8 +1,11 @@
 """Test handling of different LLM response formats in the interpreter."""
 
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, AsyncMock
+import asyncio
 
+from opendxa.common.resource.llm_resource import LLMResource
+from opendxa.common.types import BaseRequest
 from opendxa.dana.runtime.context import RuntimeContext
 from opendxa.dana.runtime.interpreter import Interpreter, LogLevel
 from opendxa.dana.language.ast import ReasonStatement, Literal, LiteralExpression
@@ -16,12 +19,17 @@ class TestLLMResponseFormats(unittest.TestCase):
         self.context = RuntimeContext()
         self.interpreter = Interpreter(self.context)
         self.interpreter.set_log_level(LogLevel.INFO)
+        
+        # Register a mock LLM resource
+        self.mock_llm = MagicMock(spec=LLMResource)
+        self.context.register_resource("reason_llm", self.mock_llm)
 
-    @patch('opendxa.dana.runtime.interpreter.Interpreter._perform_reasoning')
-    def test_openai_style_response(self, mock_reasoning):
+    def test_openai_style_response(self):
         """Test handling of OpenAI-style dictionary responses."""
-        # Mock the _perform_reasoning method to return a dictionary response
-        mock_response = {
+        # Create a response structure with OpenAI-style format
+        mock_response = MagicMock()
+        mock_response.success = True
+        mock_response.content = {
             "choices": [
                 {
                     "message": {
@@ -30,22 +38,32 @@ class TestLLMResponseFormats(unittest.TestCase):
                 }
             ]
         }
-        mock_reasoning.return_value = mock_response
-
+        
+        # Set up the async mock for LLM query
+        async def mock_initialize():
+            return None
+        self.mock_llm.initialize = mock_initialize
+        
+        async def mock_query(*args, **kwargs):
+            return mock_response
+        self.mock_llm.query = mock_query
+        
         # Create a reason statement
         literal = Literal("test prompt")
         expr = LiteralExpression(literal)
         reason_stmt = ReasonStatement(expr, None, None, {})
+        
+        # Patch the _log method to check the output
+        with patch.object(self.interpreter, '_log') as mock_log:
+            # Execute the reason statement synchronously
+            self.interpreter._visit_reason_statement_sync(reason_stmt)
+            
+            # Check that the right content was extracted and logged
+            calls = mock_log.call_args_list
+            assert any("This is a test response" in str(call) for call in calls), \
+                "Expected log to contain the test response"
 
-        # Execute the reason statement synchronously to avoid asyncio issues
-        self.interpreter._visit_reason_statement_sync(reason_stmt)
-
-        # Verify the reasoning was called
-        mock_reasoning.assert_called_once()
-
-    @patch('opendxa.dana.runtime.interpreter.Interpreter._perform_reasoning')
-    @patch('json.dumps')
-    def test_deepseek_style_response(self, mock_dumps, mock_reasoning):
+    def test_deepseek_style_response(self):
         """Test handling of DeepSeek-style object responses."""
         # Create a mock Choice object to simulate DeepSeek's response
         class MockMessage:
@@ -58,64 +76,100 @@ class TestLLMResponseFormats(unittest.TestCase):
 
         mock_choice = MockChoice()
         
-        # Mock the response
-        mock_response = {
+        # Create the response
+        mock_response = MagicMock()
+        mock_response.success = True
+        mock_response.content = {
             "choices": [mock_choice]
         }
         
-        # Mock the json.dumps function to avoid serialization issues
-        mock_dumps.return_value = '{"mocked": "response"}'
+        # Set up the async mock for LLM query
+        async def mock_initialize():
+            return None
+        self.mock_llm.initialize = mock_initialize
         
-        mock_reasoning.return_value = mock_response
-
+        async def mock_query(*args, **kwargs):
+            return mock_response
+        self.mock_llm.query = mock_query
+        
         # Create a reason statement
         literal = Literal("test prompt")
         expr = LiteralExpression(literal)
         reason_stmt = ReasonStatement(expr, None, None, {})
+        
+        # Patch the _log method to check the output
+        with patch.object(self.interpreter, '_log') as mock_log:
+            # Execute the reason statement synchronously
+            self.interpreter._visit_reason_statement_sync(reason_stmt)
+            
+            # Check that the right content was extracted and logged
+            calls = mock_log.call_args_list
+            assert any("This is a test response" in str(call) for call in calls), \
+                "Expected log to contain the test response"
 
-        # Execute the reason statement synchronously to avoid asyncio issues
-        self.interpreter._visit_reason_statement_sync(reason_stmt)
-
-        # Verify the reasoning was called
-        mock_reasoning.assert_called_once()
-
-    @patch('opendxa.dana.runtime.interpreter.Interpreter._perform_reasoning')
-    def test_direct_content_response(self, mock_reasoning):
+    def test_direct_content_response(self):
         """Test handling of direct content responses."""
-        # Mock the _perform_reasoning method to return a direct content response
-        mock_response = {
+        # Create a response with direct content field
+        mock_response = MagicMock()
+        mock_response.success = True
+        mock_response.content = {
             "content": "This is a test response"
         }
-        mock_reasoning.return_value = mock_response
-
+        
+        # Set up the async mock for LLM query
+        async def mock_initialize():
+            return None
+        self.mock_llm.initialize = mock_initialize
+        
+        async def mock_query(*args, **kwargs):
+            return mock_response
+        self.mock_llm.query = mock_query
+        
         # Create a reason statement
         literal = Literal("test prompt")
         expr = LiteralExpression(literal)
         reason_stmt = ReasonStatement(expr, None, None, {})
+        
+        # Patch the _log method to check the output
+        with patch.object(self.interpreter, '_log') as mock_log:
+            # Execute the reason statement synchronously
+            self.interpreter._visit_reason_statement_sync(reason_stmt)
+            
+            # Check that the right content was extracted and logged
+            calls = mock_log.call_args_list
+            assert any("This is a test response" in str(call) for call in calls), \
+                "Expected log to contain the test response"
 
-        # Execute the reason statement synchronously to avoid asyncio issues
-        self.interpreter._visit_reason_statement_sync(reason_stmt)
-
-        # Verify the reasoning was called
-        mock_reasoning.assert_called_once()
-
-    @patch('opendxa.dana.runtime.interpreter.Interpreter._perform_reasoning')
-    def test_fallback_response(self, mock_reasoning):
+    def test_fallback_response(self):
         """Test fallback handling for unexpected response formats."""
-        # Mock the _perform_reasoning method to return an unexpected response
-        mock_response = "This is a direct string response"
-        mock_reasoning.return_value = mock_response
-
+        # Create an unexpected response format (direct string)
+        mock_response = MagicMock()
+        mock_response.success = True
+        mock_response.content = "This is a direct string response"
+        
+        # Set up the async mock for LLM query
+        async def mock_initialize():
+            return None
+        self.mock_llm.initialize = mock_initialize
+        
+        async def mock_query(*args, **kwargs):
+            return mock_response
+        self.mock_llm.query = mock_query
+        
         # Create a reason statement
         literal = Literal("test prompt")
         expr = LiteralExpression(literal)
         reason_stmt = ReasonStatement(expr, None, None, {})
-
-        # Execute the reason statement synchronously to avoid asyncio issues
-        self.interpreter._visit_reason_statement_sync(reason_stmt)
-
-        # Verify the reasoning was called
-        mock_reasoning.assert_called_once()
+        
+        # Patch the _log method to check the output
+        with patch.object(self.interpreter, '_log') as mock_log:
+            # Execute the reason statement synchronously
+            self.interpreter._visit_reason_statement_sync(reason_stmt)
+            
+            # Check that the response was handled correctly
+            calls = mock_log.call_args_list
+            assert any("This is a direct string response" in str(call) for call in calls), \
+                "Expected log to contain the direct string response"
 
 
 if __name__ == '__main__':

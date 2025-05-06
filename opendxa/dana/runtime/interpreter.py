@@ -233,7 +233,19 @@ class Interpreter(ASTVisitor):
     def visit_log_statement(self, node: LogStatement, context: Optional[Dict[str, Any]] = None) -> None:
         """Visit a LogStatement node, evaluating and logging the message."""
         try:
-            message = self.visit_node(node.message, context)
+            # Use a custom context that includes direct references to unprefixed variables in the REPL
+            # This ensures consistent behavior with print statements
+            custom_context = context or {}
+
+            # Handle the case where we might be in a REPL environment with unprefixed variables
+            if hasattr(self.context, "_state") and self.context._state.get("private"):
+                for key, value in self.context._state["private"].items():
+                    # Only add top-level private variables to context
+                    if "." not in key:
+                        custom_context[key] = value
+
+            # Now visit the node with our enhanced context
+            message = self.visit_node(node.message, custom_context)
             self._log(str(message), node.level)
         except Exception as e:
             if isinstance(e, (RuntimeError, StateError)):
@@ -241,21 +253,33 @@ class Interpreter(ASTVisitor):
             error_msg = f"Error executing log statement: {type(e).__name__}: {e}"
             error_msg += format_error_location(node)
             raise RuntimeError(error_msg) from e
-            
+
     def visit_print_statement(self, node: PrintStatement, context: Optional[Dict[str, Any]] = None) -> None:
         """Visit a PrintStatement node, evaluating and printing the message."""
         try:
-            message = self.visit_node(node.message, context)
-            
+            # Use a custom context that includes direct references to unprefixed variables in the REPL
+            # Ensure consistency with how log statements handle variables
+            custom_context = context or {}
+
+            # Handle the case where we might be in a REPL environment with unprefixed variables
+            if hasattr(self.context, "_state") and self.context._state.get("private"):
+                for key, value in self.context._state["private"].items():
+                    # Only add top-level private variables to context
+                    if "." not in key:
+                        custom_context[key] = value
+
+            # Now visit the node with our enhanced context
+            message = self.visit_node(node.message, custom_context)
+
             # Convert the message to a string
             if message is None:
                 message_str = "None"
             else:
                 message_str = str(message)
-            
+
             # Print to stdout
             print(message_str)
-            
+
             # Also log at debug level
             self._log(f"Printed: {message_str}", LogLevel.DEBUG)
         except Exception as e:
@@ -342,33 +366,24 @@ class Interpreter(ASTVisitor):
             RuntimeError: If the LLM resource is not available or if the query fails.
         """
         # Get the LLM resource, or create a default one if not available
+        # Note: In the _visit_reason_statement_sync method, we now ensure the LLM is already
+        # initialized before this method is called, so we can safely assume it exists and is ready.
         try:
             llm = self.context.get_resource("reason_llm")
         except StateError:
             try:
                 llm = self.context.get_resource("llm")
             except StateError:
-                from opendxa.common.resource.llm_resource import LLMResource
+                error_msg = (
+                    "No LLM resource found. Please configure one before using reason() statements:\n"
+                    "1. Set environment variables (e.g., OPENAI_API_KEY, ANTHROPIC_API_KEY)\n"
+                    "2. Or register an LLM resource with the context using: context.register_resource('llm', llm_resource)"
+                )
+                self._log(error_msg, LogLevel.ERROR)
+                raise RuntimeError(error_msg)
 
-                # Create a default LLM resource
-                self._log("No LLM resource found, creating a default one", LogLevel.WARN)
-                llm = LLMResource(name="reason_llm")
-
-                # Register it with the context
-                self.context.register_resource("reason_llm", llm)
-                self._log("reason_llm resource registered", LogLevel.INFO)
-
-        if llm:
-            await llm.initialize()  # Ensure resource is initialized
-        else:
-            error_msg = (
-                "Failed to create default LLM resource.\n"
-                "To use reason() statements, you need to configure an LLM resource:\n"
-                "1. Set environment variables (e.g., OPENAI_API_KEY, ANTHROPIC_API_KEY)\n"
-                "2. Or register an LLM resource with the context using: context.register_resource('llm', llm_resource)"
-            )
-            self._log(error_msg, LogLevel.ERROR)
-            raise RuntimeError(error_msg)
+        # Log what's happening clearly
+        self._log(f"Starting LLM reasoning with prompt: {prompt[:50]}{'...' if len(prompt) > 50 else ''}", LogLevel.DEBUG)
 
         # Prepare the context data to include with the prompt
         context_data = {}
@@ -456,50 +471,188 @@ class Interpreter(ASTVisitor):
             if has_hooks(HookType.BEFORE_REASON):
                 execute_hook(HookType.BEFORE_REASON, hook_context)
 
-            # Evaluate the prompt
-            prompt_value = self.visit_node(node.prompt, context)
-            prompt_str = str(prompt_value)  # Convert to string if it's not already
+            # Evaluate the prompt (with null check and f-string handling)
+            if node.prompt is None:
+                raise RuntimeError("Reason statement must have a prompt")
+
+            # Enhanced f-string handling and variable resolution
+            # Use a custom context that includes direct references to unprefixed variables in the REPL
+            custom_context = context or {}
+
+            # Handle the case where we might be in a REPL environment with unprefixed variables
+            if hasattr(self.context, "_state") and self.context._state.get("private"):
+                for key, value in self.context._state["private"].items():
+                    # Only add top-level private variables to context
+                    if "." not in key:
+                        custom_context[key] = value
+
+            # Use visit_node with our enhanced context to evaluate f-strings and other expressions
+            prompt_value = self.visit_node(node.prompt, custom_context)
+
+            # Debug logging to trace the prompt value
+            self._log(f"Raw prompt value: {repr(prompt_value)}", LogLevel.DEBUG)
+            self._log(f"Prompt value type: {type(prompt_value)}", LogLevel.DEBUG)
+
+            # Convert to string, handling all possible types
+            if isinstance(prompt_value, (LiteralExpression, Literal)):
+                prompt_str = str(prompt_value.value)
+                self._log(f"After LiteralExpression/Literal conversion: {repr(prompt_str)}", LogLevel.DEBUG)
+            else:
+                prompt_str = str(prompt_value)
+                self._log(f"After direct string conversion: {repr(prompt_str)}", LogLevel.DEBUG)
+
+            # Log the prompt for debugging
+            self._log(f"Final prompt being sent to LLM: {repr(prompt_str)}", LogLevel.DEBUG)
 
             # Extract context variable names
             context_vars = []
             if node.context:
                 context_vars = [ident.name for ident in node.context]
 
-            # Execute the reasoning
+            # Execute direct synchronous reasoning
+            self._log("Starting direct synchronous LLM reasoning", LogLevel.DEBUG)
+
+            result = None
+
+            # Check if we already have an LLM resource
             try:
-                # Create a new event loop
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
+                # Get the LLM resource
+                llm = self.context.get_resource("reason_llm")
+            except Exception:
                 try:
-                    # Run the reasoning
-                    result = loop.run_until_complete(self._perform_reasoning(prompt_str, context_vars, node.options))
-                finally:
-                    loop.close()
+                    llm = self.context.get_resource("llm")
+                except Exception:
+                    from opendxa.common.resource.llm_resource import LLMResource
 
-                # If we have a target variable, store the result
-                if node.target:
-                    self._set_variable(node.target.name, result)
+                    # Create a default LLM resource
+                    self._log("No LLM resource found, creating a default one", LogLevel.WARN)
+                    llm = LLMResource(name="reason_llm")
+                    self.context.register_resource("reason_llm", llm)
+                    self._log("reason_llm resource registered", LogLevel.INFO)
+
+            # Prepare the context data
+            context_data = {}
+            if context_vars:
+                for var_name in context_vars:
+                    try:
+                        # Get the variable value from context
+                        value = self._get_variable(var_name)
+                        # Add it to the context data
+                        context_data[var_name] = value
+                    except StateError:
+                        self._log(f"Warning: Context variable '{var_name}' not found", LogLevel.WARN)
+
+            # Build the combined prompt with context
+            enriched_prompt = prompt_str
+            if context_data:
+                # Format the context as JSON for inclusion in the prompt
+                context_str = json.dumps(context_data, indent=2, default=str)
+                enriched_prompt = f"{prompt_str}\n\nContext:\n{context_str}"
+
+            # Prepare the LLM request
+            system_message = "You are a reasoning engine. Analyze the query and provide a thoughtful, accurate response."
+
+            # Add any format-specific instructions
+            format_type = node.options.get("format", "text") if node.options else "text"
+            if format_type == "json":
+                system_message += " Return your answer in valid JSON format."
+
+            # Set up the messages
+            messages = [{"role": "system", "content": system_message}, {"role": "user", "content": enriched_prompt}]
+
+            # Prepare other LLM parameters
+            params = {
+                "messages": messages,
+                "temperature": node.options.get("temperature", 0.7) if node.options else 0.7,
+            }
+
+            # Add max_tokens if specified
+            if node.options and "max_tokens" in node.options:
+                params["max_tokens"] = node.options["max_tokens"]
+
+            # Make a synchronous LLM query
+            self._log("Sending LLM query", LogLevel.DEBUG)
+            try:
+                # This avoids async/await by using a direct synchronous call pattern
+                # Import event loop functions for manual async handling
+                from asyncio import new_event_loop, set_event_loop
+
+                # Create a new event loop for this operation
+                loop = new_event_loop()
+                set_event_loop(loop)
+
+                # Set a longer timeout for the event loop (2 minutes)
+                loop.slow_callback_duration = 120.0  # seconds
+
+                # Run the initialize method if needed
+                try:
+                    loop.run_until_complete(llm.initialize())
+                except Exception as e:
+                    self._log(f"Initialization error (can be ignored if already initialized): {e}", LogLevel.DEBUG)
+
+                self._log("Starting LLM query - this may take some time...", LogLevel.INFO)
+                # Run the query method with a large timeout
+                start_time = datetime.now()
+                response = loop.run_until_complete(asyncio.wait_for(llm.query(BaseRequest(arguments=params)), timeout=120))
+                end_time = datetime.now()
+                duration = (end_time - start_time).total_seconds()
+                self._log(f"LLM query completed in {duration:.1f} seconds", LogLevel.INFO)
+
+                # Clean up resources
+                loop.close()
+
+                # Process the LLM response
+                if not response.success:
+                    raise RuntimeError(f"LLM reasoning failed: {response.error}")
+
+                # Extract the content from the response
+                content = response.content
+
+                # Recover the result from the raw response
+                # If it's a completion-style response with choices
+                if isinstance(content, dict) and "choices" in content:
+                    result = content["choices"][0]
+                    result = Misc.get_field(result, "message")
+                    result = Misc.get_field(result, "content")
+                # If it's a direct content response
+                elif isinstance(content, dict) and "content" in content:
+                    result = Misc.get_field(content, "content", content)
                 else:
-                    # Otherwise, log the result
-                    if isinstance(result, (dict, list)):
-                        result_str = json.dumps(result, indent=2)
-                    else:
-                        result_str = str(result)
+                    # Fallback for other formats
+                    result = str(content)
 
-                    # Log at most the first 500 characters to avoid huge log entries
-                    preview = result_str[:500] + "..." if len(result_str) > 500 else result_str
-                    self._log(f"Reasoning result: {preview}", LogLevel.INFO)
-
-                # Create result context for the hook
-                result_context = {**hook_context, "result": result}
-
-                # Execute after reason hooks if they exist
-                if has_hooks(HookType.AFTER_REASON):
-                    execute_hook(HookType.AFTER_REASON, result_context)
+                # Format conversion if needed
+                if format_type == "json" and isinstance(result, str):
+                    try:
+                        # Try to parse the result as JSON
+                        result = json.loads(result)
+                    except json.JSONDecodeError:
+                        self._log(f"Warning: Could not parse LLM response as JSON: {result[:100]}", LogLevel.WARN)
 
             except Exception as e:
-                self._log(f"Error in reason statement: {str(e)}", LogLevel.ERROR)
-                raise RuntimeError("Reasoning error") from e
+                self._log(f"Error in synchronous LLM query: {e}", LogLevel.ERROR)
+                result = f"Error during reasoning: {str(e)}"
+
+            # If we have a target variable, store the result
+            if node.target:
+                self._set_variable(node.target.name, result)
+            else:
+                # Otherwise, log the result
+                if isinstance(result, (dict, list)):
+                    result_str = json.dumps(result, indent=2)
+                else:
+                    result_str = str(result)
+
+                # Log at most the first 500 characters to avoid huge log entries
+                preview = result_str[:500] + "..." if len(result_str) > 500 else result_str
+                self._log(f"Reasoning result: {preview}", LogLevel.INFO)
+
+            # Create result context for the hook
+            result_context = {**hook_context, "result": result}
+
+            # Execute after reason hooks if they exist
+            if has_hooks(HookType.AFTER_REASON):
+                execute_hook(HookType.AFTER_REASON, result_context)
 
         except Exception as e:
             if isinstance(e, (RuntimeError, StateError)):
@@ -510,68 +663,8 @@ class Interpreter(ASTVisitor):
 
     async def visit_reason_statement(self, node: ReasonStatement, context: Optional[Dict[str, Any]] = None) -> None:
         """Visit a ReasonStatement node, executing the reasoning operation using an LLM."""
-        # Create hook context
-        hook_context = {"visitor": self, "context": self.context, "statement": node}
-
-        try:
-            # Execute before reason hooks if they exist
-            if has_hooks(HookType.BEFORE_REASON):
-                execute_hook(HookType.BEFORE_REASON, hook_context)
-
-            # Evaluate the prompt
-            prompt_value = self.visit_node(node.prompt, context)
-            prompt_str = str(prompt_value)  # Convert to string if it's not already
-
-            # Extract context variable names
-            context_vars = []
-            if node.context:
-                context_vars = [ident.name for ident in node.context]
-
-            # Execute the reasoning
-            try:
-                # Use the existing event loop or create a new one
-                try:
-                    loop = asyncio.get_running_loop()
-                    # If we're already in an async context, await directly
-                    result = await self._perform_reasoning(prompt_str, context_vars, node.options)
-                except RuntimeError:
-                    # No running event loop - create one and run until complete
-                    loop = asyncio.new_event_loop()
-                    asyncio.set_event_loop(loop)
-                    result = loop.run_until_complete(self._perform_reasoning(prompt_str, context_vars, node.options))
-                    loop.close()
-
-                # If we have a target variable, store the result
-                if node.target:
-                    self._set_variable(node.target.name, result)
-                else:
-                    # Otherwise, log the result
-                    if isinstance(result, (dict, list)):
-                        result_str = json.dumps(result, indent=2)
-                    else:
-                        result_str = str(result)
-
-                    # Log at most the first 500 characters to avoid huge log entries
-                    preview = result_str[:500] + "..." if len(result_str) > 500 else result_str
-                    self._log(f"Reasoning result: {preview}", LogLevel.INFO)
-
-                # Create result context for the hook
-                result_context = {**hook_context, "result": result}
-
-                # Execute after reason hooks if they exist
-                if has_hooks(HookType.AFTER_REASON):
-                    execute_hook(HookType.AFTER_REASON, result_context)
-
-            except Exception as e:
-                self._log(f"Error in reason statement: {str(e)}", LogLevel.ERROR)
-                raise RuntimeError("Reasoning error") from e
-
-        except Exception as e:
-            if isinstance(e, (RuntimeError, StateError)):
-                raise
-            error_msg = f"Error executing reason statement: {type(e).__name__}: {e}"
-            error_msg += format_error_location(node)
-            raise RuntimeError(error_msg) from e
+        # Just delegate to the sync version for now, as we've made it handle the async case properly
+        self._visit_reason_statement_sync(node, context)
 
     def visit_binary_expression(self, node: BinaryExpression, context: Optional[Dict[str, Any]] = None) -> Any:
         """Visit a BinaryExpression node, evaluating the expression."""
@@ -650,6 +743,28 @@ class Interpreter(ASTVisitor):
     def visit_identifier(self, node: Identifier, context: Optional[Dict[str, Any]] = None) -> Any:
         """Visit an Identifier node, retrieving the variable value."""
         try:
+            # First check if the variable is in the supplied context (for direct variables in REPL)
+            if context:
+                # First check the exact name
+                if node.name in context:
+                    return context[node.name]
+
+                # For dotted expressions, check if the base is in context
+                if "." in node.name:
+                    parts = node.name.split(".")
+                    base = parts[0]
+                    if base in context:
+                        # Navigate through the object attributes
+                        obj = context[base]
+                        for part in parts[1:]:
+                            if hasattr(obj, part):
+                                obj = getattr(obj, part)
+                            elif isinstance(obj, dict) and part in obj:
+                                obj = obj[part]
+                            else:
+                                raise AttributeError(f"Object {base} has no attribute '{part}'")
+                        return obj
+
             # If the name contains dots, it might be an object attribute path
             if "." in node.name:
                 parts = node.name.split(".")
@@ -665,7 +780,12 @@ class Interpreter(ASTVisitor):
 
                     # Navigate through attributes for remaining parts
                     for part in parts[1:]:
-                        obj = getattr(obj, part)
+                        if hasattr(obj, part):
+                            obj = getattr(obj, part)
+                        elif isinstance(obj, dict) and part in obj:
+                            obj = obj[part]
+                        else:
+                            raise AttributeError(f"Object {base_name} has no attribute '{part}'")
 
                     return obj
                 except (StateError, AttributeError):
@@ -822,12 +942,63 @@ class Interpreter(ASTVisitor):
 
     def visit_fstring_expression(self, node: FStringExpression, context: Optional[Dict[str, Any]] = None) -> str:
         """Visit an FStringExpression node, evaluating all parts."""
+        # Use a custom context that includes direct references to unprefixed variables in the REPL
+        # This ensures consistent behavior with print and log statements
+        custom_context = context or {}
+
+        # Handle the case where we might be in a REPL environment with unprefixed variables
+        if hasattr(self.context, "_state") and self.context._state.get("private"):
+            for key, value in self.context._state["private"].items():
+                # Only add top-level private variables to context
+                if "." not in key and key not in custom_context:
+                    custom_context[key] = value
+
+        # Debug the parts for troubleshooting
+        self._log(f"Processing f-string with parts: {[type(p).__name__ for p in node.parts]}", LogLevel.DEBUG)
+
+        # Special debug check - if there's just one part and it's a string with a placeholder marker
+        if len(node.parts) == 1 and isinstance(node.parts[0], str) and node.parts[0].startswith("F-STRING-PLACEHOLDER:"):
+            # This is from our special parser handling - we need to extract and process the f-string content
+            content = node.parts[0].replace("F-STRING-PLACEHOLDER:", "")
+            self._log(f"Found placeholder f-string: {content}", LogLevel.DEBUG)
+
+            # Simple f-string parser for {var} patterns
+            import re
+
+            result = content
+            # Find all {variable} patterns
+            var_matches = re.findall(r"{([^{}]+)}", content)
+
+            # Replace each variable with its value
+            for var_name in var_matches:
+                try:
+                    # Clean up variable name (remove spaces, etc.)
+                    var_name = var_name.strip()
+                    # First try context
+                    if var_name in custom_context:
+                        value = custom_context[var_name]
+                    else:
+                        # Then try REPL variables with private scope
+                        try:
+                            value = self._get_variable(var_name)
+                        except Exception:
+                            # If all else fails, keep the variable as is
+                            value = "{" + var_name + "}"
+
+                    # Replace in the string
+                    result = result.replace("{" + var_name + "}", str(value))
+                except Exception as e:
+                    self._log(f"Error resolving variable {var_name} in f-string: {e}", LogLevel.WARN)
+
+            return result
+
+        # Standard processing for normal AST f-strings
         result = ""
         for part in node.parts:
             if isinstance(part, str):
                 result += part
             else:
-                value = self.visit_node(part, context)
+                value = self.visit_node(part, custom_context)
                 result += str(value)
         return result
 

@@ -1,14 +1,12 @@
 # run_interactive_repl.py
 import asyncio
 import logging
+import os
 
-# Make sure aioconsole is installed: pip install aioconsole
-# The linter might show an error here if aioconsole is not yet installed.
-try:
-    import aioconsole
-except ImportError:
-    print("Please install aioconsole: pip install aioconsole")
-    exit(1)
+from prompt_toolkit import PromptSession
+from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
+from prompt_toolkit.completion import WordCompleter
+from prompt_toolkit.history import FileHistory
 
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.dana.exceptions import DanaError
@@ -21,10 +19,21 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - [%(name)s] %(level
 logging.getLogger("opendxa.dana.repl").setLevel(logging.WARNING)
 
 
+# Set up history file
+HISTORY_FILE = os.path.expanduser("~/.dana_history")
+
+
 async def main():
     """Runs an interactive DANA REPL session."""
     print("Initializing DANA REPL...")
     print("Type DANA code or natural language. Type 'exit' or 'quit' to end.")
+
+    # Initialize prompt session with history
+    session = PromptSession(
+        history=FileHistory(HISTORY_FILE),
+        auto_suggest=AutoSuggestFromHistory(),
+        completer=WordCompleter(["exit", "quit"]),  # Add more completions as needed
+    )
 
     # --- LLM Initialization (Optional) ---
     llm = None
@@ -61,8 +70,8 @@ async def main():
 
     while True:
         try:
-            # Use aioconsole for async input
-            line = await aioconsole.ainput("dana> ")
+            # Use prompt_toolkit for input with history support
+            line = await asyncio.get_event_loop().run_in_executor(None, lambda: session.prompt("dana> "))
             line = line.strip()
 
             if line.lower() in ["exit", "quit"]:

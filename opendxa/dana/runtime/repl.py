@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, cast
 
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.dana.exceptions import DanaError, ParseError, TranscoderError
@@ -99,7 +99,118 @@ class REPL:
                     self.logger.error(f"Failed to parse program: {pe}")
                     raise DanaError(f"Failed to parse program: {pe}") from pe
 
-            # Execute the program - wrap in try/except for better async error handling
+            # Special handling for REPL-style statements with type errors
+            # If this looks like a simple log/print statement or reason statement with undefined variable errors,
+            # we can try to execute it anyway since our runtime resolution might handle it
+            from opendxa.dana.exceptions import TypeError
+            from opendxa.dana.language.ast import LogStatement, PrintStatement, ReasonStatement
+
+            # Check if this is a single statement in REPL context
+            is_single_statement = len(parse_result.program.statements) == 1
+            is_special_statement = False
+
+            if is_single_statement:
+                stmt = parse_result.program.statements[0]
+                is_special_statement = isinstance(stmt, (LogStatement, PrintStatement, ReasonStatement))
+
+            # Check if errors are only undefined variable errors we might resolve at runtime
+            has_only_undefined_var_errors = False
+            if parse_result.errors:
+                has_only_undefined_var_errors = all(
+                    isinstance(err, TypeError) and "Undefined variable" in str(err) for err in parse_result.errors
+                )
+
+            # Special case for a reason statement - these always need special handling in REPL
+            is_reason_statement = is_single_statement and isinstance(parse_result.program.statements[0], ReasonStatement)
+
+            # For simple REPL expressions with just undefined variable errors or reason statements,
+            # try executing without the errors and see if runtime resolution helps
+            if is_single_statement and ((is_special_statement and has_only_undefined_var_errors) or is_reason_statement):
+                # Create a clean version of the parse result without the errors
+                clean_parse_result = ParseResult(program=parse_result.program, errors=[])  # No errors to let it execute
+
+                try:
+                    # For reason statements, we need to use the special sync reason method
+                    if is_reason_statement:
+                        # Get the reason statement from the program
+                        reason_stmt = parse_result.program.statements[0]
+                        self.logger.debug("REPL: Processing reason statement synchronously")
+
+                        # Verify that the reason statement has a valid prompt before proceeding
+                        if reason_stmt.prompt is None:
+                            # For direct reason() calls, we need to extract the prompt from the program text
+                            self.logger.debug("Fixing null prompt in reason statement")
+                            try:
+                                # Handle f-strings special case first
+                                if 'reason(f"' in program_source or "reason(f'" in program_source:
+                                    # For f-strings, we need to preserve the original as an f-string expression
+                                    # The safest approach is to just set a default prompt and let the interpreter
+                                    # correctly evaluate the f-string later
+                                    self.logger.debug("Detected f-string prompt in reason statement")
+                                    # Set a default prompt that will be overridden at execution time
+                                    from opendxa.dana.language.ast import FStringExpression, Literal, LiteralExpression
+
+                                    # Extract the f-string portions
+                                    if 'reason(f"' in program_source:
+                                        start_idx = program_source.find('reason(f"') + 9
+                                        end_idx = program_source.find('")', start_idx)
+                                    else:  # reason(f'
+                                        start_idx = program_source.find("reason(f'") + 9
+                                        end_idx = program_source.find("')", start_idx)
+
+                                    if start_idx >= 9 and end_idx > start_idx:
+                                        # Create an f-string with the original text
+                                        fs_text = program_source[start_idx:end_idx]
+                                        # Create a proper FStringExpression
+                                        from opendxa.dana.language.ast import FStringExpression
+
+                                        fstring_expr = FStringExpression(parts=[fs_text])
+                                        setattr(fstring_expr, "_is_fstring", True)
+                                        setattr(fstring_expr, "_original_text", fs_text)
+                                        reason_stmt.prompt = LiteralExpression(literal=Literal(value=fstring_expr))
+                                    else:
+                                        # If parsing fails, set a generic prompt
+                                        reason_stmt.prompt = LiteralExpression(literal=Literal(value="f-string prompt"))
+
+                                # Extract normal strings
+                                elif 'reason("' in program_source:
+                                    # Extract the text between quotes
+                                    start_idx = program_source.find('reason("') + 8
+                                    end_idx = program_source.find('")', start_idx)
+                                    if start_idx >= 8 and end_idx > start_idx:
+                                        prompt_text = program_source[start_idx:end_idx]
+                                        # Create a new prompt
+                                        from opendxa.dana.language.ast import Literal, LiteralExpression
+
+                                        reason_stmt.prompt = LiteralExpression(literal=Literal(value=prompt_text))
+                                elif "reason('" in program_source:
+                                    # Handle single quotes
+                                    start_idx = program_source.find("reason('") + 8
+                                    end_idx = program_source.find("')", start_idx)
+                                    if start_idx >= 8 and end_idx > start_idx:
+                                        prompt_text = program_source[start_idx:end_idx]
+                                        from opendxa.dana.language.ast import Literal, LiteralExpression
+
+                                        reason_stmt.prompt = LiteralExpression(literal=Literal(value=prompt_text))
+                                else:
+                                    raise RuntimeError("Reason statement must have a prompt")
+                            except Exception as e:
+                                self.logger.error(f"Error extracting prompt: {e}")
+                                raise RuntimeError("Reason statement must have a prompt")
+
+                        # Call the sync method directly
+                        self.interpreter._visit_reason_statement_sync(cast(ReasonStatement, reason_stmt))
+                        # If we got here, it worked!
+                        return
+                    else:
+                        # For other statements, try normal execution path
+                        self.interpreter.execute_program(clean_parse_result)
+                        return  # If we get here, it worked! No need to continue.
+                except Exception as e:
+                    # If execution still fails, fall back to the original parse_result
+                    self.logger.debug(f"Attempted runtime resolution failed: {e}")
+
+            # Normal execution path for all other cases
             try:
                 self.interpreter.execute_program(parse_result)
             except RuntimeError as e:

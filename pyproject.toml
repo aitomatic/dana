@@ -58,6 +58,9 @@ dev = [
     # Testing with coverage
     "pytest-cov",
 
+    # REPL keyboard
+    "prompt-toolkit",
+
     # DANA agent programming language parser/interpreter
     "lark",
     "lark-parser"
