@@ -14,17 +14,13 @@ def test_set_and_get_variable():
     ctx.set("private.name", "Alice")
     assert ctx.get("private.name") == "Alice"
 
-    # Test group scope
-    ctx.set("group.temperature", 25)
-    assert ctx.get("group.temperature") == 25
+    # Test public scope
+    ctx.set("public.weather", "sunny")
+    assert ctx.get("public.weather") == "sunny"
 
-    # Test global scope
-    ctx.set("global.weather", "sunny")
-    assert ctx.get("global.weather") == "sunny"
-
-    # Test execution scope
-    ctx.set("execution.status", "running")
-    assert ctx.get("execution.status") == "running"
+    # Test system scope
+    ctx.set("system.status", "running")
+    assert ctx.get("system.status") == "running"
 
 
 def test_get_nonexistent_variable():

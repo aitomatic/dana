@@ -20,22 +20,21 @@ class ExecutionStatus(Enum):
 class RuntimeContext:
     """Manages the scoped state during DANA program execution.
 
-    The context provides four standard scopes:
+    The context provides three standard scopes:
     - private: Private to the agent, resource, or tool itself
-    - group: A workgroup or shared blackboard
-    - global: Openly accessible world state (time, weather, etc.)
-    - execution: Execution-related mechanical state with controlled access
+    - public: Openly accessible world state (time, weather, etc.)
+    - system: System-related mechanical state with controlled access
     """
 
-    STANDARD_SCOPES = {"private", "group", "global", "execution"}
+    STANDARD_SCOPES = {"private", "public", "system"}
 
     def __init__(self):
         """Initializes the context with empty standard scopes and resource registry."""
         self._state: Dict[str, Dict] = {scope: {} for scope in self.STANDARD_SCOPES}
         self._resources = ResourceRegistry()
 
-        # Initialize execution state
-        self._state["execution"] = {
+        # Initialize system state
+        self._state["system"] = {
             "status": ExecutionStatus.IDLE,
             "history": [],
         }
@@ -120,22 +119,22 @@ class RuntimeContext:
     def add_execution_history(self, entry: Dict[str, Any]) -> None:
         """Add an entry to execution history."""
         entry["timestamp"] = datetime.now(timezone.utc).isoformat()
-        self._state["execution"]["history"].append(entry)
+        self._state["system"]["history"].append(entry)
 
     def reset_execution_state(self) -> None:
         """Reset execution state to initial values."""
-        self._state["execution"] = {
+        self._state["system"] = {
             "status": ExecutionStatus.IDLE,
             "history": [],
         }
 
     def get_execution_status(self) -> ExecutionStatus:
         """Get current execution status."""
-        return self._state["execution"]["status"]
+        return self._state["system"]["status"]
 
     def set_execution_status(self, status: ExecutionStatus) -> None:
         """Set current execution status."""
-        self._state["execution"]["status"] = status
+        self._state["system"]["status"] = status
 
     # Resource management
     def register_resource(self, name: str, resource: Any) -> None:

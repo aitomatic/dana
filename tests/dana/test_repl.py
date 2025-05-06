@@ -7,9 +7,9 @@ import pytest
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.dana.exceptions import DanaError
 from opendxa.dana.language.parser import ParseError, ParseResult
-from opendxa.dana.runtime.repl import REPL
 from opendxa.dana.runtime.context import RuntimeContext
 from opendxa.dana.runtime.interpreter import Interpreter, LogLevel
+from opendxa.dana.runtime.repl import REPL
 from opendxa.dana.transcoder.transcoder import TranscoderError
 
 
@@ -42,8 +42,8 @@ class TestREPL:
     async def test_execute_with_initial_context(self):
         """Test executing DANA code with initial context."""
         # DANA code using initial context
-        code = 'log("Location: {execution.location}")'
-        initial_context = {"execution.location": "San Francisco"}
+        code = 'log("Location: {system.location}")'
+        initial_context = {"system.location": "San Francisco"}
 
         # Mock transcoder and interpreter
         parse_result = ParseResult(program=MagicMock(), errors=[])
@@ -107,9 +107,9 @@ class TestREPL:
         context_state = context._state.copy()
         mock_state = mock_context._state.copy()
         # Remove execution ID and log level from comparison
-        context_state["execution"].pop("id", None)
-        mock_state["execution"].pop("id", None)
-        context_state["execution"].pop("log_level", None)
-        mock_state["execution"].pop("log_level", None)
+        context_state["system"].pop("id", None)
+        mock_state["system"].pop("id", None)
+        context_state["system"].pop("log_level", None)
+        mock_state["system"].pop("log_level", None)
         assert context_state == mock_state
         assert context._resources.list() == mock_context._resources.list()

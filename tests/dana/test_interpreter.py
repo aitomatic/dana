@@ -279,7 +279,7 @@ def test_log_level_set_statement():
     for level in [LogLevel.DEBUG, LogLevel.INFO, LogLevel.WARN, LogLevel.ERROR]:
         program = Program([LogLevelSetStatement(level=level)])
         interpreter.execute_program(ParseResult(program=program))
-        assert interpreter.context.get("execution.log_level") == level.value
+        assert interpreter.context.get("system.log_level") == level.value
 
         # Verify the log level affects message filtering
         with patch("builtins.print") as mock_print:
@@ -311,7 +311,7 @@ def test_state_management():
         [
             Assignment(target=Identifier("private.config.value1"), value=LiteralExpression(Literal(42))),
             Assignment(target=Identifier("private.config.value2"), value=LiteralExpression(Literal("test"))),
-            Assignment(target=Identifier("global.state.counter"), value=LiteralExpression(Literal(100))),
+            Assignment(target=Identifier("public.state.counter"), value=LiteralExpression(Literal(100))),
         ]
     )
     interpreter.execute_program(ParseResult(program=program))
@@ -319,7 +319,7 @@ def test_state_management():
     # Verify values
     assert interpreter.context.get("private.config.value1") == 42
     assert interpreter.context.get("private.config.value2") == "test"
-    assert interpreter.context.get("global.state.counter") == 100
+    assert interpreter.context.get("public.state.counter") == 100
 
     # Update existing value
     program = Program([Assignment(target=Identifier("private.config.value1"), value=LiteralExpression(Literal(99)))])

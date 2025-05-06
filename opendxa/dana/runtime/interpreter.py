@@ -73,9 +73,9 @@ class Interpreter(ASTVisitor):
         self._execution_id = str(uuid.uuid4())[:8]  # Short unique ID for this execution
         self._log_level = LogLevel.WARN  # Default log level to WARN
 
-        # Initialize execution state
-        self.context.set("execution.id", self._execution_id)
-        self.context.set("execution.log_level", self._log_level.value)
+        # Initialize system state
+        self.context.set("system.id", self._execution_id)
+        self.context.set("system.log_level", self._log_level.value)
 
     def _should_log(self, level: LogLevel) -> bool:
         """Check if a message with the given level should be logged."""
@@ -114,9 +114,13 @@ class Interpreter(ASTVisitor):
             print(f"[opendxa.dana {timestamp}] {color}{message} | {self._execution_id} | {level.value} | execution{RESET}")
 
     def set_log_level(self, level: LogLevel) -> None:
-        """Set the global log level threshold."""
+        """Set the current log level.
+
+        Args:
+            level: The new log level to set
+        """
         self._log_level = level
-        self.context.set("execution.log_level", level.value)
+        self.context.set("system.log_level", level.value)
 
     def execute_program(self, parse_result: ParseResult) -> None:
         """Execute a DANA program.
@@ -153,7 +157,7 @@ class Interpreter(ASTVisitor):
         except Exception as e:
             # Set log level to ERROR for any exceptions
             self._log_level = LogLevel.ERROR
-            self.context.set("execution.log_level", LogLevel.ERROR.value)
+            self.context.set("system.log_level", LogLevel.ERROR.value)
 
             # Execute error hooks
             if has_hooks(HookType.ON_ERROR):
@@ -241,7 +245,7 @@ class Interpreter(ASTVisitor):
         """Visit a LogLevelSetStatement node, setting the log level."""
         try:
             self._log_level = node.level
-            self.context.set("execution.log_level", node.level.value)
+            self.context.set("system.log_level", node.level.value)
             self._log(f"Set log level to {node.level.value}", LogLevel.DEBUG)
         except Exception as e:
             if isinstance(e, (RuntimeError, StateError)):
@@ -625,20 +629,20 @@ class Interpreter(ASTVisitor):
             # If the name contains dots, it might be an object attribute path
             if "." in node.name:
                 parts = node.name.split(".")
-                
+
                 # Get the base object first (prefix with private. if needed)
                 base_name = parts[0]
                 if "." not in base_name:
                     base_name = f"private.{base_name}"
-                
+
                 try:
                     # Get the base object
                     obj = self.context.get(base_name)
-                    
+
                     # Navigate through attributes for remaining parts
                     for part in parts[1:]:
                         obj = getattr(obj, part)
-                    
+
                     return obj
                 except (StateError, AttributeError):
                     # Fall back to direct variable lookup if attribute path fails
@@ -667,7 +671,7 @@ class Interpreter(ASTVisitor):
 
                 # Call the function from the registry
                 return call_function(node.name, self.context, args)
-            
+
             # First try to get the function directly as a variable (for lambda functions)
             try:
                 # Convert all argument values first
@@ -678,7 +682,7 @@ class Interpreter(ASTVisitor):
                         processed_args[key] = self.visit_node(value, context)
                     else:
                         processed_args[key] = value
-                
+
                 # Prepare positional and keyword arguments
                 args_list = []
                 kwargs = {}
@@ -693,22 +697,22 @@ class Interpreter(ASTVisitor):
                     else:
                         # Otherwise it's a keyword argument
                         kwargs[key] = value
-                
+
                 # Try to get function as variable first (for lambda, etc.)
                 var_name = node.name
                 if "." not in var_name:
                     var_name = f"private.{var_name}"
-                
+
                 func = self.context.get(var_name)
-                
+
                 if callable(func):
                     result = func(*args_list, **kwargs)
                     return result
-                    
+
             except StateError:
                 # If not found as a variable, continue with normal processing
                 pass
-            
+
             # If the function name contains dots, it might be a Python object method call
             if "." in node.name:
                 # Convert all argument values first
@@ -719,7 +723,7 @@ class Interpreter(ASTVisitor):
                         processed_args[key] = self.visit_node(value, context)
                     else:
                         processed_args[key] = value
-                
+
                 # Prepare positional and keyword arguments
                 args_list = []
                 kwargs = {}
@@ -734,25 +738,25 @@ class Interpreter(ASTVisitor):
                     else:
                         # Otherwise it's a keyword argument
                         kwargs[key] = value
-                
+
                 # Try to resolve the object path
                 parts = node.name.split(".")
-                
+
                 # Start by getting the base object
                 try:
                     # Get the base object with private prefix if needed
                     base_name = parts[0]
                     if "." not in base_name:
                         base_name = f"private.{base_name}"
-                    
+
                     obj = self.context.get(base_name)
-                    
+
                     # Navigate through the object attributes to get the method
                     for i, part in enumerate(parts[1:], start=1):
                         if i == len(parts) - 1:
                             # Last part is the method to call
                             method = getattr(obj, part)
-                            
+
                             # Check if we have a callable
                             if callable(method):
                                 # IMPORTANT: Actually call the method and return the result
@@ -765,7 +769,7 @@ class Interpreter(ASTVisitor):
                         else:
                             # Navigate to the next attribute
                             obj = getattr(obj, part)
-                    
+
                 except (AttributeError, TypeError) as e:
                     error_msg = f"Error accessing object or method in '{node.name}': {str(e)}"
                     error_msg += format_error_location(node)
@@ -774,7 +778,7 @@ class Interpreter(ASTVisitor):
                     error_msg = f"Variable not found in '{node.name}'"
                     error_msg += format_error_location(node)
                     raise RuntimeError(error_msg)
-            
+
             else:
                 error_msg = f"Function '{node.name}' is not registered or found as variable"
                 error_msg += format_error_location(node)

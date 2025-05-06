@@ -14,17 +14,13 @@ def test_runtime_context_scopes():
     ctx.set("private.name", "Alice")
     assert ctx.get("private.name") == "Alice"
 
-    # Test group scope
-    ctx.set("group.temperature", 25)
-    assert ctx.get("group.temperature") == 25
+    # Test public scope
+    ctx.set("public.weather", "sunny")
+    assert ctx.get("public.weather") == "sunny"
 
-    # Test global scope
-    ctx.set("global.weather", "sunny")
-    assert ctx.get("global.weather") == "sunny"
-
-    # Test execution scope
-    ctx.set("execution.status", "running")
-    assert ctx.get("execution.status") == "running"
+    # Test system scope
+    ctx.set("system.status", "running")
+    assert ctx.get("system.status") == "running"
 
 
 def test_runtime_context_nested_keys():
@@ -37,17 +33,13 @@ def test_runtime_context_nested_keys():
     assert ctx.get("private.profile.name") == "Alice"
     assert ctx.get("private.profile.age") == 30
 
-    # Test nested keys in group scope
-    ctx.set("group.settings.theme", "dark")
-    assert ctx.get("group.settings.theme") == "dark"
+    # Test nested keys in public scope
+    ctx.set("public.location.city", "San Francisco")
+    assert ctx.get("public.location.city") == "San Francisco"
 
-    # Test nested keys in global scope
-    ctx.set("global.location.city", "San Francisco")
-    assert ctx.get("global.location.city") == "San Francisco"
-
-    # Test nested keys in execution scope
-    ctx.set("execution.history.last_action", "completed")
-    assert ctx.get("execution.history.last_action") == "completed"
+    # Test nested keys in system scope
+    ctx.set("system.history.last_action", "completed")
+    assert ctx.get("system.history.last_action") == "completed"
 
 
 def test_execution_state():
@@ -59,7 +51,7 @@ def test_execution_state():
 
     # Test execution history
     ctx.add_execution_history({"action": "test"})
-    history = ctx.get("execution.history")
+    history = ctx.get("system.history")
     assert len(history) == 1
     assert history[0]["action"] == "test"
     assert "timestamp" in history[0]
@@ -71,7 +63,7 @@ def test_execution_state():
     # Test reset
     ctx.reset_execution_state()
     assert ctx.get_execution_status() == ExecutionStatus.IDLE
-    assert not ctx.get("execution.history")
+    assert not ctx.get("system.history")
 
 
 def test_resource_management():
