@@ -118,8 +118,8 @@ def test_variable_shadowing():
 
     program = """
     x = 42  # private.x
-    group.x = 100  # group.x
-    log(f"Private: {x}, Group: {group.x}")
+    public.x = 100  # group.x
+    log(f"Private: {x}, Public: {public.x}")
     """
     with patch("builtins.print") as mock_print:
         interpreter.set_log_level(LogLevel.INFO)
@@ -129,4 +129,4 @@ def test_variable_shadowing():
         assert "42" in output
         assert "100" in output
         assert interpreter.context.get("private.x") == 42
-        assert interpreter.context.get("group.x") == 100
+        assert interpreter.context.get("public.x") == 100
