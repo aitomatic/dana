@@ -32,39 +32,29 @@ def mock_llm():
     return mock_llm
 
 
-@pytest.mark.asyncio
-async def test_reason_statement(runtime_context, mock_llm):
+def test_reason_statement(runtime_context, mock_llm):
     """Test the reason statement outside of asyncio."""
-    # Since we're testing the workaround for reason statements in the REPL,
-    # we'll take a different approach. Let's use the real REPL but override 
-    # the _visit_reason_statement_sync method to avoid asyncio issues.
-
-    # Create a REPL instance with the mock LLM
-    repl = REPL(mock_llm, runtime_context, log_level=LogLevel.DEBUG)
+    # We need to mock the LLM integration completely to avoid asyncio issues
     
-    # Patch the interpreter's _visit_reason_statement_sync method
-    with patch.object(repl.interpreter, '_visit_reason_statement_sync') as mock_sync:
-        # Make the mock method just set a pre-defined result
-        def mock_reason(node, context=None):
-            # If the statement has a target, set the variable
-            if node.target:
-                repl.interpreter._set_variable(node.target.name, "Mock reasoning result")
-            return None
+    from opendxa.dana.runtime.interpreter import create_interpreter
+    from opendxa.dana.language.parser import parse
+    
+    # Create an interpreter
+    interpreter = create_interpreter(runtime_context)
+    
+    # Mock the LLM integration component
+    with patch.object(interpreter.statement_executor.llm_integration, 'execute_direct_synchronous_reasoning') as mock_reasoning:
+        # Mock the reasoning to return a fixed result
+        mock_reasoning.return_value = "4"
         
-        mock_sync.side_effect = mock_reason
+        # Parse and execute a simple reason statement with assignment
+        program = parse('private.result = reason("What is 2+2?")')
+        interpreter.execute_program(program)
         
-        # Execute a simple reason statement
-        await repl.execute('reason("What is the capital of France?")')
+        # Verify our mock was called with the right prompt
+        mock_reasoning.assert_called_once()
+        args, _ = mock_reasoning.call_args
+        assert args[0] == "What is 2+2?"
         
-        # Verify our mock was called
-        mock_sync.assert_called_once()
-        
-        # Reset the mock for the next test
-        mock_sync.reset_mock()
-        
-        # Test a reason statement with assignment
-        await repl.execute('result = reason("What is 2+2?")')
-        
-        # Verify the variable was set
-        assert repl.context.get("private.result") == "Mock reasoning result"
-        mock_sync.assert_called_once()
+        # Verify the variable was set correctly
+        assert interpreter.context.get("private.result") == "4"

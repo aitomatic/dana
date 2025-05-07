@@ -11,14 +11,10 @@ from opendxa.dana.language.ast import LogLevel, Program
 from opendxa.dana.language.parser import ParseResult
 from opendxa.dana.runtime.context import RuntimeContext
 from opendxa.dana.runtime.executor.context_manager import ContextManager
-from opendxa.dana.runtime.executor.error_utils import format_error_location
 from opendxa.dana.runtime.executor.expression_evaluator import ExpressionEvaluator
 from opendxa.dana.runtime.executor.llm_integration import LLMIntegration
 from opendxa.dana.runtime.executor.statement_executor import StatementExecutor
 from opendxa.dana.runtime.hooks import HookType, execute_hook, has_hooks
-
-# Re-export for backward compatibility
-__all__ = ["Interpreter", "create_interpreter", "format_error_location"]
 
 
 class Interpreter:
@@ -79,8 +75,23 @@ class Interpreter:
         try:
             # Execute all statements in the program
             for statement in parse_result.program.statements:
-                # Execute the statement (statement hooks are now handled inside the executor)
+                # Create hook context for statement hooks
+                stmt_hook_context = {
+                    "visitor": self,
+                    "context": self.context,
+                    "statement": statement
+                }
+                
+                # Execute before statement hooks
+                if has_hooks(HookType.BEFORE_STATEMENT):
+                    execute_hook(HookType.BEFORE_STATEMENT, stmt_hook_context)
+                
+                # Execute the statement
                 self.statement_executor.execute(statement)
+                
+                # Execute after statement hooks
+                if has_hooks(HookType.AFTER_STATEMENT):
+                    execute_hook(HookType.AFTER_STATEMENT, stmt_hook_context)
             
             # If there are any parse errors, stop at the first one
             if parse_result.errors:
@@ -171,26 +182,6 @@ class Interpreter:
         # Unknown node type
         else:
             raise RuntimeError(f"Unsupported node type: {type(node).__name__}")
-    
-    # Backward compatibility method for REPL functionality
-    
-    def _visit_reason_statement_sync(self, node: Any, context: Optional[Dict[str, Any]] = None) -> Any:
-        """Method for synchronously visiting reason statements.
-        
-        Used by the REPL implementation to handle reason statements in async contexts.
-        
-        Args:
-            node: The reason statement node
-            context: Optional local context
-            
-        Returns:
-            The result of the reasoning
-        """
-        if hasattr(self.statement_executor, '_execute_reason_statement_sync'):
-            return self.statement_executor._execute_reason_statement_sync(node, context)
-        else:
-            # Fallback to asynchronous version
-            return self.statement_executor.execute_reason_statement(node, context)
 
 
 # Factory function for creating interpreters

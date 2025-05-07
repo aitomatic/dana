@@ -26,8 +26,8 @@ class TestFStringEvaluation:
         parts = ["F-STRING-PLACEHOLDER:What is {a}*{pi}?"]
         fstring = FStringExpression(parts=parts)
         
-        # Process directly
-        result = interpreter.visit_fstring_expression(fstring, {"a": 10, "pi": 3.14})
+        # Process directly using the expression evaluator
+        result = interpreter.expression_evaluator.evaluate_fstring_expression(fstring, {"a": 10, "pi": 3.14})
         
         # Check the result
         assert "What is 10*3.14?" in result, f"Expected '10*3.14' in result, got: {result}"

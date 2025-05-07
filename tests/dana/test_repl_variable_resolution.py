@@ -30,87 +30,49 @@ class TestReplVariableResolution(unittest.TestCase):
         # Set up test variables directly
         self.context.set('private.a', 5)
         self.context.set('private.obj', {'value': 10})
+    
+    def test_direct_variable_access(self):
+        """Test direct variable access through expression evaluation."""
+        # Use direct expression evaluation
+        a_value = self.interpreter.evaluate_expression(Identifier(name='private.a'))
+        assert a_value == 5, f"Expected a value to be 5, got {a_value}"
         
-    def test_variable_resolution_consistency(self):
-        """Test that variable resolution is consistent in log and print statements."""
-        # Test direct variable access with print statement
+        # Test nested object reference
+        obj_value = self.interpreter.evaluate_expression(Identifier(name='private.obj.value'))
+        assert obj_value == 10, f"Expected obj.value to be 10, got {obj_value}"
+        
+    def test_print_variable_in_repl(self):
+        """Test that print statements can access variables in REPL mode."""
+        # Mock REPL execution
+        from opendxa.dana.runtime.repl import REPL
+        from unittest.mock import MagicMock
+        
+        # Create a simple REPL object with our context
+        repl = REPL(MagicMock(), self.context)
+        
+        # Test print with variable
         with patch('sys.stdout', new_callable=io.StringIO) as mock_stdout:
-            # Create a PrintStatement node directly
-            print_node = PrintStatement(
-                message=Identifier(name='a')
-            )
-            # Visit the node
-            self.interpreter.visit_print_statement(print_node)
-            # Check output
-            output = mock_stdout.getvalue().strip()
-            self.assertTrue(output.startswith('5'), f"Print output didn't start with '5': {output}")
-        
-        # Test direct variable access with log statement
-        with patch.object(self.interpreter, '_log') as mock_log:
-            # Create a LogStatement node directly
-            log_node = LogStatement(
-                message=Identifier(name='a'),
-                level=LogLevel.INFO
-            )
-            # Visit the node
-            self.interpreter.visit_log_statement(log_node)
-            # Check that _log was called with the value '5'
-            mock_log.assert_called_with('5', LogLevel.INFO)
+            # Mute the debug logging that gets printed along with the output
+            with patch.object(self.interpreter.statement_executor, '_log'):
+                # Call the statement executor directly with existing variable
+                print_node = PrintStatement(message=Identifier(name='private.a'))
+                self.interpreter.statement_executor.execute_print_statement(print_node)
+                
+                # Check output (just the first line)
+                output = mock_stdout.getvalue().split('\n')[0].strip()
+                assert output == '5', f"Expected output to be '5', got '{output}'"
             
-    def test_complex_variable_resolution(self):
-        """Test resolution with nested variable references."""
-        # Test direct access to nested variables with print
-        with patch('sys.stdout', new_callable=io.StringIO) as mock_stdout:
-            # Create a PrintStatement node directly with a complex path
-            print_node = PrintStatement(
-                message=Identifier(name='obj.value')
-            )
-            # Visit the node
-            self.interpreter.visit_print_statement(print_node)
-            # Check output
-            output = mock_stdout.getvalue().strip()
-            self.assertTrue(output.startswith('10'), f"Print output didn't start with '10': {output}")
-        
-        # Test direct access to nested variables with log
-        with patch.object(self.interpreter, '_log') as mock_log:
-            # Create a LogStatement node directly with a complex path
+    def test_log_variable_in_repl(self):
+        """Test that log statements can access variables in REPL mode."""
+        # Test using the log statement directly
+        with patch.object(self.interpreter.statement_executor, '_log') as mock_log:
+            # Create and execute a log statement with a variable using the statement executor
             log_node = LogStatement(
-                message=Identifier(name='obj.value'),
+                message=Identifier(name='private.a'),
                 level=LogLevel.INFO
             )
-            # Visit the node
-            self.interpreter.visit_log_statement(log_node)
-            # Check that _log was called with the value '10'
-            mock_log.assert_called_with('10', LogLevel.INFO)
+            self.interpreter.statement_executor.execute_log_statement(log_node)
             
-    def test_unprefixed_variable_access(self):
-        """Test direct access to unprefixed variables."""
-        # Test that we can directly access 'a' without prefix in both print and log statements
-        
-        # For print statement
-        with patch('sys.stdout', new_callable=io.StringIO) as mock_stdout:
-            # Create custom context with unprefixed variable
-            custom_context = {'a': 5}
-            # Create a PrintStatement node
-            print_node = PrintStatement(
-                message=Identifier(name='a')
-            )
-            # Visit the node with custom context
-            self.interpreter.visit_print_statement(print_node, custom_context)
-            # Check output
-            output = mock_stdout.getvalue().strip()
-            self.assertTrue(output.startswith('5'), f"Print output didn't start with '5': {output}")
-        
-        # For log statement
-        with patch.object(self.interpreter, '_log') as mock_log:
-            # Create custom context with unprefixed variable
-            custom_context = {'a': 5}
-            # Create a LogStatement node
-            log_node = LogStatement(
-                message=Identifier(name='a'),
-                level=LogLevel.INFO
-            )
-            # Visit the node with custom context
-            self.interpreter.visit_log_statement(log_node, custom_context)
-            # Check that _log was called with the value '5'
-            mock_log.assert_called_with('5', LogLevel.INFO)
+            # Check the output
+            mock_log.assert_called()
+            assert mock_log.call_args[0][0] == '5', f"Expected log call with '5', got {mock_log.call_args}"

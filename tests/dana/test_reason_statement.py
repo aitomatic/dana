@@ -41,40 +41,28 @@ class TestReasonStatement:
         
         return mock_llm
 
-    @pytest.mark.asyncio
-    async def test_reason_statement_in_repl(self, runtime_context, mock_llm):
+    def test_reason_statement_in_repl(self, runtime_context):
         """Test the reason statement in the DANA REPL."""
-        # Register the mock LLM resource with the context
-        runtime_context.register_resource("llm", mock_llm)
+        # We'll use a simpler approach with the interpreter directly
+        from opendxa.dana.runtime.interpreter import create_interpreter
+        from opendxa.dana.language.parser import parse
         
-        # Create a REPL instance with the mock LLM
-        repl = REPL(mock_llm, runtime_context, log_level=LogLevel.DEBUG)
+        # Create an interpreter
+        interpreter = create_interpreter(runtime_context)
         
-        # Patch our problematic method to avoid event loop issues in tests
-        with patch.object(repl.interpreter, '_visit_reason_statement_sync') as mock_reason:
-            # Set up a side effect that simulates adding result to context
-            def simulate_reason(node, context=None):
-                # If we have a target, store a result
-                if node and node.target:
-                    repl.interpreter._set_variable(node.target.name, "This is a mock LLM response")
-                return None
+        # Mock the LLM integration component
+        with patch.object(interpreter.statement_executor.llm_integration, 'execute_direct_synchronous_reasoning') as mock_reasoning:
+            # Mock the reasoning to return a fixed result
+            mock_reasoning.return_value = "Paris"
             
-            mock_reason.side_effect = simulate_reason
+            # Parse and execute a simple reason statement with assignment
+            program = parse('private.result = reason("What is the capital of France?")')
+            interpreter.execute_program(program)
             
-            # Execute a simple reason statement with a string literal
-            await repl.execute('reason("What is the capital of France?")')
+            # Verify our mock was called with the right prompt
+            mock_reasoning.assert_called_once()
+            args, _ = mock_reasoning.call_args
+            assert args[0] == "What is the capital of France?"
             
-            # Verify that our mocked method was called
-            mock_reason.assert_called_once()
-            
-            # Reset the mock for the next test
-            mock_reason.reset_mock()
-            
-            # Test a more complex reason statement with variable assignment
-            await repl.execute('result = reason("What is 2+2?")')
-            
-            # Verify that the mock method was called again
-            mock_reason.assert_called_once()
-            
-            # Check that the result was stored in the variable
-            assert runtime_context.get("private.result") == "This is a mock LLM response"
+            # Verify the variable was set correctly
+            assert interpreter.context.get("private.result") == "Paris"

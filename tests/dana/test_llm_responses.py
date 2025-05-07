@@ -19,17 +19,25 @@ class TestLLMResponseFormats(unittest.TestCase):
         self.context = RuntimeContext()
         self.interpreter = Interpreter(self.context)
         self.interpreter.set_log_level(LogLevel.INFO)
-        
-        # Register a mock LLM resource
-        self.mock_llm = MagicMock(spec=LLMResource)
-        self.context.register_resource("reason_llm", self.mock_llm)
 
     def test_openai_style_response(self):
         """Test handling of OpenAI-style dictionary responses."""
-        # Create a response structure with OpenAI-style format
-        mock_response = MagicMock()
-        mock_response.success = True
-        mock_response.content = {
+        # Create a parse result for testing
+        from opendxa.dana.language.parser import ParseResult
+        from opendxa.dana.language.ast import Program, Assignment, Identifier
+        
+        # Create an LLM integration object to test response processing directly
+        from opendxa.dana.runtime.executor.llm_integration import LLMIntegration
+        from opendxa.dana.runtime.executor.context_manager import ContextManager
+        
+        # Create a context manager
+        context_manager = ContextManager(self.context)
+        
+        # Create the LLM integration to test
+        llm_integration = LLMIntegration(context_manager)
+        
+        # Create a mock response in OpenAI format
+        mock_content = {
             "choices": [
                 {
                     "message": {
@@ -39,32 +47,28 @@ class TestLLMResponseFormats(unittest.TestCase):
             ]
         }
         
-        # Set up the async mock for LLM query
-        async def mock_initialize():
-            return None
-        self.mock_llm.initialize = mock_initialize
+        # Test the processor directly
+        result = llm_integration._process_llm_response(mock_content)
         
-        async def mock_query(*args, **kwargs):
-            return mock_response
-        self.mock_llm.query = mock_query
-        
-        # Create a reason statement
-        literal = Literal("test prompt")
-        expr = LiteralExpression(literal)
-        reason_stmt = ReasonStatement(expr, None, None, {})
-        
-        # Patch the _log method to check the output
-        with patch.object(self.interpreter, '_log') as mock_log:
-            # Execute the reason statement synchronously
-            self.interpreter._visit_reason_statement_sync(reason_stmt)
-            
-            # Check that the right content was extracted and logged
-            calls = mock_log.call_args_list
-            assert any("This is a test response" in str(call) for call in calls), \
-                "Expected log to contain the test response"
+        # Verify the result
+        assert result == "This is a test response"
 
     def test_deepseek_style_response(self):
         """Test handling of DeepSeek-style object responses."""
+        # Create a parse result for testing
+        from opendxa.dana.language.parser import ParseResult
+        from opendxa.dana.language.ast import Program, Assignment, Identifier
+        
+        # Create an LLM integration object to test response processing directly
+        from opendxa.dana.runtime.executor.llm_integration import LLMIntegration
+        from opendxa.dana.runtime.executor.context_manager import ContextManager
+        
+        # Create a context manager
+        context_manager = ContextManager(self.context)
+        
+        # Create the LLM integration to test
+        llm_integration = LLMIntegration(context_manager)
+        
         # Create a mock Choice object to simulate DeepSeek's response
         class MockMessage:
             def __init__(self):
@@ -76,100 +80,62 @@ class TestLLMResponseFormats(unittest.TestCase):
 
         mock_choice = MockChoice()
         
-        # Create the response
-        mock_response = MagicMock()
-        mock_response.success = True
-        mock_response.content = {
+        # Create the response in DeepSeek format
+        mock_content = {
             "choices": [mock_choice]
         }
         
-        # Set up the async mock for LLM query
-        async def mock_initialize():
-            return None
-        self.mock_llm.initialize = mock_initialize
+        # Test the processor directly
+        result = llm_integration._process_llm_response(mock_content)
         
-        async def mock_query(*args, **kwargs):
-            return mock_response
-        self.mock_llm.query = mock_query
+        # The result should be the string "This is a test response"
+        # Note: This might fail if the LLM integration doesn't handle object attributes correctly
+        # In a real implementation, it would need to handle both dictionary access and attribute access
+        assert str(result) == str(mock_choice.message.content)
         
-        # Create a reason statement
-        literal = Literal("test prompt")
-        expr = LiteralExpression(literal)
-        reason_stmt = ReasonStatement(expr, None, None, {})
-        
-        # Patch the _log method to check the output
-        with patch.object(self.interpreter, '_log') as mock_log:
-            # Execute the reason statement synchronously
-            self.interpreter._visit_reason_statement_sync(reason_stmt)
-            
-            # Check that the right content was extracted and logged
-            calls = mock_log.call_args_list
-            assert any("This is a test response" in str(call) for call in calls), \
-                "Expected log to contain the test response"
-
     def test_direct_content_response(self):
         """Test handling of direct content responses."""
-        # Create a response with direct content field
-        mock_response = MagicMock()
-        mock_response.success = True
-        mock_response.content = {
+        # Create an LLM integration object to test response processing directly
+        from opendxa.dana.runtime.executor.llm_integration import LLMIntegration
+        from opendxa.dana.runtime.executor.context_manager import ContextManager
+        
+        # Create a context manager
+        context_manager = ContextManager(self.context)
+        
+        # Create the LLM integration to test
+        llm_integration = LLMIntegration(context_manager)
+        
+        # Create a mock response with direct content
+        mock_content = {
             "content": "This is a test response"
         }
         
-        # Set up the async mock for LLM query
-        async def mock_initialize():
-            return None
-        self.mock_llm.initialize = mock_initialize
+        # Test the processor directly
+        result = llm_integration._process_llm_response(mock_content)
         
-        async def mock_query(*args, **kwargs):
-            return mock_response
-        self.mock_llm.query = mock_query
+        # Verify the result
+        assert result == "This is a test response"
         
-        # Create a reason statement
-        literal = Literal("test prompt")
-        expr = LiteralExpression(literal)
-        reason_stmt = ReasonStatement(expr, None, None, {})
-        
-        # Patch the _log method to check the output
-        with patch.object(self.interpreter, '_log') as mock_log:
-            # Execute the reason statement synchronously
-            self.interpreter._visit_reason_statement_sync(reason_stmt)
-            
-            # Check that the right content was extracted and logged
-            calls = mock_log.call_args_list
-            assert any("This is a test response" in str(call) for call in calls), \
-                "Expected log to contain the test response"
-
     def test_fallback_response(self):
         """Test fallback handling for unexpected response formats."""
-        # Create an unexpected response format (direct string)
-        mock_response = MagicMock()
-        mock_response.success = True
-        mock_response.content = "This is a direct string response"
+        # Create an LLM integration object to test response processing directly
+        from opendxa.dana.runtime.executor.llm_integration import LLMIntegration
+        from opendxa.dana.runtime.executor.context_manager import ContextManager
         
-        # Set up the async mock for LLM query
-        async def mock_initialize():
-            return None
-        self.mock_llm.initialize = mock_initialize
+        # Create a context manager
+        context_manager = ContextManager(self.context)
         
-        async def mock_query(*args, **kwargs):
-            return mock_response
-        self.mock_llm.query = mock_query
+        # Create the LLM integration to test
+        llm_integration = LLMIntegration(context_manager)
         
-        # Create a reason statement
-        literal = Literal("test prompt")
-        expr = LiteralExpression(literal)
-        reason_stmt = ReasonStatement(expr, None, None, {})
+        # Create a simple string response
+        mock_content = "This is a direct string response"
         
-        # Patch the _log method to check the output
-        with patch.object(self.interpreter, '_log') as mock_log:
-            # Execute the reason statement synchronously
-            self.interpreter._visit_reason_statement_sync(reason_stmt)
-            
-            # Check that the response was handled correctly
-            calls = mock_log.call_args_list
-            assert any("This is a direct string response" in str(call) for call in calls), \
-                "Expected log to contain the direct string response"
+        # Test the processor directly
+        result = llm_integration._process_llm_response(mock_content)
+        
+        # Verify the result
+        assert result == "This is a direct string response"
 
 
 if __name__ == '__main__':
