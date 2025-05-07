@@ -79,14 +79,46 @@ class REPL(Loggable):
             if initial_context:
                 for key, value in initial_context.items():
                     self.context.set(key, value)
+            
+            # Check if this is likely a natural language input (single word or short phrase)
+            is_likely_nl = False
+            words = program_source.strip().split()
+            
+            # Single word that starts with a letter is likely natural language
+            if len(words) == 1 and words[0] and words[0][0].isalpha():
+                self.debug("Detected single word input, treating as natural language")
+                is_likely_nl = True
+            # Short phrases without DANA syntax are likely natural language
+            elif len(words) <= 5 and "=" not in program_source and "." not in program_source and "(" not in program_source:
+                self.debug("Detected short natural language phrase")
+                is_likely_nl = True
 
             # Try to transcode if we have an LLM resource
             parse_result: ParseResult
             if self.transcoder:
                 try:
-                    # transcode now returns a tuple (ParseResult, str | None)
-                    self.debug(f"Attempting to transcode input: {program_source[:50]}{'...' if len(program_source) > 50 else ''}")
-                    parse_result, cleaned_code = await self.transcoder.transcode(program_source, self.context)
+                    # If this is likely natural language and we have a transcoder, skip parsing
+                    if is_likely_nl:
+                        self.debug("Input looks like natural language, transcoding directly")
+                        parse_result, cleaned_code = await self.transcoder.transcode(program_source, self.context)
+                    else:
+                        # transcode now returns a tuple (ParseResult, str | None)
+                        self.debug(f"Attempting to transcode input: {program_source[:50]}{'...' if len(program_source) > 50 else ''}")
+                        
+                        # First try simple parsing to see if it's valid DANA code
+                        try:
+                            direct_parse_result = parse(program_source)
+                            if direct_parse_result.is_valid:
+                                self.debug("Input is valid DANA code, skipping transcoding")
+                                parse_result = direct_parse_result
+                                cleaned_code = None
+                            else:
+                                # Not valid DANA code, try transcoding
+                                parse_result, cleaned_code = await self.transcoder.transcode(program_source, self.context)
+                        except Exception:
+                            # Parsing failed, try transcoding
+                            parse_result, cleaned_code = await self.transcoder.transcode(program_source, self.context)
+                        
                     if cleaned_code:
                         self.info(f"LLM generated DANA code:\n{cleaned_code}")
                     if not parse_result.is_valid:
@@ -94,6 +126,15 @@ class REPL(Loggable):
                         raise DanaError(f"Invalid program after transcoding: {parse_result.error}")
                 except TranscoderError as e:
                     self.warning(f"Transcoding failed: {e}")
+                    
+                    # For natural language without transcoder, print a helpful message
+                    if is_likely_nl:
+                        self.warning("Natural language detected but transcoding failed. No LLM available for processing.")
+                        # For simple natural language, just print it back for a REPL-like experience
+                        print(f"Input: {program_source}")
+                        print("Note: Natural language processing requires an LLM resource.")
+                        return
+                        
                     self.info("Falling back to direct parsing")
                     # Fall back to direct parsing
                     try:
@@ -112,6 +153,16 @@ class REPL(Loggable):
                     # The 'parse_result' from the inner try will be used.
 
             else:
+                # Without transcoder
+                
+                # For natural language without transcoder, print a helpful message
+                if is_likely_nl:
+                    self.warning("Natural language detected but no LLM available for processing.")
+                    # For simple natural language, just print it back for a REPL-like experience
+                    print(f"Input: {program_source}")
+                    print("Note: Natural language processing requires an LLM resource.")
+                    return
+                
                 # Direct parsing without transcoding
                 self.debug("No transcoder available, using direct parsing")
                 try:

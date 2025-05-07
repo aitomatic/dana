@@ -67,6 +67,23 @@ class InputCompleteChecker(Loggable):
         """
         self.debug(f"Checking if input is complete ({len(code)} chars)")
         
+        # Handle special case for empty input
+        if not code.strip():
+            return True
+        
+        # Check if this is likely natural language input (single word or short phrase)
+        words = code.strip().split()
+        
+        # Single word that starts with a letter is likely natural language
+        if len(words) == 1 and words[0] and words[0][0].isalpha():
+            self.debug("Detected single word input, treating as complete natural language")
+            return True
+            
+        # Short phrases without DANA syntax are likely natural language
+        if len(words) <= 5 and "=" not in code and all("." not in w for w in words) and "(" not in code:
+            self.debug("Detected short natural language phrase, treating as complete")
+            return True
+        
         # Check for balanced brackets/braces
         brackets = {'(': ')', '[': ']', '{': '}'}
         stack = []
@@ -122,18 +139,26 @@ class InputCompleteChecker(Loggable):
         try:
             self.debug("Using parser to check completeness")
             result = parse(code)
+            
+            # If the parse result has no statements, it's likely incomplete
+            if len(result.program.statements) == 0 and code.strip():
+                self.debug("No statements found, input may be incomplete")
+                return False
+                
             # Check for specific errors that indicate incomplete input
             for error in result.errors:
                 error_msg = str(error)
                 if "Unexpected end of input" in error_msg or "Expected closing" in error_msg:
                     self.debug(f"Parser detected incomplete input: {error_msg}")
                     return False
+                    
             self.debug("Input is complete according to parser")
             return True
         except Exception as e:
-            # If parsing fails completely, it might be incomplete
+            # If parsing fails completely but we've passed all other checks,
+            # the input is probably complete but invalid (which will be caught during execution)
             self.debug(f"Parser exception during completeness check: {e}")
-            return False
+            return True
 
 
 class DanaREPLApp(Loggable):
