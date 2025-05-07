@@ -103,7 +103,12 @@ dana/
 │   ├── parser.py        # Lark-based parser
 │   ├── type_checker.py  # Static type checking
 │   ├── visitor.py       # Visitor pattern implementation
-│   └── types.py         # Type system definitions
+│   ├── types.py         # Type system definitions
+│   └── transformers/    # Modular AST transformers
+│       ├── base_transformer.py    # Common utilities
+│       ├── statement_transformer.py # Statement parsing
+│       ├── expression_transformer.py # Expression parsing
+│       └── fstring_transformer.py  # F-string parsing
 ├── transcoder/      # NL ↔ Code translation
 │   ├── transcoder.py    # Bidirectional translation
 │   ├── compiler.py      # NL to DANA compilation
@@ -123,6 +128,7 @@ The DANA runtime uses a robust architecture combining several design patterns:
 - **Function Registry**: Dynamic registration of tools and functions
 - **Type System**: Static type checking with runtime validation
 - **Logging System**: Configurable logging with color-coded levels (DEBUG, INFO, WARN, ERROR)
+- **Modular Transformers**: The parser uses specialized transformer components for different language constructs, improving maintainability and extensibility
 
 Key Features:
 - Asynchronous execution support
