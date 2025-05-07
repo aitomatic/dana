@@ -16,20 +16,25 @@ from opendxa.dana.transcoder.transcoder import FaultTolerantTranscoder
 class REPL(Loggable):
     """Read-Eval-Print Loop for executing and managing DANA programs.
 
-    This class provides an interactive REPL environment for executing DANA programs,
-    with support for both direct DANA code execution and natural language
-    input through the transcoder.
+    This class provides an interactive REPL environment for executing DANA programs.
+    It supports variable lookup for single-word inputs and has special handling for
+    reason() statements that use LLM resources.
+    
+    When NLP mode is enabled (private.__repl.nlp = True), it will attempt to transcode
+    natural language inputs that fail to parse as DANA code.
     """
 
     def __init__(
-        self, llm_resource: Optional[LLMResource] = None, context: Optional[RuntimeContext] = None, log_level: LogLevel = LogLevel.INFO
+        self, llm_resource: Optional[LLMResource] = None, context: Optional[RuntimeContext] = None, 
+        log_level: LogLevel = LogLevel.INFO, nlp_mode: bool = False
     ):
         """Initialize the DANA REPL.
 
         Args:
-            llm_resource: Optional LLM resource for code cleaning and generation
+            llm_resource: Optional LLM resource for reason() statements and transcoding
             context: Optional runtime context for program execution
             log_level: Logging level (default: INFO)
+            nlp_mode: Enable natural language processing mode (default: False)
         """
         # Initialize Loggable
         super().__init__(logger_name="dana.repl")
@@ -45,30 +50,73 @@ class REPL(Loggable):
         self.logger.setLevel(python_log_level)
 
         self.context = context or RuntimeContext()
-
-        # Set up LLM resource if provided
+        
+        # Initialize transcoder if LLM resource is provided
+        self.transcoder = None
         if llm_resource:
             # Register the LLM resource with the runtime context for reason() statements
             self.context.register_resource("llm", llm_resource)
-            # Initialize transcoder with the same LLM resource
+            
+            # Initialize transcoder for NLP mode
             self.transcoder = FaultTolerantTranscoder(llm_resource)
+            
             # Use getattr to safely access name in case it's a mock
             llm_name = getattr(llm_resource, 'name', str(llm_resource))
-            self.info(f"Initialized transcoder with LLM resource: {llm_name}")
-        else:
-            self.transcoder = None
-            self.warning("No LLM resource provided, transcoding disabled")
+            self.info(f"Initialized LLM resource for reason() statements: {llm_name}")
+            
+            if nlp_mode:
+                self.info(f"NLP mode enabled - will attempt transcoding for non-DANA inputs")
 
         # Initialize interpreter with the context
         self.interpreter = Interpreter(self.context)
         self.interpreter.set_log_level(log_level)  # DANA log level
         self.info(f"REPL initialized with log level: {log_level.value}")
+        
+        # Set up NLP mode in private context
+        try:
+            # Create __repl namespace in private scope if it doesn't exist
+            if "__repl" not in self.context._state["private"]:
+                self.context._state["private"]["__repl"] = {}
+            
+            # Set NLP mode flag
+            self.context._state["private"]["__repl"]["nlp"] = nlp_mode
+            self.debug(f"NLP mode initialized to: {nlp_mode}")
+        except Exception as e:
+            self.warning(f"Could not initialize NLP mode flag: {e}")
+            
+    def is_nlp_mode_enabled(self) -> bool:
+        """Check if NLP mode is enabled in the context.
+        
+        Returns:
+            bool: True if NLP mode is enabled, False otherwise
+        """
+        try:
+            return self.context._state["private"].get("__repl", {}).get("nlp", False)
+        except Exception:
+            return False
+            
+    def set_nlp_mode(self, enabled: bool) -> None:
+        """Enable or disable NLP mode for the REPL.
+        
+        Args:
+            enabled: True to enable NLP mode, False to disable
+        """
+        try:
+            # Create __repl namespace in private scope if it doesn't exist
+            if "__repl" not in self.context._state["private"]:
+                self.context._state["private"]["__repl"] = {}
+                
+            # Set NLP mode flag
+            self.context._state["private"]["__repl"]["nlp"] = enabled
+            self.info(f"NLP mode set to: {enabled}")
+        except Exception as e:
+            self.warning(f"Could not set NLP mode: {e}")
 
     async def execute(self, program_source: str, initial_context: Optional[Dict[str, Any]] = None) -> None:
         """Execute a DANA program.
 
         Args:
-            program_source: DANA program source code or natural language description
+            program_source: DANA program source code
             initial_context: Optional initial context values
 
         Raises:
@@ -80,96 +128,61 @@ class REPL(Loggable):
                 for key, value in initial_context.items():
                     self.context.set(key, value)
             
-            # Check if this is likely a natural language input (single word or short phrase)
-            is_likely_nl = False
+            # Special handling for single word variable references
+            # If this is a single word, try to evaluate it as a variable reference
             words = program_source.strip().split()
-            
-            # Single word that starts with a letter is likely natural language
-            if len(words) == 1 and words[0] and words[0][0].isalpha():
-                self.debug("Detected single word input, treating as natural language")
-                is_likely_nl = True
-            # Short phrases without DANA syntax are likely natural language
-            elif len(words) <= 5 and "=" not in program_source and "." not in program_source and "(" not in program_source:
-                self.debug("Detected short natural language phrase")
-                is_likely_nl = True
-
-            # Try to transcode if we have an LLM resource
-            parse_result: ParseResult
-            if self.transcoder:
-                try:
-                    # If this is likely natural language and we have a transcoder, skip parsing
-                    if is_likely_nl:
-                        self.debug("Input looks like natural language, transcoding directly")
-                        parse_result, cleaned_code = await self.transcoder.transcode(program_source, self.context)
-                    else:
-                        # transcode now returns a tuple (ParseResult, str | None)
-                        self.debug(f"Attempting to transcode input: {program_source[:50]}{'...' if len(program_source) > 50 else ''}")
-                        
-                        # First try simple parsing to see if it's valid DANA code
-                        try:
-                            direct_parse_result = parse(program_source)
-                            if direct_parse_result.is_valid:
-                                self.debug("Input is valid DANA code, skipping transcoding")
-                                parse_result = direct_parse_result
-                                cleaned_code = None
-                            else:
-                                # Not valid DANA code, try transcoding
-                                parse_result, cleaned_code = await self.transcoder.transcode(program_source, self.context)
-                        except Exception:
-                            # Parsing failed, try transcoding
-                            parse_result, cleaned_code = await self.transcoder.transcode(program_source, self.context)
-                        
-                    if cleaned_code:
-                        self.info(f"LLM generated DANA code:\n{cleaned_code}")
-                    if not parse_result.is_valid:
-                        self.error(f"Invalid program after transcoding: {parse_result.error}")
-                        raise DanaError(f"Invalid program after transcoding: {parse_result.error}")
-                except TranscoderError as e:
-                    self.warning(f"Transcoding failed: {e}")
-                    
-                    # For natural language without transcoder, print a helpful message
-                    if is_likely_nl:
-                        self.warning("Natural language detected but transcoding failed. No LLM available for processing.")
-                        # For simple natural language, just print it back for a REPL-like experience
-                        print(f"Input: {program_source}")
-                        print("Note: Natural language processing requires an LLM resource.")
-                        return
-                        
-                    self.info("Falling back to direct parsing")
-                    # Fall back to direct parsing
+            if len(words) == 1 and words[0].isalpha():
+                var_name = words[0]
+                self.debug(f"Attempting to evaluate single word as variable: {var_name}")
+                
+                # Try all standard scopes
+                for scope in ["private", "public", "system"]:
                     try:
-                        # Try parsing again
-                        parse_result = parse(program_source)
-                        self.debug("Direct parsing successful")
-                        # If parsing *succeeds* here (unlikely given the test setup, but possible),
-                        # we'd continue to execution. The original TranscoderError 'e' is effectively ignored.
-                    except ParseError as pe:
-                        # Both transcoding and parsing failed.
-                        # Raise a new DanaError specifically for this double failure.
-                        err_msg = f"Failed to parse program after transcoding failed: {pe}"
-                        self.error(err_msg)
-                        raise DanaError(err_msg)  # Don't chain the original TranscoderError
-                    # If we reach here, parsing succeeded after transcoding failed.
-                    # The 'parse_result' from the inner try will be used.
-
-            else:
-                # Without transcoder
+                        value = self.context.get(f"{scope}.{var_name}")
+                        print(f"{scope}.{var_name} = {value}")
+                        return
+                    except Exception:
+                        # Variable not found in this scope, try next one
+                        pass
+                        
+                # If we get here, the variable wasn't found in any scope
+                self.debug(f"Variable '{var_name}' not found in any scope")
+                print(f"Variable '{var_name}' not found")
+                return
                 
-                # For natural language without transcoder, print a helpful message
-                if is_likely_nl:
-                    self.warning("Natural language detected but no LLM available for processing.")
-                    # For simple natural language, just print it back for a REPL-like experience
-                    print(f"Input: {program_source}")
-                    print("Note: Natural language processing requires an LLM resource.")
-                    return
+            # For everything else, parse as DANA code
+            self.debug(f"Parsing input as DANA code: {program_source[:50]}{'...' if len(program_source) > 50 else ''}")
+            try:
+                parse_result = parse(program_source)
+                self.debug("Parsing successful")
+            except ParseError as pe:
+                self.error(f"Failed to parse program: {pe}")
                 
-                # Direct parsing without transcoding
-                self.debug("No transcoder available, using direct parsing")
-                try:
-                    parse_result = parse(program_source)
-                    self.debug("Direct parsing successful")
-                except ParseError as pe:
-                    self.error(f"Failed to parse program: {pe}")
+                # Check if NLP mode is enabled and we have a transcoder
+                if self.is_nlp_mode_enabled() and self.transcoder:
+                    self.info("NLP mode enabled, attempting to transcode input")
+                    try:
+                        # Attempt to transcode the input
+                        transcode_result, cleaned_code = await self.transcoder.transcode(program_source, self.context)
+                        
+                        if transcode_result.is_valid:
+                            self.info("Transcoding successful")
+                            if cleaned_code:
+                                self.debug(f"Transcoded code: {cleaned_code}")
+                            
+                            # Use the transcoded result
+                            parse_result = transcode_result
+                            self.info("Using transcoded DANA code")
+                        else:
+                            # Transcoding failed to produce valid DANA code
+                            self.error(f"Transcoding failed to produce valid DANA code: {transcode_result.error}")
+                            raise DanaError(f"Failed to parse program and transcoding failed: {pe}") from pe
+                    except TranscoderError as te:
+                        # Transcoding process failed
+                        self.error(f"Transcoding error: {te}")
+                        raise DanaError(f"Failed to parse program and transcoding failed: {te}") from te
+                else:
+                    # NLP mode disabled or no transcoder available - just raise the original error
                     raise DanaError(f"Failed to parse program: {pe}") from pe
 
             # Special handling for REPL-style statements with type errors

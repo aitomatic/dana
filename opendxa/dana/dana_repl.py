@@ -71,17 +71,10 @@ class InputCompleteChecker(Loggable):
         if not code.strip():
             return True
         
-        # Check if this is likely natural language input (single word or short phrase)
+        # Check for single word variable references - these are complete
         words = code.strip().split()
-        
-        # Single word that starts with a letter is likely natural language
-        if len(words) == 1 and words[0] and words[0][0].isalpha():
-            self.debug("Detected single word input, treating as complete natural language")
-            return True
-            
-        # Short phrases without DANA syntax are likely natural language
-        if len(words) <= 5 and "=" not in code and all("." not in w for w in words) and "(" not in code:
-            self.debug("Detected short natural language phrase, treating as complete")
+        if len(words) == 1 and words[0].isalpha():
+            self.debug(f"Single word variable reference: {words[0]}")
             return True
         
         # Check for balanced brackets/braces
@@ -180,12 +173,16 @@ class DanaREPLApp(Loggable):
         print("For multiline blocks, continue typing - the prompt will change to '.... ' for continuation lines.")
         print("Special commands:")
         print("  - Type '##' on a new line to force execution of a multiline block")
+        print("  - Type '##nlp on' to enable natural language processing mode")
+        print("  - Type '##nlp off' to disable natural language processing mode")
+        print("  - Type '##nlp status' to check if NLP mode is enabled")
         print("  - Press Ctrl+C to cancel the current input")
 
         # Create keywords list for autocompletion
         keywords = [
             "exit", "quit", "private", "agent", "world", "temp", "log", "reason",
-            "if", "else", "while", "print", "true", "false", "null"
+            "if", "else", "while", "print", "true", "false", "null",
+            "##nlp on", "##nlp off", "##nlp status", "##"
         ]
         self.debug(f"Initialized keywords for autocompletion ({len(keywords)} keywords)")
         
@@ -248,12 +245,32 @@ class DanaREPLApp(Loggable):
                     None, lambda: session.prompt(prompt)
                 )
             
-                # Check for exit commands (only when not in multiline mode)
-                if not input_state.in_multiline and line.strip().lower() in ["exit", "quit"]:
-                    self.info("Exiting REPL")
-                    print("Exiting REPL.")
-                    break
+                # Check for special commands (only when not in multiline mode)
+                if not input_state.in_multiline:
+                    cmd = line.strip().lower()
                     
+                    # Exit commands
+                    if cmd in ["exit", "quit"]:
+                        self.info("Exiting REPL")
+                        print("Exiting REPL.")
+                        break
+                    
+                    # NLP mode commands    
+                    elif cmd == "##nlp on":
+                        self.info("Enabling NLP mode")
+                        repl.set_nlp_mode(True)
+                        print("✅ NLP mode enabled. Natural language inputs will be transcoded when parsing fails.")
+                        continue
+                    elif cmd == "##nlp off":
+                        self.info("Disabling NLP mode")
+                        repl.set_nlp_mode(False)
+                        print("❌ NLP mode disabled. Only valid DANA code will be accepted.")
+                        continue
+                    elif cmd == "##nlp status":
+                        status = repl.is_nlp_mode_enabled()
+                        print(f"NLP mode: {'✅ enabled' if status else '❌ disabled'}")
+                        continue
+                
                 # Handle blank lines
                 if not line.strip() and not input_state.in_multiline:
                     self.debug("Skipping blank line")
