@@ -4,6 +4,7 @@ import asyncio
 import logging
 from typing import Any, Dict, Optional, cast
 
+from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.dana.exceptions import DanaError, ParseError, TranscoderError
 from opendxa.dana.language.parser import ParseResult, parse
@@ -12,7 +13,7 @@ from opendxa.dana.runtime.interpreter import Interpreter, LogLevel
 from opendxa.dana.transcoder.transcoder import FaultTolerantTranscoder
 
 
-class REPL:
+class REPL(Loggable):
     """Read-Eval-Print Loop for executing and managing DANA programs.
 
     This class provides an interactive REPL environment for executing DANA programs,
@@ -30,8 +31,18 @@ class REPL:
             context: Optional runtime context for program execution
             log_level: Logging level (default: INFO)
         """
-        self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.INFO)  # Python logging level
+        # Initialize Loggable
+        super().__init__(logger_name="dana.repl")
+        
+        # Set Python logging level based on DANA log level
+        python_log_level = {
+            LogLevel.DEBUG: logging.DEBUG,
+            LogLevel.INFO: logging.INFO,
+            LogLevel.WARN: logging.WARNING,
+            LogLevel.ERROR: logging.ERROR
+        }.get(log_level, logging.INFO)
+        
+        self.logger.setLevel(python_log_level)
 
         self.context = context or RuntimeContext()
 
@@ -41,12 +52,17 @@ class REPL:
             self.context.register_resource("llm", llm_resource)
             # Initialize transcoder with the same LLM resource
             self.transcoder = FaultTolerantTranscoder(llm_resource)
+            # Use getattr to safely access name in case it's a mock
+            llm_name = getattr(llm_resource, 'name', str(llm_resource))
+            self.info(f"Initialized transcoder with LLM resource: {llm_name}")
         else:
             self.transcoder = None
+            self.warning("No LLM resource provided, transcoding disabled")
 
         # Initialize interpreter with the context
         self.interpreter = Interpreter(self.context)
         self.interpreter.set_log_level(log_level)  # DANA log level
+        self.info(f"REPL initialized with log level: {log_level.value}")
 
     async def execute(self, program_source: str, initial_context: Optional[Dict[str, Any]] = None) -> None:
         """Execute a DANA program.
@@ -69,34 +85,40 @@ class REPL:
             if self.transcoder:
                 try:
                     # transcode now returns a tuple (ParseResult, str | None)
+                    self.debug(f"Attempting to transcode input: {program_source[:50]}{'...' if len(program_source) > 50 else ''}")
                     parse_result, cleaned_code = await self.transcoder.transcode(program_source, self.context)
                     if cleaned_code:
-                        self.logger.info("LLM generated DANA code:\n%s", cleaned_code)
+                        self.info(f"LLM generated DANA code:\n{cleaned_code}")
                     if not parse_result.is_valid:
+                        self.error(f"Invalid program after transcoding: {parse_result.error}")
                         raise DanaError(f"Invalid program after transcoding: {parse_result.error}")
                 except TranscoderError as e:
-                    self.logger.warning(f"Transcoding failed: {e}")
+                    self.warning(f"Transcoding failed: {e}")
+                    self.info("Falling back to direct parsing")
                     # Fall back to direct parsing
                     try:
                         # Try parsing again
                         parse_result = parse(program_source)
+                        self.debug("Direct parsing successful")
                         # If parsing *succeeds* here (unlikely given the test setup, but possible),
                         # we'd continue to execution. The original TranscoderError 'e' is effectively ignored.
                     except ParseError as pe:
                         # Both transcoding and parsing failed.
                         # Raise a new DanaError specifically for this double failure.
                         err_msg = f"Failed to parse program after transcoding failed: {pe}"
-                        self.logger.error(err_msg)
+                        self.error(err_msg)
                         raise DanaError(err_msg)  # Don't chain the original TranscoderError
                     # If we reach here, parsing succeeded after transcoding failed.
                     # The 'parse_result' from the inner try will be used.
 
             else:
                 # Direct parsing without transcoding
+                self.debug("No transcoder available, using direct parsing")
                 try:
                     parse_result = parse(program_source)
+                    self.debug("Direct parsing successful")
                 except ParseError as pe:
-                    self.logger.error(f"Failed to parse program: {pe}")
+                    self.error(f"Failed to parse program: {pe}")
                     raise DanaError(f"Failed to parse program: {pe}") from pe
 
             # Special handling for REPL-style statements with type errors
@@ -134,19 +156,19 @@ class REPL:
                     if is_reason_statement:
                         # Get the reason statement from the program
                         reason_stmt = parse_result.program.statements[0]
-                        self.logger.debug("REPL: Processing reason statement synchronously")
+                        self.debug("Processing reason statement synchronously")
 
                         # Verify that the reason statement has a valid prompt before proceeding
                         if reason_stmt.prompt is None:
                             # For direct reason() calls, we need to extract the prompt from the program text
-                            self.logger.debug("Fixing null prompt in reason statement")
+                            self.debug("Fixing null prompt in reason statement")
                             try:
                                 # Handle f-strings special case first
                                 if 'reason(f"' in program_source or "reason(f'" in program_source:
                                     # For f-strings, we need to preserve the original as an f-string expression
                                     # The safest approach is to just set a default prompt and let the interpreter
                                     # correctly evaluate the f-string later
-                                    self.logger.debug("Detected f-string prompt in reason statement")
+                                    self.debug("Detected f-string prompt in reason statement")
                                     # Set a default prompt that will be overridden at execution time
                                     from opendxa.dana.language.ast import FStringExpression, Literal, LiteralExpression
 
@@ -195,7 +217,7 @@ class REPL:
                                 else:
                                     raise RuntimeError("Reason statement must have a prompt")
                             except Exception as e:
-                                self.logger.error(f"Error extracting prompt: {e}")
+                                self.error(f"Error extracting prompt: {e}")
                                 raise RuntimeError("Reason statement must have a prompt")
 
                         # Call the sync method directly
@@ -208,7 +230,7 @@ class REPL:
                         return  # If we get here, it worked! No need to continue.
                 except Exception as e:
                     # If execution still fails, fall back to the original parse_result
-                    self.logger.debug(f"Attempted runtime resolution failed: {e}")
+                    self.debug(f"Attempted runtime resolution failed: {e}")
 
             # Normal execution path for all other cases
             try:
@@ -217,7 +239,7 @@ class REPL:
                 if "Cannot run the event loop while another loop is running" in str(e):
                     # This is a special case for reason() statements in an async context
                     # We'll create and use our own event loop for this execution
-                    self.logger.debug("Detected event loop issue with reasoning statements, using alternate approach")
+                    self.debug("Detected event loop issue with reasoning statements, using alternate approach")
                     # Recreate a nested event loop for the reasoning operation
                     loop = asyncio.new_event_loop()
                     try:
@@ -236,11 +258,11 @@ class REPL:
         except DanaError as e:
             # Handle DanaError, including the specific one for double failure.
             # We log it here, and the test will assert the correct message is raised.
-            self.logger.error(f"Program execution failed with DanaError: {e}")
+            self.error(f"Program execution failed with DanaError: {e}")
             raise  # Re-raise the caught DanaError
         except Exception as e:
             # Catch any other unexpected exceptions
-            self.logger.error(f"Program execution failed: {e}")
+            self.error(f"Program execution failed: {e}")
             raise DanaError(f"Program execution failed: {e}") from e
 
     def get_context(self) -> RuntimeContext:
@@ -257,5 +279,18 @@ class REPL:
         Args:
             level: Logging level
         """
-        self.logger.setLevel(logging.INFO)  # Python logging level
-        self.interpreter.set_log_level(level)  # DANA log level
+        # Map DANA log level to Python log level
+        python_log_level = {
+            LogLevel.DEBUG: logging.DEBUG,
+            LogLevel.INFO: logging.INFO,
+            LogLevel.WARN: logging.WARNING,
+            LogLevel.ERROR: logging.ERROR
+        }.get(level, logging.INFO)
+        
+        # Update Loggable logger level
+        self.logger.setLevel(python_log_level)
+        
+        # Update interpreter log level
+        self.interpreter.set_log_level(level)
+        
+        self.debug(f"Log level set to {level.value}")

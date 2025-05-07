@@ -4,7 +4,7 @@ import pytest
 from unittest.mock import MagicMock, patch
 
 from opendxa.dana.runtime.context import RuntimeContext
-from opendxa.dana.runtime.repl import REPL
+# REPL import not needed for this test
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.dana.language.ast import LogLevel
 

@@ -6,6 +6,7 @@ It uses a modular architecture with specialized components for different aspects
 
 from typing import Any, Dict, List, Optional, Union
 
+from opendxa.common.mixins.loggable import Loggable
 from opendxa.dana.exceptions import InterpretError, RuntimeError, StateError
 from opendxa.dana.language.ast import LogLevel, Program
 from opendxa.dana.language.parser import ParseResult
@@ -21,7 +22,7 @@ from opendxa.dana.runtime.hooks import HookType, execute_hook, has_hooks
 __all__ = ["Interpreter", "create_interpreter", "format_error_location"]
 
 
-class Interpreter:
+class Interpreter(Loggable):
     """Interpreter for executing DANA programs.
     
     This class coordinates the execution of DANA programs using specialized components
@@ -34,6 +35,9 @@ class Interpreter:
         Args:
             context: The runtime context for state management
         """
+        # Initialize Loggable
+        super().__init__(logger_name="dana.interpreter")
+        
         # Create the execution components
         self.context_manager = ContextManager(context)
         self.expression_evaluator = ExpressionEvaluator(self.context_manager)
@@ -64,6 +68,9 @@ class Interpreter:
         if not isinstance(parse_result.program, Program):
             raise InterpretError(f"Expected a Program node, got {type(parse_result.program).__name__}")
         
+        # Log execution start
+        self.debug(f"Executing program with {len(parse_result.program.statements)} statements")
+        
         # Create hook context for program hooks
         hook_context = {
             "interpreter": self,
@@ -74,28 +81,38 @@ class Interpreter:
         
         # Execute before program hooks
         if has_hooks(HookType.BEFORE_PROGRAM):
+            self.debug("Executing BEFORE_PROGRAM hooks")
             execute_hook(HookType.BEFORE_PROGRAM, hook_context)
         
         try:
             # Execute all statements in the program
-            for statement in parse_result.program.statements:
+            for i, statement in enumerate(parse_result.program.statements):
                 # Execute the statement (statement hooks are now handled inside the executor)
+                self.debug(f"Executing statement {i+1}/{len(parse_result.program.statements)}: {type(statement).__name__}")
                 self.statement_executor.execute(statement)
             
             # If there are any parse errors, stop at the first one
             if parse_result.errors:
+                self.error(f"Encountered parse error: {parse_result.errors[0]}")
                 raise parse_result.errors[0]
             
             # Execute after program hooks
             if has_hooks(HookType.AFTER_PROGRAM):
+                self.debug("Executing AFTER_PROGRAM hooks")
                 execute_hook(HookType.AFTER_PROGRAM, hook_context)
+                
+            self.debug("Program execution completed successfully")
         
         except Exception as e:
             # Set log level to ERROR for any exceptions
             self.set_log_level(LogLevel.ERROR)
             
+            # Log the error
+            self.error(f"Program execution failed: {e}")
+            
             # Execute error hooks
             if has_hooks(HookType.ON_ERROR):
+                self.debug("Executing ON_ERROR hooks")
                 error_context = {**hook_context, "error": e}
                 execute_hook(HookType.ON_ERROR, error_context)
             
