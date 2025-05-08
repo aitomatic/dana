@@ -75,7 +75,9 @@ atom: identifier
     | TRUE
     | FALSE
 
-identifier: CNAME ("." CNAME)*
+// Scope and identifier rules
+SCOPE_PREFIX: "private" | "public" | "system"
+identifier: SCOPE_PREFIX "." CNAME ("." CNAME)* | CNAME ("." CNAME)*
 identifier_list: identifier ("," identifier)*
 
 literal: STRING | NUMBER | BOOL | "null" | f_string

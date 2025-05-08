@@ -114,12 +114,16 @@ class FStringTransformer(BaseTransformer):
 
                 return BinaryExpression(left=left_expr, operator=op_enum, right=right_expr)
 
-        # If no binary operation, default to identifier
-        return Identifier(name=expr_text)
+        # If no binary operation, parse as a single term
+        return self._parse_expression_term(expr_text)
 
     def _parse_expression_term(self, term: str) -> Any:
         """Parse a single term in an f-string expression."""
         if "." in term or term.isalnum():
-            return Identifier(name=term)
+            # Add private scope if no scope prefix
+            parts = term.split(".")
+            if parts[0] not in ["private", "public", "system"]:
+                parts.insert(0, "private")
+            return Identifier(name=".".join(parts))
         else:
             return LiteralExpression(literal=self._parse_literal(term))

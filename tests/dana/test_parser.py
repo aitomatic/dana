@@ -23,7 +23,7 @@ def test_parse_assignment():
 
     stmt = result.program.statements[0]
     assert isinstance(stmt, Assignment)
-    assert stmt.target.name == "temp.x"
+    assert stmt.target.name == "private.temp.x"
     assert isinstance(stmt.value, LiteralExpression)
     assert stmt.value.literal.value == 42
 
@@ -38,7 +38,7 @@ def test_parse_float_assignment():
 
     stmt = result.program.statements[0]
     assert isinstance(stmt, Assignment)
-    assert stmt.target.name == "temp.x"
+    assert stmt.target.name == "private.temp.x"
     assert isinstance(stmt.value, LiteralExpression)
     assert stmt.value.literal.value == 3.14
 
@@ -53,7 +53,7 @@ def test_parse_arithmetic_expression():
 
     stmt = result.program.statements[0]
     assert isinstance(stmt, Assignment)
-    assert stmt.target.name == "temp.x"
+    assert stmt.target.name == "private.temp.x"
 
     # Check the expression structure
     expr = stmt.value
@@ -137,7 +137,7 @@ def test_parse_string_assignment():
 
     stmt = result.program.statements[0]
     assert isinstance(stmt, Assignment)
-    assert stmt.target.name == "temp.msg"
+    assert stmt.target.name == "private.temp.msg"
     assert isinstance(stmt.value, LiteralExpression)
     assert stmt.value.literal.value == "Alice"
 
@@ -194,14 +194,14 @@ def test_parse_multiple_statements():
     # Check first statement
     stmt1 = result.program.statements[0]
     assert isinstance(stmt1, Assignment)
-    assert stmt1.target.name == "temp.x"
+    assert stmt1.target.name == "private.temp.x"
     assert isinstance(stmt1.value, LiteralExpression)
     assert stmt1.value.literal.value == 42
 
     # Check second statement
     stmt2 = result.program.statements[1]
     assert isinstance(stmt2, Assignment)
-    assert stmt2.target.name == "temp.y"
+    assert stmt2.target.name == "private.temp.y"
     assert isinstance(stmt2.value, LiteralExpression)
     assert stmt2.value.literal.value == "test"
 

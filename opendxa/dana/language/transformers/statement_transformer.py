@@ -41,6 +41,11 @@ class StatementTransformer(BaseTransformer):
         """Transform an assignment rule into an Assignment node."""
         target = items[0]
         value = items[1]
+
+        # Ensure target has a scope prefix
+        if not target.name.startswith(("private.", "public.", "system.")):
+            target = Identifier(name="private." + target.name)
+
         return Assignment(target=target, value=value)
 
     def log_statement(self, items):

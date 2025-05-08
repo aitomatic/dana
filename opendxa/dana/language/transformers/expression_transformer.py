@@ -160,11 +160,18 @@ class ExpressionTransformer(BaseTransformer):
 
     def identifier(self, items):
         """Transform an identifier rule into an Identifier node."""
-        # Join parts with dots for nested identifiers (e.g., "a.b.c")
-        if len(items) == 1:
-            name = items[0].value
-        else:
-            name = ".".join(item.value for item in items)
+        # Convert all items to strings
+        parts = []
+        for item in items:
+            if isinstance(item, Token):
+                parts.append(item.value)
+
+        # If no scope prefix, add private
+        if parts[0] not in ["private", "public", "system"]:
+            parts.insert(0, "private")
+
+        # Join all parts with dots
+        name = ".".join(parts)
         return Identifier(name=name)
 
     def _get_binary_operator(self, op_str):
