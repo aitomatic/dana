@@ -6,24 +6,27 @@ in the DANA REPL implementation.
 
 import unittest
 
+import pytest
+
 from opendxa.dana.dana_repl import InputCompleteChecker
 
 
+@pytest.mark.unit
 class TestReplMultiline(unittest.TestCase):
     """Test the multiline input handling in the DANA REPL."""
-    
+
     def setUp(self):
         """Set up the test case."""
         self.checker = InputCompleteChecker()
 
     def test_complete_simple_statement(self):
         """Test that a simple complete statement is recognized."""
-        code = 'temp.x = 42'
+        code = "temp.x = 42"
         self.assertTrue(self.checker.is_complete(code))
 
     def test_incomplete_assignment(self):
         """Test that an incomplete assignment is recognized."""
-        code = 'temp.x = '
+        code = "temp.x = "
         self.assertFalse(self.checker.is_complete(code))
 
     def test_complete_if_statement(self):
@@ -33,7 +36,7 @@ class TestReplMultiline(unittest.TestCase):
 
     def test_incomplete_if_statement_without_body(self):
         """Test that an if statement without a body is recognized as incomplete."""
-        code = 'if temp.x > 10:'
+        code = "if temp.x > 10:"
         self.assertFalse(self.checker.is_complete(code))
 
     def test_incomplete_if_statement_without_indented_body(self):
@@ -58,7 +61,7 @@ class TestReplMultiline(unittest.TestCase):
 
     def test_incomplete_while_loop(self):
         """Test that an incomplete while loop is recognized."""
-        code = 'while temp.x < 10:'
+        code = "while temp.x < 10:"
         self.assertFalse(self.checker.is_complete(code))
 
     def test_balanced_parentheses(self):
@@ -89,7 +92,7 @@ else:
     log.info("Counter reached limit")
     temp.counter = 0"""
         self.assertTrue(self.checker.is_complete(code))
-        
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

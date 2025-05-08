@@ -7,114 +7,103 @@ import pytest
 
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.common.types import BaseResponse
+from opendxa.dana.language.ast import Program
 from opendxa.dana.language.parser import ParseError, ParseResult
-from opendxa.dana.runtime.context import RuntimeContext
-from opendxa.dana.transcoder.transcoder import FaultTolerantTranscoder, TranscoderError
+from opendxa.dana.transcoder.transcoder import Transcoder, TranscoderError
 
 
 @pytest.mark.asyncio
-class TestFaultTolerantTranscoder(IsolatedAsyncioTestCase):
-    """Tests for the FaultTolerantTranscoder."""
+class TestTranscoder(IsolatedAsyncioTestCase):
+    """Tests for the Transcoder."""
 
     async def asyncSetUp(self):
         """Set up async test environment."""
         self.llm = AsyncMock(spec=LLMResource)
-        # Mock the query method which is actually used
         self.llm.query = AsyncMock()
-        self.context = MagicMock(spec=RuntimeContext)
-        self.transcoder = FaultTolerantTranscoder(self.llm)
+        self.transcoder = Transcoder(self.llm)
 
-    async def test_direct_parsing_success(self):
-        """Test successful direct parsing when LLM is not available."""
-        transcoder = FaultTolerantTranscoder(None)  # type: ignore No LLM
-        code = "private.x = 10"
-        # Mock parse to succeed directly
-        mock_program = MagicMock()
+    async def test_to_dana_success(self):
+        """Test successful translation from natural language to DANA code."""
+        natural_language = "add 5 and 10"
+        dana_code = "private.result = 5 + 10"
+        mock_program = MagicMock(spec=Program)
+
+        # Mock LLM response
+        llm_response = BaseResponse(success=True, content=dana_code)
+        self.llm.query.return_value = llm_response
+
+        # Mock parse to succeed
         with patch("opendxa.dana.transcoder.transcoder.parse", return_value=ParseResult(program=mock_program, errors=[])):
-            result, cleaned_code = await transcoder.transcode(code, self.context)
-            self.assertTrue(result.is_valid)
-            self.assertIsNotNone(result.program)
-            self.assertEqual(result.program, mock_program)
-            self.assertIsNone(cleaned_code)  # No LLM cleaning was performed
-
-    async def test_llm_query_failure(self):
-        """Test when the initial parse fails and the LLM query itself fails."""
-        code = "invalid code"
-        # Mock initial parse to fail
-        with patch("opendxa.dana.transcoder.transcoder.parse", side_effect=ParseError("Initial Parse Error")) as mock_initial_parse:
-            # Mock LLM query to return a failed response
-            failed_response = BaseResponse(success=False, error="LLM Query Failed")
-            self.llm.query.return_value = failed_response
-
-            with self.assertRaises(TranscoderError) as cm:
-                await self.transcoder.transcode(code, self.context)
-
-            self.assertIn("Failed to clean code with LLM", str(cm.exception))
-            mock_initial_parse.assert_called_once_with(code)
-            self.llm.query.assert_awaited_once()
-
-    async def test_llm_cleaning_and_final_parse_failure(self):
-        """Test when LLM cleaning succeeds but the final parse still fails."""
-        original_code = "invalid code"
-        cleaned_code = "still invalid code"
-
-        # Mock parse: first call fails, second call (with cleaned code) also fails
-        parse_side_effects = [ParseError("Initial Parse Error"), ParseError("Final Parse Error")]
-        with patch("opendxa.dana.transcoder.transcoder.parse", side_effect=parse_side_effects) as mock_parse:
-            # Mock LLM query to return cleaned code
-            mock_choice = MagicMock()
-            mock_choice.message.content = cleaned_code
-            llm_success_response = BaseResponse(success=True, content={"choices": [mock_choice]})
-            self.llm.query.return_value = llm_success_response
-
-            with self.assertRaises(TranscoderError) as cm:
-                await self.transcoder.transcode(original_code, self.context)
-
-            self.assertIn("Failed to transcode input after cleaning: Final Parse Error", str(cm.exception))
-            # Check parse was called twice
-            self.assertEqual(mock_parse.call_count, 2)
-            mock_parse.assert_any_call(original_code)
-            mock_parse.assert_any_call(cleaned_code)
-            # Check LLM query was called
-            self.llm.query.assert_awaited_once()
-
-    async def test_llm_cleaning_success(self):
-        """Test successful LLM cleaning after initial parse failure."""
-        original_code = 'log "hello world'  # Missing closing quote
-        cleaned_code = 'log "hello world"'
-        mock_program = MagicMock()
-
-        # Mock parse: first call fails, second call (with cleaned code) succeeds
-        parse_side_effects = [ParseError("Initial Parse Error"), ParseResult(program=mock_program, errors=[])]
-        with patch("opendxa.dana.transcoder.transcoder.parse", side_effect=parse_side_effects) as mock_parse:
-            # Mock LLM query to return cleaned code
-            mock_choice = MagicMock()
-            mock_choice.message.content = cleaned_code
-            llm_success_response = BaseResponse(success=True, content={"choices": [mock_choice]})
-            self.llm.query.return_value = llm_success_response
-
-            result, cleaned_code_returned = await self.transcoder.transcode(original_code, self.context)
-
+            result, code = await self.transcoder.to_dana(natural_language)
             self.assertTrue(result.is_valid)
             self.assertEqual(result.program, mock_program)
-            self.assertEqual(cleaned_code_returned, cleaned_code)  # Check that the cleaned code is returned
-            # Check parse was called twice
-            self.assertEqual(mock_parse.call_count, 2)
-            mock_parse.assert_any_call(original_code)
-            mock_parse.assert_any_call(cleaned_code)
-            # Check LLM query was called
-            self.llm.query.assert_awaited_once()
+            self.assertEqual(code, dana_code)
 
-    async def test_validation(self):
-        """Test the validation mechanism."""
-        # This test assumes validation logic exists within the transcoder or its components
-        # Add specific validation tests if needed
-        pass
+    async def test_to_dana_llm_failure(self):
+        """Test when LLM query fails."""
+        natural_language = "add 5 and 10"
+        failed_response = BaseResponse(success=False, error="LLM Query Failed")
+        self.llm.query.return_value = failed_response
 
-    async def test_validation_failure(self):
-        """Test handling of validation failures."""
-        # Mock validation failure if applicable
-        pass
+        with self.assertRaises(TranscoderError) as cm:
+            await self.transcoder.to_dana(natural_language)
+        self.assertIn("Failed to translate to DANA", str(cm.exception))
+
+    async def test_to_dana_parse_failure(self):
+        """Test when LLM returns invalid DANA code."""
+        natural_language = "add 5 and 10"
+        invalid_code = "invalid dana code"
+
+        # Mock LLM response with invalid code
+        llm_response = BaseResponse(success=True, content=invalid_code)
+        self.llm.query.return_value = llm_response
+
+        # Mock parse to fail
+        with patch(
+            "opendxa.dana.transcoder.transcoder.parse", return_value=ParseResult(program=Program([]), errors=[ParseError("Invalid syntax")])
+        ):
+            with self.assertRaises(TranscoderError) as cm:
+                await self.transcoder.to_dana(natural_language)
+            self.assertIn("Invalid syntax", str(cm.exception))
+
+    async def test_to_natural_language_success(self):
+        """Test successful translation from DANA code to natural language."""
+        dana_code = "private.result = 5 + 10"
+        natural_language = "Add 5 and 10"
+
+        # Mock LLM response
+        llm_response = BaseResponse(success=True, content=natural_language)
+        self.llm.query.return_value = llm_response
+
+        result = await self.transcoder.to_natural_language(dana_code)
+        self.assertEqual(result, natural_language)
+
+    async def test_to_natural_language_llm_failure(self):
+        """Test when LLM query fails during natural language translation."""
+        dana_code = "private.result = 5 + 10"
+        failed_response = BaseResponse(success=False, error="LLM Query Failed")
+        self.llm.query.return_value = failed_response
+
+        with self.assertRaises(TranscoderError) as cm:
+            await self.transcoder.to_natural_language(dana_code)
+        self.assertIn("Failed to translate to natural language", str(cm.exception))
+
+    async def test_llm_response_formats(self):
+        """Test handling of different LLM response formats."""
+        dana_code = "private.result = 5 + 10"
+        expected_nl = "Add 5 and 10"
+
+        # Test direct content format
+        llm_response = BaseResponse(success=True, content=expected_nl)
+        self.llm.query.return_value = llm_response
+        result = await self.transcoder.to_natural_language(dana_code)
+        self.assertEqual(result, expected_nl)
+
+        # Test string format
+        llm_response = BaseResponse(success=True, content=str(expected_nl))
+        self.llm.query.return_value = llm_response
+        result = await self.transcoder.to_natural_language(dana_code)
+        self.assertEqual(result, expected_nl)
 
 
 if __name__ == "__main__":

@@ -1,11 +1,7 @@
 """Tests for the modular interpreter implementation."""
 
-import unittest
 from unittest.mock import patch
 
-import pytest
-
-from opendxa.dana.exceptions import StateError
 from opendxa.dana.language.ast import (
     Assignment,
     BinaryExpression,
@@ -20,70 +16,62 @@ from opendxa.dana.language.ast import (
 )
 from opendxa.dana.language.parser import ParseResult
 from opendxa.dana.runtime.context import RuntimeContext
-from opendxa.dana.runtime.interpreter_new import Interpreter
+from opendxa.dana.runtime.interpreter import Interpreter
 
 
 def test_arithmetic_operations():
     """Test basic arithmetic operations with the modular interpreter."""
     interpreter = Interpreter(RuntimeContext())
-    
+
     # Addition: 5 + 3
     program = Program(
         [
             Assignment(
                 target=Identifier("private.value"),
                 value=BinaryExpression(
-                    left=LiteralExpression(Literal(5)),
-                    operator=BinaryOperator.ADD,
-                    right=LiteralExpression(Literal(3))
+                    left=LiteralExpression(Literal(5)), operator=BinaryOperator.ADD, right=LiteralExpression(Literal(3))
                 ),
             )
         ]
     )
     interpreter.execute_program(ParseResult(program=program))
     assert interpreter.context.get("private.value") == 8
-    
+
     # Subtraction: 10 - 4
     program = Program(
         [
             Assignment(
                 target=Identifier("private.value"),
                 value=BinaryExpression(
-                    left=LiteralExpression(Literal(10)),
-                    operator=BinaryOperator.SUBTRACT,
-                    right=LiteralExpression(Literal(4))
+                    left=LiteralExpression(Literal(10)), operator=BinaryOperator.SUBTRACT, right=LiteralExpression(Literal(4))
                 ),
             )
         ]
     )
     interpreter.execute_program(ParseResult(program=program))
     assert interpreter.context.get("private.value") == 6
-    
+
     # Multiplication: 6 * 7
     program = Program(
         [
             Assignment(
                 target=Identifier("private.value"),
                 value=BinaryExpression(
-                    left=LiteralExpression(Literal(6)),
-                    operator=BinaryOperator.MULTIPLY,
-                    right=LiteralExpression(Literal(7))
+                    left=LiteralExpression(Literal(6)), operator=BinaryOperator.MULTIPLY, right=LiteralExpression(Literal(7))
                 ),
             )
         ]
     )
     interpreter.execute_program(ParseResult(program=program))
     assert interpreter.context.get("private.value") == 42
-    
+
     # Division: 20 / 5
     program = Program(
         [
             Assignment(
                 target=Identifier("private.value"),
                 value=BinaryExpression(
-                    left=LiteralExpression(Literal(20)),
-                    operator=BinaryOperator.DIVIDE,
-                    right=LiteralExpression(Literal(5))
+                    left=LiteralExpression(Literal(20)), operator=BinaryOperator.DIVIDE, right=LiteralExpression(Literal(5))
                 ),
             )
         ]
@@ -96,18 +84,20 @@ def test_log_statement():
     """Test log statement execution with the modular interpreter."""
     interpreter = Interpreter(RuntimeContext())
     interpreter.set_log_level(LogLevel.INFO)  # Ensure INFO messages are printed
-    
+
     # Test default INFO level
-    with patch("builtins.print") as mock_print:
+    with patch("opendxa.dana.runtime.executor.statement_executor.StatementExecutor.info") as mock_info:
         program = Program([LogStatement(message=LiteralExpression(Literal("Test message")))])
         interpreter.execute_program(ParseResult(program=program))
-        mock_print.assert_called_once()
-        assert "INFO" in mock_print.call_args[0][0]
-        assert "Test message" in mock_print.call_args[0][0]
-    
+        mock_info.assert_called_once_with("Test message")
+
     # Test explicit levels
     interpreter.set_log_level(LogLevel.DEBUG)  # Set log level to DEBUG to see all messages
-    with patch("builtins.print") as mock_print:
+    with patch("opendxa.dana.runtime.executor.statement_executor.StatementExecutor.debug") as mock_debug, patch(
+        "opendxa.dana.runtime.executor.statement_executor.StatementExecutor.info"
+    ) as mock_info, patch("opendxa.dana.runtime.executor.statement_executor.StatementExecutor.warning") as mock_warning, patch(
+        "opendxa.dana.runtime.executor.statement_executor.StatementExecutor.error"
+    ) as mock_error:
         program = Program(
             [
                 LogStatement(message=LiteralExpression(Literal("Debug message")), level=LogLevel.DEBUG),
@@ -117,11 +107,10 @@ def test_log_statement():
             ]
         )
         interpreter.execute_program(ParseResult(program=program))
-        assert mock_print.call_count == 4
-        assert "DEBUG" in mock_print.call_args_list[0][0][0]
-        assert "INFO" in mock_print.call_args_list[1][0][0]
-        assert "WARN" in mock_print.call_args_list[2][0][0]
-        assert "ERROR" in mock_print.call_args_list[3][0][0]
+        mock_debug.assert_called_once_with("Debug message")
+        mock_info.assert_called_once_with("Info message")
+        mock_warning.assert_called_once_with("Warn message")
+        mock_error.assert_called_once_with("Error message")
 
 
 def test_print_statement(capfd):
@@ -129,7 +118,7 @@ def test_print_statement(capfd):
     # Create an interpreter
     context = RuntimeContext()
     interpreter = Interpreter(context)
-    
+
     # Execute a program with a print statement using AST nodes directly
     program = Program(
         [
@@ -139,7 +128,7 @@ def test_print_statement(capfd):
         ]
     )
     interpreter.execute_program(ParseResult(program=program))
-    
+
     # Check the captured output
     out, err = capfd.readouterr()
     assert "42" in out
@@ -149,7 +138,7 @@ def test_print_statement(capfd):
 def test_variable_resolution():
     """Test variable resolution in the modular interpreter."""
     interpreter = Interpreter(RuntimeContext())
-    
+
     # Set a variable in the private scope
     program = Program(
         [
@@ -158,21 +147,17 @@ def test_variable_resolution():
         ]
     )
     interpreter.execute_program(ParseResult(program=program))
-    
+
     # Check that variables are set correctly
     assert interpreter.context.get("private.x") == 10
     assert interpreter.context.get("private.y") == 20
-    
+
     # Test variable resolution in binary expression
     program = Program(
         [
             Assignment(
                 target=Identifier("private.z"),
-                value=BinaryExpression(
-                    left=Identifier("private.x"),
-                    operator=BinaryOperator.ADD,
-                    right=Identifier("y")
-                ),
+                value=BinaryExpression(left=Identifier("private.x"), operator=BinaryOperator.ADD, right=Identifier("y")),
             )
         ]
     )
