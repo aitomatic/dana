@@ -42,6 +42,9 @@ class HookType(Enum):
     # Error hooks
     ON_ERROR = "on_error"  # Called when an error occurs
 
+    # New hook for log level changes
+    LOG_LEVEL_CHANGED = "log_level_changed"
+
 
 # Type aliases for hook callbacks
 HookCallback = Callable[[Dict[str, Any]], None]

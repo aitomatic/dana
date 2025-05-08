@@ -8,8 +8,7 @@ import logging
 from typing import Any, Dict, Optional
 
 from opendxa.common.mixins.loggable import Loggable
-from opendxa.common.utils.logging.dxa_logger import DXA_LOGGER
-from opendxa.dana.exceptions import InterpretError, RuntimeError
+from opendxa.dana.exceptions import RuntimeError
 from opendxa.dana.language.ast import LogLevel, Program
 from opendxa.dana.language.parser import ParseResult
 from opendxa.dana.runtime.context import RuntimeContext
@@ -59,23 +58,19 @@ class Interpreter(Loggable):
         """Execute a DANA program.
 
         Args:
-            parse_result: Result of parsing the program
+            parse_result: The parse result containing the program to execute
 
         Returns:
-            The result of the last statement executed
+            The result of executing the program
 
         Raises:
-            InterpretError: If a program is not provided
-            Various exceptions: For errors during execution
+            RuntimeError: If the program execution fails
         """
-        if not isinstance(parse_result.program, Program):
-            raise InterpretError(f"Expected a Program node, got {type(parse_result.program).__name__}")
-
-        # Log execution start
-        self.debug(f"Executing program with {len(parse_result.program.statements)} statements")
-
-        # Create hook context for program hooks
-        hook_context = {"interpreter": self, "context": self.context, "program": parse_result.program, "errors": parse_result.errors}
+        # Initialize hook context
+        hook_context = {
+            "program": parse_result.program,
+            "context": self.context,
+        }
 
         # Execute before program hooks
         if has_hooks(HookType.BEFORE_PROGRAM):
@@ -93,13 +88,17 @@ class Interpreter(Loggable):
                 try:
                     last_result = self.statement_executor.execute(statement)
                 except Exception as e:
-                    if "Undefined variable" in str(e):
-                        # Try to provide a more helpful error for undefined variables
-                        # If there's a reference to a bare variable 'a', suggest that they prefix it
-                        # with 'private.' or 'public.'
+                    if "Undefined variable" in str(e) or "Variable" in str(e):
+                        # Use consistent error message format
                         error_msg = str(e)
-                        if ": a" in error_msg or "variable: a" in error_msg:
-                            raise RuntimeError(f"{error_msg}. Did you mean 'private.a' or 'public.a'?")
+                        if "must be accessed with a scope prefix" not in error_msg:
+                            # If it's a bare variable reference, suggest the correct format
+                            var_name = error_msg.split("'")[1] if "'" in error_msg else ""
+                            if var_name and "." not in var_name:
+                                raise RuntimeError(
+                                    f"Variable '{var_name}' must be accessed with a scope prefix: "
+                                    f"private.{var_name}, public.{var_name}, or system.{var_name}"
+                                )
                     raise e
 
                 # For single-statement programs, ensure we return the statement's value
@@ -169,7 +168,6 @@ class Interpreter(Loggable):
             LogLevelSetStatement,
             LogStatement,
             PrintStatement,
-            Program,
             ReasonStatement,
             WhileLoop,
         )
@@ -215,16 +213,6 @@ class Interpreter(Loggable):
         else:
             # Fallback to asynchronous version
             return self.statement_executor.execute_reason_statement(node, context)
-
-    def set_log_level(self, level: LogLevel) -> None:
-        """Set the log level for the interpreter.
-
-        Args:
-            level: The log level to set
-        """
-        DXA_LOGGER.setLevel(LEVEL_MAP[level], scope="opendxa.dana")
-        self.context.set("system.log_level", level.value)
-        self.debug(f"Set log level to {level.value}")
 
 
 # Factory function for creating interpreters

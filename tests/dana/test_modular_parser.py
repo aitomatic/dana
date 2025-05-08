@@ -35,10 +35,10 @@ def test_modular_parse_assignment():
 def test_modular_parse_conditional():
     """Test parsing a conditional statement with the modular parser."""
     code = """
-if x > 5:
-    y = 10
+if private.x > 5:
+    private.y = 10
 else:
-    y = 20
+    private.y = 20
 """
     result = parse(code, type_check=False)
     assert result.is_valid
@@ -52,26 +52,26 @@ else:
     assert isinstance(stmt.condition, BinaryExpression)
     assert stmt.condition.operator == BinaryOperator.GREATER_THAN
     assert isinstance(stmt.condition.left, Identifier)
-    assert stmt.condition.left.name == "x"
+    assert stmt.condition.left.name == "private.x"
     assert isinstance(stmt.condition.right, LiteralExpression)
     assert stmt.condition.right.literal.value == 5
 
     # Check if body
     assert len(stmt.body) == 1
     assert isinstance(stmt.body[0], Assignment)
-    assert stmt.body[0].target.name == "y"
+    assert stmt.body[0].target.name == "private.y"
     assert stmt.body[0].value.literal.value == 10
 
     # Check else body
     assert len(stmt.else_body) == 1
     assert isinstance(stmt.else_body[0], Assignment)
-    assert stmt.else_body[0].target.name == "y"
+    assert stmt.else_body[0].target.name == "private.y"
     assert stmt.else_body[0].value.literal.value == 20
 
 
 def test_modular_parse_fstring():
     """Test parsing an f-string with the modular parser."""
-    result = parse('message = f"Hello, {name}"', type_check=False)
+    result = parse('private.message = f"Hello, {private.name}"', type_check=False)
     assert result.is_valid
     assert len(result.errors) == 0
 
@@ -80,7 +80,7 @@ def test_modular_parse_fstring():
 
     stmt = result.program.statements[0]
     assert isinstance(stmt, Assignment)
-    assert stmt.target.name == "message"
+    assert stmt.target.name == "private.message"
     assert isinstance(stmt.value, LiteralExpression)
     assert isinstance(stmt.value.literal.value, FStringExpression)
 
@@ -88,7 +88,7 @@ def test_modular_parse_fstring():
     fstring = stmt.value.literal.value
     assert hasattr(fstring, "_is_fstring")
     assert hasattr(fstring, "_original_text")
-    assert fstring._original_text == "Hello, {name}"
+    assert fstring._original_text == "Hello, {private.name}"
 
 
 def test_modular_parse_log_statement():
@@ -110,9 +110,9 @@ def test_modular_parse_log_statement():
 def test_modular_parse_while_loop():
     """Test parsing a while loop with the modular parser."""
     code = """
-while count < 10:
-    temp.count = count + 1
-    log.info("Count: " + count)
+while private.count < 10:
+    temp.count = private.count + 1
+    log.info("Count: " + private.count)
 """
     result = parse(code, type_check=False)
     assert result.is_valid
@@ -126,7 +126,7 @@ while count < 10:
     assert isinstance(stmt.condition, BinaryExpression)
     assert stmt.condition.operator == BinaryOperator.LESS_THAN
     assert isinstance(stmt.condition.left, Identifier)
-    assert stmt.condition.left.name == "count"
+    assert stmt.condition.left.name == "private.count"
     assert isinstance(stmt.condition.right, LiteralExpression)
     assert stmt.condition.right.literal.value == 10
 
@@ -154,7 +154,7 @@ def test_modular_parse_syntax_error():
 
 def test_modular_parse_complex_expression():
     """Test parsing complex expressions with correct precedence."""
-    result = parse("result = 2 + 3 * 4", type_check=False)
+    result = parse("private.result = 2 + 3 * 4", type_check=False)
     assert result.is_valid
     assert len(result.errors) == 0
 
@@ -163,7 +163,7 @@ def test_modular_parse_complex_expression():
 
     stmt = result.program.statements[0]
     assert isinstance(stmt, Assignment)
-    assert stmt.target.name == "result"
+    assert stmt.target.name == "private.result"
 
     # Should be structured as 2 + (3 * 4) due to precedence
     assert isinstance(stmt.value, BinaryExpression)

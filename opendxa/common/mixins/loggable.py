@@ -1,7 +1,7 @@
 """Loggable abstract base class for standardized logging across the codebase."""
 
 import logging
-from typing import Optional
+from typing import Any, Optional
 
 from opendxa.common.utils.logging.dxa_logger import DXA_LOGGER
 
@@ -45,10 +45,21 @@ class Loggable:
     def __instantiate_logger(
         self, logger_name: Optional[str] = None, prefix: Optional[str] = None, log_data: bool = False, level: Optional[int] = None
     ):
+        """Initialize a logger instance.
+
+        Args:
+            logger_name: Optional custom logger name
+            prefix: Optional prefix for log messages
+            log_data: Whether to log data payloads
+            level: Optional logging level (defaults to WARNING)
+
+        Returns:
+            The configured logger instance
+        """
         self._logger = DXA_LOGGER.getLogger(logger_name or self, prefix)
         self._logger.configure(
             console=True,
-            level=level or logging.WARNING,
+            level=level if level is not None else logging.WARNING,
             log_data=log_data,
             fmt="%(asctime)s - [%(name)s] %(levelname)s - %(message)s",
             datefmt="%H:%M:%S",
@@ -99,6 +110,6 @@ class Loggable:
         cls.get_class_logger().error(message, *args, **context)
 
     @classmethod
-    def get_class_logger(cls) -> "Loggable":
+    def get_class_logger(cls) -> Any:
         """Get a logger for the class itself."""
         return DXA_LOGGER.getLoggerForClass(cls)

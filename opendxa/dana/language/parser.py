@@ -43,7 +43,10 @@ except ImportError:
 
 
 from opendxa.dana.exceptions import ParseError
-from opendxa.dana.language.ast import Program
+from opendxa.dana.language.ast import (
+    Identifier,
+    Program,
+)
 from opendxa.dana.language.error_utils import handle_parse_error
 from opendxa.dana.language.transformer_module import get_transformer_class
 
@@ -194,6 +197,18 @@ class GrammarParser(Loggable):
             # Create an empty program as a fallback
             empty_program = Program(statements=[], source_text=program_text)
             return ParseResult(program=empty_program, errors=errors)
+
+    def transform_identifier(self, node: Tree) -> Identifier:
+        """Transform an identifier node.
+
+        Args:
+            node: The identifier node to transform
+
+        Returns:
+            The transformed identifier
+        """
+        name = str(node.children[0])
+        return Identifier(name=name, location=self._get_location(node))
 
 
 # Import for type checking

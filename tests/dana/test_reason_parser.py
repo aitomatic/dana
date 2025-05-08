@@ -44,7 +44,7 @@ class TestReasonParser:
 
     def test_parse_reason_with_assignment(self):
         """Test parsing a reason statement with assignment."""
-        code = 'result = reason("What is 2+2?")'
+        code = 'private.result = reason("What is 2+2?")'
         parse_result = parse(code)
 
         # Ensure no parse errors
@@ -60,7 +60,7 @@ class TestReasonParser:
         reason_stmt = parse_result.program.statements[0]
         assert reason_stmt.prompt is not None
         assert reason_stmt.target is not None
-        assert reason_stmt.target.name == "result"
+        assert reason_stmt.target.name == "private.result"
 
         # Print the AST for debugging
         print(f"Reason statement with assignment: {reason_stmt}")
@@ -73,7 +73,7 @@ class TestReasonParser:
     def test_parse_reason_with_context(self):
         """Test parsing a reason statement with context."""
         # First define a variable for the context to avoid undefined variable error
-        code = 'data = "some test data"\nreason("Analyze this data", context=data)'
+        code = 'private.data = "some test data"\nreason("Analyze this data", context=private.data)'
         parse_result = parse(code)
 
         # Ensure no parse errors
@@ -84,4 +84,4 @@ class TestReasonParser:
         reason_stmt = parse_result.program.statements[1]
         assert reason_stmt.context is not None
         assert len(reason_stmt.context) == 1
-        assert reason_stmt.context[0].name == "data"
+        assert reason_stmt.context[0].name == "private.data"

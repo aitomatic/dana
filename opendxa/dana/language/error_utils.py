@@ -28,14 +28,22 @@ def create_error_message(error_text: str, line: int, column: int, source_line: s
             # Make the message more friendly
             error_text = f"Unexpected input: {token_info}"
 
-    # Format the location info more clearly
-    location_info = f"Error at line {line}, column {column}"
-    indicator = " " * column + "^"
+    # Clean up expected tokens
+    if "Expected one of:" in error_text:
+        # Split into main error and expected tokens
+        parts = error_text.split("Expected one of:")
+        expected = parts[1].strip()
+        # Format expected tokens more cleanly
+        expected = expected.replace("\n", ", ").replace("\t", "").replace("* ", "")
+        # Make the message more user-friendly
+        error_text = f"Invalid syntax\nExpected: {expected}"
 
+    # Format with just the inline caret
+    indicator = " " * column + "^"
     if adjustment:
-        return f"{location_info}\n{error_text}\n\n{source_line}\n{indicator} {adjustment}"
+        return f"{source_line}\n{indicator} {adjustment}"
     else:
-        return f"{location_info}\n{error_text}\n\n{source_line}\n{indicator}"
+        return f"{source_line}\n{indicator}"
 
 
 def handle_parse_error(e: Exception, program_text: str) -> Tuple[Program, List[ParseError]]:
@@ -75,17 +83,6 @@ def handle_parse_error(e: Exception, program_text: str) -> Tuple[Program, List[P
 
         # Clean up the error message
         error_text = str(e)
-        if "Expected one of:" in error_text:
-            # Split into main error and expected tokens
-            parts = error_text.split("Expected one of:")
-            main_error = parts[0].strip()
-            expected = parts[1].strip()
-            # Format expected tokens more cleanly
-            expected = expected.replace("\n", ", ").replace("\t", "").replace("* ", "")
-            # Make the message more user-friendly
-            error_text = f"Invalid syntax\nExpected: {expected}"
-
-        # Generic error message
         error_msg = create_error_message(error_text, e.line, column, error_line)
         errors.append(ParseError(error_msg, e.line, error_line))
     else:

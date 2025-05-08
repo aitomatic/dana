@@ -34,7 +34,7 @@ class ErrorContext:
             return None
         line, column, source_text = node.location
         padding = " " * (column - 1)
-        return f"\nAt line {line}, column {column}:\n{source_text}\n{padding}^"
+        return f"{source_text}\n{padding}^"
 
 
 class DanaError(Exception):
@@ -66,13 +66,12 @@ class DanaError(Exception):
         """
         parts = []
 
-        # Add the primary message
-        parts.append(message)
-
         # Add context information if available
-        if context:
-            if context.location:
-                parts.append(context.location)
+        if context and context.location:
+            parts.append(context.location)
+        else:
+            # Add the primary message only if we don't have location info
+            parts.append(message)
 
         # Add original error information if available
         if original_error:

@@ -1,14 +1,20 @@
 """DANA REPL: Read-Eval-Print Loop for executing and managing DANA programs."""
 
+import logging
 from typing import Any, Dict, Optional
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.resource.llm_resource import LLMResource
-from opendxa.dana.error_handling import DanaError, ErrorContext, ErrorHandler
-from opendxa.dana.language.parser import parse
+from opendxa.dana.error_handling import DanaError
+from opendxa.dana.language.ast import LogLevel
+from opendxa.dana.language.parser import GrammarParser
 from opendxa.dana.runtime.context import RuntimeContext
 from opendxa.dana.runtime.interpreter import Interpreter
+from opendxa.dana.runtime.log_manager import set_dana_log_level
 from opendxa.dana.transcoder.transcoder import Transcoder
+
+# Map DANA LogLevel to Python logging levels
+LEVEL_MAP = {LogLevel.DEBUG: logging.DEBUG, LogLevel.INFO: logging.INFO, LogLevel.WARN: logging.WARNING, LogLevel.ERROR: logging.ERROR}
 
 
 class REPL(Loggable):
@@ -41,8 +47,31 @@ class REPL(Loggable):
             except Exception as e:
                 self.error(f"Failed to initialize transcoder: {e}")
 
-        # Set up interpreter
+        # Set up interpreter and parser
         self.interpreter = Interpreter(self.context)
+        self.parser = GrammarParser()
+
+        # Register hook for log level changes
+        from opendxa.dana.runtime.hooks import HookType, register_hook
+
+        register_hook(HookType.LOG_LEVEL_CHANGED, self._handle_log_level_change)
+
+    def _handle_log_level_change(self, context: Dict[str, Any]) -> None:
+        """Handle log level change hook."""
+        level = context.get("level")
+        if level:
+            self.set_log_level(level)
+
+    def set_log_level(self, level: LogLevel) -> None:
+        """Set the log level for the REPL.
+
+        This is the only place in opendxa.dana where log levels should be set.
+
+        Args:
+            level: The log level to set
+        """
+        set_dana_log_level(level)
+        self.debug(f"Set log level to {level.value}")
 
     def get_nlp_mode(self) -> bool:
         """Get the current NLP mode state."""
@@ -91,117 +120,28 @@ class REPL(Loggable):
             # Clean up the line
             line = line.strip()
 
-            # Skip lines with just carets or arrows
-            if line.strip() in ["^", ">", "A"]:
-                continue
-
-            # Clean up expected tokens
-            if "Expected:" in line:
-                tokens = line.split("Expected:")[1].strip()
-                tokens = tokens.replace("LPAR", "(").replace("RPAR", ")").replace("EQUAL", "=")
-                line = f"Expected: {tokens}"
-
-            formatted_lines.append(line)
+            # Keep only the source line and caret line
+            if line.startswith(">") or "^" in line:
+                formatted_lines.append(line)
 
         return "\n".join(formatted_lines)
 
-    async def execute(self, program_source: str, initial_context: Optional[Dict[str, Any]] = None) -> Any:
+    def execute(self, program_source: str, initial_context: Optional[Dict[str, Any]] = None) -> Any:
         """Execute a DANA program and return the result value."""
         # Set initial context if provided
         if initial_context:
             for key, value in initial_context.items():
                 self.context.set(key, value)
 
-        # Special handling for REPL expressions - direct variable lookups
-        program_source = program_source.strip()
-        # Only handle direct variable references, not statements
-        if not program_source.startswith(("if", "while", "print", "log")) and "=" not in program_source:
-            # Check for dotted expression like 'private.a' or 'public.b'
-            if "." in program_source and len(program_source.split(".")) == 2:
-                scope, var_name = program_source.split(".")
-                if scope in ["private", "public", "system"] and var_name.isalpha():
-                    try:
-                        # Direct lookup with no fallbacks for consistency
-                        return self.context.get(program_source)
-                    except Exception:
-                        # Not found in the specified scope
-                        raise DanaError(f"Variable '{program_source}' not found")
-
-            # For simple variables, explicitly require a scope
-            elif program_source.isalpha():
-                # Provide a helpful error message
-                raise DanaError(
-                    f"Variable '{program_source}' must be accessed with a scope prefix: "
-                    f"private.{program_source}, public.{program_source}, or system.{program_source}"
-                )
-
-        # If NLP mode is on, use transcoder
-        if self.get_nlp_mode():
-            if not self.transcoder:
-                raise DanaError(
-                    "NLP mode is enabled but no LLM resource is available. "
-                    "Please set one of these environment variables: OPENAI_API_KEY, ANTHROPIC_API_KEY, AZURE_OPENAI_API_KEY, etc."
-                )
-            try:
-                parse_result, _ = await self.transcoder.to_dana(program_source)
-            except Exception as e:
-                context = ErrorContext("natural language processing")
-                error = ErrorHandler.handle_error(e, context)
-                if "Generated invalid DANA code" in str(e):
-                    raise DanaError("I couldn't understand that. Please try rephrasing your request or use DANA syntax directly.")
-                else:
-                    # Clean up the error message
-                    error_msg = str(error)
-                    if "Error during" in error_msg:
-                        error_msg = error_msg.split("Error during")[1].strip()
-                    raise DanaError(error_msg)
-        else:
-            # Direct parsing when NLP mode is off
-            try:
-                parse_result = parse(program_source)
-            except Exception as e:
-                context = ErrorContext("program parsing")
-                error = ErrorHandler.handle_error(e, context)
-                # Clean up the error message
-                error_msg = str(error)
-                if "Error during" in error_msg:
-                    error_msg = error_msg.split("Error during")[1].strip()
-                raise DanaError(self._format_error_message(error_msg))
-
-        # Execute the parsed program
-        if not parse_result.is_valid:
-            context = ErrorContext("program validation")
-            error_msg = str(parse_result.errors)
-            if "ParseError" in error_msg:
-                # Extract just the error message without the ParseError wrapper
-                error_parts = error_msg.split("ParseError(")
-                if len(error_parts) > 1:
-                    # Get everything between the first ( and the last )
-                    error_content = error_parts[1]
-                    # Find the last closing parenthesis
-                    last_paren = error_content.rfind(")")
-                    if last_paren != -1:
-                        error_msg = error_content[:last_paren]
-                        # Remove quotes if present
-                        if error_msg.startswith('"') and error_msg.endswith('"'):
-                            error_msg = error_msg[1:-1]
-
-            raise DanaError(self._format_error_message(error_msg), context=context)
-
+        # Parse and execute the program
         try:
-            result = self.interpreter.execute_program(parse_result)
-            # Try to get the last_value first, then fallback to the result from execute_program
-            if "private" in self.context._state and "__last_value" in self.context._state["private"]:
-                return self.context.get("private.__last_value")
-            return result
+            parse_result = self.parser.parse(program_source)
+            if parse_result.errors:
+                raise DanaError(str(parse_result.errors[0]))
+
+            return self.interpreter.execute_program(parse_result)
         except Exception as e:
-            context = ErrorContext("program execution")
-            error = ErrorHandler.handle_error(e, context)
-            # Clean up the error message
-            error_msg = str(error)
-            if "Error during" in error_msg:
-                error_msg = error_msg.split("Error during")[1].strip()
-            raise DanaError(self._format_error_message(error_msg))
+            raise DanaError(str(e))
 
     def get_context(self) -> RuntimeContext:
         """Get the current runtime context."""

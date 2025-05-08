@@ -271,40 +271,25 @@ system.log_level = "DEBUG"
 
 ## 📝 Logging
 
-DANA supports logging statements with different severity levels and global log level configuration:
+DANA provides built-in logging capabilities through the `log` object. You can use different log levels:
 
-```python
-# Set minimum level for log display
-log_level = DEBUG  # Options: DEBUG, INFO, WARN, ERROR
-
-# Log statements
-log("Basic message")  # INFO level by default
-log(f"The temperature is {temp.value}")  # With variable interpolation
+```dana
+log.debug("Debug message")
+log.info("Info message")
+log.warn("Warning message")
+log.error("Error message")
 ```
 
-Log levels determine which messages are displayed:
-- DEBUG: Detailed information for debugging
-- INFO: General information about program execution
-- WARN: Warning messages for potentially harmful situations
-- ERROR: Error messages for serious problems
+The log level can be set using the `log.setLevel()` function:
 
-Messages with a level lower than the set level will be filtered out. For example, if the level is set to "WARN", only WARN and ERROR messages will be displayed.
-
-### How to Set Log Level
-
-```python
-# Set global log level to DEBUG
-log_level = DEBUG
-
-# Set global log level to INFO
-log_level = INFO
-
-# Set global log level to WARN
-log_level = WARN
-
-# Set global log level to ERROR
-log_level = ERROR
+```dana
+log.setLevel("DEBUG")  # Set to debug level
+log.setLevel("INFO")   # Set to info level
+log.setLevel("WARN")   # Set to warning level
+log.setLevel("ERROR")  # Set to error level
 ```
+
+The log level determines which messages are displayed. For example, if the level is set to "WARN", only warning and error messages will be shown.
 
 ---
 

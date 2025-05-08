@@ -5,6 +5,7 @@ import unittest
 from opendxa.dana.language.ast import LogLevel
 from opendxa.dana.runtime.context import RuntimeContext
 from opendxa.dana.runtime.interpreter import Interpreter
+from opendxa.dana.runtime.repl import REPL
 
 
 class TestLLMResponseFormats(unittest.TestCase):
@@ -14,7 +15,8 @@ class TestLLMResponseFormats(unittest.TestCase):
         """Set up the test environment."""
         self.context = RuntimeContext()
         self.interpreter = Interpreter(self.context)
-        self.interpreter.set_log_level(LogLevel.INFO)
+        self.repl = REPL(context=self.context)
+        self.repl.set_log_level(LogLevel.INFO)
 
     def test_openai_style_response(self):
         """Test handling of OpenAI-style dictionary responses."""

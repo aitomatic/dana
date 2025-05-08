@@ -85,8 +85,13 @@ class DXALogger:
             handler.setFormatter(formatter)
             root.addHandler(handler)
 
-        # Configure this logger
+        # Configure this logger and all existing loggers
         self.logger.setLevel(level)
+        for logger_name in logging.Logger.manager.loggerDict:
+            logger = logging.getLogger(logger_name)
+            if isinstance(logger, logging.Logger):
+                logger.setLevel(level)
+
         self.log_data = log_data
         self._configured = True
 

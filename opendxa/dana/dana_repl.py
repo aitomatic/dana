@@ -14,11 +14,9 @@ from prompt_toolkit.keys import Keys
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.resource.llm_resource import LLMResource
-from opendxa.common.utils.logging.dxa_logger import DXA_LOGGER
 from opendxa.dana.error_handling import ErrorContext, ErrorHandler
 from opendxa.dana.language.ast import LogLevel
 from opendxa.dana.runtime.repl import REPL
-from opendxa.dana.runtime.fixes.repl_fix import apply_repl_fix
 
 # Constants
 HISTORY_FILE = os.path.expanduser("~/.dana_history")
@@ -296,27 +294,23 @@ class DanaREPLApp(Loggable):
     """Main DANA REPL application."""
 
     def __init__(self, log_level: LogLevel = LogLevel.WARN):
-        """Initialize the REPL application."""
+        """Initialize the REPL application.
+
+        Args:
+            log_level: Initial log level (default: WARN)
+        """
         super().__init__()
-
-        # Set system-wide log level once, at the entry point
-        DXA_LOGGER.setLevel(LEVEL_MAP.get(log_level, logging.WARN), scope="opendxa.dana")
-
-        self.input_checker = InputCompleteChecker()
         self.input_state = InputState()
+        self.input_checker = InputCompleteChecker()
         self.repl = self._setup_repl()
+        self.repl.set_log_level(log_level)  # Use REPL's method to set log level
         self.command_handler = CommandHandler(self.repl)
-        self.session = self._setup_prompt_session()
+        self.prompt_session = self._setup_prompt_session()
 
     def _setup_repl(self) -> REPL:
         """Set up the REPL instance."""
         llm = LLMResource()
         repl = REPL(llm_resource=llm)
-
-        # Apply REPL fixes for variable handling
-        apply_repl_fix()
-        self.info("Applied REPL fixes for improved variable handling")
-
         return repl
 
     def _setup_prompt_session(self) -> PromptSession:
@@ -395,7 +389,7 @@ class DanaREPLApp(Loggable):
             try:
                 # Get input with appropriate prompt
                 prompt = MULTILINE_PROMPT if self.input_state.in_multiline else ">>> "
-                line = await self.session.prompt_async(prompt)
+                line = await self.prompt_session.prompt_async(prompt)
                 self.debug(f"Got input: '{line}'")
 
                 # Handle empty lines

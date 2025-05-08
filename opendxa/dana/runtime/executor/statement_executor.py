@@ -8,7 +8,6 @@ import json
 import logging
 from typing import Any, Dict, List, Optional
 
-from opendxa.common.utils.logging.dxa_logger import DXA_LOGGER
 from opendxa.dana.exceptions import RuntimeError, StateError
 from opendxa.dana.language.ast import (
     Assignment,
@@ -30,6 +29,7 @@ from opendxa.dana.runtime.executor.expression_evaluator import ExpressionEvaluat
 from opendxa.dana.runtime.executor.llm_integration import LLMIntegration
 from opendxa.dana.runtime.function_registry import call_function, has_function
 from opendxa.dana.runtime.hooks import HookType, has_hooks
+from opendxa.dana.runtime.log_manager import set_dana_log_level
 
 # Map DANA LogLevel to Python logging levels
 LEVEL_MAP = {LogLevel.DEBUG: logging.DEBUG, LogLevel.INFO: logging.INFO, LogLevel.WARN: logging.WARNING, LogLevel.ERROR: logging.ERROR}
@@ -225,32 +225,23 @@ class StatementExecutor(BaseExecutor):
 
     def execute_log_statement(self, node: LogStatement) -> None:
         """Execute a log statement."""
-        # Get the current log level
-        current_level = self.context_manager.get_variable("system.log_level")
-        if current_level is None:
-            current_level = LogLevel.INFO.value
-
-        # Check if the message should be logged based on level
-        level_priorities = {LogLevel.DEBUG: 0, LogLevel.INFO: 1, LogLevel.WARN: 2, LogLevel.ERROR: 3}
-        if level_priorities[node.level] >= level_priorities[LogLevel(current_level)]:
-            message = self.expression_evaluator.evaluate(node.message)
-            # Use Loggable methods directly based on the level
-            # Note: These log levels correspond to user-requested log levels in DANA code
-            # (e.g., log.error(), log.info(), etc.) and are not system errors
-            if node.level == LogLevel.DEBUG:
-                self.debug(str(message))
-            elif node.level == LogLevel.INFO:
-                self.info(str(message))
-            elif node.level == LogLevel.WARN:
-                self.warning(str(message))
-            elif node.level == LogLevel.ERROR:
-                self.error(str(message))
+        message = self.expression_evaluator.evaluate(node.message)
+        # Use Loggable methods directly based on the level
+        # Note: These log levels correspond to user-requested log levels in DANA code
+        # (e.g., log.error(), log.info(), etc.) and are not system errors
+        if node.level == LogLevel.DEBUG:
+            self.debug(str(message))
+        elif node.level == LogLevel.INFO:
+            self.info(str(message))
+        elif node.level == LogLevel.WARN:
+            self.warning(str(message))
+        elif node.level == LogLevel.ERROR:
+            self.error(str(message))
 
     def execute_log_level_set_statement(self, node: LogLevelSetStatement) -> None:
         """Execute a log level set statement."""
-        DXA_LOGGER.setLevel(LEVEL_MAP[node.level], scope="opendxa.dana")
-        self.context_manager.set_variable("system.log_level", node.level.value)
-        self.debug(f"Set log level to {node.level.value}")
+        set_dana_log_level(node.level)
+        self.debug(f"Log level set to {node.level.value}")
 
     def execute_print_statement(self, node: PrintStatement, context: Optional[Dict[str, Any]] = None) -> None:
         """Execute a print statement.

@@ -23,14 +23,6 @@ embedded grammar as well to ensure consistent behavior. You can do this by runni
 """
 
 # The DANA grammar definition in Lark format
-GRAMMAR = r"""' > opendxa/dana/language/dana_grammar_embedded.py
-cat opendxa/dana/language/dana_grammar_embedded.py.tmp >> opendxa/dana/language/dana_grammar_embedded.py
-echo '"""' >> opendxa/dana/language/dana_grammar_embedded.py
-rm opendxa/dana/language/dana_grammar_embedded.py.tmp
-```
-"""
-
-# The DANA grammar definition in Lark format
 GRAMMAR = r"""
 // DANA language grammar definition
 
@@ -43,17 +35,18 @@ statement: assignment
         | reason_statement
         | log_level_set_statement
         | function_call
+        | print_statement
         | COMMENT
         | _NL              // Skip empty lines
 
 assignment: identifier "=" expression
 
-log_statement: "log" ["." level] "(" expression ")"
+log_statement: "log" ["." level] "(" expression ["," named_args] ")"
 level: DEBUG | INFO | WARN | ERROR
-DEBUG: "debug"
-INFO: "info"
-WARN: "warn"
-ERROR: "error"
+DEBUG: "debug" | "DEBUG"
+INFO: "info" | "INFO"
+WARN: "warn" | "WARN"
+ERROR: "error" | "ERROR"
 
 conditional: if_part [else_part]
 if_part: "if" expression ":" _NL INDENT statement+ DEDENT
@@ -61,12 +54,14 @@ else_part: "else" ":" _NL INDENT statement+ DEDENT
 
 while_loop: "while" expression ":" _NL INDENT statement+ DEDENT
 
-reason_statement: [identifier "="] "reason" "(" expression ["," "context" "=" context_arg] ["," options] ")"
+reason_statement: [identifier "="] "reason" "(" expression ["," named_args] ")"
 context_arg: identifier | "[" identifier_list "]"
 options: key_value ("," key_value)*
 key_value: CNAME "=" (STRING | NUMBER | BOOL)
 
-log_level_set_statement: "log" "." "setLevel" "(" STRING ")"
+log_level_set_statement: "log" "." "setLevel" "(" (STRING | level) ")"
+
+print_statement: "print" "(" expression ")"
 
 function_call: identifier "(" [arg_list] ")"
 arg_list: (positional_args [","]) | (positional_args "," named_args) | named_args
@@ -101,19 +96,33 @@ atom: identifier
     | literal
     | "(" expression ")"
     | function_call
+    | array_literal
+    | TRUE
+    | FALSE
 
 identifier: CNAME ("." CNAME)*
 identifier_list: identifier ("," identifier)*
 
 literal: STRING | NUMBER | BOOL | "null" | f_string
 
-f_string: "f" STRING
+array_literal: "[" [array_items] "]"
+array_items: expression ("," expression)*
+
+// Boolean literals
+TRUE: "True"
+FALSE: "False"
+
+// Improved f-string support to handle interpolation
+f_string: "f" F_STRING_VALUE
+F_STRING_VALUE: /"[^"]*"/ | /'[^']*'/ | /"""[\s\S]*?"""/ | /'''[\s\S]*?'''/
 
 // Terminals
-STRING: DOUBLE_QUOTE_STRING | SINGLE_QUOTE_STRING
+STRING: DOUBLE_QUOTE_STRING | SINGLE_QUOTE_STRING | TRIPLE_DOUBLE_QUOTE_STRING | TRIPLE_SINGLE_QUOTE_STRING
 DOUBLE_QUOTE_STRING: /"[^"]*"/
 SINGLE_QUOTE_STRING: /'[^']*'/
-NUMBER: /[0-9]+(\.[0-9]+)?/
+TRIPLE_DOUBLE_QUOTE_STRING: /"""[\s\S]*?"""/
+TRIPLE_SINGLE_QUOTE_STRING: /'''[\s\S]*?'''/
+NUMBER: /-?[0-9]+(\.[0-9]+)?/
 BOOL: "true" | "false"
 CNAME: /[a-zA-Z_][a-zA-Z0-9_]*/
 COMMENT: /#[^\n]*/
@@ -121,6 +130,7 @@ COMMENT: /#[^\n]*/
 // Whitespace and indentation
 _NL: /\r?\n[\t ]*/
 WS: /[ \t]+/
+_WS: /[ \t]+/
 
 %ignore WS
 %ignore COMMENT

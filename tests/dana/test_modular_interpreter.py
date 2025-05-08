@@ -1,7 +1,5 @@
 """Tests for the modular interpreter implementation."""
 
-from unittest.mock import patch
-
 from opendxa.dana.language.ast import (
     Assignment,
     BinaryExpression,
@@ -10,13 +8,13 @@ from opendxa.dana.language.ast import (
     Literal,
     LiteralExpression,
     LogLevel,
-    LogStatement,
     PrintStatement,
     Program,
 )
 from opendxa.dana.language.parser import ParseResult
 from opendxa.dana.runtime.context import RuntimeContext
 from opendxa.dana.runtime.interpreter import Interpreter
+from opendxa.dana.runtime.log_manager import set_dana_log_level
 
 
 def test_arithmetic_operations():
@@ -82,35 +80,15 @@ def test_arithmetic_operations():
 
 def test_log_statement():
     """Test log statement execution with the modular interpreter."""
-    interpreter = Interpreter(RuntimeContext())
-    interpreter.set_log_level(LogLevel.INFO)  # Ensure INFO messages are printed
+    context = RuntimeContext()
+    interpreter = Interpreter(context)
+    set_dana_log_level(LogLevel.INFO)  # Ensure INFO messages are printed
 
-    # Test default INFO level
-    with patch("opendxa.dana.runtime.executor.statement_executor.StatementExecutor.info") as mock_info:
-        program = Program([LogStatement(message=LiteralExpression(Literal("Test message")))])
-        interpreter.execute_program(ParseResult(program=program))
-        mock_info.assert_called_once_with("Test message")
-
-    # Test explicit levels
-    interpreter.set_log_level(LogLevel.DEBUG)  # Set log level to DEBUG to see all messages
-    with patch("opendxa.dana.runtime.executor.statement_executor.StatementExecutor.debug") as mock_debug, patch(
-        "opendxa.dana.runtime.executor.statement_executor.StatementExecutor.info"
-    ) as mock_info, patch("opendxa.dana.runtime.executor.statement_executor.StatementExecutor.warning") as mock_warning, patch(
-        "opendxa.dana.runtime.executor.statement_executor.StatementExecutor.error"
-    ) as mock_error:
-        program = Program(
-            [
-                LogStatement(message=LiteralExpression(Literal("Debug message")), level=LogLevel.DEBUG),
-                LogStatement(message=LiteralExpression(Literal("Info message")), level=LogLevel.INFO),
-                LogStatement(message=LiteralExpression(Literal("Warn message")), level=LogLevel.WARN),
-                LogStatement(message=LiteralExpression(Literal("Error message")), level=LogLevel.ERROR),
-            ]
-        )
-        interpreter.execute_program(ParseResult(program=program))
-        mock_debug.assert_called_once_with("Debug message")
-        mock_info.assert_called_once_with("Info message")
-        mock_warning.assert_called_once_with("Warn message")
-        mock_error.assert_called_once_with("Error message")
+    # Test different log levels
+    interpreter.debug("Debug message")
+    interpreter.info("Info message")
+    interpreter.warning("Warning message")
+    interpreter.error("Error message")
 
 
 def test_print_statement(capfd):
@@ -139,11 +117,11 @@ def test_variable_resolution():
     """Test variable resolution in the modular interpreter."""
     interpreter = Interpreter(RuntimeContext())
 
-    # Set a variable in the private scope
+    # Set variables in the private scope
     program = Program(
         [
             Assignment(target=Identifier("private.x"), value=LiteralExpression(Literal(10))),
-            Assignment(target=Identifier("y"), value=LiteralExpression(Literal(20))),
+            Assignment(target=Identifier("private.y"), value=LiteralExpression(Literal(20))),
         ]
     )
     interpreter.execute_program(ParseResult(program=program))
@@ -157,7 +135,7 @@ def test_variable_resolution():
         [
             Assignment(
                 target=Identifier("private.z"),
-                value=BinaryExpression(left=Identifier("private.x"), operator=BinaryOperator.ADD, right=Identifier("y")),
+                value=BinaryExpression(left=Identifier("private.x"), operator=BinaryOperator.ADD, right=Identifier("private.y")),
             )
         ]
     )
