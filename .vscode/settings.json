@@ -13,8 +13,13 @@
     "python.analysis.extraPaths": ["./opendxa"],
     "python.analysis.diagnosticSeverityOverrides": {
         "reportUndefinedVariable": "none",
-        "reportMissingImports": "none"
+        "reportMissingImports": "none",
+        "reportGeneralTypeIssues": "none"
     },
+    "python.analysis.diagnosticMode": "workspace",
+    "python.analysis.ignore": [
+        "**/dana_grammar_embedded.py"
+    ],
 
     // === Editor Formatting ===
     // Configures automatic code formatting with Black

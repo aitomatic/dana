@@ -437,7 +437,7 @@ class DanaREPLApp(Loggable):
                 except Exception as e:
                     context = ErrorContext("program execution")
                     error = ErrorHandler.handle_error(e, context)
-                    print(f"Error: {error.message}")
+                    print(f"Error:\n{error.message}")
 
             except KeyboardInterrupt:
                 print("\nOperation cancelled")
@@ -447,7 +447,7 @@ class DanaREPLApp(Loggable):
             except Exception as e:
                 context = ErrorContext("REPL operation")
                 error = ErrorHandler.handle_error(e, context)
-                print(f"Error: {error.message}")
+                print(f"Error:\n{error.message}")
                 self.input_state.reset()
 
 

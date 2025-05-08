@@ -7,10 +7,9 @@ The parser uses a modular design with specialized transformer components
 for different language constructs, improving maintainability and testability.
 """
 
-import logging
 import os
 from pathlib import Path
-from typing import List, NamedTuple, Optional
+from typing import TYPE_CHECKING, NamedTuple, Optional, Sequence, cast
 
 from opendxa.common.mixins.loggable import Loggable
 
@@ -52,6 +51,7 @@ from opendxa.dana.language.ast import (
 )
 from opendxa.dana.language.error_utils import handle_parse_error
 from opendxa.dana.language.transformer_module import get_transformer_class
+from opendxa.dana.language.type_checker import TypeCheckVisitor, TypeEnvironment
 
 parser_logger = DXA_LOGGER.getLogger("opendxa.dana.language.parser")
 
@@ -60,7 +60,7 @@ class ParseResult(NamedTuple):
     """Result of parsing a DANA program."""
 
     program: Program
-    errors: List[ParseError] = []
+    errors: Sequence[ParseError] = ()
 
     @property
     def is_valid(self) -> bool:
@@ -92,6 +92,15 @@ class DanaIndenter(Indenter):
     tab_len = 8
 
 
+if TYPE_CHECKING:
+    from typing import Optional
+
+    from lark import Tree
+    from lark.indenter import Indenter
+
+    from opendxa.dana.language.transformer_module import Transformer
+
+
 class GrammarParser(Loggable):
     """Grammar-based parser for DANA language.
 
@@ -119,14 +128,14 @@ class GrammarParser(Loggable):
             self.debug(f"Loaded grammar from {grammar_path}")
 
         # Only create parser if Lark is available
-        self.parser = None
-        self.transformer = None
+        self.parser: Optional[Lark] = None
+        self.transformer: Optional[Transformer] = None
 
         if LARK_AVAILABLE:
             try:
                 # Create the parser with the DanaIndenter
                 self.parser = Lark(
-                    self.grammar,
+                    self.grammar,  # type: ignore[arg-type]
                     parser="lalr",
                     postlex=DanaIndenter(),
                     start="start",
@@ -158,6 +167,10 @@ class GrammarParser(Loggable):
             return ParseResult(
                 program=Program(statements=[]), errors=[ParseError("Lark parser is not available. Install with 'pip install lark-parser'")]
             )
+
+        # Type narrowing - we know parser is not None here due to is_available() check
+        assert self.parser is not None
+        assert self.transformer is not None
 
         errors = []
 
@@ -213,14 +226,14 @@ class GrammarParser(Loggable):
         return Identifier(name=name, location=self._get_location(node))
 
 
-# Import for type checking
-from opendxa.dana.language.type_checker import check_types
+# Create a persistent type environment
+_type_environment = TypeEnvironment()
 
 # Create a singleton instance of the grammar parser
 _parser = GrammarParser()
 
 
-def parse(code: str, type_check: bool = None) -> ParseResult:
+def parse(code: str, type_check: Optional[bool] = None) -> ParseResult:
     """Parse a DANA program string into an AST.
 
     Args:
@@ -231,51 +244,34 @@ def parse(code: str, type_check: bool = None) -> ParseResult:
         A ParseResult containing the parsed program and any errors
     """
     # Resolve type checking flag
-    do_type_check = ENABLE_TYPE_CHECK if type_check is None else type_check
+    do_type_check = ENABLE_TYPE_CHECK if type_check is None else bool(type_check)
 
     if not _parser.is_available():
         parser_logger.error("Parser is not available. Please install the lark-parser package.")
         return ParseResult(
-            program=Program(statements=[]), errors=[ParseError("Parser is not available. Please install the lark-parser package.")]
+            program=Program(statements=[]), errors=(ParseError("Parser is not available. Please install the lark-parser package."),)
         )
-
-    from opendxa.common.utils.logging import DXA_LOGGER
-
-    DXA_LOGGER.setLevel(logging.WARN, "*")  # someone somewhere is messing with the log level
-
-    parser_logger.debug("Pre-checking code for common syntax errors")
-
-    # Pre-check for common syntax errors
-    lines = code.split("\n")
-    for i, line in enumerate(lines):
-        line_stripped = line.strip()
-        # Skip empty lines and comments
-        if not line_stripped or line_stripped.startswith("#"):
-            continue
-
-        # Check for assignment with missing expression
-        if "=" in line_stripped and not line_stripped.endswith(":"):
-            pos = line.find("=")
-            rest = line[pos + 1 :].strip()
-            if not rest or rest.startswith("#"):
-                # Found a missing expression
-                error_msg = f"Syntax error at line {i+1}, column {pos+2}: Missing expression after equals sign"
-                error_line = line + "\n" + " " * pos + "^ Missing expression here"
-                parser_logger.debug(f"Found syntax error: {error_msg}")
-                return ParseResult(program=Program(statements=[], source_text=code), errors=[ParseError(error_msg, i + 1, line)])
 
     # Parse the code
     parser_logger.debug("Parsing code")
     result = _parser.parse(code)
 
-    # Perform type checking if enabled and parsing was successful
+    # Perform type checking if enabled
     if do_type_check and result.is_valid:
-        parser_logger.debug("Performing type checking")
-        type_errors = check_types(result.program)
-        if type_errors:
-            # Add type errors to the result
-            parser_logger.debug(f"Found {len(type_errors)} type errors")
-            result = ParseResult(program=result.program, errors=list(result.errors) + type_errors)
+        parser_logger.debug("Type checking program")
+        visitor = TypeCheckVisitor(env=_type_environment)  # Use the persistent environment
+        visitor.visit_program(result.program)
+        if visitor.errors:
+            # Convert type errors to parse errors with proper location handling
+            type_errors = []
+            for err in visitor.errors:
+                line = 0
+                if hasattr(err, "location") and err.location is not None:
+                    line = getattr(err.location, "line", 0)
+                type_errors.append(ParseError(str(err), line))
+
+            # Create a new ParseResult with the type errors
+            result = ParseResult(program=result.program, errors=cast(Sequence[ParseError], list(result.errors) + type_errors))
 
     if result.is_valid:
         parser_logger.debug("Successfully parsed and validated code")

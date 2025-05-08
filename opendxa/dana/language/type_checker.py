@@ -82,6 +82,10 @@ class TypeEnvironment:
         """
         return name in self._types
 
+    def clear(self) -> None:
+        """Clear all types from the environment."""
+        self._types.clear()
+
 
 class TypeCheckVisitor(ASTVisitor):
     """Visitor for type checking DANA programs.
@@ -117,7 +121,12 @@ class TypeCheckVisitor(ASTVisitor):
             The type of the program (always ANY)
         """
         for stmt in node.statements:
-            self.visit_node(stmt)
+            # Handle both statements and bare expressions
+            if isinstance(stmt, Identifier):
+                # For bare identifiers, just check if they exist
+                self.visit_identifier(stmt)
+            else:
+                self.visit_node(stmt)
         return DanaType.ANY
 
     def visit_assignment(self, node: Assignment, context=None) -> DanaType:
@@ -136,12 +145,24 @@ class TypeCheckVisitor(ASTVisitor):
         if node.target.name in self.env:
             existing_type = self.env.get(node.target.name)
             if existing_type is not None and not self._are_types_compatible(existing_type, value_type):
+                # Special case: if we're assigning a string + number expression, it's valid
+                if isinstance(node.value, BinaryExpression) and node.value.operator == BinaryOperator.ADD:
+                    left_type = self.visit_node(node.value.left)
+                    right_type = self.visit_node(node.value.right)
+                    if (left_type == DanaType.STRING and right_type in [DanaType.INT, DanaType.FLOAT, DanaType.NUMBER]) or (
+                        right_type == DanaType.STRING and left_type in [DanaType.INT, DanaType.FLOAT, DanaType.NUMBER]
+                    ):
+                        # String concatenation with numbers is allowed
+                        self.env.set(node.target.name, DanaType.STRING)
+                        return DanaType.STRING
+
                 self.errors.append(
                     TypeError(
                         f"Type mismatch in assignment to '{node.target.name}': " f"expected {existing_type.value}, got {value_type.value}",
                         node.location,
                     )
                 )
+                return value_type
 
         # Set the variable's type
         self.env.set(node.target.name, value_type)
@@ -303,12 +324,6 @@ class TypeCheckVisitor(ASTVisitor):
         """
         # If the identifier is not in the environment, it's a type error
         if node.name not in self.env:
-            # Don't report errors for identifiers that come from scopes
-            # or for bare variable names (which can be auto-scoped at runtime)
-            if "." not in node.name:
-                # Instead of raising an error, return ANY type for bare variables
-                # This allows them to be auto-scoped at runtime
-                return DanaType.ANY
             self.errors.append(TypeError(f"Undefined variable: {node.name}", node.location))
             return DanaType.ANY
 
@@ -488,6 +503,10 @@ class TypeCheckVisitor(ASTVisitor):
 
         # INT can be implicitly converted to FLOAT
         if expected == DanaType.FLOAT and actual == DanaType.INT:
+            return True
+
+        # If we're assigning to a variable for the first time, any type is compatible
+        if expected is None:
             return True
 
         # Otherwise, types must match exactly

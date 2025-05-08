@@ -123,7 +123,7 @@ class Interpreter(Loggable):
 
         except Exception as e:
             # Log the error
-            self.error(f"Program execution failed: {e}")
+            self.debug(f"Program execution failed: {e}")
 
             # Execute error hooks
             if has_hooks(HookType.ON_ERROR):

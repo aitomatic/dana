@@ -10,6 +10,7 @@ statement: assignment
         | log_level_set_statement
         | function_call
         | print_statement
+        | identifier          // Allow bare identifiers as statements
         | COMMENT
         | _NL              // Skip empty lines
 

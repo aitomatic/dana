@@ -103,13 +103,13 @@ def test_assignment_types():
 
 def test_type_checking_integration():
     """Test type checking integration with parser."""
-    # Program with a type error
-    program = 'private.x = "hello"\nprivate.y = private.x + 42  # Type error: string + number'
+    # Program with string concatenation
+    program = 'private.x = "hello"\nprivate.y = private.x + 42  # String concatenation'
 
-    # Our current implementation doesn't require type errors for string + number
-    # since it's a valid operation in DANA (string concatenation)
-    # So this test is modified to just check that parsing works with and without
-    # type checking
+    # Clear the type environment before running
+    from opendxa.dana.language.parser import _type_environment
+
+    _type_environment.clear()
 
     # Parse with type checking enabled
     result = parse(program, type_check=True)
@@ -120,6 +120,10 @@ def test_type_checking_integration():
     # Both should be valid
     assert result.is_valid
     assert result_no_check.is_valid
+
+    # Check that the types are correct
+    assert _type_environment.get("private.x") == DanaType.STRING
+    assert _type_environment.get("private.y") == DanaType.STRING
 
 
 def test_logical_operator_type_checking():

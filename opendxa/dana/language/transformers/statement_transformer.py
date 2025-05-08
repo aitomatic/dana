@@ -69,16 +69,16 @@ class StatementTransformer(BaseTransformer):
         return items[0]
 
     def DEBUG(self, _):
-        return Token("LEVEL", "DEBUG")
+        return Token("LEVEL", "DEBUG")  # type: ignore
 
     def INFO(self, _):
-        return Token("LEVEL", "INFO")
+        return Token("LEVEL", "INFO")  # type: ignore
 
     def WARN(self, _):
-        return Token("LEVEL", "WARN")
+        return Token("LEVEL", "WARN")  # type: ignore
 
     def ERROR(self, _):
-        return Token("LEVEL", "ERROR")
+        return Token("LEVEL", "ERROR")  # type: ignore
 
     def print_statement(self, items):
         """Transform a print statement rule into a PrintStatement node."""
@@ -232,7 +232,7 @@ class StatementTransformer(BaseTransformer):
             options = None
 
         # Create and return a ReasonStatement instead of a FunctionCall
-        return ReasonStatement(prompt=prompt, target=None, context=context, options=options)
+        return ReasonStatement(prompt=prompt, target=None, context=context, options=options)  # type: ignore
 
     def arg_list(self, items):
         """Transform an argument list into a list of arguments."""

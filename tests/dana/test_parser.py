@@ -4,6 +4,7 @@ from opendxa.dana.language.ast import (
     Assignment,
     BinaryExpression,
     BinaryOperator,
+    Identifier,
     LiteralExpression,
     LogLevelSetStatement,
     LogStatement,
@@ -71,7 +72,7 @@ def test_parse_arithmetic_expression():
 
 def test_parse_parenthetical_expression():
     """Test parsing expressions with parentheses."""
-    result = parse("temp.x = (5 + 3) * 2", type_check=False)
+    result = parse("private.x = (5 + 3) * 2", type_check=False)
     assert isinstance(result, ParseResult)
     assert isinstance(result.program, Program)
     assert len(result.program.statements) == 1
@@ -79,7 +80,7 @@ def test_parse_parenthetical_expression():
 
     stmt = result.program.statements[0]
     assert isinstance(stmt, Assignment)
-    assert stmt.target.name == "temp.x"
+    assert stmt.target.name == "private.x"
 
     # Check the expression structure
     expr = stmt.value
@@ -101,7 +102,7 @@ def test_parse_parenthetical_expression():
 
 def test_parse_mixed_arithmetic():
     """Test parsing mixed arithmetic expressions."""
-    result = parse("temp.x = 1.5 + 2.5 * 3.0", type_check=False)
+    result = parse("private.x = 1.5 + 2.5 * 3.0", type_check=False)
     assert isinstance(result, ParseResult)
     assert isinstance(result.program, Program)
     assert len(result.program.statements) == 1
@@ -109,7 +110,7 @@ def test_parse_mixed_arithmetic():
 
     stmt = result.program.statements[0]
     assert isinstance(stmt, Assignment)
-    assert stmt.target.name == "temp.x"
+    assert stmt.target.name == "private.x"
 
     # Check the expression structure
     expr = stmt.value
@@ -257,3 +258,41 @@ def test_parse_invalid_syntax():
     result = parse("log()", type_check=False)
     assert isinstance(result, ParseResult)
     assert len(result.errors) > 0
+
+
+def test_parse_bare_identifier():
+    """Test parsing a bare identifier as a statement."""
+    result = parse("private.x", type_check=False)
+    assert isinstance(result, ParseResult)
+    assert isinstance(result.program, Program)
+    assert len(result.program.statements) == 1
+    assert not result.errors
+
+    stmt = result.program.statements[0]
+    assert isinstance(stmt, Identifier)
+    assert stmt.name == "private.x"
+
+
+def test_parse_bare_identifier_with_type_check():
+    """Test parsing a bare identifier with type checking."""
+    # First set up a variable
+    setup_result = parse("private.x = 42", type_check=True)
+    assert setup_result.is_valid
+    assert len(setup_result.errors) == 0
+
+    # Then try to use it as a bare identifier
+    result = parse("private.x", type_check=True)
+    assert result.is_valid
+    assert len(result.errors) == 0
+
+    stmt = result.program.statements[0]
+    assert isinstance(stmt, Identifier)
+    assert stmt.name == "private.x"
+
+
+def test_parse_bare_identifier_undefined():
+    """Test parsing an undefined bare identifier with type checking."""
+    result = parse("private.undefined_var", type_check=True)
+    assert not result.is_valid
+    assert len(result.errors) > 0
+    assert any("Undefined variable" in str(error) for error in result.errors)

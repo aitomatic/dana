@@ -18,7 +18,7 @@ from opendxa.dana.language.parser import parse
 
 def test_modular_parse_assignment():
     """Test parsing a simple assignment statement with the modular parser."""
-    result = parse("temp.x = 42", type_check=False)
+    result = parse("private.x = 42", type_check=False)
     assert result.is_valid
     assert len(result.errors) == 0
 
@@ -27,7 +27,7 @@ def test_modular_parse_assignment():
 
     stmt = result.program.statements[0]
     assert isinstance(stmt, Assignment)
-    assert stmt.target.name == "temp.x"
+    assert stmt.target.name == "private.x"
     assert isinstance(stmt.value, LiteralExpression)
     assert stmt.value.literal.value == 42
 
@@ -111,7 +111,7 @@ def test_modular_parse_while_loop():
     """Test parsing a while loop with the modular parser."""
     code = """
 while private.count < 10:
-    temp.count = private.count + 1
+    private.count = private.count + 1
     log.info("Count: " + private.count)
 """
     result = parse(code, type_check=False)
@@ -133,7 +133,7 @@ while private.count < 10:
     # Check body
     assert len(stmt.body) == 2
     assert isinstance(stmt.body[0], Assignment)
-    assert stmt.body[0].target.name == "temp.count"
+    assert stmt.body[0].target.name == "private.count"
     assert isinstance(stmt.body[0].value, BinaryExpression)
     assert stmt.body[0].value.operator == BinaryOperator.ADD
 
@@ -177,3 +177,17 @@ def test_modular_parse_complex_expression():
     assert stmt.value.right.left.literal.value == 3
     assert isinstance(stmt.value.right.right, LiteralExpression)
     assert stmt.value.right.right.literal.value == 4
+
+
+def test_modular_parse_bare_identifier():
+    """Test parsing a bare identifier as a statement."""
+    result = parse("private.x", type_check=False)
+    assert result.is_valid
+    assert len(result.errors) == 0
+
+    assert isinstance(result.program, Program)
+    assert len(result.program.statements) == 1
+
+    stmt = result.program.statements[0]
+    assert isinstance(stmt, Identifier)
+    assert stmt.name == "private.x"

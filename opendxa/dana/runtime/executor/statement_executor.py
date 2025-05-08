@@ -8,11 +8,12 @@ import json
 import logging
 from typing import Any, Dict, List, Optional
 
-from opendxa.dana.exceptions import RuntimeError, StateError
+from opendxa.dana.exceptions import RuntimeError
 from opendxa.dana.language.ast import (
     Assignment,
     Conditional,
     FunctionCall,
+    Identifier,
     LogLevel,
     LogLevelSetStatement,
     LogStatement,
@@ -27,7 +28,6 @@ from opendxa.dana.runtime.executor.error_utils import (
 )
 from opendxa.dana.runtime.executor.expression_evaluator import ExpressionEvaluator
 from opendxa.dana.runtime.executor.llm_integration import LLMIntegration
-from opendxa.dana.runtime.function_registry import call_function, has_function
 from opendxa.dana.runtime.hooks import HookType, has_hooks
 from opendxa.dana.runtime.log_manager import set_dana_log_level
 
@@ -68,100 +68,92 @@ class StatementExecutor(BaseExecutor):
             context: Optional local context for variable resolution
 
         Returns:
-            The result of executing the statement (or None for statements that don't produce values)
+            The result of executing the statement
 
         Raises:
-            RuntimeError: If the statement cannot be executed
+            RuntimeError: If the statement execution fails
         """
-        # Prepare the hook context
-        hook_context = {
-            "statement": node,
-            "visitor": self,  # For backward compatibility
-            "interpreter": self,
-            "context": self.context_manager.context,
-        }
+        # Create hook context
+        hook_context = {"statement": node, "interpreter": self, "context": self.context_manager.context}
 
-        try:
-            # Execute before statement hooks
-            if has_hooks(HookType.BEFORE_STATEMENT):
+        # Execute before statement hooks
+        if has_hooks(HookType.BEFORE_STATEMENT):
+            from opendxa.dana.runtime.hooks import execute_hook
+
+            execute_hook(HookType.BEFORE_STATEMENT, hook_context)
+
+        # Execute the statement
+        result = None
+        if isinstance(node, Assignment):
+            # Execute assignment with appropriate hooks
+            # Before assignment hook
+            if has_hooks(HookType.BEFORE_ASSIGNMENT):
                 from opendxa.dana.runtime.hooks import execute_hook
 
-                execute_hook(HookType.BEFORE_STATEMENT, hook_context)
+                assignment_hook_context = {"statement": node, "interpreter": self, "context": self.context_manager.context}
+                execute_hook(HookType.BEFORE_ASSIGNMENT, assignment_hook_context)
 
-            # Execute the statement based on its type and store the result
-            result = None
-            if isinstance(node, Assignment):
-                # Execute assignment with appropriate hooks
-                # Before assignment hook
-                if has_hooks(HookType.BEFORE_ASSIGNMENT):
-                    from opendxa.dana.runtime.hooks import execute_hook
+            # For assignments, evaluate the value first
+            value = self.expression_evaluator.evaluate(node.value, context)
+            self.context_manager.set_variable(node.target.name, value)
+            result = value  # Store the value as the result
+            self.context_manager.set_variable("private.__last_value", value)  # Store for REPL output
+            self.debug(f"Set {node.target.name} = {value}")
 
-                    assignment_hook_context = {"statement": node, "interpreter": self, "context": self.context_manager.context}
-                    execute_hook(HookType.BEFORE_ASSIGNMENT, assignment_hook_context)
-
-                # For assignments, evaluate the value first
-                value = self.expression_evaluator.evaluate(node.value, context)
-                self.context_manager.set_variable(node.target.name, value)
-                result = value  # Store the value as the result
-                self.context_manager.set_variable("private.__last_value", value)  # Store for REPL output
-                self.debug(f"Set {node.target.name} = {value}")
-
-                # After assignment hook
-                if has_hooks(HookType.AFTER_ASSIGNMENT):
-                    from opendxa.dana.runtime.hooks import execute_hook
-
-                    # Include the evaluated value in the hook context
-                    assignment_hook_context = {
-                        "statement": node,
-                        "interpreter": self,
-                        "context": self.context_manager.context,
-                        "value": value,
-                    }
-                    execute_hook(HookType.AFTER_ASSIGNMENT, assignment_hook_context)
-            elif isinstance(node, LogStatement):
-                self.execute_log_statement(node)
-                # Log statements don't have a return value
-                self.context_manager.set_variable("private.__last_value", None)
-            elif isinstance(node, LogLevelSetStatement):
-                self.execute_log_level_set_statement(node)
-                # Log level statements don't have a return value
-                self.context_manager.set_variable("private.__last_value", None)
-            elif isinstance(node, PrintStatement):
-                self.execute_print_statement(node, context)
-                # Print statements don't return a value (handled in execute_print_statement)
-            elif isinstance(node, Conditional):
-                self.execute_conditional(node, context)
-                # Conditionals don't have a return value
-                self.context_manager.set_variable("private.__last_value", None)
-            elif isinstance(node, WhileLoop):
-                self.execute_while_loop(node, context)
-                # Loops don't have a return value
-                self.context_manager.set_variable("private.__last_value", None)
-            elif isinstance(node, ReasonStatement):
-                result = self._execute_reason_statement_sync(node, context)
-                # The result is already stored in __last_value inside execute_reason_statement
-            elif isinstance(node, FunctionCall):
-                result = self.execute_function_call(node, context)
-                # Store function call results for REPL output
-                self.context_manager.set_variable("private.__last_value", result)
-            else:
-                error_msg = f"Unsupported statement type: {type(node).__name__}"
-                raise RuntimeError(error_msg)
-
-            # Execute after statement hooks
-            if has_hooks(HookType.AFTER_STATEMENT):
+            # After assignment hook
+            if has_hooks(HookType.AFTER_ASSIGNMENT):
                 from opendxa.dana.runtime.hooks import execute_hook
 
-                execute_hook(HookType.AFTER_STATEMENT, hook_context)
+                # Include the evaluated value in the hook context
+                assignment_hook_context = {
+                    "statement": node,
+                    "interpreter": self,
+                    "context": self.context_manager.context,
+                    "value": value,
+                }
+                execute_hook(HookType.AFTER_ASSIGNMENT, assignment_hook_context)
+        elif isinstance(node, LogStatement):
+            self.execute_log_statement(node)
+            # Log statements don't have a return value
+            self.context_manager.set_variable("private.__last_value", None)
+        elif isinstance(node, LogLevelSetStatement):
+            self.execute_log_level_set_statement(node)
+            # Log level statements don't have a return value
+            self.context_manager.set_variable("private.__last_value", None)
+        elif isinstance(node, PrintStatement):
+            self.execute_print_statement(node, context)
+            # Print statements don't return a value (handled in execute_print_statement)
+        elif isinstance(node, Conditional):
+            self.execute_conditional(node, context)
+            # Conditionals don't have a return value
+            self.context_manager.set_variable("private.__last_value", None)
+        elif isinstance(node, WhileLoop):
+            self.execute_while_loop(node, context)
+            # Loops don't have a return value
+            self.context_manager.set_variable("private.__last_value", None)
+        elif isinstance(node, ReasonStatement):
+            result = self._execute_reason_statement_sync(node, context)
+            # The result is already stored in __last_value inside execute_reason_statement
+        elif isinstance(node, FunctionCall):
+            result = self.execute_function_call(node, context)
+            # Store function call results for REPL output
+            self.context_manager.set_variable("private.__last_value", result)
+        elif isinstance(node, Identifier):
+            # Handle bare identifier as a statement
+            result = self.expression_evaluator.evaluate(node, context)
+            self.context_manager.set_variable("private.__last_value", result)
+            self.debug(f"Evaluated identifier: {node.name} = {result}")
+        else:
+            error_msg = f"Unsupported statement type: {type(node).__name__}"
+            raise RuntimeError(error_msg)
 
-            return result
+        # Execute after statement hooks
+        if has_hooks(HookType.AFTER_STATEMENT):
+            from opendxa.dana.runtime.hooks import execute_hook
 
-        except Exception as e:
-            error, passthrough = handle_execution_error(e, node, "executing statement")
-            if passthrough:
-                raise error
-            else:
-                raise RuntimeError(f"Failed to execute statement: {e}")
+            execute_hook(HookType.AFTER_STATEMENT, hook_context)
+
+        return result
 
     def execute_assignment(self, node: Assignment, context: Optional[Dict[str, Any]] = None) -> Any:
         """Execute an assignment statement.
@@ -433,36 +425,8 @@ class StatementExecutor(BaseExecutor):
             self.error(f"Failed to execute reason statement: {e}")
             raise RuntimeError(f"Failed to execute reason statement: {e}")
 
-    def execute_function_call(self, node: FunctionCall, context: Optional[Dict[str, Any]] = None) -> None:
+    def execute_function_call(self, node: FunctionCall, context: Optional[Dict[str, Any]] = None) -> Any:
         """Execute a function call.
-
-        Args:
-            node: The function call to execute
-            context: Optional local context for variable resolution
-
-        Raises:
-            RuntimeError: If the function call fails
-        """
-        try:
-            # Check if this is a call to a registered function
-            if "." not in node.name and has_function(node.name):
-                self._execute_registered_function(node, context)
-            else:
-                # Try to handle it as a method call or variable function
-                result = self._execute_method_or_variable_function(node, context)
-
-                # Log the result (only for standalone function calls)
-                if result is not None:
-                    self.debug(f"Function {node.name} returned: {result}")
-        except Exception as e:
-            error, passthrough = handle_execution_error(e, node, f"calling function '{node.name}'")
-            if passthrough:
-                raise error
-            else:
-                raise RuntimeError(f"Failed to call function '{node.name}': {e}")
-
-    def _execute_registered_function(self, node: FunctionCall, context: Optional[Dict[str, Any]]) -> Any:
-        """Execute a registered function from the function registry.
 
         Args:
             node: The function call node
@@ -474,14 +438,23 @@ class StatementExecutor(BaseExecutor):
         Raises:
             RuntimeError: If the function call fails
         """
-        # Evaluate argument expressions
-        args = {}
-        for key, value in node.args.items():
-            # Evaluate argument expressions if needed
-            args[key] = self.expression_evaluator.evaluate(value, context)
+        # Execute before expression hooks
+        if has_hooks(HookType.BEFORE_EXPRESSION):
+            from opendxa.dana.runtime.hooks import execute_hook
 
-        # Call the function from the registry
-        result = call_function(node.name, self.context_manager.context, args)
+            hook_context = {"expression": node, "interpreter": self, "context": self.context_manager.context}
+            execute_hook(HookType.BEFORE_EXPRESSION, hook_context)
+
+        # Execute the function call
+        result = self._execute_method_or_variable_function(node, context)
+
+        # Execute after expression hooks
+        if has_hooks(HookType.AFTER_EXPRESSION):
+            from opendxa.dana.runtime.hooks import execute_hook
+
+            hook_context = {"expression": node, "interpreter": self, "context": self.context_manager.context, "result": result}
+            execute_hook(HookType.AFTER_EXPRESSION, hook_context)
+
         return result
 
     def _execute_method_or_variable_function(self, node: FunctionCall, context: Optional[Dict[str, Any]]) -> Any:
@@ -529,12 +502,12 @@ class StatementExecutor(BaseExecutor):
             else:
                 raise RuntimeError(f"Variable '{node.name}' is not callable")
 
-    def _execute_method_call(self, method_path: str, args_list: List[Any], kwargs: Dict[str, Any]) -> Any:
+    def _execute_method_call(self, name: str, args: List[Any], kwargs: Dict[str, Any]) -> Any:
         """Execute a method call on an object.
 
         Args:
-            method_path: The dot-path to the method (e.g., "obj.method")
-            args_list: Positional arguments
+            name: The name of the method to call
+            args: Positional arguments
             kwargs: Keyword arguments
 
         Returns:
@@ -543,35 +516,21 @@ class StatementExecutor(BaseExecutor):
         Raises:
             RuntimeError: If the method call fails
         """
-        # Split the path into object and method parts
-        parts = method_path.split(".")
+        # Split the name into object and method parts
+        parts = name.split(".")
+        obj_name = ".".join(parts[:-1])
+        method_name = parts[-1]
 
-        # Start by getting the base object
-        base_name = parts[0]
-        if "." not in base_name:
-            base_name = f"private.{base_name}"
+        # Get the object
+        obj = self.context_manager.get_variable(obj_name)
 
-        try:
-            obj = self.context_manager.get_variable(base_name)
+        # Get the method
+        method = getattr(obj, method_name, None)
+        if method is None:
+            raise RuntimeError(f"Object '{obj_name}' has no method '{method_name}'")
 
-            # Navigate through the object attributes to get the method
-            for i, part in enumerate(parts[1:], start=1):
-                if i == len(parts) - 1:
-                    # Last part is the method to call
-                    method = getattr(obj, part)
-
-                    # Check if we have a callable
-                    if callable(method):
-                        return method(*args_list, **kwargs)
-                    else:
-                        raise RuntimeError(f"Object attribute '{part}' in '{method_path}' is not callable")
-                else:
-                    # Navigate to the next attribute
-                    obj = getattr(obj, part)
-        except (AttributeError, TypeError) as e:
-            raise RuntimeError(f"Error accessing object or method in '{method_path}': {str(e)}")
-        except StateError:
-            raise RuntimeError(f"Variable not found in '{method_path}'")
+        # Call the method
+        return method(*args, **kwargs)
 
     def _enhance_local_context(self, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Enhance the local context with unprefixed variables from the private scope.

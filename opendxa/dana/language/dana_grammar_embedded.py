@@ -1,29 +1,14 @@
 """Embedded DANA grammar definition.
 
-This module contains the embedded grammar definition for the DANA language.
-It's used as a fallback if the grammar file isn't found.
+This file contains the DANA language grammar definition in Lark format.
+It is used as a fallback if the main grammar file (dana_grammar.lark) is not found.
 
-NOTE: If you modify the grammar file (dana_grammar.lark), you should update this
-embedded grammar as well to ensure consistent behavior. You can do this by running:
-
-```bash
-cat opendxa/dana/language/dana_grammar.lark > opendxa/dana/language/dana_grammar_embedded.py.tmp
-echo '"""Embedded DANA grammar definition.
-
-This module contains the embedded grammar definition for the DANA language.
-It'\''s used as a fallback if the grammar file isn'\''t found.
-
-NOTE: If you modify the grammar file (dana_grammar.lark), you should update this
-embedded grammar as well to ensure consistent behavior. You can do this by running:
-
-```bash
-# ... [copy this section to a shell script]
-```
-
+To update this file after modifying dana_grammar.lark, run:
+    python -c "from opendxa.dana.language.parser import GrammarParser; GrammarParser._update_embedded_grammar()"
 """
 
-# The DANA grammar definition in Lark format
-GRAMMAR = r"""
+# type: ignore
+GRAMMAR = r"""# type: ignore
 // DANA language grammar definition
 
 start: statement*
@@ -36,6 +21,7 @@ statement: assignment
         | log_level_set_statement
         | function_call
         | print_statement
+        | identifier          // Allow bare identifiers as statements
         | COMMENT
         | _NL              // Skip empty lines
 

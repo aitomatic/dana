@@ -60,22 +60,22 @@ class ExpressionTransformer(BaseTransformer):
         return items[0]
 
     def EQ(self, _):  # noqa: N802
-        return Token("COMP_OP", "==")
+        return Token("COMP_OP", "==")  # type: ignore
 
     def NEQ(self, _):  # noqa: N802
-        return Token("COMP_OP", "!=")
+        return Token("COMP_OP", "!=")  # type: ignore
 
     def LT(self, _):  # noqa: N802
-        return Token("COMP_OP", "<")
+        return Token("COMP_OP", "<")  # type: ignore
 
     def GT(self, _):  # noqa: N802
-        return Token("COMP_OP", ">")
+        return Token("COMP_OP", ">")  # type: ignore
 
     def LTE(self, _):  # noqa: N802
-        return Token("COMP_OP", "<=")
+        return Token("COMP_OP", "<=")  # type: ignore
 
     def GTE(self, _):  # noqa: N802
-        return Token("COMP_OP", ">=")
+        return Token("COMP_OP", ">=")  # type: ignore
 
     def sum_expr(self, items):
         """Transform a sum expression into a BinaryExpression or pass through."""
@@ -95,10 +95,10 @@ class ExpressionTransformer(BaseTransformer):
         return items[0]
 
     def PLUS(self, _):  # noqa: N802
-        return Token("ADD_OP", "+")
+        return Token("ADD_OP", "+")  # type: ignore
 
     def MINUS(self, _):  # noqa: N802
-        return Token("ADD_OP", "-")
+        return Token("ADD_OP", "-")  # type: ignore
 
     def product(self, items):
         """Transform a product expression into a BinaryExpression or pass through."""
@@ -118,13 +118,13 @@ class ExpressionTransformer(BaseTransformer):
         return items[0]
 
     def MULT(self, _):  # noqa: N802
-        return Token("MUL_OP", "*")
+        return Token("MUL_OP", "*")  # type: ignore
 
     def DIV(self, _):  # noqa: N802
-        return Token("MUL_OP", "/")
+        return Token("MUL_OP", "/")  # type: ignore
 
     def MOD(self, _):  # noqa: N802
-        return Token("MUL_OP", "%")
+        return Token("MUL_OP", "%")  # type: ignore
 
     def atom(self, items):
         """Transform an atom rule into an Expression node."""

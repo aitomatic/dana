@@ -6,6 +6,7 @@ for basic DANA syntax.
 
 import pytest
 
+from opendxa.dana.language.ast import Identifier
 from opendxa.dana.language.parser import parse
 
 
@@ -34,7 +35,7 @@ def test_string_literals():
 
 def test_nested_identifier():
     """Test parsing nested identifiers."""
-    code = "user.name = 'Bob'"
+    code = "private.user.name = 'Bob'"
     result = parse(code, type_check=False)
     assert result.is_valid
     assert len(result.program.statements) == 1
@@ -60,6 +61,16 @@ else:
     result = parse(code, type_check=False)
     assert result.is_valid
     assert len(result.program.statements) == 1
+
+
+def test_bare_identifier():
+    """Test parsing a bare identifier as a statement."""
+    code = "private.x"
+    result = parse(code, type_check=False)
+    assert result.is_valid
+    assert len(result.program.statements) == 1
+    assert isinstance(result.program.statements[0], Identifier)
+    assert result.program.statements[0].name == "private.x"
 
 
 if __name__ == "__main__":
