@@ -1,34 +1,36 @@
 """Objects that have a registry for other objects"""
 
 from typing import Dict
+
 from opendxa.common.mixins.identifiable import Identifiable
+
 
 class Registerable(Identifiable):
     """Objects that have a global registry for all registerable objects."""
 
     # Single global registry for all registerable objects
-    _registry: Dict[str, 'Registerable'] = {}
+    _registry: Dict[str, "Registerable"] = {}
 
     @classmethod
-    def get_from_registry(cls, object_id: str) -> 'Registerable':
+    def get_from_registry(cls, object_id: str) -> "Registerable":
         """Get a resource from the registry."""
         if object_id not in cls._registry:
             raise ValueError(f"Object {object_id} not found in registry")
         return cls._registry[object_id]
-    
+
     @classmethod
-    def add_object_to_registry(cls, the_object: 'Registerable') -> None:
+    def add_object_to_registry(cls, the_object: "Registerable") -> None:
         """Add an object to the registry with the specified ID.
-        
+
         Args:
             the_object: The object to register
         """
         cls._registry[the_object.id] = the_object
-    
-    @classmethod    
+
+    @classmethod
     def remove_object_from_registry(cls, object_id: str) -> None:
         """Remove an object from the registry.
-        
+
         Args:
             object_id: ID of the object to remove
         """

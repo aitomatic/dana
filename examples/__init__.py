@@ -10,9 +10,7 @@ Examples:
     4. Collaborative Research: Multi-agent coordination
 """
 
-
-__all__ = [
-]
+__all__ = []
 
 # Example usage documentation
 USAGE = """
@@ -53,12 +51,12 @@ Running Examples:
 Example Usage:
     ```python
     from examples import create_math_tutor, run_collaborative_research
-    
+
     # Create a math tutor agent
     tutor = create_math_tutor()
-    
+
     # Run collaborative research example
     # Requires OPENAI_API_KEY and WEBSOCKET_URL
     await run_collaborative_research()
     ```
-""" 
+"""

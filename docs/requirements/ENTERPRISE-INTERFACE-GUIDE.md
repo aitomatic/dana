@@ -75,7 +75,7 @@ sequenceDiagram
     participant D as DXA
     participant K as Knowledge Base
     participant S as System
-    
+
     U->>D: Upload screenshot
     D->>D: Preprocess image
     D->>K: Query templates

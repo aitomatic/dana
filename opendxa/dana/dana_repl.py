@@ -430,8 +430,9 @@ class DanaREPLApp(Loggable):
                 try:
                     self.debug(f"Executing program: {program}")
                     result = await self.repl.execute(program)
+                    # Only print the result if it's not None
                     if result is not None:
-                        print(f"Result: {result}")
+                        print(result)
                 except Exception as e:
                     context = ErrorContext("program execution")
                     error = ErrorHandler.handle_error(e, context)
@@ -445,7 +446,7 @@ class DanaREPLApp(Loggable):
             except Exception as e:
                 context = ErrorContext("REPL operation")
                 error = ErrorHandler.handle_error(e, context)
-                print(f"Unexpected error: {error.message}")
+                print(f"Error: {error.message}")
                 self.input_state.reset()
 
 

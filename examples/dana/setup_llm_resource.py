@@ -9,18 +9,17 @@ This script shows how to:
 Usage:
     python setup_llm_resource.py
 
-Note: 
+Note:
     - This requires at least one LLM API key set in your environment variables
     - See below for supported providers and their environment variables
 """
 
 import asyncio
 import os
-from pathlib import Path
 
 from opendxa.common.resource.llm_resource import LLMResource
-from opendxa.dana.runtime.context import RuntimeContext
 from opendxa.dana.language.parser import parse
+from opendxa.dana.runtime.context import RuntimeContext
 from opendxa.dana.runtime.interpreter import Interpreter
 
 
@@ -28,7 +27,7 @@ async def main():
     """Run the example script."""
     print("DANA LLM Resource Setup Example")
     print("===============================")
-    
+
     # Check for common API keys
     api_keys = {
         "OpenAI": os.environ.get("OPENAI_API_KEY"),
@@ -37,9 +36,9 @@ async def main():
         "Groq": os.environ.get("GROQ_API_KEY"),
         "Google": os.environ.get("GOOGLE_API_KEY"),
     }
-    
+
     available_keys = [provider for provider, key in api_keys.items() if key]
-    
+
     if not available_keys:
         print("⚠️  No LLM API keys found in environment variables.")
         print("This example requires at least one provider's API key to be set.")
@@ -50,21 +49,21 @@ async def main():
         print("  - Groq: GROQ_API_KEY")
         print("  - Google: GOOGLE_API_KEY")
         return
-    
+
     print(f"✅ Found API keys for: {', '.join(available_keys)}")
-    
+
     # Create and initialize LLM resource
     print("\nStep 1: Creating and initializing LLM resource...")
-    
+
     # Option 1: Simple initialization - uses config and available API keys
     llm = LLMResource(name="reasoning_llm")
     await llm.initialize()
     print(f"LLM initialized with model: {llm.model}")
-    
+
     # Option 2: With explicit model (uncomment to use)
     # llm = LLMResource(name="reasoning_llm", model="openai:gpt-3.5-turbo")
     # await llm.initialize()
-    
+
     # Option 3: With custom parameters (uncomment to use)
     # llm = LLMResource(
     #     name="reasoning_llm",
@@ -72,16 +71,16 @@ async def main():
     #     max_tokens=1000,
     # )
     # await llm.initialize()
-    
+
     # Create runtime context and register LLM resource
     print("\nStep 2: Creating RuntimeContext and registering LLM...")
     context = RuntimeContext()
     context.register_resource("llm", llm)
     print(f"Resources in context: {context.list_resources()}")
-    
+
     # Create and run a DANA program with reason()
     print("\nStep 3: Running DANA program with reason() statement...")
-    
+
     # Simple program with reason() statement
     program = """
     log_level INFO
@@ -89,12 +88,12 @@ async def main():
     answer = reason("What are three advantages of using domain-specific languages?")
     log.info(f"LLM response: {answer}")
     """
-    
+
     # Parse and execute the program
     parse_result = parse(program)
     interpreter = Interpreter(context)
     interpreter.execute_program(parse_result)
-    
+
     print("\nExample complete!")
 
 

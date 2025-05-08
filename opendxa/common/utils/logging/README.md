@@ -29,7 +29,7 @@ class MyService(Loggable):
         # Just call super().__init__() - that's it!
         super().__init__()
         self.logger.info("Service initialized")
-    
+
     def process(self, data):
         self.logger.debug("Processing data: %s", data)
         # ... processing logic ...

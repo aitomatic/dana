@@ -210,4 +210,3 @@ __all__ = [
     "WebSocketIO",
     "WoTResource",
 ]
-

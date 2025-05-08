@@ -149,7 +149,7 @@ result = await router.route(
        target_protocol="mcp",
        context=context
    )
-   
+
    # Send adapted message
    result = await protocols.send(
        message=adapted,

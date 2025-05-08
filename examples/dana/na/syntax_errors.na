@@ -11,7 +11,7 @@ log("This example contains several syntax errors. Execution should stop at the f
 log("Attempting assignment with missing value (EXPECTED ERROR)")
 private.x =  # type: ignore
 
-# --- Execution should not reach here --- 
+# --- Execution should not reach here ---
 log("This log should NOT appear.")
 
 # Missing equals sign error
@@ -28,4 +28,4 @@ private.msg = hello world # type: ignore
 
 # This one is valid, to test recovery
 # Note: The parser will stop at the first error above
-private.valid = "ok" 
+private.valid = "ok"

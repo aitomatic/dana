@@ -49,8 +49,8 @@ json_result = reason("Analyze performance metrics", format="json")
 #### LLM Parameters
 
 ```python
-detailed_analysis = reason("Provide detailed failure analysis", 
-                        temperature=0.2, 
+detailed_analysis = reason("Provide detailed failure analysis",
+                        temperature=0.2,
                         max_tokens=1000)
 ```
 
@@ -98,7 +98,7 @@ log(f"Analysis: {analysis}")
 ### Using context passing for complex objects
 ```python
 if private.temp > 80:
-    action = reason("What action should be taken for the equipment?", 
+    action = reason("What action should be taken for the equipment?",
                     context=[private.temp, private.previous_readings, private.equipment],
                     format="json")
 

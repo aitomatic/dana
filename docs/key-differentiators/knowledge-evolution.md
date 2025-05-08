@@ -145,10 +145,10 @@ version = integrator.integrate(
        expert="process_engineer",
        content=improvement
    )
-   
+
    # Validate
    result = validator.validate(new_knowledge)
-   
+
    # Integrate if valid
    if result.is_valid:
        version = integrator.integrate(
@@ -166,7 +166,7 @@ version = integrator.integrate(
        metric="accuracy",
        value=0.95
    )
-   
+
    # Analyze trends
    analysis = metrics.analyze(
        knowledge_id="process_001",
@@ -183,13 +183,13 @@ version = integrator.integrate(
        rating=4,
        comments="Very helpful"
    )
-   
+
    # Process feedback
    result = process_feedback(
        feedback=feedback,
        knowledge_base=kb
    )
-   
+
    # Update if needed
    if result.needs_update:
        update_knowledge(result)

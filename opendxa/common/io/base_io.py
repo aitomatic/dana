@@ -7,8 +7,9 @@ input/output operations while extending BaseResource functionality.
 
 from abc import abstractmethod
 from typing import Any, Optional
-from opendxa.common.resource import BaseResource
+
 from opendxa.common.mixins import ToolCallable
+from opendxa.common.resource import BaseResource
 from opendxa.common.types import BaseRequest, BaseResponse
 
 
@@ -52,7 +53,7 @@ class BaseIO(BaseResource):
         if "receive" in request.arguments:
             response = await self.receive()
             return BaseResponse(success=True, content={"response": response})
-        
+
         return BaseResponse.error_response("Invalid query - must specify send or receive")
 
     def can_handle(self, request: BaseRequest) -> bool:

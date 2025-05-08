@@ -163,7 +163,7 @@ kb.update_knowledge(
    ```python
    # Query knowledge base
    result = kb.query("semiconductor process control")
-   
+
    # Use in execution
    agent.execute(
        objective="Analyze process data",
@@ -179,7 +179,7 @@ kb.update_knowledge(
        content=new_knowledge,
        source="expert_review"
    )
-   
+
    # Update existing knowledge
    kb.update_knowledge(
        id="process_control_001",
@@ -192,7 +192,7 @@ kb.update_knowledge(
    ```python
    # Track changes
    history = kb.get_history("process_control_001")
-   
+
    # Analyze evolution
    analysis = kb.analyze_evolution(
        domain="semiconductor",

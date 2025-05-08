@@ -72,7 +72,7 @@ sequenceDiagram
     participant D as DXA
     participant E as Experion
     participant O as Operator
-    
+
     loop Each Batch Cycle
         S->>D: Process parameters
         D->>D: Recipe analysis
@@ -156,14 +156,14 @@ graph TB
         A[Analytical Data]
         V[Valve/Agitator Controls]
     end
-    
+
     subgraph "DXA System"
         D[DXA Core]
         D <--> OPT[Recipe Optimizer]
         D <--> KB[Knowledge Base]
         D <--> WF[Batch Workflow Engine]
     end
-    
+
     subgraph "Integration Layer"
         EXP[Experion Batch]
         HF[Honeywell Forge]

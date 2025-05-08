@@ -110,7 +110,7 @@ sequenceDiagram
     RIE->>FDC: RF Power Data Stream
     FDC->>DXA: Matching Network Parameters
     DXA->>DXA: Detect RF matching<br/>anomalies
-    
+
     alt Severe Mismatch
         DXA->>Op: Alert: RF matching<br/>fault detected
         DXA->>Op: Recommend matching<br/>network adjustment

@@ -17,7 +17,7 @@ private.threshold_critical = 120
 if private.sensor.temperature > private.threshold_high:
     # Log a warning
     log.warn("WARNING: Temperature is too high!")
-    
+
     # Set status based on severity
     if private.sensor.temperature > private.threshold_critical:
         private.status = "CRITICAL"

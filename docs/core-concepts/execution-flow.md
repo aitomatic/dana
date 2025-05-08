@@ -140,16 +140,16 @@ except ExecutionError as e:
    ```python
    # Create workflow
    workflow = Workflow(objective="Process data")
-   
+
    # Add nodes
    workflow.add_node("GATHER", "Gather data")
    workflow.add_node("PROCESS", "Process data")
    workflow.add_node("ANALYZE", "Analyze results")
-   
+
    # Add edges
    workflow.add_edge("GATHER", "PROCESS")
    workflow.add_edge("PROCESS", "ANALYZE")
-   
+
    # Execute
    result = await executor.execute(workflow)
    ```
@@ -159,7 +159,7 @@ except ExecutionError as e:
    # Set state
    context.set_state("data.raw", raw_data)
    context.set_state("data.processed", processed_data)
-   
+
    # Get state
    raw_data = context.get_state("data.raw")
    processed_data = context.get_state("data.processed")
@@ -173,11 +173,11 @@ except ExecutionError as e:
    except ExecutionError as e:
        # Log error
        logger.error(f"Execution failed: {e}")
-       
+
        # Update state
        context.set_state("execution.status", "failed")
        context.set_state("execution.error", str(e))
-       
+
        # Handle based on type
        if isinstance(e, ResourceError):
            # Handle resource error

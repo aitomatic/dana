@@ -60,12 +60,15 @@ class StatementExecutor(BaseExecutor):
         self.expression_evaluator = expression_evaluator
         self.llm_integration = llm_integration
 
-    def execute(self, node: Any, context: Optional[Dict[str, Any]] = None) -> None:
+    def execute(self, node: Any, context: Optional[Dict[str, Any]] = None) -> Any:
         """Execute a statement node.
 
         Args:
             node: The statement node to execute
             context: Optional local context for variable resolution
+
+        Returns:
+            The result of executing the statement (or None for statements that don't produce values)
 
         Raises:
             RuntimeError: If the statement cannot be executed
@@ -85,23 +88,60 @@ class StatementExecutor(BaseExecutor):
 
                 execute_hook(HookType.BEFORE_STATEMENT, hook_context)
 
-            # Execute the statement based on its type
+            # Execute the statement based on its type and store the result
+            result = None
             if isinstance(node, Assignment):
-                self.execute_assignment(node, context)
+                # Execute assignment with appropriate hooks
+                # Before assignment hook
+                if has_hooks(HookType.BEFORE_ASSIGNMENT):
+                    from opendxa.dana.runtime.hooks import execute_hook
+                    assignment_hook_context = {"statement": node, "interpreter": self, "context": self.context_manager.context}
+                    execute_hook(HookType.BEFORE_ASSIGNMENT, assignment_hook_context)
+                
+                # For assignments, evaluate the value first
+                value = self.expression_evaluator.evaluate(node.value, context)
+                self.context_manager.set_variable(node.target.name, value)
+                result = value  # Store the value as the result
+                self.context_manager.set_variable("private.__last_value", value)  # Store for REPL output
+                self.debug(f"Set {node.target.name} = {value}")
+                
+                # After assignment hook
+                if has_hooks(HookType.AFTER_ASSIGNMENT):
+                    from opendxa.dana.runtime.hooks import execute_hook
+                    # Include the evaluated value in the hook context
+                    assignment_hook_context = {
+                        "statement": node, 
+                        "interpreter": self, 
+                        "context": self.context_manager.context,
+                        "value": value
+                    }
+                    execute_hook(HookType.AFTER_ASSIGNMENT, assignment_hook_context)
             elif isinstance(node, LogStatement):
                 self.execute_log_statement(node)
+                # Log statements don't have a return value
+                self.context_manager.set_variable("private.__last_value", None)
             elif isinstance(node, LogLevelSetStatement):
                 self.execute_log_level_set_statement(node)
+                # Log level statements don't have a return value
+                self.context_manager.set_variable("private.__last_value", None)
             elif isinstance(node, PrintStatement):
                 self.execute_print_statement(node, context)
+                # Print statements don't return a value (handled in execute_print_statement)
             elif isinstance(node, Conditional):
                 self.execute_conditional(node, context)
+                # Conditionals don't have a return value
+                self.context_manager.set_variable("private.__last_value", None)
             elif isinstance(node, WhileLoop):
                 self.execute_while_loop(node, context)
+                # Loops don't have a return value
+                self.context_manager.set_variable("private.__last_value", None)
             elif isinstance(node, ReasonStatement):
-                self.execute_reason_statement(node, context)
+                result = self.execute_reason_statement(node, context)
+                # The result is already stored in __last_value inside execute_reason_statement
             elif isinstance(node, FunctionCall):
-                self.execute_function_call(node, context)
+                result = self.execute_function_call(node, context)
+                # Store function call results for REPL output
+                self.context_manager.set_variable("private.__last_value", result)
             else:
                 error_msg = f"Unsupported statement type: {type(node).__name__}"
                 raise RuntimeError(error_msg)
@@ -112,6 +152,8 @@ class StatementExecutor(BaseExecutor):
 
                 execute_hook(HookType.AFTER_STATEMENT, hook_context)
 
+            return result
+
         except Exception as e:
             error, passthrough = handle_execution_error(e, node, "executing statement")
             if passthrough:
@@ -119,12 +161,15 @@ class StatementExecutor(BaseExecutor):
             else:
                 raise RuntimeError(f"Failed to execute statement: {e}")
 
-    def execute_assignment(self, node: Assignment, context: Optional[Dict[str, Any]] = None) -> None:
+    def execute_assignment(self, node: Assignment, context: Optional[Dict[str, Any]] = None) -> Any:
         """Execute an assignment statement.
 
         Args:
             node: The assignment statement to execute
             context: Optional local context for variable resolution
+
+        Returns:
+            The evaluated value of the assignment
 
         Raises:
             RuntimeError: If the assignment fails
@@ -141,7 +186,20 @@ class StatementExecutor(BaseExecutor):
 
             # Evaluate the expression and store the value
             value = self.expression_evaluator.evaluate(node.value, context)
-            self.context_manager.set_variable(node.target.name, value)
+
+            # Get the target name for assignment
+            target_name = node.target.name
+
+            # Handle explicit scoping requirement
+            if "." not in target_name:
+                # Log a warning about missing scope
+                self.warning(f"Variable '{target_name}' assigned without scope prefix. Use 'private.{target_name}' for clarity.")
+
+            # Store the value in the variable
+            self.context_manager.set_variable(target_name, value)
+
+            # Store the value in __last_value for REPL output
+            self.context_manager.set_variable("private.__last_value", value)
             self.debug(f"Set {node.target.name} = {value}")
 
             # Update hook context with assignment result
@@ -152,6 +210,9 @@ class StatementExecutor(BaseExecutor):
                 from opendxa.dana.runtime.hooks import execute_hook
 
                 execute_hook(HookType.AFTER_ASSIGNMENT, hook_context)
+
+            # Return the value for consistent behavior in the REPL
+            return value
 
         except Exception as e:
             error, passthrough = handle_execution_error(e, node, "executing assignment")
@@ -172,6 +233,8 @@ class StatementExecutor(BaseExecutor):
         if level_priorities[node.level] >= level_priorities[LogLevel(current_level)]:
             message = self.expression_evaluator.evaluate(node.message)
             # Use Loggable methods directly based on the level
+            # Note: These log levels correspond to user-requested log levels in DANA code
+            # (e.g., log.error(), log.info(), etc.) and are not system errors
             if node.level == LogLevel.DEBUG:
                 self.debug(str(message))
             elif node.level == LogLevel.INFO:
@@ -215,6 +278,10 @@ class StatementExecutor(BaseExecutor):
 
             # Also log at debug level
             self.debug(f"Printed: {message_str}")
+
+            # Clear the __last_value so it doesn't return anything in the REPL
+            # Print statements should not produce a return value
+            self.context_manager.set_variable("private.__last_value", None)
         except Exception as e:
             error, passthrough = handle_execution_error(e, node, "executing print statement")
             if passthrough:
@@ -325,43 +392,53 @@ class StatementExecutor(BaseExecutor):
         Raises:
             RuntimeError: If the reason statement fails
         """
-        # Enhanced context for prompt evaluation
-        custom_context = self._enhance_local_context(context)
-
-        # Evaluate the prompt
+        # The ReasonStatement structure has a prompt instead of query
         if node.prompt is None:
             raise RuntimeError("Reason statement must have a prompt")
 
-        prompt_value = self.expression_evaluator.evaluate(node.prompt, custom_context)
-        prompt_str = str(prompt_value)
+        try:
+            # Evaluate the prompt
+            prompt_value = self.expression_evaluator.evaluate(node.prompt, context)
+            prompt_str = str(prompt_value)
 
-        # Log the prompt for debugging
-        self.debug(f"Reasoning prompt: {prompt_str[:100]}{'...' if len(prompt_str) > 100 else ''}")
+            # Log the prompt for debugging
+            self.debug(f"Reasoning prompt: {prompt_str[:100]}{'...' if len(prompt_str) > 100 else ''}")
 
-        # Extract context variable names
-        context_vars = None
-        if node.context:
-            context_vars = [ident.name for ident in node.context]
+            # Extract context variable names
+            context_vars = None
+            if node.context:
+                context_vars = [ident.name for ident in node.context]
 
-        # Execute direct synchronous reasoning
-        result = self.llm_integration.execute_direct_synchronous_reasoning(prompt_str, context_vars, node.options)
+            # Create local context for enhanced variable access
+            custom_context = self._enhance_local_context(context)
 
-        # If we have a target variable, store the result
-        if node.target:
-            self.context_manager.set_variable(node.target.name, result)
-        else:
-            # Otherwise, log the result
-            if isinstance(result, (dict, list)):
-                result_str = json.dumps(result, indent=2)
+            # Execute direct synchronous reasoning with the LLM
+            result = self.llm_integration.execute_direct_synchronous_reasoning(prompt_str, context_vars, node.options)
+
+            # Store the result in __last_value for REPL output
+            self.context_manager.set_variable("private.__last_value", result)
+
+            # If we have a target variable, store the result there too
+            if node.target:
+                self.context_manager.set_variable(node.target.name, result)
             else:
-                result_str = str(result)
+                # Otherwise, log the result
+                if isinstance(result, (dict, list)):
+                    result_str = json.dumps(result, indent=2)
+                else:
+                    result_str = str(result)
 
-            # Log at most the first 500 characters to avoid huge log entries
-            preview = result_str[:500] + "..." if len(result_str) > 500 else result_str
-            self.info(f"Reasoning result: {preview}")
+                # Log at most the first 500 characters to avoid huge log entries
+                preview = result_str[:500] + "..." if len(result_str) > 500 else result_str
+                self.info(f"Reasoning result: {preview}")
 
-        # Return the result for backward compatibility
-        return result
+            # Return the result for REPL display
+            return result
+            
+        except Exception as e:
+            # Provide a more helpful error message
+            self.error(f"Failed to execute reason statement: {e}")
+            raise RuntimeError(f"Failed to execute reason statement: {e}")
 
     def execute_function_call(self, node: FunctionCall, context: Optional[Dict[str, Any]] = None) -> None:
         """Execute a function call.

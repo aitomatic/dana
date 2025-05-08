@@ -61,14 +61,14 @@ graph TB
         A[Alarm System] --> D[DXA]
         O[Operator] --> D
     end
-    
+
     subgraph "DXA System"
         D <--> KB[Knowledge Base]
         D <--> BP[Blueprint Parser]
         D <--> RT[Real-time Data]
         D <--> RCA[Root Cause Analyzer]
     end
-    
+
     subgraph "Knowledge Sources"
         KB --> GC[Grid Configuration]
         KB --> TD[Topology Data]
@@ -95,7 +95,7 @@ sequenceDiagram
         D->>K: Check historical patterns
         D->>A: Query related alarms
     end
-    
+
     loop Deep Analysis
         D->>D: Cross-reference data
         D->>D: Apply diagnostic rules
@@ -104,7 +104,7 @@ sequenceDiagram
             H-->>D: Provide insight
         end
     end
-    
+
     D-->>O: Present root cause
     deactivate D
 ```

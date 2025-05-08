@@ -55,11 +55,14 @@ class Interpreter(Loggable):
         # Initialize system state
         self.context.set("system.id", self.statement_executor._execution_id)
 
-    def execute_program(self, parse_result: ParseResult) -> None:
+    def execute_program(self, parse_result: ParseResult) -> Any:
         """Execute a DANA program.
 
         Args:
             parse_result: Result of parsing the program
+
+        Returns:
+            The result of the last statement executed
 
         Raises:
             InterpretError: If a program is not provided
@@ -81,10 +84,29 @@ class Interpreter(Loggable):
 
         try:
             # Execute all statements in the program
+            last_result = None
             for i, statement in enumerate(parse_result.program.statements):
                 # Execute the statement (statement hooks are now handled inside the executor)
                 self.debug(f"Executing statement {i+1}/{len(parse_result.program.statements)}: {type(statement).__name__}")
-                self.statement_executor.execute(statement)
+
+                # Handle statement execution with better error messages
+                try:
+                    last_result = self.statement_executor.execute(statement)
+                except Exception as e:
+                    if "Undefined variable" in str(e):
+                        # Try to provide a more helpful error for undefined variables
+                        # If there's a reference to a bare variable 'a', suggest that they prefix it
+                        # with 'private.' or 'public.'
+                        error_msg = str(e)
+                        if ": a" in error_msg or "variable: a" in error_msg:
+                            raise RuntimeError(f"{error_msg}. Did you mean 'private.a' or 'public.a'?")
+                    raise e
+
+                # For single-statement programs, ensure we return the statement's value
+                if len(parse_result.program.statements) == 1:
+                    # Store in context directly for REPL to retrieve
+                    if last_result is not None:
+                        self.context.set("private.__last_value", last_result)
 
             # If there are any parse errors, stop at the first one
             if parse_result.errors:
@@ -97,6 +119,7 @@ class Interpreter(Loggable):
                 execute_hook(HookType.AFTER_PROGRAM, hook_context)
 
             self.debug("Program execution completed successfully")
+            return last_result
 
         except Exception as e:
             # Log the error

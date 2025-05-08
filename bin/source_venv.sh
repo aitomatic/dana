@@ -6,4 +6,3 @@ source .venv/bin/activate
 
 # Install opendxa library in dev mode
 pip install -e ".[dev]"
-

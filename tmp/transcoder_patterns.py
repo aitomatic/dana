@@ -1,12 +1,11 @@
 """Pattern handler code for DANA transcoder."""
 
-from opendxa.dana.language.parser import parse
 
 def add_pattern_handlers(transcoder_file_path):
     """Add pattern handlers to the transcoder file."""
-    with open(transcoder_file_path, 'r') as f:
+    with open(transcoder_file_path) as f:
         content = f.read()
-    
+
     # Find where to insert numeric and variable assignment patterns
     # Add after the direct math expressions pattern
     import_re_pos = content.find("import re", content.find("def transcode"))
@@ -27,7 +26,7 @@ def add_pattern_handlers(transcoder_file_path):
                     return result, dana_code
             except Exception as e:
                 print(f"⚠️ Direct number conversion failed: {e}")
-                
+
         # Handle simple variable assignment like "a=5"
         if re.match(r'^\\s*([a-zA-Z_][a-zA-Z0-9_]*)\\s*=\\s*(.+)\\s*$', input_text):
             print(f"🔄 Direct conversion of simple assignment: {input_text}")
@@ -44,13 +43,15 @@ def add_pattern_handlers(transcoder_file_path):
                 print(f"⚠️ Direct assignment conversion failed: {e}")
 """
             new_content = content[:next_pattern_pos] + numeric_pattern + content[next_pattern_pos:]
-            with open(transcoder_file_path, 'w') as f:
+            with open(transcoder_file_path, "w") as f:
                 f.write(new_content)
             return True
     return False
 
+
 if __name__ == "__main__":
     import sys
+
     if len(sys.argv) > 1:
         result = add_pattern_handlers(sys.argv[1])
         print(f"Pattern handlers added: {result}")

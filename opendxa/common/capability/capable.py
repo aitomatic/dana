@@ -11,20 +11,23 @@ from opendxa.common.types import BaseRequest
 
 class CapabilityError(Exception):
     """Base class for capability-related errors."""
+
     pass
 
 
 class CapabilityNotFoundError(CapabilityError):
     """Error raised when a capability is not found."""
+
     pass
 
 
 class CapabilityRequest(BaseModel):
     """Request for applying a capability."""
+
     parameters: Dict[str, Any] = Field(default_factory=dict)
 
 
-class Capable():
+class Capable:
     """Mixin for capable objects."""
 
     def __init__(self, capabilities: Optional[List[BaseCapability]] = None):
@@ -38,10 +41,10 @@ class Capable():
 
     def __contains__(self, capability: BaseCapability) -> bool:
         """Check if capability exists using 'in' operator.
-        
+
         Args:
             capability: The capability to check for.
-            
+
         Returns:
             True if the capability exists, False otherwise.
         """
@@ -67,16 +70,16 @@ class Capable():
             return CapabilityApplicationResult(
                 success=False,
                 content=request.arguments if request else {},
-                error=CapabilityNotFoundError(f"Capability {capability.name} not found")
+                error=CapabilityNotFoundError(f"Capability {capability.name} not found"),
             )
         return capability.apply(request.arguments if request else {})
 
     def has_capability(self, capability: BaseCapability) -> bool:
         """Check if capability exists.
-        
+
         Args:
             capability: The capability to check for.
-            
+
         Returns:
             True if the capability exists, False otherwise.
         """
@@ -84,7 +87,7 @@ class Capable():
 
     def add_capability(self, capability: BaseCapability) -> None:
         """Add a capability to the Capable object.
-        
+
         Args:
             capability: The capability to add.
         """

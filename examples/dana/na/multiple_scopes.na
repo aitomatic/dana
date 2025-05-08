@@ -20,7 +20,7 @@ public.status.sensor2 = "standby"
 
 # System scope (system state)
 log("Assigning values to system scope.")
-# Note: system scope is reserved for internal use, 
+# Note: system scope is reserved for internal use,
 # so we add custom fields to private scope instead
 private.temperature = 20
 private.status.value = "normal"

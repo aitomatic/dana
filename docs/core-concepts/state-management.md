@@ -30,7 +30,7 @@ The top use cases for state management in agentic systems are:
    - Intermediate results
    - Progress metrics
    - Task dependencies
-   
+
    *Example:*
    ```python
    # Track progress through a multi-step task
@@ -51,7 +51,7 @@ The top use cases for state management in agentic systems are:
    - Plan execution status
    - Plan modifications
    - Node dependencies
-   
+
    *Example:*
    ```python
    # Direct plan object access (no intermediate state storage)
@@ -83,7 +83,7 @@ The top use cases for state management in agentic systems are:
    - Authentication tokens
    - Session data
    - External system states
-   
+
    *Example:*
    ```python
    # Manage tool authentication and session
@@ -104,7 +104,7 @@ The top use cases for state management in agentic systems are:
    - Decision criteria and context
    - Reasoning chains and justifications
    - Validation results
-   
+
    *Example:*
    ```python
    # Store decision context and LLM interaction state
@@ -135,7 +135,7 @@ The top use cases for state management in agentic systems are:
    - Fallback options
    - Error handling strategies
    - System resilience data
-   
+
    *Example:*
    ```python
    # Track error state and recovery attempts

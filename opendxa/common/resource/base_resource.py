@@ -21,14 +21,16 @@ Example:
             pass
 """
 
-from typing import Dict, Any, Optional, TypeVar
-from opendxa.common.mixins.loggable import Loggable
-from opendxa.common.mixins.configurable import Configurable
-from opendxa.common.mixins.queryable import Queryable
+from typing import Any, Dict, Optional, TypeVar
+
 from opendxa.common.mixins import ToolCallable
+from opendxa.common.mixins.configurable import Configurable
+from opendxa.common.mixins.loggable import Loggable
+from opendxa.common.mixins.queryable import Queryable
 from opendxa.common.types import BaseRequest, BaseResponse
 
-T = TypeVar('T', bound='BaseResource')
+T = TypeVar("T", bound="BaseResource")
+
 
 class ResourceError(Exception):
     """Base class for resource errors."""
@@ -38,18 +40,20 @@ class ResourceError(Exception):
         self.original_error = original_error
         # Use class logger for error logging
         logger = Loggable.get_class_logger()
-        logger.error(
-            "Resource error occurred",
-            extra={"error": message, "exception": original_error}
-        )
+        logger.error("Resource error occurred", extra={"error": message, "exception": original_error})
+
 
 class ResourceUnavailableError(ResourceError):
     """Error raised when resource is unavailable."""
+
     pass
+
 
 class ResourceAccessError(ResourceError):
     """Error raised when resource access fails."""
+
     pass
+
 
 class BaseResource(Configurable, Queryable, ToolCallable):
     """Abstract base resource."""
@@ -113,7 +117,7 @@ class BaseResource(Configurable, Queryable, ToolCallable):
                 sanitized[key] = "***REDACTED***"
         return sanitized
 
-    async def __aenter__(self) -> 'BaseResource':
+    async def __aenter__(self) -> "BaseResource":
         await self.initialize()
         return self
 

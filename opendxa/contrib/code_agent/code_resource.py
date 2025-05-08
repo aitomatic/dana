@@ -46,9 +46,7 @@ class CodeResource(BaseResource):
             required_packages = self._extract_packages(text, code)
             self._install_dependencies(required_packages)
             result = self._execute_code(code)
-            return ResourceResponse(
-                success=True, content={"code": code, "result": result}
-            )
+            return ResourceResponse(success=True, content={"code": code, "result": result})
         except Exception as e:
             return ResourceResponse(success=False, error=str(e), content={"code": code})
 
@@ -56,11 +54,7 @@ class CodeResource(BaseResource):
         """Extract and validate Python code from text using the specified separator."""
         if separator in text and len(text.split(separator)) > 1:
             codes = text.split(separator)
-            codes = [
-                code
-                for code in [PythonParser.get_code(code) for code in codes]
-                if code is not None
-            ]
+            codes = [code for code in [PythonParser.get_code(code) for code in codes] if code is not None]
         else:
             codes = [text]
 
@@ -83,9 +77,7 @@ class CodeResource(BaseResource):
             std_check_script = str(self.runner.path / "scripts" / "is_standard_pkg.py")
             std_packages = is_standard_package(python_path, std_check_script, ".")
 
-            return [
-                pkg for pkg in pip_packages + python_packages if pkg not in std_packages
-            ]
+            return [pkg for pkg in pip_packages + python_packages if pkg not in std_packages]
         except Exception as e:
             raise Exception(f"Failed to extract required packages: {str(e)}")
 
@@ -108,11 +100,9 @@ class CodeResource(BaseResource):
             return
 
         try:
-            not_yet_installed = (
-                self.runner._executor_venv.check_additional_dependencies(
-                    packages,
-                    str(self.runner.executor_dir_path),
-                )
+            not_yet_installed = self.runner._executor_venv.check_additional_dependencies(
+                packages,
+                str(self.runner.executor_dir_path),
             )
             if not_yet_installed:
                 self.runner._executor_venv.install_additional_dependencies(

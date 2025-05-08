@@ -131,7 +131,7 @@ reasoner = Reasoner(resources=resources)
        def __init__(self):
            self.steps = []
            self.parameters = {}
-   
+
    # Imperative: Use knowledge
    def execute_process(knowledge: ProcessKnowledge):
        for step in knowledge.steps:
@@ -145,7 +145,7 @@ reasoner = Reasoner(resources=resources)
        "llm": LLMResource(),
        "calculator": ToolResource()
    }
-   
+
    # Imperative: Use resources
    async def process_with_resources(resources):
        result = await resources["llm"].query("Calculate 2+2")
@@ -159,7 +159,7 @@ reasoner = Reasoner(resources=resources)
        def __init__(self):
            self.current_step = 0
            self.results = []
-   
+
    # Imperative: Update state
    def update_process_state(state: ProcessState, result):
        state.current_step += 1

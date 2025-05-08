@@ -1,14 +1,16 @@
 """Mixin for identifiable objects."""
 
 from typing import Optional
+
 from opendxa.common.utils.misc import Misc
+
 
 class Identifiable:
     """Mixin for identifiable objects."""
 
     def __init__(self, name: Optional[str] = None, description: Optional[str] = None):
         """Initialize an identifiable object.
-        
+
         Args:
             name: Optional name for the object
             description: Optional description of the object

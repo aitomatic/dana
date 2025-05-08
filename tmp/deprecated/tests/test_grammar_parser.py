@@ -1,38 +1,30 @@
 """Tests for the grammar-based DANA parser.
 
-This module contains tests to verify that the grammar-based parser works correctly and 
+This module contains tests to verify that the grammar-based parser works correctly and
 produces the same results as the regex-based parser for basic DANA programs.
 """
 
 import pytest
-import os
 
-from opendxa.dana.language.parser_factory import ParserType, parse, get_parser_factory
-from opendxa.dana.language.parser import parse as regex_parse
-from opendxa.dana.language.lark_parser import _grammar_parser
 from opendxa.dana.language.ast import (
     Assignment,
     BinaryExpression,
     BinaryOperator,
     Conditional,
     FunctionCall,
-    Identifier,
-    Literal,
     LiteralExpression,
     LogLevel,
-    LogLevelSetStatement,
     LogStatement,
     Program,
     ReasonStatement,
     WhileLoop,
 )
-
+from opendxa.dana.language.lark_parser import _grammar_parser
+from opendxa.dana.language.parser import parse as regex_parse
+from opendxa.dana.language.parser_factory import ParserType, get_parser_factory, parse
 
 # Skip all tests if the grammar parser is not available
-pytestmark = pytest.mark.skipif(
-    not _grammar_parser.is_available(),
-    reason="Grammar parser is not available. Install lark-parser package."
-)
+pytestmark = pytest.mark.skipif(not _grammar_parser.is_available(), reason="Grammar parser is not available. Install lark-parser package.")
 
 # Disable type checking for all tests
 get_parser_factory().set_type_checking(False)
@@ -66,7 +58,7 @@ def test_assignment():
     assert result.is_valid
     assert isinstance(result.program, Program)
     assert len(result.program.statements) == 1
-    
+
     stmt = result.program.statements[0]
     assert isinstance(stmt, Assignment)
     assert stmt.target.name == "x"
@@ -81,7 +73,7 @@ def test_nested_assignment():
     assert result.is_valid
     assert isinstance(result.program, Program)
     assert len(result.program.statements) == 1
-    
+
     stmt = result.program.statements[0]
     assert isinstance(stmt, Assignment)
     assert stmt.target.name == "user.name"
@@ -94,7 +86,7 @@ def test_log_statement():
     assert result.is_valid
     assert isinstance(result.program, Program)
     assert len(result.program.statements) == 1
-    
+
     stmt = result.program.statements[0]
     assert isinstance(stmt, LogStatement)
     assert stmt.level == LogLevel.INFO  # Default level
@@ -109,7 +101,7 @@ def test_log_statement_with_level():
     assert result.is_valid
     assert isinstance(result.program, Program)
     assert len(result.program.statements) == 1
-    
+
     stmt = result.program.statements[0]
     assert isinstance(stmt, LogStatement)
     assert stmt.level == LogLevel.ERROR
@@ -124,7 +116,7 @@ def test_conditional():
     assert result.is_valid
     assert isinstance(result.program, Program)
     assert len(result.program.statements) == 1
-    
+
     stmt = result.program.statements[0]
     assert isinstance(stmt, Conditional)
     assert isinstance(stmt.condition, BinaryExpression)
@@ -141,7 +133,7 @@ def test_while_loop():
     assert result.is_valid
     assert isinstance(result.program, Program)
     assert len(result.program.statements) == 1
-    
+
     stmt = result.program.statements[0]
     assert isinstance(stmt, WhileLoop)
     assert isinstance(stmt.condition, BinaryExpression)
@@ -158,18 +150,18 @@ def test_function_call():
     assert result.is_valid
     assert isinstance(result.program, Program)
     assert len(result.program.statements) == 1
-    
+
     stmt = result.program.statements[0]
     assert isinstance(stmt, FunctionCall)
     assert stmt.name == "calculate"
-    
+
     # Check if we have arguments, possibly in nested structures
     assert len(stmt.args) > 0
-    
+
     # Try to find the named arguments in the args
     x_found = False
     y_found = False
-    
+
     for key, value in stmt.args.items():
         if isinstance(value, list):
             for item in value:
@@ -181,7 +173,7 @@ def test_function_call():
             x_found = True
         elif key == "y":
             y_found = True
-    
+
     assert x_found, "Argument x not found in function call"
     assert y_found, "Argument y not found in function call"
 
@@ -193,7 +185,7 @@ def test_reason_statement():
     assert result.is_valid
     assert isinstance(result.program, Program)
     assert len(result.program.statements) == 1
-    
+
     stmt = result.program.statements[0]
     assert isinstance(stmt, ReasonStatement)
     assert stmt.target.name == "result"
@@ -208,7 +200,7 @@ def test_reason_statement_with_context():
     assert result.is_valid
     assert isinstance(result.program, Program)
     assert len(result.program.statements) == 1
-    
+
     stmt = result.program.statements[0]
     assert isinstance(stmt, ReasonStatement)
     assert stmt.target.name == "result"
@@ -226,7 +218,7 @@ def test_binary_expression():
     assert result.is_valid
     assert isinstance(result.program, Program)
     assert len(result.program.statements) == 1
-    
+
     stmt = result.program.statements[0]
     assert isinstance(stmt, Assignment)
     assert isinstance(stmt.value, BinaryExpression)
@@ -274,7 +266,7 @@ def test_syntax_error():
     result = parse(code, ParserType.GRAMMAR, type_check=False)
     assert not result.is_valid
     assert len(result.errors) > 0
-    
+
     # Check that error contains useful information
     error_msg = str(result.errors[0])
     assert "DANA Error" in error_msg
@@ -294,21 +286,22 @@ else:
 """
     # For this test, we bypass the factory and test directly against the parsers
     regex_result = regex_parse(code)  # Use regex parser directly
-    
+
     from opendxa.dana.language.lark_parser import parse_with_grammar
+
     grammar_result = parse_with_grammar(code)  # Use grammar parser directly
-    
+
     print(f"Regex result valid: {regex_result.is_valid}")
     if not regex_result.is_valid:
         print(f"Regex errors: {regex_result.errors}")
-        
+
     print(f"Grammar result valid: {grammar_result.is_valid}")
     if not grammar_result.is_valid:
         print(f"Grammar errors: {grammar_result.errors}")
-    
+
     # Check that at least one parser succeeds (we're still transitioning)
     assert regex_result.is_valid or grammar_result.is_valid
-    
+
     # If both are valid, they should have similar structure
     if regex_result.is_valid and grammar_result.is_valid:
         assert len(regex_result.program.statements) == len(grammar_result.program.statements)

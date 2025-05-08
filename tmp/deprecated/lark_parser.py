@@ -4,25 +4,39 @@ This module provides a robust grammar-based parser for DANA using the Lark parsi
 It offers better extensibility, error reporting, and maintainability than the regex-based parser.
 """
 
-import os
-from typing import Any, Dict, List, Optional, Tuple, Union
 from pathlib import Path
 
 try:
-    from lark import Lark, Transformer, Token, Tree
+    from lark import Lark, Token, Transformer, Tree
     from lark.exceptions import LarkError, UnexpectedInput
     from lark.indenter import Indenter
+
     LARK_AVAILABLE = True
 except ImportError:
     # Define compatibility stubs so the module can load without Lark
     LARK_AVAILABLE = False
-    class Token: pass
-    class Tree: pass
-    class Lark: pass
-    class Transformer: pass
-    class Indenter: pass
-    class LarkError(Exception): pass
-    class UnexpectedInput(Exception): pass
+
+    class Token:
+        pass
+
+    class Tree:
+        pass
+
+    class Lark:
+        pass
+
+    class Transformer:
+        pass
+
+    class Indenter:
+        pass
+
+    class LarkError(Exception):
+        pass
+
+    class UnexpectedInput(Exception):
+        pass
+
 
 from opendxa.dana.exceptions import ParseError
 from opendxa.dana.language.ast import (
@@ -50,26 +64,27 @@ USE_LARK_PARSER = True
 
 class DanaIndenter(Indenter):
     """Indenter for DANA language.
-    
+
     Handles Python-style indentation for blocks.
     """
-    NL_type = '_NL'
+
+    NL_type = "_NL"
     OPEN_PAREN_types = []
     CLOSE_PAREN_types = []
-    INDENT_type = 'INDENT'
-    DEDENT_type = 'DEDENT'
+    INDENT_type = "INDENT"
+    DEDENT_type = "DEDENT"
     tab_len = 8
 
 
 class DanaTransformer(Transformer):
     """Transforms Lark parse tree nodes into DANA AST nodes."""
-    
+
     def start(self, items):
         """Transform the start rule into a Program node."""
         # Filter out None items (e.g., from comments or empty lines)
         statements = [item for item in items if item is not None]
         return Program(statements=statements)
-    
+
     def statement(self, items):
         """Transform a statement rule."""
         # Return the first non-None item
@@ -77,91 +92,91 @@ class DanaTransformer(Transformer):
             if item is not None:
                 return item
         return None
-    
+
     def assignment(self, items):
         """Transform an assignment rule into an Assignment node."""
         target = items[0]
         value = items[1]
         return Assignment(target=target, value=value)
-    
+
     def log_statement(self, items):
         """Transform a log statement rule into a LogStatement node."""
         # Default level is INFO
         level = LogLevel.INFO
-        
+
         # Filter out None values
         items = [item for item in items if item is not None]
-        
+
         if not items:
             return None
-            
+
         # If level is specified, use it
-        if len(items) > 1 and hasattr(items[0], 'value'):
+        if len(items) > 1 and hasattr(items[0], "value"):
             level_str = items[0].value.upper()
             level = LogLevel[level_str]
             message = items[1]
         else:
             message = items[0]
-            
+
         return LogStatement(message=message, level=level)
-    
+
     def level(self, items):
         """Transform a log level into a string."""
         return items[0]
-        
+
     def DEBUG(self, _):
-        return Token('LEVEL', 'DEBUG')
-        
+        return Token("LEVEL", "DEBUG")
+
     def INFO(self, _):
-        return Token('LEVEL', 'INFO')
-        
+        return Token("LEVEL", "INFO")
+
     def WARN(self, _):
-        return Token('LEVEL', 'WARN')
-        
+        return Token("LEVEL", "WARN")
+
     def ERROR(self, _):
-        return Token('LEVEL', 'ERROR')
-    
+        return Token("LEVEL", "ERROR")
+
     def conditional(self, items):
         """Transform a conditional rule into a Conditional node."""
         if_part = items[0]
         else_body = []
-        
+
         # If we have an else part, extract the else body
         if len(items) > 1 and items[1] is not None:
             else_body = items[1]
-            
+
         # Extract condition and if body from if_part
         condition = if_part[0]
         if_body = if_part[1:]
-        
+
         # Use line info from the parse tree if available
-        line_num = getattr(condition, 'line', 0) or 0
+        line_num = getattr(condition, "line", 0) or 0
         return Conditional(condition=condition, body=if_body, else_body=else_body, line_num=line_num)
-        
+
     def if_part(self, items):
         """Transform if part of conditional into a list with condition first, then body statements."""
         # First item is the condition, rest are the body statements
         condition = items[0]
-        
+
         # Filter out INDENT/DEDENT tokens and None values from the body
         body = [item for item in items[1:] if not (isinstance(item, Token) or item is None)]
-        
+
         return [condition] + body
-        
+
     def else_part(self, items):
         """Transform else part of conditional into a list of body statements."""
         # Filter out INDENT/DEDENT tokens and None values
         return [item for item in items if not (isinstance(item, Token) or item is None)]
-    
+
     def while_loop(self, items):
         """Transform a while loop rule into a WhileLoop node."""
         condition = items[0]
         # Filter out INDENT/DEDENT tokens and None values from the body
         body = [item for item in items[1:] if not (isinstance(item, Token) or item is None)]
         # Use line info from the parse tree if available
-        line_num = getattr(condition, 'line', 0) or 0
+        line_num = getattr(condition, "line", 0) or 0
         return WhileLoop(condition=condition, body=body, line_num=line_num)
-    
+
     def reason_statement(self, items):
         """Transform a reason statement rule into a ReasonStatement node."""
         # Check if we have a target variable
@@ -173,24 +188,19 @@ class DanaTransformer(Transformer):
             target = None
             prompt = items[0]
             rest = items[1:]
-            
+
         # Process optional context and options
         context = None
         options = None
-        
+
         for item in rest:
             if isinstance(item, list):
                 context = item
             elif isinstance(item, dict):
                 options = item
-                
-        return ReasonStatement(
-            prompt=prompt,
-            target=target,
-            context=context,
-            options=options
-        )
-        
+
+        return ReasonStatement(prompt=prompt, target=target, context=context, options=options)
+
     def context_arg(self, items):
         """Transform a context argument into a list of identifiers."""
         if len(items) == 1 and isinstance(items[0], list):
@@ -198,11 +208,11 @@ class DanaTransformer(Transformer):
         elif len(items) == 1 and isinstance(items[0], Identifier):
             return [items[0]]  # Single identifier
         return []  # Empty context
-        
+
     def identifier_list(self, items):
         """Transform an identifier list into a list."""
         return items
-        
+
     def options(self, items):
         """Transform options into a dictionary."""
         result = {}
@@ -210,36 +220,36 @@ class DanaTransformer(Transformer):
             key, value = item
             result[key] = value
         return result
-        
+
     def key_value(self, items):
         """Transform a key-value pair into a tuple."""
         key = items[0].value
         value = items[1]
         return (key, value)
-    
+
     def log_level_set_statement(self, items):
         """Transform a log level set statement into a LogLevelSetStatement node."""
-        level_str = items[0].value.strip('"\'')
+        level_str = items[0].value.strip("\"'")
         try:
             level = LogLevel[level_str.upper()]
             return LogLevelSetStatement(level=level)
         except KeyError:
             # Return None for invalid log levels, handled in parser
             return None
-    
+
     def function_call(self, items):
         """Transform a function call into a FunctionCall node."""
         name = items[0].name  # Identifier node
-        
+
         # Process arguments
         args = {}
         if len(items) > 1:
             # We have arguments
             arg_items = items[1:]
-            
+
             # Filter out None values
             arg_items = [item for item in arg_items if item is not None]
-            
+
             # Check if we have positional or named arguments or both
             for arg in arg_items:
                 if isinstance(arg, tuple):
@@ -259,162 +269,142 @@ class DanaTransformer(Transformer):
                 else:
                     # Positional argument - use a numeric key
                     args[f"arg{len(args)}"] = arg
-                    
+
         return FunctionCall(name=name, args=args)
-    
+
     def arg_list(self, items):
         """Transform an argument list into a list of arguments."""
         return items
-    
+
     def positional_args(self, items):
         """Transform positional arguments into a list."""
         return items
-    
+
     def named_args(self, items):
         """Transform named arguments into a list of tuples."""
         return items
-    
+
     def named_arg(self, items):
         """Transform a named argument into a tuple of (name, value)."""
         name = items[0].value
         value = items[1]
         return (name, value)
-    
+
     def expression(self, items):
         """Transform an expression rule into an Expression node."""
         # Pass through to the or_expr rule
         return items[0]
-    
+
     def or_expr(self, items):
         """Transform an or expression into a BinaryExpression or pass through."""
         if len(items) == 1:
             return items[0]
-        
+
         # Build a left-associative tree of binary expressions
         result = items[0]
         for i in range(1, len(items)):
-            result = BinaryExpression(
-                left=result,
-                operator=BinaryOperator.OR,
-                right=items[i]
-            )
+            result = BinaryExpression(left=result, operator=BinaryOperator.OR, right=items[i])
         return result
-    
+
     def and_expr(self, items):
         """Transform an and expression into a BinaryExpression or pass through."""
         if len(items) == 1:
             return items[0]
-        
+
         # Build a left-associative tree of binary expressions
         result = items[0]
         for i in range(1, len(items)):
-            result = BinaryExpression(
-                left=result,
-                operator=BinaryOperator.AND,
-                right=items[i]
-            )
+            result = BinaryExpression(left=result, operator=BinaryOperator.AND, right=items[i])
         return result
-    
+
     def comparison(self, items):
         """Transform a comparison into a BinaryExpression or pass through."""
         if len(items) == 1:
             return items[0]
-        
+
         # Items alternate between expressions and operators
         result = items[0]
         for i in range(1, len(items), 2):
             operator = self._get_binary_operator(items[i].value)
-            right = items[i+1]
-            result = BinaryExpression(
-                left=result,
-                operator=operator,
-                right=right
-            )
+            right = items[i + 1]
+            result = BinaryExpression(left=result, operator=operator, right=right)
         return result
-    
+
     def comp_op(self, items):
         """Transform a comparison operator token into a string."""
         return items[0]
-        
+
     def EQ(self, _):
-        return Token('COMP_OP', '==')
-        
+        return Token("COMP_OP", "==")
+
     def NEQ(self, _):
-        return Token('COMP_OP', '!=')
-        
+        return Token("COMP_OP", "!=")
+
     def LT(self, _):
-        return Token('COMP_OP', '<')
-        
+        return Token("COMP_OP", "<")
+
     def GT(self, _):
-        return Token('COMP_OP', '>')
-        
+        return Token("COMP_OP", ">")
+
     def LTE(self, _):
-        return Token('COMP_OP', '<=')
-        
+        return Token("COMP_OP", "<=")
+
     def GTE(self, _):
-        return Token('COMP_OP', '>=')
-    
+        return Token("COMP_OP", ">=")
+
     def sum_expr(self, items):
         """Transform a sum expression into a BinaryExpression or pass through."""
         if len(items) == 1:
             return items[0]
-        
+
         # Items alternate between expressions and operators
         result = items[0]
         for i in range(1, len(items), 2):
             operator = self._get_binary_operator(items[i].value)
-            right = items[i+1]
-            result = BinaryExpression(
-                left=result,
-                operator=operator,
-                right=right
-            )
+            right = items[i + 1]
+            result = BinaryExpression(left=result, operator=operator, right=right)
         return result
-    
+
     def add_op(self, items):
         """Transform an addition operator token into a string."""
         return items[0]
-        
+
     def PLUS(self, _):
-        return Token('ADD_OP', '+')
-        
+        return Token("ADD_OP", "+")
+
     def MINUS(self, _):
-        return Token('ADD_OP', '-')
-    
+        return Token("ADD_OP", "-")
+
     def product(self, items):
         """Transform a product expression into a BinaryExpression or pass through."""
         if len(items) == 1:
             return items[0]
-        
+
         # Items alternate between expressions and operators
         result = items[0]
         for i in range(1, len(items), 2):
             operator = self._get_binary_operator(items[i].value)
-            right = items[i+1]
-            result = BinaryExpression(
-                left=result,
-                operator=operator,
-                right=right
-            )
+            right = items[i + 1]
+            result = BinaryExpression(left=result, operator=operator, right=right)
         return result
-    
+
     def mul_op(self, items):
         """Transform a multiplication operator token into a string."""
         return items[0]
-        
+
     def MULT(self, _):
-        return Token('MUL_OP', '*')
-        
+        return Token("MUL_OP", "*")
+
     def DIV(self, _):
-        return Token('MUL_OP', '/')
-        
+        return Token("MUL_OP", "/")
+
     def MOD(self, _):
-        return Token('MUL_OP', '%')
-    
+        return Token("MUL_OP", "%")
+
     def atom(self, items):
         """Transform an atom rule into an Expression node."""
         return items[0]
-    
+
     def identifier(self, items):
         """Transform an identifier rule into an Identifier node."""
         # Join parts with dots for nested identifiers (e.g., "a.b.c")
@@ -423,49 +413,47 @@ class DanaTransformer(Transformer):
         else:
             name = ".".join(item.value for item in items)
         return Identifier(name=name)
-    
+
     def literal(self, items):
         """Transform a literal rule into a LiteralExpression node."""
         return LiteralExpression(literal=self._create_literal(items[0]))
-    
+
     def f_string(self, items):
         """Transform an f-string rule into a LiteralExpression node with FStringExpression."""
         # Remove the 'f' and quotes
         s = items[0].value[1:]  # Remove 'f'
         if s.startswith('"') and s.endswith('"'):
             s = s[1:-1]  # Remove quotes
-            
+
         # Placeholder for f-string parsing
         # In a real implementation, you would parse for {} expressions
         # and build a proper FStringExpression
-        return LiteralExpression(
-            literal=Literal(value=FStringExpression(parts=[s]))
-        )
-    
+        return LiteralExpression(literal=Literal(value=FStringExpression(parts=[s])))
+
     def _create_literal(self, token):
         """Create a Literal node from a token."""
         token_type = token.type
         value = token.value
-        
-        if token_type == 'STRING':
+
+        if token_type == "STRING":
             # Remove quotes (either single or double)
             if (value.startswith('"') and value.endswith('"')) or (value.startswith("'") and value.endswith("'")):
                 value = value[1:-1]
             return Literal(value=value)
-        elif token_type == 'NUMBER':
+        elif token_type == "NUMBER":
             # Check if it's an integer or float
-            if '.' in value:
+            if "." in value:
                 return Literal(value=float(value))
             else:
                 return Literal(value=int(value))
-        elif token_type == 'BOOL':
-            return Literal(value=value.lower() == 'true')
-        elif value == 'null':
+        elif token_type == "BOOL":
+            return Literal(value=value.lower() == "true")
+        elif value == "null":
             return Literal(value=None)
-        
+
         # Fallback
         return Literal(value=value)
-    
+
     def _get_binary_operator(self, op_str):
         """Convert an operator string to a BinaryOperator enum value."""
         op_map = {
@@ -483,110 +471,110 @@ class DanaTransformer(Transformer):
             "and": BinaryOperator.AND,
             "or": BinaryOperator.OR,
         }
-        
+
         return op_map.get(op_str, BinaryOperator.EQUALS)  # Default to equals if unknown
 
 
 class GrammarParser:
     """Grammar-based parser for DANA language.
-    
+
     Uses Lark to parse DANA programs into AST nodes based on a formal grammar.
     """
-    
+
     def __init__(self):
         """Initialize the parser with the DANA grammar."""
         # Path to the grammar file (relative to this file)
         grammar_path = Path(__file__).parent / "dana_grammar.lark"
-        
+
         if not grammar_path.exists():
             # If grammar file doesn't exist, use the embedded grammar
             # This is useful for testing without requiring the external file
             from . import dana_grammar_embedded
+
             self.grammar = dana_grammar_embedded.GRAMMAR
         else:
             # Load grammar from file
-            with open(grammar_path, "r") as f:
+            with open(grammar_path) as f:
                 self.grammar = f.read()
-        
+
         # Only create parser if Lark is available
         self.parser = None
         self.transformer = None
-        
+
         if LARK_AVAILABLE:
             try:
                 # Create the parser with the DanaIndenter
                 self.parser = Lark(
-                    self.grammar, 
-                    parser='lalr',
+                    self.grammar,
+                    parser="lalr",
                     postlex=DanaIndenter(),
-                    start='start',
+                    start="start",
                     # Enable better error reporting and recovery
                     debug=True,
                 )
-                
+
                 # Create the transformer
                 self.transformer = DanaTransformer()
             except Exception as e:
                 print(f"Failed to initialize Lark parser: {e}")
-    
+
     def is_available(self) -> bool:
         """Check if the Lark parser is available and initialized."""
         return LARK_AVAILABLE and self.parser is not None
-    
+
     def parse(self, program_text):
         """Parse a DANA program string into an AST.
-        
+
         Args:
             program_text: The program text to parse
-            
+
         Returns:
             A ParseResult containing the parsed program and any errors
         """
         if not self.is_available():
             return ParseResult(
-                program=Program(statements=[]), 
-                errors=[ParseError("Lark parser is not available. Install with 'pip install lark-parser'")]
+                program=Program(statements=[]), errors=[ParseError("Lark parser is not available. Install with 'pip install lark-parser'")]
             )
-        
+
         errors = []
-        
+
         try:
             # Parse the program
             parse_tree = self.parser.parse(program_text)
-            
+
             # Debug logging for specific test cases
             if "user.name" in program_text or "else:" in program_text:
                 print(f"DEBUG: Parse tree: {parse_tree.pretty()}")
-            
+
             # Transform the parse tree into AST nodes
             program = self.transformer.transform(parse_tree)
-            
+
             # Set the source text on the program
             program.source_text = program_text
-            
+
             return ParseResult(program=program, errors=errors)
-            
+
         except UnexpectedInput as e:
             # Create a detailed error message with location information
             error_msg = f"Syntax error at line {e.line}, column {e.column}: {e.get_context(program_text)}"
-            errors.append(ParseError(error_msg, e.line, program_text.split('\n')[e.line-1]))
-            
+            errors.append(ParseError(error_msg, e.line, program_text.split("\n")[e.line - 1]))
+
             # Create an empty program as a fallback
             empty_program = Program(statements=[], source_text=program_text)
             return ParseResult(program=empty_program, errors=errors)
-            
+
         except LarkError as e:
             # Handle other Lark errors
-            errors.append(ParseError(f"Parsing error: {str(e)}", 0, program_text.split('\n')[0] if program_text else ""))
-            
+            errors.append(ParseError(f"Parsing error: {str(e)}", 0, program_text.split("\n")[0] if program_text else ""))
+
             # Create an empty program as a fallback
             empty_program = Program(statements=[], source_text=program_text)
             return ParseResult(program=empty_program, errors=errors)
-            
+
         except Exception as e:
             # Handle any other errors
-            errors.append(ParseError(f"Unexpected error during parsing: {str(e)}", 0, program_text.split('\n')[0] if program_text else ""))
-            
+            errors.append(ParseError(f"Unexpected error during parsing: {str(e)}", 0, program_text.split("\n")[0] if program_text else ""))
+
             # Create an empty program as a fallback
             empty_program = Program(statements=[], source_text=program_text)
             return ParseResult(program=empty_program, errors=errors)
@@ -598,33 +586,33 @@ _grammar_parser = GrammarParser()
 
 def parse_with_grammar(program_text: str) -> ParseResult:
     """Parse a DANA program using the grammar-based parser.
-    
+
     Args:
         program_text: The program text to parse
-        
+
     Returns:
         A ParseResult containing the parsed program and any errors
     """
     # Debug print for troubleshooting specific cases
     if "user.name" in program_text or "else:" in program_text:
         print(f"DEBUG: Parsing with grammar: '{program_text}'")
-        
+
     result = _grammar_parser.parse(program_text)
-    
+
     # Debug print for troubleshooting specific cases
     if "user.name" in program_text or "else:" in program_text:
         if not result.is_valid:
             print(f"DEBUG: Parse failed with errors: {result.errors}")
-            
+
     return result
 
 
 def parse(program_text: str) -> ParseResult:
     """Parse a DANA program string, using either grammar or regex-based parser.
-    
+
     Args:
         program_text: The program to parse
-        
+
     Returns:
         A ParseResult containing the parsed program and any errors
     """
@@ -632,4 +620,5 @@ def parse(program_text: str) -> ParseResult:
         return parse_with_grammar(program_text)
     else:
         from opendxa.dana.language.parser import parse as regex_parse
+
         return regex_parse(program_text)

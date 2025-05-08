@@ -1,13 +1,15 @@
 """Test script for DANA REPL without interactive prompt."""
 
 import asyncio
-from opendxa.dana.runtime.repl import REPL
+
 from opendxa.dana.runtime.interpreter import LogLevel
+from opendxa.dana.runtime.repl import REPL
+
 
 async def test_repl():
     # Initialize REPL without LLM resource for simplicity
     repl = REPL(log_level=LogLevel.DEBUG)
-    
+
     # Test case 1: Simple variable assignment
     print("\nTest 1: Simple variable assignment")
     try:
@@ -15,7 +17,7 @@ async def test_repl():
         print("✅ Test 1 passed")
     except Exception as e:
         print(f"❌ Test 1 failed: {e}")
-    
+
     # Test case 2: Single word variable reference
     print("\nTest 2: Single word variable reference")
     try:
@@ -24,7 +26,7 @@ async def test_repl():
         print("✅ Test 2 passed")
     except Exception as e:
         print(f"❌ Test 2 failed: {e}")
-    
+
     # Test case 3: Invalid input
     print("\nTest 3: Invalid input")
     try:
@@ -32,7 +34,7 @@ async def test_repl():
         print("❌ Test 3 should have failed but passed")
     except Exception as e:
         print(f"✅ Test 3 correctly failed: {e}")
-    
+
     # Test case 4: Multi-line code block
     print("\nTest 4: Multi-line code block")
     code_block = """
@@ -46,12 +48,13 @@ else:
         print("✅ Test 4 passed")
     except Exception as e:
         print(f"❌ Test 4 failed: {e}")
-    
+
     # Print final context values
     print("\nFinal context values:")
     ctx = repl.get_context()
     print(f"private.a = {ctx.get('private.a')}")
     print(f"private.b = {ctx.get('private.b')}")
+
 
 if __name__ == "__main__":
     asyncio.run(test_repl())

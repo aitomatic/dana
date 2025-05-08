@@ -184,7 +184,7 @@ def test_parse_log_level_set_statement():
 
 def test_parse_multiple_statements():
     """Test parsing multiple statements."""
-    result = parse("temp.x = 42\ntemp.y = \"test\"\nlog(\"done\")", type_check=False)
+    result = parse('temp.x = 42\ntemp.y = "test"\nlog("done")', type_check=False)
     assert isinstance(result, ParseResult)
     assert isinstance(result.program, Program)
     assert len(result.program.statements) == 3
@@ -213,15 +213,16 @@ def test_parse_multiple_statements():
 
 def test_parse_conditional_with_else():
     """Test parsing a conditional statement with an else clause."""
-    code = "if x > 10:\n    log(\"x is big\")\n    y = x * 2\nelse:\n    log(\"x is small\")\n    y = 0"
+    code = 'if x > 10:\n    log("x is big")\n    y = x * 2\nelse:\n    log("x is small")\n    y = 0'
     result = parse(code, type_check=False)
     assert isinstance(result, ParseResult)
     assert isinstance(result.program, Program)
     assert len(result.program.statements) == 1
     assert not result.errors
-    
+
     stmt = result.program.statements[0]
     from opendxa.dana.language.ast import Conditional
+
     assert isinstance(stmt, Conditional)
     assert len(stmt.body) == 2
     assert len(stmt.else_body) == 2
@@ -235,9 +236,10 @@ def test_parse_while_loop():
     assert isinstance(result.program, Program)
     assert len(result.program.statements) == 2  # Assignment and while loop
     assert not result.errors
-    
+
     stmt = result.program.statements[1]  # Second statement is the while loop
     from opendxa.dana.language.ast import WhileLoop
+
     assert isinstance(stmt, WhileLoop)
     assert len(stmt.body) == 2
 

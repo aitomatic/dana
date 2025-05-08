@@ -166,13 +166,13 @@ workflow.apply_dependencies(dependencies)
    ```python
    # Initialize planner
    planner = Planner()
-   
+
    # Plan tasks
    tasks = planner.plan(
        objective="Process data",
        context=context
    )
-   
+
    # Create workflow
    workflow = Workflow(objective="Process data")
    workflow.add_tasks(tasks)
@@ -185,7 +185,7 @@ workflow.apply_dependencies(dependencies)
        tasks=tasks,
        resources=resources
    )
-   
+
    # Apply allocation
    workflow.apply_allocation(allocation)
    ```
@@ -194,10 +194,10 @@ workflow.apply_dependencies(dependencies)
    ```python
    # Analyze dependencies
    dependencies = dependency_manager.analyze(tasks)
-   
+
    # Apply dependencies
    workflow.apply_dependencies(dependencies)
-   
+
    # Validate workflow
    workflow.validate()
    ```

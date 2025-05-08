@@ -8,12 +8,14 @@ import pytest
 
 from opendxa.dana.language.parser import parse
 
+
 def test_simple_assignment():
     """Test parsing a simple assignment."""
     code = "x = 42"
     result = parse(code, type_check=False)
     assert result.is_valid
     assert len(result.program.statements) == 1
+
 
 def test_string_literals():
     """Test parsing string literals with both quote styles."""
@@ -22,12 +24,13 @@ def test_string_literals():
     result = parse(code, type_check=False)
     assert result.is_valid
     assert len(result.program.statements) == 1
-    
+
     # Test single quotes
     code = "name = 'Alice'"
     result = parse(code, type_check=False)
     assert result.is_valid
     assert len(result.program.statements) == 1
+
 
 def test_nested_identifier():
     """Test parsing nested identifiers."""
@@ -35,6 +38,7 @@ def test_nested_identifier():
     result = parse(code, type_check=False)
     assert result.is_valid
     assert len(result.program.statements) == 1
+
 
 def test_simple_conditional():
     """Test parsing a simple conditional statement."""
@@ -44,6 +48,7 @@ def test_simple_conditional():
     result = parse(code, type_check=False)
     assert result.is_valid
     assert len(result.program.statements) == 1
+
 
 def test_conditional_with_else():
     """Test parsing a conditional with an else clause."""
@@ -55,6 +60,7 @@ else:
     result = parse(code, type_check=False)
     assert result.is_valid
     assert len(result.program.statements) == 1
+
 
 if __name__ == "__main__":
     pytest.main(["-xvs", __file__])

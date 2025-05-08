@@ -9,8 +9,10 @@ Classes:
 """
 
 from typing import Optional
-from opendxa.common.types import BaseRequest, BaseResponse
+
 from opendxa.common.resource.base_resource import BaseResource
+from opendxa.common.types import BaseRequest, BaseResponse
+
 
 class HumanResource(BaseResource):
     """Resource for getting human input."""
@@ -34,11 +36,7 @@ class HumanResource(BaseResource):
         Returns:
             bool: True if resource can handle request
         """
-        return (
-            isinstance(request, BaseRequest) and
-            isinstance(request.arguments, dict) and
-            "prompt" in request.arguments
-        )
+        return isinstance(request, BaseRequest) and isinstance(request.arguments, dict) and "prompt" in request.arguments
 
     async def query(self, request: BaseRequest) -> BaseResponse:
         """Get human input.

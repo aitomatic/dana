@@ -140,13 +140,13 @@ result = validation.validate(process_data)
    ```python
    from opendxa.agent import Agent
    from opendxa.domain import DomainExpert
-   
+
    # Create domain expert
    expert = DomainExpert(
        knowledge_base=kb,
        domain="semiconductor"
    )
-   
+
    # Create agent with expertise
    agent = Agent()
    agent.with_expertise(expert)
@@ -164,7 +164,7 @@ result = validation.validate(process_data)
        name="wafer_inspection",
        steps=inspection_steps
    )
-   
+
    # Execute with validation
    result = await agent.execute_process(
        process=process,
@@ -180,7 +180,7 @@ result = validation.validate(process_data)
        context="wafer_defect",
        parameters=defect_data
    )
-   
+
    # Apply expert advice
    action = agent.interpret_advice(advice)
    result = await agent.execute_action(action)

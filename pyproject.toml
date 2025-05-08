@@ -13,7 +13,7 @@ authors = [
     {name = "Lam Nguyen", email = "lam@aitomatic.com"},
     {name = "Zooey Nguyen", email = "zooey@aitomatic.com"},
     {name = "Vinh Luong", email = "vinh@aitomatic.com"}
-]   
+]
 
 # Core dependencies
 dependencies = [
@@ -21,27 +21,27 @@ dependencies = [
     "aiohttp",
     "aioconsole",
     "websockets",
-    
+
     # AI/LLM services
     "aisuite[openai,anthropic,azure,google,groq,huggingface,ollama]",
     "openai",
     "mcp",
     "llm-code-executor",
-    
+
     # Data processing and visualization
     "pandas",
     "matplotlib",
     "seaborn",
-    
+
     # Database
     "sqlalchemy",
-    
+
     # Utilities
     "nest_asyncio",
     "python-dotenv",
     "pyyaml",
     "structlog",
-    
+
     # Testing
     "pytest",
     "pytest-asyncio",
@@ -54,7 +54,8 @@ dev = [
     # Code formatting and linting
     "black",
     "ruff",
-    
+    "pre-commit",
+
     # Testing with coverage
     "pytest-cov",
 
@@ -88,6 +89,10 @@ select = [
     "B",   # bugbear (likely bugs and design problems)
     "UP",  # pyupgrade (use modern Python features)
     "N801", "N802", "N803", "N804",  # naming conventions for classes and functions only
+    "F821",  # undefined name
+    "F822",  # undefined attribute
+    "F841",  # unused variable
+    "F401",  # unused import
 ]
 
 # Rules to ignore
@@ -96,6 +101,7 @@ ignore = [
     "E501",  # Line too long (we use the line-length parameter instead)
     "B008",  # Function call in default argument (common in web frameworks)
     "B010",  # Setting attributes in class body (common in web frameworks)
+    "B904",  # Require raise Error(..) from ...
 ]
 
 # Exclusion patterns

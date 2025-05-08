@@ -220,11 +220,11 @@ class Agent(Configurable, Loggable, Capable, ToolCallable):
 
 ## License
 
-OpenDXA is released under the [MIT License](../../../LICENSE.md). 
+OpenDXA is released under the [MIT License](../../../LICENSE.md).
 
 ---
 <p align="center">
 Copyright © 2024 Aitomatic, Inc. Licensed under the [MIT License](../../../LICENSE.md).
 <br/>
 <a href="https://aitomatic.com">https://aitomatic.com</a>
-</p> 
+</p>

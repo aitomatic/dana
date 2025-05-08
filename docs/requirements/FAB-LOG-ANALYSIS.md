@@ -74,7 +74,7 @@ sequenceDiagram
     participant F as FAE
     participant D as DXA
     participant K as Knowledge Base
-    
+
     C->>F: Upload log file
     F->>D: Request analysis
     D->>D: Parse log structure
@@ -145,7 +145,7 @@ graph TB
         E[Error Codes]
         P[Parameters]
     end
-    
+
     subgraph "DXA Core"
         D[DXA System]
         D <--> LP[Log Parser]
@@ -153,7 +153,7 @@ graph TB
         D <--> PV[Parameter Validator]
         D <--> PA[Pattern Analyzer]
     end
-    
+
     subgraph "Output Layer"
         R[Reports]
         V[Visualizations]

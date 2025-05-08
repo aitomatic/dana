@@ -14,7 +14,7 @@ def test_nested_conditionals():
     context.set("private.outer", True)
     context.set("private.inner", True)
     context.set("private.result", "initial")
-    
+
     program = """
     if private.outer:
         private.result = "outer"
@@ -32,11 +32,11 @@ def test_nested_conditionals():
     # Create a fresh context and interpreter to avoid state issues
     context = RuntimeContext()
     interpreter = Interpreter(context)
-    
+
     context.set("private.outer", True)
     context.set("private.inner", False)
     context.set("private.result", "initial")
-    
+
     program = """
     if private.outer:
         private.result = "outer"
@@ -54,11 +54,11 @@ def test_nested_conditionals():
     # Create a fresh context and interpreter to avoid state issues
     context = RuntimeContext()
     interpreter = Interpreter(context)
-    
+
     context.set("private.outer", False)
     context.set("private.inner", True)
     context.set("private.result", "initial")
-    
+
     program = """
     if private.outer:
         private.result = "outer"
@@ -83,7 +83,7 @@ def test_multiple_nested_conditionals():
     context.set("private.level2", True)
     context.set("private.level3", True)
     context.set("private.result", "initial")
-    
+
     program = """
     if private.level1:
         private.result = "level1"
@@ -114,12 +114,12 @@ def test_multiple_nested_conditionals():
         # Create a fresh context and interpreter for each test case
         context = RuntimeContext()
         interpreter = Interpreter(context)
-        
+
         context.set("private.level1", level1)
         context.set("private.level2", level2)
         context.set("private.level3", level3)
         context.set("private.result", "initial")
-        
+
         program = """
         if private.level1:
             private.result = "level1"
@@ -139,16 +139,17 @@ def test_multiple_nested_conditionals():
 def test_nested_conditionals_with_visitor():
     """Test that nested conditionals work with the visitor pattern."""
     context = RuntimeContext()
-    
+
     # Create interpreter
     from opendxa.dana.runtime.interpreter import create_interpreter
+
     interpreter = create_interpreter(context)
 
     # Set up a program with nested conditionals
     context.set("private.outer", True)
     context.set("private.inner", True)
     context.set("private.result", "initial")
-    
+
     program = """
     if private.outer:
         private.result = "outer"

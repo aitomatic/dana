@@ -9,11 +9,11 @@ def test_basic_while_loop():
     """Test that a basic while loop works correctly."""
     context = RuntimeContext()
     interpreter = Interpreter(context)
-    
+
     # Set up a program with a while loop
     context.set("private.counter", 0)
     context.set("private.result", "initial")
-    
+
     program = """
     while private.counter < 5:
         private.result = "iteration " + private.counter
@@ -37,7 +37,7 @@ def test_nested_while_loops():
     context.set("private.outer", 0)
     context.set("private.inner", 0)
     context.set("private.result", "initial")
-    
+
     program = """
     while private.outer < 3:
         private.result = "outer " + private.outer
@@ -65,7 +65,7 @@ def test_while_with_conditionals():
     # Set up a program with a while loop containing a conditional
     context.set("private.counter", 0)
     context.set("private.result", "initial")
-    
+
     program = """
     while private.counter < 5:
         if private.counter % 2 == 0:
@@ -90,7 +90,7 @@ def test_conditionals_with_while():
     context.set("private.run_loop", True)
     context.set("private.counter", 0)
     context.set("private.result", "initial")
-    
+
     program = """
     if private.run_loop:
         while private.counter < 3:
@@ -108,13 +108,13 @@ def test_conditionals_with_while():
     # Test with run_loop = False
     context = RuntimeContext()
     interpreter = Interpreter(context)
-    
+
     context.set("private.run_loop", False)
     context.set("private.counter", 0)
     context.set("private.result", "initial")
-    
+
     interpreter.execute_program(result)
-    
+
     # Check that the loop didn't run
     assert context.get("private.counter") == 0
     assert context.get("private.result") == "initial"
@@ -123,15 +123,16 @@ def test_conditionals_with_while():
 def test_while_with_visitor_pattern():
     """Test that while loops work with the visitor pattern."""
     context = RuntimeContext()
-    
+
     # Create interpreter
     from opendxa.dana.runtime.interpreter import create_interpreter
+
     interpreter = create_interpreter(context)
 
     # Set up a program with a while loop
     context.set("private.counter", 0)
     context.set("private.result", "initial")
-    
+
     program = """
     while private.counter < 3:
         private.result = "iteration " + private.counter

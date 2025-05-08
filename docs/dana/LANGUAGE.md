@@ -341,7 +341,7 @@ To use `reason()` statements, you need to set up an LLM resource in one of these
    ```python
    from opendxa.common.resource.llm_resource import LLMResource
    from opendxa.dana.runtime.context import RuntimeContext
-   
+
    context = RuntimeContext()
    llm = LLMResource(name="reason_llm")
    await llm.initialize()  # Always initialize before use
@@ -417,7 +417,7 @@ if world.system.temperature > 90:
 ideas = reason("Generate solution ideas for the issue", temperature=0.8)
 
 // Using the format parameter to get structured JSON
-analysis = reason("Analyze system state and list problems", 
+analysis = reason("Analyze system state and list problems",
                  context=[world.sensors, world.alerts],
                  format="json")
 

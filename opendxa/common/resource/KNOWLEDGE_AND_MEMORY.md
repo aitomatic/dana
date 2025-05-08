@@ -22,7 +22,7 @@ classDiagram
         +retrieve(key, query)
         +delete(key)
     }
-    
+
     class KnowledgeDBModel {
         +str key
         +dict value
@@ -30,7 +30,7 @@ classDiagram
         +datetime created_at
         +datetime updated_at
     }
-    
+
     KBResource --> KnowledgeDBModel : manages
 ```
 
@@ -50,7 +50,7 @@ classDiagram
         +update_importance(memory_id, importance)
         +decay_memories()
     }
-    
+
     class MemoryDBModel {
         +str content
         +dict context
@@ -60,37 +60,37 @@ classDiagram
         +datetime created_at
         +datetime updated_at
     }
-    
+
     MemoryResource --> MemoryDBModel : manages
-    
+
     class STMemoryResource {
         +default_importance: 0.5
         +default_decay_rate: 0.1
         +default_retrieve_limit: 5
         +decay_interval: 21600 (6 hours)
     }
-    
+
     class LTMemoryResource {
         +default_importance: 2.0
         +default_decay_rate: 0.01
         +default_retrieve_limit: 10
         +decay_interval: 86400 (24 hours)
     }
-    
+
     class PermMemoryResource {
         +default_importance: 3.0
         +default_decay_rate: 0.0
         +default_retrieve_limit: 20
     }
-    
+
     class STMemoryDBModel
     class LTMemoryDBModel
     class PermMemoryDBModel
-    
+
     MemoryResource <|-- STMemoryResource
     MemoryResource <|-- LTMemoryResource
     MemoryResource <|-- PermMemoryResource
-    
+
     MemoryDBModel <|-- STMemoryDBModel
     MemoryDBModel <|-- LTMemoryDBModel
     MemoryDBModel <|-- PermMemoryDBModel
@@ -106,20 +106,20 @@ classDiagram
         +initialize()
         +cleanup()
     }
-    
+
     class SqlDBStorage {
         +engine
         +Session
         +store(key, content, metadata)
         +retrieve(query)
     }
-    
+
     class VectorDBStorage {
         +store(content, context, importance)
         +retrieve(query, limit)
         +update_importance(memory_id, importance)
     }
-    
+
     BaseDBStorage <|-- SqlDBStorage
     BaseDBStorage <|-- VectorDBStorage
 ```
@@ -132,13 +132,13 @@ classDiagram
         +datetime created_at
         +datetime updated_at
     }
-    
+
     class KnowledgeDBModel {
         +str key
         +dict value
         +dict metadata
     }
-    
+
     class MemoryDBModel {
         +str content
         +dict context
@@ -146,11 +146,11 @@ classDiagram
         +float decay_rate
         +datetime last_accessed
     }
-    
+
     class STMemoryDBModel
     class LTMemoryDBModel
     class PermMemoryDBModel
-    
+
     BaseDBModel <|-- KnowledgeDBModel
     BaseDBModel <|-- MemoryDBModel
     MemoryDBModel <|-- STMemoryDBModel

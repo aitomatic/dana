@@ -35,7 +35,7 @@ private.temperature_threshold = 80
 private.max_temp = 83  # Hardcoded max from the array for simplicity
 if private.max_temp > private.temperature_threshold:
     private.assessment = reason(f"Is a temperature of {private.max_temp}°F concerning?")
-    
+
     # Simple string check for "yes"
     if private.assessment == "yes":
         log.warn(f"Temperature concern detected: {private.assessment}")

@@ -49,4 +49,4 @@ python run.py dana/basic_assignments.dana
 
 1. Add new `.dana` files to the `dana/` directory
 2. Use descriptive names (e.g., `expressions.dana`, `functions.dana`)
-3. Test using `run.py` 
+3. Test using `run.py`

@@ -60,12 +60,12 @@ class ASTVisitor(ABC):
     def visit_conditional(self, node: Conditional, context: Optional[Dict[str, Any]] = None) -> Any:
         """Visit a Conditional node."""
         pass
-        
+
     @abstractmethod
     def visit_while_loop(self, node: WhileLoop, context: Optional[Dict[str, Any]] = None) -> Any:
         """Visit a WhileLoop node."""
         pass
-        
+
     @abstractmethod
     def visit_reason_statement(self, node: ReasonStatement, context: Optional[Dict[str, Any]] = None) -> Any:
         """Visit a ReasonStatement node."""

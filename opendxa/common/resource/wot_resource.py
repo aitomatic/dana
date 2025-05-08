@@ -1,18 +1,18 @@
 """Web of Things (WoT) resource implementation."""
 
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
+
 import aiohttp
-from opendxa.common.resource.base_resource import BaseResource
+
 from opendxa.common.mixins.tool_callable import ToolCallable
+from opendxa.common.resource.base_resource import BaseResource
 from opendxa.common.types import BaseRequest, BaseResponse
+
 
 class WoTResource(BaseResource):
     """WoT resource handling Thing interactions."""
-    
-    def __init__(self,
-                 name: str,
-                 directory_endpoint: str,
-                 thing_description: Optional[Dict[str, Any]] = None):
+
+    def __init__(self, name: str, directory_endpoint: str, thing_description: Optional[Dict[str, Any]] = None):
         super().__init__(name)
         self.directory_endpoint = directory_endpoint
         self.thing_description = thing_description
@@ -96,4 +96,4 @@ class WoTResource(BaseResource):
 
     def can_handle(self, request: Dict[str, Any]) -> bool:
         """Check for WoT interaction patterns."""
-        return "thing_id" in request and "interaction_type" in request 
+        return "thing_id" in request and "interaction_type" in request

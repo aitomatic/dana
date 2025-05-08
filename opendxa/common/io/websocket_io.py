@@ -4,35 +4,38 @@ This module provides a WebSocket-based implementation of the BaseIOResource inte
 enabling real-time bidirectional communication over WebSocket connections.
 """
 
-from typing import Optional, Any, cast
 import asyncio
+from typing import Any, Optional
 from urllib.parse import urlparse
-from websockets.legacy.server import WebSocketServerProtocol
+
 from websockets import serve
+from websockets.legacy.server import WebSocketServerProtocol
+
 from .base_io import BaseIO
+
 
 class WebSocketIO(BaseIO):
     """WebSocket-based I/O resource implementation."""
-    
+
     def __init__(
-        self, 
+        self,
         url: str = "ws://localhost:8765",
         name: str = "websocket",
         description: Optional[str] = None,
         max_retries: int = 3,
-        retry_delay: float = 1.0
+        retry_delay: float = 1.0,
     ):
         """Initialize WebSocket I/O resource."""
         super().__init__(name, description or "WebSocket-based I/O resource")
         parsed = urlparse(url)
-        self.host = parsed.hostname or 'localhost'
+        self.host = parsed.hostname or "localhost"
         self.port = parsed.port or 8765
         self.max_retries = max_retries
         self.retry_delay = retry_delay
         self._server: Optional[WebSocketServerProtocol] = None
         self._current_connection: Optional[WebSocketServerProtocol] = None
         self._message_queue: asyncio.Queue[str] = asyncio.Queue()
-    
+
     async def _handle_connection(self, websocket: WebSocketServerProtocol) -> None:
         """Handle incoming WebSocket connection."""
         self._current_connection = websocket
@@ -44,17 +47,13 @@ class WebSocketIO(BaseIO):
         finally:
             if self._current_connection is websocket:
                 self._current_connection = None
-    
+
     async def initialize(self) -> None:
         """Initialize WebSocket server."""
         await super().initialize()
-        self._server = await serve(
-                                    self._handle_connection,
-                                    self.host,
-            self.port
-        )
+        self._server = await serve(self._handle_connection, self.host, self.port)
         self.logger.info(f"WebSocket server started on ws://{self.host}:{self.port}")
-    
+
     async def cleanup(self) -> None:
         """Cleanup WebSocket connections."""
         if self._server:
@@ -62,14 +61,14 @@ class WebSocketIO(BaseIO):
             await self._server.wait_closed()
         await super().cleanup()
         self.logger.info("WebSocket server shut down")
-    
+
     async def send(self, message: Any) -> None:
         """Send message through WebSocket."""
         if self._current_connection and not self._current_connection.closed:
             await self._current_connection.send(str(message))
         else:
             self.logger.warning("No active WebSocket connection for sending message")
-    
+
     async def receive(self) -> Any:
         """Receive message from WebSocket."""
-        return await self._message_queue.get() 
+        return await self._message_queue.get()

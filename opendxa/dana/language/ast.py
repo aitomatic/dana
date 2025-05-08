@@ -15,7 +15,9 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 # Forward references for type hints
 Expression = Union["LiteralExpression", "Identifier", "BinaryExpression", "FunctionCall"]
-Statement = Union["Assignment", "LogStatement", "Conditional", "WhileLoop", "LogLevelSetStatement", "ReasonStatement", "FunctionCall", "PrintStatement"]
+Statement = Union[
+    "Assignment", "LogStatement", "Conditional", "WhileLoop", "LogLevelSetStatement", "ReasonStatement", "FunctionCall", "PrintStatement"
+]
 
 
 class BinaryOperator(Enum):
@@ -57,11 +59,11 @@ class Literal:
 
     value: Union[int, float, str, bool, None, "FStringExpression", List[Any]]
     location: Optional[Location] = None
-    
+
     @property
     def type(self):
         """Get the type of this literal.
-        
+
         This is used during type checking to determine the type of literals.
         """
         # Need to check bool first since True and False are also instances of int
@@ -89,26 +91,26 @@ class LiteralExpression:
 
     literal: Literal
     location: Optional[Location] = None
-    
+
     @property
     def value(self):
         """Get the value of this literal expression.
-        
+
         This is a convenience property that delegates to the literal's value.
         """
         return None if self.literal is None else self.literal.value
-    
+
     @property
     def type(self):
         """Get the type of this literal expression.
-        
+
         This is used during type checking to determine the type of literals.
         """
         if self.literal is None:
             return None
-            
+
         value = self.literal.value
-        
+
         # Need to check bool first since True and False are also instances of int
         if isinstance(value, bool):
             return "bool"
@@ -199,7 +201,9 @@ class Conditional:
     body: List[Union[Assignment, LogStatement, "Conditional", "WhileLoop", "LogLevelSetStatement", "ReasonStatement", FunctionCall]]
     line_num: int  # Line number where this conditional was defined
     location: Optional[Location] = None
-    else_body: List[Union[Assignment, LogStatement, "Conditional", "WhileLoop", "LogLevelSetStatement", "ReasonStatement", FunctionCall]] = field(default_factory=list)
+    else_body: List[
+        Union[Assignment, LogStatement, "Conditional", "WhileLoop", "LogLevelSetStatement", "ReasonStatement", FunctionCall]
+    ] = field(default_factory=list)
 
 
 @dataclass
@@ -223,7 +227,7 @@ class LogLevelSetStatement:
 @dataclass
 class ReasonStatement:
     """Represents a reasoning statement in DANA.
-    
+
     This statement calls the LLM to reason about the provided prompt,
     optionally accessing contextual data from the DANA state.
     """

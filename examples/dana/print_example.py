@@ -15,33 +15,33 @@ from opendxa.dana.runtime.interpreter import create_interpreter
 def main():
     """Run the DANA print example."""
     print("Running DANA print example...\n")
-    
+
     # Read the example file
-    example_file = Path(__file__).parent / 'na' / 'print_example.na'
-    with open(example_file, 'r') as f:
+    example_file = Path(__file__).parent / "na" / "print_example.na"
+    with open(example_file) as f:
         code = f.read()
-    
+
     # Parse the code
     print(f"Parsing code from {example_file}...\n")
     result = parse(code, type_check=False)
-    
+
     if not result.is_valid:
         print("Error parsing code:")
         for error in result.errors:
             print(f"  {error}")
         return
-    
+
     # Create an interpreter and runtime context
     context = RuntimeContext()
     interpreter = create_interpreter(context)
-    
+
     # Enable debug logging to see all log messages
     os.environ["DANA_LOG_LEVEL"] = "DEBUG"
-    
+
     # Execute the code
     print("Executing code...\n")
     interpreter.execute_program(result)
-    
+
     print("\nDone!")
 
 

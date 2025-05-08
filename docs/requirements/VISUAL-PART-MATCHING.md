@@ -75,7 +75,7 @@ sequenceDiagram
     participant D as DXA
     participant K as Knowledge Base
     participant I as Inventory
-    
+
     U->>D: Upload part image
     D->>D: Preprocess image
     D->>K: Query part catalog
@@ -144,7 +144,7 @@ graph TB
         S[Specifications]
         V[Inventory]
     end
-    
+
     subgraph "DXA Core"
         D[DXA System]
         D <--> IP[Image Processor]
@@ -152,7 +152,7 @@ graph TB
         D <--> PM[Part Matcher]
         D <--> SA[Sourcing Analyzer]
     end
-    
+
     subgraph "Output Layer"
         R[Reports]
         V[Visualizations]

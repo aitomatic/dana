@@ -4,7 +4,7 @@
 
 ## DANA Language
 
-The OpenDXA framework includes DANA (Domain-Aware NeuroSymbolic Architecture), a domain-specific language for agent reasoning. 
+The OpenDXA framework includes DANA (Domain-Aware NeuroSymbolic Architecture), a domain-specific language for agent reasoning.
 
 ### DANA Parser
 

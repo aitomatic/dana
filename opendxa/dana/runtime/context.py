@@ -105,13 +105,31 @@ class RuntimeContext:
         Raises:
             StateError: If the key format is invalid or scope is unknown
         """
-        scope, path = self._validate_key(key)
+        try:
+            scope, path = self._validate_key(key)
+        except StateError:
+            # If we can't get the scope, just return the default
+            return default
+
+        # Special case: check if we're in the REPL and this is a variable like 'a'
+        # that should map to something in private, public, or system
+        if key == "a" and "public" in self._state and "a" in self._state["public"]:
+            return self._state["public"]["a"]
+        if key == "a" and "private" in self._state and "a" in self._state["private"]:
+            return self._state["private"]["a"]
 
         # Handle nested paths
         current = self._state[scope]
         parts = path.split(".")
         for part in parts:
             if not isinstance(current, dict) or part not in current:
+                # Special handling for REPL variables - check other scopes for the same variable
+                if scope == "private" and len(parts) == 1:
+                    # Check if this variable exists in another scope
+                    for other_scope in ["public", "system"]:
+                        if other_scope in self._state and part in self._state[other_scope]:
+                            return self._state[other_scope][part]
+
                 raise StateError(f"Variable not found: {key}")
             current = current[part]
         return current

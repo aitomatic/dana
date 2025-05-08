@@ -61,14 +61,14 @@ graph TB
     subgraph "Customer Interface"
         C[Customer] --> F[FAE]
     end
-    
+
     subgraph "DXA System"
         F <--> D[Design Expert DXA]
         D <--> KB[Knowledge Base]
         D <--> PE[Parameter Engine]
         D <--> VA[Validation Agent]
     end
-    
+
     subgraph "Knowledge Sources"
         KB --> DOC[Internal Documentation]
         KB --> DS[Datasheets]
@@ -162,7 +162,7 @@ sequenceDiagram
 stateDiagram-v2
     [*] --> Initial_Contact
     Initial_Contact --> Requirements_Gathering
-    
+
     state Requirements_Gathering {
         [*] --> Collect_Params
         Collect_Params --> Validate_Params
@@ -170,9 +170,9 @@ stateDiagram-v2
         Issues_Found --> Collect_Params: Need More Info
         Issues_Found --> [*]: Parameters Valid
     }
-    
+
     Requirements_Gathering --> Solution_Design
-    
+
     state Solution_Design {
         [*] --> Generate_Options
         Generate_Options --> Review_Tradeoffs
@@ -180,7 +180,7 @@ stateDiagram-v2
         Customer_Feedback --> Generate_Options: Refinement Needed
         Customer_Feedback --> [*]: Solution Accepted
     }
-    
+
     Solution_Design --> Documentation
     Documentation --> [*]
 ```

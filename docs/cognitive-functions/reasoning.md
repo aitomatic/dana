@@ -169,13 +169,13 @@ actions = action_planner.plan(
    ```python
    # Initialize reasoner
    reasoner = Reasoner()
-   
+
    # Analyze situation
    analysis = reasoner.analyze(
        situation=situation,
        knowledge_base=kb
    )
-   
+
    # Generate options
    options = decision_maker.generate_options(analysis)
    ```
@@ -187,7 +187,7 @@ actions = action_planner.plan(
        options=options,
        criteria=criteria
    )
-   
+
    # Make decision
    decision = decision_maker.decide(evaluations)
    ```
@@ -199,7 +199,7 @@ actions = action_planner.plan(
        decision=decision,
        context=context
    )
-   
+
    # Validate plan
    plan = action_planner.validate(actions)
    ```

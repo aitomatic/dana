@@ -183,7 +183,7 @@ result = await composite.execute(
    ```python
    # Add capability
    agent.add_capability(CustomCapability())
-   
+
    # Use capability
    result = await agent.use_capability(
        capability="custom",
@@ -196,11 +196,11 @@ result = await composite.execute(
    ```python
    # Create composite
    composite = CompositeCapability()
-   
+
    # Add capabilities
    composite.add_capability(Capability1())
    composite.add_capability(Capability2())
-   
+
    # Use composite
    result = await composite.execute(
        operation="combined",

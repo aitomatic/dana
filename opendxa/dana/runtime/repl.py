@@ -112,22 +112,36 @@ class REPL(Loggable):
             for key, value in initial_context.items():
                 self.context.set(key, value)
 
-        # Try single word variable lookup first
-        words = program_source.strip().split()
-        if len(words) == 1 and words[0].isalpha():
-            for scope in ["private", "public", "system"]:
-                try:
-                    return self.context.get(f"{scope}.{words[0]}")
-                except Exception as e:
-                    context = ErrorContext("variable lookup", None)
-                    error = ErrorHandler.handle_error(e, context)
-                    self.error(f"Variable lookup failed: {error.message}")
-                    continue
+        # Special handling for REPL expressions - direct variable lookups
+        program_source = program_source.strip()
+        # Only handle direct variable references, not statements
+        if not program_source.startswith(("if", "while", "print", "log")) and "=" not in program_source:
+            # Check for dotted expression like 'private.a' or 'public.b'
+            if "." in program_source and len(program_source.split(".")) == 2:
+                scope, var_name = program_source.split(".")
+                if scope in ["private", "public", "system"] and var_name.isalpha():
+                    try:
+                        # Direct lookup with no fallbacks for consistency
+                        return self.context.get(program_source)
+                    except Exception:
+                        # Not found in the specified scope
+                        raise DanaError(f"Variable '{program_source}' not found")
+
+            # For simple variables, explicitly require a scope
+            elif program_source.isalpha():
+                # Provide a helpful error message
+                raise DanaError(
+                    f"Variable '{program_source}' must be accessed with a scope prefix: "
+                    f"private.{program_source}, public.{program_source}, or system.{program_source}"
+                )
 
         # If NLP mode is on, use transcoder
         if self.get_nlp_mode():
             if not self.transcoder:
-                raise DanaError("NLP mode is enabled but no LLM resource is available")
+                raise DanaError(
+                    "NLP mode is enabled but no LLM resource is available. "
+                    "Please set one of these environment variables: OPENAI_API_KEY, ANTHROPIC_API_KEY, AZURE_OPENAI_API_KEY, etc."
+                )
             try:
                 parse_result, _ = await self.transcoder.to_dana(program_source)
             except Exception as e:
@@ -136,14 +150,23 @@ class REPL(Loggable):
                 if "Generated invalid DANA code" in str(e):
                     raise DanaError("I couldn't understand that. Please try rephrasing your request or use DANA syntax directly.")
                 else:
-                    raise error
+                    # Clean up the error message
+                    error_msg = str(error)
+                    if "Error during" in error_msg:
+                        error_msg = error_msg.split("Error during")[1].strip()
+                    raise DanaError(error_msg)
         else:
             # Direct parsing when NLP mode is off
             try:
                 parse_result = parse(program_source)
             except Exception as e:
                 context = ErrorContext("program parsing")
-                raise ErrorHandler.handle_error(e, context)
+                error = ErrorHandler.handle_error(e, context)
+                # Clean up the error message
+                error_msg = str(error)
+                if "Error during" in error_msg:
+                    error_msg = error_msg.split("Error during")[1].strip()
+                raise DanaError(self._format_error_message(error_msg))
 
         # Execute the parsed program
         if not parse_result.is_valid:
@@ -163,15 +186,22 @@ class REPL(Loggable):
                         if error_msg.startswith('"') and error_msg.endswith('"'):
                             error_msg = error_msg[1:-1]
 
-            raise DanaError(error_msg, context=context)
+            raise DanaError(self._format_error_message(error_msg), context=context)
 
         try:
-            self.interpreter.execute_program(parse_result)
-            # Return the last value in the context if available
-            return self.context.get("private.__last_value") if "private.__last_value" in self.context._state["private"] else None
+            result = self.interpreter.execute_program(parse_result)
+            # Try to get the last_value first, then fallback to the result from execute_program
+            if "private" in self.context._state and "__last_value" in self.context._state["private"]:
+                return self.context.get("private.__last_value")
+            return result
         except Exception as e:
             context = ErrorContext("program execution")
-            raise ErrorHandler.handle_error(e, context)
+            error = ErrorHandler.handle_error(e, context)
+            # Clean up the error message
+            error_msg = str(error)
+            if "Error during" in error_msg:
+                error_msg = error_msg.split("Error during")[1].strip()
+            raise DanaError(self._format_error_message(error_msg))
 
     def get_context(self) -> RuntimeContext:
         """Get the current runtime context."""

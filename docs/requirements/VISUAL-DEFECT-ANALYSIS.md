@@ -98,7 +98,7 @@ sequenceDiagram
     participant D as DXA
     participant K as Knowledge Base
     participant P as Production
-    
+
     Q->>D: Upload defect image
     D->>D: Preprocess image
     D->>K: Query defect patterns
@@ -175,7 +175,7 @@ graph TB
         P[Process Data]
         H[Historical Data]
     end
-    
+
     subgraph "DXA Core"
         D[DXA System]
         D <--> IP[Image Processor]
@@ -183,7 +183,7 @@ graph TB
         D <--> RC[Root Cause Analyzer]
         D <--> CA[Corrective Action]
     end
-    
+
     subgraph "Output Layer"
         R[Reports]
         V[Visualizations]

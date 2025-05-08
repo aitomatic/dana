@@ -10,6 +10,23 @@
 
 OpenDXA is a comprehensive framework for building intelligent multi-agent systems with domain expertise, powered by Large Language Models (LLMs). It consists of three core components:
 
+## Development Setup
+
+1. Install development dependencies:
+```bash
+pip install -e ".[dev]"
+```
+
+2. Set up pre-commit hooks:
+```bash
+pre-commit install
+```
+
+This will ensure code quality checks run automatically on commit, including:
+- Code formatting with Ruff
+- Linting with Ruff (including undefined attributes/methods)
+- Basic file checks (trailing whitespace, merge conflicts, etc.)
+
 ### Example Use Case
 
 Consider a simple but practical use case: a Customer Support Agent that can handle basic inquiries and escalate when needed.
@@ -31,7 +48,7 @@ With OpenDXA, we can implement the password-reset customer support agent as a si
 if world.customer.query.type == "password_reset":
     # Search knowledge-base engine (KE)
     private.ke_result = use("danke.support.password_reset")
-    
+
     # If no clear answer, escalate
     if private.ke_result.confidence < 0.8:
         private.analysis = reason("Should this be escalated to human support?", context=[world.customer, private.ke_result])
@@ -232,7 +249,7 @@ def run_customer_query(query: str) -> str:
 if __name__ == "__main__":
     queries = [
         "How do I reset my password?",
-        "What’s the status of my refund from last month?"
+        "What's the status of my refund from last month?"
     ]
     for q in queries:
         print(f"Query: {q}")
@@ -271,7 +288,7 @@ def escalate_decision(context):
     # You would typically call an LLM here
     customer = context["customer"]
     kb_result = context["kb_result"]
-    
+
     # Simulated logic
     if "angry" in customer.get("tone", "").lower() or "urgent" in customer.get("query", {}).get("text", "").lower():
         return "yes"
@@ -291,7 +308,7 @@ def kb_support_escalate(customer_data):
 def customer_support_agent(world, execution, temp):
     if world["customer"]["query"]["type"] == "password_reset":
         temp["kb_result"] = kb_support_password_reset(world["customer"]["query"])
-        
+
         if temp["kb_result"]["confidence"] < 0.8:
             temp["analysis"] = escalate_decision({
                 "customer": world["customer"],
@@ -331,7 +348,7 @@ if __name__ == "__main__":
 The AutoGen approach to your workflow would implement it as a multi-agent conversation, where:
 - Each agent plays a specific role (e.g., UserProxyAgent, SupportAgent, EscalationAgent)
 - Agents communicate via LLM-mediated messages
-- Tool usage (like KB search or escalation) is embedded in an agent’s function or tool call
+- Tool usage (like KB search or escalation) is embedded in an agent's function or tool call
 - You define the flow by structuring interactions and termination conditions
 
 ```python
@@ -473,16 +490,6 @@ if __name__ == "__main__":
 
 #### 7. DANA Implementation
 
-
-
-
-
-
-
-
-
-
-
 ### Core Components
 
 1. **DANA (Domain-Aware NeuroSymbolic Architecture)**
@@ -508,7 +515,7 @@ if __name__ == "__main__":
      public.weather.temperature = 72
 
      # Perform reasoning
-     private.analysis = reason("Should we recommend a jacket?", 
+     private.analysis = reason("Should we recommend a jacket?",
                              context=[private.user, public.weather])
 
      # Take action based on reasoning
@@ -600,11 +607,11 @@ To immediately leverage domain expertise, you can also utilize Aitomatic's separ
 For detailed documentation on the OpenDXA framework itself, see the [main documentation](docs/README.md).
 
 > "The real race in AI is the race to get right context to have AI Agents solve the user's problem fully. Organizing or indexing the right data, understanding a domain deeply, getting enough activity for useful memory, and connecting to the right tools. This is the big prize."
-> 
+>
 > — Aaron Levie, CEO of Box
 
 > "Domain expertise is key. It's the efficiency of focus."
-> 
+>
 > — Christopher Nguyen, CEO of Aitomatic
 
 ## License
@@ -723,4 +730,3 @@ Copyright © 2024 Aitomatic, Inc. Licensed under the <a href="LICENSE.md">MIT Li
 <br/>
 <a href="https://aitomatic.com">https://aitomatic.com</a>
 </p>
-

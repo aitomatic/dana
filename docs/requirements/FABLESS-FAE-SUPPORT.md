@@ -75,7 +75,7 @@ sequenceDiagram
     participant F as FAE
     participant D as DXA
     participant K as Knowledge Base
-    
+
     C->>F: Initiates design consultation
     F->>D: Begins discovery conversation
     D->>K: Query relevant docs
@@ -152,7 +152,7 @@ graph TB
         P[Parameters]
         R[Requirements]
     end
-    
+
     subgraph "DXA Core"
         D[DXA System]
         D <--> PE[Parameter Engine]
@@ -160,7 +160,7 @@ graph TB
         D <--> PA[Plan Analyzer]
         D <--> IE[Implementation Engine]
     end
-    
+
     subgraph "Output Layer"
         G[Guides]
         C[Calculations]

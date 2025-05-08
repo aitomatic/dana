@@ -164,14 +164,14 @@ agent.update_state("analysis.result", result)
    ```python
    # Create agent
    agent = Agent()
-   
+
    # Add capabilities
    agent.add_capability(MemoryCapability())
    agent.add_capability(PlanningCapability())
-   
+
    # Initialize
    await agent.initialize(config)
-   
+
    # Execute
    result = await agent.execute(objective, context)
    ```
@@ -181,7 +181,7 @@ agent.update_state("analysis.result", result)
    # Add resources
    agent.add_resource(LLMResource())
    agent.add_resource(ToolResource())
-   
+
    # Use resources
    result = await agent.use_resource(
        resource="llm",
@@ -194,10 +194,10 @@ agent.update_state("analysis.result", result)
    ```python
    # Set state
    agent.set_state("task.status", "in_progress")
-   
+
    # Get state
    status = agent.get_state("task.status")
-   
+
    # Update state
    agent.update_state("task.result", result)
    ```

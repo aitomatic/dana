@@ -1,37 +1,40 @@
 """Base directed graph implementation."""
 
-from typing import Dict, List, Optional, Iterator, Any, Union, TextIO, TYPE_CHECKING
-from pathlib import Path
 from enum import Enum
+from pathlib import Path
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, TextIO, Union
+
 from pydantic import BaseModel, Field
-from opendxa.common.utils.misc import Misc
+
 from opendxa.common.mixins.configurable import Configurable
+from opendxa.common.utils.misc import Misc
+
 if TYPE_CHECKING:
-    from opendxa.common.graph.visualizer import GraphVisualizer
     from opendxa.common.graph.serializer import GraphSerializer
-    from opendxa.common.graph.traversal import (
-        Cursor,
-        TraversalStrategy,
-        TopologicalTraversal
-    )
+    from opendxa.common.graph.traversal import Cursor, TopologicalTraversal, TraversalStrategy
+    from opendxa.common.graph.visualizer import GraphVisualizer
 _CURSOR_CLASS_NAME = "opendxa.common.graph.traversal.Cursor"
+
 
 class NodeType(Enum):
     """Base node types for all graphs."""
-    NODE = "NODE"               # General node
-    START = "START"             # Starting point
-    END = "END"                 # Ending point
-    TASK = "TASK"               # Execution task
-    CONDITION = "CONDITION"     # Conditional execution
-    FORK = "FORK"               # Branching execution
-    JOIN = "JOIN"               # Joining execution
-    SOURCE = "SOURCE"           # Data sources (IoT, DB, etc)
-    SINK = "SINK"               # Data destinations
-    TRANSFORM = "TRANSFORM"     # Data transformations
-    MODEL = "MODEL"             # ML model operations
+
+    NODE = "NODE"  # General node
+    START = "START"  # Starting point
+    END = "END"  # Ending point
+    TASK = "TASK"  # Execution task
+    CONDITION = "CONDITION"  # Conditional execution
+    FORK = "FORK"  # Branching execution
+    JOIN = "JOIN"  # Joining execution
+    SOURCE = "SOURCE"  # Data sources (IoT, DB, etc)
+    SINK = "SINK"  # Data destinations
+    TRANSFORM = "TRANSFORM"  # Data transformations
+    MODEL = "MODEL"  # ML model operations
+
 
 class Node(BaseModel):
     """Base graph node."""
+
     node_id: str
     node_type: NodeType = Field(default=NodeType.NODE)
     description: str = Field(default="")
@@ -47,28 +50,29 @@ class Node(BaseModel):
             return NotImplemented
         return self.node_id == other.node_id
 
+
 class Edge(BaseModel):
     """Base graph edge."""
+
     source: str
     target: str
     metadata: Dict[str, Any] = Field(default_factory=dict)
     condition: Optional[str] = None
     state_updates: Dict[str, Any] = Field(default_factory=dict)
 
-    def __init__(self, source: Union[str, Node], target: Union[str, Node], 
-                 metadata: Optional[Dict[str, Any]] = None,
-                 condition: Optional[str] = None,
-                 state_updates: Optional[Dict[str, Any]] = None,
-                 **data):
+    def __init__(
+        self,
+        source: Union[str, Node],
+        target: Union[str, Node],
+        metadata: Optional[Dict[str, Any]] = None,
+        condition: Optional[str] = None,
+        state_updates: Optional[Dict[str, Any]] = None,
+        **data,
+    ):
         source_id = source.node_id if isinstance(source, Node) else source
         target_id = target.node_id if isinstance(target, Node) else target
         super().__init__(
-            source=source_id,
-            target=target_id,
-            metadata=metadata or {},
-            condition=condition,
-            state_updates=state_updates or {},
-            **data
+            source=source_id, target=target_id, metadata=metadata or {}, condition=condition, state_updates=state_updates or {}, **data
         )
 
     def __hash__(self) -> int:
@@ -81,9 +85,11 @@ class Edge(BaseModel):
             return NotImplemented
         return self.source == other.source and self.target == other.target
 
+
 # pylint: disable=too-many-instance-attributes
 class DirectedGraph(Configurable):
     """Pure directed graph implementation."""
+
     def __init__(self):
         super().__init__()
         self._nodes: Dict[str, Node] = {}
@@ -133,7 +139,7 @@ class DirectedGraph(Configurable):
         return any(edge.source == source_id and edge.target == target_id for edge in self.edges)
 
     @classmethod
-    def from_yaml(cls, stream: Union[str, TextIO, Path]) -> 'DirectedGraph':
+    def from_yaml(cls, stream: Union[str, TextIO, Path]) -> "DirectedGraph":
         """Create graph from YAML specification."""
         serializer: GraphSerializer = GraphSerializer()
         return serializer.from_yaml(stream, cls)
@@ -224,7 +230,7 @@ class DirectedGraph(Configurable):
             raise ValueError("Serializer is not set")
         return self._serializer.to_dict(self)
 
-    def get_a_cursor(self, start_node: Node, strategy: Optional['TraversalStrategy'] = None) -> 'Cursor':
+    def get_a_cursor(self, start_node: Node, strategy: Optional["TraversalStrategy"] = None) -> "Cursor":
         """Get traversal cursor starting at given node."""
         if strategy is None:
             strategy = self._default_traversal
@@ -235,7 +241,7 @@ class DirectedGraph(Configurable):
         """Get current node from cursor if it exists."""
         return self._cursor.current if self._cursor else None
 
-    def start_cursor(self) -> 'Cursor':
+    def start_cursor(self) -> "Cursor":
         """Starting my cursor at the first START type node found."""
         start_node = self.get_start_node()
         if not start_node:
@@ -245,13 +251,11 @@ class DirectedGraph(Configurable):
 
     def get_start_node(self) -> Optional[Node]:
         """Get the first START type node found."""
-        return next((node for node in self.nodes.values()
-                     if node.node_type == NodeType.START), None)
+        return next((node for node in self.nodes.values() if node.node_type == NodeType.START), None)
 
     def get_end_nodes(self) -> List[Node]:
         """Get all END type nodes."""
-        return [node for node in self.nodes.values()
-                if node.node_type == NodeType.END]
+        return [node for node in self.nodes.values() if node.node_type == NodeType.END]
 
     def update_cursor(self, node_id: str) -> None:
         """Update graph cursor to specified node."""

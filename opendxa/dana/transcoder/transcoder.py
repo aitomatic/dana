@@ -72,7 +72,7 @@ class Transcoder:
         - Assignments: scope.variable = value
           Example: private.result = "done", public.data = 5
         - Conditionals: if condition: followed by indented block
-          Example: 
+          Example:
             if private.x > 10:
                 log.info("X is greater than 10")
         - Logging: log.level(message)

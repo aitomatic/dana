@@ -159,7 +159,6 @@ class ToolCallable(Registerable, Loggable):
         setattr(model, "__return_type__", sig.return_annotation if sig.return_annotation != inspect.Signature.empty else Any)
         setattr(model, "__input_schema__", model.model_json_schema())
 
-
         return model
 
     def _resolve_schema_refs(self, schema: Dict[str, Any]) -> Dict[str, Any]:
@@ -272,7 +271,9 @@ class ToolCallable(Registerable, Loggable):
 
             # Convert to desired format
             formatted_tool = format_converter.convert(
-                name=func_name, description=function_schema["description"], schema=function_schema  # Use parsed description
+                name=func_name,
+                description=function_schema["description"],
+                schema=function_schema,  # Use parsed description
             )
             formatted_tools.append(formatted_tool)
 

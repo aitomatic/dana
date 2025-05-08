@@ -28,11 +28,11 @@ For our development plans and future capabilities, see the [Development Roadmap]
 To immediately leverage domain expertise, you can also utilize Aitomatic's separate open-source [Domain Knowledge Base project]([link-to-knowledge-base-repo]) (provides both general technical knowledge and specific domain expertise, e.g., SOPs, taxonomies, specs), which is compatible with any agent framework, including OpenDXA.
 
 > "The real race in AI is the race to get right context to have AI Agents solve the user's problem fully. Organizing or indexing the right data, understanding a domain deeply, getting enough activity for useful memory, and connecting to the right tools. This is the big prize."
-> 
+>
 > — Aaron Levie, CEO of Box
 
 > "Domain expertise is key. It's the efficiency of focus."
-> 
+>
 > — Christopher Nguyen, CEO of Aitomatic
 
 ## Why OpenDXA?

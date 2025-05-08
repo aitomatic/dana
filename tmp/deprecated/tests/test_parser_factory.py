@@ -7,6 +7,7 @@ from opendxa.dana.language.parser_factory import get_parser, parse
 
 try:
     from opendxa.dana.language.lark_parser import parse as lark_parse
+
     LARK_AVAILABLE = True
 except ImportError:
     LARK_AVAILABLE = False
@@ -55,7 +56,7 @@ def test_parse_with_lark_parser():
         # For now, we're just testing that it doesn't crash
         result = parse("private.x = 42", use_lark=True)
         # Since the Lark parser is not fully implemented, this might return an empty program
-        assert hasattr(result, 'program')
+        assert hasattr(result, "program")
     except NotImplementedError:
         # Or it might raise NotImplementedError, which is also acceptable for now
         pass

@@ -1,8 +1,8 @@
 {
     // === File Associations ===
     // Treats .dana files as Python for syntax highlighting and tooling
-    "files.associations": { 
-        "*.na": "python" 
+    "files.associations": {
+        "*.na": "python"
     },
 
     // === Python Analysis Settings ===
@@ -20,7 +20,7 @@
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "ms-python.black-formatter",
     "editor.defaultFoldingRangeProvider": "ms-python.black-formatter",
-    
+
     // === Code Actions ===
     // Sets up Ruff for linting and import organization when explicitly triggered
     "editor.codeActionsOnSave": {
