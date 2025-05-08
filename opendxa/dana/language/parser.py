@@ -7,6 +7,7 @@ The parser uses a modular design with specialized transformer components
 for different language constructs, improving maintainability and testability.
 """
 
+import logging
 import os
 from pathlib import Path
 from typing import List, NamedTuple, Optional
@@ -42,6 +43,8 @@ except ImportError:
         pass
 
 
+# Create a shared logger for the parser module
+from opendxa.common.utils.logging import DXA_LOGGER
 from opendxa.dana.exceptions import ParseError
 from opendxa.dana.language.ast import (
     Identifier,
@@ -50,8 +53,7 @@ from opendxa.dana.language.ast import (
 from opendxa.dana.language.error_utils import handle_parse_error
 from opendxa.dana.language.transformer_module import get_transformer_class
 
-# Create a shared logger for the parser module
-parser_logger = Loggable.get_class_logger()
+parser_logger = DXA_LOGGER.getLogger("opendxa.dana.language.parser")
 
 
 class ParseResult(NamedTuple):
@@ -128,7 +130,7 @@ class GrammarParser(Loggable):
                     parser="lalr",
                     postlex=DanaIndenter(),
                     start="start",
-                    debug=True,
+                    debug=False,
                 )
 
                 # Get the transformer from the modular implementation
@@ -236,6 +238,10 @@ def parse(code: str, type_check: bool = None) -> ParseResult:
         return ParseResult(
             program=Program(statements=[]), errors=[ParseError("Parser is not available. Please install the lark-parser package.")]
         )
+
+    from opendxa.common.utils.logging import DXA_LOGGER
+
+    DXA_LOGGER.setLevel(logging.WARN, "*")  # someone somewhere is messing with the log level
 
     parser_logger.debug("Pre-checking code for common syntax errors")
 
