@@ -9,38 +9,18 @@ for different language constructs, improving maintainability and testability.
 
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, NamedTuple, Optional, Sequence, cast
+from typing import TYPE_CHECKING, NamedTuple, Optional, Sequence
 
 from opendxa.common.mixins.loggable import Loggable
 
 try:
-    from lark import Lark, Token, Tree
+    from lark import Lark, Tree
     from lark.exceptions import LarkError, UnexpectedInput
     from lark.indenter import Indenter
 
     LARK_AVAILABLE = True
 except ImportError:
-    # Define compatibility stubs so the module can load without Lark
-    LARK_AVAILABLE = False
-
-    class Token:
-        pass
-
-    class Tree:
-        pass
-
-    class Lark:
-        pass
-
-    class Indenter:
-        pass
-
-    class LarkError(Exception):
-        pass
-
-    class UnexpectedInput(Exception):
-        pass
-
+    raise ImportError("The lark-parser package is required. Install it with 'pip install lark-parser'")
 
 # Create a shared logger for the parser module
 from opendxa.common.utils.logging import DXA_LOGGER
@@ -52,6 +32,7 @@ from opendxa.dana.language.ast import (
 from opendxa.dana.language.error_utils import handle_parse_error
 from opendxa.dana.language.transformer_module import get_transformer_class
 from opendxa.dana.language.type_checker import TypeCheckVisitor, TypeEnvironment
+from opendxa.dana.language.visitor import accept
 
 parser_logger = DXA_LOGGER.getLogger("opendxa.dana.language.parser")
 
@@ -66,11 +47,6 @@ class ParseResult(NamedTuple):
     def is_valid(self) -> bool:
         """Check if parsing was successful (no errors)."""
         return len(self.errors) == 0
-
-    @property
-    def error(self) -> Optional[ParseError]:
-        """Get the first error if any exist, for backward compatibility."""
-        return self.errors[0] if self.errors else None
 
 
 # Environment variable for controlling type checking
@@ -91,14 +67,15 @@ class DanaIndenter(Indenter):
     DEDENT_type = "DEDENT"
     tab_len = 8
 
+    # Token types that should always be accepted
+    always_accept = {NL_type, INDENT_type, DEDENT_type}
+
 
 if TYPE_CHECKING:
     from typing import Optional
 
     from lark import Tree
     from lark.indenter import Indenter
-
-    from opendxa.dana.language.transformer_module import Transformer
 
 
 class GrammarParser(Loggable):
@@ -127,31 +104,24 @@ class GrammarParser(Loggable):
                 self.grammar = f.read()
             self.debug(f"Loaded grammar from {grammar_path}")
 
-        # Only create parser if Lark is available
-        self.parser: Optional[Lark] = None
-        self.transformer: Optional[Transformer] = None
+        # Create parser
+        try:
+            # Create the parser with the DanaIndenter
+            self.parser = Lark(
+                self.grammar,  # type: ignore[arg-type]
+                parser="lalr",
+                postlex=DanaIndenter(),
+                start="start",
+                debug=False,
+            )
 
-        if LARK_AVAILABLE:
-            try:
-                # Create the parser with the DanaIndenter
-                self.parser = Lark(
-                    self.grammar,  # type: ignore[arg-type]
-                    parser="lalr",
-                    postlex=DanaIndenter(),
-                    start="start",
-                    debug=False,
-                )
-
-                # Get the transformer from the modular implementation
-                TransformerClass = get_transformer_class()
-                self.transformer = TransformerClass()
-                self.debug(f"Using transformer class: {TransformerClass.__name__}")
-            except Exception as e:
-                self.error(f"Failed to initialize Lark parser: {e}")
-
-    def is_available(self) -> bool:
-        """Check if the Lark parser is available and initialized."""
-        return LARK_AVAILABLE and self.parser is not None
+            # Get the transformer from the modular implementation
+            TransformerClass = get_transformer_class()
+            self.transformer = TransformerClass()
+            self.debug(f"Using transformer class: {TransformerClass.__name__}")
+        except Exception as e:
+            self.error(f"Failed to initialize Lark parser: {e}")
+            raise
 
     def parse(self, program_text: str) -> ParseResult:
         """Parse a DANA program string into an AST.
@@ -162,16 +132,6 @@ class GrammarParser(Loggable):
         Returns:
             A ParseResult containing the parsed program and any errors
         """
-        if not self.is_available():
-            self.warning("Lark parser is not available")
-            return ParseResult(
-                program=Program(statements=[]), errors=[ParseError("Lark parser is not available. Install with 'pip install lark-parser'")]
-            )
-
-        # Type narrowing - we know parser is not None here due to is_available() check
-        assert self.parser is not None
-        assert self.transformer is not None
-
         errors = []
 
         try:
@@ -246,36 +206,23 @@ def parse(code: str, type_check: Optional[bool] = None) -> ParseResult:
     # Resolve type checking flag
     do_type_check = ENABLE_TYPE_CHECK if type_check is None else bool(type_check)
 
-    if not _parser.is_available():
-        parser_logger.error("Parser is not available. Please install the lark-parser package.")
-        return ParseResult(
-            program=Program(statements=[]), errors=(ParseError("Parser is not available. Please install the lark-parser package."),)
-        )
-
     # Parse the code
-    parser_logger.debug("Parsing code")
     result = _parser.parse(code)
 
-    # Perform type checking if enabled
+    # Perform type checking if enabled and parsing was successful
     if do_type_check and result.is_valid:
-        parser_logger.debug("Type checking program")
-        visitor = TypeCheckVisitor(env=_type_environment)  # Use the persistent environment
-        visitor.visit_program(result.program)
+        visitor = TypeCheckVisitor(_type_environment)
+        accept(result.program, visitor)
         if visitor.errors:
-            # Convert type errors to parse errors with proper location handling
-            type_errors = []
-            for err in visitor.errors:
+            # Convert type errors to parse errors
+            parse_errors = []
+            for error in visitor.errors:
                 line = 0
-                if hasattr(err, "location") and err.location is not None:
-                    line = getattr(err.location, "line", 0)
-                type_errors.append(ParseError(str(err), line))
+                if hasattr(error, "location") and error.location is not None:
+                    line = getattr(error.location, "line", 0)
+                parse_errors.append(ParseError(str(error), line))
 
-            # Create a new ParseResult with the type errors
-            result = ParseResult(program=result.program, errors=cast(Sequence[ParseError], list(result.errors) + type_errors))
-
-    if result.is_valid:
-        parser_logger.debug("Successfully parsed and validated code")
-    else:
-        parser_logger.debug(f"Parsing completed with {len(result.errors)} errors")
+            # Add type errors to the result
+            result = ParseResult(program=result.program, errors=list(result.errors) + parse_errors)
 
     return result

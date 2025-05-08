@@ -27,32 +27,35 @@ __all__ = ["Interpreter", "create_interpreter", "format_error_location"]
 
 
 class Interpreter(Loggable):
-    """Interpreter for executing DANA programs.
+    """Interpreter for executing DANA programs."""
 
-    This class coordinates the execution of DANA programs using specialized components
-    for different aspects of execution.
-    """
-
-    def __init__(self, context: RuntimeContext):
-        """Initialize the interpreter with a runtime context.
+    def __init__(self, context: Optional[RuntimeContext] = None):
+        """Initialize the interpreter.
 
         Args:
-            context: The runtime context for state management
+            context: Optional runtime context to use
         """
-        # Initialize Loggable
         super().__init__()
-
-        # Create the execution components
-        self.context_manager = ContextManager(context)
+        self.context = context or RuntimeContext()
+        self.context_manager = ContextManager(self.context)
         self.expression_evaluator = ExpressionEvaluator(self.context_manager)
         self.llm_integration = LLMIntegration(self.context_manager)
         self.statement_executor = StatementExecutor(self.context_manager, self.expression_evaluator, self.llm_integration)
 
-        # Store a direct reference to the context for backward compatibility
-        self.context = context
-
         # Initialize system state
         self.context.set("system.id", self.statement_executor._execution_id)
+
+    def evaluate_expression(self, expression: Any, context: Optional[Dict[str, Any]] = None) -> Any:
+        """Evaluate an expression.
+
+        Args:
+            expression: The expression to evaluate
+            context: Optional local context
+
+        Returns:
+            The result of evaluating the expression
+        """
+        return self.expression_evaluator.evaluate(expression, context)
 
     def execute_program(self, parse_result: ParseResult) -> Any:
         """Execute a DANA program.
@@ -132,18 +135,6 @@ class Interpreter(Loggable):
                 execute_hook(HookType.ON_ERROR, error_context)
 
             raise e
-
-    def evaluate_expression(self, node: Any, context: Optional[Dict[str, Any]] = None) -> Any:
-        """Evaluate an expression node.
-
-        Args:
-            node: The expression node to evaluate
-            context: Optional local context for variable resolution
-
-        Returns:
-            The result of the expression
-        """
-        return self.expression_evaluator.evaluate(node, context)
 
     # Backward compatibility methods
 

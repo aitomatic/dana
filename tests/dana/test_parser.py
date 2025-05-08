@@ -19,7 +19,7 @@ def test_parse_assignment():
     assert isinstance(result, ParseResult)
     assert isinstance(result.program, Program)
     assert len(result.program.statements) == 1
-    assert not result.errors  # Now using errors list instead of error
+    assert not result.errors
 
     stmt = result.program.statements[0]
     assert isinstance(stmt, Assignment)
@@ -170,17 +170,13 @@ def test_parse_log_level_set_statement():
         assert isinstance(stmt, LogLevelSetStatement)
         assert stmt.level.value == level.upper()
 
-    # In the grammar parser, invalid log levels might not generate errors at parse time
-    # since validation happens later, which is different from the regex parser
-    # This test is updated to match the grammar parser behavior
+    # Test invalid log level
     result = parse('log.setLevel("invalid")', type_check=False)
     assert isinstance(result, ParseResult)
-    # Valid syntax but just an unknown level
     assert isinstance(result.program, Program)
-    # It should still produce a statement, just with a default level or empty level
-    if len(result.program.statements) > 0:
-        stmt = result.program.statements[0]
-        assert isinstance(stmt, LogLevelSetStatement)
+    assert len(result.program.statements) > 0
+    stmt = result.program.statements[0]
+    assert isinstance(stmt, LogLevelSetStatement)
 
 
 def test_parse_multiple_statements():

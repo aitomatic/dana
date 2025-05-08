@@ -8,20 +8,16 @@ The OpenDXA framework includes DANA (Domain-Aware NeuroSymbolic Architecture), a
 
 ### DANA Parser
 
-The DANA language parser now supports two parsing implementations:
+The DANA language parser uses a grammar-based implementation with the Lark parsing library. This provides:
 
-1. **Regex-based parser** (default): The original parser that uses regular expressions to parse DANA code.
-2. **Grammar-based parser**: A more robust parser that uses Lark to parse DANA code based on a formal grammar definition.
-
-To use the grammar-based parser, you need to:
-
-1. Install the Lark parser: `pip install lark-parser` (included in requirements.txt)
-2. Set the environment variable: `export DANA_USE_GRAMMAR_PARSER=1`
-
-The grammar-based parser offers several advantages:
-- More robust error reporting with detailed error messages
-- Easier extensibility through the formal grammar definition
+- Robust error reporting with detailed error messages
+- Extensibility through the formal grammar definition
 - Better support for language evolution and new features
+
+To use the parser, you need to install the Lark parser:
+```bash
+pip install lark-parser
+```
 
 ### Environment Variables
 
@@ -29,7 +25,6 @@ The DANA language parser supports the following environment variables:
 
 | Variable | Description | Default | Values |
 |----------|-------------|---------|--------|
-| `DANA_USE_GRAMMAR_PARSER` | Controls which parser implementation to use | Off | `0`, `1`, `true`, `false`, `yes`, `no`, `y`, `n` |
 | `DANA_TYPE_CHECK` | Enables or disables type checking during parsing | On | `0`, `1`, `true`, `false`, `yes`, `no`, `y`, `n` |
 
 ## Setup and Installation
@@ -55,88 +50,33 @@ pytest
 pytest tests/execution/planning/test_plan_factory.py
 
 # Run a specific test case
-pytest tests/execution/planning/test_plan_factory.py::TestPlanFactory::test_create_plan
-
-# Run tests with coverage
-pytest --cov=opendxa
-
-# Format code
-black opendxa/
-
-# Type checking
-mypy opendxa/
-
-# Linting
-ruff check opendxa/
+pytest tests/execution/planning/test_plan_factory.py::test_specific_case
 ```
 
-## Dependencies
+## Key Features
 
-- **Core LLM Libraries**: OpenAI, Anthropic, Azure, Google, Groq, HuggingFace, Ollama
-- **Additional Libraries**: matplotlib, pandas, pytest, PyYAML, seaborn, structlog, websockets
-- **MCP Support**: Model Context Protocol for standardized interface to external resources
-
-## Code Style Guidelines
-
-- **Documentation**: Use docstrings with triple double quotes `"""` for classes and functions
-- **Imports**: Group imports (stdlib → third-party → local), use absolute imports
-- **Types**: Use type hints throughout; import from `typing` module
-- **Classes**: PascalCase for classes; inherit from `Loggable` for standardized logging
-- **Variables**: snake_case for methods/variables, UPPER_CASE for constants
-- **Error Handling**: Use custom exceptions from `opendxa.common.exceptions`
-- **Testing**: Test classes named `Test{ClassName}`, methods as `test_{descriptive_name}`
-- **Logging**: Use the `Loggable` base class for consistent logging patterns
-
-## Project Architecture
-
-- 3-layer execution framework: Workflows → Plans → Reasoning
-- Modular resource design with agent capabilities and resources
-- Strong typing with factory pattern for component creation
-- Built-in support for Model Context Protocol (MCP) integration
-- DANA language for implementing agent reasoning and knowledge representation
-
-## DANA Language
-
-The Domain-Aware NeuroSymbolic Architecture (DANA) is a key component of OpenDXA:
-
-- **Language Features**: Strongly typed DSL with variables, conditionals, loops, and functions
-- **Runtime System**: Scoped execution context with standardized memory spaces
-- **LLM Integration**: Via `reason()` statements and transcoding capabilities
-- **File Extensions**: Use `.na` extension for DANA files
 - **State Management**: Explicit memory spaces (`agent`, `world`, `temp`, `execution`)
-- **Parser Options**: Supports both regex-based and grammar-based parsers
+- **Grammar-based Parser**: Robust parsing using the Lark library
 
-### DANA Parser Options
+### DANA Parser
 
-DANA includes two parser implementations:
-
-1. **Regex-based Parser**: The default parser using regular expressions
-2. **Grammar-based Parser**: A more robust parser using the Lark parsing library
-
-The grammar-based parser offers better extensibility, error messages, and maintainability. To enable it, set the `DANA_USE_GRAMMAR_PARSER` environment variable:
+The DANA parser uses the Lark parsing library to provide robust parsing capabilities. The parser is configured through environment variables:
 
 ```bash
-# Enable grammar-based parser
-export DANA_USE_GRAMMAR_PARSER=1
+# Disable type checking
+export DANA_TYPE_CHECK=0
 
 # Run your code
 python your_script.py
 ```
 
-You can also select the parser programmatically:
+You can also control type checking programmatically:
 
 ```python
-from opendxa.dana.language import ParserType, get_parser_factory
-
-# Get the parser factory
-factory = get_parser_factory()
-
-# Set the default parser to grammar-based
-factory.set_default_parser(ParserType.GRAMMAR)
-
-# Or use it for a specific parse operation
 from opendxa.dana.language import parse
-result = parse(code, parser_type=ParserType.GRAMMAR)
+
+# Parse without type checking
+result = parse(code, type_check=False)
 ```
 
 ## Directory Structure

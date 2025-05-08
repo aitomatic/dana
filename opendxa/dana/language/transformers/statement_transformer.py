@@ -144,23 +144,23 @@ class StatementTransformer(BaseTransformer):
             level_str = item.value.strip("\"'")
             try:
                 level = LogLevel[level_str.upper()]
-                return LogLevelSetStatement(level=level)
             except KeyError:
-                # Return None for invalid log levels, handled in parser
-                return None
+                # For invalid levels, use ERROR as default and let runtime handle it
+                level = LogLevel.ERROR
+            return LogLevelSetStatement(level=level)
 
         # Handle level token (log.setLevel(INFO))
         elif hasattr(item, "value"):
             level_str = item.value.upper()
             try:
                 level = LogLevel[level_str]
-                return LogLevelSetStatement(level=level)
             except KeyError:
-                # Return None for invalid log levels, handled in parser
-                return None
+                # For invalid levels, use ERROR as default and let runtime handle it
+                level = LogLevel.ERROR
+            return LogLevelSetStatement(level=level)
 
         # If we got here, something went wrong
-        return None
+        return LogLevelSetStatement(level=LogLevel.ERROR)
 
     def function_call(self, items):
         """Transform a function call into a FunctionCall node."""
