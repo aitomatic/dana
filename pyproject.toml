@@ -45,7 +45,14 @@ dependencies = [
     # Testing
     "pytest",
     "pytest-asyncio",
-    "pytest-mock"
+    "pytest-mock",
+
+    # REPL keyboard
+    "prompt-toolkit",
+
+    # DANA agent programming language parser/interpreter
+    "lark",
+    "lark-parser"
 ]
 
 # Development dependencies
@@ -57,14 +64,7 @@ dev = [
     "pre-commit",
 
     # Testing with coverage
-    "pytest-cov",
-
-    # REPL keyboard
-    "prompt-toolkit",
-
-    # DANA agent programming language parser/interpreter
-    "lark",
-    "lark-parser"
+    "pytest-cov"
 ]
 
 # Package configuration
