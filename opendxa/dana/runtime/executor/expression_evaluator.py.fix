@@ -93,78 +93,77 @@ class ExpressionEvaluator(BaseExecutor):
         """
         # Special handling for variable references in binary expressions
         try:
-            # First thing first - log some debug info
             self.debug(f"Evaluating binary expression with operator: {node.operator}")
             
-            # Try the most direct approach for scoped variables first
+            # First try most direct approach for left operand
             if isinstance(node.left, Identifier) and "." in node.left.name:
                 parts = node.left.name.split(".", 1)
                 scope, var_name = parts
                 
-                # For REPL, try direct state dictionary access first (most reliable)
+                # For REPL usage with scoped variables, try direct state access first
                 if (
                     scope in ["private", "public", "system"] 
                     and scope in self.context_manager.context._state
                     and var_name in self.context_manager.context._state[scope]
                 ):
-                    # Direct state access - bypasses all abstraction layers
+                    # Direct state access - most reliable for REPL
                     left = self.context_manager.context._state[scope][var_name]
-                    self.debug(f"Successfully accessed {node.left.name} = {left} directly from state dictionary")
+                    self.debug(f"Direct state access for {node.left.name} = {left}")
                 else:
-                    # If not found with direct access, try standard evaluation
                     try:
+                        # Fall back to standard variable lookup
                         left = self.context_manager.get_variable(node.left.name, context)
-                        self.debug(f"Evaluated {node.left.name} = {left} using get_variable")
+                        self.debug(f"Standard lookup for {node.left.name} = {left}")
                     except Exception as e:
-                        self.debug(f"Failed to evaluate {node.left.name} with get_variable: {e}")
-                        self.debug(f"Available keys in private scope: {list(self.context_manager.context._state.get('private', {}).keys())}")
+                        self.debug(f"Failed to evaluate {node.left.name}: {e}")
+                        self.debug(f"State keys: {list(self.context_manager.context._state.get(scope, {}).keys())}")
                         raise create_state_error(f"Undefined variable: {node.left.name}", node)
             elif isinstance(node.left, Identifier):
                 # For unscoped variables
                 try:
                     left = self.context_manager.get_variable(node.left.name, context)
-                    self.debug(f"Evaluated unscoped variable {node.left.name} = {left}")
+                    self.debug(f"Evaluated {node.left.name} = {left}")
                 except StateError as e:
-                    self.debug(f"Error evaluating left operand '{node.left.name}': {e}")
+                    self.debug(f"Error evaluating left operand: {e}")
                     raise create_state_error(f"Undefined variable: {node.left.name}", node)
             else:
                 # Standard evaluation for non-identifiers
                 left = self.evaluate(node.left, context)
-                self.debug(f"Evaluated non-identifier left operand: {left}")
+                self.debug(f"Evaluated left non-identifier: {left}")
 
             # Similar approach for right operand
             if isinstance(node.right, Identifier) and "." in node.right.name:
                 parts = node.right.name.split(".", 1)
                 scope, var_name = parts
                 
-                # For REPL usage, try direct access first
+                # For REPL usage, try direct state access first
                 if (
                     scope in ["private", "public", "system"] 
                     and scope in self.context_manager.context._state
                     and var_name in self.context_manager.context._state[scope]
                 ):
-                    # Direct state access - bypass all abstraction
+                    # Direct state access - most reliable
                     right = self.context_manager.context._state[scope][var_name]
-                    self.debug(f"Successfully accessed {node.right.name} = {right} directly from state dictionary")
+                    self.debug(f"Direct state access for {node.right.name} = {right}")
                 else:
-                    # Fall back to standard approach
                     try:
+                        # Fall back to standard variable lookup
                         right = self.context_manager.get_variable(node.right.name, context)
-                        self.debug(f"Evaluated {node.right.name} = {right} using get_variable")
+                        self.debug(f"Standard lookup for {node.right.name} = {right}")
                     except Exception as e:
                         self.debug(f"Failed to evaluate {node.right.name}: {e}")
                         raise create_state_error(f"Undefined variable: {node.right.name}", node)
             elif isinstance(node.right, Identifier):
                 try:
                     right = self.context_manager.get_variable(node.right.name, context)
-                    self.debug(f"Evaluated unscoped variable {node.right.name} = {right}")
+                    self.debug(f"Evaluated {node.right.name} = {right}")
                 except StateError as e:
-                    self.debug(f"Error evaluating right operand '{node.right.name}': {e}")
+                    self.debug(f"Error evaluating right operand: {e}")
                     raise create_state_error(f"Undefined variable: {node.right.name}", node)
             else:
                 # Standard evaluation for non-identifiers
                 right = self.evaluate(node.right, context)
-                self.debug(f"Evaluated non-identifier right operand: {right}")
+                self.debug(f"Evaluated right non-identifier: {right}")
 
             # Process the operation based on operator type
             if node.operator == BinaryOperator.ADD:
@@ -249,32 +248,31 @@ class ExpressionEvaluator(BaseExecutor):
         Raises:
             StateError: If the identifier is not defined
         """
-        # Special handling for direct variable references in binary expressions
         try:
             self.debug(f"Evaluating identifier: {node.name}")
             
-            # Direct access for scoped variables - most reliable and efficient
+            # Direct dictionary access for scoped variables
             if "." in node.name:
                 parts = node.name.split(".", 1)
                 scope, var_name = parts
                 
-                # Direct access to state for better reliability and debugging
+                # Most reliable direct state dictionary access
                 if scope in ["private", "public", "system"] and scope in self.context_manager.context._state:
-                    # Try most direct lookup first
-                    if var_name in self.context_manager.context._state[scope]:
-                        value = self.context_manager.context._state[scope][var_name]
-                        self.debug(f"Found '{node.name}' with direct access: {value}")
+                    state_dict = self.context_manager.context._state[scope]
+                    if var_name in state_dict:
+                        value = state_dict[var_name]
+                        self.debug(f"Direct state access for '{node.name}' = {value}")
                         return value
             
-            # Now try the standard method
+            # Standard variable lookup
             try:
                 value = self.context_manager.get_variable(node.name, context)
-                self.debug(f"Found '{node.name}' with get_variable: {value}")
+                self.debug(f"Standard lookup for '{node.name}' = {value}")
                 return value
             except Exception as e:
                 self.debug(f"Error in get_variable for '{node.name}': {e}")
                 
-                # Last resort - try manual traversal
+                # Last fallback for scoped variables
                 if "." in node.name:
                     parts = node.name.split(".")
                     scope, var_name = parts[0], parts[1]
@@ -284,7 +282,7 @@ class ExpressionEvaluator(BaseExecutor):
                         and var_name in self.context_manager.context._state[scope]
                     ):
                         value = self.context_manager.context._state[scope][var_name]
-                        self.warning(f"Found '{node.name}' with fallback method: {value}")
+                        self.warning(f"Fallback lookup for '{node.name}' = {value}")
                         return value
                 raise
                 
@@ -294,9 +292,9 @@ class ExpressionEvaluator(BaseExecutor):
                 error_msg = f"Undefined variable: {node.name}"
             else:
                 error_msg = (
-                    f"Variable '{node.name}' must include scope prefix (private.{node.name}, public.{node.name}, or system.{node.name})"
+                    f"Variable '{node.name}' must include scope prefix (private.{node.name}, public.{name}, or system.{name})"
                 )
-            self.debug(f"Raising error for '{node.name}': {error_msg}")
+            self.debug(f"Variable not found: {node.name}")
             raise create_state_error(error_msg, node)
 
     def evaluate_literal(self, node: Literal, context: Optional[Dict[str, Any]] = None) -> Any:

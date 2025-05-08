@@ -95,25 +95,27 @@ class StatementExecutor(BaseExecutor):
                 # Before assignment hook
                 if has_hooks(HookType.BEFORE_ASSIGNMENT):
                     from opendxa.dana.runtime.hooks import execute_hook
+
                     assignment_hook_context = {"statement": node, "interpreter": self, "context": self.context_manager.context}
                     execute_hook(HookType.BEFORE_ASSIGNMENT, assignment_hook_context)
-                
+
                 # For assignments, evaluate the value first
                 value = self.expression_evaluator.evaluate(node.value, context)
                 self.context_manager.set_variable(node.target.name, value)
                 result = value  # Store the value as the result
                 self.context_manager.set_variable("private.__last_value", value)  # Store for REPL output
                 self.debug(f"Set {node.target.name} = {value}")
-                
+
                 # After assignment hook
                 if has_hooks(HookType.AFTER_ASSIGNMENT):
                     from opendxa.dana.runtime.hooks import execute_hook
+
                     # Include the evaluated value in the hook context
                     assignment_hook_context = {
-                        "statement": node, 
-                        "interpreter": self, 
+                        "statement": node,
+                        "interpreter": self,
                         "context": self.context_manager.context,
-                        "value": value
+                        "value": value,
                     }
                     execute_hook(HookType.AFTER_ASSIGNMENT, assignment_hook_context)
             elif isinstance(node, LogStatement):
@@ -434,7 +436,7 @@ class StatementExecutor(BaseExecutor):
 
             # Return the result for REPL display
             return result
-            
+
         except Exception as e:
             # Provide a more helpful error message
             self.error(f"Failed to execute reason statement: {e}")

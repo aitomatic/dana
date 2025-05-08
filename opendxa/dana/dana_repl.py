@@ -18,6 +18,7 @@ from opendxa.common.utils.logging.dxa_logger import DXA_LOGGER
 from opendxa.dana.error_handling import ErrorContext, ErrorHandler
 from opendxa.dana.language.ast import LogLevel
 from opendxa.dana.runtime.repl import REPL
+from opendxa.dana.runtime.fixes.repl_fix import apply_repl_fix
 
 # Constants
 HISTORY_FILE = os.path.expanduser("~/.dana_history")
@@ -310,7 +311,13 @@ class DanaREPLApp(Loggable):
     def _setup_repl(self) -> REPL:
         """Set up the REPL instance."""
         llm = LLMResource()
-        return REPL(llm_resource=llm)
+        repl = REPL(llm_resource=llm)
+        
+        # Apply REPL fixes for variable handling
+        apply_repl_fix()
+        self.info("Applied REPL fixes for improved variable handling")
+        
+        return repl
 
     def _setup_prompt_session(self) -> PromptSession:
         """Set up the prompt session with history and completion."""

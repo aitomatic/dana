@@ -41,10 +41,13 @@ class ContextManager(Loggable):
         Raises:
             StateError: If the variable doesn't exist
         """
+        self.debug(f"Getting variable: {name}")
+        
         # First check if the variable is in the local context
         if local_context and name in local_context:
             value = local_context[name]
             if value is not None:
+                self.debug(f"Found '{name}' in local context: {value}")
                 return value
 
         # For dotted expressions in local context, check if the base is in context
@@ -62,70 +65,69 @@ class ContextManager(Loggable):
                     else:
                         raise AttributeError(f"Object {base} has no attribute '{part}'")
                 if obj is not None:
+                    self.debug(f"Found '{name}' through local context navigation: {obj}")
                     return obj
                 raise StateError(f"Variable not found: {name}")
-                
-        # Handle unscoped variables first (auto-scoping for tests)
-        # But for REPL, we require explicit scoping
-        if "." not in name:
-            # Special handling for test compatibility
-            any_found = False
-            any_non_none = False
+
+        # Try direct access to state - most reliable method for REPL
+        if "." in name:
+            parts = name.split(".")
+            scope = parts[0]
+            var_path = parts[1]
             
-            # Check if variable exists in any scope with any non-None values
+            if scope in ["private", "public", "system"] and scope in self.context._state:
+                # Special case for handling direct state access by key
+                if len(parts) == 2:  # Simple scoped variable
+                    # CRITICAL: Direct dictionary access to state
+                    # We need to access the raw dictionary for consistent behavior
+                    state_dict = self.context._state[scope]
+                    if var_path in state_dict:
+                        value = state_dict[var_path]
+                        self.debug(f"Found '{name}' through direct state dictionary access: {value}")
+                        return value
+                    else:
+                        # This is critical debug information
+                        self.debug(f"Variable '{var_path}' not found in {scope} scope. Available keys: {list(state_dict.keys())}")
+                        self.debug(f"State data type: {type(state_dict)}, scope type: {type(scope)}, var_path type: {type(var_path)}")
+                
+                # Try nested path
+                try:
+                    current = self.context._state[scope]
+                    for i, part in enumerate(parts[1:], 1):
+                        if part not in current:
+                            self.debug(f"Path component '{part}' not found in {'.'.join(parts[:i])}")
+                            raise StateError(f"Variable not found: {name}")
+                        current = current[part]
+                    self.debug(f"Found nested path '{name}' through direct state access: {current}")
+                    return current
+                except (KeyError, AttributeError) as e:
+                    self.debug(f"Error accessing nested path '{name}': {e}")
+                    raise StateError(f"Variable not found: {name}")
+        else:
+            # For unscoped variables, check all scopes (needed for tests)
             for scope in ["private", "public", "system"]:
                 if scope in self.context._state and name in self.context._state[scope]:
-                    any_found = True
-                    if self.context._state[scope][name] is not None:
-                        any_non_none = True
-            
-            # Now handle the specific test cases
-            if any_found:
-                if any_non_none:
-                    # Auto-scope to first non-None value (respecting precedence)
-                    for scope in ["private", "public", "system"]:
-                        if (scope in self.context._state and 
-                            name in self.context._state[scope] and 
-                            self.context._state[scope][name] is not None):
-                            return self.context._state[scope][name]
-                else:
-                    # Special case for test_rhs_auto_scoping_precedence
-                    # All values are None - this needs to raise an error
-                    raise StateError(f"Variable not found: {name}")
-            
-            # No values found in any scope
-            raise StateError(f"Variable not found: {name}")
+                    value = self.context._state[scope][name]
+                    self.warning(f"Auto-scoping variable '{name}' to '{scope}.{name}'. This is deprecated - use explicit scope.")
+                    self.debug(f"Found unscoped '{name}' in {scope} scope: {value}")
+                    return value
+
+        # For unscoped variables
+        if "." not in name:
+            # For REPL, suggest explicit scoping
+            raise StateError(f"Variable '{name}' must include scope prefix (private.{name}, public.{name}, or system.{name})")
         
-        # For dotted variable references (scope.var_name)
+        # For dotted variable references with invalid scope
         parts = name.split(".", 1)
-        scope, var_path = parts
+        scope = parts[0]
         
-        # If it's a scoped variable (private.x, public.x, system.x)
-        if scope in ["private", "public", "system"]:
-            # Handle multi-level paths (private.config.value)
-            if "." in var_path:
-                try:
-                    # Try using context's get first
-                    return self.context.get(name)
-                except Exception:
-                    # If that fails, try navigating manually
-                    current = self.context._state[scope]
-                    for part in var_path.split("."):
-                        current = current[part] if part in current else None
-                        if current is None:
-                            # Match the test expectation's error message format
-                            raise StateError(f"Variable not found: {name}")
-                    return current
-            else:
-                # Simple variable with scope
-                if scope in self.context._state and var_path in self.context._state[scope]:
-                    return self.context._state[scope][var_path]
-                # Match expected error message in tests
-                raise StateError(f"Variable not found: {name}")
-        else:
-            # For test compatibility, use this exact error message format
+        # For test compatibility, use this exact error message format for unknown scopes
+        if scope not in ["private", "public", "system"]:
             error_msg = f"Unknown scope: {scope}. Must be one of: private, public, system"
             raise StateError(error_msg)
+            
+        # Other variables not found
+        raise StateError(f"Variable not found: {name}")
 
     def set_variable(self, name: str, value: Any) -> None:
         """Set a variable value in the context.

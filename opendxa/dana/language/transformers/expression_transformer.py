@@ -59,22 +59,22 @@ class ExpressionTransformer(BaseTransformer):
         """Transform a comparison operator token into a string."""
         return items[0]
 
-    def EQ(self, _):
+    def EQ(self, _):  # noqa: N802
         return Token("COMP_OP", "==")
 
-    def NEQ(self, _):
+    def NEQ(self, _):  # noqa: N802
         return Token("COMP_OP", "!=")
 
-    def LT(self, _):
+    def LT(self, _):  # noqa: N802
         return Token("COMP_OP", "<")
 
-    def GT(self, _):
+    def GT(self, _):  # noqa: N802
         return Token("COMP_OP", ">")
 
-    def LTE(self, _):
+    def LTE(self, _):  # noqa: N802
         return Token("COMP_OP", "<=")
 
-    def GTE(self, _):
+    def GTE(self, _):  # noqa: N802
         return Token("COMP_OP", ">=")
 
     def sum_expr(self, items):
@@ -94,10 +94,10 @@ class ExpressionTransformer(BaseTransformer):
         """Transform an addition operator token into a string."""
         return items[0]
 
-    def PLUS(self, _):
+    def PLUS(self, _):  # noqa: N802
         return Token("ADD_OP", "+")
 
-    def MINUS(self, _):
+    def MINUS(self, _):  # noqa: N802
         return Token("ADD_OP", "-")
 
     def product(self, items):
@@ -117,24 +117,24 @@ class ExpressionTransformer(BaseTransformer):
         """Transform a multiplication operator token into a string."""
         return items[0]
 
-    def MULT(self, _):
+    def MULT(self, _):  # noqa: N802
         return Token("MUL_OP", "*")
 
-    def DIV(self, _):
+    def DIV(self, _):  # noqa: N802
         return Token("MUL_OP", "/")
 
-    def MOD(self, _):
+    def MOD(self, _):  # noqa: N802
         return Token("MUL_OP", "%")
 
     def atom(self, items):
         """Transform an atom rule into an Expression node."""
         return items[0]
 
-    def TRUE(self, _):
+    def TRUE(self, _):  # noqa: N802
         """Transform a TRUE token into a LiteralExpression with value True."""
         return LiteralExpression(literal=Literal(value=True))
 
-    def FALSE(self, _):
+    def FALSE(self, _):  # noqa: N802
         """Transform a FALSE token into a LiteralExpression with value False."""
         return LiteralExpression(literal=Literal(value=False))
 

@@ -81,6 +81,7 @@ target-version = ["py38"]
 line-length = 140
 target-version = "py38"
 
+[tool.ruff.lint]
 # Rule selection
 select = [
     "E",   # pycodestyle errors (critical issues)
@@ -88,7 +89,7 @@ select = [
     "I",   # isort (import sorting)
     "B",   # bugbear (likely bugs and design problems)
     "UP",  # pyupgrade (use modern Python features)
-    "N801", "N802", "N803", "N804",  # naming conventions for classes and functions only
+    "N801", "N803", "N804",  # naming conventions for classes and functions only
     "F821",  # undefined name
     "F822",  # undefined attribute
     "F841",  # unused variable
@@ -102,6 +103,7 @@ ignore = [
     "B008",  # Function call in default argument (common in web frameworks)
     "B010",  # Setting attributes in class body (common in web frameworks)
     "B904",  # Require raise Error(..) from ...
+    "N802",  # Function name should be lowercase (ignored for transformer functions)
 ]
 
 # Exclusion patterns
@@ -109,7 +111,8 @@ exclude = [
     "*.na",
     ".git",
     ".venv",
-    "opendxa.egg-info"
+    "opendxa.egg-info",
+    "opendxa/dana/language/dana_grammar_embedded.py"  # Exclude the embedded grammar file
 ]
 
 # Disabled linters (in favor of Ruff)
