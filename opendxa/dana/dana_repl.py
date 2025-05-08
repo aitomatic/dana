@@ -283,9 +283,9 @@ class CommandHandler(Loggable):
                 print(f"\n➡️ Test input: '{test_input}'")
                 try:
                     result = self.repl.execute(test_input)
-                    print(f"✅ Execution result: {result}")
+                    print(f"✅ Execution result:\n{result}")
                 except Exception as e:
-                    print(f"❌ Execution failed: {e}")
+                    print(f"❌ Execution failed:\n{e}")
         finally:
             self.repl.set_nlp_mode(original_mode)
 

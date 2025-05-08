@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.resource.llm_resource import LLMResource
+from opendxa.common.utils import Misc
 from opendxa.dana.error_handling import DanaError
 from opendxa.dana.language.ast import LogLevel
 from opendxa.dana.language.parser import GrammarParser
@@ -143,6 +144,15 @@ class REPL(Loggable):
         if initial_context:
             for key, value in initial_context.items():
                 self.context.set(key, value)
+
+        # Handle NLP mode if enabled
+        if self.get_nlp_mode() and self.transcoder:
+            self.debug("NLP mode enabled, translating input")
+            parse_result, translated_code = Misc.safe_asyncio_run(self.transcoder.to_dana, program_source)
+            if parse_result.errors:
+                raise DanaError(str(parse_result.errors[0]))
+            program_source = translated_code
+            print(f"Translated to: {program_source}")
 
         # Parse and execute the program
         try:
