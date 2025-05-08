@@ -255,7 +255,7 @@ class CommandHandler(Loggable):
 
     def _show_nlp_status(self) -> None:
         """Show NLP mode status."""
-        status = self.repl.is_nlp_mode_enabled()
+        status = self.repl.get_nlp_mode()
         print(f"NLP mode: {'✅ enabled' if status else '❌ disabled'}")
         has_transcoder = self.repl.transcoder is not None
         print(f"LLM resource: {'✅ available' if has_transcoder else '❌ not available'}")
@@ -271,7 +271,7 @@ class CommandHandler(Loggable):
         print("🧪 Testing NLP transcoder with common examples...")
         test_inputs = ["calculate 10 + 20", "add 42 and 17", "print hello world", "if x is greater than 10 then log success"]
 
-        original_mode = self.repl.is_nlp_mode_enabled()
+        original_mode = self.repl.get_nlp_mode()
         self.repl.set_nlp_mode(True)
 
         try:
@@ -301,7 +301,7 @@ class DanaREPLApp(Loggable):
     def _setup_repl(self) -> REPL:
         """Set up the REPL instance."""
         llm = LLMResource()
-        return REPL(llm_resource=llm, log_level=LogLevel.DEBUG)  # NLP mode is managed through context state
+        return REPL(llm_resource=llm, log_level=LogLevel.WARN)  # NLP mode is managed through context state
 
     def _setup_prompt_session(self) -> PromptSession:
         """Set up the prompt session with history and completion."""

@@ -19,13 +19,23 @@ def create_error_message(error_text: str, line: int, column: int, source_line: s
     Returns:
         A formatted error message string
     """
-    location_info = f"Syntax error at line {line}, column {column}"
+    # Clean up the error text to be more user-friendly
+    if "Unexpected token" in error_text:
+        # Extract the token information
+        parts = error_text.split("Unexpected token")
+        if len(parts) > 1:
+            token_info = parts[1].strip()
+            # Make the message more friendly
+            error_text = f"Unexpected input: {token_info}"
+
+    # Format the location info more clearly
+    location_info = f"Error at line {line}, column {column}"
     indicator = " " * column + "^"
 
     if adjustment:
-        return f"{location_info}: {error_text}\n{source_line}\n{indicator} {adjustment}"
+        return f"{location_info}\n{error_text}\n\n{source_line}\n{indicator} {adjustment}"
     else:
-        return f"{location_info}: {error_text}\n{source_line}\n{indicator}"
+        return f"{location_info}\n{error_text}\n\n{source_line}\n{indicator}"
 
 
 def handle_parse_error(e: Exception, program_text: str) -> Tuple[Program, List[ParseError]]:
@@ -58,7 +68,7 @@ def handle_parse_error(e: Exception, program_text: str) -> Tuple[Program, List[P
                 if comment_pos > equals_pos and (comment_pos - equals_pos <= 3):
                     column = equals_pos + 1
                     error_msg = create_error_message(
-                        "Missing expression after equals sign", e.line, column, error_line, "Missing expression after equals sign"
+                        "Missing expression after equals sign", e.line, column, error_line, "Missing expression here"
                     )
                     errors.append(ParseError(error_msg, e.line, error_line))
                     return empty_program, errors
@@ -72,7 +82,8 @@ def handle_parse_error(e: Exception, program_text: str) -> Tuple[Program, List[P
             expected = parts[1].strip()
             # Format expected tokens more cleanly
             expected = expected.replace("\n", ", ").replace("\t", "").replace("* ", "")
-            error_text = f"{main_error}\nExpected: {expected}"
+            # Make the message more user-friendly
+            error_text = f"Invalid syntax\nExpected: {expected}"
 
         # Generic error message
         error_msg = create_error_message(error_text, e.line, column, error_line)

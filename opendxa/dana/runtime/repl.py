@@ -74,6 +74,47 @@ class REPL(Loggable):
             self.error(f"Could not set NLP mode: {e}")
             raise DanaError(f"Failed to set NLP mode: {e}")
 
+    def _format_error_message(self, error_msg: str) -> str:
+        """Format an error message to be more user-friendly.
+
+        Args:
+            error_msg: The raw error message
+
+        Returns:
+            A formatted, user-friendly error message
+        """
+        # Remove DANA Error prefix if present
+        if "DANA Error" in error_msg:
+            error_msg = error_msg.split("DANA Error")[1].strip()
+            if error_msg.startswith("("):
+                error_msg = error_msg[error_msg.find(")") + 1 :].strip()
+
+        # Clean up the error message
+        lines = error_msg.split("\n")
+        formatted_lines = []
+
+        for line in lines:
+            # Skip empty lines
+            if not line.strip():
+                continue
+
+            # Clean up the line
+            line = line.strip()
+
+            # Skip lines with just carets or arrows
+            if line.strip() in ["^", ">", "A"]:
+                continue
+
+            # Clean up expected tokens
+            if "Expected:" in line:
+                tokens = line.split("Expected:")[1].strip()
+                tokens = tokens.replace("LPAR", "(").replace("RPAR", ")").replace("EQUAL", "=")
+                line = f"Expected: {tokens}"
+
+            formatted_lines.append(line)
+
+        return "\n".join(formatted_lines)
+
     async def execute(self, program_source: str, initial_context: Optional[Dict[str, Any]] = None) -> Any:
         """Execute a DANA program and return the result value."""
         # Set initial context if provided
@@ -96,15 +137,37 @@ class REPL(Loggable):
                 raise DanaError("NLP mode is enabled but no LLM resource is available")
             try:
                 parse_result, _ = await self.transcoder.to_dana(program_source)
-            except TranscoderError:
-                raise
+            except TranscoderError as e:
+                # Provide a more user-friendly error message for natural language input
+                if "Generated invalid DANA code" in str(e):
+                    raise DanaError("I couldn't understand that. Please try rephrasing your request or use DANA syntax directly.")
+                else:
+                    raise DanaError(f"Error processing your request: {str(e)}")
         else:
             # Direct parsing when NLP mode is off
             parse_result = parse(program_source)
 
         # Execute the parsed program
         if not parse_result.is_valid:
-            raise DanaError(f"Invalid program: {parse_result.errors}")
+            # Clean up error messages for better readability
+            error_msg = str(parse_result.errors)
+            if "ParseError" in error_msg:
+                # Extract just the error message without the ParseError wrapper
+                error_parts = error_msg.split("ParseError(")
+                if len(error_parts) > 1:
+                    # Get everything between the first ( and the last )
+                    error_content = error_parts[1]
+                    # Find the last closing parenthesis
+                    last_paren = error_content.rfind(")")
+                    if last_paren != -1:
+                        error_msg = error_content[:last_paren]
+                        # Remove quotes if present
+                        if error_msg.startswith('"') and error_msg.endswith('"'):
+                            error_msg = error_msg[1:-1]
+
+            # Format the error message to be more user-friendly
+            error_msg = self._format_error_message(error_msg)
+            raise DanaError(error_msg)
 
         try:
             self.interpreter.execute_program(parse_result)
@@ -120,6 +183,6 @@ class REPL(Loggable):
     def set_log_level(self, level: LogLevel) -> None:
         """Set the logging level."""
         # Set level for all loggers under opendxa.dana
-        DXA_LOGGER.setLevel(LEVEL_MAP.get(level, logging.INFO), scope="opendxa.dana")
+        DXA_LOGGER.setLevel(LEVEL_MAP.get(level, logging.WARN), scope="opendxa.dana")
         # Update interpreter's log level
         self.interpreter.set_log_level(level)

@@ -1,14 +1,16 @@
 """Test script for DANA REPL's NLP mode functionality."""
 
 import asyncio
-from opendxa.dana.runtime.repl import REPL
-from opendxa.dana.runtime.interpreter import LogLevel
+
 from opendxa.common.resource.llm_resource import LLMResource
+from opendxa.dana.runtime.interpreter import LogLevel
+from opendxa.dana.runtime.repl import REPL
+
 
 async def test_nlp_mode():
     """Test the NLP mode functionality in the REPL."""
     print("\n=== Testing DANA REPL NLP Mode ===\n")
-    
+
     # Mock LLM resource for testing
     # In a real scenario, this would be a real LLM resource
     # But for testing, we'll just create a minimally functional mock
@@ -16,19 +18,19 @@ async def test_nlp_mode():
         async def initialize(self):
             self.model = "mock-model"
             return True
-            
+
         async def generate(self, prompt, **kwargs):
             # For testing, return a simple DANA code snippet
             # that sets a result variable
             return f"private.result = 42; // Transcoded from: {prompt}"
-            
+
     # Create a mock LLM resource
     llm = MockLLMResource(name="test_llm")
     await llm.initialize()
-    
+
     # Initialize REPL with NLP mode disabled initially
     repl = REPL(llm_resource=llm, log_level=LogLevel.INFO, nlp_mode=False)
-    
+
     # Test 1: NLP mode disabled
     print("\nTest 1: NLP mode disabled - natural language input should fail")
     try:
@@ -36,12 +38,12 @@ async def test_nlp_mode():
         print("❌ Test 1 failed - should have raised an error")
     except Exception as e:
         print(f"✅ Test 1 passed - error was raised as expected: {e}")
-    
+
     # Test 2: Enable NLP mode
     print("\nTest 2: Enable NLP mode")
     repl.set_nlp_mode(True)
-    print(f"NLP mode is now: {repl.is_nlp_mode_enabled()}")
-    
+    print(f"NLP mode is now: {repl.get_nlp_mode()}")
+
     # Test 3: Try natural language with NLP mode enabled
     print("\nTest 3: Natural language with NLP mode enabled")
     try:
@@ -54,7 +56,7 @@ async def test_nlp_mode():
             print(f"❌ Test 3 failed - unexpected result: {result}")
     except Exception as e:
         print(f"❌ Test 3 failed - error: {e}")
-    
+
     # Test 4: Direct DANA code still works with NLP mode
     print("\nTest 4: Direct DANA code with NLP mode enabled")
     try:
@@ -66,19 +68,20 @@ async def test_nlp_mode():
             print(f"❌ Test 4 failed - unexpected result: {result}")
     except Exception as e:
         print(f"❌ Test 4 failed - error: {e}")
-        
+
     # Test 5: Disable NLP mode again
     print("\nTest 5: Disable NLP mode")
     repl.set_nlp_mode(False)
-    print(f"NLP mode is now: {repl.is_nlp_mode_enabled()}")
-    
+    print(f"NLP mode is now: {repl.get_nlp_mode()}")
+
     # Print final context values
     print("\nFinal context values:")
     for key, value in repl.context._state["private"].items():
         if not key.startswith("__"):  # Skip internal variables
             print(f"  private.{key} = {value}")
-            
+
     print("\n=== Tests complete ===")
+
 
 if __name__ == "__main__":
     asyncio.run(test_nlp_mode())
