@@ -4,9 +4,11 @@ This module provides the main Interpreter implementation for executing DANA prog
 It uses a modular architecture with specialized components for different aspects of execution.
 """
 
+import logging
 from typing import Any, Dict, Optional
 
 from opendxa.common.mixins.loggable import Loggable
+from opendxa.common.utils.logging.dxa_logger import DXA_LOGGER
 from opendxa.dana.exceptions import InterpretError, RuntimeError
 from opendxa.dana.language.ast import LogLevel, Program
 from opendxa.dana.language.parser import ParseResult
@@ -17,6 +19,9 @@ from opendxa.dana.runtime.executor.expression_evaluator import ExpressionEvaluat
 from opendxa.dana.runtime.executor.llm_integration import LLMIntegration
 from opendxa.dana.runtime.executor.statement_executor import StatementExecutor
 from opendxa.dana.runtime.hooks import HookType, execute_hook, has_hooks
+
+# Map DANA LogLevel to Python logging levels
+LEVEL_MAP = {LogLevel.DEBUG: logging.DEBUG, LogLevel.INFO: logging.INFO, LogLevel.WARN: logging.WARNING, LogLevel.ERROR: logging.ERROR}
 
 # Re-export for backward compatibility
 __all__ = ["Interpreter", "create_interpreter", "format_error_location"]
@@ -49,7 +54,6 @@ class Interpreter(Loggable):
 
         # Initialize system state
         self.context.set("system.id", self.statement_executor._execution_id)
-        self.context.set("system.log_level", self.statement_executor._log_level.value)
 
     def execute_program(self, parse_result: ParseResult) -> None:
         """Execute a DANA program.
@@ -95,9 +99,6 @@ class Interpreter(Loggable):
             self.debug("Program execution completed successfully")
 
         except Exception as e:
-            # Set log level to ERROR for any exceptions
-            self.set_log_level(LogLevel.ERROR)
-
             # Log the error
             self.error(f"Program execution failed: {e}")
 
@@ -108,20 +109,6 @@ class Interpreter(Loggable):
                 execute_hook(HookType.ON_ERROR, error_context)
 
             raise e
-
-    def set_log_level(self, level: LogLevel) -> None:
-        """Set the log level for all components.
-
-        Args:
-            level: The log level to set
-        """
-        # Update the log level in all components through their BaseExecutor parent
-        self.statement_executor.set_log_level(level)
-        self.expression_evaluator.set_log_level(level)
-        self.llm_integration.set_log_level(level)
-
-        # Update in context for backward compatibility
-        self.context.set("system.log_level", level.value)
 
     def evaluate_expression(self, node: Any, context: Optional[Dict[str, Any]] = None) -> Any:
         """Evaluate an expression node.
@@ -205,6 +192,16 @@ class Interpreter(Loggable):
         else:
             # Fallback to asynchronous version
             return self.statement_executor.execute_reason_statement(node, context)
+
+    def set_log_level(self, level: LogLevel) -> None:
+        """Set the log level for the interpreter.
+
+        Args:
+            level: The log level to set
+        """
+        DXA_LOGGER.setLevel(LEVEL_MAP[level], scope="opendxa.dana")
+        self.context.set("system.log_level", level.value)
+        self.debug(f"Set log level to {level.value}")
 
 
 # Factory function for creating interpreters

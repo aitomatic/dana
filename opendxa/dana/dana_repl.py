@@ -1,6 +1,7 @@
 """DANA REPL: Interactive command-line interface for DANA."""
 
 import asyncio
+import logging
 import os
 from typing import List
 
@@ -13,13 +14,17 @@ from prompt_toolkit.keys import Keys
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.resource.llm_resource import LLMResource
-from opendxa.dana.exceptions import DanaError
-from opendxa.dana.runtime.interpreter import LogLevel
+from opendxa.common.utils.logging.dxa_logger import DXA_LOGGER
+from opendxa.dana.error_handling import ErrorContext, ErrorHandler
+from opendxa.dana.language.ast import LogLevel
 from opendxa.dana.runtime.repl import REPL
 
 # Constants
 HISTORY_FILE = os.path.expanduser("~/.dana_history")
 MULTILINE_PROMPT = ".... "
+
+# Map DANA LogLevel to Python logging levels
+LEVEL_MAP = {LogLevel.DEBUG: logging.DEBUG, LogLevel.INFO: logging.INFO, LogLevel.WARN: logging.WARNING, LogLevel.ERROR: logging.ERROR}
 
 
 class InputState(Loggable):
@@ -289,9 +294,13 @@ class CommandHandler(Loggable):
 class DanaREPLApp(Loggable):
     """Main DANA REPL application."""
 
-    def __init__(self):
+    def __init__(self, log_level: LogLevel = LogLevel.WARN):
         """Initialize the REPL application."""
         super().__init__()
+
+        # Set system-wide log level once, at the entry point
+        DXA_LOGGER.setLevel(LEVEL_MAP.get(log_level, logging.WARN), scope="opendxa.dana")
+
         self.input_checker = InputCompleteChecker()
         self.input_state = InputState()
         self.repl = self._setup_repl()
@@ -301,7 +310,7 @@ class DanaREPLApp(Loggable):
     def _setup_repl(self) -> REPL:
         """Set up the REPL instance."""
         llm = LLMResource()
-        return REPL(llm_resource=llm, log_level=LogLevel.WARN)  # NLP mode is managed through context state
+        return REPL(llm_resource=llm)
 
     def _setup_prompt_session(self) -> PromptSession:
         """Set up the prompt session with history and completion."""
@@ -352,7 +361,9 @@ class DanaREPLApp(Loggable):
             enable_history_search=True,
             complete_while_typing=True,
             complete_in_thread=True,
-            mouse_support=True,  # Enable mouse support for better interaction
+            mouse_support=False,  # Disable mouse support to prevent terminal issues
+            enable_system_prompt=True,  # Enable system prompt for better terminal compatibility
+            enable_suspend=True,  # Allow suspending the REPL with Ctrl+Z
         )
 
     def _show_welcome(self) -> None:
@@ -421,8 +432,10 @@ class DanaREPLApp(Loggable):
                     result = await self.repl.execute(program)
                     if result is not None:
                         print(f"Result: {result}")
-                except DanaError as e:
-                    print(f"Error: {e}")
+                except Exception as e:
+                    context = ErrorContext("program execution")
+                    error = ErrorHandler.handle_error(e, context)
+                    print(f"Error: {error.message}")
 
             except KeyboardInterrupt:
                 print("\nOperation cancelled")
@@ -430,7 +443,9 @@ class DanaREPLApp(Loggable):
             except EOFError:
                 break
             except Exception as e:
-                print(f"Unexpected error: {e}")
+                context = ErrorContext("REPL operation")
+                error = ErrorHandler.handle_error(e, context)
+                print(f"Unexpected error: {error.message}")
                 self.input_state.reset()
 
 

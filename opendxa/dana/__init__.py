@@ -1,11 +1,14 @@
 """DANA: Domain-Aware Neurosymbolic Architecture"""
 
-from opendxa.dana.exceptions import (
+from opendxa.dana.error_handling import (
     DanaError,
+    ErrorContext,
+    ErrorHandler,
     InterpretError,
     ParseError,
     RuntimeError,
     StateError,
+    ValidationError,
 )
 from opendxa.dana.language.ast import (
     Assignment,
@@ -23,12 +26,15 @@ from opendxa.dana.language.ast import (
 from opendxa.dana.runtime import ExecutionStatus, Interpreter, ResourceRegistry, RuntimeContext
 
 __all__ = [
-    # Exceptions
+    # Error Handling
     "DanaError",
+    "ErrorContext",
+    "ErrorHandler",
     "ParseError",
     "InterpretError",
     "RuntimeError",
     "StateError",
+    "ValidationError",
     # Runtime
     "RuntimeContext",
     "ExecutionStatus",

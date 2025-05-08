@@ -1,19 +1,14 @@
 """DANA REPL: Read-Eval-Print Loop for executing and managing DANA programs."""
 
-import logging
 from typing import Any, Dict, Optional
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.resource.llm_resource import LLMResource
-from opendxa.common.utils.logging.dxa_logger import DXA_LOGGER
-from opendxa.dana.exceptions import DanaError, TranscoderError
+from opendxa.dana.error_handling import DanaError, ErrorContext, ErrorHandler
 from opendxa.dana.language.parser import parse
 from opendxa.dana.runtime.context import RuntimeContext
-from opendxa.dana.runtime.interpreter import Interpreter, LogLevel
+from opendxa.dana.runtime.interpreter import Interpreter
 from opendxa.dana.transcoder.transcoder import Transcoder
-
-# Map DANA LogLevel to Python logging levels
-LEVEL_MAP = {LogLevel.DEBUG: logging.DEBUG, LogLevel.INFO: logging.INFO, LogLevel.WARN: logging.WARNING, LogLevel.ERROR: logging.ERROR}
 
 
 class REPL(Loggable):
@@ -23,14 +18,10 @@ class REPL(Loggable):
         self,
         llm_resource: Optional[LLMResource] = None,
         context: Optional[RuntimeContext] = None,
-        log_level: LogLevel = LogLevel.INFO,
     ):
         """Initialize the DANA REPL."""
         # Initialize Loggable
         super().__init__()
-
-        # Set up logging
-        DXA_LOGGER.setLevel(LEVEL_MAP.get(log_level, logging.INFO), scope="opendxa.dana")
 
         # Set up context
         self.context = context or RuntimeContext()
@@ -52,7 +43,6 @@ class REPL(Loggable):
 
         # Set up interpreter
         self.interpreter = Interpreter(self.context)
-        self.interpreter.set_log_level(log_level)
 
     def get_nlp_mode(self) -> bool:
         """Get the current NLP mode state."""
@@ -128,7 +118,10 @@ class REPL(Loggable):
             for scope in ["private", "public", "system"]:
                 try:
                     return self.context.get(f"{scope}.{words[0]}")
-                except Exception:
+                except Exception as e:
+                    context = ErrorContext("variable lookup", None)
+                    error = ErrorHandler.handle_error(e, context)
+                    self.error(f"Variable lookup failed: {error.message}")
                     continue
 
         # If NLP mode is on, use transcoder
@@ -137,19 +130,24 @@ class REPL(Loggable):
                 raise DanaError("NLP mode is enabled but no LLM resource is available")
             try:
                 parse_result, _ = await self.transcoder.to_dana(program_source)
-            except TranscoderError as e:
-                # Provide a more user-friendly error message for natural language input
+            except Exception as e:
+                context = ErrorContext("natural language processing")
+                error = ErrorHandler.handle_error(e, context)
                 if "Generated invalid DANA code" in str(e):
                     raise DanaError("I couldn't understand that. Please try rephrasing your request or use DANA syntax directly.")
                 else:
-                    raise DanaError(f"Error processing your request: {str(e)}")
+                    raise error
         else:
             # Direct parsing when NLP mode is off
-            parse_result = parse(program_source)
+            try:
+                parse_result = parse(program_source)
+            except Exception as e:
+                context = ErrorContext("program parsing")
+                raise ErrorHandler.handle_error(e, context)
 
         # Execute the parsed program
         if not parse_result.is_valid:
-            # Clean up error messages for better readability
+            context = ErrorContext("program validation")
             error_msg = str(parse_result.errors)
             if "ParseError" in error_msg:
                 # Extract just the error message without the ParseError wrapper
@@ -165,24 +163,16 @@ class REPL(Loggable):
                         if error_msg.startswith('"') and error_msg.endswith('"'):
                             error_msg = error_msg[1:-1]
 
-            # Format the error message to be more user-friendly
-            error_msg = self._format_error_message(error_msg)
-            raise DanaError(error_msg)
+            raise DanaError(error_msg, context=context)
 
         try:
             self.interpreter.execute_program(parse_result)
             # Return the last value in the context if available
             return self.context.get("private.__last_value") if "private.__last_value" in self.context._state["private"] else None
         except Exception as e:
-            raise DanaError(f"Execution failed: {e}")
+            context = ErrorContext("program execution")
+            raise ErrorHandler.handle_error(e, context)
 
     def get_context(self) -> RuntimeContext:
         """Get the current runtime context."""
         return self.context
-
-    def set_log_level(self, level: LogLevel) -> None:
-        """Set the logging level."""
-        # Set level for all loggers under opendxa.dana
-        DXA_LOGGER.setLevel(LEVEL_MAP.get(level, logging.WARN), scope="opendxa.dana")
-        # Update interpreter's log level
-        self.interpreter.set_log_level(level)
