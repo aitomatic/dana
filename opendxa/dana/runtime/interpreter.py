@@ -86,7 +86,8 @@ class Interpreter(Loggable):
 
                 # Handle statement execution with better error messages
                 try:
-                    last_result = self.statement_executor.execute(statement)
+                    result = self.statement_executor.execute(statement)
+                    last_result = result
                 except Exception as e:
                     if "Undefined variable" in str(e) or "Variable" in str(e):
                         # Use consistent error message format
@@ -178,7 +179,7 @@ class Interpreter(Loggable):
 
         # Handle expressions
         elif isinstance(node, (BinaryExpression, LiteralExpression, Identifier, Literal, FStringExpression)):
-            return self.expression_evaluator.evaluate(node, context)
+            return self.evaluate_expression(node, context)
 
         # Handle function calls
         elif isinstance(node, FunctionCall):
@@ -193,8 +194,6 @@ class Interpreter(Loggable):
         # Unknown node type
         else:
             raise RuntimeError(f"Unsupported node type: {type(node).__name__}")
-
-    # Backward compatibility method for REPL functionality
 
     def _visit_reason_statement_sync(self, node: Any, context: Optional[Dict[str, Any]] = None) -> Any:
         """Method for synchronously visiting reason statements.
@@ -211,7 +210,7 @@ class Interpreter(Loggable):
         if hasattr(self.statement_executor, "_execute_reason_statement_sync"):
             return self.statement_executor._execute_reason_statement_sync(node, context)
         else:
-            # Fallback to asynchronous version
+            # Fallback to synchronous version
             return self.statement_executor.execute_reason_statement(node, context)
 
 

@@ -217,6 +217,23 @@ class LLMResource(BaseResource):
         self.config["model"] = value  # Keep config in sync
         self.log_info(f"LLM model set to: {self._model}")
 
+    def query_sync(self, request: BaseRequest) -> BaseResponse:
+        """Query the LLM synchronously.
+
+        Args:
+            request: The request containing:
+                - messages: List of message dictionaries
+                - available_resources: List of available resources
+                - max_tokens: Optional maximum tokens to generate
+                - temperature: Optional temperature for generation
+
+        Returns:
+            BaseResponse containing:
+                - content: The assistant's message
+                - usage: Token usage statistics
+        """
+        return Misc.safe_asyncio_run(self.query, request)
+
     async def query(self, request: BaseRequest) -> BaseResponse:
         """Query the LLM.
 

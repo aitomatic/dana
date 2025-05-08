@@ -282,7 +282,7 @@ class CommandHandler(Loggable):
             for test_input in test_inputs:
                 print(f"\n➡️ Test input: '{test_input}'")
                 try:
-                    result = await self.repl.execute(test_input)
+                    result = self.repl.execute(test_input)
                     print(f"✅ Execution result: {result}")
                 except Exception as e:
                     print(f"❌ Execution failed: {e}")
@@ -430,7 +430,7 @@ class DanaREPLApp(Loggable):
 
                 try:
                     self.debug(f"Executing program: {program}")
-                    result = await self.repl.execute(program)
+                    result = self.repl.execute(program)
                     # Only print the result if it's not None
                     if result is not None:
                         print(result)

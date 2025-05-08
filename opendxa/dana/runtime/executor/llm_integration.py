@@ -4,14 +4,14 @@ This module provides the LLMIntegration class, which is responsible for
 handling interactions with Large Language Models during execution.
 """
 
-import asyncio
 import json
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union, cast
 
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.common.types import BaseRequest
 from opendxa.common.utils.misc import Misc
 from opendxa.dana.exceptions import RuntimeError, StateError
+from opendxa.dana.language.ast import ReasonStatement
 from opendxa.dana.runtime.executor.base_executor import BaseExecutor
 from opendxa.dana.runtime.executor.context_manager import ContextManager
 
@@ -35,47 +35,7 @@ class LLMIntegration(BaseExecutor):
         super().__init__()
         self.context_manager = context_manager
 
-    async def perform_reasoning(
-        self, prompt: str, context_vars: Optional[List[str]] = None, options: Optional[Dict[str, Any]] = None
-    ) -> Any:
-        """Execute a reasoning operation by calling the LLM.
-
-        Args:
-            prompt: The reasoning prompt to send to the LLM
-            context_vars: Optional list of variable names to include as context
-            options: Optional parameters for the LLM call (temperature, format, etc.)
-
-        Returns:
-            The reasoning result from the LLM
-
-        Raises:
-            RuntimeError: If the LLM resource is not available or if the query fails
-        """
-        # Get or initialize the LLM resource
-        llm = self._get_llm_resource()
-
-        # Log what's happening
-        self.debug(f"Starting LLM reasoning with prompt: {prompt[:50]}{'...' if len(prompt) > 50 else ''}")
-
-        # Prepare the context data
-        context_data = self._prepare_context_data(context_vars)
-
-        # Build the combined prompt with context
-        enriched_prompt = self._build_enriched_prompt(prompt, context_data)
-
-        # Prepare the system message
-        system_message = self._build_system_message(options)
-
-        # Set up the messages
-        messages = [{"role": "system", "content": system_message}, {"role": "user", "content": enriched_prompt}]
-
-        # Prepare LLM parameters
-        params = self._prepare_llm_params(messages, options)
-
-        # Make the LLM call
-        return await self._execute_llm_query(llm, params, options)
-
-    def _get_llm_resource(self) -> Any:
+    def _get_llm_resource(self) -> LLMResource:
         """Get or initialize the LLM resource.
 
         Returns:
@@ -97,7 +57,7 @@ class LLMIntegration(BaseExecutor):
                     llm = LLMResource(name="reason_llm")
                     self.context_manager.register_resource("reason_llm", llm)
                     self.info("reason_llm resource registered")
-                    return llm
+                    return cast(LLMResource, llm)
         except Exception as e:
             error_msg = (
                 "No LLM resource found and could not create one. "
@@ -186,58 +146,6 @@ class LLMIntegration(BaseExecutor):
 
         return params
 
-    async def _execute_llm_query(self, llm: Any, params: Dict[str, Any], options: Optional[Dict[str, Any]]) -> Any:
-        """Execute the LLM query.
-
-        Args:
-            llm: The LLM resource to use
-            params: The parameters for the query
-            options: Optional parameters that may affect result processing
-
-        Returns:
-            The result from the LLM
-
-        Raises:
-            RuntimeError: If the query fails
-        """
-        try:
-            # Initialize the LLM if needed
-            try:
-                await llm.initialize()
-            except Exception:
-                # Ignore initialization errors (it might already be initialized)
-                pass
-
-            # Log the start of the query
-            self.info("Starting LLM query - this may take some time...")
-
-            # Make the asynchronous LLM query
-            response = await llm.query(BaseRequest(arguments=params))
-
-            if not response.success:
-                raise RuntimeError(f"LLM reasoning failed: {response.error}")
-
-            # Extract the content from the response
-            content = response.content
-
-            # Process the response based on its structure
-            result = self._process_llm_response(content)
-
-            # Handle format conversion if needed
-            format_type = options.get("format", "text") if options else "text"
-            if format_type == "json" and isinstance(result, str):
-                try:
-                    # Try to parse the result as JSON
-                    result = json.loads(result)
-                except json.JSONDecodeError:
-                    self.warning(f"Warning: Could not parse LLM response as JSON: {result[:100]}")
-
-            return result
-
-        except Exception as e:
-            self.error(f"Error during LLM reasoning: {str(e)}")
-            raise RuntimeError(f"Error during reasoning: {str(e)}") from e
-
     def _process_llm_response(self, content: Any) -> Any:
         """Process the raw LLM response to extract the result.
 
@@ -262,15 +170,12 @@ class LLMIntegration(BaseExecutor):
         return str(content)
 
     def execute_direct_synchronous_reasoning(
-        self, prompt: str, context_vars: Optional[List[str]] = None, options: Optional[Dict[str, Any]] = None
+        self, prompt: Union[str, ReasonStatement], context_vars: Optional[List[str]] = None, options: Optional[Dict[str, Any]] = None
     ) -> Any:
         """Execute a synchronous reasoning operation.
 
-        This method is a wrapper around the asynchronous perform_reasoning method
-        that runs it synchronously for environments that don't support async/await.
-
         Args:
-            prompt: The reasoning prompt to send to the LLM
+            prompt: The reasoning prompt to send to the LLM, either as a string or ReasonStatement
             context_vars: Optional list of variable names to include as context
             options: Optional parameters for the LLM call
 
@@ -281,24 +186,62 @@ class LLMIntegration(BaseExecutor):
             RuntimeError: If the LLM resource is not available or if the query fails
         """
         try:
-            # Import event loop functions for manual async handling
-            from asyncio import new_event_loop, set_event_loop
+            # Handle both string prompts and ReasonStatement objects
+            if isinstance(prompt, ReasonStatement):
+                # Extract prompt and options from ReasonStatement
+                prompt_str = str(prompt.prompt)
+                if prompt.context:
+                    context_vars = [ident.name for ident in prompt.context]
+                if prompt.options:
+                    options = prompt.options
+            else:
+                prompt_str = str(prompt)
 
-            # Create a new event loop for this operation
-            loop = new_event_loop()
-            set_event_loop(loop)
+            # Get the LLM resource
+            llm_resource = self._get_llm_resource()
+            if not llm_resource:
+                raise RuntimeError("No LLM resource available for reasoning")
 
-            # Set a longer timeout for the event loop (2 minutes)
-            loop.slow_callback_duration = 120.0  # seconds
+            # Log what's happening
+            self.debug(f"Starting LLM reasoning with prompt: {prompt_str[:50]}{'...' if len(prompt_str) > 50 else ''}")
 
-            # Run the query with a large timeout
-            result = loop.run_until_complete(asyncio.wait_for(self.perform_reasoning(prompt, context_vars, options), timeout=120))
+            # Prepare the context data
+            context_data = self._prepare_context_data(context_vars)
 
-            # Clean up resources
-            loop.close()
+            # Build the combined prompt with context
+            enriched_prompt = self._build_enriched_prompt(prompt_str, context_data)
+
+            # Prepare the system message
+            system_message = self._build_system_message(options)
+
+            # Set up the messages
+            messages = [{"role": "system", "content": system_message}, {"role": "user", "content": enriched_prompt}]
+
+            # Prepare LLM parameters
+            params = self._prepare_llm_params(messages, options)
+
+            # Create the request
+            request = BaseRequest(arguments=params)
+
+            # Execute the reasoning synchronously
+            response = llm_resource.query_sync(request)
+            if not response.success:
+                raise RuntimeError(f"LLM reasoning failed: {response.error}")
+
+            # Process the response based on its structure
+            result = self._process_llm_response(response.content)
+
+            # Handle format conversion if needed
+            format_type = options.get("format", "text") if options else "text"
+            if format_type == "json" and isinstance(result, str):
+                try:
+                    # Try to parse the result as JSON
+                    result = json.loads(result)
+                except json.JSONDecodeError:
+                    self.warning(f"Warning: Could not parse LLM response as JSON: {result[:100]}")
 
             return result
 
         except Exception as e:
-            self.error(f"Error in synchronous LLM query: {e}")
+            self.error(f"Error during LLM reasoning: {str(e)}")
             raise RuntimeError(f"Error during reasoning: {str(e)}") from e

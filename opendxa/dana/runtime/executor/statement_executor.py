@@ -138,7 +138,7 @@ class StatementExecutor(BaseExecutor):
                 # Loops don't have a return value
                 self.context_manager.set_variable("private.__last_value", None)
             elif isinstance(node, ReasonStatement):
-                result = self.execute_reason_statement(node, context)
+                result = self._execute_reason_statement_sync(node, context)
                 # The result is already stored in __last_value inside execute_reason_statement
             elif isinstance(node, FunctionCall):
                 result = self.execute_function_call(node, context)

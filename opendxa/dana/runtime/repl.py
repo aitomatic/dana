@@ -127,7 +127,18 @@ class REPL(Loggable):
         return "\n".join(formatted_lines)
 
     def execute(self, program_source: str, initial_context: Optional[Dict[str, Any]] = None) -> Any:
-        """Execute a DANA program and return the result value."""
+        """Execute a DANA program and return the result value.
+
+        Args:
+            program_source: The DANA program source code to execute
+            initial_context: Optional initial context to set before execution
+
+        Returns:
+            The result of executing the program
+
+        Raises:
+            DanaError: If the program execution fails
+        """
         # Set initial context if provided
         if initial_context:
             for key, value in initial_context.items():
@@ -135,11 +146,14 @@ class REPL(Loggable):
 
         # Parse and execute the program
         try:
+            # Parse the program (synchronous operation)
             parse_result = self.parser.parse(program_source)
             if parse_result.errors:
                 raise DanaError(str(parse_result.errors[0]))
 
-            return self.interpreter.execute_program(parse_result)
+            # Execute the program (synchronous operation)
+            result = self.interpreter.execute_program(parse_result)
+            return result
         except Exception as e:
             raise DanaError(str(e))
 
