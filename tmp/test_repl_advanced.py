@@ -15,11 +15,11 @@ async def test_repl_integration():
     """Test the integration of the REPL fix more directly."""
     from opendxa.dana.runtime.repl import REPL
     from opendxa.dana.runtime.fixes.repl_fix import apply_repl_fix
-    
+
     # Create a REPL with the fix applied
     repl = REPL()
     apply_repl_fix()
-    
+
     # Test cases
     test_cases = [
         # Basic assignment
@@ -37,7 +37,7 @@ async def test_repl_integration():
         # Complex expression
         ("private.result = private.a + private.b", 13),
     ]
-    
+
     # Run the test cases
     print("\n===== Testing REPL with Variable Reference Fix =====\n")
     for i, (code, expected) in enumerate(test_cases, 1):
@@ -50,7 +50,7 @@ async def test_repl_integration():
         except Exception as e:
             print(f"Test {i}: {code}")
             print(f"   Error: {e} ❌\n")
-    
+
     # Test compound operations (should be supported in the future)
     print("\n===== Testing Advanced Operations =====\n")
     compound_tests = [
@@ -60,7 +60,7 @@ async def test_repl_integration():
         "private.y = 10",
         "private.z = private.x + private.y",     # Variable combination
     ]
-    
+
     for i, code in enumerate(compound_tests, 1):
         try:
             result = await repl.execute(code)
@@ -69,7 +69,7 @@ async def test_repl_integration():
         except Exception as e:
             print(f"Advanced Test {i}: {code}")
             print(f"   Error: {e} ❌")
-    
+
     # Show final state
     print("\nFinal State:")
     for scope, values in repl.context._state.items():
@@ -78,7 +78,7 @@ async def test_repl_integration():
             for key, value in values.items():
                 if not key.startswith('__'):  # Skip internal variables
                     print(f"   {key} = {value}")
-    
+
     return True
 
 if __name__ == "__main__":

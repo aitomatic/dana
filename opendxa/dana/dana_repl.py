@@ -312,11 +312,11 @@ class DanaREPLApp(Loggable):
         """Set up the REPL instance."""
         llm = LLMResource()
         repl = REPL(llm_resource=llm)
-        
+
         # Apply REPL fixes for variable handling
         apply_repl_fix()
         self.info("Applied REPL fixes for improved variable handling")
-        
+
         return repl
 
     def _setup_prompt_session(self) -> PromptSession:

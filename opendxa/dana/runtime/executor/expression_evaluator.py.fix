@@ -94,15 +94,15 @@ class ExpressionEvaluator(BaseExecutor):
         # Special handling for variable references in binary expressions
         try:
             self.debug(f"Evaluating binary expression with operator: {node.operator}")
-            
+
             # First try most direct approach for left operand
             if isinstance(node.left, Identifier) and "." in node.left.name:
                 parts = node.left.name.split(".", 1)
                 scope, var_name = parts
-                
+
                 # For REPL usage with scoped variables, try direct state access first
                 if (
-                    scope in ["private", "public", "system"] 
+                    scope in ["private", "public", "system"]
                     and scope in self.context_manager.context._state
                     and var_name in self.context_manager.context._state[scope]
                 ):
@@ -135,10 +135,10 @@ class ExpressionEvaluator(BaseExecutor):
             if isinstance(node.right, Identifier) and "." in node.right.name:
                 parts = node.right.name.split(".", 1)
                 scope, var_name = parts
-                
+
                 # For REPL usage, try direct state access first
                 if (
-                    scope in ["private", "public", "system"] 
+                    scope in ["private", "public", "system"]
                     and scope in self.context_manager.context._state
                     and var_name in self.context_manager.context._state[scope]
                 ):
@@ -250,12 +250,12 @@ class ExpressionEvaluator(BaseExecutor):
         """
         try:
             self.debug(f"Evaluating identifier: {node.name}")
-            
+
             # Direct dictionary access for scoped variables
             if "." in node.name:
                 parts = node.name.split(".", 1)
                 scope, var_name = parts
-                
+
                 # Most reliable direct state dictionary access
                 if scope in ["private", "public", "system"] and scope in self.context_manager.context._state:
                     state_dict = self.context_manager.context._state[scope]
@@ -263,7 +263,7 @@ class ExpressionEvaluator(BaseExecutor):
                         value = state_dict[var_name]
                         self.debug(f"Direct state access for '{node.name}' = {value}")
                         return value
-            
+
             # Standard variable lookup
             try:
                 value = self.context_manager.get_variable(node.name, context)
@@ -271,13 +271,13 @@ class ExpressionEvaluator(BaseExecutor):
                 return value
             except Exception as e:
                 self.debug(f"Error in get_variable for '{node.name}': {e}")
-                
+
                 # Last fallback for scoped variables
                 if "." in node.name:
                     parts = node.name.split(".")
                     scope, var_name = parts[0], parts[1]
                     if (
-                        scope in ["private", "public", "system"] 
+                        scope in ["private", "public", "system"]
                         and scope in self.context_manager.context._state
                         and var_name in self.context_manager.context._state[scope]
                     ):
@@ -285,7 +285,7 @@ class ExpressionEvaluator(BaseExecutor):
                         self.warning(f"Fallback lookup for '{node.name}' = {value}")
                         return value
                 raise
-                
+
         except StateError as e:
             # Standard error for undefined variables
             if "." in node.name:
