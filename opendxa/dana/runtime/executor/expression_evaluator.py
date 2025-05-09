@@ -12,17 +12,15 @@ from opendxa.dana.language.ast import (
     BinaryExpression,
     BinaryOperator,
     FStringExpression,
+    FunctionCall,
     Identifier,
     Literal,
     LiteralExpression,
 )
 from opendxa.dana.runtime.executor.base_executor import BaseExecutor
 from opendxa.dana.runtime.executor.context_manager import ContextManager
-from opendxa.dana.runtime.executor.error_utils import (
-    create_runtime_error,
-    create_state_error,
-    handle_execution_error,
-)
+from opendxa.dana.runtime.executor.error_utils import create_runtime_error, create_state_error, handle_execution_error
+from opendxa.dana.runtime.function_registry import call_function
 
 
 class ExpressionEvaluator(BaseExecutor):
@@ -68,6 +66,8 @@ class ExpressionEvaluator(BaseExecutor):
                 return self.evaluate_literal(node, context)
             elif isinstance(node, FStringExpression):
                 return self.evaluate_fstring_expression(node, context)
+            elif isinstance(node, FunctionCall):
+                return self.evaluate_function_call(node, context)
             else:
                 error_msg = f"Unsupported expression type: {type(node).__name__}"
                 raise RuntimeError(error_msg)
@@ -311,3 +311,7 @@ class ExpressionEvaluator(BaseExecutor):
                 self.warning(f"Variable '{var_ref}' not found in f-string")
 
         return result
+
+    def evaluate_function_call(self, node: FunctionCall, context: Optional[Dict[str, Any]] = None) -> Any:
+        """Evaluate a function call."""
+        return call_function(node.name, context, node.args)

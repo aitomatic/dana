@@ -1,16 +1,7 @@
-import get_product_details
-import vector_search_descriptions
-
 private.use_case_description = "Foundation pouring, concrete slabs, heavy-duty construction, infrastructure projects"
 private.product = get_product_details("CM-2501")
 private.top_5_candidates = vector_search_descriptions(private.product.description)
-private.scores = reason(
-    "Given the use case, original product info, and candidate products, rank the candidates \
-        based on how well they would function as an alternative to the original product for this use case. \
-        Return the ordered list of IDs of the top 3 candidates.",
-    return_type=list(str),
-    context=[private.product, private.top_5_candidates, private.use_case_description],
-)
+private.scores = reason("Given the use case, original product info, and candidate products, rank the candidates based on how well they would function as an alternative to the original product for this use case. Return the ordered list of IDs of the top 3 candidates.", context=[private.product, private.top_5_candidates, private.use_case_description])
 print(private.scores)
 
 
