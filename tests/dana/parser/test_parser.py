@@ -1,5 +1,7 @@
 """Unit tests for the DANA language parser."""
 
+import pytest
+
 from opendxa.dana.language.ast import (
     Assignment,
     BinaryExpression,
@@ -10,7 +12,14 @@ from opendxa.dana.language.ast import (
     LogStatement,
     Program,
 )
-from opendxa.dana.language.parser import ParseResult, parse
+from opendxa.dana.language.parser import ParseResult, _type_environment, parse
+
+
+@pytest.fixture(autouse=True)
+def clear_type_environment():
+    """Clear the type environment before each test."""
+    _type_environment.clear()
+    yield
 
 
 def test_parse_assignment():
