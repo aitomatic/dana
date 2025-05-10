@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from opendxa.dana.exceptions import StateError
 
@@ -139,3 +139,43 @@ class RuntimeContext:
         """Reset the execution state to IDLE and clear history."""
         self.set_execution_status(ExecutionStatus.IDLE)
         self.set("system.history", [])
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any], base_context: Optional["RuntimeContext"] = None) -> "RuntimeContext":
+        """Create a new RuntimeContext from a dictionary, with base context taking precedence.
+
+        The base context values will override any values in the data dictionary.
+
+        Args:
+            data: Dictionary containing initial context data
+            base_context: Optional existing RuntimeContext that will override data
+
+        Returns:
+            A new RuntimeContext instance with the merged data
+        """
+        # Step 1: Create new context with initial data
+        context = cls()
+        for key, value in data.items():
+            if "." in key:
+                context.set(key, value)
+            else:
+                # If no scope specified, put in private scope
+                context.set(f"private.{key}", value)
+
+        # Step 2: Override with base context if provided
+        if base_context:
+            # Merge states from base context (overriding any existing values)
+            for scope in cls.STANDARD_SCOPES:
+                if scope in base_context._state:
+                    # Create a copy of the base context's state for this scope
+                    context._state[scope] = base_context._state[scope].copy()
+                    # Update with any values from data that weren't in base context
+                    for key, value in data.items():
+                        if key.startswith(f"{scope}."):
+                            var_name = key[len(f"{scope}.") :]
+                            if var_name not in base_context._state[scope]:
+                                context._state[scope][var_name] = value
+            # Copy all resources from base context
+            context._resources = base_context._resources.copy()
+
+        return context

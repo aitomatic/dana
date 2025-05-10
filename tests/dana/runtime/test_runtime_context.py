@@ -106,3 +106,79 @@ def test_invalid_keys():
     with pytest.raises(StateError) as exc_info:
         ctx.set("private", "test")
     assert "Invalid state key" in str(exc_info.value)
+
+
+def test_from_dict_basic():
+    """Test creating RuntimeContext from dictionary without base context."""
+    data = {
+        "private.name": "Alice",
+        "public.weather": "sunny",
+        "system.status": "running",
+        "unscoped": "value",  # Should go to private scope
+    }
+
+    ctx = RuntimeContext.from_dict(data)
+
+    # Test scoped variables
+    assert ctx.get("private.name") == "Alice"
+    assert ctx.get("public.weather") == "sunny"
+    assert ctx.get("system.status") == "running"
+
+    # Test unscoped variable went to private scope
+    assert ctx.get("private.unscoped") == "value"
+
+
+def test_from_dict_with_base_context():
+    """Test creating RuntimeContext from dictionary with base context override."""
+    # Create base context with some values
+    base = RuntimeContext()
+    base.set("private.name", "Bob")
+    base.set("public.weather", "rainy")
+    base.set("private.other", "base_value")
+
+    # Create data that will be overridden by base context
+    data = {
+        "private.name": "Alice",  # Will be overridden by base
+        "public.weather": "sunny",  # Will be overridden by base
+        "private.new": "new_value",  # Will be kept
+    }
+
+    ctx = RuntimeContext.from_dict(data, base)
+
+    # Base context values should take precedence
+    assert ctx.get("private.name") == "Bob"
+    assert ctx.get("public.weather") == "rainy"
+
+    # Base context values should be included
+    assert ctx.get("private.other") == "base_value"
+
+    # New values from data should be included
+    assert ctx.get("private.new") == "new_value"
+
+
+def test_from_dict_resources():
+    """Test that resources are copied from base context."""
+    # Create base context with a resource
+    base = RuntimeContext()
+    resource = {"type": "test", "value": 42}
+    base.register_resource("test_resource", resource)
+
+    # Create new context with base
+    ctx = RuntimeContext.from_dict({}, base)
+
+    # Resource should be available
+    assert ctx.get_resource("test_resource") == resource
+    assert "test_resource" in ctx.list_resources()
+
+
+def test_from_dict_empty():
+    """Test creating RuntimeContext from empty dictionary."""
+    # Test without base context
+    ctx1 = RuntimeContext.from_dict({})
+    assert ctx1.get_execution_status() == ExecutionStatus.IDLE
+
+    # Test with base context
+    base = RuntimeContext()
+    base.set("private.name", "Bob")
+    ctx2 = RuntimeContext.from_dict({}, base)
+    assert ctx2.get("private.name") == "Bob"

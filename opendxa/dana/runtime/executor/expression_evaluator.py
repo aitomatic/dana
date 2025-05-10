@@ -17,6 +17,7 @@ from opendxa.dana.language.ast import (
     Literal,
     LiteralExpression,
 )
+from opendxa.dana.runtime.context import RuntimeContext
 from opendxa.dana.runtime.executor.base_executor import BaseExecutor
 from opendxa.dana.runtime.executor.context_manager import ContextManager
 from opendxa.dana.runtime.executor.error_utils import create_runtime_error, create_state_error, handle_execution_error
@@ -313,5 +314,14 @@ class ExpressionEvaluator(BaseExecutor):
         return result
 
     def evaluate_function_call(self, node: FunctionCall, context: Optional[Dict[str, Any]] = None) -> Any:
-        """Evaluate a function call."""
-        return call_function(node.name, context, node.args)
+        """Evaluate a function call.
+
+        The base context from the context manager will override any values in the local context.
+        """
+        # Step 1: Get the base context from the context manager
+        base_context = self.context_manager.context
+
+        # Step 2: If local context provided, create new context with base context taking precedence
+        runtime_context = RuntimeContext.from_dict(context, base_context) if context else base_context
+
+        return call_function(node.name, runtime_context, node.args)
