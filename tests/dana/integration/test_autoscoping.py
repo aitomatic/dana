@@ -10,7 +10,7 @@ from opendxa.dana.language.ast import (
 )
 from opendxa.dana.language.parser import GrammarParser, ParseResult
 from opendxa.dana.runtime.context import RuntimeContext
-from opendxa.dana.runtime.interpreter import create_interpreter
+from opendxa.dana.runtime.interpreter import Interpreter
 
 
 @pytest.fixture
@@ -216,7 +216,7 @@ def test_fstring_autoscoping(parser):
 def test_autoscoping_basics(parser, context):
     """Test basic automatic scoping functionality."""
     # Create an interpreter
-    interpreter = create_interpreter(context)
+    interpreter = Interpreter.new(context)
 
     # Parse a program with unscoped variables
     result = parser.parse("private.x = 42\nprivate.y = private.x + 10")
@@ -234,7 +234,7 @@ def test_autoscoping_basics(parser, context):
 def test_autoscoping_with_explicit_scopes(parser, context):
     """Test automatic scoping with explicit scopes."""
     # Create an interpreter
-    interpreter = create_interpreter(context)
+    interpreter = Interpreter.new(context)
 
     # Parse a program with mixed scoping
     result = parser.parse("private.x = 42\npublic.y = private.x + 10")

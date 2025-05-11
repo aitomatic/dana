@@ -29,7 +29,7 @@ class ContextManager(Loggable):
         super().__init__()
         self.context = context
 
-    def get_variable(self, name: str, local_context: Optional[Dict[str, Any]] = None) -> Any:
+    def get_from_context(self, name: str, local_context: Optional[Dict[str, Any]] = None) -> Any:
         """Get a variable value from the context.
 
         Args:
@@ -61,7 +61,7 @@ class ContextManager(Loggable):
         # 4. Variable not found
         raise StateError(f"Variable not found: {name}")
 
-    def set_variable(self, name: str, value: Any) -> None:
+    def set_in_context(self, name: str, value: Any) -> None:
         """Set a variable value in the context.
 
         Args:

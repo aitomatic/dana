@@ -14,7 +14,7 @@ from opendxa.dana.language.ast import (
 from opendxa.dana.language.parser import ParseResult
 from opendxa.dana.runtime.context import RuntimeContext
 from opendxa.dana.runtime.interpreter import Interpreter
-from opendxa.dana.runtime.log_manager import set_dana_log_level
+from opendxa.dana.runtime.log_manager import LogManager
 
 
 def test_arithmetic_operations():
@@ -82,7 +82,7 @@ def test_log_statement():
     """Test log statement execution with the modular interpreter."""
     context = RuntimeContext()
     interpreter = Interpreter(context)
-    set_dana_log_level(LogLevel.INFO)  # Ensure INFO messages are printed
+    LogManager.set_dana_log_level(LogLevel.INFO, context)  # Ensure INFO messages are printed
 
     # Test different log levels
     interpreter.debug("Debug message")

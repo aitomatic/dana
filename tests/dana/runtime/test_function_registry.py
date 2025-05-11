@@ -3,6 +3,7 @@
 import pytest
 
 from opendxa.dana.exceptions import RuntimeError, StateError
+from opendxa.dana.language.ast import LogStatement
 from opendxa.dana.language.parser import GrammarParser, ParseResult
 from opendxa.dana.runtime.context import RuntimeContext
 from opendxa.dana.runtime.function_registry import (
@@ -13,7 +14,7 @@ from opendxa.dana.runtime.function_registry import (
     register_function,
     unregister_function,
 )
-from opendxa.dana.runtime.interpreter import create_interpreter
+from opendxa.dana.runtime.interpreter import Interpreter
 
 
 @pytest.fixture
@@ -87,7 +88,7 @@ def test_interpreter_function_call(parser, context):
     register_function("multiply", multiply)
 
     # Create interpreter
-    interpreter = create_interpreter(context)
+    interpreter = Interpreter.new(context)
 
     # Skip this test for now until we properly implement function calling in DANA language
     # The test_function_registry_basics test already tests the underlying functionality
@@ -129,7 +130,7 @@ def test_recursive_function_call():
 
     # Create interpreter
     context = RuntimeContext()
-    interpreter = create_interpreter(context, use_visitor=False)  # Test with traditional interpreter
+    interpreter = Interpreter.new(context, use_visitor=False)  # Test with traditional interpreter
 
     # Parse and execute a program with nested function calls: double(add_five(10))
     program = """
@@ -164,7 +165,7 @@ def test_function_call_error_handling():
 
     # Create interpreter
     context = RuntimeContext()
-    interpreter = create_interpreter(context, use_visitor=True)
+    interpreter = Interpreter.new(context, use_visitor=True)
 
     # Parse and execute a program that calls the failing function
     program = """
@@ -242,8 +243,8 @@ def test_call_function(parser, context):
 
     # Get the function call node
     stmt = result.program.statements[0]
-    assert stmt.name == "log"
+    assert isinstance(stmt, LogStatement)
 
     # Call the function
-    result = call_function(stmt.name, context, stmt.args)
+    result = call_function("log", context, {"message": stmt.message})
     assert result is None  # log function returns None

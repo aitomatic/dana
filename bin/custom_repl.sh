@@ -6,9 +6,9 @@ script_dir="$(dirname "$(realpath "$0")")"
 cd $script_dir/..
 
 # Activate the virtual environment if it exists and not already activated
-if [ -f "./VENV.sh" ] && [ -z "$VIRTUAL_ENV" ]; then
+if [ -f "./source_venv.sh" ] && [ -z "$VIRTUAL_ENV" ]; then
     echo "Activating virtual environment..."
-    source ./VENV.sh
+    source ./source_venv.sh
 fi
 
 # Run the REPL

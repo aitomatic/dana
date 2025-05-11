@@ -14,7 +14,7 @@ from typing import Any, Dict, Optional
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.dana.language.parser import GrammarParser
 from opendxa.dana.runtime.context import RuntimeContext
-from opendxa.dana.runtime.interpreter import create_interpreter
+from opendxa.dana.runtime.interpreter import Interpreter
 
 
 async def run_dana_reasoning_example(model: Optional[str] = None, provider: Optional[str] = None) -> None:
@@ -57,7 +57,7 @@ async def run_dana_reasoning_example(model: Optional[str] = None, provider: Opti
     context.add_resource("llm", llm)
 
     # Create an interpreter
-    interpreter = create_interpreter(context)
+    interpreter = Interpreter.new(context)
 
     print(f"Executing DANA code...\n{'-'*80}")
 

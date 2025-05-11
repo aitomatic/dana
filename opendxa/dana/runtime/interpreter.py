@@ -17,13 +17,13 @@ from opendxa.dana.runtime.executor.error_utils import format_error_location
 from opendxa.dana.runtime.executor.expression_evaluator import ExpressionEvaluator
 from opendxa.dana.runtime.executor.llm_integration import LLMIntegration
 from opendxa.dana.runtime.executor.statement_executor import StatementExecutor
-from opendxa.dana.runtime.hooks import HookType, execute_hook, has_hooks
+from opendxa.dana.runtime.hooks import HookRegistry, HookType
 
 # Map DANA LogLevel to Python logging levels
 LEVEL_MAP = {LogLevel.DEBUG: logging.DEBUG, LogLevel.INFO: logging.INFO, LogLevel.WARN: logging.WARNING, LogLevel.ERROR: logging.ERROR}
 
 # Re-export for backward compatibility
-__all__ = ["Interpreter", "create_interpreter", "format_error_location"]
+__all__ = ["Interpreter", "new", "format_error_location"]
 
 
 class Interpreter(Loggable):
@@ -76,9 +76,9 @@ class Interpreter(Loggable):
         }
 
         # Execute before program hooks
-        if has_hooks(HookType.BEFORE_PROGRAM):
+        if HookRegistry.has_hooks(HookType.BEFORE_PROGRAM):
             self.debug("Executing BEFORE_PROGRAM hooks")
-            execute_hook(HookType.BEFORE_PROGRAM, hook_context)
+            HookRegistry.execute(HookType.BEFORE_PROGRAM, hook_context)
 
         try:
             # Execute all statements in the program
@@ -117,9 +117,9 @@ class Interpreter(Loggable):
                 raise parse_result.errors[0]
 
             # Execute after program hooks
-            if has_hooks(HookType.AFTER_PROGRAM):
+            if HookRegistry.has_hooks(HookType.AFTER_PROGRAM):
                 self.debug("Executing AFTER_PROGRAM hooks")
-                execute_hook(HookType.AFTER_PROGRAM, hook_context)
+                HookRegistry.execute(HookType.AFTER_PROGRAM, hook_context)
 
             self.debug("Program execution completed successfully")
             return last_result
@@ -129,10 +129,10 @@ class Interpreter(Loggable):
             self.debug(f"Program execution failed: {e}")
 
             # Execute error hooks
-            if has_hooks(HookType.ON_ERROR):
+            if HookRegistry.has_hooks(HookType.ON_ERROR):
                 self.debug("Executing ON_ERROR hooks")
                 error_context = {**hook_context, "error": e}
-                execute_hook(HookType.ON_ERROR, error_context)
+                HookRegistry.execute(HookType.ON_ERROR, error_context)
 
             raise e
 
@@ -204,8 +204,14 @@ class Interpreter(Loggable):
             # Fallback to synchronous version
             return self.statement_executor.execute_reason_statement(node, context)
 
+    @classmethod
+    def new(cls, context: RuntimeContext) -> "Interpreter":
+        """Create a new instance of the Interpreter.
 
-# Factory function for creating interpreters
-def create_interpreter(context: RuntimeContext) -> Interpreter:
-    """Create a new interpreter with the given context."""
-    return Interpreter(context)
+        Args:
+            context: The runtime context for the interpreter.
+
+        Returns:
+            An instance of the Interpreter.
+        """
+        return cls(context)

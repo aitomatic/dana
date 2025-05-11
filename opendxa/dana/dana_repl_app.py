@@ -302,15 +302,13 @@ class DanaREPLApp(Loggable):
         super().__init__()
         self.input_state = InputState()
         self.input_checker = InputCompleteChecker()
-        self.repl = self._setup_repl()
-        self.repl.set_log_level(log_level)  # Use REPL's method to set log level
+        self.repl = self._setup_repl(log_level)
         self.command_handler = CommandHandler(self.repl)
         self.prompt_session = self._setup_prompt_session()
 
-    def _setup_repl(self) -> REPL:
+    def _setup_repl(self, log_level: LogLevel) -> REPL:
         """Set up the REPL instance."""
-        llm = LLMResource()
-        repl = REPL(llm_resource=llm)
+        repl = REPL(llm_resource=LLMResource(), log_level=log_level)
         return repl
 
     def _setup_prompt_session(self) -> PromptSession:

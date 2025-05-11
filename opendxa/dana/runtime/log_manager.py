@@ -1,26 +1,32 @@
 """Log level management for DANA runtime."""
 
 import logging
-from typing import Optional
+from typing import Optional, Union
 
 from opendxa.common.utils.logging.dxa_logger import DXA_LOGGER
 from opendxa.dana.language.ast import LogLevel
+from opendxa.dana.runtime.context import RuntimeContext
 
 # Map DANA LogLevel to Python logging levels
-LEVEL_MAP = {
-    LogLevel.DEBUG: logging.DEBUG,
-    LogLevel.INFO: logging.INFO,
-    LogLevel.WARN: logging.WARNING,
-    LogLevel.ERROR: logging.ERROR
-}
+LEVEL_MAP = {LogLevel.DEBUG: logging.DEBUG, LogLevel.INFO: logging.INFO, LogLevel.WARN: logging.WARNING, LogLevel.ERROR: logging.ERROR}
 
-def set_dana_log_level(level: LogLevel) -> None:
-    """Set the log level for DANA runtime.
-    
-    This is the single source of truth for setting log levels in DANA.
-    All components should use this function to change log levels.
-    
-    Args:
-        level: The log level to set
-    """
-    DXA_LOGGER.setLevel(LEVEL_MAP[level], scope="opendxa.dana") 
+
+class LogManager:
+    """Log level management for DANA runtime."""
+
+    @staticmethod
+    def set_dana_log_level(level: Union[LogLevel, str], context: Optional[RuntimeContext] = None) -> None:
+        """Set the log level for DANA runtime.
+
+        This is the single source of truth for setting log levels in DANA.
+        All components should use this function to change log levels.
+
+        Args:
+            level: The log level to set, can be a LogLevel enum or a string
+        """
+        if isinstance(level, str):
+            level = LogLevel(level)
+
+        DXA_LOGGER.setLevel(LEVEL_MAP[level], scope="opendxa.dana")
+        if context:
+            context.set("system.__log_level", level)

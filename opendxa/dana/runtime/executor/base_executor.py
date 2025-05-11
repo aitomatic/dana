@@ -21,7 +21,7 @@ class BaseExecutor(Loggable):
     def __init__(self):
         """Initialize the base executor."""
         # Initialize Loggable with prefix for all DANA logs
-        super().__init__(prefix="dana")
+        super().__init__()
 
         # Generate execution ID for this run
         self._execution_id = str(uuid.uuid4())[:8]  # Short unique ID for this execution

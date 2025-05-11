@@ -99,7 +99,7 @@ class ExpressionEvaluator(BaseExecutor):
             # Evaluate left operand
             if isinstance(node.left, Identifier):
                 try:
-                    left = self.context_manager.get_variable(node.left.name, context)
+                    left = self.context_manager.get_from_context(node.left.name, context)
                     self.debug(f"Evaluated {node.left.name} = {left}")
                 except Exception as e:
                     self.debug(f"Error evaluating left operand: {e}")
@@ -118,7 +118,7 @@ class ExpressionEvaluator(BaseExecutor):
             # Evaluate right operand
             if isinstance(node.right, Identifier):
                 try:
-                    right = self.context_manager.get_variable(node.right.name, context)
+                    right = self.context_manager.get_from_context(node.right.name, context)
                     self.debug(f"Evaluated {node.right.name} = {right}")
                 except Exception as e:
                     self.debug(f"Error evaluating right operand: {e}")
@@ -135,44 +135,51 @@ class ExpressionEvaluator(BaseExecutor):
                 self.debug(f"Evaluated right operand: {right}")
 
             # Process the operation based on operator type
-            if node.operator == BinaryOperator.ADD:
-                # String concatenation
-                if isinstance(left, str) or isinstance(right, str):
-                    return str(left) + str(right)
-                return left + right
-            elif node.operator == BinaryOperator.SUBTRACT:
-                return left - right
-            elif node.operator == BinaryOperator.MULTIPLY:
-                return left * right
-            elif node.operator == BinaryOperator.DIVIDE:
-                if right == 0:
-                    raise create_state_error("Division by zero", node)
-                return left / right
-            elif node.operator == BinaryOperator.MODULO:
-                if right == 0:
-                    raise create_state_error("Modulo by zero", node)
-                return left % right
-            elif node.operator == BinaryOperator.EQUALS:
-                return left == right
-            elif node.operator == BinaryOperator.NOT_EQUALS:
-                return left != right
-            elif node.operator == BinaryOperator.LESS_THAN:
-                return left < right
-            elif node.operator == BinaryOperator.GREATER_THAN:
-                return left > right
-            elif node.operator == BinaryOperator.LESS_EQUALS:
-                return left <= right
-            elif node.operator == BinaryOperator.GREATER_EQUALS:
-                return left >= right
-            elif node.operator == BinaryOperator.AND:
-                return left and right
-            elif node.operator == BinaryOperator.OR:
-                return left or right
-            elif node.operator == BinaryOperator.IN:
-                return left in right
-            else:
-                # Unsupported operator
-                raise create_state_error(f"Unsupported binary operator: {node.operator.value}", node)
+            try:
+                if node.operator == BinaryOperator.ADD:
+                    # String concatenation
+                    if isinstance(left, str) or isinstance(right, str):
+                        return str(left) + str(right)
+                    return left + right
+                elif node.operator == BinaryOperator.SUBTRACT:
+                    return left - right
+                elif node.operator == BinaryOperator.MULTIPLY:
+                    return left * right
+                elif node.operator == BinaryOperator.DIVIDE:
+                    if right == 0:
+                        raise create_state_error("Division by zero", node)
+                    return left / right
+                elif node.operator == BinaryOperator.MODULO:
+                    if right == 0:
+                        raise create_state_error("Modulo by zero", node)
+                    return left % right
+                elif node.operator == BinaryOperator.EQUALS:
+                    return left == right
+                elif node.operator == BinaryOperator.NOT_EQUALS:
+                    return left != right
+                elif node.operator == BinaryOperator.LESS_THAN:
+                    return left < right
+                elif node.operator == BinaryOperator.GREATER_THAN:
+                    return left > right
+                elif node.operator == BinaryOperator.LESS_EQUALS:
+                    return left <= right
+                elif node.operator == BinaryOperator.GREATER_EQUALS:
+                    return left >= right
+                elif node.operator == BinaryOperator.AND:
+                    return left and right
+                elif node.operator == BinaryOperator.OR:
+                    return left or right
+                elif node.operator == BinaryOperator.IN:
+                    return left in right
+                else:
+                    # Unsupported operator
+                    raise create_state_error(f"Unsupported binary operator: {node.operator.value}", node)
+            except Exception as e:
+                self.debug(f"Error in binary operation: {e}")
+                self.debug(f"Left operand type: {type(left)}, value: {left}")
+                self.debug(f"Right operand type: {type(right)}, value: {right}")
+                self.debug(f"Operator: {node.operator}")
+                raise
 
         except Exception as e:
             # Re-raise with more context
@@ -216,7 +223,7 @@ class ExpressionEvaluator(BaseExecutor):
                 parts = node.name.split(".", 1)
                 scope, var_name = parts
 
-                # Most reliable direct state dictionary access
+                # Try direct state access first for common scopes
                 if scope in RuntimeScopes.ALL and scope in self.context_manager.context._state:
                     state_dict = self.context_manager.context._state[scope]
                     if var_name in state_dict:
@@ -226,11 +233,13 @@ class ExpressionEvaluator(BaseExecutor):
 
             # Standard variable lookup
             try:
-                value = self.context_manager.get_variable(node.name, context)
+                value = self.context_manager.get_from_context(node.name, context)
                 self.debug(f"Standard lookup for '{node.name}' = {value}")
                 return value
             except Exception as e:
-                self.debug(f"Error in get_variable for '{node.name}': {e}")
+                self.debug(f"Error in variable lookup for '{node.name}': {e}")
+                if "." in node.name:
+                    self.debug(f"Available keys in scope: {list(self.context_manager.context._state.get(scope, {}).keys())}")
                 raise
 
         except StateError:
@@ -305,7 +314,7 @@ class ExpressionEvaluator(BaseExecutor):
         for var_ref in var_matches:
             try:
                 # Try to evaluate the variable
-                value = self.context_manager.get_variable(var_ref, context)
+                value = self.context_manager.get_from_context(var_ref, context)
                 # Replace the variable reference with its value
                 result = result.replace(f"{{{var_ref}}}", str(value))
             except StateError:

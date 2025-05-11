@@ -15,8 +15,7 @@ class TestLLMResponseFormats(unittest.TestCase):
         """Set up the test environment."""
         self.context = RuntimeContext()
         self.interpreter = Interpreter(self.context)
-        self.repl = REPL(context=self.context)
-        self.repl.set_log_level(LogLevel.INFO)
+        self.repl = REPL(log_level=LogLevel.INFO, context=self.context)
 
     def test_openai_style_response(self):
         """Test handling of OpenAI-style dictionary responses."""

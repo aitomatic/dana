@@ -2,7 +2,7 @@ import asyncio
 import time
 from typing import Any, Dict
 
-from opendxa.dana.dana_repl import DanaREPLApp
+from dana.dana_repl_app import DanaREPLApp
 from opendxa.dana.language.ast import LogLevel
 from opendxa.dana.runtime.function_registry import register_function
 

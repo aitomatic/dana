@@ -4,7 +4,7 @@ import pytest
 
 from opendxa.dana.language.parser import GrammarParser, ParseResult
 from opendxa.dana.runtime.context import RuntimeContext
-from opendxa.dana.runtime.interpreter import create_interpreter
+from opendxa.dana.runtime.interpreter import Interpreter
 
 
 @pytest.fixture
@@ -37,7 +37,7 @@ def test_reason2_in_dana():
     context.set("private.data", "test data")
     context.set("public.info", "public info")
 
-    interpreter = create_interpreter(context)
+    interpreter = Interpreter.new(context)
 
     # Test program using both styles
     program = """# Test with named arguments and context variables

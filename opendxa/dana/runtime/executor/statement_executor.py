@@ -1,7 +1,7 @@
 """Statement executor for the DANA interpreter.
 
 This module provides the StatementExecutor class, which is responsible for
-executing statements in DANA programs.
+executing DANA program statements.
 """
 
 import logging
@@ -11,6 +11,7 @@ from opendxa.dana.exceptions import RuntimeError
 from opendxa.dana.language.ast import (
     Assignment,
     Conditional,
+    Expression,
     FunctionCall,
     Identifier,
     LogLevel,
@@ -20,6 +21,7 @@ from opendxa.dana.language.ast import (
     ReasonStatement,
     WhileLoop,
 )
+from opendxa.dana.runtime.core_functions.reason_function import ReasonFunction
 from opendxa.dana.runtime.executor.base_executor import BaseExecutor
 from opendxa.dana.runtime.executor.context_manager import ContextManager
 from opendxa.dana.runtime.executor.error_utils import (
@@ -27,7 +29,8 @@ from opendxa.dana.runtime.executor.error_utils import (
 )
 from opendxa.dana.runtime.executor.expression_evaluator import ExpressionEvaluator
 from opendxa.dana.runtime.executor.llm_integration import LLMIntegration
-from opendxa.dana.runtime.hooks import HookType, execute_hook, has_hooks
+from opendxa.dana.runtime.hooks import HookRegistry, HookType
+from opendxa.dana.runtime.log_manager import LogManager
 
 # Map DANA LogLevel to Python logging levels
 LEVEL_MAP = {LogLevel.DEBUG: logging.DEBUG, LogLevel.INFO: logging.INFO, LogLevel.WARN: logging.WARNING, LogLevel.ERROR: logging.ERROR}
@@ -61,21 +64,22 @@ class StatementExecutor(BaseExecutor):
         self.llm_integration = llm_integration
 
     def _execute_hook(self, hook_type: HookType, node: Any, additional_context: Optional[Dict[str, Any]] = None) -> None:
-        """Execute a hook if it exists.
+        """Execute hooks for the given hook type.
 
         Args:
             hook_type: The type of hook to execute
-            node: The node being processed
-            additional_context: Optional additional context to include in the hook context
+            node: The AST node being executed
+            additional_context: Additional context data to include in the hook context
         """
-        if has_hooks(hook_type):
-            # Create base hook context
-            hook_context = {"statement": node, "interpreter": self, "context": self.context_manager.context}
-            # Add any additional context
+        if HookRegistry.has_hooks(hook_type):
+            hook_context = {
+                "node": node,
+                "environment": self.environment,
+                "interpreter": self.interpreter,
+            }
             if additional_context:
                 hook_context.update(additional_context)
-            # Execute the hook
-            execute_hook(hook_type, hook_context)
+            HookRegistry.execute(hook_type, hook_context)
 
     def execute(self, node: Any, context: Optional[Dict[str, Any]] = None) -> Any:
         """Execute a statement node.
@@ -99,37 +103,28 @@ class StatementExecutor(BaseExecutor):
             result = self.execute_assignment(node, context)
         elif isinstance(node, LogStatement):
             self.execute_log_statement(node)
-            # Log statements don't have a return value
-            self.context_manager.set_variable(StatementExecutor.LAST_VALUE, None)
         elif isinstance(node, LogLevelSetStatement):
             self.execute_log_level_set_statement(node)
-            # Log level statements don't have a return value
-            self.context_manager.set_variable(StatementExecutor.LAST_VALUE, None)
         elif isinstance(node, PrintStatement):
             self.execute_print_statement(node, context)
-            # Print statements don't return a value (handled in execute_print_statement)
         elif isinstance(node, Conditional):
             self.execute_conditional(node, context)
-            # Conditionals don't have a return value
-            self.context_manager.set_variable(StatementExecutor.LAST_VALUE, None)
         elif isinstance(node, WhileLoop):
             self.execute_while_loop(node, context)
-            # Loops don't have a return value
-            self.context_manager.set_variable(StatementExecutor.LAST_VALUE, None)
         elif isinstance(node, ReasonStatement):
-            result = self.execute_reason_statement(node, context)
+            result = self.execute_reason_statement(node)
         elif isinstance(node, FunctionCall):
             result = self.execute_function_call(node, context)
-            # Store function call results for REPL output
-            self.context_manager.set_variable(StatementExecutor.LAST_VALUE, result)
         elif isinstance(node, Identifier):
             # Handle bare identifier as a statement
             result = self.expression_evaluator.evaluate(node, context)
-            self.context_manager.set_variable(StatementExecutor.LAST_VALUE, result)
             self.debug(f"Evaluated identifier: {node.name} = {result}")
         else:
             error_msg = f"Unsupported statement type: {type(node).__name__}"
             raise RuntimeError(error_msg)
+
+        # Store the result in the context for REPL output
+        self.context_manager.set_in_context(StatementExecutor.LAST_VALUE, result)
 
         # Execute after statement hooks
         self._execute_hook(HookType.AFTER_STATEMENT, node)
@@ -142,9 +137,9 @@ class StatementExecutor(BaseExecutor):
 
         # For assignments, evaluate the value first
         value = self.expression_evaluator.evaluate(node.value, context)
-        self.context_manager.set_variable(node.target.name, value)
+        self.context_manager.set_in_context(node.target.name, value)
         result = value  # Store the value as the result
-        self.context_manager.set_variable(StatementExecutor.LAST_VALUE, value)  # Store for REPL output
+        self.context_manager.set_in_context(StatementExecutor.LAST_VALUE, value)  # Store for REPL output
         self.debug(f"Set {node.target.name} = {value}")
 
         # Execute after assignment hook
@@ -182,8 +177,8 @@ class StatementExecutor(BaseExecutor):
         Raises:
             RuntimeError: If the log level set statement fails
         """
-        # Set the log level
-        self.context_manager.context.set("log_level", node.level)
+        # Set the log level via the central LogManager
+        LogManager.set_dana_log_level(node.level, self.context_manager.context)
 
     def execute_print_statement(self, node: PrintStatement, context: Optional[Dict[str, Any]] = None) -> None:
         """Execute a print statement.
@@ -291,46 +286,52 @@ class StatementExecutor(BaseExecutor):
             else:
                 raise RuntimeError(f"Failed to execute while loop: {e}")
 
-    def execute_reason_statement(self, node: ReasonStatement, context: Optional[Dict[str, Any]] = None) -> Any:
+    def execute_reason_statement(self, node: ReasonStatement) -> Any:
         """Execute a reason statement.
 
         Args:
             node: The reason statement to execute
-            context: Optional local context for variable resolution
 
         Returns:
-            The result of the reasoning
+            The result of the reasoning operation
 
         Raises:
-            RuntimeError: If the reason statement fails
+            RuntimeError: If the statement cannot be executed
         """
         try:
-            # Execute before reason hook
-            self._execute_hook(HookType.BEFORE_REASON, node)
+            # Execute before reason hooks
+            self._execute_hook(HookType.BEFORE_REASON, {"statement": node})
 
-            # Enhanced context for prompt evaluation
-            custom_context = self._enhance_local_context(context)
-
-            # Evaluate the prompt
+            # Evaluate the prompt expression
             if node.prompt is None:
                 raise RuntimeError("Reason statement must have a prompt")
+            prompt = str(self.expression_evaluator.evaluate(node.prompt))
 
-            prompt_value = self.expression_evaluator.evaluate(node.prompt, custom_context)
+            # Evaluate any options expressions
+            options = {}
+            if node.options:
+                for key, value in node.options.items():
+                    if isinstance(value, Expression):
+                        options[key] = self.expression_evaluator.evaluate(value)
+                    else:
+                        options[key] = value
 
-            # Log the result
-            self.debug(f"Reasoning result: {prompt_value}")
+            # Execute the reason function
+            result = ReasonFunction.execute(
+                prompt=prompt,
+                context=self.context_manager.context,
+                llm_integration=self.llm_integration,
+                options=options,
+            )
 
-            # Execute after reason hook
-            self._execute_hook(HookType.AFTER_REASON, node, {"result": prompt_value})
+            # Execute after reason hooks
+            self._execute_hook(HookType.AFTER_REASON, {"statement": node, "result": result})
 
-            return prompt_value
+            return result
 
         except Exception as e:
-            error, passthrough = handle_execution_error(e, node, "executing reason statement")
-            if passthrough:
-                raise error
-            else:
-                raise RuntimeError(f"Failed to execute reason statement: {e}")
+            self.error(f"Error executing reason statement: {e}")
+            raise RuntimeError(f"Error executing reason statement: {e}") from e
 
     def execute_function_call(self, node: FunctionCall, context: Optional[Dict[str, Any]] = None) -> Any:
         """Execute a function call.
@@ -349,7 +350,7 @@ class StatementExecutor(BaseExecutor):
         result = self._execute_method_or_variable_function(node, context)
 
         # Store the result in the context
-        self.context_manager.set_variable(StatementExecutor.LAST_VALUE, result)
+        self.context_manager.set_in_context(StatementExecutor.LAST_VALUE, result)
 
         return result
 
@@ -391,7 +392,7 @@ class StatementExecutor(BaseExecutor):
             return self._execute_method_call(node.name, args_list, kwargs)
         else:
             # Try to get function as variable
-            func = self.context_manager.get_variable(node.name, context)
+            func = self.context_manager.get_from_context(node.name, context)
 
             if callable(func):
                 return func(*args_list, **kwargs)
@@ -418,7 +419,7 @@ class StatementExecutor(BaseExecutor):
         method_name = parts[-1]
 
         # Get the object
-        obj = self.context_manager.get_variable(obj_name)
+        obj = self.context_manager.get_from_context(obj_name)
 
         # Get the method
         method = getattr(obj, method_name, None)

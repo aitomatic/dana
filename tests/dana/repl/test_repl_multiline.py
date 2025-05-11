@@ -8,7 +8,7 @@ import unittest
 
 import pytest
 
-from opendxa.dana.dana_repl import InputCompleteChecker
+from dana.dana_repl_app import InputCompleteChecker
 
 
 @pytest.mark.unit

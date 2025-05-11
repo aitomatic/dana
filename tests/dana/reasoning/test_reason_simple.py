@@ -8,6 +8,7 @@ import pytest
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.dana.language.parser import GrammarParser, ParseResult
 from opendxa.dana.runtime.context import RuntimeContext
+from opendxa.dana.runtime.interpreter import Interpreter
 
 
 @pytest.fixture
@@ -43,10 +44,8 @@ def test_reason_statement(runtime_context, mock_llm, parser):
     """Test the reason statement outside of asyncio."""
     # We need to mock the LLM integration completely to avoid asyncio issues
 
-    from opendxa.dana.runtime.interpreter import create_interpreter
-
     # Create an interpreter
-    interpreter = create_interpreter(runtime_context)
+    interpreter = Interpreter.new(runtime_context)
 
     # Mock the LLM integration component
     with patch.object(interpreter.statement_executor.llm_integration, "execute_direct_synchronous_reasoning") as mock_reasoning:

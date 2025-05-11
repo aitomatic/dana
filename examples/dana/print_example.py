@@ -9,7 +9,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from opendxa.dana.language.parser import GrammarParser
 from opendxa.dana.runtime.context import RuntimeContext
-from opendxa.dana.runtime.interpreter import create_interpreter
+from opendxa.dana.runtime.interpreter import Interpreter
 
 
 def main():
@@ -34,7 +34,7 @@ def main():
 
     # Create an interpreter and runtime context
     context = RuntimeContext()
-    interpreter = create_interpreter(context)
+    interpreter = Interpreter.new(context)
 
     # Enable debug logging to see all log messages
     os.environ["DANA_LOG_LEVEL"] = "DEBUG"

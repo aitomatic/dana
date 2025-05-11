@@ -260,7 +260,7 @@ def _parse_context_vars(kwargs: Dict[str, Any], special_keys: Optional[List[str]
             raise ValueError(f"System variables are not allowed in context: {key}")
 
         # If key is unscoped, treat it as local
-        if "." in key and not key.startswith(RuntimeScopes.ALL_WITH_DOT):
+        if "." in key and not any(key.startswith(scope) for scope in RuntimeScopes.ALL_WITH_DOT):
             scoped_key = f"local.{key}"
         else:
             scoped_key = key

@@ -4,13 +4,15 @@ import logging
 from typing import Any, Dict, Optional
 
 from opendxa.common.mixins.loggable import Loggable
+from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.common.utils import Misc
 from opendxa.dana.error_handling import DanaError
 from opendxa.dana.language.ast import LogLevel
 from opendxa.dana.language.parser import GrammarParser
 from opendxa.dana.runtime.context import RuntimeContext
+from opendxa.dana.runtime.executor.llm_integration import LLMIntegration
 from opendxa.dana.runtime.interpreter import Interpreter
-from opendxa.dana.runtime.log_manager import set_dana_log_level
+from opendxa.dana.runtime.log_manager import LogManager
 
 # Map DANA LogLevel to Python logging levels
 LEVEL_MAP = {LogLevel.DEBUG: logging.DEBUG, LogLevel.INFO: logging.INFO, LogLevel.WARN: logging.WARNING, LogLevel.ERROR: logging.ERROR}
@@ -19,16 +21,22 @@ LEVEL_MAP = {LogLevel.DEBUG: logging.DEBUG, LogLevel.INFO: logging.INFO, LogLeve
 class REPL(Loggable):
     """Read-Eval-Print Loop for executing and managing DANA programs."""
 
-    def __init__(self, context: Optional[RuntimeContext] = None):
+    def __init__(
+        self, llm_resource: Optional[LLMResource] = None, log_level: Optional[LogLevel] = None, context: Optional[RuntimeContext] = None
+    ):
         """Initialize the REPL.
 
         Args:
+            llm_resource: Optional LLM resource to use
             context: Optional runtime context to use
         """
         self.context = context or RuntimeContext()
+        self.context.set(LLMIntegration.LLM_RESOURCE_VARIABLE, llm_resource)
         self.interpreter = Interpreter(self.context)
         self.parser = GrammarParser()
         self.last_result = None
+        if log_level:
+            self.set_log_level(log_level)
 
     def _handle_log_level_change(self, context: Dict[str, Any]) -> None:
         """Handle log level change hook."""
@@ -44,7 +52,7 @@ class REPL(Loggable):
         Args:
             level: The log level to set
         """
-        set_dana_log_level(level)
+        LogManager.set_dana_log_level(level, self.context)
         self.debug(f"Set log level to {level.value}")
 
     def get_nlp_mode(self) -> bool:

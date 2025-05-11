@@ -18,7 +18,7 @@ from opendxa.dana.language.ast import (
 from opendxa.dana.language.parser import ParseResult
 from opendxa.dana.runtime.context import RuntimeContext
 from opendxa.dana.runtime.interpreter import Interpreter
-from opendxa.dana.runtime.log_manager import LEVEL_MAP, set_dana_log_level
+from opendxa.dana.runtime.log_manager import LEVEL_MAP, LogManager
 
 
 def create_location(line: int, column: int, text: str = "") -> Location:
@@ -196,7 +196,7 @@ def test_log_statement():
     """Test log statement execution."""
     context = RuntimeContext()
     interpreter = Interpreter(context=context)
-    set_dana_log_level(LogLevel.INFO)  # Ensure INFO messages are printed by default
+    LogManager.set_dana_log_level(LogLevel.INFO, context)  # Ensure INFO messages are printed by default
 
     # Test different log levels
     interpreter.debug("Debug message")
@@ -211,7 +211,7 @@ def test_log_level_threshold():
     interpreter = Interpreter(context=context)
 
     # Set to WARN level
-    set_dana_log_level(LogLevel.WARN)
+    LogManager.set_dana_log_level(LogLevel.WARN, context)
 
     # Test that INFO messages are not shown
     interpreter.info("This should not be shown")

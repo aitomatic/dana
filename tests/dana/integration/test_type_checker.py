@@ -13,7 +13,7 @@ from opendxa.dana.language.ast import (
 from opendxa.dana.language.parser import GrammarParser
 from opendxa.dana.language.type_checker import DanaType, TypeCheckVisitor, TypeEnvironment
 from opendxa.dana.runtime.context import RuntimeContext
-from opendxa.dana.runtime.interpreter import create_interpreter
+from opendxa.dana.runtime.interpreter import Interpreter
 
 
 @pytest.fixture
@@ -168,7 +168,7 @@ def test_comprehensive_type_checking(parser):
 
     # We should be able to execute the program
     context = RuntimeContext()
-    interpreter = create_interpreter(context)
+    interpreter = Interpreter.new(context)
 
     # This should execute without errors
     interpreter.execute_program(result)
