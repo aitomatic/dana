@@ -29,7 +29,7 @@ from opendxa.dana.language.ast import (
     Identifier,
     Program,
 )
-from opendxa.dana.language.error_utils import handle_parse_error
+from opendxa.dana.language.error_utils import ErrorUtils
 from opendxa.dana.language.transformer_module import get_transformer_class
 from opendxa.dana.language.type_checker import TypeChecker, TypeEnvironment
 
@@ -155,25 +155,19 @@ class GrammarParser(Loggable):
         except UnexpectedInput as e:
             # Use error handling utility
             self.debug(f"Unexpected input during parsing: {str(e)}")
-            empty_program, errors = handle_parse_error(e, program_text)
+            empty_program, errors = ErrorUtils.handle_parse_error(e, program_text)
             return ParseResult(program=empty_program, errors=errors)
 
         except LarkError as e:
             # Handle other Lark errors
             self.debug(f"Lark parsing error: {str(e)}")
-            errors.append(ParseError(f"Parsing error: {str(e)}", 0, program_text.split("\n")[0] if program_text else ""))
-
-            # Create an empty program as a fallback
-            empty_program = Program(statements=[], source_text=program_text)
+            empty_program, errors = ErrorUtils.handle_parse_error(e, program_text)
             return ParseResult(program=empty_program, errors=errors)
 
         except Exception as e:
             # Handle any other errors
             self.error(f"Unexpected error during parsing: {str(e)}")
-            errors.append(ParseError(f"Unexpected error during parsing: {str(e)}", 0, program_text.split("\n")[0] if program_text else ""))
-
-            # Create an empty program as a fallback
-            empty_program = Program(statements=[], source_text=program_text)
+            empty_program, errors = ErrorUtils.handle_parse_error(e, program_text)
             return ParseResult(program=empty_program, errors=errors)
 
     def transform_identifier(self, node: Tree) -> Identifier:

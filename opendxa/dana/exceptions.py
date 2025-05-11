@@ -17,6 +17,9 @@ class ParseError(DanaError):
     def __init__(self, message: str, line_num: int | None = None, line_content: str | None = None):
         self.line_num = line_num
         self.line_content = line_content
+        # Set self.line for compatibility with DanaError and tests
+        line = line_num if line_num is not None else 0
+        source_line = line_content or ""
         full_message = message
         if line_content is not None:
             # Find the position of the error in the line
@@ -39,7 +42,7 @@ class ParseError(DanaError):
 
             # Insert the caret at the error position
             full_message = f"{full_message}\n{line_with_caret}\n{' ' * error_pos}^"
-        super().__init__(full_message)
+        super().__init__(full_message, line, source_line)
 
 
 class ValidationError(DanaError):
