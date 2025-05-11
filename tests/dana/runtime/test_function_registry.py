@@ -130,7 +130,7 @@ def test_recursive_function_call():
 
     # Create interpreter
     context = RuntimeContext()
-    interpreter = Interpreter.new(context, use_visitor=False)  # Test with traditional interpreter
+    interpreter = Interpreter.new(context)
 
     # Parse and execute a program with nested function calls: double(add_five(10))
     program = """
@@ -165,7 +165,7 @@ def test_function_call_error_handling():
 
     # Create interpreter
     context = RuntimeContext()
-    interpreter = Interpreter.new(context, use_visitor=True)
+    interpreter = Interpreter.new(context)
 
     # Parse and execute a program that calls the failing function
     program = """

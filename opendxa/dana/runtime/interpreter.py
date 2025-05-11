@@ -9,11 +9,10 @@ from typing import Any, Dict, Optional
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.dana.exceptions import RuntimeError
-from opendxa.dana.language.ast import LogLevel, Program
+from opendxa.dana.language.ast import LogLevel
 from opendxa.dana.language.parser import ParseResult
 from opendxa.dana.runtime.context import RuntimeContext
 from opendxa.dana.runtime.executor.context_manager import ContextManager
-from opendxa.dana.runtime.executor.error_utils import format_error_location
 from opendxa.dana.runtime.executor.expression_evaluator import ExpressionEvaluator
 from opendxa.dana.runtime.executor.llm_integration import LLMIntegration
 from opendxa.dana.runtime.executor.statement_executor import StatementExecutor
@@ -21,9 +20,6 @@ from opendxa.dana.runtime.hooks import HookRegistry, HookType
 
 # Map DANA LogLevel to Python logging levels
 LEVEL_MAP = {LogLevel.DEBUG: logging.DEBUG, LogLevel.INFO: logging.INFO, LogLevel.WARN: logging.WARNING, LogLevel.ERROR: logging.ERROR}
-
-# Re-export for backward compatibility
-__all__ = ["Interpreter", "new", "format_error_location"]
 
 
 class Interpreter(Loggable):
@@ -135,74 +131,6 @@ class Interpreter(Loggable):
                 HookRegistry.execute(HookType.ON_ERROR, error_context)
 
             raise e
-
-    # Backward compatibility methods
-
-    def visit_node(self, node: Any, context: Optional[Dict[str, Any]] = None) -> Any:
-        """Backward compatibility method for visiting nodes.
-
-        Args:
-            node: The node to visit
-            context: Optional local context
-
-        Returns:
-            The result of visiting the node
-        """
-        from opendxa.dana.language.ast import (
-            Assignment,
-            BinaryExpression,
-            Conditional,
-            FStringExpression,
-            FunctionCall,
-            Identifier,
-            Literal,
-            LiteralExpression,
-            LogLevelSetStatement,
-            LogStatement,
-            PrintStatement,
-            ReasonStatement,
-            WhileLoop,
-        )
-
-        # Handle statements
-        if isinstance(node, (Assignment, LogStatement, LogLevelSetStatement, PrintStatement, Conditional, WhileLoop, ReasonStatement)):
-            return self.statement_executor.execute(node, context)
-
-        # Handle expressions
-        elif isinstance(node, (BinaryExpression, LiteralExpression, Identifier, Literal, FStringExpression)):
-            return self.evaluate_expression(node, context)
-
-        # Handle function calls
-        elif isinstance(node, FunctionCall):
-            return self.statement_executor.execute_function_call(node, context)
-
-        # Handle programs
-        elif isinstance(node, Program):
-            # Create a parse result for the program
-            parse_result = ParseResult(program=node)
-            return self.execute_program(parse_result)
-
-        # Unknown node type
-        else:
-            raise RuntimeError(f"Unsupported node type: {type(node).__name__}")
-
-    def _visit_reason_statement_sync(self, node: Any, context: Optional[Dict[str, Any]] = None) -> Any:
-        """Method for synchronously visiting reason statements.
-
-        Used by the REPL implementation to handle reason statements in async contexts.
-
-        Args:
-            node: The reason statement node
-            context: Optional local context
-
-        Returns:
-            The result of the reasoning
-        """
-        if hasattr(self.statement_executor, "_execute_reason_statement_sync"):
-            return self.statement_executor._execute_reason_statement_sync(node, context)
-        else:
-            # Fallback to synchronous version
-            return self.statement_executor.execute_reason_statement(node, context)
 
     @classmethod
     def new(cls, context: RuntimeContext) -> "Interpreter":

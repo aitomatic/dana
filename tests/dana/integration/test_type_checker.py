@@ -11,7 +11,7 @@ from opendxa.dana.language.ast import (
     LiteralExpression,
 )
 from opendxa.dana.language.parser import GrammarParser
-from opendxa.dana.language.type_checker import DanaType, TypeCheckVisitor, TypeEnvironment
+from opendxa.dana.language.type_checker import DanaType, TypeChecker, TypeEnvironment
 from opendxa.dana.runtime.context import RuntimeContext
 from opendxa.dana.runtime.interpreter import Interpreter
 
@@ -33,88 +33,81 @@ def test_type_environment():
     env = TypeEnvironment()
 
     # Test setting and getting types
-    env.set("private.x", DanaType.INT)
-    assert env.get("private.x") == DanaType.INT
+    env.set("private.x", DanaType("int"))
+    type_ = env.get("private.x")
+    assert type_ is not None
+    assert type_.name == "int"
 
-    # Test contains
-    assert "private.x" in env
-    assert "private.y" not in env
+    # Test parent environment
+    child_env = TypeEnvironment(parent=env)
+    type_ = child_env.get("private.x")
+    assert type_ is not None
+    assert type_.name == "int"
 
 
 def test_literal_types():
     """Test type inference for literals."""
-    visitor = TypeCheckVisitor()
+    checker = TypeChecker()
 
     # Test integer
-    assert visitor.visit_literal(Literal(42)) == DanaType.INT
+    assert checker.check_literal_expression(LiteralExpression(Literal(42))).name == "int"
 
     # Test float
-    assert visitor.visit_literal(Literal(3.14)) == DanaType.FLOAT
+    assert checker.check_literal_expression(LiteralExpression(Literal(3.14))).name == "float"
 
     # Test string
-    assert visitor.visit_literal(Literal("hello")) == DanaType.STRING
+    assert checker.check_literal_expression(LiteralExpression(Literal("hello"))).name == "string"
 
     # Test boolean
-    assert visitor.visit_literal(Literal(True)) == DanaType.BOOL
-    assert visitor.visit_literal(Literal(False)) == DanaType.BOOL
+    assert checker.check_literal_expression(LiteralExpression(Literal(True))).name == "bool"
+    assert checker.check_literal_expression(LiteralExpression(Literal(False))).name == "bool"
 
     # Test null
-    assert visitor.visit_literal(Literal(None)) == DanaType.NULL
+    assert checker.check_literal_expression(LiteralExpression(Literal(None))).name == "null"
 
 
 def test_binary_expression_types():
     """Test type inference for binary expressions."""
-    visitor = TypeCheckVisitor()
+    checker = TypeChecker()
 
     # Test arithmetic operators
     expr = BinaryExpression(left=LiteralExpression(Literal(5)), operator=BinaryOperator.ADD, right=LiteralExpression(Literal(3)))
-    assert visitor.visit_binary_expression(expr) == DanaType.INT
+    assert checker.check_binary_expression(expr).name == "int"
 
     # Test arithmetic with mixed types
     expr = BinaryExpression(left=LiteralExpression(Literal(5)), operator=BinaryOperator.ADD, right=LiteralExpression(Literal(3.14)))
-    assert visitor.visit_binary_expression(expr) == DanaType.FLOAT
+    assert checker.check_binary_expression(expr).name == "float"
 
     # Test string concatenation
     expr = BinaryExpression(
         left=LiteralExpression(Literal("hello")), operator=BinaryOperator.ADD, right=LiteralExpression(Literal(" world"))
     )
-    assert visitor.visit_binary_expression(expr) == DanaType.STRING
+    assert checker.check_binary_expression(expr).name == "string"
 
     # Test comparison operators
     expr = BinaryExpression(left=LiteralExpression(Literal(5)), operator=BinaryOperator.LESS_THAN, right=LiteralExpression(Literal(10)))
-    assert visitor.visit_binary_expression(expr) == DanaType.BOOL
+    assert checker.check_binary_expression(expr).name == "bool"
 
     # Test logical operators
     expr = BinaryExpression(left=LiteralExpression(Literal(True)), operator=BinaryOperator.AND, right=LiteralExpression(Literal(False)))
-    assert visitor.visit_binary_expression(expr) == DanaType.BOOL
+    assert checker.check_binary_expression(expr).name == "bool"
 
 
 def test_assignment_types():
     """Test type checking for assignments."""
-    visitor = TypeCheckVisitor()
+    checker = TypeChecker()
 
     # Test assignment of compatible types
-    env = TypeEnvironment()
-    env.set("private.x", DanaType.INT)
-    visitor.env = env
-
+    checker.environment.set("private.x", DanaType("int"))
     assignment = Assignment(target=Identifier("private.x"), value=LiteralExpression(Literal(42)))
-
-    # This should not add any type errors
-    visitor.visit_assignment(assignment)
-    assert len(visitor.errors) == 0
+    checker.check_assignment(assignment)  # Should not raise
 
     # Test assignment of incompatible types
-    env = TypeEnvironment()
-    env.set("private.y", DanaType.STRING)
-    visitor.env = env
-
+    checker.environment.set("private.y", DanaType("string"))
     assignment = Assignment(target=Identifier("private.y"), value=LiteralExpression(Literal(42)))
-
-    # This should add a type error
-    visitor.visit_assignment(assignment)
-    assert len(visitor.errors) == 1
-    assert "Type mismatch" in str(visitor.errors[0])
+    with pytest.raises(RuntimeError) as excinfo:
+        checker.check_assignment(assignment)
+    assert "Type mismatch" in str(excinfo.value)
 
 
 def test_type_checking_integration(parser):
@@ -132,31 +125,22 @@ def test_type_checking_integration(parser):
     assert result.is_valid
     assert result_no_check.is_valid
 
-    # Check that the types are correct
-    assert parser.type_environment.get("private.x") == DanaType.STRING
-    assert parser.type_environment.get("private.y") == DanaType.STRING
-
 
 def test_logical_operator_type_checking():
     """Test type checking for logical operators."""
-    # For now, we'll just test the type checking visitor directly since
-    # the integration with the parser factory isn't working as expected
-
-    visitor = TypeCheckVisitor()
+    checker = TypeChecker()
 
     # Create a binary expression with non-boolean left operand
     expr = BinaryExpression(left=LiteralExpression(Literal(42)), operator=BinaryOperator.AND, right=LiteralExpression(Literal(True)))
 
-    # This should add a type error
-    visitor.visit_binary_expression(expr)
-    assert len(visitor.errors) > 0
-    assert any("must be a boolean" in str(error) for error in visitor.errors)
+    # This should raise a RuntimeError
+    with pytest.raises(RuntimeError) as excinfo:
+        checker.check_binary_expression(expr)
+    assert "must be boolean" in str(excinfo.value)
 
 
 def test_comprehensive_type_checking(parser):
     """Test type checking on a more complex program."""
-    # For now, we'll just test that we can parse and execute a complex program
-    # without breaking anything, rather than checking for specific type errors
     program = 'private.a = 10\nprivate.b = 20.5\nprivate.c = private.a + private.b  # Should be float\nprivate.d = "hello"\nprivate.e = private.d + " world"  # Should be string\nprivate.f = private.a < private.b  # Should be bool'
 
     # Parse with type checking enabled
@@ -179,6 +163,4 @@ def test_comprehensive_type_checking(parser):
     assert context.get("private.c") == 30.5
     assert context.get("private.d") == "hello"
     assert context.get("private.e") == "hello world"
-    # The comparison operators might result in 1 for true instead of True
-    # depending on implementation details, so we'll use a more flexible check
     assert bool(context.get("private.f"))

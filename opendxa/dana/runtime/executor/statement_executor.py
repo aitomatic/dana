@@ -5,7 +5,7 @@ executing DANA program statements.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from opendxa.dana.exceptions import RuntimeError
 from opendxa.dana.language.ast import (
@@ -18,6 +18,7 @@ from opendxa.dana.language.ast import (
     LogLevelSetStatement,
     LogStatement,
     PrintStatement,
+    Program,
     ReasonStatement,
     WhileLoop,
 )
@@ -34,6 +35,11 @@ from opendxa.dana.runtime.log_manager import LogManager
 
 # Map DANA LogLevel to Python logging levels
 LEVEL_MAP = {LogLevel.DEBUG: logging.DEBUG, LogLevel.INFO: logging.INFO, LogLevel.WARN: logging.WARNING, LogLevel.ERROR: logging.ERROR}
+
+# Define the types of nodes we can execute
+ExecutableNode = Union[
+    Assignment, LogStatement, Conditional, WhileLoop, LogLevelSetStatement, ReasonStatement, FunctionCall, Identifier, Program
+]
 
 
 class StatementExecutor(BaseExecutor):
@@ -81,55 +87,76 @@ class StatementExecutor(BaseExecutor):
                 hook_context.update(additional_context)
             HookRegistry.execute(hook_type, hook_context)
 
-    def execute(self, node: Any, context: Optional[Dict[str, Any]] = None) -> Any:
+    def execute(self, node: ExecutableNode, context: Optional[Dict[str, Any]] = None) -> Any:
         """Execute a statement node.
 
         Args:
             node: The statement node to execute
-            context: Optional local context for variable resolution
+            context: Optional context to use during execution
 
         Returns:
             The result of executing the statement
 
         Raises:
-            RuntimeError: If the statement execution fails
+            RuntimeError: If the statement type is not supported or execution fails
         """
         # Execute before statement hooks
         self._execute_hook(HookType.BEFORE_STATEMENT, node)
 
-        # Execute the statement
-        result = None
-        if isinstance(node, Assignment):
-            result = self.execute_assignment(node, context)
-        elif isinstance(node, LogStatement):
-            self.execute_log_statement(node)
-        elif isinstance(node, LogLevelSetStatement):
-            self.execute_log_level_set_statement(node)
-        elif isinstance(node, PrintStatement):
-            self.execute_print_statement(node, context)
-        elif isinstance(node, Conditional):
-            self.execute_conditional(node, context)
-        elif isinstance(node, WhileLoop):
-            self.execute_while_loop(node, context)
-        elif isinstance(node, ReasonStatement):
-            result = self.execute_reason_statement(node)
-        elif isinstance(node, FunctionCall):
-            result = self.execute_function_call(node, context)
-        elif isinstance(node, Identifier):
-            # Handle bare identifier as a statement
-            result = self.expression_evaluator.evaluate(node, context)
-            self.debug(f"Evaluated identifier: {node.name} = {result}")
-        else:
-            error_msg = f"Unsupported statement type: {type(node).__name__}"
-            raise RuntimeError(error_msg)
+        try:
+            # Program and control flow statements
+            if isinstance(node, Program):
+                result = self.execute_program(node, context)
+            elif isinstance(node, Conditional):
+                result = self.execute_conditional(node, context)
+            elif isinstance(node, WhileLoop):
+                result = self.execute_while_loop(node, context)
 
-        # Store the result in the context for REPL output
-        self.context_manager.set_in_context(StatementExecutor.LAST_VALUE, result)
+            # Variable and expression operations
+            elif isinstance(node, Assignment):
+                result = self.execute_assignment(node, context)
+            elif isinstance(node, Identifier):
+                result = self.expression_evaluator.evaluate(node, context)
 
-        # Execute after statement hooks
-        self._execute_hook(HookType.AFTER_STATEMENT, node)
+            # Output and logging statements
+            elif isinstance(node, LogStatement):
+                result = self.execute_log_statement(node)
+            elif isinstance(node, LogLevelSetStatement):
+                result = self.execute_log_level_set_statement(node)
 
-        return result
+            # Special statements
+            elif isinstance(node, ReasonStatement):
+                result = self.execute_reason_statement(node)
+
+            # Function operations
+            elif isinstance(node, FunctionCall):
+                result = self.execute_function_call(node, context)
+
+            # If we get here, we have an unsupported node type
+            else:
+                error_msg = f"Unsupported statement type: {type(node).__name__}"
+                raise RuntimeError(error_msg)
+
+            # Store the result in the context for REPL output
+            self.context_manager.set_in_context(StatementExecutor.LAST_VALUE, result)
+
+            # Execute after statement hooks
+            self._execute_hook(HookType.AFTER_STATEMENT, node)
+
+            return result
+
+        except Exception as e:
+            # Add context to the error message
+            node_type = type(node).__name__
+            location = getattr(node, "location", None)
+            location_str = f" at {location}" if location else ""
+
+            if isinstance(e, RuntimeError):
+                # If it's already a RuntimeError, just add context
+                raise RuntimeError(f"Error executing {node_type}{location_str}: {str(e)}")
+            else:
+                # For other exceptions, wrap them with context
+                raise RuntimeError(f"Unexpected error executing {node_type}{location_str}: {str(e)}")
 
     def execute_assignment(self, node: Assignment, context: Optional[Dict[str, Any]] = None) -> Any:
         # Execute before assignment hook

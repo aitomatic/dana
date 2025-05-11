@@ -31,8 +31,7 @@ from opendxa.dana.language.ast import (
 )
 from opendxa.dana.language.error_utils import handle_parse_error
 from opendxa.dana.language.transformer_module import get_transformer_class
-from opendxa.dana.language.type_checker import TypeCheckVisitor, TypeEnvironment
-from opendxa.dana.language.visitor import accept
+from opendxa.dana.language.type_checker import TypeChecker, TypeEnvironment
 
 parser_logger = DXA_LOGGER.getLogger("opendxa.dana.language.parser")
 
@@ -149,19 +148,7 @@ class GrammarParser(Loggable):
             # Perform type checking if enabled and parsing was successful
             do_type_check = ENABLE_TYPE_CHECK if type_check is None else bool(type_check)
             if do_type_check and result.is_valid:
-                visitor = TypeCheckVisitor(self.type_environment)
-                accept(result.program, visitor)
-                if visitor.errors:
-                    # Convert type errors to parse errors
-                    parse_errors = []
-                    for error in visitor.errors:
-                        line = 0
-                        if hasattr(error, "location") and error.location is not None:
-                            line = getattr(error.location, "line", 0)
-                        parse_errors.append(ParseError(str(error), line))
-
-                    # Add type errors to the result
-                    result = ParseResult(program=result.program, errors=list(result.errors) + parse_errors)
+                check_types(program)
 
             return result
 
@@ -200,3 +187,16 @@ class GrammarParser(Loggable):
         """
         name = str(node.children[0])
         return Identifier(name=name, location=self._get_location(node))
+
+
+def check_types(program: Program) -> None:
+    """Check types in a DANA program.
+
+    Args:
+        program: The program to check
+
+    Raises:
+        RuntimeError: If type errors are found
+    """
+    checker = TypeChecker()
+    checker.check_program(program)
