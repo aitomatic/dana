@@ -76,7 +76,7 @@ atom: identifier
     | FALSE
 
 // Scope and identifier rules
-SCOPE_PREFIX: "private" | "public" | "system"
+SCOPE_PREFIX: "local" | "private" | "public" | "system"
 identifier: SCOPE_PREFIX "." CNAME ("." CNAME)* | CNAME ("." CNAME)*
 identifier_list: identifier ("," identifier)*
 

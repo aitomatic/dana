@@ -2,6 +2,7 @@
 
 from typing import Any, List
 
+from opendxa.dana.common.runtime_scopes import RuntimeScopes
 from opendxa.dana.language.ast import (
     BinaryExpression,
     BinaryOperator,
@@ -120,10 +121,10 @@ class FStringTransformer(BaseTransformer):
     def _parse_expression_term(self, term: str) -> Any:
         """Parse a single term in an f-string expression."""
         if "." in term or term.isalnum():
-            # Add private scope if no scope prefix
+            # Add local scope if no scope prefix
             parts = term.split(".")
-            if parts[0] not in ["private", "public", "system"]:
-                parts.insert(0, "private")
+            if parts[0] not in RuntimeScopes.ALL:
+                parts = self._insert_local_scope(parts)
             return Identifier(name=".".join(parts))
         else:
             return LiteralExpression(literal=self._parse_literal(term))

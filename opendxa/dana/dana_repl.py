@@ -332,10 +332,12 @@ class DanaREPLApp(Loggable):
             "exit",
             "quit",
             # DANA scopes
+            "local",
             "private",
             "public",
             "system",
             # Common prefixes
+            "local.",
             "private.",
             "public.",
             "system.",

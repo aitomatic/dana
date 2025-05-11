@@ -2,26 +2,7 @@
 
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.common.types import BaseRequest
-from opendxa.dana.language.parser import ParseResult, parse
-
-
-class TranscoderError(Exception):
-    """Exception raised when transcoding fails."""
-
-    def __init__(self, message: str, natural_language: str):
-        self.natural_language = natural_language
-        # Clean up the error message
-        if "Generated invalid DANA code:" in message:
-            # Extract the actual error message
-            error_msg = message.split("Generated invalid DANA code:")[1].strip()
-            # Remove the ParseError wrapper
-            if error_msg.startswith("[ParseError(") and error_msg.endswith(")]"):
-                error_msg = error_msg[12:-2]  # Remove ParseError( and )
-                # Remove quotes if present
-                if error_msg.startswith('"') and error_msg.endswith('"'):
-                    error_msg = error_msg[1:-1]
-            message = error_msg
-        super().__init__(message)
+from opendxa.dana.language.parser import GrammarParser, ParseResult
 
 
 class Transcoder:
@@ -56,6 +37,7 @@ class Transcoder:
             llm_resource: LLM resource for translation
         """
         self.llm = llm_resource
+        self.parser = GrammarParser()
 
     async def to_dana(self, natural_language: str) -> tuple[ParseResult, str]:
         """Convert natural language to DANA code.
@@ -119,7 +101,7 @@ class Transcoder:
                 dana_code = str(response.content)
 
             # Parse the generated code to validate it
-            result = parse(dana_code)
+            result = self.parser.parse(dana_code)
             if not result.is_valid:
                 raise TranscoderError(f"Generated invalid DANA code: {result.errors}", natural_language)
 

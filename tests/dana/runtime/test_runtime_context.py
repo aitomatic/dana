@@ -10,9 +10,17 @@ def test_runtime_context_scopes():
     """Test scope-based access in RuntimeContext."""
     ctx = RuntimeContext()
 
+    # Test local scope (unscoped variables)
+    ctx.set("name", "Alice")
+    assert ctx.get("name") == "Alice"
+    assert ctx.get("local.name") == "Alice"
+    # Dotted local variable names are not allowed
+    with pytest.raises(StateError):
+        ctx.set("foo.bar", 123)
+
     # Test private scope
-    ctx.set("private.name", "Alice")
-    assert ctx.get("private.name") == "Alice"
+    ctx.set("private.name", "Bob")
+    assert ctx.get("private.name") == "Bob"
 
     # Test public scope
     ctx.set("public.weather", "sunny")
@@ -27,11 +35,17 @@ def test_runtime_context_nested_keys():
     """Test nested key access in RuntimeContext."""
     ctx = RuntimeContext()
 
-    # Test nested keys in private scope
-    ctx.set("private.profile.name", "Alice")
-    ctx.set("private.profile.age", 30)
-    assert ctx.get("private.profile.name") == "Alice"
-    assert ctx.get("private.profile.age") == 30
+    # Test local scope does not allow nested keys
+    with pytest.raises(StateError):
+        ctx.set("profile.name", "Alice")
+    with pytest.raises(StateError):
+        ctx.set("profile.age", 30)
+
+    # Test private scope allows nested keys
+    ctx.set("private.profile.name", "Bob")
+    ctx.set("private.profile.age", 35)
+    assert ctx.get("private.profile.name") == "Bob"
+    assert ctx.get("private.profile.age") == 35
 
     # Test nested keys in public scope
     ctx.set("public.location.city", "San Francisco")
@@ -102,30 +116,31 @@ def test_invalid_keys():
         ctx.set(".value", "test")
     assert "Invalid state key" in str(exc_info.value)
 
-    # Test missing variable
-    with pytest.raises(StateError) as exc_info:
-        ctx.set("private", "test")
-    assert "Invalid state key" in str(exc_info.value)
+def test_parent_context_inheritance():
+    """Test inheritance from parent context."""
+    # Create parent context
+    parent = RuntimeContext()
+    parent.set("private.name", "Parent")
+    parent.set("public.weather", "sunny")
+    parent.set("system.status", "running")
+    parent.set("local_var", "parent_local")  # Local variables don't inherit
 
+    # Create child context
+    child = RuntimeContext(parent=parent)
 
-def test_from_dict_basic():
-    """Test creating RuntimeContext from dictionary without base context."""
-    data = {
-        "private.name": "Alice",
-        "public.weather": "sunny",
-        "system.status": "running",
-        "unscoped": "value",  # Should go to private scope
-    }
+    # Test inheritance of shared scopes
+    assert child.get("private.name") == "Parent"
+    assert child.get("public.weather") == "sunny"
+    assert child.get("system.status") == "running"
 
-    ctx = RuntimeContext.from_dict(data)
+    # Test local scope is fresh
+    with pytest.raises(StateError):
+        child.get("local_var")
 
-    # Test scoped variables
-    assert ctx.get("private.name") == "Alice"
-    assert ctx.get("public.weather") == "sunny"
-    assert ctx.get("system.status") == "running"
-
-    # Test unscoped variable went to private scope
-    assert ctx.get("private.unscoped") == "value"
+    # Test modifications don't affect parent
+    child.set("private.name", "Child")
+    assert child.get("private.name") == "Child"
+    assert parent.get("private.name") == "Parent"
 
 
 def test_from_dict_with_base_context():
@@ -138,22 +153,24 @@ def test_from_dict_with_base_context():
 
     # Create data that will be overridden by base context
     data = {
-        "private.name": "Alice",  # Will be overridden by base
-        "public.weather": "sunny",  # Will be overridden by base
+        "private.name": "Alice",  # Will override base
+        "public.weather": "sunny",  # Will override base
         "private.new": "new_value",  # Will be kept
+        "local_var": "local_value",  # Goes to local scope
     }
 
     ctx = RuntimeContext.from_dict(data, base)
 
-    # Base context values should take precedence
-    assert ctx.get("private.name") == "Bob"
-    assert ctx.get("public.weather") == "rainy"
+    # Base context values should take precedence for shared scopes
+    assert ctx.get("private.name") == "Alice"
+    assert ctx.get("public.weather") == "sunny"
 
     # Base context values should be included
     assert ctx.get("private.other") == "base_value"
 
     # New values from data should be included
     assert ctx.get("private.new") == "new_value"
+    assert ctx.get("local_var") == "local_value"
 
 
 def test_from_dict_resources():

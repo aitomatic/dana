@@ -2,9 +2,13 @@
 
 
 class DanaError(Exception):
-    """Base class for all DANA-related errors."""
+    """Base class for all DANA-related errors with unified formatting."""
 
-    pass
+    def __init__(self, message: str, line: int = 0, source_line: str = ""):
+        self.message = message
+        self.line = line
+        self.source_line = source_line
+        super().__init__(self.message)
 
 
 class ParseError(DanaError):
@@ -34,7 +38,7 @@ class ParseError(DanaError):
                 error_pos = min(error_pos, line_with_caret.index("#") - 1)
 
             # Insert the caret at the error position
-            full_message = f"{line_with_caret}\n{' ' * error_pos}^"
+            full_message = f"{full_message}\n{line_with_caret}\n{' ' * error_pos}^"
         super().__init__(full_message)
 
 
@@ -104,10 +108,12 @@ class SandboxViolationError(DANARuntimeError):
     pass
 
 
-class TranscoderError(DANAError):
+class TranscoderError(Exception):
     """Base class for errors during NL <-> Program conversion."""
 
-    pass
+    def __init__(self, message: str):
+        self.message = message
+        super().__init__(self.message)
 
 
 class CompilationError(TranscoderError):
@@ -155,3 +161,29 @@ class KBError(DanaError):
     """Error related to Knowledge Base access or loading."""
 
     pass
+
+
+# Moved from opendxa/dana/error_handling.py
+class ErrorContext:
+    """Context for error handling."""
+
+    def __init__(self, message: str, line: int = 0, source_line: str = ""):
+        self.message = message
+        self.line = line
+        self.source_line = source_line
+
+
+class ErrorHandler:
+    """Handles errors in DANA programs."""
+
+    def __init__(self):
+        self.errors = []
+
+    def add_error(self, error: DanaError):
+        self.errors.append(error)
+
+    def has_errors(self) -> bool:
+        return len(self.errors) > 0
+
+    def get_errors(self) -> list[DanaError]:
+        return self.errors

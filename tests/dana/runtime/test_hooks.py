@@ -3,7 +3,7 @@
 import pytest
 
 from opendxa.dana.exceptions import StateError
-from opendxa.dana.language.parser import parse
+from opendxa.dana.language.parser import GrammarParser, ParseResult
 from opendxa.dana.runtime.context import RuntimeContext
 from opendxa.dana.runtime.hooks import (
     HookRegistry,
@@ -15,6 +15,18 @@ from opendxa.dana.runtime.hooks import (
     unregister_hook,
 )
 from opendxa.dana.runtime.interpreter import create_interpreter
+
+
+@pytest.fixture
+def parser():
+    """Create a fresh parser instance for each test."""
+    return GrammarParser()
+
+
+@pytest.fixture
+def context():
+    """Create a runtime context for testing."""
+    return RuntimeContext()
 
 
 def test_hook_registry_basics():
@@ -71,13 +83,12 @@ def test_global_hook_registry():
     clear_hooks()
 
 
-def test_program_hooks():
+def test_program_hooks(parser, context):
     """Test program-level hooks in the interpreter."""
     # Clean up any existing hooks
     clear_hooks()
 
     # Create an interpreter
-    context = RuntimeContext()
     interpreter = create_interpreter(context)
 
     executed = {"before_program": 0, "after_program": 0}
@@ -93,9 +104,7 @@ def test_program_hooks():
     register_hook(HookType.AFTER_PROGRAM, after_program_hook)
 
     # Execute a program
-    program = "private.a = 42"
-
-    result = parse(program, type_check=False)
+    result = parser.parse("private.a = 42")
     interpreter.execute_program(result)
 
     # Check that hooks were executed
@@ -106,7 +115,7 @@ def test_program_hooks():
     clear_hooks()
 
 
-def test_statement_hooks():
+def test_statement_hooks(parser, context):
     """Test statement-level hooks in the interpreter."""
     # Clean up any existing hooks
     clear_hooks()
@@ -139,9 +148,7 @@ def test_statement_hooks():
     register_hook(HookType.AFTER_ASSIGNMENT, after_assignment_hook)
 
     # Execute a program with one assignment
-    program = "private.a = 42"
-
-    result = parse(program, type_check=False)
+    result = parser.parse("private.a = 42")
     interpreter.execute_program(result)
 
     # Check that hooks were executed the right number of times
@@ -154,7 +161,7 @@ def test_statement_hooks():
     clear_hooks()
 
 
-def test_expression_hooks():
+def test_expression_hooks(parser, context):
     """Test expression-level hooks in the interpreter."""
     # Clean up any existing hooks
     clear_hooks()
@@ -178,9 +185,7 @@ def test_expression_hooks():
     register_hook(HookType.AFTER_EXPRESSION, after_expression_hook)
 
     # Execute a program with a binary expression
-    program = "private.a = 40 + 2"
-
-    result = parse(program, type_check=False)
+    result = parser.parse("private.a = 40 + 2")
 
     # Run with hooks
     try:
@@ -201,7 +206,7 @@ def test_expression_hooks():
     clear_hooks()
 
 
-def test_error_hooks():
+def test_error_hooks(parser, context):
     """Test error hooks in the interpreter."""
     # Clean up any existing hooks
     clear_hooks()
@@ -223,9 +228,7 @@ def test_error_hooks():
     register_hook(HookType.ON_ERROR, on_error_hook)
 
     # Execute a program with an error (division by zero)
-    program = "private.a = 42 / 0"
-
-    result = parse(program, type_check=False)
+    result = parser.parse("private.a = 42 / 0")
 
     # Should raise a StateError
     with pytest.raises(StateError):
@@ -239,7 +242,7 @@ def test_error_hooks():
     clear_hooks()
 
 
-def test_hook_with_visitor_pattern():
+def test_hook_with_visitor_pattern(parser, context):
     """Test that hooks work with the interpreter."""
     # Clean up any existing hooks
     clear_hooks()
@@ -261,9 +264,7 @@ def test_hook_with_visitor_pattern():
     register_hook(HookType.AFTER_PROGRAM, after_program_hook)
 
     # Execute a program
-    program = "private.a = 42"
-
-    result = parse(program, type_check=False)
+    result = parser.parse("private.a = 42")
     interpreter.execute_program(result)
 
     # Check that hooks were executed
@@ -272,3 +273,20 @@ def test_hook_with_visitor_pattern():
 
     # Clean up
     clear_hooks()
+
+
+def test_hook_execution(parser, context):
+    """Test that hooks are executed correctly."""
+    # Create an interpreter
+    interpreter = create_interpreter(context)
+
+    # Parse a program
+    result = parser.parse("private.x = 42")
+    assert isinstance(result, ParseResult)
+    assert result.is_valid
+
+    # Execute the program
+    interpreter.execute_program(result)
+
+    # Check that the variable was set
+    assert context.get("private.x") == 42

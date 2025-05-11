@@ -3,16 +3,29 @@
 import pytest
 
 from opendxa.dana.exceptions import RuntimeError, StateError
-from opendxa.dana.language.parser import parse
+from opendxa.dana.language.parser import GrammarParser, ParseResult
 from opendxa.dana.runtime.context import RuntimeContext
 from opendxa.dana.runtime.function_registry import (
     FunctionRegistry,
+    call_function,
     get_registry,
     has_function,
     register_function,
     unregister_function,
 )
 from opendxa.dana.runtime.interpreter import create_interpreter
+
+
+@pytest.fixture
+def parser():
+    """Create a fresh parser instance for each test."""
+    return GrammarParser()
+
+
+@pytest.fixture
+def context():
+    """Create a runtime context for testing."""
+    return RuntimeContext()
 
 
 def test_function_registry_basics():
@@ -64,7 +77,7 @@ def test_global_registry():
     assert not has_function("square")
 
 
-def test_interpreter_function_call():
+def test_interpreter_function_call(parser, context):
     """Test function calls in the interpreter."""
 
     # Register a test function
@@ -74,7 +87,6 @@ def test_interpreter_function_call():
     register_function("multiply", multiply)
 
     # Create interpreter
-    context = RuntimeContext()
     interpreter = create_interpreter(context)
 
     # Skip this test for now until we properly implement function calling in DANA language
@@ -89,7 +101,7 @@ def test_interpreter_function_call():
     private.result = multiply(a=private.a, b=private.b)
     """
 
-    result = parse(program)
+    result = parser.parse(program)
     interpreter.execute_program(result)
 
     # Check the result
@@ -126,7 +138,7 @@ def test_recursive_function_call():
     private.result = double(value=private.step1)
     """
 
-    result = parse(program)
+    result = parser.parse(program)
     interpreter.execute_program(result)
 
     # 10 + 5 = 15, 15 * 2 = 30
@@ -159,7 +171,7 @@ def test_function_call_error_handling():
     private.result = failing_func()
     """
 
-    result = parse(program)
+    result = parser.parse(program)
 
     # Should raise a RuntimeError with the original error message
     with pytest.raises(RuntimeError) as excinfo:
@@ -169,3 +181,69 @@ def test_function_call_error_handling():
 
     # Clean up
     unregister_function("failing_func")
+
+
+def test_reason2_function():
+    """Test the reason2 function implementation."""
+    # Create a test context with LLM integration
+    context = RuntimeContext()
+
+    # Mock LLM integration
+    class MockLLMIntegration:
+        def execute_direct_synchronous_reasoning(self, prompt, context_vars=None, options=None):
+            return f"Mock response to: {prompt}"
+
+    context.register_resource("llm_integration", MockLLMIntegration())
+
+    # Test basic usage with named argument
+    result = call_function("reason2", context, {"prompt": "What is 2+2?"})
+    assert "Mock response to: What is 2+2?" in result
+
+    # Test basic usage with positional argument
+    result = call_function("reason2", context, {"__positional": ["What is 3+3?"]})
+    assert "Mock response to: What is 3+3?" in result
+
+    # Test positional argument with other named arguments
+    result = call_function("reason2", context, {"__positional": ["Analyze this data"], "context": "private.data", "temperature": 0.7})
+    assert "Mock response to: Analyze this data" in result
+
+    # Test with context
+    result = call_function("reason2", context, {"prompt": "Analyze this data", "context": "private.data"})
+    assert "Mock response to: Analyze this data" in result
+
+    # Test with context list
+    result = call_function("reason2", context, {"prompt": "Analyze this data", "context": ["private.data1", "private.data2"]})
+    assert "Mock response to: Analyze this data" in result
+
+    # Test with options
+    result = call_function("reason2", context, {"prompt": "Generate ideas", "temperature": 0.7, "format": "json"})
+    assert "Mock response to: Generate ideas" in result
+
+    # Test error handling - missing prompt
+    with pytest.raises(RuntimeError, match="reason2 function requires a 'prompt' argument"):
+        call_function("reason2", context, {})
+
+    # Test error handling - empty positional args
+    with pytest.raises(RuntimeError, match="reason2 function requires a 'prompt' argument"):
+        call_function("reason2", context, {"__positional": []})
+
+    # Test error handling - missing LLM integration
+    with pytest.raises(RuntimeError, match="No LLM integration available"):
+        empty_context = RuntimeContext()
+        call_function("reason2", empty_context, {"prompt": "Test"})
+
+
+def test_call_function(parser, context):
+    """Test calling a function through the registry."""
+    # Parse a function call
+    result = parser.parse('log("Hello, world!")')
+    assert isinstance(result, ParseResult)
+    assert result.is_valid
+
+    # Get the function call node
+    stmt = result.program.statements[0]
+    assert stmt.name == "log"
+
+    # Call the function
+    result = call_function(stmt.name, context, stmt.args)
+    assert result is None  # log function returns None

@@ -6,6 +6,7 @@ This module provides utilities for managing the runtime context during execution
 from typing import Any, Dict, Optional
 
 from opendxa.common.mixins.loggable import Loggable
+from opendxa.dana.common.runtime_scopes import RuntimeScopes
 from opendxa.dana.exceptions import StateError
 from opendxa.dana.runtime.context import RuntimeContext
 
@@ -50,8 +51,8 @@ class ContextManager(Loggable):
             raise StateError(f"Variable '{name}' must include scope prefix (private.{name}, public.{name}, or system.{name})")
 
         scope, var_name = name.split(".", 1)
-        if scope not in ["private", "public", "system"]:
-            raise StateError(f"Invalid scope '{scope}'. Must be one of: private, public, system")
+        if scope not in RuntimeScopes.ALL:
+            raise StateError(f"Invalid scope '{scope}'. Must be one of: {RuntimeScopes.ALL}")
 
         # 3. Direct dictionary access - the core functionality
         if scope in self.context._state and var_name in self.context._state[scope]:
@@ -72,11 +73,11 @@ class ContextManager(Loggable):
         """
         # Validate and split the variable name
         if "." not in name:
-            raise StateError(f"Variable '{name}' must include scope prefix (private.{name}, public.{name}, or system.{name})")
+            raise StateError(f"Variable '{name}' must include scope prefix (local.{name}, private.{name}, public.{name}, or system.{name})")
 
         scope, var_name = name.split(".", 1)
-        if scope not in ["private", "public", "system"]:
-            raise StateError(f"Invalid scope '{scope}'. Must be one of: private, public, system")
+        if scope not in RuntimeScopes.ALL:
+            raise StateError(f"Invalid scope '{scope}'. Must be one of: {RuntimeScopes.ALL}")
 
         # Set the variable in the specified scope
         self.context.set(name, value)

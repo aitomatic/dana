@@ -7,6 +7,7 @@ evaluating expressions in DANA programs.
 import re
 from typing import Any, Dict, Optional
 
+from opendxa.dana.common.runtime_scopes import RuntimeScopes
 from opendxa.dana.exceptions import RuntimeError, StateError
 from opendxa.dana.language.ast import (
     BinaryExpression,
@@ -216,7 +217,7 @@ class ExpressionEvaluator(BaseExecutor):
                 scope, var_name = parts
 
                 # Most reliable direct state dictionary access
-                if scope in ["private", "public", "system"] and scope in self.context_manager.context._state:
+                if scope in RuntimeScopes.ALL and scope in self.context_manager.context._state:
                     state_dict = self.context_manager.context._state[scope]
                     if var_name in state_dict:
                         value = state_dict[var_name]
@@ -324,4 +325,38 @@ class ExpressionEvaluator(BaseExecutor):
         # Step 2: If local context provided, create new context with base context taking precedence
         runtime_context = RuntimeContext.from_dict(context, base_context) if context else base_context
 
-        return call_function(node.name, runtime_context, node.args)
+        def unwrap_value(val):
+            # Unwrap LiteralExpression to its value
+            if isinstance(val, LiteralExpression):
+                inner = val.literal.value
+                # If the value is a list, unwrap each element
+                if isinstance(inner, list):
+                    return [unwrap_value(item) for item in inner]
+                elif isinstance(inner, dict):
+                    return {k: unwrap_value(v) for k, v in inner.items()}
+                else:
+                    return inner
+            # Resolve Identifier
+            elif isinstance(val, Identifier):
+                return self.evaluate_identifier(val, context)
+            # Evaluate nested FunctionCall, etc.
+            elif hasattr(val, "__dict__") or hasattr(val, "__slots__"):
+                return self.evaluate(val, context)
+            # If it's a dict, recursively unwrap
+            elif isinstance(val, dict):
+                return {k: unwrap_value(v) for k, v in val.items()}
+            # If it's a list, recursively unwrap
+            elif isinstance(val, list):
+                return [unwrap_value(item) for item in val]
+            else:
+                return val
+
+        # Evaluate all arguments before calling the function
+        evaluated_args = {}
+        for key, value in node.args.items():
+            if key == "__positional" and isinstance(value, list):
+                evaluated_args["__positional"] = [unwrap_value(arg) for arg in value]
+            else:
+                evaluated_args[key] = unwrap_value(value)
+
+        return call_function(node.name, runtime_context, evaluated_args)

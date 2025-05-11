@@ -4,7 +4,7 @@ This module provides access to the transformer classes used by the DANA parser.
 """
 
 from opendxa.common.mixins.loggable import Loggable
-from opendxa.dana.language.transformers.main_transformer import DanaTransformerNew
+from opendxa.dana.language.transformers.main_transformer import DanaTransformer
 
 
 class TransformerModule(Loggable):
@@ -16,7 +16,7 @@ class TransformerModule(Loggable):
 
     def get_transformer_class(self):
         """Get the transformer class for DANA language parsing."""
-        return DanaTransformerNew
+        return DanaTransformer
 
 
 # Create a singleton instance

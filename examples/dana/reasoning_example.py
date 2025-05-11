@@ -12,7 +12,7 @@ import os
 from typing import Any, Dict, Optional
 
 from opendxa.common.resource.llm_resource import LLMResource
-from opendxa.dana.language.parser import parse
+from opendxa.dana.language.parser import GrammarParser
 from opendxa.dana.runtime.context import RuntimeContext
 from opendxa.dana.runtime.interpreter import create_interpreter
 
@@ -40,7 +40,8 @@ async def run_dana_reasoning_example(model: Optional[str] = None, provider: Opti
     print(f"{'-'*80}\n")
 
     # Parse the DANA code
-    parse_result = parse(dana_code)
+    parser = GrammarParser()
+    parse_result = parser.parse(dana_code)
 
     # Create a runtime context
     context = RuntimeContext()

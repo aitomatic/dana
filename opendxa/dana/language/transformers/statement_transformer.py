@@ -2,6 +2,7 @@
 
 from lark import Token
 
+from opendxa.dana.common.runtime_scopes import RuntimeScopes
 from opendxa.dana.language.ast import (
     Assignment,
     Conditional,
@@ -43,8 +44,8 @@ class StatementTransformer(BaseTransformer):
         value = items[1]
 
         # Ensure target has a scope prefix
-        if not target.name.startswith(("private.", "public.", "system.")):
-            target = Identifier(name="private." + target.name)
+        if not any(target.name.startswith(prefix) for prefix in RuntimeScopes.ALL_WITH_DOT):
+            target = Identifier(name=self._insert_local_scope(target.name))
 
         return Assignment(target=target, value=value)
 
@@ -175,29 +176,40 @@ class StatementTransformer(BaseTransformer):
             # Filter out None values
             arg_items = [item for item in arg_items if item is not None]
 
-            # Check if we have positional or named arguments or both
+            # Process each argument
             for arg in arg_items:
-                if isinstance(arg, tuple):
-                    # Named argument
-                    key, value = arg
-                    args[key] = value
+                if isinstance(arg, dict):
+                    # Named arguments
+                    args.update(arg)
                 elif isinstance(arg, list):
-                    # List of named arguments or positional arguments
-                    for sub_arg in arg:
+                    # List of arguments
+                    positional_args = []
+                    for i, sub_arg in enumerate(arg):
                         if isinstance(sub_arg, tuple):
                             # Named argument
                             key, value = sub_arg
                             args[key] = value
                         else:
-                            # Positional argument - use a numeric key
-                            args[f"arg{len(args)}"] = sub_arg
+                            # Positional argument
+                            positional_args.append(sub_arg)
+                    if positional_args:
+                        args["__positional"] = positional_args
+                elif isinstance(arg, tuple):
+                    # Named argument
+                    key, value = arg
+                    args[key] = value
                 else:
-                    # Positional argument - use a numeric key
-                    args[f"arg{len(args)}"] = arg
+                    # Single positional argument
+                    args["__positional"] = [arg]
 
         # For direct reason() function calls, handle special case
         if name == "reason" and "arg0" in args:
             return self._process_reason_function_call(args)
+
+        # If we have a single positional argument that's a dictionary of named arguments,
+        # use that as our args
+        if len(args) == 1 and "arg0" in args and isinstance(args["arg0"], dict):
+            args = args["arg0"]
 
         return FunctionCall(name=name, args=args)
 
@@ -248,8 +260,14 @@ class StatementTransformer(BaseTransformer):
         return items
 
     def named_args(self, items):
-        """Transform named arguments into a list of tuples."""
-        return items
+        """Transform named arguments into a dictionary."""
+        # Convert list of tuples to dictionary
+        args = {}
+        for item in items:
+            if isinstance(item, tuple):
+                key, value = item
+                args[key] = value
+        return args
 
     def named_arg(self, items):
         """Transform a named argument into a tuple of (name, value)."""

@@ -6,6 +6,7 @@ Functions can be registered by name and called with arguments.
 
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
+from opendxa.dana.common.runtime_scopes import RuntimeScopes
 from opendxa.dana.exceptions import RuntimeError, StateError
 from opendxa.dana.runtime.context import RuntimeContext
 
@@ -223,6 +224,112 @@ def _log_function(context: RuntimeContext, args: Dict[str, Any]) -> None:
     return None
 
 
+def _parse_context_vars(kwargs: Dict[str, Any], special_keys: Optional[List[str]] = None) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+    """Parse context variables from kwargs, separating them from special arguments.
+
+    This utility function processes kwargs to extract context variables and special arguments.
+    Context variables are any named arguments that are not in the special_keys list.
+    Unscoped variables are treated as private variables.
+
+    Args:
+        kwargs: Dictionary of keyword arguments to process
+        special_keys: List of keys to treat as special arguments (not context variables)
+                     Defaults to ["prompt", "__positional", "temperature", "format"]
+
+    Returns:
+        Tuple containing:
+        - Dictionary of context variables with proper scoping
+        - Dictionary of special arguments
+
+    Raises:
+        ValueError: If any system variables are found in the context variables
+    """
+    if special_keys is None:
+        special_keys = ["prompt", "__positional", "temperature", "format"]
+
+    context_vars = {}
+    special_args = {}
+
+    for key, value in kwargs.items():
+        if key in special_keys:
+            special_args[key] = value
+            continue
+
+        # Check if key is a system variable (not allowed)
+        if key.startswith("system."):
+            raise ValueError(f"System variables are not allowed in context: {key}")
+
+        # If key is unscoped, treat it as local
+        if "." in key and not key.startswith(RuntimeScopes.ALL_WITH_DOT):
+            scoped_key = f"local.{key}"
+        else:
+            scoped_key = key
+
+        context_vars[scoped_key] = value
+
+    return context_vars, special_args
+
+
+def _reason2_function(context: RuntimeContext, args: Dict[str, Any]) -> Any:
+    """Alternative implementation of reason as a registered function.
+
+    This function provides similar functionality to the reason statement
+    but implemented as a regular function.
+
+    Args can be provided in two ways:
+    1. Named arguments: {"prompt": "...", "var1": "value1", "var2": "value2", ...}
+    2. Positional arguments: {"__positional": ["prompt value", ...], "var1": "value1", ...}
+
+    All named arguments (except prompt and special options) are treated as context variables
+    that augment a local copy of the RuntimeContext:
+    - Unscoped variables (e.g., "var") are treated as "private.var"
+    - Scoped variables (e.g., "private.var" or "public.var") are used as is
+    - System variables (e.g., "system.var") are not allowed
+
+    Special arguments:
+    - prompt: The reasoning prompt (required)
+    - temperature: Optional LLM temperature parameter
+    - format: Optional output format (text/json)
+    """
+    # Parse context variables and special arguments
+    context_vars, special_args = _parse_context_vars(args)
+
+    # Handle positional arguments if present
+    if "__positional" in special_args and special_args["__positional"]:
+        prompt = special_args["__positional"][0]  # First positional arg is prompt
+    elif "prompt" in special_args:
+        prompt = special_args["prompt"]
+    else:
+        raise ValueError("reason2 function requires a 'prompt' argument")
+
+    # Create a local copy of the RuntimeContext
+    local_context = RuntimeContext.from_dict({}, context)
+
+    # Add context variables to local context
+    for key, value in context_vars.items():
+        local_context.set(key, value)
+
+    # Get options (only temperature and format)
+    options = {}
+    if "temperature" in special_args:
+        options["temperature"] = special_args["temperature"]
+    if "format" in special_args:
+        options["format"] = special_args["format"]
+
+    # Get the LLM integration from the context
+    try:
+        llm_integration = local_context.get_resource("llm_integration")
+        if not llm_integration:
+            raise RuntimeError("No LLM integration available")
+    except StateError:
+        raise RuntimeError("No LLM integration available")
+
+    # Execute the reasoning with the augmented context
+    result = llm_integration.execute_direct_synchronous_reasoning(prompt, context_vars=None, options=options if options else None)
+
+    return result
+
+
 def _register_standard_functions() -> None:
     """Register standard functions with the global registry."""
     register_function(
@@ -233,6 +340,20 @@ def _register_standard_functions() -> None:
             "parameters": {
                 "message": {"type": "string", "description": "The message to log"},
                 "level": {"type": "string", "description": "The log level (DEBUG, INFO, WARN, ERROR)", "default": "INFO"},
+            },
+        },
+    )
+
+    register_function(
+        "reason2",
+        _reason2_function,
+        {
+            "description": "Alternative implementation of reason as a function",
+            "parameters": {
+                "prompt": {"type": "string", "description": "The reasoning prompt"},
+                "context": {"type": "string|list", "description": "Optional context variables to include", "optional": True},
+                "temperature": {"type": "number", "description": "LLM temperature parameter", "optional": True},
+                "format": {"type": "string", "description": "Output format (text/json)", "optional": True},
             },
         },
     )

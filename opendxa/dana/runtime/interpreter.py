@@ -109,7 +109,7 @@ class Interpreter(Loggable):
                 if len(parse_result.program.statements) == 1:
                     # Store in context directly for REPL to retrieve
                     if last_result is not None:
-                        self.context.set("private.__last_value", last_result)
+                        self.context.set(StatementExecutor.LAST_VALUE, last_result)
 
             # If there are any parse errors, stop at the first one
             if parse_result.errors:

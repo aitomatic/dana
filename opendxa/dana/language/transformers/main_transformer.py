@@ -7,8 +7,8 @@ from opendxa.dana.language.transformers.fstring_transformer import FStringTransf
 from opendxa.dana.language.transformers.statement_transformer import StatementTransformer
 
 
-class DanaTransformerNew(Transformer):
-    """New main transformer class that delegates to specialized transformers.
+class DanaTransformer(Transformer):
+    """Main transformer class that delegates to specialized transformers.
 
     This transformer integrates all the specialized transformers and
     delegates method calls to the appropriate specialized transformer.
@@ -29,4 +29,4 @@ class DanaTransformerNew(Transformer):
                 return getattr(transformer, name)
 
         # If method not found, raise AttributeError
-        raise AttributeError(f"'DanaTransformerNew' has no attribute '{name}'")
+        raise AttributeError(f"'DanaTransformer' has no attribute '{name}'")

@@ -109,32 +109,4 @@ class ErrorHandler:
         return DanaError(message=f"Error during {context.operation}", original_error=error, context=context)
 
 
-# Specific error types that extend DanaError
-class RuntimeError(DanaError):
-    """Error during program execution."""
-
-    pass
-
-
-class StateError(DanaError):
-    """Error related to runtime state access."""
-
-    pass
-
-
-class ParseError(DanaError):
-    """Error during program parsing."""
-
-    pass
-
-
-class ValidationError(DanaError):
-    """Error during program validation."""
-
-    pass
-
-
-class InterpretError(DanaError):
-    """Error during program interpretation."""
-
-    pass
+# Removed error classes that have been moved to opendxa/dana/exceptions.py

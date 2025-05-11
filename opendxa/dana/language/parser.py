@@ -9,7 +9,7 @@ for different language constructs, improving maintainability and testability.
 
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, NamedTuple, Optional, Sequence
+from typing import NamedTuple, Optional, Sequence
 
 from opendxa.common.mixins.loggable import Loggable
 
@@ -71,13 +71,6 @@ class DanaIndenter(Indenter):
     always_accept = {NL_type, INDENT_type, DEDENT_type}
 
 
-if TYPE_CHECKING:
-    from typing import Optional
-
-    from lark import Tree
-    from lark.indenter import Indenter
-
-
 class GrammarParser(Loggable):
     """Grammar-based parser for DANA language.
 
@@ -88,6 +81,9 @@ class GrammarParser(Loggable):
         """Initialize the parser with the DANA grammar."""
         # Initialize Loggable
         super().__init__()
+
+        # Initialize type environment
+        self.type_environment = TypeEnvironment()
 
         # Path to the grammar file (relative to this file)
         grammar_path = Path(__file__).parent / "dana_grammar.lark"
@@ -123,16 +119,17 @@ class GrammarParser(Loggable):
             self.error(f"Failed to initialize Lark parser: {e}")
             raise
 
-    def parse(self, program_text: str) -> ParseResult:
+    def parse(self, program_text: str, type_check: Optional[bool] = None) -> ParseResult:
         """Parse a DANA program string into an AST.
 
         Args:
             program_text: The program text to parse
+            type_check: Whether to perform type checking. If None, uses the environment default.
 
         Returns:
             A ParseResult containing the parsed program and any errors
         """
-        errors = []
+        errors: list[ParseError] = []
 
         try:
             # Parse the program
@@ -147,7 +144,26 @@ class GrammarParser(Loggable):
             program.source_text = program_text
 
             self.debug(f"Successfully parsed program with {len(program.statements)} statements")
-            return ParseResult(program=program, errors=errors)
+            result = ParseResult(program=program, errors=errors)
+
+            # Perform type checking if enabled and parsing was successful
+            do_type_check = ENABLE_TYPE_CHECK if type_check is None else bool(type_check)
+            if do_type_check and result.is_valid:
+                visitor = TypeCheckVisitor(self.type_environment)
+                accept(result.program, visitor)
+                if visitor.errors:
+                    # Convert type errors to parse errors
+                    parse_errors = []
+                    for error in visitor.errors:
+                        line = 0
+                        if hasattr(error, "location") and error.location is not None:
+                            line = getattr(error.location, "line", 0)
+                        parse_errors.append(ParseError(str(error), line))
+
+                    # Add type errors to the result
+                    result = ParseResult(program=result.program, errors=list(result.errors) + parse_errors)
+
+            return result
 
         except UnexpectedInput as e:
             # Use error handling utility
@@ -157,7 +173,7 @@ class GrammarParser(Loggable):
 
         except LarkError as e:
             # Handle other Lark errors
-            self.error(f"Lark parsing error: {str(e)}")
+            self.debug(f"Lark parsing error: {str(e)}")
             errors.append(ParseError(f"Parsing error: {str(e)}", 0, program_text.split("\n")[0] if program_text else ""))
 
             # Create an empty program as a fallback
@@ -184,45 +200,3 @@ class GrammarParser(Loggable):
         """
         name = str(node.children[0])
         return Identifier(name=name, location=self._get_location(node))
-
-
-# Create a persistent type environment
-_type_environment = TypeEnvironment()
-
-# Create a singleton instance of the grammar parser
-_parser = GrammarParser()
-
-
-def parse(code: str, type_check: Optional[bool] = None) -> ParseResult:
-    """Parse a DANA program string into an AST.
-
-    Args:
-        code: The DANA code to parse
-        type_check: Whether to perform type checking. If None, uses the environment default.
-
-    Returns:
-        A ParseResult containing the parsed program and any errors
-    """
-    # Resolve type checking flag
-    do_type_check = ENABLE_TYPE_CHECK if type_check is None else bool(type_check)
-
-    # Parse the code
-    result = _parser.parse(code)
-
-    # Perform type checking if enabled and parsing was successful
-    if do_type_check and result.is_valid:
-        visitor = TypeCheckVisitor(_type_environment)
-        accept(result.program, visitor)
-        if visitor.errors:
-            # Convert type errors to parse errors
-            parse_errors = []
-            for error in visitor.errors:
-                line = 0
-                if hasattr(error, "location") and error.location is not None:
-                    line = getattr(error.location, "line", 0)
-                parse_errors.append(ParseError(str(error), line))
-
-            # Add type errors to the result
-            result = ParseResult(program=result.program, errors=list(result.errors) + parse_errors)
-
-    return result

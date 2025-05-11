@@ -6,6 +6,7 @@ import pytest
 
 # REPL import not needed for this test
 from opendxa.common.resource.llm_resource import LLMResource
+from opendxa.dana.language.parser import GrammarParser, ParseResult
 from opendxa.dana.runtime.context import RuntimeContext
 
 
@@ -32,11 +33,16 @@ def mock_llm():
     return mock_llm
 
 
-def test_reason_statement(runtime_context, mock_llm):
+@pytest.fixture
+def parser():
+    """Create a fresh parser instance for each test."""
+    return GrammarParser()
+
+
+def test_reason_statement(runtime_context, mock_llm, parser):
     """Test the reason statement outside of asyncio."""
     # We need to mock the LLM integration completely to avoid asyncio issues
 
-    from opendxa.dana.language.parser import parse
     from opendxa.dana.runtime.interpreter import create_interpreter
 
     # Create an interpreter
@@ -48,7 +54,7 @@ def test_reason_statement(runtime_context, mock_llm):
         mock_reasoning.return_value = "4"
 
         # Parse and execute a simple reason statement with assignment
-        program = parse('private.result = reason("What is 2+2?")')
+        program = parser.parse('private.result = reason("What is 2+2?")')
         interpreter.execute_program(program)
 
         # Verify our mock was called with the right prompt
@@ -58,3 +64,11 @@ def test_reason_statement(runtime_context, mock_llm):
 
         # Verify the variable was set correctly
         assert interpreter.context.get("private.result") == "4"
+
+
+def test_parse_simple_reason(parser):
+    """Test parsing a simple reason statement."""
+    program = parser.parse('private.result = reason("What is 2+2?")')
+    assert isinstance(program, ParseResult)
+    assert program.is_valid
+    assert len(program.program.statements) == 1

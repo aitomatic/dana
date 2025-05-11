@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 from opendxa.dana.exceptions import DanaError
 from opendxa.dana.io.file_io import read_dana_program
 from opendxa.dana.language.ast import LogLevel
-from opendxa.dana.language.parser import parse
+from opendxa.dana.language.parser import GrammarParser
 from opendxa.dana.runtime.context import RuntimeContext
 from opendxa.dana.runtime.interpreter import Interpreter
 
@@ -57,7 +57,8 @@ def run_example(example_path: str):
 
         # 2. Parse
         print(f"{YELLOW}Parsing...{RESET}")
-        parse_result = parse(dana_code)
+        parser = GrammarParser()
+        parse_result = parser.parse(dana_code)
 
         # 3. Setup Runtime
         print(f"{YELLOW}Initializing context and interpreter...{RESET}")

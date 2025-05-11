@@ -18,7 +18,7 @@ import asyncio
 import os
 
 from opendxa.common.resource.llm_resource import LLMResource
-from opendxa.dana.language.parser import parse
+from opendxa.dana.language.parser import GrammarParser
 from opendxa.dana.runtime.context import RuntimeContext
 from opendxa.dana.runtime.interpreter import Interpreter
 
@@ -90,7 +90,8 @@ async def main():
     """
 
     # Parse and execute the program
-    parse_result = parse(program)
+    parser = GrammarParser()
+    parse_result = parser.parse(program)
     interpreter = Interpreter(context)
     interpreter.execute_program(parse_result)
 

@@ -7,13 +7,74 @@ for basic DANA syntax.
 import pytest
 
 from opendxa.dana.language.ast import Identifier
-from opendxa.dana.language.parser import parse
+from opendxa.dana.language.parser import GrammarParser, ParseResult
 
 
-def test_simple_assignment():
+@pytest.fixture
+def parser():
+    """Create a fresh parser instance for each test."""
+    return GrammarParser()
+
+
+def test_parse_simple_assignment(parser):
     """Test parsing a simple assignment."""
-    code = "x = 42"
-    result = parse(code, type_check=False)
+    code = "private.x = 42"
+    result = parser.parse(code, type_check=False)
+    assert isinstance(result, ParseResult)
+    assert result.is_valid
+    assert len(result.program.statements) == 1
+
+
+def test_parse_string_assignment(parser):
+    """Test parsing a string assignment."""
+    code = 'private.message = "Hello, world!"'
+    result = parser.parse(code, type_check=False)
+    assert isinstance(result, ParseResult)
+    assert result.is_valid
+    assert len(result.program.statements) == 1
+
+
+def test_parse_float_assignment(parser):
+    """Test parsing a float assignment."""
+    code = "private.pi = 3.14159"
+    result = parser.parse(code, type_check=False)
+    assert isinstance(result, ParseResult)
+    assert result.is_valid
+    assert len(result.program.statements) == 1
+
+
+def test_parse_boolean_assignment(parser):
+    """Test parsing a boolean assignment."""
+    code = "private.is_valid = true"
+    result = parser.parse(code, type_check=False)
+    assert isinstance(result, ParseResult)
+    assert result.is_valid
+    assert len(result.program.statements) == 1
+
+
+def test_parse_arithmetic_expression(parser):
+    """Test parsing arithmetic expressions."""
+    code = "private.result = 2 + 3 * 4"
+    result = parser.parse(code, type_check=False)
+    assert isinstance(result, ParseResult)
+    assert result.is_valid
+    assert len(result.program.statements) == 1
+
+
+def test_parse_comparison_expression(parser):
+    """Test parsing comparison expressions."""
+    code = "private.is_greater = 5 > 3"
+    result = parser.parse(code, type_check=False)
+    assert isinstance(result, ParseResult)
+    assert result.is_valid
+    assert len(result.program.statements) == 1
+
+
+def test_parse_logical_expression(parser):
+    """Test parsing logical expressions."""
+    code = "private.is_valid = true and false"
+    result = parser.parse(code, type_check=False)
+    assert isinstance(result, ParseResult)
     assert result.is_valid
     assert len(result.program.statements) == 1
 
@@ -22,13 +83,13 @@ def test_string_literals():
     """Test parsing string literals with both quote styles."""
     # Test double quotes
     code = 'message = "Hello, world!"'
-    result = parse(code, type_check=False)
+    result = parser.parse(code, type_check=False)
     assert result.is_valid
     assert len(result.program.statements) == 1
 
     # Test single quotes
     code = "name = 'Alice'"
-    result = parse(code, type_check=False)
+    result = parser.parse(code, type_check=False)
     assert result.is_valid
     assert len(result.program.statements) == 1
 
@@ -36,7 +97,7 @@ def test_string_literals():
 def test_nested_identifier():
     """Test parsing nested identifiers."""
     code = "private.user.name = 'Bob'"
-    result = parse(code, type_check=False)
+    result = parser.parse(code, type_check=False)
     assert result.is_valid
     assert len(result.program.statements) == 1
 
@@ -46,7 +107,7 @@ def test_simple_conditional():
     code = """if x > 10:
     log("x is greater than 10")
 """
-    result = parse(code, type_check=False)
+    result = parser.parse(code, type_check=False)
     assert result.is_valid
     assert len(result.program.statements) == 1
 
@@ -58,7 +119,7 @@ def test_conditional_with_else():
 else:
     log("x is not greater than 10")
 """
-    result = parse(code, type_check=False)
+    result = parser.parse(code, type_check=False)
     assert result.is_valid
     assert len(result.program.statements) == 1
 
@@ -66,7 +127,7 @@ else:
 def test_bare_identifier():
     """Test parsing a bare identifier as a statement."""
     code = "private.x"
-    result = parse(code, type_check=False)
+    result = parser.parse(code, type_check=False)
     assert result.is_valid
     assert len(result.program.statements) == 1
     assert isinstance(result.program.statements[0], Identifier)

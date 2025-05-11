@@ -1,5 +1,7 @@
 """Tests for the DANA type checker."""
 
+import pytest
+
 from opendxa.dana.language.ast import (
     Assignment,
     BinaryExpression,
@@ -8,8 +10,22 @@ from opendxa.dana.language.ast import (
     Literal,
     LiteralExpression,
 )
-from opendxa.dana.language.parser import parse
+from opendxa.dana.language.parser import GrammarParser
 from opendxa.dana.language.type_checker import DanaType, TypeCheckVisitor, TypeEnvironment
+from opendxa.dana.runtime.context import RuntimeContext
+from opendxa.dana.runtime.interpreter import create_interpreter
+
+
+@pytest.fixture
+def parser():
+    """Create a fresh parser instance for each test."""
+    return GrammarParser()
+
+
+@pytest.fixture
+def type_environment():
+    """Create a type environment for testing."""
+    return TypeEnvironment()
 
 
 def test_type_environment():
@@ -101,29 +117,24 @@ def test_assignment_types():
     assert "Type mismatch" in str(visitor.errors[0])
 
 
-def test_type_checking_integration():
+def test_type_checking_integration(parser):
     """Test type checking integration with parser."""
     # Program with string concatenation
     program = 'private.x = "hello"\nprivate.y = private.x + 42  # String concatenation'
 
-    # Clear the type environment before running
-    from opendxa.dana.language.parser import _type_environment
-
-    _type_environment.clear()
-
     # Parse with type checking enabled
-    result = parse(program, type_check=True)
+    result = parser.parse(program, type_check=True)
 
     # Parse without type checking
-    result_no_check = parse(program, type_check=False)
+    result_no_check = parser.parse(program, type_check=False)
 
     # Both should be valid
     assert result.is_valid
     assert result_no_check.is_valid
 
     # Check that the types are correct
-    assert _type_environment.get("private.x") == DanaType.STRING
-    assert _type_environment.get("private.y") == DanaType.STRING
+    assert parser.type_environment.get("private.x") == DanaType.STRING
+    assert parser.type_environment.get("private.y") == DanaType.STRING
 
 
 def test_logical_operator_type_checking():
@@ -142,23 +153,20 @@ def test_logical_operator_type_checking():
     assert any("must be a boolean" in str(error) for error in visitor.errors)
 
 
-def test_comprehensive_type_checking():
+def test_comprehensive_type_checking(parser):
     """Test type checking on a more complex program."""
     # For now, we'll just test that we can parse and execute a complex program
     # without breaking anything, rather than checking for specific type errors
     program = 'private.a = 10\nprivate.b = 20.5\nprivate.c = private.a + private.b  # Should be float\nprivate.d = "hello"\nprivate.e = private.d + " world"  # Should be string\nprivate.f = private.a < private.b  # Should be bool'
 
     # Parse with type checking enabled
-    result = parse(program, type_check=True)
+    result = parser.parse(program, type_check=True)
 
     # Should be valid
     assert result.is_valid
     assert len(result.errors) == 0
 
     # We should be able to execute the program
-    from opendxa.dana.runtime.context import RuntimeContext
-    from opendxa.dana.runtime.interpreter import create_interpreter
-
     context = RuntimeContext()
     interpreter = create_interpreter(context)
 

@@ -32,11 +32,11 @@ class REPL(Loggable):
 
         # Set up context
         self.context = context or RuntimeContext()
-        if "private" not in self.context._state:
-            self.context._state["private"] = {}
-        if "__repl" not in self.context._state["private"]:
-            self.context._state["private"]["__repl"] = {}
-        self.context._state["private"]["__repl"]["nlp"] = False  # Default to disabled
+        if "system" not in self.context._state:
+            self.context._state["system"] = {}
+        if "__repl" not in self.context._state["system"]:
+            self.context._state["system"]["__repl"] = {}
+        self.context._state["system"]["__repl"]["nlp"] = False  # Default to disabled
 
         # Set up transcoder if LLM resource is available
         self.transcoder = None
@@ -77,18 +77,18 @@ class REPL(Loggable):
     def get_nlp_mode(self) -> bool:
         """Get the current NLP mode state."""
         try:
-            return self.context._state["private"].get("__repl", {}).get("nlp", False)
+            return self.context._state["system"].get("__repl", {}).get("nlp", False)
         except Exception:
             return False
 
     def set_nlp_mode(self, enabled: bool) -> None:
         """Enable or disable NLP mode."""
         try:
-            if "private" not in self.context._state:
-                self.context._state["private"] = {}
-            if "__repl" not in self.context._state["private"]:
-                self.context._state["private"]["__repl"] = {}
-            self.context._state["private"]["__repl"]["nlp"] = enabled
+            if "system" not in self.context._state:
+                self.context._state["system"] = {}
+            if "__repl" not in self.context._state["system"]:
+                self.context._state["system"]["__repl"] = {}
+            self.context._state["system"]["__repl"]["nlp"] = enabled
             self.info(f"NLP mode set to: {enabled}")
         except Exception as e:
             self.error(f"Could not set NLP mode: {e}")

@@ -20,7 +20,7 @@ from opendxa.dana.language.ast import (
 )
 
 # Export parser components
-from opendxa.dana.language.parser import ParseResult, parse
+from opendxa.dana.language.parser import ParseResult
 
 __all__ = [
     # AST
@@ -41,6 +41,5 @@ __all__ = [
     "BinaryOperator",
     "LogLevel",
     # Parser
-    "parse",
     "ParseResult",
 ]

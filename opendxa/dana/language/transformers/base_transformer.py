@@ -1,5 +1,8 @@
 """Base transformer class for DANA language parsing."""
 
+from typing import Any, Union
+
+from opendxa.dana.exceptions import ParseError
 from opendxa.dana.language.ast import Literal
 
 
@@ -58,3 +61,20 @@ class BaseTransformer:
 
         # Fallback
         return Literal(value=value)
+
+    def _insert_local_scope(self, parts: Union[list[str], str]) -> Any:
+        """Insert local scope prefix to parts if not already present."""
+        if isinstance(parts, str):
+            if "." in parts:
+                raise ParseError(f"Local variable must be a simple name: {parts}")
+            return f"local.{parts}"
+        elif isinstance(parts, list):
+            if len(parts) == 0:
+                raise ParseError("No local variable name provided")
+            elif len(parts) > 1:
+                raise ParseError("Local variable must be a simple name")
+            else:
+                parts.insert(0, "local")
+                return parts
+        else:
+            raise ParseError(f"Invalid type for local variable: {type(parts)}")

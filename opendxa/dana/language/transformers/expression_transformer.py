@@ -2,6 +2,7 @@
 
 from lark import Token
 
+from opendxa.dana.common.runtime_scopes import RuntimeScopes
 from opendxa.dana.language.ast import (
     BinaryExpression,
     BinaryOperator,
@@ -166,9 +167,9 @@ class ExpressionTransformer(BaseTransformer):
             if isinstance(item, Token):
                 parts.append(item.value)
 
-        # If no scope prefix, add private
-        if parts[0] not in ["private", "public", "system"]:
-            parts.insert(0, "private")
+        # If no scope prefix and not a function name, add local
+        if parts[0] not in RuntimeScopes.ALL + ["reason2", "reason", "log", "print"]:
+            parts = self._insert_local_scope(parts)
 
         # Join all parts with dots
         name = ".".join(parts)

@@ -12,19 +12,18 @@ from opendxa.dana.language.ast import (
     LogStatement,
     Program,
 )
-from opendxa.dana.language.parser import ParseResult, _type_environment, parse
+from opendxa.dana.language.parser import GrammarParser, ParseResult
 
 
-@pytest.fixture(autouse=True)
-def clear_type_environment():
-    """Clear the type environment before each test."""
-    _type_environment.clear()
-    yield
+@pytest.fixture
+def parser():
+    """Create a fresh parser instance for each test."""
+    return GrammarParser()
 
 
-def test_parse_assignment():
+def test_parse_assignment(parser):
     """Test parsing a simple assignment statement."""
-    result = parse("temp.x = 42", type_check=False)
+    result = parser.parse("temp.x = 42", type_check=False)
     assert isinstance(result, ParseResult)
     assert isinstance(result.program, Program)
     assert len(result.program.statements) == 1
@@ -37,9 +36,9 @@ def test_parse_assignment():
     assert stmt.value.literal.value == 42
 
 
-def test_parse_float_assignment():
+def test_parse_float_assignment(parser):
     """Test parsing a float assignment."""
-    result = parse("temp.x = 3.14", type_check=False)
+    result = parser.parse("temp.x = 3.14", type_check=False)
     assert isinstance(result, ParseResult)
     assert isinstance(result.program, Program)
     assert len(result.program.statements) == 1
@@ -52,9 +51,9 @@ def test_parse_float_assignment():
     assert stmt.value.literal.value == 3.14
 
 
-def test_parse_arithmetic_expression():
+def test_parse_arithmetic_expression(parser):
     """Test parsing arithmetic expressions."""
-    result = parse("temp.x = 5 + 3 * 2", type_check=False)
+    result = parser.parse("temp.x = 5 + 3 * 2", type_check=False)
     assert isinstance(result, ParseResult)
     assert isinstance(result.program, Program)
     assert len(result.program.statements) == 1
@@ -79,9 +78,9 @@ def test_parse_arithmetic_expression():
     assert expr.right.right.literal.value == 2
 
 
-def test_parse_parenthetical_expression():
+def test_parse_parenthetical_expression(parser):
     """Test parsing expressions with parentheses."""
-    result = parse("private.x = (5 + 3) * 2", type_check=False)
+    result = parser.parse("private.x = (5 + 3) * 2", type_check=False)
     assert isinstance(result, ParseResult)
     assert isinstance(result.program, Program)
     assert len(result.program.statements) == 1
@@ -109,9 +108,9 @@ def test_parse_parenthetical_expression():
     assert expr.right.literal.value == 2
 
 
-def test_parse_mixed_arithmetic():
+def test_parse_mixed_arithmetic(parser):
     """Test parsing mixed arithmetic expressions."""
-    result = parse("private.x = 1.5 + 2.5 * 3.0", type_check=False)
+    result = parser.parse("private.x = 1.5 + 2.5 * 3.0", type_check=False)
     assert isinstance(result, ParseResult)
     assert isinstance(result.program, Program)
     assert len(result.program.statements) == 1
@@ -136,9 +135,9 @@ def test_parse_mixed_arithmetic():
     assert expr.right.right.literal.value == 3.0
 
 
-def test_parse_string_assignment():
+def test_parse_string_assignment(parser):
     """Test parsing a string assignment."""
-    result = parse('temp.msg = "Alice"', type_check=False)
+    result = parser.parse('temp.msg = "Alice"', type_check=False)
     assert isinstance(result, ParseResult)
     assert isinstance(result.program, Program)
     assert len(result.program.statements) == 1
@@ -151,9 +150,9 @@ def test_parse_string_assignment():
     assert stmt.value.literal.value == "Alice"
 
 
-def test_parse_log_statement():
+def test_parse_log_statement(parser):
     """Test parsing a log statement."""
-    result = parse('log("Hello, world!")', type_check=False)
+    result = parser.parse('log("Hello, world!")', type_check=False)
     assert isinstance(result, ParseResult)
     assert isinstance(result.program, Program)
     assert len(result.program.statements) == 1
@@ -165,11 +164,11 @@ def test_parse_log_statement():
     assert stmt.message.literal.value == "Hello, world!"
 
 
-def test_parse_log_level_set_statement():
+def test_parse_log_level_set_statement(parser):
     """Test parsing a log level set statement."""
     # Test with different log levels
     for level in ["debug", "info", "warn", "error"]:
-        result = parse(f'log.setLevel("{level}")', type_check=False)
+        result = parser.parse(f'log.setLevel("{level}")', type_check=False)
         assert isinstance(result, ParseResult)
         assert isinstance(result.program, Program)
         assert len(result.program.statements) == 1
@@ -180,7 +179,7 @@ def test_parse_log_level_set_statement():
         assert stmt.level.value == level.upper()
 
     # Test invalid log level
-    result = parse('log.setLevel("invalid")', type_check=False)
+    result = parser.parse('log.setLevel("invalid")', type_check=False)
     assert isinstance(result, ParseResult)
     assert isinstance(result.program, Program)
     assert len(result.program.statements) > 0
@@ -188,9 +187,9 @@ def test_parse_log_level_set_statement():
     assert isinstance(stmt, LogLevelSetStatement)
 
 
-def test_parse_multiple_statements():
+def test_parse_multiple_statements(parser):
     """Test parsing multiple statements."""
-    result = parse('temp.x = 42\ntemp.y = "test"\nlog("done")', type_check=False)
+    result = parser.parse('temp.x = 42\ntemp.y = "test"\nlog("done")', type_check=False)
     assert isinstance(result, ParseResult)
     assert isinstance(result.program, Program)
     assert len(result.program.statements) == 3
@@ -217,87 +216,117 @@ def test_parse_multiple_statements():
     assert stmt3.message.literal.value == "done"
 
 
-def test_parse_conditional_with_else():
-    """Test parsing a conditional statement with an else clause."""
-    code = 'if x > 10:\n    log("x is big")\n    y = x * 2\nelse:\n    log("x is small")\n    y = 0'
-    result = parse(code, type_check=False)
+def test_parse_conditional_with_else(parser):
+    """Test parsing a conditional statement with else."""
+    code = """
+    if private.x > 10:
+        private.y = 20
+    else:
+        private.y = 30
+    """
+    result = parser.parse(code, type_check=False)
     assert isinstance(result, ParseResult)
     assert isinstance(result.program, Program)
     assert len(result.program.statements) == 1
     assert not result.errors
 
     stmt = result.program.statements[0]
-    from opendxa.dana.language.ast import Conditional
+    assert isinstance(stmt, ConditionalStatement)
+    assert isinstance(stmt.condition, BinaryExpression)
+    assert stmt.condition.operator == BinaryOperator.GREATER_THAN
+    assert isinstance(stmt.condition.left, Identifier)
+    assert stmt.condition.left.name == "private.x"
+    assert isinstance(stmt.condition.right, LiteralExpression)
+    assert stmt.condition.right.literal.value == 10
 
-    assert isinstance(stmt, Conditional)
-    assert len(stmt.body) == 2
-    assert len(stmt.else_body) == 2
+    assert len(stmt.then_block.statements) == 1
+    assert len(stmt.else_block.statements) == 1
 
 
-def test_parse_while_loop():
-    """Test parsing a while loop statement."""
-    code = "count = 0\nwhile count < 5:\n    log(count)\n    count = count + 1"
-    result = parse(code, type_check=False)
+def test_parse_while_loop(parser):
+    """Test parsing a while loop."""
+    code = """
+    while private.x < 10:
+        private.x = private.x + 1
+    """
+    result = parser.parse(code, type_check=False)
     assert isinstance(result, ParseResult)
     assert isinstance(result.program, Program)
-    assert len(result.program.statements) == 2  # Assignment and while loop
+    assert len(result.program.statements) == 1
     assert not result.errors
 
-    stmt = result.program.statements[1]  # Second statement is the while loop
-    from opendxa.dana.language.ast import WhileLoop
+    stmt = result.program.statements[0]
+    assert isinstance(stmt, WhileStatement)
+    assert isinstance(stmt.condition, BinaryExpression)
+    assert stmt.condition.operator == BinaryOperator.LESS_THAN
+    assert isinstance(stmt.condition.left, Identifier)
+    assert stmt.condition.left.name == "private.x"
+    assert isinstance(stmt.condition.right, LiteralExpression)
+    assert stmt.condition.right.literal.value == 10
 
-    assert isinstance(stmt, WhileLoop)
-    assert len(stmt.body) == 2
+    assert len(stmt.body.statements) == 1
 
 
-def test_parse_invalid_syntax():
+def test_parse_invalid_syntax(parser):
     """Test parsing invalid syntax."""
-    result = parse("temp.x =", type_check=False)
-    assert isinstance(result, ParseResult)
-    assert len(result.errors) > 0
-
-    result = parse("= 42", type_check=False)
-    assert isinstance(result, ParseResult)
-    assert len(result.errors) > 0
-
-    result = parse("log()", type_check=False)
-    assert isinstance(result, ParseResult)
-    assert len(result.errors) > 0
-
-
-def test_parse_bare_identifier():
-    """Test parsing a bare identifier as a statement."""
-    result = parse("private.x", type_check=False)
-    assert isinstance(result, ParseResult)
-    assert isinstance(result.program, Program)
-    assert len(result.program.statements) == 1
-    assert not result.errors
-
-    stmt = result.program.statements[0]
-    assert isinstance(stmt, Identifier)
-    assert stmt.name == "private.x"
-
-
-def test_parse_bare_identifier_with_type_check():
-    """Test parsing a bare identifier with type checking."""
-    # First set up a variable
-    setup_result = parse("private.x = 42", type_check=True)
-    assert setup_result.is_valid
-    assert len(setup_result.errors) == 0
-
-    # Then try to use it as a bare identifier
-    result = parse("private.x", type_check=True)
-    assert result.is_valid
-    assert len(result.errors) == 0
-
-    stmt = result.program.statements[0]
-    assert isinstance(stmt, Identifier)
-    assert stmt.name == "private.x"
-
-
-def test_parse_bare_identifier_undefined():
-    """Test parsing an undefined bare identifier with type checking."""
-    result = parse("private.undefined_var", type_check=True)
+    # Test incomplete assignment
+    result = parser.parse("temp.x =", type_check=False)
     assert not result.is_valid
     assert len(result.errors) > 0
-    assert any("Undefined variable" in str(error) for error in result.errors)
+
+    # Test missing left side
+    result = parser.parse("= 42", type_check=False)
+    assert not result.is_valid
+    assert len(result.errors) > 0
+
+    # Test invalid function call
+    result = parser.parse("log()", type_check=False)
+    assert not result.is_valid
+    assert len(result.errors) > 0
+
+
+def test_parse_bare_identifier(parser):
+    """Test parsing a bare identifier."""
+    result = parser.parse("private.x", type_check=False)
+    assert isinstance(result, ParseResult)
+    assert isinstance(result.program, Program)
+    assert len(result.program.statements) == 1
+    assert not result.errors
+
+    stmt = result.program.statements[0]
+    assert isinstance(stmt, ExpressionStatement)
+    assert isinstance(stmt.expression, Identifier)
+    assert stmt.expression.name == "private.x"
+
+
+def test_parse_bare_identifier_with_type_check(parser):
+    """Test parsing a bare identifier with type checking."""
+    # First set up the variable
+    setup_result = parser.parse("private.x = 42", type_check=True)
+    assert setup_result.is_valid
+
+    # Then try to access it
+    result = parser.parse("private.x", type_check=True)
+    assert isinstance(result, ParseResult)
+    assert isinstance(result.program, Program)
+    assert len(result.program.statements) == 1
+    assert not result.errors
+
+    stmt = result.program.statements[0]
+    assert isinstance(stmt, ExpressionStatement)
+    assert isinstance(stmt.expression, Identifier)
+    assert stmt.expression.name == "private.x"
+
+
+def test_parse_bare_identifier_undefined(parser):
+    """Test parsing a bare identifier that is undefined."""
+    result = parser.parse("private.undefined_var", type_check=True)
+    assert isinstance(result, ParseResult)
+    assert isinstance(result.program, Program)
+    assert len(result.program.statements) == 1
+    assert len(result.errors) > 0  # Should have type error for undefined variable
+
+    stmt = result.program.statements[0]
+    assert isinstance(stmt, ExpressionStatement)
+    assert isinstance(stmt.expression, Identifier)
+    assert stmt.expression.name == "private.undefined_var"

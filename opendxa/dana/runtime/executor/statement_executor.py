@@ -47,6 +47,8 @@ class StatementExecutor(BaseExecutor):
     - Execute reason statements
     """
 
+    LAST_VALUE = "system.__last_value"
+
     def __init__(self, context_manager: ContextManager, expression_evaluator: ExpressionEvaluator, llm_integration: LLMIntegration):
         """Initialize the statement executor.
 
@@ -97,7 +99,7 @@ class StatementExecutor(BaseExecutor):
             value = self.expression_evaluator.evaluate(node.value, context)
             self.context_manager.set_variable(node.target.name, value)
             result = value  # Store the value as the result
-            self.context_manager.set_variable("private.__last_value", value)  # Store for REPL output
+            self.context_manager.set_variable(StatementExecutor.LAST_VALUE, value)  # Store for REPL output
             self.debug(f"Set {node.target.name} = {value}")
 
             # After assignment hook
@@ -115,33 +117,33 @@ class StatementExecutor(BaseExecutor):
         elif isinstance(node, LogStatement):
             self.execute_log_statement(node)
             # Log statements don't have a return value
-            self.context_manager.set_variable("private.__last_value", None)
+            self.context_manager.set_variable(StatementExecutor.LAST_VALUE, None)
         elif isinstance(node, LogLevelSetStatement):
             self.execute_log_level_set_statement(node)
             # Log level statements don't have a return value
-            self.context_manager.set_variable("private.__last_value", None)
+            self.context_manager.set_variable(StatementExecutor.LAST_VALUE, None)
         elif isinstance(node, PrintStatement):
             self.execute_print_statement(node, context)
             # Print statements don't return a value (handled in execute_print_statement)
         elif isinstance(node, Conditional):
             self.execute_conditional(node, context)
             # Conditionals don't have a return value
-            self.context_manager.set_variable("private.__last_value", None)
+            self.context_manager.set_variable(StatementExecutor.LAST_VALUE, None)
         elif isinstance(node, WhileLoop):
             self.execute_while_loop(node, context)
             # Loops don't have a return value
-            self.context_manager.set_variable("private.__last_value", None)
+            self.context_manager.set_variable(StatementExecutor.LAST_VALUE, None)
         elif isinstance(node, ReasonStatement):
             result = self._execute_reason_statement_sync(node, context)
             # The result is already stored in __last_value inside execute_reason_statement
         elif isinstance(node, FunctionCall):
             result = self.execute_function_call(node, context)
             # Store function call results for REPL output
-            self.context_manager.set_variable("private.__last_value", result)
+            self.context_manager.set_variable(StatementExecutor.LAST_VALUE, result)
         elif isinstance(node, Identifier):
             # Handle bare identifier as a statement
             result = self.expression_evaluator.evaluate(node, context)
-            self.context_manager.set_variable("private.__last_value", result)
+            self.context_manager.set_variable(StatementExecutor.LAST_VALUE, result)
             self.debug(f"Evaluated identifier: {node.name} = {result}")
         else:
             error_msg = f"Unsupported statement type: {type(node).__name__}"
@@ -193,7 +195,7 @@ class StatementExecutor(BaseExecutor):
             self.context_manager.set_variable(target_name, value)
 
             # Store the value in __last_value for REPL output
-            self.context_manager.set_variable("private.__last_value", value)
+            self.context_manager.set_variable(StatementExecutor.LAST_VALUE, value)
             self.debug(f"Set {node.target.name} = {value}")
 
             # Update hook context with assignment result
@@ -266,7 +268,7 @@ class StatementExecutor(BaseExecutor):
 
             # Clear the __last_value so it doesn't return anything in the REPL
             # Print statements should not produce a return value
-            self.context_manager.set_variable("private.__last_value", None)
+            self.context_manager.set_variable(StatementExecutor.LAST_VALUE, None)
         except Exception as e:
             error, passthrough = handle_execution_error(e, node, "executing print statement")
             if passthrough:
@@ -401,7 +403,7 @@ class StatementExecutor(BaseExecutor):
             result = self.llm_integration.execute_direct_synchronous_reasoning(prompt_str, context_vars, node.options)
 
             # Store the result in __last_value for REPL output
-            self.context_manager.set_variable("private.__last_value", result)
+            self.context_manager.set_variable(StatementExecutor.LAST_VALUE, result)
 
             # If we have a target variable, store the result there too
             if node.target:
@@ -533,7 +535,7 @@ class StatementExecutor(BaseExecutor):
         return method(*args, **kwargs)
 
     def _enhance_local_context(self, context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-        """Enhance the local context with unprefixed variables from the private scope.
+        """Enhance the given context with unprefixed variables from the local scope.
 
         Args:
             context: The original context to enhance
@@ -543,11 +545,11 @@ class StatementExecutor(BaseExecutor):
         """
         custom_context = context or {}
 
-        # Add unprefixed variables from the private scope
+        # Add unprefixed variables from the local scope
         try:
-            private_scope = self.context_manager.context._state.get("private", {})
-            for key, value in private_scope.items():
-                # Only add top-level private variables to context
+            local_scope = self.context_manager.context._state.get("local", {})
+            for key, value in local_scope.items():
+                # Only add top-level local variables to context
                 if "." not in key and key not in custom_context:
                     custom_context[key] = value
         except (AttributeError, KeyError):
