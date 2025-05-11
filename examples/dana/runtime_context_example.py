@@ -1,6 +1,6 @@
 """Example demonstrating RuntimeContext usage."""
 
-from opendxa.dana.runtime.runtime_context import RuntimeContext
+from opendxa.dana.runtime.context import RuntimeContext
 
 
 def main():
@@ -23,9 +23,6 @@ def main():
     ctx.set("execution:step", 1)
     ctx.set("execution:errors", [])
 
-    # Register a resource
-    ctx.resources.register("llm", "mock_llm")
-
     # Print the state
     print("Agent State:")
     print(f"  Name: {ctx.get('agent:name')}")
@@ -43,19 +40,11 @@ def main():
     print(f"  Step: {ctx.get('execution:step')}")
     print(f"  Errors: {ctx.get('execution:errors')}")
 
-    print("\nResources:")
-    print(f"  LLM: {ctx.get('resource:llm')}")
-
     # Demonstrate error handling
     try:
         ctx.get("invalid:key")
     except Exception as e:
         print(f"\nError handling example: {e}")
-
-    try:
-        ctx.set("resource:llm", "new_llm")
-    except Exception as e:
-        print(f"Error handling example: {e}")
 
 
 if __name__ == "__main__":

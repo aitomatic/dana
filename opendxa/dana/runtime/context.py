@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from opendxa.dana.common.exceptions import StateError
 from opendxa.dana.common.runtime_scopes import RuntimeScopes
@@ -36,13 +36,11 @@ class RuntimeContext:
                 "history": [],
             },
         }
-        self._resources: Dict[str, Any] = {}
 
         # If parent exists, share global scopes instead of copying
         if parent:
             for scope in RuntimeScopes.GLOBAL:
                 self._state[scope] = parent._state[scope]  # Share reference instead of copy
-            self._resources = parent._resources.copy()
 
     def _validate_key(self, key: str) -> tuple[str, str]:
         """Validates key format (scope.variable) and splits it.
@@ -125,39 +123,6 @@ class RuntimeContext:
                 return default
             raise StateError(f"Variable '{key}' not found")
         return self._state[scope][var_name]
-
-    def get_resource(self, name: str) -> Any:
-        """Get a resource from the context.
-
-        Args:
-            name: The name of the resource to get
-
-        Returns:
-            The requested resource
-
-        Raises:
-            StateError: If the resource doesn't exist
-        """
-        if name not in self._resources:
-            raise StateError(f"Resource not found: {name}")
-        return self._resources[name]
-
-    def register_resource(self, name: str, resource: Any) -> None:
-        """Register a resource in the context.
-
-        Args:
-            name: The name of the resource to register
-            resource: The resource to register
-        """
-        self._resources[name] = resource
-
-    def list_resources(self) -> List[str]:
-        """List all registered resources.
-
-        Returns:
-            A list of resource names
-        """
-        return list(self._resources.keys())
 
     def get_execution_status(self) -> ExecutionStatus:
         """Get the current execution status.

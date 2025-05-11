@@ -6,7 +6,7 @@ and execution of DANA programs.
 
 from typing import Any, Optional, Tuple
 
-from opendxa.dana.exceptions import ParseError, RuntimeError, StateError
+from opendxa.dana.common.exceptions import ParseError, RuntimeError, StateError
 
 
 class ErrorContext:

@@ -12,26 +12,18 @@ from opendxa.dana.common.exceptions import RuntimeError, StateError
 from opendxa.dana.common.runtime_scopes import RuntimeScopes
 from opendxa.dana.language.ast import (
     Assignment,
-    AssignmentStatement,
-    BlockStatement,
-    BreakStatement,
     Conditional,
-    ContinueStatement,
     Expression,
-    ForStatement,
     FunctionCall,
     Identifier,
-    IfStatement,
     LogLevel,
     LogLevelSetStatement,
     LogStatement,
     PrintStatement,
     Program,
     ReasonStatement,
-    ReturnStatement,
     Statement,
     WhileLoop,
-    WhileStatement,
 )
 from opendxa.dana.runtime.core_functions.reason_function import ReasonFunction
 from opendxa.dana.runtime.executor.base_executor import BaseExecutor
@@ -109,26 +101,14 @@ class StatementExecutor(BaseExecutor):
             RuntimeError: If the statement cannot be executed
         """
         try:
-            if isinstance(node, AssignmentStatement):
+            if isinstance(node, Assignment):
                 return self.execute_assignment(node, context)
-            elif isinstance(node, BlockStatement):
-                return self.execute_block(node, context)
-            elif isinstance(node, IfStatement):
-                return self.execute_if(node, context)
-            elif isinstance(node, WhileStatement):
-                return self.execute_while(node, context)
-            elif isinstance(node, ForStatement):
-                return self.execute_for(node, context)
-            elif isinstance(node, BreakStatement):
-                return self.execute_break(node, context)
-            elif isinstance(node, ContinueStatement):
-                return self.execute_continue(node, context)
-            elif isinstance(node, ReturnStatement):
-                return self.execute_return(node, context)
             elif isinstance(node, LogStatement):
                 return self.execute_log(node, context)
             elif isinstance(node, FunctionCall):
                 return self.execute_function_call(node, context)
+            elif isinstance(node, PrintStatement):
+                return self.execute_print_statement(node, context)
             else:
                 error_msg = f"Unsupported statement type: {type(node).__name__}"
                 raise RuntimeError(error_msg)
@@ -139,7 +119,7 @@ class StatementExecutor(BaseExecutor):
             else:
                 raise RuntimeError(f"Failed to execute statement: {e}")
 
-    def execute_assignment(self, node: AssignmentStatement, context: Optional[Dict[str, Any]] = None) -> Any:
+    def execute_assignment(self, node: Assignment, context: Optional[Dict[str, Any]] = None) -> Any:
         """Execute an assignment statement.
 
         Args:
@@ -169,7 +149,7 @@ class StatementExecutor(BaseExecutor):
                     raise ErrorUtils.create_state_error(f"Invalid scope: {scope}", node)
 
                 # Set the value in the appropriate scope
-                self.context_manager.set_in_scope(scope, var_name, value)
+                self.context_manager.set_in_context(var_name, value, scope=scope)
             else:
                 # Set the value in the current context
                 self.context_manager.set(node.target.name, value, context)

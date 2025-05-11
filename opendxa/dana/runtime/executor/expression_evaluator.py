@@ -7,8 +7,6 @@ evaluating expressions in DANA programs.
 import re
 from typing import Any, Dict, Optional
 
-from dana.runtime.python_registry import PythonRegistry
-
 from opendxa.dana.common.error_utils import ErrorUtils
 from opendxa.dana.common.exceptions import RuntimeError, StateError
 from opendxa.dana.language.ast import (
@@ -23,6 +21,7 @@ from opendxa.dana.language.ast import (
 from opendxa.dana.runtime.context import RuntimeContext
 from opendxa.dana.runtime.executor.base_executor import BaseExecutor
 from opendxa.dana.runtime.executor.context_manager import ContextManager
+from opendxa.dana.runtime.python_registry import PythonRegistry
 
 
 class ExpressionEvaluator(BaseExecutor):
@@ -217,7 +216,7 @@ class ExpressionEvaluator(BaseExecutor):
         """
         try:
             # Get the value from the context manager
-            return self.context_manager.get(node.name, context)
+            return self.context_manager.get_from_context(node.name, context)
         except StateError:
             # Standard error for undefined variables
             if "." in node.name:

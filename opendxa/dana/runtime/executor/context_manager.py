@@ -16,7 +16,6 @@ class ContextManager(Loggable):
 
     Responsibilities:
     - Variable resolution and scope management
-    - Resource access
     - Context updates
     """
 
@@ -29,12 +28,40 @@ class ContextManager(Loggable):
         super().__init__()
         self.context = context
 
-    def get_from_context(self, name: str, local_context: Optional[Dict[str, Any]] = None) -> Any:
+    def set_in_context(self, name: str, value: Any, scope: Optional[str] = None) -> None:
+        """Set a variable value in the context.
+
+        Args:
+            name: The name of the variable to set (can be 'scope.name' or just 'name')
+            value: The value to set
+            scope: Optional scope to set the variable in. If provided, overrides any scope in name.
+
+        Raises:
+            StateError: If the variable scope is invalid
+        """
+        if scope is not None:
+            if scope not in RuntimeScopes.ALL:
+                raise StateError(f"Invalid scope '{scope}'. Must be one of: {RuntimeScopes.ALL}")
+            full_name = f"{scope}.{name}"
+        else:
+            # If var_name is already scoped, check its scope
+            if "." in name:
+                candidate_scope = name.split(".", 1)[0]
+                if candidate_scope not in RuntimeScopes.ALL:
+                    raise StateError(f"Invalid scope '{candidate_scope}'. Must be one of: {RuntimeScopes.ALL}")
+                full_name = name
+            else:
+                # Default to local scope
+                full_name = f"local.{name}"
+        self.context.set(full_name, value)
+
+    def get_from_context(self, var_name: str, local_context: Optional[Dict[str, Any]] = None, scope: Optional[str] = None) -> Any:
         """Get a variable value from the context.
 
         Args:
-            name: The name of the variable to get (must be in format 'scope.variable')
+            var_name: The name of the variable to get (can be 'scope.var' or just 'var')
             local_context: Optional local context for variable resolution
+            scope: Optional scope to get the variable from. If provided, overrides any scope in var_name.
 
         Returns:
             The variable value
@@ -43,64 +70,28 @@ class ContextManager(Loggable):
             StateError: If the variable doesn't exist or has invalid format
         """
         # 1. Check local context first (for function parameters, etc)
-        if local_context and name in local_context:
-            return local_context[name]
+        if local_context and var_name in local_context:
+            return local_context[var_name]
 
         # 2. Validate and split the variable name
-        if "." not in name:
-            raise StateError(f"Variable '{name}' must include scope prefix (private.{name}, public.{name}, or system.{name})")
-
-        scope, var_name = name.split(".", 1)
-        if scope not in RuntimeScopes.ALL:
-            raise StateError(f"Invalid scope '{scope}'. Must be one of: {RuntimeScopes.ALL}")
+        if scope is not None:
+            if scope not in RuntimeScopes.ALL:
+                raise StateError(f"Invalid scope '{scope}'. Must be one of: {RuntimeScopes.ALL}")
+            full_name = f"{scope}.{var_name}"
+        else:
+            if "." not in var_name:
+                raise StateError(
+                    f"Variable '{var_name}' must include scope prefix (private.{var_name}, public.{var_name}, or system.{var_name})"
+                )
+            candidate_scope = var_name.split(".", 1)[0]
+            if candidate_scope not in RuntimeScopes.ALL:
+                raise StateError(f"Invalid scope '{candidate_scope}'. Must be one of: {RuntimeScopes.ALL}")
+            full_name = var_name
 
         # 3. Direct dictionary access - the core functionality
+        scope, var_name = full_name.split(".", 1)
         if scope in self.context._state and var_name in self.context._state[scope]:
             return self.context._state[scope][var_name]
 
         # 4. Variable not found
-        raise StateError(f"Variable not found: {name}")
-
-    def set_in_context(self, name: str, value: Any) -> None:
-        """Set a variable value in the context.
-
-        Args:
-            name: The name of the variable to set (must be in format 'scope.variable')
-            value: The value to set
-
-        Raises:
-            StateError: If the variable scope is invalid
-        """
-        # Validate and split the variable name
-        if "." not in name:
-            raise StateError(f"Variable '{name}' must include scope prefix (local.{name}, private.{name}, public.{name}, or system.{name})")
-
-        scope, var_name = name.split(".", 1)
-        if scope not in RuntimeScopes.ALL:
-            raise StateError(f"Invalid scope '{scope}'. Must be one of: {RuntimeScopes.ALL}")
-
-        # Set the variable in the specified scope
-        self.context.set(name, value)
-
-    def get_resource(self, name: str):
-        """Get a resource from the context.
-
-        Args:
-            name: The name of the resource to get
-
-        Returns:
-            The requested resource
-
-        Raises:
-            StateError: If the resource doesn't exist
-        """
-        return self.context.get_resource(name)
-
-    def register_resource(self, name: str, resource: Any) -> None:
-        """Register a resource in the context.
-
-        Args:
-            name: The name of the resource to register
-            resource: The resource to register
-        """
-        self.context.register_resource(name, resource)
+        raise StateError(f"Variable not found: {full_name}")

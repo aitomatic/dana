@@ -80,23 +80,6 @@ def test_execution_state():
     assert not ctx.get("system.history")
 
 
-def test_resource_management():
-    """Test resource management functionality."""
-    ctx = RuntimeContext()
-
-    # Test registering and retrieving resources
-    resource = {"type": "test", "value": 42}
-    ctx.register_resource("test_resource", resource)
-    assert ctx.get_resource("test_resource") == resource
-
-    # Test listing resources
-    assert "test_resource" in ctx.list_resources()
-
-    # Test getting nonexistent resource
-    with pytest.raises(StateError):
-        ctx.get_resource("nonexistent")
-
-
 def test_invalid_keys():
     """Test handling of invalid state keys."""
     ctx = RuntimeContext()
@@ -138,10 +121,15 @@ def test_parent_context_inheritance():
     with pytest.raises(StateError):
         child.get("local_var")
 
-    # Test modifications don't affect parent
+    # Test modifications affect parent for global scopes
     child.set("private.name", "Child")
     assert child.get("private.name") == "Child"
-    assert parent.get("private.name") == "Parent"
+    assert parent.get("private.name") == "Child"  # Global scopes are shared
+
+    # Test local scope modifications don't affect parent
+    child.set("local_var", "child_local")
+    assert child.get("local_var") == "child_local"
+    assert parent.get("local_var") == "parent_local"
 
 
 def test_from_dict_with_base_context():
@@ -172,21 +160,6 @@ def test_from_dict_with_base_context():
     # New values from data should be included
     assert ctx.get("private.new") == "new_value"
     assert ctx.get("local_var") == "local_value"
-
-
-def test_from_dict_resources():
-    """Test that resources are copied from base context."""
-    # Create base context with a resource
-    base = RuntimeContext()
-    resource = {"type": "test", "value": 42}
-    base.register_resource("test_resource", resource)
-
-    # Create new context with base
-    ctx = RuntimeContext.from_dict({}, base)
-
-    # Resource should be available
-    assert ctx.get_resource("test_resource") == resource
-    assert "test_resource" in ctx.list_resources()
 
 
 def test_from_dict_empty():

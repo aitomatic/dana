@@ -24,12 +24,12 @@ except ImportError:
 
 # Create a shared logger for the parser module
 from opendxa.common.utils.logging import DXA_LOGGER
+from opendxa.dana.common.error_utils import ErrorUtils
 from opendxa.dana.common.exceptions import ParseError
 from opendxa.dana.language.ast import (
     Identifier,
     Program,
 )
-from opendxa.dana.language.error_utils import ErrorUtils
 from opendxa.dana.language.transformer_module import get_transformer_class
 from opendxa.dana.language.type_checker import TypeChecker, TypeEnvironment
 

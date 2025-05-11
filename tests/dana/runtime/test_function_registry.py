@@ -3,13 +3,13 @@
 from typing import Any, Dict
 
 import pytest
-from dana.runtime.python_registry import PythonRegistry
 
 from opendxa.dana.common.exceptions import RuntimeError, StateError
 from opendxa.dana.language.ast import Literal, LiteralExpression, LogLevel, LogStatement
 from opendxa.dana.language.parser import GrammarParser
 from opendxa.dana.runtime.context import RuntimeContext
 from opendxa.dana.runtime.interpreter import Interpreter
+from opendxa.dana.runtime.python_registry import PythonRegistry
 
 
 @pytest.fixture
