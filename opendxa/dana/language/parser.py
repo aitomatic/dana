@@ -148,7 +148,7 @@ class GrammarParser(Loggable):
             # Perform type checking if enabled and parsing was successful
             do_type_check = ENABLE_TYPE_CHECK if type_check is None else bool(type_check)
             if do_type_check and result.is_valid:
-                check_types(program)
+                TypeChecker.check_types(program)
 
             return result
 
@@ -181,16 +181,3 @@ class GrammarParser(Loggable):
         """
         name = str(node.children[0])
         return Identifier(name=name, location=self._get_location(node))
-
-
-def check_types(program: Program) -> None:
-    """Check types in a DANA program.
-
-    Args:
-        program: The program to check
-
-    Raises:
-        RuntimeError: If type errors are found
-    """
-    checker = TypeChecker()
-    checker.check_program(program)
