@@ -5,7 +5,7 @@ without modifying the core interpreter code.
 """
 
 from enum import Enum
-from typing import Any, Callable, Dict, Set
+from typing import Any, Callable, Dict, List
 
 
 class HookType(Enum):
@@ -31,19 +31,12 @@ class HookType(Enum):
     BEFORE_REASON = "before_reason"  # Called before executing a reason statement
     AFTER_REASON = "after_reason"  # Called after executing a reason statement
 
-    # Expression-level hooks
-    BEFORE_EXPRESSION = "before_expression"  # Called before evaluating an expression
-    AFTER_EXPRESSION = "after_expression"  # Called after evaluating an expression
-
     # Loop hooks
     BEFORE_LOOP = "before_loop"  # Called before executing a loop
     AFTER_LOOP = "after_loop"  # Called after executing a loop
 
     # Error hooks
     ON_ERROR = "on_error"  # Called when an error occurs
-
-    # New hook for log level changes
-    LOG_LEVEL_CHANGED = "log_level_changed"
 
 
 # Type aliases for hook callbacks
@@ -59,7 +52,7 @@ class HookRegistry:
 
     def __init__(self):
         """Initialize an empty hook registry."""
-        self._hooks: Dict[HookType, Set[HookCallback]] = {hook_type: set() for hook_type in HookType}
+        self._hooks: Dict[HookType, List[HookCallback]] = {hook_type: [] for hook_type in HookType}
 
     def register(self, hook_type: HookType, callback: HookCallback) -> None:
         """Register a hook callback for the given hook type.
@@ -68,7 +61,7 @@ class HookRegistry:
             hook_type: The type of hook to register for
             callback: The callback function to call when the hook is triggered
         """
-        self._hooks[hook_type].add(callback)
+        self._hooks[hook_type].append(callback)
 
     def unregister(self, hook_type: HookType, callback: HookCallback) -> None:
         """Unregister a hook callback for the given hook type.
@@ -82,7 +75,7 @@ class HookRegistry:
         """
         try:
             self._hooks[hook_type].remove(callback)
-        except KeyError:
+        except ValueError:
             raise KeyError(f"Callback {callback} not registered for hook type {hook_type}")
 
     def execute(self, hook_type: HookType, context: Dict[str, Any]) -> None:

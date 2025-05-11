@@ -4,7 +4,6 @@ import logging
 from typing import Any, Dict, Optional
 
 from opendxa.common.mixins.loggable import Loggable
-from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.common.utils import Misc
 from opendxa.dana.error_handling import DanaError
 from opendxa.dana.language.ast import LogLevel
@@ -12,7 +11,6 @@ from opendxa.dana.language.parser import GrammarParser
 from opendxa.dana.runtime.context import RuntimeContext
 from opendxa.dana.runtime.interpreter import Interpreter
 from opendxa.dana.runtime.log_manager import set_dana_log_level
-from opendxa.dana.transcoder.transcoder import Transcoder
 
 # Map DANA LogLevel to Python logging levels
 LEVEL_MAP = {LogLevel.DEBUG: logging.DEBUG, LogLevel.INFO: logging.INFO, LogLevel.WARN: logging.WARNING, LogLevel.ERROR: logging.ERROR}
@@ -21,41 +19,16 @@ LEVEL_MAP = {LogLevel.DEBUG: logging.DEBUG, LogLevel.INFO: logging.INFO, LogLeve
 class REPL(Loggable):
     """Read-Eval-Print Loop for executing and managing DANA programs."""
 
-    def __init__(
-        self,
-        llm_resource: Optional[LLMResource] = None,
-        context: Optional[RuntimeContext] = None,
-    ):
-        """Initialize the DANA REPL."""
-        # Initialize Loggable
-        super().__init__()
+    def __init__(self, context: Optional[RuntimeContext] = None):
+        """Initialize the REPL.
 
-        # Set up context
+        Args:
+            context: Optional runtime context to use
+        """
         self.context = context or RuntimeContext()
-        if "system" not in self.context._state:
-            self.context._state["system"] = {}
-        if "__repl" not in self.context._state["system"]:
-            self.context._state["system"]["__repl"] = {}
-        self.context._state["system"]["__repl"]["nlp"] = False  # Default to disabled
-
-        # Set up transcoder if LLM resource is available
-        self.transcoder = None
-        if llm_resource:
-            self.context.register_resource("llm", llm_resource)
-            try:
-                self.transcoder = Transcoder(llm_resource)
-                self.info(f"Initialized LLM resource: {llm_resource.model}")
-            except Exception as e:
-                self.error(f"Failed to initialize transcoder: {e}")
-
-        # Set up interpreter and parser
         self.interpreter = Interpreter(self.context)
         self.parser = GrammarParser()
-
-        # Register hook for log level changes
-        from opendxa.dana.runtime.hooks import HookType, register_hook
-
-        register_hook(HookType.LOG_LEVEL_CHANGED, self._handle_log_level_change)
+        self.last_result = None
 
     def _handle_log_level_change(self, context: Dict[str, Any]) -> None:
         """Handle log level change hook."""
