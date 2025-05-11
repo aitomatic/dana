@@ -161,3 +161,9 @@ class TypeChecker:
 
         # TODO: Implement proper type checking for binary operations
         return DanaType("any")  # For now, return any type
+
+    @staticmethod
+    def check_types(program: Program) -> None:
+        """Check types in a DANA program (static utility)."""
+        checker = TypeChecker()
+        checker.check_program(program)

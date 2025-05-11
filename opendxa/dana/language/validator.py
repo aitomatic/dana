@@ -2,7 +2,7 @@
 
 from typing import List, Optional
 
-from opendxa.dana.exceptions import ValidationError
+from opendxa.dana.common.exceptions import ValidationError
 from opendxa.dana.language.ast import (
     Assignment,
     BinaryExpression,

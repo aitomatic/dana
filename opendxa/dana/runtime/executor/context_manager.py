@@ -6,8 +6,8 @@ This module provides utilities for managing the runtime context during execution
 from typing import Any, Dict, Optional
 
 from opendxa.common.mixins.loggable import Loggable
+from opendxa.dana.common.exceptions import StateError
 from opendxa.dana.common.runtime_scopes import RuntimeScopes
-from opendxa.dana.exceptions import StateError
 from opendxa.dana.runtime.context import RuntimeContext
 
 

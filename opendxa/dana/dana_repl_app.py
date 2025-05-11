@@ -14,7 +14,7 @@ from prompt_toolkit.keys import Keys
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.resource.llm_resource import LLMResource
-from opendxa.dana.error_handling import ErrorContext, ErrorHandler
+from opendxa.dana.common.error_utils import ErrorContext, ErrorHandler
 from opendxa.dana.language.ast import LogLevel
 from opendxa.dana.runtime.repl import REPL
 

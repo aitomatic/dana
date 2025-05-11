@@ -2,7 +2,7 @@
 
 import pytest
 
-from opendxa.dana.exceptions import StateError
+from opendxa.dana.common.exceptions import StateError
 from opendxa.dana.runtime.context import ExecutionStatus, RuntimeContext
 
 
@@ -116,6 +116,7 @@ def test_invalid_keys():
         ctx.set(".value", "test")
     assert "Invalid state key" in str(exc_info.value)
 
+
 def test_parent_context_inheritance():
     """Test inheritance from parent context."""
     # Create parent context
@@ -199,3 +200,54 @@ def test_from_dict_empty():
     base.set("private.name", "Bob")
     ctx2 = RuntimeContext.from_dict({}, base)
     assert ctx2.get("private.name") == "Bob"
+
+
+def test_shared_global_modifications():
+    """Test that modifications to global scopes are shared across contexts."""
+    # Create parent context
+    parent = RuntimeContext()
+    parent.set("private.name", "Parent")
+    parent.set("public.weather", "sunny")
+    parent.set("system.status", "running")
+    parent.set("local_var", "parent_local")  # Local variables don't share
+
+    # Create child context
+    child = RuntimeContext(parent=parent)
+
+    # Test initial state
+    assert child.get("private.name") == "Parent"
+    assert child.get("public.weather") == "sunny"
+    assert child.get("system.status") == "running"
+
+    # Modify global scopes in child
+    child.set("private.name", "Child")
+    child.set("public.weather", "rainy")
+    child.set("system.status", "stopped")
+
+    # Verify changes are shared with parent
+    assert parent.get("private.name") == "Child"
+    assert parent.get("public.weather") == "rainy"
+    assert parent.get("system.status") == "stopped"
+
+    # Verify local scope is not shared
+    child.set("local_var", "child_local")
+    assert child.get("local_var") == "child_local"
+    assert parent.get("local_var") == "parent_local"
+
+    # Create another child context
+    child2 = RuntimeContext(parent=parent)
+
+    # Verify child2 sees the same global state
+    assert child2.get("private.name") == "Child"
+    assert child2.get("public.weather") == "rainy"
+    assert child2.get("system.status") == "stopped"
+
+    # Modify global scopes in child2
+    child2.set("private.name", "Child2")
+    child2.set("public.weather", "cloudy")
+
+    # Verify changes are shared with all contexts
+    assert parent.get("private.name") == "Child2"
+    assert parent.get("public.weather") == "cloudy"
+    assert child.get("private.name") == "Child2"
+    assert child.get("public.weather") == "cloudy"

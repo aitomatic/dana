@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.common.utils import Misc
-from opendxa.dana.error_handling import DanaError
+from opendxa.dana.common.error_utils import DanaError
 from opendxa.dana.language.ast import LogLevel
 from opendxa.dana.language.parser import GrammarParser
 from opendxa.dana.runtime.context import RuntimeContext

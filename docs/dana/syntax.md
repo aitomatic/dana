@@ -109,6 +109,8 @@ function_name(named_arg=value)
 function_name(pos_arg, named_arg=value)
 ```
 
+For detailed information about function parameters and their handling, see [Function Parameters](function_parameters.md).
+
 ## Best Practices
 
 1. Always use explicit scope prefixes for clarity

@@ -2,7 +2,7 @@
 
 from typing import Any, Union
 
-from opendxa.dana.exceptions import ParseError
+from opendxa.dana.common.exceptions import ParseError
 from opendxa.dana.language.ast import Literal
 
 

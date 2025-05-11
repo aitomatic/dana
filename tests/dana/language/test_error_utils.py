@@ -1,8 +1,7 @@
 """Tests for error utilities."""
 
-from opendxa.dana.exceptions import ParseError
-from opendxa.dana.language.ast import Program
-from opendxa.dana.language.error_utils import ErrorUtils
+from opendxa.dana.common.error_utils import ErrorUtils
+from opendxa.dana.common.exceptions import ParseError
 
 
 class TestErrorUtils:
@@ -63,25 +62,23 @@ class TestErrorUtils:
 
         error = MockError()
         program_text = "x = 10"
-        program, errors = ErrorUtils.handle_parse_error(error, program_text)
+        error, is_passthrough = ErrorUtils.handle_parse_error(error, program_text, "parsing")
 
-        assert isinstance(program, Program)
-        assert len(errors) == 1
-        assert isinstance(errors[0], ParseError)
-        assert errors[0].line == 1
-        assert "Test error" in errors[0].message
+        assert isinstance(error, ParseError)
+        assert not is_passthrough
+        assert error.line == 1
+        assert "Test error" in str(error)
 
     def test_handle_parse_error_without_position(self):
         """Test handling parse error without position information."""
         error = Exception("Generic error")
         program_text = "x = 10"
-        program, errors = ErrorUtils.handle_parse_error(error, program_text)
+        error, is_passthrough = ErrorUtils.handle_parse_error(error, program_text, "parsing")
 
-        assert isinstance(program, Program)
-        assert len(errors) == 1
-        assert isinstance(errors[0], ParseError)
-        assert errors[0].line == 0
-        assert "Generic error" in errors[0].message
+        assert isinstance(error, ParseError)
+        assert not is_passthrough
+        assert error.line == 0
+        assert "Generic error" in str(error)
 
     def test_handle_parse_error_assignment(self):
         """Test handling parse error for assignment."""
@@ -93,9 +90,8 @@ class TestErrorUtils:
 
         error = MockError()
         program_text = "x = # comment"
-        program, errors = ErrorUtils.handle_parse_error(error, program_text)
+        error, is_passthrough = ErrorUtils.handle_parse_error(error, program_text, "parsing")
 
-        assert isinstance(program, Program)
-        assert len(errors) == 1
-        assert isinstance(errors[0], ParseError)
-        assert "Missing expression after equals sign" in errors[0].message
+        assert isinstance(error, ParseError)
+        assert not is_passthrough
+        assert "Missing expression after equals sign" in str(error)

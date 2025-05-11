@@ -4,7 +4,7 @@ from typing import Any, Dict
 
 from dana.dana_repl_app import DanaREPLApp
 from opendxa.dana.language.ast import LogLevel
-from opendxa.dana.runtime.function_registry import register_function
+from dana.runtime.python_registry import register_function
 
 
 def get_product_details(context: Dict[str, Any], product_id: str):

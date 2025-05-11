@@ -1,6 +1,6 @@
 """DANA: Domain-Aware Neurosymbolic Architecture"""
 
-from opendxa.dana.exceptions import (
+from opendxa.dana.common.exceptions import (
     DanaError,
     ErrorContext,
     ErrorHandler,

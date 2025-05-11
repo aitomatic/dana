@@ -8,7 +8,7 @@ import logging
 from typing import Any, Dict, Optional
 
 from opendxa.common.mixins.loggable import Loggable
-from opendxa.dana.exceptions import RuntimeError
+from opendxa.dana.common.exceptions import RuntimeError
 from opendxa.dana.language.ast import LogLevel
 from opendxa.dana.language.parser import ParseResult
 from opendxa.dana.runtime.context import RuntimeContext

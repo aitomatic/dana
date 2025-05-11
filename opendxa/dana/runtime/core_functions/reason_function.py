@@ -6,7 +6,7 @@ that allows DANA programs to perform reasoning using LLMs.
 
 from typing import Any, Dict, Optional
 
-from opendxa.dana.exceptions import RuntimeError
+from opendxa.dana.common.exceptions import RuntimeError
 from opendxa.dana.runtime.context import RuntimeContext
 from opendxa.dana.runtime.executor.llm_integration import LLMIntegration
 

@@ -7,8 +7,10 @@ evaluating expressions in DANA programs.
 import re
 from typing import Any, Dict, Optional
 
-from opendxa.dana.common.runtime_scopes import RuntimeScopes
-from opendxa.dana.exceptions import RuntimeError, StateError
+from dana.runtime.python_registry import PythonRegistry
+
+from opendxa.dana.common.error_utils import ErrorUtils
+from opendxa.dana.common.exceptions import RuntimeError, StateError
 from opendxa.dana.language.ast import (
     BinaryExpression,
     BinaryOperator,
@@ -21,8 +23,6 @@ from opendxa.dana.language.ast import (
 from opendxa.dana.runtime.context import RuntimeContext
 from opendxa.dana.runtime.executor.base_executor import BaseExecutor
 from opendxa.dana.runtime.executor.context_manager import ContextManager
-from opendxa.dana.runtime.executor.error_utils import create_runtime_error, create_state_error, handle_execution_error
-from opendxa.dana.runtime.function_registry import call_function
 
 
 class ExpressionEvaluator(BaseExecutor):
@@ -74,7 +74,7 @@ class ExpressionEvaluator(BaseExecutor):
                 error_msg = f"Unsupported expression type: {type(node).__name__}"
                 raise RuntimeError(error_msg)
         except Exception as e:
-            error, passthrough = handle_execution_error(e, node, "evaluating expression")
+            error, passthrough = ErrorUtils.handle_execution_error(e, node, "evaluating expression")
             if passthrough:
                 raise error
             else:
@@ -104,9 +104,9 @@ class ExpressionEvaluator(BaseExecutor):
                 except Exception as e:
                     self.debug(f"Error evaluating left operand: {e}")
                     if "." in node.left.name:
-                        raise create_state_error(f"Variable '{node.left.name}' not found", node)
+                        raise ErrorUtils.create_state_error(f"Variable '{node.left.name}' not found", node)
                     else:
-                        raise create_state_error(
+                        raise ErrorUtils.create_state_error(
                             f"Variable '{node.left.name}' must be accessed with a scope prefix: "
                             f"private.{node.left.name}, public.{node.left.name}, or system.{node.left.name}",
                             node,
@@ -123,9 +123,9 @@ class ExpressionEvaluator(BaseExecutor):
                 except Exception as e:
                     self.debug(f"Error evaluating right operand: {e}")
                     if "." in node.right.name:
-                        raise create_state_error(f"Variable '{node.right.name}' not found", node)
+                        raise ErrorUtils.create_state_error(f"Variable '{node.right.name}' not found", node)
                     else:
-                        raise create_state_error(
+                        raise ErrorUtils.create_state_error(
                             f"Variable '{node.right.name}' must be accessed with a scope prefix: "
                             f"private.{node.right.name}, public.{node.right.name}, or system.{node.right.name}",
                             node,
@@ -147,11 +147,11 @@ class ExpressionEvaluator(BaseExecutor):
                     return left * right
                 elif node.operator == BinaryOperator.DIVIDE:
                     if right == 0:
-                        raise create_state_error("Division by zero", node)
+                        raise ErrorUtils.create_state_error("Division by zero", node)
                     return left / right
                 elif node.operator == BinaryOperator.MODULO:
                     if right == 0:
-                        raise create_state_error("Modulo by zero", node)
+                        raise ErrorUtils.create_state_error("Modulo by zero", node)
                     return left % right
                 elif node.operator == BinaryOperator.EQUALS:
                     return left == right
@@ -173,7 +173,7 @@ class ExpressionEvaluator(BaseExecutor):
                     return left in right
                 else:
                     # Unsupported operator
-                    raise create_state_error(f"Unsupported binary operator: {node.operator.value}", node)
+                    raise ErrorUtils.create_state_error(f"Unsupported binary operator: {node.operator.value}", node)
             except Exception as e:
                 self.debug(f"Error in binary operation: {e}")
                 self.debug(f"Left operand type: {type(left)}, value: {left}")
@@ -186,7 +186,7 @@ class ExpressionEvaluator(BaseExecutor):
             if isinstance(e, StateError):
                 raise e
             else:
-                raise create_runtime_error(f"Error evaluating expression: {e}", node)
+                raise ErrorUtils.create_runtime_error(f"Error evaluating expression: {e}", node)
 
     def evaluate_literal_expression(self, node: LiteralExpression, context: Optional[Dict[str, Any]] = None) -> Any:
         """Evaluate a literal expression.
@@ -213,35 +213,11 @@ class ExpressionEvaluator(BaseExecutor):
             The value of the identifier
 
         Raises:
-            StateError: If the identifier is not defined
+            StateError: If the identifier is not found
         """
         try:
-            self.debug(f"Evaluating identifier: {node.name}")
-
-            # Direct dictionary access for scoped variables
-            if "." in node.name:
-                parts = node.name.split(".", 1)
-                scope, var_name = parts
-
-                # Try direct state access first for common scopes
-                if scope in RuntimeScopes.ALL and scope in self.context_manager.context._state:
-                    state_dict = self.context_manager.context._state[scope]
-                    if var_name in state_dict:
-                        value = state_dict[var_name]
-                        self.debug(f"Direct state access for '{node.name}' = {value}")
-                        return value
-
-            # Standard variable lookup
-            try:
-                value = self.context_manager.get_from_context(node.name, context)
-                self.debug(f"Standard lookup for '{node.name}' = {value}")
-                return value
-            except Exception as e:
-                self.debug(f"Error in variable lookup for '{node.name}': {e}")
-                if "." in node.name:
-                    self.debug(f"Available keys in scope: {list(self.context_manager.context._state.get(scope, {}).keys())}")
-                raise
-
+            # Get the value from the context manager
+            return self.context_manager.get(node.name, context)
         except StateError:
             # Standard error for undefined variables
             if "." in node.name:
@@ -252,7 +228,7 @@ class ExpressionEvaluator(BaseExecutor):
                     f"private.{node.name}, public.{node.name}, or system.{node.name}"
                 )
             self.debug(f"Variable not found: {node.name}")
-            raise create_state_error(error_msg, node)
+            raise ErrorUtils.create_state_error(error_msg, node)
 
     def evaluate_literal(self, node: Literal, context: Optional[Dict[str, Any]] = None) -> Any:
         """Evaluate a literal.
@@ -326,13 +302,23 @@ class ExpressionEvaluator(BaseExecutor):
     def evaluate_function_call(self, node: FunctionCall, context: Optional[Dict[str, Any]] = None) -> Any:
         """Evaluate a function call.
 
-        The base context from the context manager will override any values in the local context.
+        This method evaluates a DANA function call by:
+        1. Evaluating all arguments
+        2. Creating a new runtime context
+        3. Calling the registered Python function with the context and evaluated arguments
+
+        Args:
+            node: The function call node to evaluate
+            context: Optional local context for variable resolution
+
+        Returns:
+            The result of calling the Python function
         """
         # Step 1: Get the base context from the context manager
         base_context = self.context_manager.context
 
-        # Step 2: If local context provided, create new context with base context taking precedence
-        runtime_context = RuntimeContext.from_dict(context, base_context) if context else base_context
+        # Step 2: Create a new context with base context
+        runtime_context = RuntimeContext.from_dict({}, base_context)
 
         def unwrap_value(val):
             # Unwrap LiteralExpression to its value
@@ -360,12 +346,19 @@ class ExpressionEvaluator(BaseExecutor):
             else:
                 return val
 
-        # Evaluate all arguments before calling the function
+        # Step 3: Evaluate arguments
         evaluated_args = {}
         for key, value in node.args.items():
             if key == "__positional" and isinstance(value, list):
-                evaluated_args["__positional"] = [unwrap_value(arg) for arg in value]
+                # Handle positional arguments
+                for i, arg in enumerate(value):
+                    evaluated_value = unwrap_value(arg)
+                    evaluated_args[f"__positional_{i}"] = evaluated_value
             else:
-                evaluated_args[key] = unwrap_value(value)
+                # Handle named arguments
+                evaluated_value = unwrap_value(value)
+                evaluated_args[key] = evaluated_value
 
-        return call_function(node.name, runtime_context, evaluated_args)
+        # TODO: Support DANA Functions, too?
+        # Step 4: Call the Python function with the context and evaluated arguments
+        return PythonRegistry.call(node.name, evaluated_args)

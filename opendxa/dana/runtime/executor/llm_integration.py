@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.common.types import BaseRequest
 from opendxa.common.utils.misc import Misc
-from opendxa.dana.exceptions import RuntimeError, StateError
+from opendxa.dana.common.exceptions import RuntimeError, StateError
 from opendxa.dana.runtime.context import RuntimeContext
 from opendxa.dana.runtime.executor.base_executor import BaseExecutor
 from opendxa.dana.runtime.executor.context_manager import ContextManager

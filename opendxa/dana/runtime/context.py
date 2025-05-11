@@ -4,8 +4,8 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, Optional
 
+from opendxa.dana.common.exceptions import StateError
 from opendxa.dana.common.runtime_scopes import RuntimeScopes
-from opendxa.dana.exceptions import StateError
 
 
 class ExecutionStatus(Enum):
@@ -29,19 +29,19 @@ class RuntimeContext:
         self._parent = parent
         self._state: Dict[str, Dict[str, Any]] = {
             "local": {},  # Always fresh local scope
-            "private": {},  # Inherited from parent if exists
-            "public": {},  # Inherited from parent if exists
-            "system": {  # Inherited from parent if exists
+            "private": {},  # Shared global scope
+            "public": {},  # Shared global scope
+            "system": {  # Shared global scope
                 "execution_status": ExecutionStatus.IDLE,
                 "history": [],
             },
         }
         self._resources: Dict[str, Any] = {}
 
-        # If parent exists, inherit shared scopes and resources
+        # If parent exists, share global scopes instead of copying
         if parent:
             for scope in RuntimeScopes.GLOBAL:
-                self._state[scope] = parent._state[scope].copy()
+                self._state[scope] = parent._state[scope]  # Share reference instead of copy
             self._resources = parent._resources.copy()
 
     def _validate_key(self, key: str) -> tuple[str, str]:
@@ -67,6 +67,7 @@ class RuntimeContext:
         """Sets a value in the context using dot notation (scope.variable).
 
         If no scope is specified, the value is set in the local scope.
+        For global scopes (private/public/system), modifications are shared across all contexts.
 
         Args:
             key: The key in format 'scope.variable' or just 'variable'
@@ -76,12 +77,23 @@ class RuntimeContext:
             StateError: If the key format is invalid or scope is unknown
         """
         scope, var_name = self._validate_key(key)
-        self._state[scope][var_name] = value
+
+        # For global scopes, ensure we're modifying the root context's state
+        if scope in RuntimeScopes.GLOBAL:
+            # Find the root context
+            root = self
+            while root._parent is not None:
+                root = root._parent
+            root._state[scope][var_name] = value
+        else:
+            # Local scope modifications stay in current context
+            self._state[scope][var_name] = value
 
     def get(self, key: str, default: Any = None) -> Any:
         """Gets a value from the context using dot notation (scope.variable).
 
         If no scope is specified, looks in the local scope first.
+        For global scopes (private/public/system), looks in the root context.
 
         Args:
             key: The key in format 'scope.variable' or just 'variable'
@@ -95,7 +107,20 @@ class RuntimeContext:
         """
         scope, var_name = self._validate_key(key)
 
-        if scope not in self._state or var_name not in self._state[scope]:
+        # For global scopes, look in root context
+        if scope in RuntimeScopes.GLOBAL:
+            # Find the root context
+            root = self
+            while root._parent is not None:
+                root = root._parent
+            if var_name not in root._state[scope]:
+                if default is not None:
+                    return default
+                raise StateError(f"Variable '{key}' not found")
+            return root._state[scope][var_name]
+
+        # For local scope, look in current context
+        if var_name not in self._state[scope]:
             if default is not None:
                 return default
             raise StateError(f"Variable '{key}' not found")
@@ -172,6 +197,7 @@ class RuntimeContext:
 
         The data dictionary values will override any values already in the base context.
         Unscoped variables are placed in the local scope.
+        Global scope modifications are shared across all contexts.
 
         Args:
             data: Dictionary containing context data
@@ -189,7 +215,7 @@ class RuntimeContext:
                 # Explicitly scoped variable
                 scope, var_name = key.split(".", 1)
                 if scope in RuntimeScopes.ALL:
-                    context.set(key, value)
+                    context.set(key, value)  # This will handle global scope sharing
                 else:
                     # If not a valid scope, treat as local variable
                     context.set(key, value)

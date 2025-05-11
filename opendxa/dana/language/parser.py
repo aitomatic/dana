@@ -24,7 +24,7 @@ except ImportError:
 
 # Create a shared logger for the parser module
 from opendxa.common.utils.logging import DXA_LOGGER
-from opendxa.dana.exceptions import ParseError
+from opendxa.dana.common.exceptions import ParseError
 from opendxa.dana.language.ast import (
     Identifier,
     Program,

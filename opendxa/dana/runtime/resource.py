@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List
 
-from opendxa.dana.exceptions import StateError
+from opendxa.dana.common.exceptions import StateError
 
 
 class ResourceRegistry:
