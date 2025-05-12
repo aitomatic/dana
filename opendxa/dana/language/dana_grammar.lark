@@ -17,9 +17,13 @@ program: statement*
 statement: assignment
         | conditional
         | while_loop
+        | for_loop
         | function_call
         | print_statement
         | bare_identifier
+        | break_stmt
+        | continue_stmt
+        | function_def
         | NEWLINE
 
 assignment: identifier "=" expression -> assignment
@@ -28,11 +32,19 @@ conditional: "if" expression ":" NEWLINE INDENT statement+ DEDENT ["else" ":" NE
 
 while_loop: "while" expression ":" NEWLINE INDENT statement+ DEDENT -> while_loop
 
+for_loop: "for" identifier "in" expression ":" NEWLINE INDENT statement+ DEDENT -> for_loop
+
 function_call: identifier "(" [expression ("," expression)*] ")" -> function_call
 
 print_statement: "print" "(" expression ")" -> print_statement
 
 bare_identifier: identifier -> bare_identifier
+
+break_stmt: "break" -> break_stmt
+
+continue_stmt: "continue" -> continue_stmt
+
+function_def: "def" identifier "(" [identifier ("," identifier)*] ")" ":" NEWLINE INDENT statement+ DEDENT -> function_def
 
 expression: or_expr
 
@@ -71,6 +83,10 @@ literal: string
        | number
        | boolean
        | null
+       | fstring
+       | list
+       | dict
+       | set
 
 string: ESCAPED_STRING -> string
 
@@ -80,6 +96,16 @@ boolean: "true" -> true
        | "false" -> false
 
 null: "null" -> null
+
+fstring: "f" ESCAPED_STRING -> fstring
+
+list: "[" [expression ("," expression)*] "]" -> list
+
+dict: "{" [key_value_pair ("," key_value_pair)*] "}" -> dict
+
+key_value_pair: expression ":" expression -> key_value_pair
+
+set: "{" [expression ("," expression)*] "}" -> set
 
 %ignore WS
 %ignore C_COMMENT

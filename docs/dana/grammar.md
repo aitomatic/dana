@@ -91,104 +91,36 @@ The grammar is designed to be extensible. New statements, expressions, or litera
 
 ```
 program       ::= statement+
-statement     ::= assignment | function_call | conditional | while_loop | log_statement | loglevel_statement | comment
+statement     ::= assignment | function_call | conditional | while_loop | for_loop | break_stmt | continue_stmt | function_def | comment
 assignment    ::= identifier '=' expression
-expression    ::= literal | identifier | function_call | binary_expression | fstring_expression
-function_call ::= 'reason' '(' string [',' 'context=' (identifier | list_expression)] [',' param '=' value]* ')'
-                  | 'use' '(' string ')'
-                  | 'set' '(' string ',' expression ')'
-log_statement ::= 'log' '(' expression ')'
-loglevel_statement ::= 'log_level' '=' level
+expression    ::= literal | identifier | function_call | binary_expression
+literal       ::= string | number | boolean | none | fstring | list | dict | set
+function_call ::= identifier '(' [expression (',' expression)*] ')'
 conditional   ::= 'if' expression ':' NEWLINE INDENT program DEDENT [ 'else:' NEWLINE INDENT program DEDENT ]
 while_loop    ::= 'while' expression ':' NEWLINE INDENT program DEDENT
+for_loop      ::= 'for' identifier 'in' expression ':' NEWLINE INDENT program DEDENT
+break_stmt    ::= 'break'
+continue_stmt ::= 'continue'
+function_def  ::= 'def' identifier '(' [identifier (',' identifier)*] ')' ':' NEWLINE INDENT program DEDENT
 comment       ::= ('//' | '#') .*
 
 identifier    ::= [a-zA-Z_][a-zA-Z0-9_.]*
-literal       ::= string | number | boolean | none
-list_expression ::= '[' expression (',' expression)* ']'
-fstring_expression ::= 'f' string
+list          ::= '[' expression (',' expression)* ']'
+fstring       ::= 'f' string
+dict          ::= '{' [key_value_pair (',' key_value_pair)*] '}'
+key_value_pair ::= expression ':' expression
+set           ::= '{' expression (',' expression)* '}'
 binary_expression ::= expression binary_op expression
 binary_op     ::= '==' | '!=' | '<' | '>' | '<=' | '>=' | 'and' | 'or' | 'in' | '+' | '-' | '*' | '/'
-level         ::= 'DEBUG' | 'INFO' | 'WARN' | 'ERROR'
 ```
 
 * All blocks must be indented consistently
-* No nested function calls (e.g. `if reason(...) == ...` not allowed)
 * One instruction per line
 * F-strings support expressions inside curly braces: `f"Value: {x}"`
+* Built-in functions like `len()` are supported via transformer logic and do not require specific grammar rules.
 
 ---
 
 ## Example: Minimal DANA Program
 
-```dana
-x = 42
-if x > 10:
-    print("large")
-else:
-    print("small")
 ```
-
-## Mapping the Example Program to Grammar and AST
-
-### Grammar Rule Mapping
-
-| Code                        | Grammar Rule(s) Triggered                |
-|-----------------------------|------------------------------------------|
-| `x = 42`                    | statement → assignment                   |
-|                             | assignment → identifier '=' expression   |
-| `if x > 10:`                | statement → conditional                  |
-|                             | conditional → 'if' expression ':' ...    |
-| `    print("large")`        | statement → function_call                |
-|                             | function_call → identifier '(' ... ')'   |
-| `else:`                     | conditional (else branch)                |
-| `    print("small")`        | statement → function_call                |
-
-### Simplified Parse Tree
-
-```
-program
- ├─ assignment
- │   ├─ identifier: x
- │   └─ expression: 42
- └─ conditional
-     ├─ expression: x > 10
-     ├─ statement: function_call (print("large"))
-     └─ else statement: function_call (print("small"))
-```
-
-### Corresponding AST
-
-```mermaid
-graph TD
-    Program[Program]
-    Assignment[Assignment: x = 42]
-    Conditional[Conditional: if x > 10]
-    Identifier[Identifier: x]
-    Literal42[Literal: 42]
-    BinaryExpr[BinaryExpression: x > 10]
-    Identifier2[Identifier: x]
-    Literal10[Literal: 10]
-    Print1[FunctionCall: print]
-    LiteralLarge[Literal: 'large']
-    Print2[FunctionCall: print]
-    LiteralSmall[Literal: 'small']
-
-    Program --> Assignment
-    Program --> Conditional
-    Assignment --> Identifier
-    Assignment --> Literal42
-    Conditional --> BinaryExpr
-    BinaryExpr --> Identifier2
-    BinaryExpr --> Literal10
-    Conditional --> Print1
-    Print1 --> LiteralLarge
-    Conditional --> Print2
-    Print2 --> LiteralSmall
-```
-
----
-<p align="center">
-Copyright © 2025 Aitomatic, Inc. Licensed under the <a href="../LICENSE.md">MIT License</a>.<br/>
-<a href="https://aitomatic.com">https://aitomatic.com</a>
-</p> 
