@@ -1,10 +1,10 @@
 """Test the reason2 function usage in DANA code."""
 
 import pytest
+from dana.sandbox.sandbox_context import SandboxContext
 
 from opendxa.dana.language.parser import GrammarParser, ParseResult
-from opendxa.dana.runtime.context import RuntimeContext
-from opendxa.dana.runtime.interpreter import Interpreter
+from opendxa.dana.sandbox.interpreter import Interpreter
 
 
 @pytest.fixture
@@ -30,7 +30,7 @@ def test_reason2_in_dana():
             return f"Response to '{prompt}' with context={context_vars} and options={options}"
 
     # Set up context and interpreter
-    context = RuntimeContext()
+    context = SandboxContext()
     context.register_resource("llm_integration", MockLLMIntegration())
 
     # Set some test data in the context

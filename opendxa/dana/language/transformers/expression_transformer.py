@@ -2,12 +2,11 @@
 
 from lark import Token
 
-from opendxa.dana.common.runtime_scopes import RuntimeScopes
 from opendxa.dana.language.ast import (
     BinaryExpression,
     BinaryOperator,
+    FunctionCall,
     Identifier,
-    Literal,
     LiteralExpression,
 )
 from opendxa.dana.language.transformers.base_transformer import BaseTransformer
@@ -17,42 +16,48 @@ class ExpressionTransformer(BaseTransformer):
     """Transformer for expression-related AST nodes."""
 
     def expression(self, items):
-        """Transform an expression rule into an Expression node."""
-        # Pass through to the or_expr rule
-        return items[0]
+        """Transform an expression into an AST node or pass through."""
+        return self._unwrap_tree(items[0])
 
     def or_expr(self, items):
         """Transform an or expression into a BinaryExpression or pass through."""
+        item = self._unwrap_tree(items[0])
         if len(items) == 1:
-            return items[0]
-
-        # Build a left-associative tree of binary expressions
-        result = items[0]
-        for i in range(1, len(items)):
-            result = BinaryExpression(left=result, operator=BinaryOperator.OR, right=items[i])
+            return self._ensure_expr(item)
+        result = self._ensure_expr(self._unwrap_tree(items[0]))
+        for i in range(1, len(items), 2):
+            operator_item = items[i]
+            operator_value = operator_item.children[0].value if hasattr(operator_item, "children") else operator_item.value
+            operator = self._get_binary_operator(operator_value)
+            right = self._ensure_expr(self._unwrap_tree(items[i + 1]))
+            result = BinaryExpression(left=result, operator=operator, right=right)
         return result
 
     def and_expr(self, items):
         """Transform an and expression into a BinaryExpression or pass through."""
+        item = self._unwrap_tree(items[0])
         if len(items) == 1:
-            return items[0]
-
-        # Build a left-associative tree of binary expressions
-        result = items[0]
-        for i in range(1, len(items)):
-            result = BinaryExpression(left=result, operator=BinaryOperator.AND, right=items[i])
+            return self._ensure_expr(item)
+        result = self._ensure_expr(self._unwrap_tree(items[0]))
+        for i in range(1, len(items), 2):
+            operator_item = items[i]
+            operator_value = operator_item.children[0].value if hasattr(operator_item, "children") else operator_item.value
+            operator = self._get_binary_operator(operator_value)
+            right = self._ensure_expr(self._unwrap_tree(items[i + 1]))
+            result = BinaryExpression(left=result, operator=operator, right=right)
         return result
 
     def comparison(self, items):
         """Transform a comparison into a BinaryExpression or pass through."""
+        item = self._unwrap_tree(items[0])
         if len(items) == 1:
-            return items[0]
-
-        # Items alternate between expressions and operators
-        result = items[0]
+            return self._ensure_expr(item)
+        result = self._ensure_expr(self._unwrap_tree(items[0]))
         for i in range(1, len(items), 2):
-            operator = self._get_binary_operator(items[i].value)
-            right = items[i + 1]
+            operator_item = items[i]
+            operator_value = operator_item.children[0].value if hasattr(operator_item, "children") else operator_item.value
+            operator = self._get_binary_operator(operator_value)
+            right = self._ensure_expr(self._unwrap_tree(items[i + 1]))
             result = BinaryExpression(left=result, operator=operator, right=right)
         return result
 
@@ -80,14 +85,15 @@ class ExpressionTransformer(BaseTransformer):
 
     def sum_expr(self, items):
         """Transform a sum expression into a BinaryExpression or pass through."""
+        item = self._unwrap_tree(items[0])
         if len(items) == 1:
-            return items[0]
-
-        # Items alternate between expressions and operators
-        result = items[0]
+            return self._ensure_expr(item)
+        result = self._ensure_expr(self._unwrap_tree(items[0]))
         for i in range(1, len(items), 2):
-            operator = self._get_binary_operator(items[i].value)
-            right = items[i + 1]
+            operator_item = items[i]
+            operator_value = operator_item.children[0].value if hasattr(operator_item, "children") else operator_item.value
+            operator = self._get_binary_operator(operator_value)
+            right = self._ensure_expr(self._unwrap_tree(items[i + 1]))
             result = BinaryExpression(left=result, operator=operator, right=right)
         return result
 
@@ -102,15 +108,16 @@ class ExpressionTransformer(BaseTransformer):
         return Token("ADD_OP", "-")  # type: ignore
 
     def product(self, items):
-        """Transform a product expression into a BinaryExpression or pass through."""
+        """Transform a product into a BinaryExpression or pass through."""
+        item = self._unwrap_tree(items[0])
         if len(items) == 1:
-            return items[0]
-
-        # Items alternate between expressions and operators
-        result = items[0]
+            return self._ensure_expr(item)
+        result = self._ensure_expr(self._unwrap_tree(items[0]))
         for i in range(1, len(items), 2):
-            operator = self._get_binary_operator(items[i].value)
-            right = items[i + 1]
+            operator_item = items[i]
+            operator_value = operator_item.children[0].value if hasattr(operator_item, "children") else operator_item.value
+            operator = self._get_binary_operator(operator_value)
+            right = self._ensure_expr(self._unwrap_tree(items[i + 1]))
             result = BinaryExpression(left=result, operator=operator, right=right)
         return result
 
@@ -128,52 +135,44 @@ class ExpressionTransformer(BaseTransformer):
         return Token("MUL_OP", "%")  # type: ignore
 
     def atom(self, items):
-        """Transform an atom rule into an Expression node."""
-        return items[0]
+        """Transform an atom into an AST node or pass through."""
+        return self._unwrap_tree(items[0])
 
     def TRUE(self, _):  # noqa: N802
         """Transform a TRUE token into a LiteralExpression with value True."""
-        return LiteralExpression(literal=Literal(value=True))
+        return LiteralExpression(value=True)
 
     def FALSE(self, _):  # noqa: N802
         """Transform a FALSE token into a LiteralExpression with value False."""
-        return LiteralExpression(literal=Literal(value=False))
+        return LiteralExpression(value=False)
 
     def array_literal(self, items):
         """Transform an array literal into a LiteralExpression node."""
         # If empty array, return empty list
         if len(items) == 0:
-            return LiteralExpression(literal=Literal(value=[]))
+            return LiteralExpression(value=[])
 
         # If we have array items, extract them
         array_items = items[0] if len(items) > 0 else []
 
         # Convert to a Literal node with a list value
-        return LiteralExpression(literal=Literal(value=array_items))
+        return LiteralExpression(value=array_items)
 
     def array_items(self, items):
         """Transform array items into a list."""
         return items
 
     def literal(self, items):
-        """Transform a literal rule into a LiteralExpression node."""
-        return LiteralExpression(literal=self._create_literal(items[0]))
+        """Transform a literal into a LiteralExpression or pass through."""
+        return self._unwrap_tree(items[0])
 
     def identifier(self, items):
-        """Transform an identifier rule into an Identifier node."""
-        # Convert all items to strings
-        parts = []
-        for item in items:
-            if isinstance(item, Token):
-                parts.append(item.value)
+        """Transform an identifier into an Identifier or pass through."""
+        return self._unwrap_tree(items[0])
 
-        # If no scope prefix and not a function name, add local
-        if parts[0] not in RuntimeScopes.ALL + ["reason2", "reason", "log", "print"]:
-            parts = self._insert_local_scope(parts)
-
-        # Join all parts with dots
-        name = ".".join(parts)
-        return Identifier(name=name)
+    def not_expr(self, items):
+        """Transform a not expression into a BinaryExpression or pass through."""
+        return self._unwrap_tree(items[0])
 
     def _get_binary_operator(self, op_str):
         """Convert an operator string to a BinaryOperator enum value."""
@@ -194,3 +193,14 @@ class ExpressionTransformer(BaseTransformer):
         }
 
         return op_map.get(op_str, BinaryOperator.EQUALS)  # Default to equals if unknown
+
+    def _ensure_expr(self, node):
+        # Helper to ensure node is a valid Expression type
+        if isinstance(node, (LiteralExpression, BinaryExpression, FunctionCall)):
+            return node
+        if isinstance(node, Identifier):
+            return node
+        # If it's a Token, treat as a literal value
+        if isinstance(node, Token):
+            return LiteralExpression(value=node.value)
+        return node

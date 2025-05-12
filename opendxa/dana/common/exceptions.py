@@ -1,5 +1,7 @@
 """Custom exceptions for the DANA module."""
 
+from typing import Any, Optional
+
 
 class DanaError(Exception):
     """Base class for all DANA-related errors with unified formatting."""
@@ -44,6 +46,10 @@ class ParseError(DanaError):
             full_message = f"{full_message}\n{line_with_caret}\n{' ' * error_pos}^"
         super().__init__(full_message, line, source_line)
 
+    def __len__(self) -> int:
+        """Return 1 to indicate this is a single error."""
+        return 1
+
 
 class ValidationError(DanaError):
     """Error during DANA program validation."""
@@ -51,7 +57,7 @@ class ValidationError(DanaError):
     pass
 
 
-class RuntimeError(DanaError):
+class SandboxError(DanaError):
     """Error during DANA program execution."""
 
     pass
@@ -146,18 +152,18 @@ class InterpretError(DanaError):
     pass
 
 
-class TypeError(DanaError):
-    """Error during type checking."""
+class TypeError(Exception):
+    """Custom error for type checking in DANA."""
 
-    def __init__(self, message: str, location=None):
-        self.location = location
-        full_message = message
-        if location:
-            line, column, source_text = location
-            if source_text:
-                padding = " " * (column - 1)
-                full_message = f"{source_text}\n{padding}^"
-        super().__init__(full_message)
+    def __init__(self, message: str, node: Optional[Any] = None):
+        self.message = message
+        self.node = node
+        super().__init__(self.message)
+
+    def __str__(self) -> str:
+        if self.node:
+            return f"{self.message} at {self.node}"
+        return self.message
 
 
 class KBError(DanaError):

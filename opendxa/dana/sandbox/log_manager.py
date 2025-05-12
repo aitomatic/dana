@@ -3,9 +3,10 @@
 import logging
 from typing import Optional, Union
 
+from dana.sandbox.sandbox_context import SandboxContext
+
 from opendxa.common.utils.logging.dxa_logger import DXA_LOGGER
 from opendxa.dana.language.ast import LogLevel
-from opendxa.dana.runtime.context import RuntimeContext
 
 # Map DANA LogLevel to Python logging levels
 LEVEL_MAP = {LogLevel.DEBUG: logging.DEBUG, LogLevel.INFO: logging.INFO, LogLevel.WARN: logging.WARNING, LogLevel.ERROR: logging.ERROR}
@@ -15,7 +16,7 @@ class LogManager:
     """Log level management for DANA runtime."""
 
     @staticmethod
-    def set_dana_log_level(level: Union[LogLevel, str], context: Optional[RuntimeContext] = None) -> None:
+    def set_dana_log_level(level: Union[LogLevel, str], context: Optional[SandboxContext] = None) -> None:
         """Set the log level for DANA runtime.
 
         This is the single source of truth for setting log levels in DANA.

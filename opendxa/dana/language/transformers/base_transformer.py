@@ -2,8 +2,10 @@
 
 from typing import Any, Union
 
+from lark import Token, Tree
+
 from opendxa.dana.common.exceptions import ParseError
-from opendxa.dana.language.ast import Literal
+from opendxa.dana.language.ast import ASTNode, LiteralExpression
 
 
 class BaseTransformer:
@@ -19,27 +21,27 @@ class BaseTransformer:
         # Try numbers first
         try:
             if "." in text:
-                return Literal(value=float(text))
+                return LiteralExpression(value=float(text))
             else:
-                return Literal(value=int(text))
+                return LiteralExpression(value=int(text))
         except ValueError:
             pass
 
         # Try boolean
         if text.lower() == "true":
-            return Literal(value=True)
+            return LiteralExpression(value=True)
         elif text.lower() == "false":
-            return Literal(value=False)
+            return LiteralExpression(value=False)
 
         # Try string (with quotes)
         if (text.startswith('"') and text.endswith('"')) or (text.startswith("'") and text.endswith("'")):
-            return Literal(value=text[1:-1])
+            return LiteralExpression(value=text[1:-1])
 
         # Default to string
-        return Literal(value=text)
+        return LiteralExpression(value=text)
 
     def _create_literal(self, token):
-        """Create a Literal node from a token."""
+        """Create a LiteralExpression node from a token."""
         token_type = token.type
         value = token.value
 
@@ -47,20 +49,20 @@ class BaseTransformer:
             # Remove quotes (either single or double)
             if (value.startswith('"') and value.endswith('"')) or (value.startswith("'") and value.endswith("'")):
                 value = value[1:-1]
-            return Literal(value=value)
+            return LiteralExpression(value=value)
         elif token_type == "NUMBER":
             # Check if it's an integer or float
             if "." in value:
-                return Literal(value=float(value))
+                return LiteralExpression(value=float(value))
             else:
-                return Literal(value=int(value))
+                return LiteralExpression(value=int(value))
         elif token_type == "BOOL":
-            return Literal(value=value.lower() == "true")
+            return LiteralExpression(value=value.lower() == "true")
         elif value == "null":
-            return Literal(value=None)
+            return LiteralExpression(value=None)
 
         # Fallback
-        return Literal(value=value)
+        return LiteralExpression(value=value)
 
     def _insert_local_scope(self, parts: Union[list[str], str]) -> Any:
         """Insert local scope prefix to parts if not already present."""
@@ -72,9 +74,16 @@ class BaseTransformer:
             if len(parts) == 0:
                 raise ParseError("No local variable name provided")
             elif len(parts) > 1:
-                raise ParseError("Local variable must be a simple name")
+                # For nested identifiers, keep as is
+                return parts
             else:
                 parts.insert(0, "local")
                 return parts
         else:
             raise ParseError(f"Invalid type for local variable: {type(parts)}")
+
+    def _unwrap_tree(self, item: Union[Tree, Token, ASTNode]) -> Union[Token, ASTNode]:
+        """Recursively unwrap a Tree until an AST node or token is reached."""
+        while hasattr(item, "children") and len(item.children) == 1:
+            item = item.children[0]
+        return item  # type: ignore

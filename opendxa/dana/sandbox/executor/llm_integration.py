@@ -7,13 +7,14 @@ handling interactions with Large Language Models during execution.
 import json
 from typing import Any, Dict, List, Optional
 
+from dana.sandbox.sandbox_context import SandboxContext
+
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.common.types import BaseRequest
 from opendxa.common.utils.misc import Misc
-from opendxa.dana.common.exceptions import RuntimeError, StateError
-from opendxa.dana.runtime.context import RuntimeContext
-from opendxa.dana.runtime.executor.base_executor import BaseExecutor
-from opendxa.dana.runtime.executor.context_manager import ContextManager
+from opendxa.dana.common.exceptions import SandboxError, StateError
+from opendxa.dana.sandbox.executor.base_executor import BaseExecutor
+from opendxa.dana.sandbox.executor.context_manager import ContextManager
 
 
 class LLMIntegration(BaseExecutor):
@@ -69,9 +70,9 @@ class LLMIntegration(BaseExecutor):
                 "2. Or register an LLM resource with the context"
             )
             self.error(error_msg)
-            raise RuntimeError(error_msg) from e
+            raise SandboxError(error_msg) from e
 
-    def _prepare_context_data(self, context: RuntimeContext) -> Dict[str, Any]:
+    def _prepare_context_data(self, context: SandboxContext) -> Dict[str, Any]:
         """Prepare context data to include with the prompt.
 
         Args:

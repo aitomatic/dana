@@ -79,7 +79,7 @@ def test_parse_logical_expression(parser):
     assert len(result.program.statements) == 1
 
 
-def test_string_literals():
+def test_string_literals(parser):
     """Test parsing string literals with both quote styles."""
     # Test double quotes
     code = 'message = "Hello, world!"'
@@ -94,7 +94,7 @@ def test_string_literals():
     assert len(result.program.statements) == 1
 
 
-def test_nested_identifier():
+def test_nested_identifier(parser):
     """Test parsing nested identifiers."""
     code = "private.user.name = 'Bob'"
     result = parser.parse(code, type_check=False)
@@ -102,7 +102,7 @@ def test_nested_identifier():
     assert len(result.program.statements) == 1
 
 
-def test_simple_conditional():
+def test_simple_conditional(parser):
     """Test parsing a simple conditional statement."""
     code = """if x > 10:
     log("x is greater than 10")
@@ -112,7 +112,7 @@ def test_simple_conditional():
     assert len(result.program.statements) == 1
 
 
-def test_conditional_with_else():
+def test_conditional_with_else(parser):
     """Test parsing a conditional with an else clause."""
     code = """if x > 10:
     log("x is greater than 10")
@@ -124,7 +124,7 @@ else:
     assert len(result.program.statements) == 1
 
 
-def test_bare_identifier():
+def test_bare_identifier(parser):
     """Test parsing a bare identifier as a statement."""
     code = "private.x"
     result = parser.parse(code, type_check=False)

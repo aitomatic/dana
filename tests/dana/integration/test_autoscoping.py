@@ -1,6 +1,7 @@
 """Tests for DANA's autoscoping behavior."""
 
 import pytest
+from dana.sandbox.sandbox_context import SandboxContext
 
 from opendxa.dana.language.ast import (
     Assignment,
@@ -9,8 +10,7 @@ from opendxa.dana.language.ast import (
     Identifier,
 )
 from opendxa.dana.language.parser import GrammarParser, ParseResult
-from opendxa.dana.runtime.context import RuntimeContext
-from opendxa.dana.runtime.interpreter import Interpreter
+from opendxa.dana.sandbox.interpreter import Interpreter
 
 
 @pytest.fixture
@@ -22,7 +22,7 @@ def parser():
 @pytest.fixture
 def context():
     """Create a runtime context for testing."""
-    return RuntimeContext()
+    return SandboxContext()
 
 
 def test_implicit_private_scope(parser):

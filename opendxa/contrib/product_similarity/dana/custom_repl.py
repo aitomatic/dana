@@ -2,8 +2,9 @@ import asyncio
 import time
 from typing import Any, Dict
 
-from opendxa.dana.dana_repl_app import DanaREPLApp
+from dana.repl.dana_repl_app import DanaREPLApp
 from opendxa.dana.language.ast import LogLevel
+from opendxa.dana.language.python_registry import PythonRegistry
 
 
 def get_product_details(context: Dict[str, Any], product_id: str):
@@ -12,14 +13,54 @@ def get_product_details(context: Dict[str, Any], product_id: str):
 
 def vector_search_descriptions(context: Dict[str, Any], product_description: str, top_k: int = 5) -> list[dict]:
     print("Searching database...")
-    time.sleep(5)
-    return (
-        "{'id': 'CM-2502', 'similarity_score': 0.89, 'product_name': 'EcoBlend PLC Cement', 'product_description': 'Portland-limestone cement, eco-friendly formula, 94lb bag', 'use_cases': 'Foundation pouring, concrete slabs, sidewalk construction, sustainable construction', 'cost_per_unit': 14.75, 'availability': 'In Stock'}, "
-        "{'id': 'CM-2504', 'similarity_score': 0.87, 'product_name': 'StructureCrete Cement', 'product_description': 'High-performance Portland cement with additives, 94lb bag', 'use_cases': 'Foundation pouring, concrete slabs, heavy-duty construction, infrastructure projects', 'cost_per_unit': 22.50, 'availability': 'In Stock'}, "
-        "{'id': 'CM-2503', 'similarity_score': 0.85, 'product_name': 'QuickSet Cement Mix', 'product_description': 'Rapid-setting Portland cement, 50lb bag', 'use_cases': 'Foundation pouring, concrete slabs, emergency repairs, time-sensitive projects', 'cost_per_unit': 18.25, 'availability': 'In Stock'}, "
-        "{'id': 'CM-2505', 'similarity_score': 0.79, 'product_name': 'MasonMix Portland Cement', 'product_description': 'Modified Portland cement with improved workability, 94lb bag', 'use_cases': 'Masonry work, brick laying, block work, stone setting', 'cost_per_unit': 19.99, 'availability': 'In Stock'}, "
-        "{'id': 'CM-2506', 'similarity_score': 0.76, 'product_name': 'DuraBuild Cement', 'product_description': 'Premium Portland cement with durability enhancers, 94lb bag', 'use_cases': 'Exterior facades, weather-exposed structures, high-traffic areas', 'cost_per_unit': 24.50, 'availability': 'Low Stock'}, "
-    )
+    time.sleep(5)   # El fako!
+    return [
+        {
+            "id": "CM-2502",
+            "similarity_score": 0.89,
+            "product_name": "EcoBlend PLC Cement",
+            "product_description": "Portland-limestone cement, eco-friendly formula, 94lb bag",
+            "use_cases": "Foundation pouring, concrete slabs, sidewalk construction, sustainable construction",
+            "cost_per_unit": 14.75,
+            "availability": "In Stock",
+        },
+        {
+            "id": "CM-2504",
+            "similarity_score": 0.87,
+            "product_name": "StructureCrete Cement",
+            "product_description": "High-performance Portland cement with additives, 94lb bag",
+            "use_cases": "Foundation pouring, concrete slabs, heavy-duty construction, infrastructure projects",
+            "cost_per_unit": 22.50,
+            "availability": "In Stock",
+        },
+        {
+            "id": "CM-2503",
+            "similarity_score": 0.85,
+            "product_name": "QuickSet Cement Mix",
+            "product_description": "Rapid-setting Portland cement, 50lb bag",
+            "use_cases": "Foundation pouring, concrete slabs, emergency repairs, time-sensitive projects",
+            "cost_per_unit": 18.25,
+            "availability": "In Stock",
+        },
+        {
+            "id": "CM-2505",
+            "similarity_score": 0.79,
+            "product_name": "MasonMix Portland Cement",
+            "product_description": "Modified Portland cement with improved workability, 94lb bag",
+            "use_cases": "Masonry work, brick laying, block work, stone setting",
+            "cost_per_unit": 19.99,
+            "availability": "In Stock",
+        },
+        {
+            "id": "CM-2506",
+            "similarity_score": 0.76,
+            "product_name": "DuraBuild Cement",
+            "product_description": "Premium Portland cement with durability enhancers, 94lb bag",
+            "use_cases": "Exterior facades, weather-exposed structures, high-traffic areas",
+            "cost_per_unit": 24.50,
+            "availability": "Low Stock",
+        },
+    ]
 
 
 class ProductSimilarityREPL(DanaREPLApp):
@@ -28,8 +69,8 @@ class ProductSimilarityREPL(DanaREPLApp):
     def __init__(self, log_level: LogLevel = LogLevel.DEBUG):
         """Initialize the REPL with product similarity functions."""
         # Register functions before initializing parent
-        register_function("private.get_product_details", get_product_details)
-        register_function("private.vector_search_descriptions", vector_search_descriptions)
+        PythonRegistry.register("private.get_product_details", get_product_details)
+        PythonRegistry.register("private.vector_search_descriptions", vector_search_descriptions)
 
         # Initialize parent class
         super().__init__(log_level=log_level)

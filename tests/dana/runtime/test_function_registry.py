@@ -3,13 +3,13 @@
 from typing import Any, Dict
 
 import pytest
+from dana.sandbox.sandbox_context import SandboxContext
 
-from opendxa.dana.common.exceptions import RuntimeError, StateError
+from opendxa.dana.common.exceptions import SandboxError, StateError
 from opendxa.dana.language.ast import Literal, LiteralExpression, LogLevel, LogStatement
 from opendxa.dana.language.parser import GrammarParser
-from opendxa.dana.runtime.context import RuntimeContext
-from opendxa.dana.runtime.interpreter import Interpreter
-from opendxa.dana.runtime.python_registry import PythonRegistry
+from opendxa.dana.sandbox.interpreter import Interpreter
+from opendxa.dana.sandbox.python_registry import PythonRegistry
 
 
 @pytest.fixture
@@ -21,7 +21,7 @@ def parser():
 @pytest.fixture
 def context():
     """Create a fresh runtime context for each test."""
-    return RuntimeContext()
+    return SandboxContext()
 
 
 def test_function_registry_basics():
@@ -117,7 +117,7 @@ def test_recursive_function_call():
     PythonRegistry.register("add_five", add_five)
 
     # Create interpreter
-    context = RuntimeContext()
+    context = SandboxContext()
     interpreter = Interpreter.new(context)
 
     # Parse and execute a program with nested function calls: double(add_five(10))
@@ -152,7 +152,7 @@ def test_function_call_error_handling():
     PythonRegistry.register("failing_func", failing_func)
 
     # Create interpreter
-    context = RuntimeContext()
+    context = SandboxContext()
     interpreter = Interpreter.new(context)
 
     # Parse and execute a program that calls the failing function
@@ -163,7 +163,7 @@ def test_function_call_error_handling():
     result = parser.parse(program)
 
     # Should raise a RuntimeError with the original error message
-    with pytest.raises(RuntimeError) as excinfo:
+    with pytest.raises(SandboxError) as excinfo:
         interpreter.execute_program(result)
 
     assert "Simulated error" in str(excinfo.value)

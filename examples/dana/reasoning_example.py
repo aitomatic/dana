@@ -11,10 +11,11 @@ import asyncio
 import os
 from typing import Any, Dict, Optional
 
+from dana.sandbox.sandbox_context import SandboxContext
+
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.dana.language.parser import GrammarParser
-from opendxa.dana.runtime.context import RuntimeContext
-from opendxa.dana.runtime.interpreter import Interpreter
+from opendxa.dana.sandbox.interpreter import Interpreter
 
 
 async def run_dana_reasoning_example(model: Optional[str] = None, provider: Optional[str] = None) -> None:
@@ -44,7 +45,7 @@ async def run_dana_reasoning_example(model: Optional[str] = None, provider: Opti
     parse_result = parser.parse(dana_code)
 
     # Create a runtime context
-    context = RuntimeContext()
+    context = SandboxContext()
 
     # Configure and register an LLM resource
     llm_config: Dict[str, Any] = {"name": "example_llm"}

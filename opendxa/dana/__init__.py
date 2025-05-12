@@ -6,7 +6,7 @@ from opendxa.dana.common.exceptions import (
     ErrorHandler,
     InterpretError,
     ParseError,
-    RuntimeError,
+    SandboxError,
     StateError,
     ValidationError,
 )
@@ -19,11 +19,11 @@ from opendxa.dana.language.ast import (
     FunctionCall,
     Identifier,
     LiteralExpression,
-    LogLevel,
-    LogStatement,
     Program,
 )
-from opendxa.dana.runtime import ExecutionStatus, Interpreter, ResourceRegistry, RuntimeContext
+from opendxa.dana.repl import REPL, dana_repl_app
+from opendxa.dana.sandbox import ExecutionStatus, Interpreter, ResourceRegistry, SandboxContext
+from opendxa.dana.transcoder import CompilerInterface, NarratorInterface, Transcoder
 
 __all__ = [
     # Error Handling
@@ -32,11 +32,11 @@ __all__ = [
     "ErrorHandler",
     "ParseError",
     "InterpretError",
-    "RuntimeError",
+    "SandboxError",
     "StateError",
     "ValidationError",
     # Runtime
-    "RuntimeContext",
+    "SandboxContext",
     "ExecutionStatus",
     "Interpreter",
     "ResourceRegistry",
@@ -44,14 +44,19 @@ __all__ = [
     "Program",
     "Expression",
     "Assignment",
-    "LogStatement",
     "Conditional",
     "LiteralExpression",
     "Identifier",
     "BinaryExpression",
     "FunctionCall",
     "BinaryOperator",
-    "LogLevel",
+    # REPL
+    "REPL",
+    "dana_repl_app",
+    # Transcoder
+    "CompilerInterface",
+    "NarratorInterface",
+    "Transcoder",
 ]
 
 # Expose key APIs (Placeholders - to be defined)

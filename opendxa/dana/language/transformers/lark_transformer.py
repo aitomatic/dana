@@ -7,7 +7,7 @@ from opendxa.dana.language.transformers.fstring_transformer import FStringTransf
 from opendxa.dana.language.transformers.statement_transformer import StatementTransformer
 
 
-class DanaTransformer(Transformer):
+class LarkTransformer(Transformer):
     """Main transformer class that delegates to specialized transformers.
 
     This transformer integrates all the specialized transformers and

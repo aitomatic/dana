@@ -62,7 +62,7 @@ class TestErrorUtils:
 
         error = MockError()
         program_text = "x = 10"
-        error, is_passthrough = ErrorUtils.handle_parse_error(error, program_text, "parsing")
+        error, is_passthrough = ErrorUtils.handle_parse_error(error, None, "parsing", program_text)
 
         assert isinstance(error, ParseError)
         assert not is_passthrough
@@ -90,7 +90,7 @@ class TestErrorUtils:
 
         error = MockError()
         program_text = "x = # comment"
-        error, is_passthrough = ErrorUtils.handle_parse_error(error, program_text, "parsing")
+        error, is_passthrough = ErrorUtils.handle_parse_error(error, None, "parsing", program_text)
 
         assert isinstance(error, ParseError)
         assert not is_passthrough

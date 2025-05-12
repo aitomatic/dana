@@ -6,28 +6,34 @@ from opendxa.dana.common.runtime_scopes import RuntimeScopes
 from opendxa.dana.language.ast import (
     Assignment,
     Conditional,
+    Expression,
     FunctionCall,
     Identifier,
-    Literal,
     LiteralExpression,
-    LogLevel,
-    LogLevelSetStatement,
-    LogStatement,
     PrintStatement,
     Program,
-    ReasonStatement,
     WhileLoop,
 )
 from opendxa.dana.language.transformers.base_transformer import BaseTransformer
+from opendxa.dana.language.transformers.expression_transformer import ExpressionTransformer
 
 
 class StatementTransformer(BaseTransformer):
     """Transformer for statement-related AST nodes."""
 
+    def __init__(self):
+        """Initialize the statement transformer."""
+        super().__init__()
+        self.expression_transformer = ExpressionTransformer()
+
     def start(self, items):
         """Transform the start rule into a Program node."""
-        # Filter out None items (e.g., from comments or empty lines)
-        statements = [item for item in items if item is not None]
+        # If items is a list containing a single list, flatten it
+        if len(items) == 1 and isinstance(items[0], list):
+            statements = items[0]
+        else:
+            # Filter out None items (e.g., from comments or empty lines)
+            statements = [item for item in items if item is not None]
         return Program(statements=statements)
 
     def statement(self, items):
@@ -37,6 +43,21 @@ class StatementTransformer(BaseTransformer):
             if item is not None:
                 return item
         return None
+
+    def bare_identifier(self, items: list[Token]) -> Expression:
+        """Transform a bare identifier into an Expression.
+
+        Args:
+            items: List containing a single identifier token
+
+        Returns:
+            Identifier node representing the bare identifier
+        """
+        result = self.expression_transformer.identifier(items)
+        # If result is a Token, wrap in Identifier
+        if isinstance(result, Token):
+            return Identifier(name=result.value)
+        return result  # type: ignore
 
     def assignment(self, items):
         """Transform an assignment rule into an Assignment node."""
@@ -221,7 +242,7 @@ class StatementTransformer(BaseTransformer):
         # Convert string tokens to LiteralExpression
         if isinstance(prompt, Token) and prompt.type in ("STRING", "DOUBLE_QUOTE_STRING", "SINGLE_QUOTE_STRING"):
             value = prompt.value.strip("\"'")
-            prompt = LiteralExpression(literal=Literal(value=value))
+            prompt = LiteralExpression(value=value)
 
         context = None
         options = {}
@@ -237,9 +258,9 @@ class StatementTransformer(BaseTransformer):
                     context = [value]
                 elif isinstance(value, list):
                     context = value
-                elif hasattr(value, "literal") and isinstance(value.literal.value, list):
+                elif hasattr(value, "value") and isinstance(value.value, list):
                     # Handle array literal
-                    context = value.literal.value
+                    context = value.value
             else:
                 # Other options
                 options[key] = value
@@ -284,23 +305,23 @@ class StatementTransformer(BaseTransformer):
         if items and isinstance(items[0], Identifier):
             target = items[0]
             # Get the prompt from the next item
-            prompt = items[1] if len(items) > 1 else LiteralExpression(literal=Literal(value=""))
+            prompt = items[1] if len(items) > 1 else LiteralExpression(value="")
             rest = items[2:]
         else:
             target = None
             # Get the prompt from the first item
-            prompt = items[0] if items else LiteralExpression(literal=Literal(value=""))
+            prompt = items[0] if items else LiteralExpression(value="")
             rest = items[1:]
 
         # Make sure we have a valid prompt
         if prompt is None:
-            prompt = LiteralExpression(literal=Literal(value=""))
+            prompt = LiteralExpression(value="")
         elif isinstance(prompt, Token):
             # Convert token to LiteralExpression
             value = (
                 prompt.value.strip("\"'") if prompt.type in ("STRING", "DOUBLE_QUOTE_STRING", "SINGLE_QUOTE_STRING") else str(prompt.value)
             )
-            prompt = LiteralExpression(literal=Literal(value=value))
+            prompt = LiteralExpression(value=value)
 
         # Process optional context and options
         context = None
@@ -317,9 +338,9 @@ class StatementTransformer(BaseTransformer):
                         context = [arg_value]
                     elif isinstance(arg_value, list):
                         context = arg_value
-                    elif hasattr(arg_value, "literal") and isinstance(arg_value.literal.value, list):
+                    elif hasattr(arg_value, "value") and isinstance(arg_value.value, list):
                         # Handle array literal
-                        context = arg_value.literal.value
+                        context = arg_value.value
                 else:
                     # Other options
                     options[arg_name] = arg_value
@@ -334,9 +355,9 @@ class StatementTransformer(BaseTransformer):
                                 context = [arg_value]
                             elif isinstance(arg_value, list):
                                 context = arg_value
-                            elif hasattr(arg_value, "literal") and isinstance(arg_value.literal.value, list):
+                            elif hasattr(arg_value, "value") and isinstance(arg_value.value, list):
                                 # Handle array literal
-                                context = arg_value.literal.value
+                                context = arg_value.value
                         else:
                             # Other options
                             options[arg_name] = arg_value
@@ -358,3 +379,30 @@ class StatementTransformer(BaseTransformer):
     def identifier_list(self, items):
         """Transform an identifier list into a list."""
         return items
+
+    def identifier(self, items):
+        """Transform an identifier rule into an Identifier node."""
+        # Convert all items to strings
+        parts = []
+        for item in items:
+            if isinstance(item, Token):
+                parts.append(item.value)
+
+        # If no scope prefix and not a function name, add local
+        if parts[0] not in RuntimeScopes.ALL + ["reason2", "reason", "log", "print"]:
+            # Only add local scope if it's a simple name
+            if len(parts) == 1:
+                parts = self._insert_local_scope(parts)
+            else:
+                # For nested identifiers, keep as is
+                pass
+
+        # Join all parts with dots
+        name = ".".join(parts)
+        return Identifier(name=name)
+
+    def program(self, items):
+        """Transform a program rule into a list of statements."""
+        # Filter out None items and NEWLINE tokens
+        statements = [item for item in items if item is not None and not isinstance(item, Token)]
+        return statements

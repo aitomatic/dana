@@ -5,6 +5,7 @@ import logging
 import os
 from typing import List
 
+from dana.repl.repl import REPL
 from prompt_toolkit import PromptSession
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
 from prompt_toolkit.completion import WordCompleter
@@ -16,7 +17,6 @@ from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.dana.common.error_utils import ErrorContext, ErrorHandler
 from opendxa.dana.language.ast import LogLevel
-from opendxa.dana.runtime.repl import REPL
 
 # Constants
 HISTORY_FILE = os.path.expanduser("~/.dana_history")

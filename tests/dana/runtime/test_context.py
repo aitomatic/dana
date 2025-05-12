@@ -1,14 +1,14 @@
 """Unit tests for the DANA language context."""
 
 import pytest
+from dana.sandbox.sandbox_context import SandboxContext
 
 from opendxa.dana.common.exceptions import StateError
-from opendxa.dana.runtime.context import RuntimeContext
 
 
 def test_set_and_get_variable():
     """Test setting and getting variables in different scopes."""
-    ctx = RuntimeContext()
+    ctx = SandboxContext()
 
     # Test private scope
     ctx.set("private.name", "Alice")
@@ -25,20 +25,20 @@ def test_set_and_get_variable():
 
 def test_get_nonexistent_variable():
     """Test getting a nonexistent variable."""
-    ctx = RuntimeContext()
+    ctx = SandboxContext()
     with pytest.raises(StateError):
         ctx.get("private.nonexistent")
 
 
 def test_set_variable_invalid_scope():
     """Test setting a variable with an invalid scope."""
-    ctx = RuntimeContext()
+    ctx = SandboxContext()
     with pytest.raises(StateError):
         ctx.set("invalid.key", "value")
 
 
 def test_set_variable_invalid_name():
     """Test setting a variable with an invalid name."""
-    ctx = RuntimeContext()
+    ctx = SandboxContext()
     with pytest.raises(StateError):
         ctx.set("private.", "value")  # Empty name

@@ -1,14 +1,14 @@
 """Tests for the DANA runtime context."""
 
 import pytest
+from dana.sandbox.sandbox_context import ExecutionStatus, SandboxContext
 
 from opendxa.dana.common.exceptions import StateError
-from opendxa.dana.runtime.context import ExecutionStatus, RuntimeContext
 
 
 def test_runtime_context_scopes():
     """Test scope-based access in RuntimeContext."""
-    ctx = RuntimeContext()
+    ctx = SandboxContext()
 
     # Test local scope (unscoped variables)
     ctx.set("name", "Alice")
@@ -33,7 +33,7 @@ def test_runtime_context_scopes():
 
 def test_runtime_context_nested_keys():
     """Test nested key access in RuntimeContext."""
-    ctx = RuntimeContext()
+    ctx = SandboxContext()
 
     # Test local scope does not allow nested keys
     with pytest.raises(StateError):
@@ -58,7 +58,7 @@ def test_runtime_context_nested_keys():
 
 def test_execution_state():
     """Test execution state management."""
-    ctx = RuntimeContext()
+    ctx = SandboxContext()
 
     # Test initial state
     assert ctx.get_execution_status() == ExecutionStatus.IDLE
@@ -82,7 +82,7 @@ def test_execution_state():
 
 def test_invalid_keys():
     """Test handling of invalid state keys."""
-    ctx = RuntimeContext()
+    ctx = SandboxContext()
 
     # Test invalid scope
     with pytest.raises(StateError) as exc_info:
@@ -103,14 +103,14 @@ def test_invalid_keys():
 def test_parent_context_inheritance():
     """Test inheritance from parent context."""
     # Create parent context
-    parent = RuntimeContext()
+    parent = SandboxContext()
     parent.set("private.name", "Parent")
     parent.set("public.weather", "sunny")
     parent.set("system.status", "running")
     parent.set("local_var", "parent_local")  # Local variables don't inherit
 
     # Create child context
-    child = RuntimeContext(parent=parent)
+    child = SandboxContext(parent=parent)
 
     # Test inheritance of shared scopes
     assert child.get("private.name") == "Parent"
@@ -135,7 +135,7 @@ def test_parent_context_inheritance():
 def test_from_dict_with_base_context():
     """Test creating RuntimeContext from dictionary with base context override."""
     # Create base context with some values
-    base = RuntimeContext()
+    base = SandboxContext()
     base.set("private.name", "Bob")
     base.set("public.weather", "rainy")
     base.set("private.other", "base_value")
@@ -148,7 +148,7 @@ def test_from_dict_with_base_context():
         "local_var": "local_value",  # Goes to local scope
     }
 
-    ctx = RuntimeContext.from_dict(data, base)
+    ctx = SandboxContext.from_dict(data, base)
 
     # Base context values should take precedence for shared scopes
     assert ctx.get("private.name") == "Alice"
@@ -165,27 +165,27 @@ def test_from_dict_with_base_context():
 def test_from_dict_empty():
     """Test creating RuntimeContext from empty dictionary."""
     # Test without base context
-    ctx1 = RuntimeContext.from_dict({})
+    ctx1 = SandboxContext.from_dict({})
     assert ctx1.get_execution_status() == ExecutionStatus.IDLE
 
     # Test with base context
-    base = RuntimeContext()
+    base = SandboxContext()
     base.set("private.name", "Bob")
-    ctx2 = RuntimeContext.from_dict({}, base)
+    ctx2 = SandboxContext.from_dict({}, base)
     assert ctx2.get("private.name") == "Bob"
 
 
 def test_shared_global_modifications():
     """Test that modifications to global scopes are shared across contexts."""
     # Create parent context
-    parent = RuntimeContext()
+    parent = SandboxContext()
     parent.set("private.name", "Parent")
     parent.set("public.weather", "sunny")
     parent.set("system.status", "running")
     parent.set("local_var", "parent_local")  # Local variables don't share
 
     # Create child context
-    child = RuntimeContext(parent=parent)
+    child = SandboxContext(parent=parent)
 
     # Test initial state
     assert child.get("private.name") == "Parent"
@@ -208,7 +208,7 @@ def test_shared_global_modifications():
     assert parent.get("local_var") == "parent_local"
 
     # Create another child context
-    child2 = RuntimeContext(parent=parent)
+    child2 = SandboxContext(parent=parent)
 
     # Verify child2 sees the same global state
     assert child2.get("private.name") == "Child"

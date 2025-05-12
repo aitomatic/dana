@@ -1,11 +1,11 @@
 """Example demonstrating RuntimeContext usage."""
 
-from opendxa.dana.runtime.context import RuntimeContext
+from dana.sandbox.sandbox_context import SandboxContext
 
 
 def main():
     # Create a runtime context
-    ctx = RuntimeContext()
+    ctx = SandboxContext()
 
     # Set some agent state
     ctx.set("agent:name", "Alice")

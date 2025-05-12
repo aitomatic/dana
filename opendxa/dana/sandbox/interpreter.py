@@ -7,16 +7,17 @@ It uses a modular architecture with specialized components for different aspects
 import logging
 from typing import Any, Dict, Optional
 
+from dana.sandbox.sandbox_context import SandboxContext
+
 from opendxa.common.mixins.loggable import Loggable
-from opendxa.dana.common.exceptions import RuntimeError
+from opendxa.dana.common.exceptions import SandboxError
 from opendxa.dana.language.ast import LogLevel
 from opendxa.dana.language.parser import ParseResult
-from opendxa.dana.runtime.context import RuntimeContext
-from opendxa.dana.runtime.executor.context_manager import ContextManager
-from opendxa.dana.runtime.executor.expression_evaluator import ExpressionEvaluator
-from opendxa.dana.runtime.executor.llm_integration import LLMIntegration
-from opendxa.dana.runtime.executor.statement_executor import StatementExecutor
-from opendxa.dana.runtime.hooks import HookRegistry, HookType
+from opendxa.dana.sandbox.executor.context_manager import ContextManager
+from opendxa.dana.sandbox.executor.expression_evaluator import ExpressionEvaluator
+from opendxa.dana.sandbox.executor.llm_integration import LLMIntegration
+from opendxa.dana.sandbox.executor.statement_executor import StatementExecutor
+from opendxa.dana.sandbox.hooks import HookRegistry, HookType
 
 # Map DANA LogLevel to Python logging levels
 LEVEL_MAP = {LogLevel.DEBUG: logging.DEBUG, LogLevel.INFO: logging.INFO, LogLevel.WARN: logging.WARNING, LogLevel.ERROR: logging.ERROR}
@@ -25,14 +26,14 @@ LEVEL_MAP = {LogLevel.DEBUG: logging.DEBUG, LogLevel.INFO: logging.INFO, LogLeve
 class Interpreter(Loggable):
     """Interpreter for executing DANA programs."""
 
-    def __init__(self, context: Optional[RuntimeContext] = None):
+    def __init__(self, context: Optional[SandboxContext] = None):
         """Initialize the interpreter.
 
         Args:
             context: Optional runtime context to use
         """
         super().__init__()
-        self.context = context or RuntimeContext()
+        self.context = context or SandboxContext()
         self.context_manager = ContextManager(self.context)
         self.expression_evaluator = ExpressionEvaluator(self.context_manager)
         self.llm_integration = LLMIntegration(self.context_manager)
@@ -95,7 +96,7 @@ class Interpreter(Loggable):
                             # If it's a bare variable reference, suggest the correct format
                             var_name = error_msg.split("'")[1] if "'" in error_msg else ""
                             if var_name and "." not in var_name:
-                                raise RuntimeError(
+                                raise SandboxError(
                                     f"Variable '{var_name}' must be accessed with a scope prefix: "
                                     f"private.{var_name}, public.{var_name}, or system.{var_name}"
                                 )
@@ -133,7 +134,7 @@ class Interpreter(Loggable):
             raise e
 
     @classmethod
-    def new(cls, context: RuntimeContext) -> "Interpreter":
+    def new(cls, context: SandboxContext) -> "Interpreter":
         """Create a new instance of the Interpreter.
 
         Args:

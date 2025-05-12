@@ -8,7 +8,7 @@ import unittest
 
 import pytest
 
-from dana.dana_repl_app import InputCompleteChecker
+from dana.repl.dana_repl_app import InputCompleteChecker
 
 
 @pytest.mark.unit

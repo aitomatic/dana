@@ -3,10 +3,10 @@
 import asyncio
 import logging
 
-from dana.runtime.repl import REPL
+from dana.repl.repl import REPL
 
 from opendxa.common.resource.llm_resource import LLMResource
-from opendxa.dana.runtime.interpreter import LogLevel
+from opendxa.dana.sandbox.interpreter import LogLevel
 
 
 async def run_conditional_example(repl: REPL) -> None:

@@ -17,10 +17,10 @@ class ExecutionStatus(Enum):
     FAILED = "failed"
 
 
-class RuntimeContext:
+class SandboxContext:
     """Manages the scoped state during DANA program execution."""
 
-    def __init__(self, parent: Optional["RuntimeContext"] = None):
+    def __init__(self, parent: Optional["SandboxContext"] = None):
         """Initialize the runtime context.
 
         Args:
@@ -157,7 +157,7 @@ class RuntimeContext:
         self.set("system.history", [])
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any], base_context: Optional["RuntimeContext"] = None) -> "RuntimeContext":
+    def from_dict(cls, data: Dict[str, Any], base_context: Optional["SandboxContext"] = None) -> "SandboxContext":
         """Create a new RuntimeContext from a dictionary and base context, with `data` taking precedence.
 
         The data dictionary values will override any values already in the base context.

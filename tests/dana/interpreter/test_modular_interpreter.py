@@ -1,6 +1,7 @@
 """Tests for the modular interpreter implementation."""
 
 import pytest
+from dana.sandbox.sandbox_context import SandboxContext
 
 from opendxa.dana.common.exceptions import StateError
 from opendxa.dana.language.ast import (
@@ -17,9 +18,8 @@ from opendxa.dana.language.ast import (
     Program,
 )
 from opendxa.dana.language.parser import ParseResult
-from opendxa.dana.runtime.context import RuntimeContext
-from opendxa.dana.runtime.interpreter import Interpreter
-from opendxa.dana.runtime.log_manager import LEVEL_MAP, LogManager
+from opendxa.dana.sandbox.interpreter import Interpreter
+from opendxa.dana.sandbox.log_manager import LEVEL_MAP, LogManager
 
 
 def create_location(line: int, column: int, text: str = "") -> Location:
@@ -29,7 +29,7 @@ def create_location(line: int, column: int, text: str = "") -> Location:
 
 def test_arithmetic_operations():
     """Test basic arithmetic operations with the modular interpreter."""
-    interpreter = Interpreter(RuntimeContext())
+    interpreter = Interpreter(SandboxContext())
 
     # Addition: 5 + 3
     program = Program(
@@ -90,7 +90,7 @@ def test_arithmetic_operations():
 
 def test_division_by_zero():
     """Test division by zero raises RuntimeError with location information."""
-    interpreter = Interpreter(RuntimeContext())
+    interpreter = Interpreter(SandboxContext())
     program = Program(
         [
             Assignment(
@@ -117,7 +117,7 @@ def test_division_by_zero():
 
 def test_undefined_variable():
     """Test accessing undefined variable raises StateError with location information."""
-    interpreter = Interpreter(RuntimeContext())
+    interpreter = Interpreter(SandboxContext())
     program = Program(
         [
             Assignment(
@@ -139,7 +139,7 @@ def test_undefined_variable():
 
 def test_string_concatenation():
     """Test string concatenation with different types."""
-    interpreter = Interpreter(RuntimeContext())
+    interpreter = Interpreter(SandboxContext())
 
     # String + String
     program = Program(
@@ -172,7 +172,7 @@ def test_string_concatenation():
 
 def test_expression_precedence():
     """Test operator precedence in expressions."""
-    interpreter = Interpreter(RuntimeContext())
+    interpreter = Interpreter(SandboxContext())
 
     # 2 + 3 * 4 should be 14 (not 20)
     program = Program(
@@ -195,7 +195,7 @@ def test_expression_precedence():
 
 def test_log_statement():
     """Test log statement execution with the modular interpreter."""
-    context = RuntimeContext()
+    context = SandboxContext()
     interpreter = Interpreter(context)
     LogManager.set_dana_log_level(LogLevel.INFO, context)  # Ensure INFO messages are printed
 
@@ -208,7 +208,7 @@ def test_log_statement():
 
 def test_log_level_threshold():
     """Test that log messages respect the current log level threshold."""
-    context = RuntimeContext()
+    context = SandboxContext()
     interpreter = Interpreter(context)
 
     # Set to WARN level
@@ -222,7 +222,7 @@ def test_log_level_threshold():
 
 def test_log_level_set_statement():
     """Test log level set statement."""
-    context = RuntimeContext()
+    context = SandboxContext()
     interpreter = Interpreter(context)
 
     # Test setting different log levels
@@ -236,7 +236,7 @@ def test_log_level_set_statement():
 def test_print_statement(capfd):
     """Test that print statements work correctly with the modular interpreter."""
     # Create an interpreter
-    context = RuntimeContext()
+    context = SandboxContext()
     interpreter = Interpreter(context)
 
     # Execute a program with a print statement using AST nodes directly
@@ -257,7 +257,7 @@ def test_print_statement(capfd):
 
 def test_variable_resolution():
     """Test variable resolution in the modular interpreter."""
-    interpreter = Interpreter(RuntimeContext())
+    interpreter = Interpreter(SandboxContext())
 
     # Set variables in the private scope
     program = Program(

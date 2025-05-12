@@ -17,10 +17,11 @@ Note:
 import asyncio
 import os
 
+from dana.sandbox.sandbox_context import SandboxContext
+
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.dana.language.parser import GrammarParser
-from opendxa.dana.runtime.context import RuntimeContext
-from opendxa.dana.runtime.interpreter import Interpreter
+from opendxa.dana.sandbox.interpreter import Interpreter
 
 
 async def main():
@@ -74,7 +75,7 @@ async def main():
 
     # Create runtime context and register LLM resource
     print("\nStep 2: Creating RuntimeContext and registering LLM...")
-    context = RuntimeContext()
+    context = SandboxContext()
     context.register_resource("llm", llm)
     print(f"Resources in context: {context.list_resources()}")
 

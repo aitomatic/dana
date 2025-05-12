@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from dana.dana_repl_app import DanaREPLApp
+from dana.repl.dana_repl_app import DanaREPLApp
 
 # Mark all tests in this file as live tests
 pytestmark = [pytest.mark.asyncio, pytest.mark.live]

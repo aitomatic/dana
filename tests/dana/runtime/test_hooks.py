@@ -5,14 +5,14 @@ interpreter with custom behavior at key points in the execution process.
 """
 
 import pytest
+from dana.sandbox.sandbox_context import SandboxContext
 
 from opendxa.dana.language.parser import GrammarParser
-from opendxa.dana.runtime.context import RuntimeContext
-from opendxa.dana.runtime.hooks import (
+from opendxa.dana.sandbox.hooks import (
     HookRegistry,
     HookType,
 )
-from opendxa.dana.runtime.interpreter import Interpreter
+from opendxa.dana.sandbox.interpreter import Interpreter
 
 
 @pytest.fixture
@@ -24,10 +24,10 @@ def parser():
 @pytest.fixture
 def context():
     """Create a runtime context for testing."""
-    return RuntimeContext()
+    return SandboxContext()
 
 
-def create_interpreter(context: RuntimeContext) -> Interpreter:
+def create_interpreter(context: SandboxContext) -> Interpreter:
     """Create an interpreter with the given context.
 
     Args:

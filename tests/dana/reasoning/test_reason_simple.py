@@ -3,18 +3,18 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
+from dana.sandbox.sandbox_context import SandboxContext
 
 # REPL import not needed for this test
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.dana.language.parser import GrammarParser, ParseResult
-from opendxa.dana.runtime.context import RuntimeContext
-from opendxa.dana.runtime.interpreter import Interpreter
+from opendxa.dana.sandbox.interpreter import Interpreter
 
 
 @pytest.fixture
 def runtime_context():
     """Create a runtime context for testing."""
-    return RuntimeContext()
+    return SandboxContext()
 
 
 @pytest.fixture

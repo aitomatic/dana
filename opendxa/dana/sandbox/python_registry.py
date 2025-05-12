@@ -6,7 +6,7 @@ Functions can be registered by name and called with arguments.
 
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from opendxa.dana.common.exceptions import RuntimeError, StateError
+from opendxa.dana.common.exceptions import SandboxError, StateError
 from opendxa.dana.common.runtime_scopes import RuntimeScopes
 
 # Type for function implementations
@@ -109,7 +109,7 @@ class PythonRegistry:
         except StateError:
             raise
         except Exception as e:
-            raise RuntimeError(f"Error calling function '{name}': {str(e)}") from e
+            raise SandboxError(f"Error calling function '{name}': {str(e)}") from e
 
     def _list(self) -> List[str]:
         """List all registered function names.
@@ -313,9 +313,9 @@ class PythonRegistry:
         try:
             llm_integration = args.get("llm_integration")
             if not llm_integration:
-                raise RuntimeError("No LLM integration available")
+                raise SandboxError("No LLM integration available")
         except StateError:
-            raise RuntimeError("No LLM integration available")
+            raise SandboxError("No LLM integration available")
 
         # Execute the reasoning with the augmented context
         result = llm_integration.execute_direct_synchronous_reasoning(prompt, context_vars=None, options=options if options else None)

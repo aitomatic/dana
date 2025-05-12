@@ -7,8 +7,10 @@ evaluating expressions in DANA programs.
 import re
 from typing import Any, Dict, Optional
 
+from dana.sandbox.sandbox_context import SandboxContext
+
 from opendxa.dana.common.error_utils import ErrorUtils
-from opendxa.dana.common.exceptions import RuntimeError, StateError
+from opendxa.dana.common.exceptions import SandboxError, StateError
 from opendxa.dana.language.ast import (
     BinaryExpression,
     BinaryOperator,
@@ -18,10 +20,9 @@ from opendxa.dana.language.ast import (
     Literal,
     LiteralExpression,
 )
-from opendxa.dana.runtime.context import RuntimeContext
-from opendxa.dana.runtime.executor.base_executor import BaseExecutor
-from opendxa.dana.runtime.executor.context_manager import ContextManager
-from opendxa.dana.runtime.python_registry import PythonRegistry
+from opendxa.dana.sandbox.executor.base_executor import BaseExecutor
+from opendxa.dana.sandbox.executor.context_manager import ContextManager
+from opendxa.dana.sandbox.python_registry import PythonRegistry
 
 
 class ExpressionEvaluator(BaseExecutor):
@@ -71,13 +72,13 @@ class ExpressionEvaluator(BaseExecutor):
                 return self.evaluate_function_call(node, context)
             else:
                 error_msg = f"Unsupported expression type: {type(node).__name__}"
-                raise RuntimeError(error_msg)
+                raise SandboxError(error_msg)
         except Exception as e:
             error, passthrough = ErrorUtils.handle_execution_error(e, node, "evaluating expression")
             if passthrough:
                 raise error
             else:
-                raise RuntimeError(f"Failed to evaluate expression: {e}")
+                raise SandboxError(f"Failed to evaluate expression: {e}")
 
     def evaluate_binary_expression(self, node: BinaryExpression, context: Optional[Dict[str, Any]] = None) -> Any:
         """Evaluate a binary expression.
@@ -317,7 +318,8 @@ class ExpressionEvaluator(BaseExecutor):
         base_context = self.context_manager.context
 
         # Step 2: Create a new context with base context
-        runtime_context = RuntimeContext.from_dict({}, base_context)
+        # TODO: Support DANA Functions, too?
+        runtime_context = SandboxContext.from_dict({}, base_context)
 
         def unwrap_value(val):
             # Unwrap LiteralExpression to its value

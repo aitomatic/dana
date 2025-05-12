@@ -2,9 +2,10 @@
 
 from typing import List, Union
 
+from dana.sandbox.sandbox_context import SandboxContext
+
 from opendxa.dana.language.ast import Expression, FStringExpression
-from opendxa.dana.runtime.context import RuntimeContext
-from opendxa.dana.runtime.interpreter import Interpreter
+from opendxa.dana.sandbox.interpreter import Interpreter
 
 
 class TestFStringEvaluation:
@@ -13,7 +14,7 @@ class TestFStringEvaluation:
     def test_fstring_evaluation(self):
         """Test that f-string expressions are properly evaluated."""
         # Create a context with some variables
-        context = RuntimeContext()
+        context = SandboxContext()
         interpreter = Interpreter(context)
 
         # Set up test variables

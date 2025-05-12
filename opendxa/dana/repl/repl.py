@@ -3,16 +3,17 @@
 import logging
 from typing import Any, Dict, Optional
 
+from dana.sandbox.sandbox_context import SandboxContext
+
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.common.utils import Misc
 from opendxa.dana.common.error_utils import DanaError
 from opendxa.dana.language.ast import LogLevel
 from opendxa.dana.language.parser import GrammarParser
-from opendxa.dana.runtime.context import RuntimeContext
-from opendxa.dana.runtime.executor.llm_integration import LLMIntegration
-from opendxa.dana.runtime.interpreter import Interpreter
-from opendxa.dana.runtime.log_manager import LogManager
+from opendxa.dana.sandbox.executor.llm_integration import LLMIntegration
+from opendxa.dana.sandbox.interpreter import Interpreter
+from opendxa.dana.sandbox.log_manager import LogManager
 
 # Map DANA LogLevel to Python logging levels
 LEVEL_MAP = {LogLevel.DEBUG: logging.DEBUG, LogLevel.INFO: logging.INFO, LogLevel.WARN: logging.WARNING, LogLevel.ERROR: logging.ERROR}
@@ -22,7 +23,7 @@ class REPL(Loggable):
     """Read-Eval-Print Loop for executing and managing DANA programs."""
 
     def __init__(
-        self, llm_resource: Optional[LLMResource] = None, log_level: Optional[LogLevel] = None, context: Optional[RuntimeContext] = None
+        self, llm_resource: Optional[LLMResource] = None, log_level: Optional[LogLevel] = None, context: Optional[SandboxContext] = None
     ):
         """Initialize the REPL.
 
@@ -30,7 +31,7 @@ class REPL(Loggable):
             llm_resource: Optional LLM resource to use
             context: Optional runtime context to use
         """
-        self.context = context or RuntimeContext()
+        self.context = context or SandboxContext()
         self.context.set(LLMIntegration.LLM_RESOURCE_VARIABLE, llm_resource)
         self.interpreter = Interpreter(self.context)
         self.parser = GrammarParser()
@@ -148,6 +149,6 @@ class REPL(Loggable):
         except Exception as e:
             raise DanaError(str(e))
 
-    def get_context(self) -> RuntimeContext:
+    def get_context(self) -> SandboxContext:
         """Get the current runtime context."""
         return self.context

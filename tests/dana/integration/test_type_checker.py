@@ -1,6 +1,7 @@
 """Tests for the DANA type checker."""
 
 import pytest
+from dana.sandbox.sandbox_context import SandboxContext
 
 from opendxa.dana.language.ast import (
     Assignment,
@@ -12,8 +13,7 @@ from opendxa.dana.language.ast import (
 )
 from opendxa.dana.language.parser import GrammarParser
 from opendxa.dana.language.type_checker import DanaType, TypeChecker, TypeEnvironment
-from opendxa.dana.runtime.context import RuntimeContext
-from opendxa.dana.runtime.interpreter import Interpreter
+from opendxa.dana.sandbox.interpreter import Interpreter
 
 
 @pytest.fixture
@@ -151,7 +151,7 @@ def test_comprehensive_type_checking(parser):
     assert len(result.errors) == 0
 
     # We should be able to execute the program
-    context = RuntimeContext()
+    context = SandboxContext()
     interpreter = Interpreter.new(context)
 
     # This should execute without errors

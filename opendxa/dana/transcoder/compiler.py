@@ -4,8 +4,9 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from dana.sandbox.sandbox_context import SandboxContext
+
     from opendxa.dana.language.ast import Program
-    from opendxa.dana.runtime.context import RuntimeContext
 
 
 class CompilerInterface(ABC):
@@ -14,7 +15,7 @@ class CompilerInterface(ABC):
     # This corresponds to the GMA concept
 
     @abstractmethod
-    async def compile(self, objective: str, context: "RuntimeContext") -> "Program":
+    async def compile(self, objective: str, context: "SandboxContext") -> "Program":
         """Compiles a natural language objective into a DANA program AST, using the provided context."""
         pass
 

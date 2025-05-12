@@ -2,11 +2,15 @@
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
 
+[◀ DANA](./dana.md) | [Sandbox ▶︎](./sandbox.md)
+
 # DANA Language Specification
 
 ## 📜 Purpose
 
 DANA is a minimal, interpretable, and LLM-friendly program format for reasoning and tool-based execution. This document specifies the syntax, structure, and semantics of valid DANA programs.
+
+For greater detail, see the [DANA Syntax](./syntax.md) document.
 
 ---
 

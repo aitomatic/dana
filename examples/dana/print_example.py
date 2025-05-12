@@ -7,9 +7,10 @@ from pathlib import Path
 # Add the parent directory to the path so we can import opendxa
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
+from dana.sandbox.sandbox_context import SandboxContext
+
 from opendxa.dana.language.parser import GrammarParser
-from opendxa.dana.runtime.context import RuntimeContext
-from opendxa.dana.runtime.interpreter import Interpreter
+from opendxa.dana.sandbox.interpreter import Interpreter
 
 
 def main():
@@ -33,7 +34,7 @@ def main():
         return
 
     # Create an interpreter and runtime context
-    context = RuntimeContext()
+    context = SandboxContext()
     interpreter = Interpreter.new(context)
 
     # Enable debug logging to see all log messages

@@ -14,7 +14,7 @@ from typing import NamedTuple, Optional, Sequence
 from opendxa.common.mixins.loggable import Loggable
 
 try:
-    from lark import Lark, Tree
+    from lark import Lark, Token, Tree
     from lark.exceptions import LarkError, UnexpectedInput
     from lark.indenter import Indenter
 
@@ -23,6 +23,8 @@ except ImportError:
     raise ImportError("The lark-parser package is required. Install it with 'pip install lark-parser'")
 
 # Create a shared logger for the parser module
+from dana.language.transformers.lark_transformer import LarkTransformer
+
 from opendxa.common.utils.logging import DXA_LOGGER
 from opendxa.dana.common.error_utils import ErrorUtils
 from opendxa.dana.common.exceptions import ParseError
@@ -30,7 +32,6 @@ from opendxa.dana.language.ast import (
     Identifier,
     Program,
 )
-from opendxa.dana.language.transformer_module import get_transformer_class
 from opendxa.dana.language.type_checker import TypeChecker, TypeEnvironment
 
 parser_logger = DXA_LOGGER.getLogger("opendxa.dana.language.parser")
@@ -54,9 +55,10 @@ ENABLE_TYPE_CHECK = os.environ.get(ENV_TYPE_CHECK, "1").lower() in ["1", "true",
 
 
 class DanaIndenter(Indenter):
-    """Indenter for DANA language.
+    """Custom indenter for DANA language.
 
-    Handles Python-style indentation for blocks.
+    This class handles indentation in DANA programs, which is used for
+    block statements like conditionals and loops.
     """
 
     NL_type = "_NL"
@@ -64,10 +66,33 @@ class DanaIndenter(Indenter):
     CLOSE_PAREN_types = []
     INDENT_type = "INDENT"
     DEDENT_type = "DEDENT"
-    tab_len = 8
+    tab_len = 4
 
     # Token types that should always be accepted
     always_accept = {NL_type, INDENT_type, DEDENT_type}
+
+    def __init__(self):
+        """Initialize the indenter."""
+        super().__init__()
+        self.indent_level: list[int] = [0]  # Start with no indentation
+
+    def process(self, stream):
+        """Process the token stream to handle indentation."""
+        for token in stream:
+            if token.type == self.NL_type:
+                # Count leading spaces in the next line
+                next_line = token.value
+                indent = len(next_line) - len(next_line.lstrip())
+                current_level = self.indent_level[0]
+                if indent > current_level:
+                    yield Token(self.INDENT_type, "", 0, 0)  # type: ignore[arg-type]
+                    self.indent_level.append(indent)
+                elif indent < current_level:
+                    while indent < current_level:
+                        yield Token(self.DEDENT_type, "", 0, 0)  # type: ignore[arg-type]
+                        self.indent_level.pop()
+                        current_level = self.indent_level[0]
+            yield token
 
 
 class GrammarParser(Loggable):
@@ -111,9 +136,8 @@ class GrammarParser(Loggable):
             )
 
             # Get the transformer from the modular implementation
-            TransformerClass = get_transformer_class()
-            self.transformer = TransformerClass()
-            self.debug(f"Using transformer class: {TransformerClass.__name__}")
+            self.transformer = LarkTransformer()
+            self.debug("Using transformer class: DanaTransformer")
         except Exception as e:
             self.error(f"Failed to initialize Lark parser: {e}")
             raise
@@ -129,6 +153,7 @@ class GrammarParser(Loggable):
             A ParseResult containing the parsed program and any errors
         """
         errors: list[ParseError] = []
+        program: Program = None
 
         try:
             # Parse the program
@@ -155,20 +180,13 @@ class GrammarParser(Loggable):
         except UnexpectedInput as e:
             # Use error handling utility
             self.debug(f"Unexpected input during parsing: {str(e)}")
-            empty_program, errors = ErrorUtils.handle_parse_error(e, program_text)
-            return ParseResult(program=empty_program, errors=errors)
-
-        except LarkError as e:
-            # Handle other Lark errors
-            self.debug(f"Lark parsing error: {str(e)}")
-            empty_program, errors = ErrorUtils.handle_parse_error(e, program_text)
-            return ParseResult(program=empty_program, errors=errors)
-
+            errors, _ = ErrorUtils.handle_parse_error(e, program_text, "parsing")
+            return ParseResult(program=program, errors=errors)
         except Exception as e:
-            # Handle any other errors
+            # Handle other errors
             self.error(f"Unexpected error during parsing: {str(e)}")
-            empty_program, errors = ErrorUtils.handle_parse_error(e, program_text)
-            return ParseResult(program=empty_program, errors=errors)
+            errors.append(ParseError(f"Error parsing: {str(e)}"))
+            return ParseResult(program=program, errors=errors)
 
     def transform_identifier(self, node: Tree) -> Identifier:
         """Transform an identifier node.
