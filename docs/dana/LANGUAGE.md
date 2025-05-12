@@ -52,19 +52,19 @@ Returns a value to be stored or checked.
 
 ```python
 # Basic usage
-temp.analysis = reason("Is this machine in a failure state?")
+local.analysis = reason("Is this machine in a failure state?")
 
 # With context
-temp.analysis = reason("Is this machine in a failure state?", context=world)
+local.analysis = reason("Is this machine in a failure state?", context=world)
 
 # With multiple context variables
-temp.analysis = reason("Analyze this situation", context=[sensor, metrics, history])
+local.analysis = reason("Analyze this situation", context=[sensor, metrics, history])
 
 # With temperature control
-temp.ideas = reason("Generate creative solutions", temperature=0.9)
+local.ideas = reason("Generate creative solutions", temperature=0.9)
 
 # With specific format (supports "json" or "text")
-temp.data = reason("List 3 potential causes", format="json")
+local.data = reason("List 3 potential causes", format="json")
 ```
 
 ### `use(id: str)`
@@ -188,24 +188,12 @@ a / b
 ```
 
 ### 7. State Scopes
-```python
-agent:     # Agent identity and long-term traits
-ltmem:     # Long-term memory
-stmem:     # Short-term memory
-temp:      # Ephemeral memory
-world:     # External facts
-execution: # Plan status
-custom:    # User-defined scopes
-```
 
----
-
-## 📘 State Model
-
-State variables are referenced using dot-scoped prefixes, organized by memory scope:
+Variables are referenced using dot-scoped prefixes, organized by memory scope:
 
 | Scope      | Description                                |
 | ---------- | ------------------------------------------ |
+| `local:`   | Local to the current agent/resource/tool/function |
 | `private:` | Private to the agent, resource, or tool itself |
 | `public:`  | Openly accessible world state (time, weather, etc.) |
 | `system:`  | System-related mechanical state with controlled access |
@@ -213,9 +201,9 @@ State variables are referenced using dot-scoped prefixes, organized by memory sc
 The `RuntimeContext` enforces strict scope boundaries and provides controlled access to state variables through dot notation. For example:
 
 ```python
-# Private scope - internal state
-private.user.name = "Alice"
-private.settings.temperature = 0.8
+# Local scope - internal state
+local.user = "Alice"
+user = "Alice" # same as local.user
 
 # Public scope - shared world state
 public.weather.temperature = 72
@@ -228,10 +216,14 @@ system.log_level = "DEBUG"
 
 ### Scope Access Rules
 
-1. **Private Scope**
-   - Accessible only to the current agent/resource
+1. **Local Scope**
+   - Accessible only to the current agent/resource/tool/function
    - Used for internal state and temporary variables
    - Default scope for unqualified variables
+
+2. **Private Scope**
+   - Accessible only to the current agent/resource
+   - Used for internal state and temporary variables
 
 2. **Public Scope**
    - Accessible to all agents and resources
@@ -301,7 +293,7 @@ The log level determines which messages are displayed. For example, if the level
 
 ### LLM Resource Configuration
 
-To use `reason()` statements, you need to set up an LLM resource in one of these ways:
+To use `reason()` and other LLM-related functions, you need to set up an LLM resource in one of these ways:
 
 1. **Environment Variables**: Set one of these in your environment:
    - `OPENAI_API_KEY` (for OpenAI models)
@@ -350,68 +342,31 @@ For more advanced LLM configurations, refer to the `LLMResource` class documenta
 
 ---
 
-## 🔐 Safety
-
-* `reason(...)` and `use(...)` should be treated as potentially fallible operations.
-* Default behavior on error is soft-fail (e.g., `None` or default return) without interrupting program execution.
-* Future support may include policies for retries or fallback logic outside the language core.
-* All state changes occur via explicit `assign` or `set`
-* No side-effects outside `context`
-* Programs can be sandboxed by the host runtime
-
----
-
-## 🔧 Future Extensions
-
-The following features are **intentionally deferred** to preserve DANA's simplicity and clarity in early implementation. They may be added later as use cases justify their complexity.
-
-* `foreach` loops
-* `function` definitions
-* Inline validations or constraints
-* Data types: JSON schema-based records
-* Policy flags (e.g., confidence threshold on `reason()`)
-
-### Recently Added Features
-
-* `while` loops - For repeating actions while a condition is true
-```python
-while temp.counter < 10:
-    temp.counter = temp.counter + 1
-    log(f"Counter is now {temp.counter}")
-```
-
-* Enhanced `reason()` function with additional parameters:
-  - `temperature` - Controls randomness of LLM output
-  - `format` - Allows specifying output format (e.g., "json", "text")
-  - Support for multiple context variables via lists
-
----
-
 ## 🧪 Example Programs
 
 ### Basic Reasoning Example
 
 ```python
-if world.system.temperature > 90:
-    temp.eval = reason("Is this temperature abnormal?", context=world.system)
-    if temp.eval == "yes":
+if public.system.temperature > 90:
+    eval = reason("Is this temperature abnormal?", context=public.system)
+    if eval == "yes":
         use("kb.maintenance.dispatch.v2")
-        log(f"High temperature detected: {world.system.temperature}°C")
+        log(f"High temperature detected: {public.system.temperature}°C")
 ```
 
 ### Advanced Reasoning with Options
 
 ```python
-// Use temperature parameter for more creative responses
+# Use temperature parameter for more creative responses
 ideas = reason("Generate solution ideas for the issue", temperature=0.8)
 
-// Using the format parameter to get structured JSON
+# Using the format parameter to get structured JSON
 analysis = reason("Analyze system state and list problems",
-                 context=[world.sensors, world.alerts],
+                 context=[public.sensors, public.alerts],
                  format="json")
 
-// Present the analysis
-log(f"Analysis found {analysis.problem_count} problems")
+# Present the analysis
+log(f"Analysis found {problem_count} problems")
 ```
 
 ### Using While Loops
@@ -420,117 +375,24 @@ log(f"Analysis found {analysis.problem_count} problems")
 counter = 0
 while counter < 5:
     log(f"Checking sensor {counter}")
-    reading = world.sensors[counter].value
+    reading = sensors[counter].value
     if reading > threshold:
-        alert = reason(f"Analyze reading: {reading}", context=world.sensors[counter])
+        alert = reason(f"Analyze reading: {reading}", context=sensors[counter])
         log(f"Analysis result: {alert}")
     counter = counter + 1
 ```
 
 ---
 
-## 🧰 Formal Grammar (Minimal EBNF)
+## 🧰 Formal Grammar
 
-```
-program       ::= statement+
-statement     ::= assignment | function_call | conditional | while_loop | log_statement | loglevel_statement | comment
-assignment    ::= identifier '=' expression
-expression    ::= literal | identifier | function_call | binary_expression | fstring_expression
-function_call ::= 'reason' '(' string [',' 'context=' (identifier | list_expression)] [',' param '=' value]* ')'
-                  | 'use' '(' string ')'
-                  | 'set' '(' string ',' expression ')'
-log_statement ::= 'log' '(' expression ')'
-loglevel_statement ::= 'log_level' '=' level
-conditional   ::= 'if' expression ':' NEWLINE INDENT program DEDENT [ 'else:' NEWLINE INDENT program DEDENT ]
-while_loop    ::= 'while' expression ':' NEWLINE INDENT program DEDENT
-comment       ::= ('//' | '#') .*
-
-identifier    ::= [a-zA-Z_][a-zA-Z0-9_.]*
-literal       ::= string | number | boolean | none
-list_expression ::= '[' expression (',' expression)* ']'
-fstring_expression ::= 'f' string
-binary_expression ::= expression binary_op expression
-binary_op     ::= '==' | '!=' | '<' | '>' | '<=' | '>=' | 'and' | 'or' | 'in' | '+' | '-' | '*' | '/'
-level         ::= 'DEBUG' | 'INFO' | 'WARN' | 'ERROR'
-```
-
-* All blocks must be indented consistently
-* No nested function calls (e.g. `if reason(...) == ...` not allowed)
-* One instruction per line
-* F-strings support expressions inside curly braces: `f"Value: {x}"`
-
----
-
-## 🛯️ Fallback Handling Patterns
-
-Fallback behavior can be encoded in programs via explicit branching:
-
-```python
-temp.result = reason("Diagnose failure", context=world)
-if temp.result == None:
-    temp.result = reason("Try again: Diagnose failure", context=world)
-```
-
-Or by delegating to alternate KB entries:
-
-```python
-if temp.result == "uncertain":
-    use("kb.diagnostics.retry_logic.v1")
-```
-
-In the future, `reason(...)` or `use(...)` may accept optional fallback parameters:
-
-```python
-temp.result = reason("Classify", context=world.sensor, fallback="retry once")
-```
-
-Until then, soft failure + manual retry logic is preferred for clarity and control.
-
----
-
-## 📤 Integration Notes
-
-* DANA can be parsed from JSON or DSL
-* AST structure mirrors the above
-* Runtime evaluates node-by-node, mutating shared context
-
----
-
-## Recommendations for Improvement
-
-  1. Complete the Parser Generator Transition
-    - Fully implement and transition to the Lark-based parser
-    - This would make syntax extensions far more manageable
-    - Keep regex as fallback for backward compatibility
-  2. Enhance the Type System
-    - Introduce structured data types (records/objects)
-    - Add collections (lists, maps) as first-class citizens
-    - Consider gradual typing with optional annotations
-  3. Formalize Extension Points
-    - Develop a plugin system for language extensions
-    - Standardize the registration of new language features
-    - Create configuration-based extension loading
-  4. Strengthen Error Recovery
-    - Implement more robust error recovery during parsing
-    - Add a repair mechanism for common syntax mistakes
-    - Enhance debugging with better error visualization
-  5. Complete the Knowledge Base
-    - Develop the KB storage and retrieval mechanisms
-    - Integrate program fragments as reusable components
-    - Add versioning and dependency management
-
----
-
-## 📚 Related Modules
-
-* `dana.language.parser`: Converts text/JSON to AST
-* `dana.runtime.interpreter`: Executes AST step-by-step
-* `dana.transcoder.compiler`: Converts NL to DANA
-* `dana.kb.loader`: Resolves `use(...)` entries
+The formal grammar for the DANA language is now maintained in [grammar.md](./grammar.md) and is kept in sync with the Lark grammar and parser implementation. Please refer to that document for the most up-to-date EBNF and syntax rules.
 
 ---
 
 This spec will evolve with runtime capabilities, real-world use, and expressiveness requirements.
+
+---
 
 <p align="center">
 Copyright © 2025 Aitomatic, Inc. Licensed under the <a href="../LICENSE.md">MIT License</a>.

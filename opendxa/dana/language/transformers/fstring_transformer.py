@@ -34,39 +34,33 @@ class FStringTransformer(BaseTransformer):
         setattr(fstring_expr, "_is_fstring", True)
         setattr(fstring_expr, "_original_text", s)
 
-        return LiteralExpression(literal=Literal(value=fstring_expr))
+        return LiteralExpression(value=fstring_expr)
 
     def _parse_fstring_parts(self, s: str) -> List:
         """Parse an f-string into its component parts."""
-        # Parse f-string for {expression} placeholders
         parts = []
         current_text = ""
         i = 0
-
         while i < len(s):
             if s[i] == "{" and (i == 0 or s[i - 1] != "\\"):
                 # Found start of expression
                 if current_text:
                     parts.append(current_text)
                     current_text = ""
-
                 # Find the matching closing brace
                 brace_level = 1
-                start_idx = i + 1
                 expr_text = ""
-
                 i += 1
                 while i < len(s) and brace_level > 0:
                     if s[i] == "{" and s[i - 1] != "\\":
                         brace_level += 1
                     elif s[i] == "}" and s[i - 1] != "\\":
                         brace_level -= 1
-
                     if brace_level > 0:
                         expr_text += s[i]
-
                     i += 1
-
+                if brace_level != 0:
+                    raise ValueError("Unbalanced braces in f-string expression.")
                 if expr_text:
                     expr_text = expr_text.strip()
                     part = self._parse_expression_in_fstring(expr_text)
@@ -74,16 +68,8 @@ class FStringTransformer(BaseTransformer):
             else:
                 current_text += s[i]
                 i += 1
-
         if current_text:
             parts.append(current_text)
-
-        # Add special marker for simple strings that need variable substitution
-        if not parts:
-            parts = [f"F-STRING-PLACEHOLDER:{s}"]
-        elif len(parts) == 1 and isinstance(parts[0], str):
-            parts = [f"F-STRING-PLACEHOLDER:{s}"]
-
         return parts
 
     def _parse_expression_in_fstring(self, expr_text: str) -> Any:
@@ -119,11 +105,11 @@ class FStringTransformer(BaseTransformer):
 
     def _parse_expression_term(self, term: str) -> Any:
         """Parse a single term in an f-string expression."""
-        if "." in term or term.isalnum():
-            # Add local scope if no scope prefix
+        term = term.strip()
+        if term.replace(".", "").isalnum():
             parts = term.split(".")
             if parts[0] not in RuntimeScopes.ALL:
                 parts = self._insert_local_scope(parts)
             return Identifier(name=".".join(parts))
         else:
-            return LiteralExpression(literal=self._parse_literal(term))
+            return self._parse_literal(term)

@@ -83,6 +83,42 @@ graph TD
 
 The grammar is designed to be extensible. New statements, expressions, or literal types can be added by extending the grammar file and updating the parser and transformers accordingly.
 
+---
+
+## Formal Grammar (Minimal EBNF)
+
+> This EBNF is kept in sync with the Lark grammar and parser implementation in `opendxa/dana/language/dana_grammar.lark`.
+
+```
+program       ::= statement+
+statement     ::= assignment | function_call | conditional | while_loop | log_statement | loglevel_statement | comment
+assignment    ::= identifier '=' expression
+expression    ::= literal | identifier | function_call | binary_expression | fstring_expression
+function_call ::= 'reason' '(' string [',' 'context=' (identifier | list_expression)] [',' param '=' value]* ')'
+                  | 'use' '(' string ')'
+                  | 'set' '(' string ',' expression ')'
+log_statement ::= 'log' '(' expression ')'
+loglevel_statement ::= 'log_level' '=' level
+conditional   ::= 'if' expression ':' NEWLINE INDENT program DEDENT [ 'else:' NEWLINE INDENT program DEDENT ]
+while_loop    ::= 'while' expression ':' NEWLINE INDENT program DEDENT
+comment       ::= ('//' | '#') .*
+
+identifier    ::= [a-zA-Z_][a-zA-Z0-9_.]*
+literal       ::= string | number | boolean | none
+list_expression ::= '[' expression (',' expression)* ']'
+fstring_expression ::= 'f' string
+binary_expression ::= expression binary_op expression
+binary_op     ::= '==' | '!=' | '<' | '>' | '<=' | '>=' | 'and' | 'or' | 'in' | '+' | '-' | '*' | '/'
+level         ::= 'DEBUG' | 'INFO' | 'WARN' | 'ERROR'
+```
+
+* All blocks must be indented consistently
+* No nested function calls (e.g. `if reason(...) == ...` not allowed)
+* One instruction per line
+* F-strings support expressions inside curly braces: `f"Value: {x}"`
+
+---
+
 ## Example: Minimal DANA Program
 
 ```dana
