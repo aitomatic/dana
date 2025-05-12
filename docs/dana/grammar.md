@@ -91,10 +91,10 @@ The grammar is designed to be extensible. New statements, expressions, or litera
 
 ```
 program       ::= statement+
-statement     ::= assignment | function_call | conditional | while_loop | for_loop | break_stmt | continue_stmt | function_def | comment
+statement     ::= assignment | function_call | conditional | while_loop | for_loop | break_stmt | continue_stmt | function_def | print_statement | bare_identifier | comment | NEWLINE
 assignment    ::= identifier '=' expression
 expression    ::= literal | identifier | function_call | binary_expression
-literal       ::= string | number | boolean | none | fstring | list | dict | set
+literal       ::= string | number | boolean | null | fstring | list | dict | set
 function_call ::= identifier '(' [expression (',' expression)*] ')'
 conditional   ::= 'if' expression ':' NEWLINE INDENT program DEDENT [ 'else:' NEWLINE INDENT program DEDENT ]
 while_loop    ::= 'while' expression ':' NEWLINE INDENT program DEDENT
@@ -102,6 +102,8 @@ for_loop      ::= 'for' identifier 'in' expression ':' NEWLINE INDENT program DE
 break_stmt    ::= 'break'
 continue_stmt ::= 'continue'
 function_def  ::= 'def' identifier '(' [identifier (',' identifier)*] ')' ':' NEWLINE INDENT program DEDENT
+print_statement ::= 'print' '(' expression ')'
+bare_identifier ::= identifier
 comment       ::= ('//' | '#') .*
 
 identifier    ::= [a-zA-Z_][a-zA-Z0-9_.]*
@@ -118,6 +120,9 @@ binary_op     ::= '==' | '!=' | '<' | '>' | '<=' | '>=' | 'and' | 'or' | 'in' | 
 * One instruction per line
 * F-strings support expressions inside curly braces: `f"Value: {x}"`
 * Built-in functions like `len()` are supported via transformer logic and do not require specific grammar rules.
+* The Lark grammar is more explicit about operator precedence (logical, comparison, arithmetic, unary) than this EBNF, which is more abstract.
+* In the Lark grammar, `NEWLINE` is a possible statement, allowing for blank lines in code.
+* In this EBNF, comments are treated as statements and could appear in the parse tree. In the actual Lark grammar, comments (lines starting with `#`) are ignored and do not appear in the parse tree at all.
 
 ---
 

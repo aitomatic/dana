@@ -82,7 +82,7 @@ scope_prefix: "private" | "public" | "protected"
 literal: string
        | number
        | boolean
-       | null
+       | none
        | fstring
        | list
        | dict
@@ -95,7 +95,7 @@ number: NUMBER -> number
 boolean: "true" -> true
        | "false" -> false
 
-null: "null" -> null
+none: "None" -> none
 
 fstring: "f" ESCAPED_STRING -> fstring
 
@@ -108,5 +108,4 @@ key_value_pair: expression ":" expression -> key_value_pair
 set: "{" [expression ("," expression)*] "}" -> set
 
 %ignore WS
-%ignore C_COMMENT
-%ignore CPP_COMMENT
+%ignore /#.*/
