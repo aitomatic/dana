@@ -97,7 +97,19 @@ boolean: "true" -> true
 
 none: "None" -> none
 
-fstring: "f" ESCAPED_STRING -> fstring
+# F-string with embedded expressions, e.g. f"Hello {name}!"
+fstring: "f" FSTRING_START fstring_parts FSTRING_END -> fstring
+
+# F-string parts: sequence of string fragments and embedded expressions
+fstring_parts: (fstring_text | fstring_expr)*
+
+# Embedded expression in curly braces
+fstring_expr: "{" expression "}"
+
+# Text fragment (not containing braces)
+FSTRING_START: /["']/
+FSTRING_END: FSTRING_START
+fstring_text: /[^{}]+/
 
 list: "[" [expression ("," expression)*] "]" -> list
 

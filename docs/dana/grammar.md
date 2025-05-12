@@ -108,7 +108,12 @@ comment       ::= ('//' | '#') .*
 
 identifier    ::= [a-zA-Z_][a-zA-Z0-9_.]*
 list          ::= '[' expression (',' expression)* ']'
-fstring       ::= 'f' string
+fstring       ::= 'f' fstring_start fstring_parts fstring_end
+fstring_parts ::= (fstring_text | fstring_expr)*
+fstring_expr  ::= '{' expression '}'
+fstring_text  ::= <any text not containing '{' or '}'>
+fstring_start ::= '"' | '\''
+fstring_end   ::= fstring_start
 dict          ::= '{' [key_value_pair (',' key_value_pair)*] '}'
 key_value_pair ::= expression ':' expression
 set           ::= '{' expression (',' expression)* '}'
@@ -118,7 +123,7 @@ binary_op     ::= '==' | '!=' | '<' | '>' | '<=' | '>=' | 'and' | 'or' | 'in' | 
 
 * All blocks must be indented consistently
 * One instruction per line
-* F-strings support expressions inside curly braces: `f"Value: {x}"`
+* F-strings support expressions inside curly braces: `f"Value: {x+1}"` and can contain multiple text and expression parts.
 * Built-in functions like `len()` are supported via transformer logic and do not require specific grammar rules.
 * The Lark grammar is more explicit about operator precedence (logical, comparison, arithmetic, unary) than this EBNF, which is more abstract.
 * In the Lark grammar, `NEWLINE` is a possible statement, allowing for blank lines in code.
