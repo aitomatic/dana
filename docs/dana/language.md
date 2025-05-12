@@ -19,9 +19,9 @@ For greater detail, see the [DANA Syntax](./syntax.md) document.
 A DANA program is a sequence of **instructions**, optionally organized into **blocks**, executed linearly by the runtime.
 
 ```python
-if world.sensor.temp > 100:
-    temp.msg = reason("Is this overheating?", context=world.sensor)
-    if temp.msg == "yes":
+if private.sensor.temp > 100:
+    msg = reason("Is this overheating?", context=world.sensor)
+    if msg == "yes":
         execution.alerts.append("Overheat detected")
 ```
 
