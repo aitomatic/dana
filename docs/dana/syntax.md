@@ -8,6 +8,14 @@
 
 DANA is a domain-specific language designed for AI-driven automation and reasoning. This document provides a comprehensive reference for DANA's syntax and language features, as supported by the current grammar and runtime.
 
+## DANA vs. Python: Quick Comparison
+
+- DANA's syntax is intentionally similar to Python: indentation, assignments, conditionals, loops, and function calls all look familiar.
+- DANA requires explicit scope prefixes for variables (e.g., `private.x`, `public.y`), unlike Python.
+- DANA only supports single-line comments with `#` (no docstrings).
+- DANA supports f-strings with embedded expressions (e.g., `f"Value: {x+1}"`).
+- Some advanced Python features (like comprehensions, decorators, or dynamic typing) are not present in DANA.
+
 ## Basic Syntax
 
 ### Comments

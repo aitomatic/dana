@@ -18,6 +18,29 @@ This document describes the formal grammar definition for the DANA language, as 
 
 The DANA grammar is written in [Lark](https://github.com/lark-parser/lark) EBNF syntax. It specifies the structure of valid DANA programs, including statements, expressions, literals, and control flow constructs. The grammar is designed to be readable, extensible, and to support indentation-based blocks.
 
+## DANA vs. Python: Key Differences
+
+- **Scope Prefixes:**  
+  DANA allows explicit scope prefixes for variables and functions (e.g., `private.x`, `public.y`). Python uses naming conventions and modules for visibility, not explicit prefixes.
+
+- **Null Value:**  
+  DANA uses `None` (capitalized, like Python), but it is a literal in the grammar, not a reserved keyword.
+
+- **Comments:**  
+  DANA only supports single-line comments with `#`. Python also supports docstrings (`'''` or `"""`), which DANA does not.
+
+- **F-Strings:**  
+  DANA supports f-strings with embedded expressions (e.g., `f"Value: {x+1}"`), but the implementation and parsing are defined by a formal grammar. Some advanced Python f-string features (like format specifiers) may not be supported.
+
+- **Operator Precedence:**  
+  DANA's operator precedence is defined explicitly in its grammar. While similar to Python, there may be subtle differences—check the grammar if you rely on complex expressions.
+
+- **Comments in Parse Tree:**  
+  In DANA, comments are ignored by the parser and do not appear in the parse tree. In Python, comments are ignored by the interpreter, but some tools can access them via the AST.
+
+- **Formal Grammar:**  
+  DANA is defined by a strict formal grammar (Lark), which may restrict or clarify certain constructs more than Python's more flexible syntax.
+
 ## Main Rules
 
 - **start**: Entry point for parsing; matches a complete DANA program.
