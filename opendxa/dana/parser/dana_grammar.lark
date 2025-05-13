@@ -4,7 +4,6 @@
 // It provides security scopes with colon syntax and property access via dot notation.
 
 %import common.WS_INLINE
-%import common.CNAME -> NAME
 %import common.NUMBER
 %import common.ESCAPED_STRING -> REGULAR_STRING
 %import common.WS
@@ -92,7 +91,7 @@ dotted_access: simple_name ("." NAME)+
 scoped_var: scope_prefix ":" (simple_name | dotted_access)
 
 // Scope prefixes
-scope_prefix: "local" | "private" | "public" | "system"
+scope_prefix: PRIVATE | PUBLIC | LOCAL | SYSTEM
 
 // Assignment targets
 target: variable                // Variable
@@ -109,12 +108,24 @@ not_expr: "not" not_expr | comparison
 
 comparison: sum_expr (comp_op sum_expr)*
 
-comp_op: "<" | ">" | "==" | ">=" | "<=" | "!="
-       | "in" | "not" "in" | "is" | "is" "not"
+comp_op: LT_OP | GT_OP | EQ_OP | GE_OP | LE_OP | NE_OP
+       | IN_OP | NOT_IN_OP | IS_OP | IS_NOT_OP
 
-sum_expr: term (("+" | "-") term)*
+LT_OP: "<"
+GT_OP: ">"
+EQ_OP: "=="
+GE_OP: ">="
+LE_OP: "<="
+NE_OP: "!="
+IN_OP: "in"
+NOT_IN_OP: "not" "in"
+IS_OP: "is"
+IS_NOT_OP: "is" "not"
 
-term: factor (("*" | "/" | "//" | "%") factor)*
+sum_expr: term (add_op term)*
+add_op: "+" | "-"
+term: factor (mul_op factor)*
+mul_op: "*" | "/" | "//" | "%"
 
 factor: ("+" | "-") factor | power
 
@@ -130,7 +141,9 @@ arguments: expr ("," expr)* [","]
 atom: variable
     | NUMBER
     | any_string
-    | "True" | "False" | "None"
+    | TRUE
+    | FALSE
+    | NONE
     | collection
     | "(" expr ")"
 
@@ -165,3 +178,15 @@ _NL: /(\r?\n[\t ]*)+/
 %ignore WS_INLINE
 %ignore /[ \t\f]+/
 %ignore /#[^\n]*/
+
+PRIVATE: "private"
+PUBLIC: "public"
+LOCAL: "local"
+SYSTEM: "system"
+
+// TRUE, FALSE, NONE tokens must be defined above NAME for precedence
+TRUE: "True" | "true" | "TRUE"
+FALSE: "False" | "false" | "FALSE"
+NONE: "None" | "none" | "NONE" | "null" | "NULL"
+// Custom NAME token that excludes reserved words
+NAME: /(?!(True|true|TRUE|False|false|FALSE|None|none|NONE|null|NULL|private|public|local|system|break|continue|pass|return|if|else|while|for|def|try|except|finally|raise|assert|import|from|as|with|lambda|yield|global|nonlocal|del|and|or|not|is|in)\b)[a-zA-Z_][a-zA-Z0-9_]*/

@@ -9,14 +9,20 @@ from opendxa.dana.parser.transformers.variable_transformer import VariableTransf
 
 
 class DanaTransformer(Transformer):
-    """Main transformer class that delegates to specialized transformers.
+    """
+    Unified DANA AST transformer that delegates to specialized transformers for statements, expressions,
+    f-strings, and variables.
 
-    This transformer integrates all the specialized transformers and
-    delegates method calls to the appropriate specialized transformer.
+    When Lark calls a transformation method (e.g., assignment, expr, f_string, variable), this class
+    automatically forwards the call to the appropriate specialized transformer. This keeps grammar logic
+    modular and maintainable, while providing a single entry point for parsing.
     """
 
     def __init__(self):
-        """Initialize all specialized transformers."""
+        """
+        Initialize all specialized transformers. Each grammar domain (statements, expressions, f-strings,
+        variables) is handled by its own class, and DanaTransformer delegates to them as needed.
+        """
         super().__init__()
         self._statement_transformer = StatementTransformer()
         self._expression_transformer = ExpressionTransformer()
@@ -24,8 +30,14 @@ class DanaTransformer(Transformer):
         self._variable_transformer = VariableTransformer()
 
     def __getattr__(self, name):
-        """Delegate method calls to the appropriate specialized transformer."""
-        # Try to find the method in the specialized transformers
+        """
+        Delegate method calls to the appropriate specialized transformer. When a transformation method
+        is not found directly on DanaTransformer, this will search each sub-transformer in order and
+        return the first match.
+        """
+        # Check each specialized transformer to see if it implements the requested method.
+        # If found, delegate the call to that transformer. This enables seamless routing of
+        # transformation methods (e.g., assignment, expr, f_string, variable) to the correct handler.
         for transformer in [
             self._statement_transformer,
             self._expression_transformer,

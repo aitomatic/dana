@@ -15,26 +15,35 @@ class BaseTransformer:
     """
 
     def _parse_literal(self, text):
-        """Parse a simple literal value from text."""
-        text = text.strip()
+        """Parse a simple literal value from text or Token."""
+        from lark import Token
+
+        # Unwrap Token to its value
+        if isinstance(text, Token):
+            text = text.value
+        if isinstance(text, str):
+            text = text.strip()
 
         # Try numbers first
         try:
-            if "." in text:
+            if isinstance(text, str) and "." in text:
                 return LiteralExpression(value=float(text))
-            else:
+            elif isinstance(text, str):
                 return LiteralExpression(value=int(text))
+            elif isinstance(text, (int, float)):
+                return LiteralExpression(value=text)
         except ValueError:
             pass
 
         # Try boolean
-        if text.lower() == "true":
-            return LiteralExpression(value=True)
-        elif text.lower() == "false":
-            return LiteralExpression(value=False)
+        if isinstance(text, str):
+            if text.lower() == "true":
+                return LiteralExpression(value=True)
+            elif text.lower() == "false":
+                return LiteralExpression(value=False)
 
         # Try string (with quotes)
-        if (text.startswith('"') and text.endswith('"')) or (text.startswith("'") and text.endswith("'")):
+        if isinstance(text, str) and ((text.startswith('"') and text.endswith('"')) or (text.startswith("'") and text.endswith("'"))):
             return LiteralExpression(value=text[1:-1])
 
         # Default to string
@@ -82,7 +91,8 @@ class BaseTransformer:
         else:
             raise ParseError(f"Invalid type for local variable: {type(parts)}")
 
-    def _unwrap_tree(self, item: Union[Tree, Token, ASTNode]) -> Union[Token, ASTNode]:
+    @staticmethod
+    def get_leaf_node(item: Union[Tree, Token, ASTNode]) -> Union[Token, ASTNode]:
         """Recursively unwrap a Tree until an AST node or token is reached."""
         while hasattr(item, "children") and len(item.children) == 1:
             item = item.children[0]
