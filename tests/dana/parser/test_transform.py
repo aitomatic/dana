@@ -298,6 +298,6 @@ def test_expression_function_call_and_attr():
 
 def test_expression_literals_and_collections():
     et = ExpressionTransformer()
-    assert et.literal([LiteralExpression(True)]).value is True
-    assert et.literal([LiteralExpression(None)]).value is None
-    assert isinstance(et.list([LiteralExpression(1), LiteralExpression(2)]).value, list)
+    assert cast(LiteralExpression, et.literal([LiteralExpression(True)])).value is True
+    assert cast(LiteralExpression, et.literal([LiteralExpression(None)])).value is None
+    assert isinstance(cast(LiteralExpression, et.list([LiteralExpression(1), LiteralExpression(2)])).value, list)
