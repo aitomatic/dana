@@ -123,38 +123,59 @@ class ExpressionTransformer(BaseTransformer):
             return LiteralExpression(value=value)
         raise TypeError(f"Cannot transform expression: {item} ({type(item)})")
 
+    def _extract_operator_string(self, op_token):
+        """
+        Extract the operator string from a parse tree node or token.
+        Handles comp_op, *_op, and direct tokens.
+        """
+        from lark import Token, Tree
+
+        if isinstance(op_token, Tree):
+            if getattr(op_token, "data", None) == "comp_op":
+                return " ".join(child.value for child in op_token.children if isinstance(child, Token))
+            elif op_token.children and isinstance(op_token.children[0], Token):
+                return op_token.children[0].value
+            elif hasattr(op_token, "data") and op_token.data.endswith("_op"):
+                return self._op_tree_to_str(op_token)
+            else:
+                raise TypeError(f"Unexpected op_token tree: {op_token}")
+        else:
+            return op_token
+
+    def _op_tree_to_str(self, tree):
+        op_map = {
+            "add_op": "+",
+            "mul_op": "*",
+            "sub_op": "-",
+            "div_op": "/",
+            "mod_op": "%",
+            "floordiv_op": "//",
+            "pow_op": "**",
+            "and_op": "and",
+            "or_op": "or",
+            "eq_op": "==",
+            "neq_op": "!=",
+            "lt_op": "<",
+            "gt_op": ">",
+            "le_op": "<=",
+            "ge_op": ">=",
+        }
+        return op_map.get(tree.data, tree.data)
+
     def _left_associative_binop(self, items, operator_getter):
         """
         Helper for left-associative binary operations (e.g., a + b + c).
         Iterates over items, applying the operator from operator_getter to each pair.
         Used by or_expr, and_expr, comparison, sum_expr, and term.
         """
-
-        def op_tree_to_str(tree):
-            op_map = {
-                "add_op": "+",
-                "mul_op": "*",
-                "sub_op": "-",
-                "div_op": "/",
-                "mod_op": "%",
-                "floordiv_op": "//",
-                "pow_op": "**",
-                "and_op": "and",
-                "or_op": "or",
-                "eq_op": "==",
-                "neq_op": "!=",
-                "lt_op": "<",
-                "gt_op": ">",
-                "le_op": "<=",
-                "ge_op": ">=",
-            }
-            return op_map.get(tree.data, tree.data)
-
+        # Defensive: filter out empty operator nodes (e.g., Tree with no children)
         filtered_items = []
         for item in items:
             if isinstance(item, Tree) and not item.children:
+                # If this is an operator node, keep it for operator extraction
                 if hasattr(item, "data") and item.data.endswith("_op"):
-                    filtered_items.append(op_tree_to_str(item))
+                    filtered_items.append(item)
+                # Otherwise, skip
                 continue
             filtered_items.append(item)
         items = filtered_items
@@ -169,17 +190,7 @@ class ExpressionTransformer(BaseTransformer):
         while i < len(items):
             op_token = items[i]
             right = self.expression([items[i + 1]])
-            if isinstance(op_token, Tree):
-                if getattr(op_token, "data", None) == "comp_op":
-                    op_str = " ".join(child.value for child in op_token.children if isinstance(child, Token))
-                elif op_token.children and isinstance(op_token.children[0], Token):
-                    op_str = op_token.children[0].value
-                elif hasattr(op_token, "data") and op_token.data.endswith("_op"):
-                    op_str = op_tree_to_str(op_token)
-                else:
-                    raise TypeError(f"Unexpected op_token tree: {op_token}")
-            else:
-                op_str = op_token
+            op_str = self._extract_operator_string(op_token)
             valid_types = (LiteralExpression, Identifier, BinaryExpression, FunctionCall)
             invalid_ast_types = (TupleLiteral, DictLiteral, SetLiteral, SubscriptExpression, AttributeAccess, FStringExpression)
             if not isinstance(left, valid_types):
@@ -196,8 +207,6 @@ class ExpressionTransformer(BaseTransformer):
                     raise TypeError(f"Invalid right operand AST node for BinaryExpression: {type(right)}")
                 else:
                     raise TypeError(f"Invalid right operand type for BinaryExpression: {type(right)}")
-            assert isinstance(left, valid_types), f"Left operand is not a valid type: {type(left)}"
-            assert isinstance(right, valid_types), f"Right operand is not a valid type: {type(right)}"
             left_casted = cast(ValidExprType, left)
             right_casted = cast(ValidExprType, right)
             op = operator_getter(op_str)
@@ -296,58 +305,22 @@ class ExpressionTransformer(BaseTransformer):
     def atom(self, items):
         if not items:
             return None
-        item = items[0]
+        item = self.unwrap_single_child_tree(items[0])
         from lark import Token, Tree
 
-        # If it's a Token, unwrap to primitive for LiteralExpression
+        # Handle Token
         if isinstance(item, Token):
-            value = item.value
-            # String literal: strip quotes
-            if (
-                value
-                and isinstance(value, str)
-                and (
-                    (value.startswith('"') and value.endswith('"'))
-                    or (value.startswith("'") and value.endswith("'"))
-                    or (value.startswith('"""') and value.endswith('"""'))
-                    or (value.startswith("'''") and value.endswith("'''"))
-                )
-            ):
-                # Remove triple quotes first
-                if value.startswith('"""') and value.endswith('"""'):
-                    value = value[3:-3]
-                elif value.startswith("'''") and value.endswith("'''"):
-                    value = value[3:-3]
-                else:
-                    value = value[1:-1]
-                return LiteralExpression(value=value)
-            # Try to convert to int, float, bool, or None
-            if value.isdigit():
-                value = int(value)
-            else:
-                try:
-                    value = float(value)
-                except Exception:
-                    if value == "True":
-                        value = True
-                    elif value == "False":
-                        value = False
-                    elif value == "None":
-                        value = None
-            return LiteralExpression(value=value)
-        # If it's a Tree, flatten all children and recurse
+            return self._atom_from_token(item)
+        # Handle Tree
         if isinstance(item, Tree):
-            # If this is a literal, recurse
             if item.data == "literal" and item.children:
                 return self.atom(item.children)
-            # If this is a boolean or None, handle
             if item.data == "true_lit":
                 return LiteralExpression(value=True)
             if item.data == "false_lit":
                 return LiteralExpression(value=False)
             if item.data == "none_lit":
                 return LiteralExpression(value=None)
-            # If this is a collection, return the AST node directly
             if item.data == "collection" and len(item.children) == 1:
                 child = item.children[0]
                 from opendxa.dana.parser.ast import DictLiteral, SetLiteral, TupleLiteral
@@ -359,12 +332,47 @@ class ExpressionTransformer(BaseTransformer):
                 result = self.atom([child])
                 if isinstance(result, LiteralExpression):
                     return result
-            # If nothing matched, raise
             raise TypeError(f"Unhandled tree in atom: {item.data} with children {item.children}")
         # If it's already a primitive, wrap as LiteralExpression
         if isinstance(item, (int, float, str, bool, type(None))):
             return LiteralExpression(value=item)
         return item
+
+    def _atom_from_token(self, token):
+        value = token.value
+        # String literal: strip quotes
+        if (
+            value
+            and isinstance(value, str)
+            and (
+                (value.startswith('"') and value.endswith('"'))
+                or (value.startswith("'") and value.endswith("'"))
+                or (value.startswith('"""') and value.endswith('"""'))
+                or (value.startswith("'''") and value.endswith("'''"))
+            )
+        ):
+            # Remove triple quotes first
+            if value.startswith('"""') and value.endswith('"""'):
+                value = value[3:-3]
+            elif value.startswith("'''") and value.endswith("'''"):
+                value = value[3:-3]
+            else:
+                value = value[1:-1]
+            return LiteralExpression(value=value)
+        # Try to convert to int, float, bool, or None
+        if value.isdigit():
+            value = int(value)
+        else:
+            try:
+                value = float(value)
+            except Exception:
+                if value == "True":
+                    value = True
+                elif value == "False":
+                    value = False
+                elif value == "None":
+                    value = None
+        return LiteralExpression(value=value)
 
     def literal(self, items):
         # Unwrap and convert all literal tokens/trees to primitives
@@ -377,81 +385,33 @@ class ExpressionTransformer(BaseTransformer):
         raise TypeError(f"Cannot transform identifier: {items}")
 
     def tuple(self, items):
-        # Always return a TupleLiteral, never a LiteralExpression or None
         from opendxa.dana.parser.ast import TupleLiteral
 
-        flat_items = []
-        for item in items:
-            if isinstance(item, list):
-                for subitem in item:
-                    if subitem is not None:
-                        flat_items.append(self.expression([subitem]))
-            elif hasattr(item, "children"):
-                for child in item.children:
-                    flat_items.append(self.expression([child]))
-            elif item is not None:
-                flat_items.append(self.expression([item]))
-        return TupleLiteral(items=flat_items)
+        flat_items = self.flatten_items(items)
+        return TupleLiteral(items=[self.expression([item]) for item in flat_items])
 
     def list(self, items):
-        # Flatten and unwrap all children
-        flat_items = []
-        for item in items:
-            if isinstance(item, list):
-                flat_items.extend(item)
-            elif hasattr(item, "children") and getattr(item, "data", None) == "list_items":
-                for child in item.children:
-                    flat_items.append(self.expression([child]))
-            elif item is not None:
-                flat_items.append(self.expression([item]))
-        return LiteralExpression(value=flat_items)
+        flat_items = self.flatten_items(items)
+        return LiteralExpression(value=[self.expression([item]) for item in flat_items])
 
     def dict(self, items):
-        # Robustly extract all (key, value) pairs from children
-        flat_items = []
-        for item in items:
-            if item is None:
-                continue
+        flat_items = self.flatten_items(items)
+        pairs = []
+        for item in flat_items:
             if isinstance(item, tuple) and len(item) == 2:
-                flat_items.append(item)
+                pairs.append(item)
             elif hasattr(item, "data") and item.data == "key_value_pair":
                 pair = self.key_value_pair(item.children)
-                flat_items.append(pair)
-            elif hasattr(item, "data") and item.data == "dict_items":
-                for child in item.children:
-                    if isinstance(child, tuple) and len(child) == 2:
-                        flat_items.append(child)
-                    elif hasattr(child, "data") and child.data == "key_value_pair":
-                        pair = self.key_value_pair(child.children)
-                        flat_items.append(pair)
-            elif isinstance(item, list):
-                for subitem in item:
-                    if subitem is None:
-                        continue
-                    if isinstance(subitem, tuple) and len(subitem) == 2:
-                        flat_items.append(subitem)
-                    elif hasattr(subitem, "data") and subitem.data == "key_value_pair":
-                        pair = self.key_value_pair(subitem.children)
-                        flat_items.append(pair)
-            # Ignore anything else
+                pairs.append(pair)
         from opendxa.dana.parser.ast import DictLiteral
 
-        return DictLiteral(items=flat_items)
+        return DictLiteral(items=pairs)
 
     def set(self, items):
-        # Flatten and unwrap all children
-        flat_items = []
-        for item in items:
-            if isinstance(item, list):
-                flat_items.extend(item)
-            elif hasattr(item, "children") and getattr(item, "data", None) == "set_items":
-                for child in item.children:
-                    flat_items.append(self.expression([child]))
-            elif item is not None:
-                flat_items.append(self.expression([item]))
+        flat_items = self.flatten_items(items)
         from opendxa.dana.parser.ast import SetLiteral
 
-        return SetLiteral(items=flat_items)
+        return SetLiteral(items=[self.expression([item]) for item in flat_items])
 
     def TRUE(self, items=None):
         return LiteralExpression(value=True)

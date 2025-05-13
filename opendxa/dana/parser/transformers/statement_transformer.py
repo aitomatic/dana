@@ -147,6 +147,52 @@ class StatementTransformer(BaseTransformer):
         finally_block = items[2] if len(items) > 2 else None
         return TryBlock(body=body, except_blocks=except_blocks, finally_block=finally_block)
 
+    def if_stmt(self, items):
+        """Transform an if_stmt rule into a Conditional AST node, handling if/elif/else blocks."""
+        from opendxa.dana.parser.ast import Conditional
+
+        def flatten_block(block):
+            if isinstance(block, list):
+                flat = []
+                for b in block:
+                    if isinstance(b, list):
+                        flat.extend(flatten_block(b))
+                    else:
+                        flat.append(b)
+                return flat
+            elif hasattr(block, "children"):
+                return list(block.children)
+            elif block is None:
+                return []
+            else:
+                return [block]
+
+        condition = items[0]
+        if_body = flatten_block(items[1])
+        else_body = []
+        if len(items) == 3:
+            third = items[2]
+            else_body = flatten_block(third)
+        elif len(items) == 4:
+            elif_blocks = flatten_block(items[2])
+            else_block = flatten_block(items[3])
+
+            def nest_elif_blocks(blocks, final_else):
+                if not blocks:
+                    return final_else
+                head, *tail = blocks
+                nested = Conditional(
+                    condition=head.condition,
+                    body=head.body,
+                    else_body=cast([Conditional], nest_elif_blocks(tail, final_else)),
+                    line_num=getattr(head.condition, "line", 0) or 0,
+                )
+                return [nested]
+
+            else_body = flatten_block(nest_elif_blocks(elif_blocks, else_block))
+        line_num = getattr(condition, "line", 0) or 0
+        return Conditional(condition=condition, body=if_body, else_body=cast([Conditional], else_body), line_num=line_num)
+
     # === Simple Statements ===
     def assignment(self, items):
         """

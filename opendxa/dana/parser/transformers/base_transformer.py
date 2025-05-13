@@ -97,3 +97,32 @@ class BaseTransformer:
         while hasattr(item, "children") and len(item.children) == 1:
             item = item.children[0]
         return item  # type: ignore
+
+    def flatten_items(self, items):
+        """
+        Recursively flatten lists and Tree nodes, returning a flat list of AST nodes or tokens.
+        Useful for collection and statement flattening.
+        """
+        from lark import Tree
+
+        flat = []
+        for item in items:
+            if isinstance(item, list):
+                flat.extend(self.flatten_items(item))
+            elif isinstance(item, Tree) and hasattr(item, "children"):
+                flat.extend(self.flatten_items(item.children))
+            elif item is not None:
+                flat.append(item)
+        return flat
+
+    def unwrap_single_child_tree(self, item, stop_at=None):
+        """
+        Recursively unwrap single-child Tree nodes, stopping at rule names in stop_at.
+        If stop_at is None, unwrap all single-child Trees.
+        """
+        from lark import Tree
+
+        stop_at = stop_at or set()
+        while isinstance(item, Tree) and len(item.children) == 1 and getattr(item, "data", None) not in stop_at:
+            item = item.children[0]
+        return item
