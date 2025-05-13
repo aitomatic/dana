@@ -5,11 +5,10 @@ This module provides utilities for managing the runtime context during execution
 
 from typing import Any, Dict, Optional
 
-from dana.sandbox.sandbox_context import SandboxContext
-
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.dana.common.exceptions import StateError
 from opendxa.dana.common.runtime_scopes import RuntimeScopes
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
 class ContextManager(Loggable):

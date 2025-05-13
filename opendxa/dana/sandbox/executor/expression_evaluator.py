@@ -7,11 +7,9 @@ evaluating expressions in DANA programs.
 import re
 from typing import Any, Dict, Optional
 
-from dana.sandbox.sandbox_context import SandboxContext
-
 from opendxa.dana.common.error_utils import ErrorUtils
 from opendxa.dana.common.exceptions import SandboxError, StateError
-from opendxa.dana.language.ast import (
+from opendxa.dana.parser.ast import (
     BinaryExpression,
     BinaryOperator,
     FStringExpression,
@@ -23,6 +21,7 @@ from opendxa.dana.language.ast import (
 from opendxa.dana.sandbox.executor.base_executor import BaseExecutor
 from opendxa.dana.sandbox.executor.context_manager import ContextManager
 from opendxa.dana.sandbox.python_registry import PythonRegistry
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
 class ExpressionEvaluator(BaseExecutor):

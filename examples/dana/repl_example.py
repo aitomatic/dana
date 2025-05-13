@@ -3,10 +3,9 @@
 import asyncio
 import logging
 
-from dana.repl.repl import REPL
-
 from opendxa.common.resource.llm_resource import LLMResource
-from opendxa.dana.sandbox.interpreter import LogLevel
+from opendxa.dana.repl.repl import REPL
+from opendxa.dana.sandbox.log_manager import LogLevel
 
 
 async def main():

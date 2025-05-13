@@ -17,11 +17,10 @@ Note:
 import asyncio
 import os
 
-from dana.sandbox.sandbox_context import SandboxContext
-
 from opendxa.common.resource.llm_resource import LLMResource
-from opendxa.dana.language.parser import GrammarParser
+from dana.parser.dana_parser import DanaParser
 from opendxa.dana.sandbox.interpreter import Interpreter
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
 async def main():
@@ -91,7 +90,7 @@ async def main():
     """
 
     # Parse and execute the program
-    parser = GrammarParser()
+    parser = DanaParser()
     parse_result = parser.parse(program)
     interpreter = Interpreter(context)
     interpreter.execute_program(parse_result)

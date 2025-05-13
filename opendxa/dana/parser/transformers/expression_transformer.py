@@ -2,14 +2,14 @@
 
 from lark import Token
 
-from opendxa.dana.language.ast import (
+from opendxa.dana.parser.ast import (
     BinaryExpression,
     BinaryOperator,
     FunctionCall,
     Identifier,
     LiteralExpression,
 )
-from opendxa.dana.language.transformers.base_transformer import BaseTransformer
+from opendxa.dana.parser.transformers.base_transformer import BaseTransformer
 
 
 class ExpressionTransformer(BaseTransformer):
@@ -167,8 +167,8 @@ class ExpressionTransformer(BaseTransformer):
         return self._unwrap_tree(items[0])
 
     def identifier(self, items):
-        """Transform an identifier into an Identifier or pass through."""
-        return self._unwrap_tree(items[0])
+        # This method is now handled by VariableTransformer
+        raise NotImplementedError("identifier is handled by VariableTransformer")
 
     def not_expr(self, items):
         """Transform a not expression into a BinaryExpression or pass through."""

@@ -1,22 +1,16 @@
 """DANA REPL: Read-Eval-Print Loop for executing and managing DANA programs."""
 
-import logging
 from typing import Any, Dict, Optional
-
-from dana.sandbox.sandbox_context import SandboxContext
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.common.utils import Misc
 from opendxa.dana.common.error_utils import DanaError
-from opendxa.dana.language.ast import LogLevel
-from opendxa.dana.language.parser import GrammarParser
+from dana.parser.dana_parser import DanaParser
 from opendxa.dana.sandbox.executor.llm_integration import LLMIntegration
 from opendxa.dana.sandbox.interpreter import Interpreter
-from opendxa.dana.sandbox.log_manager import LogManager
-
-# Map DANA LogLevel to Python logging levels
-LEVEL_MAP = {LogLevel.DEBUG: logging.DEBUG, LogLevel.INFO: logging.INFO, LogLevel.WARN: logging.WARNING, LogLevel.ERROR: logging.ERROR}
+from opendxa.dana.sandbox.log_manager import LogLevel, LogManager
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
 class REPL(Loggable):
@@ -34,7 +28,7 @@ class REPL(Loggable):
         self.context = context or SandboxContext()
         self.context.set(LLMIntegration.LLM_RESOURCE_VARIABLE, llm_resource)
         self.interpreter = Interpreter(self.context)
-        self.parser = GrammarParser()
+        self.parser = DanaParser()
         self.last_result = None
         if log_level:
             self.set_log_level(log_level)
@@ -53,7 +47,7 @@ class REPL(Loggable):
         Args:
             level: The log level to set
         """
-        LogManager.set_dana_log_level(level, self.context)
+        LogManager.set_system_log_level(level, self.context)
         self.debug(f"Set log level to {level.value}")
 
     def get_nlp_mode(self) -> bool:

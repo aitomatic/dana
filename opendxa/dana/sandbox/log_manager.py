@@ -1,22 +1,27 @@
 """Log level management for DANA runtime."""
 
 import logging
+from enum import Enum
 from typing import Optional, Union
 
-from dana.sandbox.sandbox_context import SandboxContext
-
 from opendxa.common.utils.logging.dxa_logger import DXA_LOGGER
-from opendxa.dana.language.ast import LogLevel
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
-# Map DANA LogLevel to Python logging levels
-LEVEL_MAP = {LogLevel.DEBUG: logging.DEBUG, LogLevel.INFO: logging.INFO, LogLevel.WARN: logging.WARNING, LogLevel.ERROR: logging.ERROR}
+
+class LogLevel(Enum):
+    """Log level management for DANA runtime."""
+
+    DEBUG = logging.DEBUG
+    INFO = logging.INFO
+    WARN = logging.WARNING
+    ERROR = logging.ERROR
 
 
 class LogManager:
     """Log level management for DANA runtime."""
 
     @staticmethod
-    def set_dana_log_level(level: Union[LogLevel, str], context: Optional[SandboxContext] = None) -> None:
+    def set_system_log_level(level: Union[LogLevel, str], context: Optional[SandboxContext] = None) -> None:
         """Set the log level for DANA runtime.
 
         This is the single source of truth for setting log levels in DANA.
@@ -26,8 +31,8 @@ class LogManager:
             level: The log level to set, can be a LogLevel enum or a string
         """
         if isinstance(level, str):
-            level = LogLevel(level)
+            level = LogLevel[level]
 
-        DXA_LOGGER.setLevel(LEVEL_MAP[level], scope="opendxa.dana")
+        DXA_LOGGER.setLevel(level.value, scope="opendxa.dana")
         if context:
             context.set("system.__log_level", level)

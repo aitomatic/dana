@@ -1,6 +1,6 @@
 """Example demonstrating RuntimeContext usage."""
 
-from dana.sandbox.sandbox_context import SandboxContext
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
 def main():

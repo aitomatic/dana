@@ -111,8 +111,8 @@ opendxa/               # Main package
 ### Working with DANA
 
 ```python
-from dana import run, compile_nl
-from dana.runtime.context import RuntimeContext
+from opendxa.dana import run, compile_nl
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 # Create runtime context
 ctx = RuntimeContext(agent={}, world={}, temp={})

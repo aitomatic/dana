@@ -5,20 +5,20 @@ interpreter with custom behavior at key points in the execution process.
 """
 
 import pytest
-from dana.sandbox.sandbox_context import SandboxContext
 
-from opendxa.dana.language.parser import GrammarParser
+from dana.parser.dana_parser import DanaParser
 from opendxa.dana.sandbox.hooks import (
     HookRegistry,
     HookType,
 )
 from opendxa.dana.sandbox.interpreter import Interpreter
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
 @pytest.fixture
 def parser():
     """Create a fresh parser instance for each test."""
-    return GrammarParser()
+    return DanaParser()
 
 
 @pytest.fixture

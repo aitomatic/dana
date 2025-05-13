@@ -2,12 +2,13 @@
 
 from lark import Transformer
 
-from opendxa.dana.language.transformers.expression_transformer import ExpressionTransformer
-from opendxa.dana.language.transformers.fstring_transformer import FStringTransformer
-from opendxa.dana.language.transformers.statement_transformer import StatementTransformer
+from opendxa.dana.parser.transformers.expression_transformer import ExpressionTransformer
+from opendxa.dana.parser.transformers.fstring_transformer import FStringTransformer
+from opendxa.dana.parser.transformers.statement_transformer import StatementTransformer
+from opendxa.dana.parser.transformers.variable_transformer import VariableTransformer
 
 
-class LarkTransformer(Transformer):
+class DanaTransformer(Transformer):
     """Main transformer class that delegates to specialized transformers.
 
     This transformer integrates all the specialized transformers and
@@ -20,11 +21,17 @@ class LarkTransformer(Transformer):
         self._statement_transformer = StatementTransformer()
         self._expression_transformer = ExpressionTransformer()
         self._fstring_transformer = FStringTransformer()
+        self._variable_transformer = VariableTransformer()
 
     def __getattr__(self, name):
         """Delegate method calls to the appropriate specialized transformer."""
         # Try to find the method in the specialized transformers
-        for transformer in [self._statement_transformer, self._expression_transformer, self._fstring_transformer]:
+        for transformer in [
+            self._statement_transformer,
+            self._expression_transformer,
+            self._fstring_transformer,
+            self._variable_transformer,
+        ]:
             if hasattr(transformer, name):
                 return getattr(transformer, name)
 

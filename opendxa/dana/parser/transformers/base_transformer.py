@@ -5,7 +5,7 @@ from typing import Any, Union
 from lark import Token, Tree
 
 from opendxa.dana.common.exceptions import ParseError
-from opendxa.dana.language.ast import ASTNode, LiteralExpression
+from opendxa.dana.parser.ast import ASTNode, LiteralExpression
 
 
 class BaseTransformer:

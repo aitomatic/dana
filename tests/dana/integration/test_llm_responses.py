@@ -2,11 +2,10 @@
 
 import unittest
 
-from dana.sandbox.sandbox_context import SandboxContext
-
-from opendxa.dana.language.ast import LogLevel
+from opendxa.dana.repl.repl import REPL
 from opendxa.dana.sandbox.interpreter import Interpreter
-from dana.repl.repl import REPL
+from opendxa.dana.sandbox.log_manager import LogLevel
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
 class TestLLMResponseFormats(unittest.TestCase):

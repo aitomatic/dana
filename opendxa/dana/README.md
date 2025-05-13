@@ -146,9 +146,9 @@ Key Features:
 Designed for use inside agentic systems:
 
 ```python
-from dana import run, compile_nl, explain
-from dana.runtime.context import RuntimeContext
-from dana.runtime.interpreter import Interpreter
+from opendxa.dana import run, compile_nl, explain
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from opendxa.dana.sandbox.interpreter import Interpreter
 
 # Basic usage
 program = compile_nl("If X is drifting, flag it.")

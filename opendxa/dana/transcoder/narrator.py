@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 
-from opendxa.dana.language.ast import Program
+from opendxa.dana.parser.ast import Program
 
 
 class NarratorInterface(ABC):

@@ -2,13 +2,13 @@
 
 import pytest
 
-from opendxa.dana.language.parser import GrammarParser, ParseResult
+from dana.parser.dana_parser import DanaParser, ParseResult
 
 
 @pytest.fixture
 def parser():
     """Create a fresh parser instance for each test."""
-    return GrammarParser()
+    return DanaParser()
 
 
 def test_parse_simple_reason(parser):

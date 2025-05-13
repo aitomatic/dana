@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional, Union
 from opendxa.dana.common.error_utils import ErrorUtils
 from opendxa.dana.common.exceptions import SandboxError, StateError
 from opendxa.dana.common.runtime_scopes import RuntimeScopes
-from opendxa.dana.language.ast import (
+from opendxa.dana.parser.ast import (
     Assignment,
     BinaryExpression,
     Conditional,
@@ -27,7 +27,7 @@ from opendxa.dana.language.ast import (
     Statement,
     WhileLoop,
 )
-from opendxa.dana.sandbox.core_functions.reason_function import ReasonFunction
+from dana.sandbox.core_functions.reason_function import ReasonFunction
 from opendxa.dana.sandbox.executor.base_executor import BaseExecutor
 from opendxa.dana.sandbox.executor.context_manager import ContextManager
 from opendxa.dana.sandbox.executor.expression_evaluator import ExpressionEvaluator
@@ -204,7 +204,7 @@ class StatementExecutor(BaseExecutor):
             RuntimeError: If the log level set statement fails
         """
         # Set the log level via the central LogManager
-        LogManager.set_dana_log_level(node.level, self.context_manager.context)
+        LogManager.set_system_log_level(node.level, self.context_manager.context)
 
     def execute_print_statement(self, node: PrintStatement) -> None:
         """Execute a print statement.

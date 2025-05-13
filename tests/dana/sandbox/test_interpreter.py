@@ -1,10 +1,9 @@
 """Tests for the modular interpreter implementation."""
 
 import pytest
-from dana.sandbox.sandbox_context import SandboxContext
 
 from opendxa.dana.common.exceptions import StateError
-from opendxa.dana.language.ast import (
+from opendxa.dana.parser.ast import (
     Assignment,
     BinaryExpression,
     BinaryOperator,
@@ -12,14 +11,14 @@ from opendxa.dana.language.ast import (
     Literal,
     LiteralExpression,
     Location,
-    LogLevel,
-    LogLevelSetStatement,
     PrintStatement,
     Program,
 )
-from opendxa.dana.language.parser import ParseResult
+from dana.parser.dana_parser import ParseResult
 from opendxa.dana.sandbox.interpreter import Interpreter
 from opendxa.dana.sandbox.log_manager import LEVEL_MAP, LogManager
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from opendxa.dana.sendbox.log_manager import LogLevel
 
 
 def create_location(line: int, column: int, text: str = "") -> Location:
@@ -197,7 +196,7 @@ def test_log_statement():
     """Test log statement execution with the modular interpreter."""
     context = SandboxContext()
     interpreter = Interpreter(context)
-    LogManager.set_dana_log_level(LogLevel.INFO, context)  # Ensure INFO messages are printed
+    LogManager.set_system_log_level(LogLevel.INFO, context)  # Ensure INFO messages are printed
 
     # Test different log levels
     interpreter.debug("Debug message")
@@ -212,7 +211,7 @@ def test_log_level_threshold():
     interpreter = Interpreter(context)
 
     # Set to WARN level
-    LogManager.set_dana_log_level(LogLevel.WARN, context)
+    LogManager.set_system_log_level(LogLevel.WARN, context)
 
     # Test that INFO messages are not shown
     interpreter.info("This should not be shown")

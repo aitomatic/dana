@@ -5,12 +5,11 @@ This module provides the reason function, which handles reasoning in the DANA in
 
 from typing import Any, Dict, Optional
 
-from dana.sandbox.sandbox_context import SandboxContext
-
 from opendxa.dana.common.exceptions import SandboxError
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
-def reason(
+def reason_function(
     prompt: str,
     context: SandboxContext,
     options: Optional[Dict[str, Any]] = None,

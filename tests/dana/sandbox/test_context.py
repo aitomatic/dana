@@ -1,9 +1,9 @@
 """Unit tests for the DANA language context."""
 
 import pytest
-from dana.sandbox.sandbox_context import SandboxContext
 
 from opendxa.dana.common.exceptions import StateError
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
 def test_set_and_get_variable():

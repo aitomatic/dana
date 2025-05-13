@@ -11,11 +11,10 @@ import asyncio
 import os
 from typing import Any, Dict, Optional
 
-from dana.sandbox.sandbox_context import SandboxContext
-
 from opendxa.common.resource.llm_resource import LLMResource
-from opendxa.dana.language.parser import GrammarParser
+from dana.parser.dana_parser import DanaParser
 from opendxa.dana.sandbox.interpreter import Interpreter
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
 async def run_dana_reasoning_example(model: Optional[str] = None, provider: Optional[str] = None) -> None:
@@ -41,7 +40,7 @@ async def run_dana_reasoning_example(model: Optional[str] = None, provider: Opti
     print(f"{'-'*80}\n")
 
     # Parse the DANA code
-    parser = GrammarParser()
+    parser = DanaParser()
     parse_result = parser.parse(dana_code)
 
     # Create a runtime context

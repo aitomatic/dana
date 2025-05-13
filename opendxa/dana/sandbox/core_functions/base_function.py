@@ -7,7 +7,7 @@ for all core DANA functions.
 from abc import ABC, abstractmethod
 from typing import Any
 
-from dana.sandbox.sandbox_context import SandboxContext
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
 class BaseFunction(ABC):

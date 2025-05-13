@@ -70,7 +70,7 @@ graph LR
 from opendxa.dana.language.parser import GrammarParser
 from opendxa.dana.language.type_checker import TypeChecker
 
-parser = GrammarParser()
+parser = DanaParser()
 result = parser.parse("x = 10\nif x > 5:\n    print('ok')")
 
 if result.is_valid:

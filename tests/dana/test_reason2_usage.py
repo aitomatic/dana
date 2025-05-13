@@ -1,16 +1,16 @@
 """Test the reason2 function usage in DANA code."""
 
 import pytest
-from dana.sandbox.sandbox_context import SandboxContext
 
-from opendxa.dana.language.parser import GrammarParser, ParseResult
+from dana.parser.dana_parser import DanaParser, ParseResult
 from opendxa.dana.sandbox.interpreter import Interpreter
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
 @pytest.fixture
 def parser():
     """Create a fresh parser instance for each test."""
-    return GrammarParser()
+    return DanaParser()
 
 
 def test_reason2_in_dana():

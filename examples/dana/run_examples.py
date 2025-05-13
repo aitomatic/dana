@@ -11,12 +11,12 @@ import sys
 # Adjust path to import from the opendxa package root
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
-from dana.sandbox.sandbox_context import SandboxContext
-
 from opendxa.dana.common.exceptions import DanaError
 from opendxa.dana.io.file_io import read_dana_program
-from opendxa.dana.language.parser import GrammarParser
+from dana.parser.dana_parser import DanaParser
 from opendxa.dana.sandbox.interpreter import Interpreter
+from opendxa.dana.sandbox.log_manager import LogLevel
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 # ANSI color codes
 BLUE = "\033[94m"  # Program headers
@@ -57,7 +57,7 @@ def run_example(example_path: str):
 
         # 2. Parse
         print(f"{YELLOW}Parsing...{RESET}")
-        parser = GrammarParser()
+        parser = DanaParser()
         parse_result = parser.parse(dana_code)
 
         # 3. Setup Runtime

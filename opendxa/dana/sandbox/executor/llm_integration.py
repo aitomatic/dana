@@ -7,14 +7,13 @@ handling interactions with Large Language Models during execution.
 import json
 from typing import Any, Dict, List, Optional
 
-from dana.sandbox.sandbox_context import SandboxContext
-
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.common.types import BaseRequest
 from opendxa.common.utils.misc import Misc
 from opendxa.dana.common.exceptions import SandboxError, StateError
 from opendxa.dana.sandbox.executor.base_executor import BaseExecutor
 from opendxa.dana.sandbox.executor.context_manager import ContextManager
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
 class LLMIntegration(BaseExecutor):

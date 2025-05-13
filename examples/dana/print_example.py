@@ -7,9 +7,7 @@ from pathlib import Path
 # Add the parent directory to the path so we can import opendxa
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from dana.sandbox.sandbox_context import SandboxContext
-
-from opendxa.dana.language.parser import GrammarParser
+from dana.parser.dana_parser import DanaParser
 from opendxa.dana.sandbox.interpreter import Interpreter
 
 
@@ -24,7 +22,7 @@ def main():
 
     # Parse the code
     print(f"Parsing code from {example_file}...\n")
-    parser = GrammarParser()
+    parser = DanaParser()
     result = parser.parse(code, type_check=False)
 
     if not result.is_valid:

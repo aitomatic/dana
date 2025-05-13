@@ -1,22 +1,22 @@
 """Tests for DANA's autoscoping behavior."""
 
 import pytest
-from dana.sandbox.sandbox_context import SandboxContext
 
-from opendxa.dana.language.ast import (
+from opendxa.dana.parser.ast import (
     Assignment,
     BinaryExpression,
     FStringExpression,
     Identifier,
 )
-from opendxa.dana.language.parser import GrammarParser, ParseResult
+from dana.parser.dana_parser import DanaParser, ParseResult
 from opendxa.dana.sandbox.interpreter import Interpreter
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
 @pytest.fixture
 def parser():
     """Create a fresh parser instance for each test."""
-    return GrammarParser()
+    return DanaParser()
 
 
 @pytest.fixture

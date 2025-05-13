@@ -3,19 +3,19 @@
 from typing import Any, Dict
 
 import pytest
-from dana.sandbox.sandbox_context import SandboxContext
 
 from opendxa.dana.common.exceptions import SandboxError, StateError
-from opendxa.dana.language.ast import Literal, LiteralExpression, LogLevel, LogStatement
-from opendxa.dana.language.parser import GrammarParser
+from opendxa.dana.parser.ast import Literal, LiteralExpression, LogLevel, LogStatement
+from dana.parser.dana_parser import DanaParser
 from opendxa.dana.sandbox.interpreter import Interpreter
 from opendxa.dana.sandbox.python_registry import PythonRegistry
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
 @pytest.fixture
 def parser():
     """Create a fresh parser instance for each test."""
-    return GrammarParser()
+    return DanaParser()
 
 
 @pytest.fixture

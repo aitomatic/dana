@@ -8,7 +8,6 @@
 
 **Files**:
     - `opendxa/dana/language/dana_grammar.lark`: The Lark grammar file.
-    - `opendxa/dana/language/dana_grammar_embedded.py`: The back-up grammar file, in case Lark is not available for some reason.
 
 The DANA Parser uses the Lark parser to parse the DANA source code into a parse tree.
 
@@ -131,7 +130,7 @@ comment       ::= ('//' | '#') .*
 
 identifier    ::= [a-zA-Z_][a-zA-Z0-9_.]*
 list          ::= '[' expression (',' expression)* ']'
-fstring       ::= 'f' fstring_start fstring_parts fstring_end
+fstring       ::= 'f' ( '"' <any chars except unescaped '"'> '"' | '\'' <any chars except unescaped '\''> '\'' )
 fstring_parts ::= (fstring_text | fstring_expr)*
 fstring_expr  ::= '{' expression '}'
 fstring_text  ::= <any text not containing '{' or '}'>
@@ -142,6 +141,8 @@ key_value_pair ::= expression ':' expression
 set           ::= '{' expression (',' expression)* '}'
 binary_expression ::= expression binary_op expression
 binary_op     ::= '==' | '!=' | '<' | '>' | '<=' | '>=' | 'and' | 'or' | 'in' | '+' | '-' | '*' | '/'
+
+string        ::= '"' <any chars except unescaped '"'> '"' | '\'' <any chars except unescaped '\''> '\''
 ```
 
 * All blocks must be indented consistently
@@ -151,6 +152,7 @@ binary_op     ::= '==' | '!=' | '<' | '>' | '<=' | '>=' | 'and' | 'or' | 'in' | 
 * The Lark grammar is more explicit about operator precedence (logical, comparison, arithmetic, unary) than this EBNF, which is more abstract.
 * In the Lark grammar, `NEWLINE` is a possible statement, allowing for blank lines in code.
 * In this EBNF, comments are treated as statements and could appear in the parse tree. In the actual Lark grammar, comments (lines starting with `#`) are ignored and do not appear in the parse tree at all.
+* Both single (`'...'`) and double (`"..."`) quotes are accepted for string literals and f-strings, just like in Python.
 
 ---
 

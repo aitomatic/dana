@@ -1,9 +1,10 @@
 """Tests for the DANA type checker."""
 
 import pytest
-from dana.sandbox.sandbox_context import SandboxContext
 
-from opendxa.dana.language.ast import (
+"""Tests for the DANA type checker."""
+
+from opendxa.dana.parser.ast import (
     Assignment,
     BinaryExpression,
     BinaryOperator,
@@ -11,15 +12,15 @@ from opendxa.dana.language.ast import (
     Literal,
     LiteralExpression,
 )
-from opendxa.dana.language.parser import GrammarParser
-from opendxa.dana.language.type_checker import DanaType, TypeChecker, TypeEnvironment
+from dana.parser.dana_parser import DanaParser
+from opendxa.dana.parser.type_checker import DanaType, TypeChecker, TypeEnvironment
 from opendxa.dana.sandbox.interpreter import Interpreter
 
 
 @pytest.fixture
 def parser():
     """Create a fresh parser instance for each test."""
-    return GrammarParser()
+    return DanaParser()
 
 
 @pytest.fixture

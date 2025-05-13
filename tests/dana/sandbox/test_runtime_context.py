@@ -1,9 +1,9 @@
 """Tests for the DANA runtime context."""
 
 import pytest
-from dana.sandbox.sandbox_context import ExecutionStatus, SandboxContext
 
 from opendxa.dana.common.exceptions import StateError
+from opendxa.dana.sandbox.sandbox_context import ExecutionStatus, SandboxContext
 
 
 def test_runtime_context_scopes():

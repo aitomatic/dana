@@ -2,7 +2,7 @@
 
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.common.types import BaseRequest
-from opendxa.dana.language.parser import GrammarParser, ParseResult
+from dana.parser.dana_parser import DanaParser, ParseResult
 
 
 class Transcoder:
@@ -37,7 +37,7 @@ class Transcoder:
             llm_resource: LLM resource for translation
         """
         self.llm = llm_resource
-        self.parser = GrammarParser()
+        self.parser = DanaParser()
 
     async def to_dana(self, natural_language: str) -> tuple[ParseResult, str]:
         """Convert natural language to DANA code.

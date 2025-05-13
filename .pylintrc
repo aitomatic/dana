@@ -19,4 +19,3 @@ disable=C0303,C0304,W0107,C0301,C0413,C0103,E0401,R0903,R0917,W1203,W0718,C0415,
 
 [MASTER]
 # Add the grammar file to the ignore list
-ignore=opendxa/dana/language/dana_grammar_embedded.py

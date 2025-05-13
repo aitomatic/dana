@@ -71,7 +71,7 @@ graph TB
 from opendxa.dana.language.parser import GrammarParser
 from opendxa.dana.sandbox.interpreter import Interpreter
 
-parser = GrammarParser()
+parser = DanaParser()
 result = parser.parse("x = 10\nif x > 5:\n    print('ok')")
 
 if result.is_valid:

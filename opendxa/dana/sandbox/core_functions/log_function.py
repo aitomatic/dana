@@ -5,10 +5,10 @@ This module provides the log function, which handles logging in the DANA interpr
 
 from typing import Any, Dict, Optional
 
-from dana.sandbox.sandbox_context import SandboxContext
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
-def log(
+def log_function(
     context: SandboxContext,
     options: Optional[Dict[str, Any]] = None,
 ) -> None:

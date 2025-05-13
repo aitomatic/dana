@@ -1,0 +1,167 @@
+// DANA language grammar definition
+//
+// This grammar follows KISS/YAGNI principles for maximum LALR parser compatibility.
+// It provides security scopes with colon syntax and property access via dot notation.
+
+%import common.WS_INLINE
+%import common.CNAME -> NAME
+%import common.NUMBER
+%import common.ESCAPED_STRING -> REGULAR_STRING
+%import common.WS
+%declare _INDENT _DEDENT
+
+// ===== PROGRAM STRUCTURE =====
+// The program is the top-level structure, consisting of a sequence of statements
+// Optional newlines at the beginning and end make the grammar more forgiving
+
+program: _NL* statements _NL*
+
+// A sequence of one or more statements
+statements: statement+
+
+// A statement can be either compound (with block) or simple (single line)
+statement: compound_stmt | simple_stmt _NL
+
+// ===== COMPOUND STATEMENTS =====
+compound_stmt: if_stmt
+             | while_stmt
+             | for_stmt
+             | function_def
+             | try_stmt
+
+block: _NL _INDENT statements _DEDENT*
+
+// ===== COMPOUND STATEMENT TYPES =====
+// Simplified if statement structure to avoid LALR conflicts
+if_stmt: "if" expr ":" block
+       | "if" expr ":" block "else" ":" block
+       | "if" expr ":" block elif_stmts
+       | "if" expr ":" block elif_stmts "else" ":" block
+
+elif_stmts: elif_stmt+
+elif_stmt: "elif" expr ":" block
+
+// Other compound statements
+while_stmt: "while" expr ":" block
+for_stmt: "for" NAME "in" expr ":" block
+function_def: "def" NAME "(" [parameters] ")" ":" block
+try_stmt: "try" ":" block "except" ["(" expr ")"] ":" block ["finally" ":" block]
+
+// Function parameters
+parameters: parameter ("," parameter)*
+parameter: NAME ["=" expr]
+
+// ===== SIMPLE STATEMENTS =====
+simple_stmt: assignment
+           | expr_stmt
+           | return_stmt
+           | break_stmt
+           | continue_stmt
+           | pass_stmt
+           | import_stmt
+           | raise_stmt
+           | assert_stmt
+
+assignment: target "=" expr
+expr_stmt: expr
+return_stmt: "return" [expr]
+break_stmt: "break"
+continue_stmt: "continue"
+pass_stmt: "pass"
+import_stmt: "import" module_path ["as" NAME]
+           | "from" module_path "import" NAME ["as" NAME]
+raise_stmt: "raise" [expr ["from" expr]]
+assert_stmt: "assert" expr ["," expr]
+
+// Module paths for imports
+module_path: NAME ("." NAME)*
+
+// ===== VARIABLES AND ACCESS =====
+// Variable with optional scope prefix
+variable: scoped_var    // Variable with explicit scope (private:x)
+        | simple_name   // Variable with implicit local scope (x)
+        | dotted_access // Property access chain (obj.prop.field)
+
+// Simple variable name (without dots)
+simple_name: NAME
+
+// Property access chain
+dotted_access: simple_name ("." NAME)+
+
+// Scoped variable
+scoped_var: scope_prefix ":" (simple_name | dotted_access)
+
+// Scope prefixes
+scope_prefix: "local" | "private" | "public" | "system"
+
+// Assignment targets
+target: variable                // Variable
+      | atom "[" expr "]"       // Indexing
+
+// ===== EXPRESSIONS =====
+expr: or_expr
+
+or_expr: and_expr ("or" and_expr)*
+
+and_expr: not_expr ("and" not_expr)*
+
+not_expr: "not" not_expr | comparison
+
+comparison: sum_expr (comp_op sum_expr)*
+
+comp_op: "<" | ">" | "==" | ">=" | "<=" | "!="
+       | "in" | "not" "in" | "is" | "is" "not"
+
+sum_expr: term (("+" | "-") term)*
+
+term: factor (("*" | "/" | "//" | "%") factor)*
+
+factor: ("+" | "-") factor | power
+
+power: atom trailer* ["**" factor]
+
+trailer: "(" [arguments] ")"    // Function call
+       | "[" expr "]"           // Indexing
+       | "." NAME               // Property access
+
+arguments: expr ("," expr)* [","]
+
+// ===== BASIC VALUES =====
+atom: variable
+    | NUMBER
+    | any_string
+    | "True" | "False" | "None"
+    | collection
+    | "(" expr ")"
+
+// String literals with support for regular, raw, and multiline strings
+any_string: REGULAR_STRING  // Regular string
+      | f_string            // f-string with embedded expressions
+      | raw_string          // Raw string for regex etc.
+      | multiline_string    // Triple-quoted multiline string
+
+raw_string: "r" REGULAR_STRING
+f_string: "f" REGULAR_STRING
+multiline_string: TRIPLE_QUOTED_STRING
+
+// Triple quoted string for multiline text
+TRIPLE_QUOTED_STRING: /""".*?"""/s | /'''.*?'''/s
+
+// ===== COLLECTIONS =====
+collection: list | dict | tuple
+
+list: "[" [list_items] "]"
+dict: "{" [dict_items] "}"
+tuple: "(" ")"
+     | "(" expr "," [list_items] ")"
+
+list_items: expr ("," expr)* [","]
+dict_items: key_value_pair ("," key_value_pair)* [","]
+key_value_pair: expr ":" expr
+
+// ===== WHITESPACE AND COMMENTS =====
+_NL: /(\r?\n[\t ]*)+/
+
+%ignore WS_INLINE
+%ignore /[ \t\f]+/
+%ignore /#[^\n]*/

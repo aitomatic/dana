@@ -67,7 +67,7 @@ Type checking is optional and can be enabled or disabled via environment variabl
 ```python
 from opendxa.dana.language.parser import GrammarParser
 
-parser = GrammarParser()
+parser = DanaParser()
 result = parser.parse("x = 42\nprint(x)")
 
 if result.is_valid:

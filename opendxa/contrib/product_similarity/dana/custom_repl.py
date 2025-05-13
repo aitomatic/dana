@@ -2,9 +2,9 @@ import asyncio
 import time
 from typing import Any, Dict
 
-from dana.repl.dana_repl_app import DanaREPLApp
-from opendxa.dana.language.ast import LogLevel
-from opendxa.dana.language.python_registry import PythonRegistry
+from opendxa.dana.parser.python_registry import PythonRegistry
+from opendxa.dana.repl.dana_repl_app import DanaREPLApp
+from opendxa.dana.sandbox.log_manager import LogLevel
 
 
 def get_product_details(context: Dict[str, Any], product_id: str):
@@ -13,7 +13,7 @@ def get_product_details(context: Dict[str, Any], product_id: str):
 
 def vector_search_descriptions(context: Dict[str, Any], product_description: str, top_k: int = 5) -> list[dict]:
     print("Searching database...")
-    time.sleep(5)   # El fako!
+    time.sleep(5)  # El fako!
     return [
         {
             "id": "CM-2502",

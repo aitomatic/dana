@@ -9,7 +9,6 @@ repos:
       - id: check-yaml
       - id: check-added-large-files
       - id: check-ast
-        exclude: ^opendxa/dana/language/dana_grammar_embedded\.py$
       - id: check-json
         exclude: ^opendxa/dana/runtime/executor/expression_evaluator\.py$|\.ipynb$|\.vscode/settings\.json$
       - id: check-merge-conflict
@@ -22,7 +21,6 @@ repos:
   #       args: [--fix, --config=pyproject.toml]
   #     - id: ruff-format
   #       args: [--config=pyproject.toml]
-  #       exclude: ^opendxa/dana/language/dana_grammar_embedded\.py$
 
   - repo: local
     hooks:
