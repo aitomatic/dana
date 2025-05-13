@@ -2,11 +2,12 @@
 
 from typing import Any, Dict, Optional
 
+from dana.parser.dana_parser import DanaParser
+
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.common.utils import Misc
 from opendxa.dana.common.error_utils import DanaError
-from dana.parser.dana_parser import DanaParser
 from opendxa.dana.sandbox.executor.llm_integration import LLMIntegration
 from opendxa.dana.sandbox.interpreter import Interpreter
 from opendxa.dana.sandbox.log_manager import LogLevel, LogManager
@@ -133,12 +134,12 @@ class REPL(Loggable):
         # Parse and execute the program
         try:
             # Parse the program (synchronous operation)
-            parse_result = self.parser.parse(program_source)
-            if parse_result.errors:
-                raise DanaError(str(parse_result.errors[0]))
+            program = self.parser.parse(program_source)
+            if program.errors:
+                raise DanaError(str(program.errors[0]))
 
             # Execute the program (synchronous operation)
-            result = self.interpreter.execute_program(parse_result)
+            result = self.interpreter.execute_program(program)
             return result
         except Exception as e:
             raise DanaError(str(e))

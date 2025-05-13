@@ -7,7 +7,6 @@ The parser uses a modular design with specialized transformer components
 for different language constructs, improving maintainability and testability.
 """
 
-from ast import parse
 import os
 from pathlib import Path
 from typing import Any, NamedTuple, Sequence
@@ -96,13 +95,13 @@ class DanaParser(Lark, Loggable):
         self.transformer = DanaTransformer()
         self.program_text = ""
 
-    def parse(self, program_text: str, do_transform: bool = False, do_type_check: bool = False) -> Any:
+    def parse(self, program_text: str, do_transform: bool = True, do_type_check: bool = False) -> Any:
         """Parse a DANA program string into an AST.
 
         Args:
             program_text: The program text to parse
-            do_transform: Whether to perform transformation.
-            do_type_check: Whether to perform type checking.
+            do_transform: Whether to perform transformation to AST. Default is True.
+            do_type_check: Whether to perform type checking. Default is False.
 
         Returns:
             A parse tree
