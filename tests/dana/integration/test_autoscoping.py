@@ -8,7 +8,7 @@ from opendxa.dana.parser.ast import (
     FStringExpression,
     Identifier,
 )
-from dana.parser.dana_parser import DanaParser, ParseResult
+from opendxa.dana.parser.dana_parser import DanaParser, ParseResult
 from opendxa.dana.sandbox.interpreter import Interpreter
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 

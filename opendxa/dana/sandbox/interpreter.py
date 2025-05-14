@@ -12,10 +12,9 @@ It uses a modular architecture with specialized components for different aspects
 import logging
 from typing import Any, Dict, Optional
 
-from dana.parser.dana_parser import ParseResult
-
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.dana.common.exceptions import SandboxError
+from opendxa.dana.parser.dana_parser import ParseResult
 from opendxa.dana.sandbox.executor.context_manager import ContextManager
 from opendxa.dana.sandbox.executor.expression_evaluator import ExpressionEvaluator
 from opendxa.dana.sandbox.executor.llm_integration import LLMIntegration
