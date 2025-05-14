@@ -8,12 +8,17 @@
 
 ## TL;DR
 
+> _Get me up and running already—Famous Last Words_
+
 ```bash
 % git clone https://github.com/aitomatic/opendxa.git
 % cd opendxa
 % source ./RUN_ME.sh
 % bin/dana
 ```
+
+Note: you will need an LLM API key in your environment to access many of the LLM-related feature
+(`AITOMATIC_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `DEEPSEEK_API_KEY`, `AZURE_API_KEY`, `GROK_API_KEY`, etc.)
 
 ## Overview
 
