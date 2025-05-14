@@ -2,10 +2,10 @@
 
 from lark import Transformer
 
-from opendxa.dana.parser.transformers.expression_transformer import ExpressionTransformer
-from opendxa.dana.parser.transformers.fstring_transformer import FStringTransformer
-from opendxa.dana.parser.transformers.statement_transformer import StatementTransformer
-from opendxa.dana.parser.transformers.variable_transformer import VariableTransformer
+from opendxa.dana.parser.transformer.expression_transformer import ExpressionTransformer
+from opendxa.dana.parser.transformer.fstring_transformer import FStringTransformer
+from opendxa.dana.parser.transformer.statement_transformer import StatementTransformer
+from opendxa.dana.parser.transformer.variable_transformer import VariableTransformer
 
 
 class DanaTransformer(Transformer):

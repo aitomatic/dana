@@ -19,7 +19,7 @@ from typing import Any, NamedTuple, Sequence
 from lark.indenter import PythonIndenter
 
 from opendxa.common.mixins.loggable import Loggable
-from opendxa.dana.parser.transformers.dana_transformer import DanaTransformer
+from opendxa.dana.parser.transformer.dana_transformer import DanaTransformer
 
 try:
     from lark import Lark, Tree

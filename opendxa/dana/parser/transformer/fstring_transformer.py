@@ -22,7 +22,7 @@ from opendxa.dana.parser.ast import (
     Identifier,
     LiteralExpression,
 )
-from opendxa.dana.parser.transformers.base_transformer import BaseTransformer
+from opendxa.dana.parser.transformer.base_transformer import BaseTransformer
 
 
 class FStringTransformer(BaseTransformer):

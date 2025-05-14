@@ -25,7 +25,7 @@ from opendxa.dana.parser.ast import (
     TupleLiteral,
     UnaryExpression,
 )
-from opendxa.dana.parser.transformers.base_transformer import BaseTransformer
+from opendxa.dana.parser.transformer.base_transformer import BaseTransformer
 
 ValidExprType = Union[LiteralExpression, Identifier, BinaryExpression, FunctionCall]
 

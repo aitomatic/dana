@@ -38,9 +38,9 @@ from opendxa.dana.parser.ast import (
     TupleLiteral,
     WhileLoop,
 )
-from opendxa.dana.parser.transformers.base_transformer import BaseTransformer
-from opendxa.dana.parser.transformers.expression_transformer import ExpressionTransformer
-from opendxa.dana.parser.transformers.variable_transformer import VariableTransformer
+from opendxa.dana.parser.transformer.base_transformer import BaseTransformer
+from opendxa.dana.parser.transformer.expression_transformer import ExpressionTransformer
+from opendxa.dana.parser.transformer.variable_transformer import VariableTransformer
 
 # Allowed types for Assignment.value
 AllowedAssignmentValue = Union[
