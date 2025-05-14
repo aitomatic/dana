@@ -1,4 +1,9 @@
-"""Base function implementation for the DANA interpreter.
+"""
+Copyright © 2025 Aitomatic, Inc.
+
+This source code is licensed under the license found in the LICENSE file in the root directory of this source tree
+
+Base function implementation for the DANA interpreter.
 
 This module provides the BaseFunction class, which serves as the parent class
 for all core DANA functions.

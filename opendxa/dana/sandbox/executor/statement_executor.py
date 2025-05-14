@@ -1,4 +1,9 @@
-"""Statement executor for the DANA interpreter.
+"""
+Copyright © 2025 Aitomatic, Inc.
+
+This source code is licensed under the license found in the LICENSE file in the root directory of this source tree
+
+Statement executor for the DANA interpreter.
 
 This module provides the StatementExecutor class, which is responsible for
 executing DANA program statements.
@@ -6,6 +11,8 @@ executing DANA program statements.
 
 import logging
 from typing import Any, Dict, List, Optional, Union
+
+from dana.sandbox.core_functions.reason_function import ReasonFunction
 
 from opendxa.dana.common.error_utils import ErrorUtils
 from opendxa.dana.common.exceptions import SandboxError, StateError
@@ -27,7 +34,6 @@ from opendxa.dana.parser.ast import (
     Statement,
     WhileLoop,
 )
-from dana.sandbox.core_functions.reason_function import ReasonFunction
 from opendxa.dana.sandbox.executor.base_executor import BaseExecutor
 from opendxa.dana.sandbox.executor.context_manager import ContextManager
 from opendxa.dana.sandbox.executor.expression_evaluator import ExpressionEvaluator

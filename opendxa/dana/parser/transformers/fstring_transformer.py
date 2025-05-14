@@ -1,4 +1,9 @@
-"""F-string expression transformer for DANA language parsing.
+"""
+Copyright © 2025 Aitomatic, Inc.
+
+This source code is licensed under the license found in the LICENSE file in the root directory of this source tree
+
+F-string expression transformer for DANA language parsing.
 
 Handles the f_string rule in the grammar:
     f_string: "f" REGULAR_STRING

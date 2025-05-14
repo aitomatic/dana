@@ -1,4 +1,9 @@
-"""Error handling utilities for the DANA interpreter.
+"""
+Copyright © 2025 Aitomatic, Inc.
+
+This source code is licensed under the license found in the LICENSE file in the root directory of this source tree
+
+Error handling utilities for the DANA interpreter.
 
 This module provides utilities for error handling and reporting during both parsing
 and execution of DANA programs.

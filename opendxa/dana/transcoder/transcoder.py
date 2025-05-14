@@ -1,8 +1,15 @@
-"""Simple transcoder for DANA programs."""
+"""
+Copyright © 2025 Aitomatic, Inc.
+
+This source code is licensed under the license found in the LICENSE file in the root directory of this source tree
+
+Simple transcoder for DANA programs.
+"""
+
+from dana.parser.dana_parser import DanaParser, ParseResult
 
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.common.types import BaseRequest
-from dana.parser.dana_parser import DanaParser, ParseResult
 
 
 class Transcoder:

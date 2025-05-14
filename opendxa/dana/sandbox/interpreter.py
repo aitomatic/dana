@@ -1,4 +1,9 @@
-"""DANA Runtime Interpreter.
+"""
+Copyright © 2025 Aitomatic, Inc.
+
+This source code is licensed under the license found in the LICENSE file in the root directory of this source tree
+
+DANA Runtime Interpreter.
 
 This module provides the main Interpreter implementation for executing DANA programs.
 It uses a modular architecture with specialized components for different aspects of execution.
@@ -7,9 +12,10 @@ It uses a modular architecture with specialized components for different aspects
 import logging
 from typing import Any, Dict, Optional
 
+from dana.parser.dana_parser import ParseResult
+
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.dana.common.exceptions import SandboxError
-from dana.parser.dana_parser import ParseResult
 from opendxa.dana.sandbox.executor.context_manager import ContextManager
 from opendxa.dana.sandbox.executor.expression_evaluator import ExpressionEvaluator
 from opendxa.dana.sandbox.executor.llm_integration import LLMIntegration

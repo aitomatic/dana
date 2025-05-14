@@ -1,4 +1,9 @@
-"""Extension hooks for the DANA interpreter.
+"""
+Copyright © 2025 Aitomatic, Inc.
+
+This source code is licensed under the license found in the LICENSE file in the root directory of this source tree
+
+Extension hooks for the DANA interpreter.
 
 This module provides hooks for extending the DANA interpreter with custom behavior
 without modifying the core interpreter code.

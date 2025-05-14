@@ -1,4 +1,9 @@
-"""Registry for Python functions that can be called from DANA code.
+"""
+Copyright © 2025 Aitomatic, Inc.
+
+This source code is licensed under the license found in the LICENSE file in the root directory of this source tree
+
+Registry for Python functions that can be called from DANA code.
 
 This module provides a registry for Python functions that can be called from DANA code.
 Functions can be registered by name and called with arguments.

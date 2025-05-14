@@ -129,7 +129,8 @@ mul_op: "*" | "/" | "//" | "%"
 
 factor: ("+" | "-") factor | power
 
-power: atom trailer* ["**" factor]
+power: atom trailer* "**" factor
+     | atom trailer*
 
 trailer: "(" [arguments] ")"    // Function call
        | "[" expr "]"           // Indexing
@@ -138,7 +139,7 @@ trailer: "(" [arguments] ")"    // Function call
 arguments: expr ("," expr)* [","]
 
 // ===== BASIC VALUES =====
-atom: variable
+atom: variable trailer*
     | NUMBER
     | any_string
     | TRUE

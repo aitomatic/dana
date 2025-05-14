@@ -1,4 +1,9 @@
-"""Expression evaluator for the DANA interpreter.
+"""
+Copyright © 2025 Aitomatic, Inc.
+
+This source code is licensed under the license found in the LICENSE file in the root directory of this source tree
+
+Expression evaluator for the DANA interpreter.
 
 This module provides the ExpressionEvaluator class, which is responsible for
 evaluating expressions in DANA programs.

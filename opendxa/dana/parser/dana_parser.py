@@ -1,4 +1,9 @@
-"""Grammar-based parser for DANA language.
+"""
+Copyright © 2025 Aitomatic, Inc.
+
+This source code is licensed under the license found in the LICENSE file in the root directory of this source tree
+
+Grammar-based parser for DANA language.
 
 This module provides a robust parser for DANA using the Lark parsing library.
 It offers good extensibility, error reporting, and maintainability.

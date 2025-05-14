@@ -1,4 +1,10 @@
-"""Statement transformers for DANA language parsing."""
+"""
+Copyright © 2025 Aitomatic, Inc.
+
+This source code is licensed under the license found in the LICENSE file in the root directory of this source tree
+
+Statement transformers for DANA language parsing.
+"""
 
 from typing import Union, cast
 
@@ -135,63 +141,72 @@ class StatementTransformer(BaseTransformer):
 
     def function_def(self, items):
         """Transform a function definition rule into a FunctionDefinition node."""
-        name = Identifier(name=items[0].value if isinstance(items[0], Token) else str(items[0]))
+        name = Identifier(name=items[0].value if hasattr(items[0], "value") else str(items[0]))
         parameters = items[1] if len(items) > 2 else []
-        body = items[-1] if items else []
+        body = self._transform_block(items[-1]) if items else []
         return FunctionDefinition(name=name, parameters=parameters, body=body)
 
     def try_stmt(self, items):
         """Transform a try statement rule into a TryBlock node."""
-        body = items[0]
-        except_blocks = items[1] if len(items) > 1 else []
-        finally_block = items[2] if len(items) > 2 else None
+        body = self._transform_block(items[0])
+        except_blocks = self._transform_block(items[1]) if len(items) > 1 else []
+        finally_block = self._transform_block(items[2]) if len(items) > 2 else []
         return TryBlock(body=body, except_blocks=except_blocks, finally_block=finally_block)
 
     def if_stmt(self, items):
         """Transform an if_stmt rule into a Conditional AST node, handling if/elif/else blocks."""
+        from lark import Tree
+
         from opendxa.dana.parser.ast import Conditional
 
-        def flatten_block(block):
-            if isinstance(block, list):
-                flat = []
-                for b in block:
-                    if isinstance(b, list):
-                        flat.extend(flatten_block(b))
+        def transform_elif_blocks(blocks):
+            # Recursively transform Tree nodes to Conditional nodes
+            result = []
+            for b in self._transform_block(blocks):
+                if isinstance(b, Tree) and hasattr(self, b.data):
+                    method = getattr(self, b.data, None)
+                    if method:
+                        transformed = method(b.children)
+                        result.append(transformed)
                     else:
-                        flat.append(b)
-                return flat
-            elif hasattr(block, "children"):
-                return list(block.children)
-            elif block is None:
-                return []
-            else:
-                return [block]
+                        result.append(b)
+                else:
+                    result.append(b)
+            return result
 
         condition = items[0]
-        if_body = flatten_block(items[1])
+        if_body = self._transform_block(items[1])
         else_body = []
         if len(items) == 3:
             third = items[2]
-            else_body = flatten_block(third)
+            # Could be else or elifs
+            if isinstance(third, list) or (isinstance(third, Tree) and getattr(third, "data", None) == "elif_stmts"):
+                elif_blocks = transform_elif_blocks(third)
+                else_body = elif_blocks
+            else:
+                else_body = self._transform_block(third)
         elif len(items) == 4:
-            elif_blocks = flatten_block(items[2])
-            else_block = flatten_block(items[3])
+            elif_blocks = transform_elif_blocks(items[2])
+            else_block = self._transform_block(items[3])
 
             def nest_elif_blocks(blocks, final_else):
                 if not blocks:
                     return final_else
                 head, *tail = blocks
+                # Only nest if head is a Conditional, else treat as terminal else_body
+                if not hasattr(head, "condition") or not hasattr(head, "body"):
+                    return [head] + (nest_elif_blocks(tail, final_else) if tail else final_else)
                 nested = Conditional(
                     condition=head.condition,
                     body=head.body,
-                    else_body=cast([Conditional], nest_elif_blocks(tail, final_else)),
+                    else_body=nest_elif_blocks(tail, final_else),
                     line_num=getattr(head.condition, "line", 0) or 0,
                 )
                 return [nested]
 
-            else_body = flatten_block(nest_elif_blocks(elif_blocks, else_block))
+            else_body = self._transform_block(nest_elif_blocks(elif_blocks, else_block))
         line_num = getattr(condition, "line", 0) or 0
-        return Conditional(condition=condition, body=if_body, else_body=cast([Conditional], else_body), line_num=line_num)
+        return Conditional(condition=condition, body=if_body, else_body=else_body, line_num=line_num)
 
     # === Simple Statements ===
     def assignment(self, items):
@@ -338,3 +353,35 @@ class StatementTransformer(BaseTransformer):
     def identifier(self, items):
         """This method is now handled by VariableTransformer."""
         raise NotImplementedError("identifier is handled by VariableTransformer")
+
+    def _transform_block(self, block):
+        """Recursively transform a block (list, Tree, or node) into a flat list of AST nodes."""
+        from lark import Tree
+
+        result = []
+        if block is None:
+            return result
+        if isinstance(block, list):
+            for item in block:
+                result.extend(self._transform_block(item))
+        elif isinstance(block, Tree):
+            # If this is a block or statements node, flatten children
+            if getattr(block, "data", None) in {"block", "statements"}:
+                for child in block.children:
+                    result.extend(self._transform_block(child))
+            else:
+                # Try to dispatch to a transformer method if available
+                method = getattr(self, block.data, None)
+                if method:
+                    transformed = method(block.children)
+                    # If the result is a list, flatten it
+                    if isinstance(transformed, list):
+                        result.extend(self._transform_block(transformed))
+                    else:
+                        result.append(transformed)
+                else:
+                    # Fallback: treat as leaf
+                    result.append(block)
+        else:
+            result.append(block)
+        return result

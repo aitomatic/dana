@@ -1,4 +1,10 @@
-"""Expression transformers for DANA language parsing."""
+"""
+Copyright © 2025 Aitomatic, Inc.
+
+This source code is licensed under the license found in the LICENSE file in the root directory of this source tree
+
+Expression transformers for DANA language parsing.
+"""
 
 from typing import Union, cast
 
@@ -295,16 +301,49 @@ class ExpressionTransformer(BaseTransformer):
         )
 
     def power(self, items):
-        base = self.expression([items[0]])
-        # items[1] is None if no exponentiation
-        if len(items) > 1 and items[1] is not None:
-            exponent = self.expression([items[1]])
-            return BinaryExpression(left=base, operator=BinaryOperator.POWER, right=exponent)  # type: ignore
-        return base
+        # Only produce a BinaryExpression if '**' is actually present in the parse tree
+        def ensure_expression(node):
+            from opendxa.dana.parser.ast import BinaryExpression, FunctionCall, Identifier, LiteralExpression
+
+            if isinstance(node, (LiteralExpression, Identifier, BinaryExpression, FunctionCall)):
+                return node
+            raise TypeError(f"Invalid left operand for BinaryExpression: {type(node)}: {node}")
+
+        if len(items) == 4 and (items[2] == "**" or (hasattr(items[2], "type") and getattr(items[2], "type", None) == "POW_OP")):
+            base = self.expression([items[0]])
+            if isinstance(items[1], list) and items[1]:
+                base = self.trailer([base] + items[1])
+            base = ensure_expression(base)
+            exponent = self.expression([items[3]])
+            return BinaryExpression(left=base, operator=BinaryOperator.POWER, right=exponent)
+        elif len(items) == 3 and (items[1] == "**" or (hasattr(items[1], "type") and getattr(items[1], "type", None) == "POW_OP")):
+            base = self.expression([items[0]])
+            base = ensure_expression(base)
+            exponent = self.expression([items[2]])
+            return BinaryExpression(left=base, operator=BinaryOperator.POWER, right=exponent)
+        else:
+            base = self.expression([items[0]])
+            if len(items) > 1 and isinstance(items[1], list) and items[1]:
+                base = self.trailer([base] + items[1])
+            return base
 
     def atom(self, items):
         if not items:
             return None
+        # Handle function call on Identifier (including dotted)
+        if len(items) >= 2:
+            base = self.unwrap_single_child_tree(items[0])
+            trailer = items[1]
+            from lark import Tree
+
+            from opendxa.dana.parser.ast import FunctionCall, Identifier
+
+            if isinstance(base, Identifier) and isinstance(trailer, Tree) and getattr(trailer, "data", None) == "arguments":
+                name = base.name
+                args = trailer.children if hasattr(trailer, "children") else []
+                if not isinstance(args, dict):
+                    args = {"__positional": args}
+                return FunctionCall(name=name, args=args, location=getattr(base, "location", None))
         item = self.unwrap_single_child_tree(items[0])
         from lark import Token, Tree
 
@@ -425,49 +464,51 @@ class ExpressionTransformer(BaseTransformer):
     def trailer(self, items):
         """
         Handles function calls, attribute access, and indexing after an atom.
-
-        In grammar terms, a 'trailer' is a construct that follows an atom (primary expression) and modifies or extends it.
-        In DANA (and Python-like languages), a trailer can be:
-            - a function call: ( ... )
-            - an index: [ ... ]
-            - an attribute access: .NAME
-        Multiple trailers can be chained, and each is applied in sequence to the result of the previous one.
-
-        Examples:
-            foo(1, 2)         -> FunctionCall(name='foo', args={...})
-            foo.bar           -> AttributeAccess(object=foo, attribute='bar')
-            foo[0]            -> SubscriptExpression(object=foo, index=0)
-            foo.bar(1)[2]     -> SubscriptExpression(
-                                    object=FunctionCall(
-                                        name='bar',
-                                        args={...},
-                                        # called on AttributeAccess(object=foo, attribute='bar')
-                                    ),
-                                    index=2
-                                )
-        The method processes each trailer (call, attribute, or index) in order, so chained calls like foo.bar()[0] are handled correctly.
+        If the base is an Identifier (including dotted), and the trailer is a function call, produce a FunctionCall node.
         """
         base = items[0]
-        from typing import cast
+        trailers = items[1:]
+        for t in trailers:
+            # Function call: ( ... )
+            if hasattr(t, "data") and t.data == "arguments":
+                from opendxa.dana.parser.ast import FunctionCall
 
-        for trailer_item in items[1:]:
-            if isinstance(trailer_item, Tree):
-                if trailer_item.data == "arguments":
-                    # Function call
-                    args = [self.expression([arg]) for arg in trailer_item.children]
-                    base = FunctionCall(name=base.name if hasattr(base, "name") else str(base), args={"__positional": args})
-                elif trailer_item.data == "expr":
-                    # Indexing
-                    index = self.expression([trailer_item.children[0]])
-                    index_expr = cast(Expression, index)
-                    base = SubscriptExpression(object=base, index=index_expr)
-                elif trailer_item.data == "NAME":
-                    # Attribute access
-                    base = AttributeAccess(object=base, attribute=trailer_item.children[0].value)
-            elif isinstance(trailer_item, Token):
-                # Attribute access
-                base = AttributeAccess(object=base, attribute=trailer_item.value)
+                name = getattr(base, "name", None)
+                if not isinstance(name, str):
+                    name = str(base)
+                args = t.children if hasattr(t, "children") else []
+                if not isinstance(args, dict):
+                    args = {"__positional": args}
+                return FunctionCall(name=name, args=args, location=getattr(base, "location", None))
+            # Attribute access: .NAME
+            elif hasattr(t, "type") and t.type == "NAME":
+                from opendxa.dana.parser.ast import Identifier
+
+                name = getattr(base, "name", None)
+                if not isinstance(name, str):
+                    name = str(base)
+                name = f"{name}.{t.value}"
+                base = Identifier(name=name, location=getattr(base, "location", None))
+            # Indexing: [ ... ]
+            elif hasattr(t, "data") and t.data == "expr":
+                from opendxa.dana.parser.ast import SubscriptExpression
+
+                base = SubscriptExpression(
+                    object=base, index=t.children[0] if hasattr(t, "children") else t, location=getattr(base, "location", None)
+                )
         return base
+
+    def _get_full_attribute_name(self, attr):
+        # Recursively extract full dotted name from AttributeAccess chain
+        parts = []
+        while isinstance(attr, AttributeAccess):
+            parts.append(attr.attribute)
+            attr = attr.object
+        if isinstance(attr, Identifier):
+            parts.append(attr.name)
+        else:
+            parts.append(str(attr))
+        return ".".join(reversed(parts))
 
     def key_value_pair(self, items):
         # Always return a (key, value) tuple

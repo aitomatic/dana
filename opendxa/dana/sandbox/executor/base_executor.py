@@ -1,4 +1,9 @@
-"""Base executor for the DANA interpreter.
+"""
+Copyright © 2025 Aitomatic, Inc.
+
+This source code is licensed under the license found in the LICENSE file in the root directory of this source tree
+
+Base executor for the DANA interpreter.
 
 This module provides the base executor class that defines the interface
 for all DANA execution components.
