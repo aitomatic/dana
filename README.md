@@ -6,6 +6,15 @@
 
 # OpenDXA - Domain-Expert Agent Framework
 
+## TL;DR
+
+```bash
+% git clone https://github.com/aitomatic/opendxa.git
+% cd opendxa
+% source ./RUN_ME.sh
+% bin/dana
+```
+
 ## Overview
 
 OpenDXA is a comprehensive framework for building intelligent multi-agent systems with domain expertise, powered by Large Language Models (LLMs). It consists of three core components:
