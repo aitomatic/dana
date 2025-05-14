@@ -63,102 +63,17 @@ DANA can:
 
 ### State Model
 
-DANA programs operate over a shared `RuntimeContext`, which is composed of multiple memory scopes (state containers). These include:
+DANA programs operate over a shared `RuntimeContext`, which is composed of four memory scopes (state containers):
 
-| Scope        | Description                                |
-| ------------ | ------------------------------------------ |
-| `agent:`     | Long-term agent state (identity, traits)   |
-| `world:`     | External observations and sensed data      |
-| `temp:`      | Ephemeral memory — scoped to a single step |
-| `stmem:`     | Short-term memory — scoped to a session    |
-| `ltmem:`     | Long-term memory — persisted over time     |
-| `execution:` | Execution trace, status, and control flags |
-| `private:`   | Local scope variables                      |
-| `system:`    | Runtime configuration (log levels, ID)     |
-| *custom:*    | User-defined namespaces for workflows      |
+| Scope      | Description                                                      |
+|------------|------------------------------------------------------------------|
+| `local:`   | Local to the current agent/resource/tool/function (default scope)|
+| `private:` | Private to the agent, resource, or tool itself                   |
+| `public:`  | Openly accessible world state (time, weather, etc.)              |
+| `system:`  | System-related mechanical state with controlled access           |
+
+> **Note:** Only these four scopes are valid in the DANA language and enforced by the parser. Any references to other scopes (such as `agent:`, `world:`, `temp:`, `stmem:`, `ltmem:`, `execution:`, or custom scopes) are not supported in the current grammar and will result in a parse error.
 
 ### Security Design
 
-**The `dana.runtime` module is the primary enforcer of security during the execution of a DANA program.** It manages the `RuntimeContext` for the duration of the execution and enforces access policies based on the defined scopes and program logic.
-
-| Security Concern            | Enforced By              | Mechanism                                      |
-| --------------------------- | ------------------------ | ---------------------------------------------- |
-| Scope restrictions          | `dana.runtime`           | Limits visible/writable scopes during execution |
-| State mutation permissions  | `dana.runtime`           | Controlled state updates via instructions      |
-| Tool/API usage validation   | `dana.runtime`           | Ensures `use` targets are valid/allowed        |
-| LLM output handling         | `dana.runtime`           | Manages `reason` call results and potential errors |
-| Execution logging           | `dana.runtime`           | Tracks execution steps within the DANA context |
-| Resource constraints        | `dana.runtime`           | (Optional) Limits execution steps, time, memory |
-
----
-
-## 💡 Example Use Cases
-
-### 1. Multi-Step Risk Assessment
-
-**With DANA:**
-```python
-temp.supplier = {}
-temp.supplier.summary = reason("Summarize this supplier's profile", context=temp.supplier)
-temp.supplier.financial_risk = reason("Assess financial risk", context=temp.supplier)
-temp.supplier.legal_risk = reason("Assess legal risk", context=temp.supplier)
-temp.final_decision = reason("Would you approve this supplier?", context=temp.supplier)
-agent.supplier_approval = temp.final_decision
-```
-
-### 2. Predictive Maintenance
-
-**With DANA:**
-```python
-if world.pump.vibration_level > 80:
-    execution.alerts.append("Anomaly detected")
-    use("kb.notify.maintenance_team")
-    temp.severity = reason("Does this require immediate escalation?")
-    if temp.severity == "yes":
-        use("kb.escalate.critical_check")
-```
-
-### 3. Eligibility Evaluation
-
-**With DANA:**
-```python
-if world.customer.credit_score < 600:
-    temp.eligibility = reason("Does this score disqualify the applicant?", context=world.customer)
-else:
-    temp.eligibility = "likely"
-
-if temp.eligibility == "yes":
-    agent.decision = "deny"
-else:
-    agent.decision = "approve"
-```
-
----
-
-## 🤝 Relationship to OpenDXA
-
-* DANA is embedded within OpenDXA as the **reasoning and execution layer**
-* Agents emit or receive DANA programs to carry out goals
-* Tool calls and reasoning steps all route through DANA
-* The KB provides reusable domain logic to DXAs and GMAs
-
----
-
-## 🛠 Status
-
-DANA is under active development and currently embedded inside `OpenDXA` as a module. Refactoring and extraction to an independent package is supported by clean modular structure.
-
-> Future direction includes formal spec, test suite, and runtime service for multi-agent environments.
-
----
-
-## 📣 Contribute
-
-Want to help shape how intelligent agents reason and act? Reach out or contribute to the `dana/` module inside the OpenDXA repository.
-
----
-<p align="center">
-Copyright © 2025 Aitomatic, Inc. Licensed under the <a href="../LICENSE.md">MIT License</a>.
-<br/>
-<a href="https://aitomatic.com">https://aitomatic.com</a>
-</p>
+**The `dana.runtime`

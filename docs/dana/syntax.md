@@ -38,9 +38,9 @@ public.shared_data = value
 system.status = value
 ```
 
-For convenience in the REPL environment, variables without a scope prefix are automatically placed in the `private` scope:
+For convenience in the REPL environment, variables without a scope prefix are automatically placed in the `local` scope:
 ```dana
-my_variable = value  # Equivalent to private.my_variable = value
+my_variable = value  # Equivalent to local.my_variable = value
 ```
 
 ### Basic Data Types
