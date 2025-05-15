@@ -80,9 +80,9 @@ CODE_SAMPLES = {
 }
 
 
-def parse_and_get_program(code, do_transform=True):
+def parse_and_get_program(code, do_transform=True, do_type_check=False):
     parser = DanaParser()
-    return parser.parse(textwrap.dedent(code), do_type_check=False, do_transform=do_transform)
+    return parser.parse(textwrap.dedent(code), do_type_check=do_type_check, do_transform=do_transform)
 
 
 def find_function_call_recursive(body, name):
@@ -132,12 +132,20 @@ def assert_function_calls_in_ast(ast, sample_name):
         assert find_function_call_recursive(ast.statements, "local.reason"), "No call to local.reason() found"
 
 
+# Add a fixture for the typecheck flag
+@pytest.fixture(params=[True, False], ids=["typecheck_on", "typecheck_off"])
+def typecheck_flag(request):
+    return request.param
+
+
 @pytest.mark.parametrize(
     "sample_name,do_transform", [(name, False) for name in CODE_SAMPLES.keys()] + [(name, True) for name in CODE_SAMPLES.keys()]
 )
-def test_program_samples(sample_name, do_transform):
+def test_program_samples(sample_name, do_transform, typecheck_flag):
+    if typecheck_flag and do_transform:
+        pytest.xfail("Integration samples are not type-safe; undefined names are expected.")
     code = CODE_SAMPLES[sample_name]
-    result = parse_and_get_program(code, do_transform=do_transform)
+    result = parse_and_get_program(code, do_transform=do_transform, do_type_check=typecheck_flag)
     if not do_transform:
         assert hasattr(result, "data")  # Should be a Lark Tree
     else:

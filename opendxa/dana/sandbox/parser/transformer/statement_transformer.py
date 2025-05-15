@@ -122,7 +122,7 @@ class StatementTransformer(BaseTransformer):
     def while_stmt(self, items):
         """Transform a while statement rule into a WhileLoop node."""
         condition = items[0]
-        body = self._filter_body(items[1:])
+        body = self._transform_block(items[1:])
         line_num = getattr(condition, "line", 0) or 0
         return WhileLoop(condition=condition, body=body, line_num=line_num)
 

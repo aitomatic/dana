@@ -60,9 +60,35 @@ def get_assignment(program):
 
 
 def get_conditional(program):
-    stmt = get_first_statement(program)
-    assert isinstance(stmt, Conditional)
-    return stmt
+    for stmt in program.statements:
+        # Recursively unwrap Tree or list wrappers
+        s = stmt
+        while isinstance(s, (list, Tree)):
+            if isinstance(s, list):
+                s = s[0]
+            elif isinstance(s, Tree) and s.children:
+                s = s.children[0]
+            else:
+                break
+        if isinstance(s, Conditional):
+            return s
+    raise AssertionError("No Conditional found in program.statements")
+
+
+def get_while_loop(program):
+    for stmt in program.statements:
+        # Recursively unwrap Tree or list wrappers
+        s = stmt
+        while isinstance(s, (list, Tree)):
+            if isinstance(s, list):
+                s = s[0]
+            elif isinstance(s, Tree) and s.children:
+                s = s.children[0]
+            else:
+                break
+        if isinstance(s, WhileLoop):
+            return s
+    raise AssertionError("No WhileLoop found in program.statements")
 
 
 def assert_assignment(node, target_name, value_type=None):
@@ -98,33 +124,39 @@ def parser():
     return DanaParser()
 
 
+# Add a fixture for the typecheck flag
+@pytest.fixture(params=[True, False], ids=["typecheck_on", "typecheck_off"])
+def typecheck_flag(request):
+    return request.param
+
+
 # =========================
 # 1. ASSIGNMENTS
 # =========================
-def test_assignment_simple(parser):
-    program = parser.parse("x = 42", do_type_check=False, do_transform=True)
+def test_assignment_simple(parser, typecheck_flag):
+    program = parser.parse("x = 42", do_type_check=typecheck_flag, do_transform=True)
     stmt = get_assignment(program)
     assert_assignment(stmt, "local.x")
     assert isinstance(stmt.value, LiteralExpression)
     assert stmt.value.value == 42
 
 
-def test_assignment_float(parser):
-    program = parser.parse("x = 3.14", do_type_check=False, do_transform=True)
+def test_assignment_float(parser, typecheck_flag):
+    program = parser.parse("x = 3.14", do_type_check=typecheck_flag, do_transform=True)
     stmt = get_assignment(program)
     assert_assignment(stmt, "local.x")
     assert stmt.value.value == 3.14
 
 
-def test_assignment_scoped(parser):
-    program = parser.parse("private:x = 1", do_type_check=False, do_transform=True)
+def test_assignment_scoped(parser, typecheck_flag):
+    program = parser.parse("private:x = 1", do_type_check=typecheck_flag, do_transform=True)
     stmt = get_assignment(program)
     assert_assignment(stmt, "private.x")
     assert stmt.value.value == 1
 
 
-def test_assignment_dotted(parser):
-    program = parser.parse("foo.bar = 2", do_type_check=False, do_transform=True)
+def test_assignment_dotted(parser, typecheck_flag):
+    program = parser.parse("foo.bar = 2", do_type_check=typecheck_flag, do_transform=True)
     stmt = get_assignment(program)
     assert_assignment(stmt, "local.foo.bar")
     assert stmt.value.value == 2
@@ -136,15 +168,15 @@ def test_assignment_dotted(parser):
 # =========================
 # 2. LITERALS & STRINGS
 # =========================
-def test_literal_string(parser):
-    program = parser.parse('msg = "Alice"', do_type_check=False, do_transform=True)
+def test_literal_string(parser, typecheck_flag):
+    program = parser.parse('msg = "Alice"', do_type_check=typecheck_flag, do_transform=True)
     stmt = get_assignment(program)
     assert_assignment(stmt, "local.msg")
     assert stmt.value.value == "Alice"
 
 
-def test_literal_multiline_string(parser):
-    program = parser.parse('msg = """Hello\nWorld"""', do_type_check=False, do_transform=True)
+def test_literal_multiline_string(parser, typecheck_flag):
+    program = parser.parse('msg = """Hello\nWorld"""', do_type_check=typecheck_flag, do_transform=True)
     stmt = get_assignment(program)
     assert_assignment(stmt, "local.msg")
     assert isinstance(stmt.value, LiteralExpression)
@@ -152,16 +184,16 @@ def test_literal_multiline_string(parser):
     assert "Hello" in stmt.value.value
 
 
-def test_literal_fstring(parser):
-    program = parser.parse('msg = f"Hello, {name}"', do_type_check=False, do_transform=True)
+def test_literal_fstring(parser, typecheck_flag):
+    program = parser.parse('msg = f"Hello, {name}"', do_type_check=typecheck_flag, do_transform=True)
     stmt = get_assignment(program)
     assert_assignment(stmt, "local.msg")
     assert isinstance(stmt.value, LiteralExpression)
     assert isinstance(stmt.value.value, FStringExpression)
 
 
-def test_literal_raw_string(parser):
-    program = parser.parse('msg = r"raw\\nstring"', do_type_check=False, do_transform=True)
+def test_literal_raw_string(parser, typecheck_flag):
+    program = parser.parse('msg = r"raw\\nstring"', do_type_check=typecheck_flag, do_transform=True)
     stmt = get_assignment(program)
     assert_assignment(stmt, "local.msg")
     assert isinstance(stmt.value, LiteralExpression)
@@ -169,8 +201,8 @@ def test_literal_raw_string(parser):
     assert "raw" in stmt.value.value
 
 
-def test_literal_bool_and_none(parser):
-    program = parser.parse("a = True\nb = False\nc = None", do_type_check=False, do_transform=True)
+def test_literal_bool_and_none(parser, typecheck_flag):
+    program = parser.parse("a = True\nb = False\nc = None", do_type_check=typecheck_flag, do_transform=True)
     assert len(program.statements) == 3
     assert all(isinstance(get_assignment(type("FakeProg", (), {"statements": [stmt]})()), Assignment) for stmt in program.statements)
     value = program.statements[0].value
@@ -188,8 +220,8 @@ def test_literal_bool_and_none(parser):
 # =========================
 # 3. COLLECTIONS
 # =========================
-def test_collection_list(parser):
-    program = parser.parse("l = [1, 2]", do_type_check=False, do_transform=True)
+def test_collection_list(parser, typecheck_flag):
+    program = parser.parse("l = [1, 2]", do_type_check=typecheck_flag, do_transform=True)
     stmt = get_assignment(program)
     assert_assignment(stmt, "local.l")
     assert isinstance(stmt.value, LiteralExpression)
@@ -198,8 +230,8 @@ def test_collection_list(parser):
     assert [e.value for e in stmt.value.value] == [1, 2]
 
 
-def test_collection_dict(parser):
-    program = parser.parse('d = {"a": 1, "b": 2}', do_type_check=False, do_transform=True)
+def test_collection_dict(parser, typecheck_flag):
+    program = parser.parse('d = {"a": 1, "b": 2}', do_type_check=typecheck_flag, do_transform=True)
     stmt = get_assignment(program)
     assert_assignment(stmt, "local.d")
     assert hasattr(stmt.value, "items")
@@ -213,23 +245,23 @@ def test_collection_dict(parser):
         assert v.value == ev.value
 
 
-def test_collection_tuple(parser):
-    program = parser.parse("t = (1, 2)", do_type_check=False, do_transform=True)
+def test_collection_tuple(parser, typecheck_flag):
+    program = parser.parse("t = (1, 2)", do_type_check=typecheck_flag, do_transform=True)
     stmt = get_assignment(program)
     assert hasattr(stmt.value, "items")
     assert stmt.value.items == [LiteralExpression(value=1), LiteralExpression(value=2)]
 
 
-def test_collection_empty(parser):
-    program = parser.parse("a = []\nb = {}\nc = ()", do_type_check=False, do_transform=True)
+def test_collection_empty(parser, typecheck_flag):
+    program = parser.parse("a = []\nb = {}\nc = ()", do_type_check=typecheck_flag, do_transform=True)
     assert len(program.statements) == 3
 
 
 # =========================
 # 4. EXPRESSIONS
 # =========================
-def test_expression_arithmetic(parser):
-    program = parser.parse("x = 1 + 2 * 3", do_type_check=False, do_transform=True)
+def test_expression_arithmetic(parser, typecheck_flag):
+    program = parser.parse("x = 1 + 2 * 3", do_type_check=typecheck_flag, do_transform=True)
     stmt = get_assignment(program)
     expr = stmt.value
     assert isinstance(expr, BinaryExpression)
@@ -238,8 +270,8 @@ def test_expression_arithmetic(parser):
     assert expr.right.operator == BinaryOperator.MULTIPLY
 
 
-def test_expression_parentheses(parser):
-    program = parser.parse("x = (1 + 2) * 3", do_type_check=False, do_transform=True)
+def test_expression_parentheses(parser, typecheck_flag):
+    program = parser.parse("x = (1 + 2) * 3", do_type_check=typecheck_flag, do_transform=True)
     stmt = get_assignment(program)
     expr = stmt.value
     assert isinstance(expr, BinaryExpression)
@@ -248,8 +280,8 @@ def test_expression_parentheses(parser):
     assert expr.left.operator == BinaryOperator.ADD
 
 
-def test_expression_logical(parser):
-    program = parser.parse("x = True and False or not True", do_type_check=False, do_transform=True)
+def test_expression_logical(parser, typecheck_flag):
+    program = parser.parse("x = True and False or not True", do_type_check=typecheck_flag, do_transform=True)
     stmt = get_assignment(program)
     expr = stmt.value
     assert isinstance(expr, BinaryExpression)
@@ -263,16 +295,17 @@ def test_expression_logical(parser):
 # =========================
 # 5. CONTROL FLOW
 # =========================
-def test_if_else(parser):
+def test_if_else(parser, typecheck_flag):
     code = textwrap.dedent(
         """
+    x = 0
     if x > 10:
         y = 1
     else:
         y = 2
     """
     )
-    program = parser.parse(code, do_type_check=False, do_transform=True)
+    program = parser.parse(code, do_type_check=typecheck_flag, do_transform=True)
     stmt = get_conditional(program)
     assert isinstance(stmt.condition, BinaryExpression)
     assert stmt.condition.operator == BinaryOperator.GREATER_THAN
@@ -280,15 +313,16 @@ def test_if_else(parser):
     assert len(stmt.else_body) == 1
 
 
-def test_while_loop(parser):
+def test_while_loop(parser, typecheck_flag):
     code = textwrap.dedent(
         """
+    x = 0
     while x < 10:
         x = x + 1
     """
     )
-    program = parser.parse(code, do_type_check=False, do_transform=True)
-    stmt = get_first_statement(program)
+    program = parser.parse(code, do_type_check=typecheck_flag, do_transform=True)
+    stmt = get_while_loop(program)
     assert isinstance(stmt, WhileLoop)
     assert isinstance(stmt.condition, BinaryExpression)
     assert stmt.condition.operator == BinaryOperator.LESS_THAN
@@ -326,55 +360,75 @@ def test_while_loop(parser):
 # =========================
 # 11. MISCELLANEOUS
 # =========================
-def test_multiple_statements(parser):
-    program = parser.parse('x = 42\ny = "test"\nlog("done")', do_type_check=False, do_transform=True)
+def test_multiple_statements(parser, typecheck_flag):
+    program = parser.parse('x = 42\ny = "test"\nlog("done")', do_type_check=typecheck_flag, do_transform=True)
     assert isinstance(program, Program)
     assert len(program.statements) == 3
 
 
-def test_bare_identifier(parser):
-    node = parser.parse("private:x", do_type_check=False, do_transform=True)
-    # Unwrap if needed
-    if hasattr(node, "name"):
-        assert node.name == "private.x"
-    elif hasattr(node, "target"):
-        assert node.target.name == "private.x"
-    elif hasattr(node, "statements") and node.statements:
-        # If node is a Program, check the first statement
-        stmt = node.statements[0]
-        if hasattr(stmt, "name"):
-            assert stmt.name == "private.x"
-        elif hasattr(stmt, "target"):
-            assert stmt.target.name == "private.x"
-        else:
-            raise AssertionError(f"Unexpected statement type in Program: {type(stmt)}")
+def test_bare_identifier(parser, typecheck_flag):
+    code = "private:x = 1\nprivate:x"
+    program = parser.parse(code, do_type_check=typecheck_flag, do_transform=True)
+    # First statement: assignment
+    stmt1 = program.statements[0]
+    assert hasattr(stmt1, "target") and stmt1.target.name == "private.x"
+    # Second statement: bare identifier
+    stmt2 = program.statements[1]
+    if hasattr(stmt2, "name"):
+        assert stmt2.name == "private.x"
+    elif hasattr(stmt2, "target"):
+        assert stmt2.target.name == "private.x"
     else:
-        raise AssertionError(f"Unexpected node type: {type(node)}")
+        raise AssertionError(f"Unexpected statement type: {type(stmt2)}")
 
 
 # =========================
 # 12. NEGATIVE/ERROR CASES
 # =========================
-def test_incomplete_assignment_error(parser):
+def test_incomplete_assignment_error(parser, typecheck_flag):
     with pytest.raises(Exception):  # noqa: B017
-        parser.parse("x =", do_type_check=False, do_transform=True)
+        parser.parse("x =", do_type_check=typecheck_flag, do_transform=True)
 
 
-def test_unmatched_parentheses_error(parser):
+def test_unmatched_parentheses_error(parser, typecheck_flag):
     with pytest.raises(Exception):  # noqa: B017
-        parser.parse("x = (1 + 2", do_type_check=False, do_transform=True)
+        parser.parse("x = (1 + 2", do_type_check=typecheck_flag, do_transform=True)
 
 
-def test_invalid_keyword_error(parser):
+def test_invalid_keyword_error(parser, typecheck_flag):
     import lark
 
     try:
-        parser.parse("foo = break", do_type_check=False, do_transform=True)
+        parser.parse("foo = break", do_type_check=typecheck_flag, do_transform=True)
     except lark.exceptions.UnexpectedToken:
         return  # Expected
     except Exception:
         return
     raise AssertionError("Expected an exception for invalid keyword, but none was raised.")
+
+
+def test_type_error_mismatched_types(parser):
+    code = "x = 1\nx = x + 'a'"
+    with pytest.raises(Exception):  # noqa: B017
+        parser.parse(code, do_type_check=True, do_transform=True)
+
+
+def test_type_error_undefined_variable(parser):
+    code = "y = x + 1"
+    with pytest.raises(Exception):  # noqa: B017
+        parser.parse(code, do_type_check=True, do_transform=True)
+
+
+def test_type_error_invalid_operation(parser):
+    code = "x = 'hello' - 1"
+    with pytest.raises(Exception):  # noqa: B017
+        parser.parse(code, do_type_check=True, do_transform=True)
+
+
+def test_syntax_error_malformed_block(parser):
+    code = "if x > 0:\n    y = 1\nelse:"
+    with pytest.raises(Exception):  # noqa: B017
+        parser.parse(code, do_type_check=False, do_transform=True)
 
 
 # =========================

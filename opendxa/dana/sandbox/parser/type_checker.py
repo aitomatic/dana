@@ -15,6 +15,7 @@ from opendxa.dana.sandbox.parser.ast import (
     Assignment,
     AttributeAccess,
     BinaryExpression,
+    BinaryOperator,
     Conditional,
     DictLiteral,
     ExceptBlock,
@@ -30,6 +31,7 @@ from opendxa.dana.sandbox.parser.ast import (
     SetLiteral,
     SubscriptExpression,
     TryBlock,
+    TupleLiteral,
     UnaryExpression,
     WhileLoop,
 )
@@ -101,6 +103,8 @@ class TypeChecker:
             self.check_import_statement(statement)
         elif isinstance(statement, ImportFromStatement):
             self.check_import_from_statement(statement)
+        elif isinstance(statement, Identifier):
+            self.check_identifier(statement)
         else:
             raise TypeError(f"Unsupported statement type: {type(statement).__name__}", statement)
 
@@ -188,12 +192,14 @@ class TypeChecker:
             return self.check_dict_literal(expression)
         elif isinstance(expression, SetLiteral):
             return self.check_set_literal(expression)
+        elif isinstance(expression, TupleLiteral):
+            return self.check_tuple_literal(expression)
         else:
             raise TypeError(f"Unsupported expression type: {type(expression).__name__}", expression)
 
     def check_literal_expression(self, node: LiteralExpression) -> DanaType:
         """Check a literal expression for type errors."""
-        return DanaType(node.literal.type)
+        return DanaType(node.type)
 
     def check_identifier(self, node: Identifier) -> DanaType:
         """Check an identifier for type errors."""
@@ -205,8 +211,7 @@ class TypeChecker:
     def check_binary_expression(self, node: BinaryExpression) -> DanaType:
         """Check a binary expression for type errors.
 
-        This is a simple implementation that checks that the left and right operands
-        are of the same type and returns that type.
+        Returns bool for comparison operators, otherwise returns the operand type.
         """
         left_type = self.check_expression(node.left)
         right_type = self.check_expression(node.right)
@@ -214,6 +219,18 @@ class TypeChecker:
         if left_type != right_type:
             raise TypeError(f"Binary expression operands must be of the same type, got {left_type} and {right_type}", node)
 
+        # Comparison operators using BinaryOperator enum
+        comparison_ops = {
+            BinaryOperator.EQUALS,
+            BinaryOperator.NOT_EQUALS,
+            BinaryOperator.LESS_THAN,
+            BinaryOperator.GREATER_THAN,
+            BinaryOperator.LESS_EQUALS,
+            BinaryOperator.GREATER_EQUALS,
+        }
+        if node.operator in comparison_ops:
+            return DanaType("bool")
+        # Arithmetic/logical operators: return operand type
         return left_type
 
     def check_unary_expression(self, node: UnaryExpression) -> DanaType:
@@ -258,6 +275,22 @@ class TypeChecker:
         for item in node.items:
             _ = self.check_expression(item)
         return DanaType("set")
+
+    def check_tuple_literal(self, node: TupleLiteral) -> DanaType:
+        """Check a tuple literal for type errors."""
+        for item in node.items:
+            _ = self.check_expression(item)
+        return DanaType("tuple")
+
+    def check_function_call(self, node: FunctionCall) -> DanaType:
+        """Check a function call for type errors."""
+        for arg in node.args.values():
+            if isinstance(arg, list):
+                for a in arg:
+                    self.check_expression(a)
+            else:
+                self.check_expression(arg)
+        return DanaType("any")
 
     @staticmethod
     def check_types(program: Program) -> None:

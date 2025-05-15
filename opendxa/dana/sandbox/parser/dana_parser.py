@@ -14,7 +14,7 @@ for different language constructs, improving maintainability and testability.
 
 import os
 from pathlib import Path
-from typing import Any, NamedTuple, Sequence
+from typing import Any, NamedTuple, Sequence, cast
 
 from lark.indenter import PythonIndenter
 
@@ -128,7 +128,7 @@ class DanaParser(Lark, Loggable):
         """Transform a parse tree into an AST."""
         # Transform the parse tree into AST nodes
         self.debug("Transforming parse tree to AST")
-        ast = self.transformer.transform(parse_tree)
+        ast = cast(Program, self.transformer.transform(parse_tree))
 
         # Set the source text on the program
         ast.source_text = self.program_text
@@ -136,7 +136,7 @@ class DanaParser(Lark, Loggable):
         self.debug(f"Successfully parsed program with {len(ast.statements)} statements")
 
         # Perform type checking if enabled and parsing was successful
-        if do_type_check and ast.is_valid:
+        if do_type_check and ast.statements:
             TypeChecker.check_types(ast)
 
         return ast
