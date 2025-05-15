@@ -8,7 +8,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from dana.parser.dana_parser import DanaParser
-from opendxa.dana.sandbox.interpreter import Interpreter
+from dana.sandbox.interpreter.interpreter import Interpreter
 
 
 def main():

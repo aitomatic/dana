@@ -1,9 +1,14 @@
+#
+# Copyright © 2025 Aitomatic, Inc.
+#
+# This source code is licensed under the license found in the LICENSE file in the root directory of this source tree
+#
 """Test the reason2 function usage in DANA code."""
 
 import pytest
-
 from dana.parser.dana_parser import DanaParser, ParseResult
-from opendxa.dana.sandbox.interpreter import Interpreter
+from dana.sandbox.interpreter.interpreter import Interpreter
+
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 

@@ -7,7 +7,7 @@ Defines the interface for the DANA Narrator (Program-to-NL)."""
 
 from abc import ABC, abstractmethod
 
-from opendxa.dana.parser.ast import Program
+from opendxa.dana.sandbox.parser.ast import Program
 
 
 class NarratorInterface(ABC):

@@ -12,15 +12,16 @@ It uses a modular architecture with specialized components for different aspects
 import logging
 from typing import Any, Dict, Optional
 
+from dana.sandbox.interpreter.hooks import HookRegistry, HookType
+
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.dana.common.exceptions import SandboxError
-from opendxa.dana.parser.dana_parser import ParseResult
 from opendxa.dana.sandbox.executor.context_manager import ContextManager
 from opendxa.dana.sandbox.executor.expression_evaluator import ExpressionEvaluator
 from opendxa.dana.sandbox.executor.llm_integration import LLMIntegration
 from opendxa.dana.sandbox.executor.statement_executor import StatementExecutor
-from opendxa.dana.sandbox.hooks import HookRegistry, HookType
 from opendxa.dana.sandbox.log_manager import LogLevel
+from opendxa.dana.sandbox.parser.dana_parser import ParseResult
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 # Map DANA LogLevel to Python logging levels

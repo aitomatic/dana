@@ -4,11 +4,11 @@ from unittest import IsolatedAsyncioTestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from dana.parser.dana_parser import ParseError, ParseResult
 
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.common.types import BaseResponse
-from opendxa.dana.parser.ast import Program
-from dana.parser.dana_parser import ParseError, ParseResult
+from opendxa.dana.sandbox.parser.ast import Program
 from opendxa.dana.transcoder.transcoder import Transcoder, TranscoderError
 
 

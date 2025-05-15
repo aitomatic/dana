@@ -14,8 +14,8 @@ Follows the style and best practices of StatementTransformer and ExpressionTrans
 from lark import Token, Tree
 
 from opendxa.dana.common.runtime_scopes import RuntimeScopes
-from opendxa.dana.parser.ast import Identifier
-from opendxa.dana.parser.transformer.base_transformer import BaseTransformer
+from opendxa.dana.sandbox.parser.ast import Identifier
+from opendxa.dana.sandbox.parser.transformer.base_transformer import BaseTransformer
 
 
 class VariableTransformer(BaseTransformer):

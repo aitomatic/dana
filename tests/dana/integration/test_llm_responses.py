@@ -3,7 +3,7 @@
 import unittest
 
 from opendxa.dana.repl.repl import REPL
-from opendxa.dana.sandbox.interpreter import Interpreter
+from dana.sandbox.interpreter.interpreter import Interpreter
 from opendxa.dana.sandbox.log_manager import LogLevel
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 

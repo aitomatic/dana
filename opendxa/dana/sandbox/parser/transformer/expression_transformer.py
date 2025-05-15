@@ -10,7 +10,7 @@ from typing import Union, cast
 
 from lark import Token, Tree
 
-from opendxa.dana.parser.ast import (
+from opendxa.dana.sandbox.parser.ast import (
     AttributeAccess,
     BinaryExpression,
     BinaryOperator,
@@ -25,7 +25,7 @@ from opendxa.dana.parser.ast import (
     TupleLiteral,
     UnaryExpression,
 )
-from opendxa.dana.parser.transformer.base_transformer import BaseTransformer
+from opendxa.dana.sandbox.parser.transformer.base_transformer import BaseTransformer
 
 ValidExprType = Union[LiteralExpression, Identifier, BinaryExpression, FunctionCall]
 
@@ -303,7 +303,7 @@ class ExpressionTransformer(BaseTransformer):
     def power(self, items):
         # Only produce a BinaryExpression if '**' is actually present in the parse tree
         def ensure_expression(node):
-            from opendxa.dana.parser.ast import BinaryExpression, FunctionCall, Identifier, LiteralExpression
+            from opendxa.dana.sandbox.parser.ast import BinaryExpression, FunctionCall, Identifier, LiteralExpression
 
             if isinstance(node, (LiteralExpression, Identifier, BinaryExpression, FunctionCall)):
                 return node
@@ -336,7 +336,7 @@ class ExpressionTransformer(BaseTransformer):
             trailer = items[1]
             from lark import Tree
 
-            from opendxa.dana.parser.ast import FunctionCall, Identifier
+            from opendxa.dana.sandbox.parser.ast import FunctionCall, Identifier
 
             if isinstance(base, Identifier) and isinstance(trailer, Tree) and getattr(trailer, "data", None) == "arguments":
                 name = base.name
@@ -362,7 +362,7 @@ class ExpressionTransformer(BaseTransformer):
                 return LiteralExpression(value=None)
             if item.data == "collection" and len(item.children) == 1:
                 child = item.children[0]
-                from opendxa.dana.parser.ast import DictLiteral, SetLiteral, TupleLiteral
+                from opendxa.dana.sandbox.parser.ast import DictLiteral, SetLiteral, TupleLiteral
 
                 if isinstance(child, (DictLiteral, TupleLiteral, SetLiteral)):
                     return child
@@ -424,7 +424,7 @@ class ExpressionTransformer(BaseTransformer):
         raise TypeError(f"Cannot transform identifier: {items}")
 
     def tuple(self, items):
-        from opendxa.dana.parser.ast import TupleLiteral
+        from opendxa.dana.sandbox.parser.ast import TupleLiteral
 
         flat_items = self.flatten_items(items)
         return TupleLiteral(items=[self.expression([item]) for item in flat_items])
@@ -442,13 +442,13 @@ class ExpressionTransformer(BaseTransformer):
             elif hasattr(item, "data") and item.data == "key_value_pair":
                 pair = self.key_value_pair(item.children)
                 pairs.append(pair)
-        from opendxa.dana.parser.ast import DictLiteral
+        from opendxa.dana.sandbox.parser.ast import DictLiteral
 
         return DictLiteral(items=pairs)
 
     def set(self, items):
         flat_items = self.flatten_items(items)
-        from opendxa.dana.parser.ast import SetLiteral
+        from opendxa.dana.sandbox.parser.ast import SetLiteral
 
         return SetLiteral(items=[self.expression([item]) for item in flat_items])
 
@@ -471,7 +471,7 @@ class ExpressionTransformer(BaseTransformer):
         for t in trailers:
             # Function call: ( ... )
             if hasattr(t, "data") and t.data == "arguments":
-                from opendxa.dana.parser.ast import FunctionCall
+                from opendxa.dana.sandbox.parser.ast import FunctionCall
 
                 name = getattr(base, "name", None)
                 if not isinstance(name, str):
@@ -482,7 +482,7 @@ class ExpressionTransformer(BaseTransformer):
                 return FunctionCall(name=name, args=args, location=getattr(base, "location", None))
             # Attribute access: .NAME
             elif hasattr(t, "type") and t.type == "NAME":
-                from opendxa.dana.parser.ast import Identifier
+                from opendxa.dana.sandbox.parser.ast import Identifier
 
                 name = getattr(base, "name", None)
                 if not isinstance(name, str):
@@ -491,7 +491,7 @@ class ExpressionTransformer(BaseTransformer):
                 base = Identifier(name=name, location=getattr(base, "location", None))
             # Indexing: [ ... ]
             elif hasattr(t, "data") and t.data == "expr":
-                from opendxa.dana.parser.ast import SubscriptExpression
+                from opendxa.dana.sandbox.parserx.parser.ast import SubscriptExpression
 
                 base = SubscriptExpression(
                     object=base, index=t.children[0] if hasattr(t, "children") else t, location=getattr(base, "location", None)

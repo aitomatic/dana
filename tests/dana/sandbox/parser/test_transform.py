@@ -1,8 +1,13 @@
+#
+# Copyright © 2025 Aitomatic, Inc.
+#
+# This source code is licensed under the license found in the LICENSE file in the root directory of this source tree
+#
 from typing import cast
 
 import pytest
 
-from opendxa.dana.parser.ast import (
+from opendxa.dana.sandbox.parser.ast import (
     Assignment,
     AttributeAccess,
     BinaryExpression,
@@ -13,10 +18,10 @@ from opendxa.dana.parser.ast import (
     LiteralExpression,
     UnaryExpression,
 )
-from opendxa.dana.parser.transformer.expression_transformer import ExpressionTransformer
-from opendxa.dana.parser.transformer.fstring_transformer import FStringTransformer
-from opendxa.dana.parser.transformer.statement_transformer import StatementTransformer
-from opendxa.dana.parser.transformer.variable_transformer import VariableTransformer
+from opendxa.dana.sandbox.parser.transformer.expression_transformer import ExpressionTransformer
+from opendxa.dana.sandbox.parser.transformer.fstring_transformer import FStringTransformer
+from opendxa.dana.sandbox.parser.transformer.statement_transformer import StatementTransformer
+from opendxa.dana.sandbox.parser.transformer.variable_transformer import VariableTransformer
 
 # 1. VariableTransformer tests
 

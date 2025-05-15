@@ -19,7 +19,7 @@ from typing import Any, NamedTuple, Sequence
 from lark.indenter import PythonIndenter
 
 from opendxa.common.mixins.loggable import Loggable
-from opendxa.dana.parser.transformer.dana_transformer import DanaTransformer
+from opendxa.dana.sandbox.parser.transformer.dana_transformer import DanaTransformer
 
 try:
     from lark import Lark, Tree
@@ -31,11 +31,11 @@ except ImportError:
 # Create a shared logger for the parser module
 from opendxa.common.utils.logging import DXA_LOGGER
 from opendxa.dana.common.exceptions import ParseError
-from opendxa.dana.parser.ast import (
+from opendxa.dana.sandbox.parser.ast import (
     Identifier,
     Program,
 )
-from opendxa.dana.parser.type_checker import TypeChecker, TypeEnvironment
+from opendxa.dana.sandbox.parser.type_checker import TypeChecker, TypeEnvironment
 
 parser_logger = DXA_LOGGER.getLogger("opendxa.dana.language.parser")
 

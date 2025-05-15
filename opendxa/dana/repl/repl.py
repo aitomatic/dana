@@ -15,7 +15,7 @@ from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.common.utils import Misc
 from opendxa.dana.common.error_utils import DanaError
 from opendxa.dana.sandbox.executor.llm_integration import LLMIntegration
-from opendxa.dana.sandbox.interpreter import Interpreter
+from dana.sandbox.interpreter.interpreter import Interpreter
 from opendxa.dana.sandbox.log_manager import LogLevel, LogManager
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 

@@ -7,11 +7,11 @@ interpreter with custom behavior at key points in the execution process.
 import pytest
 
 from dana.parser.dana_parser import DanaParser
-from opendxa.dana.sandbox.hooks import (
+from dana.sandbox.interpreter.hooks import (
     HookRegistry,
     HookType,
 )
-from opendxa.dana.sandbox.interpreter import Interpreter
+from dana.sandbox.interpreter.interpreter import Interpreter
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 

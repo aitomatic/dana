@@ -1,15 +1,15 @@
 """Tests for DANA's autoscoping behavior."""
 
 import pytest
+from dana.sandbox.interpreter.interpreter import Interpreter
 
-from opendxa.dana.parser.ast import (
+from opendxa.dana.sandbox.parser.dana_parser import DanaParser, ParseResult
+from opendxa.dana.sandbox.parser.ast import (
     Assignment,
     BinaryExpression,
     FStringExpression,
-    Identifier,
+    Iopendxa.dana.sandbox.parser
 )
-from opendxa.dana.parser.dana_parser import DanaParser, ParseResult
-from opendxa.dana.sandbox.interpreter import Interpreter
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 

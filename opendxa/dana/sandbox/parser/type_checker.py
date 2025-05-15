@@ -11,7 +11,7 @@ This module provides type checking functionality for DANA programs.
 from typing import Any, Dict, Optional
 
 from opendxa.dana.common.exceptions import TypeError
-from opendxa.dana.parser.ast import (
+from opendxa.dana.sandbox.parser.ast import (
     Assignment,
     AttributeAccess,
     BinaryExpression,

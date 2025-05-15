@@ -15,14 +15,14 @@ Follows the style and best practices of StatementTransformer and ExpressionTrans
 from typing import Any, List
 
 from opendxa.dana.common.runtime_scopes import RuntimeScopes
-from opendxa.dana.parser.ast import (
+from opendxa.dana.sandbox.parser.ast import (
     BinaryExpression,
     BinaryOperator,
     FStringExpression,
     Identifier,
     LiteralExpression,
 )
-from opendxa.dana.parser.transformer.base_transformer import BaseTransformer
+from opendxa.dana.sandbox.parser.transformer.base_transformer import BaseTransformer
 
 
 class FStringTransformer(BaseTransformer):

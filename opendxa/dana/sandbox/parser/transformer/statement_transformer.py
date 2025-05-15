@@ -10,7 +10,7 @@ from typing import Union, cast
 
 from lark import Token, Tree
 
-from opendxa.dana.parser.ast import (
+from opendxa.dana.sandbox.parser.ast import (
     AssertStatement,
     Assignment,
     AttributeAccess,
@@ -38,9 +38,9 @@ from opendxa.dana.parser.ast import (
     TupleLiteral,
     WhileLoop,
 )
-from opendxa.dana.parser.transformer.base_transformer import BaseTransformer
-from opendxa.dana.parser.transformer.expression_transformer import ExpressionTransformer
-from opendxa.dana.parser.transformer.variable_transformer import VariableTransformer
+from opendxa.dana.sandbox.parser.transformer.base_transformer import BaseTransformer
+from opendxa.dana.sandbox.parser.transformer.expression_transformer import ExpressionTransformer
+from opendxa.dana.sandbox.parser.transformer.variable_transformer import VariableTransformer
 
 # Allowed types for Assignment.value
 AllowedAssignmentValue = Union[
@@ -128,7 +128,7 @@ class StatementTransformer(BaseTransformer):
 
     def for_stmt(self, items):
         """Transform a for loop rule into a ForLoop node."""
-        from opendxa.dana.parser.ast import Expression, Identifier
+        from opendxa.dana.sandbox.parser.ast import Expression, Identifier
 
         target = Identifier(name=items[0].value if isinstance(items[0], Token) else str(items[0]))
         iterable = self.expression_transformer.expression([items[1]])
@@ -157,7 +157,7 @@ class StatementTransformer(BaseTransformer):
         """Transform an if_stmt rule into a Conditional AST node, handling if/elif/else blocks."""
         from lark import Tree
 
-        from opendxa.dana.parser.ast import Conditional
+        from opendxa.dana.sandbox.parser.ast import Conditional
 
         def transform_elif_blocks(blocks):
             # Recursively transform Tree nodes to Conditional nodes
@@ -214,7 +214,7 @@ class StatementTransformer(BaseTransformer):
         Transform an assignment rule into an Assignment node.
         Always use VariableTransformer to transform the target, and never attempt to re-scope or re-stringify an Identifier.
         """
-        from opendxa.dana.parser.ast import (
+        from opendxa.dana.sandbox.parser.ast import (
             AttributeAccess,
             BinaryExpression,
             DictLiteral,
@@ -287,7 +287,7 @@ class StatementTransformer(BaseTransformer):
 
     def assert_stmt(self, items):
         """Transform an assert statement rule into an AssertStatement node."""
-        from opendxa.dana.parser.ast import Expression
+        from opendxa.dana.sandbox.parser.ast import Expression
 
         condition = self.expression_transformer.expression([items[0]])
         message = self.expression_transformer.expression([items[1]]) if len(items) > 1 else None

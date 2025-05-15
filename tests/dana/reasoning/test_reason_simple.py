@@ -6,7 +6,7 @@ import pytest
 
 from opendxa.common.resource.llm_resource import LLMResource
 from dana.parser.dana_parser import DanaParser, ParseResult
-from opendxa.dana.sandbox.interpreter import Interpreter
+from dana.sandbox.interpreter.interpreter import Interpreter
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 

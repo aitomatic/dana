@@ -1,9 +1,12 @@
 """Tests for the modular interpreter implementation."""
 
 import pytest
+from dana.parser.dana_parser import ParseResult
+from dana.sandbox.interpreter.interpreter import Interpreter
 
 from opendxa.dana.common.exceptions import StateError
-from opendxa.dana.parser.ast import (
+from opendxa.dana.sandbox.log_manager import LEVEL_MAP, LogManager
+from opendxa.dana.sandbox.parser.ast import (
     Assignment,
     BinaryExpression,
     BinaryOperator,
@@ -14,9 +17,6 @@ from opendxa.dana.parser.ast import (
     PrintStatement,
     Program,
 )
-from dana.parser.dana_parser import ParseResult
-from opendxa.dana.sandbox.interpreter import Interpreter
-from opendxa.dana.sandbox.log_manager import LEVEL_MAP, LogManager
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 from opendxa.dana.sendbox.log_manager import LogLevel
 

@@ -4,7 +4,10 @@ import pytest
 
 """Tests for the DANA type checker."""
 
-from opendxa.dana.parser.ast import (
+from dana.parser.dana_parser import DanaParser
+from dana.sandbox.interpreter.interpreter import Interpreter
+
+from opendxa.dana.sandbox.parser.ast import (
     Assignment,
     BinaryExpression,
     BinaryOperator,
@@ -12,9 +15,7 @@ from opendxa.dana.parser.ast import (
     Literal,
     LiteralExpression,
 )
-from dana.parser.dana_parser import DanaParser
-from opendxa.dana.parser.type_checker import DanaType, TypeChecker, TypeEnvironment
-from opendxa.dana.sandbox.interpreter import Interpreter
+from opendxa.dana.sandbox.parser.type_checker import DanaType, TypeChecker, TypeEnvironment
 
 
 @pytest.fixture

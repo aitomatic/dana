@@ -2,9 +2,9 @@ import asyncio
 import time
 from typing import Any, Dict
 
-from opendxa.dana.parser.python_registry import PythonRegistry
 from opendxa.dana.repl.dana_repl_app import DanaREPLApp
 from opendxa.dana.sandbox.log_manager import LogLevel
+from opendxa.dana.sandbox.parser.python_registry import PythonRegistry
 
 
 def get_product_details(context: Dict[str, Any], product_id: str):

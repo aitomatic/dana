@@ -3,12 +3,12 @@
 from typing import Any, Dict
 
 import pytest
+from dana.parser.dana_parser import DanaParser
+from dana.sandbox.interpreter.interpreter import Interpreter
+from dana.sandbox.interpreter.python_registry import PythonRegistry
 
 from opendxa.dana.common.exceptions import SandboxError, StateError
-from opendxa.dana.parser.ast import Literal, LiteralExpression, LogLevel, LogStatement
-from dana.parser.dana_parser import DanaParser
-from opendxa.dana.sandbox.interpreter import Interpreter
-from opendxa.dana.sandbox.python_registry import PythonRegistry
+from opendxa.dana.sandbox.parser.ast import Literal, LiteralExpression, LogLevel, LogStatement
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 

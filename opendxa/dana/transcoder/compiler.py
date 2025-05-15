@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from opendxa.dana.parser.ast import Program
+    from opendxa.dana.sandbox.parser.ast import Program
     from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 

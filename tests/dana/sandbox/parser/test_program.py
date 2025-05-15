@@ -1,9 +1,14 @@
+#
+# Copyright © 2025 Aitomatic, Inc.
+#
+# This source code is licensed under the license found in the LICENSE file in the root directory of this source tree
+#
 import textwrap
 
 import pytest
 
-from opendxa.dana.parser.ast import Conditional, FunctionCall, FunctionDefinition, Program, TryBlock, WhileLoop
-from opendxa.dana.parser.dana_parser import DanaParser
+from opendxa.dana.sandbox.parser.ast import Conditional, FunctionCall, FunctionDefinition, Program, TryBlock, WhileLoop
+from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 
 CODE_SAMPLES = {
     "nested_if_elif_else": """
