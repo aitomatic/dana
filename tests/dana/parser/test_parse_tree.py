@@ -40,8 +40,11 @@ def test_assignment(dana_parser):
     assignment = find_first(tree, "assignment")
     assert assignment is not None
     target = assignment.children[0]
-    inner = target.children[0]
-    assert inner.data in ("variable", "scoped_var", "simple_name", "dotted_access", "index_access")
+    assert target.data == "target"
+    atom = target.children[0]
+    assert atom.data == "atom"
+    inner = atom.children[0]
+    assert inner.data in ("variable", "scoped_var", "simple_name", "dotted_access")
 
 
 def test_assignment_indexing(dana_parser):
@@ -50,9 +53,11 @@ def test_assignment_indexing(dana_parser):
     assert assignment is not None
     target = assignment.children[0]
     assert target.data == "target"
-    assert len(target.children) == 2
-    assert isinstance(target.children[0], Tree) and target.children[0].data == "atom"
-    assert isinstance(target.children[1], Tree) and target.children[1].data == "expr"
+    atom = target.children[0]
+    assert atom.data == "atom"
+    # The first child of atom should be variable, and the next child should be a trailer (indexing)
+    assert atom.children[0].data == "variable"
+    assert atom.children[1].data == "trailer"
 
 
 def test_assignment_targets(dana_parser):
@@ -60,16 +65,26 @@ def test_assignment_targets(dana_parser):
     tree = dana_parser.parse("x = 1\n", do_transform=False)
     assignment = find_first(tree, "assignment")
     assert assignment is not None
-    target = assignment.children[0].children[0]
-    assert target.data in ("variable", "scoped_var", "simple_name", "dotted_access")
+    target = assignment.children[0]
+    assert target.data == "target"
+    atom = target.children[0]
+    assert atom.data == "atom"
+    inner = atom.children[0]
+    assert inner.data in ("variable", "scoped_var", "simple_name", "dotted_access")
     # Scoped assignment
     tree2 = dana_parser.parse("private:x = 2\n", do_transform=False)
     assignment2 = find_first(tree2, "assignment")
     assert assignment2 is not None
-    target2 = assignment2.children[0].children[0].children[0]
-    assert target2.data == "scoped_var"
+    target2 = assignment2.children[0]
+    assert target2.data == "target"
+    atom2 = target2.children[0]
+    assert atom2.data == "atom"
+    inner2 = atom2.children[0]
+    assert inner2.data == "variable"
+    scoped_var_node = inner2.children[0]
+    assert scoped_var_node.data == "scoped_var"
     # Check the structure of the scoped_var node
-    scope_node = target2.children[0]
+    scope_node = scoped_var_node.children[0]
     assert isinstance(scope_node, Tree)
     assert scope_node.data == "scope_prefix"
     # Ideally, scope_node.children should not be empty and should contain a Token with value 'private'
@@ -80,14 +95,25 @@ def test_assignment_targets(dana_parser):
     tree3 = dana_parser.parse("foo.bar.baz = 3\n", do_transform=False)
     assignment3 = find_first(tree3, "assignment")
     assert assignment3 is not None
-    target3 = assignment3.children[0].children[0].children[0]
-    assert target3.data == "dotted_access"
+    target3 = assignment3.children[0]
+    assert target3.data == "target"
+    atom3 = target3.children[0]
+    assert atom3.data == "atom"
+    inner3 = atom3.children[0]
+    assert inner3.data == "variable"
+    dotted_access_node = inner3.children[0]
+    assert dotted_access_node.data == "dotted_access"
     # Indexing assignment
     tree4 = dana_parser.parse("arr[0] = 4\n", do_transform=False)
     assignment4 = find_first(tree4, "assignment")
     assert assignment4 is not None
-    target4 = assignment4.children[0].children[0].children[0].children[0].children[0]
-    assert target4 == "arr"
+    target4 = assignment4.children[0]
+    assert target4.data == "target"
+    atom4 = target4.children[0]
+    assert atom4.data == "atom"
+    # The first child of atom should be variable, and the next child should be a trailer (indexing)
+    assert atom4.children[0].data == "variable"
+    assert atom4.children[1].data == "trailer"
 
 
 # 2. Literals and strings
@@ -95,14 +121,20 @@ def test_assignment_targets(dana_parser):
 
 def test_string_and_literals(dana_parser):
     tree = dana_parser.parse('s = "hello"\n', do_transform=False)
-    atom = find_first(tree, "atom")
+    assignment = find_first(tree, "assignment")
+    assert assignment is not None
+    expr = assignment.children[1]
+    atom = find_first(expr, "atom")
     assert atom is not None
     string_node = find_first(atom, "any_string")
     assert string_node is not None
     assert any(child.type == "REGULAR_STRING" for child in string_node.children if hasattr(child, "type"))
 
     tree2 = dana_parser.parse('s = r"rawstring"\n', do_transform=False)
-    atom2 = find_first(tree2, "atom")
+    assignment2 = find_first(tree2, "assignment")
+    assert assignment2 is not None
+    expr2 = assignment2.children[1]
+    atom2 = find_first(expr2, "atom")
     assert atom2 is not None
     string_node2 = find_first(atom2, "any_string")
     assert string_node2 is not None
@@ -111,7 +143,12 @@ def test_string_and_literals(dana_parser):
     assert any(child.type == "REGULAR_STRING" for child in raw_string_node.children if hasattr(child, "type"))
 
     tree3 = dana_parser.parse('s = """multi\nline\nstring"""\n', do_transform=False)
-    multiline_string = find_first(tree3, "multiline_string")
+    assignment3 = find_first(tree3, "assignment")
+    assert assignment3 is not None
+    expr3 = assignment3.children[1]
+    atom3 = find_first(expr3, "atom")
+    assert atom3 is not None
+    multiline_string = find_first(atom3, "multiline_string")
     assert multiline_string is not None
 
     tree4 = dana_parser.parse("a = True\nb = False\nc = None\n", do_transform=False)
@@ -126,7 +163,10 @@ def test_string_and_literals(dana_parser):
         assert getattr(atom.children[0], "type", None) == expected_types[i]
 
     tree5 = dana_parser.parse('s = f"Hello, {name}!"\n', do_transform=False)
-    atom5 = find_first(tree5, "atom")
+    assignment5 = find_first(tree5, "assignment")
+    assert assignment5 is not None
+    expr5 = assignment5.children[1]
+    atom5 = find_first(expr5, "atom")
     assert atom5 is not None
     string_node5 = find_first(atom5, "any_string")
     assert string_node5 is not None

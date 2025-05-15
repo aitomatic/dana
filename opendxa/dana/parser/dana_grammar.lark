@@ -94,8 +94,11 @@ scoped_var: scope_prefix ":" (simple_name | dotted_access)
 scope_prefix: PRIVATE | PUBLIC | LOCAL | SYSTEM
 
 // Assignment targets
-target: variable                // Variable
-      | atom "[" expr "]"       // Indexing
+// Previous rule (commented out for easy reversal):
+// target: variable                // Variable
+//       | atom "[" expr "]"       // Indexing
+// New rule: allow any atom as assignment target (enables arr[0] = 5, obj.x = 1, etc.)
+target: atom
 
 // ===== EXPRESSIONS =====
 expr: or_expr
