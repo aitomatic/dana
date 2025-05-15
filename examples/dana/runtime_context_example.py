@@ -7,38 +7,38 @@ def main():
     # Create a runtime context
     ctx = SandboxContext()
 
-    # Set some agent state
-    ctx.set("agent:name", "Alice")
-    ctx.set("agent:role", "assistant")
-    ctx.set("agent:preferences.theme", "dark")
-    ctx.set("agent:preferences.language", "en")
+    # Set some local state
+    ctx.set("local:name", "Alice")
+    ctx.set("local:role", "assistant")
+    ctx.set("local:preferences.theme", "dark")
+    ctx.set("local:preferences.language", "en")
 
-    # Set some world state
-    ctx.set("world:temperature", 25)
-    ctx.set("world:humidity", 60)
-    ctx.set("world:sensor.status", "active")
+    # Set some public state
+    ctx.set("public:temperature", 25)
+    ctx.set("public:humidity", 60)
+    ctx.set("public:sensor.status", "active")
 
-    # Set some execution state
-    ctx.set("execution:status", "running")
-    ctx.set("execution:step", 1)
-    ctx.set("execution:errors", [])
+    # Set some system state
+    ctx.set("system:status", "running")
+    ctx.set("system:step", 1)
+    ctx.set("system:errors", [])
 
     # Print the state
-    print("Agent State:")
-    print(f"  Name: {ctx.get('agent:name')}")
-    print(f"  Role: {ctx.get('agent:role')}")
-    print(f"  Theme: {ctx.get('agent:preferences.theme')}")
-    print(f"  Language: {ctx.get('agent:preferences.language')}")
+    print("Local State:")
+    print(f"  Name: {ctx.get('local:name')}")
+    print(f"  Role: {ctx.get('local:role')}")
+    print(f"  Theme: {ctx.get('local:preferences.theme')}")
+    print(f"  Language: {ctx.get('local:preferences.language')}")
 
-    print("\nWorld State:")
-    print(f"  Temperature: {ctx.get('world:temperature')}")
-    print(f"  Humidity: {ctx.get('world:humidity')}")
-    print(f"  Sensor Status: {ctx.get('world:sensor.status')}")
+    print("\nPublic State:")
+    print(f"  Temperature: {ctx.get('public:temperature')}")
+    print(f"  Humidity: {ctx.get('public:humidity')}")
+    print(f"  Sensor Status: {ctx.get('public:sensor.status')}")
 
-    print("\nExecution State:")
-    print(f"  Status: {ctx.get('execution:status')}")
-    print(f"  Step: {ctx.get('execution:step')}")
-    print(f"  Errors: {ctx.get('execution:errors')}")
+    print("\nSystem State:")
+    print(f"  Status: {ctx.get('system:status')}")
+    print(f"  Step: {ctx.get('system:step')}")
+    print(f"  Errors: {ctx.get('system:errors')}")
 
     # Demonstrate error handling
     try:
