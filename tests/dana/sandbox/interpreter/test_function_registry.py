@@ -8,7 +8,7 @@ from dana.sandbox.interpreter.interpreter import Interpreter
 from dana.sandbox.interpreter.python_registry import PythonRegistry
 
 from opendxa.dana.common.exceptions import SandboxError, StateError
-from opendxa.dana.sandbox.parser.ast import Literal, LiteralExpression, LogLevel, LogStatement
+from opendxa.dana.sandbox.parser.ast import LiteralExpression, LogLevel, LogStatement
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
@@ -224,7 +224,7 @@ def test_function_registry():
 def test_log_function():
     """Test the log function."""
     # Create a log statement with proper types
-    message = LiteralExpression(literal=Literal(value="Test message"))
+    message = LiteralExpression("Test message")
     stmt = LogStatement(message=message, level=LogLevel.INFO)
 
     # Call the log function

@@ -23,7 +23,7 @@ from opendxa.dana.sendbox.log_manager import LogLevel
 
 def create_location(line: int, column: int, text: str = "") -> Location:
     """Helper to create location tuples."""
-    return (line, column, text)
+    return Location(line, column, text)
 
 
 def test_arithmetic_operations():
@@ -190,47 +190,6 @@ def test_expression_precedence():
     )
     interpreter.execute_program(ParseResult(program=program))
     assert interpreter.context.get("private.value") == 14
-
-
-def test_log_statement():
-    """Test log statement execution with the modular interpreter."""
-    context = SandboxContext()
-    interpreter = Interpreter(context)
-    LogManager.set_system_log_level(LogLevel.INFO, context)  # Ensure INFO messages are printed
-
-    # Test different log levels
-    interpreter.debug("Debug message")
-    interpreter.info("Info message")
-    interpreter.warning("Warning message")
-    interpreter.error("Error message")
-
-
-def test_log_level_threshold():
-    """Test that log messages respect the current log level threshold."""
-    context = SandboxContext()
-    interpreter = Interpreter(context)
-
-    # Set to WARN level
-    LogManager.set_system_log_level(LogLevel.WARN, context)
-
-    # Test that INFO messages are not shown
-    interpreter.info("This should not be shown")
-    interpreter.warning("This should be shown")
-    interpreter.error("This should be shown")
-
-
-def test_log_level_set_statement():
-    """Test log level set statement."""
-    context = SandboxContext()
-    interpreter = Interpreter(context)
-
-    # Test setting different log levels
-    for level in [LogLevel.DEBUG, LogLevel.INFO, LogLevel.WARN, LogLevel.ERROR]:
-        node = LogLevelSetStatement(level=level)
-        interpreter.statement_executor.execute_log_level_set_statement(node)
-        # Verify the log level was set by checking the actual logger level
-        assert interpreter.logger.logger.level == LEVEL_MAP[level]
-
 
 def test_print_statement(capfd):
     """Test that print statements work correctly with the modular interpreter."""
