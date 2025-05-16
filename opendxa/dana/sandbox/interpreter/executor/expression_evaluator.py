@@ -12,22 +12,20 @@ evaluating expressions in DANA programs.
 import re
 from typing import Any, Dict, Optional
 
-from dana.sandbox.interpreter.python_registry import PythonRegistry
-
 from opendxa.dana.common.error_utils import ErrorUtils
 from opendxa.dana.common.exceptions import SandboxError, StateError
-from opendxa.dana.sandbox.executor.base_executor import BaseExecutor
-from opendxa.dana.sandbox.executor.context_manager import ContextManager
+from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
+from opendxa.dana.sandbox.interpreter.executor.context_manager import ContextManager
+from opendxa.dana.sandbox.interpreter.functions.python_function import PythonRegistry
 from opendxa.dana.sandbox.parser.ast import (
     BinaryExpression,
     BinaryOperator,
     FStringExpression,
     FunctionCall,
     Identifier,
-    Literal,
     LiteralExpression,
+    UnaryExpression,
 )
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
 class ExpressionEvaluator(BaseExecutor):
@@ -62,19 +60,30 @@ class ExpressionEvaluator(BaseExecutor):
         Raises:
             RuntimeError: If the expression cannot be evaluated
         """
+        self.debug(f"[EVAL] Node type: {type(node)}, value: {getattr(node, 'value', None)}")
         try:
             if isinstance(node, BinaryExpression):
                 return self.evaluate_binary_expression(node, context)
+            elif isinstance(node, UnaryExpression):
+                return self.evaluate_unary_expression(node, context)
             elif isinstance(node, LiteralExpression):
                 return self.evaluate_literal_expression(node, context)
             elif isinstance(node, Identifier):
                 return self.evaluate_identifier(node, context)
-            elif isinstance(node, Literal):
-                return self.evaluate_literal(node, context)
             elif isinstance(node, FStringExpression):
                 return self.evaluate_fstring_expression(node, context)
             elif isinstance(node, FunctionCall):
                 return self.evaluate_function_call(node, context)
+            elif hasattr(node, "__class__") and node.__class__.__name__ == "AttributeAccess":
+                return self.evaluate_attribute_access(node, context)
+            elif hasattr(node, "__class__") and node.__class__.__name__ == "SubscriptExpression":
+                return self.evaluate_subscript_expression(node, context)
+            elif hasattr(node, "__class__") and node.__class__.__name__ == "DictLiteral":
+                return self.evaluate_dict_literal(node, context)
+            elif hasattr(node, "__class__") and node.__class__.__name__ == "TupleLiteral":
+                return self.evaluate_tuple_literal(node, context)
+            elif hasattr(node, "__class__") and node.__class__.__name__ == "SetLiteral":
+                return self.evaluate_set_literal(node, context)
             else:
                 error_msg = f"Unsupported expression type: {type(node).__name__}"
                 raise SandboxError(error_msg)
@@ -98,9 +107,11 @@ class ExpressionEvaluator(BaseExecutor):
         Raises:
             StateError: If the expression contains invalid operations
         """
+        self.debug(f"[EVAL_BIN_START] node: {node}, operator: {node.operator}")
+        self.debug(
+            f"[EVAL_BIN] operator={node.operator}, left={getattr(node.left, 'value', node.left)}, right={getattr(node.right, 'value', node.right)}"
+        )
         try:
-            self.debug(f"Evaluating binary expression with operator: {node.operator}")
-
             # Evaluate left operand
             if isinstance(node.left, Identifier):
                 try:
@@ -151,12 +162,15 @@ class ExpressionEvaluator(BaseExecutor):
                 elif node.operator == BinaryOperator.MULTIPLY:
                     return left * right
                 elif node.operator == BinaryOperator.DIVIDE:
+                    self.debug(f"[EVAL_BIN] About to check division: left={left}, right={right}")
+                    self.debug(f"[EVAL_BIN] DIVIDE branch: left={left}, right={right}")
                     if right == 0:
-                        raise ErrorUtils.create_state_error("Division by zero", node)
+                        self.debug("[EVAL_BIN] Division by zero detected, raising error.")
+                        raise ErrorUtils.create_state_error("Math Error: Division by zero is not allowed.", node)
                     return left / right
                 elif node.operator == BinaryOperator.MODULO:
                     if right == 0:
-                        raise ErrorUtils.create_state_error("Modulo by zero", node)
+                        raise ErrorUtils.create_state_error("Math Error: Division by zero is not allowed.", node)
                     return left % right
                 elif node.operator == BinaryOperator.EQUALS:
                     return left == right
@@ -176,6 +190,8 @@ class ExpressionEvaluator(BaseExecutor):
                     return left or right
                 elif node.operator == BinaryOperator.IN:
                     return left in right
+                elif node.operator == BinaryOperator.POWER:
+                    return left**right
                 else:
                     # Unsupported operator
                     raise ErrorUtils.create_state_error(f"Unsupported binary operator: {node.operator.value}", node)
@@ -193,6 +209,18 @@ class ExpressionEvaluator(BaseExecutor):
             else:
                 raise ErrorUtils.create_runtime_error(f"Error evaluating expression: {e}", node)
 
+    def evaluate_unary_expression(self, node, context=None):
+        """Evaluate a unary expression (e.g., -x, +x, not x)."""
+        operand = self.evaluate(node.operand, context)
+        if node.operator == "-":
+            return -operand
+        elif node.operator == "+":
+            return +operand
+        elif node.operator == "not":
+            return not operand
+        else:
+            raise SandboxError(f"Unsupported unary operator: {node.operator}")
+
     def evaluate_literal_expression(self, node: LiteralExpression, context: Optional[Dict[str, Any]] = None) -> Any:
         """Evaluate a literal expression.
 
@@ -203,9 +231,9 @@ class ExpressionEvaluator(BaseExecutor):
         Returns:
             The literal value
         """
-        if isinstance(node.literal.value, FStringExpression):
-            return self.evaluate_fstring_expression(node.literal.value, context)
-        return node.literal.value
+        if isinstance(node.value, FStringExpression):
+            return self.evaluate_fstring_expression(node.value, context)
+        return node.value
 
     def evaluate_identifier(self, node: Identifier, context: Optional[Dict[str, Any]] = None) -> Any:
         """Evaluate an identifier.
@@ -234,20 +262,6 @@ class ExpressionEvaluator(BaseExecutor):
                 )
             self.debug(f"Variable not found: {node.name}")
             raise ErrorUtils.create_state_error(error_msg, node)
-
-    def evaluate_literal(self, node: Literal, context: Optional[Dict[str, Any]] = None) -> Any:
-        """Evaluate a literal.
-
-        Args:
-            node: The literal to evaluate
-            context: Optional local context (unused)
-
-        Returns:
-            The literal value
-        """
-        if isinstance(node.value, FStringExpression):
-            return self.evaluate_fstring_expression(node.value, context)
-        return node.value
 
     def evaluate_fstring_expression(self, node: FStringExpression, context: Optional[Dict[str, Any]] = None) -> str:
         """Evaluate an f-string expression.
@@ -305,66 +319,33 @@ class ExpressionEvaluator(BaseExecutor):
         return result
 
     def evaluate_function_call(self, node: FunctionCall, context: Optional[Dict[str, Any]] = None) -> Any:
-        """Evaluate a function call.
-
-        This method evaluates a DANA function call by:
-        1. Evaluating all arguments
-        2. Creating a new runtime context
-        3. Calling the registered Python function with the context and evaluated arguments
-
-        Args:
-            node: The function call node to evaluate
-            context: Optional local context for variable resolution
-
-        Returns:
-            The result of calling the Python function
-        """
-        # Step 1: Get the base context from the context manager
-        base_context = self.context_manager.context
-
-        # Step 2: Create a new context with base context
-        # TODO: Support DANA Functions, too?
-        runtime_context = SandboxContext.from_dict({}, base_context)
-
-        def unwrap_value(val):
-            # Unwrap LiteralExpression to its value
-            if isinstance(val, LiteralExpression):
-                inner = val.literal.value
-                # If the value is a list, unwrap each element
-                if isinstance(inner, list):
-                    return [unwrap_value(item) for item in inner]
-                elif isinstance(inner, dict):
-                    return {k: unwrap_value(v) for k, v in inner.items()}
-                else:
-                    return inner
-            # Resolve Identifier
-            elif isinstance(val, Identifier):
-                return self.evaluate_identifier(val, context)
-            # Evaluate nested FunctionCall, etc.
-            elif hasattr(val, "__dict__") or hasattr(val, "__slots__"):
-                return self.evaluate(val, context)
-            # If it's a dict, recursively unwrap
-            elif isinstance(val, dict):
-                return {k: unwrap_value(v) for k, v in val.items()}
-            # If it's a list, recursively unwrap
-            elif isinstance(val, list):
-                return [unwrap_value(item) for item in val]
-            else:
-                return val
-
-        # Step 3: Evaluate arguments
-        evaluated_args = {}
-        for key, value in node.args.items():
-            if key == "__positional" and isinstance(value, list):
-                # Handle positional arguments
-                for i, arg in enumerate(value):
-                    evaluated_value = unwrap_value(arg)
-                    evaluated_args[f"__positional_{i}"] = evaluated_value
-            else:
-                # Handle named arguments
-                evaluated_value = unwrap_value(value)
-                evaluated_args[key] = evaluated_value
-
-        # TODO: Support DANA Functions, too?
-        # Step 4: Call the Python function with the context and evaluated arguments
+        """Evaluate a function call expression."""
+        # Evaluate arguments
+        evaluated_args = {k: self.evaluate(v, context) for k, v in node.args.items()}
+        # Call the function from the registry
         return PythonRegistry.call(node.name, evaluated_args)
+
+    def evaluate_attribute_access(self, node, context=None):
+        obj = self.evaluate(node.object, context)
+        attr = node.attribute
+        # Support dict and object attribute access
+        if isinstance(obj, dict):
+            return obj.get(attr)
+        return getattr(obj, attr, None)
+
+    def evaluate_subscript_expression(self, node, context=None):
+        obj = self.evaluate(node.object, context)
+        idx = self.evaluate(node.index, context)
+        return obj[idx]
+
+    def evaluate_dict_literal(self, node, context=None):
+        # Evaluate all key-value pairs in the dict literal
+        return {self.evaluate(k, context): self.evaluate(v, context) for k, v in node.items}
+
+    def evaluate_tuple_literal(self, node, context=None):
+        # Evaluate all items in the tuple literal
+        return tuple(self.evaluate(item, context) for item in node.items)
+
+    def evaluate_set_literal(self, node, context=None):
+        # Evaluate all items in the set literal
+        return set(self.evaluate(item, context) for item in node.items)

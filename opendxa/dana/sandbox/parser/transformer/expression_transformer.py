@@ -131,42 +131,33 @@ class ExpressionTransformer(BaseTransformer):
 
     def _extract_operator_string(self, op_token):
         """
-        Extract the operator string from a parse tree node or token.
-        Handles comp_op, *_op, and direct tokens.
+        Extract the operator string from a parse tree node, token, or string.
+        Handles comp_op, *_op, ADD_OP, MUL_OP, direct tokens, and plain strings.
         """
         from lark import Token, Tree
 
+        if isinstance(op_token, Token):
+            return op_token.value
+        if isinstance(op_token, str):
+            return op_token
         if isinstance(op_token, Tree):
             if getattr(op_token, "data", None) == "comp_op":
-                return " ".join(child.value for child in op_token.children if isinstance(child, Token))
+                op_str = " ".join(child.value for child in op_token.children if isinstance(child, Token))
+                return op_str
             elif op_token.children and isinstance(op_token.children[0], Token):
                 return op_token.children[0].value
-            elif hasattr(op_token, "data") and op_token.data.endswith("_op"):
-                return self._op_tree_to_str(op_token)
-            else:
-                raise TypeError(f"Unexpected op_token tree: {op_token}")
-        else:
-            return op_token
+        raise ValueError(f"Cannot extract operator string from: {op_token}")
 
     def _op_tree_to_str(self, tree):
-        op_map = {
-            "add_op": "+",
-            "mul_op": "*",
-            "sub_op": "-",
-            "div_op": "/",
-            "mod_op": "%",
-            "floordiv_op": "//",
-            "pow_op": "**",
-            "and_op": "and",
-            "or_op": "or",
-            "eq_op": "==",
-            "neq_op": "!=",
-            "lt_op": "<",
-            "gt_op": ">",
-            "le_op": "<=",
-            "ge_op": ">=",
-        }
-        return op_map.get(tree.data, tree.data)
+        # For ADD_OP and MUL_OP, the child is the actual operator token
+        from lark import Token, Tree
+
+        if isinstance(tree, Token):
+            return tree.value
+        if isinstance(tree, Tree):
+            if tree.children and isinstance(tree.children[0], Token):
+                return tree.children[0].value
+        raise ValueError(f"Cannot extract operator string from: {tree}")
 
     def _left_associative_binop(self, items, operator_getter):
         """
@@ -174,51 +165,23 @@ class ExpressionTransformer(BaseTransformer):
         Iterates over items, applying the operator from operator_getter to each pair.
         Used by or_expr, and_expr, comparison, sum_expr, and term.
         """
-        # Defensive: filter out empty operator nodes (e.g., Tree with no children)
-        filtered_items = []
-        for item in items:
-            if isinstance(item, Tree) and not item.children:
-                # If this is an operator node, keep it for operator extraction
-                if hasattr(item, "data") and item.data.endswith("_op"):
-                    filtered_items.append(item)
-                # Otherwise, skip
-                continue
-            filtered_items.append(item)
-        items = filtered_items
         if not items:
-            return None
-        if len(items) == 1:
-            return self.expression([items[0]])
-        if len(items) % 2 == 0:
-            raise ValueError(f"Malformed parse tree for binary operation: items={items} (length={len(items)})")
-        left = self.expression([items[0]])
+            raise ValueError("No items for binary operation")
+        result = items[0]
         i = 1
         while i < len(items):
             op_token = items[i]
-            right = self.expression([items[i + 1]])
+            from lark import Tree
+
+            if isinstance(op_token, Tree) and hasattr(op_token, "data") and op_token.data.endswith("_op") and not op_token.children:
+                raise ValueError(f"Malformed parse tree: operator node '{op_token.data}' has no children at index {i} in items: {items}")
             op_str = self._extract_operator_string(op_token)
-            valid_types = (LiteralExpression, Identifier, BinaryExpression, FunctionCall)
-            invalid_ast_types = (TupleLiteral, DictLiteral, SetLiteral, SubscriptExpression, AttributeAccess, FStringExpression)
-            if not isinstance(left, valid_types):
-                if isinstance(left, (int, float, str, bool, type(None))):
-                    left = LiteralExpression(value=left)
-                elif isinstance(left, invalid_ast_types):
-                    raise TypeError(f"Invalid left operand AST node for BinaryExpression: {type(left)}")
-                else:
-                    raise TypeError(f"Invalid left operand type for BinaryExpression: {type(left)}")
-            if not isinstance(right, valid_types):
-                if isinstance(right, (int, float, str, bool, type(None))):
-                    right = LiteralExpression(value=right)
-                elif isinstance(right, invalid_ast_types):
-                    raise TypeError(f"Invalid right operand AST node for BinaryExpression: {type(right)}")
-                else:
-                    raise TypeError(f"Invalid right operand type for BinaryExpression: {type(right)}")
-            left_casted = cast(ValidExprType, left)
-            right_casted = cast(ValidExprType, right)
             op = operator_getter(op_str)
-            left = BinaryExpression(left=left_casted, operator=op, right=right_casted)
+            right = items[i + 1]
+            left = result
+            result = BinaryExpression(left, op, right)
             i += 2
-        return left
+        return result
 
     def _get_binary_operator(self, op_str):
         """
@@ -231,18 +194,18 @@ class ExpressionTransformer(BaseTransformer):
             "*": BinaryOperator.MULTIPLY,
             "/": BinaryOperator.DIVIDE,
             "%": BinaryOperator.MODULO,
-            "//": BinaryOperator.FLOORDIV if hasattr(BinaryOperator, "FLOORDIV") else BinaryOperator.DIVIDE,
+            "==": BinaryOperator.EQUALS,
+            "!=": BinaryOperator.NOT_EQUALS,
             "<": BinaryOperator.LESS_THAN,
             ">": BinaryOperator.GREATER_THAN,
             "<=": BinaryOperator.LESS_EQUALS,
             ">=": BinaryOperator.GREATER_EQUALS,
-            "==": BinaryOperator.EQUALS,
-            "!=": BinaryOperator.NOT_EQUALS,
             "and": BinaryOperator.AND,
             "or": BinaryOperator.OR,
+            "in": BinaryOperator.IN,
             "**": BinaryOperator.POWER,
         }
-        return op_map.get(op_str, BinaryOperator.EQUALS)  # Default to equals if unknown
+        return op_map[op_str]
 
     def or_expr(self, items):
         # If items contains only operands, insert 'or' between each pair
@@ -271,7 +234,6 @@ class ExpressionTransformer(BaseTransformer):
             return self.expression([items[0]])
         # Use a UnaryExpression node for 'not'
         right = self.expression([items[1]])
-        from typing import cast
 
         # Explicitly cast right to Expression
         right_expr = cast(Expression, right)
@@ -281,10 +243,12 @@ class ExpressionTransformer(BaseTransformer):
         return self._left_associative_binop(items, self._get_binary_operator)
 
     def sum_expr(self, items):
-        return self._left_associative_binop(items, self._get_binary_operator)
+        result = self._left_associative_binop(items, self._get_binary_operator)
+        return result
 
     def term(self, items):
-        return self._left_associative_binop(items, self._get_binary_operator)
+        result = self._left_associative_binop(items, self._get_binary_operator)
+        return result
 
     def factor(self, items):
         # Unary plus/minus or pass-through
@@ -292,13 +256,17 @@ class ExpressionTransformer(BaseTransformer):
             return self.expression([items[0]])
         op_token = items[0]
         right = self.expression([items[1]])
-        from typing import cast
 
         # Explicitly cast right to Expression
         right_expr = cast(Expression, right)
-        return UnaryExpression(
-            operator=self._get_binary_operator(op_token.value if isinstance(op_token, Token) else op_token), operand=right_expr
-        )
+        # Ensure operator is a string for UnaryExpression
+        from lark import Token
+
+        if isinstance(op_token, Token):
+            op_str = op_token.value
+        else:
+            op_str = str(op_token)
+        return UnaryExpression(operator=op_str, operand=right_expr)
 
     def power(self, items):
         # Only produce a BinaryExpression if '**' is actually present in the parse tree
@@ -374,7 +342,8 @@ class ExpressionTransformer(BaseTransformer):
             raise TypeError(f"Unhandled tree in atom: {item.data} with children {item.children}")
         # If it's already a primitive, wrap as LiteralExpression
         if isinstance(item, (int, float, str, bool, type(None))):
-            return LiteralExpression(value=item)
+            result = LiteralExpression(value=item)
+            return result
         return item
 
     def _atom_from_token(self, token):

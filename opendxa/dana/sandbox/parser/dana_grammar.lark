@@ -130,10 +130,10 @@ NOT_IN_OP: "not" "in"
 IS_OP: "is"
 IS_NOT_OP: "is" "not"
 
-sum_expr: term (add_op term)*
-add_op: "+" | "-"
-term: factor (mul_op factor)*
-mul_op: "*" | "/" | "//" | "%"
+sum_expr: term (ADD_OP term)*
+ADD_OP: "+" | "-"
+term: factor (MUL_OP factor)*
+MUL_OP: "*" | "/" | "//" | "%"
 
 factor: ("+" | "-") factor | power
 

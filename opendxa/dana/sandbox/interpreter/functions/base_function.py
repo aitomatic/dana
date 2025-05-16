@@ -10,7 +10,7 @@ for all core DANA functions.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Dict, Optional
 
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
@@ -41,4 +41,33 @@ class BaseFunction(ABC):
         Raises:
             RuntimeError: If the function execution fails.
         """
-        pass
+        raise NotImplementedError("Function must implement call()")
+
+
+class BaseFunctionRegistry:
+    _instances = {}
+
+    def __new__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            instance = super().__new__(cls)
+            cls._instances[cls] = instance
+            instance._initialized = False
+        return cls._instances[cls]
+
+    def __init__(self):
+        if getattr(self, "_initialized", False):
+            return
+        self._functions = {}
+        self._initialized = True
+
+    def register(self, name: str, func, metadata: Optional[Dict[str, Any]] = None):
+        self._functions[name] = (func, metadata or {})
+
+    def get(self, name):
+        return self._functions[name][0]
+
+    def has(self, name):
+        return name in self._functions
+
+    def list(self):
+        return list(self._functions.keys())

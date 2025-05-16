@@ -2,7 +2,7 @@
 
 import pytest
 
-from dana.parser.dana_parser import DanaParser, ParseResult
+from opendxa.dana.sandbox.parser.dana_parser import DanaParser, ParseResult
 
 
 @pytest.fixture

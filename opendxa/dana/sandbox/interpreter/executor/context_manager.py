@@ -78,24 +78,30 @@ class ContextManager(Loggable):
         if local_context and var_name in local_context:
             return local_context[var_name]
 
-        # 2. Validate and split the variable name
+        # 2. Autoscope logic
+        if scope is None:
+            if "." in var_name:
+                candidate_scope, candidate_var = var_name.split(".", 1)
+                from opendxa.dana.common.runtime_scopes import RuntimeScopes
+
+                if candidate_scope in RuntimeScopes.ALL:
+                    scope = candidate_scope
+                    var_name = candidate_var
+                else:
+                    # Not a known scope, treat as local
+                    scope = "local"
+            else:
+                scope = "local"
+        from opendxa.dana.common.runtime_scopes import RuntimeScopes
+
         if scope not in RuntimeScopes.ALL:
             raise StateError(f"Invalid scope '{scope}'. Must be one of: {RuntimeScopes.ALL}")
-            full_name = f"{scope}.{var_name}"
-        else:
-            if "." not in var_name:
-                raise StateError(
-                    f"Variable '{var_name}' must include scope prefix (private.{var_name}, public.{var_name}, or system.{var_name})"
-                )
-            candidate_scope = var_name.split(".", 1)[0]
-            if candidate_scope not in RuntimeScopes.ALL:
-                raise StateError(f"Invalid scope '{candidate_scope}'. Must be one of: {RuntimeScopes.ALL}")
-            full_name = var_name
+        full_name = f"{scope}.{var_name}"
 
         # 3. Direct dictionary access - the core functionality
-        scope, var_name = full_name.split(".", 1)
-        if scope in self.context._state and var_name in self.context._state[scope]:
-            return self.context._state[scope][var_name]
+        scope_key, var_key = full_name.split(".", 1)
+        if scope_key in self.context._state and var_key in self.context._state[scope_key]:
+            return self.context._state[scope_key][var_key]
 
         # 4. Variable not found
         raise StateError(f"Variable not found: {full_name}")

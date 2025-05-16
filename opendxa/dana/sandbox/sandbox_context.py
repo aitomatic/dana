@@ -92,16 +92,13 @@ class SandboxContext:
             StateError: If the key format is invalid or scope is unknown
         """
         scope, var_name = self._validate_key(key)
-
         # For global scopes, ensure we're modifying the root context's state
         if scope in RuntimeScopes.GLOBAL:
-            # Find the root context
             root = self
             while root._parent is not None:
                 root = root._parent
             root._state[scope][var_name] = value
         else:
-            # Local scope modifications stay in current context
             self._state[scope][var_name] = value
 
     def get(self, key: str, default: Any = None) -> Any:
@@ -121,10 +118,8 @@ class SandboxContext:
             StateError: If the key format is invalid or scope is unknown
         """
         scope, var_name = self._validate_key(key)
-
         # For global scopes, look in root context
         if scope in RuntimeScopes.GLOBAL:
-            # Find the root context
             root = self
             while root._parent is not None:
                 root = root._parent
@@ -132,14 +127,15 @@ class SandboxContext:
                 if default is not None:
                     return default
                 raise StateError(f"Variable '{key}' not found")
-            return root._state[scope][var_name]
-
+            value = root._state[scope][var_name]
+            return value
         # For local scope, look in current context
         if var_name not in self._state[scope]:
             if default is not None:
                 return default
             raise StateError(f"Variable '{key}' not found")
-        return self._state[scope][var_name]
+        value = self._state[scope][var_name]
+        return value
 
     def get_execution_status(self) -> ExecutionStatus:
         """Get the current execution status.

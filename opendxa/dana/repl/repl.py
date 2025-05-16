@@ -19,16 +19,16 @@ Discord: https://discord.gg/6jGD4PYk
 
 from typing import Any, Dict, Optional
 
-from dana.parser.dana_parser import DanaParser
-from dana.sandbox.interpreter.interpreter import Interpreter
-
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.common.utils import Misc
 from opendxa.dana.common.error_utils import DanaError
-from opendxa.dana.sandbox.executor.llm_integration import LLMIntegration
+from opendxa.dana.sandbox.interpreter.executor.llm_integration import LLMIntegration
+from opendxa.dana.sandbox.interpreter.interpreter import Interpreter
 from opendxa.dana.sandbox.log_manager import LogLevel, LogManager
+from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from opendxa.dana.transcoder.transcoder import Transcoder
 
 
 class REPL(Loggable):
@@ -48,6 +48,12 @@ class REPL(Loggable):
         self.interpreter = Interpreter(self.context)
         self.parser = DanaParser()
         self.last_result = None
+        self.transcoder = None
+        if llm_resource is not None:
+            try:
+                self.transcoder = Transcoder(llm_resource)
+            except Exception as e:
+                self.warning(f"Could not initialize Transcoder: {e}")
         if log_level:
             self.set_log_level(log_level)
 
@@ -88,38 +94,57 @@ class REPL(Loggable):
             self.error(f"Could not set NLP mode: {e}")
             raise DanaError(f"Failed to set NLP mode: {e}")
 
-    def _format_error_message(self, error_msg: str) -> str:
-        """Format an error message to be more user-friendly.
+    def _format_error_message(self, error_msg: str, user_input: str = "") -> str:
+        """Format an error message to be more user-friendly for AI engineers.
 
         Args:
             error_msg: The raw error message
+            user_input: The user's input that caused the error (if available)
 
         Returns:
             A formatted, user-friendly error message
         """
-        # Remove DANA Error prefix if present
-        if "DANA Error" in error_msg:
-            error_msg = error_msg.split("DANA Error")[1].strip()
-            if error_msg.startswith("("):
-                error_msg = error_msg[error_msg.find(")") + 1 :].strip()
+        # Determine error type
+        error_type = "Error"
+        if "Unexpected token" in error_msg or "Invalid syntax" in error_msg or "Expected one of" in error_msg:
+            error_type = "Syntax Error"
+        elif "Unsupported expression type" in error_msg:
+            error_type = "Execution Error"
+        elif "TranscoderError" in error_msg or "Internal Error" in error_msg:
+            error_type = "Internal Error"
+            summary = "Something went wrong during translation or execution."
+            tip = "Tip: Please try again or contact support if the problem persists."
 
-        # Clean up the error message
+        # Extract caret and source line if present
         lines = error_msg.split("\n")
-        formatted_lines = []
+        caret_line = None
+        source_line = None
+        for i, line in enumerate(lines):
+            if "^" in line:
+                caret_line = line
+                if i > 0:
+                    source_line = lines[i - 1]
+                break
 
-        for line in lines:
-            # Skip empty lines
-            if not line.strip():
-                continue
-
-            # Clean up the line
-            line = line.strip()
-
-            # Keep only the source line and caret line
-            if line.startswith(">") or "^" in line:
-                formatted_lines.append(line)
-
-        return "\n".join(formatted_lines)
+        # Build the message
+        formatted = [f"{error_type}:"]
+        if user_input:
+            formatted.append(f"  Input: {user_input}")
+        if source_line:
+            formatted.append(f"  {source_line}")
+        if caret_line:
+            formatted.append(f"  {caret_line}")
+        if summary:
+            formatted.append(f"  {summary}")
+        # Add the main error message (first non-empty line, if not already summarized)
+        if not summary:
+            for line in lines:
+                if line.strip() and not line.startswith("^") and line != source_line:
+                    formatted.append(f"  {line.strip()}")
+                    break
+        if tip:
+            formatted.append(f"  {tip}")
+        return "\n".join(formatted)
 
     def execute(self, program_source: str, initial_context: Optional[Dict[str, Any]] = None) -> Any:
         """Execute a DANA program and return the result value.
@@ -151,9 +176,10 @@ class REPL(Loggable):
         # Parse and execute the program
         try:
             # Parse the program (synchronous operation)
-            program = self.parser.parse(program_source)
-            if program.errors:
-                raise DanaError(str(program.errors[0]))
+            parse_result = self.parser.parse(program_source)
+            if hasattr(parse_result, "errors") and parse_result.errors:
+                raise DanaError(str(parse_result.errors[0]))
+            program = parse_result.program if hasattr(parse_result, "program") else parse_result
 
             # Execute the program (synchronous operation)
             result = self.interpreter.execute_program(program)

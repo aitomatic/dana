@@ -3,7 +3,7 @@
 import unittest
 
 from opendxa.dana.repl.repl import REPL
-from dana.sandbox.interpreter.interpreter import Interpreter
+from opendxa.dana.sandbox.interpreter.interpreter import Interpreter
 from opendxa.dana.sandbox.log_manager import LogLevel
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
@@ -22,8 +22,8 @@ class TestLLMResponseFormats(unittest.TestCase):
         # Create a parse result for testing
 
         # Create an LLM integration object to test response processing directly
-        from opendxa.dana.sandbox.executor.context_manager import ContextManager
-        from opendxa.dana.sandbox.executor.llm_integration import LLMIntegration
+        from opendxa.dana.sandbox.interpreter.executor.context_manager import ContextManager
+        from opendxa.dana.sandbox.interpreter.executor.llm_integration import LLMIntegration
 
         # Create a context manager
         context_manager = ContextManager(self.context)
@@ -45,8 +45,8 @@ class TestLLMResponseFormats(unittest.TestCase):
         # Create a parse result for testing
 
         # Create an LLM integration object to test response processing directly
-        from opendxa.dana.sandbox.executor.context_manager import ContextManager
-        from opendxa.dana.sandbox.executor.llm_integration import LLMIntegration
+        from opendxa.dana.sandbox.interpreter.executor.context_manager import ContextManager
+        from opendxa.dana.sandbox.interpreter.executor.llm_integration import LLMIntegration
 
         # Create a context manager
         context_manager = ContextManager(self.context)
@@ -79,8 +79,8 @@ class TestLLMResponseFormats(unittest.TestCase):
     def test_direct_content_response(self):
         """Test handling of direct content responses."""
         # Create an LLM integration object to test response processing directly
-        from opendxa.dana.sandbox.executor.context_manager import ContextManager
-        from opendxa.dana.sandbox.executor.llm_integration import LLMIntegration
+        from opendxa.dana.sandbox.interpreter.executor.context_manager import ContextManager
+        from opendxa.dana.sandbox.interpreter.executor.llm_integration import LLMIntegration
 
         # Create a context manager
         context_manager = ContextManager(self.context)
@@ -100,8 +100,8 @@ class TestLLMResponseFormats(unittest.TestCase):
     def test_fallback_response(self):
         """Test fallback handling for unexpected response formats."""
         # Create an LLM integration object to test response processing directly
-        from opendxa.dana.sandbox.executor.context_manager import ContextManager
-        from opendxa.dana.sandbox.executor.llm_integration import LLMIntegration
+        from opendxa.dana.sandbox.interpreter.executor.context_manager import ContextManager
+        from opendxa.dana.sandbox.interpreter.executor.llm_integration import LLMIntegration
 
         # Create a context manager
         context_manager = ContextManager(self.context)

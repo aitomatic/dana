@@ -6,10 +6,12 @@ This source code is licensed under the license found in the LICENSE file in the 
 Simple transcoder for DANA programs.
 """
 
-from dana.parser.dana_parser import DanaParser, ParseResult
+import re
 
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.common.types import BaseRequest
+from opendxa.dana.common.exceptions import TranscoderError
+from opendxa.dana.sandbox.parser.dana_parser import DanaParser, ParseResult, Program
 
 
 class Transcoder:
@@ -65,7 +67,8 @@ class Transcoder:
             "Follow these rules strictly:",
             "1. Output ONLY valid DANA code that can be parsed and executed",
             "2. Use proper DANA syntax:",
-            "   - Variables must be scoped (private., public., system.)",
+            "   - Variables must be scoped (private:, public:, system:) using a colon, e.g., private:x = 5",
+            "   - Do NOT use dot notation for scoped variables (wrong: private.x = 5; right: private:x = 5)",
             "   - Use proper operators and expressions",
             "   - Follow DANA block structure and indentation",
             "3. Add helpful comments (# comment) to clarify complex logic",
@@ -91,7 +94,7 @@ class Transcoder:
         try:
             response = await self.llm.query(request)
             if not response.success:
-                raise TranscoderError(f"Failed to translate to DANA: {response}", natural_language)
+                raise TranscoderError(f"Failed to translate to DANA: {response}")
 
             # Extract the content from the response
             if hasattr(response, "content") and isinstance(response.content, dict):
@@ -107,15 +110,23 @@ class Transcoder:
             else:
                 dana_code = str(response.content)
 
+            # Post-process to fix common LLM mistakes: replace private.x = with private:x =, etc.
+            dana_code = re.sub(r"\b(private|public|system|local)\.([a-zA-Z_][a-zA-Z0-9_]*)", r"\\1:\\2", dana_code)
+
             # Parse the generated code to validate it
-            result = self.parser.parse(dana_code)
-            if not result.is_valid:
-                raise TranscoderError(f"Generated invalid DANA code: {result.errors}", natural_language)
+            parsed = self.parser.parse(dana_code)
+            # If parser returns a Program, wrap it in a ParseResult
+            if isinstance(parsed, Program):
+                result = ParseResult(program=parsed, errors=[])
+            else:
+                result = parsed
+            if result.errors:
+                raise TranscoderError(f"Generated invalid DANA code: {result.errors}")
 
             return result, dana_code
 
         except Exception as e:
-            raise TranscoderError(f"Error during translation: {e}", natural_language)
+            raise TranscoderError(f"Error during translation: {e}")
 
     async def to_natural_language(self, dana_code: str) -> str:
         """Convert DANA code to natural language.
@@ -153,7 +164,7 @@ class Transcoder:
         try:
             response = await self.llm.query(request)
             if not response.success:
-                raise TranscoderError(f"Failed to translate to natural language: {response}", dana_code)
+                raise TranscoderError(f"Failed to translate to natural language: {response}")
 
             # Extract the content from the response
             if hasattr(response, "content") and isinstance(response.content, dict):
@@ -170,4 +181,4 @@ class Transcoder:
                 return str(response.content)
 
         except Exception as e:
-            raise TranscoderError(f"Error during translation: {e}", dana_code)
+            raise TranscoderError(f"Error during translation: {e}")

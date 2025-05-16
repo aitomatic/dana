@@ -2,8 +2,7 @@
 
 from typing import List, Union
 
-from dana.sandbox.interpreter.interpreter import Interpreter
-
+from opendxa.dana.sandbox.interpreter.interpreter import Interpreter
 from opendxa.dana.sandbox.parser.ast import Expression, FStringExpression
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 

@@ -265,9 +265,9 @@ class CommandHandler(Loggable):
         print("  ##nlp status    - Check if NLP mode is enabled")
         print("  ##nlp test      - Test the NLP transcoder functionality")
         print("\nDANA Syntax:")
-        print("  Variables:      private.x = 5, public.data = 'hello'")
-        print("  Conditionals:   if private.x > 10: ...")
-        print("  Loops:         while private.x < 10: ...")
+        print("  Variables:      private:x = 5, public:data = 'hello'")
+        print("  Conditionals:   if private:x > 10: ...")
+        print("  Loops:         while private:x < 10: ...")
         print("  Logging:       log.info('message'), log.error('error')")
         print("  Printing:      print('hello world')")
         print("\nTips:")
@@ -398,6 +398,13 @@ class DanaREPLApp(Loggable):
         print("  - Type '##nlp status' to check if NLP mode is enabled")
         print("  - Type '##nlp test' to test the NLP transcoder functionality")
         print("  - Press Ctrl+C to cancel the current input")
+        print("\nDANA Syntax:")
+        print("  Variables:      private:x = 5, public:data = 'hello'")
+        print("  Conditionals:   if private:x > 10: ...")
+        print("  Loops:         while private:x < 10: ...")
+        print("  Logging:       log.info('message'), log.error('error')")
+        print("  Printing:      print('hello world')")
+        print()
 
     async def run(self) -> None:
         """Run the interactive DANA REPL session."""

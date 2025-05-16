@@ -7,8 +7,8 @@ from pathlib import Path
 # Add the parent directory to the path so we can import opendxa
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from dana.parser.dana_parser import DanaParser
-from dana.sandbox.interpreter.interpreter import Interpreter
+from opendxa.dana.sandbox.interpreter.interpreter import Interpreter
+from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 
 
 def main():

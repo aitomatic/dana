@@ -4,12 +4,13 @@ from unittest import IsolatedAsyncioTestCase
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from dana.parser.dana_parser import ParseError, ParseResult
 
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.common.types import BaseResponse
+from opendxa.dana.common.exceptions import ParseError, TranscoderError
 from opendxa.dana.sandbox.parser.ast import Program
-from opendxa.dana.transcoder.transcoder import Transcoder, TranscoderError
+from opendxa.dana.sandbox.parser.dana_parser import ParseResult
+from opendxa.dana.transcoder.transcoder import Transcoder
 
 
 @pytest.mark.asyncio
@@ -33,7 +34,7 @@ class TestTranscoder(IsolatedAsyncioTestCase):
         self.llm.query.return_value = llm_response
 
         # Mock parse to succeed
-        with patch("opendxa.dana.transcoder.transcoder.parse", return_value=ParseResult(program=mock_program, errors=[])):
+        with patch("opendxa.dana.sandbox.parser.dana_parser.DanaParser.parse", return_value=ParseResult(program=mock_program, errors=[])):
             result, code = await self.transcoder.to_dana(natural_language)
             self.assertTrue(result.is_valid)
             self.assertEqual(result.program, mock_program)
@@ -60,7 +61,8 @@ class TestTranscoder(IsolatedAsyncioTestCase):
 
         # Mock parse to fail
         with patch(
-            "opendxa.dana.transcoder.transcoder.parse", return_value=ParseResult(program=Program([]), errors=[ParseError("Invalid syntax")])
+            "opendxa.dana.sandbox.parser.dana_parser.DanaParser.parse",
+            return_value=ParseResult(program=Program([]), errors=[ParseError("Invalid syntax")]),
         ):
             with self.assertRaises(TranscoderError) as cm:
                 await self.transcoder.to_dana(natural_language)

@@ -14,7 +14,7 @@ pytestmark = [pytest.mark.asyncio, pytest.mark.live]
 async def test_dana_repl_basic():
     """Test basic REPL functionality."""
     # Mock the prompt session to simulate user input
-    mock_inputs = ["private.x = 5", "private.y = 10", "private.x + private.y", "exit"]  # Should return 15
+    mock_inputs = ["private:x = 5", "private:y = 10", "private:x + private:y", "exit"]  # Should return 15
 
     with patch("prompt_toolkit.PromptSession.prompt_async") as mock_prompt:
         mock_prompt.side_effect = mock_inputs
@@ -29,7 +29,7 @@ async def test_dana_repl_basic():
 @pytest.mark.live
 async def test_dana_repl_multiline():
     """Test multiline input handling."""
-    mock_inputs = ["if private.x > 0:", "    print('positive')", "else:", "    print('negative')", "exit"]
+    mock_inputs = ["if private:x > 0:", "    print('positive')", "else:", "    print('negative')", "exit"]
 
     with patch("prompt_toolkit.PromptSession.prompt_async") as mock_prompt:
         mock_prompt.side_effect = mock_inputs
@@ -86,7 +86,7 @@ async def test_dana_repl_error_handling():
     """Test error handling in the REPL."""
     mock_inputs = [
         "invalid syntax here",  # Should show error
-        "private.x = ",  # Incomplete statement
+        "private:x = ",  # Incomplete statement
         "if true:",  # Incomplete block
         "    print('test')",  # Complete the block
         "exit",
@@ -104,7 +104,7 @@ async def test_dana_repl_error_handling():
 @pytest.mark.live
 async def test_dana_repl_interrupt_handling():
     """Test handling of keyboard interrupts."""
-    mock_inputs = ["private.x = 5", KeyboardInterrupt(), "exit"]  # Simulate Ctrl+C
+    mock_inputs = ["private:x = 5", KeyboardInterrupt(), "exit"]  # Simulate Ctrl+C
 
     with patch("prompt_toolkit.PromptSession.prompt_async") as mock_prompt:
         mock_prompt.side_effect = mock_inputs
@@ -135,7 +135,7 @@ async def test_dana_repl_help_command():
 async def test_dana_repl_simple_assignment():
     """Test simple variable assignment in REPL."""
     # Mock the prompt session to simulate user input
-    mock_inputs = ["private.a = 5", "exit"]  # Simple assignment and exit
+    mock_inputs = ["private:a = 5", "exit"]  # Simple assignment and exit
 
     with patch("prompt_toolkit.PromptSession.prompt_async") as mock_prompt:
         mock_prompt.side_effect = mock_inputs

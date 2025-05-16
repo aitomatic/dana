@@ -222,6 +222,7 @@ class Assignment:
         LiteralExpression,
         Identifier,
         BinaryExpression,
+        UnaryExpression,
         FunctionCall,
         TupleLiteral,
         DictLiteral,

@@ -11,9 +11,10 @@ import asyncio
 import os
 from typing import Any, Dict, Optional
 
+from opendxa.dana.sandbox.interpreter.interpreter import Interpreter
+
 from opendxa.common.resource.llm_resource import LLMResource
-from dana.parser.dana_parser import DanaParser
-from dana.sandbox.interpreter.interpreter import Interpreter
+from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 

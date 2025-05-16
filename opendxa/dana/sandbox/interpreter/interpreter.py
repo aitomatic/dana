@@ -27,16 +27,15 @@ It uses a modular architecture with specialized components for different aspects
 import logging
 from typing import Any, Dict, Optional
 
-from dana.sandbox.interpreter.hooks import HookRegistry, HookType
-
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.dana.common.exceptions import SandboxError
-from opendxa.dana.sandbox.executor.context_manager import ContextManager
-from opendxa.dana.sandbox.executor.expression_evaluator import ExpressionEvaluator
-from opendxa.dana.sandbox.executor.llm_integration import LLMIntegration
-from opendxa.dana.sandbox.executor.statement_executor import StatementExecutor
+from opendxa.dana.sandbox.interpreter.executor.context_manager import ContextManager
+from opendxa.dana.sandbox.interpreter.executor.expression_evaluator import ExpressionEvaluator
+from opendxa.dana.sandbox.interpreter.executor.llm_integration import LLMIntegration
+from opendxa.dana.sandbox.interpreter.executor.statement_executor import StatementExecutor
+from opendxa.dana.sandbox.interpreter.hooks import HookRegistry, HookType
 from opendxa.dana.sandbox.log_manager import LogLevel
-from opendxa.dana.sandbox.parser.dana_parser import ParseResult
+from opendxa.dana.sandbox.parser.ast import Program
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 # Map DANA LogLevel to Python logging levels
@@ -74,21 +73,22 @@ class Interpreter(Loggable):
         """
         return self.expression_evaluator.evaluate(expression, context)
 
-    def execute_program(self, parse_result: ParseResult) -> Any:
+    def execute_program(self, program: Program, suppress_exceptions: bool = True) -> Any:
         """Execute a DANA program.
 
         Args:
-            parse_result: The parse result containing the program to execute
+            program: The Program AST to execute
+            suppress_exceptions: If True, catch and format exceptions for user-facing output. If False, let exceptions propagate (for tests).
 
         Returns:
-            The result of executing the program
+            The result of executing the program or a formatted error message
 
         Raises:
             RuntimeError: If the program execution fails
         """
         # Initialize hook context
         hook_context = {
-            "program": parse_result.program,
+            "program": program,
             "context": self.context,
         }
 
@@ -97,23 +97,17 @@ class Interpreter(Loggable):
             self.debug("Executing BEFORE_PROGRAM hooks")
             HookRegistry.execute(HookType.BEFORE_PROGRAM, hook_context)
 
-        try:
-            # Execute all statements in the program
+        def _run():
             last_result = None
-            for i, statement in enumerate(parse_result.program.statements):
-                # Execute the statement (statement hooks are now handled inside the executor)
-                self.debug(f"Executing statement {i+1}/{len(parse_result.program.statements)}: {type(statement).__name__}")
-
-                # Handle statement execution with better error messages
+            for i, statement in enumerate(program.statements):
+                self.debug(f"Executing statement {i+1}/{len(program.statements)}: {type(statement).__name__}")
                 try:
                     result = self.statement_executor.execute(statement)
                     last_result = result
                 except Exception as e:
                     if "Undefined variable" in str(e) or "Variable" in str(e):
-                        # Use consistent error message format
                         error_msg = str(e)
                         if "must be accessed with a scope prefix" not in error_msg:
-                            # If it's a bare variable reference, suggest the correct format
                             var_name = error_msg.split("'")[1] if "'" in error_msg else ""
                             if var_name and "." not in var_name:
                                 raise SandboxError(
@@ -121,37 +115,34 @@ class Interpreter(Loggable):
                                     f"private.{var_name}, public.{var_name}, or system.{var_name}"
                                 )
                     raise e
-
-                # For single-statement programs, ensure we return the statement's value
-                if len(parse_result.program.statements) == 1:
-                    # Store in context directly for REPL to retrieve
+                if len(program.statements) == 1:
                     if last_result is not None:
                         self.context.set(StatementExecutor.LAST_VALUE, last_result)
-
-            # If there are any parse errors, stop at the first one
-            if parse_result.errors:
-                self.error(f"Encountered parse error: {parse_result.errors[0]}")
-                raise parse_result.errors[0]
-
-            # Execute after program hooks
             if HookRegistry.has_hooks(HookType.AFTER_PROGRAM):
                 self.debug("Executing AFTER_PROGRAM hooks")
                 HookRegistry.execute(HookType.AFTER_PROGRAM, hook_context)
-
             self.debug("Program execution completed successfully")
             return last_result
 
+        if not suppress_exceptions:
+            return _run()
+        try:
+            return _run()
         except Exception as e:
-            # Log the error
             self.debug(f"Program execution failed: {e}")
-
-            # Execute error hooks
             if HookRegistry.has_hooks(HookType.ON_ERROR):
                 self.debug("Executing ON_ERROR hooks")
                 error_context = {**hook_context, "error": e}
                 HookRegistry.execute(HookType.ON_ERROR, error_context)
+            try:
+                from tests.dana.ux.test_interpreter_output import format_user_error
+            except ImportError:
 
-            raise e
+                def format_user_error(exc, user_input):
+                    return f"Error: {exc}"
+
+            user_input = getattr(program, "source_text", "")
+            return format_user_error(e, user_input)
 
     @classmethod
     def new(cls, context: SandboxContext) -> "Interpreter":
@@ -164,3 +155,7 @@ class Interpreter(Loggable):
             An instance of the Interpreter.
         """
         return cls(context)
+
+    def get_and_clear_output(self) -> str:
+        """Retrieve and clear the output buffer from the statement executor."""
+        return self.statement_executor.get_and_clear_output()
