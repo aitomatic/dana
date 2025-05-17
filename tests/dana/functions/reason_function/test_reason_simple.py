@@ -1,12 +1,12 @@
 """Simplified test for reason statements outside of asyncio."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.dana.sandbox.interpreter.interpreter import Interpreter
-from opendxa.dana.sandbox.parser.dana_parser import DanaParser, ParseResult
+from opendxa.dana.sandbox.parser.dana_parser import DanaParser, Program
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
@@ -41,32 +41,23 @@ def parser():
 
 def test_reason_statement(runtime_context, mock_llm, parser):
     """Test the reason statement outside of asyncio."""
-    # We need to mock the LLM integration completely to avoid asyncio issues
-
-    # Create an interpreter
+    # Set the mock LLM in the context so the interpreter will use it
+    runtime_context.set("system.__reason_llm", mock_llm)
     interpreter = Interpreter.new(runtime_context)
 
-    # Mock the LLM integration component
-    with patch.object(interpreter.statement_executor.llm_integration, "execute_direct_synchronous_reasoning") as mock_reasoning:
-        # Mock the reasoning to return a fixed result
-        mock_reasoning.return_value = "4"
+    # Parse and execute a simple reason statement with assignment
+    program = parser.parse('private:result = reason("What is 2+2?")')
+    interpreter.execute_program(program)
 
-        # Parse and execute a simple reason statement with assignment
-        program = parser.parse('private.result = reason("What is 2+2?")')
-        interpreter.execute_program(program)
+    # Verify our mock was called
+    mock_llm.query.assert_called_once()
 
-        # Verify our mock was called with the right prompt
-        mock_reasoning.assert_called_once()
-        args, _ = mock_reasoning.call_args
-        assert args[0] == "What is 2+2?"
-
-        # Verify the variable was set correctly
-        assert interpreter.context.get("private.result") == "4"
+    # Verify the variable was set correctly
+    assert interpreter.context.get("private:result") == "4"
 
 
 def test_parse_simple_reason(parser):
     """Test parsing a simple reason statement."""
-    program = parser.parse('private.result = reason("What is 2+2?")')
-    assert isinstance(program, ParseResult)
-    assert program.is_valid
-    assert len(program.program.statements) == 1
+    program = parser.parse('private:result = reason("What is 2+2?")')
+    assert isinstance(program, Program)
+    assert len(program.statements) == 1

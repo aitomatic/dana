@@ -69,7 +69,4 @@ def run_repl_and_capture_output(input_code):
 )
 def test_repl_output(input_code, expected_output, request):
     actual_output = run_repl_and_capture_output(input_code)
-    if request.config.getoption("--ux-review"):
-        print(f"\nInput:\n{input_code}\nOutput:\n{actual_output}\n")
-    else:
-        assert expected_output in actual_output
+    assert expected_output in actual_output

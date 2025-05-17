@@ -284,3 +284,55 @@ class ErrorUtils:
             return ErrorUtils.create_state_error(error_msg, node, e), False
         else:
             return ErrorUtils.create_runtime_error(error_msg, node, e), False
+
+    @staticmethod
+    def format_user_error(e, user_input=None):
+        """
+        Format exceptions for user-facing output, removing parser internals and providing concise, actionable messages.
+        Args:
+            e: The exception or error message
+            user_input: (Optional) The user input that caused the error
+        Returns:
+            A user-friendly error message string
+        """
+        msg = str(e)
+        # Remove parser internals and caret lines
+        msg = "\n".join(
+            line
+            for line in msg.splitlines()
+            if not (
+                line.strip().startswith("Expected one of")
+                or line.strip().startswith("Previous tokens")
+                or line.strip().startswith("^")
+                or line.strip().startswith("[")
+                or line.strip().startswith("    ")
+            )
+        )
+        # Try to extract line/column info
+        line_col = re.search(r"line (\d+), col(?:umn)? (\d+)", msg)
+        line_col_str = f" (line {line_col.group(1)}, col {line_col.group(2)})" if line_col else ""
+        if "Unexpected token" in msg:
+            token = re.search(r"Unexpected token Token\('NAME', '([^']+)'\)", msg)
+            token_str = f"'{token.group(1)}'" if token else "input"
+            return f"Syntax Error{line_col_str}: Unexpected {token_str} after condition. Did you forget a colon?"
+        if "No terminal matches" in msg:
+            return "Syntax Error: Unexpected or misplaced token."
+        if "unsupported expression type" in msg.lower() or "not supported" in msg.lower():
+            return "Execution Error: Invalid or unsupported expression."
+        if "Undefined variable" in msg or "is not defined" in msg:
+            var = re.search(r"'([^']+)'", msg)
+            var_str = var.group(1) if var else "variable"
+            return f"Name Error: '{var_str}' is not defined."
+        if "must be accessed with a scope prefix" in msg:
+            return "Name Error: Variable must be accessed with a scope prefix (e.g., private:x)."
+        if "TypeError" in msg or "unsupported operand" in msg:
+            return "Type Error: Invalid operation."
+        if "SyntaxError" in msg or "syntax error" in msg:
+            return "Syntax Error: Invalid syntax."
+        if "Math Error" in msg:
+            return "Math Error: Division by zero is not allowed."
+        if "Execution Error" in msg:
+            return msg.replace("Error: ", "").strip()
+        # Deduplicate error prefixes
+        msg = re.sub(r"^(Error: )+", "Error: ", msg.strip())
+        return f"Error: {msg.strip()}"

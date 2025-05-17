@@ -197,7 +197,8 @@ class StatementExecutor(BaseExecutor):
 
             # Evaluate the message
             value = self.expression_evaluator.evaluate(node.message, custom_context)
-            self._output_buffer.append(str(value))  # Capture output instead of printing
+            print(str(value))  # Write to stdout for test capture
+            self._output_buffer.append(str(value))  # Also capture for REPL/UX
         except Exception as e:
             error, passthrough = ErrorUtils.handle_execution_error(e, node, "executing print statement")
             if passthrough:

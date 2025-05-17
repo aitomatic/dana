@@ -28,6 +28,7 @@ import logging
 from typing import Any, Dict, Optional
 
 from opendxa.common.mixins.loggable import Loggable
+from opendxa.dana.common.error_utils import ErrorUtils
 from opendxa.dana.common.exceptions import SandboxError
 from opendxa.dana.sandbox.interpreter.executor.context_manager import ContextManager
 from opendxa.dana.sandbox.interpreter.executor.expression_evaluator import ExpressionEvaluator
@@ -134,15 +135,8 @@ class Interpreter(Loggable):
                 self.debug("Executing ON_ERROR hooks")
                 error_context = {**hook_context, "error": e}
                 HookRegistry.execute(HookType.ON_ERROR, error_context)
-            try:
-                from tests.dana.ux.test_interpreter_output import format_user_error
-            except ImportError:
-
-                def format_user_error(exc, user_input):
-                    return f"Error: {exc}"
-
             user_input = getattr(program, "source_text", "")
-            return format_user_error(e, user_input)
+            return ErrorUtils.format_user_error(e, user_input)
 
     @classmethod
     def new(cls, context: SandboxContext) -> "Interpreter":

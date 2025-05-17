@@ -52,9 +52,7 @@ def run_and_capture_output(input_code):
                 else:
                     output = str(result)
         except Exception as e:
-            print(f"[DEBUG] Exception: {e}")
             output = format_user_error(e, input_code)
-            print(f"[DEBUG] Formatted output: {output}")
     finally:
         pass
     return output.strip()
@@ -82,8 +80,4 @@ def test_user_output(input_code, expected_output, request):
     # Check for line length
     for line in actual_output.splitlines():
         assert len(line) <= 120, f"Output line too long: {line}"
-    if request.config.getoption("--ux-review"):
-        print(f"\nInput:\n{input_code}\nOutput:\n{actual_output}\n")
-    else:
-        print(f"[DEBUG] Actual output: {actual_output}")
-        assert expected_output in actual_output
+    assert expected_output in actual_output

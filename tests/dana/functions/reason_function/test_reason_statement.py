@@ -2,7 +2,7 @@
 
 import pytest
 
-from opendxa.dana.sandbox.parser.dana_parser import DanaParser, ParseResult
+from opendxa.dana.sandbox.parser.dana_parser import DanaParser, Program
 
 
 @pytest.fixture
@@ -13,7 +13,6 @@ def parser():
 
 def test_parse_reason_statement(parser):
     """Test parsing a reason statement."""
-    program = parser.parse('private.result = reason("What is the capital of France?")')
-    assert isinstance(program, ParseResult)
-    assert program.is_valid
-    assert len(program.program.statements) == 1
+    program = parser.parse('private:result = reason("What is the capital of France?")')
+    assert isinstance(program, Program)
+    assert len(program.statements) == 1

@@ -26,7 +26,7 @@ class TestTranscoder(IsolatedAsyncioTestCase):
     async def test_to_dana_success(self):
         """Test successful translation from natural language to DANA code."""
         natural_language = "add 5 and 10"
-        dana_code = "private.result = 5 + 10"
+        dana_code = "private:result = 5 + 10"
         mock_program = MagicMock(spec=Program)
 
         # Mock LLM response
@@ -70,7 +70,7 @@ class TestTranscoder(IsolatedAsyncioTestCase):
 
     async def test_to_natural_language_success(self):
         """Test successful translation from DANA code to natural language."""
-        dana_code = "private.result = 5 + 10"
+        dana_code = "private:result = 5 + 10"
         natural_language = "Add 5 and 10"
 
         # Mock LLM response
@@ -82,7 +82,7 @@ class TestTranscoder(IsolatedAsyncioTestCase):
 
     async def test_to_natural_language_llm_failure(self):
         """Test when LLM query fails during natural language translation."""
-        dana_code = "private.result = 5 + 10"
+        dana_code = "private:result = 5 + 10"
         failed_response = BaseResponse(success=False, error="LLM Query Failed")
         self.llm.query.return_value = failed_response
 
@@ -92,7 +92,7 @@ class TestTranscoder(IsolatedAsyncioTestCase):
 
     async def test_llm_response_formats(self):
         """Test handling of different LLM response formats."""
-        dana_code = "private.result = 5 + 10"
+        dana_code = "private:result = 5 + 10"
         expected_nl = "Add 5 and 10"
 
         # Test direct content format
