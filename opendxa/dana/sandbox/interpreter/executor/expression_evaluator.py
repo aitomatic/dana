@@ -301,10 +301,18 @@ class ExpressionEvaluator(BaseExecutor):
         """
         if isinstance(node.value, FStringExpression):
             return self._evaluate_fstring_expression(node.value, context)
-        # Handle list of LiteralExpressions by recursively evaluating each item
+        # Handle list of expressions (especially LiteralExpressions) by recursively evaluating each item
         elif isinstance(node.value, list):
-            # Recursively evaluate each item in the list if it's an AST node
-            return [self.evaluate(item, context) if hasattr(item, "__class__") and hasattr(item, "value") else item for item in node.value]
+            # Recursively evaluate each item in the list
+            result = []
+            for item in node.value:
+                if hasattr(item, "__class__") and hasattr(item, "value"):
+                    # This is an expression object - evaluate it
+                    result.append(self.evaluate(item, context))
+                else:
+                    # This is a primitive value
+                    result.append(item)
+            return result
         return node.value
 
     def _resolve_identifier(self, node: Identifier, context: Optional[Dict[str, Any]] = None) -> Any:

@@ -161,6 +161,25 @@ class StatementExecutor(BaseExecutor):
                 # Special handling for FStringExpression to ensure it's properly evaluated
                 if hasattr(value, "__class__") and value.__class__.__name__ == "FStringExpression":
                     value = self.expression_evaluator.evaluate(value)
+
+                # Recursively extract values from list of LiteralExpressions
+                if isinstance(value, list):
+
+                    def extract_values(items):
+                        result = []
+                        for item in items:
+                            if hasattr(item, "__class__") and hasattr(item, "value"):
+                                # This is a LiteralExpression or similar
+                                if isinstance(item.value, list):
+                                    # Recursively process nested lists
+                                    result.append(extract_values(item.value))
+                                else:
+                                    result.append(item.value)
+                            else:
+                                result.append(item)
+                        return result
+
+                    value = extract_values(value)
             except Exception:
                 raise
 
