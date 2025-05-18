@@ -122,6 +122,18 @@ OpenDXA stands out by enabling truly expert agents grounded in specific domain k
 - **Adaptive Knowledge Management** - Manage the full lifecycle as your knowledge evolves
 - **True Interoperability** - Seamlessly connect agents and systems based on different standards
 
+## AST Validation
+
+The AST validation system helps ensure that the parser properly transforms Lark parse trees into DANA AST nodes without leaving any Lark Tree nodes in the AST. This is important for maintaining a clean, well-defined AST structure.
+
+Key validation tools:
+
+- **`validate_ast`**: A utility function to check if an AST contains any Lark Tree nodes
+- **`StrictDanaParser`**: A variant of the parser that enforces strict AST validation
+- **`safe_strip_lark_trees`**: A recursive validation function that detects Tree nodes while avoiding infinite recursion
+
+These tools help maintain a clean separation between the parser's internal implementation and the AST, making it easier to work with the AST in downstream code.
+
 ## License
 
 OpenDXA is released under the [MIT License](LICENSE.md).
