@@ -191,7 +191,28 @@ class StatementTransformer(BaseTransformer):
     def function_def(self, items):
         """Transform a function definition rule into a FunctionDefinition node."""
         name = Identifier(name=items[0].value if hasattr(items[0], "value") else str(items[0]))
-        parameters = items[1] if len(items) > 2 else []
+
+        # Properly transform parameters from Tree nodes to Identifier objects
+        parameters = []
+        if len(items) > 2:
+            param_items = items[1]
+            # Handle different parameter structures
+            if isinstance(param_items, list):
+                for param in param_items:
+                    if isinstance(param, Identifier):
+                        parameters.append(param)
+                    elif hasattr(param, "data") and param.data == "parameter":
+                        # Extract parameter name from the parameter rule
+                        param_name = param.children[0].value if hasattr(param.children[0], "value") else str(param.children[0])
+                        # Create an Identifier with the proper local scope
+                        parameters.append(Identifier(name=f"local.{param_name}"))
+                    elif hasattr(param, "value"):
+                        # Directly use token value
+                        parameters.append(Identifier(name=f"local.{param.value}"))
+                    else:
+                        # Fallback case
+                        parameters.append(Identifier(name=f"local.{str(param)}"))
+
         body = self._transform_block(items[-1]) if items else []
         return FunctionDefinition(name=name, parameters=parameters, body=body)
 
@@ -446,3 +467,42 @@ class StatementTransformer(BaseTransformer):
         else:
             result.append(block)
         return result
+
+    # === Parameter Handling ===
+    def parameters(self, items):
+        """Transform parameters rule into a list of Identifier objects.
+
+        Grammar: parameters: parameter ("," parameter)*
+        """
+        result = []
+        for item in items:
+            if isinstance(item, Identifier):
+                result.append(item)
+            elif hasattr(item, "data") and item.data == "parameter":
+                # Handle parameter via the parameter method
+                param = self.parameter(item.children)
+                result.append(param)
+            else:
+                # Handle unexpected item
+                self.warning(f"Unexpected parameter item: {item}")
+        return result
+
+    def parameter(self, items):
+        """Transform a parameter rule into an Identifier object.
+
+        Grammar: parameter: NAME ["=" expr]
+        Note: Default values are handled at runtime, not during parsing.
+        """
+        # Extract name from the first item (NAME token)
+        if len(items) > 0:
+            name_item = items[0]
+            if hasattr(name_item, "value"):
+                param_name = name_item.value
+            else:
+                param_name = str(name_item)
+
+            # Create an Identifier with the proper local scope
+            return Identifier(name=f"local.{param_name}")
+
+        # Fallback
+        return Identifier(name="local.param")

@@ -4,11 +4,12 @@ from typing import Any, Union
 
 from lark import Token, Tree
 
+from opendxa.common.mixins.loggable import Loggable
 from opendxa.dana.common.exceptions import ParseError
 from opendxa.dana.sandbox.parser.ast import ASTNode, LiteralExpression
 
 
-class BaseTransformer:
+class BaseTransformer(Loggable):
     """Base class for DANA AST transformers.
 
     Provides common utility methods for transforming Lark parse trees into DANA AST nodes.
