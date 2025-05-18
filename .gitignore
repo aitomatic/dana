@@ -1,40 +1,44 @@
-# Byte-compiled / cache files
+# Python
 __pycache__/
 *.py[cod]
+*.so
+*.egg-info/
+.pytest_cache/
 .mypy_cache/
 .ruff_cache/
 
-# Virtual environments
+# Environment
 .venv/
+venv/
 .env
-.env.swp
+.env.*
+!.env.example
 
-# Editor files
-*.swp
-.vscode/
-.vscode/*.json
-
-# Coverage and test outputs
+# Testing and coverage
 .coverage
-*.egg-info/
-flake8_issues.txt
+pytest.ini
 
-# Logs and runtime files
+# Logs and data
 logs/
-local_executor
+local_executor/
 memory-bank/
-proposal/
-notebooks/
-uv.lock
+configs/
 
-# Custom/Tool-specific files
-.aider*
-.claude
+# Editors and tools
+.vscode/
+*.swp
+*.swo
 .cursorrules
-.gitignore.swp
-# Claude tool settings
-**/.claude/settings.local.json
+.aider*
+.claude/
 
-# MCP (uncomment if needed)
-# mcp/
-# configs/
+# Build artifacts
+build/
+dist/
+*.egg
+
+# Development files
+notebooks/
+proposal/
+uv.lock
+flake8_issues.txt
