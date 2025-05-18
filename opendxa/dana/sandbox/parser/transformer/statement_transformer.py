@@ -404,17 +404,61 @@ class StatementTransformer(BaseTransformer):
     # === Import Statements ===
     def import_stmt(self, items):
         """Transform an import statement rule into an ImportStatement or ImportFromStatement node."""
-        if items[0] == "import":
-            module = items[1]
-            alias = items[2] if len(items) > 2 else None
-            return ImportStatement(module=module, alias=alias)
-        elif items[0] == "from":
-            module = items[1]
-            name = items[2]
-            alias = items[3] if len(items) > 3 else None
-            return ImportFromStatement(module=module, names=[(name, alias)])
+        # The import_stmt rule now delegates to either simple_import or from_import
+        return items[0]
+
+    def simple_import(self, items):
+        """Transform a simple_import rule into an ImportStatement node."""
+        from lark import Tree
+
+        # In simple_import rule, the import keyword is not included in items.
+        # items[0] should be the module_path
+        module_item = items[0]
+
+        # Extract the module path from the Tree
+        if isinstance(module_item, Tree) and getattr(module_item, "data", None) == "module_path":
+            parts = []
+            for child in module_item.children:
+                if hasattr(child, "value"):
+                    parts.append(child.value)
+            module = ".".join(parts)
         else:
-            raise ValueError(f"Unknown import statement: {items}")
+            # Fallback to string conversion if not a module_path Tree
+            module = str(module_item)
+
+        # items[1] might be the alias (if present)
+        alias = items[1] if len(items) > 1 and items[1] is not None else None
+        return ImportStatement(module=module, alias=alias)
+
+    def from_import(self, items):
+        """Transform a from_import rule into an ImportFromStatement node."""
+        from lark import Tree
+
+        # In from_import rule, the from and import keywords are not included in items.
+        # items[0] should be the module_path
+        module_item = items[0]
+
+        # Extract the module path from the Tree
+        if isinstance(module_item, Tree) and getattr(module_item, "data", None) == "module_path":
+            parts = []
+            for child in module_item.children:
+                if hasattr(child, "value"):
+                    parts.append(child.value)
+            module = ".".join(parts)
+        else:
+            # Fallback to string conversion if not a module_path Tree
+            module = str(module_item)
+
+        # items[1] should be the name to import
+        name_item = items[1]
+        if hasattr(name_item, "value"):
+            name = name_item.value
+        else:
+            name = str(name_item)
+
+        # items[2] might be the alias (if present)
+        alias = items[2] if len(items) > 2 and items[2] is not None else None
+        return ImportFromStatement(module=module, names=[(name, alias)])
 
     # === Argument Handling ===
     def arg_list(self, items):

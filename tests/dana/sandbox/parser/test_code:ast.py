@@ -31,6 +31,8 @@ from opendxa.dana.sandbox.parser.ast import (
     FunctionCall,
     # Add more as needed for coverage
     Identifier,
+    ImportFromStatement,
+    ImportStatement,
     LiteralExpression,
     Program,
     SetLiteral,
@@ -346,10 +348,38 @@ def test_while_loop(parser, typecheck_flag):
 # =========================
 # TODO: Add function definition, function call, nested calls, minimal function
 
+
 # =========================
 # 7. IMPORTS & SCOPE
 # =========================
-# TODO: Add import statement, from-import, scope edge cases
+def test_import_statements(parser, typecheck_flag):
+    # Test unquoted imports
+    program = parser.parse(
+        "import foo.bar\nimport math as m\nfrom collections import deque", do_type_check=typecheck_flag, do_transform=True
+    )
+    assert isinstance(program, Program)
+    assert len(program.statements) == 3
+
+    # First import: simple unquoted
+    import_stmt = program.statements[0]
+    assert isinstance(import_stmt, ImportStatement)
+    assert import_stmt.module == "foo.bar"
+    assert import_stmt.alias is None
+
+    # Second import: unquoted with alias
+    import_stmt2 = program.statements[1]
+    assert isinstance(import_stmt2, ImportStatement)
+    assert import_stmt2.module == "math"
+    assert import_stmt2.alias == "m"
+
+    # Third import: from-import unquoted
+    import_stmt3 = program.statements[2]
+    assert isinstance(import_stmt3, ImportFromStatement)
+    assert import_stmt3.module == "collections"
+    assert len(import_stmt3.names) == 1
+    assert import_stmt3.names[0][0] == "deque"
+    assert import_stmt3.names[0][1] is None
+
 
 # =========================
 # 8. TRY/EXCEPT/FINALLY

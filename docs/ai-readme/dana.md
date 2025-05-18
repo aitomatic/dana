@@ -163,13 +163,13 @@ result = double(5)
 
 ### Importing DANA Modules
 ```dana
-import "my_utils.na" as util
+import my_utils.na as util
 result = util.double(10)
 ```
 
 ### Importing Python Modules
 ```dana
-import "my_python_module.py" as py
+import my_python_module.py as py
 sum = py.add(1, 2)
 ```
 

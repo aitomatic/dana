@@ -29,12 +29,12 @@ result = double(5)
 
 **With alias:**
 ```dana
-import "my_utils.na" as util
+import my_utils.na as util
 result = util.double(10)
 ```
 **Without alias:**
 ```dana
-import "my_utils.na"
+import my_utils.na
 result = double(10)
 ```
 - Use `import` to bring in functions from other DANA files.
@@ -46,13 +46,13 @@ result = double(10)
 
 **With alias:**
 ```dana
-import "my_python_module.py" as py
+import my_python_module.py as py
 sum = py.add(1, 2)
 product = py.multiply(3, 4)
 ```
 **Without alias:**
 ```dana
-import "my_python_module.py"
+import my_python_module.py
 sum = add(1, 2)
 product = multiply(3, 4)
 ```

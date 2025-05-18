@@ -66,12 +66,12 @@ sum = py.add(1, 2)
 ---
 
 ## 5. Grammar & Import Syntax
-- Import statements require quotes around the file/module name: `import "foo.py"` or `import "foo.na"`.
+- Import statements use unquoted module names: `import foo.py`
 - Extension determines import type: `.py` for Python, `.na` for DANA.
 - `as` provides namespacing; omitting it imports functions globally.
 - Example grammar rule:
   ```
-  import_stmt : "import" STRING ("as" IDENTIFIER)?
+  import_stmt : "import" module_path ("as" IDENTIFIER)?
   ```
 
 ---
