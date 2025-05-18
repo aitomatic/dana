@@ -7,6 +7,8 @@ from lark import Token, Tree
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.dana.common.exceptions import ParseError
 from opendxa.dana.sandbox.parser.ast import ASTNode, LiteralExpression
+from opendxa.dana.sandbox.parser.utils.tree_utils import TreeTraverser
+from opendxa.dana.sandbox.parser.utils.tree_utils import unwrap_single_child_tree as utils_unwrap
 
 
 class BaseTransformer(Loggable):
@@ -14,6 +16,12 @@ class BaseTransformer(Loggable):
 
     Provides common utility methods for transforming Lark parse trees into DANA AST nodes.
     """
+
+    def __init__(self):
+        """Initialize the transformer with tree traversal utilities."""
+        super().__init__()
+        # Create a TreeTraverser instance for tree traversal operations
+        self.tree_traverser = TreeTraverser(transformer=self)
 
     def _parse_literal(self, text):
         """Parse a simple literal value from text or Token."""
@@ -120,10 +128,18 @@ class BaseTransformer(Loggable):
         """
         Recursively unwrap single-child Tree nodes, stopping at rule names in stop_at.
         If stop_at is None, unwrap all single-child Trees.
+
+        This method now delegates to the tree_utils implementation for consistency.
         """
         from lark import Tree
 
-        stop_at = stop_at or set()
-        while isinstance(item, Tree) and len(item.children) == 1 and getattr(item, "data", None) not in stop_at:
-            item = item.children[0]
-        return item
+        # For backward compatibility, handle stop_at parameter
+        if stop_at:
+            stop_at = stop_at or set()
+            # Use the old implementation if stop_at is provided
+            while isinstance(item, Tree) and len(item.children) == 1 and getattr(item, "data", None) not in stop_at:
+                item = item.children[0]
+            return item
+        else:
+            # Use the new implementation from tree_utils
+            return utils_unwrap(item)

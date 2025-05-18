@@ -1,10 +1,10 @@
 """
 OpenDXA DANA Type Checker
 
+This module provides type checking functionality for DANA programs.
+
 Copyright © 2025 Aitomatic, Inc.
 MIT License
-
-This module provides type checking for the DANA language in OpenDXA.
 
 Community Values:
     1. Attribution: Please maintain attribution to Aitomatic and OpenDXA/DANA in derivative works.
@@ -15,10 +15,6 @@ Community Values:
 Learn more: https://aitomatic.com
 GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
-
-Type checker for DANA programs.
-
-This module provides type checking functionality for DANA programs.
 """
 
 from typing import Any, Dict, Optional
