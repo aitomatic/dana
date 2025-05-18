@@ -233,7 +233,7 @@ class StatementTransformer(BaseTransformer):
                     param_name = p.value
                     param_list.append(Identifier(name=f"local.{param_name}"))
                 else:
-                    self.warning(f"Unexpected parameter: {p} ({type(p)})")
+                    raise TypeError(f"Unexpected parameter: {p} (type: {type(p)})")
         elif isinstance(params, Token):
             param_name = params.value
             param_list.append(Identifier(name=f"local.{param_name}"))
