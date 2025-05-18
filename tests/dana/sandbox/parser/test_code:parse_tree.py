@@ -37,6 +37,17 @@ def find_value_in_tree(tree, value):
     return False
 
 
+def find_all(tree, data_name):
+    """Recursively find all subtrees with the given data name."""
+    result = []
+    if isinstance(tree, Tree):
+        if tree.data == data_name:
+            result.append(tree)
+        for child in tree.children:
+            result.extend(find_all(child, data_name))
+    return result
+
+
 # 1. Assignment and targets
 
 
@@ -131,7 +142,7 @@ def test_string_and_literals(dana_parser):
     expr = assignment.children[1]
     atom = find_first(expr, "atom")
     assert atom is not None
-    string_node = find_first(atom, "any_string")
+    string_node = find_first(atom, "string_literal")
     assert string_node is not None
     assert any(child.type == "REGULAR_STRING" for child in string_node.children if hasattr(child, "type"))
 
@@ -141,11 +152,15 @@ def test_string_and_literals(dana_parser):
     expr2 = assignment2.children[1]
     atom2 = find_first(expr2, "atom")
     assert atom2 is not None
-    string_node2 = find_first(atom2, "any_string")
+    string_node2 = find_first(atom2, "string_literal")
     assert string_node2 is not None
-    raw_string_node = find_first(string_node2, "raw_string")
-    assert raw_string_node is not None
-    assert any(child.type == "REGULAR_STRING" for child in raw_string_node.children if hasattr(child, "type"))
+    # Look for a RAW_STRING token among the children
+    has_raw_string = False
+    for child in string_node2.children:
+        if hasattr(child, "type") and child.type == "RAW_STRING":
+            has_raw_string = True
+            break
+    assert has_raw_string, "RAW_STRING token not found in string_literal"
 
     tree3 = dana_parser.parse('s = """multi\nline\nstring"""\n', do_transform=False)
     assignment3 = find_first(tree3, "assignment")
@@ -153,8 +168,15 @@ def test_string_and_literals(dana_parser):
     expr3 = assignment3.children[1]
     atom3 = find_first(expr3, "atom")
     assert atom3 is not None
-    multiline_string = find_first(atom3, "multiline_string")
-    assert multiline_string is not None
+    string_node3 = find_first(atom3, "string_literal")
+    assert string_node3 is not None
+    # Look for a MULTILINE_STRING token among the children
+    has_multiline = False
+    for child in string_node3.children:
+        if hasattr(child, "type") and child.type == "MULTILINE_STRING":
+            has_multiline = True
+            break
+    assert has_multiline, "MULTILINE_STRING token not found in string_literal"
 
     tree4 = dana_parser.parse("a = True\nb = False\nc = None\n", do_transform=False)
     assignments = [sub for sub in tree4.iter_subtrees() if sub.data == "assignment"]
@@ -173,13 +195,15 @@ def test_string_and_literals(dana_parser):
     expr5 = assignment5.children[1]
     atom5 = find_first(expr5, "atom")
     assert atom5 is not None
-    string_node5 = find_first(atom5, "any_string")
+    string_node5 = find_first(atom5, "string_literal")
     assert string_node5 is not None
-    # Look for fstring rule node instead of F_STRING token
-    fstring_node = find_first(string_node5, "fstring")
-    assert fstring_node is not None
-    # Our f-string implementation now uses a single F_STRING token
-    assert len(fstring_node.children) == 1
+    # Look for an F_STRING_TOKEN token in the children
+    has_fstring = False
+    for child in string_node5.children:
+        if hasattr(child, "type") and child.type == "F_STRING_TOKEN":
+            has_fstring = True
+            break
+    assert has_fstring, "F_STRING_TOKEN not found in string_literal node"
 
 
 def test_fstring_assignment(dana_parser):
@@ -189,13 +213,15 @@ def test_fstring_assignment(dana_parser):
     expr = assignment.children[1]
     atom = find_first(expr, "atom")
     assert atom is not None
-    string_node = find_first(atom, "any_string")
+    string_node = find_first(atom, "string_literal")
     assert string_node is not None
-    # Look for fstring rule node
-    fstring_node = find_first(string_node, "fstring")
-    assert fstring_node is not None
-    # Our f-string implementation now uses a single F_STRING token
-    assert len(fstring_node.children) == 1
+    # Look for an F_STRING_TOKEN token in the children
+    has_fstring = False
+    for child in string_node.children:
+        if hasattr(child, "type") and child.type == "F_STRING_TOKEN":
+            has_fstring = True
+            break
+    assert has_fstring, "F_STRING_TOKEN not found in string_literal node"
 
 
 # We can only parse simple f-strings for now
@@ -356,7 +382,7 @@ def test_missing_trailing_newline(dana_parser):
 
 
 def test_nested_blocks_and_complex_program(dana_parser):
-    code = """def outer():\n    def inner():\n        if x:\n            try:\n                risky()\n            except:\n                pass\n    return inner\n"""
+    code = """def outer():\n    def nested():\n        if x:\n            try:\n                risky()\n            except:\n                pass\n    return nested\n"""
     tree = dana_parser.parse(code, do_transform=False)
     assert find_first(tree, "function_def") is not None
     assert find_first(tree, "if_stmt") is not None
@@ -486,3 +512,40 @@ def test_unmatched_parentheses_raises(dana_parser):
 def test_invalid_keyword_raises(dana_parser):
     with pytest.raises(Exception):  # noqa: B017
         dana_parser.parse("frobnicate x", do_transform=False)
+
+
+def test_fstring_with_expression_first():
+    """Test parsing f-strings that start immediately with an expression."""
+    code = """
+a = 5
+result = f"{a}"
+result2 = f"{a} text"
+"""
+    parser = DanaParser()
+    # Force parser to reload grammar
+    parser._grammar = None
+    parse_tree = parser.parse(code, do_transform=False)
+
+    # Verify the parse tree has the right structure
+    assignments = find_all(parse_tree, "assignment")
+    assert len(assignments) == 3  # a=5, result=f"{a}", result2=f"{a} text"
+
+    # Check for the string_literal node in the parse tree
+    string_literal_nodes = []
+
+    # Find any nodes that have F_STRING_TOKEN children
+    for node in parse_tree.iter_subtrees():
+        has_fstring = False
+        for child in getattr(node, "children", []):
+            if hasattr(child, "type") and child.type == "F_STRING_TOKEN":
+                has_fstring = True
+                break
+
+        if has_fstring:
+            string_literal_nodes.append(node)
+
+    assert len(string_literal_nodes) >= 2, "Not enough F_STRING_TOKEN nodes found in the tree"
+
+    # Test that transformation doesn't fail
+    ast = parser.parse(code, do_transform=True)
+    assert len(ast.statements) == 3

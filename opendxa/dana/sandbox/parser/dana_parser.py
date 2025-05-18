@@ -29,10 +29,12 @@ import os
 from pathlib import Path
 from typing import Any, NamedTuple, Sequence, cast
 
+from lark import Lark, Tree
 from lark.indenter import PythonIndenter
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.dana.sandbox.parser.transformer.dana_transformer import DanaTransformer
+from opendxa.dana.sandbox.parser.type_checker import TypeEnvironment
 
 try:
     from lark import Lark, Tree
@@ -44,11 +46,8 @@ except ImportError:
 # Create a shared logger for the parser module
 from opendxa.common.utils.logging import DXA_LOGGER
 from opendxa.dana.common.exceptions import ParseError
-from opendxa.dana.sandbox.parser.ast import (
-    Identifier,
-    Program,
-)
-from opendxa.dana.sandbox.parser.type_checker import TypeChecker, TypeEnvironment
+from opendxa.dana.sandbox.parser.ast import Identifier, Program
+from opendxa.dana.sandbox.parser.type_checker import TypeChecker
 
 parser_logger = DXA_LOGGER.getLogger("opendxa.dana.language.parser")
 
@@ -145,12 +144,23 @@ class DanaParser(Lark, Loggable):
     """Grammar-based parser for DANA language.
 
     Uses Lark to parse DANA programs into AST nodes based on a formal grammar.
+
+    Args:
+        optimize: Whether to optimize the parser (default: True)
+        debug: Whether to enable debug mode (default: False)
+        reload_grammar: Force reload of the grammar (default: False)
     """
 
-    def __init__(self):
+    _grammar_text = None
+
+    def __init__(self, reload_grammar=False):
         """Initialize the parser with the DANA grammar."""
         # Initialize type environment
         self.type_environment = TypeEnvironment()
+
+        # Clear cached grammar if requested
+        if reload_grammar:
+            DanaParser._grammar_text = None
 
         # Path to the grammar file (relative to this file)
         grammar_path = Path(__file__).parent / "dana_grammar.lark"
@@ -160,19 +170,20 @@ class DanaParser(Lark, Loggable):
             raise FileNotFoundError(f"Grammar file not found: {grammar_path}")
 
         # Load grammar from file - force read from disk to ensure we have latest
-        with open(grammar_path) as f:
-            self.grammar = f.read()
-        self.debug(f"Loaded grammar from {grammar_path}")
+        if DanaParser._grammar_text is None:
+            with open(grammar_path) as f:
+                DanaParser._grammar_text = f.read()
+            self.debug(f"Loaded grammar from {grammar_path}")
 
-        # Initialize the Lark parser with a fresh grammar each time
+        # Initialize the Lark parser with the grammar
         super().__init__(
-            grammar=self.grammar,
+            grammar=DanaParser._grammar_text,
             parser="lalr",
             postlex=DanaIndenter(),
             start="program",
             lexer="contextual",
             debug=False,
-            cache=False,  # Disable caching to ensure fresh grammar each time
+            cache=False if reload_grammar else False,  # Disable caching always
         )
 
         self.transformer = DanaTransformer()

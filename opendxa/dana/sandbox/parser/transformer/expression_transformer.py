@@ -566,6 +566,25 @@ class ExpressionTransformer(BaseTransformer):
             if item.type == "REGULAR_STRING":
                 value = item.value[1:-1]  # Strip quotes
                 return LiteralExpression(value)
+            elif item.type == "F_STRING_TOKEN":
+                # Pass to the fstring_transformer
+                from opendxa.dana.sandbox.parser.transformer.fstring_transformer import FStringTransformer
+
+                fstring_transformer = FStringTransformer()
+                return fstring_transformer.fstring([item])
+            elif item.type == "RAW_STRING":
+                # Handle raw string
+                value = item.value[2:-1]  # Strip r" and "
+                return LiteralExpression(value)
+            elif item.type == "MULTILINE_STRING":
+                # Handle multiline string
+                if item.value.startswith('"""') and item.value.endswith('"""'):
+                    value = item.value[3:-3]
+                elif item.value.startswith("'''") and item.value.endswith("'''"):
+                    value = item.value[3:-3]
+                else:
+                    value = item.value
+                return LiteralExpression(value)
         elif isinstance(item, Tree):
             if item.data == "raw_string":
                 # raw_string: "r" REGULAR_STRING
@@ -649,3 +668,50 @@ class ExpressionTransformer(BaseTransformer):
     def MOD(self, token):
         """Handle the modulo operator token."""
         return BinaryOperator.MODULO
+
+    def string_literal(self, items):
+        """
+        Handles string_literal rule from the grammar, which includes REGULAR_STRING, F_STRING_TOKEN, RAW_STRING, etc.
+        This rule directly maps to grammar's string_literal rule.
+        """
+        if not items:
+            return LiteralExpression("")
+
+        item = items[0]
+        from lark import Token
+
+        if isinstance(item, Token):
+            # F-string handling
+            if item.type == "F_STRING_TOKEN":
+                # Pass to the FStringTransformer
+                from opendxa.dana.sandbox.parser.transformer.fstring_transformer import FStringTransformer
+
+                fstring_transformer = FStringTransformer()
+                return fstring_transformer.fstring([item])
+            # Regular string
+            elif item.type == "REGULAR_STRING":
+                value = item.value[1:-1]  # Strip quotes
+                return LiteralExpression(value)
+            # Raw string
+            elif item.type == "RAW_STRING":
+                # Extract the raw string content (removing r" prefix and " suffix)
+                if item.value.startswith('r"') and item.value.endswith('"'):
+                    value = item.value[2:-1]
+                elif item.value.startswith("r'") and item.value.endswith("'"):
+                    value = item.value[2:-1]
+                else:
+                    value = item.value
+                return LiteralExpression(value)
+            # Multiline string
+            elif item.type == "MULTILINE_STRING":
+                if item.value.startswith('"""') and item.value.endswith('"""'):
+                    value = item.value[3:-3]
+                elif item.value.startswith("'''") and item.value.endswith("'''"):
+                    value = item.value[3:-3]
+                else:
+                    value = item.value
+                return LiteralExpression(value)
+
+        # If we reach here, it's an unexpected string type
+        self.error(f"Unexpected string literal type: {type(item)}")
+        return LiteralExpression("")

@@ -162,6 +162,16 @@ class StatementExecutor(BaseExecutor):
                 if hasattr(value, "__class__") and value.__class__.__name__ == "FStringExpression":
                     value = self.expression_evaluator.evaluate(value)
 
+                # Handle f-string literals (strings starting with 'f"' or "f'")
+                if isinstance(value, str) and (value.startswith('f"') or value.startswith("f'")):
+                    self.debug(f"Found string f-string: {value}")
+                    # Enhance the local context to include all variables
+                    local_context = self._enhance_local_context()
+                    # Re-evaluate as a literal expression to process the f-string
+                    from opendxa.dana.sandbox.parser.ast import LiteralExpression
+
+                    value = self.expression_evaluator._evaluate_literal_expression(LiteralExpression(value=value), local_context)
+
                 # Recursively extract values from list of LiteralExpressions
                 if isinstance(value, list):
 
@@ -180,7 +190,8 @@ class StatementExecutor(BaseExecutor):
                         return result
 
                     value = extract_values(value)
-            except Exception:
+            except Exception as e:
+                self.debug(f"Error evaluating assignment value: {e}")
                 raise
 
             # Handle scoped variables
@@ -205,7 +216,8 @@ class StatementExecutor(BaseExecutor):
             self._execute_hook(HookType.AFTER_ASSIGNMENT, node, {"value": value})
 
             return result
-        except Exception:
+        except Exception as e:
+            self.debug(f"Error in execute_assignment: {e}")
             raise
 
     def execute_print_statement(self, node: PrintStatement) -> None:

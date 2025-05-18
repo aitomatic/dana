@@ -172,6 +172,26 @@ def test_fstring_complex_expressions():
     assert fexpr.parts[1].operator == BinaryOperator.GREATER_THAN
 
 
+def test_fstring_starts_with_expression():
+    # Test an f-string that starts immediately with an expression
+    ft = FStringTransformer()
+    token = make_token("F_STRING", 'f"{a}"')
+    result = ft.fstring([token])
+    fexpr = result.value
+    assert isinstance(fexpr, FStringExpression)
+    assert isinstance(fexpr.parts[0], Identifier)
+    assert fexpr.parts[0].name == "local.a"
+
+    # Test with expression followed by text
+    token2 = make_token("F_STRING", 'f"{a} text"')
+    result2 = ft.fstring([token2])
+    fexpr2 = result2.value
+    assert isinstance(fexpr2, FStringExpression)
+    assert isinstance(fexpr2.parts[0], Identifier)
+    assert fexpr2.parts[0].name == "local.a"
+    assert fexpr2.parts[1] == " text"
+
+
 # 3. StatementTransformer tests
 
 

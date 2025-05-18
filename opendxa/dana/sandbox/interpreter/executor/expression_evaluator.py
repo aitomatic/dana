@@ -299,8 +299,45 @@ class ExpressionEvaluator(BaseExecutor):
         Returns:
             The literal value
         """
+        # Handle FStringExpression objects
         if isinstance(node.value, FStringExpression):
             return self._evaluate_fstring_expression(node.value, context)
+
+        # Handle f-string literals that are strings starting with 'f"' or "f'"
+        if isinstance(node.value, str) and (node.value.startswith('f"') or node.value.startswith("f'")):
+            self.debug(f"Converting f-string literal to evaluated string: {node.value}")
+            # Extract variable names from the f-string
+            parts = []
+            current_str = node.value[2:-1]  # Remove the f" and closing "
+            # Create a simple FStringExpression with the content
+
+            # Extract any variables from the string using a simple regex
+            import re
+
+            # Find all expressions like {var} in the string
+            var_matches = re.findall(r"\{([^{}]+)\}", current_str)
+
+            # If we have variables, replace them with their values from context
+            if var_matches and context:
+                result = current_str
+                for var_name in var_matches:
+                    if var_name in context:
+                        result = result.replace(f"{{{var_name}}}", str(context[var_name]))
+                    elif var_name.startswith("local.") and var_name[6:] in context:
+                        result = result.replace(f"{{{var_name}}}", str(context[var_name[6:]]))
+                    else:
+                        try:
+                            # Try to retrieve from context manager
+                            var_value = self.context_manager.get_from_context(var_name, context)
+                            result = result.replace(f"{{{var_name}}}", str(var_value))
+                        except Exception:
+                            # If variable not found, leave as is
+                            pass
+                return result
+
+            # If no matches or no context, return the original f-string
+            return node.value
+
         # Handle list of expressions (especially LiteralExpressions) by recursively evaluating each item
         elif isinstance(node.value, list):
             # Recursively evaluate each item in the list
