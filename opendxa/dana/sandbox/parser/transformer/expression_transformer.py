@@ -69,6 +69,8 @@ class ExpressionTransformer(BaseTransformer):
             # Always dispatch to the corresponding method for these rules
             if item.data == "sum_expr":
                 return self.sum_expr(item.children)
+            if item.data == "product":
+                return self.product(item.children)
             if item.data == "term":
                 return self.term(item.children)
             if item.data == "comparison":
@@ -287,14 +289,30 @@ class ExpressionTransformer(BaseTransformer):
         return result
 
     def factor(self, items):
+        """
+        Transform a factor rule into an AST expression.
+
+        Grammar: factor: (ADD | SUB) factor | atom trailer*
+        """
         # Unary plus/minus or pass-through
         if len(items) == 1:
+            # Just an atom with possible trailers
             return self.expression([items[0]])
+
+        # If we have a unary operator
         op_token = items[0]
-        right = self.expression([items[1]])
+        right = None
+
+        # Try to process the second item
+        if len(items) > 1:
+            right = self.expression([items[1]])
+        else:
+            # Fallback for unexpected structure
+            raise ValueError(f"Factor with operator {op_token} has no operand")
 
         # Explicitly cast right to Expression
         right_expr = cast(Expression, right)
+
         # Ensure operator is a string for UnaryExpression
         from lark import Token
 
@@ -302,6 +320,7 @@ class ExpressionTransformer(BaseTransformer):
             op_str = op_token.value
         else:
             op_str = str(op_token)
+
         return UnaryExpression(operator=op_str, operand=right_expr)
 
     def power(self, items):
@@ -440,22 +459,14 @@ class ExpressionTransformer(BaseTransformer):
 
     def list(self, items):
         """
-        Transform a list literal into a LiteralExpression with primitive values.
-
-        We process each item and extract the primitive value if possible to avoid
-        storing LiteralExpression objects in the list.
+        Transform a list literal into a LiteralExpression with list of LiteralExpression values.
         """
         flat_items = self.flatten_items(items)
         processed_items = []
 
         for item in flat_items:
             expr = self.expression([item])
-
-            # If it's a LiteralExpression, extract its value
-            if isinstance(expr, LiteralExpression) and hasattr(expr, "value"):
-                processed_items.append(expr.value)
-            else:
-                processed_items.append(expr)
+            processed_items.append(expr)
 
         return LiteralExpression(value=processed_items)
 
@@ -517,7 +528,7 @@ class ExpressionTransformer(BaseTransformer):
                 base = Identifier(name=name, location=getattr(base, "location", None))
             # Indexing: [ ... ]
             elif hasattr(t, "data") and t.data == "expr":
-                from opendxa.dana.sandbox.parserx.parser.ast import SubscriptExpression
+                from opendxa.dana.sandbox.parser.ast import SubscriptExpression
 
                 base = SubscriptExpression(
                     object=base, index=t.children[0] if hasattr(t, "children") else t, location=getattr(base, "location", None)

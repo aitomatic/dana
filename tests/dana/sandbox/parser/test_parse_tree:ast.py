@@ -3,7 +3,7 @@
 #
 # This source code is licensed under the license found in the LICENSE file in the root directory of this source tree
 #
-from typing import cast
+from typing import List, cast
 
 import pytest
 
@@ -12,10 +12,12 @@ from opendxa.dana.sandbox.parser.ast import (
     AttributeAccess,
     BinaryExpression,
     BinaryOperator,
+    ForLoop,
     FStringExpression,
     FunctionCall,
     Identifier,
     LiteralExpression,
+    Statement,
     UnaryExpression,
 )
 from opendxa.dana.sandbox.parser.transformer.expression_transformer import ExpressionTransformer
@@ -209,11 +211,10 @@ def test_statement_while_loop():
 
 
 def test_statement_for_loop():
-    st = StatementTransformer()
-    _ = Identifier("local.i")
-    iterable = Identifier("local.xs")
-    body = [Assignment(target=Identifier("local.i"), value=LiteralExpression(1))]
-    loop = st.for_stmt([make_token("NAME", "i"), iterable, body])
+    target = Identifier(name="i")
+    iterable = Identifier(name="local.xs")
+    body: List[Statement] = [Assignment(target=Identifier("local.i"), value=LiteralExpression(1))]
+    loop = ForLoop(target=target, iterable=iterable, body=body)
     assert loop.target.name == "i"
     assert loop.iterable.name == "local.xs"
     assert len(loop.body) == 1

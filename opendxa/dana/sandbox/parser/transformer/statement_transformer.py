@@ -130,7 +130,7 @@ class StatementTransformer(BaseTransformer):
         """Transform a for loop rule into a ForLoop node."""
         from lark import Tree
 
-        from opendxa.dana.sandbox.parser.ast import Expression, Identifier, Statement
+        from opendxa.dana.sandbox.parser.ast import Expression, Identifier
 
         # Get the loop variable (target)
         target = Identifier(name=items[0].value if isinstance(items[0], Token) else str(items[0]))
@@ -156,9 +156,14 @@ class StatementTransformer(BaseTransformer):
                     transformed = self._transform_item(item)
                     if transformed is not None:
                         body_items.append(transformed)
-            # If body is already a Statement, use it directly
-            elif isinstance(body, Statement):
-                body_items = [body]
+            # Otherwise, try to transform the item
+            else:
+                transformed = self._transform_item(body)
+                if transformed is not None:
+                    if isinstance(transformed, list):
+                        body_items.extend(transformed)
+                    else:
+                        body_items.append(transformed)
 
         return ForLoop(target=target, iterable=iterable_expr, body=body_items)
 
