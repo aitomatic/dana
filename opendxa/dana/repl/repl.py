@@ -104,8 +104,27 @@ class REPL(Loggable):
         Returns:
             A formatted, user-friendly error message
         """
+        # User-friendly rewording for parser errors
+        if "Unexpected token" in error_msg:
+            # Try to extract the problematic character or symbol
+            import re
+
+            match = re.search(r"Unexpected token Token\('([^']+)', '([^']+)'\)", error_msg)
+            if match:
+                symbol_type, symbol = match.groups()
+                main_msg = f"Unexpected character or symbol '{symbol}' in your input."
+            else:
+                main_msg = "Unexpected character or symbol in your input."
+            return (
+                "Syntax Error:\n"
+                f"  Input: {user_input}\n"
+                f"  {main_msg}\n"
+                "  Please check for typos, missing operators, or unsupported syntax."
+            )
         # Determine error type
         error_type = "Error"
+        summary = None
+        tip = None
         if "Unexpected token" in error_msg or "Invalid syntax" in error_msg or "Expected one of" in error_msg:
             error_type = "Syntax Error"
         elif "Unsupported expression type" in error_msg:
@@ -169,7 +188,8 @@ class REPL(Loggable):
             self.debug("NLP mode enabled, translating input")
             parse_result, translated_code = Misc.safe_asyncio_run(self.transcoder.to_dana, program_source)
             if parse_result.errors:
-                raise DanaError(str(parse_result.errors[0]))
+                formatted = self._format_error_message(str(parse_result.errors[0]), program_source)
+                raise DanaError(formatted)
             program_source = translated_code
             print(f"Translated to: {program_source}")
 
@@ -178,14 +198,16 @@ class REPL(Loggable):
             # Parse the program (synchronous operation)
             parse_result = self.parser.parse(program_source)
             if hasattr(parse_result, "errors") and parse_result.errors:
-                raise DanaError(str(parse_result.errors[0]))
+                formatted = self._format_error_message(str(parse_result.errors[0]), program_source)
+                raise DanaError(formatted)
             program = parse_result.program if hasattr(parse_result, "program") else parse_result
 
             # Execute the program (synchronous operation)
             result = self.interpreter.execute_program(program)
             return result
         except Exception as e:
-            raise DanaError(str(e))
+            formatted = self._format_error_message(str(e), program_source)
+            raise DanaError(formatted)
 
     def get_context(self) -> SandboxContext:
         """Get the current runtime context."""

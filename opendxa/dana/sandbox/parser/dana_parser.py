@@ -78,6 +78,23 @@ class DanaIndenter(PythonIndenter):
     DEDENT_type = "_DEDENT"
 
 
+def strip_lark_trees(node):
+    """Recursively walk the AST and raise if any Lark Tree nodes are found."""
+    if isinstance(node, Tree):
+        raise TypeError(f"Lark Tree node found in AST after transformation: {node.data}")
+    elif isinstance(node, list):
+        for item in node:
+            strip_lark_trees(item)
+    elif isinstance(node, dict):
+        for v in node.values():
+            strip_lark_trees(v)
+    elif hasattr(node, "__dict__"):
+        for v in vars(node).values():
+            strip_lark_trees(v)
+    # else: primitive, fine
+    return node
+
+
 class DanaParser(Lark, Loggable):
     """Grammar-based parser for DANA language.
 

@@ -15,4 +15,4 @@ fi
 # Run the REPL
 echo "Starting DANA REPL with variable reference fixes..."
 echo "You can now use expressions like 'a = a + 1' where a is a local variable"
-exec python opendxa/dana/dana_repl_app.py "$@"
+exec python opendxa/dana/repl/dana_repl_app.py "$@"

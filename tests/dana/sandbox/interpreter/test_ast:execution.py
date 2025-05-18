@@ -631,3 +631,7 @@ def test_division_by_zero():
         ]
     )
     interpreter.execute_program(program)
+
+
+# --- End-to-End Integration Tests for DANA Grammar Features ---
+# (Moved to test_code:execution.py)

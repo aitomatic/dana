@@ -488,3 +488,59 @@ class ExpressionTransformer(BaseTransformer):
     def expr(self, items):
         # Delegate to the main expression handler
         return self.expression(items)
+
+    def string(self, items):
+        # Handles REGULAR_STRING, fstring, raw_string, multiline_string
+        item = items[0]
+        from lark import Token, Tree
+
+        if isinstance(item, Token):
+            if item.type == "REGULAR_STRING":
+                value = item.value[1:-1]  # Strip quotes
+                return LiteralExpression(value)
+        elif isinstance(item, Tree):
+            if item.data == "raw_string":
+                # raw_string: "r" REGULAR_STRING
+                string_token = item.children[1]
+                value = string_token.value[1:-1]
+                return LiteralExpression(value)
+            elif item.data == "multiline_string":
+                # multiline_string: TRIPLE_QUOTED_STRING
+                string_token = item.children[0]
+                # Strip triple quotes
+                value = string_token.value[3:-3]
+                return LiteralExpression(value)
+            elif item.data == "fstring":
+                # Handle fstring: f_prefix fstring_content
+                # For now, treat as a regular string but prepare for embedded expressions
+                parts = []
+
+                # Extract f_prefix (already processed) and fstring_content
+                content_node = item.children[1]
+
+                if isinstance(content_node, Token) and content_node.type == "REGULAR_STRING":
+                    # Simple case: f"..." with no embedded expressions
+                    value = content_node.value[1:-1]  # Strip quotes
+                    return LiteralExpression(value)
+
+                # Process complex fstring with potential embedded expressions
+                content_parts = []
+                # Skip the opening and closing quotes in content_node.children
+                for child in content_node.children[1:-1]:
+                    if isinstance(child, Token) and child.type == "fstring_text":
+                        # Regular text
+                        content_parts.append(LiteralExpression(child.value))
+                    elif isinstance(child, Tree) and child.data == "fstring_expr":
+                        # Embedded expression {expr}
+                        expr_node = child.children[1]  # Skip the { and }
+                        expr = self.expression([expr_node])
+                        content_parts.append(expr)
+                    elif isinstance(child, Token) and child.type == "ESCAPED_BRACE":
+                        # Escaped braces {{ or }}
+                        content_parts.append(LiteralExpression(child.value[0]))  # Just add one brace
+
+                # Return specialized FStringExpression node
+                return FStringExpression(parts=content_parts)
+
+        self.error(f"Unknown string type: {item}")
+        return LiteralExpression("")

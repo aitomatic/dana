@@ -137,7 +137,7 @@ MUL_OP: "*" | "/" | "//" | "%"
 
 factor: ("+" | "-") factor | power
 
-power: atom trailer* "**" factor
+power: atom trailer* "^" factor
      | atom trailer*
 
 trailer: "(" [arguments] ")"    // Function call
@@ -145,6 +145,24 @@ trailer: "(" [arguments] ")"    // Function call
        | "." NAME               // Property access
 
 arguments: expr ("," expr)* [","]
+
+// ===== F-STRING SUPPORT =====
+// TODO: Implement full f-string expression support in the transformer.
+
+// Define a custom token that matches both f"string" and f"{expr}" patterns
+// We include the outer quotes in the pattern, then strip them in the transformer
+F_STRING: /[fF]("([^"\\]|\\.|{{|}|}|\{[^}]*\})*"|'([^'\\]|\\.|{{|}|}|\{[^}]*\})*')/
+
+// f-string rule is just this one token
+fstring: F_STRING
+
+// These rules are for AST transformation
+fstring_expr: "{" expr "}"
+fstring_text: /[^{}"']+/
+ESCAPED_BRACE: "{{" | "}}"
+
+// Add raw string support
+raw_string: "r" REGULAR_STRING
 
 // ===== BASIC VALUES =====
 atom: variable trailer*
@@ -157,17 +175,16 @@ atom: variable trailer*
     | "(" expr ")"
 
 // String literals with support for regular, raw, and multiline strings
-any_string: REGULAR_STRING  // Regular string
-      | f_string            // f-string with embedded expressions
-      | raw_string          // Raw string for regex etc.
-      | multiline_string    // Triple-quoted multiline string
-
-raw_string: "r" REGULAR_STRING
-f_string: "f" REGULAR_STRING
-multiline_string: TRIPLE_QUOTED_STRING
+any_string: REGULAR_STRING
+          | fstring
+          | raw_string
+          | multiline_string
 
 // Triple quoted string for multiline text
 TRIPLE_QUOTED_STRING: /""".*?"""/s | /'''.*?'''/s
+
+// Define the multiline_string rule to connect to the token
+multiline_string: TRIPLE_QUOTED_STRING
 
 // ===== COLLECTIONS =====
 collection: list | dict | tuple
@@ -197,5 +214,5 @@ SYSTEM: "system"
 TRUE: "True" | "true" | "TRUE"
 FALSE: "False" | "false" | "FALSE"
 NONE: "None" | "none" | "NONE" | "null" | "NULL"
-// Custom NAME token that excludes reserved words
-NAME: /(?!(True|true|TRUE|False|false|FALSE|None|none|NONE|null|NULL|private|public|local|system|break|continue|pass|return|if|else|while|for|def|try|except|finally|raise|assert|import|from|as|with|lambda|yield|global|nonlocal|del|and|or|not|is|in)\b)[a-zA-Z_][a-zA-Z0-9_]*/
+// Custom NAME token that excludes reserved words and f when followed by a quote
+NAME: /(?!(f["']|F["']|True|true|TRUE|False|false|FALSE|None|none|NONE|null|NULL|private|public|local|system|break|continue|pass|return|if|else|while|for|def|try|except|finally|raise|assert|import|from|as|with|lambda|yield|global|nonlocal|del|and|or|not|is|in)\b)[a-zA-Z_][a-zA-Z0-9_]*/

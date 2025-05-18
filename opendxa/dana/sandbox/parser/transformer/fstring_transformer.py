@@ -12,6 +12,7 @@ Parses f-strings with embedded expressions, returning a LiteralExpression(FStrin
 Follows the style and best practices of StatementTransformer and ExpressionTransformer.
 """
 
+import logging
 from typing import Any, List
 
 from opendxa.dana.common.runtime_scopes import RuntimeScopes
@@ -33,14 +34,24 @@ class FStringTransformer(BaseTransformer):
     a LiteralExpression(FStringExpression(...)).
     """
 
+    def debug(self, message):
+        """Log debug messages."""
+        logging.debug(f"FStringTransformer: {message}")
+
     # === Entry Point ===
-    def f_string(self, items):
+    def fstring(self, items):
         """
         Transform an f-string rule into a LiteralExpression node with FStringExpression.
-        Grammar: f_string: "f" REGULAR_STRING
+        Grammar: fstring: F_STRING
         Example: f"Hello {name}!" -> LiteralExpression(value=FStringExpression(parts=["Hello ", Identifier(name="local.name"), "!"]))
         """
+        # Get the string value from F_STRING (items[0])
         s = items[0].value
+
+        # Remove 'f' or 'F' prefix
+        if s.startswith("f") or s.startswith("F"):
+            s = s[1:]
+
         # Remove quotes (single or double)
         if s.startswith('"') and s.endswith('"'):
             s = s[1:-1]
@@ -97,27 +108,192 @@ class FStringTransformer(BaseTransformer):
     def _parse_expression_in_fstring(self, expr_text: str) -> Any:
         """
         Parse an expression found in an f-string placeholder.
-        Supports simple binary operations and identifiers.
-        TODO: Support full DANA expressions using the main ExpressionTransformer.
+        Supports full DANA expressions by using the ExpressionTransformer.
+
+        For simple binary operations and identifiers, we still use direct parsing as
+        it's more robust for partial expressions.
         """
+        # Handle complex expressions with parentheses by using the main parser
+        if "(" in expr_text or ")" in expr_text:
+            try:
+                # Import here to avoid circular imports
+                from lark import UnexpectedInput, UnexpectedToken
+
+                from opendxa.dana.sandbox.parser.dana_parser import DanaParser
+
+                # Create a temporary expression wrapper for the parser
+                # We need to make this a valid complete expression and add a newline
+                wrapped_expr = f"{expr_text}\n"
+
+                # Create a parser instance just for this expression
+                parser = DanaParser()
+
+                # Parse the expression directly
+                try:
+                    # Try to parse as a complete expression
+                    parse_tree = parser.parse(wrapped_expr, do_transform=True)
+
+                    # Extract the resulting expression from the parsed program
+                    if hasattr(parse_tree, "statements") and parse_tree.statements:
+                        # If the parser returns a Program, extract the expression
+                        if len(parse_tree.statements) == 1:
+                            stmt = parse_tree.statements[0]
+                            # If it's a FunctionCall or an Identifier, return it directly
+                            if hasattr(stmt, "value"):
+                                return stmt.value
+                            return stmt
+
+                    # Fallback to direct approach if extraction fails
+                    self.debug("Failed to extract expression from parser result")
+
+                except (UnexpectedInput, UnexpectedToken) as e:
+                    self.debug(f"Parser error on complex expression: {e}")
+                    # Continue to other parsing methods
+
+            except Exception as e:
+                self.debug(f"Error using main parser for complex expression: {e}")
+                # Fall through to other parsing methods
+
+        # Handle comparison operators (<, >, <=, >=, ==, !=)
+        for op_str in [">", "<", ">=", "<=", "==", "!="]:
+            if op_str in expr_text:
+                try:
+                    # Find the position of the operator, accounting for nested expressions
+                    paren_level = 0
+                    op_position = -1
+
+                    for i in range(len(expr_text) - len(op_str) + 1):
+                        if i > 0 and expr_text[i - 1 : i + len(op_str)] == op_str:
+                            # Skip if we're in the middle of a multi-char operator
+                            continue
+
+                        if expr_text[i : i + len(op_str)] == op_str:
+                            # Check if we're at the right level
+                            if paren_level == 0:
+                                op_position = i
+                                break
+                        elif expr_text[i] == "(":
+                            paren_level += 1
+                        elif expr_text[i] == ")":
+                            paren_level -= 1
+
+                    if op_position >= 0:
+                        left = expr_text[:op_position].strip()
+                        right = expr_text[op_position + len(op_str) :].strip()
+
+                        left_expr = self._parse_expression_term(left)
+                        right_expr = self._parse_expression_term(right)
+
+                        # Map the operator string to the corresponding BinaryOperator enum
+                        op_map = {
+                            ">": BinaryOperator.GREATER_THAN,
+                            "<": BinaryOperator.LESS_THAN,
+                            ">=": BinaryOperator.GREATER_EQUALS,
+                            "<=": BinaryOperator.LESS_EQUALS,
+                            "==": BinaryOperator.EQUALS,
+                            "!=": BinaryOperator.NOT_EQUALS,
+                        }
+
+                        return BinaryExpression(left=left_expr, operator=op_map[op_str], right=right_expr)
+                except Exception as e:
+                    self.debug(f"Comparison operator parsing failed: {e}")
+                    # Continue to other approaches
+
+        # Try to parse using the direct approach for basic expressions
         binary_ops = [
             ("+", BinaryOperator.ADD),
             ("-", BinaryOperator.SUBTRACT, lambda x: not x.startswith("-")),  # Not negative number
             ("*", BinaryOperator.MULTIPLY),
             ("/", BinaryOperator.DIVIDE),
         ]
+
         for op_spec in binary_ops:
             op_str = op_spec[0]
             op_enum = op_spec[1]
             condition_func = op_spec[2] if len(op_spec) > 2 else None
+
             if op_str in expr_text and (condition_func is None or condition_func(expr_text)):
-                left, right = expr_text.split(op_str, 1)
-                left = left.strip()
-                right = right.strip()
-                left_expr = self._parse_expression_term(left)
-                right_expr = self._parse_expression_term(right)
-                return BinaryExpression(left=left_expr, operator=op_enum, right=right_expr)
-        # If no binary operation, parse as a single term
+                try:
+                    # Find the position of the operator, accounting for nested expressions
+                    # This handles cases like "x * (y + 2)" to find the top-level operator
+                    paren_level = 0
+                    op_position = -1
+
+                    for i, char in enumerate(expr_text):
+                        if char == "(":
+                            paren_level += 1
+                        elif char == ")":
+                            paren_level -= 1
+                        elif char == op_str and paren_level == 0:
+                            op_position = i
+                            break
+
+                    # Only proceed if we found the operator at the top level
+                    if op_position >= 0:
+                        left = expr_text[:op_position].strip()
+                        right = expr_text[op_position + len(op_str) :].strip()
+
+                        left_expr = self._parse_expression_term(left)
+                        right_expr = self._parse_expression_term(right)
+
+                        return BinaryExpression(left=left_expr, operator=op_enum, right=right_expr)
+                except Exception as e:
+                    self.debug(f"Direct parsing failed: {e}")
+                    # Continue to next operator or approach
+
+        # If direct parsing fails, use ExpressionTransformer
+        try:
+            # Create a local SimpleToken class that won't conflict
+            class _SimpleToken:
+                def __init__(self, type_, value):
+                    self.type = type_
+                    self.value = value
+
+                def __str__(self):
+                    return f"SimpleToken({self.type}, {self.value})"
+
+            from opendxa.dana.sandbox.parser.transformer.expression_transformer import ExpressionTransformer
+
+            # Create ExpressionTransformer and parse
+            et = ExpressionTransformer()
+
+            # Improved tokenization for all expressions
+            import re
+
+            # More comprehensive operator pattern
+            pattern = r"(\+|\-|\*|\/|\(|\)|\{|\}|\[|\]|\,|\.|==|!=|<=|>=|<|>|=|\s+)"
+            parts = re.split(pattern, expr_text)
+            parts = [p for p in parts if p and not p.isspace()]
+
+            tokens = []
+            for part in parts:
+                # Better token type determination
+                if part in ["(", ")"]:
+                    token_type = "PAREN"
+                elif part in ["+", "-", "*", "/", ">", "<", "==", "!=", ">=", "<=", "."]:
+                    token_type = "OPERATOR"
+                elif part.isdigit() or (part.startswith("-") and part[1:].isdigit()):
+                    token_type = "NUMBER"
+                elif part.replace(".", "", 1).isdigit() and part.count(".") == 1:
+                    token_type = "FLOAT"
+                elif part in ["True", "False"]:
+                    token_type = "BOOL"
+                elif part == "None":
+                    token_type = "NONE"
+                else:
+                    token_type = "NAME"
+
+                token = _SimpleToken(token_type, part)
+                tokens.append(token)
+
+            # Try to parse with the ExpressionTransformer
+            result = et.expression(tokens)
+            if result is not None:
+                return result
+        except Exception as e:
+            self.debug(f"ExpressionTransformer failed: {e}, falling back to simple parsing")
+
+        # If everything else fails, parse as a single term
         return self._parse_expression_term(expr_text)
 
     def _parse_expression_term(self, term: str) -> Any:

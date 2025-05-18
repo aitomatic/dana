@@ -91,8 +91,8 @@ def test_variable_scoped_and_dotted():
 
 def test_fstring_text_only():
     ft = FStringTransformer()
-    token = make_token("REGULAR_STRING", "Hello world!")
-    result = ft.f_string([token])
+    token = make_token("F_STRING", 'f"Hello world!"')
+    result = ft.fstring([token])
     assert isinstance(result, LiteralExpression)
     fexpr = result.value
     assert isinstance(fexpr, FStringExpression)
@@ -101,8 +101,8 @@ def test_fstring_text_only():
 
 def test_fstring_with_identifier():
     ft = FStringTransformer()
-    token = make_token("REGULAR_STRING", "Hello, {foo}")
-    result = ft.f_string([token])
+    token = make_token("F_STRING", 'f"Hello, {foo}"')
+    result = ft.fstring([token])
     fexpr = result.value
     assert isinstance(fexpr, FStringExpression)
     assert fexpr.parts[0] == "Hello, "
@@ -112,8 +112,8 @@ def test_fstring_with_identifier():
 
 def test_fstring_with_binary_expression():
     ft = FStringTransformer()
-    token = make_token("REGULAR_STRING", "Sum: {x + y}")
-    result = ft.f_string([token])
+    token = make_token("F_STRING", 'f"Sum: {x + y}"')
+    result = ft.fstring([token])
     fexpr = result.value
     assert isinstance(fexpr, FStringExpression)
     assert fexpr.parts[0] == "Sum: "
@@ -128,20 +128,46 @@ def test_fstring_with_binary_expression():
 
 def test_fstring_unbalanced_braces():
     ft = FStringTransformer()
-    token = make_token("REGULAR_STRING", "Hello {foo")
+    token = make_token("F_STRING", 'f"Hello {foo"')
     with pytest.raises(ValueError):
-        ft.f_string([token])
+        ft.fstring([token])
 
 
 def test_fstring_multiple_and_expression():
     ft = FStringTransformer()
-    token = make_token("REGULAR_STRING", "A: {a}, B: {b + 1}")
-    result = ft.f_string([token])
+    token = make_token("F_STRING", 'f"A: {a}, B: {b + 1}"')
+    result = ft.fstring([token])
     fexpr = result.value
     assert isinstance(fexpr, FStringExpression)
     assert len(fexpr.parts) == 4
     assert isinstance(fexpr.parts[1], Identifier)
     assert isinstance(fexpr.parts[3], BinaryExpression)
+
+
+def test_fstring_complex_expressions():
+    ft = FStringTransformer()
+    # Test nested expressions
+    token = make_token("F_STRING", 'f"Nested: {x * (y + 2)}"')
+    result = ft.fstring([token])
+    fexpr = result.value
+    assert isinstance(fexpr, FStringExpression)
+    assert isinstance(fexpr.parts[1], BinaryExpression)
+    assert fexpr.parts[1].operator == BinaryOperator.MULTIPLY
+
+    # Test multiple operations
+    token = make_token("F_STRING", 'f"Math: {a + b * c}"')
+    result = ft.fstring([token])
+    fexpr = result.value
+    assert isinstance(fexpr, FStringExpression)
+    assert isinstance(fexpr.parts[1], BinaryExpression)
+
+    # Test with comparison
+    token = make_token("F_STRING", 'f"Check: {x > 10}"')
+    result = ft.fstring([token])
+    fexpr = result.value
+    assert isinstance(fexpr, FStringExpression)
+    assert isinstance(fexpr.parts[1], BinaryExpression)
+    assert fexpr.parts[1].operator == BinaryOperator.GREATER_THAN
 
 
 # 3. StatementTransformer tests

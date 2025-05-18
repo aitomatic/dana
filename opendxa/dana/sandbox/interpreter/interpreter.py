@@ -25,6 +25,7 @@ It uses a modular architecture with specialized components for different aspects
 """
 
 import logging
+import re
 from typing import Any, Dict, Optional
 
 from opendxa.common.mixins.loggable import Loggable
@@ -41,6 +42,32 @@ from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 # Map DANA LogLevel to Python logging levels
 LEVEL_MAP = {LogLevel.DEBUG: logging.DEBUG, LogLevel.INFO: logging.INFO, LogLevel.WARN: logging.WARNING, LogLevel.ERROR: logging.ERROR}
+
+# Patch ErrorUtils.format_user_error to improve parser error messages
+_original_format_user_error = ErrorUtils.format_user_error
+
+
+def _patched_format_user_error(e, user_input=None):
+    msg = str(e)
+    # User-friendly rewording for parser errors
+    if "Unexpected token" in msg:
+        match = re.search(r"Unexpected token Token\('([^']+)', '([^']+)'\)", msg)
+        if match:
+            symbol_type, symbol = match.groups()
+            main_msg = f"The symbol '{symbol}' is not allowed in this context."
+            # Special suggestion for exponentiation
+            if symbol == "*" and user_input and "**" in user_input:
+                suggestion = "For exponentiation in DANA, use '^' (e.g., x = x ^ 2)."
+            else:
+                suggestion = "Please check for typos, missing operators, or unsupported syntax."
+        else:
+            main_msg = "An invalid symbol is not allowed in this context."
+            suggestion = "Please check for typos, missing operators, or unsupported syntax."
+        return "Syntax Error:\n" f"  Input: {user_input}\n" f"  {main_msg}\n" f"  {suggestion}"
+    return _original_format_user_error(e, user_input)
+
+
+ErrorUtils.format_user_error = _patched_format_user_error
 
 
 class Interpreter(Loggable):

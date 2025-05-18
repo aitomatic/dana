@@ -84,7 +84,7 @@ class BinaryOperator(Enum):
     MULTIPLY = "*"
     DIVIDE = "/"
     MODULO = "%"
-    POWER = "**"
+    POWER = "^"
 
 
 # === Utility Classes ===

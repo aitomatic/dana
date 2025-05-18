@@ -191,6 +191,7 @@ class ExpressionEvaluator(BaseExecutor):
                 elif node.operator == BinaryOperator.IN:
                     return left in right
                 elif node.operator == BinaryOperator.POWER:
+                    # DANA '^' means exponentiation, not bitwise XOR
                     return left**right
                 else:
                     # Unsupported operator
