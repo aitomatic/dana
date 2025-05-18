@@ -127,8 +127,8 @@ LE_OP: "<="
 NE_OP: "!="
 IN_OP: "in"
 NOT_IN_OP: "not" "in"
-IS_OP: "is"
-IS_NOT_OP: "is" "not"
+IS_OP: /\bis\b/
+IS_NOT_OP: /\bis\s+not\b/
 
 // Define token patterns with explicit priorities (lexer specific)
 // IMPORTANT: Define ** first, then * to avoid conflicts
@@ -174,7 +174,7 @@ MULTILINE_STRING: /""".*?"""/s | /'''.*?'''/s
 
 // Define the NAME token to explicitly NOT match f" or f' or r" or r'
 // Important: Added patterns to exclude 'f"', 'f'', 'r"', 'r'' in proper regex format
-NAME: /(?!([fF]["']|[rR]["']|True|true|TRUE|False|false|FALSE|None|none|NONE|null|NULL|private|public|local|system|break|continue|pass|return|if|else|while|for|def|try|except|finally|raise|assert|import|from|as|with|lambda|yield|global|nonlocal|del|and|or|not|is|in)(\b|))([a-zA-Z_][a-zA-Z0-9_]*)/
+NAME: /(?!([fF]["']|[rR]["']|True|true|TRUE|False|false|FALSE|None|none|NONE|null|NULL|private|public|local|system|break|continue|pass|return|if|else|while|for|def|try|except|finally|raise|assert|import|from|as|with|lambda|yield|global|nonlocal|del|and|or|not)(\b|))([a-zA-Z_][a-zA-Z0-9_]*)/
 
 // Basic string literals with f-strings
 string_literal: REGULAR_STRING
