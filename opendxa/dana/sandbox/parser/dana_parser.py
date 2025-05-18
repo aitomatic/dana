@@ -1,10 +1,16 @@
 """
 OpenDXA DANA Parser
 
+Grammar-based parser for DANA language.
+
+This module provides a robust parser for DANA using the Lark parsing library.
+It offers good extensibility, error reporting, and maintainability.
+
+The parser uses a modular design with specialized transformer components
+for different language constructs, improving maintainability and testability.
+
 Copyright © 2025 Aitomatic, Inc.
 MIT License
-
-This module provides the parser for the DANA language in OpenDXA.
 
 Community Values:
     1. Attribution: Please maintain attribution to Aitomatic and OpenDXA/DANA in derivative works.
@@ -15,14 +21,6 @@ Community Values:
 Learn more: https://aitomatic.com
 GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
-
-Grammar-based parser for DANA language.
-
-This module provides a robust parser for DANA using the Lark parsing library.
-It offers good extensibility, error reporting, and maintainability.
-
-The parser uses a modular design with specialized transformer components
-for different language constructs, improving maintainability and testability.
 """
 
 import os

@@ -1,6 +1,9 @@
 """
 OpenDXA DANA Runtime Interpreter
 
+This module provides the main Interpreter implementation for executing DANA programs.
+It uses a modular architecture with specialized components for different aspects of execution.
+
 Copyright © 2025 Aitomatic, Inc.
 MIT License
 
@@ -15,13 +18,6 @@ Community Values:
 Learn more: https://aitomatic.com
 GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
-
-This source code is licensed under the license found in the LICENSE file in the root directory of this source tree
-
-DANA Runtime Interpreter.
-
-This module provides the main Interpreter implementation for executing DANA programs.
-It uses a modular architecture with specialized components for different aspects of execution.
 """
 
 import logging
