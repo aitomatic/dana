@@ -1,10 +1,16 @@
 """
 OpenDXA DANA Parser
 
+Grammar-based parser for DANA language.
+
+This module provides a robust parser for DANA using the Lark parsing library.
+It offers good extensibility, error reporting, and maintainability.
+
+The parser uses a modular design with specialized transformer components
+for different language constructs, improving maintainability and testability.
+
 Copyright © 2025 Aitomatic, Inc.
 MIT License
-
-This module provides the parser for the DANA language in OpenDXA.
 
 Community Values:
     1. Attribution: Please maintain attribution to Aitomatic and OpenDXA/DANA in derivative works.
@@ -15,14 +21,6 @@ Community Values:
 Learn more: https://aitomatic.com
 GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
-
-Grammar-based parser for DANA language.
-
-This module provides a robust parser for DANA using the Lark parsing library.
-It offers good extensibility, error reporting, and maintainability.
-
-The parser uses a modular design with specialized transformer components
-for different language constructs, improving maintainability and testability.
 """
 
 import os
@@ -34,7 +32,7 @@ from lark.indenter import PythonIndenter
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.dana.sandbox.parser.transformer.dana_transformer import DanaTransformer
-from opendxa.dana.sandbox.parser.type_checker import TypeEnvironment
+from opendxa.dana.sandbox.parser.utils.type_checker import TypeEnvironment
 
 try:
     from lark import Lark, Tree
@@ -47,7 +45,7 @@ except ImportError:
 from opendxa.common.utils.logging import DXA_LOGGER
 from opendxa.dana.common.exceptions import ParseError
 from opendxa.dana.sandbox.parser.ast import Identifier, Program
-from opendxa.dana.sandbox.parser.type_checker import TypeChecker
+from opendxa.dana.sandbox.parser.utils.type_checker import TypeChecker
 
 parser_logger = DXA_LOGGER.getLogger("opendxa.dana.language.parser")
 

@@ -1,10 +1,10 @@
 """
 OpenDXA DANA Sandbox Context
 
+This module provides the sandbox context for the DANA runtime in OpenDXA.
+
 Copyright © 2025 Aitomatic, Inc.
 MIT License
-
-This module provides the sandbox context for the DANA runtime in OpenDXA.
 
 Community Values:
     1. Attribution: Please maintain attribution to Aitomatic and OpenDXA/DANA in derivative works.

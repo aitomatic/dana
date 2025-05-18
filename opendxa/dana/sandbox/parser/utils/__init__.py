@@ -1,10 +1,10 @@
 """
-OpenDXA DANA Transcoder Templates Package
+OpenDXA DANA Language Parser Package
 
 Copyright © 2025 Aitomatic, Inc.
 MIT License
 
-This package provides the templates for the DANA transcoder in OpenDXA.
+This package provides the parser for the DANA language in OpenDXA.
 
 Community Values:
     1. Attribution: Please maintain attribution to Aitomatic and OpenDXA/DANA in derivative works.
