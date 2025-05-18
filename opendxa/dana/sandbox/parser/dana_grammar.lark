@@ -130,17 +130,23 @@ NOT_IN_OP: "not" "in"
 IS_OP: "is"
 IS_NOT_OP: "is" "not"
 
-sum_expr: term (ADD_OP term)*
-ADD_OP: "+" | "-"
-term: factor (MUL_OP factor)*
-MUL_OP: "*" | "/" | "//" | "%"
+// Define token patterns with explicit priorities (lexer specific)
+// IMPORTANT: Define ** first, then * to avoid conflicts
+POW: "**"  // Define POW as a distinct token separate from MUL
+ADD: "+" 
+SUB: "-"
+MUL: "*"
+DIV: "/"
+FDIV: "//"
+MOD: "%"
 
-factor: ("+" | "-") factor | power
+// Expression precedence structure (lowest to highest)
+sum_expr: product ((ADD | SUB) product)*
+product: power ((MUL | DIV | FDIV | MOD) power)*
 
-power: atom trailer* POW_OP factor
-     | atom trailer*
-
-POW_OP: "^"
+// Power is right-associative, so use recursion on the right side 
+power: atom (POW power)?
+factor: (ADD | SUB) factor | atom trailer*
 
 trailer: "(" [arguments] ")"    // Function call
        | "[" expr "]"           // Indexing

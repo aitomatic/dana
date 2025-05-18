@@ -134,6 +134,7 @@ class ExpressionTransformer(BaseTransformer):
         """
         Extract the operator string from a parse tree node, token, or string.
         Handles comp_op, *_op, ADD_OP, MUL_OP, direct tokens, and plain strings.
+        Also handles BinaryOperator enum values.
         """
         from lark import Token, Tree
 
@@ -141,6 +142,8 @@ class ExpressionTransformer(BaseTransformer):
             return op_token.value
         if isinstance(op_token, str):
             return op_token
+        if isinstance(op_token, BinaryOperator):
+            return op_token.value  # Return the value of the enum
         if isinstance(op_token, Tree):
             if getattr(op_token, "data", None) == "comp_op":
                 op_str = " ".join(child.value for child in op_token.children if isinstance(child, Token))
@@ -204,8 +207,7 @@ class ExpressionTransformer(BaseTransformer):
             "and": BinaryOperator.AND,
             "or": BinaryOperator.OR,
             "in": BinaryOperator.IN,
-            "**": BinaryOperator.POWER,
-            "^": BinaryOperator.POWER,  # Add support for caret as power operator
+            "^": BinaryOperator.POWER,
         }
         return op_map[op_str]
 
@@ -306,36 +308,31 @@ class ExpressionTransformer(BaseTransformer):
         """
         Transform a power rule into an AST expression.
 
-        This handles both power operator forms:
-        1. atom POW_OP factor (in grammar: power: atom trailer* POW_OP factor)
-        2. atom trailer* (regular atoms without power operation)
-
-        The parse tree structure for case 1 is [atom, POW_OP, factor] or similar.
+        New grammar structure: power: factor (POWER_OP power)?
+        This makes power right-associative, as in 2**3**4 = 2**(3**4)
         """
+        if len(items) == 1:
+            # Just a single factor, no power operation
+            return self.expression([items[0]])
 
-        def ensure_expression(node):
-            from opendxa.dana.sandbox.parser.ast import BinaryExpression, FunctionCall, Identifier, LiteralExpression
+        # We have a power operation with a right operand
+        base = self.expression([items[0]])  # Base/left operand
 
-            if isinstance(node, (LiteralExpression, Identifier, BinaryExpression, FunctionCall)):
-                return node
-            raise TypeError(f"Invalid operand for BinaryExpression: {type(node)}: {node}")
-
-        # Look for POW_OP in the items
+        # Process the POWER_OP and its right operand
         from lark import Token
 
-        for i, item in enumerate(items):
-            # Match ^ operator as Token(POW_OP) or string "^"
-            if (isinstance(item, Token) and item.type == "POW_OP") or item == "^" or (hasattr(item, "value") and item.value == "^"):
-                if i > 0 and i < len(items) - 1:  # Make sure we have operands
-                    base = self.expression([items[0]])
-                    base = ensure_expression(base)
-                    exponent = self.expression([items[i + 1]])
-                    return BinaryExpression(left=base, operator=BinaryOperator.POWER, right=exponent)
+        # Check for POWER_OP token or "**" string in the middle element
+        if len(items) >= 3 and (
+            (isinstance(items[1], Token) and items[1].type == "POWER_OP")
+            or items[1] == "**"
+            or (hasattr(items[1], "value") and items[1].value == "**")
+        ):
+            # Found a power operator, right operand is already processed recursively
+            # due to the grammar rule being recursive: (POWER_OP power)?
+            right = self.expression([items[2]])
+            return BinaryExpression(left=base, operator=BinaryOperator.POWER, right=right)
 
-        # If no power operator, just return the base atom with any trailers
-        base = self.expression([items[0]])
-        if len(items) > 1 and isinstance(items[1], list) and items[1]:
-            base = self.trailer([base] + items[1])
+        # Shouldn't reach here with the new grammar rule, but just in case
         return base
 
     def atom(self, items):
@@ -587,3 +584,40 @@ class ExpressionTransformer(BaseTransformer):
 
         self.error(f"Unknown string type: {item}")
         return LiteralExpression("")
+
+    # Add support for the new grammar rules
+    def product(self, items):
+        """Transform a product rule (term with multiplication, division, etc)."""
+        if len(items) == 1:
+            return self.expression([items[0]])
+
+        # Build a binary expression tree for the product
+        return self._left_associative_binop(items, self._get_binary_operator)
+
+    def POW(self, token):
+        """Handle the power operator token."""
+        return BinaryOperator.POWER
+
+    def ADD(self, token):
+        """Handle the addition operator token."""
+        return BinaryOperator.ADD
+
+    def SUB(self, token):
+        """Handle the subtraction operator token."""
+        return BinaryOperator.SUBTRACT
+
+    def MUL(self, token):
+        """Handle the multiplication operator token."""
+        return BinaryOperator.MULTIPLY
+
+    def DIV(self, token):
+        """Handle the division operator token."""
+        return BinaryOperator.DIVIDE
+
+    def FDIV(self, token):
+        """Handle the floor division operator token."""
+        return BinaryOperator.DIVIDE  # For now, just map to regular division
+
+    def MOD(self, token):
+        """Handle the modulo operator token."""
+        return BinaryOperator.MODULO

@@ -113,11 +113,12 @@ class DanaParser(Lark, Loggable):
             # If grammar file doesn't exist, use the embedded grammar
             raise FileNotFoundError(f"Grammar file not found: {grammar_path}")
 
-        # Load grammar from file
+        # Load grammar from file - force read from disk to ensure we have latest
         with open(grammar_path) as f:
             self.grammar = f.read()
         self.debug(f"Loaded grammar from {grammar_path}")
 
+        # Initialize the Lark parser with a fresh grammar each time
         super().__init__(
             grammar=self.grammar,
             parser="lalr",
@@ -125,6 +126,7 @@ class DanaParser(Lark, Loggable):
             start="program",
             lexer="contextual",
             debug=False,
+            cache=False,  # Disable caching to ensure fresh grammar each time
         )
 
         self.transformer = DanaTransformer()

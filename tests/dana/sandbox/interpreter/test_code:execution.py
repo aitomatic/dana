@@ -26,8 +26,9 @@ from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
-def run_dana_code(code):
-    parser = DanaParser()
+def run_dana_code(code, parser=None):
+    if parser is None:
+        parser = DanaParser()
     program = parser.parse(code, do_type_check=True, do_transform=True)
     interpreter = Interpreter(SandboxContext())
     interpreter.execute_program(program)
@@ -57,7 +58,9 @@ def test_literals():
 
 # --- Arithmetic & Operator Precedence ---
 def test_arithmetic_operators():
-    ctx = run_dana_code("x = 2 + 3\ny = 5 - 1\nz = 2 * 3\nw = 8 / 2\nv = 7 % 4\nu = 2 ^ 3")
+    # Force DanaParser to reload the grammar
+    parser = DanaParser()
+    ctx = run_dana_code("x = 2 + 3\ny = 5 - 1\nz = 2 * 3\nw = 8 / 2\nv = 7 % 4\nu = 2 ** 3", parser=parser)
     assert ctx.get("local.x") == 5
     assert ctx.get("local.y") == 4
     assert ctx.get("local.z") == 6
@@ -67,7 +70,9 @@ def test_arithmetic_operators():
 
 
 def test_operator_precedence():
-    ctx = run_dana_code("x = 2 + 3 * 4\ny = (2 + 3) * 4\nz = 2 ^ 3 * 2\nw = 2 * 3 ^ 2")
+    # Force DanaParser to reload the grammar
+    parser = DanaParser()
+    ctx = run_dana_code("x = 2 + 3 * 4\ny = (2 + 3) * 4\nz = 2 ** 3 * 2\nw = 2 * 3 ** 2", parser=parser)
     assert ctx.get("local.x") == 14
     assert ctx.get("local.y") == 20
     assert ctx.get("local.z") == 16
