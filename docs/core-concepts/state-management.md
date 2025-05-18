@@ -8,19 +8,19 @@
 
 # State Management
 
-This document describes how OpenDXA manages state across different components of the system.
+This document describes how OpenDXA manages state across different components of the system using DANA's state scopes.
 
 *Note: For conversation history and LLM interaction context, see [Conversation Context Management](../core-concepts/conversation-context.md).*
 
 ## Overview
 
-OpenDXA's state management system is designed to handle different types of variables through blackboards. The main containers are:
-- `execution:` - Execution progress and control (via ExecutionState)
-- `world:` - Environment and tool state (via WorldState)
-- `agent:` - Agent-specific state (via AgentState)
-- `plan:` - Direct access to plan object (special container)
+OpenDXA's state management system is designed to handle different types of variables through specific state scopes. The main state containers are:
 
-*Note: Unlike other containers that access state objects, the `plan:` container provides direct access to the plan object and its properties. This allows for efficient plan manipulation and querying without intermediate state storage.*
+- `agent.` - Agent-specific state (via AgentState)
+- `world.` - Environment and tool state (via WorldState)
+- `temp.` - Temporary computation state (via TempState)
+
+Each scope provides separation and organization for different types of variables in DANA programs.
 
 The top use cases for state management in agentic systems are:
 
@@ -31,139 +31,180 @@ The top use cases for state management in agentic systems are:
    - Progress metrics
    - Task dependencies
 
-   *Example:*
+   *Example (DANA):*
    ```python
    # Track progress through a multi-step task
-   execution_context.set("execution:current.step", "data_processing")
-   execution_context.set("execution:progress.items.processed", 42)
-   execution_context.set("execution:progress.items.total", 100)
+   agent.current_step = "data_processing"
+   agent.progress_items_processed = 42
+   agent.progress_items_total = 100
 
    # Check progress and make decisions
-   current_step = execution_context.get("execution:current.step")
-   processed = execution_context.get("execution:progress.items.processed")
-   total = execution_context.get("execution:progress.items.total")
-   if processed >= total:
-       execution_context.set("execution:current.step", "complete")
+   if agent.progress_items_processed >= agent.progress_items_total:
+       agent.current_step = "complete"
    ```
 
-2. **Plan State Management** ⭐⭐⭐⭐⭐
-   - Current plan node
-   - Plan execution status
-   - Plan modifications
-   - Node dependencies
-
-   *Example:*
-   ```python
-   # Direct plan object access (no intermediate state storage)
-   execution_context.set("plan:current.node", "process_data")  # Updates plan object directly
-   execution_context.set("plan:nodes.process_data.status", "in_progress")  # Modifies node in plan
-   execution_context.set("plan:nodes.process_data.dependencies", ["fetch_data", "validate_input"])
-
-   # Get LLM's analysis of plan progress
-   llm_resource = LLMResource()
-   llm_response = llm_resource.query(
-       f"Analyze plan progress. Current node: {execution_context.get('plan:current.node')}, "
-       f"Status: {execution_context.get('plan:nodes.process_data.status')}"
-   )
-   execution_context.set("plan:analysis.last_llm", llm_response)
-
-   # Direct plan queries
-   current_node = execution_context.get("plan:current.node")  # Reads from plan object
-   dependencies = execution_context.get(f"plan:nodes.{current_node}.dependencies")  # Queries plan structure
-   for dep in dependencies:
-       dep_status = execution_context.get(f"plan:nodes.{dep}.status")  # Reads node status from plan
-       if dep_status != "complete":
-           execution_context.set("plan:current.node", dep)  # Updates plan directly
-           break
-   ```
-
-3. **Environment and Tool State Management** ⭐⭐⭐⭐⭐
+2. **Environment and Tool State Management** ⭐⭐⭐⭐⭐
    - Tool configurations
    - Connection states
    - Authentication tokens
    - Session data
    - External system states
 
-   *Example:*
+   *Example (DANA):*
    ```python
    # Manage tool authentication and session
-   execution_context.set("world:api.auth.token", "xyz123")
-   execution_context.set("world:api.last_request.time", "2024-03-20T10:00:00")
-   execution_context.set("world:api.rate_limit.remaining", 95)
+   world.api_auth_token = "xyz123"
+   world.api_last_request_time = "2024-03-20T10:00:00"
+   world.api_rate_limit_remaining = 95
 
    # Check rate limits before making API calls
-   remaining = execution_context.get("world:api.rate_limit.remaining")
-   if remaining <= 0:
-       next_time = execution_context.get("world:api.rate_limit.reset_time")
-       raise RateLimitError(f"Rate limit exceeded. Try again at {next_time}")
+   if world.api_rate_limit_remaining <= 0:
+       log.error("Rate limit exceeded. Try again at {world.api_rate_limit_reset_time}")
+   else:
+       temp.api_response = call_api(world.api_endpoint, world.api_auth_token)
    ```
 
-4. **Decision Context and Reasoning State** ⭐⭐⭐⭐
+3. **Decision Context and Reasoning State** ⭐⭐⭐⭐
    - Template placeholders and substitutions
    - LLM output parsing rules
    - Decision criteria and context
    - Reasoning chains and justifications
    - Validation results
 
-   *Example:*
+   *Example (DANA):*
    ```python
    # Store decision context and LLM interaction state
-   execution_context.set("agent:decision.criteria", ["cost", "speed", "reliability"])
-   execution_context.set("agent:decision.current.priority", "cost")
-   execution_context.set("agent:validation.status", True)
+   agent.decision_criteria = ["cost", "speed", "reliability"]
+   agent.decision_current_priority = "cost"
+   agent.validation_status = True
 
    # Get LLM's decision analysis
-   llm_resource = LLMResource()
-   criteria = execution_context.get("agent:decision.criteria")
-   priority = execution_context.get("agent:decision.current.priority")
-   llm_response = llm_resource.query(
-       f"Analyze decision criteria: {criteria} with priority: {priority}. "
-       "Suggest any adjustments needed."
-   )
-   execution_context.set("agent:decision.llm_analysis", llm_response)
+   temp.llm_response = reason("Analyze decision criteria: {agent.decision_criteria} 
+                               with priority: {agent.decision_current_priority}. 
+                               Suggest any adjustments needed.")
+   agent.decision_llm_analysis = temp.llm_response
 
    # Use decision context for making choices
-   if priority in criteria:
-       criteria.remove(priority)
-       criteria.insert(0, priority)
-       execution_context.set("agent:decision.criteria", criteria)
+   if agent.decision_current_priority in agent.decision_criteria:
+       # Update priority in criteria list
+       temp.criteria = agent.decision_criteria
+       temp.criteria.remove(agent.decision_current_priority)
+       temp.criteria.insert(0, agent.decision_current_priority)
+       agent.decision_criteria = temp.criteria
    ```
 
-5. **Error Recovery and Resilience** ⭐⭐⭐⭐
+4. **Error Recovery and Resilience** ⭐⭐⭐⭐
    - Error states and recovery points
    - Retry counts and backoff states
    - Fallback options
    - Error handling strategies
    - System resilience data
 
-   *Example:*
+   *Example (DANA):*
    ```python
    # Track error state and recovery attempts
-   execution_context.set("execution:error.last.type", "connection_timeout")
-   execution_context.set("execution:error.retry.count", 2)
-   execution_context.set("execution:error.retry.next_time", "2024-03-20T10:05:00")
+   agent.error_last_type = "connection_timeout"
+   agent.error_retry_count = 2
+   agent.error_retry_next_time = "2024-03-20T10:05:00"
 
    # Get LLM's error analysis and recovery suggestion
-   llm_resource = LLMResource()
-   error_type = execution_context.get("execution:error.last.type")
-   retry_count = execution_context.get("execution:error.retry.count")
-   llm_response = llm_resource.query(
-       f"Error type: {error_type}, Retry count: {retry_count}. "
-       "Suggest recovery strategy and next steps."
-   )
-   execution_context.set("execution:error.llm_recovery_plan", llm_response)
+   temp.llm_response = reason("Error type: {agent.error_last_type}, 
+                               Retry count: {agent.error_retry_count}. 
+                               Suggest recovery strategy and next steps.")
+   agent.error_llm_recovery_plan = temp.llm_response
 
    # Implement retry logic
-   max_retries = execution_context.get("execution:error.retry.max", 3)
-   if retry_count >= max_retries:
-       raise MaxRetriesExceeded("Maximum retry attempts reached")
-   next_time = execution_context.get("execution:error.retry.next_time")
-   if datetime.now() < next_time:
-       raise RetryNotReady(f"Next retry at {next_time}")
+   agent.error_retry_max = agent.error_retry_max if hasattr(agent, "error_retry_max") else 3
+   if agent.error_retry_count >= agent.error_retry_max:
+       log.error("Maximum retry attempts reached")
+   elif current_time() < agent.error_retry_next_time:
+       log.info("Next retry at {agent.error_retry_next_time}")
+   else:
+       # Attempt retry
+       agent.error_retry_count += 1
+       temp.retry_result = retry_operation()
    ```
 
-*Note: Conversation history and LLM interaction context are managed at the Executor (Planner/Reasoner) layer, not within the state management system described here.*
+5. **Temporary Computation State** ⭐⭐⭐⭐
+   - Intermediate calculation results
+   - Temporary variables
+   - Processing buffers
+   - Local function state
+   - Short-lived data
+
+   *Example (DANA):*
+   ```python
+   # Use temp scope for intermediate calculations
+   temp.data = world.input_data
+   temp.processed_items = []
+   
+   # Process each item
+   for item in temp.data:
+       temp.current_item = item
+       temp.analysis_result = reason("Analyze this item: {temp.current_item}")
+       temp.processed_items.append(temp.analysis_result)
+   
+   # Store final results in agent state
+   agent.processed_results = temp.processed_items
+   agent.analysis_complete = True
+   ```
+
+*Note: Conversation history and LLM interaction context are managed separately through the LLMResource, not within the state management system described here.*
+
+## SandboxContext API
+
+The SandboxContext class provides an API for interacting with DANA state containers programmatically:
+
+```python
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
+
+# Create context with initial state
+context = SandboxContext(
+    agent={"name": "analyst", "objective": "Process data"},
+    world={"data_source": "customer_feedback.csv"},
+    temp={}
+)
+
+# Access state programmatically 
+agent_name = context.get("agent.name")
+context.set("temp.processing_started", True)
+
+# Execute DANA program with context
+from opendxa.dana import run
+
+dana_program = """
+# Access existing state
+log.info("Processing data for agent: {agent.name}")
+log.info("Data source: {world.data_source}")
+
+# Create new state
+temp.results = []
+agent.status = "processing"
+"""
+
+run(dana_program, context)
+```
+
+## Best Practices
+
+1. **State Organization**
+   - Use `agent.` for persistent agent-specific state
+   - Use `world.` for environment and external system state
+   - Use `temp.` for intermediate calculations and temporary data
+   - Follow consistent naming conventions
+
+2. **State Access Patterns**
+   - Access state directly via dot notation in DANA
+   - Use clear, descriptive variable names
+   - Validate state before use with conditional checks
+   - Use default values or hasattr for optional state
+
+3. **State Updates**
+   - Use explicit assignments for state updates
+   - Maintain proper scoping for state variables
+   - Consider state persistence when needed
+   - Clean up temporary state when no longer needed
 
 ## Additional Information
 
-For more details on state management, please refer to the [State Management](../core-concepts/state-management.md) section in the documentation.
+For more details on DANA state management, please refer to the [DANA Language](../dana/language.md) documentation.

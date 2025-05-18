@@ -1,6 +1,12 @@
-MIT License
+# OpenDXA & DANA - Agentic AI Programming Framework, Language, and Sandbox Runtime
 
-Copyright (c) 2025 Aitomatic
+Copyright © 2025 Aitomatic, Inc.
+
+---
+
+## MIT License
+
+Copyright © 2025 Aitomatic, Inc.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

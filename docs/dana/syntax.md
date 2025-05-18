@@ -1,6 +1,20 @@
+<p align="center">
+  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
+</p>
+
+[◀ Language](./language.md)
+
 # DANA Language Syntax Reference
 
-DANA is a domain-specific language designed for AI-driven automation and reasoning. This document provides a comprehensive reference for DANA's syntax and language features.
+DANA is a domain-specific language designed for AI-driven automation and reasoning. This document provides a comprehensive reference for DANA's syntax and language features, as supported by the current grammar and runtime.
+
+## DANA vs. Python: Quick Comparison
+
+- DANA's syntax is intentionally similar to Python: indentation, assignments, conditionals, loops, and function calls all look familiar.
+- DANA requires explicit scope prefixes for variables (e.g., `private.x`, `public.y`), unlike Python.
+- DANA only supports single-line comments with `#` (no docstrings).
+- DANA supports f-strings with embedded expressions (e.g., `f"Value: {x+1}"`).
+- Some advanced Python features (like comprehensions, decorators, or dynamic typing) are not present in DANA.
 
 ## Basic Syntax
 
@@ -11,10 +25,11 @@ DANA is a domain-specific language designed for AI-driven automation and reasoni
 
 ### Variables and Scoping
 
-DANA has a structured scoping system with three standard scopes:
+DANA has a structured scoping system with four standard scopes:
 - `private`: Private to the agent, resource, or tool itself
 - `public`: Openly accessible world state (time, weather, etc.)
 - `system`: System-related mechanical state with controlled access
+- `local`: Local scope for the current execution (implicit in most cases)
 
 Variables must be prefixed with their scope:
 ```dana
@@ -23,69 +38,56 @@ public.shared_data = value
 system.status = value
 ```
 
-For convenience in the REPL environment, variables without a scope prefix are automatically placed in the `private` scope:
+For convenience in the REPL environment, variables without a scope prefix are automatically placed in the `local` scope:
 ```dana
-my_variable = value  # Equivalent to private.my_variable = value
+my_variable = value  # Equivalent to local.my_variable = value
 ```
 
 ### Basic Data Types
-- Strings: `"double quoted"` or `'single quoted'`
-- Numbers: `42` or `3.14`
-- Booleans: `true` or `false`
-- Null: `null`
-- Arrays: `[1, 2, 3]`
-
-### String Interpolation (F-strings)
-```dana
-f"Hello {name}!"
-```
+- Strings: "double quoted" or 'single quoted'
+- Numbers: 42 or 3.14
+- Booleans: true or false
+- Null: null
 
 ## Statements
+
+### Assignment
+```dana
+private.x = 10
+public.message = "Hello"
+```
 
 ### Print Statement
 ```dana
 print("Hello, World!")
-```
-
-### Logging
-```dana
-log("Info message")  # Default level is INFO
-log.info("Info message")
-log.debug("Debug message")
-log.warn("Warning message")
-log.error("Error message")
-
-# Set global log level
-log.setLevel("INFO")  # or "DEBUG", "WARN", "ERROR"
+print(private.x)
 ```
 
 ### Conditional Statements
 ```dana
-if condition:
-    # statements
+if private.x > 5:
+    print("x is greater than 5")
 else:
-    # statements
+    print("x is not greater than 5")
 ```
 
 ### While Loops
 ```dana
-while condition:
-    # statements
+while private.x < 10:
+    print(private.x)
+    private.x = private.x + 1
 ```
 
-### Reasoning Statements
+### Function Calls
 ```dana
-# Basic reasoning
-reason("What is the capital of France?")
+system.math.sqrt(16)
+public.result = system.math.max(3, 7)
+```
 
-# Store result in variable
-result = reason("What is 2 + 2?")
-
-# With context variables
-reason("Analyze this data", context=[private.data_variable])
-
-# With options
-reason("Generate a response", temperature=0.7, max_tokens=100)
+### Bare Identifiers
+A bare identifier (just a variable or function name) is allowed as a statement, typically for REPL inspection:
+```dana
+private.x
 ```
 
 ## Expressions
@@ -102,11 +104,9 @@ reason("Generate a response", temperature=0.7, max_tokens=100)
 4. Comparison `<`, `>`, `<=`, `>=`, `==`, `!=`
 5. Logical `and`, `or`
 
-### Function Calls
+### Function Calls in Expressions
 ```dana
-function_name(arg1, arg2)
-function_name(named_arg=value)
-function_name(pos_arg, named_arg=value)
+private.y = system.math.sqrt(private.x)
 ```
 
 ## Best Practices
@@ -114,54 +114,38 @@ function_name(pos_arg, named_arg=value)
 1. Always use explicit scope prefixes for clarity
 2. Use meaningful variable names
 3. Add comments for complex logic
-4. Use appropriate log levels for debugging
-5. Structure complex reasoning tasks with clear prompts
-6. Use context variables to provide relevant information to reasoning tasks
+4. Structure code with clear indentation for blocks
 
 ## Examples
 
 ### Basic Program with Scoping
 ```dana
-# Set up logging
-log.setLevel("INFO")
-
 # Define variables with explicit scopes
 private.name = "World"
 public.count = 5
 system.status = "active"
 
-# Use f-strings
-message = f"Hello {private.name}!"
-
-# Print and log
-print(message)
-log.info(f"Count is {public.count}")
+# Print
+print("Hello, " + private.name)
+print(public.count)
 
 # Conditional logic
 if public.count > 3:
-    log.warn("Count is high")
+    print("Count is high")
 else:
-    log.info("Count is normal")
-
-# Reasoning with context
-result = reason("Analyze the count", context=[public.count], temperature=0.7)
+    print("Count is normal")
 ```
 
-### Complex Reasoning with Scoped Variables
+### While Loop Example
 ```dana
-# Define data in appropriate scopes
-private.data = [1, 2, 3, 4, 5]
-public.threshold = 3
-system.analysis_mode = "detailed"
-
-# Analyze with reasoning
-analysis = reason(
-    "Analyze if the data exceeds the threshold",
-    context=[private.data, public.threshold],
-    temperature=0.5
-)
-
-# Use the result
-if analysis:
-    log.info("Analysis complete")
+private.x = 0
+while private.x < 3:
+    print(private.x)
+    private.x = private.x + 1
 ```
+
+---
+<p align="center">
+Copyright © 2025 Aitomatic, Inc. Licensed under the <a href="../LICENSE.md">MIT License</a>.<br/>
+<a href="https://aitomatic.com">https://aitomatic.com</a>
+</p>

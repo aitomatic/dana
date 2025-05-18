@@ -112,7 +112,6 @@ exclude = [
     ".git",
     ".venv",
     "opendxa.egg-info",
-    "opendxa/dana/language/dana_grammar_embedded.py"  # Exclude the embedded grammar file
 ]
 
 # Disabled linters (in favor of Ruff)

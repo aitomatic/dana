@@ -11,115 +11,149 @@
 
 ## Overview
 
-The execution flow in OpenDXA defines how agents plan, reason, and execute tasks. It combines declarative knowledge with imperative actions to achieve complex objectives.
+The execution flow in OpenDXA defines how agents process tasks using the DANA language. DANA (Domain-Aware NeuroSymbolic Architecture) provides an imperative programming model that combines domain expertise with LLM-powered reasoning to achieve complex objectives.
 
 ## Core Concepts
 
 ### 1. Execution Components
-- Planning System
-  - Strategic task decomposition
-  - Resource allocation
-  - Dependency management
-  - Goal refinement
-- Reasoning System
-  - Tactical decision making
-  - Context analysis
-  - Knowledge application
-  - Problem solving
-- Execution Context
+
+- **DANA Language**
+  - Imperative programming language
+  - Domain-specific syntax
+  - State-based operations
+  - Built-in reasoning functions
+
+- **DANA Interpreter**
+  - AST-based execution
+  - State management
+  - Function registry
+  - Error handling
+
+- **Runtime Context**
   - [State management](./state-management.md)
   - Resource access
   - Progress tracking
   - Error handling
 
 ### 2. Execution Operations
-- Workflow execution
+
+- DANA program execution
 - [State management](./state-management.md)
 - Resource coordination
 - Error handling
-- Progress tracking
+- Progress monitoring
 
-## Architecture
+## Execution Flow
 
-```mermaid
-graph TD
-    subgraph "Execution Flow"
-        direction TB
-        Start[Start] --> Plan[Planning]
-        Plan --> Reason[Reasoning]
-        Reason --> Execute[Execution]
-        Execute --> Check[Check Results]
-        Check -->|Success| End[End]
-        Check -->|Failure| Retry[Retry/Adapt]
-        Retry --> Plan
-    end
-```
+The typical execution flow in OpenDXA follows these steps:
+
+1. **Request Interpretation**: Incoming user requests are analyzed and converted to execution objectives
+2. **Program Generation**: DANA programs are generated either directly or via the transcoder
+3. **Context Initialization**: Runtime context with appropriate state containers is created
+4. **Program Execution**: The DANA interpreter executes the program statements
+5. **Response Generation**: Results are assembled and returned to the user
 
 ## Implementation
 
-### 1. Workflow Execution
+### 1. DANA Program Execution
+
 ```python
-from opendxa.execution import WorkflowExecutor
-from opendxa.execution.workflow import Workflow
+from opendxa.dana import run
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
-# Create workflow
-workflow = Workflow(objective="Analyze data")
-workflow.add_node("ANALYZE", "Analyze dataset")
+# Define a DANA program
+dana_program = """
+# Initialize variables
+temp.data = world.input_data
+temp.processed = []
 
-# Execute
-executor = WorkflowExecutor()
-result = await executor.execute(workflow)
+# Process data
+for item in temp.data:
+    temp.result = reason("Analyze this item: {item}")
+    temp.processed.append(temp.result)
+
+# Generate summary
+agent.summary = reason("Summarize the following analysis: {temp.processed}")
+log.info("Analysis complete with summary: {agent.summary}")
+"""
+
+# Create context and run program
+context = SandboxContext(
+    agent={},
+    world={"input_data": ["item1", "item2", "item3"]},
+    temp={}
+)
+result = run(dana_program, context)
 ```
 
 ### 2. State Management
+
 ```python
-from opendxa.execution import ExecutionContext
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
-# Create context
-context = ExecutionContext()
+# Initialize context with state
+context = SandboxContext()
 
-# Access state
-context.set_state("analysis.result", result)
-value = context.get_state("analysis.result")
+# Set state values
+context.set("agent.name", "analyst_agent") 
+context.set("world.data_source", "customer_feedback.csv")
+context.set("temp.processing_started", True)
+
+# Get state values
+agent_name = context.get("agent.name")
+data_source = context.get("world.data_source")
 ```
+
 *See [State Management](./state-management.md) for comprehensive details.*
 
 ### 3. Error Handling
+
 ```python
 try:
-    result = await executor.execute(workflow)
-except ExecutionError as e:
-    # Handle error
-    context.handle_error(e)
-    # Retry or adapt
+    result = run(dana_program, context)
+except Exception as e:
+    # Log error
+    print(f"Execution failed: {e}")
+    
+    # Update state
+    context.set("agent.status", "error")
+    context.set("agent.error", str(e))
+    
+    # Handle error based on type
+    if "NameError" in str(e):
+        # Handle variable resolution error
+        pass
+    elif "TypeError" in str(e):
+        # Handle type error
+        pass
 ```
 
 ## Key Differentiators
 
-1. **Declarative-Imperative Integration**
-   - Clear separation of planning and execution
-   - Knowledge-driven execution
-   - Context-aware reasoning
-   - Adaptive error handling
+1. **Imperative Programming Model**
+   - Clear, sequential program flow
+   - Explicit state management
+   - Direct conditional logic
+   - First-class function support
 
-2. **Robust Execution**
-   - State management
-   - Resource coordination
-   - Error recovery
-   - Progress tracking
+2. **Integrated Reasoning**
+   - `reason()` function for LLM-powered reasoning
+   - Seamless integration of symbolic and neural processing
+   - Context-aware reasoning with f-string templates
+   - Stateful reasoning across operations
 
-3. **Flexible Workflows**
-   - Dynamic task decomposition
-   - Resource allocation
-   - Dependency management
-   - Goal refinement
+3. **Runtime Flexibility**
+   - Dynamic state creation and access
+   - Resource integration and coordination
+   - Error recovery and handling
+   - Progress tracking and monitoring
 
 ## Best Practices
 
-1. **Workflow Design**
-   - Clear objectives
-   - Proper decomposition
-   - Error handling
+1. **Program Design**
+   - Clear, modular DANA programs
+   - Proper state scoping and organization
+   - Error handling and validation
    - State management *(See [State Management](./state-management.md))*
 
 2. **Execution Control**
@@ -130,66 +164,72 @@ except ExecutionError as e:
 
 3. **State Management**
    - Clear state structure
-   - Proper access control
+   - Proper access patterns
    - State persistence
    - Context maintenance
 
 ## Common Patterns
 
-1. **Basic Execution**
+1. **Sequential Processing**
    ```python
-   # Create workflow
-   workflow = Workflow(objective="Process data")
-
-   # Add nodes
-   workflow.add_node("GATHER", "Gather data")
-   workflow.add_node("PROCESS", "Process data")
-   workflow.add_node("ANALYZE", "Analyze results")
-
-   # Add edges
-   workflow.add_edge("GATHER", "PROCESS")
-   workflow.add_edge("PROCESS", "ANALYZE")
-
-   # Execute
-   result = await executor.execute(workflow)
+   # DANA program for sequential processing
+   dana_program = """
+   # Initialize state
+   temp.data = world.input
+   
+   # Process sequentially
+   temp.step1 = reason("Process step 1: {temp.data}")
+   temp.step2 = reason("Process step 2 with previous result: {temp.step1}")
+   temp.step3 = reason("Process step 3 with previous result: {temp.step2}")
+   
+   # Store final result
+   agent.result = temp.step3
+   """
    ```
 
-2. **State Management**
+2. **Conditional Processing**
    ```python
-   # Set state
-   context.set_state("data.raw", raw_data)
-   context.set_state("data.processed", processed_data)
-
-   # Get state
-   raw_data = context.get_state("data.raw")
-   processed_data = context.get_state("data.processed")
+   # DANA program with conditional logic
+   dana_program = """
+   # Check conditions
+   temp.sentiment = reason("Analyze sentiment in: {world.text}")
+   
+   # Conditional processing
+   if "positive" in temp.sentiment:
+       agent.response = reason("Generate positive response to: {world.text}")
+   elif "negative" in temp.sentiment:
+       agent.response = reason("Generate empathetic response to: {world.text}")
+   else:
+       agent.response = reason("Generate neutral response to: {world.text}")
+   
+   # Log result
+   log.info("Generated response: {agent.response}")
+   """
    ```
-   *See [State Management](./state-management.md) for comprehensive details.*
 
-3. **Error Handling**
+3. **Iterative Processing**
    ```python
-   try:
-       result = await executor.execute(workflow)
-   except ExecutionError as e:
-       # Log error
-       logger.error(f"Execution failed: {e}")
-
-       # Update state
-       context.set_state("execution.status", "failed")
-       context.set_state("execution.error", str(e))
-
-       # Handle based on type
-       if isinstance(e, ResourceError):
-           # Handle resource error
-       elif isinstance(e, StateError):
-           # Handle state error
+   # DANA program with iteration
+   dana_program = """
+   # Initialize
+   temp.items = world.data_items
+   temp.results = []
+   
+   # Process each item
+   for item in temp.items:
+       temp.analysis = reason("Analyze this item: {item}")
+       temp.results.append(temp.analysis)
+   
+   # Summarize results
+   agent.summary = reason("Summarize these analyses: {temp.results}")
+   """
    ```
 
 ## Execution Examples
 
-1. **Data Processing**
-   - Data gathering
-   - Data transformation
+1. **Data Analysis**
+   - Data loading and preparation
+   - Feature extraction and transformation
    - Analysis execution
    - Result generation
 
@@ -199,18 +239,18 @@ except ExecutionError as e:
    - Execution control
    - Error handling
 
-3. **Decision Making**
+3. **Conversational Assistance**
    - Context analysis
-   - Knowledge application
-   - Option evaluation
-   - Action selection
+   - Knowledge retrieval
+   - Response generation
+   - Memory management
 
 ## Next Steps
 
 - Learn about [Agents](./agent.md)
-- Understand [Planning](../cognitive-functions/planning.md)
-- Understand [Reasoning](../cognitive-functions/reasoning.md)
-- Understand [Memory & Knowledge](../cognitive-functions/memory-knowledge.md)
+- Understand [DANA Language](../dana/language.md)
+- Understand [State Management](./state-management.md)
+- Explore [Resources](./resources.md)
 
 ---
 <p align="center">

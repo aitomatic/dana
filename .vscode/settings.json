@@ -2,8 +2,26 @@
     // === File Associations ===
     // Treats .dana files as Python for syntax highlighting and tooling
     "files.associations": {
-        "*.na": "python",
-        "*.toml": "json"
+        "*.na": "python"
+    },
+
+    // === Explorer Settings ===
+    // Show hidden files and folders
+    "files.exclude": {
+        "**/.claude": true,
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "**/__pycache__": true,
+        "**/.pytest_cache": true,
+        "**/.coverage": true,
+        "**/.mypy_cache": true,
+        "**/.ruff_cache": true,
+        "**/.venv": true,
+        "**/opendxa.egg-info": true
     },
 
     // === Python Analysis Settings ===
@@ -13,8 +31,13 @@
     "python.analysis.extraPaths": ["./opendxa"],
     "python.analysis.diagnosticSeverityOverrides": {
         "reportUndefinedVariable": "none",
-        "reportMissingImports": "none"
+        "reportMissingImports": "none",
+        "reportGeneralTypeIssues": "none"
     },
+    "python.analysis.diagnosticMode": "workspace",
+    "python.analysis.ignore": [
+        "**/dana_grammar_embedded.py"
+    ],
 
     // === Editor Formatting ===
     // Configures automatic code formatting with Black

@@ -11,12 +11,12 @@ import sys
 # Adjust path to import from the opendxa package root
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
-from opendxa.dana.exceptions import DanaError
+from opendxa.dana.common.exceptions import DanaError
 from opendxa.dana.io.file_io import read_dana_program
-from opendxa.dana.language.ast import LogLevel
-from opendxa.dana.language.parser import parse
-from opendxa.dana.runtime.context import RuntimeContext
-from opendxa.dana.runtime.interpreter import Interpreter
+from opendxa.dana.sandbox.interpreter.interpreter import Interpreter
+from opendxa.dana.sandbox.log_manager import LogLevel
+from opendxa.dana.sandbox.parser.dana_parser import DanaParser
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 # ANSI color codes
 BLUE = "\033[94m"  # Program headers
@@ -57,11 +57,12 @@ def run_example(example_path: str):
 
         # 2. Parse
         print(f"{YELLOW}Parsing...{RESET}")
-        parse_result = parse(dana_code)
+        parser = DanaParser()
+        parse_result = parser.parse(dana_code)
 
         # 3. Setup Runtime
         print(f"{YELLOW}Initializing context and interpreter...{RESET}")
-        context = RuntimeContext()
+        context = SandboxContext()
         interpreter = Interpreter(context=context)
 
         # Set log level to DEBUG for log_levels.dana example

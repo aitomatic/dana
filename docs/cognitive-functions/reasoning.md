@@ -11,7 +11,7 @@
 
 ## Overview
 
-Reasoning in OpenDXA enables agents to analyze situations, make decisions, and solve problems using available knowledge and context. The reasoning system combines logical analysis with domain expertise to support effective decision-making.
+Reasoning in OpenDXA enables agents to analyze situations, make decisions, and solve problems using available knowledge and context. Through DANA programs and the `reason()` function, the reasoning system combines logical analysis with domain expertise to support effective decision-making.
 
 ## Core Concepts
 
@@ -41,186 +41,253 @@ Reasoning in OpenDXA enables agents to analyze situations, make decisions, and s
 
 ## Architecture
 
-```mermaid
-graph TD
-    subgraph "Reasoning System"
-        direction TB
-        LA[Logical Analysis]
-        CA[Context Analysis]
-        DM[Decision Making]
-        AP[Action Planning]
-    end
+The OpenDXA reasoning system is centered around the DANA `reason()` function, which provides a direct interface to LLM-powered reasoning. The reasoning architecture includes:
 
-    subgraph "Knowledge System"
-        KB[Knowledge Base]
-    end
-
-    subgraph "Execution System"
-        ES[Execution System]
-    end
-
-    KB --> LA & CA
-    LA --> DM
-    CA --> DM
-    DM --> AP
-    AP --> ES
-```
+1. **DANA Reasoning Layer**: Primary interface through the `reason()` function
+2. **LLM Integration Layer**: Connects to language models for reasoning tasks
+3. **Knowledge Integration Layer**: Provides access to domain knowledge
+4. **Context Management Layer**: Maintains state and context for reasoning
+5. **Action Planning Layer**: Translates reasoning outcomes to executable actions
 
 ## Implementation
 
-### 1. Basic Reasoning
+### 1. Basic Reasoning with DANA
 ```python
-from opendxa.reasoning import Reasoner
-from opendxa.knowledge import KnowledgeBase
+from opendxa.dana import run
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
-# Initialize reasoner
-reasoner = Reasoner()
+# Define DANA reasoning program
+reasoning_program = """
+# Initialize reasoning state
+agent.situation = "Machine shows high temperature alerts of 85°C"
+agent.domain = "HVAC systems"
 
-# Create knowledge base
-kb = KnowledgeBase()
-kb.load_domain_knowledge("semiconductor")
+# Analyze the situation
+temp.analysis = reason("Analyze this situation in the context of {agent.domain}: {agent.situation}")
 
-# Analyze situation
-analysis = reasoner.analyze(
-    situation=current_situation,
-    knowledge_base=kb,
-    context=context
+# Generate possible causes
+temp.causes = reason("What are the most likely causes of {agent.situation} in {agent.domain} systems?")
+
+# Evaluate each cause
+temp.evaluations = []
+for cause in temp.causes:
+    temp.likelihood = reason("Evaluate the likelihood of '{cause}' being the cause of '{agent.situation}' and explain why")
+    temp.evaluations.append({
+        "cause": cause,
+        "likelihood": temp.likelihood
+    })
+
+# Determine most likely cause
+agent.diagnosis = reason("Based on these evaluations, what is the most likely cause of the problem? {temp.evaluations}")
+
+# Recommend actions
+agent.recommendation = reason("Recommend actions to address this cause: {agent.diagnosis}")
+
+# Log results
+log.info("Diagnosis: {agent.diagnosis}")
+log.info("Recommendation: {agent.recommendation}")
+"""
+
+# Create context with initial state
+context = SandboxContext(
+    agent={"name": "diagnostic_agent"},
+    world={},
+    temp={}
 )
+
+# Execute reasoning program
+result = run(reasoning_program, context)
 ```
 
 ### 2. Decision Making
 ```python
-from opendxa.reasoning import DecisionMaker
+# DANA program for decision making
+decision_program = """
+# Initialize decision state
+agent.options = world.available_options
+agent.criteria = ["cost", "performance", "reliability", "maintenance"]
+temp.evaluations = []
 
-# Initialize decision maker
-decision_maker = DecisionMaker()
+# Evaluate each option against criteria
+for option in agent.options:
+    temp.option_evaluation = {}
+    temp.option_evaluation["option"] = option
+    temp.option_evaluation["scores"] = {}
+    
+    for criterion in agent.criteria:
+        temp.score = reason("Evaluate {option} on {criterion} on a scale of 1-10")
+        temp.option_evaluation["scores"][criterion] = temp.score
+    
+    temp.evaluations.append(temp.option_evaluation)
 
-# Generate options
-options = decision_maker.generate_options(
-    analysis=analysis,
-    constraints=constraints
-)
+# Calculate total scores
+for evaluation in temp.evaluations:
+    temp.total = 0
+    for criterion, score in evaluation["scores"].items():
+        temp.total += int(score)
+    evaluation["total_score"] = temp.total
 
 # Make decision
-decision = decision_maker.decide(
-    options=options,
-    criteria=decision_criteria
-)
+temp.best_option = max(temp.evaluations, key=lambda x: x["total_score"])
+agent.decision = temp.best_option["option"]
+agent.justification = reason("Justify why {agent.decision} is the best option based on these evaluations: {temp.evaluations}")
+
+# Log decision
+log.info("Decision: {agent.decision}")
+log.info("Justification: {agent.justification}")
+"""
 ```
 
-### 3. Action Planning
+### 3. Problem Solving
 ```python
-from opendxa.reasoning import ActionPlanner
+# DANA program for problem solving
+problem_solving_program = """
+# Define problem
+agent.problem = world.current_problem
+agent.constraints = world.constraints
+temp.solutions = []
 
-# Initialize action planner
-action_planner = ActionPlanner()
+# Generate possible solutions
+temp.potential_solutions = reason("Generate 3-5 possible solutions for this problem: {agent.problem}")
 
-# Plan actions
-actions = action_planner.plan(
-    decision=decision,
-    context=context,
-    resources=resources
-)
+# Evaluate each solution against constraints
+for solution in temp.potential_solutions:
+    temp.evaluation = {}
+    temp.evaluation["solution"] = solution
+    temp.evaluation["constraint_check"] = {}
+    
+    for constraint in agent.constraints:
+        temp.check = reason("Does the solution '{solution}' satisfy the constraint '{constraint}'? Explain.")
+        temp.evaluation["constraint_check"][constraint] = temp.check
+    
+    temp.evaluation["feasibility"] = reason("Overall, how feasible is this solution considering all constraints?")
+    temp.solutions.append(temp.evaluation)
+
+# Select best solution
+agent.solution = reason("Which solution is best overall based on these evaluations? {temp.solutions}")
+agent.implementation_plan = reason("Create a step-by-step implementation plan for this solution: {agent.solution}")
+
+# Log solution
+log.info("Selected solution: {agent.solution}")
+log.info("Implementation plan: {agent.implementation_plan}")
+"""
 ```
 
 ## Key Differentiators
 
-1. **Logical Reasoning**
-   - Pattern recognition
-   - Rule application
-   - Inference making
-   - Conclusion drawing
+1. **Integrated Reasoning in DANA**
+   - First-class `reason()` function
+   - Seamless LLM integration
+   - Context-aware reasoning
+   - State-based information flow
 
 2. **Contextual Analysis**
    - Situation assessment
+   - Domain knowledge integration
    - Constraint evaluation
-   - Option generation
    - Impact analysis
 
 3. **Decision Support**
    - Option evaluation
    - Risk assessment
    - Trade-off analysis
-   - Action selection
+   - Action planning
 
 ## Best Practices
 
-1. **Situation Analysis**
-   - Clear understanding
-   - Context awareness
-   - Constraint identification
-   - Impact assessment
+1. **Effective Reasoning Prompts**
+   - Be specific and focused
+   - Provide relevant context
+   - Define clear objectives
+   - Include necessary constraints
 
-2. **Knowledge Application**
-   - Relevant knowledge
-   - Proper context
-   - Accurate application
-   - Validation
+2. **Knowledge Integration**
+   - Reference domain knowledge
+   - Apply appropriate context
+   - Validate reasoning outputs
+   - Consider alternative perspectives
 
 3. **Decision Making**
-   - Clear criteria
-   - Thorough analysis
-   - Risk consideration
-   - Action planning
+   - Define clear criteria
+   - Evaluate options thoroughly
+   - Consider risks and tradeoffs
+   - Document justifications
 
 ## Common Patterns
 
-1. **Basic Reasoning**
+1. **Analysis Pattern**
    ```python
-   # Initialize reasoner
-   reasoner = Reasoner()
-
-   # Analyze situation
-   analysis = reasoner.analyze(
-       situation=situation,
-       knowledge_base=kb
-   )
-
-   # Generate options
-   options = decision_maker.generate_options(analysis)
+   # DANA pattern for situation analysis
+   analysis_pattern = """
+   # Define situation
+   temp.situation = world.current_situation
+   
+   # Perform multi-step analysis
+   temp.observations = reason("What are the key observations in this situation: {temp.situation}")
+   temp.implications = reason("What are the implications of these observations: {temp.observations}")
+   temp.root_causes = reason("What are the potential root causes behind these observations: {temp.observations}")
+   
+   # Generate final analysis
+   agent.analysis = reason("Synthesize a comprehensive analysis based on: Observations: {temp.observations}, Implications: {temp.implications}, Root causes: {temp.root_causes}")
+   """
    ```
 
-2. **Decision Making**
+2. **Decision Pattern**
    ```python
+   # DANA pattern for decision making
+   decision_pattern = """
+   # Define decision context
+   temp.options = world.available_options
+   temp.criteria = world.decision_criteria
+   
    # Evaluate options
-   evaluations = decision_maker.evaluate(
-       options=options,
-       criteria=criteria
-   )
-
+   temp.evaluations = []
+   for option in temp.options:
+       temp.evaluation = reason("Evaluate option '{option}' against these criteria: {temp.criteria}")
+       temp.evaluations.append({"option": option, "evaluation": temp.evaluation})
+   
    # Make decision
-   decision = decision_maker.decide(evaluations)
+   agent.decision = reason("Based on these evaluations, which option is best? {temp.evaluations}")
+   agent.justification = reason("Justify why {agent.decision} is the best choice")
+   """
    ```
 
-3. **Action Planning**
+3. **Problem-Solving Pattern**
    ```python
-   # Plan actions
-   actions = action_planner.plan(
-       decision=decision,
-       context=context
-   )
-
-   # Validate plan
-   plan = action_planner.validate(actions)
+   # DANA pattern for problem solving
+   problem_solving_pattern = """
+   # Define problem
+   temp.problem = world.current_problem
+   
+   # Problem solving steps
+   temp.analysis = reason("Analyze this problem: {temp.problem}")
+   temp.solutions = reason("Generate possible solutions for this problem: {temp.problem}")
+   temp.evaluation = reason("Evaluate each solution: {temp.solutions}")
+   temp.best_solution = reason("Which solution is best and why? {temp.evaluation}")
+   
+   # Implementation planning
+   agent.solution = temp.best_solution
+   agent.implementation_plan = reason("Create a step-by-step plan to implement: {agent.solution}")
+   """
    ```
 
 ## Reasoning Examples
 
-1. **Problem Solving**
-   - Situation analysis
-   - Option generation
-   - Decision making
-   - Action planning
+1. **Diagnostic Reasoning**
+   - Symptom analysis
+   - Cause identification
+   - Evidence evaluation
+   - Diagnosis formulation
 
 2. **Risk Assessment**
    - Risk identification
    - Impact analysis
+   - Probability evaluation
    - Mitigation planning
-   - Action selection
 
-3. **Process Optimization**
-   - Current state analysis
-   - Improvement options
+3. **Solution Development**
+   - Problem definition
+   - Option generation
    - Impact evaluation
    - Implementation planning
 
@@ -228,6 +295,7 @@ actions = action_planner.plan(
 
 - Learn about [Planning](./planning.md)
 - Understand [Execution Flow](../core-concepts/execution-flow.md)
+- Explore [DANA Language](../dana/language.md)
 
 ---
 <p align="center">

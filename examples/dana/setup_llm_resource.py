@@ -18,9 +18,9 @@ import asyncio
 import os
 
 from opendxa.common.resource.llm_resource import LLMResource
-from opendxa.dana.language.parser import parse
-from opendxa.dana.runtime.context import RuntimeContext
-from opendxa.dana.runtime.interpreter import Interpreter
+from opendxa.dana.sandbox.interpreter.interpreter import Interpreter
+from opendxa.dana.sandbox.parser.dana_parser import DanaParser
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
 async def main():
@@ -74,7 +74,7 @@ async def main():
 
     # Create runtime context and register LLM resource
     print("\nStep 2: Creating RuntimeContext and registering LLM...")
-    context = RuntimeContext()
+    context = SandboxContext()
     context.register_resource("llm", llm)
     print(f"Resources in context: {context.list_resources()}")
 
@@ -90,7 +90,8 @@ async def main():
     """
 
     # Parse and execute the program
-    parse_result = parse(program)
+    parser = DanaParser()
+    parse_result = parser.parse(program)
     interpreter = Interpreter(context)
     interpreter.execute_program(parse_result)
 

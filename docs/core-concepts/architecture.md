@@ -10,23 +10,23 @@
 
 ## Overview
 
-OpenDXA is built on a modular, extensible architecture that enables the creation and deployment of autonomous agents. The system is designed to be flexible, scalable, and maintainable, with clear separation of concerns and well-defined interfaces between components.
+OpenDXA is built on a modular, extensible architecture that enables the creation and deployment of autonomous agents. The system is designed to be flexible, scalable, and maintainable, with clear separation of concerns and well-defined interfaces between components. At its core, OpenDXA leverages DANA, a Domain-Aware NeuroSymbolic Architecture language, for agent reasoning and execution.
 
 ## Core Components
 
 | Descriptive Components | Executive Components |
 |----------------------|---------------------|
-| **Agent**<br>- Autonomous entity<br>- Capability integration<br>- Resource management | **AgentRuntime**<br>- Plan execution<br>- RuntimeContext management<br>- Resource coordination |
-| **Knowledge**<br>- Information storage<br>- Data persistence<br>- Context sharing<br>- CORAL lifecycle | **RuntimeContext**<br>- State management<br>- Execution tracking<br>- State container coordination |
-| **Capabilities**<br>- Core functionalities<br>- Extensible modules<br>- Shared services | **Planner**<br>- Plan creation<br>- Node management<br>- Execution flow control |
-| **Resources**<br>- Tools and utilities<br>- Knowledge bases<br>- External services | **Reasoner**<br>- Node execution<br>- Signal processing<br>- State updates |
-| **State**<br>- Agent state<br>- World state<br>- Execution state | **LLMResource**<br>- LLM communication<br>- Model configuration<br>- Response handling |
+| **Agent**<br>- Autonomous entity<br>- Capability integration<br>- Resource management | **AgentRuntime**<br>- DANA program execution<br>- RuntimeContext management<br>- Resource coordination |
+| **Knowledge**<br>- Information storage<br>- Data persistence<br>- Context sharing<br>- CORRAL lifecycle | **RuntimeContext**<br>- State management<br>- Execution tracking<br>- State container coordination |
+| **Capabilities**<br>- Core functionalities<br>- Extensible modules<br>- Shared services | **DANA Interpreter**<br>- Program execution<br>- Function management<br>- State updates |
+| **Resources**<br>- Tools and utilities<br>- Knowledge bases<br>- External services | **DANA Parser**<br>- Grammar-based parsing<br>- AST generation<br>- Type checking |
+| **State**<br>- Agent state<br>- World state<br>- Temp state | **LLMResource**<br>- LLM communication<br>- Model configuration<br>- Response handling |
 
-### CORAL: Domain Knowledge Lifecycle
+### CORRAL: Domain Knowledge Lifecycle
 
-OpenDXA's key differentiator is its emphasis on domain knowledge management through the CORAL lifecycle:
+OpenDXA's key differentiator is its emphasis on domain knowledge management through the CORRAL lifecycle:
 
-1. **CAPTURE**
+1. **COLLECT**
    - Knowledge acquisition from various sources
    - Initial processing and validation
    - Integration with existing knowledge base
@@ -41,12 +41,17 @@ OpenDXA's key differentiator is its emphasis on domain knowledge management thro
    - Semantic search and relevance ranking
    - Dynamic query optimization
 
-4. **APPLY**
-   - Contextual knowledge application
-   - Decision support and reasoning
-   - Action planning and execution
+4. **REASON**
+   - Inference and contextual reasoning
+   - Pattern recognition and hypothesis generation
+   - Decision support
 
-5. **LEARN**
+5. **ACT**
+   - Action planning and execution
+   - Applying knowledge to real-world tasks
+   - Feedback collection from actions
+
+6. **LEARN**
    - Feedback integration
    - Knowledge refinement
    - Continuous improvement
@@ -60,143 +65,43 @@ This lifecycle is implemented through the interaction of various components:
 
 ## System Architecture
 
-```mermaid
-graph TD
-    subgraph "Application Layer"
-        UI[User Interface]
-        API[API Gateway]
-    end
+The OpenDXA architecture is organized into layers, with DANA serving as the central execution model:
 
-    subgraph "Resource/Tools Layer"
-        direction LR
-        LLR[LLMResource]
-        LLM[LLM]
-    end
+1. **Application Layer**
+   - User Interface components
+   - API Gateway for external communication
 
-    subgraph "Core Components"
-        subgraph DC["Descriptive Components"]
-            A[Agent]
-            KB[Knowledge Base]
-            C[Capabilities]
-            R[Resources]
-            S[State]
-        end
+2. **Agent Layer**
+   - Agent configuration and management
+   - Capability integration
+   - Resource management
 
-        subgraph EC["Executive Components"]
-            AR[AgentRuntime]
-            RC[RuntimeContext]
-            P[Planner]
-            RE[Reasoner]
-        end
-    end
+3. **DANA Execution Layer**
+   - Parser for code interpretation
+   - Interpreter for program execution
+   - Runtime Context for state management
 
-    UI --> API
-    API --> A
-    A --> AR
-    AR --> RC
-    RC --> P
-    P --> RE
-    RE --> LLR
-    LLR --> LLM
-    LLR --> AR
-    KB --> A
-    C --> RE
-
-    style UI fill:#f9f,stroke:#333,stroke-width:2px
-    style API fill:#f9f,stroke:#333,stroke-width:2px
-    style A fill:#bbf,stroke:#333,stroke-width:2px
-    style KB fill:#bbf,stroke:#333,stroke-width:2px
-    style C fill:#bbf,stroke:#333,stroke-width:2px
-    style R fill:#bbf,stroke:#333,stroke-width:2px
-    style S fill:#bbf,stroke:#333,stroke-width:2px
-    style AR fill:#bfb,stroke:#333,stroke-width:2px
-    style RC fill:#bfb,stroke:#333,stroke-width:2px
-    style P fill:#bfb,stroke:#333,stroke-width:2px
-    style RE fill:#bfb,stroke:#333,stroke-width:2px
-    style LLR fill:#fbb,stroke:#333,stroke-width:2px
-    style LLM fill:#fbb,stroke:#333,stroke-width:2px
-    style DC fill:#e6f3ff,stroke:#333,stroke-width:2px
-    style EC fill:#e6ffe6,stroke:#333,stroke-width:2px
-```
-
-### CORAL: Domain Knowledge Lifecycle
-
-OpenDXA's key differentiator is its emphasis on domain knowledge management through the CORAL lifecycle:
-
-1. **CAPTURE**
-   - Knowledge acquisition from various sources
-   - Initial processing and validation
-   - Integration with existing knowledge base
-
-2. **ORGANIZE**
-   - Structured storage and categorization
-   - Relationship mapping and context linking
-   - Metadata management and tagging
-
-3. **RETRIEVE**
-   - Context-aware knowledge access
-   - Semantic search and relevance ranking
-   - Dynamic query optimization
-
-4. **APPLY**
-   - Contextual knowledge application
-   - Decision support and reasoning
-   - Action planning and execution
-
-5. **LEARN**
-   - Feedback integration
-   - Knowledge refinement
-   - Continuous improvement
-
-```mermaid
-graph LR
-    subgraph "Descriptive Components"
-        KB[Knowledge Base]
-    end
-
-    subgraph "Executive Components"
-        RE[Reasoner]
-        RC[RuntimeContext]
-    end
-
-    subgraph "Resources"
-        LLR[LLMResource]
-    end
-
-    %% CORAL Flow
-    KB -->|C1: CAPTURE| KB
-    KB -->|C2: ORGANIZE| KB
-    KB -->|C3: RETRIEVE| KB
-    KB -->|C4: APPLY| RE
-    RE -->|C5: LEARN| KB
-
-    %% Supporting Flows
-    LLR -->|Process| KB
-    RC -->|Context| KB
-    KB -->|Query| LLR
-
-    style KB fill:#bbf,stroke:#333,stroke-width:2px
-    style RE fill:#bfb,stroke:#333,stroke-width:2px
-    style RC fill:#bfb,stroke:#333,stroke-width:2px
-    style LLR fill:#fbb,stroke:#333,stroke-width:2px
-```
+4. **Resource Layer**
+   - LLM integration
+   - Knowledge base access
+   - External tools and services
 
 ## Component Interactions
 
 ### 1. Request Flow
 1. User request received through API
 2. Agent instance created/selected
-3. AgentRuntime initialized with RuntimeContext
-4. Planner creates execution plan
-5. Reasoner executes plan steps
+3. DANA program composed for the task
+4. RuntimeContext initialized with state containers
+5. DANA Interpreter executes the program
 6. LLMResource handles LLM communication
 7. Results returned through API
 
 ### 2. Agent Initialization
 ```python
 from opendxa.agent import Agent
-from opendxa.config import AgentConfig
-from opendxa.base.resource import LLMResource
+from opendxa.agent.agent_config import AgentConfig
+from opendxa.common.resource import LLMResource
 
 # Create agent with configuration
 agent = Agent(name="researcher")
@@ -216,81 +121,89 @@ llm_resource = LLMResource(
 agent = agent.with_llm(llm_resource)
 agent = agent.with_capabilities({
     "memory": MemoryCapability(),
-    "planning": PlanningCapability()
+    "domain_expertise": DomainExpertiseCapability()
 })
 ```
 
-### 3. Plan Execution
+### 3. DANA Program Execution
 ```python
-from opendxa.execution import Plan, PlanFactory
-from opendxa.base.execution import RuntimeContext
-from opendxa.base.state import AgentState, WorldState, ExecutionState
+from opendxa.dana import run
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
-# Create execution plan
-plan = PlanFactory.create_basic_plan(
-    objective="Analyze customer feedback",
-    capabilities=["memory", "planning"]
+# Create sandbox context with state
+context = SandboxContext(
+    agent={},
+    world={},
+    temp={}
 )
 
-# Create runtime context
-context = RuntimeContext(
-    agent_state=agent.state,
-    world_state=WorldState(),
-    execution_state=ExecutionState()
-)
+# Define DANA program
+dana_program = """
+# Set initial state
+agent.objective = "Analyze customer feedback"
+temp.feedback_data = world.customer_feedback
 
-# Execute plan through AgentRuntime
-result = await agent.runtime.execute(plan, context)
+# Process data
+temp.sentiment = reason("Analyze the sentiment in {temp.feedback_data}")
+temp.key_issues = reason("Identify key issues in {temp.feedback_data}")
+
+# Generate response
+agent.response = reason("Create a summary of sentiment analysis: {temp.sentiment} and key issues: {temp.key_issues}")
+
+# Log results
+log.info("Analysis complete. Response: {agent.response}")
+"""
+
+# Execute DANA program
+result = run(dana_program, context)
 ```
 
 ## Implementation Details
 
 ### 1. Agent Runtime
 ```python
-from opendxa.execution import AgentRuntime
-from opendxa.base.execution import RuntimeContext
+from opendxa.agent.agent_runtime import AgentRuntime
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
-# AgentRuntime manages plan execution with RuntimeContext
+# AgentRuntime manages DANA program execution with SandboxContext
 runtime = AgentRuntime(agent)
 
-# Create and use RuntimeContext
-context = RuntimeContext(
-    agent_state=agent.state,
-    world_state=WorldState(),
-    execution_state=ExecutionState()
+# Create and use SandboxContext
+context = SandboxContext(
+    agent=agent.state,
+    world={},
+    temp={}
 )
 
-# Execute plan with context
-result = await runtime.execute(plan, context)
+# Execute DANA program with context
+result = runtime.execute(dana_program, context)
 ```
 
 ### 2. State Management
 ```python
-from opendxa.base.state import (
-    AgentState,
-    WorldState,
-    ExecutionState,
-    StateManager
-)
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 # Initialize state containers
-agent_state = AgentState()
-world_state = WorldState()
-execution_state = ExecutionState()
-
-# Create state manager
-state_manager = StateManager(
-    state_containers={
-        'agent': agent_state,
-        'world': world_state,
-        'execution': execution_state
-    }
+context = SandboxContext(
+    agent={
+        "name": "research_agent",
+        "objective": "Analyze data"
+    },
+    world={
+        "data_source": "customer_feedback_db",
+        "customer_feedback": [...] 
+    },
+    temp={}
 )
+
+# Access state
+objective = context.get("agent.objective")
+context.set("temp.analysis_result", analysis_result)
 ```
 
 ### 3. LLM Communication
 ```python
-from opendxa.base.resource import LLMResource
+from opendxa.common.resource import LLMResource
 
 # Create and configure LLM resource
 llm_resource = LLMResource(
@@ -313,15 +226,16 @@ response = await llm_resource.query(prompt)
    - Configure LLMResource appropriately
    - Manage capabilities efficiently
 
-2. **Plan Execution**
-   - Create clear objectives
-   - Use appropriate capabilities
+2. **DANA Program Design**
+   - Create clear, modular programs
+   - Use proper state scopes (agent, world, temp)
+   - Leverage built-in functions like reason() and log()
    - Handle errors gracefully
 
 3. **State Management**
-   - Maintain consistent state through RuntimeContext
+   - Maintain consistent state through SandboxContext
    - Use appropriate state containers
-   - Handle state transitions properly
+   - Follow proper naming conventions for state variables
 
 ## Common Patterns
 
@@ -333,19 +247,19 @@ response = await llm_resource.query(prompt)
    agent = agent.with_capabilities(capabilities)
    ```
 
-2. **Plan Execution**
+2. **DANA Program Execution**
    ```python
-   # Create and execute plan
-   plan = PlanFactory.create_basic_plan(objective)
-   context = RuntimeContext(agent_state, world_state, execution_state)
-   result = await agent.runtime.execute(plan, context)
+   # Create context and execute DANA program
+   context = SandboxContext(agent={}, world={}, temp={})
+   result = run(dana_program, context)
    ```
 
 3. **State Updates**
    ```python
-   # Update and track state through RuntimeContext
-   context.set('agent.objective', new_objective)
-   status = context.get('execution.status')
+   # Update and access state within DANA programs
+   agent.status = "processing"
+   temp.result = process_data(world.input_data)
+   log.info("Processing complete: {temp.result}")
    ```
 
 ## Next Steps

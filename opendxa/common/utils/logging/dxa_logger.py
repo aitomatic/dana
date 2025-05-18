@@ -4,7 +4,7 @@ Simplified DXALogger with core logging functionality.
 
 import logging
 from functools import lru_cache
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, cast
 
 
 class ColoredFormatter(logging.Formatter):
@@ -136,6 +136,18 @@ class DXALogger:
         if self.prefix:
             return f"[{self.prefix}] {message}"
         return message
+
+    def log(self, level: Union[int, str], message: str, *args, **context):
+        """Log message with specified level."""
+        formatted = self._format_message(message)
+
+        if isinstance(level, str):
+            level = cast(int, getattr(logging, level))
+
+        if self.log_data:
+            self.logger.log(level, formatted, *args, extra=context)
+        else:
+            self.logger.log(level, formatted, *args)
 
     def info(self, message: str, *args, **context):
         """Log informational message."""
