@@ -1,0 +1,97 @@
+# DANA Language reason() statement demonstration
+# Note: This requires an LLM to be configured in your DANA runtime context
+
+# Set log level to see more information
+log.setLevel(INFO)
+
+# ----------------------------------------------------------------------------
+# 1. Basic reason() usage
+# ----------------------------------------------------------------------------
+# The reason() statement allows you to invoke an LLM for text generation
+# directly within your DANA code. Here's the simplest form:
+
+log.info("BASIC USAGE EXAMPLE")
+reason("What is the capital of France?")
+
+# ----------------------------------------------------------------------------
+# 2. Assigning reasoning results to variables
+# ----------------------------------------------------------------------------
+# You can capture the output of reason() statements into variables
+
+log.info("\nASSIGNING TO VARIABLES EXAMPLE")
+private.capital_info = reason("List three interesting facts about Tokyo.")
+log.info(f"Stored reasoning result: {private.capital_info}")
+
+# ----------------------------------------------------------------------------
+# 3. Passing context to reason()
+# ----------------------------------------------------------------------------
+# You can provide context to the LLM to improve its reasoning
+
+log.info("\nCONTEXT EXAMPLE")
+
+# Variables to use as context
+private.temperature = 72.5
+private.humidity = 45.3
+private.pressure = 1013.2
+private.location = "Server Room A"
+
+# Method 1: Using f-strings to include context
+private.activity_suggestion = reason(f"Is this server environment (temp: {private.temperature}F, humidity: {private.humidity}%, pressure: {private.pressure} hPa, location: {private.location}) within acceptable parameters for operations?")
+log.info(f"Environment assessment: {private.activity_suggestion}")
+
+# Method 2: Using the context parameter
+private.server_analysis = reason("Analyze these environmental conditions and suggest any actions needed")
+log.info(f"Analysis result: {private.server_analysis}")
+
+# ----------------------------------------------------------------------------
+# 4. Using different format options
+# ----------------------------------------------------------------------------
+# The reason() statement accepts a 'format' parameter to structure the output
+
+log.info("\nFORMAT EXAMPLE")
+
+# JSON format
+private.json_summary = reason("Create a summary of the current conditions with any potential issues")
+log.info(f"JSON result: {private.json_summary}")
+
+# Bullet points format
+private.bullets_result = reason("List three ways to optimize server room efficiency.")
+log.info(f"Bullet points: {private.bullets_result}")
+
+# Custom format (here requesting a specific structure)
+private.custom_result = reason("Compare air cooling vs. liquid cooling for servers.")
+log.info(f"Custom format: {private.custom_result}")
+
+# ----------------------------------------------------------------------------
+# 5. Simple error detection
+# ----------------------------------------------------------------------------
+# Check if reasoning worked
+
+log.info("\nERROR DETECTION EXAMPLE")
+
+private.complex_reasoning = reason("Explain quantum computing's relevance to server optimization in 50 words.")
+log.info(f"Result: {private.complex_reasoning}")
+
+# Check if result is None or empty
+if private.complex_reasoning == None or private.complex_reasoning == "":
+    log.error("Reasoning failed - got empty result")
+    # Fallback behavior
+    private.fallback_response = "Unable to complete reasoning task. Using fallback response."
+    log.info(f"Using fallback: {private.fallback_response}")
+
+# ----------------------------------------------------------------------------
+# Advanced usage - Chaining reasoning
+# ----------------------------------------------------------------------------
+# You can use the output of one reason() as input to another
+
+log.info("\nCHAINING EXAMPLE")
+
+private.issue = reason("Identify a potential issue in a server room")
+private.solution = reason(f"Recommend a solution for this issue: {private.issue}")
+private.implementation = reason(f"Outline steps to implement this solution: {private.solution}")
+
+log.info(f"Identified issue: {private.issue}")
+log.info(f"Recommended solution: {private.solution}")
+log.info(f"Implementation steps: {private.implementation}")
+
+log.info("\nDEMONSTRATION COMPLETE")

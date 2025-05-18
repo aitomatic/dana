@@ -1,3 +1,6 @@
+#
+# Keep this for remote linting e.g., by GitHub
+#
 [MESSAGES CONTROL]
 # C0303: Trailing whitespace
 # C0304: Final newline missing
@@ -12,4 +15,7 @@
 # W0718: Catching too general exception Exception
 # C0415: Import outside toplevel
 # W0621: Redefinition of name from outer scope
-disable=C0303,C0304,W0107,C0301,C0413,C0103,R0903,E0401,R0917,W1203,W0718,C0415,W0621
+disable=C0303,C0304,W0107,C0301,C0413,C0103,E0401,R0903,R0917,W1203,W0718,C0415,W0621
+
+[MASTER]
+# Add the grammar file to the ignore list

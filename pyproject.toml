@@ -4,12 +4,127 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "opendxa"
-version = "0.3.0"
+version = "0.4.0"
 description = "Domain-Expert Agent Framework"
+requires-python = ">=3.8"
+authors = [
+    {name = "Christopher Nguyen", email = "ctn@aitomatic.com"},
+    {name = "William Nguyen", email = "william@aitomatic.com"},
+    {name = "Lam Nguyen", email = "lam@aitomatic.com"},
+    {name = "Zooey Nguyen", email = "zooey@aitomatic.com"},
+    {name = "Vinh Luong", email = "vinh@aitomatic.com"}
+]
 
+# Core dependencies
+dependencies = [
+    # HTTP and API clients
+    "aiohttp",
+    "aioconsole",
+    "websockets",
+
+    # AI/LLM services
+    "aisuite[openai,anthropic,azure,google,groq,huggingface,ollama]",
+    "openai",
+    "mcp",
+    "llm-code-executor",
+
+    # Data processing and visualization
+    "pandas",
+    "matplotlib",
+    "seaborn",
+
+    # Database
+    "sqlalchemy",
+
+    # Utilities
+    "nest_asyncio",
+    "python-dotenv",
+    "pyyaml",
+    "structlog",
+
+    # Testing
+    "pytest",
+    "pytest-asyncio",
+    "pytest-mock",
+
+    # REPL keyboard
+    "prompt-toolkit",
+
+    # DANA agent programming language parser/interpreter
+    "lark",
+    "lark-parser"
+]
+
+# Development dependencies
+[project.optional-dependencies]
+dev = [
+    # Code formatting and linting
+    "black",
+    "ruff",
+    "pre-commit",
+
+    # Testing with coverage
+    "pytest-cov"
+]
+
+# Package configuration
 [tool.setuptools]
 packages = ["opendxa"]
 
+# Code formatting configuration
+[tool.black]
+line-length = 140
+target-version = ["py38"]
+
+# Primary linter configuration
 [tool.ruff]
 line-length = 140
+target-version = "py38"
 
+[tool.ruff.lint]
+# Rule selection
+select = [
+    "E",   # pycodestyle errors (critical issues)
+    "F",   # pyflakes (unused imports, undefined variables)
+    "I",   # isort (import sorting)
+    "B",   # bugbear (likely bugs and design problems)
+    "UP",  # pyupgrade (use modern Python features)
+    "N801", "N803", "N804",  # naming conventions for classes and functions only
+    "F821",  # undefined name
+    "F822",  # undefined attribute
+    "F841",  # unused variable
+    "F401",  # unused import
+]
+
+# Rules to ignore
+ignore = [
+    "E203",  # Whitespace before ':' (Black handles this)
+    "E501",  # Line too long (we use the line-length parameter instead)
+    "B008",  # Function call in default argument (common in web frameworks)
+    "B010",  # Setting attributes in class body (common in web frameworks)
+    "B904",  # Require raise Error(..) from ...
+    "N802",  # Function name should be lowercase (ignored for transformer functions)
+]
+
+# Exclusion patterns
+exclude = [
+    "*.na",
+    ".git",
+    ".venv",
+    "opendxa.egg-info",
+]
+
+# Disabled linters (in favor of Ruff)
+[tool.flake8]
+# ignore = ["*"]
+# exclude = ["*"]
+
+[tool.pylint.MASTER]
+# disable-all = true
+# ignore-patterns = [".*"]
+
+# Pylance (Pyright)
+[tool.pyright]
+reportAttributeAccessIssue = false
+reportGeneralTypeIssues = false
+reportAssignmentType = false

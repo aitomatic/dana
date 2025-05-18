@@ -1,4 +1,27 @@
 repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      # - id: trailing-whitespace
+      #   exclude: ^opendxa/dana/runtime/executor/(expression_evaluator|context_manager|statement_executor)\.py$
+      # - id: end-of-file-fixer
+      #   exclude: ^opendxa/dana/runtime/executor/(expression_evaluator|context_manager|statement_executor)\.py$
+      - id: check-yaml
+      - id: check-added-large-files
+      # - id: check-ast
+      - id: check-json
+        exclude: ^opendxa/dana/runtime/executor/expression_evaluator\.py$|\.ipynb$|\.vscode/settings\.json$
+      - id: check-merge-conflict
+      - id: detect-private-key
+
+  # - repo: https://github.com/astral-sh/ruff-pre-commit
+  #   rev: v0.3.0
+  #   hooks:
+  #     - id: ruff
+  #       args: [--fix, --config=pyproject.toml]
+  #     - id: ruff-format
+  #       args: [--config=pyproject.toml]
+
   - repo: local
     hooks:
       - id: make-files-readonly

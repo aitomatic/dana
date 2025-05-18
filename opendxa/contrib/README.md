@@ -41,11 +41,11 @@ If you have code you'd like to contribute:
 3. Follow the guidelines above for your contribution's README
 4. Submit a pull request with a clear description of your contribution
 
-Note: Code in this directory is not subject to the same review process as the main codebase, but should still follow basic security and ethical guidelines. 
+Note: Code in this directory is not subject to the same review process as the main codebase, but should still follow basic security and ethical guidelines.
 
 ---
 <p align="center">
 Copyright © 2024 Aitomatic, Inc. Licensed under the <a href="../LICENSE.md">MIT License</a>.
 <br/>
 <a href="https://aitomatic.com">https://aitomatic.com</a>
-</p> 
+</p>

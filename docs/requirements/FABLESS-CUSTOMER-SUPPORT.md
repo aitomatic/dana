@@ -4,13 +4,12 @@
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
 
+[Project Overview](../../README.md)
+
+
 # Fabless Customer Design Support Scenario
 
 This scenario describes how a Field Application Engineer (FAE), supported by a Domain Expert Agent (DXA), assists customers in successfully implementing IC designs through technical consultation and documentation.
-
-<p align="center">
-  <img src="https://phisonblog.com/wp-content/uploads/2023/03/1507431_WPICDesignProcess_01_112222.jpg" alt="IC Design Process Flow" width="50%" />
-</p>
 
 ## Business/Technical Problem Statement
 
@@ -55,10 +54,6 @@ The Domain Expert Agent (DXA) supports Field Application Engineers (FAEs) in pro
    - Reference designs
    - Historical design consultations
 
-<p align="center">
-  <img src="https://www.powersystemsdesign.com/images/articles/1384946982Illustration_YoleSermaPressrelease_March2013.jpg" alt="Semiconductor Industry Structure" width="50%" />
-</p>
-
 ### System Architecture
 
 ```mermaid
@@ -66,14 +61,14 @@ graph TB
     subgraph "Customer Interface"
         C[Customer] --> F[FAE]
     end
-    
+
     subgraph "DXA System"
         F <--> D[Design Expert DXA]
         D <--> KB[Knowledge Base]
         D <--> PE[Parameter Engine]
         D <--> VA[Validation Agent]
     end
-    
+
     subgraph "Knowledge Sources"
         KB --> DOC[Internal Documentation]
         KB --> DS[Datasheets]
@@ -167,7 +162,7 @@ sequenceDiagram
 stateDiagram-v2
     [*] --> Initial_Contact
     Initial_Contact --> Requirements_Gathering
-    
+
     state Requirements_Gathering {
         [*] --> Collect_Params
         Collect_Params --> Validate_Params
@@ -175,9 +170,9 @@ stateDiagram-v2
         Issues_Found --> Collect_Params: Need More Info
         Issues_Found --> [*]: Parameters Valid
     }
-    
+
     Requirements_Gathering --> Solution_Design
-    
+
     state Solution_Design {
         [*] --> Generate_Options
         Generate_Options --> Review_Tradeoffs
@@ -185,7 +180,7 @@ stateDiagram-v2
         Customer_Feedback --> Generate_Options: Refinement Needed
         Customer_Feedback --> [*]: Solution Accepted
     }
-    
+
     Solution_Design --> Documentation
     Documentation --> [*]
 ```
@@ -274,3 +269,10 @@ stateDiagram-v2
 - Offline analysis results
 - Sample design challenges
 - Alternative solution paths
+
+---
+<p align="center">
+Copyright © 2025 Aitomatic, Inc. Licensed under the <a href="../../LICENSE.md">MIT License</a>.
+<br/>
+<a href="https://aitomatic.com">https://aitomatic.com</a>
+</p>

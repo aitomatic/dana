@@ -2,21 +2,25 @@
 
 from enum import Enum, auto
 from typing import Any, Dict
+
 from opendxa.common.mixins.tool_callable import ToolCallable
 from opendxa.common.types import BaseRequest, BaseResponse
 
+
 class QueryStrategy(Enum):
     """Available query strategies."""
+
     ONCE = auto()  # Query once
     ITERATIVE = auto()  # Iterative query
     SEMANTIC = auto()  # Semantic query with iteration
     HYBRID = auto()  # Hybrid of direct and semantic
 
-class Queryable():
+
+class Queryable:
     """Mixin for queryable objects.
-      Note that the @ToolCallable.tool decorator must be applied to the instance
-      query() method to expose it as a tool; the decorator is not inherited
-      automatically.
+    Note that the @ToolCallable.tool decorator must be applied to the instance
+    query() method to expose it as a tool; the decorator is not inherited
+    automatically.
     """
 
     def __init__(self):
@@ -34,7 +38,7 @@ class Queryable():
         # Convert dict to BaseRequest if needed
         if isinstance(request, dict):
             request = BaseRequest(arguments=request)
-            
+
         return BaseResponse(success=True, content=request.arguments, error=None)
 
     def get_query_strategy(self) -> QueryStrategy:

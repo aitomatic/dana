@@ -1,0 +1,66 @@
+{
+    // === File Associations ===
+    // Treats .dana files as Python for syntax highlighting and tooling
+    "files.associations": {
+        "*.na": "python"
+    },
+
+    // === Explorer Settings ===
+    // Show hidden files and folders
+    "files.exclude": {
+        "**/.claude": true,
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "**/__pycache__": true,
+        "**/.pytest_cache": true,
+        "**/.coverage": true,
+        "**/.mypy_cache": true,
+        "**/.ruff_cache": true,
+        "**/.venv": true,
+        "**/opendxa.egg-info": true
+    },
+
+    // === Python Analysis Settings ===
+    // Controls type checking and import behavior for Python code
+    "python.analysis.typeCheckingMode": "basic",
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.extraPaths": ["./opendxa"],
+    "python.analysis.diagnosticSeverityOverrides": {
+        "reportUndefinedVariable": "none",
+        "reportMissingImports": "none",
+        "reportGeneralTypeIssues": "none"
+    },
+    "python.analysis.diagnosticMode": "workspace",
+    "python.analysis.ignore": [
+        "**/dana_grammar_embedded.py"
+    ],
+
+    // === Editor Formatting ===
+    // Configures automatic code formatting with Black
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "editor.defaultFoldingRangeProvider": "ms-python.black-formatter",
+
+    // === Code Actions ===
+    // Sets up Ruff for linting and import organization when explicitly triggered
+    "editor.codeActionsOnSave": {
+        "source.fixAll.ruff": "explicit",
+        "source.organizeImports.ruff": "explicit"
+    },
+
+    // === Linters Configuration ===
+    // Enables multiple Python linting tools for code quality
+    "pylint.enabled": false,
+    "flake8.enabled": false,
+    "ruff.enable": true,
+
+    // === Language-Specific Overrides ===
+    // Disables auto-formatting for .dana files
+    "[dana]": {
+        "editor.formatOnSave": false
+    }
+}

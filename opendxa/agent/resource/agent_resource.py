@@ -23,14 +23,17 @@ Example:
     ```
 """
 
+# TODO: deprecate this resource in favor of the Agent itself as a Resource
+
 import asyncio
 from typing import TYPE_CHECKING
 
+# First-party imports
 from opendxa.common.exceptions import AgentError, ResourceError
-from opendxa.base.resource.base_resource import BaseResource
+from opendxa.common.mixins import ToolCallable
+from opendxa.common.resource import BaseResource
 from opendxa.common.types import BaseRequest, BaseResponse
 from opendxa.common.utils.misc import Misc
-from opendxa.common.mixins import ToolCallable
 
 if TYPE_CHECKING:
     from opendxa.agent.agent import Agent  # Only used for type hints

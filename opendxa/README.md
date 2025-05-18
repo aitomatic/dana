@@ -6,7 +6,9 @@
 
 # OpenDXA - Domain-Expert Agent Framework
 
-OpenDXA is a powerful framework for building domain-expert agents that combine declarative knowledge with imperative execution. It enables the creation of intelligent agents that can understand, reason about, and act within specific domains.
+OpenDXA DANA cuts through the frustration of current agentic frameworks by eliminating the boilerplate hell and infrastructure overhead. Forget wrestling with chains, graphs, nodes, and complex orchestration patterns—DANA lets you define agent behavior directly with a clean, expressive syntax. Build in minutes what takes days with other frameworks. You focus on what your agent should do, not how to plumb together a dozen library components.
+
+What makes DANA special is its neurosymbolic approach that gives you the best of both worlds: the precision of symbolic programming without the rigid syntax constraints. It avoids the ambiguity pitfalls of pure natural language programming while maintaining intuitive expressiveness that traditional programming languages lack. But the real game-changer is DANA's agent-to-agent knowledge exchange capability—agents can share not just messages but structured knowledge and capabilities using semantic representations. This creates possibilities for collaborative intelligence where agents can learn from each other, build on shared discoveries, and evolve together within a secure sandbox environment. It's the foundation for truly scalable multi-agent systems that current frameworks only hint at.
 
 For detailed documentation, please refer to the [Main Documentation](../docs/README.md).
 
@@ -33,4 +35,4 @@ For installation and quick start instructions, please refer to the main [README.
 Copyright © 2024 Aitomatic, Inc. Licensed under the <a href="../LICENSE.md">MIT License</a>.
 <br/>
 <a href="https://aitomatic.com">https://aitomatic.com</a>
-</p> 
+</p>

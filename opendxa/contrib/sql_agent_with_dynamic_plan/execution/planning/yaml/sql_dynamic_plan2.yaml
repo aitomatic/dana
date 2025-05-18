@@ -6,7 +6,7 @@ nodes:
     to_llm: |
       You are a SQL Expert. Your goal is to generate complex SQL queries to answer user's question.
       Question: {{agent.plan.initial_objective}}
-      
+
       Make sure you understand the question clearly by:
       - Clarify the question: Make sure you fully understand what data the user needs.
       - Determine the output: What should the final result look like? What fields? What format?
@@ -21,7 +21,7 @@ nodes:
       You are a SQL Expert. Your goal is to generate complex SQL queries to answer user's question.
       Question: {{agent.plan.initial_objective}}
       Understanding: {{agent.plan.understanding}}
-      
+
       Based on the question, analyze the database schema by using the tools provided:
       - Identify involved tables: Which tables contain the necessary data?
       - Understand relationships: Look at foreign keys, primary keys, and table joins.
@@ -37,7 +37,7 @@ nodes:
       Question: {{agent.plan.initial_objective}}
       Understanding: {{agent.plan.understanding}}
       Schema Analysis: {{agent.plan.schema_analysis}}
-      
+
       Break down the query by following these steps:
       1. Start with the base table: Choose the table with the core data.
       2. Start with smallest valid subquery, verifying each step produces correct intermediate results.
@@ -55,7 +55,7 @@ nodes:
       Question: {{agent.plan.initial_objective}}
       Query Structure: {{agent.plan.query_structure}}
       Join Strategy: {{agent.plan.join_strategy}}
-      
+
       Based on the breakdown, write the SQL query for the question following these rules:
       - Use CTEs (Common Table Expressions) or subqueries to simplify.
       - Start with smallest valid subquery, verifying each step produces correct intermediate results.
@@ -73,7 +73,7 @@ nodes:
       Question: {{agent.plan.initial_objective}}
       SQL Query: {{agent.plan.sql_query}}
       Query Explanation: {{agent.plan.query_explanation}}
-      
+
       Optimize the SQL query for performance by following these rules:
       - Reduce nested subqueries or replace them with joins if more efficient.
       - Avoid SELECT * — always specify columns.
@@ -85,4 +85,4 @@ nodes:
     next: end
 
   - id: end
-    type: end 
+    type: end

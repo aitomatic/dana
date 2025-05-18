@@ -1,0 +1,25 @@
+# Example demonstrating float literals and arithmetic operations
+
+# Floats
+private.config.threshold = 0.75
+public.env.pi_approx = 3.14159  # Changed from global to public scope
+
+# Basic arithmetic
+private.stats.level = 5 + 3
+private.stats.score = 100 - 25
+private.stats.bonus = 10 * 2
+private.stats.ratio = 50 / 4  # Expect 12.5 (float division)
+
+# Mixed types and precedence
+private.calc.value1 = 1.5 + 2.5 * 3.0  # Expect 1.5 + 7.5 = 9.0
+private.calc.value2 = (1.5 + 2.5) * 3.0  # Expect 4.0 * 3.0 = 12.0
+
+# Log results
+log(f"Threshold: {private.config.threshold}")
+log(f"Pi Approx: {public.env.pi_approx}")  # Changed from global to public
+log(f"Level: {private.stats.level}")
+log(f"Score: {private.stats.score}")
+log(f"Bonus: {private.stats.bonus}")
+log(f"Ratio: {private.stats.ratio}")
+log(f"Value 1 (1.5 + 2.5 * 3.0): {private.calc.value1}")
+log(f"Value 2 ((1.5 + 2.5) * 3.0): {private.calc.value2}")

@@ -53,14 +53,14 @@ The memory capability provides access to memory resources:
 ```python
 class MemoryCapability(BaseCapability):
     """Memory management capability for agents."""
-    
+
     async def initialize(self, config):
         self.memory = MemoryResource(config)
-        
+
     async def store(self, key: str, value: Any):
         """Store information in memory."""
         await self.memory.store(key, value)
-        
+
     async def recall(self, key: str) -> Any:
         """Recall information from memory."""
         return await self.memory.recall(key)
@@ -73,10 +73,10 @@ Knowledge capabilities provide access to knowledge base resources:
 ```python
 class KnowledgeCapability(BaseCapability):
     """Knowledge access capability."""
-    
+
     async def initialize(self, config):
         self.knowledge = KnowledgeBaseResource(config)
-        
+
     async def query(self, query: str) -> List[Knowledge]:
         """Query knowledge base."""
         return await self.knowledge.search(query)
@@ -89,10 +89,10 @@ Tool capabilities provide access to external tools and services:
 ```python
 class ToolCapability(BaseCapability):
     """Tool access capability."""
-    
+
     async def initialize(self, config):
         self.tools = ToolResource(config)
-        
+
     async def execute(self, tool_name: str, params: Dict) -> Any:
         """Execute a tool with parameters."""
         return await self.tools.execute(tool_name, params)
@@ -141,7 +141,7 @@ class AnalysisCapability(BaseCapability):
         self.memory = MemoryCapability()
         self.knowledge = KnowledgeCapability()
         self.tools = ToolCapability()
-        
+
     async def analyze(self, data):
         # Use multiple capabilities
         context = await self.memory.recall("current_context")

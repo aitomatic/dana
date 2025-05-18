@@ -2,6 +2,9 @@
 MD004: false
 ul-style: false
 
+MD007: false
+ul-indent: false
+
 # Disable rule MD013 - Line length
 MD013: false
 line-length: false
@@ -64,3 +67,5 @@ no-trailing-spaces: false
 MD012: false        # Multiple blank lines
 no-multiple-blanks: false
 
+MD058: false        # Blank lines around tables
+blanks-around-tables: false

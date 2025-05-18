@@ -4,11 +4,10 @@
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
 
-# Fabless Design Implementation Support Requirements
+[Project Overview](../../README.md)
 
-<p align="center">
-  <img src="https://phisonblog.com/wp-content/uploads/2023/03/1507431_WPICDesignProcess_01_112222.jpg" alt="IC Design Process Flow" width="50%" />
-</p>
+
+# Fabless Design Implementation Support Requirements
 
 ## Business/Technical Problem Statement
 
@@ -76,7 +75,7 @@ sequenceDiagram
     participant F as FAE
     participant D as DXA
     participant K as Knowledge Base
-    
+
     C->>F: Initiates design consultation
     F->>D: Begins discovery conversation
     D->>K: Query relevant docs
@@ -153,7 +152,7 @@ graph TB
         P[Parameters]
         R[Requirements]
     end
-    
+
     subgraph "DXA Core"
         D[DXA System]
         D <--> PE[Parameter Engine]
@@ -161,7 +160,7 @@ graph TB
         D <--> PA[Plan Analyzer]
         D <--> IE[Implementation Engine]
     end
-    
+
     subgraph "Output Layer"
         G[Guides]
         C[Calculations]
@@ -241,3 +240,10 @@ graph TB
 - Plan generation efficiency
 - Step execution success rate
 - Implementation completion time
+
+---
+<p align="center">
+Copyright © 2025 Aitomatic, Inc. Licensed under the <a href="../../LICENSE.md">MIT License</a>.
+<br/>
+<a href="https://aitomatic.com">https://aitomatic.com</a>
+</p>

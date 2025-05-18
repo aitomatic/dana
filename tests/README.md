@@ -15,18 +15,15 @@ Comprehensive test coverage for the OpenDXA framework.
 ## Test Organization
 
 - **agent/**: Agent system tests
-  - Strategy implementation
   - Agent configuration
 
 - **execution/**: Execution system tests
-  - Planning functionality
-  - Reasoning patterns
   - Workflow implementation
   - Factory patterns
 
 - **integration/**: Cross-component tests
   - Default strategies
-  - Workflow-plan integration
+  - Workflow integration
 
 ## Running Tests
 
@@ -35,13 +32,13 @@ Comprehensive test coverage for the OpenDXA framework.
 pytest
 
 # Run specific module
-pytest tests/execution/reasoning/
+pytest tests/execution/
 
 # Run specific test file
-pytest tests/execution/planning/test_plan_factory.py
+pytest tests/execution/test_pipeline.py
 
 # Run specific test case
-pytest tests/execution/planning/test_plan_factory.py::TestPlanFactory::test_create_plan
+pytest tests/execution/test_pipeline.py::TestPipeline::test_placeholder
 
 # Run with coverage
 pytest --cov=opendxa

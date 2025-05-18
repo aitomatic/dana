@@ -5,20 +5,22 @@ allowing interaction through standard input/output streams.
 """
 
 from typing import Any, Optional
+
 from .base_io import BaseIO
+
 
 class ConsoleIO(BaseIO):
     """Console-based I/O resource implementation.
-    
+
     This class implements the BaseIOResource interface for console-based interaction,
     using standard input/output streams.
     """
-    
+
     def __init__(self, name: str = "console", description: Optional[str] = None):
         """Initialize console I/O resource."""
         super().__init__(name, description or "Console-based I/O resource")
         self._buffer: list[str] = []  # For testing purposes
-    
+
     async def send(self, message: Any) -> None:
         """Print to console."""
         print(message)
@@ -36,4 +38,4 @@ class ConsoleIO(BaseIO):
     async def cleanup(self) -> None:
         """Clean up console I/O."""
         await super().cleanup()
-        self.logger.info("Console I/O resource cleaned up") 
+        self.logger.info("Console I/O resource cleaned up")

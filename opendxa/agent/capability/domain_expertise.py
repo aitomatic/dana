@@ -25,7 +25,9 @@ Example:
 """
 
 from typing import List
+
 from pydantic import BaseModel, Field
+
 
 class DomainExpertise(BaseModel):
     """Definition of a domain of expertise.
@@ -52,6 +54,7 @@ class DomainExpertise(BaseModel):
         ...     example_queries=["solve x^2 + 2x + 1 = 0"]
         ... )
     """
+
     name: str = Field(..., description="Domain identifier (e.g., 'mathematics')")
     description: str = Field(..., description="Detailed description of the expert's knowledge domain")
     capabilities: List[str] = Field(default_factory=list, description="Specific abilities and skills this expert has")
