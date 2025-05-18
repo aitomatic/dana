@@ -32,7 +32,7 @@ from lark.indenter import PythonIndenter
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.dana.sandbox.parser.transformer.dana_transformer import DanaTransformer
-from dana.sandbox.parser.utils.type_checker import TypeEnvironment
+from opendxa.dana.sandbox.parser.utils.type_checker import TypeEnvironment
 
 try:
     from lark import Lark, Tree
@@ -45,7 +45,7 @@ except ImportError:
 from opendxa.common.utils.logging import DXA_LOGGER
 from opendxa.dana.common.exceptions import ParseError
 from opendxa.dana.sandbox.parser.ast import Identifier, Program
-from dana.sandbox.parser.utils.type_checker import TypeChecker
+from opendxa.dana.sandbox.parser.utils.type_checker import TypeChecker
 
 parser_logger = DXA_LOGGER.getLogger("opendxa.dana.language.parser")
 

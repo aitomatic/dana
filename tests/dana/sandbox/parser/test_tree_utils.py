@@ -3,7 +3,7 @@
 import pytest
 from lark import Token, Tree
 
-from dana.sandbox.parser.utils.tree_utils import (
+from opendxa.dana.sandbox.parser.utils.tree_utils import (
     TreeTraverser,
     extract_token_value,
     unwrap_single_child_tree,

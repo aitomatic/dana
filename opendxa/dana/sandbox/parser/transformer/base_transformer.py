@@ -7,8 +7,8 @@ from lark import Token, Tree
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.dana.common.exceptions import ParseError
 from opendxa.dana.sandbox.parser.ast import ASTNode, LiteralExpression
-from dana.sandbox.parser.utils.tree_utils import TreeTraverser
-from dana.sandbox.parser.utils.tree_utils import unwrap_single_child_tree as utils_unwrap
+from opendxa.dana.sandbox.parser.utils.tree_utils import TreeTraverser
+from opendxa.dana.sandbox.parser.utils.tree_utils import unwrap_single_child_tree as utils_unwrap
 
 
 class BaseTransformer(Loggable):

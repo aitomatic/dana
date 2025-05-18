@@ -51,7 +51,7 @@ from opendxa.dana.sandbox.parser.ast import (
 from opendxa.dana.sandbox.parser.transformer.base_transformer import BaseTransformer
 from opendxa.dana.sandbox.parser.transformer.expression_transformer import ExpressionTransformer
 from opendxa.dana.sandbox.parser.transformer.variable_transformer import VariableTransformer
-from dana.sandbox.parser.utils.tree_utils import TreeTraverser
+from opendxa.dana.sandbox.parser.utils.tree_utils import TreeTraverser
 
 # Allowed types for Assignment.value
 AllowedAssignmentValue = Union[
