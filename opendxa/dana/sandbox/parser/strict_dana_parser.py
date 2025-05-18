@@ -9,7 +9,7 @@ from typing import Any, Optional, cast
 from lark import Tree
 
 from opendxa.dana.sandbox.parser.ast import Program
-from opendxa.dana.sandbox.parser.ast_validator import AstValidator
+from dana.sandbox.parser.utils.ast_validator import AstValidator
 from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 
 
@@ -64,7 +64,7 @@ class StrictDanaParser(DanaParser, AstValidator):
 
         # Perform type checking if enabled and parsing was successful
         if do_type_check and ast.statements:
-            from opendxa.dana.sandbox.parser.type_checker import TypeChecker
+            from dana.sandbox.parser.utils.type_checker import TypeChecker
 
             TypeChecker.check_types(ast)
 

@@ -17,15 +17,12 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from typing import List, Optional, Tuple, TypeVar, cast
+from typing import List, Optional, Tuple, cast
 
 from lark import Tree
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.dana.sandbox.parser.ast import Program
-
-# Type variable for generic AST node
-AstNodeT = TypeVar("AstNodeT")
 
 
 class AstValidator(Loggable):
@@ -35,7 +32,7 @@ class AstValidator(Loggable):
     without modifying the existing implementation.
     """
 
-    def validate_ast(self, ast: AstNodeT, strict: bool = False, max_nodes: int = 5) -> Tuple[bool, List[Tuple[List[str], Tree]]]:
+    def validate_ast(self, ast: object, strict: bool = False, max_nodes: int = 5) -> Tuple[bool, List[Tuple[List[str], Tree]]]:
         """
         Validate that an AST does not contain any remaining Lark Tree nodes.
 
@@ -114,7 +111,7 @@ class AstValidator(Loggable):
 # Standalone functions for use without the mixin
 
 
-def validate_ast(ast: AstNodeT, strict: bool = False) -> bool:
+def validate_ast(ast: object, strict: bool = False) -> bool:
     """
     Utility function to validate an AST is free of Lark Tree nodes.
 
