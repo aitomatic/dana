@@ -439,8 +439,25 @@ class ExpressionTransformer(BaseTransformer):
         return TupleLiteral(items=[self.expression([item]) for item in flat_items])
 
     def list(self, items):
+        """
+        Transform a list literal into a LiteralExpression with primitive values.
+
+        We process each item and extract the primitive value if possible to avoid
+        storing LiteralExpression objects in the list.
+        """
         flat_items = self.flatten_items(items)
-        return LiteralExpression(value=[self.expression([item]) for item in flat_items])
+        processed_items = []
+
+        for item in flat_items:
+            expr = self.expression([item])
+
+            # If it's a LiteralExpression, extract its value
+            if isinstance(expr, LiteralExpression) and hasattr(expr, "value"):
+                processed_items.append(expr.value)
+            else:
+                processed_items.append(expr)
+
+        return LiteralExpression(value=processed_items)
 
     def dict(self, items):
         flat_items = self.flatten_items(items)

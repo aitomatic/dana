@@ -128,16 +128,60 @@ class StatementTransformer(BaseTransformer):
 
     def for_stmt(self, items):
         """Transform a for loop rule into a ForLoop node."""
-        from opendxa.dana.sandbox.parser.ast import Expression, Identifier
+        from lark import Tree
 
+        from opendxa.dana.sandbox.parser.ast import Expression, Identifier, Statement
+
+        # Get the loop variable (target)
         target = Identifier(name=items[0].value if isinstance(items[0], Token) else str(items[0]))
+
+        # Transform the iterable expression
         iterable = self.expression_transformer.expression([items[1]])
         if isinstance(iterable, tuple):
             raise TypeError(f"For loop iterable cannot be a tuple: {iterable}")
-        # Ensure iterable is Expression
+
+        # Ensure iterable is Expression type
         iterable_expr = cast(Expression, iterable)
-        body = items[2] if len(items) > 2 else []
-        return ForLoop(target=target, iterable=iterable_expr, body=body)
+
+        # Transform the body, ensuring it's a list of Statement objects
+        body_items = []
+        if len(items) > 2:
+            body = items[2]
+            # Handle if body is a Tree (block node)
+            if isinstance(body, Tree) and getattr(body, "data", None) == "block":
+                body_items = self._transform_block(body)
+            # If body is a list, transform each item
+            elif isinstance(body, list):
+                for item in body:
+                    transformed = self._transform_item(item)
+                    if transformed is not None:
+                        body_items.append(transformed)
+            # If body is already a Statement, use it directly
+            elif isinstance(body, Statement):
+                body_items = [body]
+
+        return ForLoop(target=target, iterable=iterable_expr, body=body_items)
+
+    def _transform_item(self, item):
+        """Transform a single item into an AST node."""
+        from lark import Tree
+
+        if isinstance(item, Tree):
+            method = getattr(self, item.data, None)
+            if method:
+                return method(item.children)
+            # If no specific method, try to use the expression transformer
+            return self.expression_transformer.expression([item])
+        elif isinstance(item, list):
+            result = []
+            for subitem in item:
+                transformed = self._transform_item(subitem)
+                if transformed is not None:
+                    result.append(transformed)
+            return result
+        else:
+            # For basic tokens, use the expression transformer
+            return self.expression_transformer.expression([item])
 
     def function_def(self, items):
         """Transform a function definition rule into a FunctionDefinition node."""
@@ -159,54 +203,66 @@ class StatementTransformer(BaseTransformer):
 
         from opendxa.dana.sandbox.parser.ast import Conditional
 
-        def transform_elif_blocks(blocks):
-            # Recursively transform Tree nodes to Conditional nodes
-            result = []
-            for b in self._transform_block(blocks):
-                if isinstance(b, Tree) and hasattr(self, b.data):
-                    method = getattr(self, b.data, None)
-                    if method:
-                        transformed = method(b.children)
-                        result.append(transformed)
-                    else:
-                        result.append(b)
-                else:
-                    result.append(b)
-            return result
-
-        condition = items[0]
+        # Extract main if condition and body
+        condition = self.expression_transformer.expression([items[0]])
         if_body = self._transform_block(items[1])
+        line_num = getattr(condition, "line", 0) or 0
+
+        # Default: no else or elif
         else_body = []
-        if len(items) == 3:
-            third = items[2]
-            # Could be else or elifs
-            if isinstance(third, list) or (isinstance(third, Tree) and getattr(third, "data", None) == "elif_stmts"):
-                elif_blocks = transform_elif_blocks(third)
-                else_body = elif_blocks
-            else:
-                else_body = self._transform_block(third)
-        elif len(items) == 4:
-            elif_blocks = transform_elif_blocks(items[2])
+
+        # Handle additional clauses (elif/else)
+        if len(items) >= 3:
+            third_item = items[2]
+
+            # Check if it's an elif_stmts node
+            if isinstance(third_item, Tree) and getattr(third_item, "data", None) == "elif_stmts":
+                # Transform elif_stmts into a proper AST node
+                else_body = self.elif_stmts(third_item.children)
+            elif isinstance(third_item, Tree) and getattr(third_item, "data", None) == "block":
+                # It's an else block
+                else_body = self._transform_block(third_item)
+
+        # Handle case with both elif and else
+        if len(items) >= 4:
+            # The else block would be the 4th item
             else_block = self._transform_block(items[3])
 
-            def nest_elif_blocks(blocks, final_else):
-                if not blocks:
-                    return final_else
-                head, *tail = blocks
-                # Only nest if head is a Conditional, else treat as terminal else_body
-                if not hasattr(head, "condition") or not hasattr(head, "body"):
-                    return [head] + (nest_elif_blocks(tail, final_else) if tail else final_else)
-                nested = Conditional(
-                    condition=head.condition,
-                    body=head.body,
-                    else_body=nest_elif_blocks(tail, final_else),
-                    line_num=getattr(head.condition, "line", 0) or 0,
-                )
-                return [nested]
+            # If else_body contains conditionals from elif blocks,
+            # we need to add the final else block to the last conditional
+            if else_body and isinstance(else_body[-1], Conditional):
+                # Traverse to the last nested conditional
+                last_cond = else_body[-1]
+                while isinstance(last_cond.else_body, list) and last_cond.else_body and isinstance(last_cond.else_body[0], Conditional):
+                    last_cond = last_cond.else_body[0]
+                # Set the else block on the last conditional
+                last_cond.else_body = else_block
+            else:
+                # Otherwise just set it directly
+                else_body = else_block
 
-            else_body = self._transform_block(nest_elif_blocks(elif_blocks, else_block))
-        line_num = getattr(condition, "line", 0) or 0
         return Conditional(condition=condition, body=if_body, else_body=else_body, line_num=line_num)
+
+    def elif_stmts(self, items):
+        """Transform elif_stmts into a list of properly nested Conditional nodes."""
+        # Process each elif statement into a Conditional
+        result = []
+        for item in items:
+            if isinstance(item, Tree) and getattr(item, "data", None) == "elif_stmt":
+                conditional = self.elif_stmt(item.children)
+                result.append(conditional)
+        return result
+
+    def elif_stmt(self, items):
+        """Transform an elif statement into a Conditional node."""
+        from opendxa.dana.sandbox.parser.ast import Conditional
+
+        # Extract the condition and body from the elif
+        condition = self.expression_transformer.expression([items[0]])
+        body = self._transform_block(items[1])
+        line_num = getattr(condition, "line", 0) or 0
+
+        return Conditional(condition=condition, body=body, else_body=[], line_num=line_num)
 
     # === Simple Statements ===
     def assignment(self, items):

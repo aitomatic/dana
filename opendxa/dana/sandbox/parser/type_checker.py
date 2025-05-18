@@ -25,11 +25,14 @@ from typing import Any, Dict, Optional
 
 from opendxa.dana.common.exceptions import TypeError
 from opendxa.dana.sandbox.parser.ast import (
+    AssertStatement,
     Assignment,
     AttributeAccess,
     BinaryExpression,
     BinaryOperator,
+    BreakStatement,
     Conditional,
+    ContinueStatement,
     DictLiteral,
     ExceptBlock,
     Expression,
@@ -40,7 +43,11 @@ from opendxa.dana.sandbox.parser.ast import (
     ImportFromStatement,
     ImportStatement,
     LiteralExpression,
+    PassStatement,
+    PrintStatement,
     Program,
+    RaiseStatement,
+    ReturnStatement,
     SetLiteral,
     SubscriptExpression,
     TryBlock,
@@ -84,6 +91,10 @@ class TypeEnvironment:
         """Set a type in the environment."""
         self.types[name] = type_
 
+    def register(self, name: str, type_: DanaType) -> None:
+        """Register a type in the environment."""
+        self.types[name] = type_
+
 
 class TypeChecker:
     """Type checker for DANA programs."""
@@ -118,6 +129,17 @@ class TypeChecker:
             self.check_import_from_statement(statement)
         elif isinstance(statement, Identifier):
             self.check_identifier(statement)
+        elif isinstance(statement, AssertStatement):
+            self.check_assert_statement(statement)
+        elif isinstance(statement, RaiseStatement):
+            self.check_raise_statement(statement)
+        elif isinstance(statement, PrintStatement):
+            self.check_print_statement(statement)
+        elif isinstance(statement, ReturnStatement):
+            self.check_return_statement(statement)
+        elif isinstance(statement, BreakStatement) or isinstance(statement, ContinueStatement) or isinstance(statement, PassStatement):
+            # These statements have no type implications
+            pass
         else:
             raise TypeError(f"Unsupported statement type: {type(statement).__name__}", statement)
 
@@ -148,13 +170,33 @@ class TypeChecker:
 
     def check_for_loop(self, node: ForLoop) -> None:
         """Check a for loop for type errors."""
+        # Check the iterable expression
         iterable_type = self.check_expression(node.iterable)
+
         # Assuming iterable is a list or range
         if iterable_type != DanaType("array") and iterable_type != DanaType("range"):
             raise TypeError(f"For loop iterable must be a list or range, got {iterable_type}", node)
 
+        # Register the loop variable in the type environment
+        # For arrays/lists, the element type is 'any' unless we can infer more specific types
+        element_type = DanaType("any")
+
+        # Register the loop variable with either full scope name or add 'local.' prefix
+        var_name = node.target.name
+        if "." not in var_name:
+            var_name = f"local.{var_name}"
+
+        # Add the loop variable to the environment
+        self.environment.register(var_name, element_type)
+
+        # Check the loop body statements
         for statement in node.body:
             self.check_statement(statement)
+
+        # Remove the loop variable from the environment after checking
+        # to avoid polluting the outer scope
+        if var_name in self.environment.types:
+            del self.environment.types[var_name]
 
     def check_try_block(self, node: TryBlock) -> None:
         """Check a try block for type errors."""
@@ -229,21 +271,38 @@ class TypeChecker:
         left_type = self.check_expression(node.left)
         right_type = self.check_expression(node.right)
 
+        # Special handling for 'any' type - allows operations with any other type
+        # This is useful for dynamic values like loop variables
+        if left_type == DanaType("any") or right_type == DanaType("any"):
+            # For operations with 'any', use the more specific type if available
+            if left_type == DanaType("any"):
+                return right_type
+            else:
+                return left_type
+
+        # Regular type checking for non-'any' types
         if left_type != right_type:
             raise TypeError(f"Binary expression operands must be of the same type, got {left_type} and {right_type}", node)
 
-        # Comparison operators using BinaryOperator enum
-        comparison_ops = {
+        # Boolean result for comparison operators
+        if node.operator in [
             BinaryOperator.EQUALS,
             BinaryOperator.NOT_EQUALS,
             BinaryOperator.LESS_THAN,
             BinaryOperator.GREATER_THAN,
             BinaryOperator.LESS_EQUALS,
             BinaryOperator.GREATER_EQUALS,
-        }
-        if node.operator in comparison_ops:
+            BinaryOperator.IN,
+        ]:
             return DanaType("bool")
-        # Arithmetic/logical operators: return operand type
+
+        # Type-specific operations
+        if node.operator in [BinaryOperator.AND, BinaryOperator.OR]:
+            if left_type != DanaType("bool"):
+                raise TypeError(f"Logical operators require boolean operands, got {left_type}", node)
+            return DanaType("bool")
+
+        # For arithmetic, return the operand type
         return left_type
 
     def check_unary_expression(self, node: UnaryExpression) -> DanaType:
@@ -304,6 +363,37 @@ class TypeChecker:
             else:
                 self.check_expression(arg)
         return DanaType("any")
+
+    def check_assert_statement(self, node: AssertStatement) -> None:
+        """Check an assert statement for type errors."""
+        condition_type = self.check_expression(node.condition)
+        if condition_type != DanaType("bool"):
+            raise TypeError(f"Assert condition must be a boolean, got {condition_type}", node)
+
+        if node.message is not None:
+            # Message can be any type, no type restrictions
+            self.check_expression(node.message)
+
+    def check_raise_statement(self, node: RaiseStatement) -> None:
+        """Check a raise statement for type errors."""
+        if node.value is not None:
+            # The raised value can be of any type, no type restrictions
+            self.check_expression(node.value)
+
+        if node.from_value is not None:
+            # The from_value should also be allowed to be any type
+            self.check_expression(node.from_value)
+
+    def check_print_statement(self, node: PrintStatement) -> None:
+        """Check a print statement for type errors."""
+        # Any type can be printed, so just check the expression
+        self.check_expression(node.message)
+
+    def check_return_statement(self, node: ReturnStatement) -> None:
+        """Check a return statement for type errors."""
+        if node.value is not None:
+            # For now, any return type is allowed
+            self.check_expression(node.value)
 
     @staticmethod
     def check_types(program: Program) -> None:

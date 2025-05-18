@@ -26,6 +26,7 @@ from opendxa.dana.sandbox.parser.ast import (
     BreakStatement,
     Conditional,
     ContinueStatement,
+    ForLoop,
     FunctionCall,
     Identifier,
     LiteralExpression,
@@ -119,6 +120,8 @@ class StatementExecutor(BaseExecutor):
             return self.execute_conditional(statement)
         elif isinstance(statement, WhileLoop):
             return self.execute_while_loop(statement)
+        elif isinstance(statement, ForLoop):
+            return self.execute_for_loop(statement)
         elif isinstance(statement, FunctionCall):
             return self.execute_function_call(statement)
         elif isinstance(statement, PrintStatement):
@@ -154,6 +157,10 @@ class StatementExecutor(BaseExecutor):
             self._execute_hook(HookType.BEFORE_ASSIGNMENT, node)
             try:
                 value = self.expression_evaluator.evaluate(node.value)
+
+                # Special handling for FStringExpression to ensure it's properly evaluated
+                if hasattr(value, "__class__") and value.__class__.__name__ == "FStringExpression":
+                    value = self.expression_evaluator.evaluate(value)
             except Exception:
                 raise
 
@@ -240,6 +247,61 @@ class StatementExecutor(BaseExecutor):
                 break
             except ContinueException:
                 continue
+        return result
+
+    def execute_for_loop(self, node: "ForLoop") -> Any:
+        """Execute a for loop statement."""
+        # Evaluate the iterable expression
+        iterable = self.expression_evaluator.evaluate(node.iterable)
+
+        # Special handling for lists with LiteralExpression items
+        if isinstance(iterable, list):
+            # Extract values from LiteralExpression objects
+            processed_iterable = []
+            for item in iterable:
+                if hasattr(item, "__class__") and item.__class__.__name__ == "LiteralExpression":
+                    if hasattr(item, "value"):
+                        processed_iterable.append(item.value)
+                    else:
+                        processed_iterable.append(item)
+                else:
+                    processed_iterable.append(item)
+            iterable = processed_iterable
+
+        # Ensure the iterable is actually iterable
+        if not hasattr(iterable, "__iter__"):
+            raise SandboxError(f"For loop iterable must be iterable, got {type(iterable)}")
+
+        # Iterate over the iterable
+        result = None
+        max_iterations = 1000  # Prevent infinite loops
+        iteration_count = 0
+
+        for item in iterable:
+            iteration_count += 1
+            if iteration_count > max_iterations:
+                raise SandboxError("Maximum iteration count exceeded")
+
+            # Set the loop variable in the context
+            var_name = node.target.name
+            if "." in var_name:
+                # If the target has a scope prefix, use it
+                parts = var_name.split(".", 1)
+                scope, name = parts
+                self.context_manager.set_in_context(name, item, scope=scope)
+            else:
+                # Otherwise, use local scope
+                self.context_manager.set_in_context(var_name, item, scope="local")
+
+            # Execute the loop body
+            try:
+                for stmt in node.body:
+                    result = self.execute(stmt)
+            except BreakException:
+                break
+            except ContinueException:
+                continue
+
         return result
 
     def execute_function_call(self, node: FunctionCall) -> Any:
@@ -400,8 +462,20 @@ class StatementExecutor(BaseExecutor):
 
     def execute_raise_statement(self, node: "RaiseStatement") -> None:
         """Execute a raise statement by raising a Python exception with the evaluated value."""
-        value = self.expression_evaluator.evaluate(node.value) if node.value is not None else None
-        raise Exception(value)
+        # Evaluate the value to raise (if provided)
+        value = None
+        if node.value is not None:
+            value = self.expression_evaluator.evaluate(node.value)
+
+        # If the value is a string, use it as the error message
+        if isinstance(value, str):
+            raise SandboxError(value)
+        # If it's an exception instance, raise it directly
+        elif isinstance(value, Exception):
+            raise value
+        # Otherwise, raise a generic exception with the value
+        else:
+            raise SandboxError(f"Raised: {str(value)}")
 
     def execute_assert_statement(self, node: "AssertStatement") -> None:
         """Execute an assert statement by raising AssertionError if the condition is false."""

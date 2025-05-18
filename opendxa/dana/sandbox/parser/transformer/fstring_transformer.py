@@ -113,6 +113,27 @@ class FStringTransformer(BaseTransformer):
         For simple binary operations and identifiers, we still use direct parsing as
         it's more robust for partial expressions.
         """
+        # First, try to parse as a literal value (number, boolean, etc)
+        try:
+            # Try to parse as a number
+            if expr_text.isdigit():
+                return LiteralExpression(value=int(expr_text))
+
+            # Try to parse as a float
+            if "." in expr_text and expr_text.replace(".", "", 1).isdigit():
+                return LiteralExpression(value=float(expr_text))
+
+            # Try to parse as a boolean or None
+            if expr_text.lower() == "true":
+                return LiteralExpression(value=True)
+            if expr_text.lower() == "false":
+                return LiteralExpression(value=False)
+            if expr_text.lower() == "none":
+                return LiteralExpression(value=None)
+        except (ValueError, TypeError):
+            # If it's not a literal, continue with other parsing methods
+            pass
+
         # Handle complex expressions with parentheses by using the main parser
         if "(" in expr_text or ")" in expr_text:
             try:

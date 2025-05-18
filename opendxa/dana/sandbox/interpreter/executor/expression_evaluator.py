@@ -9,7 +9,6 @@ This module provides the ExpressionEvaluator class, which is responsible for
 evaluating expressions in DANA programs.
 """
 
-import re
 from typing import Any, Dict, Optional
 
 from opendxa.dana.common.error_utils import ErrorUtils
@@ -18,12 +17,17 @@ from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
 from opendxa.dana.sandbox.interpreter.executor.context_manager import ContextManager
 from opendxa.dana.sandbox.interpreter.functions.python_function import PythonRegistry
 from opendxa.dana.sandbox.parser.ast import (
+    AttributeAccess,
     BinaryExpression,
     BinaryOperator,
+    DictLiteral,
     FStringExpression,
     FunctionCall,
     Identifier,
     LiteralExpression,
+    SetLiteral,
+    SubscriptExpression,
+    TupleLiteral,
     UnaryExpression,
 )
 
@@ -47,54 +51,110 @@ class ExpressionEvaluator(BaseExecutor):
         super().__init__()
         self.context_manager = context_manager
 
-    def evaluate(self, node: Any, context: Optional[Dict[str, Any]] = None) -> Any:
-        """Evaluate an expression node.
+    def evaluate(self, expression: Any, local_context: Optional[Dict[str, Any]] = None) -> Any:
+        """Evaluate an expression using the current context.
 
         Args:
-            node: The expression node to evaluate
-            context: Optional local context for variable resolution
+            expression: The expression to evaluate
+            local_context: Optional context of local variables for evaluation
 
         Returns:
-            The result of evaluating the expression
+            The value of the expression
 
         Raises:
             RuntimeError: If the expression cannot be evaluated
         """
-        self.debug(f"[EVAL] Node type: {type(node)}, value: {getattr(node, 'value', None)}")
-        try:
-            if isinstance(node, BinaryExpression):
-                return self.evaluate_binary_expression(node, context)
-            elif isinstance(node, UnaryExpression):
-                return self.evaluate_unary_expression(node, context)
-            elif isinstance(node, LiteralExpression):
-                return self.evaluate_literal_expression(node, context)
-            elif isinstance(node, Identifier):
-                return self.evaluate_identifier(node, context)
-            elif isinstance(node, FStringExpression):
-                return self.evaluate_fstring_expression(node, context)
-            elif isinstance(node, FunctionCall):
-                return self.evaluate_function_call(node, context)
-            elif hasattr(node, "__class__") and node.__class__.__name__ == "AttributeAccess":
-                return self.evaluate_attribute_access(node, context)
-            elif hasattr(node, "__class__") and node.__class__.__name__ == "SubscriptExpression":
-                return self.evaluate_subscript_expression(node, context)
-            elif hasattr(node, "__class__") and node.__class__.__name__ == "DictLiteral":
-                return self.evaluate_dict_literal(node, context)
-            elif hasattr(node, "__class__") and node.__class__.__name__ == "TupleLiteral":
-                return self.evaluate_tuple_literal(node, context)
-            elif hasattr(node, "__class__") and node.__class__.__name__ == "SetLiteral":
-                return self.evaluate_set_literal(node, context)
-            else:
-                error_msg = f"Unsupported expression type: {type(node).__name__}"
-                raise SandboxError(error_msg)
-        except Exception as e:
-            error, passthrough = ErrorUtils.handle_execution_error(e, node, "evaluating expression")
-            if passthrough:
-                raise error
-            else:
-                raise SandboxError(f"Failed to evaluate expression: {e}")
+        if expression is None:
+            return None
 
-    def evaluate_binary_expression(self, node: BinaryExpression, context: Optional[Dict[str, Any]] = None) -> Any:
+        elif isinstance(expression, LiteralExpression):
+            return expression.value
+
+        elif isinstance(expression, Identifier):
+            return self._resolve_identifier(expression, local_context)
+
+        elif isinstance(expression, BinaryExpression):
+            return self._evaluate_binary_expression(expression, local_context)
+
+        elif isinstance(expression, UnaryExpression):
+            return self._evaluate_unary_expression(expression, local_context)
+
+        elif isinstance(expression, FunctionCall):
+            return self._evaluate_function_call(expression, local_context)
+
+        elif isinstance(expression, AttributeAccess):
+            return self._evaluate_attribute_access(expression, local_context)
+
+        elif isinstance(expression, SubscriptExpression):
+            return self._evaluate_subscript_expression(expression, local_context)
+
+        elif isinstance(expression, TupleLiteral):
+            return self._evaluate_tuple_literal(expression, local_context)
+
+        elif hasattr(expression, "__class__") and expression.__class__.__name__ == "ListLiteral":
+            # Use a generic method for ListLiteral since it might not be imported
+            return self._evaluate_list_items(getattr(expression, "items", []), local_context)
+
+        elif isinstance(expression, DictLiteral):
+            return self._evaluate_dict_literal(expression, local_context)
+
+        elif isinstance(expression, SetLiteral):
+            return self._evaluate_set_literal(expression, local_context)
+
+        elif isinstance(expression, FStringExpression):
+            return self._evaluate_fstring_expression(expression, local_context)
+
+        # If expression is a primitive Python value, return as is
+        elif isinstance(expression, (int, float, str, bool)) or expression is None:
+            return expression
+
+        else:
+            raise RuntimeError(f"Unsupported expression type: {type(expression).__name__}: {expression}")
+
+    def _evaluate_fstring_expression(self, expression: "FStringExpression", local_context: Optional[Dict[str, Any]] = None) -> str:
+        """Evaluate an f-string expression.
+
+        Handles both newer 'expressions' dictionary format and older 'parts' list format.
+
+        Args:
+            expression: The f-string expression to evaluate
+            local_context: Optional context of local variables for evaluation
+
+        Returns:
+            The formatted string result
+        """
+        # Handle both new-style expression structure (with template and expressions)
+        # and old-style parts structure
+
+        # Check if we have the new structure with template and expressions dictionary
+        if hasattr(expression, "template") and hasattr(expression, "expressions"):
+            result = expression.template
+
+            # Replace each placeholder with its evaluated value
+            for placeholder, expr in expression.expressions.items():
+                # Evaluate the expression within the placeholder
+                value = self.evaluate(expr, local_context)
+                # Replace the placeholder with the string representation of the value
+                result = result.replace(placeholder, str(value))
+
+            return result
+
+        # Handle the older style with parts list
+        elif hasattr(expression, "parts"):
+            result = ""
+            for part in expression.parts:
+                if isinstance(part, str):
+                    result += part
+                else:
+                    # Evaluate the expression part
+                    value = self.evaluate(part, local_context)
+                    result += str(value)
+            return result
+
+        # If neither format is present, return string representation
+        return str(expression)
+
+    def _evaluate_binary_expression(self, node: BinaryExpression, context: Optional[Dict[str, Any]] = None) -> Any:
         """Evaluate a binary expression.
 
         Args:
@@ -216,7 +276,7 @@ class ExpressionEvaluator(BaseExecutor):
             else:
                 raise ErrorUtils.create_runtime_error(f"Error evaluating expression: {e}", node)
 
-    def evaluate_unary_expression(self, node, context=None):
+    def _evaluate_unary_expression(self, node, context=None):
         """Evaluate a unary expression (e.g., -x, +x, not x)."""
         operand = self.evaluate(node.operand, context)
         if node.operator == "-":
@@ -229,7 +289,7 @@ class ExpressionEvaluator(BaseExecutor):
         else:
             raise SandboxError(f"Unsupported unary operator: {node.operator}")
 
-    def evaluate_literal_expression(self, node: LiteralExpression, context: Optional[Dict[str, Any]] = None) -> Any:
+    def _evaluate_literal_expression(self, node: LiteralExpression, context: Optional[Dict[str, Any]] = None) -> Any:
         """Evaluate a literal expression.
 
         Args:
@@ -240,14 +300,14 @@ class ExpressionEvaluator(BaseExecutor):
             The literal value
         """
         if isinstance(node.value, FStringExpression):
-            return self.evaluate_fstring_expression(node.value, context)
+            return self._evaluate_fstring_expression(node.value, context)
         # Handle list of LiteralExpressions by recursively evaluating each item
         elif isinstance(node.value, list):
             # Recursively evaluate each item in the list if it's an AST node
             return [self.evaluate(item, context) if hasattr(item, "__class__") and hasattr(item, "value") else item for item in node.value]
         return node.value
 
-    def evaluate_identifier(self, node: Identifier, context: Optional[Dict[str, Any]] = None) -> Any:
+    def _resolve_identifier(self, node: Identifier, context: Optional[Dict[str, Any]] = None) -> Any:
         """Evaluate an identifier.
 
         Args:
@@ -275,69 +335,14 @@ class ExpressionEvaluator(BaseExecutor):
             self.debug(f"Variable not found: {node.name}")
             raise ErrorUtils.create_state_error(error_msg, node)
 
-    def evaluate_fstring_expression(self, node: FStringExpression, context: Optional[Dict[str, Any]] = None) -> str:
-        """Evaluate an f-string expression.
-
-        Args:
-            node: The f-string expression to evaluate
-            context: Optional local context for variable resolution
-
-        Returns:
-            The evaluated string with substitutions
-        """
-        # Special handling for placeholder f-strings
-        if len(node.parts) == 1 and isinstance(node.parts[0], str) and node.parts[0].startswith("F-STRING-PLACEHOLDER:"):
-            content = node.parts[0].replace("F-STRING-PLACEHOLDER:", "")
-            return self._evaluate_placeholder_fstring(content, context)
-
-        # Standard evaluation for normal AST f-strings
-        result = ""
-        for part in node.parts:
-            if isinstance(part, str):
-                result += part
-            else:
-                value = self.evaluate(part, context)
-                result += str(value)
-        return result
-
-    def _evaluate_placeholder_fstring(self, content: str, context: Optional[Dict[str, Any]] = None) -> str:
-        """Evaluate a placeholder f-string.
-
-        This handles f-strings that were parsed as placeholders rather than AST nodes.
-
-        Args:
-            content: The content of the f-string
-            context: Optional local context for variable resolution
-
-        Returns:
-            The evaluated string with substitutions
-        """
-        # Find all variable references in the form {scope.name} or {name}
-        var_pattern = r"\{([^{}]+)\}"
-        var_matches = re.findall(var_pattern, content)
-
-        # Replace each variable reference with its value
-        result = content
-        for var_ref in var_matches:
-            try:
-                # Try to evaluate the variable
-                value = self.context_manager.get_from_context(var_ref, context)
-                # Replace the variable reference with its value
-                result = result.replace(f"{{{var_ref}}}", str(value))
-            except StateError:
-                # If the variable doesn't exist, leave the reference as is
-                self.warning(f"Variable '{var_ref}' not found in f-string")
-
-        return result
-
-    def evaluate_function_call(self, node: FunctionCall, context: Optional[Dict[str, Any]] = None) -> Any:
+    def _evaluate_function_call(self, node: FunctionCall, context: Optional[Dict[str, Any]] = None) -> Any:
         """Evaluate a function call expression."""
         # Evaluate arguments
         evaluated_args = {k: self.evaluate(v, context) for k, v in node.args.items()}
         # Call the function from the registry
         return PythonRegistry.call(node.name, evaluated_args)
 
-    def evaluate_attribute_access(self, node, context=None):
+    def _evaluate_attribute_access(self, node, context=None):
         obj = self.evaluate(node.object, context)
         attr = node.attribute
         # Support dict and object attribute access
@@ -345,19 +350,43 @@ class ExpressionEvaluator(BaseExecutor):
             return obj.get(attr)
         return getattr(obj, attr, None)
 
-    def evaluate_subscript_expression(self, node, context=None):
+    def _evaluate_subscript_expression(self, node, context=None):
         obj = self.evaluate(node.object, context)
         idx = self.evaluate(node.index, context)
         return obj[idx]
 
-    def evaluate_dict_literal(self, node, context=None):
+    def _evaluate_dict_literal(self, node, context=None):
         # Evaluate all key-value pairs in the dict literal
         return {self.evaluate(k, context): self.evaluate(v, context) for k, v in node.items}
 
-    def evaluate_tuple_literal(self, node, context=None):
+    def _evaluate_tuple_literal(self, node, context=None):
         # Evaluate all items in the tuple literal
         return tuple(self.evaluate(item, context) for item in node.items)
 
-    def evaluate_set_literal(self, node, context=None):
+    def _evaluate_set_literal(self, node, context=None):
         # Evaluate all items in the set literal
         return set(self.evaluate(item, context) for item in node.items)
+
+    def _evaluate_list_items(self, items, context=None):
+        """Evaluate a list of items generically.
+
+        Args:
+            items: The list of items to evaluate
+            context: Optional context for evaluation
+
+        Returns:
+            List of evaluated items
+        """
+        result = []
+        for item in items:
+            # If the item is a LiteralExpression, extract its value
+            if hasattr(item, "__class__") and item.__class__.__name__ == "LiteralExpression":
+                if hasattr(item, "value"):
+                    result.append(item.value)
+                else:
+                    result.append(item)
+            else:
+                # Otherwise, evaluate the item
+                evaluated_item = self.evaluate(item, context)
+                result.append(evaluated_item)
+        return result

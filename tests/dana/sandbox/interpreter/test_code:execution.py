@@ -144,10 +144,28 @@ x = add(2, 3)
 
 # --- Strings & Collections ---
 def test_fstring_and_multiline_string():
-    code = 'x = f"hello {42}"\ny = """multi\\nline"""'
+    # First test a simple multiline string
+    multiline_code = 'y = """multi\\nline"""'
+    ctx_multiline = run_dana_code(multiline_code)
+    assert "multi" in ctx_multiline.get("local.y")
+
+    # For the f-string test, we'll use variables and literal values
+    code = """
+n = 42
+x1 = f"hello {n}"
+x2 = f"number {42}"
+x3 = f"float {3.14}"
+x4 = f"bool {True}"
+"""
     ctx = run_dana_code(code)
-    assert "hello" in ctx.get("local.x")
-    assert "multi" in ctx.get("local.y")
+    assert "hello" in ctx.get("local.x1")
+    assert "42" in ctx.get("local.x1")
+    assert "number" in ctx.get("local.x2")
+    assert "42" in ctx.get("local.x2")
+    assert "float" in ctx.get("local.x3")
+    assert "3.14" in ctx.get("local.x3")
+    assert "bool" in ctx.get("local.x4")
+    assert "True" in ctx.get("local.x4")
 
 
 # --- Comments & Whitespace ---
@@ -169,14 +187,16 @@ assert x == 1
     ctx = run_dana_code(code)
     assert ctx.get("local.x") == 1
     # Test raise
-    code = "raise 'error'"
+    code = 'raise "error message"'
     parser = DanaParser()
     program = parser.parse(code, do_type_check=True, do_transform=True)
     interpreter = Interpreter(SandboxContext())
     try:
-        interpreter.execute_program(program)
+        interpreter.execute_program(program, suppress_exceptions=False)
     except Exception as e:
         assert "error" in str(e) or "raise" in str(e)
+    else:
+        raise AssertionError("Exception was not raised")
 
 
 # --- Import & Scope Keywords ---
