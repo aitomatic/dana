@@ -103,6 +103,7 @@ class ExpressionTransformer(BaseTransformer):
                 SubscriptExpression,
                 AttributeAccess,
                 FStringExpression,
+                UnaryExpression,
             ),
         ):
             return item
@@ -204,6 +205,7 @@ class ExpressionTransformer(BaseTransformer):
             "or": BinaryOperator.OR,
             "in": BinaryOperator.IN,
             "**": BinaryOperator.POWER,
+            "^": BinaryOperator.POWER,  # Add support for caret as power operator
         }
         return op_map[op_str]
 
@@ -230,14 +232,46 @@ class ExpressionTransformer(BaseTransformer):
         return self._left_associative_binop(items, lambda op: BinaryOperator.AND)
 
     def not_expr(self, items):
+        """
+        Transform a not_expr rule into an AST UnaryExpression with 'not' operator.
+        Grammar: not_expr: "not" not_expr | comparison
+
+        For "not [expr]" form, creates a UnaryExpression.
+        For regular comparison case, passes through.
+        """
+        from lark import Token
+
         if len(items) == 1:
             return self.expression([items[0]])
-        # Use a UnaryExpression node for 'not'
-        right = self.expression([items[1]])
 
-        # Explicitly cast right to Expression
-        right_expr = cast(Expression, right)
-        return UnaryExpression(operator="not", operand=right_expr)
+        # "not" operator at the beginning - match it as a string or token
+        is_not_op = False
+
+        # Check various forms of 'not' in the parse tree
+        if isinstance(items[0], str) and items[0] == "not":
+            is_not_op = True
+        elif isinstance(items[0], Token) and items[0].value == "not":
+            is_not_op = True
+        elif hasattr(items[0], "type") and getattr(items[0], "type", None) == "NOT_OP":
+            is_not_op = True
+
+        if is_not_op:
+            # Use a UnaryExpression node for 'not'
+            operand = None
+            if len(items) > 1:
+                operand = self.expression([items[1]])
+            else:
+                # Fallback for unexpected structure
+                operand = LiteralExpression(value=None)
+
+            # Explicitly cast to Expression
+            from opendxa.dana.sandbox.parser.ast import Expression
+
+            operand_expr = cast(Expression, operand)
+            return UnaryExpression(operator="not", operand=operand_expr)
+
+        # Fallback for unexpected case
+        return self.expression([items[0]])
 
     def comparison(self, items):
         return self._left_associative_binop(items, self._get_binary_operator)
@@ -269,31 +303,40 @@ class ExpressionTransformer(BaseTransformer):
         return UnaryExpression(operator=op_str, operand=right_expr)
 
     def power(self, items):
-        # Only produce a BinaryExpression if '**' is actually present in the parse tree
+        """
+        Transform a power rule into an AST expression.
+
+        This handles both power operator forms:
+        1. atom POW_OP factor (in grammar: power: atom trailer* POW_OP factor)
+        2. atom trailer* (regular atoms without power operation)
+
+        The parse tree structure for case 1 is [atom, POW_OP, factor] or similar.
+        """
+
         def ensure_expression(node):
             from opendxa.dana.sandbox.parser.ast import BinaryExpression, FunctionCall, Identifier, LiteralExpression
 
             if isinstance(node, (LiteralExpression, Identifier, BinaryExpression, FunctionCall)):
                 return node
-            raise TypeError(f"Invalid left operand for BinaryExpression: {type(node)}: {node}")
+            raise TypeError(f"Invalid operand for BinaryExpression: {type(node)}: {node}")
 
-        if len(items) == 4 and (items[2] == "**" or (hasattr(items[2], "type") and getattr(items[2], "type", None) == "POW_OP")):
-            base = self.expression([items[0]])
-            if isinstance(items[1], list) and items[1]:
-                base = self.trailer([base] + items[1])
-            base = ensure_expression(base)
-            exponent = self.expression([items[3]])
-            return BinaryExpression(left=base, operator=BinaryOperator.POWER, right=exponent)
-        elif len(items) == 3 and (items[1] == "**" or (hasattr(items[1], "type") and getattr(items[1], "type", None) == "POW_OP")):
-            base = self.expression([items[0]])
-            base = ensure_expression(base)
-            exponent = self.expression([items[2]])
-            return BinaryExpression(left=base, operator=BinaryOperator.POWER, right=exponent)
-        else:
-            base = self.expression([items[0]])
-            if len(items) > 1 and isinstance(items[1], list) and items[1]:
-                base = self.trailer([base] + items[1])
-            return base
+        # Look for POW_OP in the items
+        from lark import Token
+
+        for i, item in enumerate(items):
+            # Match ^ operator as Token(POW_OP) or string "^"
+            if (isinstance(item, Token) and item.type == "POW_OP") or item == "^" or (hasattr(item, "value") and item.value == "^"):
+                if i > 0 and i < len(items) - 1:  # Make sure we have operands
+                    base = self.expression([items[0]])
+                    base = ensure_expression(base)
+                    exponent = self.expression([items[i + 1]])
+                    return BinaryExpression(left=base, operator=BinaryOperator.POWER, right=exponent)
+
+        # If no power operator, just return the base atom with any trailers
+        base = self.expression([items[0]])
+        if len(items) > 1 and isinstance(items[1], list) and items[1]:
+            base = self.trailer([base] + items[1])
+        return base
 
     def atom(self, items):
         if not items:

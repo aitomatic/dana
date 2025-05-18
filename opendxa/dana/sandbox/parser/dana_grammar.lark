@@ -112,7 +112,7 @@ or_expr: and_expr ("or" and_expr)*
 
 and_expr: not_expr ("and" not_expr)*
 
-not_expr: "not" not_expr | comparison
+not_expr: NOT_OP not_expr | comparison
 
 comparison: sum_expr (comp_op sum_expr)*
 
@@ -137,8 +137,10 @@ MUL_OP: "*" | "/" | "//" | "%"
 
 factor: ("+" | "-") factor | power
 
-power: atom trailer* "^" factor
+power: atom trailer* POW_OP factor
      | atom trailer*
+
+POW_OP: "^"
 
 trailer: "(" [arguments] ")"    // Function call
        | "[" expr "]"           // Indexing
@@ -216,3 +218,5 @@ FALSE: "False" | "false" | "FALSE"
 NONE: "None" | "none" | "NONE" | "null" | "NULL"
 // Custom NAME token that excludes reserved words and f when followed by a quote
 NAME: /(?!(f["']|F["']|True|true|TRUE|False|false|FALSE|None|none|NONE|null|NULL|private|public|local|system|break|continue|pass|return|if|else|while|for|def|try|except|finally|raise|assert|import|from|as|with|lambda|yield|global|nonlocal|del|and|or|not|is|in)\b)[a-zA-Z_][a-zA-Z0-9_]*/
+
+NOT_OP: "not"

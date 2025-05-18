@@ -192,7 +192,13 @@ class ExpressionEvaluator(BaseExecutor):
                     return left in right
                 elif node.operator == BinaryOperator.POWER:
                     # DANA '^' means exponentiation, not bitwise XOR
-                    return left**right
+                    from math import pow
+
+                    # First convert to float for proper exponentiation, then back to int if both operands are ints
+                    result = pow(float(left), float(right))
+                    if isinstance(left, int) and isinstance(right, int):
+                        return int(result)
+                    return result
                 else:
                     # Unsupported operator
                     raise ErrorUtils.create_state_error(f"Unsupported binary operator: {node.operator.value}", node)
@@ -218,7 +224,8 @@ class ExpressionEvaluator(BaseExecutor):
         elif node.operator == "+":
             return +operand
         elif node.operator == "not":
-            return not operand
+            # Ensure we're using Python's boolean negation, not bitwise negation
+            return not bool(operand)
         else:
             raise SandboxError(f"Unsupported unary operator: {node.operator}")
 
@@ -234,6 +241,10 @@ class ExpressionEvaluator(BaseExecutor):
         """
         if isinstance(node.value, FStringExpression):
             return self.evaluate_fstring_expression(node.value, context)
+        # Handle list of LiteralExpressions by recursively evaluating each item
+        elif isinstance(node.value, list):
+            # Recursively evaluate each item in the list if it's an AST node
+            return [self.evaluate(item, context) if hasattr(item, "__class__") and hasattr(item, "value") else item for item in node.value]
         return node.value
 
     def evaluate_identifier(self, node: Identifier, context: Optional[Dict[str, Any]] = None) -> Any:
