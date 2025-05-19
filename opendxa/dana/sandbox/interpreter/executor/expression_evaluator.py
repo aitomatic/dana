@@ -24,7 +24,6 @@ from opendxa.dana.common.error_utils import ErrorUtils
 from opendxa.dana.common.exceptions import SandboxError, StateError
 from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
 from opendxa.dana.sandbox.interpreter.executor.context_manager import ContextManager
-from opendxa.dana.sandbox.interpreter.functions.python_function import PythonRegistry
 from opendxa.dana.sandbox.parser.ast import (
     AttributeAccess,
     BinaryExpression,
@@ -392,9 +391,25 @@ class ExpressionEvaluator(BaseExecutor):
     def _evaluate_function_call(self, node: FunctionCall, context: Optional[Dict[str, Any]] = None) -> Any:
         """Evaluate a function call expression."""
         # Evaluate arguments
-        evaluated_args = {k: self.evaluate(v, context) for k, v in node.args.items()}
-        # Call the function from the registry
-        return PythonRegistry.call(node.name, evaluated_args)
+        # Support both positional and named arguments
+        args = []
+        kwargs = {}
+        if hasattr(node, "args") and isinstance(node.args, dict):
+            # If node.args is a dict, treat as named arguments
+            kwargs = {k: self.evaluate(v, context) for k, v in node.args.items()}
+        elif hasattr(node, "args") and isinstance(node.args, list):
+            # If node.args is a list, treat as positional arguments
+            args = [self.evaluate(v, context) for v in node.args]
+        # Determine namespace and function name
+        func_name = getattr(node, "name", None)
+        namespace = getattr(node, "namespace", None)
+        # Use the function registry from the context manager's interpreter
+        registry = getattr(self, "function_registry", None)
+        if registry is None and hasattr(self.context_manager, "interpreter"):
+            registry = self.context_manager.interpreter.function_registry
+        if registry is None:
+            raise RuntimeError("Function registry not available for function call dispatch.")
+        return registry.call(func_name, args=args, kwargs=kwargs, context=context, namespace=namespace)
 
     def _evaluate_attribute_access(self, node, context=None):
         obj = self.evaluate(node.object, context)

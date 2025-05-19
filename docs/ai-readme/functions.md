@@ -57,8 +57,9 @@ graph TD
         Py_Import["Python module import"] --> REG
     end
     subgraph Dispatch
-        DANA_Call["DANA code: func call"] --> REG
-        Py_Call["Python: call_function API"] --> REG
+        SB["Sandbox"] --> INT["Interpreter"]
+        INT --> EXEC["Executor (Statement/Expression)"]
+        EXEC --> REG
         REG --> FN["Function (DANA or Python)"]
         FN --> OUT["Return Value"]
     end
@@ -337,7 +338,7 @@ def call_function(self, name: str, args: list = None, kwargs: dict = None, conte
 
 | Step | Description | Status | Notes |
 |------|-------------|--------|-------|
-| 1 | Unified Function Registry | [ ] Not started |  |
+| 1 | Unified Function Registry | [~] In progress | Implementation and Interpreter integration started |
 | 2 | Namespaced Function Resolution | [ ] Not started |  |
 | 3 | DANA Function Call Support | [ ] Not started |  |
 | 4 | Module Import and Registration | [ ] Not started |  |
@@ -346,6 +347,18 @@ def call_function(self, name: str, args: list = None, kwargs: dict = None, conte
 | 7 | Tests and Documentation | [ ] Not started |  |
 
 This table should be updated as each step is started, in progress, or completed.
+
+### Test Coverage Status
+
+| Scenario                        | Status      | Notes |
+|----------------------------------|------------|-------|
+| DANA→DANA function calls         | [ ] None   |       |
+| DANA→Python function calls       | [ ] None   |       |
+| Python→DANA function calls       | [ ] None   |       |
+| Namespacing                      | [ ] None   |       |
+| Collision handling               | [ ] None   |       |
+
+Update this table as tests are added and pass for each scenario.
 
 ### Review Summary
 - **Current state:**

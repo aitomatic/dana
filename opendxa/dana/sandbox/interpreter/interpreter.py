@@ -31,6 +31,7 @@ from opendxa.dana.sandbox.interpreter.executor.context_manager import ContextMan
 from opendxa.dana.sandbox.interpreter.executor.expression_evaluator import ExpressionEvaluator
 from opendxa.dana.sandbox.interpreter.executor.llm_integration import LLMIntegration
 from opendxa.dana.sandbox.interpreter.executor.statement_executor import StatementExecutor
+from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
 from opendxa.dana.sandbox.interpreter.hooks import HookRegistry, HookType
 from opendxa.dana.sandbox.log_manager import LogLevel
 from opendxa.dana.sandbox.parser.ast import Program
@@ -69,14 +70,16 @@ ErrorUtils.format_user_error = _patched_format_user_error
 class Interpreter(Loggable):
     """Interpreter for executing DANA programs."""
 
-    def __init__(self, context: Optional[SandboxContext] = None):
+    def __init__(self, context: Optional[SandboxContext] = None, function_registry: Optional[FunctionRegistry] = None):
         """Initialize the interpreter.
 
         Args:
             context: Optional runtime context to use
+            function_registry: Optional function registry to use
         """
         super().__init__()
         self.context = context or SandboxContext()
+        self.function_registry = function_registry or FunctionRegistry()
         self.context_manager = ContextManager(self.context)
         self.expression_evaluator = ExpressionEvaluator(self.context_manager)
         self.llm_integration = LLMIntegration(self.context_manager)
@@ -84,6 +87,21 @@ class Interpreter(Loggable):
 
         # Initialize system state
         self.context.set("system.id", self.statement_executor._execution_id)
+
+    def register_function(self, name: str, func, namespace: Optional[str] = None, func_type: str = "dana", metadata: Optional[dict] = None):
+        """Register a function with the interpreter's function registry."""
+        self.function_registry.register(name, func, namespace, func_type, metadata)
+
+    def call_function(
+        self,
+        name: str,
+        args: Optional[list] = None,
+        kwargs: Optional[dict] = None,
+        context: Optional[SandboxContext] = None,
+        namespace: Optional[str] = None,
+    ):
+        """Call a function via the interpreter's function registry."""
+        return self.function_registry.call(name, args, kwargs, context or self.context, namespace)
 
     def evaluate_expression(self, expression: Any, context: Optional[Dict[str, Any]] = None) -> Any:
         """Evaluate an expression.
