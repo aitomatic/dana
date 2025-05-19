@@ -6,7 +6,83 @@
 
 [Project Overview](../README.md)
 
+> **New:** Read the [DANA Manifesto](dana/manifesto.md) to understand our vision for transforming AI engineering
+
 # OpenDXA - Powered by DANA
+
+## Framework Architecture
+
+```mermaid
+graph TB
+    subgraph "Technology Stack"
+        direction TB
+        C[DANKE:<br>Domain Knowledge Base] --> B
+        B[DANA:<br>Language & Secure Runtime] --> A
+        A[OpenDXA:<br>Agentic Infrastructure] 
+    end
+    
+    style A fill:#f9f,stroke:#333,stroke-width:2px
+    style B fill:#bbf,stroke:#333,stroke-width:2px
+    style C fill:#bfb,stroke:#333,stroke-width:2px
+```
+
+### Component Details
+
+```mermaid
+graph TB
+    subgraph "OpenDXA Platform"
+        D[Agentic Infrastructure]
+        D --> D1[Planning]
+        D --> D2[Reasoning]
+        D --> D3[Execution]
+    end
+    
+    style D fill:#f9f,stroke:#333,stroke-width:2px
+    style D1 fill:#f9f,stroke:#333,stroke-width:1px
+    style D2 fill:#f9f,stroke:#333,stroke-width:1px
+    style D3 fill:#f9f,stroke:#333,stroke-width:1px
+```
+
+```mermaid
+graph TB
+    subgraph "DANA Architecture"
+        B[Language & Secure Runtime]
+        B --> B1[DANA Language]
+        B --> B2[Sandbox Environment]
+        B --> B3[Parser & Interpreter]
+    end
+    
+    style B fill:#bbf,stroke:#333,stroke-width:2px
+    style B1 fill:#bbf,stroke:#333,stroke-width:1px
+    style B2 fill:#bbf,stroke:#333,stroke-width:1px
+    style B3 fill:#bbf,stroke:#333,stroke-width:1px
+```
+
+```mermaid
+graph TB
+    subgraph "DANKE Knowledge Engine"
+        C[Domain Knowledge Base]
+        C --> C1[Knowledge Repository]
+        C --> C2[CORRAL Methodology]
+        
+        C2 --> C2a[Collect]
+        C2 --> C2b[Organize]
+        C2 --> C2c[Retrieve]
+        C2 --> C2d[Reason]
+        C2 --> C2e[Act]
+        C2 --> C2f[Learn]
+    end
+    
+    style C fill:#bfb,stroke:#333,stroke-width:2px
+    style C1 fill:#bfb,stroke:#333,stroke-width:1px
+    style C2 fill:#bfb,stroke:#333,stroke-width:1px
+    style C2a fill:#bfb,stroke:#333,stroke-width:1px
+    style C2b fill:#bfb,stroke:#333,stroke-width:1px
+    style C2c fill:#bfb,stroke:#333,stroke-width:1px
+    style C2d fill:#bfb,stroke:#333,stroke-width:1px
+    style C2e fill:#bfb,stroke:#333,stroke-width:1px
+    style C2f fill:#bfb,stroke:#333,stroke-width:1px
+```
 
 **Example: DANA agentic program**
 ```dana
@@ -192,6 +268,7 @@ For detailed framework comparisons, see [Framework Comparison](details/compariso
   - [DANA Language Reference](dana/language.md)
   - [DANA Sandbox Guide](dana/sandbox.md)
   - [DANA Syntax Reference](dana/syntax.md)
+  - [DANA Manifesto](dana/manifesto.md) - Philosophy and vision
   - [DANA Examples](../examples/01_getting_started/)
 
 - **Development Roadmap**
@@ -235,8 +312,6 @@ DXA is proprietary software developed by Aitomatic, Inc. Contributions are limit
 4. Contact the project maintainers for access to the Contributing Guide
 
 For external users or organizations interested in collaborating with Aitomatic on DXA development, please contact our business development team.
-
----
 
 ---
 <p align="center">

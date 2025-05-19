@@ -2,6 +2,8 @@
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
 
+[Project Overview](../../README.md) | [DANA Documentation](./dana.md)
+
 # Enough of brittle, black-box AI.
 
 > *You've spent days wiring up LLM calls, passing context, and debugging fragile automations. The code works—until it doesn't. A new document, a new edge case, and suddenly you're back to square one. Sound familiar?*
@@ -129,7 +131,7 @@ Not an AI expert? No problem.
 - **Why does it matter?** DANA helps teams avoid costly errors, collaborate better, and build trust in AI systems.
 - **How do I start?** Try a simple example, explore the docs, or join the community. You don't need to be a coding expert—DANA is designed to be approachable.
 
-Learn more: [DANA Documentation](https://github.com/aitomatic-opendxa/dana-docs)
+Learn more: [DANA Documentation](./dana.md)
 
 ---
 
@@ -214,6 +216,7 @@ DANA is for AI engineers, automation architects, and doers who want to create in
 ---
 
 <p align="center">
-Copyright © 2025 Aitomatic, Inc. Licensed under the <a href="../LICENSE.md">MIT License</a>.<br/>
+Copyright © 2025 Aitomatic, Inc. Licensed under the <a href="../../LICENSE.md">MIT License</a>.
+<br/>
 <a href="https://aitomatic.com">https://aitomatic.com</a>
 </p> 

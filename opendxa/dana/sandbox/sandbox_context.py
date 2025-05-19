@@ -60,38 +60,65 @@ class SandboxContext:
                 self._state[scope] = parent._state[scope]  # Share reference instead of copy
 
     def _validate_key(self, key: str) -> tuple[str, str]:
-        """Validates key format (scope.variable) and splits it.
+        """Validates key format (scope.variable or scope:variable) and splits it.
 
-        If no scope is specified, returns ('local', key). Unscoped keys must not contain a dot.
+        If no scope is specified, returns ('local', key). Unscoped keys must not contain a dot or colon.
         """
-        if "." not in key:
-            return "local", key
+        # Check for dot notation (scope.variable)
+        if "." in key and ":" not in key.split(".", 1)[0]:
+            parts = key.split(".", 1)  # Split only on the first dot
+            if len(parts) != 2 or not parts[0] or not parts[1]:
+                raise StateError(f"Invalid state key '{key}'. Must be in 'scope.variable' or 'scope:variable' format.")
+            scope, path = parts
+            if scope not in RuntimeScopes.ALL:
+                return "local", key  # Treat as local variable with dots in name
+            # For local scope, do not allow nested keys with dots
+            if scope == "local" and "." in path:
+                raise StateError(f"Local variable names must not contain dots: '{key}'")
+            return scope, path
 
-        parts = key.split(".", 1)  # Split only on the first dot
-        if len(parts) != 2 or not parts[0] or not parts[1]:
-            raise StateError(f"Invalid state key '{key}'. Must be in 'scope.variable' format.")
-        scope, path = parts
-        if scope not in RuntimeScopes.ALL:
-            raise StateError(f"Unknown scope: {scope}. Must be one of: {RuntimeScopes.ALL}")
-        # For local scope, do not allow nested keys
-        if scope == "local" and "." in path:
-            raise StateError(f"Local variable names must not contain dots: '{key}'")
-        return scope, path
+        # Check for colon notation (scope:variable)
+        if ":" in key:
+            parts = key.split(":", 1)  # Split only on the first colon
+            if len(parts) != 2 or not parts[0] or not parts[1]:
+                raise StateError(f"Invalid state key '{key}'. Must be in 'scope.variable' or 'scope:variable' format.")
+            scope, path = parts
+            if scope not in RuntimeScopes.ALL:
+                return "local", key  # Treat as local variable with colon in name
+            # For local scope, allow dots in variable names when using colon notation
+            return scope, path
+
+        # No scope specified, use local
+        return "local", key
+
+    def _normalize_key(self, scope: str, var_name: str) -> str:
+        """Normalize the key to a standard format for internal use.
+
+        Args:
+            scope: The scope name
+            var_name: The variable name
+
+        Returns:
+            A normalized key string using dot notation
+        """
+        return f"{scope}.{var_name}"
 
     def set(self, key: str, value: Any) -> None:
-        """Sets a value in the context using dot notation (scope.variable).
+        """Sets a value in the context using dot notation (scope.variable) or colon notation (scope:variable).
 
         If no scope is specified, the value is set in the local scope.
         For global scopes (private/public/system), modifications are shared across all contexts.
 
         Args:
-            key: The key in format 'scope.variable' or just 'variable'
+            key: The key in format 'scope.variable', 'scope:variable', or just 'variable'
             value: The value to set
 
         Raises:
             StateError: If the key format is invalid or scope is unknown
         """
         scope, var_name = self._validate_key(key)
+        normalized_key = self._normalize_key(scope, var_name)
+
         # For global scopes, ensure we're modifying the root context's state
         if scope in RuntimeScopes.GLOBAL:
             root = self
@@ -102,13 +129,13 @@ class SandboxContext:
             self._state[scope][var_name] = value
 
     def get(self, key: str, default: Any = None) -> Any:
-        """Gets a value from the context using dot notation (scope.variable).
+        """Gets a value from the context using dot notation (scope.variable) or colon notation (scope:variable).
 
         If no scope is specified, looks in the local scope first.
         For global scopes (private/public/system), looks in the root context.
 
         Args:
-            key: The key in format 'scope.variable' or just 'variable'
+            key: The key in format 'scope.variable', 'scope:variable', or just 'variable'
             default: Value to return if key is not found
 
         Returns:
@@ -118,6 +145,7 @@ class SandboxContext:
             StateError: If the key format is invalid or scope is unknown
         """
         scope, var_name = self._validate_key(key)
+
         # For global scopes, look in root context
         if scope in RuntimeScopes.GLOBAL:
             root = self
@@ -190,10 +218,18 @@ class SandboxContext:
         # Step 2: Set values from data, allowing them to override base context
         for key, value in data.items():
             if "." in key:
-                # Explicitly scoped variable
+                # Check if it's a scoped variable (scope.variable)
                 scope, var_name = key.split(".", 1)
                 if scope in RuntimeScopes.ALL:
                     context.set(key, value)  # This will handle global scope sharing
+                else:
+                    # If not a valid scope, treat as local variable
+                    context.set(key, value)
+            elif ":" in key:
+                # Check if it's a scoped variable (scope:variable)
+                scope, var_name = key.split(":", 1)
+                if scope in RuntimeScopes.ALL:
+                    context.set(f"{scope}:{var_name}", value)  # Use colon format
                 else:
                     # If not a valid scope, treat as local variable
                     context.set(key, value)
