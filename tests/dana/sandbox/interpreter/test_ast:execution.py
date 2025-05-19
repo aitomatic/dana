@@ -513,7 +513,7 @@ def test_print_statement():
 
 
 def test_break_statement():
-    from opendxa.dana.sandbox.interpreter.executor.statement_executor import BreakException
+    from opendxa.dana.sandbox.interpreter.executor.statement_executor import BreakStatementExit
     from opendxa.dana.sandbox.parser.ast import BreakStatement
 
     interpreter = Interpreter(SandboxContext())
@@ -524,7 +524,7 @@ def test_break_statement():
     )
     try:
         interpreter.execute_program(program, suppress_exceptions=False)
-    except BreakException:
+    except BreakStatementExit:
         pass
     else:
         raise AssertionError("BreakException was not raised")
@@ -561,7 +561,7 @@ def test_pass_statement():
 
 
 def test_return_statement():
-    from opendxa.dana.sandbox.interpreter.executor.statement_executor import ReturnException
+    from opendxa.dana.sandbox.interpreter.executor.statement_executor import ReturnStatementExit
     from opendxa.dana.sandbox.parser.ast import ReturnStatement
 
     interpreter = Interpreter(SandboxContext())
@@ -572,7 +572,7 @@ def test_return_statement():
     )
     try:
         interpreter.execute_program(program, suppress_exceptions=False)
-    except ReturnException as e:
+    except ReturnStatementExit as e:
         assert e.value == 42
     else:
         raise AssertionError("ReturnException was not raised")

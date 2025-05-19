@@ -19,10 +19,11 @@ Discord: https://discord.gg/6jGD4PYk
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 from opendxa.dana.common.exceptions import StateError
 from opendxa.dana.common.runtime_scopes import RuntimeScopes
+from opendxa.dana.sandbox.interpreter.executor.base_executor import HasInterpreter
 
 
 class ExecutionStatus(Enum):
@@ -34,7 +35,7 @@ class ExecutionStatus(Enum):
     FAILED = "failed"
 
 
-class SandboxContext:
+class SandboxContext(HasInterpreter):
     """Manages the scoped state during DANA program execution."""
 
     def __init__(self, parent: Optional["SandboxContext"] = None):
@@ -42,7 +43,9 @@ class SandboxContext:
 
         Args:
             parent: Optional parent context to inherit shared scopes from
+            interpreter: Optional interpreter to use for context
         """
+        super().__init__()
         self._parent = parent
         self._state: Dict[str, Dict[str, Any]] = {
             "local": {},  # Always fresh local scope
@@ -59,37 +62,35 @@ class SandboxContext:
             for scope in RuntimeScopes.GLOBAL:
                 self._state[scope] = parent._state[scope]  # Share reference instead of copy
 
-    def _validate_key(self, key: str) -> tuple[str, str]:
-        """Validates key format (scope.variable or scope:variable) and splits it.
+    def _validate_key(self, key: str) -> Tuple[str, str]:
+        """Validate a key and extract scope and variable name.
 
-        If no scope is specified, returns ('local', key). Unscoped keys must not contain a dot or colon.
+        Args:
+            key: The key to validate (scope.variable or scope:variable)
+
+        Returns:
+            Tuple of (scope, variable_name)
+
+        Raises:
+            StateError: If key format is invalid or scope is unknown
         """
-        # Check for dot notation (scope.variable)
-        if "." in key and ":" not in key.split(".", 1)[0]:
-            parts = key.split(".", 1)  # Split only on the first dot
-            if len(parts) != 2 or not parts[0] or not parts[1]:
-                raise StateError(f"Invalid state key '{key}'. Must be in 'scope.variable' or 'scope:variable' format.")
-            scope, path = parts
-            if scope not in RuntimeScopes.ALL:
-                return "local", key  # Treat as local variable with dots in name
-            # For local scope, do not allow nested keys with dots
-            if scope == "local" and "." in path:
-                raise StateError(f"Local variable names must not contain dots: '{key}'")
-            return scope, path
+        # Handle both dot and colon notation
+        if "." in key:
+            parts = key.split(".", 1)
+        elif ":" in key:
+            parts = key.split(":", 1)
+        else:
+            # Default to local scope for unscoped variables
+            return "local", key
 
-        # Check for colon notation (scope:variable)
-        if ":" in key:
-            parts = key.split(":", 1)  # Split only on the first colon
-            if len(parts) != 2 or not parts[0] or not parts[1]:
-                raise StateError(f"Invalid state key '{key}'. Must be in 'scope.variable' or 'scope:variable' format.")
-            scope, path = parts
-            if scope not in RuntimeScopes.ALL:
-                return "local", key  # Treat as local variable with colon in name
-            # For local scope, allow dots in variable names when using colon notation
-            return scope, path
+        if len(parts) != 2:
+            raise StateError(f"Invalid key format: {key}")
 
-        # No scope specified, use local
-        return "local", key
+        scope, var_name = parts
+        if scope not in RuntimeScopes.ALL:
+            raise StateError(f"Unknown scope: {scope}")
+
+        return scope, var_name
 
     def _normalize_key(self, scope: str, var_name: str) -> str:
         """Normalize the key to a standard format for internal use.
@@ -106,8 +107,8 @@ class SandboxContext:
     def set(self, key: str, value: Any) -> None:
         """Sets a value in the context using dot notation (scope.variable) or colon notation (scope:variable).
 
-        If no scope is specified, the value is set in the local scope.
-        For global scopes (private/public/system), modifications are shared across all contexts.
+        If no scope is specified, sets in the local scope.
+        For global scopes (private/public/system), sets in the root context.
 
         Args:
             key: The key in format 'scope.variable', 'scope:variable', or just 'variable'
@@ -117,16 +118,17 @@ class SandboxContext:
             StateError: If the key format is invalid or scope is unknown
         """
         scope, var_name = self._validate_key(key)
-        normalized_key = self._normalize_key(scope, var_name)
 
-        # For global scopes, ensure we're modifying the root context's state
+        # For global scopes, set in root context
         if scope in RuntimeScopes.GLOBAL:
             root = self
             while root._parent is not None:
                 root = root._parent
             root._state[scope][var_name] = value
-        else:
-            self._state[scope][var_name] = value
+            return
+
+        # For local scope, set in current context
+        self._state[scope][var_name] = value
 
     def get(self, key: str, default: Any = None) -> Any:
         """Gets a value from the context using dot notation (scope.variable) or colon notation (scope:variable).
@@ -155,15 +157,16 @@ class SandboxContext:
                 if default is not None:
                     return default
                 raise StateError(f"Variable '{key}' not found")
-            value = root._state[scope][var_name]
-            return value
-        # For local scope, look in current context
-        if var_name not in self._state[scope]:
-            if default is not None:
-                return default
-            raise StateError(f"Variable '{key}' not found")
-        value = self._state[scope][var_name]
-        return value
+            return root._state[scope][var_name]
+
+        # For local scope, look in current context first, then parent
+        if var_name in self._state[scope]:
+            return self._state[scope][var_name]
+        if self._parent is not None:
+            return self._parent.get(key, default)
+        if default is not None:
+            return default
+        raise StateError(f"Variable '{key}' not found")
 
     def get_execution_status(self) -> ExecutionStatus:
         """Get the current execution status.
@@ -238,3 +241,168 @@ class SandboxContext:
                 context.set(key, value)
 
         return context
+
+    def set_in_scope(self, var_name: str, value: Any, scope: str = "local") -> None:
+        """Sets a value in a specific scope.
+
+        Args:
+            var_name: The variable name
+            value: The value to set
+            scope: The scope to set in (defaults to local)
+
+        Raises:
+            StateError: If the scope is unknown
+        """
+        if scope not in RuntimeScopes.ALL:
+            raise StateError(f"Unknown scope: {scope}")
+
+        # For global scopes, set in root context
+        if scope in RuntimeScopes.GLOBAL:
+            root = self
+            while root._parent is not None:
+                root = root._parent
+            root._state[scope][var_name] = value
+            return
+
+        # For local scope, set in current context
+        self._state[scope][var_name] = value
+
+    def has(self, key: str) -> bool:
+        """Check if a key exists in the context.
+
+        Args:
+            key: The key to check
+
+        Returns:
+            True if the key exists, False otherwise
+        """
+        try:
+            scope, var_name = self._validate_key(key)
+            if scope in RuntimeScopes.GLOBAL:
+                root = self
+                while root._parent is not None:
+                    root = root._parent
+                return var_name in root._state[scope]
+            return var_name in self._state[scope] or (self._parent is not None and self._parent.has(key))
+        except StateError:
+            return False
+
+    def delete(self, key: str) -> None:
+        """Delete a key from the context.
+
+        Args:
+            key: The key to delete
+
+        Raises:
+            StateError: If the key format is invalid or scope is unknown
+        """
+        scope, var_name = self._validate_key(key)
+        if scope in RuntimeScopes.GLOBAL:
+            root = self
+            while root._parent is not None:
+                root = root._parent
+            if var_name in root._state[scope]:
+                del root._state[scope][var_name]
+            return
+        if var_name in self._state[scope]:
+            del self._state[scope][var_name]
+        elif self._parent is not None:
+            self._parent.delete(key)
+
+    def clear(self, scope: Optional[str] = None) -> None:
+        """Clear all variables in a scope or all scopes.
+
+        Args:
+            scope: Optional scope to clear (if None, clears all scopes)
+
+        Raises:
+            StateError: If the scope is unknown
+        """
+        if scope is not None:
+            if scope not in RuntimeScopes.ALL:
+                raise StateError(f"Unknown scope: {scope}")
+            self._state[scope].clear()
+        else:
+            for s in RuntimeScopes.ALL:
+                self._state[s].clear()
+
+    def get_state(self) -> Dict[str, Dict[str, Any]]:
+        """Get a copy of the current state.
+
+        Returns:
+            A copy of the state dictionary
+        """
+        return {scope: dict(values) for scope, values in self._state.items()}
+
+    def set_state(self, state: Dict[str, Dict[str, Any]]) -> None:
+        """Set the state from a dictionary.
+
+        Args:
+            state: The state dictionary to set
+
+        Raises:
+            StateError: If the state format is invalid
+        """
+        if not isinstance(state, dict):
+            raise StateError("State must be a dictionary")
+        for scope, values in state.items():
+            if scope not in RuntimeScopes.ALL:
+                raise StateError(f"Unknown scope: {scope}")
+            if not isinstance(values, dict):
+                raise StateError(f"Values for scope {scope} must be a dictionary")
+            self._state[scope] = dict(values)
+
+    def merge(self, other: "SandboxContext") -> None:
+        """Merge another context into this one.
+
+        Args:
+            other: The context to merge from
+        """
+        for scope, values in other._state.items():
+            self._state[scope].update(values)
+
+    def copy(self) -> "SandboxContext":
+        """Create a copy of this context.
+
+        Returns:
+            A new SandboxContext with the same state
+        """
+        new_context = SandboxContext(parent=self._parent)
+        new_context.set_state(self.get_state())
+        return new_context
+
+    def __str__(self) -> str:
+        """Get a string representation of the context.
+
+        Returns:
+            A string representation of the context state
+        """
+        return str(self._state)
+
+    def __repr__(self) -> str:
+        """Get a detailed string representation of the context.
+
+        Returns:
+            A detailed string representation of the context
+        """
+        return f"SandboxContext(state={self._state}, parent={self._parent})"
+
+    def get_scope(self, scope: str) -> Dict[str, Any]:
+        """Get a copy of a specific scope.
+
+        Args:
+            scope: The scope to get
+
+        Returns:
+            A copy of the scope
+        """
+        return self._state[scope].copy()
+
+    def set_scope(self, scope: str, context: Optional[Dict[str, Any]] = None) -> None:
+        """Set a value in a specific scope.
+
+        Args:
+            scope: The scope to set in
+            context: The context to set
+        """
+        self._state[scope] = context or {}

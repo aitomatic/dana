@@ -20,25 +20,27 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-import logging
 import re
 from typing import Any, Dict, Optional
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.dana.common.error_utils import ErrorUtils
-from opendxa.dana.common.exceptions import SandboxError
 from opendxa.dana.sandbox.interpreter.executor.context_manager import ContextManager
 from opendxa.dana.sandbox.interpreter.executor.expression_evaluator import ExpressionEvaluator
 from opendxa.dana.sandbox.interpreter.executor.llm_integration import LLMIntegration
 from opendxa.dana.sandbox.interpreter.executor.statement_executor import StatementExecutor
 from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
-from opendxa.dana.sandbox.interpreter.hooks import HookRegistry, HookType
-from opendxa.dana.sandbox.log_manager import LogLevel
 from opendxa.dana.sandbox.parser.ast import Program
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from opendxa.dana.sandbox.sandbox_context import ExecutionStatus, SandboxContext
 
 # Map DANA LogLevel to Python logging levels
-LEVEL_MAP = {LogLevel.DEBUG: logging.DEBUG, LogLevel.INFO: logging.INFO, LogLevel.WARN: logging.WARNING, LogLevel.ERROR: logging.ERROR}
+DANA_TO_PYTHON_LOG_LEVELS = {
+    "debug": "DEBUG",
+    "info": "INFO",
+    "warning": "WARNING",
+    "error": "ERROR",
+    "critical": "CRITICAL",
+}
 
 # Patch ErrorUtils.format_user_error to improve parser error messages
 _original_format_user_error = ErrorUtils.format_user_error
@@ -70,38 +72,24 @@ ErrorUtils.format_user_error = _patched_format_user_error
 class Interpreter(Loggable):
     """Interpreter for executing DANA programs."""
 
-    def __init__(self, context: Optional[SandboxContext] = None, function_registry: Optional[FunctionRegistry] = None):
+    def __init__(self, context: Optional[SandboxContext] = None):
         """Initialize the interpreter.
 
         Args:
             context: Optional runtime context to use
-            function_registry: Optional function registry to use
         """
         super().__init__()
         self.context = context or SandboxContext()
-        self.function_registry = function_registry or FunctionRegistry()
-        self.context_manager = ContextManager(self.context)
-        self.expression_evaluator = ExpressionEvaluator(self.context_manager)
-        self.llm_integration = LLMIntegration(self.context_manager)
-        self.statement_executor = StatementExecutor(self.context_manager, self.expression_evaluator, self.llm_integration)
+        self._context_manager = ContextManager(self.context)
+        self.function_registry = FunctionRegistry()  # Initialize function registry
+        self._expression_evaluator = ExpressionEvaluator(self._context_manager)
+        self._llm_integration = LLMIntegration()
+        self._statement_executor = StatementExecutor(self._context_manager, self._expression_evaluator, self._llm_integration)
 
-        # Initialize system state
-        self.context.set("system.id", self.statement_executor._execution_id)
-
-    def register_function(self, name: str, func, namespace: Optional[str] = None, func_type: str = "dana", metadata: Optional[dict] = None):
-        """Register a function with the interpreter's function registry."""
-        self.function_registry.register(name, func, namespace, func_type, metadata)
-
-    def call_function(
-        self,
-        name: str,
-        args: Optional[list] = None,
-        kwargs: Optional[dict] = None,
-        context: Optional[SandboxContext] = None,
-        namespace: Optional[str] = None,
-    ):
-        """Call a function via the interpreter's function registry."""
-        return self.function_registry.call(name, args, kwargs, context or self.context, namespace)
+        # Be sure to set the interpreter on all components
+        self.context.interpreter = self
+        self._expression_evaluator.interpreter = self
+        self._statement_executor.interpreter = self
 
     def evaluate_expression(self, expression: Any, context: Optional[Dict[str, Any]] = None) -> Any:
         """Evaluate an expression.
@@ -113,71 +101,43 @@ class Interpreter(Loggable):
         Returns:
             The result of evaluating the expression
         """
-        return self.expression_evaluator.evaluate(expression, context)
+        return self._expression_evaluator.evaluate(expression, context)
 
-    def execute_program(self, program: Program, suppress_exceptions: bool = True) -> Any:
+    def execute_program(self, program: Program) -> Any:
         """Execute a DANA program.
 
         Args:
-            program: The Program AST to execute
-            suppress_exceptions: If True, catch and format exceptions for user-facing output. If False, let exceptions propagate (for tests).
+            program: The program to execute
 
         Returns:
-            The result of executing the program or a formatted error message
-
-        Raises:
-            RuntimeError: If the program execution fails
+            The result of executing the program
         """
-        # Initialize hook context
-        hook_context = {
-            "program": program,
-            "context": self.context,
-        }
-
-        # Execute before program hooks
-        if HookRegistry.has_hooks(HookType.BEFORE_PROGRAM):
-            self.debug("Executing BEFORE_PROGRAM hooks")
-            HookRegistry.execute(HookType.BEFORE_PROGRAM, hook_context)
-
-        def _run():
-            last_result = None
-            for i, statement in enumerate(program.statements):
-                self.debug(f"Executing statement {i+1}/{len(program.statements)}: {type(statement).__name__}")
-                try:
-                    result = self.statement_executor.execute(statement)
-                    last_result = result
-                except Exception as e:
-                    if "Undefined variable" in str(e) or "Variable" in str(e):
-                        error_msg = str(e)
-                        if "must be accessed with a scope prefix" not in error_msg:
-                            var_name = error_msg.split("'")[1] if "'" in error_msg else ""
-                            if var_name and "." not in var_name:
-                                raise SandboxError(
-                                    f"Variable '{var_name}' must be accessed with a scope prefix: "
-                                    f"private.{var_name}, public.{var_name}, or system.{var_name}"
-                                )
-                    raise e
-                if len(program.statements) == 1:
-                    if last_result is not None:
-                        self.context.set(StatementExecutor.LAST_VALUE, last_result)
-            if HookRegistry.has_hooks(HookType.AFTER_PROGRAM):
-                self.debug("Executing AFTER_PROGRAM hooks")
-                HookRegistry.execute(HookType.AFTER_PROGRAM, hook_context)
-            self.debug("Program execution completed successfully")
-            return last_result
-
-        if not suppress_exceptions:
-            return _run()
+        result = None
         try:
-            return _run()
+            self.context.set_execution_status(ExecutionStatus.RUNNING)
+            for statement in program.statements:
+                result = self.execute_statement(statement)
+                # Store the result in the context
+                if result is not None:
+                    self.context.set("system.__last_value", result)
+            self.context.set_execution_status(ExecutionStatus.COMPLETED)
         except Exception as e:
-            self.debug(f"Program execution failed: {e}")
-            if HookRegistry.has_hooks(HookType.ON_ERROR):
-                self.debug("Executing ON_ERROR hooks")
-                error_context = {**hook_context, "error": e}
-                HookRegistry.execute(HookType.ON_ERROR, error_context)
-            user_input = getattr(program, "source_text", "")
-            return ErrorUtils.format_user_error(e, user_input)
+            self.context.set_execution_status(ExecutionStatus.FAILED)
+            raise e
+        return result
+
+    def execute_statement(self, statement: Any) -> Any:
+        """Execute a single statement.
+
+        Args:
+            statement: The statement to execute
+
+        Returns:
+            The result of executing the statement
+        """
+        # Execute the statement
+        result = self._statement_executor.execute(statement)
+        return result
 
     @classmethod
     def new(cls, context: SandboxContext) -> "Interpreter":
@@ -193,4 +153,4 @@ class Interpreter(Loggable):
 
     def get_and_clear_output(self) -> str:
         """Retrieve and clear the output buffer from the statement executor."""
-        return self.statement_executor.get_and_clear_output()
+        return self._statement_executor.get_and_clear_output()

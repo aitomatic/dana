@@ -91,6 +91,14 @@ class TypeEnvironment:
         """Register a type in the environment."""
         self.types[name] = type_
 
+    def push_scope(self):
+        """Push a new scope for type checking."""
+        self.types = {}
+
+    def pop_scope(self):
+        """Pop the current scope for type checking."""
+        self.types = self.parent.types if self.parent else {}
+
 
 class TypeChecker:
     """Type checker for DANA programs."""
@@ -211,9 +219,34 @@ class TypeChecker:
 
     def check_function_definition(self, node: FunctionDefinition) -> None:
         """Check a function definition for type errors."""
-        # Assuming all functions return 'any' for now
+        # Create a new scope for the function
+        self.environment = TypeEnvironment(self.environment)
+
+        # Add parameters to the environment
+        for param in node.parameters:
+            if isinstance(param, Identifier):
+                # Handle scoped parameters (e.g. local:a)
+                if ":" in param.name:
+                    scope, name = param.name.split(":", 1)
+                    if scope != "local":
+                        raise TypeError(f"Function parameters must use local scope, got {scope}", param)
+                    param_name = f"local.{name}"
+                else:
+                    # For unscoped parameters, add local. prefix
+                    param_name = f"local.{param.name}"
+                # Add parameter to environment with any type
+                self.environment.set(param_name, DanaType("any"))
+                # Also add unscoped version for convenience
+                if "." in param_name:
+                    _, name = param_name.split(".", 1)
+                    self.environment.set(name, DanaType("any"))
+
+        # Check the function body
         for statement in node.body:
             self.check_statement(statement)
+
+        # Restore the parent environment
+        self.environment = self.environment.parent or TypeEnvironment()
 
     def check_import_statement(self, node: ImportStatement) -> None:
         """Check an import statement for type errors."""
@@ -254,7 +287,11 @@ class TypeChecker:
 
     def check_identifier(self, node: Identifier) -> DanaType:
         """Check an identifier for type errors."""
+        # Try with original name first
         type_ = self.environment.get(node.name)
+        if type_ is None and "." not in node.name:
+            # If not found and name is unscoped, try with local scope
+            type_ = self.environment.get(f"local.{node.name}")
         if type_ is None:
             raise TypeError(f"Undefined variable: {node.name}", node)
         return type_
@@ -264,6 +301,12 @@ class TypeChecker:
 
         Returns bool for comparison operators, otherwise returns the operand type.
         """
+        # Handle unscoped variables in binary expressions
+        if isinstance(node.left, Identifier) and "." not in node.left.name:
+            node.left.name = f"local.{node.left.name}"
+        if isinstance(node.right, Identifier) and "." not in node.right.name:
+            node.right.name = f"local.{node.right.name}"
+
         left_type = self.check_expression(node.left)
         right_type = self.check_expression(node.right)
 

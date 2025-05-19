@@ -1,6 +1,10 @@
 """
 Statement transformers for DANA language parsing.
 
+This module provides statement transformers for the DANA language.
+It handles all statement grammar rules, including assignments, conditionals,
+loops, functions, and imports.
+
 Copyright © 2025 Aitomatic, Inc.
 MIT License
 
@@ -228,17 +232,36 @@ class StatementTransformer(BaseTransformer):
         if isinstance(params, list):
             for p in params:
                 if isinstance(p, Identifier):
-                    param_list.append(p)
+                    # If already an Identifier, ensure it has local scope
+                    param_name = p.name if "." in p.name else f"local.{p.name}"
+                    param_list.append(Identifier(name=param_name))
                 elif hasattr(p, "value"):
-                    param_name = p.value
-                    param_list.append(Identifier(name=f"local.{param_name}"))
+                    # For raw parameter names, add local scope
+                    param_name = f"local.{p.value}"
+                    param_list.append(Identifier(name=param_name))
                 else:
                     raise TypeError(f"Unexpected parameter: {p} (type: {type(p)})")
         elif isinstance(params, Token):
-            param_name = params.value
-            param_list.append(Identifier(name=f"local.{param_name}"))
+            # Single parameter as Token
+            param_name = f"local.{params.value}"
+            param_list.append(Identifier(name=param_name))
 
-        return FunctionDefinition(name=name, parameters=param_list, body=body)
+        # Transform unscoped variables in function body to use local scope
+        transformed_body = []
+        for stmt in body:
+            if isinstance(stmt, ReturnStatement) and isinstance(stmt.value, Identifier):
+                # Handle unscoped variables in return statements
+                if "." not in stmt.value.name:
+                    stmt.value.name = f"local.{stmt.value.name}"
+            elif isinstance(stmt, BinaryExpression):
+                # Handle unscoped variables in binary expressions
+                if isinstance(stmt.left, Identifier) and "." not in stmt.left.name:
+                    stmt.left.name = f"local.{stmt.left.name}"
+                if isinstance(stmt.right, Identifier) and "." not in stmt.right.name:
+                    stmt.right.name = f"local.{stmt.right.name}"
+            transformed_body.append(stmt)
+
+        return FunctionDefinition(name=name, parameters=param_list, body=transformed_body)
 
     def try_stmt(self, items):
         """Transform a try statement rule into a TryBlock node."""
@@ -584,3 +607,17 @@ class StatementTransformer(BaseTransformer):
 
         # Fallback
         return Identifier(name="local.param")
+
+    def binary_expr(self, items):
+        """Transform a binary expression rule into a BinaryExpression node."""
+        left = items[0]
+        operator = items[1]
+        right = items[2]
+
+        # Handle unscoped variables in binary expressions
+        if isinstance(left, Identifier) and "." not in left.name:
+            left.name = f"local.{left.name}"
+        if isinstance(right, Identifier) and "." not in right.name:
+            right.name = f"local.{right.name}"
+
+        return BinaryExpression(left=left, operator=operator, right=right)

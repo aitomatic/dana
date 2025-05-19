@@ -1,11 +1,8 @@
 """
-Context manager for the DANA interpreter.
+Context manager for DANA execution.
 
-This module provides utilities for managing the runtime context during execution.
-
-Responsibilities:
-- Variable resolution and scope management
-- Context updates
+This module provides the ContextManager class, which manages variable scopes
+and state during DANA program execution.
 
 Copyright © 2025 Aitomatic, Inc.
 MIT License
@@ -23,98 +20,175 @@ Discord: https://discord.gg/6jGD4PYk
 
 from typing import Any, Dict, Optional
 
-from opendxa.common.mixins.loggable import Loggable
 from opendxa.dana.common.exceptions import StateError
 from opendxa.dana.common.runtime_scopes import RuntimeScopes
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
-class ContextManager(Loggable):
-    """Manages the runtime context for the DANA interpreter.
+class ContextManager:
+    """Context manager for DANA execution.
 
-    Responsibilities:
-    - Variable resolution and scope management
-    - Context updates
+    This class manages variable scopes and state during DANA program execution.
+    It provides methods for getting and setting variables in different scopes.
     """
 
-    def __init__(self, context: SandboxContext):
+    def __init__(self, context: Optional[SandboxContext] = None):
         """Initialize the context manager.
 
         Args:
-            context: The runtime context to manage
+            context: Optional initial context
         """
-        super().__init__()
-        self.context = context
+        self.context = context or SandboxContext()
 
-    def set_in_context(self, name: str, value: Any, scope: Optional[str] = None) -> None:
-        """Set a variable value in the context.
+    def get(self, key: str, default: Any = None) -> Any:
+        """Get a value from the context.
 
         Args:
-            name: The name of the variable to set (can be 'scope.name' or just 'name')
-            value: The value to set
-            scope: Optional scope to set the variable in. If provided, overrides any scope in name.
-
-        Raises:
-            StateError: If the variable scope is invalid
-        """
-        if scope is not None:
-            if scope not in RuntimeScopes.ALL:
-                raise StateError(f"Invalid scope '{scope}'. Must be one of: {RuntimeScopes.ALL}")
-            full_name = f"{scope}.{name}"
-        else:
-            # If var_name is already scoped, check its scope
-            if "." in name:
-                candidate_scope = name.split(".", 1)[0]
-                if candidate_scope not in RuntimeScopes.ALL:
-                    raise StateError(f"Invalid scope '{candidate_scope}'. Must be one of: {RuntimeScopes.ALL}")
-                full_name = name
-            else:
-                # Default to local scope
-                full_name = f"local.{name}"
-        self.context.set(full_name, value)
-
-    def get_from_context(self, var_name: str, local_context: Optional[Dict[str, Any]] = None, scope: Optional[str] = None) -> Any:
-        """Get a variable value from the context.
-
-        Args:
-            var_name: The name of the variable to get (can be 'scope.var' or just 'var')
-            local_context: Optional local context for variable resolution
-            scope: Optional scope to get the variable from. If provided, overrides any scope in var_name.
+            key: The key to get
+            default: Default value if key not found
 
         Returns:
-            The variable value
+            The value associated with the key
+        """
+        return self.context.get(key, default)
+
+    def set(self, key: str, value: Any) -> None:
+        """Set a value in the context.
+
+        Args:
+            key: The key to set
+            value: The value to set
+        """
+        self.context.set(key, value)
+
+    def set_in_context(self, var_name: str, value: Any, scope: str = "local") -> None:
+        """Set a value in a specific scope.
+
+        Args:
+            var_name: The variable name
+            value: The value to set
+            scope: The scope to set in (defaults to local)
 
         Raises:
-            StateError: If the variable doesn't exist or has invalid format
+            StateError: If the scope is unknown
         """
-        # 1. Check local context first (for function parameters, etc)
-        if local_context and var_name in local_context:
-            return local_context[var_name]
-
-        # 2. Autoscope logic
-        if scope is None:
-            if "." in var_name:
-                candidate_scope, candidate_var = var_name.split(".", 1)
-                from opendxa.dana.common.runtime_scopes import RuntimeScopes
-
-                if candidate_scope in RuntimeScopes.ALL:
-                    scope = candidate_scope
-                    var_name = candidate_var
-                else:
-                    # Not a known scope, treat as local
-                    scope = "local"
-            else:
-                scope = "local"
-        from opendxa.dana.common.runtime_scopes import RuntimeScopes
-
         if scope not in RuntimeScopes.ALL:
-            raise StateError(f"Invalid scope '{scope}'. Must be one of: {RuntimeScopes.ALL}")
-        full_name = f"{scope}.{var_name}"
+            raise StateError(f"Unknown scope: {scope}")
 
-        # 3. Direct dictionary access - the core functionality
-        scope_key, var_key = full_name.split(".", 1)
-        if scope_key in self.context._state and var_key in self.context._state[scope_key]:
-            return self.context._state[scope_key][var_key]
+        # For global scopes, set in root context
+        if scope in RuntimeScopes.GLOBAL:
+            root = self.context
+            while root._parent is not None:
+                root = root._parent
+            root._state[scope][var_name] = value
+            return
 
-        # 4. Variable not found
-        raise StateError(f"Variable not found: {full_name}")
+        # For local scope, set in current context
+        self.context._state[scope][var_name] = value
+
+    def get_from_scope(self, var_name: str, scope: Optional[str] = None) -> Any:
+        """Get a value from a specific scope.
+
+        Args:
+            var_name: The variable name
+            scope: Optional scope override (defaults to None)
+
+        Returns:
+            The value associated with the variable
+
+        Raises:
+            StateError: If the scope is unknown or variable not found
+        """
+        # If var_name contains a scope prefix (e.g. "private.x"), use that
+        if "." in var_name:
+            scope_name, name = var_name.split(".", 1)
+            if scope_name not in RuntimeScopes.ALL:
+                raise StateError(f"Unknown scope: {scope_name}")
+            scope_dict = self.context._state[scope_name]
+            if name not in scope_dict:
+                raise StateError(f"Variable '{var_name}' not found")
+            return scope_dict[name]
+
+        # Otherwise use the provided scope or default to local
+        scope = scope or "local"
+        if scope not in RuntimeScopes.ALL:
+            raise StateError(f"Unknown scope: {scope}")
+        scope_dict = self.context._state[scope]
+        if var_name not in scope_dict:
+            raise StateError(f"Variable '{var_name}' not found in scope '{scope}'")
+        return scope_dict[var_name]
+
+    def has(self, key: str) -> bool:
+        """Check if a key exists in the context.
+
+        Args:
+            key: The key to check
+
+        Returns:
+            True if the key exists, False otherwise
+        """
+        return self.context.has(key)
+
+    def delete(self, key: str) -> None:
+        """Delete a key from the context.
+
+        Args:
+            key: The key to delete
+        """
+        self.context.delete(key)
+
+    def clear(self, scope: Optional[str] = None) -> None:
+        """Clear all variables in a scope or all scopes.
+
+        Args:
+            scope: Optional scope to clear (if None, clears all scopes)
+        """
+        self.context.clear(scope)
+
+    def get_state(self) -> Dict[str, Dict[str, Any]]:
+        """Get a copy of the current state.
+
+        Returns:
+            A copy of the state dictionary
+        """
+        return self.context.get_state()
+
+    def set_state(self, state: Dict[str, Dict[str, Any]]) -> None:
+        """Set the state from a dictionary.
+
+        Args:
+            state: The state dictionary to set
+        """
+        self.context.set_state(state)
+
+    def merge(self, other: "ContextManager") -> None:
+        """Merge another context manager into this one.
+
+        Args:
+            other: The context manager to merge from
+        """
+        self.context.merge(other.context)
+
+    def copy(self) -> "ContextManager":
+        """Create a copy of this context manager.
+
+        Returns:
+            A new ContextManager with the same state
+        """
+        return ContextManager(self.context.copy())
+
+    def __str__(self) -> str:
+        """Get a string representation of the context manager.
+
+        Returns:
+            A string representation of the context manager state
+        """
+        return str(self.context)
+
+    def __repr__(self) -> str:
+        """Get a detailed string representation of the context manager.
+
+        Returns:
+            A detailed string representation of the context manager
+        """
+        return f"ContextManager(context={self.context})"

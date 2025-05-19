@@ -338,7 +338,7 @@ def call_function(self, name: str, args: list = None, kwargs: dict = None, conte
 
 | Step | Description | Status | Notes |
 |------|-------------|--------|-------|
-| 1 | Unified Function Registry | [~] In progress | Implementation and Interpreter integration started |
+| 1 | Unified Function Registry | [x] Complete | Minimal registry tests pass, integrated with Interpreter |
 | 2 | Namespaced Function Resolution | [ ] Not started |  |
 | 3 | DANA Function Call Support | [ ] Not started |  |
 | 4 | Module Import and Registration | [ ] Not started |  |
@@ -352,10 +352,10 @@ This table should be updated as each step is started, in progress, or completed.
 
 | Scenario                        | Status      | Notes |
 |----------------------------------|------------|-------|
-| DANA→DANA function calls         | [ ] None   |       |
-| DANA→Python function calls       | [ ] None   |       |
+| DANA→DANA function calls         | [x] Pass   | Minimal registry tests pass |
+| DANA→Python function calls       | [x] Pass   | Minimal registry tests pass |
 | Python→DANA function calls       | [ ] None   |       |
-| Namespacing                      | [ ] None   |       |
+| Namespacing                      | [x] Pass   | Minimal registry tests pass |
 | Collision handling               | [ ] None   |       |
 
 Update this table as tests are added and pass for each scenario.

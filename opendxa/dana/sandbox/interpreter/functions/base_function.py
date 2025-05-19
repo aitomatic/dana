@@ -19,12 +19,12 @@ Discord: https://discord.gg/6jGD4PYk
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Optional
 
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
-class BaseFunction(ABC):
+class BaseFunction(Callable, ABC):
     """Base class for all DANA core functions.
 
     This class provides a common interface for all core functions.

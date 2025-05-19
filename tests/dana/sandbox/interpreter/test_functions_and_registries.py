@@ -5,22 +5,17 @@ from opendxa.dana.sandbox.interpreter.executor.context_manager import ContextMan
 from opendxa.dana.sandbox.interpreter.executor.expression_evaluator import ExpressionEvaluator
 from opendxa.dana.sandbox.interpreter.executor.llm_integration import LLMIntegration
 from opendxa.dana.sandbox.interpreter.executor.statement_executor import StatementExecutor
-from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction, DanaRegistry
-from opendxa.dana.sandbox.interpreter.functions.python_function import PythonFunction, PythonRegistry
+from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionMetadata, FunctionRegistry
 from opendxa.dana.sandbox.interpreter.interpreter import Interpreter
 from opendxa.dana.sandbox.parser.ast import (
     Assignment,
-    AttributeAccess,
     BinaryExpression,
     BinaryOperator,
-    DictLiteral,
-    FStringExpression,
     FunctionCall,
     Identifier,
     LiteralExpression,
     PrintStatement,
     Program,
-    SubscriptExpression,
 )
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
@@ -75,13 +70,14 @@ def test_registry_list_and_missing():
 
 # --- Integration: StatementExecutor function call logic ---
 def test_statement_executor_function_resolution(monkeypatch):
-    # Setup DanaFunction
-    class MockAST:
-        pass
+    # Setup mock function that will be called
+    def mock_dana_function(*args, **kwargs):
+        return "dana-called"
 
     class MockInterpreter:
         def __init__(self, context):
-            pass
+            self.context = context
+            self.function_registry = FunctionRegistry()  # Create registry in interpreter
 
         def execute_program(self, ast):
             return "dana-called"
@@ -89,33 +85,32 @@ def test_statement_executor_function_resolution(monkeypatch):
     monkeypatch.setitem(
         __import__("sys").modules, "opendxa.dana.sandbox.interpreter.interpreter", type("mod", (), {"Interpreter": MockInterpreter})
     )
+
     context = SandboxContext()
     cm = ContextManager(context)
-    ee = ExpressionEvaluator(cm)
-    llm = LLMIntegration(cm)
+    ee = ExpressionEvaluator(cm)  # No longer pass registry here
+    llm = LLMIntegration()  # Initialize without arguments
     se = StatementExecutor(cm, ee, llm)
 
+    # Create mock interpreter and set it
+    mock_interpreter = MockInterpreter(context)
+    ee.interpreter = mock_interpreter
+    se.interpreter = mock_interpreter
+
     # 1. foo_registry() resolves to registry function if present
-    DanaRegistry()._functions.clear()
-    PythonRegistry()._functions.clear()
-    DanaRegistry().register("foo_registry", DanaFunction(MockAST(), [], None))
+    mock_interpreter.function_registry.register(
+        "foo_registry", mock_dana_function, func_type="dana", metadata=FunctionMetadata(context_aware=True)  # Use simple function
+    )
     node = FunctionCall(name="foo_registry", args={})
     assert se._execute_method_or_variable_function(node) == "dana-called"
-    # Now clear for next sub-case
-    DanaRegistry()._functions.clear()
-    PythonRegistry()._functions.clear()
 
     # 2. foo_local() falls back to local.foo_local if callable
-    DanaRegistry()._functions.clear()
-    PythonRegistry()._functions.clear()
     node = FunctionCall(name="foo_local", args={})
     context.set("local.foo_local", lambda: "local-called")
     assert se._execute_method_or_variable_function(node) == "local-called"
     context._state["local"].pop("foo_local")
 
     # 3. foo_missing() raises error if neither registry nor local.foo_missing exists
-    DanaRegistry()._functions.clear()
-    PythonRegistry()._functions.clear()
     node = FunctionCall(name="foo_missing", args={})
     with pytest.raises(SandboxError, match="Function or variable 'foo_missing' not found"):
         se._execute_method_or_variable_function(node)
@@ -183,8 +178,19 @@ def test_statement_executor_assignment_and_print(capsys):
     context = SandboxContext()
     cm = ContextManager(context)
     ee = ExpressionEvaluator(cm)
-    llm = LLMIntegration(cm)
+    llm = LLMIntegration()  # Initialize without arguments
     se = StatementExecutor(cm, ee, llm)
+
+    # Create mock interpreter and set it
+    class MockInterpreter:
+        def __init__(self, context):
+            self.context = context
+            self.function_registry = FunctionRegistry()
+
+    mock_interpreter = MockInterpreter(context)
+    ee.interpreter = mock_interpreter
+    se.interpreter = mock_interpreter
+
     # Assignment
     stmt = Assignment(target=Identifier("private.x"), value=LiteralExpression(99))
     se.execute(stmt)
@@ -207,7 +213,7 @@ def test_interpreter_init_and_execute():
     context = SandboxContext()
     interpreter = Interpreter(context)
     program = Program([Assignment(target=Identifier("private.y"), value=LiteralExpression(123))])
-    result = interpreter.execute_program(program, suppress_exceptions=False)
+    result = interpreter.execute_program(program)  # Remove suppress_exceptions
     assert context.get("private.y") == 123
 
     # Error case: invalid statement
@@ -216,7 +222,7 @@ def test_interpreter_init_and_execute():
 
     program = Program([Dummy()])
     with pytest.raises(Exception):
-        interpreter.execute_program(program, suppress_exceptions=False)  # type: ignore
+        interpreter.execute_program(program)  # Remove suppress_exceptions
 
 
 def test_expression_evaluator_fstring_attribute_subscript():
@@ -238,7 +244,7 @@ def test_context_manager_missing_variable():
     context = SandboxContext()
     cm = ContextManager(context)
     with pytest.raises(Exception):
-        cm.get_from_context("private.missing")
+        cm.get_from_scope("private.missing")
 
 
 def test_interpreter_error_hook(monkeypatch):
@@ -263,4 +269,199 @@ def test_interpreter_error_hook(monkeypatch):
 
     program = Program([Dummy()])
     with pytest.raises(Exception):
-        interpreter.execute_program(program, suppress_exceptions=False)
+        interpreter.execute_program(program)
+
+
+def test_register_and_call_python_function():
+    registry = FunctionRegistry()
+
+    def py_add(ctx, a, b):
+        return a + b
+
+    registry.register("add", py_add, func_type="python")
+    result = registry.call("add", args=[2, 3], context={})  # Provide empty context
+    assert result == 5
+
+
+def test_register_and_call_python_function_with_namespace():
+    registry = FunctionRegistry()
+
+    def py_mul(ctx, a, b):
+        return a * b
+
+    registry.register("mul", py_mul, namespace="math", func_type="python")
+    result = registry.call("mul", args=[4, 5], context={}, namespace="math")  # Provide empty context
+    assert result == 20
+
+
+def test_register_and_call_dana_function():
+    registry = FunctionRegistry()
+
+    def dana_double(ctx, x):
+        return x * 2
+
+    registry.register("double", dana_double, func_type="dana")
+    result = registry.call("double", args=[7], context={})  # Provide empty context
+    assert result == 14
+
+
+def test_register_and_call_dana_function_with_namespace():
+    registry = FunctionRegistry()
+
+    def dana_triple(ctx, x):
+        return x * 3
+
+    registry.register("triple", dana_triple, namespace="util", func_type="dana")
+    result = registry.call("triple", args=[6], context={}, namespace="util")  # Provide empty context
+    assert result == 18
+
+
+# New tests for enhanced FunctionRegistry
+
+
+def test_function_registry_basic_operations():
+    """Test basic registry operations."""
+    registry = FunctionRegistry()
+
+    # Test registration
+    def test_func(x: int) -> int:
+        return x * 2
+
+    registry.register("double", test_func)
+    assert registry.has("double")
+    assert not registry.has("triple")
+
+    # Test resolution
+    func, func_type, metadata = registry.resolve("double")
+    assert func == test_func
+    assert func_type == "dana"  # default type
+    assert isinstance(metadata, FunctionMetadata)
+
+    # Test listing
+    assert "double" in registry.list()
+
+    # Test calling
+    result = registry.call("double", args=[5])
+    assert result == 10
+
+
+def test_function_registry_namespaces():
+    """Test namespace support."""
+    registry = FunctionRegistry()
+
+    # Register functions in different namespaces
+    def add(a, b):
+        return a + b
+
+    def sub(a, b):
+        return a - b
+
+    registry.register("calc", add, namespace="math")
+    registry.register("calc", sub, namespace="other")  # Same name, different namespace
+
+    # Test resolution in different namespaces
+    assert registry.call("calc", args=[5, 3], namespace="math") == 8
+    assert registry.call("calc", args=[5, 3], namespace="other") == 2
+
+    # Test listing by namespace
+    assert "calc" in registry.list(namespace="math")
+    assert "calc" in registry.list(namespace="other")
+
+
+def test_function_registry_metadata():
+    """Test metadata handling."""
+    registry = FunctionRegistry()
+
+    def context_aware_func(ctx, x):
+        return f"Context: {ctx}, Value: {x}"
+
+    # Test with explicit metadata
+    metadata = FunctionMetadata(context_aware=True, is_public=True, doc="Test function", source_file="test.py")
+    registry.register("test", context_aware_func, metadata=metadata)
+
+    # Verify metadata
+    retrieved_metadata = registry.get_metadata("test")
+    assert retrieved_metadata.context_aware
+    assert retrieved_metadata.is_public
+    assert retrieved_metadata.doc == "Test function"
+    assert retrieved_metadata.source_file == "test.py"
+
+
+def test_function_registry_python_context_detection():
+    """Test automatic context awareness detection for Python functions."""
+    registry = FunctionRegistry()
+
+    def with_context(ctx, x):
+        return x
+
+    def without_context(x):
+        return x
+
+    registry.register("with_ctx", with_context, func_type="python")
+    registry.register("without_ctx", without_context, func_type="python")
+
+    # Check auto-detected metadata
+    assert registry.get_metadata("with_ctx").context_aware
+    assert not registry.get_metadata("without_ctx").context_aware
+
+
+def test_function_registry_overwrite_protection():
+    """Test function overwrite protection."""
+    registry = FunctionRegistry()
+
+    def func1(x):
+        return x
+
+    def func2(x):
+        return x * 2
+
+    registry.register("test", func1)
+
+    # Should raise error when trying to overwrite without flag
+    with pytest.raises(ValueError):
+        registry.register("test", func2)
+
+    # Should succeed with overwrite flag
+    registry.register("test", func2, overwrite=True)
+    result = registry.call("test", args=[5])
+    assert result == 10  # Should use func2
+
+
+def test_function_registry_context_injection():
+    """Test context injection behavior."""
+    registry = FunctionRegistry()
+    test_context = {"test": "context"}
+
+    def context_func(ctx, x):
+        assert ctx == test_context
+        return x * 2
+
+    # Register with explicit context awareness
+    registry.register("test", context_func, metadata=FunctionMetadata(context_aware=True))
+
+    # Test calling with context
+    result = registry.call("test", args=[5], context=test_context)
+    assert result == 10
+
+
+def test_function_registry_error_handling():
+    """Test error handling scenarios."""
+    registry = FunctionRegistry()
+
+    # Test resolving non-existent function
+    with pytest.raises(KeyError):
+        registry.resolve("nonexistent")
+
+    # Test calling non-existent function
+    with pytest.raises(KeyError):
+        registry.call("nonexistent")
+
+    # Test invalid argument count
+    def strict_func(x, y):  # Function that requires exactly 2 arguments
+        return x + y
+
+    registry.register("strict", strict_func)
+
+    # Should raise TypeError when passing wrong number of arguments
+    with pytest.raises(TypeError, match="Error calling function 'strict'"):
+        registry.call("strict", args=[1])  # Missing second argument

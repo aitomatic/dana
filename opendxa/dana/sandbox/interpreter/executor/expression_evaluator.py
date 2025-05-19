@@ -22,6 +22,7 @@ from typing import Any, Dict, Optional
 
 from opendxa.dana.common.error_utils import ErrorUtils
 from opendxa.dana.common.exceptions import SandboxError, StateError
+from opendxa.dana.common.runtime_scopes import RuntimeScopes
 from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
 from opendxa.dana.sandbox.interpreter.executor.context_manager import ContextManager
 from opendxa.dana.sandbox.parser.ast import (
@@ -162,12 +163,12 @@ class ExpressionEvaluator(BaseExecutor):
         # If neither format is present, return string representation
         return str(expression)
 
-    def _evaluate_binary_expression(self, node: BinaryExpression, context: Optional[Dict[str, Any]] = None) -> Any:
+    def _evaluate_binary_expression(self, node: BinaryExpression, local_context: Optional[Dict[str, Any]] = None) -> Any:
         """Evaluate a binary expression.
 
         Args:
             node: The binary expression to evaluate
-            context: Optional local context for variable resolution
+            local_context: Optional local context for variable resolution
 
         Returns:
             The result of evaluating the expression
@@ -183,7 +184,11 @@ class ExpressionEvaluator(BaseExecutor):
             # Evaluate left operand
             if isinstance(node.left, Identifier):
                 try:
-                    left = self.context_manager.get_from_context(node.left.name, context)
+                    # First check local context
+                    if local_context is not None and "." not in node.left.name and node.left.name in local_context:
+                        left = local_context[node.left.name]
+                    else:
+                        left = self.context_manager.get_from_scope(node.left.name)
                     self.debug(f"Evaluated {node.left.name} = {left}")
                 except Exception as e:
                     self.debug(f"Error evaluating left operand: {e}")
@@ -196,13 +201,17 @@ class ExpressionEvaluator(BaseExecutor):
                             node,
                         )
             else:
-                left = self.evaluate(node.left, context)
-                self.debug(f"Evaluated left operand: {left}")
+                left = self.evaluate(node.left, local_context)
+                self.debug(f"Evaluated left operand = {left}")
 
             # Evaluate right operand
             if isinstance(node.right, Identifier):
                 try:
-                    right = self.context_manager.get_from_context(node.right.name, context)
+                    # First check local context
+                    if local_context is not None and "." not in node.right.name and node.right.name in local_context:
+                        right = local_context[node.right.name]
+                    else:
+                        right = self.context_manager.get_from_scope(node.right.name)
                     self.debug(f"Evaluated {node.right.name} = {right}")
                 except Exception as e:
                     self.debug(f"Error evaluating right operand: {e}")
@@ -215,74 +224,43 @@ class ExpressionEvaluator(BaseExecutor):
                             node,
                         )
             else:
-                right = self.evaluate(node.right, context)
-                self.debug(f"Evaluated right operand: {right}")
+                right = self.evaluate(node.right, local_context)
+                self.debug(f"Evaluated right operand = {right}")
 
-            # Process the operation based on operator type
-            try:
-                if node.operator == BinaryOperator.ADD:
-                    # String concatenation
-                    if isinstance(left, str) or isinstance(right, str):
-                        return str(left) + str(right)
-                    return left + right
-                elif node.operator == BinaryOperator.SUBTRACT:
-                    return left - right
-                elif node.operator == BinaryOperator.MULTIPLY:
-                    return left * right
-                elif node.operator == BinaryOperator.DIVIDE:
-                    self.debug(f"[EVAL_BIN] About to check division: left={left}, right={right}")
-                    self.debug(f"[EVAL_BIN] DIVIDE branch: left={left}, right={right}")
-                    if right == 0:
-                        self.debug("[EVAL_BIN] Division by zero detected, raising error.")
-                        raise ErrorUtils.create_state_error("Math Error: Division by zero is not allowed.", node)
-                    return left / right
-                elif node.operator == BinaryOperator.MODULO:
-                    if right == 0:
-                        raise ErrorUtils.create_state_error("Math Error: Division by zero is not allowed.", node)
-                    return left % right
-                elif node.operator == BinaryOperator.EQUALS:
-                    return left == right
-                elif node.operator == BinaryOperator.NOT_EQUALS:
-                    return left != right
-                elif node.operator == BinaryOperator.LESS_THAN:
-                    return left < right
-                elif node.operator == BinaryOperator.GREATER_THAN:
-                    return left > right
-                elif node.operator == BinaryOperator.LESS_EQUALS:
-                    return left <= right
-                elif node.operator == BinaryOperator.GREATER_EQUALS:
-                    return left >= right
-                elif node.operator == BinaryOperator.AND:
-                    return left and right
-                elif node.operator == BinaryOperator.OR:
-                    return left or right
-                elif node.operator == BinaryOperator.IN:
-                    return left in right
-                elif node.operator == BinaryOperator.POWER:
-                    # DANA '^' means exponentiation, not bitwise XOR
-                    from math import pow
-
-                    # First convert to float for proper exponentiation, then back to int if both operands are ints
-                    result = pow(float(left), float(right))
-                    if isinstance(left, int) and isinstance(right, int):
-                        return int(result)
-                    return result
-                else:
-                    # Unsupported operator
-                    raise ErrorUtils.create_state_error(f"Unsupported binary operator: {node.operator.value}", node)
-            except Exception as e:
-                self.debug(f"Error in binary operation: {e}")
-                self.debug(f"Left operand type: {type(left)}, value: {left}")
-                self.debug(f"Right operand type: {type(right)}, value: {right}")
-                self.debug(f"Operator: {node.operator}")
-                raise
-
-        except Exception as e:
-            # Re-raise with more context
-            if isinstance(e, StateError):
-                raise e
+            # Perform the operation
+            if node.operator == BinaryOperator.ADD:
+                return left + right
+            elif node.operator == BinaryOperator.SUBTRACT:
+                return left - right
+            elif node.operator == BinaryOperator.MULTIPLY:
+                return left * right
+            elif node.operator == BinaryOperator.DIVIDE:
+                return left / right
+            elif node.operator == BinaryOperator.MODULO:
+                return left % right
+            elif node.operator == BinaryOperator.POWER:
+                return left**right
+            elif node.operator == BinaryOperator.EQUALS:
+                return left == right
+            elif node.operator == BinaryOperator.NOT_EQUALS:
+                return left != right
+            elif node.operator == BinaryOperator.LESS_THAN:
+                return left < right
+            elif node.operator == BinaryOperator.LESS_EQUALS:
+                return left <= right
+            elif node.operator == BinaryOperator.GREATER_THAN:
+                return left > right
+            elif node.operator == BinaryOperator.GREATER_EQUALS:
+                return left >= right
+            elif node.operator == BinaryOperator.AND:
+                return bool(left and right)
+            elif node.operator == BinaryOperator.OR:
+                return bool(left or right)
             else:
-                raise ErrorUtils.create_runtime_error(f"Error evaluating expression: {e}", node)
+                raise StateError(f"Unknown operator: {node.operator}")
+        except Exception as e:
+            self.debug(f"Error in binary expression evaluation: {e}")
+            raise e
 
     def _evaluate_unary_expression(self, node, context=None):
         """Evaluate a unary expression (e.g., -x, +x, not x)."""
@@ -336,7 +314,11 @@ class ExpressionEvaluator(BaseExecutor):
                     else:
                         try:
                             # Try to retrieve from context manager
-                            var_value = self.context_manager.get_from_context(var_name, context)
+                            if "." in var_name:
+                                scope, name = var_name.split(".", 1)
+                                var_value = self.context_manager.get_from_scope(name, scope=scope)
+                            else:
+                                var_value = self.context_manager.get_from_scope(var_name, scope="local")
                             result = result.replace(f"{{{var_name}}}", str(var_value))
                         except Exception:
                             # If variable not found, leave as is
@@ -360,12 +342,12 @@ class ExpressionEvaluator(BaseExecutor):
             return result
         return node.value
 
-    def _resolve_identifier(self, node: Identifier, context: Optional[Dict[str, Any]] = None) -> Any:
+    def _resolve_identifier(self, node: Identifier, local_context: Optional[Dict[str, Any]] = None) -> Any:
         """Evaluate an identifier.
 
         Args:
             node: The identifier to evaluate
-            context: Optional local context for variable resolution
+            local_context: Optional local context for variable resolution
 
         Returns:
             The value of the identifier
@@ -374,50 +356,101 @@ class ExpressionEvaluator(BaseExecutor):
             StateError: If the identifier is not found
         """
         try:
-            # Get the value from the context manager
-            return self.context_manager.get_from_context(node.name, context)
-        except StateError:
-            # Standard error for undefined variables
+            # First check local context if provided
+            if local_context is not None and "." not in node.name and node.name in local_context:
+                return local_context[node.name]
+
+            # If the name has a scope prefix (e.g. "private.x"), use that scope
             if "." in node.name:
-                error_msg = f"Variable '{node.name}' not found"
+                scope, name = node.name.split(".", 1)
+                if scope not in RuntimeScopes.ALL:
+                    raise StateError(f"Unknown scope: {scope}")
+                return self.context_manager.get_from_scope(name, scope=scope)
+
+            # Otherwise use local scope
+            return self.context_manager.get_from_scope(node.name, scope="local")
+        except Exception as e:
+            self.debug(f"Error resolving identifier: {e}")
+            if "." in node.name:
+                raise ErrorUtils.create_state_error(f"Variable '{node.name}' not found", node)
             else:
-                error_msg = (
+                raise ErrorUtils.create_state_error(
                     f"Variable '{node.name}' must be accessed with a scope prefix: "
-                    f"private.{node.name}, public.{node.name}, or system.{node.name}"
+                    f"private.{node.name}, public.{node.name}, or system.{node.name}",
+                    node,
                 )
-            self.debug(f"Variable not found: {node.name}")
-            raise ErrorUtils.create_state_error(error_msg, node)
 
-    def _evaluate_function_call(self, node: FunctionCall, context: Optional[Dict[str, Any]] = None) -> Any:
-        """Evaluate a function call expression."""
-        # Evaluate arguments
-        # Support both positional and named arguments
-        args = []
-        kwargs = {}
-        if hasattr(node, "args") and isinstance(node.args, dict):
-            # If node.args is a dict, treat as named arguments
-            kwargs = {k: self.evaluate(v, context) for k, v in node.args.items()}
-        elif hasattr(node, "args") and isinstance(node.args, list):
-            # If node.args is a list, treat as positional arguments
-            args = [self.evaluate(v, context) for v in node.args]
-        # Determine namespace and function name
-        func_name = getattr(node, "name", None)
-        namespace = getattr(node, "namespace", None)
-        # Use the function registry from the context manager's interpreter
-        registry = getattr(self, "function_registry", None)
-        if registry is None and hasattr(self.context_manager, "interpreter"):
-            registry = self.context_manager.interpreter.function_registry
-        if registry is None:
-            raise RuntimeError("Function registry not available for function call dispatch.")
-        return registry.call(func_name, args=args, kwargs=kwargs, context=context, namespace=namespace)
+    def _evaluate_function_call(
+        self,
+        node: FunctionCall,
+        local_context: Optional[Dict[str, Any]] = None,
+    ) -> Any:
+        """Evaluate a function call expression.
 
-    def _evaluate_attribute_access(self, node, context=None):
+        Args:
+            node: The function call node
+            local_context: Optional local context for evaluation
+
+        Returns:
+            The result of the function call
+
+        Raises:
+            RuntimeError: If the function call fails
+        """
+
+        # Convert all argument values first
+        the_args = []
+        the_kwargs = {}
+
+        # Handle positional arguments
+        if "__positional" in node.args:
+            the_args = [self.evaluate(arg, local_context) for arg in node.args["__positional"]]
+        # Handle keyword arguments
+        else:
+            for key, value in node.args.items():
+                if key.isdigit():
+                    # Positional argument
+                    pos = int(key)
+                    while len(the_args) <= pos:
+                        the_args.append(None)
+                    the_args[pos] = self.evaluate(value, local_context)
+                else:
+                    # Keyword argument
+                    the_kwargs[key] = self.evaluate(value, local_context)
+
+        # Call the function with the local context
+        result = self.function_registry.call(
+            node.name,
+            args=the_args,
+            kwargs=the_kwargs,
+            context=self.context_manager.context,
+            local_context=local_context,
+        )
+
+        return result
+
+    def _evaluate_attribute_access(self, node: AttributeAccess, context: Optional[Dict[str, Any]] = None) -> Any:
+        """Evaluate an attribute access expression.
+
+        Args:
+            node: The attribute access node
+            context: Optional context for evaluation
+
+        Returns:
+            The value of the attribute
+
+        Raises:
+            RuntimeError: If the attribute access fails
+        """
+        # Get the object
         obj = self.evaluate(node.object, context)
-        attr = node.attribute
-        # Support dict and object attribute access
-        if isinstance(obj, dict):
-            return obj.get(attr)
-        return getattr(obj, attr, None)
+        if obj is None:
+            raise RuntimeError(f"Cannot access attribute '{node.attribute}' on None")
+
+        # Get the attribute
+        if not hasattr(obj, node.attribute):
+            raise RuntimeError(f"Object has no attribute '{node.attribute}'")
+        return getattr(obj, node.attribute)
 
     def _evaluate_subscript_expression(self, node, context=None):
         obj = self.evaluate(node.object, context)

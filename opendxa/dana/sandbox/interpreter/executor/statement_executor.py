@@ -27,6 +27,8 @@ from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
 from opendxa.dana.sandbox.interpreter.executor.context_manager import ContextManager
 from opendxa.dana.sandbox.interpreter.executor.expression_evaluator import ExpressionEvaluator
 from opendxa.dana.sandbox.interpreter.executor.llm_integration import LLMIntegration
+from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
+from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionMetadata
 from opendxa.dana.sandbox.interpreter.hooks import HookRegistry, HookType
 from opendxa.dana.sandbox.parser.ast import (
     AssertStatement,
@@ -37,6 +39,7 @@ from opendxa.dana.sandbox.parser.ast import (
     ContinueStatement,
     ForLoop,
     FunctionCall,
+    FunctionDefinition,
     Identifier,
     LiteralExpression,
     PassStatement,
@@ -52,16 +55,16 @@ from opendxa.dana.sandbox.parser.ast import (
 ExecutableNode = Union[Assignment, Conditional, WhileLoop, FunctionCall, Identifier, Program]
 
 
-class ReturnException(Exception):
+class ReturnStatementExit(Exception):
     def __init__(self, value):
         self.value = value
 
 
-class BreakException(Exception):
+class BreakStatementExit(Exception):
     pass
 
 
-class ContinueException(Exception):
+class ContinueStatementExit(Exception):
     pass
 
 
@@ -147,6 +150,8 @@ class StatementExecutor(BaseExecutor):
             return self.execute_raise_statement(statement)
         elif isinstance(statement, AssertStatement):
             return self.execute_assert_statement(statement)
+        elif isinstance(statement, FunctionDefinition):
+            return self.execute_function_definition(statement)
         elif isinstance(statement, (Identifier, BinaryExpression, FunctionCall, LiteralExpression)):
             return self.expression_evaluator.evaluate(statement)
         else:
@@ -165,6 +170,7 @@ class StatementExecutor(BaseExecutor):
             value = None
             self._execute_hook(HookType.BEFORE_ASSIGNMENT, node)
             try:
+                # Evaluate the value expression with proper local context
                 value = self.expression_evaluator.evaluate(node.value)
 
                 # Special handling for FStringExpression to ensure it's properly evaluated
@@ -204,22 +210,26 @@ class StatementExecutor(BaseExecutor):
                 raise
 
             # Handle scoped variables
-            if "." in node.target.name:
+            if ":" in node.target.name:
+                parts = node.target.name.split(":", 1)
+                scope, var_name = parts
+            elif "." in node.target.name:
                 parts = node.target.name.split(".", 1)
                 scope, var_name = parts
-
-                # Validate scope
-                if scope not in RuntimeScopes.ALL:
-                    raise ErrorUtils.create_state_error(f"Invalid scope: {scope}", node)
-
-                # Set the value in the appropriate scope
-                self.context_manager.set_in_context(var_name, value, scope=scope)
             else:
-                # Set the value in the current context
-                self.context_manager.set(node.target.name, value)
+                # Default to local scope for unscoped variables
+                scope = "local"
+                var_name = node.target.name
+
+            # Validate scope
+            if scope not in RuntimeScopes.ALL:
+                raise ErrorUtils.create_state_error(f"Invalid scope: {scope}", node)
+
+            # Set the value in the appropriate scope
+            self.context_manager.set_in_context(var_name, value, scope=scope)
 
             result = value  # Store the value as the result
-            self.context_manager.set_in_context(StatementExecutor.LAST_VALUE, result)
+            self.context_manager.set_in_context("__last_value", result, scope="system")
 
             # Execute after assignment hook
             self._execute_hook(HookType.AFTER_ASSIGNMENT, node, {"value": value})
@@ -283,7 +293,7 @@ class StatementExecutor(BaseExecutor):
             try:
                 for stmt in node.body:
                     result = self.execute(stmt)
-            except BreakException:
+            except BreakStatementExit:
                 break
             except ContinueException:
                 continue
@@ -337,7 +347,7 @@ class StatementExecutor(BaseExecutor):
             try:
                 for stmt in node.body:
                     result = self.execute(stmt)
-            except BreakException:
+            except BreakStatementExit:
                 break
             except ContinueException:
                 continue
@@ -360,7 +370,7 @@ class StatementExecutor(BaseExecutor):
         result = self._execute_method_or_variable_function(node)
 
         # Store the result in the context
-        self.context_manager.set_in_context(StatementExecutor.LAST_VALUE, result)
+        self.context_manager.set_in_context("__last_value", result, scope="system")
 
         return result
 
@@ -400,7 +410,7 @@ class StatementExecutor(BaseExecutor):
         if ":" in node.name:
             scope, var_name = node.name.split(":", 1)
             try:
-                func = self.context_manager.get_from_context(var_name, scope=scope)
+                func = self.context_manager.get_from_scope(var_name, scope=scope)
                 if callable(func):
                     return func(*args_list, **kwargs)
                 else:
@@ -412,25 +422,19 @@ class StatementExecutor(BaseExecutor):
         if "." in node.name:
             return self._execute_method_call(node.name, args_list, kwargs)
         else:
-            # Try DanaRegistry and PythonRegistry first
-            from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaRegistry
-            from opendxa.dana.sandbox.interpreter.functions.python_function import PythonRegistry
-
-            if DanaRegistry().has(node.name):
-                func = DanaRegistry().get(node.name)
-                return func.call(self.context_manager.context, *args_list, **kwargs)
-            elif PythonRegistry().has(node.name):
-                func = PythonRegistry().get(node.name)
-                return func.call(self.context_manager.context, *args_list, **kwargs)
-            # Fallback: Try to get local.foo as a variable from context
+            # Try to resolve and call the function
             try:
-                func = self.context_manager.get_from_context(node.name, scope="local")
-                if callable(func):
-                    return func(*args_list, **kwargs)
-                else:
-                    raise SandboxError(f"Variable 'local:{node.name}' is not callable")
-            except Exception:
-                raise SandboxError(f"Function or variable '{node.name}' not found in registries or local context")
+                return self.function_registry.call(node.name, args=args_list, kwargs=kwargs, context=self.context_manager.context)
+            except KeyError:
+                # Fallback: Try to get local.foo as a variable from context
+                try:
+                    func = self.context_manager.get_from_scope(node.name, scope="local")
+                    if callable(func):
+                        return func(*args_list, **kwargs)
+                    else:
+                        raise SandboxError(f"Variable 'local:{node.name}' is not callable")
+                except Exception:
+                    raise SandboxError(f"Function or variable '{node.name}' not found in registries or local context")
 
     def _execute_method_call(self, name: str, args: List[Any], kwargs: Dict[str, Any]) -> Any:
         """Execute a method call on an object.
@@ -452,7 +456,7 @@ class StatementExecutor(BaseExecutor):
         method_name = parts[-1]
 
         # Get the object
-        obj = self.context_manager.get_from_context(obj_name)
+        obj = self.context_manager.get_from_scope(obj_name)
 
         # Get the method
         method = getattr(obj, method_name, None)
@@ -490,11 +494,11 @@ class StatementExecutor(BaseExecutor):
     def execute_return_statement(self, node: "ReturnStatement") -> None:
         """Execute a return statement by raising ReturnException with the value."""
         value = self.expression_evaluator.evaluate(node.value) if node.value is not None else None
-        raise ReturnException(value)
+        raise ReturnStatementExit(value)
 
     def execute_break_statement(self, node: "BreakStatement") -> None:
         """Execute a break statement by raising BreakException."""
-        raise BreakException()
+        raise BreakStatementExit()
 
     def execute_continue_statement(self, node: "ContinueStatement") -> None:
         """Execute a continue statement by raising ContinueException."""
@@ -523,6 +527,44 @@ class StatementExecutor(BaseExecutor):
         if not condition:
             message = self.expression_evaluator.evaluate(node.message) if node.message is not None else None
             raise AssertionError(message)
+
+    def execute_function_definition(self, node: FunctionDefinition) -> None:
+        """Execute a function definition statement.
+
+        Args:
+            node: The function definition node to execute
+        """
+        # Extract parameter names from the parameters list
+        param_names = []
+        for param in node.parameters:
+            # Handle scoped parameters (e.g. local:a)
+            if isinstance(param, Identifier) and ":" in param.name:
+                scope, name = param.name.split(":", 1)
+                if scope != "local":
+                    raise SandboxError(f"Function parameters must use local scope, got {scope}")
+                param_names.append(name)
+            else:
+                # For unscoped parameters, use the name directly
+                param_names.append(param.name)
+
+        # Create a DANA function object
+        func = DanaFunction(node.body, param_names, self.context_manager.context)
+
+        # Create function metadata
+        metadata = FunctionMetadata(
+            context_aware=True,  # DANA functions are always context-aware
+            is_public=True,  # Functions are public by default
+            doc=None,  # No docstring support yet
+            source_file=None,  # No source file tracking yet
+        )
+
+        # Register the function in the function registry
+        self.function_registry.register(
+            name=node.name.name,  # The function name
+            func=func,  # The function object
+            func_type="dana",  # Mark it as a DANA function
+            metadata=metadata,
+        )
 
     def get_and_clear_output(self) -> str:
         """Retrieve and clear the output buffer as a single string (joined by newlines)."""
