@@ -1,0 +1,53 @@
+"""
+Copyright © 2025 Aitomatic, Inc.
+
+This source code is licensed under the license found in the LICENSE file in the root directory of this source tree
+
+Core function registration for the DANA interpreter.
+
+This module provides a helper function to automatically register all core functions in the DANA interpreter.
+"""
+
+import importlib
+import inspect
+from pathlib import Path
+
+from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
+
+
+def register_core_functions(registry: FunctionRegistry) -> None:
+    """Register all core functions from the core directory.
+
+    This function scans the core/ directory for Python modules and registers
+    any function ending with '_function' as a DANA function in the registry.
+
+    Args:
+        registry: The function registry to register functions with
+    """
+    # Get the directory containing this file
+    core_dir = Path(__file__).parent
+
+    # Find all Python files in the core directory
+    python_files = [f for f in core_dir.glob("*.py") if f.is_file() and f.name != "__init__.py" and f.name != Path(__file__).name]
+
+    # Import each module and register any functions ending with '_function'
+    for py_file in python_files:
+        module_name = f"opendxa.dana.sandbox.interpreter.functions.core.{py_file.stem}"
+        try:
+            module = importlib.import_module(module_name)
+
+            # Find all functions in the module
+            for name, obj in inspect.getmembers(module, inspect.isfunction):
+                # Register functions ending with '_function'
+                if name.endswith("_function"):
+                    # Remove '_function' suffix for the registry name
+                    dana_func_name = name.replace("_function", "")
+                    registry.register(
+                        name=dana_func_name,
+                        func=obj,
+                        func_type="python",
+                        overwrite=True,
+                    )
+                    print(f"Registered core function: {dana_func_name}")
+        except ImportError as e:
+            print(f"Error importing module {module_name}: {e}")

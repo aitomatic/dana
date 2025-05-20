@@ -53,7 +53,7 @@ The DANA interpreter executes DANA programs by evaluating the AST. Key component
 - **StatementExecutor**: Executes statements (assignments, conditionals, loops, etc.)
 - **ExpressionEvaluator**: Evaluates expressions (arithmetic, logical, identifiers, literals)
 - **ContextManager**: Manages variable scope and sandbox state
-- **LLMIntegration**: Integrates with language models for advanced reasoning
+- **SandboxContext**: Provides access to LLMResource for reasoning capabilities
 - **FunctionRegistry**: Handles function and tool registrations
 
 ```python

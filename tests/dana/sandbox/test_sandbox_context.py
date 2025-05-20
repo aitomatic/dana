@@ -78,9 +78,9 @@ def test_local_variable_with_dots():
     context.set("local:variable.with.dots", "value")
     assert context.get("local:variable.with.dots") == "value"
 
-    # This should raise an error for local scope with dot notation
-    with pytest.raises(StateError):
-        context.set("local.variable.with.dots", "value")
+    # This should work fine now with our updated validation
+    context.set("local.variable.with.dots", "value")
+    assert context.get("local.variable.with.dots") == "value"
 
 
 def test_from_dict_with_mixed_notation():

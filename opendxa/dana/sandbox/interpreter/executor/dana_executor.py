@@ -20,7 +20,6 @@ Discord: https://discord.gg/6jGD4PYk
 from opendxa.dana.common.exceptions import SandboxError
 from opendxa.dana.sandbox.interpreter.executor.context_manager import ContextManager
 from opendxa.dana.sandbox.interpreter.executor.expression_evaluator import ExpressionEvaluator
-from opendxa.dana.sandbox.interpreter.executor.llm_integration import LLMIntegration
 from opendxa.dana.sandbox.interpreter.executor.statement_executor import StatementExecutor
 from opendxa.dana.sandbox.parser.ast import Expression, Statement
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
@@ -39,8 +38,7 @@ class DanaExecutor:
         self.context = context
         self.context_manager = ContextManager(self.context)
         self.expression_evaluator = ExpressionEvaluator(self.context_manager)
-        self.llm_integration = LLMIntegration(self.context_manager)
-        self.statement_executor = StatementExecutor(self.context_manager, self.expression_evaluator, self.llm_integration)
+        self.statement_executor = StatementExecutor(self.context_manager, self.expression_evaluator)
         # Add more specialized executors here as needed
 
     def execute(self, node, *args, **kwargs):

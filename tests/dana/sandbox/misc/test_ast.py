@@ -15,6 +15,7 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
+
 def test_division_from_source():
     from opendxa.dana.sandbox.interpreter.interpreter import Interpreter
     from opendxa.dana.sandbox.parser.dana_parser import DanaParser
@@ -24,7 +25,7 @@ def test_division_from_source():
     parse_tree = parser.parser.parse("private:x = 6 / 2\n")
     ast = parser.transform(parse_tree)
     interpreter = Interpreter(SandboxContext())
-    result = interpreter.execute_program(ast, suppress_exceptions=False)
+    interpreter.execute_program(ast)
     assert interpreter.context.get("private.x") == 3.0
 
 
@@ -32,4 +33,4 @@ def test_parse_simple_division_expression():
     from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 
     parser = DanaParser()
-    parse_tree = parser.parser.parse("6 / 2\n")
+    parser.parser.parse("6 / 2\n")

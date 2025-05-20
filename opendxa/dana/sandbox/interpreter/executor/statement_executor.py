@@ -26,7 +26,6 @@ from opendxa.dana.common.runtime_scopes import RuntimeScopes
 from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
 from opendxa.dana.sandbox.interpreter.executor.context_manager import ContextManager
 from opendxa.dana.sandbox.interpreter.executor.expression_evaluator import ExpressionEvaluator
-from opendxa.dana.sandbox.interpreter.executor.llm_integration import LLMIntegration
 from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
 from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionMetadata
 from opendxa.dana.sandbox.interpreter.hooks import HookRegistry, HookType
@@ -82,18 +81,16 @@ class StatementExecutor(BaseExecutor):
 
     LAST_VALUE = "system.__last_value"
 
-    def __init__(self, context_manager: ContextManager, expression_evaluator: ExpressionEvaluator, llm_integration: LLMIntegration):
+    def __init__(self, context_manager: ContextManager, expression_evaluator: ExpressionEvaluator):
         """Initialize the statement executor.
 
         Args:
             context_manager: The context manager for variable resolution
             expression_evaluator: The evaluator for expressions
-            llm_integration: The integration for LLM reasoning
         """
         super().__init__()
         self.context_manager = context_manager
         self.expression_evaluator = expression_evaluator
-        self.llm_integration = llm_integration
         self._output_buffer = []  # Buffer for capturing print output
 
     def _execute_hook(self, hook_type: HookType, node: Any, additional_context: Optional[Dict[str, Any]] = None) -> None:
@@ -295,7 +292,7 @@ class StatementExecutor(BaseExecutor):
                     result = self.execute(stmt)
             except BreakStatementExit:
                 break
-            except ContinueException:
+            except ContinueStatementExit:
                 continue
         return result
 
@@ -349,7 +346,7 @@ class StatementExecutor(BaseExecutor):
                     result = self.execute(stmt)
             except BreakStatementExit:
                 break
-            except ContinueException:
+            except ContinueStatementExit:
                 continue
 
         return result
@@ -501,8 +498,8 @@ class StatementExecutor(BaseExecutor):
         raise BreakStatementExit()
 
     def execute_continue_statement(self, node: "ContinueStatement") -> None:
-        """Execute a continue statement by raising ContinueException."""
-        raise ContinueException()
+        """Execute a continue statement by raising ContinueStatementExit."""
+        raise ContinueStatementExit()
 
     def execute_raise_statement(self, node: "RaiseStatement") -> None:
         """Execute a raise statement by raising a Python exception with the evaluated value."""
@@ -550,13 +547,8 @@ class StatementExecutor(BaseExecutor):
         # Create a DANA function object
         func = DanaFunction(node.body, param_names, self.context_manager.context)
 
-        # Create function metadata
-        metadata = FunctionMetadata(
-            context_aware=True,  # DANA functions are always context-aware
-            is_public=True,  # Functions are public by default
-            doc=None,  # No docstring support yet
-            source_file=None,  # No source file tracking yet
-        )
+        # Create function metadata - source_file will be determined automatically
+        metadata = FunctionMetadata()
 
         # Register the function in the function registry
         self.function_registry.register(

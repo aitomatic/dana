@@ -146,7 +146,7 @@ for i in [1,2,3]:
 
 
 # --- Functions ---
-@pytest.mark.skip(reason="FunctionDefinition not yet implemented")
+# @pytest.mark.skip(reason="FunctionDefinition not yet implemented")
 def test_function_def_and_call():
     code = """
 def add(a, b):
@@ -207,7 +207,7 @@ assert x == 1
     program = parser.parse(code, do_type_check=True, do_transform=True)
     interpreter = Interpreter(SandboxContext())
     try:
-        interpreter.execute_program(program, suppress_exceptions=False)
+        interpreter.execute_program(program)
     except Exception as e:
         assert "error" in str(e) or "raise" in str(e)
     else:
@@ -288,7 +288,7 @@ def test_variable_not_found():
     program = parser.parse(code, do_type_check=False, do_transform=True)
     interpreter = Interpreter(SandboxContext())
     try:
-        interpreter.execute_program(program, suppress_exceptions=False)
+        interpreter.execute_program(program)
         pytest.fail("Should have raised an exception for undefined variable")
     except Exception as e:
         assert "not found" in str(e) or "undefined" in str(e) or "scope prefix" in str(e)
@@ -300,7 +300,7 @@ def test_division_by_zero():
     program = parser.parse(code, do_type_check=True, do_transform=True)
     interpreter = Interpreter(SandboxContext())
     try:
-        interpreter.execute_program(program, suppress_exceptions=False)
+        interpreter.execute_program(program)
         pytest.fail("Should have raised an exception for division by zero")
     except Exception as e:
         assert "zero" in str(e) or "division" in str(e)
@@ -315,7 +315,7 @@ assert x == 10, "x should be 10"
     program = parser.parse(code, do_type_check=True, do_transform=True)
     interpreter = Interpreter(SandboxContext())
     try:
-        interpreter.execute_program(program, suppress_exceptions=False)
+        interpreter.execute_program(program)
         pytest.fail("Should have raised an assertion error")
     except Exception as e:
         assert "should be 10" in str(e) or "AssertionError" in str(e)
@@ -498,3 +498,6 @@ cubed = 2 ** 3
 
 def test_more_binary_operations():
     pass  # Placeholder to avoid breaking test collection
+
+
+# Note: Function Calling Tests have been moved to tests/dana/sandbox/test_functions_and_registries.py

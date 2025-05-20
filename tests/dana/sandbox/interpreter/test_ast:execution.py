@@ -18,7 +18,8 @@ Discord: https://discord.gg/6jGD4PYk
 
 import pytest
 
-from opendxa.dana.sandbox.interpreter.functions.python_function import PythonRegistry
+from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
+from opendxa.dana.sandbox.interpreter.functions.python_function import PythonFunction
 from opendxa.dana.sandbox.interpreter.interpreter import Interpreter
 from opendxa.dana.sandbox.parser.ast import (
     Assignment,
@@ -411,7 +412,13 @@ def test_function_call():
 
     interpreter = Interpreter(SandboxContext())
     # Register a dummy function 'foo' that returns 42 and accepts context/kwargs
-    PythonRegistry().register("foo", lambda context=None, **kwargs: 42)
+    FunctionRegistry().register(
+        "foo",
+        PythonFunction(
+            lambda context=None, **kwargs: 42,
+            context=interpreter.context,
+        ),
+    )
     program = Program(
         [
             Assignment(
@@ -523,7 +530,7 @@ def test_break_statement():
         ]
     )
     try:
-        interpreter.execute_program(program, suppress_exceptions=False)
+        interpreter.execute_program(program)
     except BreakStatementExit:
         pass
     else:
@@ -531,7 +538,7 @@ def test_break_statement():
 
 
 def test_continue_statement():
-    from opendxa.dana.sandbox.interpreter.executor.statement_executor import ContinueException
+    from opendxa.dana.sandbox.interpreter.executor.statement_executor import ContinueStatementExit
     from opendxa.dana.sandbox.parser.ast import ContinueStatement
 
     interpreter = Interpreter(SandboxContext())
@@ -541,11 +548,11 @@ def test_continue_statement():
         ]
     )
     try:
-        interpreter.execute_program(program, suppress_exceptions=False)
-    except ContinueException:
+        interpreter.execute_program(program)
+    except ContinueStatementExit:
         pass
     else:
-        raise AssertionError("ContinueException was not raised")
+        raise AssertionError("ContinueStatementExit was not raised")
 
 
 def test_pass_statement():
@@ -571,7 +578,7 @@ def test_return_statement():
         ]
     )
     try:
-        interpreter.execute_program(program, suppress_exceptions=False)
+        interpreter.execute_program(program)
     except ReturnStatementExit as e:
         assert e.value == 42
     else:
@@ -588,7 +595,7 @@ def test_raise_statement():
         ]
     )
     try:
-        interpreter.execute_program(program, suppress_exceptions=False)
+        interpreter.execute_program(program)
     except Exception as e:
         assert str(e) == "error"
     else:
@@ -605,7 +612,7 @@ def test_assert_statement():
         ]
     )
     try:
-        interpreter.execute_program(program, suppress_exceptions=False)
+        interpreter.execute_program(program)
     except AssertionError as e:
         assert str(e) == "fail!"
     else:

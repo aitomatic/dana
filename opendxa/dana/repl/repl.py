@@ -23,7 +23,6 @@ from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.common.utils import Misc
 from opendxa.dana.common.error_utils import DanaError
-from opendxa.dana.sandbox.interpreter.executor.llm_integration import LLMIntegration
 from opendxa.dana.sandbox.interpreter.interpreter import Interpreter
 from opendxa.dana.sandbox.log_manager import LogLevel, LogManager
 from opendxa.dana.sandbox.parser.dana_parser import DanaParser
@@ -44,7 +43,8 @@ class REPL(Loggable):
             context: Optional runtime context to use
         """
         self.context = context or SandboxContext()
-        self.context.set(LLMIntegration.LLM_RESOURCE_VARIABLE, llm_resource)
+        if llm_resource is not None:
+            self.context.set("system.llm_resource", llm_resource)
         self.interpreter = Interpreter(self.context)
         self.parser = DanaParser()
         self.last_result = None

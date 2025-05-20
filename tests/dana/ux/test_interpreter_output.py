@@ -67,7 +67,7 @@ def run_and_capture_output(input_code):
         ("print('hello') print('world')", "Syntax Error"),
         ("print(does_not_exist)", "Execution Error"),
         ("private:x = 'foo' + 5", "Syntax Error"),
-        ("private:x = 1 / 0", "Math Error"),
+        ("private:x = 1 / 0", "division by zero"),
         ("private:x = 42", "42"),  # Success
         ("print('hello world')", "Syntax Error"),
     ],

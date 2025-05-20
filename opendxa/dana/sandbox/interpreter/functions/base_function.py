@@ -21,62 +21,94 @@ Discord: https://discord.gg/6jGD4PYk
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, Optional
 
+from opendxa.dana.common.exceptions import SandboxError
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
-class BaseFunction(Callable, ABC):
+class BaseFunction(ABC, Callable):
     """Base class for all DANA core functions.
 
     This class provides a common interface for all core functions.
     """
 
-    @abstractmethod
-    def call(
-        self,
-        context: SandboxContext,
-        *args: Any,
-        **kwargs: Any,
-    ) -> Any:
-        """Execute the function.
+    def __init__(self, context: Optional[SandboxContext] = None):
+        """Initialize a DANA function.
 
         Args:
-            context: The runtime context for variable resolution.
-            *args: Positional arguments for the function.
-            **kwargs: Keyword arguments for the function.
+            context: The sandbox context
+        """
+        self.context = context
+
+    def __call__(
+        self,
+        context: Optional[SandboxContext] = None,
+        local_context: Optional[Dict[str, Any]] = None,
+        *the_args: Any,
+        **the_kwargs: Any,
+    ) -> Any:
+        """Call the function with arguments.
+
+        Args:
+            context: Optional context to use for execution
+            local_context: Optional local context to use for execution
+            *the_args: Positional arguments
+            **the_kwargs: Keyword arguments
 
         Returns:
-            The result of the function execution.
+            The function result
 
         Raises:
-            RuntimeError: If the function execution fails.
+            SandboxError: If argument binding fails
         """
-        raise NotImplementedError("Function must implement call()")
+        # Create a new local scope for the function
+        local_scope: Dict[str, Any] = {}
 
+        # Bind positional arguments
+        if len(the_args) > len(self.parameters):
+            raise SandboxError(f"Too many arguments: expected {len(self.parameters)}, got {len(the_args)}")
+        for param, arg in zip(self.parameters, the_args):
+            local_scope[param] = arg
 
-class BaseFunctionRegistry:
-    _instances = {}
+        # Bind keyword arguments
+        for name, value in the_kwargs.items():
+            if name not in self.parameters:
+                raise SandboxError(f"Unknown parameter: {name}")
+            if name in local_scope:
+                raise SandboxError(f"Parameter already bound: {name}")
+            local_scope[name] = value
 
-    def __new__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            instance = super().__new__(cls)
-            cls._instances[cls] = instance
-            instance._initialized = False
-        return cls._instances[cls]
+        # Check that all parameters are bound
+        unbound = set(self.parameters) - set(local_scope.keys())
+        if unbound:
+            raise SandboxError(f"Missing arguments for parameters: {', '.join(unbound)}")
 
-    def __init__(self):
-        if getattr(self, "_initialized", False):
-            return
-        self._functions = {}
-        self._initialized = True
+        for k, v in local_scope.copy().items():
+            if k.startswith("local.") or k.startswith("local:"):
+                local_scope[k[6:]] = v
+                del local_scope[k]
 
-    def register(self, name: str, func, metadata: Optional[Dict[str, Any]] = None):
-        self._functions[name] = (func, metadata or {})
+        # Use provided context or default to self.context
+        the_context = context or self.context or SandboxContext()
 
-    def get(self, name):
-        return self._functions[name][0]
+        # Execute the function body with the local scope
+        try:
+            # Merge local_context and local_scope
+            local_context = {**(local_context or {}), **local_scope}
+            saved_local_context = the_context.get_scope("local")
+            the_context.set_scope("local", local_context)
+            return self.__do_call__(the_context, *the_args, **the_kwargs)
+        finally:
+            # Restore the original local context
+            the_context.set_scope("local", saved_local_context)
 
-    def has(self, name):
-        return name in self._functions
+    @abstractmethod
+    def __do_call__(self, the_context: SandboxContext, *the_args: Any, **the_kwargs: Any) -> Any:
+        """Execute the function body with the provided context and local context.
 
-    def list(self):
-        return list(self._functions.keys())
+        Args:
+            the_context: The context to use for execution
+            local_context: The local context to use for execution
+            *the_args: Positional arguments, not used because they’re already in the local scope
+            **the_kwargs: Keyword arguments, not used because they’re already in the local scope
+        """
+        raise NotImplementedError("Subclasses must implement this method")

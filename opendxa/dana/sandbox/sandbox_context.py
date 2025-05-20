@@ -21,9 +21,10 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, Optional, Tuple
 
+from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.dana.common.exceptions import StateError
 from opendxa.dana.common.runtime_scopes import RuntimeScopes
-from opendxa.dana.sandbox.interpreter.executor.base_executor import HasInterpreter
+from opendxa.dana.sandbox.interpreter.executor.has_interpreter import HasInterpreter
 
 
 class ExecutionStatus(Enum):
@@ -77,18 +78,23 @@ class SandboxContext(HasInterpreter):
         # Handle both dot and colon notation
         if "." in key:
             parts = key.split(".", 1)
+            if parts[0] in RuntimeScopes.ALL:
+                # Valid scope.variable notation
+                scope, var_name = parts
+            else:
+                # Local variable with dots in the name
+                scope = "local"
+                var_name = key
         elif ":" in key:
             parts = key.split(":", 1)
+            if len(parts) != 2:
+                raise StateError(f"Invalid key format: {key}")
+            scope, var_name = parts
+            if scope not in RuntimeScopes.ALL:
+                raise StateError(f"Unknown scope: {scope}")
         else:
             # Default to local scope for unscoped variables
             return "local", key
-
-        if len(parts) != 2:
-            raise StateError(f"Invalid key format: {key}")
-
-        scope, var_name = parts
-        if scope not in RuntimeScopes.ALL:
-            raise StateError(f"Unknown scope: {scope}")
 
         return scope, var_name
 
@@ -399,10 +405,40 @@ class SandboxContext(HasInterpreter):
         return self._state[scope].copy()
 
     def set_scope(self, scope: str, context: Optional[Dict[str, Any]] = None) -> None:
-        """Set a value in a specific scope.
+        """Sets all variables in a scope.
 
         Args:
-            scope: The scope to set in
-            context: The context to set
+            scope: The scope name
+            context: Dictionary of variable values to set
         """
-        self._state[scope] = context or {}
+        if scope not in RuntimeScopes.ALL:
+            raise StateError(f"Unknown scope: {scope}")
+
+        if context is None:
+            context = {}
+
+        self._state[scope] = context
+
+    @property
+    def llm_resource(self) -> LLMResource:
+        """Get the LLM resource for this context, creating it if it doesn't exist.
+
+        This is a lazy-initialized property that creates the LLMResource only when
+        first accessed, storing it in the system scope of the context.
+
+        Returns:
+            The LLMResource instance for this context
+        """
+        try:
+            # First try to get the existing resource from the context
+            resource = self.get("system.llm_resource")
+            if resource is not None:
+                return resource
+        except StateError:
+            # If not found, create a new one
+            pass
+
+        # Create a new LLMResource and store it in the context
+        resource = LLMResource(name="dana_context_llm")
+        self.set("system.llm_resource", resource)
+        return resource

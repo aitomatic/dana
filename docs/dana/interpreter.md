@@ -24,7 +24,7 @@ The DANA Interpreter executes DANA programs by walking the Abstract Syntax Tree 
 - **StatementExecutor**: Executes statements (assignments, conditionals, loops, function calls, etc.).
 - **ExpressionEvaluator**: Evaluates expressions (arithmetic, logical, identifiers, literals, etc.).
 - **ContextManager**: Manages variable scope and sandbox state.
-- **LLMIntegration**: Integrates with language models for advanced reasoning (if enabled).
+- **SandboxContext**: Provides access to the LLMResource for reasoning capabilities.
 - **Hooks**: Extensible hooks for before/after program execution and error handling.
 
 ## Interpreter Flow
@@ -39,7 +39,7 @@ graph TB
     end
     subgraph UT [ ]
         CM[ContextManager]
-        LLM[LLMIntegration]
+        SC[SandboxContext]
         Hooks[Hooks]
     end
     EV --|uses|--> UT
@@ -53,7 +53,7 @@ graph TB
 - **StatementExecutor**: Executes statements in the program.
 - **ExpressionEvaluator**: Evaluates expressions as needed.
 - **ContextManager**: Handles variable scope and sandbox state.
-- **LLMIntegration**: Optional, for advanced reasoning.
+- **SandboxContext**: Provides access to LLMResource for reasoning.
 - **Hooks**: Extensible points for before/after/error events.
 - **Result**: The output of program execution.
 
@@ -94,7 +94,7 @@ The interpreter raises a `SandboxError` (from `opendxa.dana.common.exceptions`) 
 The interpreter is designed to be extensible:
 - Add new statement or expression types by extending `StatementExecutor` or `ExpressionEvaluator`.
 - Register hooks for before/after program execution or error handling.
-- Integrate with new LLMs or external systems via `LLMIntegration`.
+- Access the LLMResource from the SandboxContext to utilize different language models.
 
 ---
 <p align="center">

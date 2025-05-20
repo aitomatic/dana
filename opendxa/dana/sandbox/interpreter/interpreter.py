@@ -25,11 +25,8 @@ from typing import Any, Dict, Optional
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.dana.common.error_utils import ErrorUtils
-from opendxa.dana.sandbox.interpreter.executor.context_manager import ContextManager
 from opendxa.dana.sandbox.interpreter.executor.expression_evaluator import ExpressionEvaluator
-from opendxa.dana.sandbox.interpreter.executor.llm_integration import LLMIntegration
 from opendxa.dana.sandbox.interpreter.executor.statement_executor import StatementExecutor
-from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
 from opendxa.dana.sandbox.parser.ast import Program
 from opendxa.dana.sandbox.sandbox_context import ExecutionStatus, SandboxContext
 
@@ -79,17 +76,31 @@ class Interpreter(Loggable):
             context: Optional runtime context to use
         """
         super().__init__()
+        from opendxa.dana.sandbox.interpreter.executor.context_manager import ContextManager
+
         self.context = context or SandboxContext()
         self._context_manager = ContextManager(self.context)
-        self.function_registry = FunctionRegistry()  # Initialize function registry
+
         self._expression_evaluator = ExpressionEvaluator(self._context_manager)
-        self._llm_integration = LLMIntegration()
-        self._statement_executor = StatementExecutor(self._context_manager, self._expression_evaluator, self._llm_integration)
+        self._statement_executor = StatementExecutor(self._context_manager, self._expression_evaluator)
 
         # Be sure to set the interpreter on all components
         self.context.interpreter = self
         self._expression_evaluator.interpreter = self
         self._statement_executor.interpreter = self
+
+        self._function_registry = None  # Will be lazily initialized
+
+    @property
+    def function_registry(self):
+        if self._function_registry is None:
+            from opendxa.dana.sandbox.interpreter.functions.core.register_core_functions import register_core_functions
+            from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
+
+            self._function_registry = FunctionRegistry()
+            # Register all core functions automatically
+            register_core_functions(self._function_registry)
+        return self._function_registry
 
     def evaluate_expression(self, expression: Any, context: Optional[Dict[str, Any]] = None) -> Any:
         """Evaluate an expression.

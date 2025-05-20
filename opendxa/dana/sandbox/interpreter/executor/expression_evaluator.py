@@ -256,6 +256,8 @@ class ExpressionEvaluator(BaseExecutor):
                 return bool(left and right)
             elif node.operator == BinaryOperator.OR:
                 return bool(left or right)
+            elif node.operator == BinaryOperator.IN:
+                return left in right
             else:
                 raise StateError(f"Unknown operator: {node.operator}")
         except Exception as e:
@@ -293,7 +295,7 @@ class ExpressionEvaluator(BaseExecutor):
         if isinstance(node.value, str) and (node.value.startswith('f"') or node.value.startswith("f'")):
             self.debug(f"Converting f-string literal to evaluated string: {node.value}")
             # Extract variable names from the f-string
-            parts = []
+            # parts = []
             current_str = node.value[2:-1]  # Remove the f" and closing "
             # Create a simple FStringExpression with the content
 
@@ -447,6 +449,9 @@ class ExpressionEvaluator(BaseExecutor):
         if obj is None:
             raise RuntimeError(f"Cannot access attribute '{node.attribute}' on None")
 
+        # Support dict key access as attribute
+        if isinstance(obj, dict) and node.attribute in obj:
+            return obj[node.attribute]
         # Get the attribute
         if not hasattr(obj, node.attribute):
             raise RuntimeError(f"Object has no attribute '{node.attribute}'")
