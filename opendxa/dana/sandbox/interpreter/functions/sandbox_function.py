@@ -96,13 +96,7 @@ class SandboxFunction(ABC, Callable):
         context = context or self.context or SandboxContext()
 
         # Get a sanitized copy of the context
-        if not hasattr(context, "manager") or context.manager is None:
-            # Create a context manager if one doesn't exist
-            from opendxa.dana.sandbox.context_manager import ContextManager
-
-            context.manager = ContextManager(context)
-
-        sanitized_context = context.manager.get_sanitized_context()
+        sanitized_context = context.copy().sanitize()
 
         # Scan args and kwargs for SandboxContext instances and replace with sanitized copy
         sanitized_args = []
@@ -126,7 +120,8 @@ class SandboxFunction(ABC, Callable):
         # Execute the function body in a secure context
         try:
             sanitized_context.set_scope("local", local_context)
-            return self.__do_call__(sanitized_context, *sanitized_args, **sanitized_kwargs)
+            result = self.__do_call__(sanitized_context, *sanitized_args, **sanitized_kwargs)
+            return result
         finally:
             # Restore the original local context
             sanitized_context.set_scope("local", saved_local_context)

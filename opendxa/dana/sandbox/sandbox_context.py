@@ -41,7 +41,7 @@ class ExecutionStatus(Enum):
 class SandboxContext(HasInterpreter):
     """Manages the scoped state during DANA program execution."""
 
-    def __init__(self, parent: Optional["SandboxContext"] = None):
+    def __init__(self, parent: Optional["SandboxContext"] = None, manager: Optional["ContextManager"] = None):
         """Initialize the runtime context.
 
         Args:
@@ -50,7 +50,7 @@ class SandboxContext(HasInterpreter):
         """
         super().__init__()
         self._parent = parent
-        self._manager = None
+        self._manager = manager
         self._state: Dict[str, Dict[str, Any]] = {
             "local": {},  # Always fresh local scope
             "private": {},  # Shared global scope
@@ -72,7 +72,7 @@ class SandboxContext(HasInterpreter):
         return self._parent
 
     @property
-    def manager(self) -> "ContextManager":
+    def manager(self) -> Optional["ContextManager"]:
         """Get the context manager for this context."""
         return self._manager
 
@@ -390,7 +390,7 @@ class SandboxContext(HasInterpreter):
         new_context.set_state(self.get_state())
         return new_context
 
-    def sanitize(self) -> None:
+    def sanitize(self) -> "SandboxContext":
         """Remove or mask sensitive properties from the context.
 
         This method removes or masks properties that are considered sensitive,
@@ -503,6 +503,7 @@ class SandboxContext(HasInterpreter):
                     else:
                         # For non-string values, replace with masked indicator
                         self._state[scope][key] = "[MASKED]"
+        return self
 
     def __str__(self) -> str:
         """Get a string representation of the context.

@@ -153,6 +153,7 @@ def add(a, b):
     return a + b
 x = add(2, 3)
 """
+    breakpoint()
     ctx = run_dana_code(code)
     assert ctx.get("local.x") == 5
 

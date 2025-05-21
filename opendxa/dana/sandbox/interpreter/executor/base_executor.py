@@ -25,6 +25,7 @@ from opendxa.common.mixins.loggable import Loggable
 from opendxa.dana.sandbox.interpreter.executor.has_interpreter import HasInterpreter
 
 if TYPE_CHECKING:
+    from opendxa.dana.sandbox.context_manager import ContextManager
     from opendxa.dana.sandbox.interpreter.interpreter import Interpreter
 
 
@@ -37,10 +38,18 @@ class BaseExecutor(HasInterpreter, Loggable):
     - Error handling hooks
     """
 
-    def __init__(self, interpreter: Optional["Interpreter"] = None):
+    def __init__(self, context_manager: "ContextManager", interpreter: Optional["Interpreter"] = None):
         """Initialize the base executor."""
         # Initialize Loggable with prefix for all DANA logs
         super().__init__(interpreter=interpreter)
 
+        self._context_manager = context_manager
+
         # Generate execution ID for this run
         self._execution_id = str(uuid.uuid4())[:8]  # Short unique ID for this execution
+
+    @property
+    def context_manager(self) -> "ContextManager":
+        """Get the context manager."""
+        raise NotImplementedError("context_manager is not implemented")
+        # return self._context_manager

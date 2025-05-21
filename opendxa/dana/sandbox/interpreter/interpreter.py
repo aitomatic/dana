@@ -21,7 +21,7 @@ Discord: https://discord.gg/6jGD4PYk
 """
 
 import re
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.dana.common.error_utils import ErrorUtils
@@ -102,12 +102,12 @@ class Interpreter(Loggable):
             register_core_functions(self._function_registry)
         return self._function_registry
 
-    def evaluate_expression(self, expression: Any, context: Optional[Dict[str, Any]] = None) -> Any:
+    def evaluate_expression(self, expression: Any, context: SandboxContext) -> Any:
         """Evaluate an expression.
 
         Args:
             expression: The expression to evaluate
-            context: Optional local context
+            context: The context to evaluate the expression in
 
         Returns:
             The result of evaluating the expression
@@ -124,20 +124,21 @@ class Interpreter(Loggable):
             The result of executing the program
         """
         result = None
+        context = self.context
         try:
-            self.context.set_execution_status(ExecutionStatus.RUNNING)
+            context.set_execution_status(ExecutionStatus.RUNNING)
             for statement in program.statements:
-                result = self.execute_statement(statement)
+                result = self.execute_statement(statement, context)
                 # Store the result in the context
                 if result is not None:
-                    self.context.set("system.__last_value", result)
-            self.context.set_execution_status(ExecutionStatus.COMPLETED)
+                    context.set("system.__last_value", result)
+            context.set_execution_status(ExecutionStatus.COMPLETED)
         except Exception as e:
-            self.context.set_execution_status(ExecutionStatus.FAILED)
+            context.set_execution_status(ExecutionStatus.FAILED)
             raise e
         return result
 
-    def execute_statement(self, statement: Any) -> Any:
+    def execute_statement(self, statement: Any, context: SandboxContext) -> Any:
         """Execute a single statement.
 
         Args:
@@ -147,7 +148,7 @@ class Interpreter(Loggable):
             The result of executing the statement
         """
         # Execute the statement
-        result = self._statement_executor.execute(statement)
+        result = self._statement_executor.execute(statement, context)
         return result
 
     @classmethod

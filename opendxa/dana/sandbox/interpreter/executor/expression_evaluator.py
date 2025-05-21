@@ -18,13 +18,12 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from opendxa.dana.common.error_utils import ErrorUtils
 from opendxa.dana.common.exceptions import SandboxError, StateError
-from opendxa.dana.common.runtime_scopes import RuntimeScopes
+from opendxa.dana.sandbox.context_manager import ContextManager
 from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
-from opendxa.dana.sandbox.interpreter.executor.context_manager import ContextManager
 from opendxa.dana.sandbox.parser.ast import (
     AttributeAccess,
     BinaryExpression,
@@ -39,6 +38,7 @@ from opendxa.dana.sandbox.parser.ast import (
     TupleLiteral,
     UnaryExpression,
 )
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
 class ExpressionEvaluator(BaseExecutor):
@@ -57,10 +57,9 @@ class ExpressionEvaluator(BaseExecutor):
         Args:
             context_manager: The context manager for variable resolution
         """
-        super().__init__()
-        self.context_manager = context_manager
+        super().__init__(context_manager)
 
-    def evaluate(self, expression: Any, local_context: Optional[Dict[str, Any]] = None) -> Any:
+    def evaluate(self, expression: Any, context: SandboxContext) -> Any:
         """Evaluate an expression using the current context.
 
         Args:
@@ -73,6 +72,13 @@ class ExpressionEvaluator(BaseExecutor):
         Raises:
             RuntimeError: If the expression cannot be evaluated
         """
+        # If it's a list of LiteralExpressions (common in the REPL),
+        # extract the actual value from the first one instead of throwing an error
+        if isinstance(expression, list):
+            if len(expression) > 0 and hasattr(expression[0], "value"):
+                # Extract the string value from the LiteralExpression
+                return expression[0].value
+
         if expression is None:
             return None
 
@@ -80,38 +86,38 @@ class ExpressionEvaluator(BaseExecutor):
             return expression.value
 
         elif isinstance(expression, Identifier):
-            return self._resolve_identifier(expression, local_context)
+            return self._resolve_identifier(expression, context)
 
         elif isinstance(expression, BinaryExpression):
-            return self._evaluate_binary_expression(expression, local_context)
+            return self._evaluate_binary_expression(expression, context)
 
         elif isinstance(expression, UnaryExpression):
-            return self._evaluate_unary_expression(expression, local_context)
+            return self._evaluate_unary_expression(expression, context)
 
         elif isinstance(expression, FunctionCall):
-            return self._evaluate_function_call(expression, local_context)
+            return self._evaluate_function_call(expression, context)
 
         elif isinstance(expression, AttributeAccess):
-            return self._evaluate_attribute_access(expression, local_context)
+            return self._evaluate_attribute_access(expression, context)
 
         elif isinstance(expression, SubscriptExpression):
-            return self._evaluate_subscript_expression(expression, local_context)
+            return self._evaluate_subscript_expression(expression, context)
 
         elif isinstance(expression, TupleLiteral):
-            return self._evaluate_tuple_literal(expression, local_context)
+            return self._evaluate_tuple_literal(expression, context)
 
         elif hasattr(expression, "__class__") and expression.__class__.__name__ == "ListLiteral":
             # Use a generic method for ListLiteral since it might not be imported
-            return self._evaluate_list_items(getattr(expression, "items", []), local_context)
+            return self._evaluate_list_items(getattr(expression, "items", []), context)
 
         elif isinstance(expression, DictLiteral):
-            return self._evaluate_dict_literal(expression, local_context)
+            return self._evaluate_dict_literal(expression, context)
 
         elif isinstance(expression, SetLiteral):
-            return self._evaluate_set_literal(expression, local_context)
+            return self._evaluate_set_literal(expression, context)
 
         elif isinstance(expression, FStringExpression):
-            return self._evaluate_fstring_expression(expression, local_context)
+            return self._evaluate_fstring_expression(expression, context)
 
         # If expression is a primitive Python value, return as is
         elif isinstance(expression, (int, float, str, bool)) or expression is None:
@@ -120,7 +126,7 @@ class ExpressionEvaluator(BaseExecutor):
         else:
             raise RuntimeError(f"Unsupported expression type: {type(expression).__name__}: {expression}")
 
-    def _evaluate_fstring_expression(self, expression: "FStringExpression", local_context: Optional[Dict[str, Any]] = None) -> str:
+    def _evaluate_fstring_expression(self, expression: "FStringExpression", context: SandboxContext) -> str:
         """Evaluate an f-string expression.
 
         Handles both newer 'expressions' dictionary format and older 'parts' list format.
@@ -142,7 +148,7 @@ class ExpressionEvaluator(BaseExecutor):
             # Replace each placeholder with its evaluated value
             for placeholder, expr in expression.expressions.items():
                 # Evaluate the expression within the placeholder
-                value = self.evaluate(expr, local_context)
+                value = self.evaluate(expr, context)
                 # Replace the placeholder with the string representation of the value
                 result = result.replace(placeholder, str(value))
 
@@ -156,19 +162,19 @@ class ExpressionEvaluator(BaseExecutor):
                     result += part
                 else:
                     # Evaluate the expression part
-                    value = self.evaluate(part, local_context)
+                    value = self.evaluate(part, context)
                     result += str(value)
             return result
 
         # If neither format is present, return string representation
         return str(expression)
 
-    def _evaluate_binary_expression(self, node: BinaryExpression, local_context: Optional[Dict[str, Any]] = None) -> Any:
+    def _evaluate_binary_expression(self, node: BinaryExpression, context: SandboxContext) -> Any:
         """Evaluate a binary expression.
 
         Args:
             node: The binary expression to evaluate
-            local_context: Optional local context for variable resolution
+            context: The context for variable resolution
 
         Returns:
             The result of evaluating the expression
@@ -176,56 +182,10 @@ class ExpressionEvaluator(BaseExecutor):
         Raises:
             StateError: If the expression contains invalid operations
         """
-        self.debug(f"[EVAL_BIN_START] node: {node}, operator: {node.operator}")
-        self.debug(
-            f"[EVAL_BIN] operator={node.operator}, left={getattr(node.left, 'value', node.left)}, right={getattr(node.right, 'value', node.right)}"
-        )
         try:
             # Evaluate left operand
-            if isinstance(node.left, Identifier):
-                try:
-                    # First check local context
-                    if local_context is not None and "." not in node.left.name and node.left.name in local_context:
-                        left = local_context[node.left.name]
-                    else:
-                        left = self.context_manager.get_from_scope(node.left.name)
-                    self.debug(f"Evaluated {node.left.name} = {left}")
-                except Exception as e:
-                    self.debug(f"Error evaluating left operand: {e}")
-                    if "." in node.left.name:
-                        raise ErrorUtils.create_state_error(f"Variable '{node.left.name}' not found", node)
-                    else:
-                        raise ErrorUtils.create_state_error(
-                            f"Variable '{node.left.name}' must be accessed with a scope prefix: "
-                            f"private.{node.left.name}, public.{node.left.name}, or system.{node.left.name}",
-                            node,
-                        )
-            else:
-                left = self.evaluate(node.left, local_context)
-                self.debug(f"Evaluated left operand = {left}")
-
-            # Evaluate right operand
-            if isinstance(node.right, Identifier):
-                try:
-                    # First check local context
-                    if local_context is not None and "." not in node.right.name and node.right.name in local_context:
-                        right = local_context[node.right.name]
-                    else:
-                        right = self.context_manager.get_from_scope(node.right.name)
-                    self.debug(f"Evaluated {node.right.name} = {right}")
-                except Exception as e:
-                    self.debug(f"Error evaluating right operand: {e}")
-                    if "." in node.right.name:
-                        raise ErrorUtils.create_state_error(f"Variable '{node.right.name}' not found", node)
-                    else:
-                        raise ErrorUtils.create_state_error(
-                            f"Variable '{node.right.name}' must be accessed with a scope prefix: "
-                            f"private.{node.right.name}, public.{node.right.name}, or system.{node.right.name}",
-                            node,
-                        )
-            else:
-                right = self.evaluate(node.right, local_context)
-                self.debug(f"Evaluated right operand = {right}")
+            left = self.evaluate(node.left, context)
+            right = self.evaluate(node.right, context)
 
             # Perform the operation
             if node.operator == BinaryOperator.ADD:
@@ -261,10 +221,9 @@ class ExpressionEvaluator(BaseExecutor):
             else:
                 raise StateError(f"Unknown operator: {node.operator}")
         except Exception as e:
-            self.debug(f"Error in binary expression evaluation: {e}")
             raise e
 
-    def _evaluate_unary_expression(self, node, context=None):
+    def _evaluate_unary_expression(self, node, context: SandboxContext):
         """Evaluate a unary expression (e.g., -x, +x, not x)."""
         operand = self.evaluate(node.operand, context)
         if node.operator == "-":
@@ -277,12 +236,12 @@ class ExpressionEvaluator(BaseExecutor):
         else:
             raise SandboxError(f"Unsupported unary operator: {node.operator}")
 
-    def _evaluate_literal_expression(self, node: LiteralExpression, context: Optional[Dict[str, Any]] = None) -> Any:
+    def _evaluate_literal_expression(self, node: LiteralExpression, context: SandboxContext) -> Any:
         """Evaluate a literal expression.
 
         Args:
             node: The literal expression to evaluate
-            context: Optional local context (unused)
+            context: context for variable resolution
 
         Returns:
             The literal value
@@ -293,16 +252,12 @@ class ExpressionEvaluator(BaseExecutor):
 
         # Handle f-string literals that are strings starting with 'f"' or "f'"
         if isinstance(node.value, str) and (node.value.startswith('f"') or node.value.startswith("f'")):
-            self.debug(f"Converting f-string literal to evaluated string: {node.value}")
-            # Extract variable names from the f-string
-            # parts = []
             current_str = node.value[2:-1]  # Remove the f" and closing "
-            # Create a simple FStringExpression with the content
 
             # Extract any variables from the string using a simple regex
             import re
 
-            # Find all expressions like {var} in the string
+            # Find aliiiil expressions like {var} in the string
             var_matches = re.findall(r"\{([^{}]+)\}", current_str)
 
             # If we have variables, replace them with their values from context
@@ -320,7 +275,7 @@ class ExpressionEvaluator(BaseExecutor):
                                 scope, name = var_name.split(".", 1)
                                 var_value = self.context_manager.get_from_scope(name, scope=scope)
                             else:
-                                var_value = self.context_manager.get_from_scope(var_name, scope="local")
+                                var_value = self.context_manager.get(var_name)
                             result = result.replace(f"{{{var_name}}}", str(var_value))
                         except Exception:
                             # If variable not found, leave as is
@@ -344,7 +299,7 @@ class ExpressionEvaluator(BaseExecutor):
             return result
         return node.value
 
-    def _resolve_identifier(self, node: Identifier, local_context: Optional[Dict[str, Any]] = None) -> Any:
+    def _resolve_identifier(self, node: Identifier, context: SandboxContext) -> Any:
         """Evaluate an identifier.
 
         Args:
@@ -357,35 +312,16 @@ class ExpressionEvaluator(BaseExecutor):
         Raises:
             StateError: If the identifier is not found
         """
-        try:
-            # First check local context if provided
-            if local_context is not None and "." not in node.name and node.name in local_context:
-                return local_context[node.name]
-
-            # If the name has a scope prefix (e.g. "private.x"), use that scope
-            if "." in node.name:
-                scope, name = node.name.split(".", 1)
-                if scope not in RuntimeScopes.ALL:
-                    raise StateError(f"Unknown scope: {scope}")
-                return self.context_manager.get_from_scope(name, scope=scope)
-
-            # Otherwise use local scope
-            return self.context_manager.get_from_scope(node.name, scope="local")
-        except Exception as e:
-            self.debug(f"Error resolving identifier: {e}")
-            if "." in node.name:
-                raise ErrorUtils.create_state_error(f"Variable '{node.name}' not found", node)
-            else:
-                raise ErrorUtils.create_state_error(
-                    f"Variable '{node.name}' must be accessed with a scope prefix: "
-                    f"private.{node.name}, public.{node.name}, or system.{node.name}",
-                    node,
-                )
+        result = context.get(node.name, default="__not_found__")
+        if result == "__not_found__":
+            raise ErrorUtils.create_state_error(f"Variable '{node.name}' not found", node)
+        else:
+            return result
 
     def _evaluate_function_call(
         self,
         node: FunctionCall,
-        local_context: Optional[Dict[str, Any]] = None,
+        context: SandboxContext,
     ) -> Any:
         """Evaluate a function call expression.
 
@@ -399,6 +335,10 @@ class ExpressionEvaluator(BaseExecutor):
         Raises:
             RuntimeError: If the function call fails
         """
+        # Special handling for local.reason - redirect to the global reason function
+        function_name = node.name
+        if function_name == "local.reason":
+            function_name = "reason"
 
         # Convert all argument values first
         the_args = []
@@ -406,7 +346,21 @@ class ExpressionEvaluator(BaseExecutor):
 
         # Handle positional arguments
         if "__positional" in node.args:
-            the_args = [self.evaluate(arg, local_context) for arg in node.args["__positional"]]
+            # Ensure we evaluate each argument to get its actual value
+            for arg in node.args["__positional"]:
+                # Make sure to properly evaluate arguments
+                evaluated_arg = self.evaluate(arg, context)
+
+                # Handle case where arg is a list of LiteralExpressions
+                if isinstance(evaluated_arg, list) and len(evaluated_arg) > 0:
+                    if all(hasattr(item, "value") for item in evaluated_arg):
+                        # Extract the value from each LiteralExpression
+                        evaluated_arg = [item.value for item in evaluated_arg]
+                    # If there's just one element, use it directly
+                    if len(evaluated_arg) == 1 and isinstance(evaluated_arg[0], str):
+                        evaluated_arg = evaluated_arg[0]
+
+                the_args.append(evaluated_arg)
         # Handle keyword arguments
         else:
             for key, value in node.args.items():
@@ -415,23 +369,34 @@ class ExpressionEvaluator(BaseExecutor):
                     pos = int(key)
                     while len(the_args) <= pos:
                         the_args.append(None)
-                    the_args[pos] = self.evaluate(value, local_context)
+
+                    evaluated_value = self.evaluate(value, context)
+
+                    # Handle case where value is a list of LiteralExpressions
+                    if isinstance(evaluated_value, list) and len(evaluated_value) > 0:
+                        if all(hasattr(item, "value") for item in evaluated_value):
+                            # Extract the value from each LiteralExpression
+                            evaluated_value = [item.value for item in evaluated_value]
+                        # If there's just one element, use it directly
+                        if len(evaluated_value) == 1 and isinstance(evaluated_value[0], str):
+                            evaluated_value = evaluated_value[0]
+
+                    the_args[pos] = evaluated_value
                 else:
                     # Keyword argument
-                    the_kwargs[key] = self.evaluate(value, local_context)
+                    the_kwargs[key] = self.evaluate(value, context)
 
         # Call the function with the local context
         result = self.function_registry.call(
-            node.name,
+            function_name,
             args=the_args,
             kwargs=the_kwargs,
-            context=self.context_manager.context,
-            local_context=local_context,
+            context=context,
         )
 
         return result
 
-    def _evaluate_attribute_access(self, node: AttributeAccess, context: Optional[Dict[str, Any]] = None) -> Any:
+    def _evaluate_attribute_access(self, node: AttributeAccess, context: SandboxContext) -> Any:
         """Evaluate an attribute access expression.
 
         Args:
@@ -457,24 +422,24 @@ class ExpressionEvaluator(BaseExecutor):
             raise RuntimeError(f"Object has no attribute '{node.attribute}'")
         return getattr(obj, node.attribute)
 
-    def _evaluate_subscript_expression(self, node, context=None):
+    def _evaluate_subscript_expression(self, node, context: SandboxContext):
         obj = self.evaluate(node.object, context)
         idx = self.evaluate(node.index, context)
         return obj[idx]
 
-    def _evaluate_dict_literal(self, node, context=None):
+    def _evaluate_dict_literal(self, node, context: SandboxContext):
         # Evaluate all key-value pairs in the dict literal
         return {self.evaluate(k, context): self.evaluate(v, context) for k, v in node.items}
 
-    def _evaluate_tuple_literal(self, node, context=None):
+    def _evaluate_tuple_literal(self, node, context: SandboxContext):
         # Evaluate all items in the tuple literal
         return tuple(self.evaluate(item, context) for item in node.items)
 
-    def _evaluate_set_literal(self, node, context=None):
+    def _evaluate_set_literal(self, node, context: SandboxContext):
         # Evaluate all items in the set literal
         return set(self.evaluate(item, context) for item in node.items)
 
-    def _evaluate_list_items(self, items, context=None):
+    def _evaluate_list_items(self, items, context: SandboxContext):
         """Evaluate a list of items generically.
 
         Args:

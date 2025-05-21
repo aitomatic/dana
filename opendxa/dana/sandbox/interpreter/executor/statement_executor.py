@@ -49,6 +49,7 @@ from opendxa.dana.sandbox.parser.ast import (
     Statement,
     WhileLoop,
 )
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 # Define the types of nodes we can execute
 ExecutableNode = Union[Assignment, Conditional, WhileLoop, FunctionCall, Identifier, Program]
@@ -88,8 +89,7 @@ class StatementExecutor(BaseExecutor):
             context_manager: The context manager for variable resolution
             expression_evaluator: The evaluator for expressions
         """
-        super().__init__()
-        self.context_manager = context_manager
+        super().__init__(context_manager)
         self.expression_evaluator = expression_evaluator
         self._output_buffer = []  # Buffer for capturing print output
 
@@ -111,7 +111,7 @@ class StatementExecutor(BaseExecutor):
                 hook_context.update(additional_context)
             HookRegistry.execute(hook_type, hook_context)
 
-    def execute(self, statement: Statement) -> Any:
+    def execute(self, statement: Statement, context: SandboxContext) -> Any:
         """Execute a statement.
 
         Args:
@@ -124,37 +124,37 @@ class StatementExecutor(BaseExecutor):
             RuntimeError: If the statement type is not supported
         """
         if isinstance(statement, Assignment):
-            return self.execute_assignment(statement)
+            return self.execute_assignment(statement, context)
         elif isinstance(statement, Conditional):
-            return self.execute_conditional(statement)
+            return self.execute_conditional(statement, context)
         elif isinstance(statement, WhileLoop):
-            return self.execute_while_loop(statement)
+            return self.execute_while_loop(statement, context)
         elif isinstance(statement, ForLoop):
-            return self.execute_for_loop(statement)
+            return self.execute_for_loop(statement, context)
         elif isinstance(statement, FunctionCall):
-            return self.execute_function_call(statement)
+            return self.execute_function_call(statement, context)
         elif isinstance(statement, PrintStatement):
-            return self.execute_print_statement(statement)
+            return self.execute_print_statement(statement, context)
         elif isinstance(statement, PassStatement):
-            return self.execute_pass_statement(statement)
+            return self.execute_pass_statement(statement, context)
         elif isinstance(statement, ReturnStatement):
-            return self.execute_return_statement(statement)
+            return self.execute_return_statement(statement, context)
         elif isinstance(statement, BreakStatement):
-            return self.execute_break_statement(statement)
+            return self.execute_break_statement(statement, context)
         elif isinstance(statement, ContinueStatement):
-            return self.execute_continue_statement(statement)
+            return self.execute_continue_statement(statement, context)
         elif isinstance(statement, RaiseStatement):
-            return self.execute_raise_statement(statement)
+            return self.execute_raise_statement(statement, context)
         elif isinstance(statement, AssertStatement):
-            return self.execute_assert_statement(statement)
+            return self.execute_assert_statement(statement, context)
         elif isinstance(statement, FunctionDefinition):
-            return self.execute_function_definition(statement)
+            return self.execute_function_definition(statement, context)
         elif isinstance(statement, (Identifier, BinaryExpression, FunctionCall, LiteralExpression)):
-            return self.expression_evaluator.evaluate(statement)
+            return self.expression_evaluator.evaluate(statement, context)
         else:
             raise SandboxError(f"Unsupported statement type: {type(statement)}")
 
-    def execute_assignment(self, node: Assignment) -> Any:
+    def execute_assignment(self, node: Assignment, context: SandboxContext) -> Any:
         """Execute an assignment statement.
 
         Args:
@@ -168,21 +168,19 @@ class StatementExecutor(BaseExecutor):
             self._execute_hook(HookType.BEFORE_ASSIGNMENT, node)
             try:
                 # Evaluate the value expression with proper local context
-                value = self.expression_evaluator.evaluate(node.value)
+                value = self.expression_evaluator.evaluate(node.value, context)
 
                 # Special handling for FStringExpression to ensure it's properly evaluated
                 if hasattr(value, "__class__") and value.__class__.__name__ == "FStringExpression":
-                    value = self.expression_evaluator.evaluate(value)
+                    value = self.expression_evaluator.evaluate(value, context)
 
                 # Handle f-string literals (strings starting with 'f"' or "f'")
                 if isinstance(value, str) and (value.startswith('f"') or value.startswith("f'")):
                     self.debug(f"Found string f-string: {value}")
-                    # Enhance the local context to include all variables
-                    local_context = self._enhance_local_context()
                     # Re-evaluate as a literal expression to process the f-string
                     from opendxa.dana.sandbox.parser.ast import LiteralExpression
 
-                    value = self.expression_evaluator._evaluate_literal_expression(LiteralExpression(value=value), local_context)
+                    value = self.expression_evaluator._evaluate_literal_expression(LiteralExpression(value=value), context)
 
                 # Recursively extract values from list of LiteralExpressions
                 if isinstance(value, list):
@@ -223,10 +221,12 @@ class StatementExecutor(BaseExecutor):
                 raise ErrorUtils.create_state_error(f"Invalid scope: {scope}", node)
 
             # Set the value in the appropriate scope
-            self.context_manager.set_in_context(var_name, value, scope=scope)
+            context.set_in_scope(var_name, value, scope=scope)
+            # self.context_manager.set_in_context(var_name, value, scope=scope)
 
             result = value  # Store the value as the result
-            self.context_manager.set_in_context("__last_value", result, scope="system")
+            context.set_in_scope("__last_value", result, scope="system")
+            # self.context_manager.set_in_context("__last_value", result, scope="system")
 
             # Execute after assignment hook
             self._execute_hook(HookType.AFTER_ASSIGNMENT, node, {"value": value})
@@ -236,7 +236,7 @@ class StatementExecutor(BaseExecutor):
             self.debug(f"Error in execute_assignment: {e}")
             raise
 
-    def execute_print_statement(self, node: PrintStatement) -> None:
+    def execute_print_statement(self, node: PrintStatement, context: SandboxContext) -> None:
         """Execute a print statement.
 
         Args:
@@ -246,11 +246,8 @@ class StatementExecutor(BaseExecutor):
             RuntimeError: If the print statement fails
         """
         try:
-            # Use a custom context that includes direct references to unprefixed variables
-            custom_context = self._enhance_local_context()
-
             # Evaluate the message
-            value = self.expression_evaluator.evaluate(node.message, custom_context)
+            value = self.expression_evaluator.evaluate(node.message, context)
             print(str(value))  # Write to stdout for test capture
             self._output_buffer.append(str(value))  # Also capture for REPL/UX
         except Exception as e:
@@ -260,28 +257,28 @@ class StatementExecutor(BaseExecutor):
             else:
                 raise SandboxError(f"Failed to execute print statement: {e}")
 
-    def execute_conditional(self, node: "Conditional") -> Any:
+    def execute_conditional(self, node: "Conditional", context: SandboxContext) -> Any:
         """Execute a conditional (if/else) statement."""
-        condition = self.expression_evaluator.evaluate(node.condition)
+        condition = self.expression_evaluator.evaluate(node.condition, context)
         if condition:
             result = None
             for stmt in node.body:
-                result = self.execute(stmt)
+                result = self.execute(stmt, context)
             return result
         elif node.else_body:
             result = None
             for stmt in node.else_body:
-                result = self.execute(stmt)
+                result = self.execute(stmt, context)
             return result
         return None
 
-    def execute_while_loop(self, node: "WhileLoop") -> Any:
+    def execute_while_loop(self, node: "WhileLoop", context: SandboxContext) -> Any:
         """Execute a while loop statement."""
         max_iterations = 1000  # Prevent infinite loops
         iteration_count = 0
         result = None
         while True:
-            condition = self.expression_evaluator.evaluate(node.condition)
+            condition = self.expression_evaluator.evaluate(node.condition, context)
             if not condition:
                 break
             iteration_count += 1
@@ -289,17 +286,17 @@ class StatementExecutor(BaseExecutor):
                 raise SandboxError("Maximum iteration count exceeded")
             try:
                 for stmt in node.body:
-                    result = self.execute(stmt)
+                    result = self.execute(stmt, context)
             except BreakStatementExit:
                 break
             except ContinueStatementExit:
                 continue
         return result
 
-    def execute_for_loop(self, node: "ForLoop") -> Any:
+    def execute_for_loop(self, node: "ForLoop", context: SandboxContext) -> Any:
         """Execute a for loop statement."""
         # Evaluate the iterable expression
-        iterable = self.expression_evaluator.evaluate(node.iterable)
+        iterable = self.expression_evaluator.evaluate(node.iterable, context)
 
         # Special handling for lists with LiteralExpression items
         if isinstance(iterable, list):
@@ -335,15 +332,17 @@ class StatementExecutor(BaseExecutor):
                 # If the target has a scope prefix, use it
                 parts = var_name.split(".", 1)
                 scope, name = parts
-                self.context_manager.set_in_context(name, item, scope=scope)
+                context.set_in_scope(name, item, scope=scope)
+                # self.context_manager.set_in_context(name, item, scope=scope)
             else:
                 # Otherwise, use local scope
-                self.context_manager.set_in_context(var_name, item, scope="local")
+                context.set_in_scope(var_name, item, scope="local")
+                # self.context_manager.set_in_context(var_name, item, scope="local")
 
             # Execute the loop body
             try:
                 for stmt in node.body:
-                    result = self.execute(stmt)
+                    result = self.execute(stmt, context)
             except BreakStatementExit:
                 break
             except ContinueStatementExit:
@@ -351,7 +350,7 @@ class StatementExecutor(BaseExecutor):
 
         return result
 
-    def execute_function_call(self, node: FunctionCall) -> Any:
+    def execute_function_call(self, node: FunctionCall, context: SandboxContext) -> Any:
         """Execute a function call.
 
         Args:
@@ -364,14 +363,14 @@ class StatementExecutor(BaseExecutor):
             RuntimeError: If the function call fails
         """
         # Execute the function call
-        result = self._execute_method_or_variable_function(node)
+        result = self._execute_method_or_variable_function(node, context)
 
         # Store the result in the context
         self.context_manager.set_in_context("__last_value", result, scope="system")
 
         return result
 
-    def _execute_method_or_variable_function(self, node: FunctionCall) -> Any:
+    def _execute_method_or_variable_function(self, node: FunctionCall, context: SandboxContext) -> Any:
         """Execute a method call or variable function.
 
         Args:
@@ -386,7 +385,7 @@ class StatementExecutor(BaseExecutor):
         # Convert all argument values first
         processed_args = {}
         for key, value in node.args.items():
-            processed_args[key] = self.expression_evaluator.evaluate(value)
+            processed_args[key] = self.expression_evaluator.evaluate(value, context)
 
         # Prepare positional and keyword arguments
         args_list = []
@@ -417,7 +416,7 @@ class StatementExecutor(BaseExecutor):
 
         # If the function name contains dots, it might be a Python object method call
         if "." in node.name:
-            return self._execute_method_call(node.name, args_list, kwargs)
+            return self._execute_method_call(node.name, args_list, kwargs, context)
         else:
             # Try to resolve and call the function
             try:
@@ -425,7 +424,7 @@ class StatementExecutor(BaseExecutor):
             except KeyError:
                 # Fallback: Try to get local.foo as a variable from context
                 try:
-                    func = self.context_manager.get_from_scope(node.name, scope="local")
+                    func = self.context_manager.get(node.name)
                     if callable(func):
                         return func(*args_list, **kwargs)
                     else:
@@ -433,7 +432,7 @@ class StatementExecutor(BaseExecutor):
                 except Exception:
                     raise SandboxError(f"Function or variable '{node.name}' not found in registries or local context")
 
-    def _execute_method_call(self, name: str, args: List[Any], kwargs: Dict[str, Any]) -> Any:
+    def _execute_method_call(self, name: str, args: List[Any], kwargs: Dict[str, Any], context: SandboxContext) -> Any:
         """Execute a method call on an object.
 
         Args:
@@ -453,7 +452,7 @@ class StatementExecutor(BaseExecutor):
         method_name = parts[-1]
 
         # Get the object
-        obj = self.context_manager.get_from_scope(obj_name, scope="local")
+        obj = self.context_manager.get(obj_name)
 
         # Get the method
         method = getattr(obj, method_name, None)
@@ -463,50 +462,29 @@ class StatementExecutor(BaseExecutor):
         # Call the method
         return method(*args, **kwargs)
 
-    def _enhance_local_context(self) -> Dict[str, Any]:
-        """Enhance the local context with unprefixed variables from the local scope.
-
-        Returns:
-            The enhanced context
-        """
-        custom_context = {}
-
-        # Add unprefixed variables from the local scope
-        try:
-            local_scope = self.context_manager.context._state.get("local", {})
-            for key, value in local_scope.items():
-                # Only add top-level local variables to context
-                if "." not in key and key not in custom_context:
-                    custom_context[key] = value
-        except (AttributeError, KeyError):
-            # If we can't access private scope, just use the original context
-            pass
-
-        return custom_context
-
-    def execute_pass_statement(self, node: "PassStatement") -> None:
+    def execute_pass_statement(self, node: "PassStatement", context: SandboxContext) -> None:
         """Execute a pass statement (does nothing)."""
         return None
 
-    def execute_return_statement(self, node: "ReturnStatement") -> None:
+    def execute_return_statement(self, node: "ReturnStatement", context: SandboxContext) -> None:
         """Execute a return statement by raising ReturnException with the value."""
-        value = self.expression_evaluator.evaluate(node.value) if node.value is not None else None
+        value = self.expression_evaluator.evaluate(node.value, context) if node.value is not None else None
         raise ReturnStatementExit(value)
 
-    def execute_break_statement(self, node: "BreakStatement") -> None:
+    def execute_break_statement(self, node: "BreakStatement", context: SandboxContext) -> None:
         """Execute a break statement by raising BreakException."""
         raise BreakStatementExit()
 
-    def execute_continue_statement(self, node: "ContinueStatement") -> None:
+    def execute_continue_statement(self, node: "ContinueStatement", context: SandboxContext) -> None:
         """Execute a continue statement by raising ContinueStatementExit."""
         raise ContinueStatementExit()
 
-    def execute_raise_statement(self, node: "RaiseStatement") -> None:
+    def execute_raise_statement(self, node: "RaiseStatement", context: SandboxContext) -> None:
         """Execute a raise statement by raising a Python exception with the evaluated value."""
         # Evaluate the value to raise (if provided)
         value = None
         if node.value is not None:
-            value = self.expression_evaluator.evaluate(node.value)
+            value = self.expression_evaluator.evaluate(node.value, context)
 
         # If the value is a string, use it as the error message
         if isinstance(value, str):
@@ -518,20 +496,20 @@ class StatementExecutor(BaseExecutor):
         else:
             raise SandboxError(f"Raised: {str(value)}")
 
-    def execute_assert_statement(self, node: "AssertStatement") -> None:
+    def execute_assert_statement(self, node: "AssertStatement", context: SandboxContext) -> None:
         """Execute an assert statement by raising AssertionError if the condition is false."""
-        condition = self.expression_evaluator.evaluate(node.condition)
+        condition = self.expression_evaluator.evaluate(node.condition, context)
         if not condition:
-            message = self.expression_evaluator.evaluate(node.message) if node.message is not None else None
+            message = self.expression_evaluator.evaluate(node.message, context) if node.message is not None else None
             raise AssertionError(message)
 
-    def execute_function_definition(self, node: FunctionDefinition) -> None:
+    def execute_function_definition(self, node: FunctionDefinition, context: SandboxContext) -> None:
         """Execute a function definition statement.
 
         Args:
             node: The function definition node to execute
         """
-        # Extract parameter names from the parameters list
+        # Extra parameter names from the parameters list
         param_names = []
         for param in node.parameters:
             # Handle scoped parameters (e.g. local:a)
@@ -545,7 +523,7 @@ class StatementExecutor(BaseExecutor):
                 param_names.append(param.name)
 
         # Create a DANA function object
-        func = DanaFunction(node.body, param_names, self.context_manager.context)
+        func = DanaFunction(node.body, param_names, context)
 
         # Create function metadata - source_file will be determined automatically
         metadata = FunctionMetadata()

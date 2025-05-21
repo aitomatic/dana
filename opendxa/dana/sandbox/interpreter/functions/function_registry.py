@@ -236,7 +236,8 @@ class FunctionRegistry:
         try:
             # All functions are now BaseFunction instances which handle context and parameter binding
             # The BaseFunction.__call__ method takes care of binding arguments and context
-            return func(context, local_context, *call_args, **call_kwargs)
+            result = func(context, local_context, *call_args, **call_kwargs)
+            return result
         except TypeError as e:
             # Re-raise with more descriptive error message
             raise TypeError(f"Error calling function '{name}': {str(e)}")
