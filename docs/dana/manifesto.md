@@ -23,7 +23,7 @@ Imagine a world where building with AI is clear, reliable, and empowering. DANA 
 ## DANA in the Computing Landscape
 
 <p align="center">
-  <img src="../images/dana-io.png" alt="DANA Positioning Quadrant" width="400"/>
+  <img src="../images/dana-io.jpg" alt="DANA Positioning Quadrant" width="400"/>
 </p>
 <p align="center" style="font-size: 12px; font-style: italic;">DANA's unique position in the computing landscape.</p>
 
