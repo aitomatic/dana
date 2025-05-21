@@ -1,7 +1,8 @@
 """Python function."""
 
 import inspect
-from typing import Any, Callable, List, Optional, Set
+import logging
+from typing import Any, Callable, Dict, List, Optional, Set
 
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
@@ -20,51 +21,157 @@ class PythonFunction(SandboxFunction):
         """
         super().__init__(context)
         self.func = func
+        self.wants_context = False
+        self.context_param_name = None
 
         # Extract parameters from function signature
         self.parameters: List[str] = []  # All parameters
         self.required_parameters: Set[str] = set()  # Required parameters (no default)
+        self.defaults: Dict[str, Any] = {}  # Default values for parameters
+
+        # Special parameters that are not exposed to argument binding
+        self.special_params: Set[str] = set()
 
         try:
             sig = inspect.signature(func)
             param_names = []
             required_params = set()
+            default_values = {}
 
             # Get all parameters and identify which are required
             for name, param in sig.parameters.items():
-                # Skip context-related params that will be injected
-                if name in ("ctx", "context", "the_context", "sandbox_context"):
-                    continue
-                if name in ("local_ctx", "local_context"):
+                # Check if this parameter is a context parameter by name or annotation
+                if self._is_context_parameter(name, param):
+                    self.wants_context = True
+                    self.context_param_name = name
+                    self.special_params.add(name)
                     continue
 
                 # Add to parameter list
                 param_names.append(name)
 
+                # If parameter has a default, store it
+                if param.default is not param.empty:
+                    default_values[name] = param.default
                 # If parameter has no default and isn't VAR_POSITIONAL or VAR_KEYWORD,
                 # it's required
-                if param.default is param.empty and param.kind not in (param.VAR_POSITIONAL, param.VAR_KEYWORD):
+                elif param.kind not in (param.VAR_POSITIONAL, param.VAR_KEYWORD):
                     required_params.add(name)
 
             self.parameters = param_names
             self.required_parameters = required_params
+            self.defaults = default_values
 
         except (ValueError, TypeError):
             # If we can't get parameters, use empty collections
             self.parameters = []
             self.required_parameters = set()
+            self.defaults = {}
 
-    def __do_call__(self, the_context: SandboxContext, *the_args: Any, **the_kwargs: Any) -> Any:
-        """Execute the function body with the provided context and local context.
+    def _is_context_parameter(self, name: str, param: inspect.Parameter) -> bool:
+        """
+        Determine if a parameter is a context parameter.
+
+        A parameter is considered a context parameter if:
+        1. It has a name like "context", "ctx", etc.
+        2. It has a type annotation matching SandboxContext
 
         Args:
-            the_context: The context to use for execution, intelligently injected into the arguments
-            *the_args: Positional arguments
-            **the_kwargs: Keyword arguments
+            name: Parameter name
+            param: Parameter object
+
+        Returns:
+            True if this is a context parameter
+        """
+        # Check by name
+        if name in ("ctx", "context", "the_context", "sandbox_context"):
+            return True
+
+        # Check by annotation if available
+        try:
+            if param.annotation != param.empty:
+                # Get the annotation as a string and check if it matches SandboxContext
+                anno_str = str(param.annotation)
+                if "SandboxContext" in anno_str:
+                    return True
+
+                # Also check for 'context' in the type name (for custom context classes)
+                if "context" in anno_str.lower() or "ctx" in anno_str.lower():
+                    return True
+        except Exception:
+            # Ignore errors in annotation checking
+            pass
+
+        return False
+
+    def prepare_context(self, context: SandboxContext, args: List[Any], kwargs: Dict[str, Any]) -> SandboxContext:
+        """
+        Prepare context for a Python function.
+
+        For Python functions:
+        - Creates a sanitized context for safety
+        - No need to map arguments to context (will be passed directly)
+
+        Args:
+            context: The original context
+            args: Positional arguments (ignored for Python functions)
+            kwargs: Keyword arguments (ignored for Python functions)
+
+        Returns:
+            Sanitized context
+        """
+        # For Python functions, we just sanitize the context
+        return context.copy().sanitize()
+
+    def restore_context(self, context: SandboxContext, original_context: SandboxContext) -> None:
+        """
+        Restore the context after Python function execution.
+
+        For Python functions, there's typically no need to restore context
+        since they don't modify it directly (changes happen via return values).
+
+        Args:
+            context: The current context
+            original_context: The original context before execution
+        """
+        # No restoration needed for Python functions
+        pass
+
+    def inject_context(self, context: SandboxContext, kwargs: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Handle context injection for Python functions that want it.
+
+        Args:
+            context: The context to inject
+            kwargs: The existing keyword arguments
+
+        Returns:
+            Updated keyword arguments with context injected if needed
+        """
+        # Check if the function wants context and has a parameter name for it
+        if self.wants_context and self.context_param_name:
+            # If parameter name already exists in kwargs, log a warning but don't override
+            param_name = self.context_param_name
+            if param_name in kwargs:
+                # Don't override existing value, but log a warning
+                logger = logging.getLogger(__name__)
+                logger.warning(f"Context parameter '{param_name}' already exists in kwargs. " f"Not injecting context automatically.")
+            else:
+                # Inject the context parameter
+                kwargs[param_name] = context
+
+        return kwargs
+
+    def execute(self, context: SandboxContext, *args: Any, **kwargs: Any) -> Any:
+        """Execute the function body with the provided context and arguments.
+
+        Args:
+            context: The context to use for execution
+            *args: Positional arguments
+            **kwargs: Keyword arguments
 
         Returns:
             The result of calling the Python function
         """
-        # Call the wrapped function with the context, local context, and the arguments
-        # We need to pass {} as local_context because we're directly calling the func
-        return self.func(*the_args, **the_kwargs)
+        # Call the wrapped function with the arguments
+        return self.func(*args, **kwargs)

@@ -48,11 +48,15 @@ def test_sandbox_context_cleanse():
     assert context.get("local.normal_string") == "This is a normal string"
     assert context.get("public.normal_number") == 42
 
-    # Verify that sensitive data in private/system is removed
-    assert not context.has("private.password")
-    assert not context.has("system.auth_token")
-    assert not context.has("system.llm_resource")
-    assert not context.has("system.config")
+    # Verify that sensitive scopes (private/system) are completely removed
+    assert "private" not in context._state
+    assert "system" not in context._state
+
+    # These assertions should no longer be used since the scopes are removed entirely
+    # assert not context.has("private.password")
+    # assert not context.has("system.auth_token")
+    # assert not context.has("system.llm_resource")
+    # assert not context.has("system.config")
 
     # Verify that sensitive data in local/public is masked
     api_key_value = context.get("local.api_key")
@@ -73,7 +77,7 @@ def test_sandbox_context_cleanse():
 
 def print_scopes(context):
     """Print the contents of each scope in the context."""
-    for scope in ["local", "public", "private", "system"]:
+    for scope in list(context._state.keys()):
         print(f"{scope}: {context._state[scope]}")
 
 

@@ -22,7 +22,6 @@ from typing import Any
 
 from opendxa.dana.common.error_utils import ErrorUtils
 from opendxa.dana.common.exceptions import SandboxError, StateError
-from opendxa.dana.sandbox.context_manager import ContextManager
 from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
 from opendxa.dana.sandbox.parser.ast import (
     AttributeAccess,
@@ -51,20 +50,23 @@ class ExpressionEvaluator(BaseExecutor):
     - Evaluate f-string expressions
     """
 
-    def __init__(self, context_manager: ContextManager):
+    def __init__(self, context_provider):
         """Initialize the expression evaluator.
 
         Args:
-            context_manager: The context manager for variable resolution
+            context_provider: Any object that provides context management functionality and has a get_registry() method
         """
-        super().__init__(context_manager)
+        super().__init__(context_provider)
+
+        # Feature flag to control use of ArgumentProcessor
+        self._use_arg_processor = False
 
     def evaluate(self, expression: Any, context: SandboxContext) -> Any:
         """Evaluate an expression using the current context.
 
         Args:
             expression: The expression to evaluate
-            local_context: Optional context of local variables for evaluation
+            context: Context of local variables for evaluation
 
         Returns:
             The value of the expression
@@ -133,7 +135,7 @@ class ExpressionEvaluator(BaseExecutor):
 
         Args:
             expression: The f-string expression to evaluate
-            local_context: Optional context of local variables for evaluation
+            context: Context of variables for evaluation
 
         Returns:
             The formatted string result
@@ -241,7 +243,7 @@ class ExpressionEvaluator(BaseExecutor):
 
         Args:
             node: The literal expression to evaluate
-            context: context for variable resolution
+            context: Context for variable resolution
 
         Returns:
             The literal value
@@ -257,26 +259,29 @@ class ExpressionEvaluator(BaseExecutor):
             # Extract any variables from the string using a simple regex
             import re
 
-            # Find aliiiil expressions like {var} in the string
+            # Find all expressions like {var} in the string
             var_matches = re.findall(r"\{([^{}]+)\}", current_str)
 
             # If we have variables, replace them with their values from context
             if var_matches and context:
                 result = current_str
                 for var_name in var_matches:
-                    if var_name in context:
-                        result = result.replace(f"{{{var_name}}}", str(context[var_name]))
+                    if var_name in context:  # Direct check in context
+                        result = result.replace(f"{{{var_name}}}", str(context.get(var_name)))
                     elif var_name.startswith("local.") and var_name[6:] in context:
-                        result = result.replace(f"{{{var_name}}}", str(context[var_name[6:]]))
+                        result = result.replace(f"{{{var_name}}}", str(context.get(var_name[6:])))
                     else:
                         try:
-                            # Try to retrieve from context manager
+                            # Try to retrieve value directly from context or via a helper
                             if "." in var_name:
                                 scope, name = var_name.split(".", 1)
-                                var_value = self.context_manager.get_from_scope(name, scope=scope)
+                                # Access value directly from context if possible
+                                var_value = context.get_from_scope(name, scope) if hasattr(context, "get_from_scope") else None
                             else:
-                                var_value = self.context_manager.get(var_name)
-                            result = result.replace(f"{{{var_name}}}", str(var_value))
+                                var_value = context.get(var_name)
+
+                            if var_value is not None:
+                                result = result.replace(f"{{{var_name}}}", str(var_value))
                         except Exception:
                             # If variable not found, leave as is
                             pass
@@ -327,7 +332,7 @@ class ExpressionEvaluator(BaseExecutor):
 
         Args:
             node: The function call node
-            local_context: Optional local context for evaluation
+            context: Context for evaluation
 
         Returns:
             The result of the function call
@@ -340,7 +345,33 @@ class ExpressionEvaluator(BaseExecutor):
         if function_name == "local.reason":
             function_name = "reason"
 
-        # Convert all argument values first
+        # Use the ArgumentProcessor if enabled
+        if self._use_arg_processor:
+            try:
+                # Import here to avoid circular imports
+                from opendxa.dana.sandbox.interpreter.functions.argument_processor import ArgumentProcessor
+
+                # Create an instance and use it to process arguments
+                processor = ArgumentProcessor(self)
+                args_list = list(node.args.get("__positional", []))
+                kwargs_dict = {k: v for k, v in node.args.items() if k != "__positional"}
+
+                evaluated_args, evaluated_kwargs = processor.evaluate_args(args_list, kwargs_dict, context)
+
+                # Call the function
+                result = self.function_registry.call(
+                    function_name,
+                    context=context,
+                    args=evaluated_args,
+                    kwargs=evaluated_kwargs,
+                )
+
+                return result
+            except ImportError:
+                # Fall back to original implementation if ArgumentProcessor is not available
+                pass
+
+        # Original implementation - Convert all argument values first
         the_args = []
         the_kwargs = {}
 

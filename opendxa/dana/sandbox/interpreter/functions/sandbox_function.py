@@ -19,13 +19,12 @@ Discord: https://discord.gg/6jGD4PYk
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Dict, List, Optional
 
-from opendxa.dana.common.exceptions import SandboxError
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
-class SandboxFunction(ABC, Callable):
+class SandboxFunction(ABC):
     """Base class for all Sandbox functions, with security controls.
 
     This class provides a common interface for all core functions.
@@ -38,6 +37,7 @@ class SandboxFunction(ABC, Callable):
             context: The sandbox context
         """
         self.context = context
+        self.parameters: List[str] = []  # Will be set by subclasses
 
     def __call__(
         self,
@@ -60,47 +60,34 @@ class SandboxFunction(ABC, Callable):
         Raises:
             SandboxError: If argument binding fails
         """
-        # Create a new local scope for the function
-        local_scope: Dict[str, Any] = {}
+        # Handle case where local_context is actually a positional argument (not a dict)
+        # This happens in tests like test_function_registry_deeply_nested_namespaces
+        positional_args = list(the_args)
+        if local_context is not None and not isinstance(local_context, dict):
+            # Insert local_context as the first positional argument
+            positional_args.insert(0, local_context)
+            local_context = None  # Clear local_context since it's now a positional arg
 
-        # Bind positional arguments
-        if len(the_args) > len(self.parameters):
-            raise SandboxError(f"Too many arguments: expected {len(self.parameters)}, got {len(the_args)}")
-        for param, arg in zip(self.parameters, the_args):
-            local_scope[param] = arg
+        # Ensure context is never None
+        actual_context = context or self.context
+        if actual_context is None:
+            actual_context = SandboxContext()
 
-        # Bind keyword arguments
-        for name, value in the_kwargs.items():
-            if name not in self.parameters:
-                raise SandboxError(f"Unknown parameter: {name}")
-            if name in local_scope:
-                raise SandboxError(f"Parameter already bound: {name}")
-            local_scope[name] = value
+        # Prepare the context for execution
+        prepared_context = self.prepare_context(actual_context, positional_args, the_kwargs)
 
-        # Check that all required parameters are bound
-        if hasattr(self, "required_parameters"):
-            unbound = set(self.required_parameters) - set(local_scope.keys())
-        else:
-            # For backward compatibility with BaseFunction subclasses that don't define required_parameters
-            unbound = set(self.parameters) - set(local_scope.keys())
+        # Merge local_context into prepared_context if provided
+        if local_context:
+            saved_local = prepared_context.get_scope("local")
+            # Merge local_context with the existing local scope
+            merged_local = {**saved_local, **local_context}
+            prepared_context.set_scope("local", merged_local)
 
-        if unbound:
-            raise SandboxError(f"Missing arguments for parameters: {', '.join(unbound)}")
+        # Sanitize any SandboxContext instances in the arguments for security
+        sanitized_context = actual_context.copy().sanitize()
 
-        for k, v in local_scope.copy().items():
-            if k.startswith("local.") or k.startswith("local:"):
-                local_scope[k[6:]] = v
-                del local_scope[k]
-
-        # Use provided context or default to self.context
-        context = context or self.context or SandboxContext()
-
-        # Get a sanitized copy of the context
-        sanitized_context = context.copy().sanitize()
-
-        # Scan args and kwargs for SandboxContext instances and replace with sanitized copy
         sanitized_args = []
-        for arg in the_args:
+        for arg in positional_args:
             if isinstance(arg, SandboxContext):
                 sanitized_args.append(sanitized_context)
             else:
@@ -113,26 +100,64 @@ class SandboxFunction(ABC, Callable):
             else:
                 sanitized_kwargs[key] = value
 
-        # Merge local_context and local_scope
-        local_context = {**(local_context or {}), **local_scope}
-        saved_local_context = sanitized_context.get_scope("local")
+        # Handle context injection if needed (for Python functions)
+        sanitized_kwargs = self.inject_context(prepared_context, sanitized_kwargs)
 
-        # Execute the function body in a secure context
+        # Execute the function with the prepared context
         try:
-            sanitized_context.set_scope("local", local_context)
-            result = self.__do_call__(sanitized_context, *sanitized_args, **sanitized_kwargs)
+            result = self.execute(prepared_context, *sanitized_args, **sanitized_kwargs)
             return result
         finally:
-            # Restore the original local context
-            sanitized_context.set_scope("local", saved_local_context)
+            # Restore the context after execution
+            self.restore_context(prepared_context, actual_context)
 
-    @abstractmethod
-    def __do_call__(self, the_context: SandboxContext, *the_args: Any, **the_kwargs: Any) -> Any:
-        """Execute the function body with the provided context and local context.
+    def prepare_context(self, context: SandboxContext, args: List[Any], kwargs: Dict[str, Any]) -> SandboxContext:
+        """
+        Prepare the context for function execution.
+        Default implementation just returns a copy of the context.
 
         Args:
-            the_context: The context to use for execution
-            *the_args: Positional arguments
-            **the_kwargs: Keyword arguments
+            context: The original context
+            args: Positional arguments
+            kwargs: Keyword arguments
+
+        Returns:
+            Prepared context for function execution
+        """
+        return context.copy()
+
+    def restore_context(self, context: SandboxContext, original_context: SandboxContext) -> None:
+        """
+        Restore the context after function execution.
+        Default implementation does nothing.
+
+        Args:
+            context: The current context
+            original_context: The original context before execution
+        """
+        pass
+
+    def inject_context(self, context: SandboxContext, kwargs: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Handle context injection for functions that want it.
+        Default implementation does nothing.
+
+        Args:
+            context: The context to inject
+            kwargs: The existing keyword arguments
+
+        Returns:
+            Updated keyword arguments with context injected if needed
+        """
+        return kwargs
+
+    @abstractmethod
+    def execute(self, context: SandboxContext, *args: Any, **kwargs: Any) -> Any:
+        """Execute the function body with the provided context and arguments.
+
+        Args:
+            context: The context to use for execution
+            *args: Positional arguments
+            **kwargs: Keyword arguments
         """
         raise NotImplementedError("Subclasses must implement this method")

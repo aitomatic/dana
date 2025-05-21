@@ -249,3 +249,20 @@ class DanaParser(Lark, Loggable):
         """
         name = str(node.children[0])
         return Identifier(name=name, location=self._get_location(node))
+
+
+def parse_program(program_text: str, do_type_check: bool = ENABLE_TYPE_CHECK) -> Program:
+    """
+    Parse a DANA program string into a Program AST node.
+
+    This is a utility function that creates a parser instance and parses the program.
+
+    Args:
+        program_text: The program text to parse
+        do_type_check: Whether to perform type checking (default depends on environment)
+
+    Returns:
+        Program AST node
+    """
+    parser = DanaParser()
+    return parser.parse(program_text, do_transform=True, do_type_check=do_type_check)

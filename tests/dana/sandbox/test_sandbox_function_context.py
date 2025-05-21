@@ -19,14 +19,14 @@ class TestFunction(SandboxFunction):
         super().__init__(context)
         self.parameters = ["test_context", "other_arg"]
 
-    def __do_call__(self, the_context, *the_args, **the_kwargs):
+    def execute(self, context, *args, **kwargs):
         """Test implementation that returns the sanitized context."""
         # Return the first arg or kwarg that is a SandboxContext
-        for arg in the_args:
+        for arg in args:
             if isinstance(arg, SandboxContext):
                 return arg
 
-        for key, value in the_kwargs.items():
+        for key, value in kwargs.items():
             if isinstance(value, SandboxContext):
                 return value
 

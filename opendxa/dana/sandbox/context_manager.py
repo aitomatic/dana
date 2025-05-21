@@ -40,6 +40,7 @@ class ContextManager:
         """
         self.context = context or SandboxContext()
         self.context.manager = self
+        self._registry = None  # Will be set by the interpreter
 
     def get(self, key: str, default: Any = None) -> Any:
         """Get a value from the context.
@@ -203,3 +204,20 @@ class ContextManager:
             A detailed string representation of the context manager
         """
         return f"ContextManager(context={self.context})"
+
+    def get_registry(self):
+        """
+        Get the function registry.
+
+        This method is used by registry_provider pattern to access function registry.
+        The registry should be set by the interpreter when initializing the context manager.
+
+        Returns:
+            The function registry, or None if not set
+        """
+        # If interpreter is available in context, try to get registry from it
+        if hasattr(self.context, "interpreter") and self.context.interpreter:
+            return self.context.interpreter.function_registry
+
+        # Return the cached registry if available
+        return self._registry

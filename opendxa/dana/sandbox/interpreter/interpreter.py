@@ -98,6 +98,11 @@ class Interpreter(Loggable):
             from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
 
             self._function_registry = FunctionRegistry()
+
+            # Apply the feature flag if set on the Interpreter class
+            if hasattr(self.__class__, "_function_registry_use_arg_processor"):
+                self._function_registry._use_arg_processor = self.__class__._function_registry_use_arg_processor
+
             # Register all core functions automatically
             register_core_functions(self._function_registry)
         return self._function_registry

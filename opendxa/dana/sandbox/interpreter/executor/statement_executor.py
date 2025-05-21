@@ -18,7 +18,7 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 from opendxa.dana.common.error_utils import ErrorUtils
 from opendxa.dana.common.exceptions import SandboxError
@@ -371,96 +371,99 @@ class StatementExecutor(BaseExecutor):
         return result
 
     def _execute_method_or_variable_function(self, node: FunctionCall, context: SandboxContext) -> Any:
-        """Execute a method call or variable function.
+        """Execute a function call where the function might be a variable.
+
+        Precedence:
+        1. Check if function exists in registry
+        2. Check if it's a variable with colon syntax (local:func)
+        3. Check if it's a variable that is callable
 
         Args:
             node: The function call node
+            context: The execution context
 
         Returns:
             The result of the function call
 
         Raises:
-            RuntimeError: If the function call fails
+            SandboxError: If the function or variable is not found
         """
-        # Convert all argument values first
-        processed_args = {}
-        for key, value in node.args.items():
-            processed_args[key] = self.expression_evaluator.evaluate(value, context)
+        function_name = node.name
+        args_list = list()
+        kwargs = dict()
 
-        # Prepare positional and keyword arguments
-        args_list = []
-        kwargs = {}
-        for key, value in processed_args.items():
-            # If the key is a position number, add to args_list
-            if key.isdigit():
-                position = int(key)
-                # Expand args_list if needed
-                while len(args_list) <= position:
-                    args_list.append(None)
-                args_list[position] = value
-            else:
-                # Otherwise it's a keyword argument
-                kwargs[key] = value
-
-        # Explicit scope: local:foo, private:bar, etc.
-        if ":" in node.name:
-            scope, var_name = node.name.split(":", 1)
-            try:
-                func = self.context_manager.get_from_scope(var_name, scope=scope)
-                if callable(func):
-                    return func(*args_list, **kwargs)
-                else:
-                    raise SandboxError(f"Variable '{scope}:{var_name}' is not callable")
-            except Exception:
-                raise SandboxError(f"Function or variable '{scope}:{var_name}' not found in context")
-
-        # If the function name contains dots, it might be a Python object method call
-        if "." in node.name:
-            return self._execute_method_call(node.name, args_list, kwargs, context)
+        # Handle positional arguments
+        if "__positional" in node.args:
+            for arg in node.args["__positional"]:
+                # Ensure we evaluate each argument to get its actual value
+                evaluated_arg = self.expression_evaluator.evaluate(arg, context)
+                args_list.append(evaluated_arg)
+        # Handle keyword arguments
         else:
-            # Try to resolve and call the function
+            for key, value in node.args.items():
+                if key.isdigit():
+                    # Positional argument by index
+                    pos = int(key)
+                    while len(args_list) <= pos:
+                        args_list.append(None)
+                    evaluated_value = self.expression_evaluator.evaluate(value, context)
+                    args_list[pos] = evaluated_value
+                else:
+                    # Keyword argument
+                    kwargs[key] = self.expression_evaluator.evaluate(value, context)
+
+        # Check if the function is using the explicit scope notation (scope:name)
+        if ":" in function_name:
+            scope, var_name = function_name.split(":", 1)
+
+            # Get callable from context
             try:
-                return self.function_registry.call(node.name, args=args_list, kwargs=kwargs, context=self.context_manager.context)
-            except KeyError:
-                # Fallback: Try to get local.foo as a variable from context
-                try:
-                    func = self.context_manager.get(node.name)
-                    if callable(func):
+                # Access context directly instead of through context_manager
+                func = context.get_from_scope(var_name, scope) if hasattr(context, "get_from_scope") else None
+
+                if func and callable(func):
+                    if args_list and kwargs:
                         return func(*args_list, **kwargs)
+                    elif args_list:
+                        return func(*args_list)
+                    elif kwargs:
+                        return func(**kwargs)
                     else:
-                        raise SandboxError(f"Variable 'local:{node.name}' is not callable")
-                except Exception:
-                    raise SandboxError(f"Function or variable '{node.name}' not found in registries or local context")
+                        return func()
+                else:
+                    raise SandboxError(f"Variable '{var_name}' in scope '{scope}' is not callable")
+            except Exception as e:
+                raise SandboxError(f"Error calling variable function '{function_name}': {str(e)}")
 
-    def _execute_method_call(self, name: str, args: List[Any], kwargs: Dict[str, Any], context: SandboxContext) -> Any:
-        """Execute a method call on an object.
+        # Check if the function exists in the function registry
+        if self.function_registry.has(function_name):
+            try:
+                # Call through registry
+                result = self.function_registry.call(function_name, args=args_list, kwargs=kwargs, context=context)
+                return result
+            except Exception as e:
+                raise SandboxError(f"Error calling registry function '{function_name}': {str(e)}")
 
-        Args:
-            name: The name of the method to call
-            args: Positional arguments
-            kwargs: Keyword arguments
+        # Finally, check if it's a variable in local scope
+        try:
+            # Try to access the function from context directly
+            func = context.get(function_name)
 
-        Returns:
-            The result of the method call
-
-        Raises:
-            RuntimeError: If the method call fails
-        """
-        # Split the name into object and method parts
-        parts = name.split(".")
-        obj_name = ".".join(parts[:-1])
-        method_name = parts[-1]
-
-        # Get the object
-        obj = self.context_manager.get(obj_name)
-
-        # Get the method
-        method = getattr(obj, method_name, None)
-        if method is None:
-            raise SandboxError(f"Object '{obj_name}' has no method '{method_name}'")
-
-        # Call the method
-        return method(*args, **kwargs)
+            if func and callable(func):
+                if args_list and kwargs:
+                    return func(*args_list, **kwargs)
+                elif args_list:
+                    return func(*args_list)
+                elif kwargs:
+                    return func(**kwargs)
+                else:
+                    return func()
+            else:
+                raise SandboxError(f"Function or variable '{function_name}' not found or not callable")
+        except Exception as e:
+            if isinstance(e, SandboxError):
+                raise e
+            raise SandboxError(f"Function or variable '{function_name}' not found")
 
     def execute_pass_statement(self, node: "PassStatement", context: SandboxContext) -> None:
         """Execute a pass statement (does nothing)."""
