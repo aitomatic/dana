@@ -43,8 +43,6 @@ class DanaFunction(SandboxFunction, Loggable):
                 if self.context is not None and hasattr(self.context, "_interpreter") and self.context._interpreter is not None:
                     context._interpreter = self.context._interpreter
 
-            breakpoint()
-
             # Copy args and kwargs into the local scope by parameter names, but only if they don't exist
             for i, param_name in enumerate(self.parameters):
                 if i < len(the_args):
