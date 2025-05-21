@@ -18,7 +18,7 @@ Discord: https://discord.gg/6jGD4PYk
 """
 
 from opendxa.dana.common.exceptions import SandboxError
-from opendxa.dana.sandbox.interpreter.executor.context_manager import ContextManager
+from opendxa.dana.sandbox.context_manager import ContextManager
 from opendxa.dana.sandbox.interpreter.executor.expression_evaluator import ExpressionEvaluator
 from opendxa.dana.sandbox.interpreter.executor.statement_executor import StatementExecutor
 from opendxa.dana.sandbox.parser.ast import Expression, Statement

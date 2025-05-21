@@ -19,12 +19,14 @@ Discord: https://discord.gg/6jGD4PYk
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
 
-from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.dana.common.exceptions import StateError
 from opendxa.dana.common.runtime_scopes import RuntimeScopes
 from opendxa.dana.sandbox.interpreter.executor.has_interpreter import HasInterpreter
+
+if TYPE_CHECKING:
+    from opendxa.dana.sandbox.context_manager import ContextManager
 
 
 class ExecutionStatus(Enum):
@@ -48,6 +50,7 @@ class SandboxContext(HasInterpreter):
         """
         super().__init__()
         self._parent = parent
+        self._manager = None
         self._state: Dict[str, Dict[str, Any]] = {
             "local": {},  # Always fresh local scope
             "private": {},  # Shared global scope
@@ -62,6 +65,21 @@ class SandboxContext(HasInterpreter):
         if parent:
             for scope in RuntimeScopes.GLOBAL:
                 self._state[scope] = parent._state[scope]  # Share reference instead of copy
+
+    @property
+    def parent_context(self) -> Optional["SandboxContext"]:
+        """Get the parent context."""
+        return self._parent
+
+    @property
+    def manager(self) -> "ContextManager":
+        """Get the context manager for this context."""
+        return self._manager
+
+    @manager.setter
+    def manager(self, manager: "ContextManager") -> None:
+        """Set the context manager for this context."""
+        self._manager = manager
 
     def _validate_key(self, key: str) -> Tuple[str, str]:
         """Validate a key and extract scope and variable name.
@@ -78,23 +96,18 @@ class SandboxContext(HasInterpreter):
         # Handle both dot and colon notation
         if "." in key:
             parts = key.split(".", 1)
-            if parts[0] in RuntimeScopes.ALL:
-                # Valid scope.variable notation
-                scope, var_name = parts
-            else:
-                # Local variable with dots in the name
-                scope = "local"
-                var_name = key
         elif ":" in key:
             parts = key.split(":", 1)
-            if len(parts) != 2:
-                raise StateError(f"Invalid key format: {key}")
-            scope, var_name = parts
-            if scope not in RuntimeScopes.ALL:
-                raise StateError(f"Unknown scope: {scope}")
         else:
             # Default to local scope for unscoped variables
             return "local", key
+
+        if len(parts) != 2:
+            raise StateError(f"Invalid key format: {key}")
+
+        scope, var_name = parts
+        if scope not in RuntimeScopes.ALL:
+            raise StateError(f"Unknown scope: {scope}")
 
         return scope, var_name
 
@@ -373,9 +386,123 @@ class SandboxContext(HasInterpreter):
         Returns:
             A new SandboxContext with the same state
         """
-        new_context = SandboxContext(parent=self._parent)
+        new_context = SandboxContext()
         new_context.set_state(self.get_state())
         return new_context
+
+    def sanitize(self) -> None:
+        """Remove or mask sensitive properties from the context.
+
+        This method removes or masks properties that are considered sensitive,
+        such as API keys, credentials, and private data. It operates on the
+        current context instance in-place.
+
+        Sensitive data includes:
+        - Credentials and API keys in any scope
+        - Authentication tokens
+        - User-specific information
+        - Internal system properties
+        """
+        # Define sensitive property patterns to identify and remove
+        sensitive_patterns = [
+            "api_key",
+            "apikey",
+            "key",
+            "token",
+            "secret",
+            "password",
+            "credential",
+            "auth",
+            "access",
+            "private_key",
+            "cert",
+            "certificate",
+            "signature",
+        ]
+
+        # Additional sensitive key names (exact matches)
+        sensitive_keys = ["config", "credentials", "settings", "llm_resource"]
+
+        # User identifiable information patterns
+        user_info_patterns = ["user_id", "username", "email", "account", "address", "phone"]
+
+        # Completely remove private and system scopes
+        for scope in RuntimeScopes.SENSITIVE:
+            if scope in self._state:
+                del self._state[scope]
+
+        # Mask sensitive values in remaining scopes (local, public)
+        for scope in RuntimeScopes.NOT_SENSITIVE:
+            if scope not in self._state:
+                continue
+
+            keys_to_mask = []
+
+            # Identify sensitive keys
+            for key, value in list(self._state[scope].items()):
+                # Direct match with known sensitive keys
+                if key in sensitive_keys:
+                    keys_to_mask.append(key)
+                    continue
+
+                # Check if key contains sensitive patterns
+                if any(pattern in key.lower() for pattern in sensitive_patterns):
+                    keys_to_mask.append(key)
+                    continue
+
+                # Check for user identifiable information
+                if any(pattern in key.lower() for pattern in user_info_patterns):
+                    keys_to_mask.append(key)
+                    continue
+
+                # Check for values that look like credentials or sensitive IDs
+                if isinstance(value, str):
+                    # Identify values that look like credentials
+                    potential_credential = False
+
+                    # Longer strings need more scrutiny
+                    if len(value) > 20:
+                        # Check for JWT-like patterns
+                        if "." in value and value.count(".") >= 2 and all(len(part) > 5 for part in value.split(".")):
+                            potential_credential = True
+
+                        # Check for patterns like sk_live_, Bearer token, or OAuth formats
+                        elif any(prefix in value for prefix in ["sk_", "Bearer ", "OAuth ", "api_", "pk_"]):
+                            potential_credential = True
+
+                        # Check for alphanumeric strings with hyphens, underscores, or mixed case that look like UUIDs or tokens
+                        elif any(c.isalnum() for c in value) and (
+                            sum(1 for c in value if c in "-_") > 0 or sum(1 for c in value if c.isupper()) > 5
+                        ):
+                            potential_credential = True
+
+                    # Look for user ID patterns (shorter strings with prefixes)
+                    elif len(value) >= 10 and any(prefix in value for prefix in ["usr_", "user_", "acct_", "id_"]):
+                        potential_credential = True
+
+                    if potential_credential:
+                        keys_to_mask.append(key)
+                        continue
+
+                # Check dictionaries for sensitive keys
+                if isinstance(value, dict) and any(k.lower() in sensitive_patterns for k in value):
+                    keys_to_mask.append(key)
+                    continue
+
+            # Mask sensitive values
+            for key in keys_to_mask:
+                if key in self._state[scope]:
+                    if isinstance(self._state[scope][key], str):
+                        # Replace with masked version
+                        value = self._state[scope][key]
+                        if len(value) > 8:
+                            masked = value[:4] + "****" + value[-4:]
+                        else:
+                            masked = "********"
+                        self._state[scope][key] = masked
+                    else:
+                        # For non-string values, replace with masked indicator
+                        self._state[scope][key] = "[MASKED]"
 
     def __str__(self) -> str:
         """Get a string representation of the context.
@@ -405,40 +532,10 @@ class SandboxContext(HasInterpreter):
         return self._state[scope].copy()
 
     def set_scope(self, scope: str, context: Optional[Dict[str, Any]] = None) -> None:
-        """Sets all variables in a scope.
+        """Set a value in a specific scope.
 
         Args:
-            scope: The scope name
-            context: Dictionary of variable values to set
+            scope: The scope to set in
+            context: The context to set
         """
-        if scope not in RuntimeScopes.ALL:
-            raise StateError(f"Unknown scope: {scope}")
-
-        if context is None:
-            context = {}
-
-        self._state[scope] = context
-
-    @property
-    def llm_resource(self) -> LLMResource:
-        """Get the LLM resource for this context, creating it if it doesn't exist.
-
-        This is a lazy-initialized property that creates the LLMResource only when
-        first accessed, storing it in the system scope of the context.
-
-        Returns:
-            The LLMResource instance for this context
-        """
-        try:
-            # First try to get the existing resource from the context
-            resource = self.get("system.llm_resource")
-            if resource is not None:
-                return resource
-        except StateError:
-            # If not found, create a new one
-            pass
-
-        # Create a new LLMResource and store it in the context
-        resource = LLMResource(name="dana_context_llm")
-        self.set("system.llm_resource", resource)
-        return resource
+        self._state[scope] = context or {}

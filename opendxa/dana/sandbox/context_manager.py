@@ -39,6 +39,7 @@ class ContextManager:
             context: Optional initial context
         """
         self.context = context or SandboxContext()
+        self.context.manager = self
 
     def get(self, key: str, default: Any = None) -> Any:
         """Get a value from the context.
@@ -86,37 +87,47 @@ class ContextManager:
         # For local scope, set in current context
         self.context._state[scope][var_name] = value
 
-    def get_from_scope(self, var_name: str, scope: Optional[str] = None) -> Any:
-        """Get a value from a specific scope.
+    def get_from_scope(self, identifier: str, scope: str, from_parent: bool = True) -> Any:
+        """Get a variable from a specific scope.
 
         Args:
-            var_name: The variable name
-            scope: Optional scope override (defaults to None)
+            identifier: The variable name
+            scope: The scope to search in
+            from_parent: Whether to search in parent contexts
 
         Returns:
-            The value associated with the variable
+            The variable value
 
         Raises:
-            StateError: If the scope is unknown or variable not found
+            StateError: If the variable is not found
         """
-        # If var_name contains a scope prefix (e.g. "private.x"), use that
-        if "." in var_name:
-            scope_name, name = var_name.split(".", 1)
-            if scope_name not in RuntimeScopes.ALL:
-                raise StateError(f"Unknown scope: {scope_name}")
-            scope_dict = self.context._state[scope_name]
-            if name not in scope_dict:
-                raise StateError(f"Variable '{var_name}' not found")
-            return scope_dict[name]
-
-        # Otherwise use the provided scope or default to local
-        scope = scope or "local"
-        if scope not in RuntimeScopes.ALL:
+        # Ensure scope exists
+        if not scope or scope not in self.context._state:
             raise StateError(f"Unknown scope: {scope}")
-        scope_dict = self.context._state[scope]
-        if var_name not in scope_dict:
-            raise StateError(f"Variable '{var_name}' not found in scope '{scope}'")
-        return scope_dict[var_name]
+
+        # Direct access for private.foo, public.bar, system.baz
+        if identifier in self.context._state[scope]:
+            return self.context._state[scope][identifier]
+
+        if from_parent and self.context.parent_context:
+            # TODO: Be careful: security risk
+            return self.context.parent_context.get_from_scope(identifier, scope, from_parent)
+
+        # Not found anywhere, raise error
+        raise StateError(f"Variable '{identifier}' not found in scope '{scope}'")
+
+    def get_sanitized_context(self) -> SandboxContext:
+        """Get a sandboxed copy of the current context without sensitive scopes.
+
+        This method creates a copy of the current context with the private and system
+        scopes removed to prevent access to sensitive information.
+
+        Returns:
+            A sanitized copy of the sandbox context
+        """
+        sandboxed_copy = self.context.copy()
+        sandboxed_copy.sanitize()  # Remove private scope and sanitize remaining scopes
+        return sandboxed_copy
 
     def has(self, key: str) -> bool:
         """Check if a key exists in the context.

@@ -25,8 +25,8 @@ from opendxa.dana.common.exceptions import SandboxError
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
-class BaseFunction(ABC, Callable):
-    """Base class for all DANA core functions.
+class SandboxFunction(ABC, Callable):
+    """Base class for all Sandbox functions, with security controls.
 
     This class provides a common interface for all core functions.
     """
@@ -77,8 +77,13 @@ class BaseFunction(ABC, Callable):
                 raise SandboxError(f"Parameter already bound: {name}")
             local_scope[name] = value
 
-        # Check that all parameters are bound
-        unbound = set(self.parameters) - set(local_scope.keys())
+        # Check that all required parameters are bound
+        if hasattr(self, "required_parameters"):
+            unbound = set(self.required_parameters) - set(local_scope.keys())
+        else:
+            # For backward compatibility with BaseFunction subclasses that don't define required_parameters
+            unbound = set(self.parameters) - set(local_scope.keys())
+
         if unbound:
             raise SandboxError(f"Missing arguments for parameters: {', '.join(unbound)}")
 
@@ -88,18 +93,43 @@ class BaseFunction(ABC, Callable):
                 del local_scope[k]
 
         # Use provided context or default to self.context
-        the_context = context or self.context or SandboxContext()
+        context = context or self.context or SandboxContext()
 
-        # Execute the function body with the local scope
+        # Get a sanitized copy of the context
+        if not hasattr(context, "manager") or context.manager is None:
+            # Create a context manager if one doesn't exist
+            from opendxa.dana.sandbox.context_manager import ContextManager
+
+            context.manager = ContextManager(context)
+
+        sanitized_context = context.manager.get_sanitized_context()
+
+        # Scan args and kwargs for SandboxContext instances and replace with sanitized copy
+        sanitized_args = []
+        for arg in the_args:
+            if isinstance(arg, SandboxContext):
+                sanitized_args.append(sanitized_context)
+            else:
+                sanitized_args.append(arg)
+
+        sanitized_kwargs = {}
+        for key, value in the_kwargs.items():
+            if isinstance(value, SandboxContext):
+                sanitized_kwargs[key] = sanitized_context
+            else:
+                sanitized_kwargs[key] = value
+
+        # Merge local_context and local_scope
+        local_context = {**(local_context or {}), **local_scope}
+        saved_local_context = sanitized_context.get_scope("local")
+
+        # Execute the function body in a secure context
         try:
-            # Merge local_context and local_scope
-            local_context = {**(local_context or {}), **local_scope}
-            saved_local_context = the_context.get_scope("local")
-            the_context.set_scope("local", local_context)
-            return self.__do_call__(the_context, *the_args, **the_kwargs)
+            sanitized_context.set_scope("local", local_context)
+            return self.__do_call__(sanitized_context, *sanitized_args, **sanitized_kwargs)
         finally:
             # Restore the original local context
-            the_context.set_scope("local", saved_local_context)
+            sanitized_context.set_scope("local", saved_local_context)
 
     @abstractmethod
     def __do_call__(self, the_context: SandboxContext, *the_args: Any, **the_kwargs: Any) -> Any:
@@ -107,8 +137,7 @@ class BaseFunction(ABC, Callable):
 
         Args:
             the_context: The context to use for execution
-            local_context: The local context to use for execution
-            *the_args: Positional arguments, not used because they’re already in the local scope
-            **the_kwargs: Keyword arguments, not used because they’re already in the local scope
+            *the_args: Positional arguments
+            **the_kwargs: Keyword arguments
         """
         raise NotImplementedError("Subclasses must implement this method")

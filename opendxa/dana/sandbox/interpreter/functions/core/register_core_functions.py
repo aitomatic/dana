@@ -23,6 +23,9 @@ def register_core_functions(registry: FunctionRegistry) -> None:
 
     Args:
         registry: The function registry to register functions with
+    
+    Security:
+        Core functions have special security status.
     """
     # Get the directory containing this file
     core_dir = Path(__file__).parent

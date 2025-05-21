@@ -16,3 +16,5 @@ class RuntimeScopes:
     ALL_WITH_DOT = LOCAL_WITH_DOT + GLOBAL_WITH_DOT
     ALL_WITH_COLON = LOCAL_WITH_COLON + GLOBAL_WITH_COLON
     ALL_WITH_SEPARATOR = ALL_WITH_DOT + ALL_WITH_COLON
+    SENSITIVE = ["private", "system"]
+    NOT_SENSITIVE = [scope for scope in ALL if scope not in ["private", "system"]]

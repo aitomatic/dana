@@ -76,7 +76,7 @@ class Interpreter(Loggable):
             context: Optional runtime context to use
         """
         super().__init__()
-        from opendxa.dana.sandbox.interpreter.executor.context_manager import ContextManager
+        from opendxa.dana.sandbox.context_manager import ContextManager
 
         self.context = context or SandboxContext()
         self._context_manager = ContextManager(self.context)

@@ -11,6 +11,7 @@ This module provides the reason function, which handles reasoning in the DANA in
 import json
 from typing import Any, Dict, Optional
 
+from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.common.types import BaseRequest
 from opendxa.common.utils.logging import DXA_LOGGER
 from opendxa.dana.common.exceptions import SandboxError
@@ -22,58 +23,50 @@ def reason_function(
     context: SandboxContext,
     options: Optional[Dict[str, Any]] = None,
 ) -> Any:
-    """Execute the reason function.
+    """Execute the reason function to generate a response using an LLM.
 
     Args:
-        prompt: The reasoning prompt.
-        context: The runtime context for variable resolution.
-        options: Optional parameters for the function.
+        prompt: The prompt string to send to the LLM (can be a string or a list with LiteralExpression)
+        context: The sandbox context
+        options: Optional parameters for the LLM call, including:
+            - system_message: Custom system message (default: helpful assistant)
+            - temperature: Controls randomness (default: 0.7)
+            - max_tokens: Limit on response length
+            - format: Output format ("text" or "json")
 
     Returns:
-        The result of the reasoning operation.
+        The LLM's response to the prompt
 
     Raises:
-        SandboxError: If the function execution fails.
+        SandboxError: If the function execution fails or parameters are invalid
     """
     logger = DXA_LOGGER.getLogger("opendxa.dana.reason")
+    options = options or {}
 
-    if options is None:
-        options = {}
+    if not prompt:
+        raise SandboxError("reason function requires a non-empty prompt")
 
-    prompt = options.get("prompt", prompt)
-    llm_resource = context.llm_resource
+    # Get LLM resource from context (assume it's available)
+    if hasattr(context, "llm_resource") and context.llm_resource:
+        llm_resource = context.llm_resource
+    else:
+        # Try to get from system.llm_resource
+        try:
+            llm_resource = context.get("system.llm_resource")
+            if not llm_resource:
+                llm_resource = LLMResource()
+        except Exception:
+            llm_resource = LLMResource()
 
     try:
         # Log what's happening
         logger.debug(f"Starting LLM reasoning with prompt: {prompt[:500]}{'...' if len(prompt) > 500 else ''}")
 
-        # Extract variables from context for prompt enrichment
-        context_vars = {}
-        try:
-            # Get all variables from local scope
-            local_scope = context._state.get("local", {})
-            for key, value in local_scope.items():
-                # Only add simple types to context
-                if isinstance(value, (str, int, float, bool, list, dict)):
-                    context_vars[key] = value
-        except (AttributeError, KeyError):
-            pass  # If we can't access local scope, use empty context
-
-        # Build the combined prompt with context
-        if context_vars:
-            # Only include context if there are variables to include
-            context_section = "Available variables:\n"
-            for key, value in context_vars.items():
-                context_section += f"  {key}: {value}\n"
-            enriched_prompt = f"{context_section}\n{prompt}"
-        else:
-            enriched_prompt = prompt
-
         # Prepare system message
         system_message = options.get("system_message", "You are a helpful AI assistant. Respond concisely and accurately.")
 
         # Set up the messages
-        messages = [{"role": "system", "content": system_message}, {"role": "user", "content": enriched_prompt}]
+        messages = [{"role": "system", "content": system_message}, {"role": "user", "content": prompt}]
 
         # Prepare LLM parameters and execute the query
         request_params = {

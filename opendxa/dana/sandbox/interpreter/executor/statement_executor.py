@@ -23,8 +23,8 @@ from typing import Any, Dict, List, Optional, Union
 from opendxa.dana.common.error_utils import ErrorUtils
 from opendxa.dana.common.exceptions import SandboxError
 from opendxa.dana.common.runtime_scopes import RuntimeScopes
+from opendxa.dana.sandbox.context_manager import ContextManager
 from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
-from opendxa.dana.sandbox.interpreter.executor.context_manager import ContextManager
 from opendxa.dana.sandbox.interpreter.executor.expression_evaluator import ExpressionEvaluator
 from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
 from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionMetadata
@@ -453,7 +453,7 @@ class StatementExecutor(BaseExecutor):
         method_name = parts[-1]
 
         # Get the object
-        obj = self.context_manager.get_from_scope(obj_name)
+        obj = self.context_manager.get_from_scope(obj_name, scope="local")
 
         # Get the method
         method = getattr(obj, method_name, None)

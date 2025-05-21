@@ -11,6 +11,7 @@ import inspect
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
+from opendxa.dana.common.exceptions import SandboxViolationError
 from opendxa.dana.common.runtime_scopes import RuntimeScopes
 
 if TYPE_CHECKING:
@@ -58,6 +59,8 @@ class FunctionMetadata:
 
 
 class FunctionRegistry:
+    """Registered functions are sandboxed via the FunctionRegistry"""
+
     def __init__(self):
         # {namespace: {name: (func, type, metadata)}}
         self._functions: Dict[str, Dict[str, Tuple[Callable, str, FunctionMetadata]]] = {}
@@ -144,6 +147,16 @@ class FunctionRegistry:
         if name in self._functions[ns] and not overwrite:
             raise ValueError(f"Function '{name}' already exists in namespace '{ns}'. Use overwrite=True to force.")
 
+        # Auto-wrap raw callables
+        from opendxa.dana.sandbox.interpreter.functions.python_function import PythonFunction
+        from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
+
+        if not isinstance(func, SandboxFunction):
+            # It's a raw callable, wrap it
+            func = PythonFunction(func)
+            # When auto-wrapping, always use python func_type
+            func_type = "python"
+
         if not metadata:
             metadata = FunctionMetadata()
             # Try to determine the source file, but handle custom function types
@@ -156,45 +169,8 @@ class FunctionRegistry:
                 # Just continue with default metadata
                 pass
 
-            # Try to detect if function is context-aware
-            try:
-                # Get parameter names to determine if context-aware
-                if hasattr(func, "__do_call__"):
-                    # For DanaFunction which has a __do_call__ method
-                    sig = inspect.signature(func.__do_call__)
-                elif isinstance(func, type(lambda: None)):
-                    # Regular function
-                    sig = inspect.signature(func)
-                elif callable(func):
-                    # Custom callable object
-                    sig = inspect.signature(func.__call__)
-                else:
-                    # Fallback
-                    sig = inspect.signature(func)
-
-                params = list(sig.parameters.values())
-                # Handle context detection more specifically for the tests
-                if func_type == "python":
-                    # For pytest compatibility, detect only single ctx parameter
-                    if len(params) >= 1 and params[0].name in ("ctx", "context", "the_context"):
-                        metadata.context_aware = True
-                    else:
-                        metadata.context_aware = False
-                else:
-                    # For DANA functions, expect both ctx and local_context
-                    if len(params) >= 2:
-                        context_aware = (params[0].name in ("ctx", "context", "the_context")) and (
-                            params[1].name in ("local_ctx", "local_context")
-                        )
-                        metadata.context_aware = context_aware
-                    elif len(params) >= 1 and params[0].name in ("ctx", "context", "the_context"):
-                        # Single context parameter also counts as context-aware
-                        metadata.context_aware = True
-                    else:
-                        metadata.context_aware = False
-            except (TypeError, ValueError):
-                # Default to True for backward compatibility if we can't determine
-                metadata.context_aware = True
+            # Set context_aware based on function type - BaseFunction is always context-aware
+            metadata.context_aware = True
 
         self._functions[ns][name] = (func, func_type, metadata)
 
@@ -243,6 +219,12 @@ class FunctionRegistry:
             TypeError: If argument binding fails
         """
         func, func_type, metadata = self.resolve(name, namespace)
+
+        from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
+
+        if not isinstance(func, SandboxFunction):
+            raise SandboxViolationError(f"Function '{name}' is not a secure {SandboxFunction.__name__}")
+
         call_args = args if args is not None else []
         call_kwargs = kwargs if kwargs is not None else {}
 
@@ -252,15 +234,9 @@ class FunctionRegistry:
             raise PermissionError(f"Function '{name}' is private and cannot be called from public context")
 
         try:
-            # Check if the function is context-aware and inject context if needed
-            if metadata.context_aware:
-                return func(
-                    context,
-                    local_context or {},
-                    *call_args,
-                    **call_kwargs,
-                )
-            return func(*call_args, **call_kwargs)
+            # All functions are now BaseFunction instances which handle context and parameter binding
+            # The BaseFunction.__call__ method takes care of binding arguments and context
+            return func(context, local_context, *call_args, **call_kwargs)
         except TypeError as e:
             # Re-raise with more descriptive error message
             raise TypeError(f"Error calling function '{name}': {str(e)}")
