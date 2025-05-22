@@ -8,6 +8,7 @@ MIT License
 from typing import Any, Dict, List, Optional
 
 from opendxa.common.mixins.loggable import Loggable
+from opendxa.dana.sandbox.interpreter.executor.dana_executor import ReturnException
 from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
@@ -89,8 +90,6 @@ class DanaFunction(SandboxFunction, Loggable):
             *args: Positional arguments
             **kwargs: Keyword arguments
         """
-        from opendxa.dana.sandbox.interpreter.executor.statement_executor import ReturnStatementExit
-
         try:
             # If the context doesn't have an interpreter, assign the one from self.context
             if not hasattr(context, "_interpreter") or context._interpreter is None:
@@ -112,5 +111,5 @@ class DanaFunction(SandboxFunction, Loggable):
             for statement in self.body:
                 result = context.interpreter.execute_statement(statement, context)
                 self.debug(f"statement: {statement}, result: {result}")
-        except ReturnStatementExit as e:
+        except ReturnException as e:
             return e.value

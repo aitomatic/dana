@@ -1,6 +1,6 @@
 """Tests for basic DANA code execution."""
 
-from opendxa.dana.sandbox.interpreter.interpreter import Interpreter
+from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
 from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
@@ -11,7 +11,7 @@ def run_dana_code(code: str):
     code = code.strip()
     parser = DanaParser()
     program = parser.parse(code, do_type_check=True, do_transform=True)
-    interpreter = Interpreter(SandboxContext())
+    interpreter = DanaInterpreter(SandboxContext())
     interpreter.execute_program(program)
     return interpreter.context
 

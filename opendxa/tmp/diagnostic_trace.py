@@ -7,8 +7,8 @@ different contexts (REPL vs. Test)
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.dana.repl.repl import REPL
 from opendxa.dana.sandbox.context_manager import ContextManager
+from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
 from opendxa.dana.sandbox.interpreter.executor.expression_evaluator import ExpressionEvaluator
-from opendxa.dana.sandbox.interpreter.interpreter import Interpreter
 from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
@@ -33,7 +33,7 @@ print("TEST 1: Test Environment Execution Path")
 print("-" * 50)
 
 # Create interpreter and parser as would be done in tests
-interpreter = Interpreter(context)
+interpreter = DanaInterpreter(context)
 parser = DanaParser()
 
 print(f"\nParsing in test environment: {INPUT_STRING}")

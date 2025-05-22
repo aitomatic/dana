@@ -11,9 +11,8 @@ import asyncio
 import os
 from typing import Any, Dict, Optional
 
-from opendxa.dana.sandbox.interpreter.interpreter import Interpreter
-
 from opendxa.common.resource.llm_resource import LLMResource
+from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
 from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
@@ -58,7 +57,7 @@ async def run_dana_reasoning_example(model: Optional[str] = None, provider: Opti
     context.add_resource("llm", llm)
 
     # Create an interpreter
-    interpreter = Interpreter.new(context)
+    interpreter = DanaInterpreter.new(context)
 
     print(f"Executing DANA code...\n{'-'*80}")
 

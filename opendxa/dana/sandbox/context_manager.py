@@ -112,7 +112,7 @@ class ContextManager:
 
         if from_parent and self.context.parent_context:
             # TODO: Be careful: security risk
-            return self.context.parent_context.get_from_scope(identifier, scope, from_parent)
+            return self.context.parent_context.get_from_scope(identifier, scope)
 
         # Not found anywhere, raise error
         raise StateError(f"Variable '{identifier}' not found in scope '{scope}'")

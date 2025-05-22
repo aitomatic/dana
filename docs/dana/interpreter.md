@@ -10,7 +10,7 @@
 
 **Module**: `opendxa.dana.sandbox.interpreter`
 
-Given the program AST after trransformation (and optional type checking), we are ready to execute the program.
+Given the program AST after transformation (and optional type checking), we are ready to execute the program.
 
 This document describes the architecture, responsibilities, and flow of the DANA Interpreter, which is responsible for executing DANA programs by traversing the AST and managing sandbox context.
 
@@ -20,7 +20,7 @@ The DANA Interpreter executes DANA programs by walking the Abstract Syntax Tree 
 
 ## Main Components
 
-- **Interpreter**: The main entry point for program execution. Manages context, hooks, and delegates execution.
+- **DanaInterpreter**: The main entry point for program execution. Manages context, hooks, and delegates execution.
 - **StatementExecutor**: Executes statements (assignments, conditionals, loops, function calls, etc.).
 - **ExpressionEvaluator**: Evaluates expressions (arithmetic, logical, identifiers, literals, etc.).
 - **ContextManager**: Manages variable scope and sandbox state.
@@ -31,7 +31,7 @@ The DANA Interpreter executes DANA programs by walking the Abstract Syntax Tree 
 
 ```mermaid
 graph TB
-    AST[[AST]] --> I[Interpreter]
+    AST[[AST]] --> I[DanaInterpreter]
     I --> EV
     subgraph EV [Evaluators]
         SE[StatementExecutor]
@@ -49,7 +49,7 @@ graph TB
 ```
 
 - **AST**: The abstract syntax tree from the parser/type checker.
-- **Interpreter**: Orchestrates execution, manages context and hooks.
+- **DanaInterpreter**: Orchestrates execution, manages context and hooks.
 - **StatementExecutor**: Executes statements in the program.
 - **ExpressionEvaluator**: Evaluates expressions as needed.
 - **ContextManager**: Handles variable scope and sandbox state.
@@ -68,14 +68,14 @@ graph TB
 ## Example Usage
 
 ```python
-from opendxa.dana.language.parser import GrammarParser
-from opendxa.dana.sandbox.interpreter import Interpreter
+from opendxa.dana.sandbox.parser.dana_parser import DanaParser
+from dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
 
 parser = DanaParser()
 result = parser.parse("x = 10\nif x > 5:\n    print('ok')")
 
 if result.is_valid:
-    interpreter = Interpreter()
+    interpreter = DanaInterpreter()
     output = interpreter.execute_program(result)
     print("Program output:", output)
 else:

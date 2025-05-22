@@ -35,7 +35,7 @@ def reason_function(
             - format: Output format ("text" or "json")
 
     Returns:
-        The LLM's response to the prompt
+        The LLM's response to the prompt as a string
 
     Raises:
         SandboxError: If the function execution fails or parameters are invalid
@@ -45,6 +45,10 @@ def reason_function(
 
     if not prompt:
         raise SandboxError("reason function requires a non-empty prompt")
+
+    # Convert prompt to string if it's not already
+    if not isinstance(prompt, str):
+        prompt = str(prompt)
 
     # Get LLM resource from context (assume it's available)
     if hasattr(context, "llm_resource") and context.llm_resource:
@@ -83,8 +87,41 @@ def reason_function(
 
         # Process the response
         result = response.content
-        if isinstance(result, dict) and "content" in result:
-            result = result["content"]
+        logger.debug(f"Raw LLM response type: {type(result)}")
+
+        # Extract just the text content from the response
+        if isinstance(result, dict):
+            logger.debug(f"Raw response keys: {result.keys()}")
+            # Handle different LLM response structures
+            if "choices" in result and result["choices"] and isinstance(result["choices"], list):
+                # OpenAI/Anthropic style response
+                first_choice = result["choices"][0]
+                if hasattr(first_choice, "message") and hasattr(first_choice.message, "content"):
+                    # Handle object-style responses
+                    result = first_choice.message.content
+                    logger.debug(f"Extracted content from object attributes: {result[:100]}...")
+                elif isinstance(first_choice, dict):
+                    if "message" in first_choice:
+                        message = first_choice["message"]
+                        if isinstance(message, dict) and "content" in message:
+                            result = message["content"]
+                            logger.debug(f"Extracted content from choices[0].message.content: {result[:100]}...")
+                        elif hasattr(message, "content"):
+                            result = message.content
+                            logger.debug(f"Extracted content from message.content attribute: {result[:100]}...")
+                    elif "text" in first_choice:
+                        # Some LLMs use 'text' instead of 'message.content'
+                        result = first_choice["text"]
+                        logger.debug(f"Extracted content from choices[0].text: {result[:100]}...")
+            # Simpler response format with direct content
+            elif "content" in result:
+                result = result["content"]
+                logger.debug(f"Extracted content directly from content field: {result[:100]}...")
+
+        # If result is still a complex object, try to get its string representation
+        if not isinstance(result, (str, int, float, bool, list, dict)) and hasattr(result, "__str__"):
+            result = str(result)
+            logger.debug(f"Converted complex object to string: {result[:100]}...")
 
         # Handle format conversion if needed
         format_type = options.get("format", "text")

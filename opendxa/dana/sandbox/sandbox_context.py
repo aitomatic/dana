@@ -540,3 +540,46 @@ class SandboxContext(HasInterpreter):
             context: The context to set
         """
         self._state[scope] = context or {}
+
+    def get_from_scope(self, var_name: str, scope: str = "local") -> Any:
+        """Gets a value from a specific scope.
+
+        Args:
+            var_name: The variable name
+            scope: The scope to get from (defaults to local)
+
+        Returns:
+            The value, or None if not found
+
+        Raises:
+            StateError: If the scope is unknown
+        """
+        if scope not in RuntimeScopes.ALL:
+            raise StateError(f"Unknown scope: {scope}")
+
+        # For global scopes, get from root context
+        if scope in RuntimeScopes.GLOBAL:
+            root = self
+            while root._parent is not None:
+                root = root._parent
+            if var_name in root._state[scope]:
+                return root._state[scope][var_name]
+            return None
+
+        # For local scope, check current context first
+        if var_name in self._state[scope]:
+            return self._state[scope][var_name]
+
+        # Then check parent contexts
+        if self._parent is not None:
+            return self._parent.get_from_scope(var_name, scope)
+
+        return None
+
+    def set_registry(self, registry: Any) -> None:
+        """Set the function registry for this context.
+
+        Args:
+            registry: The function registry to use
+        """
+        self.set("system.function_registry", registry)

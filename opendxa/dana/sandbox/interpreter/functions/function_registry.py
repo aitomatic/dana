@@ -97,18 +97,19 @@ class FunctionRegistry:
         """
         if self._arg_processor is None:
             # Import here to avoid circular imports
-            from opendxa.dana.sandbox.interpreter.executor.expression_evaluator import ExpressionEvaluator
+            from opendxa.dana.sandbox.interpreter.executor.dana_executor import DanaExecutor
             from opendxa.dana.sandbox.interpreter.functions.argument_processor import ArgumentProcessor
+            from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
             # Create a simple adapter instead of using ContextManager
             adapter = RegistryAdapter(self)
 
-            # Create an ExpressionEvaluator with the adapter
-            # ExpressionEvaluator should use duck typing to access registry methods
-            evaluator = ExpressionEvaluator(adapter)
+            # Create a DanaExecutor with a temporary context
+            temp_context = SandboxContext()
+            executor = DanaExecutor(temp_context)
 
-            # Create ArgumentProcessor with the evaluator
-            self._arg_processor = ArgumentProcessor(evaluator)
+            # Create ArgumentProcessor with the executor
+            self._arg_processor = ArgumentProcessor(executor)
 
         return self._arg_processor
 

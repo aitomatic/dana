@@ -17,7 +17,7 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from opendxa.dana.sandbox.interpreter.interpreter import Interpreter
+from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
 from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
@@ -27,6 +27,6 @@ def test_arithmetic_assignment_parse_tree_ast_execution():
     code = "private:result = 2 + 3"
     parser = DanaParser()
     program = parser.parse(code, do_transform=True)
-    interpreter = Interpreter(SandboxContext())
+    interpreter = DanaInterpreter(SandboxContext())
     interpreter.execute_program(program)
     assert interpreter.context.get("private.result") == 5

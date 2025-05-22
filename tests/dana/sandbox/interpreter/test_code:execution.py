@@ -36,7 +36,7 @@ Discord: https://discord.gg/6jGD4PYk
 
 import pytest
 
-from opendxa.dana.sandbox.interpreter.interpreter import Interpreter
+from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
 from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
@@ -45,7 +45,7 @@ def run_dana_code(code, parser=None):
     if parser is None:
         parser = DanaParser()
     program = parser.parse(code, do_type_check=True, do_transform=True)
-    interpreter = Interpreter(SandboxContext())
+    interpreter = DanaInterpreter(SandboxContext())
     interpreter.execute_program(program)
     return interpreter.context
 
@@ -205,7 +205,7 @@ assert x == 1
     code = 'raise "error message"'
     parser = DanaParser()
     program = parser.parse(code, do_type_check=True, do_transform=True)
-    interpreter = Interpreter(SandboxContext())
+    interpreter = DanaInterpreter(SandboxContext())
     try:
         interpreter.execute_program(program)
     except Exception as e:
@@ -262,7 +262,7 @@ for i in [1, 2, 3, 4, 5]:
     # Disable type checking for this test since the type checker doesn't handle in-loop conditionals well
     parser = DanaParser()
     program = parser.parse(code, do_type_check=False, do_transform=True)
-    interpreter = Interpreter(SandboxContext())
+    interpreter = DanaInterpreter(SandboxContext())
     interpreter.execute_program(program)
     ctx = interpreter.context
     assert ctx.get("local.sum") == 6  # 1 + 2 + 3 = 6
@@ -286,7 +286,7 @@ def test_variable_not_found():
     parser = DanaParser()
     # Disable type checking since it will fail on undefined variable before runtime
     program = parser.parse(code, do_type_check=False, do_transform=True)
-    interpreter = Interpreter(SandboxContext())
+    interpreter = DanaInterpreter(SandboxContext())
     try:
         interpreter.execute_program(program)
         pytest.fail("Should have raised an exception for undefined variable")
@@ -298,7 +298,7 @@ def test_division_by_zero():
     code = "x = 1 / 0"
     parser = DanaParser()
     program = parser.parse(code, do_type_check=True, do_transform=True)
-    interpreter = Interpreter(SandboxContext())
+    interpreter = DanaInterpreter(SandboxContext())
     try:
         interpreter.execute_program(program)
         pytest.fail("Should have raised an exception for division by zero")
@@ -313,7 +313,7 @@ assert x == 10, "x should be 10"
 """
     parser = DanaParser()
     program = parser.parse(code, do_type_check=True, do_transform=True)
-    interpreter = Interpreter(SandboxContext())
+    interpreter = DanaInterpreter(SandboxContext())
     try:
         interpreter.execute_program(program)
         pytest.fail("Should have raised an assertion error")
@@ -352,7 +352,7 @@ a = [1, 2, 3]
 """
     parser = DanaParser()
     program = parser.parse(code, do_type_check=False, do_transform=True)
-    interpreter = Interpreter(SandboxContext())
+    interpreter = DanaInterpreter(SandboxContext())
     interpreter.execute_program(program)
     ctx = interpreter.context
 
@@ -370,7 +370,7 @@ if 5 in a:
     e = 1
 """
     program2 = parser.parse(code2, do_type_check=False, do_transform=True)
-    interpreter2 = Interpreter(SandboxContext())
+    interpreter2 = DanaInterpreter(SandboxContext())
     interpreter2.execute_program(program2)
     ctx2 = interpreter2.context
     assert ctx2.get("local.d") == 1  # true
@@ -385,7 +385,7 @@ has_key = "foo" in empty_dict
 """
     parser = DanaParser()
     program = parser.parse(code, do_type_check=False, do_transform=True)
-    interpreter = Interpreter(SandboxContext())
+    interpreter = DanaInterpreter(SandboxContext())
     interpreter.execute_program(program)
     ctx = interpreter.context
 
@@ -412,7 +412,7 @@ system:z = 3
     child_context = SandboxContext(parent=parent_context)
 
     # Execute in the child context
-    interpreter = Interpreter(child_context)
+    interpreter = DanaInterpreter(child_context)
     interpreter.execute_program(program)
 
     # Verify that the child can see parent's values
@@ -436,7 +436,7 @@ e = not True
     # Disable type checking for these tests
     parser = DanaParser()
     program = parser.parse(code, do_type_check=False, do_transform=True)
-    interpreter = Interpreter(SandboxContext())
+    interpreter = DanaInterpreter(SandboxContext())
     interpreter.execute_program(program)
     ctx = interpreter.context
 
@@ -456,7 +456,7 @@ has_k3 = "k3" in d
 """
     parser = DanaParser()
     program = parser.parse(code, do_type_check=False, do_transform=True)
-    interpreter = Interpreter(SandboxContext())
+    interpreter = DanaInterpreter(SandboxContext())
     interpreter.execute_program(program)
     ctx = interpreter.context
 
@@ -473,7 +473,7 @@ greeting = str1 + str2
 """
     parser = DanaParser()
     program = parser.parse(code, do_type_check=False, do_transform=True)
-    interpreter = Interpreter(SandboxContext())
+    interpreter = DanaInterpreter(SandboxContext())
     interpreter.execute_program(program)
     ctx = interpreter.context
 
@@ -488,7 +488,7 @@ cubed = 2 ** 3
 """
     parser = DanaParser()
     program = parser.parse(code, do_type_check=False, do_transform=True)
-    interpreter = Interpreter(SandboxContext())
+    interpreter = DanaInterpreter(SandboxContext())
     interpreter.execute_program(program)
     ctx = interpreter.context
 

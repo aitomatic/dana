@@ -173,5 +173,11 @@ class PythonFunction(SandboxFunction):
         Returns:
             The result of calling the Python function
         """
-        # Call the wrapped function with the arguments
-        return self.func(*args, **kwargs)
+        # If function expects context parameter, inject it
+        if self.wants_context and self.context_param_name:
+            kwargs[self.context_param_name] = context
+            # Call the wrapped function with the arguments
+            return self.func(*args, **kwargs)
+        else:
+            # Call the wrapped function with the arguments
+            return self.func(*args, **kwargs)

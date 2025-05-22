@@ -23,7 +23,7 @@ from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.common.utils import Misc
 from opendxa.dana.common.error_utils import DanaError
-from opendxa.dana.sandbox.interpreter.interpreter import Interpreter
+from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
 from opendxa.dana.sandbox.log_manager import LogLevel, LogManager
 from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
@@ -42,10 +42,17 @@ class REPL(Loggable):
             llm_resource: Optional LLM resource to use
             context: Optional runtime context to use
         """
+        super().__init__()  # Initialize Loggable
         self.context = context or SandboxContext()
         if llm_resource is not None:
             self.context.set("system.llm_resource", llm_resource)
-        self.interpreter = Interpreter(self.context)
+        self.interpreter = DanaInterpreter(self.context)
+
+        # Force initialization of the function registry and set it on the context
+        registry = self.interpreter.function_registry
+        self.context.set_registry(registry)
+        self.debug("Function registry initialized and set on context")
+
         self.parser = DanaParser()
         self.last_result = None
         self.transcoder = None

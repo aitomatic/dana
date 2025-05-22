@@ -5,8 +5,8 @@ between test and REPL environments.
 """
 
 from opendxa.common.resource.llm_resource import LLMResource
+from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
 from opendxa.dana.sandbox.interpreter.executor.expression_evaluator import ExpressionEvaluator
-from opendxa.dana.sandbox.interpreter.interpreter import Interpreter
 from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
@@ -42,7 +42,7 @@ print_separator("TEST 1: Varying do_type_check parameter")
 
 # Test 1A: With do_type_check=False (like tests)
 print("\nTest 1A: do_type_check=False (test-like)")
-interpreter = Interpreter(context)
+interpreter = DanaInterpreter(context)
 parser = DanaParser()
 program = parser.parse('reason("what is")', do_type_check=False)
 print(f"Program AST: {program}")
@@ -68,7 +68,7 @@ except Exception as e:
 
 # Test 1B: With do_type_check=True (like REPL)
 print("\nTest 1B: do_type_check=True (REPL-like)")
-interpreter = Interpreter(context)
+interpreter = DanaInterpreter(context)
 parser = DanaParser()
 program = parser.parse('reason("what is")', do_type_check=True)
 print(f"Program AST: {program}")
@@ -84,7 +84,7 @@ print_separator("TEST 2: Varying input structure")
 
 # Test 2A: With assignment (like tests)
 print("\nTest 2A: Assignment statement (test-like)")
-interpreter = Interpreter(context)
+interpreter = DanaInterpreter(context)
 parser = DanaParser()
 program = parser.parse('result = reason("what is")', do_type_check=False)
 print(f"Program AST: {program}")
@@ -97,7 +97,7 @@ except Exception as e:
 
 # Test 2B: With bare function call (like REPL)
 print("\nTest 2B: Bare function call (REPL-like)")
-interpreter = Interpreter(context)
+interpreter = DanaInterpreter(context)
 parser = DanaParser()
 program = parser.parse('reason("what is")', do_type_check=False)
 print(f"Program AST: {program}")
@@ -113,7 +113,7 @@ print_separator("TEST 3: Varying do_transform parameter")
 
 # Test 3A: With do_transform=True (default)
 print("\nTest 3A: do_transform=True (default)")
-interpreter = Interpreter(context)
+interpreter = DanaInterpreter(context)
 parser = DanaParser()
 program = parser.parse('reason("what is")', do_type_check=False, do_transform=True)
 print(f"Program AST: {program}")
@@ -126,7 +126,7 @@ except Exception as e:
 
 # Test 3B: With do_transform=False
 print("\nTest 3B: do_transform=False")
-interpreter = Interpreter(context)
+interpreter = DanaInterpreter(context)
 parser = DanaParser()
 program = parser.parse('reason("what is")', do_type_check=False, do_transform=False)
 print(f"Program AST: {program}")

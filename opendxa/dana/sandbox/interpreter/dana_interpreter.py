@@ -25,8 +25,7 @@ from typing import Any, Optional
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.dana.common.error_utils import ErrorUtils
-from opendxa.dana.sandbox.interpreter.executor.expression_evaluator import ExpressionEvaluator
-from opendxa.dana.sandbox.interpreter.executor.statement_executor import StatementExecutor
+from opendxa.dana.sandbox.interpreter.executor.dana_executor import DanaExecutor
 from opendxa.dana.sandbox.parser.ast import Program
 from opendxa.dana.sandbox.sandbox_context import ExecutionStatus, SandboxContext
 
@@ -66,7 +65,7 @@ def _patched_format_user_error(e, user_input=None):
 ErrorUtils.format_user_error = _patched_format_user_error
 
 
-class Interpreter(Loggable):
+class DanaInterpreter(Loggable):
     """Interpreter for executing DANA programs."""
 
     def __init__(self, context: Optional[SandboxContext] = None):
@@ -81,13 +80,12 @@ class Interpreter(Loggable):
         self.context = context or SandboxContext()
         self._context_manager = ContextManager(self.context)
 
-        self._expression_evaluator = ExpressionEvaluator(self._context_manager)
-        self._statement_executor = StatementExecutor(self._context_manager, self._expression_evaluator)
+        # Create a single DanaExecutor for all execution
+        self._executor = DanaExecutor(self.context)
 
         # Be sure to set the interpreter on all components
         self.context.interpreter = self
-        self._expression_evaluator.interpreter = self
-        self._statement_executor.interpreter = self
+        self._executor.interpreter = self
 
         self._function_registry = None  # Will be lazily initialized
 
@@ -105,6 +103,11 @@ class Interpreter(Loggable):
 
             # Register all core functions automatically
             register_core_functions(self._function_registry)
+
+            # Make sure we set the registry on the context so it can be found during execution
+            self.context.set_registry(self._function_registry)
+            self.debug("Function registry initialized and set on context")
+
         return self._function_registry
 
     def evaluate_expression(self, expression: Any, context: SandboxContext) -> Any:
@@ -117,7 +120,7 @@ class Interpreter(Loggable):
         Returns:
             The result of evaluating the expression
         """
-        return self._expression_evaluator.evaluate(expression, context)
+        return self._executor.execute(expression, context)
 
     def execute_program(self, program: Program) -> Any:
         """Execute a DANA program.
@@ -132,11 +135,7 @@ class Interpreter(Loggable):
         context = self.context
         try:
             context.set_execution_status(ExecutionStatus.RUNNING)
-            for statement in program.statements:
-                result = self.execute_statement(statement, context)
-                # Store the result in the context
-                if result is not None:
-                    context.set("system.__last_value", result)
+            result = self._executor.execute(program, context)
             context.set_execution_status(ExecutionStatus.COMPLETED)
         except Exception as e:
             context.set_execution_status(ExecutionStatus.FAILED)
@@ -152,12 +151,11 @@ class Interpreter(Loggable):
         Returns:
             The result of executing the statement
         """
-        # Execute the statement
-        result = self._statement_executor.execute(statement, context)
-        return result
+        # All execution goes through the unified executor
+        return self._executor.execute(statement, context)
 
     @classmethod
-    def new(cls, context: SandboxContext) -> "Interpreter":
+    def new(cls, context: SandboxContext) -> "DanaInterpreter":
         """Create a new instance of the Interpreter.
 
         Args:
@@ -169,5 +167,5 @@ class Interpreter(Loggable):
         return cls(context)
 
     def get_and_clear_output(self) -> str:
-        """Retrieve and clear the output buffer from the statement executor."""
-        return self._statement_executor.get_and_clear_output()
+        """Retrieve and clear the output buffer from the executor."""
+        return self._executor.get_and_clear_output()

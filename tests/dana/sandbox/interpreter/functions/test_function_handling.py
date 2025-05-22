@@ -10,10 +10,10 @@ These tests focus on:
 
 from unittest.mock import MagicMock, patch
 
+from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
 from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
 from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
 from opendxa.dana.sandbox.interpreter.functions.python_function import PythonFunction
-from opendxa.dana.sandbox.interpreter.interpreter import Interpreter
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
@@ -29,7 +29,7 @@ def test_dana_to_dana_function_call():
 
     # When the program is executed
     context = SandboxContext()
-    interpreter = Interpreter(context)
+    interpreter = DanaInterpreter(context)
 
     # Manually create and register a function directly
     def add_function(a, b):
@@ -60,7 +60,7 @@ def test_dana_to_dana_function_call_with_args():
 
     # When the program is executed
     context = SandboxContext()
-    interpreter = Interpreter(context)
+    interpreter = DanaInterpreter(context)
 
     # Manually create a function
     def process_function(name, age=25, city="Unknown"):
@@ -92,7 +92,7 @@ def test_dana_to_python_function():
         return a * b
 
     context = SandboxContext()
-    interpreter = Interpreter(context)
+    interpreter = DanaInterpreter(context)
 
     # Register the Python function
     interpreter.function_registry.register("multiply", multiply, func_type="python")
@@ -119,7 +119,7 @@ def test_python_to_dana_function():
     """
 
     context = SandboxContext()
-    interpreter = Interpreter(context)
+    interpreter = DanaInterpreter(context)
 
     # Manually create a function
     def square_function(x):

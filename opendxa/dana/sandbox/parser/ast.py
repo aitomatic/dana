@@ -19,10 +19,22 @@ Discord: https://discord.gg/6jGD4PYk
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Protocol, Tuple, Union
+
+
+# Define a protocol instead of a base class to avoid dataclass inheritance issues
+class ASTNode(Protocol):
+    """Protocol for all AST nodes in DANA."""
+
+    location: Optional["Location"]
+
+    def evaluate(self, context) -> Any:
+        """Every node can be evaluated to produce a value."""
+        ...
+
 
 # === Type Aliases ===
-# An Expression is any node that can be evaluated to a value.
+# An Expression is any node that primarily produces a value.
 Expression = Union[
     "LiteralExpression",
     "Identifier",
@@ -37,7 +49,7 @@ Expression = Union[
     "TupleLiteral",
 ]
 
-# A Statement is any node that performs an action.
+# A Statement is any node that primarily performs an action, but still produces a value.
 Statement = Union[
     "Assignment",
     "Conditional",
@@ -47,7 +59,7 @@ Statement = Union[
     "FunctionDefinition",
     "ImportStatement",
     "ImportFromStatement",
-    "FunctionCall",
+    "FunctionCall",  # Can be both an expression and a statement
     "PrintStatement",
     "BreakStatement",
     "ContinueStatement",
@@ -55,11 +67,8 @@ Statement = Union[
     "ReturnStatement",
     "RaiseStatement",
     "AssertStatement",
-    "Expression",  # bare expression as a statement
+    Expression,  # Any expression can be used as a statement
 ]
-
-# ASTNode is any node in the AST (expression or statement).
-ASTNode = Union[Expression, Statement]
 
 
 # === Enums ===
@@ -127,6 +136,8 @@ class FStringExpression:
 
     parts: List[Union[str, Expression]]  # Literal strings or expressions
     location: Optional[Location] = None
+    template: str = ""
+    expressions: Dict[str, Expression] = field(default_factory=dict)
 
 
 @dataclass
@@ -159,7 +170,7 @@ class BinaryExpression:
 
 @dataclass
 class FunctionCall:
-    """A function call (e.g., foo(1, 2))."""
+    """A function call (e.g., foo(1, 2)), can be used as either expression or statement."""
 
     name: str
     args: Dict[str, Any]
@@ -211,7 +222,7 @@ class SetLiteral:
 # === Statements ===
 @dataclass
 class Assignment:
-    """Assignment statement (e.g., x = 42)."""
+    """Assignment statement (e.g., x = 42). Returns the assigned value."""
 
     target: Identifier
     value: Union[
@@ -232,7 +243,7 @@ class Assignment:
 
 @dataclass
 class PrintStatement:
-    """Print statement (e.g., print(x))."""
+    """Print statement (e.g., print(x)). Returns None."""
 
     message: Expression
     location: Optional[Location] = None
@@ -240,7 +251,7 @@ class PrintStatement:
 
 @dataclass
 class Conditional:
-    """If/elif/else conditional statement."""
+    """If/elif/else conditional statement. Returns the value of the last executed statement."""
 
     condition: Expression
     body: List[Union[Assignment, "Conditional", "WhileLoop", FunctionCall]]

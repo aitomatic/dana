@@ -10,7 +10,7 @@ together correctly, including:
 5. Error handling
 """
 
-from opendxa.dana.sandbox.interpreter.interpreter import Interpreter
+from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
 from opendxa.dana.sandbox.parser.mock_parser import parse_program
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
@@ -44,7 +44,7 @@ def test_mixed_dana_and_python_functions():
     if "system" not in context._state:
         context._state["system"] = {}
 
-    interpreter = Interpreter(context)
+    interpreter = DanaInterpreter(context)
 
     # Register Python functions
     interpreter.function_registry.register("python_logger", python_logger)
@@ -107,7 +107,7 @@ def test_context_injection_with_type_annotations():
 
     # Setup
     context = SandboxContext()
-    interpreter = Interpreter(context)
+    interpreter = DanaInterpreter(context)
 
     # Register Python function
     interpreter.function_registry.register("analyze_data", analyze_data)
@@ -144,7 +144,7 @@ def test_keyword_and_positional_args():
 
     # Setup
     context = SandboxContext()
-    interpreter = Interpreter(context)
+    interpreter = DanaInterpreter(context)
 
     # Register Python function
     interpreter.function_registry.register("format_message", format_message)
@@ -179,7 +179,7 @@ def test_error_handling():
 
     # Setup
     context = SandboxContext()
-    interpreter = Interpreter(context)
+    interpreter = DanaInterpreter(context)
 
     # Register Python function
     interpreter.function_registry.register("divide", divide)

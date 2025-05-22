@@ -49,7 +49,7 @@ else:
 
 The DANA interpreter executes DANA programs by evaluating the AST. Key components include:
 
-- **Interpreter**: Main entry point for program execution
+- **DanaInterpreter**: Main entry point for program execution
 - **StatementExecutor**: Executes statements (assignments, conditionals, loops, etc.)
 - **ExpressionEvaluator**: Evaluates expressions (arithmetic, logical, identifiers, literals)
 - **ContextManager**: Manages variable scope and sandbox state
@@ -57,14 +57,14 @@ The DANA interpreter executes DANA programs by evaluating the AST. Key component
 - **FunctionRegistry**: Handles function and tool registrations
 
 ```python
-from opendxa.dana.sandbox.interpreter.interpreter import Interpreter
+from dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 # Create context
 ctx = SandboxContext(private={}, public={}, system={}, local={})
 
 # Initialize interpreter
-interpreter = Interpreter(ctx)
+interpreter = DanaInterpreter(ctx)
 
 # Execute program from AST
 output = interpreter.execute_program(ast)

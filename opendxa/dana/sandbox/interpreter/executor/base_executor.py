@@ -27,7 +27,7 @@ from opendxa.common.mixins.loggable import Loggable
 from opendxa.dana.sandbox.interpreter.executor.has_interpreter import HasInterpreter
 
 if TYPE_CHECKING:
-    from opendxa.dana.sandbox.interpreter.interpreter import Interpreter
+    from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
 
 
 @runtime_checkable
@@ -48,7 +48,7 @@ class BaseExecutor(HasInterpreter, Loggable):
     - Error handling hooks
     """
 
-    def __init__(self, registry_provider: Any, interpreter: Optional["Interpreter"] = None):
+    def __init__(self, registry_provider: Any, interpreter: Optional["DanaInterpreter"] = None):
         """Initialize the base executor.
 
         Args:
