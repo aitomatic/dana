@@ -9,6 +9,7 @@ This module provides the reason function, which handles reasoning in the Dana in
 """
 
 import json
+import os
 from typing import Any, Dict, Optional
 
 from opendxa.common.resource.llm_resource import LLMResource
@@ -22,6 +23,7 @@ def reason_function(
     prompt: str,
     context: SandboxContext,
     options: Optional[Dict[str, Any]] = None,
+    use_mock: Optional[bool] = None,
 ) -> Any:
     """Execute the reason function to generate a response using an LLM.
 
@@ -33,6 +35,8 @@ def reason_function(
             - temperature: Controls randomness (default: 0.7)
             - max_tokens: Limit on response length
             - format: Output format ("text" or "json")
+        use_mock: Force use of mock responses (True) or real LLM calls (False).
+                  If None, defaults to checking OPENDXA_MOCK_LLM environment variable.
 
     Returns:
         The LLM's response to the prompt as a string
@@ -50,6 +54,10 @@ def reason_function(
     if not isinstance(prompt, str):
         prompt = str(prompt)
 
+    # Check if we should use mock responses
+    # Priority: function parameter > environment variable
+    should_mock = use_mock if use_mock is not None else os.environ.get("OPENDXA_MOCK_LLM", "").lower() == "true"
+
     # Get LLM resource from context (assume it's available)
     if hasattr(context, "llm_resource") and context.llm_resource:
         llm_resource = context.llm_resource
@@ -61,6 +69,11 @@ def reason_function(
                 llm_resource = LLMResource()
         except Exception:
             llm_resource = LLMResource()
+
+    # Apply mocking if needed
+    if should_mock:
+        logger.info(f"Using mock LLM response (prompt: {prompt[:100]}{'...' if len(prompt) > 100 else ''})")
+        llm_resource = llm_resource.with_mock_llm_call(True)
 
     try:
         # Log what's happening

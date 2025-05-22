@@ -65,7 +65,7 @@ def run_and_capture_output(input_code):
         ("if x > 0 print('missing colon')", "Syntax Error"),
         ("if private:x > 0:\n    print('ok')\nelse:\n    print('fail')", "Syntax Error"),
         ("print('hello') print('world')", "Syntax Error"),
-        ("print(does_not_exist)", "Execution Error"),
+        ("print(does_not_exist)", "Error accessing variable"),
         ("private:x = 'foo' + 5", "Syntax Error"),
         ("private:x = 1 / 0", "division by zero"),
         ("private:x = 42", "42"),  # Success

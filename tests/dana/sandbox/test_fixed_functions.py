@@ -215,8 +215,8 @@ def test_print_function_with_fstrings():
     sys.stdout = captured_output
 
     try:
-        # Call print function with f-string
-        print_function(fstring, context=context)
+        # Call print function with f-string - context as first positional arg
+        print_function(context, fstring)
 
         # Get the captured output
         output = captured_output.getvalue().strip()
@@ -233,8 +233,8 @@ def test_print_function_with_fstrings():
             parts=["x + 10 = ", BinaryExpression(Identifier("x"), BinaryOperator.ADD, LiteralExpression(10))]
         )
 
-        # Print with multiple arguments
-        print_function("Result:", complex_fstring, context=context)
+        # Print with multiple arguments - context as first positional arg
+        print_function(context, "Result:", complex_fstring)
 
         # Verify combined output
         combined_output = captured_output.getvalue().strip()

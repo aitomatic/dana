@@ -2,9 +2,6 @@
 print("Welcome to DANA!")
 print("This is a simple test.")
 
-# Use print function
-print("Welcome to DANA!")
-
 # Use reason function and store in a variable
 private.result = reason("What is the capital of France?")
 

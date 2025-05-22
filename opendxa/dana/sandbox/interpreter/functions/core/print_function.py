@@ -15,15 +15,15 @@ from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
 def print_function(
-    *args: Any,
     context: SandboxContext,
+    *args: Any,
     options: Optional[Dict[str, Any]] = None,
 ) -> None:
     """Execute the print function.
 
     Args:
+        context: The sandbox context 
         *args: Values to print
-        context: The sandbox context
         options: Optional parameters for the function
 
     Returns:

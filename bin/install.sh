@@ -9,7 +9,6 @@ source .venv/bin/activate
 # Install opendxa library in dev mode
 pip install -e ".[dev]"
 
-
 # Install pre-commit
 pip install pre-commit
 pre-commit install --hook-type post-checkout --hook-type post-merge --hook-type post-rewrite
@@ -17,4 +16,4 @@ pre-commit install --hook-type post-checkout --hook-type post-merge --hook-type 
 # Install dependencies
 pip install -r requirements.txt
 
-echo "Environment setup complete. Activate it using 'source .venv/bin/activate'."
+echo "Installation & environment setup complete."
