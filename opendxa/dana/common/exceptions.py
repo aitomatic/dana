@@ -3,14 +3,14 @@ Copyright © 2025 Aitomatic, Inc.
 
 This source code is licensed under the license found in the LICENSE file in the root directory of this source tree
 
-Custom exceptions for the DANA module.
+Custom exceptions for the Dana module.
 """
 
 from typing import Any, Optional
 
 
 class DanaError(Exception):
-    """Base class for all DANA-related errors with unified formatting."""
+    """Base class for all Dana-related errors with unified formatting."""
 
     def __init__(self, message: str, line: int = 0, source_line: str = ""):
         self.message = message
@@ -20,7 +20,7 @@ class DanaError(Exception):
 
 
 class ParseError(DanaError):
-    """Error during DANA program parsing."""
+    """Error during Dana program parsing."""
 
     def __init__(self, message: str, line_num: int | None = None, line_content: str | None = None):
         self.line_num = line_num
@@ -58,24 +58,24 @@ class ParseError(DanaError):
 
 
 class ValidationError(DanaError):
-    """Error during DANA program validation."""
+    """Error during Dana program validation."""
 
     pass
 
 
 class SandboxError(DanaError):
-    """Error during DANA program execution."""
+    """Error during Dana program execution."""
 
     pass
 
 
-class DANAError(Exception):
-    """Base class for exceptions in the DANA module."""
+class DanaError(Exception):
+    """Base class for exceptions in the Dana module."""
 
     pass
 
 
-class LanguageError(DANAError):
+class LanguageError(DanaError):
     """Base class for errors related to program language (parsing, validation)."""
 
     pass
@@ -93,31 +93,31 @@ class ProgramValidationError(LanguageError):
     pass
 
 
-class DANARuntimeError(DANAError):
+class DanaRuntimeError(DanaError):
     """Base class for errors occurring during program execution."""
 
     pass
 
 
-class ProgramExecutionError(DANARuntimeError):
+class ProgramExecutionError(DanaRuntimeError):
     """Raised for general errors during program execution by the interpreter."""
 
     pass
 
 
-class ResourceNotFoundError(DANARuntimeError, KeyError):
+class ResourceNotFoundError(DanaRuntimeError, KeyError):
     """Raised when a required resource (tool, LLM) is not found in the context."""
 
     pass
 
 
-class InvalidStateKeyError(DANARuntimeError, ValueError):
+class InvalidStateKeyError(DanaRuntimeError, ValueError):
     """Raised when an invalid key is used for context state access (format or scope)."""
 
     pass
 
 
-class SandboxViolationError(DANARuntimeError):
+class SandboxViolationError(DanaRuntimeError):
     """Raised if an operation violates configured sandbox constraints."""
 
     pass
@@ -143,7 +143,7 @@ class NarrationError(TranscoderError):
     pass
 
 
-# Base exceptions for DANA
+# Base exceptions for Dana
 
 
 class StateError(DanaError):
@@ -153,13 +153,13 @@ class StateError(DanaError):
 
 
 class InterpretError(DanaError):
-    """Error during DANA program interpretation/execution."""
+    """Error during Dana program interpretation/execution."""
 
     pass
 
 
 class TypeError(Exception):
-    """Custom error for type checking in DANA."""
+    """Custom error for type checking in Dana."""
 
     def __init__(self, message: str, node: Optional[Any] = None):
         self.message = message
@@ -189,7 +189,7 @@ class ErrorContext:
 
 
 class ErrorHandler:
-    """Handles errors in DANA programs."""
+    """Handles errors in Dana programs."""
 
     def __init__(self):
         self.errors = []

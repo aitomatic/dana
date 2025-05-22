@@ -1,5 +1,5 @@
 """
-Execution status enum for DANA sandbox.
+Execution status enum for Dana sandbox.
 
 Copyright © 2025 Aitomatic, Inc.
 MIT License

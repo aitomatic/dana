@@ -1,5 +1,5 @@
 """
-DANA function implementation.
+Dana function implementation.
 
 Copyright © 2025 Aitomatic, Inc.
 MIT License
@@ -14,10 +14,10 @@ from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
 class DanaFunction(SandboxFunction, Loggable):
-    """A DANA function that can be called with arguments."""
+    """A Dana function that can be called with arguments."""
 
     def __init__(self, body: List[Any], parameters: List[str], context: Optional[SandboxContext] = None):
-        """Initialize a DANA function.
+        """Initialize a Dana function.
 
         Args:
             body: The function body statements
@@ -30,9 +30,9 @@ class DanaFunction(SandboxFunction, Loggable):
 
     def prepare_context(self, context: SandboxContext, args: List[Any], kwargs: Dict[str, Any]) -> SandboxContext:
         """
-        Prepare context for a DANA function.
+        Prepare context for a Dana function.
 
-        For DANA functions:
+        For Dana functions:
         - Creates a clean local scope
         - Sets up interpreter if needed
         - Maps arguments to the local scope
@@ -71,7 +71,7 @@ class DanaFunction(SandboxFunction, Loggable):
 
     def restore_context(self, context: SandboxContext, original_context: SandboxContext) -> None:
         """
-        Restore the context after DANA function execution.
+        Restore the context after Dana function execution.
 
         Args:
             context: The current context

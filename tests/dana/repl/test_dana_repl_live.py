@@ -1,4 +1,4 @@
-"""Live tests for the DANA REPL."""
+"""Live tests for the Dana REPL."""
 
 from unittest.mock import patch
 
@@ -67,8 +67,8 @@ async def test_dana_repl_nlp_transcoding():
     """Test NLP transcoding functionality."""
     mock_inputs = [
         "##nlp on",
-        "calculate 10 + 20",  # Should be transcoded to DANA code
-        "add 42 and 17",  # Should be transcoded to DANA code
+        "calculate 10 + 20",  # Should be transcoded to Dana code
+        "add 42 and 17",  # Should be transcoded to Dana code
         "exit",
     ]
 

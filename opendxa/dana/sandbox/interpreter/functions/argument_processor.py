@@ -1,5 +1,5 @@
 """
-Argument processing for function calls in DANA.
+Argument processing for function calls in Dana.
 
 This module provides utilities for evaluating and binding arguments to functions.
 
@@ -15,7 +15,7 @@ from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 class ArgumentProcessor:
     """
-    Processes arguments for function calls in DANA.
+    Processes arguments for function calls in Dana.
 
     Responsibilities:
     - Evaluate argument expressions to concrete values

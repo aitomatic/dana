@@ -64,7 +64,7 @@ def vector_search_descriptions(context: Dict[str, Any], product_description: str
 
 
 class ProductSimilarityREPL(DanaREPLApp):
-    """DANA REPL with product similarity functions."""
+    """Dana REPL with product similarity functions."""
 
     def __init__(self, log_level: LogLevel = LogLevel.DEBUG):
         """Initialize the REPL with product similarity functions."""
@@ -89,7 +89,7 @@ class ProductSimilarityREPL(DanaREPLApp):
 
 
 async def main():
-    """Run the DANA REPL with product similarity functions."""
+    """Run the Dana REPL with product similarity functions."""
     app = ProductSimilarityREPL()
     await app.run()
 

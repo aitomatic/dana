@@ -1,4 +1,4 @@
-"""Tests for F-string lexing in DANA language."""
+"""Tests for F-string lexing in Dana language."""
 
 from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 

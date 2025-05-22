@@ -1,4 +1,4 @@
-"""Live test for the DANA transcoder using actual LLM calls."""
+"""Live test for the Dana transcoder using actual LLM calls."""
 
 import os
 
@@ -32,7 +32,7 @@ async def test_transcoder():
     # Create transcoder
     transcoder = Transcoder(llm)
 
-    # Test cases for natural language to DANA
+    # Test cases for natural language to Dana
     nl_to_dana_tests = [
         "add 5 and 10",
         "calculate the square root of 16",
@@ -41,16 +41,16 @@ async def test_transcoder():
         "log an error message saying 'connection failed'",
     ]
 
-    print("\n=== Testing Natural Language to DANA ===")
+    print("\n=== Testing Natural Language to Dana ===")
     for nl in nl_to_dana_tests:
         print(f"\nInput: {nl}")
         try:
             result = await transcoder.to_dana(nl)
-            print(f"Generated DANA code: {result}")
+            print(f"Generated Dana code: {result}")
         except Exception as e:
             print(f"Error: {e}")
 
-    # Test cases for DANA to natural language
+    # Test cases for Dana to natural language
     dana_to_nl_tests = [
         "private.result = 5 + 10",
         "if private.temp > 30:\n    print('too hot')",
@@ -59,7 +59,7 @@ async def test_transcoder():
         "private.sqrt_result = system.math.sqrt(16)",
     ]
 
-    print("\n=== Testing DANA to Natural Language ===")
+    print("\n=== Testing Dana to Natural Language ===")
     for dana in dana_to_nl_tests:
         print(f"\nInput: {dana}")
         try:

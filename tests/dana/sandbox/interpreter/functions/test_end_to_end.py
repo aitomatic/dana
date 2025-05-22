@@ -3,8 +3,8 @@ End-to-end tests for the function call system.
 
 These tests verify that all components of the function call system work
 together correctly, including:
-1. Python to DANA calls
-2. DANA to Python calls
+1. Python to Dana calls
+2. Dana to Python calls
 3. Context passing
 4. Argument processing
 5. Error handling
@@ -16,7 +16,7 @@ from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
 def test_mixed_dana_and_python_functions():
-    """Test Python and DANA functions working together with context passing."""
+    """Test Python and Dana functions working together with context passing."""
 
     # Define a Python function that needs context
     def python_logger(message, context):
@@ -50,14 +50,14 @@ def test_mixed_dana_and_python_functions():
     interpreter.function_registry.register("python_logger", python_logger)
     interpreter.function_registry.register("create_formatter", create_formatter)
 
-    # Define DANA program that uses both Python and DANA functions
+    # Define Dana program that uses both Python and Dana functions
     program_text = """
-    # Define a DANA function that calls Python function
+    # Define a Dana function that calls Python function
     func dana_logger(message):
         result = python_logger(message)
         return result
     
-    # Define a DANA function that uses a higher-order function
+    # Define a Dana function that uses a higher-order function
     func format_and_log(message, format_type):
         formatter = create_formatter(format_type)
         formatted = formatter(message)
@@ -112,7 +112,7 @@ def test_context_injection_with_type_annotations():
     # Register Python function
     interpreter.function_registry.register("analyze_data", analyze_data)
 
-    # Define DANA program that uses the function
+    # Define Dana program that uses the function
     program_text = """
     data = [1, 2, 3, 4, 5]
     result = analyze_data(data)
@@ -149,7 +149,7 @@ def test_keyword_and_positional_args():
     # Register Python function
     interpreter.function_registry.register("format_message", format_message)
 
-    # Define DANA program that calls with mixed args
+    # Define Dana program that calls with mixed args
     program_text = """
     # Call with different argument patterns
     msg1 = format_message("{name} is {age} years old from {location}", "Alice", 30, "New York")
@@ -184,7 +184,7 @@ def test_error_handling():
     # Register Python function
     interpreter.function_registry.register("divide", divide)
 
-    # Define DANA program with try/except
+    # Define Dana program with try/except
     program_text = """
     # Valid division
     result1 = divide(10, 2)

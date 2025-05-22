@@ -1,4 +1,4 @@
-"""Unit tests for the DANA transcoder."""
+"""Unit tests for the Dana transcoder."""
 
 from unittest import IsolatedAsyncioTestCase
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -24,7 +24,7 @@ class TestTranscoder(IsolatedAsyncioTestCase):
         self.transcoder = Transcoder(self.llm)
 
     async def test_to_dana_success(self):
-        """Test successful translation from natural language to DANA code."""
+        """Test successful translation from natural language to Dana code."""
         natural_language = "add 5 and 10"
         dana_code = "private:result = 5 + 10"
         mock_program = MagicMock(spec=Program)
@@ -48,10 +48,10 @@ class TestTranscoder(IsolatedAsyncioTestCase):
 
         with self.assertRaises(TranscoderError) as cm:
             await self.transcoder.to_dana(natural_language)
-        self.assertIn("Failed to translate to DANA", str(cm.exception))
+        self.assertIn("Failed to translate to Dana", str(cm.exception))
 
     async def test_to_dana_parse_failure(self):
-        """Test when LLM returns invalid DANA code."""
+        """Test when LLM returns invalid Dana code."""
         natural_language = "add 5 and 10"
         invalid_code = "invalid dana code"
 
@@ -69,7 +69,7 @@ class TestTranscoder(IsolatedAsyncioTestCase):
             self.assertIn("Invalid syntax", str(cm.exception))
 
     async def test_to_natural_language_success(self):
-        """Test successful translation from DANA code to natural language."""
+        """Test successful translation from Dana code to natural language."""
         dana_code = "private:result = 5 + 10"
         natural_language = "Add 5 and 10"
 

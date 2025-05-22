@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Test script for the reason function in DANA.
+Test script for the reason function in Dana.
 
 This script tests the reason function directly without the REPL complexity.
 """

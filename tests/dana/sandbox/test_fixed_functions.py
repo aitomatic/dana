@@ -1,5 +1,5 @@
 """
-Tests for the unified function execution in DANA using DanaExecutor.
+Tests for the unified function execution in Dana using DanaExecutor.
 
 These tests verify that function registration, resolution, and execution work correctly
 with the unified DanaExecutor approach.

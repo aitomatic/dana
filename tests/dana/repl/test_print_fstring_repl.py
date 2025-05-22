@@ -1,5 +1,5 @@
 """
-Test f-string handling in the DANA REPL.
+Test f-string handling in the Dana REPL.
 
 These tests verify that f-strings are properly evaluated and printed in the REPL environment.
 """

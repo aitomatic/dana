@@ -1,10 +1,10 @@
 """
-Test the function handling and argument processing in DANA.
+Test the function handling and argument processing in Dana.
 
 These tests focus on:
-1. DANA -> DANA function calls
-2. DANA -> Python function calls
-3. Python -> DANA function calls
+1. Dana -> Dana function calls
+2. Dana -> Python function calls
+3. Python -> Dana function calls
 4. Argument processing and binding
 """
 
@@ -18,8 +18,8 @@ from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
 def test_dana_to_dana_function_call():
-    """Test DANA function calling another DANA function."""
-    # Given a program with a DANA function definition and a call to that function
+    """Test Dana function calling another Dana function."""
+    # Given a program with a Dana function definition and a call to that function
     program_text = """
     func add(a, b):
         return a + b
@@ -47,8 +47,8 @@ def test_dana_to_dana_function_call():
 
 
 def test_dana_to_dana_function_call_with_args():
-    """Test DANA function with more complex argument patterns."""
-    # Given a program with a DANA function that takes a mix of positional and keyword args
+    """Test Dana function with more complex argument patterns."""
+    # Given a program with a Dana function that takes a mix of positional and keyword args
     program_text = """
     func process(name, age=25, city="Unknown"):
         return f"{name} is {age} years old from {city}"
@@ -85,7 +85,7 @@ def test_dana_to_dana_function_call_with_args():
 
 
 def test_dana_to_python_function():
-    """Test DANA code calling a Python function."""
+    """Test Dana code calling a Python function."""
 
     # Given a Python function registered in the function registry
     def multiply(a, b):
@@ -97,7 +97,7 @@ def test_dana_to_python_function():
     # Register the Python function
     interpreter.function_registry.register("multiply", multiply, func_type="python")
 
-    # And a DANA program that calls it
+    # And a Dana program that calls it
     program_text = """
     result = multiply(6, 7)
     """
@@ -111,8 +111,8 @@ def test_dana_to_python_function():
 
 
 def test_python_to_dana_function():
-    """Test Python code calling a DANA function."""
-    # Given a DANA function
+    """Test Python code calling a Dana function."""
+    # Given a Dana function
     program_text = """
     func square(x):
         return x * x

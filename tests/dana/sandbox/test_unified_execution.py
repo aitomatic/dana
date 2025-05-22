@@ -92,7 +92,7 @@ def test_reason_function_parameter_order():
 
 
 """
-Tests for the unified execution behavior in DANA.
+Tests for the unified execution behavior in Dana.
 
 These tests verify that statements and expressions are executed consistently,
 particularly focusing on function calls in different contexts.
@@ -105,7 +105,7 @@ from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 
 
 class TestUnifiedExecution(unittest.TestCase):
-    """Test the unified execution behavior in DANA."""
+    """Test the unified execution behavior in Dana."""
 
     def setUp(self):
         """Set up the test environment."""

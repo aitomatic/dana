@@ -1,7 +1,7 @@
-"""Test the multiline input support in the DANA REPL.
+"""Test the multiline input support in the Dana REPL.
 
 This module contains unit tests for the multiline input handling logic
-in the DANA REPL implementation.
+in the Dana REPL implementation.
 """
 
 import unittest
@@ -13,7 +13,7 @@ from opendxa.dana.repl.dana_repl_app import InputCompleteChecker
 
 @pytest.mark.unit
 class TestReplMultiline(unittest.TestCase):
-    """Test the multiline input handling in the DANA REPL."""
+    """Test the multiline input handling in the Dana REPL."""
 
     def setUp(self):
         """Set up the test case."""

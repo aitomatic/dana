@@ -3,9 +3,9 @@ Copyright © 2025 Aitomatic, Inc.
 
 This source code is licensed under the license found in the LICENSE file in the root directory of this source tree
 
-Core function registration for the DANA interpreter.
+Core function registration for the Dana interpreter.
 
-This module provides a helper function to automatically register all core functions in the DANA interpreter.
+This module provides a helper function to automatically register all core functions in the Dana interpreter.
 """
 
 import importlib
@@ -19,7 +19,7 @@ def register_core_functions(registry: FunctionRegistry) -> None:
     """Register all core functions from the core directory.
 
     This function scans the core/ directory for Python modules and registers
-    any function ending with '_function' as a DANA function in the registry.
+    any function ending with '_function' as a Dana function in the registry.
 
     Args:
         registry: The function registry to register functions with

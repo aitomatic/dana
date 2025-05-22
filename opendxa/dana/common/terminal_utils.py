@@ -1,8 +1,8 @@
 """
-Terminal Utilities for DANA CLI
+Terminal Utilities for Dana CLI
 
 This module provides common utilities for terminal styling and color support
-to be used across the DANA command-line tools.
+to be used across the Dana command-line tools.
 """
 
 import os
@@ -19,7 +19,7 @@ DEFAULT_TERMINAL_WIDTH = 80
 
 # Color scheme definitions
 class ColorScheme:
-    """Defines a consistent color scheme for DANA terminal applications."""
+    """Defines a consistent color scheme for Dana terminal applications."""
 
     def __init__(self, use_colors: bool = True):
         """Initialize the color scheme.
@@ -59,11 +59,11 @@ class ColorScheme:
         return f"{self.RESET}{text}"
 
 
-# Define a Pygments lexer for DANA
-class DANALexer(RegexLexer):
-    """A pygments lexer for DANA syntax highlighting."""
+# Define a Pygments lexer for Dana
+class DanaLexer(RegexLexer):
+    """A pygments lexer for Dana syntax highlighting."""
 
-    name = "DANA"
+    name = "Dana"
     aliases = ["dana"]
     filenames = ["*.na"]
 
@@ -91,9 +91,9 @@ class DANALexer(RegexLexer):
 
 
 def get_dana_lexer():
-    """Get a prompt_toolkit lexer for DANA syntax highlighting."""
+    """Get a prompt_toolkit lexer for Dana syntax highlighting."""
     try:
-        return PygmentsLexer(DANALexer)
+        return PygmentsLexer(DanaLexer)
     except Exception:
         # Fall back to simple lexer if there's any issue
         return SimpleLexer()

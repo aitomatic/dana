@@ -19,7 +19,7 @@ def test_parse_simple_reason(parser):
     assert len(program.statements) == 1
 
 
-# The following tests are commented out because DANA does not support object/dict literals as assignment values.
+# The following tests are commented out because Dana does not support object/dict literals as assignment values.
 # def test_parse_reason_with_context(parser):
 #     """Test parsing a reason statement with context."""
 #     code = textwrap.dedent('''

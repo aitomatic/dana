@@ -3,10 +3,10 @@ Copyright © 2025 Aitomatic, Inc.
 
 This source code is licensed under the license found in the LICENSE file in the root directory of this source tree
 
-Error handling utilities for the DANA interpreter.
+Error handling utilities for the Dana interpreter.
 
 This module provides utilities for error handling and reporting during both parsing
-and execution of DANA programs.
+and execution of Dana programs.
 """
 
 import re
@@ -46,10 +46,10 @@ class ErrorContext:
 
 
 class DanaError(Exception):
-    """Base class for all DANA-related errors with unified formatting."""
+    """Base class for all Dana-related errors with unified formatting."""
 
     def __init__(self, message: str, original_error: Optional[Exception] = None, context: Optional[ErrorContext] = None):
-        """Initialize a DANA error.
+        """Initialize a Dana error.
 
         Args:
             message: Primary error message
@@ -118,7 +118,7 @@ class ErrorHandler:
 
 
 class ErrorUtils:
-    """Utility class for handling DANA parsing and runtime execution errors."""
+    """Utility class for handling Dana parsing and runtime execution errors."""
 
     @staticmethod
     def format_error_location(node: Any) -> str:

@@ -1,4 +1,4 @@
-"""Tests for basic DANA code execution."""
+"""Tests for basic Dana code execution."""
 
 from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
 from opendxa.dana.sandbox.parser.dana_parser import DanaParser
@@ -6,7 +6,7 @@ from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
 def run_dana_code(code: str):
-    """Helper function to run DANA code and return the context."""
+    """Helper function to run Dana code and return the context."""
     # Remove leading/trailing whitespace and normalize line endings
     code = code.strip()
     parser = DanaParser()
@@ -17,7 +17,7 @@ def run_dana_code(code: str):
 
 
 def test_basic_variable_assignment():
-    """Test basic variable assignment in DANA."""
+    """Test basic variable assignment in Dana."""
     code = """
 private:x = 42
 private:y = "hello"
@@ -30,7 +30,7 @@ private:z = True
 
 
 def test_basic_arithmetic():
-    """Test basic arithmetic operations in DANA."""
+    """Test basic arithmetic operations in Dana."""
     code = """
 private:a = 10
 private:b = 5
@@ -47,7 +47,7 @@ private:div = private:a / private:b
 
 
 def test_basic_string_operations():
-    """Test basic string operations in DANA."""
+    """Test basic string operations in Dana."""
     code = """
 private:str1 = "Hello"
 private:str2 = "World"
@@ -58,7 +58,7 @@ private:concat = private:str1 + " " + private:str2
 
 
 def test_basic_boolean_operations():
-    """Test basic boolean operations in DANA."""
+    """Test basic boolean operations in Dana."""
     code = """
 private:x = True
 private:y = False

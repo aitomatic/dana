@@ -1,7 +1,7 @@
 """
-Unified Function Registry for DANA and Python functions.
+Unified Function Registry for Dana and Python functions.
 
-This registry supports namespacing, type tagging, and unified dispatch for both DANA and Python functions.
+This registry supports namespacing, type tagging, and unified dispatch for both Dana and Python functions.
 
 Copyright © 2025 Aitomatic, Inc.
 MIT License

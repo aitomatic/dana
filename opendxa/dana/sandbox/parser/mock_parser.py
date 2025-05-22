@@ -1,7 +1,7 @@
 """
 Mock parser for testing.
 
-This module provides a simple mock parser for DANA that returns hardcoded AST nodes.
+This module provides a simple mock parser for Dana that returns hardcoded AST nodes.
 It is used in tests to bypass the actual parser when the grammar is not the focus
 of the test.
 
