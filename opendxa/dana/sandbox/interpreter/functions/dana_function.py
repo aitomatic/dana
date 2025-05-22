@@ -8,7 +8,7 @@ MIT License
 from typing import Any, Dict, List, Optional
 
 from opendxa.common.mixins.loggable import Loggable
-from opendxa.dana.sandbox.interpreter.executor.dana_executor import ReturnException
+from opendxa.dana.sandbox.interpreter.executor.control_flow_executor import ReturnException
 from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
@@ -82,34 +82,56 @@ class DanaFunction(SandboxFunction, Loggable):
             context.set_scope("local", context._original_locals)
             delattr(context, "_original_locals")
 
-    def execute(self, context: SandboxContext, *args: Any, **kwargs: Any) -> Any:
+    def execute(self, context: Any, *args: Any, **kwargs: Any) -> Any:
         """Execute the function body with the provided context and arguments.
 
         Args:
-            context: The context to use for execution
+            context: The context to use for execution or a arguments dict
             *args: Positional arguments
             **kwargs: Keyword arguments
         """
         try:
+            # Check if context is actually a dict of arguments rather than a SandboxContext
+            if isinstance(context, dict) and not isinstance(context, SandboxContext):
+                # In this case, the first parameter is actually a dict of args
+                arg_dict = context
+                context = None
+
+                # Try to get the context from args or use self.context
+                if args and isinstance(args[0], SandboxContext):
+                    context = args[0].copy()  # Make a copy to avoid affecting the original
+                    args = args[1:]
+                else:
+                    context = self.context.copy() if self.context else SandboxContext()
+
+                # Process arguments from the arg_dict
+                positional_args = arg_dict.get("__positional", [])
+                kwargs.update({k: v for k, v in arg_dict.items() if k != "__positional"})
+                args = positional_args + list(args)
+
             # If the context doesn't have an interpreter, assign the one from self.context
             if not hasattr(context, "_interpreter") or context._interpreter is None:
                 if self.context is not None and hasattr(self.context, "_interpreter") and self.context._interpreter is not None:
                     context._interpreter = self.context._interpreter
 
-            # Copy args and kwargs into the local scope by parameter names, but only if they don't exist
+            # Create a new scope for the function
             for i, param_name in enumerate(self.parameters):
                 if i < len(args):
-                    # Only set the parameter if it doesn't already exist in local scope
-                    if not context.has(f"local.{param_name}"):
-                        context.set_in_scope(param_name, args[i], scope="local")
+                    # Directly set the parameter in the local scope
+                    context.set_in_scope(param_name, args[i], scope="local")
 
-            # Set any keyword args if they don't already exist
+            # Set any keyword args
             for kwarg_name, kwarg_value in kwargs.items():
-                if kwarg_name in self.parameters and not context.has(f"local.{kwarg_name}"):
+                if kwarg_name in self.parameters:
                     context.set_in_scope(kwarg_name, kwarg_value, scope="local")
 
+            result = None
             for statement in self.body:
-                result = context.interpreter.execute_statement(statement, context)
-                self.debug(f"statement: {statement}, result: {result}")
+                try:
+                    result = context.interpreter.execute_statement(statement, context)
+                    self.debug(f"statement: {statement}, result: {result}")
+                except ReturnException as e:
+                    return e.value
+            return result
         except ReturnException as e:
             return e.value

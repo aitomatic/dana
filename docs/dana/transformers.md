@@ -2,17 +2,17 @@
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
 
-[▲ DANA](./dana.md) 
+[▲ Dana](./dana.md) 
 
 [◀ Parser](./parser.md) | [AST ▶︎](./ast.md)
 
-# DANA Language Transformers 
+# Dana Language Transformers 
 
 **Module**: `opendxa.dana.language.transformers`
 
 After initial parsing, the Lark parser calls its transformer to output the AST (Abstract Syntax Tree).
 
-This module describes the transformer components for the DANA language parser. The parser uses a modular architecture with specialized transformer classes for different language constructs.
+This module describes the transformer components for the Dana language parser. The parser uses a modular architecture with specialized transformer classes for different language constructs.
 
 ## Structure
 

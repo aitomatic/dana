@@ -21,9 +21,9 @@ opendxa/                         # Main package root
 ├── contrib/                     # Contributed modules and examples
 ├── dana/                        # Domain-Aware NeuroSymbolic Architecture
 │   ├── repl/                    # Interactive REPL implementation
-│   ├── sandbox/                 # DANA sandbox environment
-│   │   ├── interpreter/         # DANA interpreter components
-│   │   └── parser/              # DANA language parser
+│   ├── sandbox/                 # Dana sandbox environment
+│   │   ├── interpreter/         # Dana interpreter components
+│   │   └── parser/              # Dana language parser
 │   └── transcoder/              # NL to code translation
 └── danke/                       # Domain-Aware NeuroSymbolic Knowledge Engine
 
@@ -33,7 +33,7 @@ docs/                           # Project documentation
 ├── ai-readme/                  # AI-assisted documentation
 ├── architecture/               # System architecture
 ├── core-concepts/              # Framework core concepts
-├── dana/                       # DANA language documentation
+├── dana/                       # Dana language documentation
 └── danke/                      # DANKE documentation
 
 examples/                       # Example code and tutorials
@@ -45,7 +45,7 @@ examples/                       # Example code and tutorials
 tests/                          # Test suite
 ├── agent/                      # Agent tests
 ├── common/                     # Common utilities tests
-├── dana/                       # DANA language tests
+├── dana/                       # Dana language tests
 │   ├── repl/                   # REPL tests
 │   ├── sandbox/                # Sandbox environment tests
 │   │   ├── interpreter/        # Interpreter tests
@@ -80,12 +80,12 @@ Example environment variable configuration for local development.
 
 OpenDXA is a comprehensive framework for building intelligent multi-agent systems with domain expertise, powered by Large Language Models (LLMs). It consists of two main components:
 
-1. **DANA (Domain-Aware NeuroSymbolic Architecture)**: An imperative programming language and execution runtime for agent reasoning. Key components include:
-   - **Parser**: Converts DANA source code into an Abstract Syntax Tree (AST) using a formal grammar
-   - **Interpreter**: Executes DANA programs by processing the AST
+1. **Dana (Domain-Aware NeuroSymbolic Architecture)**: An imperative programming language and execution runtime for agent reasoning. Key components include:
+   - **Parser**: Converts Dana source code into an Abstract Syntax Tree (AST) using a formal grammar
+   - **Interpreter**: Executes Dana programs by processing the AST
    - **Sandbox**: Provides a safe execution environment with controlled state management
-   - **Transcoder**: Translates between natural language and DANA code
-   - **REPL**: Interactive environment for executing DANA code
+   - **Transcoder**: Translates between natural language and Dana code
+   - **REPL**: Interactive environment for executing Dana code
 
 2. **DANKE (Domain-Aware NeuroSymbolic Knowledge Engine)**: A knowledge management system implementing the CORRAL methodology (Collect, Organize, Retrieve, Reason, Act, Learn).
 

@@ -6,9 +6,9 @@
 
 [Project Overview](../README.md)
 
-> **New:** Read the [DANA Manifesto](dana/manifesto.md) to understand our vision for transforming AI engineering
+> **New:** Read the [Dana Manifesto](dana/manifesto.md) to understand our vision for transforming AI engineering
 
-# OpenDXA - Powered by DANA
+# OpenDXA - Powered by Dana
 
 ## Framework Architecture
 
@@ -17,7 +17,7 @@ graph TB
     subgraph "Technology Stack"
         direction TB
         C[DANKE:<br>Domain Knowledge Base] --> B
-        B[DANA:<br>Language & Secure Runtime] --> A
+        B[Dana:<br>Language & Secure Runtime] --> A
         A[OpenDXA:<br>Agentic Infrastructure] 
     end
     
@@ -45,9 +45,9 @@ graph TB
 
 ```mermaid
 graph TB
-    subgraph "DANA Architecture"
+    subgraph "Dana Architecture"
         B[Language & Secure Runtime]
-        B --> B1[DANA Language]
+        B --> B1[Dana Language]
         B --> B2[Sandbox Environment]
         B --> B3[Parser & Interpreter]
     end
@@ -84,7 +84,7 @@ graph TB
     style C2f fill:#bfb,stroke:#333,stroke-width:1px
 ```
 
-**Example: DANA agentic program**
+**Example: Dana agentic program**
 ```dana
 # Local solve: ask for a diagnosis based on temperature
 cause = local.solve(f"Diagnose the cause of high temperature: {temp}")
@@ -100,7 +100,7 @@ if is_safe(plan):
   result = execute(plan)
 ```
 
-**Example: DANA agentic program (Finance Use Case)**
+**Example: Dana agentic program (Finance Use Case)**
 ```dana
 import aitomatic as ai
 
@@ -123,23 +123,23 @@ else:
 ```
 
 **Note:**
-In DANA, method calls like `credit_scoring_agent.score(applicant)` are automatically converted to a generic agentic call:
+In Dana, method calls like `credit_scoring_agent.score(applicant)` are automatically converted to a generic agentic call:
 ```dana
 credit_scoring_agent.solve("Score this applicant", applicant)
 ```
 This standardizes agent/service interactions in a human-readable, LLM-friendly way, allowing agents to expose their capabilities as a structured API, or as prompt-driven functions.
 
-OpenDXA is the first agent framework enabled by the **DANA Language** and **DANA Sandbox**—a neurosymbolic programming environment that lets Agentic AI Engineers build, test, and share agent logic as straightforward, readable programs. 
+OpenDXA is the first agent framework enabled by the **Dana Language** and **Dana Sandbox**—a neurosymbolic programming environment that lets Agentic AI Engineers build, test, and share agent logic as straightforward, readable programs. 
 
-**With DANA, you don't have to deal with boilerplate code or infrastructure paradigms like links, nodes, or graphs. You just write agent logic—clear, expressive, and powerful—like you always have.**
+**With Dana, you don't have to deal with boilerplate code or infrastructure paradigms like links, nodes, or graphs. You just write agent logic—clear, expressive, and powerful—like you always have.**
 
-DANA's neurosymbolic architecture gives you the best of both worlds: the flexibility and fault-tolerance of natural language, and the determinism, explainability, and auditability of symbolic programming. 
+Dana's neurosymbolic architecture gives you the best of both worlds: the flexibility and fault-tolerance of natural language, and the determinism, explainability, and auditability of symbolic programming. 
 
-Agents communicate and share executable knowledge (how-tos) via DANA, enabling a new era of programmable, collaborative AI. The **DANA Sandbox** provides an interactive playground for rapid development, debugging, and experimentation—making agentic AI accessible and productive for every engineer.
+Agents communicate and share executable knowledge (how-tos) via Dana, enabling a new era of programmable, collaborative AI. The **Dana Sandbox** provides an interactive playground for rapid development, debugging, and experimentation—making agentic AI accessible and productive for every engineer.
 
 > **Try it now:**  
-> - [DANA Sandbox Guide](dana/sandbox.md)  
-> - [DANA Language Reference](dana/language.md)
+> - [Dana Sandbox Guide](dana/sandbox.md)  
+> - [Dana Language Reference](dana/language.md)
 
 # OpenDXA - Domain-Expert Agent Framework Documentation
 
@@ -169,20 +169,20 @@ To immediately leverage domain expertise, you can also utilize Aitomatic's separ
 >
 > — Christopher Nguyen, CEO of Aitomatic
 
-## 🚀 DANA Language & Sandbox: The Heart of OpenDXA Reasoning
+## 🚀 Dana Language & Sandbox: The Heart of OpenDXA Reasoning
 
-OpenDXA's reasoning, planning, and tool use are powered by the **DANA Language** — a minimal, interpretable, and LLM-friendly program format. DANA enables agents to reason, act, and collaborate through structured, auditable programs.
+OpenDXA's reasoning, planning, and tool use are powered by the **Dana Language** — a minimal, interpretable, and LLM-friendly program format. Dana enables agents to reason, act, and collaborate through structured, auditable programs.
 
-**DANA Sandbox** provides an interactive playground for:
-- Authoring and testing DANA programs
+**Dana Sandbox** provides an interactive playground for:
+- Authoring and testing Dana programs
 - Debugging agent logic step-by-step
 - Experimenting with new reasoning patterns
 
 > **Try it now:**  
-> - [DANA Sandbox Guide](dana/sandbox.md)  
-> - [DANA Language Reference](dana/language.md)
+> - [Dana Sandbox Guide](dana/sandbox.md)  
+> - [Dana Language Reference](dana/language.md)
 
-**Example DANA program:**
+**Example Dana program:**
 ```dana
 public.temp = 42
 if public.temp > 40:
@@ -237,8 +237,8 @@ For detailed architecture information, see [Architecture Documentation](details/
 - **Composable Architecture** - Mix and match capabilities as needed
 - **Built-in Best Practices** - Pre-configured templates for common patterns
 - **Full Customization** - Complete control when needed
-- **DANA Language** – Minimal, interpretable, and LLM-friendly program format for agent reasoning and tool use
-- **DANA Sandbox** – Interactive playground for authoring, testing, and debugging DANA programs
+- **Dana Language** – Minimal, interpretable, and LLM-friendly program format for agent reasoning and tool use
+- **Dana Sandbox** – Interactive playground for authoring, testing, and debugging Dana programs
 
 ## Key Differentiators
 
@@ -246,13 +246,13 @@ For detailed architecture information, see [Architecture Documentation](details/
 1. **Declarative-Imperative Architecture**: Clear separation between what agents know and how they act
 2. **Knowledge Management**: Built-in support for structured knowledge management and evolution
 3. **Domain Expertise Integration**: Specifically designed to embed domain expertise into agents
-4. **DANA Language & Sandbox**: Core to agent reasoning, with interactive authoring and debugging
+4. **Dana Language & Sandbox**: Core to agent reasoning, with interactive authoring and debugging
 
 ### Engineering Approaches
 1. **Progressive Complexity**: Start with simple implementations and progressively add complexity
 2. **Composable Architecture**: Mix and match components as needed for highly customized agents
 3. **Clean Separation of Concerns**: Maintain clear boundaries between description and execution layers
-4. **DANA as Reasoning Core**: All agent logic and tool use is expressed in DANA, testable in the Sandbox
+4. **Dana as Reasoning Core**: All agent logic and tool use is expressed in Dana, testable in the Sandbox
 
 For detailed framework comparisons, see [Framework Comparison](details/comparison.md).
 
@@ -262,14 +262,14 @@ For detailed framework comparisons, see [Framework Comparison](details/compariso
   - [Quick Start](getting-started/quickstart.md) - Your first OpenDXA agent
   - [Core Concepts](getting-started/core-concepts.md) - Fundamental concepts
   - [Examples](../../examples/README.md) - Usage patterns and tutorials
-  - [Try DANA in the Sandbox](dana/sandbox.md)
+  - [Try Dana in the Sandbox](dana/sandbox.md)
 
-- **DANA Language & Sandbox**
-  - [DANA Language Reference](dana/language.md)
-  - [DANA Sandbox Guide](dana/sandbox.md)
-  - [DANA Syntax Reference](dana/syntax.md)
-  - [DANA Manifesto](dana/manifesto.md) - Philosophy and vision
-  - [DANA Examples](../examples/01_getting_started/)
+- **Dana Language & Sandbox**
+  - [Dana Language Reference](dana/language.md)
+  - [Dana Sandbox Guide](dana/sandbox.md)
+  - [Dana Syntax Reference](dana/syntax.md)
+  - [Dana Manifesto](dana/manifesto.md) - Philosophy and vision
+  - [Dana Examples](../examples/01_getting_started/)
 
 - **Development Roadmap**
   - [Roadmap](ROADMAP.md) - Planned development path and future capabilities

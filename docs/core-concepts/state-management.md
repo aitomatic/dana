@@ -8,7 +8,7 @@
 
 # State Management
 
-This document describes how OpenDXA manages state across different components of the system using DANA's state scopes.
+This document describes how OpenDXA manages state across different components of the system using Dana's state scopes.
 
 *Note: For conversation history and LLM interaction context, see [Conversation Context Management](../core-concepts/conversation-context.md).*
 
@@ -20,7 +20,7 @@ OpenDXA's state management system is designed to handle different types of varia
 - `world.` - Environment and tool state (via WorldState)
 - `temp.` - Temporary computation state (via TempState)
 
-Each scope provides separation and organization for different types of variables in DANA programs.
+Each scope provides separation and organization for different types of variables in Dana programs.
 
 The top use cases for state management in agentic systems are:
 
@@ -31,7 +31,7 @@ The top use cases for state management in agentic systems are:
    - Progress metrics
    - Task dependencies
 
-   *Example (DANA):*
+   *Example (Dana):*
    ```python
    # Track progress through a multi-step task
    agent.current_step = "data_processing"
@@ -50,7 +50,7 @@ The top use cases for state management in agentic systems are:
    - Session data
    - External system states
 
-   *Example (DANA):*
+   *Example (Dana):*
    ```python
    # Manage tool authentication and session
    world.api_auth_token = "xyz123"
@@ -71,7 +71,7 @@ The top use cases for state management in agentic systems are:
    - Reasoning chains and justifications
    - Validation results
 
-   *Example (DANA):*
+   *Example (Dana):*
    ```python
    # Store decision context and LLM interaction state
    agent.decision_criteria = ["cost", "speed", "reliability"]
@@ -100,7 +100,7 @@ The top use cases for state management in agentic systems are:
    - Error handling strategies
    - System resilience data
 
-   *Example (DANA):*
+   *Example (Dana):*
    ```python
    # Track error state and recovery attempts
    agent.error_last_type = "connection_timeout"
@@ -132,7 +132,7 @@ The top use cases for state management in agentic systems are:
    - Local function state
    - Short-lived data
 
-   *Example (DANA):*
+   *Example (Dana):*
    ```python
    # Use temp scope for intermediate calculations
    temp.data = world.input_data
@@ -153,7 +153,7 @@ The top use cases for state management in agentic systems are:
 
 ## SandboxContext API
 
-The SandboxContext class provides an API for interacting with DANA state containers programmatically:
+The SandboxContext class provides an API for interacting with Dana state containers programmatically:
 
 ```python
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
@@ -169,7 +169,7 @@ context = SandboxContext(
 agent_name = context.get("agent.name")
 context.set("temp.processing_started", True)
 
-# Execute DANA program with context
+# Execute Dana program with context
 from opendxa.dana import run
 
 dana_program = """
@@ -194,7 +194,7 @@ run(dana_program, context)
    - Follow consistent naming conventions
 
 2. **State Access Patterns**
-   - Access state directly via dot notation in DANA
+   - Access state directly via dot notation in Dana
    - Use clear, descriptive variable names
    - Validate state before use with conditional checks
    - Use default values or hasattr for optional state
@@ -207,4 +207,4 @@ run(dana_program, context)
 
 ## Additional Information
 
-For more details on DANA state management, please refer to the [DANA Language](../dana/language.md) documentation.
+For more details on Dana state management, please refer to the [Dana Language](../dana/language.md) documentation.

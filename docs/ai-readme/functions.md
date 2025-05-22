@@ -4,39 +4,39 @@
 
 [Project Overview](../../README.md)
 
-# DANA Function Calling: Design Overview
+# Dana Function Calling: Design Overview
 
 ## 1. Introduction
-This document describes the design for function calling in the DANA language and runtime, supporting:
-- DANA calling DANA functions
-- DANA calling Python functions
-- Python calling DANA functions (reverse FFI)
+This document describes the design for function calling in the Dana language and runtime, supporting:
+- Dana calling Dana functions
+- Dana calling Python functions
+- Python calling Dana functions (reverse FFI)
 
-The goal is to provide a unified, extensible, and secure function system that enables seamless integration between DANA and Python, with clear boundaries for context, security, and auditability.
+The goal is to provide a unified, extensible, and secure function system that enables seamless integration between Dana and Python, with clear boundaries for context, security, and auditability.
 
 ---
 
 ## 2. The Function Registry: Central Pillar of Function Calling
 
 ### Responsibilities
-- **Unified Registration:** All callable functions—DANA or Python—are registered in a single registry, with support for namespacing and global imports.
-- **Dynamic Registration:** Functions are registered at definition (DANA) or import (DANA/Python module), with metadata (e.g., context-awareness).
-- **Lookup & Dispatch:** All function calls (from DANA or Python) are resolved and dispatched via the registry, which adapts arguments and context as needed.
-- **Signature Adaptation:** The registry inspects function signatures and binds arguments from DANA code or Python API calls, injecting context if required.
+- **Unified Registration:** All callable functions—Dana or Python—are registered in a single registry, with support for namespacing and global imports.
+- **Dynamic Registration:** Functions are registered at definition (Dana) or import (Dana/Python module), with metadata (e.g., context-awareness).
+- **Lookup & Dispatch:** All function calls (from Dana or Python) are resolved and dispatched via the registry, which adapts arguments and context as needed.
+- **Signature Adaptation:** The registry inspects function signatures and binds arguments from Dana code or Python API calls, injecting context if required.
 - **Policy Enforcement:** Security and context-passing policies are enforced centrally in the registry.
 - **Auditability:** All registrations and calls can be logged for traceability and debugging.
 - **Extensibility:** The registry is the single point for adding advanced features (decorators, LLM-powered argument mapping, etc.).
 
 ### How the Registry Fits Each Scenario
-- **DANA→DANA:** Resolves and dispatches DANA function calls, manages local context.
-- **DANA→Python:** Resolves Python functions, adapts arguments, injects context if needed, handles type conversion.
-- **Python→DANA:** Python API calls into the registry to resolve and invoke DANA functions, passing in arguments and context.
+- **Dana→Dana:** Resolves and dispatches Dana function calls, manages local context.
+- **Dana→Python:** Resolves Python functions, adapts arguments, injects context if needed, handles type conversion.
+- **Python→Dana:** Python API calls into the registry to resolve and invoke Dana functions, passing in arguments and context.
 
 ### Conceptual API Sketch
 ```python
 class FunctionRegistry:
     def register(self, name, func, namespace=None, is_python=False, context_aware=False):
-        # Register a function (DANA or Python) with optional namespace and metadata
+        # Register a function (Dana or Python) with optional namespace and metadata
         ...
 
     def resolve(self, name, namespace=None):
@@ -53,14 +53,14 @@ class FunctionRegistry:
 ```mermaid
 graph TD
     subgraph Registration
-        DANA_Def["DANA func def/import"] --> REG[Function Registry]
+        Dana_Def["Dana func def/import"] --> REG[Function Registry]
         Py_Import["Python module import"] --> REG
     end
     subgraph Dispatch
         SB["Sandbox"] --> INT["Interpreter"]
         INT --> EXEC["Executor (Statement/Expression)"]
         EXEC --> REG
-        REG --> FN["Function (DANA or Python)"]
+        REG --> FN["Function (Dana or Python)"]
         FN --> OUT["Return Value"]
     end
 ```
@@ -69,18 +69,18 @@ graph TD
 
 ## 3. Function Definition and Import Rules
 
-DANA and Python functions must be defined in specific locations depending on the calling scenario. This ensures modularity, reusability, and clear separation of code.
+Dana and Python functions must be defined in specific locations depending on the calling scenario. This ensures modularity, reusability, and clear separation of code.
 
 | Scenario                | Where Function Is Defined         | How Registered/Imported                | Registry Behavior                |
 |-------------------------|-----------------------------------|----------------------------------------|----------------------------------|
-| DANA→DANA (same file)   | Inline in `.na`                   | Registered at parse time               | Local/global scope               |
-| DANA→DANA (other file)  | In another `.na`                  | `import my_utils.na as util`           | Namespace/global registration    |
-| DANA→Python             | In another `.py`                  | `import my_module.py as py`            | Namespace/global registration    |
-| Python→DANA             | In another `.na` (not inline)     | Interpreter loads `.na` file/module    | Functions registered for API use |
+| Dana→Dana (same file)   | Inline in `.na`                   | Registered at parse time               | Local/global scope               |
+| Dana→Dana (other file)  | In another `.na`                  | `import my_utils.na as util`           | Namespace/global registration    |
+| Dana→Python             | In another `.py`                  | `import my_module.py as py`            | Namespace/global registration    |
+| Python→Dana             | In another `.na` (not inline)     | Interpreter loads `.na` file/module    | Functions registered for API use |
 
 ### Examples
 
-#### DANA→DANA (Same File)
+#### Dana→Dana (Same File)
 ```dana
 # file: main.na
 func greet(name):
@@ -89,7 +89,7 @@ func greet(name):
 result = greet("Alice")
 ```
 
-#### DANA→DANA (Other File)
+#### Dana→Dana (Other File)
 ```dana
 # file: utils.na
 func double(x):
@@ -101,7 +101,7 @@ import utils.na as util
 result = util.double(10)
 ```
 
-#### DANA→Python (Python function in another .py)
+#### Dana→Python (Python function in another .py)
 ```python
 # file: math_utils.py
 def add(a, b):
@@ -113,7 +113,7 @@ import math_utils.py as math
 sum = math.add(3, 4)
 ```
 
-#### Python→DANA (DANA function in another .na)
+#### Python→Dana (Dana function in another .na)
 ```dana
 # file: business_rules.na
 func is_even(n):
@@ -131,18 +131,18 @@ result = interpreter.call_function('is_even', [42])
 ```
 
 ### Best Practices
-- **DANA→DANA:** Define reusable functions in separate `.na` files and import as needed.
-- **DANA→Python:** Only import Python functions from external `.py` modules. Do not define Python functions inline in `.na` files.
-- **Python→DANA:** Always define callable DANA functions in a separate `.na` file/module. Do not use inline DANA code for Python→DANA calls.
+- **Dana→Dana:** Define reusable functions in separate `.na` files and import as needed.
+- **Dana→Python:** Only import Python functions from external `.py` modules. Do not define Python functions inline in `.na` files.
+- **Python→Dana:** Always define callable Dana functions in a separate `.na` file/module. Do not use inline Dana code for Python→Dana calls.
 
 ---
 
 ## 4. Name Collision Resolution
 
-Name collisions can occur when multiple functions with the same name are imported or defined. DANA resolves these using **namespacing**, import policies, and registry enforcement.
+Name collisions can occur when multiple functions with the same name are imported or defined. Dana resolves these using **namespacing**, import policies, and registry enforcement.
 
 ### 1. Namespacing with `as` Keyword
-When importing modules (DANA or Python), use the `as` keyword to assign a namespace. This ensures that functions from different modules do not collide in the global scope.
+When importing modules (Dana or Python), use the `as` keyword to assign a namespace. This ensures that functions from different modules do not collide in the global scope.
 
 **Example:**
 ```dana
@@ -176,7 +176,7 @@ The function registry tracks all registered functions and their namespaces. When
 - For global imports, warn or error on collision.
 - For namespaced imports, allow same function names in different namespaces.
 
-### 4. Example: DANA and Python
+### 4. Example: Dana and Python
 ```dana
 import utils.na as util
 import math_utils.py as math
@@ -203,12 +203,12 @@ sum = math.format(1, 2)  # Both modules can have a 'format' function, no collisi
 
 ---
 
-## 5. DANA Calling DANA Functions
+## 5. Dana Calling Dana Functions
 
 ### Mechanism
-- Functions are defined in DANA using `func name(args): ...`.
-- Functions can be imported from other DANA modules using `import my_utils.na as util` or globally.
-- The function registry tracks all available DANA functions, supporting namespacing and global imports.
+- Functions are defined in Dana using `func name(args): ...`.
+- Functions can be imported from other Dana modules using `import my_utils.na as util` or globally.
+- The function registry tracks all available Dana functions, supporting namespacing and global imports.
 - Parameters are mapped to the local scope (`local.param`), and each call creates a new local context.
 
 ### Example
@@ -228,12 +228,12 @@ result = util.double(10)
 
 ---
 
-## 6. DANA Calling Python Functions
+## 6. Dana Calling Python Functions
 
 ### Mechanism
-- DANA can import Python modules with `import my_module.py as py`.
-- All functions in the Python module are registered in the DANA function registry, accessible as `py.funcname(...)` or globally.
-- Python functions can optionally accept the DANA context as their first argument for advanced integration.
+- Dana can import Python modules with `import my_module.py as py`.
+- All functions in the Python module are registered in the Dana function registry, accessible as `py.funcname(...)` or globally.
+- Python functions can optionally accept the Dana context as their first argument for advanced integration.
 - Argument binding is handled by inspecting the Python function's signature; context is injected if needed.
 
 ### Example
@@ -244,19 +244,19 @@ result = math.add(1, 2)
 
 ### Design Notes
 - **Automatic Registration:** On import, Python functions are introspected and registered.
-- **Context Injection:** If the Python function's first argument is `context`, the DANA context is passed in.
+- **Context Injection:** If the Python function's first argument is `context`, the Dana context is passed in.
 - **Security:** Only public variables are passed by default; private/local/system variables require explicit opt-in.
-- **Signature Adaptation:** The registry adapts DANA arguments to Python signatures, supporting both positional and named arguments.
+- **Signature Adaptation:** The registry adapts Dana arguments to Python signatures, supporting both positional and named arguments.
 
 ---
 
-## 7. Python Calling DANA Functions (Reverse FFI)
+## 7. Python Calling Dana Functions (Reverse FFI)
 
 ### Mechanism
-- Python code can instantiate a DANA interpreter, load a DANA module, and call a function by name, passing arguments as needed.
-- The interpreter exposes a `call_function` API for Python to invoke DANA functions.
-- Python must construct a DANA context (public/private/system/local) to pass in.
-- Return values are converted from DANA to Python types as needed.
+- Python code can instantiate a Dana interpreter, load a Dana module, and call a function by name, passing arguments as needed.
+- The interpreter exposes a `call_function` API for Python to invoke Dana functions.
+- Python must construct a Dana context (public/private/system/local) to pass in.
+- Return values are converted from Dana to Python types as needed.
 
 ### Example
 ```python
@@ -272,27 +272,27 @@ result = interpreter.call_function("double", [10])
 ```python
 def call_function(self, name: str, args: list = None, kwargs: dict = None, context: SandboxContext = None) -> Any:
     """
-    Call a DANA function by name from Python.
-    - name: Name of the DANA function (optionally namespaced)
+    Call a Dana function by name from Python.
+    - name: Name of the Dana function (optionally namespaced)
     - args: Positional arguments (optional)
     - kwargs: Named arguments (optional)
-    - context: Optional DANA context (if not provided, use interpreter's context)
+    - context: Optional Dana context (if not provided, use interpreter's context)
     Returns the function's return value, converted to a Python type if possible.
     """
 ```
 
 ### Design Notes
-- **API Exposure:** Expose a Python API like `interpreter.call_function("func_name", args, context)` to invoke DANA functions.
-- **Context Management:** Python must construct a DANA context (public/private/system/local) to pass in.
-- **Return Values:** DANA functions can return values to Python, with type conversion handled.
-- **Security:** Control what context is visible to the DANA function.
+- **API Exposure:** Expose a Python API like `interpreter.call_function("func_name", args, context)` to invoke Dana functions.
+- **Context Management:** Python must construct a Dana context (public/private/system/local) to pass in.
+- **Return Values:** Dana functions can return values to Python, with type conversion handled.
+- **Security:** Control what context is visible to the Dana function.
 
 ---
 
 ## 8. Unified Function Registry & Dispatch
-- All callable functions (DANA and Python) are registered in a single registry, supporting namespacing and global imports.
-- At call time, the registry inspects the function signature and binds arguments from DANA code and context.
-- DANA-aware Python functions (first arg `context`) get the DANA context injected.
+- All callable functions (Dana and Python) are registered in a single registry, supporting namespacing and global imports.
+- At call time, the registry inspects the function signature and binds arguments from Dana code and context.
+- Dana-aware Python functions (first arg `context`) get the Dana context injected.
 - Pure Python functions get only the provided arguments.
 - In the future, a context-mapping layer (Predict-and-Error Correct) can auto-fill arguments using name/type matching or LLM-powered inference.
 
@@ -318,17 +318,17 @@ def call_function(self, name: str, args: list = None, kwargs: dict = None, conte
 ## 11. Summary Table
 | Scenario                | How?                        | Context Passing         | Return Value      | Security Policy         |
 |-------------------------|-----------------------------|------------------------|-------------------|------------------------|
-| DANA→DANA               | Direct call/import          | Local, explicit others | DANA type         | Explicit opt-in        |
-| DANA→Python             | Import .py, call            | Public auto, opt-in    | Python type       | Explicit opt-in        |
-| Python→DANA             | Interpreter.call_function() | User-constructed       | Python type       | Explicit opt-in        |
+| Dana→Dana               | Direct call/import          | Local, explicit others | Dana type         | Explicit opt-in        |
+| Dana→Python             | Import .py, call            | Public auto, opt-in    | Python type       | Explicit opt-in        |
+| Python→Dana             | Interpreter.call_function() | User-constructed       | Python type       | Explicit opt-in        |
 
 ---
 
 ## 12. References
-- [DANA Function Design Guide](../../dana/functions/design-guide.md)
-- [DANA Function User Guide](../../dana/functions/user-guide.md)
-- [DANA Grammar](../../dana/grammar.md)
-- [DANA Interpreter](../../dana/interpreter.md) 
+- [Dana Function Design Guide](../../dana/functions/design-guide.md)
+- [Dana Function User Guide](../../dana/functions/user-guide.md)
+- [Dana Grammar](../../dana/grammar.md)
+- [Dana Interpreter](../../dana/interpreter.md) 
 
 ---
 
@@ -340,10 +340,10 @@ def call_function(self, name: str, args: list = None, kwargs: dict = None, conte
 |------|-------------|--------|-------|
 | 1 | Unified Function Registry | [x] Complete | Unified registry, namespacing, context, metadata, collision handling. |
 | 2 | Namespaced Function Resolution | [x] Complete | Registry and evaluator support namespacing. |
-| 3 | DANA Function Call Support | [x] Complete | DANA function calls work via registry. |
-| 4 | Module Import and Registration | [x] Complete | DANA and Python modules register functions under namespace. |
+| 3 | Dana Function Call Support | [x] Complete | Dana function calls work via registry. |
+| 4 | Module Import and Registration | [x] Complete | Dana and Python modules register functions under namespace. |
 | 5 | Collision Handling | [x] Complete | Registry enforces and tests collision handling. |
-| 6 | Python→DANA API | [x] Complete | Interpreter exposes API for Python to call DANA functions. |
+| 6 | Python→Dana API | [x] Complete | Interpreter exposes API for Python to call Dana functions. |
 | 7 | Tests and Documentation | [~] Partial | Core tests pass; more edge case tests and doc updates recommended. |
 
 This table should be updated as each step is started, in progress, or completed.
@@ -352,9 +352,9 @@ This table should be updated as each step is started, in progress, or completed.
 
 | Scenario                        | Status      | Notes |
 |----------------------------------|------------|-------|
-| DANA→DANA function calls         | [x] Pass   | Registry and execution tested. |
-| DANA→Python function calls       | [x] Pass   | Registry and context injection tested. |
-| Python→DANA function calls       | [x] Pass   | Interpreter API tested. |
+| Dana→Dana function calls         | [x] Pass   | Registry and execution tested. |
+| Dana→Python function calls       | [x] Pass   | Registry and context injection tested. |
+| Python→Dana function calls       | [x] Pass   | Interpreter API tested. |
 | Namespacing                      | [x] Pass   | Registry supports and tests namespacing. |
 | Collision handling               | [x] Pass   | Registry enforces and tests collision handling. |
 | Edge cases & extensibility       | [x] Pass   | Edge/extensibility tests complete. |
@@ -363,22 +363,22 @@ Update this table as tests are added and pass for each scenario.
 
 ### Review Summary
 - **Current state:**
-  - The unified function system for DANA is **functionally complete**: DANA↔DANA, DANA→Python, and Python→DANA calls all work via a single registry, with namespacing, context, and collision handling.
+  - The unified function system for Dana is **functionally complete**: Dana↔Dana, Dana→Python, and Python→Dana calls all work via a single registry, with namespacing, context, and collision handling.
   - All major scenarios are supported and tested.
   - Further work is focused on edge case testing, extensibility, and documentation improvements.
 
 ### Step-by-Step Plan
 
 #### **Step 1: Unified Function Registry**
-- Create a single `FunctionRegistry` (or manager) that can register and resolve both DANA and Python functions, with namespace support.
+- Create a single `FunctionRegistry` (or manager) that can register and resolve both Dana and Python functions, with namespace support.
 - Refactor `DanaRegistry` and `PythonRegistry` to be internal helpers or merge them.
 
 #### **Step 2: Namespaced Function Resolution**
 - Update the evaluator to support namespaced function calls (e.g., `util.double`).
 - When importing modules, register functions under the specified namespace.
 
-#### **Step 3: DANA Function Call Support**
-- In `ExpressionEvaluator._evaluate_function_call`, resolve the function (DANA or Python) from the unified registry and dispatch accordingly.
+#### **Step 3: Dana Function Call Support**
+- In `ExpressionEvaluator._evaluate_function_call`, resolve the function (Dana or Python) from the unified registry and dispatch accordingly.
 - Support both positional and named arguments.
 
 #### **Step 4: Module Import and Registration**
@@ -390,17 +390,17 @@ Update this table as tests are added and pass for each scenario.
 - On registration, check for name collisions in the registry.
 - Warn or error on global collisions; allow same names in different namespaces.
 
-#### **Step 6: Python→DANA API**
-- Expose a `call_function` method on the interpreter that uses the unified registry to call DANA functions by name.
+#### **Step 6: Python→Dana API**
+- Expose a `call_function` method on the interpreter that uses the unified registry to call Dana functions by name.
 
 #### **Step 7: Tests and Documentation**
-- Add/expand tests for all scenarios: DANA→DANA, DANA→Python, Python→DANA, namespacing, and collision handling.
+- Add/expand tests for all scenarios: Dana→Dana, Dana→Python, Python→Dana, namespacing, and collision handling.
 - Update documentation and usage examples.
 
 ### Immediate Next Steps
 1. Design and implement a unified function registry with namespace support.
 2. Refactor the evaluator to use this registry for all function calls.
-3. Add DANA function call support in the evaluator.
+3. Add Dana function call support in the evaluator.
 4. Add namespacing and collision handling in the registry.
 
 ---

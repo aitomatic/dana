@@ -1,8 +1,7 @@
 """
-Base executor for the DANA interpreter.
+Base executor for DANA language.
 
-This module provides the base executor class that defines the interface
-for all DANA execution components.
+This module provides a base executor class for all specialized executors in DANA.
 
 Copyright © 2025 Aitomatic, Inc.
 MIT License
@@ -18,80 +17,143 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-import inspect
-import uuid
-import warnings
-from typing import TYPE_CHECKING, Any, Optional, Protocol, runtime_checkable
+from typing import Any, Dict, Optional, Type
 
 from opendxa.common.mixins.loggable import Loggable
-from opendxa.dana.sandbox.interpreter.executor.has_interpreter import HasInterpreter
-
-if TYPE_CHECKING:
-    from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
+from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
-@runtime_checkable
-class ContextProvider(Protocol):
-    """Protocol for objects that provide context management functionality."""
+class BaseExecutor(Loggable):
+    """Base class for all executors in DANA.
 
-    def get_registry(self) -> Any:
-        """Get the function registry."""
-        ...
-
-
-class BaseExecutor(HasInterpreter, Loggable):
-    """Base class for DANA execution components.
-
-    This class provides common functionality used across all execution components:
-    - Logging utilities
-    - Execution ID management
-    - Error handling hooks
+    This class provides common functionality for all executors,
+    such as access to a function registry and parent executor reference.
     """
 
-    def __init__(self, registry_provider: Any, interpreter: Optional["DanaInterpreter"] = None):
-        """Initialize the base executor.
+    def __init__(self, parent: "BaseExecutor", function_registry: Optional[FunctionRegistry] = None):
+        """Initialize the executor.
 
         Args:
-            registry_provider: Any object that provides access to a function registry
-            interpreter: Optional interpreter instance
+            parent: Parent executor for delegation
+            function_registry: Optional function registry
         """
-        # Initialize Loggable with prefix for all DANA logs
-        super().__init__(interpreter=interpreter)
-
-        self._registry_provider = registry_provider
-
-        # Generate execution ID for this run
-        self._execution_id = str(uuid.uuid4())[:8]  # Short unique ID for this execution
+        super().__init__()
+        self._function_registry = function_registry
+        self._parent = parent
+        self._handlers: Dict[Type, Any] = {}
 
     @property
-    def registry_provider(self) -> Any:
-        """Get the registry provider."""
-        return self._registry_provider
+    def function_registry(self) -> Optional[FunctionRegistry]:
+        """Get the function registry.
+
+        Returns:
+            The function registry or None if not set
+        """
+        # If we have a registry, use it
+        if self._function_registry:
+            return self._function_registry
+
+        # Otherwise delegate to parent if available
+        if self._parent:
+            return self._parent.function_registry
+
+        return None
 
     @property
-    def function_registry(self) -> Any:
-        """Get the function registry from the provider."""
-        return self._registry_provider.get_registry()
+    def parent(self) -> "BaseExecutor":
+        """Get the parent executor.
 
-    @property
-    def context_manager(self) -> Any:
+        Returns:
+            The parent executor
         """
-        DEPRECATED: Get the context provider.
+        return self._parent
 
-        WARNING: This property should not be used to access SandboxContext.
-        Context should be passed explicitly to methods rather than
-        accessed through the context manager.
+    def execute(self, node: Any, context: SandboxContext) -> Any:
+        """Execute a node with the given context.
+
+        Args:
+            node: The node to execute
+            context: The execution context
+
+        Returns:
+            The result of execution
         """
-        # Emit a deprecation warning with the actual caller information
-        frame = inspect.currentframe()
-        if frame:
-            frame = frame.f_back  # Get the caller's frame
-            if frame:
-                caller = f"{frame.f_code.co_filename}:{frame.f_lineno}"
-                warnings.warn(
-                    f"Accessing context_manager is deprecated at {caller}. " "Pass SandboxContext explicitly to methods instead.",
-                    DeprecationWarning,
-                    stacklevel=2,
-                )
+        # Track execution path for testing/debugging
+        try:
+            context.set("system.__last_execution_path", "unified")
+        except Exception:
+            # Ignore any errors when trying to set the execution path
+            pass
 
-        return self._registry_provider
+        # If we have a handler for this node type, use it
+        node_type = type(node)
+        if node_type in self._handlers:
+            return self._handlers[node_type](node, context)
+
+        # Otherwise delegate to parent if available
+        if self._parent:
+            return self._parent.execute(node, context)
+
+        # If we don't have a handler or parent, raise an error
+        node_name = getattr(node, "__class__", type(node)).__name__
+        raise ValueError(f"Unsupported node type: {node_name}")
+
+    def register_handlers(self):
+        """Register handlers for node types.
+
+        This method should be implemented by subclasses to register
+        handlers for specific node types.
+        """
+        pass
+
+    def get_handlers(self) -> Dict[Type, Any]:
+        """Get the node handlers dictionary.
+
+        Returns:
+            A dictionary mapping node types to handler methods
+        """
+        return self._handlers
+
+    def get_function_registry(self, context: SandboxContext) -> Optional[FunctionRegistry]:
+        """Get the function registry from the context or local registry.
+
+        This is used by function executors to resolve function calls.
+
+        Args:
+            context: The execution context which may contain a registry
+
+        Returns:
+            A function registry or None if not available
+        """
+        # First try to use our own registry
+        if self._function_registry:
+            return self._function_registry
+
+        # Then try to get it directly from the context's system scope
+        try:
+            registry = context.get("system.function_registry")
+            if registry:
+                return registry
+        except Exception:
+            # Ignore errors when trying to access system.function_registry
+            pass
+
+        # If the context has an interpreter property, try to get it from there
+        try:
+            if hasattr(context, "function_registry") and context.function_registry:
+                return context.function_registry
+        except RuntimeError:
+            # This may raise RuntimeError if interpreter not set
+            pass
+
+        # If the context has an interpreter, try to get it from there
+        if hasattr(context, "_interpreter") and context._interpreter:
+            if hasattr(context._interpreter, "function_registry"):
+                return context._interpreter.function_registry
+
+        # Otherwise delegate to parent if available
+        if self._parent:
+            return self._parent.get_function_registry(context)
+
+        return None

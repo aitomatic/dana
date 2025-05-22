@@ -203,7 +203,9 @@ def test_fstring_literal():
         ]
     )
     interpreter.execute_program(program)
-    assert interpreter.context.get("private.result") == "foo42"
+    # Get the value and ensure it's evaluated
+    result = interpreter.get_evaluated("private.result", interpreter.context)
+    assert result == "foo42"
 
 
 # --- More Arithmetic ---
@@ -520,7 +522,7 @@ def test_print_statement():
 
 
 def test_break_statement():
-    from opendxa.dana.sandbox.interpreter.executor.dana_executor import BreakException
+    from opendxa.dana.sandbox.interpreter.executor.control_flow_executor import BreakException
     from opendxa.dana.sandbox.parser.ast import BreakStatement
 
     interpreter = DanaInterpreter(SandboxContext())
@@ -538,7 +540,7 @@ def test_break_statement():
 
 
 def test_continue_statement():
-    from opendxa.dana.sandbox.interpreter.executor.dana_executor import ContinueException
+    from opendxa.dana.sandbox.interpreter.executor.control_flow_executor import ContinueException
     from opendxa.dana.sandbox.parser.ast import ContinueStatement
 
     interpreter = DanaInterpreter(SandboxContext())
@@ -568,7 +570,7 @@ def test_pass_statement():
 
 
 def test_return_statement():
-    from opendxa.dana.sandbox.interpreter.executor.dana_executor import ReturnException
+    from opendxa.dana.sandbox.interpreter.executor.control_flow_executor import ReturnException
     from opendxa.dana.sandbox.parser.ast import ReturnStatement
 
     interpreter = DanaInterpreter(SandboxContext())

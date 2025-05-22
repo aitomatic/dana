@@ -26,6 +26,7 @@ from typing import Any, Optional
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.dana.common.error_utils import ErrorUtils
 from opendxa.dana.sandbox.interpreter.executor.dana_executor import DanaExecutor
+from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
 from opendxa.dana.sandbox.parser.ast import Program
 from opendxa.dana.sandbox.sandbox_context import ExecutionStatus, SandboxContext
 
@@ -80,34 +81,42 @@ class DanaInterpreter(Loggable):
         self.context = context or SandboxContext()
         self._context_manager = ContextManager(self.context)
 
-        # Create a single DanaExecutor for all execution
-        self._executor = DanaExecutor(self.context)
+        # Initialize the function registry first
+        self._init_function_registry()
 
-        # Be sure to set the interpreter on all components
-        self.context.interpreter = self
-        self._executor.interpreter = self
+        # Create a DanaExecutor with the function registry
+        self._executor = DanaExecutor(function_registry=self._function_registry)
 
-        self._function_registry = None  # Will be lazily initialized
+        # Store the interpreter reference in the context
+        self.context._interpreter = self
+
+    def _init_function_registry(self):
+        """Initialize the function registry."""
+        from opendxa.dana.sandbox.interpreter.functions.core.register_core_functions import register_core_functions
+        from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
+
+        self._function_registry = FunctionRegistry()
+
+        # Apply the feature flag if set on the Interpreter class
+        if hasattr(self.__class__, "_function_registry_use_arg_processor"):
+            self._function_registry._use_arg_processor = self.__class__._function_registry_use_arg_processor
+
+        # Register all core functions automatically
+        register_core_functions(self._function_registry)
+
+        # Make sure we set the registry on the context so it can be found during execution
+        self.context.set_registry(self._function_registry)
+        self.debug("Function registry initialized and set on context")
 
     @property
-    def function_registry(self):
+    def function_registry(self) -> FunctionRegistry:
+        """Get the function registry.
+
+        Returns:
+            The function registry
+        """
         if self._function_registry is None:
-            from opendxa.dana.sandbox.interpreter.functions.core.register_core_functions import register_core_functions
-            from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
-
-            self._function_registry = FunctionRegistry()
-
-            # Apply the feature flag if set on the Interpreter class
-            if hasattr(self.__class__, "_function_registry_use_arg_processor"):
-                self._function_registry._use_arg_processor = self.__class__._function_registry_use_arg_processor
-
-            # Register all core functions automatically
-            register_core_functions(self._function_registry)
-
-            # Make sure we set the registry on the context so it can be found during execution
-            self.context.set_registry(self._function_registry)
-            self.debug("Function registry initialized and set on context")
-
+            self._init_function_registry()
         return self._function_registry
 
     def evaluate_expression(self, expression: Any, context: SandboxContext) -> Any:
@@ -169,3 +178,19 @@ class DanaInterpreter(Loggable):
     def get_and_clear_output(self) -> str:
         """Retrieve and clear the output buffer from the executor."""
         return self._executor.get_and_clear_output()
+
+    def get_evaluated(self, key: str, context: SandboxContext) -> Any:
+        """Get a value from the context and evaluate it if it's an AST node.
+
+        Args:
+            key: The key to get
+            context: The context to get from
+
+        Returns:
+            The evaluated value
+        """
+        # Get the raw value from the context
+        value = context.get(key)
+
+        # Return it through the executor to ensure AST nodes are evaluated
+        return self._executor.execute(value, context)

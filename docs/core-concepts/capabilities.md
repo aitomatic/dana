@@ -11,7 +11,7 @@
 
 ## Overview
 
-Capabilities in OpenDXA are modular components that provide specific functionality to agents. They enable agents to perform complex tasks by combining different capabilities in a flexible and reusable way. Within the DANA programming paradigm, capabilities serve as building blocks that extend the agent's abilities through both API access and runtime integration.
+Capabilities in OpenDXA are modular components that provide specific functionality to agents. They enable agents to perform complex tasks by combining different capabilities in a flexible and reusable way. Within the Dana programming paradigm, capabilities serve as building blocks that extend the agent's abilities through both API access and runtime integration.
 
 ## Core Concepts
 
@@ -47,7 +47,7 @@ Capabilities in OpenDXA follow a layered architecture:
 3. **Extension Layer**: Custom capabilities defined by users for unique requirements
 4. **Integration Layer**: Capabilities that connect with external systems and services
 
-Each capability integrates with the DANA execution context and can be accessed from DANA programs.
+Each capability integrates with the Dana execution context and can be accessed from Dana programs.
 
 ## Implementation
 
@@ -90,9 +90,9 @@ result = await agent.use_capability(
 )
 ```
 
-### 3. Capability Usage in DANA Programs
+### 3. Capability Usage in Dana Programs
 ```python
-# DANA program with capability usage
+# Dana program with capability usage
 dana_program = """
 # Store data using memory capability
 temp.data = {"key": "customer_data", "value": world.customer_info}
@@ -111,16 +111,16 @@ log.info("Analysis complete: {temp.analysis}")
 """
 ```
 
-## Integration with DANA
+## Integration with Dana
 
-Capabilities extend the DANA language by providing access to specialized functionality:
+Capabilities extend the Dana language by providing access to specialized functionality:
 
-1. **Function Integration**: Capabilities can register custom functions that become available in DANA programs
-2. **State Management**: Capabilities can read from and write to DANA state containers
+1. **Function Integration**: Capabilities can register custom functions that become available in Dana programs
+2. **State Management**: Capabilities can read from and write to Dana state containers
 3. **Resource Access**: Capabilities provide access to external resources and services
-4. **Execution Context**: Capabilities have access to the DANA execution context
+4. **Execution Context**: Capabilities have access to the Dana execution context
 
-Example of a capability registering a function in DANA:
+Example of a capability registering a function in Dana:
 
 ```python
 from opendxa.dana.sandbox.interpreter.functions import register_function
@@ -131,7 +131,7 @@ class AnalyticsCapability(BaseCapability):
         self.name = "analytics"
         
     def initialize(self, config):
-        # Register function with DANA
+        # Register function with Dana
         register_function("analyze_data", self.analyze_data_function)
         
     def analyze_data_function(self, data, options=None):
@@ -139,9 +139,9 @@ class AnalyticsCapability(BaseCapability):
         return analysis_result
 ```
 
-Example usage in DANA:
+Example usage in Dana:
 ```
-# Use registered function directly in DANA
+# Use registered function directly in Dana
 temp.data = world.customer_data
 temp.analysis = analyze_data(temp.data, {"method": "sentiment"})
 ```
@@ -154,8 +154,8 @@ temp.analysis = analyze_data(temp.data, {"method": "sentiment"})
    - Easy integration
    - Flexible composition
 
-2. **DANA Integration**
-   - Direct access from DANA programs
+2. **Dana Integration**
+   - Direct access from Dana programs
    - State container integration
    - Runtime function registration
    - Seamless execution flow
@@ -180,11 +180,11 @@ temp.analysis = analyze_data(temp.data, {"method": "sentiment"})
    - State isolation when needed
    - Performance monitoring
 
-3. **DANA Integration**
+3. **Dana Integration**
    - Clean function interfaces
    - Clear error messaging
    - Proper state management
-   - Documentation for DANA users
+   - Documentation for Dana users
 
 ## Common Patterns
 
@@ -252,7 +252,7 @@ temp.analysis = analyze_data(temp.data, {"method": "sentiment"})
 
 - Learn about [Agents](./agent.md)
 - Understand [Resources](./resources.md)
-- Explore [DANA Language](../dana/language.md)
+- Explore [Dana Language](../dana/language.md)
 
 ---
 <p align="center">

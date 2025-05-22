@@ -4,17 +4,17 @@
 
 [◀ Language](./language.md)
 
-# DANA Language Syntax Reference
+# Dana Language Syntax Reference
 
-DANA is a domain-specific language designed for AI-driven automation and reasoning. This document provides a comprehensive reference for DANA's syntax and language features, as supported by the current grammar and runtime.
+Dana is a domain-specific language designed for AI-driven automation and reasoning. This document provides a comprehensive reference for Dana's syntax and language features, as supported by the current grammar and runtime.
 
-## DANA vs. Python: Quick Comparison
+## Dana vs. Python: Quick Comparison
 
-- DANA's syntax is intentionally similar to Python: indentation, assignments, conditionals, loops, and function calls all look familiar.
-- DANA requires explicit scope prefixes for variables (e.g., `private.x`, `public.y`), unlike Python.
-- DANA only supports single-line comments with `#` (no docstrings).
-- DANA supports f-strings with embedded expressions (e.g., `f"Value: {x+1}"`).
-- Some advanced Python features (like comprehensions, decorators, or dynamic typing) are not present in DANA.
+- Dana's syntax is intentionally similar to Python: indentation, assignments, conditionals, loops, and function calls all look familiar.
+- Dana requires explicit scope prefixes for variables (e.g., `private.x`, `public.y`), unlike Python.
+- Dana only supports single-line comments with `#` (no docstrings).
+- Dana supports f-strings with embedded expressions (e.g., `f"Value: {x+1}"`).
+- Some advanced Python features (like comprehensions, decorators, or dynamic typing) are not present in Dana.
 
 ## Basic Syntax
 
@@ -25,7 +25,7 @@ DANA is a domain-specific language designed for AI-driven automation and reasoni
 
 ### Variables and Scoping
 
-DANA has a structured scoping system with four standard scopes:
+Dana has a structured scoping system with four standard scopes:
 - `private`: Private to the agent, resource, or tool itself
 - `public`: Openly accessible world state (time, weather, etc.)
 - `system`: System-related mechanical state with controlled access

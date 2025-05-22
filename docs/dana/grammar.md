@@ -4,45 +4,45 @@
 
 [◀ Parser](./parser.md) | [Transformers ▶︎](./transformers.md)
 
-# DANA Grammar
+# Dana Grammar
 
 **Files**:
     - `opendxa/dana/language/dana_grammar.lark`: The Lark grammar file.
 
-The DANA Parser uses the Lark parser to parse the DANA source code into a parse tree.
+The Dana Parser uses the Lark parser to parse the Dana source code into a parse tree.
 
-This document describes the formal grammar definition for the DANA language, as implemented in the Lark grammar file. The grammar defines the syntax rules for parsing DANA source code into a parse tree, which is then transformed into an AST.
+This document describes the formal grammar definition for the Dana language, as implemented in the Lark grammar file. The grammar defines the syntax rules for parsing Dana source code into a parse tree, which is then transformed into an AST.
 
 ## Overview
 
-The DANA grammar is written in [Lark](https://github.com/lark-parser/lark) EBNF syntax. It specifies the structure of valid DANA programs, including statements, expressions, literals, and control flow constructs. The grammar is designed to be readable, extensible, and to support indentation-based blocks.
+The Dana grammar is written in [Lark](https://github.com/lark-parser/lark) EBNF syntax. It specifies the structure of valid Dana programs, including statements, expressions, literals, and control flow constructs. The grammar is designed to be readable, extensible, and to support indentation-based blocks.
 
-## DANA vs. Python: Key Differences
+## Dana vs. Python: Key Differences
 
 - **Scope Prefixes:**  
-  DANA allows explicit scope prefixes for variables and functions (e.g., `private.x`, `public.y`). Python uses naming conventions and modules for visibility, not explicit prefixes.
+  Dana allows explicit scope prefixes for variables and functions (e.g., `private.x`, `public.y`). Python uses naming conventions and modules for visibility, not explicit prefixes.
 
 - **Null Value:**  
-  DANA uses `None` (capitalized, like Python), but it is a literal in the grammar, not a reserved keyword.
+  Dana uses `None` (capitalized, like Python), but it is a literal in the grammar, not a reserved keyword.
 
 - **Comments:**  
-  DANA only supports single-line comments with `#`. Python also supports docstrings (`'''` or `"""`), which DANA does not.
+  Dana only supports single-line comments with `#`. Python also supports docstrings (`'''` or `"""`), which Dana does not.
 
 - **F-Strings:**  
-  DANA supports f-strings with embedded expressions (e.g., `f"Value: {x+1}"`), but the implementation and parsing are defined by a formal grammar. Some advanced Python f-string features (like format specifiers) may not be supported.
+  Dana supports f-strings with embedded expressions (e.g., `f"Value: {x+1}"`), but the implementation and parsing are defined by a formal grammar. Some advanced Python f-string features (like format specifiers) may not be supported.
 
 - **Operator Precedence:**  
-  DANA's operator precedence is defined explicitly in its grammar. While similar to Python, there may be subtle differences—check the grammar if you rely on complex expressions.
+  Dana's operator precedence is defined explicitly in its grammar. While similar to Python, there may be subtle differences—check the grammar if you rely on complex expressions.
 
 - **Comments in Parse Tree:**  
-  In DANA, comments are ignored by the parser and do not appear in the parse tree. In Python, comments are ignored by the interpreter, but some tools can access them via the AST.
+  In Dana, comments are ignored by the parser and do not appear in the parse tree. In Python, comments are ignored by the interpreter, but some tools can access them via the AST.
 
 - **Formal Grammar:**  
-  DANA is defined by a strict formal grammar (Lark), which may restrict or clarify certain constructs more than Python's more flexible syntax.
+  Dana is defined by a strict formal grammar (Lark), which may restrict or clarify certain constructs more than Python's more flexible syntax.
 
 ## Main Rules
 
-- **start**: Entry point for parsing; matches a complete DANA program.
+- **start**: Entry point for parsing; matches a complete Dana program.
 - **program**: Sequence of statements.
 - **statement**: Assignment, conditional, while loop, function call, print statement, bare identifier, or newline.
 - **assignment**: Variable assignment (`x = expr`).
@@ -156,6 +156,6 @@ string        ::= '"' <any chars except unescaped '"'> '"' | '\'' <any chars exc
 
 ---
 
-## Example: Minimal DANA Program
+## Example: Minimal Dana Program
 
 ```

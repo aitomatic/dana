@@ -1,18 +1,18 @@
-# AST Validation in DANA
+# AST Validation in Dana
 
 ## Introduction
 
-When parsing code, it's important to ensure that the Abstract Syntax Tree (AST) is properly transformed from the initial parse tree. In the DANA parser, we use Lark for parsing, which produces an initial tree structure that is then transformed into a typed AST.
+When parsing code, it's important to ensure that the Abstract Syntax Tree (AST) is properly transformed from the initial parse tree. In the Dana parser, we use Lark for parsing, which produces an initial tree structure that is then transformed into a typed AST.
 
-This document explains the AST validation system that helps ensure all Lark Tree nodes are properly transformed to DANA AST nodes.
+This document explains the AST validation system that helps ensure all Lark Tree nodes are properly transformed to Dana AST nodes.
 
 ## The Problem
 
-The DANA parser uses Lark to parse program text into a parse tree, then transforms that parse tree into a structured AST using various transformer classes. Occasionally, transformer methods might miss handling certain node types, resulting in raw Lark Tree nodes remaining in the AST.
+The Dana parser uses Lark to parse program text into a parse tree, then transforms that parse tree into a structured AST using various transformer classes. Occasionally, transformer methods might miss handling certain node types, resulting in raw Lark Tree nodes remaining in the AST.
 
 These untransformed nodes can cause problems:
 
-1. **Type errors** - Downstream code expects DANA AST nodes, not Lark Tree nodes
+1. **Type errors** - Downstream code expects Dana AST nodes, not Lark Tree nodes
 2. **Inconsistent behavior** - Some AST operations work differently on Lark nodes vs. AST nodes
 3. **Debugging challenges** - It can be hard to identify which transformer is responsible for the issue
 
@@ -84,11 +84,11 @@ class MyCustomParser(SomeBaseParser, AstValidator):
 
 ## Contributing New Transformers
 
-When creating new transformers for the DANA parser:
+When creating new transformers for the Dana parser:
 
 1. Make sure to handle all possible node types in your transformer methods
-2. Always return a proper DANA AST node, never a Lark Tree node
+2. Always return a proper Dana AST node, never a Lark Tree node
 3. Use the validation functions to check that your output contains no Tree nodes
 4. Add tests that use StrictDanaParser to ensure your transformer works correctly
 
-By following these practices, you'll help maintain a clean, well-structured AST that's easier to work with throughout the DANA system. 
+By following these practices, you'll help maintain a clean, well-structured AST that's easier to work with throughout the Dana system. 

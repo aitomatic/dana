@@ -4,13 +4,13 @@
 
 [Project Overview](../../README.md)
 
-# DANA Function Calls: User Guide
+# Dana Function Calls: User Guide
 
-This guide explains how to use and create functions in DANA, from the most common and simple (defining and calling DANA functions in the same file) to more advanced topics like importing modules and integrating Python code. Each section starts with examples, followed by explanations.
+This guide explains how to use and create functions in Dana, from the most common and simple (defining and calling Dana functions in the same file) to more advanced topics like importing modules and integrating Python code. Each section starts with examples, followed by explanations.
 
 ---
 
-## 1. Defining and Calling DANA Functions (Same Module)
+## 1. Defining and Calling Dana Functions (Same Module)
 
 **Example:**
 ```dana
@@ -20,12 +20,12 @@ func double(x):
 result = double(5)
 ```
 - Define functions using the `func` keyword.
-- Call them directly in your DANA code.
+- Call them directly in your Dana code.
 - This is the most common and simplest use case.
 
 ---
 
-## 2. Importing and Using DANA Functions from Other Modules
+## 2. Importing and Using Dana Functions from Other Modules
 
 **With alias:**
 ```dana
@@ -37,7 +37,7 @@ result = util.double(10)
 import my_utils.na
 result = double(10)
 ```
-- Use `import` to bring in functions from other DANA files.
+- Use `import` to bring in functions from other Dana files.
 - Use `as` to avoid name collisions or for clarity.
 
 ---
@@ -56,24 +56,24 @@ import my_python_module.py
 sum = add(1, 2)
 product = multiply(3, 4)
 ```
-- DANA infers the type of import from the file extension (`.py` for Python, `.na` for DANA).
+- Dana infers the type of import from the file extension (`.py` for Python, `.na` for Dana).
 - All functions from the Python module are available as `py.function_name` (with alias) or globally (without alias).
 
 ---
 
-## 4. DANA-aware Python Functions
+## 4. Dana-aware Python Functions
 
 **Python (my_python_module.py):**
 ```python
 def reason(context, prompt):
     return f"You asked: {prompt}"
 ```
-**DANA:**
+**Dana:**
 ```dana
 import "my_python_module.py"
 answer = reason("What is the capital of France?")
 ```
-- Python functions that accept the DANA context as their first argument can access public variables and, if permitted, private, local, or system variables.
+- Python functions that accept the Dana context as their first argument can access public variables and, if permitted, private, local, or system variables.
 
 ---
 
@@ -123,7 +123,7 @@ result = py.add(x, y, __with_private__=["secret"])
 
 **Summary Table:**
 
-| Import Syntax                        | DANA Call Style         | Namespace/Prefix | Collision Risk | Use Case                        |
+| Import Syntax                        | Dana Call Style         | Namespace/Prefix | Collision Risk | Use Case                        |
 |--------------------------------------|-------------------------|------------------|---------------|----------------------------------|
 | `import "foo.py" as bar`             | `bar.func(...)`         | Yes              | Low           | Many modules, avoid collisions   |
 | `import "foo.py"`                    | `func(...)`             | No (global)      | Higher        | Simple scripts, few modules      |
@@ -133,7 +133,7 @@ result = py.add(x, y, __with_private__=["secret"])
 ---
 
 ## 8. Future Features
-- In the future, DANA will support automatic mapping of context variables to function arguments using Predict-and-ErrorCorrect (P&E) magic. For now, be explicit for maximum control and security.
+- In the future, Dana will support automatic mapping of context variables to function arguments using Predict-and-ErrorCorrect (P&E) magic. For now, be explicit for maximum control and security.
 
 ---
 

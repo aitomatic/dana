@@ -186,3 +186,60 @@ def test_unified_interpreter_execution():
     result = interpreter.execute_statement(stmt, context)
     assert result == 456
     assert context.get("private.z") == 456
+
+
+def test_print_function_with_fstrings():
+    """Test the print function's handling of f-strings."""
+    import sys
+    from io import StringIO
+
+    from opendxa.dana.sandbox.interpreter.functions.core.print_function import print_function
+
+    # Create a context with variables
+    context = SandboxContext()
+    context.set("x", 42)
+    context.set("y", "hello")
+
+    # Create an executor and set it on the context
+    executor = DanaExecutor(context)
+    interpreter = DanaInterpreter(context)
+    interpreter._executor = executor  # Set the executor on the interpreter
+    context.interpreter = interpreter  # Set the interpreter on the context
+
+    # Create a simple f-string
+    fstring = FStringExpression(parts=["Value: ", Identifier("x")])
+
+    # Redirect stdout to capture print output
+    original_stdout = sys.stdout
+    captured_output = StringIO()
+    sys.stdout = captured_output
+
+    try:
+        # Call print function with f-string
+        print_function(fstring, context=context)
+
+        # Get the captured output
+        output = captured_output.getvalue().strip()
+
+        # Verify the output contains the evaluated f-string
+        assert output == "Value: 42"
+
+        # Test with multiple arguments including f-strings
+        captured_output.truncate(0)
+        captured_output.seek(0)
+
+        # Create a more complex f-string
+        complex_fstring = FStringExpression(
+            parts=["x + 10 = ", BinaryExpression(Identifier("x"), BinaryOperator.ADD, LiteralExpression(10))]
+        )
+
+        # Print with multiple arguments
+        print_function("Result:", complex_fstring, context=context)
+
+        # Verify combined output
+        combined_output = captured_output.getvalue().strip()
+        assert combined_output == "Result: x + 10 = 52"
+
+    finally:
+        # Restore stdout
+        sys.stdout = original_stdout

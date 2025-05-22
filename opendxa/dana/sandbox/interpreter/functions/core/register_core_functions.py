@@ -51,6 +51,5 @@ def register_core_functions(registry: FunctionRegistry) -> None:
                         func_type="python",
                         overwrite=True,
                     )
-                    print(f"Registered core function: {dana_func_name}")
         except ImportError as e:
             print(f"Error importing module {module_name}: {e}")

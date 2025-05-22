@@ -11,7 +11,7 @@
 
 ## Overview
 
-The memory and knowledge systems in OpenDXA enable agents to access, utilize, store, and evolve information and domain expertise. Through integration with DANA programs and state containers, the system is designed to handle both short-term context and long-term structured/unstructured knowledge, making it suitable for enterprise applications.
+The memory and knowledge systems in OpenDXA enable agents to access, utilize, store, and evolve information and domain expertise. Through integration with Dana programs and state containers, the system is designed to handle both short-term context and long-term structured/unstructured knowledge, making it suitable for enterprise applications.
 
 ## Core Concepts
 
@@ -36,17 +36,17 @@ The memory and knowledge systems in OpenDXA enable agents to access, utilize, st
 
 ## Architecture
 
-The OpenDXA memory and knowledge architecture consists of several layers that integrate with DANA programs:
+The OpenDXA memory and knowledge architecture consists of several layers that integrate with Dana programs:
 
 1. **Knowledge Sources Layer**: Provides input from experts, documents, historical data, and feedback
 2. **Knowledge Storage Layer**: Manages structured and unstructured knowledge
 3. **Knowledge Processing Layer**: Handles versioning, quality control, and learning
-4. **Knowledge Integration Layer**: Connects knowledge to DANA programs and agent execution
+4. **Knowledge Integration Layer**: Connects knowledge to Dana programs and agent execution
 5. **Knowledge Evolution Layer**: Manages continuous improvement of the knowledge base
 
 ## Implementation
 
-### 1. Knowledge Base Integration with DANA
+### 1. Knowledge Base Integration with Dana
 ```python
 from opendxa.dana import run
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
@@ -58,7 +58,7 @@ kb_resource = KBResource(
     config={"domain": "semiconductor"}
 )
 
-# Define DANA program with knowledge integration
+# Define Dana program with knowledge integration
 knowledge_program = """
 # Initialize knowledge state
 agent.query = "semiconductor process control"
@@ -88,9 +88,9 @@ agent_runtime.register_resource(kb_resource)
 result = agent_runtime.execute(knowledge_program, context)
 ```
 
-### 2. Memory Capability in DANA
+### 2. Memory Capability in Dana
 ```python
-# DANA program with memory operations
+# Dana program with memory operations
 memory_program = """
 # Store information in memory
 temp.memory_params = {
@@ -116,9 +116,9 @@ log.info("Parameter comparison: {temp.comparison}")
 """
 ```
 
-### 3. Knowledge Evolution with DANA
+### 3. Knowledge Evolution with Dana
 ```python
-# DANA program for knowledge evolution
+# Dana program for knowledge evolution
 knowledge_evolution_program = """
 # Get feedback and current knowledge
 temp.feedback = world.user_feedback
@@ -148,9 +148,9 @@ else:
 """
 ```
 
-## DANA State Management for Knowledge
+## Dana State Management for Knowledge
 
-The OpenDXA framework uses DANA state containers to manage different types of knowledge:
+The OpenDXA framework uses Dana state containers to manage different types of knowledge:
 
 1. **agent.** container: Stores agent-specific knowledge and memory
    - Personal state
@@ -172,8 +172,8 @@ The OpenDXA framework uses DANA state containers to manage different types of kn
 
 ## Key Differentiators
 
-1. **DANA-Integrated Knowledge**
-   - Direct knowledge access in DANA programs
+1. **Dana-Integrated Knowledge**
+   - Direct knowledge access in Dana programs
    - State-based knowledge management
    - Reasoning with contextual knowledge
    - Dynamic knowledge application
@@ -214,7 +214,7 @@ The OpenDXA framework uses DANA state containers to manage different types of kn
 
 1. **Knowledge Access Pattern**
    ```python
-   # DANA pattern for knowledge access
+   # Dana pattern for knowledge access
    knowledge_access = """
    # Query knowledge
    temp.query_params = {"query": world.user_query, "domain": agent.domain}
@@ -230,7 +230,7 @@ The OpenDXA framework uses DANA state containers to manage different types of kn
 
 2. **Memory Storage Pattern**
    ```python
-   # DANA pattern for memory operations
+   # Dana pattern for memory operations
    memory_pattern = """
    # Store information with context
    temp.memory_params = {
@@ -251,7 +251,7 @@ The OpenDXA framework uses DANA state containers to manage different types of kn
 
 3. **Knowledge Evolution Pattern**
    ```python
-   # DANA pattern for knowledge evolution
+   # Dana pattern for knowledge evolution
    evolution_pattern = """
    # Track performance
    temp.performance = world.task_performance
@@ -295,7 +295,7 @@ The OpenDXA framework uses DANA state containers to manage different types of kn
 ## Next Steps
 
 - Learn about [Agents](../core-concepts/agent.md)
-- Understand [DANA Language](../dana/language.md)
+- Understand [Dana Language](../dana/language.md)
 - Explore [Resources](../core-concepts/resources.md)
 
 ---

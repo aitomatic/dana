@@ -2,21 +2,21 @@
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
 
-[◀ DANA](./dana.md) | [Sandbox ▶︎](./sandbox.md)
+[◀ Dana](./dana.md) | [Sandbox ▶︎](./sandbox.md)
 
-# DANA Language Specification
+# Dana Language Specification
 
 ## 📜 Purpose
 
-DANA is a minimal, interpretable, and LLM-friendly program format for reasoning and tool-based execution. This document specifies the syntax, structure, and semantics of valid DANA programs.
+Dana is a minimal, interpretable, and LLM-friendly program format for reasoning and tool-based execution. This document specifies the syntax, structure, and semantics of valid Dana programs.
 
-For greater detail, see the [DANA Syntax](./syntax.md) document.
+For greater detail, see the [Dana Syntax](./syntax.md) document.
 
 ---
 
 ## 🧱 Program Structure
 
-A DANA program is a sequence of **instructions**, optionally organized into **blocks**, executed linearly by the runtime.
+A Dana program is a sequence of **instructions**, optionally organized into **blocks**, executed linearly by the runtime.
 
 ```python
 if private.sensor.temp > 100:
@@ -94,9 +94,9 @@ if agent.credit.score < 600:
 
 ---
 
-## 📋 DANA Commands & Statements
+## 📋 Dana Commands & Statements
 
-Here's a complete list of all valid DANA commands and statements:
+Here's a complete list of all valid Dana commands and statements:
 
 ### 1. Variable Assignment
 ```python
@@ -267,7 +267,7 @@ system.log_level = "DEBUG"
 
 ## 📝 Logging
 
-DANA provides built-in logging capabilities through the `log` object. You can use different log levels:
+Dana provides built-in logging capabilities through the `log` object. You can use different log levels:
 
 ```dana
 log.debug("Debug message")
@@ -386,7 +386,7 @@ while counter < 5:
 
 ## 🧰 Formal Grammar
 
-The formal grammar for the DANA language is now maintained in [grammar.md](./grammar.md) and is kept in sync with the Lark grammar and parser implementation. Please refer to that document for the most up-to-date EBNF and syntax rules.
+The formal grammar for the Dana language is now maintained in [grammar.md](./grammar.md) and is kept in sync with the Lark grammar and parser implementation. Please refer to that document for the most up-to-date EBNF and syntax rules.
 
 ---
 

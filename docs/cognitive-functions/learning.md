@@ -11,7 +11,7 @@
 
 ## Overview
 
-Learning in OpenDXA enables agents to improve their performance, adapt to changing environments, and evolve their knowledge over time. Through DANA programs and capabilities, agents can implement various learning mechanisms that enhance their efficacy and domain expertise.
+Learning in OpenDXA enables agents to improve their performance, adapt to changing environments, and evolve their knowledge over time. Through Dana programs and capabilities, agents can implement various learning mechanisms that enhance their efficacy and domain expertise.
 
 ## Core Concepts
 
@@ -41,11 +41,11 @@ Learning in OpenDXA enables agents to improve their performance, adapt to changi
 - Strategy adaptation
 - Hypothesis testing
 
-## Implementation with DANA
+## Implementation with Dana
 
 ### 1. Experience-based Learning
 ```python
-# DANA program for experience-based learning
+# Dana program for experience-based learning
 experience_learning = """
 # Track interaction experience
 temp.interaction = world.current_interaction
@@ -85,7 +85,7 @@ log.info("Strategy updated based on experience learning")
 
 ### 2. Knowledge-based Learning
 ```python
-# DANA program for knowledge-based learning
+# Dana program for knowledge-based learning
 knowledge_learning = """
 # Get current knowledge and new information
 temp.knowledge_id = "semiconductor_defect_patterns"
@@ -122,7 +122,7 @@ if temp.knowledge_updates:
 
 ### 3. Feedback-based Learning
 ```python
-# DANA program for feedback-based learning
+# Dana program for feedback-based learning
 feedback_learning = """
 # Get user feedback and context
 temp.feedback = world.user_feedback
@@ -164,7 +164,7 @@ log.info("Applied learning from feedback: {temp.insights}")
 
 ## Learning Mechanisms
 
-The OpenDXA framework leverages several learning mechanisms through DANA:
+The OpenDXA framework leverages several learning mechanisms through Dana:
 
 1. **Performance Tracking**
    - Monitoring agent performance
@@ -214,7 +214,7 @@ The OpenDXA framework leverages several learning mechanisms through DANA:
 
 1. **Feedback Loop Pattern**
    ```python
-   # DANA pattern for feedback loops
+   # Dana pattern for feedback loops
    feedback_loop = """
    # Collect performance data
    temp.performance = world.task_performance
@@ -242,7 +242,7 @@ The OpenDXA framework leverages several learning mechanisms through DANA:
 
 2. **Knowledge Evolution Pattern**
    ```python
-   # DANA pattern for knowledge evolution
+   # Dana pattern for knowledge evolution
    knowledge_evolution = """
    # Track knowledge application
    temp.applied_knowledge = agent.applied_knowledge
@@ -266,7 +266,7 @@ The OpenDXA framework leverages several learning mechanisms through DANA:
 
 3. **Adaptive Strategy Pattern**
    ```python
-   # DANA pattern for adaptive strategies
+   # Dana pattern for adaptive strategies
    adaptive_strategy = """
    # Track strategy performance across contexts
    temp.strategy_performance = agent.strategy_performance
@@ -306,7 +306,7 @@ The OpenDXA framework leverages several learning mechanisms through DANA:
 ## Next Steps
 
 - Learn about [Memory and Knowledge](./memory-knowledge.md)
-- Understand [DANA Language](../dana/language.md)
+- Understand [Dana Language](../dana/language.md)
 - Explore [Capabilities](../core-concepts/capabilities.md)
 
 ---

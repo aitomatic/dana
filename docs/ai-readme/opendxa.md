@@ -12,9 +12,9 @@ OpenDXA is a comprehensive framework for building intelligent multi-agent system
 
 ## Core Components
 
-### 1. DANA (Domain-Aware NeuroSymbolic Architecture)
+### 1. Dana (Domain-Aware NeuroSymbolic Architecture)
 
-DANA is an imperative programming language and execution runtime that forms the heart of the OpenDXA framework:
+Dana is an imperative programming language and execution runtime that forms the heart of the OpenDXA framework:
 
 - **Universal Program Format**: A simple, deterministic language for expressing agent behaviors
 - **Imperative Execution Model**: Clear control flow and state management
@@ -26,7 +26,7 @@ DANA is an imperative programming language and execution runtime that forms the 
 - **First-Class Reasoning**: Native LLM integration with the `reason()` statement
 - **Knowledge Integration**: Seamless access to structured knowledge and tools
 
-DANA programs are executed by the DANA interpreter, which provides:
+Dana programs are executed by the Dana interpreter, which provides:
 - Deterministic execution of standard operations
 - Controlled LLM reasoning integration
 - State management and scope enforcement
@@ -47,7 +47,7 @@ DANKE enables both semantic search and precise rule-based reasoning, ensuring th
 
 ### 3. OpenDXA Framework Core
 
-The framework orchestrates DANA and DANKE components, providing:
+The framework orchestrates Dana and DANKE components, providing:
 - Agent lifecycle management
 - Multi-agent coordination
 - Tool integration and execution
@@ -57,10 +57,10 @@ The framework orchestrates DANA and DANKE components, providing:
 
 ### Imperative Programming Model
 
-DANA uses a clear, imperative programming model that developers find familiar and easier to reason about:
+Dana uses a clear, imperative programming model that developers find familiar and easier to reason about:
 
 ```dana
-# Example DANA program
+# Example Dana program
 private.user.name = "Alice"
 public.weather.temperature = 72
 
@@ -102,9 +102,9 @@ This separation enables building maintainable, testable, and reliable agent syst
 ```
 User Request
     ↓
-Agent → Planning Layer → DANA Program Generation
+Agent → Planning Layer → Dana Program Generation
     ↓
-DANA Interpreter
+Dana Interpreter
     ↓
 Statement Execution
     ↓
@@ -115,7 +115,7 @@ State Management
 Response/Action
 ```
 
-The agent receives a request, plans a response using DANA, executes the DANA program through the interpreter, which manages state and calls appropriate tools or resources, ultimately generating a response or taking action.
+The agent receives a request, plans a response using Dana, executes the Dana program through the interpreter, which manages state and calls appropriate tools or resources, ultimately generating a response or taking action.
 
 ## Key Features
 

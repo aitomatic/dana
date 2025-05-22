@@ -2,7 +2,7 @@
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
 
-[▲ DANA](./dana.md) 
+[▲ Dana](./dana.md) 
 
 [◀ Interpreter](./interpreter.md) | [Transcoder ▶︎](./transcoder.md)
 
@@ -10,15 +10,15 @@
     - `opendxa.dana.repl.repl`: The main REPL class (programmatic API)
     - `opendxa.dana.repl.dana_repl_app`: The user-facing CLI application
 
-# DANA REPL (Read-Eval-Print Loop)
+# Dana REPL (Read-Eval-Print Loop)
 
-The DANA REPL provides an interactive environment for executing DANA code and natural language statements. It supports both single-line and multiline input, making it easier to write complex DANA programs interactively.
+The Dana REPL provides an interactive environment for executing Dana code and natural language statements. It supports both single-line and multiline input, making it easier to write complex Dana programs interactively.
 
-The REPL uses the Parser to parse a DANA program into an AST, then calls the Interpreter to execute it. Context is managed using `SandboxContext`.
+The REPL uses the Parser to parse a Dana program into an AST, then calls the Interpreter to execute it. Context is managed using `SandboxContext`.
 
 ## Features
 
-- Interactive execution of DANA code
+- Interactive execution of Dana code
 - Natural language transcoding (when an LLM resource is configured)
 - Command history with recall using arrow keys
 - Keyword-based tab completion (via prompt_toolkit)
@@ -87,7 +87,7 @@ The REPL supports special commands (prefixed with `##`) for controlling NLP mode
 - `help`, `?` — Show help
 - `exit`, `quit` — Exit the REPL
 
-When NLP mode is enabled and an LLM resource is configured, you can enter natural language and have it transcoded to DANA code.
+When NLP mode is enabled and an LLM resource is configured, you can enter natural language and have it transcoded to Dana code.
 
 **Example: Using NLP Mode**
 ```
@@ -100,7 +100,7 @@ dana> add 42 and 17
 
 ## Memory Spaces
 
-The REPL provides access to all standard DANA memory spaces:
+The REPL provides access to all standard Dana memory spaces:
 
 - `private` — Private context for temporary variables within a program
 - `public` — Shared public memory
@@ -120,7 +120,7 @@ After an error, the input state is reset, allowing you to start fresh.
 ## LLM Integration
 
 When started with a configured LLM resource, the REPL enables:
-- **Natural language transcoding** — Convert natural language to DANA code
+- **Natural language transcoding** — Convert natural language to Dana code
 
 To enable these features, set one of the supported API keys as an environment variable:
 - `OPENAI_API_KEY`

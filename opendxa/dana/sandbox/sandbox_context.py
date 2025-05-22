@@ -23,10 +23,11 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
 
 from opendxa.dana.common.exceptions import StateError
 from opendxa.dana.common.runtime_scopes import RuntimeScopes
-from opendxa.dana.sandbox.interpreter.executor.has_interpreter import HasInterpreter
 
 if TYPE_CHECKING:
     from opendxa.dana.sandbox.context_manager import ContextManager
+    from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
+    from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
 
 
 class ExecutionStatus(Enum):
@@ -38,7 +39,7 @@ class ExecutionStatus(Enum):
     FAILED = "failed"
 
 
-class SandboxContext(HasInterpreter):
+class SandboxContext:
     """Manages the scoped state during DANA program execution."""
 
     def __init__(self, parent: Optional["SandboxContext"] = None, manager: Optional["ContextManager"] = None):
@@ -46,11 +47,11 @@ class SandboxContext(HasInterpreter):
 
         Args:
             parent: Optional parent context to inherit shared scopes from
-            interpreter: Optional interpreter to use for context
+            manager: Optional context manager
         """
-        super().__init__()
         self._parent = parent
         self._manager = manager
+        self._interpreter: Optional[DanaInterpreter] = None
         self._state: Dict[str, Dict[str, Any]] = {
             "local": {},  # Always fresh local scope
             "private": {},  # Shared global scope
@@ -80,6 +81,37 @@ class SandboxContext(HasInterpreter):
     def manager(self, manager: "ContextManager") -> None:
         """Set the context manager for this context."""
         self._manager = manager
+
+    @property
+    def interpreter(self) -> "DanaInterpreter":
+        """Get the interpreter instance."""
+        if self._interpreter is None:
+            raise RuntimeError("Interpreter not set")
+        return self._interpreter
+
+    @interpreter.setter
+    def interpreter(self, interpreter: "DanaInterpreter"):
+        """Set the interpreter instance.
+
+        Args:
+            interpreter: The interpreter instance
+        """
+        self._interpreter = interpreter
+
+    def get_interpreter(self) -> Optional["DanaInterpreter"]:
+        """Get the interpreter instance or None if not set.
+
+        Returns:
+            The interpreter instance or None
+        """
+        return self._interpreter
+
+    @property
+    def function_registry(self) -> "FunctionRegistry":
+        """Get the function registry from the interpreter."""
+        if self._interpreter is None:
+            raise RuntimeError("Interpreter not set")
+        return self._interpreter.function_registry
 
     def _validate_key(self, key: str) -> Tuple[str, str]:
         """Validate a key and extract scope and variable name.

@@ -13,7 +13,7 @@
 
 OpenDXA provides distinct advantages in several key areas when compared to other agent frameworks:
 
-| Use Case / Feature         | OpenDXA (DANA)         | LangChain / LangGraph      | AutoGPT / BabyAGI         | Google ADK                | Microsoft AutoGen         | CrewAI                    |
+| Use Case / Feature         | OpenDXA (Dana)         | LangChain / LangGraph      | AutoGPT / BabyAGI         | Google ADK                | Microsoft AutoGen         | CrewAI                    |
 |---------------------------|------------------------|----------------------------|---------------------------|---------------------------|---------------------------|---------------------------|
 | **Quick Start**           | ✨ Code-first, minimal  | Chain/graph construction   | Command interface         | Agent/workflow setup      | Agent conversation setup  | Crew/team config or YAML  |
 | **Simple Tasks**          | ✨ Script-like, direct  | Chain composition          | Command sequences         | Agent definition required | Agent definition required | Crew/team abstraction     |

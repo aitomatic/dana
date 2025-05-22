@@ -2,19 +2,19 @@
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
 
-[▲ DANA](./dana.md) 
+[▲ Dana](./dana.md) 
 
 [◀ Transformers](./transformers.md) | [Type Checker ▶︎](./type_checker.md)
 
-# DANA Abstract Syntax Tree (AST)
+# Dana Abstract Syntax Tree (AST)
 
 **Module**: `opendxa.dana.language.ast`
 
-After parsing and transformation, we have the AST. This document describes the structure and purpose of the DANA Abstract Syntax Tree (AST), which is the core intermediate representation of DANA programs after parsing and before execution.
+After parsing and transformation, we have the AST. This document describes the structure and purpose of the Dana Abstract Syntax Tree (AST), which is the core intermediate representation of Dana programs after parsing and before execution.
 
 ## Overview
 
-The AST is a tree-structured, semantically rich representation of a DANA program. It abstracts away syntactic details and encodes the logical structure of statements and expressions, making it suitable for type checking, interpretation, and analysis.
+The AST is a tree-structured, semantically rich representation of a Dana program. It abstracts away syntactic details and encodes the logical structure of statements and expressions, making it suitable for type checking, interpretation, and analysis.
 
 ## Main Node Types
 
@@ -75,7 +75,7 @@ graph TD
 
 ## Example
 
-A simple DANA program:
+A simple Dana program:
 
 ```dana
 x = 10

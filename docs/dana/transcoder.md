@@ -2,40 +2,40 @@
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
 
-[◀ REPL](./repl.md) | [DANA ▶︎](./dana.md)
+[◀ REPL](./repl.md) | [Dana ▶︎](./dana.md)
 
-# DANA Transcoder
+# Dana Transcoder
 
 **Module**: `opendxa.dana.transcoder`
 
-This document describes the DANA Transcoder module, which provides translation between natural language and DANA code, as well as interfaces for programmatic compilation and narration.
+This document describes the Dana Transcoder module, which provides translation between natural language and Dana code, as well as interfaces for programmatic compilation and narration.
 
 ## Overview
 
-The DANA Transcoder enables two-way translation:
-- **Natural Language → DANA Code**: Converts user objectives or instructions into valid DANA programs using LLMs.
-- **DANA Code → Natural Language**: Generates human-readable explanations of DANA programs.
+The Dana Transcoder enables two-way translation:
+- **Natural Language → Dana Code**: Converts user objectives or instructions into valid Dana programs using LLMs.
+- **Dana Code → Natural Language**: Generates human-readable explanations of Dana programs.
 
 This is achieved through a modular architecture with clear interfaces for extensibility and integration with LLMs.
 
 ## Main Components
 
-- **Transcoder**: Main class for NL↔︎DANA translation. Uses an LLM resource and the DANA parser.
-- **CompilerInterface**: Abstract interface for compilers that generate DANA ASTs from NL objectives.
-- **NarratorInterface**: Abstract interface for narrators that generate NL descriptions from DANA ASTs.
+- **Transcoder**: Main class for NL↔︎Dana translation. Uses an LLM resource and the Dana parser.
+- **CompilerInterface**: Abstract interface for compilers that generate Dana ASTs from NL objectives.
+- **NarratorInterface**: Abstract interface for narrators that generate NL descriptions from Dana ASTs.
 
 ## Transcoder Flow
 
-**Natural Language to DANA Code:**
+**Natural Language to Dana Code:**
 
 - `Transcoder.to_dana()`
 
 ```mermaid
 graph LR
     NL[[Natural Language]] --> T[Transcoder]
-    T --> DANA[[DANA Code]]
+    T --> Dana[[Dana Code]]
     style NL fill:#f9f,stroke:#333
-    style DANA fill:#bff,stroke:#333
+    style Dana fill:#bff,stroke:#333
 ```
 
 - `Compiler.compile()`
@@ -43,31 +43,31 @@ graph LR
 ```mermaid
 graph LR
     NL[[Natural Language]] --|compile|--> C[Compiler]
-    C --|parse|--> AST[[DANA AST]]
-    AST --> DANA[[DANA Code]]
+    C --|parse|--> AST[[Dana AST]]
+    AST --> Dana[[Dana Code]]
     style NL fill:#f9f,stroke:#333
-    style DANA fill:#bff,stroke:#333
+    style Dana fill:#bff,stroke:#333
 ``` 
 
-**DANA Code to Natural Language:**
+**Dana Code to Natural Language:**
 
 - `Transcoder.to_natural_language()`
 
 ```mermaid
 graph LR
-    DANA[[DANA Code]] --> T[Transcoder]
+    Dana[[Dana Code]] --> T[Transcoder]
     T --> NL[[Natural Language]]
     style NL fill:#f9f,stroke:#333
-    style DANA fill:#bff,stroke:#333
+    style Dana fill:#bff,stroke:#333
 ```
 
 - `Narrator.narrate()`
 
 ```mermaid
 graph LR
-    DANA[[DANA Code]] --|parse|--> AST[[DANA AST]]
+    Dana[[Dana Code]] --|parse|--> AST[[Dana AST]]
     AST --> N[Narrator]
     N --|explanation|--> NL[[Natural Language]]
     style NL fill:#f9f,stroke:#333
-    style DANA fill:#bff,stroke:#333
+    style Dana fill:#bff,stroke:#333
 ```

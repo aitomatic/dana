@@ -38,8 +38,11 @@ def print_function(
         if hasattr(arg, "__class__") and arg.__class__.__name__ == "FStringExpression":
             logger.debug(f"Evaluating FStringExpression: {arg}")
             # Use the interpreter to evaluate the f-string expression
+            interpreter = None
             if hasattr(context, "get_interpreter") and callable(context.get_interpreter):
                 interpreter = context.get_interpreter()
+
+            if interpreter is not None:
                 try:
                     # Evaluate the f-string using the interpreter
                     evaluated_arg = interpreter.evaluate_expression(arg, context)
@@ -49,6 +52,8 @@ def print_function(
                 except Exception as e:
                     logger.error(f"Error evaluating f-string: {e}")
                     # Fall back to string representation
+            else:
+                logger.debug("No interpreter available to evaluate f-string")
 
             # If we can't evaluate it properly, just use its string representation
             processed_args.append(str(arg))
