@@ -146,6 +146,29 @@ class FunctionExecutor(BaseExecutor):
                 kwargs_copy["ctx"] = context  # Use ctx instead of context to avoid collision
                 return registry.call(node.name, context, None, evaluated_args[0], **kwargs_copy)
 
+            # Special case for functions with parameters that conflict with FunctionRegistry.call parameters
+            # format_message has a 'name' parameter which conflicts with FunctionRegistry.call's 'name' parameter
+            elif func_name == "format_message":
+                # Resolve the function directly
+                try:
+                    func, func_type, metadata = registry.resolve(node.name, None)
+                    # If it's a callable, call it directly
+                    if callable(func):
+                        # Special handling for PythonFunction
+                        from opendxa.dana.sandbox.interpreter.functions.python_function import PythonFunction
+
+                        if isinstance(func, PythonFunction):
+                            return func.execute(context, *evaluated_args, **evaluated_kwargs)
+                        else:
+                            # Regular callable
+                            return func(*evaluated_args, **evaluated_kwargs)
+                    else:
+                        # Not a callable, can't execute
+                        raise SandboxError(f"Function '{node.name}' is not callable")
+                except Exception as e:
+                    # Failed to resolve or call - raise with clear error
+                    raise SandboxError(f"Error calling function '{node.name}' directly: {e}")
+
             # Normal call
             else:
                 return registry.call(node.name, context, None, *evaluated_args, **evaluated_kwargs)
