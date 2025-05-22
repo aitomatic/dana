@@ -1,9 +1,0 @@
-# Test DANA script for print and reason functions
-
-# Test print
-print("Hello from a DANA script!")
-
-# Test reason
-private:result = reason("What is the capital of France?")
-print("Reasoning result:")
-print(private:result)
