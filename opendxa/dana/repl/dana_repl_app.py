@@ -32,7 +32,6 @@ from prompt_toolkit.formatted_text import HTML
 from prompt_toolkit.history import FileHistory
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.keys import Keys
-from prompt_toolkit.shortcuts import ProgressBar
 from prompt_toolkit.styles import Style
 
 from opendxa.common.mixins.loggable import Loggable
@@ -336,17 +335,16 @@ class CommandHandler(Loggable):
         original_mode = self.repl.get_nlp_mode()
         self.repl.set_nlp_mode(True)
 
-        # Create a progress bar for the test
-        with ProgressBar() as pb:
-            for test_input in pb(test_inputs, label="Testing examples"):
-                print(f"\n{colors.accent(f'➡️ Test input: \'{test_input}\'')}")
-                try:
-                    result = self.repl.execute(test_input)
-                    print(f"{colors.bold('✅ Execution result:')}\n{result}")
-                except Exception as e:
-                    print(f"{colors.error('❌ Execution failed:')}\n{e}")
+        # Test each input without progress bar
+        for test_input in test_inputs:
+            print(f"\n{colors.accent(f'➡️ Test input: \'{test_input}\'')}")
+            try:
+                result = self.repl.execute(test_input)
+                print(f"{colors.bold('✅ Execution result:')}\n{result}")
+            except Exception as e:
+                print(f"{colors.error('❌ Execution failed:')}\n{e}")
 
-            self.repl.set_nlp_mode(original_mode)
+        self.repl.set_nlp_mode(original_mode)
 
 
 class DanaREPLApp(Loggable):
@@ -555,12 +553,8 @@ class DanaREPLApp(Loggable):
 
                 try:
                     self.debug(f"Executing program: {program}")
-                    # Show execution indicator for potentially long-running operations
-                    with ProgressBar(title="Executing...") as pb:
-                        # This is a bit of a hack since we can't easily make the execution async
-                        # Just showing a brief progress indicator
-                        for _ in pb(range(1)):
-                            result = self.repl.execute(program)
+                    # Execute program directly without progress bar
+                    result = self.repl.execute(program)
 
                     # Only print the result if it's not None
                     if result is not None:
