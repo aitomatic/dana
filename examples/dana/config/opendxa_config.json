@@ -20,6 +20,6 @@
   "llm_defaults": {
     "temperature": 0.7,
     "max_tokens": 2000,
-    "system_prompt": "You are an AI reasoning engine in a DANA script. Provide accurate, concise responses."
+    "system_prompt": "You are an AI reasoning engine in a Dana script. Provide accurate, concise responses."
   }
 }

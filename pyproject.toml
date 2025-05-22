@@ -50,7 +50,7 @@ dependencies = [
     # REPL keyboard
     "prompt-toolkit",
 
-    # DANA agent programming language parser/interpreter
+    # Dana agent programming language parser/interpreter
     "lark",
     "lark-parser"
 ]

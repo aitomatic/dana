@@ -4,7 +4,7 @@
 
 # OpenDXA - Domain-Expert Agent Framework
 
-> A comprehensive framework for easily coding and deploying smart, multi-agent systems with domain expertise, powered by DANA, a Pythonic agentic programming language and secure sandboxed runtime.
+> A comprehensive framework for easily coding and deploying smart, multi-agent systems with domain expertise, powered by Dana, a Pythonic agentic programming language and secure sandboxed runtime.
 
 ## TL;DR
 
@@ -14,7 +14,7 @@
 % cd opendxa
 % source ./SOURCE_ME.sh
 
-# Start the DANA shell, just like Python
+# Start the Dana shell, just like Python
 % bin/dana
 ```
 
@@ -37,10 +37,10 @@ If you start up a fresh terminal session, you'll need to do this:
 % source bin/source_env.sh
 ```
 
-## Example DANA Code
+## Example Dana Code
 
 ```python
-# Simple stock research agent in DANA
+# Simple stock research agent in Dana
 def stock_research(ticker, question):
     while confidence < 0.8:
       answer = ask("danke.stock.research", ticker=ticker, question=question)
@@ -54,14 +54,14 @@ def stock_research(ticker, question):
 OpenDXA consists of three primary components:
 
 1. **OpenDXA Framework**
-   - Orchestrates DANA and DANKE components
+   - Orchestrates Dana and DANKE components
    - Manages agent lifecycle and coordination
    - [Framework Documentation](docs/README.md)
 
-2. **DANA (Domain-Aware NeuroSymbolic Architecture)**
+2. **Dana (Domain-Aware NeuroSymbolic Architecture)**
    - A universal program format and runtime for agent reasoning
-   - [DANA Documentation](docs/dana/dana.md)
-   - [DANA Manifesto](docs/dana/manifesto.md) - Vision and philosophy
+   - [Dana Documentation](docs/dana/dana.md)
+   - [Dana Manifesto](docs/dana/manifesto.md) - Vision and philosophy
 
 3. **DANKE (Domain-Aware NeuroSymbolic Knowledge Engine)**
    - Knowledge management implementing the CORRAL methodology: Collect, Organize, Retrieve, Reason, Act, Learn
@@ -83,8 +83,8 @@ OpenDXA consists of three primary components:
 - [Mixins](docs/core-concepts/mixins.md)
 - [State Management](docs/core-concepts/state-management.md)
 
-### DANA Language
-- [DANA Overview](docs/dana/dana.md)
+### Dana Language
+- [Dana Overview](docs/dana/dana.md)
 - [Language Reference](docs/dana/language.md)
 - [Sandbox Environment](docs/dana/sandbox.md)
 
@@ -93,10 +93,10 @@ OpenDXA consists of three primary components:
 - [Key Differentiators](docs/key-differentiators/README.md)
 - [Requirements](docs/requirements/README.md)
 
-## Example: DANA Program
+## Example: Dana Program
 
 ```python
-# Simple Customer Support Agent in DANA
+# Simple Customer Support Agent in Dana
 if public.customer.query.type == "password_reset":
     # Search knowledge-base engine (KE)
     private.ke_result = use("danke.support.password_reset")
@@ -131,7 +131,7 @@ This will ensure code quality checks run automatically on commit, including:
 ## Key Features
 
 - **Domain Expertise Integration** - Embed expert knowledge into agent behavior
-- **Structured Reasoning** - DANA programs provide clear, auditable execution
+- **Structured Reasoning** - Dana programs provide clear, auditable execution
 - **Declarative + Imperative Architecture** - Clear separation of knowledge and action
 - **Extensive Capabilities** - Memory, knowledge management, planning, and more
 - **Protocol Federation (NLIP)** - Interoperability between agent standards
@@ -147,7 +147,7 @@ OpenDXA stands out by enabling truly expert agents grounded in specific domain k
 
 ## AST Validation
 
-The AST validation system helps ensure that the parser properly transforms Lark parse trees into DANA AST nodes without leaving any Lark Tree nodes in the AST. This is important for maintaining a clean, well-defined AST structure.
+The AST validation system helps ensure that the parser properly transforms Lark parse trees into Dana AST nodes without leaving any Lark Tree nodes in the AST. This is important for maintaining a clean, well-defined AST structure.
 
 Key validation tools:
 
