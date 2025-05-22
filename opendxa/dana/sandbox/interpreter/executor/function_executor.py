@@ -23,6 +23,7 @@ from opendxa.dana.common.exceptions import SandboxError
 from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
 from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
 from opendxa.dana.sandbox.parser.ast import (
+    FStringExpression,
     FunctionCall,
     FunctionDefinition,
 )
@@ -69,6 +70,28 @@ class FunctionExecutor(BaseExecutor):
         context.set(node.name.name, {"type": "function", "params": node.parameters, "body": node.body})
         return None
 
+    def _ensure_fully_evaluated(self, value: Any, context: SandboxContext) -> Any:
+        """Ensure that the value is fully evaluated, particularly f-strings.
+
+        Args:
+            value: The value to evaluate
+            context: The execution context
+
+        Returns:
+            The fully evaluated value
+        """
+        # If it's already a primitive type, return it
+        if isinstance(value, (str, int, float, bool, list, dict, tuple)) or value is None:
+            return value
+
+        # Special handling for FStringExpressions - ensure they're evaluated to strings
+        if isinstance(value, FStringExpression):
+            # Use the collection executor to evaluate the f-string
+            return self.parent._collection_executor.execute_fstring_expression(value, context)
+
+        # For other types, return as is
+        return value
+
     def execute_function_call(self, node: FunctionCall, context: SandboxContext) -> Any:
         """Execute a function call.
 
@@ -93,10 +116,16 @@ class FunctionExecutor(BaseExecutor):
             positional_values = node.args["__positional"]
             if isinstance(positional_values, list):
                 for value in positional_values:
-                    evaluated_args.append(self.parent.execute(value, context))
+                    evaluated_value = self.parent.execute(value, context)
+                    # Ensure f-strings are fully evaluated to strings
+                    evaluated_value = self._ensure_fully_evaluated(evaluated_value, context)
+                    evaluated_args.append(evaluated_value)
             else:
                 # Single value, not in a list
-                evaluated_args.append(self.parent.execute(positional_values, context))
+                evaluated_value = self.parent.execute(positional_values, context)
+                # Ensure f-strings are fully evaluated to strings
+                evaluated_value = self._ensure_fully_evaluated(evaluated_value, context)
+                evaluated_args.append(evaluated_value)
         else:
             # Process regular arguments
             for key, value in node.args.items():
@@ -111,6 +140,8 @@ class FunctionExecutor(BaseExecutor):
                     int_key = int(key)
                     # Evaluate the argument
                     evaluated_value = self.parent.execute(value, context)
+                    # Ensure f-strings are fully evaluated to strings
+                    evaluated_value = self._ensure_fully_evaluated(evaluated_value, context)
 
                     # Pad the args list if needed
                     while len(evaluated_args) <= int_key:
@@ -120,7 +151,10 @@ class FunctionExecutor(BaseExecutor):
                     evaluated_args[int_key] = evaluated_value
                 except ValueError:
                     # It's a keyword argument (not an integer key)
-                    evaluated_kwargs[key] = self.parent.execute(value, context)
+                    evaluated_value = self.parent.execute(value, context)
+                    # Ensure f-strings are fully evaluated to strings
+                    evaluated_value = self._ensure_fully_evaluated(evaluated_value, context)
+                    evaluated_kwargs[key] = evaluated_value
 
         # Extract base function name (removing namespace if present)
         func_name = node.name.split(".")[-1]  # Get the bare function name without namespace
@@ -133,7 +167,7 @@ class FunctionExecutor(BaseExecutor):
                 from opendxa.dana.sandbox.interpreter.functions.core.reason_function import reason_function
 
                 # Extract the prompt string (first argument) and any additional args
-                prompt_str = evaluated_args[0]
+                prompt_str = evaluated_args[0]  # Now correctly evaluated as a string
                 add_args = evaluated_args[1:] if len(evaluated_args) > 1 else []
 
                 # Pass the prompt first, then context - matching the function's expected signature
@@ -248,13 +282,8 @@ class FunctionExecutor(BaseExecutor):
 
             for statement in body:
                 result = self.parent.execute(statement, function_context)
-
-            # Return the result of the last statement if no return statement was encountered
-            return result
-
         except ReturnException as e:
-            # If we caught a ReturnException, return its value
-            return e.value
-        except Exception as e:
-            # Re-raise other exceptions
-            raise SandboxError(f"Error executing user-defined function: {e}")
+            # Return statement was encountered
+            result = e.value
+
+        return result
