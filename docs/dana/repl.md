@@ -55,12 +55,12 @@ The REPL supports multiline statements and blocks, which is especially useful fo
 
 **Example:**
 ```
-dana> if private.x > 10:
-...     print('Value is greater than 10')
-...     private.result = 'high'
+dana> if private:x > 10:
+...     print("Value is greater than 10")
+...     private:result = "high"
 ... else:
-...     print('Value is less than or equal to 10')
-...     private.result = 'low'
+...     print("Value is less than or equal to 10")
+...     private:result = "low"
 ```
 
 **Block rules:**

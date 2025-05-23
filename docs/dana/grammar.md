@@ -20,7 +20,7 @@ The Dana grammar is written in [Lark](https://github.com/lark-parser/lark) EBNF 
 ## Dana vs. Python: Key Differences
 
 - **Scope Prefixes:**  
-  Dana allows explicit scope prefixes for variables and functions (e.g., `private.x`, `public.y`). Python uses naming conventions and modules for visibility, not explicit prefixes.
+  Dana allows explicit scope prefixes for variables and functions (e.g., `private:x`, `public:y`). Python uses naming conventions and modules for visibility, not explicit prefixes.
 
 - **Null Value:**  
   Dana uses `None` (capitalized, like Python), but it is a literal in the grammar, not a reserved keyword.

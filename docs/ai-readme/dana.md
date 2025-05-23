@@ -35,7 +35,7 @@ The Dana language parser uses a grammar-based implementation with the Lark parsi
 from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 
 parser = DanaParser()
-result = parser.parse("private.x = 42\nprint(private.x)")
+result = parser.parse("private:x = 42\nprint(private:x)")
 
 if result.is_valid:
     print("Parsed program:", result.program)

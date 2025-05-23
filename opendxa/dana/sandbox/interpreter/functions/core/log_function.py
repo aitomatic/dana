@@ -17,7 +17,7 @@ from opendxa.dana.sandbox.sandbox_context import SandboxContext
 def log_function(
     context: SandboxContext,
     message: str,
-    level: str,
+    level: Optional[str] = "INFO",
     options: Optional[Dict[str, Any]] = None,
 ) -> None:
     """Execute the log function.
@@ -25,7 +25,7 @@ def log_function(
     Args:
         context: The runtime context for variable resolution.
         message: The message to log.
-        level: The level of the log.
+        level: Optional level of the log.
         options: Optional parameters for the function.
 
     Returns:
@@ -38,5 +38,6 @@ def log_function(
         options = {}
 
     message = message or options.get("message", "")
-    level = level or options.get("level", "info")
-    SandboxLogger.log(message, level=level)
+    level = level or options.get("level", "INFO")
+
+    SandboxLogger.log(message, level=level)  # type: ignore

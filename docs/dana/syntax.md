@@ -11,7 +11,7 @@ Dana is a domain-specific language designed for AI-driven automation and reasoni
 ## Dana vs. Python: Quick Comparison
 
 - Dana's syntax is intentionally similar to Python: indentation, assignments, conditionals, loops, and function calls all look familiar.
-- Dana requires explicit scope prefixes for variables (e.g., `private.x`, `public.y`), unlike Python.
+- Dana requires explicit scope prefixes for variables (e.g., `private:x`, `public:y`), unlike Python.
 - Dana only supports single-line comments with `#` (no docstrings).
 - Dana supports f-strings with embedded expressions (e.g., `f"Value: {x+1}"`).
 - Some advanced Python features (like comprehensions, decorators, or dynamic typing) are not present in Dana.
@@ -33,14 +33,14 @@ Dana has a structured scoping system with four standard scopes:
 
 Variables must be prefixed with their scope:
 ```dana
-private.my_variable = value
-public.shared_data = value
-system.status = value
+private:my_variable = value
+public:shared_data = value
+system:status = value
 ```
 
 For convenience in the REPL environment, variables without a scope prefix are automatically placed in the `local` scope:
 ```dana
-my_variable = value  # Equivalent to local.my_variable = value
+my_variable = value  # Equivalent to local:my_variable = value
 ```
 
 ### Basic Data Types
@@ -53,13 +53,13 @@ my_variable = value  # Equivalent to local.my_variable = value
 
 ### Assignment
 ```dana
-private.x = 10
-public.message = "Hello"
+private:x = 10
+public:message = "Hello"
 ```
 
 ### Conditional Statements
 ```dana
-if private.x > 5:
+if private:x > 5:
     print("x is greater than 5")
 else:
     print("x is not greater than 5")
@@ -67,23 +67,23 @@ else:
 
 ### While Loops
 ```dana
-while private.x < 10:
-    print(private.x)
-    private.x = private.x + 1
+while private:x < 10:
+    print(private:x)
+    private:x = private:x + 1
 ```
 
 ### Function Calls
 ```dana
-system.math.sqrt(16)
-public.result = system.math.max(3, 7)
+system:math.sqrt(16)
+public:result = system:math.max(3, 7)
 print("Hello, World!")
-print(private.x)
+print(private:x)
 ```
 
 ### Bare Identifiers
 A bare identifier (just a variable or function name) is allowed as a statement, typically for REPL inspection:
 ```dana
-private.x
+private:x
 ```
 
 ## Expressions
@@ -102,7 +102,7 @@ private.x
 
 ### Function Calls in Expressions
 ```dana
-private.y = system.math.sqrt(private.x)
+private:y = system:math.sqrt(private:x)
 ```
 
 ## Best Practices
@@ -117,16 +117,16 @@ private.y = system.math.sqrt(private.x)
 ### Basic Program with Scoping
 ```dana
 # Define variables with explicit scopes
-private.name = "World"
-public.count = 5
-system.status = "active"
+private:name = "World"
+public:count = 5
+system:status = "active"
 
 # Print
-print("Hello, " + private.name)
-print(public.count)
+print("Hello, " + private:name)
+print(public:count)
 
 # Conditional logic
-if public.count > 3:
+if public:count > 3:
     print("Count is high")
 else:
     print("Count is normal")
@@ -134,10 +134,10 @@ else:
 
 ### While Loop Example
 ```dana
-private.x = 0
-while private.x < 3:
-    print(private.x)
-    private.x = private.x + 1
+private:x = 0
+while private:x < 3:
+    print(private:x)
+    private:x = private:x + 1
 ```
 
 ---

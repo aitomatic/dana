@@ -288,18 +288,17 @@ class CommandHandler(Loggable):
         print(f"  {colors.accent('##nlp status')}    - Check if NLP mode is enabled")
         print(f"  {colors.accent('##nlp test')}      - Test the NLP transcoder functionality")
 
+        # Dynamic core functions listing
+        print(f"\n{colors.bold('Core Functions:')}")
+        self._show_core_functions()
+
         print(f"\n{colors.bold('Dana Syntax Basics:')}")
-        print(f"  {colors.bold('Variables:')}      {colors.accent('private.x = 5')}, {colors.accent('public.data = hello')}")
-        print(f"  {colors.bold('Conditionals:')}   {colors.accent('if private.x > 10:')}")
-        print(f"                  {colors.accent('    log.info(Value is high)')}")
-        print(f"  {colors.bold('Loops:')}          {colors.accent('while private.x < 10:')}")
-        print(f"                  {colors.accent('    private.x = private.x + 1')}")
-        print(f"  {colors.bold('Reasoning:')}      {colors.accent('private.result = reason(Should I take an umbrella?)')}")
-        print(f"  {colors.bold('Logging:')}        {colors.accent('log.debug(Debug message)')}")
-        print(f"                  {colors.accent('log.info(Info message)')}")
-        print(f"                  {colors.accent('log.warn(Warning message)')}")
-        print(f"                  {colors.accent('log.error(Error message)')}")
-        print(f"  {colors.bold('Printing:')}       {colors.accent('print(Hello world)')}")
+        print(f"  {colors.bold('Variables:')}      {colors.accent('private:x = 5')}, {colors.accent('public:data = hello')}")
+        print(f"  {colors.bold('Conditionals:')}   {colors.accent('if private:x > 10:')}")
+        print(f"                  {colors.accent('    log(\"Value is high\", \"info\")')}")
+        print(f"  {colors.bold('Loops:')}          {colors.accent('while private:x < 10:')}")
+        print(f"                  {colors.accent('    private:x = private:x + 1')}")
+        print(f"  {colors.bold('Functions:')}      {colors.accent('func add(a, b): return a + b')}")
 
         print(f"\n{colors.bold('Tips:')}")
         print(f"  {colors.accent('•')} Use {colors.bold('Tab')} for command completion")
@@ -309,6 +308,79 @@ class CommandHandler(Loggable):
         print(f"  {colors.accent('•')} Press {colors.bold('Enter')} on an empty line to execute multiline blocks")
         print(f"  {colors.accent('•')} Try describing actions in plain language when NLP mode is on")
         print()
+
+    def _show_core_functions(self) -> None:
+        """Dynamically show available core functions from the function registry."""
+        try:
+            # Get the function registry from the REPL
+            registry = self.repl.interpreter.function_registry
+
+            # Get all functions in the local namespace (where core functions are registered)
+            core_functions = registry.list("local")
+
+            if not core_functions:
+                print(f"  {colors.error('No core functions found')}")
+                return
+
+            # Sort functions for consistent display
+            core_functions.sort()
+
+            # Group functions by type/category for better organization
+            printing_funcs = [f for f in core_functions if f in ["print"]]
+            logging_funcs = [f for f in core_functions if f.startswith("log")]
+            reasoning_funcs = [f for f in core_functions if f in ["reason"]]
+            other_funcs = [f for f in core_functions if f not in printing_funcs + logging_funcs + reasoning_funcs]
+
+            # Display functions by category
+            if printing_funcs:
+                print(f"  {colors.bold('Output:')}        ", end="")
+                for i, func in enumerate(printing_funcs):
+                    if i > 0:
+                        print(", ", end="")
+                    print(f"{colors.accent(func + '(...)')}", end="")
+                print()
+
+            if logging_funcs:
+                print(f"  {colors.bold('Logging:')}       ", end="")
+                for i, func in enumerate(logging_funcs):
+                    if i > 0:
+                        print(", ", end="")
+                    print(f"{colors.accent(func + '(...)')}", end="")
+                print()
+
+            if reasoning_funcs:
+                print(f"  {colors.bold('AI/Reasoning:')}  ", end="")
+                for i, func in enumerate(reasoning_funcs):
+                    if i > 0:
+                        print(", ", end="")
+                    print(f"{colors.accent(func + '(...)')}", end="")
+                print()
+
+            if other_funcs:
+                print(f"  {colors.bold('Other:')}         ", end="")
+                for i, func in enumerate(other_funcs):
+                    if i > 0:
+                        print(", ", end="")
+                    print(f"{colors.accent(func + '(...)')}", end="")
+                print()
+
+            # Show function examples
+            print(f"\n  {colors.bold('Function Examples:')}")
+            if "print" in core_functions:
+                print(f"    {colors.accent('print(\"Hello\", \"World\", 123)')}    - Print multiple values")
+            if "log" in core_functions:
+                print(f"    {colors.accent('log(\"Debug info\", \"debug\")')}      - Log with level")
+            if "log_level" in core_functions:
+                print(f"    {colors.accent('log_level(\"info\")')}               - Set logging level")
+            if "reason" in core_functions:
+                print(f"    {colors.accent('reason(\"What is 2+2?\")')}           - AI reasoning")
+
+        except Exception as e:
+            print(f"  {colors.error(f'Error listing core functions: {e}')}")
+            # Fallback to hardcoded list
+            print(
+                f"  {colors.accent('print(...)')}, {colors.accent('log(...)')}, {colors.accent('log_level(...)')}, {colors.accent('reason(...)')}"
+            )
 
     def _show_nlp_status(self) -> None:
         """Show NLP mode status."""
@@ -399,18 +471,10 @@ class DanaREPLApp(Loggable):
             "private.",
             "public.",
             "system.",
-            "log.",
-            # Log levels
-            "log.debug",
-            "log.info",
-            "log.warn",
-            "log.error",
             # Keywords
             "if",
             "else",
             "while",
-            "print",
-            "reason",
             "func",
             "return",
             "try",
@@ -426,6 +490,18 @@ class DanaREPLApp(Loggable):
             "true",
             "false",
         ]
+
+        # Dynamically add core function names to keywords
+        try:
+            registry = self.repl.interpreter.function_registry
+            core_functions = registry.list("local")
+            if core_functions:
+                keywords.extend(core_functions)
+                self.debug(f"Added {len(core_functions)} core functions to tab completion: {core_functions}")
+        except Exception as e:
+            self.debug(f"Could not add core functions to tab completion: {e}")
+            # Fallback: add known common functions
+            keywords.extend(["print", "log", "log_level", "reason"])
 
         # Define syntax highlighting style
         style = Style.from_dict(
