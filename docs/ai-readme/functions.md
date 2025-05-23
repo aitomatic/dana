@@ -338,13 +338,13 @@ def call_function(self, name: str, args: list = None, kwargs: dict = None, conte
 
 | Step | Description | Status | Notes |
 |------|-------------|--------|-------|
-| 1 | Unified Function Registry | [x] Complete | Unified registry, namespacing, context, metadata, collision handling. |
-| 2 | Namespaced Function Resolution | [x] Complete | Registry and evaluator support namespacing. |
-| 3 | Dana Function Call Support | [x] Complete | Dana function calls work via registry. |
-| 4 | Module Import and Registration | [x] Complete | Dana and Python modules register functions under namespace. |
-| 5 | Collision Handling | [x] Complete | Registry enforces and tests collision handling. |
-| 6 | Python→Dana API | [x] Complete | Interpreter exposes API for Python to call Dana functions. |
-| 7 | Tests and Documentation | [~] Partial | Core tests pass; more edge case tests and doc updates recommended. |
+| 1 | Unified Function Registry | [x] Complete | ✅ Fully implemented with namespacing, metadata, collision handling, and context injection. |
+| 2 | Namespaced Function Resolution | [x] Complete | ✅ Registry supports `_remap_namespace_and_name()` for consistent namespace handling. |
+| 3 | Dana Function Call Support | [x] Complete | ✅ Function calls work via FunctionExecutor and unified dispatch through registry. |
+| 4 | Module Import and Registration | [~] Partial | ⚠️ Grammar and AST support imports, but StatementExecutor shows "Import statements are not yet supported". |
+| 5 | Collision Handling | [x] Complete | ✅ Registry enforces collision detection with `overwrite` parameter and namespace separation. |
+| 6 | Python→Dana API | [x] Complete | ✅ Interpreter exposes `call_function` API via registry for Python to call Dana functions. |
+| 7 | Tests and Documentation | [x] Complete | ✅ Comprehensive test suite covering end-to-end scenarios, unified execution, and function handling. |
 
 This table should be updated as each step is started, in progress, or completed.
 
@@ -352,20 +352,22 @@ This table should be updated as each step is started, in progress, or completed.
 
 | Scenario                        | Status      | Notes |
 |----------------------------------|------------|-------|
-| Dana→Dana function calls         | [x] Pass   | Registry and execution tested. |
-| Dana→Python function calls       | [x] Pass   | Registry and context injection tested. |
-| Python→Dana function calls       | [x] Pass   | Interpreter API tested. |
-| Namespacing                      | [x] Pass   | Registry supports and tests namespacing. |
-| Collision handling               | [x] Pass   | Registry enforces and tests collision handling. |
-| Edge cases & extensibility       | [x] Pass   | Edge/extensibility tests complete. |
+| Dana→Dana function calls         | [x] Pass   | ✅ Registry and execution tested in `test_dana_to_dana_function_call`. |
+| Dana→Python function calls       | [x] Pass   | ✅ Registry and context injection tested in `test_end_to_end.py`. |
+| Python→Dana function calls       | [x] Pass   | ✅ Interpreter API tested with function registry integration. |
+| Namespacing                      | [x] Pass   | ✅ Registry supports and tests namespace resolution and collision handling. |
+| Collision handling               | [x] Pass   | ✅ Registry enforces collision detection and namespace separation. |
+| Module imports                   | [-] Not Implemented | ❌ Import statements parsed but not executed (StatementExecutor raises SandboxError). |
+| Edge cases & extensibility       | [x] Pass   | ✅ Comprehensive test coverage including error handling and chaining. |
 
 Update this table as tests are added and pass for each scenario.
 
 ### Review Summary
 - **Current state:**
-  - The unified function system for Dana is **functionally complete**: Dana↔Dana, Dana→Python, and Python→Dana calls all work via a single registry, with namespacing, context, and collision handling.
-  - All major scenarios are supported and tested.
-  - Further work is focused on edge case testing, extensibility, and documentation improvements.
+  - The unified function system for Dana is **functionally complete** for core function calling: Dana↔Dana, Dana→Python, and Python→Dana calls all work via a single registry, with namespacing, context, and collision handling.
+  - All major function calling scenarios are supported and well-tested.
+  - **Missing component**: Module import execution - while the grammar and AST support import statements, the StatementExecutor explicitly raises "Import statements are not yet supported in Dana".
+  - Function calling system is production-ready, but module system needs import statement implementation to be fully complete.
 
 ### Step-by-Step Plan
 
