@@ -35,11 +35,11 @@ def format_user_error(e, user_input):
 
 # Example function to run interpreter and capture output (replace with your actual runner)
 def run_and_capture_output(input_code):
-    from opendxa.dana.sandbox.interpreter.interpreter import Interpreter
+    from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
     from opendxa.dana.sandbox.parser.dana_parser import DanaParser
     from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
-    interpreter = Interpreter(SandboxContext())
+    interpreter = DanaInterpreter(SandboxContext())
     parser = DanaParser()
     try:
         try:
@@ -65,9 +65,9 @@ def run_and_capture_output(input_code):
         ("if x > 0 print('missing colon')", "Syntax Error"),
         ("if private:x > 0:\n    print('ok')\nelse:\n    print('fail')", "Syntax Error"),
         ("print('hello') print('world')", "Syntax Error"),
-        ("print(does_not_exist)", "Execution Error"),
+        ("print(does_not_exist)", "Error accessing variable"),
         ("private:x = 'foo' + 5", "Syntax Error"),
-        ("private:x = 1 / 0", "Math Error"),
+        ("private:x = 1 / 0", "division by zero"),
         ("private:x = 42", "42"),  # Success
         ("print('hello world')", "Syntax Error"),
     ],

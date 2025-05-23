@@ -1,8 +1,14 @@
-# DANA (Domain-Aware NeuroSymbolic Architecture)
+<p align="center">
+  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
+</p>
+
+[Project Overview](../../README.md)
+
+# Dana (Domain-Aware NeuroSymbolic Architecture)
 
 ## Overview
 
-DANA is an imperative programming language and execution runtime designed specifically for agent reasoning. It enables intelligent agents to reason, act, and collaborate through structured, interpretable programs. DANA serves as the missing link between natural language objectives and tool-assisted, stateful action.
+Dana is an imperative programming language and execution runtime designed specifically for agent reasoning. It enables intelligent agents to reason, act, and collaborate through structured, interpretable programs. Dana serves as the missing link between natural language objectives and tool-assisted, stateful action.
 
 ## Key Features
 
@@ -18,7 +24,7 @@ DANA is an imperative programming language and execution runtime designed specif
 
 **Module**: `opendxa.dana.sandbox.parser`
 
-The DANA language parser uses a grammar-based implementation with the Lark parsing library to convert DANA source code into an abstract syntax tree (AST). This provides:
+The Dana language parser uses a grammar-based implementation with the Lark parsing library to convert Dana source code into an abstract syntax tree (AST). This provides:
 
 - Robust error reporting with detailed error messages
 - Extensibility through the formal grammar definition
@@ -41,24 +47,24 @@ else:
 
 **Module**: `opendxa.dana.sandbox.interpreter`
 
-The DANA interpreter executes DANA programs by evaluating the AST. Key components include:
+The Dana interpreter executes Dana programs by evaluating the AST. Key components include:
 
-- **Interpreter**: Main entry point for program execution
+- **DanaInterpreter**: Main entry point for program execution
 - **StatementExecutor**: Executes statements (assignments, conditionals, loops, etc.)
 - **ExpressionEvaluator**: Evaluates expressions (arithmetic, logical, identifiers, literals)
 - **ContextManager**: Manages variable scope and sandbox state
-- **LLMIntegration**: Integrates with language models for advanced reasoning
+- **SandboxContext**: Provides access to LLMResource for reasoning capabilities
 - **FunctionRegistry**: Handles function and tool registrations
 
 ```python
-from opendxa.dana.sandbox.interpreter.interpreter import Interpreter
+from dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 # Create context
 ctx = SandboxContext(private={}, public={}, system={}, local={})
 
 # Initialize interpreter
-interpreter = Interpreter(ctx)
+interpreter = DanaInterpreter(ctx)
 
 # Execute program from AST
 output = interpreter.execute_program(ast)
@@ -68,10 +74,10 @@ output = interpreter.execute_program(ast)
 
 **Module**: `opendxa.dana.transcoder`
 
-The DANA transcoder provides bidirectional translation between natural language and DANA code:
+The Dana transcoder provides bidirectional translation between natural language and Dana code:
 
-- **NL → DANA**: Convert natural language descriptions to valid DANA programs
-- **DANA → NL**: Generate human-readable explanations of DANA code
+- **NL → Dana**: Convert natural language descriptions to valid Dana programs
+- **Dana → NL**: Generate human-readable explanations of Dana code
 
 ```python
 from opendxa.dana.transcoder.transcoder import Transcoder
@@ -81,17 +87,17 @@ from opendxa.common.resource.llm_resource import LLMResource
 llm = LLMResource()
 transcoder = Transcoder(llm)
 
-# Convert natural language to DANA
+# Convert natural language to Dana
 nl_prompt = "If temperature exceeds 100 degrees, activate cooling system"
 dana_code = transcoder.to_dana(nl_prompt)
 
-# Explain DANA code in natural language
+# Explain Dana code in natural language
 explanation = transcoder.to_natural_language(dana_code)
 ```
 
-## DANA Language Syntax
+## Dana Language Syntax
 
-DANA is an imperative programming language with syntax similar to Python, but with important differences:
+Dana is an imperative programming language with syntax similar to Python, but with important differences:
 
 ```dana
 # Variable assignment with explicit scopes
@@ -128,7 +134,7 @@ Key syntax elements:
 
 ## State Management
 
-DANA's imperative nature is evident in its explicit state management system. Every variable belongs to one of four scopes:
+Dana's imperative nature is evident in its explicit state management system. Every variable belongs to one of four scopes:
 
 | Scope      | Description                                                      |
 |------------|------------------------------------------------------------------|
@@ -152,38 +158,38 @@ if public.sensor.temp > 100:
 
 ## Function System
 
-DANA includes a robust function system that supports both DANA-native and Python functions:
+Dana includes a robust function system that supports both Dana-native and Python functions:
 
-### Local DANA Functions
+### Local Dana Functions
 ```dana
 func double(x):
     return x * 2
 result = double(5)
 ```
 
-### Importing DANA Modules
+### Importing Dana Modules
 ```dana
-import "my_utils.na" as util
+import my_utils.na as util
 result = util.double(10)
 ```
 
 ### Importing Python Modules
 ```dana
-import "my_python_module.py" as py
+import my_python_module.py as py
 sum = py.add(1, 2)
 ```
 
 ## Integration with OpenDXA
 
-DANA serves as the foundational execution layer within OpenDXA:
-- Agents express their reasoning and actions through DANA programs
-- The planning layer generates DANA code for execution
-- Tool and resource integration happens through DANA function calls
-- Debugging and tracking state changes is facilitated by DANA's explicit state model
+Dana serves as the foundational execution layer within OpenDXA:
+- Agents express their reasoning and actions through Dana programs
+- The planning layer generates Dana code for execution
+- Tool and resource integration happens through Dana function calls
+- Debugging and tracking state changes is facilitated by Dana's explicit state model
 
 ## Common Tasks
 
-### Running DANA Code
+### Running Dana Code
 
 ```python
 from opendxa.dana import run
@@ -192,7 +198,7 @@ from opendxa.dana.sandbox.sandbox_context import SandboxContext
 # Create runtime context
 ctx = SandboxContext(private={}, public={}, system={}, local={})
 
-# Run DANA code
+# Run Dana code
 dana_code = """
 private.result = reason("What is the meaning of life?")
 log.info("The meaning of life is {private.result}")
@@ -200,25 +206,25 @@ log.info("The meaning of life is {private.result}")
 run(dana_code, ctx)
 ```
 
-### Using the DANA REPL
+### Using the Dana REPL
 
 ```bash
-# Start the DANA REPL
+# Start the Dana REPL
 python -m opendxa.dana.repl.repl
 ```
 
-### Converting Natural Language to DANA Code
+### Converting Natural Language to Dana Code
 
 ```python
 from opendxa.dana import compile_nl
 
-# Compile natural language to DANA
+# Compile natural language to Dana
 nl_prompt = "If temperature is over 100, alert operations"
 dana_code = compile_nl(nl_prompt)
 print(dana_code)
 ```
 
-## Benefits of DANA's Imperative Approach
+## Benefits of Dana's Imperative Approach
 
 - ✅ Clear, auditable program flow and state changes
 - ✅ Familiar programming model for developers
@@ -227,3 +233,10 @@ print(dana_code)
 - ✅ Human-readable and explainable code
 - ✅ Reusable logic patterns and modules
 - ✅ Easy integration with existing tools and APIs
+
+---
+<p align="center">
+Copyright © 2025 Aitomatic, Inc. Licensed under the <a href="../../LICENSE.md">MIT License</a>.
+<br/>
+<a href="https://aitomatic.com">https://aitomatic.com</a>
+</p>

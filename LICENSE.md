@@ -1,4 +1,4 @@
-# OpenDXA & DANA - Agentic AI Programming Framework, Language, and Sandbox Runtime
+# OpenDXA & Dana - Agentic AI Programming Framework, Language, and Sandbox Runtime
 
 Copyright © 2025 Aitomatic, Inc.
 

@@ -1,13 +1,13 @@
-# DANA Language Examples
+# Dana Language Examples
 
-This directory contains examples demonstrating different aspects of the DANA language.
+This directory contains examples demonstrating different aspects of the Dana language.
 
 ## Directory Structure
 
 ```
 examples/dana/
 ├── run.py              # Example runner
-└── dana/              # DANA source files
+└── dana/              # Dana source files
     ├── basic_assignments.dana    # Basic variable assignments
     ├── syntax_errors.dana        # Syntax error handling
     └── multiple_scopes.dana      # Multiple scope usage

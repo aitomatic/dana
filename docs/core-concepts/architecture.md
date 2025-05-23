@@ -10,16 +10,16 @@
 
 ## Overview
 
-OpenDXA is built on a modular, extensible architecture that enables the creation and deployment of autonomous agents. The system is designed to be flexible, scalable, and maintainable, with clear separation of concerns and well-defined interfaces between components. At its core, OpenDXA leverages DANA, a Domain-Aware NeuroSymbolic Architecture language, for agent reasoning and execution.
+OpenDXA is built on a modular, extensible architecture that enables the creation and deployment of autonomous agents. The system is designed to be flexible, scalable, and maintainable, with clear separation of concerns and well-defined interfaces between components. At its core, OpenDXA leverages Dana, a Domain-Aware NeuroSymbolic Architecture language, for agent reasoning and execution.
 
 ## Core Components
 
 | Descriptive Components | Executive Components |
 |----------------------|---------------------|
-| **Agent**<br>- Autonomous entity<br>- Capability integration<br>- Resource management | **AgentRuntime**<br>- DANA program execution<br>- RuntimeContext management<br>- Resource coordination |
+| **Agent**<br>- Autonomous entity<br>- Capability integration<br>- Resource management | **AgentRuntime**<br>- Dana program execution<br>- RuntimeContext management<br>- Resource coordination |
 | **Knowledge**<br>- Information storage<br>- Data persistence<br>- Context sharing<br>- CORRAL lifecycle | **RuntimeContext**<br>- State management<br>- Execution tracking<br>- State container coordination |
-| **Capabilities**<br>- Core functionalities<br>- Extensible modules<br>- Shared services | **DANA Interpreter**<br>- Program execution<br>- Function management<br>- State updates |
-| **Resources**<br>- Tools and utilities<br>- Knowledge bases<br>- External services | **DANA Parser**<br>- Grammar-based parsing<br>- AST generation<br>- Type checking |
+| **Capabilities**<br>- Core functionalities<br>- Extensible modules<br>- Shared services | **Dana Interpreter**<br>- Program execution<br>- Function management<br>- State updates |
+| **Resources**<br>- Tools and utilities<br>- Knowledge bases<br>- External services | **Dana Parser**<br>- Grammar-based parsing<br>- AST generation<br>- Type checking |
 | **State**<br>- Agent state<br>- World state<br>- Temp state | **LLMResource**<br>- LLM communication<br>- Model configuration<br>- Response handling |
 
 ### CORRAL: Domain Knowledge Lifecycle
@@ -65,7 +65,7 @@ This lifecycle is implemented through the interaction of various components:
 
 ## System Architecture
 
-The OpenDXA architecture is organized into layers, with DANA serving as the central execution model:
+The OpenDXA architecture is organized into layers, with Dana serving as the central execution model:
 
 1. **Application Layer**
    - User Interface components
@@ -76,7 +76,7 @@ The OpenDXA architecture is organized into layers, with DANA serving as the cent
    - Capability integration
    - Resource management
 
-3. **DANA Execution Layer**
+3. **Dana Execution Layer**
    - Parser for code interpretation
    - Interpreter for program execution
    - Runtime Context for state management
@@ -91,9 +91,9 @@ The OpenDXA architecture is organized into layers, with DANA serving as the cent
 ### 1. Request Flow
 1. User request received through API
 2. Agent instance created/selected
-3. DANA program composed for the task
+3. Dana program composed for the task
 4. RuntimeContext initialized with state containers
-5. DANA Interpreter executes the program
+5. Dana Interpreter executes the program
 6. LLMResource handles LLM communication
 7. Results returned through API
 
@@ -125,7 +125,7 @@ agent = agent.with_capabilities({
 })
 ```
 
-### 3. DANA Program Execution
+### 3. Dana Program Execution
 ```python
 from opendxa.dana import run
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
@@ -137,7 +137,7 @@ context = SandboxContext(
     temp={}
 )
 
-# Define DANA program
+# Define Dana program
 dana_program = """
 # Set initial state
 agent.objective = "Analyze customer feedback"
@@ -154,7 +154,7 @@ agent.response = reason("Create a summary of sentiment analysis: {temp.sentiment
 log.info("Analysis complete. Response: {agent.response}")
 """
 
-# Execute DANA program
+# Execute Dana program
 result = run(dana_program, context)
 ```
 
@@ -165,7 +165,7 @@ result = run(dana_program, context)
 from opendxa.agent.agent_runtime import AgentRuntime
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
-# AgentRuntime manages DANA program execution with SandboxContext
+# AgentRuntime manages Dana program execution with SandboxContext
 runtime = AgentRuntime(agent)
 
 # Create and use SandboxContext
@@ -175,7 +175,7 @@ context = SandboxContext(
     temp={}
 )
 
-# Execute DANA program with context
+# Execute Dana program with context
 result = runtime.execute(dana_program, context)
 ```
 
@@ -226,7 +226,7 @@ response = await llm_resource.query(prompt)
    - Configure LLMResource appropriately
    - Manage capabilities efficiently
 
-2. **DANA Program Design**
+2. **Dana Program Design**
    - Create clear, modular programs
    - Use proper state scopes (agent, world, temp)
    - Leverage built-in functions like reason() and log()
@@ -247,16 +247,16 @@ response = await llm_resource.query(prompt)
    agent = agent.with_capabilities(capabilities)
    ```
 
-2. **DANA Program Execution**
+2. **Dana Program Execution**
    ```python
-   # Create context and execute DANA program
+   # Create context and execute Dana program
    context = SandboxContext(agent={}, world={}, temp={})
    result = run(dana_program, context)
    ```
 
 3. **State Updates**
    ```python
-   # Update and access state within DANA programs
+   # Update and access state within Dana programs
    agent.status = "processing"
    temp.result = process_data(world.input_data)
    log.info("Processing complete: {temp.result}")

@@ -1,4 +1,4 @@
-"""Main transformer integrating all specialized transformers for DANA language parsing."""
+"""Main transformer integrating all specialized transformers for Dana language parsing."""
 
 from lark import Transformer
 
@@ -10,7 +10,7 @@ from opendxa.dana.sandbox.parser.transformer.variable_transformer import Variabl
 
 class DanaTransformer(Transformer):
     """
-    Unified DANA AST transformer that delegates to specialized transformers for statements, expressions,
+    Unified Dana AST transformer that delegates to specialized transformers for statements, expressions,
     f-strings, and variables.
 
     When Lark calls a transformation method (e.g., assignment, expr, f_string, variable), this class

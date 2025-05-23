@@ -1,3 +1,9 @@
+<p align="center">
+  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
+</p>
+
+[Project Overview](../../README.md)
+
 # OpenDXA Documentation Strategy
 
 This document provides a comprehensive assessment of the OpenDXA documentation structure and a strategy for refactoring it to improve navigation, reduce redundancy, and better serve both users and developers.
@@ -6,15 +12,15 @@ This document provides a comprehensive assessment of the OpenDXA documentation s
 
 ### Top-Level Documentation
 - **README.md**: Project overview, quickstart, example implementations, and comparisons with other frameworks
-- **CLAUDE.md**: Configuration and usage guide for Claude Code, focusing on DANA language and parser
-- **CLAUDE-DANA.md**: Targeted DANA module documentation for Claude Code assistance
+- **CLAUDE.md**: Configuration and usage guide for Claude Code, focusing on Dana language and parser
+- **CLAUDE-Dana.md**: Targeted Dana module documentation for Claude Code assistance
 - **LICENSE.md**: MIT License
 - **COMMUNITY.md**: Community guidelines
 
 ### Documentation in `/docs` Directory
 
 #### Core Documentation
-- **README.md**: Main documentation entry point, includes DANA examples and overview of OpenDXA
+- **README.md**: Main documentation entry point, includes Dana examples and overview of OpenDXA
 - **ROADMAP.md**: Development roadmap and future plans
 
 #### Architecture
@@ -36,8 +42,8 @@ This document provides a comprehensive assessment of the OpenDXA documentation s
 - **cognitive-functions/planning.md**: Planning system
 - **cognitive-functions/reasoning.md**: Reasoning system
 
-#### DANA Language
-- **dana/dana.md**: Overview of DANA language
+#### Dana Language
+- **dana/dana.md**: Overview of Dana language
 - **dana/language.md**: Language reference
 - **dana/syntax.md**: Detailed syntax reference
 - **dana/ast.md**: Abstract syntax tree
@@ -50,10 +56,10 @@ This document provides a comprehensive assessment of the OpenDXA documentation s
 - **dana/sandbox.md**: Sandbox environment
 - **dana/transformers.md**: Parser transformers
 - **dana/type_checker.md**: Type checking system
-- **dana/manifesto.md**: DANA philosophy and vision
+- **dana/manifesto.md**: Dana philosophy and vision
 - **dana/functions/design-guide.md**: Function design guidelines
 - **dana/functions/user-guide.md**: Function usage guide
-- **dana/saved/examples.md**: Example DANA programs
+- **dana/saved/examples.md**: Example Dana programs
 - **dana/saved/function_parameters.md**: Function parameter documentation
 
 #### Key Differentiators
@@ -95,15 +101,15 @@ This document provides a comprehensive assessment of the OpenDXA documentation s
 - **opendxa/common/resource/KNOWLEDGE_AND_MEMORY.md**: Knowledge and memory systems
 - **opendxa/common/utils/logging/README.md**: Logging utilities
 
-#### DANA Module
-- **opendxa/dana/README.md**: DANA module overview and architecture
+#### Dana Module
+- **opendxa/dana/README.md**: Dana module overview and architecture
 
 #### Contrib Module
 - **opendxa/contrib/README.md**: Contribution modules overview
 
 ### Examples Documentation
 - **examples/README.md**: Overview of examples with directory structure and running instructions
-- **examples/dana/README.md**: DANA-specific examples
+- **examples/dana/README.md**: Dana-specific examples
 
 ### Tests Documentation
 - **tests/README.md**: Testing overview and guidelines
@@ -112,9 +118,9 @@ This document provides a comprehensive assessment of the OpenDXA documentation s
 
 ### Redundancies and Overlaps
 
-1. **DANA Documentation Overlap**:
+1. **Dana Documentation Overlap**:
    - Similar content between `docs/dana/*.md` and `opendxa/dana/README.md`
-   - Overlapping information in `CLAUDE-DANA.md` and DANA documentation in docs/
+   - Overlapping information in `CLAUDE-Dana.md` and Dana documentation in docs/
 
 2. **Architecture Overview Redundancy**:
    - Content duplicated across `docs/architecture/overview.md`, `docs/core-concepts/architecture.md`, and various README files
@@ -151,7 +157,7 @@ These READMEs contain valuable architectural concepts that should be centralized
    - Agent/capability/resource relationships from respective module READMEs
 
 2. **Design philosophy**:
-   - DANA language concepts from `opendxa/dana/README.md`
+   - Dana language concepts from `opendxa/dana/README.md`
    - Architectural principles from various module READMEs
 
 ## Documentation Refactoring Strategy
@@ -173,7 +179,7 @@ docs/
 │   ├── resources.md
 │   ├── mixins.md                # Extracted from module README
 │   └── state-management.md
-├── dana/                        # DANA language docs
+├── dana/                        # Dana language docs
 │   ├── overview.md
 │   ├── language.md
 │   ├── syntax.md
@@ -193,7 +199,7 @@ docs/
 
 ### 2. Specific Component Recommendations
 
-#### DANA Documentation
+#### Dana Documentation
 
 **Central Docs (`docs/dana/`)**:
 - Comprehensive language reference
@@ -282,7 +288,7 @@ Module READMEs should:
 ### Phase 4: Top-Level Documentation
 1. Simplify top-level README
 2. Create/update contributing guidelines
-3. Consolidate DANA-specific documentation
+3. Consolidate Dana-specific documentation
 
 ## Benefits of This Approach
 
@@ -307,3 +313,10 @@ Module READMEs should:
    - Reduced duplication means fewer places to update
 
 By implementing this strategy, OpenDXA documentation will be more organized, easier to navigate, and more maintainable, while still serving the needs of both users and developers.
+
+---
+<p align="center">
+Copyright © 2025 Aitomatic, Inc. Licensed under the <a href="../../LICENSE.md">MIT License</a>.
+<br/>
+<a href="https://aitomatic.com">https://aitomatic.com</a>
+</p>

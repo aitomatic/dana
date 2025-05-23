@@ -72,8 +72,7 @@ return_stmt: "return" [expr]
 break_stmt: "break"
 continue_stmt: "continue"
 pass_stmt: "pass"
-import_stmt: "import" module_path ["as" NAME]
-           | "from" module_path "import" NAME ["as" NAME]
+import_stmt: simple_import | from_import
 raise_stmt: "raise" [expr ["from" expr]]
 assert_stmt: "assert" expr ["," expr]
 
@@ -234,3 +233,6 @@ FALSE: "False" | "false" | "FALSE"
 NONE: "None" | "none" | "NONE" | "null" | "NULL"
 
 NOT_OP: "not"
+
+simple_import: "import" module_path ["as" NAME]
+from_import: "from" module_path "import" NAME ["as" NAME]

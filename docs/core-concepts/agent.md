@@ -11,14 +11,14 @@
 
 ## Overview
 
-Agents in OpenDXA are autonomous entities that can perceive their environment, make decisions, and take actions to achieve specific goals. They combine capabilities, resources, and DANA programs to perform complex tasks effectively. At their core, they leverage the Domain-Aware NeuroSymbolic Architecture (DANA) to integrate domain knowledge with LLM reasoning capabilities.
+Agents in OpenDXA are autonomous entities that can perceive their environment, make decisions, and take actions to achieve specific goals. They combine capabilities, resources, and Dana programs to perform complex tasks effectively. At their core, they leverage the Domain-Aware NeuroSymbolic Architecture (Dana) to integrate domain knowledge with LLM reasoning capabilities.
 
 ## Core Concepts
 
 ### 1. Agent Components
 - Core System
   - Agent configuration
-  - DANA runtime
+  - Dana runtime
   - State management
   - Resource coordination
 - Capabilities
@@ -34,20 +34,20 @@ Agents in OpenDXA are autonomous entities that can perceive their environment, m
 ### 2. Agent Operations
 - Environment perception
 - [State management](./state-management.md)
-- Decision making with DANA
+- Decision making with Dana
 - Action execution
 - [Learning and adaptation](../cognitive-functions/learning.md)
 
 ## Architecture
 
-The OpenDXA agent architecture is organized around the DANA language as the central execution model:
+The OpenDXA agent architecture is organized around the Dana language as the central execution model:
 
 1. **Agent Layer**
    - Agent configuration and instantiation
    - Capability and resource management
    - Runtime environment setup
 
-2. **DANA Execution Layer**
+2. **Dana Execution Layer**
    - Program parsing and interpretation
    - State management and access
    - Function registry and execution
@@ -102,7 +102,7 @@ agent.add_resource(llm_resource)
 agent.add_resource(kb_resource)
 ```
 
-### 3. DANA Program Execution
+### 3. Dana Program Execution
 ```python
 from opendxa.dana import run
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
@@ -114,7 +114,7 @@ context = SandboxContext(
     temp={}
 )
 
-# Define DANA program
+# Define Dana program
 dana_program = """
 # Record the query
 agent.current_query = world.query
@@ -140,7 +140,7 @@ result = agent.runtime.execute(dana_program, context)
 
 ## Key Differentiators
 
-1. **DANA-Powered Decision Making**
+1. **Dana-Powered Decision Making**
    - Imperative programming model
    - Explicit state management
    - Direct integration with reasoning
@@ -149,7 +149,7 @@ result = agent.runtime.execute(dana_program, context)
 2. **Capability Integration**
    - Modular functionality
    - Domain expertise encapsulation
-   - Function registration in DANA
+   - Function registration in Dana
    - Specialized operations
 
 3. **Resource Orchestration**
@@ -166,7 +166,7 @@ result = agent.runtime.execute(dana_program, context)
    - Efficient resource utilization
    - Proper state management
 
-2. **DANA Program Design**
+2. **Dana Program Design**
    - Modular program structure
    - Clear state organization
    - Proper error handling
@@ -182,7 +182,7 @@ result = agent.runtime.execute(dana_program, context)
 
 1. **Data Processing Agent**
    ```python
-   # DANA program for data processing
+   # Dana program for data processing
    dana_program = """
    # Configure processing
    agent.processing_method = "sentiment_analysis"
@@ -202,7 +202,7 @@ result = agent.runtime.execute(dana_program, context)
 
 2. **Decision Making Agent**
    ```python
-   # DANA program for decision making
+   # Dana program for decision making
    dana_program = """
    # Gather information
    temp.situation = world.current_situation
@@ -226,7 +226,7 @@ result = agent.runtime.execute(dana_program, context)
 
 3. **Interactive Assistant Agent**
    ```python
-   # DANA program for interactive assistance
+   # Dana program for interactive assistance
    dana_program = """
    # Process user query
    temp.query = world.user_query
@@ -276,7 +276,7 @@ result = agent.runtime.execute(dana_program, context)
 
 - Learn about [Capabilities](./capabilities.md)
 - Understand [Resources](./resources.md)
-- Explore [DANA Language](../dana/language.md)
+- Explore [Dana Language](../dana/language.md)
 
 ---
 <p align="center">

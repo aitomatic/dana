@@ -47,10 +47,11 @@ dependencies = [
     "pytest-asyncio",
     "pytest-mock",
 
-    # REPL keyboard
+    # REPL utilities
     "prompt-toolkit",
+    "pygments",
 
-    # DANA agent programming language parser/interpreter
+    # Dana agent programming language parser/interpreter
     "lark",
     "lark-parser"
 ]

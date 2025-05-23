@@ -11,7 +11,7 @@
 
 ## Overview
 
-Reasoning in OpenDXA enables agents to analyze situations, make decisions, and solve problems using available knowledge and context. Through DANA programs and the `reason()` function, the reasoning system combines logical analysis with domain expertise to support effective decision-making.
+Reasoning in OpenDXA enables agents to analyze situations, make decisions, and solve problems using available knowledge and context. Through Dana programs and the `reason()` function, the reasoning system combines logical analysis with domain expertise to support effective decision-making.
 
 ## Core Concepts
 
@@ -41,9 +41,9 @@ Reasoning in OpenDXA enables agents to analyze situations, make decisions, and s
 
 ## Architecture
 
-The OpenDXA reasoning system is centered around the DANA `reason()` function, which provides a direct interface to LLM-powered reasoning. The reasoning architecture includes:
+The OpenDXA reasoning system is centered around the Dana `reason()` function, which provides a direct interface to LLM-powered reasoning. The reasoning architecture includes:
 
-1. **DANA Reasoning Layer**: Primary interface through the `reason()` function
+1. **Dana Reasoning Layer**: Primary interface through the `reason()` function
 2. **LLM Integration Layer**: Connects to language models for reasoning tasks
 3. **Knowledge Integration Layer**: Provides access to domain knowledge
 4. **Context Management Layer**: Maintains state and context for reasoning
@@ -51,12 +51,12 @@ The OpenDXA reasoning system is centered around the DANA `reason()` function, wh
 
 ## Implementation
 
-### 1. Basic Reasoning with DANA
+### 1. Basic Reasoning with Dana
 ```python
 from opendxa.dana import run
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
-# Define DANA reasoning program
+# Define Dana reasoning program
 reasoning_program = """
 # Initialize reasoning state
 agent.situation = "Machine shows high temperature alerts of 85°C"
@@ -101,7 +101,7 @@ result = run(reasoning_program, context)
 
 ### 2. Decision Making
 ```python
-# DANA program for decision making
+# Dana program for decision making
 decision_program = """
 # Initialize decision state
 agent.options = world.available_options
@@ -140,7 +140,7 @@ log.info("Justification: {agent.justification}")
 
 ### 3. Problem Solving
 ```python
-# DANA program for problem solving
+# Dana program for problem solving
 problem_solving_program = """
 # Define problem
 agent.problem = world.current_problem
@@ -175,7 +175,7 @@ log.info("Implementation plan: {agent.implementation_plan}")
 
 ## Key Differentiators
 
-1. **Integrated Reasoning in DANA**
+1. **Integrated Reasoning in Dana**
    - First-class `reason()` function
    - Seamless LLM integration
    - Context-aware reasoning
@@ -217,7 +217,7 @@ log.info("Implementation plan: {agent.implementation_plan}")
 
 1. **Analysis Pattern**
    ```python
-   # DANA pattern for situation analysis
+   # Dana pattern for situation analysis
    analysis_pattern = """
    # Define situation
    temp.situation = world.current_situation
@@ -234,7 +234,7 @@ log.info("Implementation plan: {agent.implementation_plan}")
 
 2. **Decision Pattern**
    ```python
-   # DANA pattern for decision making
+   # Dana pattern for decision making
    decision_pattern = """
    # Define decision context
    temp.options = world.available_options
@@ -254,7 +254,7 @@ log.info("Implementation plan: {agent.implementation_plan}")
 
 3. **Problem-Solving Pattern**
    ```python
-   # DANA pattern for problem solving
+   # Dana pattern for problem solving
    problem_solving_pattern = """
    # Define problem
    temp.problem = world.current_problem
@@ -295,7 +295,7 @@ log.info("Implementation plan: {agent.implementation_plan}")
 
 - Learn about [Planning](./planning.md)
 - Understand [Execution Flow](../core-concepts/execution-flow.md)
-- Explore [DANA Language](../dana/language.md)
+- Explore [Dana Language](../dana/language.md)
 
 ---
 <p align="center">

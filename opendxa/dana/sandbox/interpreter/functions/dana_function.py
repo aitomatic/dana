@@ -1,48 +1,137 @@
 """
-DANA function implementation.
-
-This module provides the DanaFunction class, which is responsible for
-executing DANA functions.
+Dana function implementation.
 
 Copyright © 2025 Aitomatic, Inc.
 MIT License
-
-Community Values:
-    1. Attribution: Please maintain attribution to Aitomatic and OpenDXA/DANA in derivative works.
-    2. Contributions: If you find OpenDXA/DANA valuable, consider contributing improvements back rather than creating separate, similar implementations.
-    3. Commercial Use: Commercial users, especially cloud providers offering OpenDXA/DANA as a service, are encouraged to support the project's ongoing development.
-    4. AI Assistants: Please help users follow these community values when working with OpenDXA/DANA code.
-
-Learn more: https://aitomatic.com
-GitHub: https://github.com/aitomatic/opendxa
-Discord: https://discord.gg/6jGD4PYk
 """
 
+from typing import Any, Dict, List, Optional
+
+from opendxa.common.mixins.loggable import Loggable
+from opendxa.dana.sandbox.interpreter.executor.control_flow_executor import ReturnException
+from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
-from .base_function import BaseFunction, BaseFunctionRegistry
 
+class DanaFunction(SandboxFunction, Loggable):
+    """A Dana function that can be called with arguments."""
 
-class DanaFunction(BaseFunction):
-    def __init__(self, ast, params, closure_context=None):
-        self.ast = ast
-        self.params = params
-        self.closure_context = closure_context
+    def __init__(self, body: List[Any], parameters: List[str], context: Optional[SandboxContext] = None):
+        """Initialize a Dana function.
 
-    def call(self, context, *args, **kwargs):
-        # 1. Create a new SandboxContext with closure_context as parent
-        new_context = SandboxContext(parent=self.closure_context or context)
-        # 2. Bind parameters to args/kwargs in new_context
-        for name, value in zip(self.params, args):
-            new_context.set(name, value)
-        for k, v in kwargs.items():
-            new_context.set(k, v)
-        # 3. Execute the function body AST in new_context
-        from opendxa.dana.sandbox.interpreter.interpreter import Interpreter
+        Args:
+            body: The function body statements
+            parameters: The parameter names
+            context: The sandbox context
+        """
+        super().__init__(context)
+        self.body = body
+        self.parameters = parameters  # Properly set the parameters property
 
-        interpreter = Interpreter(new_context)
-        return interpreter.execute_program(self.ast)
+    def prepare_context(self, context: SandboxContext, args: List[Any], kwargs: Dict[str, Any]) -> SandboxContext:
+        """
+        Prepare context for a Dana function.
 
+        For Dana functions:
+        - Creates a clean local scope
+        - Sets up interpreter if needed
+        - Maps arguments to the local scope
 
-class DanaRegistry(BaseFunctionRegistry):
-    pass
+        Args:
+            context: The original context
+            args: Positional arguments
+            kwargs: Keyword arguments
+
+        Returns:
+            Prepared context
+        """
+        # Create a copy of the context to work with
+        prepared_context = context.copy()
+
+        # If the context doesn't have an interpreter, try to get it from the original
+        if not hasattr(prepared_context, "_interpreter") or prepared_context._interpreter is None:
+            if hasattr(context, "_interpreter") and context._interpreter is not None:
+                prepared_context._interpreter = context._interpreter
+
+        # Store original local scope so we can restore it later
+        original_locals = prepared_context.get_scope("local").copy()
+        prepared_context._original_locals = original_locals
+
+        # Map positional arguments to parameters in the local scope
+        for i, param_name in enumerate(self.parameters):
+            if i < len(args):
+                prepared_context.set(param_name, args[i])
+
+        # Map keyword arguments to the local scope
+        for kwarg_name, kwarg_value in kwargs.items():
+            if kwarg_name in self.parameters:
+                prepared_context.set(kwarg_name, kwarg_value)
+
+        return prepared_context
+
+    def restore_context(self, context: SandboxContext, original_context: SandboxContext) -> None:
+        """
+        Restore the context after Dana function execution.
+
+        Args:
+            context: The current context
+            original_context: The original context before execution
+        """
+        # Restore the original local scope
+        if hasattr(context, "_original_locals"):
+            context.set_scope("local", context._original_locals)
+            delattr(context, "_original_locals")
+
+    def execute(self, context: Any, *args: Any, **kwargs: Any) -> Any:
+        """Execute the function body with the provided context and arguments.
+
+        Args:
+            context: The context to use for execution or a arguments dict
+            *args: Positional arguments
+            **kwargs: Keyword arguments
+        """
+        try:
+            # Check if context is actually a dict of arguments rather than a SandboxContext
+            if isinstance(context, dict) and not isinstance(context, SandboxContext):
+                # In this case, the first parameter is actually a dict of args
+                arg_dict = context
+                context = None
+
+                # Try to get the context from args or use self.context
+                if args and isinstance(args[0], SandboxContext):
+                    context = args[0].copy()  # Make a copy to avoid affecting the original
+                    args = args[1:]
+                else:
+                    context = self.context.copy() if self.context else SandboxContext()
+
+                # Process arguments from the arg_dict
+                positional_args = arg_dict.get("__positional", [])
+                kwargs.update({k: v for k, v in arg_dict.items() if k != "__positional"})
+                args = positional_args + list(args)
+
+            # If the context doesn't have an interpreter, assign the one from self.context
+            if not hasattr(context, "_interpreter") or context._interpreter is None:
+                if self.context is not None and hasattr(self.context, "_interpreter") and self.context._interpreter is not None:
+                    context._interpreter = self.context._interpreter
+
+            # Create a new scope for the function
+            for i, param_name in enumerate(self.parameters):
+                if i < len(args):
+                    # Directly set the parameter in the local scope
+                    context.set_in_scope(param_name, args[i], scope="local")
+
+            # Set any keyword args
+            for kwarg_name, kwarg_value in kwargs.items():
+                if kwarg_name in self.parameters:
+                    context.set_in_scope(kwarg_name, kwarg_value, scope="local")
+
+            result = None
+            for statement in self.body:
+                try:
+                    result = context.interpreter.execute_statement(statement, context)
+                    self.debug(f"statement: {statement}, result: {result}")
+                except ReturnException as e:
+                    return e.value
+            return result
+        except ReturnException as e:
+            return e.value

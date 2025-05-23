@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..",
 
 from opendxa.dana.common.exceptions import DanaError
 from opendxa.dana.io.file_io import read_dana_program
-from opendxa.dana.sandbox.interpreter.interpreter import Interpreter
+from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
 from opendxa.dana.sandbox.log_manager import LogLevel
 from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
@@ -63,7 +63,7 @@ def run_example(example_path: str):
         # 3. Setup Runtime
         print(f"{YELLOW}Initializing context and interpreter...{RESET}")
         context = SandboxContext()
-        interpreter = Interpreter(context=context)
+        interpreter = DanaInterpreter(context=context)
 
         # Set log level to DEBUG for log_levels.dana example
         if os.path.basename(abs_example_path) == "log_levels.na":

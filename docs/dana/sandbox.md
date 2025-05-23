@@ -2,22 +2,22 @@
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
 
-[▲ DANA](./dana.md)
+[▲ Dana](./dana.md)
 
 [◀ Language](./language.md) | [Parser ▶︎](./parser.md) 
 
-# DANA Secure Sandbox 
+# Dana Secure Sandbox 
 
 ## Overview
 
-The DANA runtime is designed to securely and robustly process and execute code from various sources, such as scripts and interactive REPL sessions. All stages of code processing and execution are contained within a Sandbox, which provides isolation, security, and resource management.
+The Dana runtime is designed to securely and robustly process and execute code from various sources, such as scripts and interactive REPL sessions. All stages of code processing and execution are contained within a Sandbox, which provides isolation, security, and resource management.
 
 ## Runtime Flow
 
-At a high level, the DANA runtime flow is as follows:
+At a high level, the Dana runtime flow is as follows:
 
 1. [`opendxa.dana.language.parser`](./parser.md): Parses the source code into a parse tree.
-2. [`opendxa.dana.language.dana_grammar.lark`](./grammar.md): The DANA grammar (Lark grammar).
+2. [`opendxa.dana.language.dana_grammar.lark`](./grammar.md): The Dana grammar (Lark grammar).
 3. [`opendxa.dana.language.transformers`](./transformers.md): Transforms the parse tree into an AST.
 4. [`opendxa.dana.language.type_checker`](./type_checker.md): Type checks the AST.
 5. [`opendxa.dana.runtime.interpreter`](./interpreter.md): Executes the AST.
@@ -28,7 +28,7 @@ At a high level, the DANA runtime flow is as follows:
 graph TB
     SC[[Source Code]] --> SB
     REPL[REPL] --> SB
-    subgraph SB [Sandbox: Full DANA Runtime]
+    subgraph SB [Sandbox: Full Dana Runtime]
         direction LR
         P[Parser] --> T[Transformers] --> AST[[AST]]
         AST --> TC[Type Checker]
@@ -44,9 +44,9 @@ graph TB
 
 - **Source Code / REPL**: Entry points for user code, either as scripts or interactive input.
 - **Sandbox**: The top-level runtime container that manages all code processing and execution, ensuring isolation and security.
-    - **Parser**: Converts source code into a parse tree using the DANA grammar.
+    - **Parser**: Converts source code into a parse tree using the Dana grammar.
     - **Parse Tree**: The syntactic structure of the code as produced by the parser.
-    - **Transformers**: Convert the parse tree into an Abstract Syntax Tree (AST) of DANA node classes.
+    - **Transformers**: Convert the parse tree into an Abstract Syntax Tree (AST) of Dana node classes.
     - **AST**: A semantically meaningful representation of the program.
     - **Type Checker**: (Optional) Ensures type correctness throughout the AST.
     - **Interpreter**: Executes the AST, managing state and control flow.

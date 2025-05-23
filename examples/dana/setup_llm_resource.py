@@ -18,7 +18,7 @@ import asyncio
 import os
 
 from opendxa.common.resource.llm_resource import LLMResource
-from opendxa.dana.sandbox.interpreter.interpreter import Interpreter
+from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
 from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
@@ -92,7 +92,7 @@ async def main():
     # Parse and execute the program
     parser = DanaParser()
     parse_result = parser.parse(program)
-    interpreter = Interpreter(context)
+    interpreter = DanaInterpreter(context)
     interpreter.execute_program(parse_result)
 
     print("\nExample complete!")

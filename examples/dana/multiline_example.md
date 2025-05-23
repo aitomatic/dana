@@ -1,6 +1,6 @@
-# DANA REPL Multiline Examples
+# Dana REPL Multiline Examples
 
-This file contains examples of using the DANA REPL with multiline statements and blocks.
+This file contains examples of using the Dana REPL with multiline statements and blocks.
 
 ## Variable Assignment
 

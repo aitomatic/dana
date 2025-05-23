@@ -11,7 +11,7 @@
 
 ## Overview
 
-Planning in OpenDXA enables agents to decompose complex objectives into manageable tasks, allocate resources effectively, and manage dependencies between tasks. Using DANA programs, planning combines strategic thinking with tactical execution to achieve goals efficiently.
+Planning in OpenDXA enables agents to decompose complex objectives into manageable tasks, allocate resources effectively, and manage dependencies between tasks. Using Dana programs, planning combines strategic thinking with tactical execution to achieve goals efficiently.
 
 ## Core Concepts
 
@@ -41,7 +41,7 @@ Planning in OpenDXA enables agents to decompose complex objectives into manageab
 
 ## Architecture
 
-The planning system in OpenDXA is implemented as a series of DANA programs that perform specific planning functions:
+The planning system in OpenDXA is implemented as a series of Dana programs that perform specific planning functions:
 
 1. **Goal Analysis Layer**: Analyzes objectives and breaks them down into manageable components
 2. **Task Decomposition Layer**: Creates specific tasks from goal components
@@ -51,12 +51,12 @@ The planning system in OpenDXA is implemented as a series of DANA programs that 
 
 ## Implementation
 
-### 1. Basic Planning with DANA
+### 1. Basic Planning with Dana
 ```python
 from opendxa.dana import run
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
-# Define DANA planning program
+# Define Dana planning program
 planning_program = """
 # Initialize planning state
 agent.objective = "Analyze customer data"
@@ -102,7 +102,7 @@ result = run(planning_program, context)
 
 ### 2. Resource Allocation
 ```python
-# DANA program for resource allocation
+# Dana program for resource allocation
 resource_allocation_program = """
 # Initialize resource state
 temp.tasks = agent.plan
@@ -135,7 +135,7 @@ agent.plan = temp.tasks
 
 ### 3. Execution Scheduling
 ```python
-# DANA program for execution scheduling
+# Dana program for execution scheduling
 scheduling_program = """
 # Initialize scheduling state
 temp.tasks = agent.plan
@@ -173,7 +173,7 @@ agent.execution_schedule = temp.schedule
 
 ## Key Differentiators
 
-1. **DANA-Powered Planning**
+1. **Dana-Powered Planning**
    - Programmatic planning logic
    - Integrated reasoning capabilities
    - Dynamic plan adaptation
@@ -215,7 +215,7 @@ agent.execution_schedule = temp.schedule
 
 1. **Basic Planning**
    ```python
-   # DANA program for basic planning
+   # Dana program for basic planning
    planning_program = """
    # Define objective
    agent.objective = "Process customer data"
@@ -241,7 +241,7 @@ agent.execution_schedule = temp.schedule
 
 2. **Resource Allocation**
    ```python
-   # DANA program for resource allocation
+   # Dana program for resource allocation
    resource_program = """
    # Get resources and tasks
    temp.resources = world.available_resources
@@ -258,7 +258,7 @@ agent.execution_schedule = temp.schedule
 
 3. **Plan Execution Monitoring**
    ```python
-   # DANA program for execution monitoring
+   # Dana program for execution monitoring
    monitoring_program = """
    # Initialize tracking
    temp.tasks = agent.plan

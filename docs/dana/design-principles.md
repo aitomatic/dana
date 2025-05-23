@@ -4,9 +4,9 @@
 
 [Project Overview](../README.md)
 
-# DANA Design Principles
+# Dana Design Principles
 
-These principles guide the design and evolution of DANA as an agentic language and sandbox. They are intended for DANA creators, AI coding assistants, and advanced users who want to understand or extend the system.
+These principles guide the design and evolution of Dana as an agentic language and sandbox. They are intended for Dana creators, AI coding assistants, and advanced users who want to understand or extend the system.
 
 ---
 
@@ -22,7 +22,7 @@ These principles guide the design and evolution of DANA as an agentic language a
 
 ## 2. Fault-Tolerance & Precision
 
-- **DANA Sandbox Operating Model:**
+- **Dana Sandbox Operating Model:**
   - Give users the best of fault-tolerance and precision/determinism, using Predict-and-Error Correct as a core principle.
 - **Predict-and-Error Correct:**
   - The system should predict user intent and correct errors automatically when possible, but always allow for precise, deterministic control.

@@ -1,4 +1,4 @@
-"""Strict DANA Parser with enhanced AST validation.
+"""Strict Dana Parser with enhanced AST validation.
 
 This module provides a variant of the DanaParser that enforces strict AST validation.
 It is a drop-in replacement for DanaParser with additional options for validation.
@@ -72,7 +72,7 @@ class StrictDanaParser(DanaParser, AstValidator):
 
     def parse(self, program_text: str, do_transform: bool = True, do_type_check: bool = False, strict: Optional[bool] = None) -> Any:
         """
-        Parse a DANA program string into an AST with enhanced validation.
+        Parse a Dana program string into an AST with enhanced validation.
 
         This extends the DanaParser.parse method to add a strict option
         that can override the parser's default strict_validation setting.
@@ -102,7 +102,7 @@ class StrictDanaParser(DanaParser, AstValidator):
 
 def create_parser(strict: bool = False, **kwargs) -> DanaParser:
     """
-    Factory function to create either a regular or strict DANA parser.
+    Factory function to create either a regular or strict Dana parser.
 
     Args:
         strict: If True, creates a StrictDanaParser with strict_validation=True

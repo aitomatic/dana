@@ -1,6 +1,6 @@
-"""Variable transformer for DANA language parsing.
+"""Variable transformer for Dana language parsing.
 
-Handles variable, identifier, and access patterns as defined in the DANA grammar.
+Handles variable, identifier, and access patterns as defined in the Dana grammar.
 Covers:
     - variable: scoped_var | simple_name | dotted_access
     - simple_name: NAME
@@ -22,7 +22,7 @@ class VariableTransformer(BaseTransformer):
     """
     Transforms variable and identifier-related parse tree nodes into AST Identifier nodes.
 
-    Handles all variable access patterns in the DANA grammar, including scoped, simple, and dotted variables.
+    Handles all variable access patterns in the Dana grammar, including scoped, simple, and dotted variables.
     Methods are grouped by grammar hierarchy for clarity and maintainability.
     """
 

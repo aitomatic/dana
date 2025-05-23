@@ -2,25 +2,25 @@
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
 
-[▲ DANA](./dana.md) 
+[▲ Dana](./dana.md) 
 
 [◀ AST](./ast.md) | [Interpreter ▶︎](./interpreter.md)
 
-# DANA Type Checker
+# Dana Type Checker
 
 **Module**: `opendxa.dana.language.type_checker`
 
-This document describes the architecture, responsibilities, and flow of the DANA type checker, which is responsible for statically verifying type correctness in DANA programs after parsing and before execution.
+This document describes the architecture, responsibilities, and flow of the Dana type checker, which is responsible for statically verifying type correctness in Dana programs after parsing and before execution.
 
 ## Overview
 
-After the Transformer has transformed the Program into an AST, the TypeChecker (optionally) traverses the AST and ensures that all operations, assignments, and expressions are type-safe according to the DANA type system. It helps catch type errors early, before program execution, and provides detailed error messages for debugging.
+After the Transformer has transformed the Program into an AST, the TypeChecker (optionally) traverses the AST and ensures that all operations, assignments, and expressions are type-safe according to the Dana type system. It helps catch type errors early, before program execution, and provides detailed error messages for debugging.
 
 The Interpreter will receive the AST following the TypeChecking phase.
 
 ## Main Components
 
-- **DanaType**: Represents a type in DANA (e.g., `int`, `float`, `string`, `bool`, `array`, `dict`, `set`, `null`).
+- **DanaType**: Represents a type in Dana (e.g., `int`, `float`, `string`, `bool`, `array`, `dict`, `set`, `null`).
 - **TypeEnvironment**: Maintains a mapping of variable names to their types, supporting nested scopes.
 - **TypeChecker**: The main class that traverses the AST and checks types for statements and expressions.
 - **TypeError**: Custom exception raised when a type error is detected.

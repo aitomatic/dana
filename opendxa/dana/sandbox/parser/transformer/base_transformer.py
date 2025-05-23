@@ -1,4 +1,4 @@
-"""Base transformer class for DANA language parsing."""
+"""Base transformer class for Dana language parsing."""
 
 from typing import Any, Union
 
@@ -12,9 +12,9 @@ from opendxa.dana.sandbox.parser.utils.tree_utils import unwrap_single_child_tre
 
 
 class BaseTransformer(Loggable):
-    """Base class for DANA AST transformers.
+    """Base class for Dana AST transformers.
 
-    Provides common utility methods for transforming Lark parse trees into DANA AST nodes.
+    Provides common utility methods for transforming Lark parse trees into Dana AST nodes.
     """
 
     def __init__(self):

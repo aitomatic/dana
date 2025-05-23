@@ -11,19 +11,19 @@
 
 ## Overview
 
-The execution flow in OpenDXA defines how agents process tasks using the DANA language. DANA (Domain-Aware NeuroSymbolic Architecture) provides an imperative programming model that combines domain expertise with LLM-powered reasoning to achieve complex objectives.
+The execution flow in OpenDXA defines how agents process tasks using the Dana language. Dana (Domain-Aware NeuroSymbolic Architecture) provides an imperative programming model that combines domain expertise with LLM-powered reasoning to achieve complex objectives.
 
 ## Core Concepts
 
 ### 1. Execution Components
 
-- **DANA Language**
+- **Dana Language**
   - Imperative programming language
   - Domain-specific syntax
   - State-based operations
   - Built-in reasoning functions
 
-- **DANA Interpreter**
+- **Dana Interpreter**
   - AST-based execution
   - State management
   - Function registry
@@ -37,7 +37,7 @@ The execution flow in OpenDXA defines how agents process tasks using the DANA la
 
 ### 2. Execution Operations
 
-- DANA program execution
+- Dana program execution
 - [State management](./state-management.md)
 - Resource coordination
 - Error handling
@@ -48,20 +48,20 @@ The execution flow in OpenDXA defines how agents process tasks using the DANA la
 The typical execution flow in OpenDXA follows these steps:
 
 1. **Request Interpretation**: Incoming user requests are analyzed and converted to execution objectives
-2. **Program Generation**: DANA programs are generated either directly or via the transcoder
+2. **Program Generation**: Dana programs are generated either directly or via the transcoder
 3. **Context Initialization**: Runtime context with appropriate state containers is created
-4. **Program Execution**: The DANA interpreter executes the program statements
+4. **Program Execution**: The Dana interpreter executes the program statements
 5. **Response Generation**: Results are assembled and returned to the user
 
 ## Implementation
 
-### 1. DANA Program Execution
+### 1. Dana Program Execution
 
 ```python
 from opendxa.dana import run
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
-# Define a DANA program
+# Define a Dana program
 dana_program = """
 # Initialize variables
 temp.data = world.input_data
@@ -151,7 +151,7 @@ except Exception as e:
 ## Best Practices
 
 1. **Program Design**
-   - Clear, modular DANA programs
+   - Clear, modular Dana programs
    - Proper state scoping and organization
    - Error handling and validation
    - State management *(See [State Management](./state-management.md))*
@@ -172,7 +172,7 @@ except Exception as e:
 
 1. **Sequential Processing**
    ```python
-   # DANA program for sequential processing
+   # Dana program for sequential processing
    dana_program = """
    # Initialize state
    temp.data = world.input
@@ -189,7 +189,7 @@ except Exception as e:
 
 2. **Conditional Processing**
    ```python
-   # DANA program with conditional logic
+   # Dana program with conditional logic
    dana_program = """
    # Check conditions
    temp.sentiment = reason("Analyze sentiment in: {world.text}")
@@ -209,7 +209,7 @@ except Exception as e:
 
 3. **Iterative Processing**
    ```python
-   # DANA program with iteration
+   # Dana program with iteration
    dana_program = """
    # Initialize
    temp.items = world.data_items
@@ -248,7 +248,7 @@ except Exception as e:
 ## Next Steps
 
 - Learn about [Agents](./agent.md)
-- Understand [DANA Language](../dana/language.md)
+- Understand [Dana Language](../dana/language.md)
 - Understand [State Management](./state-management.md)
 - Explore [Resources](./resources.md)
 

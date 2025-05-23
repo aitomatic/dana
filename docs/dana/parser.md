@@ -2,32 +2,32 @@
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
 
-[▲ DANA](./dana.md) 
+[▲ Dana](./dana.md) 
 
 [◀ Sandbox](./sandbox.md) | [Transformers ▶︎](./transformers.md)
 
-# DANA Parser
+# Dana Parser
 
 **Module**: `opendxa.dana.language.parser`
 
-The Parser is the first step in the DANA language pipeline. It is responsible for converting DANA source code into an Abstract Syntax Tree (AST).
+The Parser is the first step in the Dana language pipeline. It is responsible for converting Dana source code into an Abstract Syntax Tree (AST).
 
-This document describes the architecture, responsibilities, and flow of the DANA parser, which is responsible for converting DANA source code into an Abstract Syntax Tree (AST).
+This document describes the architecture, responsibilities, and flow of the Dana parser, which is responsible for converting Dana source code into an Abstract Syntax Tree (AST).
 
 ## Overview
 
-The DANA parser is built on top of the [Lark](https://github.com/lark-parser/lark) parsing library. It is responsible for:
+The Dana parser is built on top of the [Lark](https://github.com/lark-parser/lark) parsing library. It is responsible for:
 
-- Loading the DANA [grammar](./grammar.md) (from file or embedded)
+- Loading the Dana [grammar](./grammar.md) (from file or embedded)
 - Parsing source code into a parse tree
-- Transforming the parse tree into a DANA AST using modular transformers
+- Transforming the parse tree into a Dana AST using modular transformers
 - Optionally performing type checking on the AST
 - Providing detailed error reporting and diagnostics
 
 ## Main Components
 
 - **GrammarParser**: The main parser class. Handles grammar loading, Lark parser instantiation, and the overall parse/transform/typecheck pipeline.
-- **DanaIndenter**: Custom indenter for handling DANA's indentation-based block structure.
+- **DanaIndenter**: Custom indenter for handling Dana's indentation-based block structure.
 - **LarkTransformer**: The main transformer passed to Lark, which delegates to specialized transformers for statements, expressions, and f-strings.
 - **ParseResult**: Named tuple containing the parsed AST and any errors.
 
@@ -47,11 +47,11 @@ graph LR
     style AST fill:#f9f,stroke:#333
 ```
 
-- **Source Code**: The DANA program as a string.
+- **Source Code**: The Dana program as a string.
 - **GrammarParser**: Loads grammar, sets up Lark, and manages the pipeline.
-- **Lark Parser**: Parses the source code into a parse tree using the DANA grammar.
+- **Lark Parser**: Parses the source code into a parse tree using the Dana grammar.
 - **Parse Tree**: The syntactic structure produced by Lark.
-- **LarkTransformer**: Transforms the parse tree into a DANA AST.
+- **LarkTransformer**: Transforms the parse tree into a Dana AST.
 - **AST**: The abstract syntax tree, ready for type checking and interpretation.
 
 ## Error Handling

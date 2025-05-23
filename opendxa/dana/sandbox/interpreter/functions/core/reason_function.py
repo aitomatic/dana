@@ -3,13 +3,18 @@ Copyright © 2025 Aitomatic, Inc.
 
 This source code is licensed under the license found in the LICENSE file in the root directory of this source tree
 
-Reason function implementation for the DANA interpreter.
+Reason function implementation for the Dana interpreter.
 
-This module provides the reason function, which handles reasoning in the DANA interpreter.
+This module provides the reason function, which handles reasoning in the Dana interpreter.
 """
 
+import json
+import os
 from typing import Any, Dict, Optional
 
+from opendxa.common.resource.llm_resource import LLMResource
+from opendxa.common.types import BaseRequest
+from opendxa.common.utils.logging import DXA_LOGGER
 from opendxa.dana.common.exceptions import SandboxError
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
@@ -18,71 +23,130 @@ def reason_function(
     prompt: str,
     context: SandboxContext,
     options: Optional[Dict[str, Any]] = None,
+    use_mock: Optional[bool] = None,
 ) -> Any:
-    """Execute the reason function.
+    """Execute the reason function to generate a response using an LLM.
 
     Args:
-        context: The runtime context for variable resolution.
-        options: Optional parameters for the function.
+        prompt: The prompt string to send to the LLM (can be a string or a list with LiteralExpression)
+        context: The sandbox context
+        options: Optional parameters for the LLM call, including:
+            - system_message: Custom system message (default: helpful assistant)
+            - temperature: Controls randomness (default: 0.7)
+            - max_tokens: Limit on response length
+            - format: Output format ("text" or "json")
+        use_mock: Force use of mock responses (True) or real LLM calls (False).
+                  If None, defaults to checking OPENDXA_MOCK_LLM environment variable.
 
     Returns:
-        The result of the reasoning operation.
+        The LLM's response to the prompt as a string
 
     Raises:
-        RuntimeError: If the function execution fails.
+        SandboxError: If the function execution fails or parameters are invalid
     """
-    if options is None:
-        options = {}
+    logger = DXA_LOGGER.getLogger("opendxa.dana.reason")
+    options = options or {}
 
-    prompt = options.get("prompt", "")
-    llm_integration = options.get("llm_integration")
+    if not prompt:
+        raise SandboxError("reason function requires a non-empty prompt")
 
-    if not llm_integration:
-        raise SandboxError("No LLM integration provided for reasoning")
+    # Convert prompt to string if it's not already
+    if not isinstance(prompt, str):
+        prompt = str(prompt)
+
+    # Check if we should use mock responses
+    # Priority: function parameter > environment variable
+    should_mock = use_mock if use_mock is not None else os.environ.get("OPENDXA_MOCK_LLM", "").lower() == "true"
+
+    # Get LLM resource from context (assume it's available)
+    if hasattr(context, "llm_resource") and context.llm_resource:
+        llm_resource = context.llm_resource
+    else:
+        # Try to get from system.llm_resource
+        try:
+            llm_resource = context.get("system.llm_resource")
+            if not llm_resource:
+                llm_resource = LLMResource()
+        except Exception:
+            llm_resource = LLMResource()
+
+    # Apply mocking if needed
+    if should_mock:
+        logger.info(f"Using mock LLM response (prompt: {prompt[:100]}{'...' if len(prompt) > 100 else ''})")
+        llm_resource = llm_resource.with_mock_llm_call(True)
 
     try:
-        # Get the LLM resource
-        llm_resource = llm_integration._get_llm_resource()
-        if not llm_resource:
-            raise SandboxError("No LLM resource available for reasoning")
-
         # Log what's happening
-        llm_integration.debug(f"Starting LLM reasoning with prompt: {prompt[:500]}{'...' if len(prompt) > 500 else ''}")
+        logger.debug(f"Starting LLM reasoning with prompt: {prompt[:500]}{'...' if len(prompt) > 500 else ''}")
 
-        # Prepare the context data
-        context_data = llm_integration._prepare_context_data(context)
-
-        # Build the combined prompt with context
-        enriched_prompt = llm_integration._build_enriched_prompt(prompt, context_data)
-
-        # Prepare the system message
-        system_message = llm_integration._build_system_message(options)
+        # Prepare system message
+        system_message = options.get("system_message", "You are a helpful AI assistant. Respond concisely and accurately.")
 
         # Set up the messages
-        messages = [{"role": "system", "content": system_message}, {"role": "user", "content": enriched_prompt}]
+        messages = [{"role": "system", "content": system_message}, {"role": "user", "content": prompt}]
 
         # Prepare LLM parameters and execute the query
-        request = llm_integration._prepare_llm_params(messages, options)
+        request_params = {
+            "messages": messages,
+            "temperature": options.get("temperature", 0.7),
+            "max_tokens": options.get("max_tokens", None),
+        }
+
+        request = BaseRequest(arguments=request_params)
         response = llm_resource.query_sync(request)
+
         if not response.success:
             raise SandboxError(f"LLM reasoning failed: {response.error}")
 
         # Process the response
-        result = llm_integration._process_llm_response(response.content)
+        result = response.content
+        logger.debug(f"Raw LLM response type: {type(result)}")
+
+        # Extract just the text content from the response
+        if isinstance(result, dict):
+            logger.debug(f"Raw response keys: {result.keys()}")
+            # Handle different LLM response structures
+            if "choices" in result and result["choices"] and isinstance(result["choices"], list):
+                # OpenAI/Anthropic style response
+                first_choice = result["choices"][0]
+                if hasattr(first_choice, "message") and hasattr(first_choice.message, "content"):
+                    # Handle object-style responses
+                    result = first_choice.message.content
+                    logger.debug(f"Extracted content from object attributes: {result[:100]}...")
+                elif isinstance(first_choice, dict):
+                    if "message" in first_choice:
+                        message = first_choice["message"]
+                        if isinstance(message, dict) and "content" in message:
+                            result = message["content"]
+                            logger.debug(f"Extracted content from choices[0].message.content: {result[:100]}...")
+                        elif hasattr(message, "content"):
+                            result = message.content
+                            logger.debug(f"Extracted content from message.content attribute: {result[:100]}...")
+                    elif "text" in first_choice:
+                        # Some LLMs use 'text' instead of 'message.content'
+                        result = first_choice["text"]
+                        logger.debug(f"Extracted content from choices[0].text: {result[:100]}...")
+            # Simpler response format with direct content
+            elif "content" in result:
+                result = result["content"]
+                logger.debug(f"Extracted content directly from content field: {result[:100]}...")
+
+        # If result is still a complex object, try to get its string representation
+        if not isinstance(result, (str, int, float, bool, list, dict)) and hasattr(result, "__str__"):
+            result = str(result)
+            logger.debug(f"Converted complex object to string: {result[:100]}...")
 
         # Handle format conversion if needed
-        format_type = options.get("format", "text") if options else "text"
+        format_type = options.get("format", "text")
         if format_type == "json" and isinstance(result, str):
             try:
                 # Try to parse the result as JSON
-                import json
-
                 result = json.loads(result)
             except json.JSONDecodeError:
-                llm_integration.warning(f"Warning: Could not parse LLM response as JSON: {result[:100]}")
+                logger.warning(f"Warning: Could not parse LLM response as JSON: {result[:100]}")
 
         return result
 
     except Exception as e:
-        llm_integration.error(f"Error during LLM reasoning: {str(e)}")
+        logger.error(f"Error during LLM reasoning: {str(e)}")
         raise SandboxError(f"Error during reasoning: {str(e)}") from e
