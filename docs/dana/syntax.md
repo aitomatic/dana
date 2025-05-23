@@ -57,12 +57,6 @@ private.x = 10
 public.message = "Hello"
 ```
 
-### Print Statement
-```dana
-print("Hello, World!")
-print(private.x)
-```
-
 ### Conditional Statements
 ```dana
 if private.x > 5:
@@ -82,6 +76,8 @@ while private.x < 10:
 ```dana
 system.math.sqrt(16)
 public.result = system.math.max(3, 7)
+print("Hello, World!")
+print(private.x)
 ```
 
 ### Bare Identifiers

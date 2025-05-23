@@ -509,12 +509,12 @@ def test_set_literal():
 
 # --- Other Statements ---
 def test_print_statement():
-    from opendxa.dana.sandbox.parser.ast import PrintStatement
+    from opendxa.dana.sandbox.parser.ast import FunctionCall
 
     interpreter = DanaInterpreter(SandboxContext())
     program = Program(
         [
-            PrintStatement(message=LiteralExpression("hello")),
+            FunctionCall(name="print", args={"0": LiteralExpression("hello")}),
         ]
     )
     interpreter.execute_program(program)

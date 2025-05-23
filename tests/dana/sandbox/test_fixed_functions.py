@@ -18,7 +18,6 @@ from opendxa.dana.sandbox.parser.ast import (
     FunctionCall,
     Identifier,
     LiteralExpression,
-    PrintStatement,
     Program,
 )
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
@@ -147,8 +146,8 @@ def test_assignment_and_print(capsys):
     assert result == 99
     assert context.get("private.x") == 99
 
-    # Print
-    stmt = PrintStatement(message=LiteralExpression("hello"))
+    # Print using FunctionCall instead of PrintStatement
+    stmt = FunctionCall(name="print", args={"0": LiteralExpression("hello")})
     executor.execute(stmt, context)
     out, _ = capsys.readouterr()
     assert "hello" in out

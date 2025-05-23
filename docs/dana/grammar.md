@@ -44,12 +44,11 @@ The Dana grammar is written in [Lark](https://github.com/lark-parser/lark) EBNF 
 
 - **start**: Entry point for parsing; matches a complete Dana program.
 - **program**: Sequence of statements.
-- **statement**: Assignment, conditional, while loop, function call, print statement, bare identifier, or newline.
+- **statement**: Assignment, conditional, while loop, function call, or newline.
 - **assignment**: Variable assignment (`x = expr`).
 - **conditional**: If/else block with indented body.
 - **while_loop**: While loop with indented body.
 - **function_call**: Function or core function call.
-- **print_statement**: Print statement.
 - **bare_identifier**: Standalone identifier.
 - **expression**: Supports logical, comparison, arithmetic, and unary operations.
 - **literal**: String, number, boolean, or null.
