@@ -23,7 +23,7 @@ import asyncio
 import logging
 import os
 import sys
-from typing import List
+from typing import Any, List, Optional
 
 from prompt_toolkit import PromptSession
 from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
@@ -565,6 +565,129 @@ class DanaREPLApp(Loggable):
 
         print(f"\nType {colors.bold('help')} for full documentation\n")
 
+    def _get_prompt(self) -> Any:
+        """Get the appropriate prompt based on current state."""
+        if colors.use_colors:
+            # Use HTML formatting for the prompt which is more reliable than ANSI
+            if self.input_state.in_multiline:
+                return HTML("<ansicyan>... </ansicyan>")
+            else:
+                return HTML("<ansicyan>>>> </ansicyan>")
+        else:
+            return MULTILINE_PROMPT if self.input_state.in_multiline else STANDARD_PROMPT
+
+    def _handle_empty_line(self, line: str) -> tuple[bool, Optional[str]]:
+        """Handle empty line input based on current state.
+
+        Returns:
+            A tuple of (should_continue, executed_program)
+        """
+        if not line.strip() and not self.input_state.in_multiline:
+            self.debug("Empty line, continuing")
+            return True, None
+
+        if not line.strip() and self.input_state.in_multiline:
+            self.debug("Empty line in multiline mode, executing buffer")
+            executed_program = self._execute_multiline_buffer()
+            return True, executed_program
+
+        return False, None
+
+    def _execute_multiline_buffer(self) -> Optional[str]:
+        """Execute the current multiline buffer.
+
+        Returns:
+            The executed program string if successful, None otherwise
+        """
+        program = self.input_state.get_buffer()
+        self.input_state.reset()
+
+        if program.strip():  # Only execute if there's actual content
+            self._execute_program(program)
+            return program
+        return None
+
+    def _execute_program(self, program: str) -> None:
+        """Execute a Dana program and handle the result or errors."""
+        try:
+            self.debug(f"Executing program: {program}")
+            result = self.repl.execute(program)
+
+            if result is not None:
+                print(f"{colors.accent(str(result))}")
+        except Exception as e:
+            self._handle_execution_error(e)
+
+    def _handle_execution_error(self, e: Exception) -> None:
+        """Handle execution errors with proper formatting."""
+        context = ErrorContext("program execution")
+        error = ErrorHandler.handle_error(e, context)
+        error_lines = error.message.split("\n")
+        formatted_error = "\n".join(f"  {line}" for line in error_lines)
+        print(f"{colors.error('Error:')}\n{formatted_error}")
+
+    def _handle_exit_commands(self, line: str) -> bool:
+        """Handle exit commands.
+
+        Returns:
+            True if exit command was detected and we should break the main loop
+        """
+        if line.strip() in ["exit", "quit"]:
+            self.debug("Exit command received")
+            print("Goodbye! Dana REPL terminated.")
+            return True
+        return False
+
+    def _handle_orphaned_else_statement(self, line: str, last_executed_program: Optional[str]) -> bool:
+        """Handle orphaned else/elif statements with helpful guidance.
+
+        Returns:
+            True if orphaned statement was handled and we should continue
+        """
+        if self._is_orphaned_else_statement(line) and last_executed_program:
+            self.debug("Detected orphaned else statement, providing guidance")
+            print(f"{colors.error('Error:')} Orphaned '{line.strip()}' statement detected.")
+            print("")
+            print("To write if-else blocks, start with the if statement and use multiline mode:")
+            print(f"  1. {colors.accent('Type the if statement (ends with :):')}")
+            print("     >>> if condition:")
+            print("     ...     # if body")
+            print("     ... else:")
+            print("     ...     # else body")
+            print(f"     ... {colors.bold('[empty line to execute]')}")
+            print("")
+            print(f"  2. {colors.accent('Or start with ## to force multiline mode:')}")
+            print("     >>> ##")
+            print("     ... if condition:")
+            print("     ...     # statements")
+            print("     ... else:")
+            print("     ...     # statements")
+            print(f"     ... {colors.bold('[empty line to execute]')}")
+            print("")
+            return True
+        return False
+
+    def _process_input_line(self, line: str) -> bool:
+        """Process a single input line and determine how to handle it.
+
+        Returns:
+            True if we should continue to the next iteration, False if we should execute the line
+        """
+        # Check if input is obviously incomplete
+        if self._is_obviously_incomplete(line):
+            self.debug("Obviously incomplete input, entering multiline mode")
+            self.input_state.in_multiline = True
+            self.input_state.add_line(line)
+            return True
+
+        # If we're already in multiline mode, just add the line
+        if self.input_state.in_multiline:
+            self.debug("Adding line to multiline buffer")
+            self.input_state.add_line(line)
+            return True
+
+        return False
+
     async def run(self) -> None:
         """Run the interactive Dana REPL session."""
         self.info("Starting Dana REPL")
@@ -575,51 +698,20 @@ class DanaREPLApp(Loggable):
         while True:
             try:
                 # Get input with appropriate prompt
-                prompt_text = MULTILINE_PROMPT if self.input_state.in_multiline else STANDARD_PROMPT
+                prompt_text = self._get_prompt()
 
-                if colors.use_colors:
-                    # Use HTML formatting for the prompt which is more reliable than ANSI
-                    if self.input_state.in_multiline:
-                        prompt = HTML("<ansicyan>... </ansicyan>")
-                    else:
-                        prompt = HTML("<ansicyan>>>> </ansicyan>")
-                else:
-                    prompt = prompt_text
-
-                line = await self.prompt_session.prompt_async(prompt)
+                line = await self.prompt_session.prompt_async(prompt_text)
                 self.debug(f"Got input: '{line}'")
 
                 # Handle empty lines
-                if not line.strip() and not self.input_state.in_multiline:
-                    self.debug("Empty line, continuing")
-                    continue
-
-                # Handle empty line in multiline mode - this ends the multiline block
-                if not line.strip() and self.input_state.in_multiline:
-                    self.debug("Empty line in multiline mode, executing buffer")
-                    program = self.input_state.get_buffer()
-                    self.input_state.reset()
-
-                    if program.strip():  # Only execute if there's actual content
-                        try:
-                            self.debug(f"Executing multiline program: {program}")
-                            result = self.repl.execute(program)
-                            last_executed_program = program
-
-                            if result is not None:
-                                print(f"{colors.accent(str(result))}")
-                        except Exception as e:
-                            context = ErrorContext("program execution")
-                            error = ErrorHandler.handle_error(e, context)
-                            error_lines = error.message.split("\n")
-                            formatted_error = "\n".join(f"  {line}" for line in error_lines)
-                            print(f"{colors.error('Error:')}\n{formatted_error}")
+                should_continue, executed_program = self._handle_empty_line(line)
+                if should_continue:
+                    if executed_program:
+                        last_executed_program = executed_program
                     continue
 
                 # Handle exit commands
-                if line.strip() in ["exit", "quit"]:
-                    self.debug("Exit command received")
-                    print("Goodbye! Dana REPL terminated.")
+                if self._handle_exit_commands(line):
                     break
 
                 # Handle special commands
@@ -631,63 +723,18 @@ class DanaREPLApp(Loggable):
                     continue
 
                 # Check for orphaned else/elif statements
-                if self._is_orphaned_else_statement(line) and last_executed_program:
-                    self.debug("Detected orphaned else statement, providing guidance")
-                    print(f"{colors.error('Error:')} Orphaned '{line.strip()}' statement detected.")
-                    print("")
-                    print("To write if-else blocks, start with the if statement and use multiline mode:")
-                    print(f"  1. {colors.accent('Type the if statement (ends with :):')}")
-                    print("     >>> if condition:")
-                    print("     ...     # if body")
-                    print("     ... else:")
-                    print("     ...     # else body")
-                    print(f"     ... {colors.bold('[empty line to execute]')}")
-                    print("")
-                    print(f"  2. {colors.accent('Or start with ## to force multiline mode:')}")
-                    print("     >>> ##")
-                    print("     ... if condition:")
-                    print("     ...     # statements")
-                    print("     ... else:")
-                    print("     ...     # statements")
-                    print(f"     ... {colors.bold('[empty line to execute]')}")
-                    print("")
+                if self._handle_orphaned_else_statement(line, last_executed_program):
                     continue
 
                 # Check if input is complete - now we're more conservative
                 # Only enter multiline mode for obviously incomplete statements
-                is_complete = self._is_obviously_incomplete(line)
-                self.debug(f"Obviously incomplete: {is_complete}")
-
-                # Handle multiline input
-                if is_complete:  # is_complete is actually "is_obviously_incomplete"
-                    self.debug("Obviously incomplete input, entering multiline mode")
-                    self.input_state.in_multiline = True
-                    self.input_state.add_line(line)
-                    continue
-
-                # If we're already in multiline mode, just add the line
-                if self.input_state.in_multiline:
-                    self.debug("Adding line to multiline buffer")
-                    self.input_state.add_line(line)
+                if self._process_input_line(line):
                     continue
 
                 # For single-line input, execute immediately
                 self.debug("Executing single line input")
-                program = line
-
-                try:
-                    self.debug(f"Executing program: {program}")
-                    result = self.repl.execute(program)
-                    last_executed_program = program
-
-                    if result is not None:
-                        print(f"{colors.accent(str(result))}")
-                except Exception as e:
-                    context = ErrorContext("program execution")
-                    error = ErrorHandler.handle_error(e, context)
-                    error_lines = error.message.split("\n")
-                    formatted_error = "\n".join(f"  {line}" for line in error_lines)
-                    print(f"{colors.error('Error:')}\n{formatted_error}")
+                self._execute_program(line)
+                last_executed_program = line
 
             except KeyboardInterrupt:
                 print("\nOperation cancelled")

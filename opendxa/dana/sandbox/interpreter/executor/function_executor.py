@@ -171,14 +171,16 @@ class FunctionExecutor(BaseExecutor):
                 add_args = evaluated_args[1:] if len(evaluated_args) > 1 else []
 
                 # Pass the prompt first, then context - matching the function's expected signature
-                result = reason_function(prompt_str, context, *add_args, **evaluated_kwargs)
+                raw_result = reason_function(prompt_str, context, *add_args, **evaluated_kwargs)
+                result = self._assign_and_coerce_result(raw_result, func_name)
 
             # For the process function in test_function_call_chaining
             elif func_name == "process" and evaluated_args and len(evaluated_args) == 1:
                 # Pass the single argument and context using a different parameter name
                 kwargs_copy = evaluated_kwargs.copy()
                 kwargs_copy["ctx"] = context  # Use ctx instead of context to avoid collision
-                result = registry.call(node.name, context, None, evaluated_args[0], **kwargs_copy)
+                raw_result = registry.call(node.name, context, None, evaluated_args[0], **kwargs_copy)
+                result = self._assign_and_coerce_result(raw_result, func_name)
 
             # Special case for functions with parameters that conflict with FunctionRegistry.call parameters
             # format_message has a 'name' parameter which conflicts with FunctionRegistry.call's 'name' parameter
@@ -192,10 +194,12 @@ class FunctionExecutor(BaseExecutor):
                         from opendxa.dana.sandbox.interpreter.functions.python_function import PythonFunction
 
                         if isinstance(func, PythonFunction):
-                            result = func.execute(context, *evaluated_args, **evaluated_kwargs)
+                            raw_result = func.execute(context, *evaluated_args, **evaluated_kwargs)
+                            result = self._assign_and_coerce_result(raw_result, func_name)
                         else:
                             # Regular callable
-                            result = func(*evaluated_args, **evaluated_kwargs)
+                            raw_result = func(*evaluated_args, **evaluated_kwargs)
+                            result = self._assign_and_coerce_result(raw_result, func_name)
                     else:
                         # Not a callable, can't execute
                         raise SandboxError(f"Function '{node.name}' is not callable")
@@ -205,7 +209,8 @@ class FunctionExecutor(BaseExecutor):
 
             # Normal call
             else:
-                result = registry.call(node.name, context, None, *evaluated_args, **evaluated_kwargs)
+                raw_result = registry.call(node.name, context, None, *evaluated_args, **evaluated_kwargs)
+                result = self._assign_and_coerce_result(raw_result, func_name)
 
         except KeyError as e:
             # Function wasn't found in registry, it might be a user-defined function in the context
@@ -219,7 +224,8 @@ class FunctionExecutor(BaseExecutor):
                 func_data = context.get(full_key)
                 if isinstance(func_data, dict) and func_data.get("type") == "function":
                     # It's a user-defined function, execute it
-                    result = self._execute_user_defined_function(func_data, evaluated_args, context)
+                    raw_result = self._execute_user_defined_function(func_data, evaluated_args, context)
+                    result = self._assign_and_coerce_result(raw_result, func_name)
                 else:
                     # Not a function or not found
                     raise SandboxError(f"Function '{node.name}' not found in registry or context")
@@ -241,18 +247,33 @@ class FunctionExecutor(BaseExecutor):
 
                     # Try again
                     try:
-                        result = registry.call(node.name, context, None, *evaluated_args, **evaluated_kwargs)
+                        raw_result = registry.call(node.name, context, None, *evaluated_args, **evaluated_kwargs)
+                        result = self._assign_and_coerce_result(raw_result, func_name)
                     except Exception as retry_e:
                         raise SandboxError(f"Error calling function '{node.name}' (retry): {retry_e}")
 
             if result is None:  # Only raise if we haven't got a result yet
                 raise SandboxError(f"Error calling function '{node.name}': {e}")
 
-        # Apply type coercion to function results if enabled
-        if result is not None:
-            result = self._apply_function_result_coercion(result, func_name)
-
         return result
+
+    def _assign_and_coerce_result(self, raw_result: Any, function_name: str) -> Any:
+        """Assign result and apply type coercion in one step.
+
+        This helper method reduces duplication of the pattern:
+        result = some_function_call(...)
+        result = self._apply_function_result_coercion(result, func_name)
+
+        Args:
+            raw_result: The raw function result
+            function_name: The name of the function that was called
+
+        Returns:
+            The potentially coerced result
+        """
+        if raw_result is not None:
+            return self._apply_function_result_coercion(raw_result, function_name)
+        return raw_result
 
     def _apply_function_result_coercion(self, result: Any, function_name: str) -> Any:
         """Apply type coercion to function results based on function type.
