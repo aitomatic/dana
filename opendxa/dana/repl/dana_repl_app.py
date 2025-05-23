@@ -21,398 +21,20 @@ Dana REPL: Interactive command-line interface for Dana.
 
 import asyncio
 import logging
-import os
 import sys
-from typing import List
-
-from prompt_toolkit import PromptSession
-from prompt_toolkit.auto_suggest import AutoSuggestFromHistory
-from prompt_toolkit.completion import WordCompleter
-from prompt_toolkit.formatted_text import HTML
-from prompt_toolkit.history import FileHistory
-from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.keys import Keys
-from prompt_toolkit.styles import Style
+from typing import Optional
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.resource.llm_resource import LLMResource
-from opendxa.dana.common.error_utils import ErrorContext, ErrorHandler
-from opendxa.dana.common.terminal_utils import ColorScheme, get_dana_lexer, print_header, supports_color
+from opendxa.dana.common.terminal_utils import ColorScheme, supports_color
+from opendxa.dana.repl.commands import CommandHandler
+from opendxa.dana.repl.input import InputProcessor
 from opendxa.dana.repl.repl import REPL
+from opendxa.dana.repl.ui import OutputFormatter, PromptSessionManager, WelcomeDisplay
 from opendxa.dana.sandbox.log_manager import LogLevel
-
-# Constants
-HISTORY_FILE = os.path.expanduser("~/.dana_history")
-MULTILINE_PROMPT = "... "
-STANDARD_PROMPT = ">>> "
 
 # Map Dana LogLevel to Python logging levels
 LEVEL_MAP = {LogLevel.DEBUG: logging.DEBUG, LogLevel.INFO: logging.INFO, LogLevel.WARN: logging.WARNING, LogLevel.ERROR: logging.ERROR}
-
-# Initialize color scheme
-colors = ColorScheme(supports_color())
-# Initialize Dana lexer for syntax highlighting
-dana_lexer = get_dana_lexer()
-
-
-class InputState(Loggable):
-    """Tracks the state of multiline input."""
-
-    def __init__(self):
-        """Initialize the input state."""
-        super().__init__()
-        self.buffer: List[str] = []
-        self.in_multiline = False
-
-    def add_line(self, line: str) -> None:
-        """Add a line to the buffer."""
-        self.buffer.append(line)
-
-    def get_buffer(self) -> str:
-        """Get the current buffer as a string."""
-        return "\n".join(self.buffer)
-
-    def reset(self) -> None:
-        """Reset the buffer."""
-        self.buffer = []
-        self.in_multiline = False
-
-
-class InputCompleteChecker(Loggable):
-    """Checks if Dana input is complete."""
-
-    def __init__(self):
-        """Initialize the checker."""
-        super().__init__()
-
-    def is_complete(self, code: str) -> bool:
-        """Check if the input code is a complete Dana statement/block."""
-        code = code.strip()
-        self.debug(f"Checking if complete: '{code}'")
-
-        if not code:
-            self.debug("Empty code, considered complete")
-            return True
-
-        # Handle simple assignments first
-        if "=" in code and ":" not in code:  # Only check = if not in a block
-            parts = code.split("=")
-            if len(parts) == 2 and parts[1].strip():  # Has a value after =
-                self.debug("Valid assignment found")
-                return True
-            self.debug("Incomplete assignment")
-            return False
-
-        # Handle single word variable reference
-        if self._is_single_word_variable(code):
-            self.debug("Single word variable reference")
-            return True
-
-        # Check brackets
-        if not self._has_balanced_brackets(code):
-            self.debug("Unbalanced brackets")
-            return False
-
-        # Check statements
-        if not self._has_complete_statements(code):
-            self.debug("Incomplete statements")
-            return False
-
-        self.debug("Code is complete")
-        return True
-
-    def _is_single_word_variable(self, code: str) -> bool:
-        """Check if input is a single word variable reference."""
-        words = code.strip().split()
-        return len(words) == 1 and "." in words[0] and all(part.isalpha() for part in words[0].split("."))
-
-    def _has_balanced_brackets(self, code: str) -> bool:
-        """Check if brackets and braces are balanced."""
-        brackets = {"(": ")", "[": "]", "{": "}"}
-        stack = []
-        in_string = False
-        string_char = None
-
-        for char in code:
-            if char in ['"', "'"] and (not in_string or char == string_char):
-                in_string = not in_string
-                string_char = char if in_string else None
-                continue
-
-            if in_string:
-                continue
-
-            if char in brackets:
-                stack.append(char)
-            elif char in brackets.values():
-                if not stack or brackets[stack.pop()] != char:
-                    return False
-
-        return not stack
-
-    def _has_complete_statements(self, code: str) -> bool:
-        """Check if all statements are complete."""
-        code = code.strip()
-        self.debug(f"Checking completeness of:\n{code}")
-
-        # Split into lines and track indentation state
-        lines = code.split("\n")
-        indent_stack = [0]  # Stack to track expected indentation levels
-        self.debug("Starting with indent stack: [0]")
-
-        # Quick check for common control structures that are definitely incomplete
-        if code.strip().endswith(":"):
-            self.debug("Code ends with colon, definitely incomplete")
-            return False
-
-        for i, line in enumerate(lines):
-            stripped = line.strip()
-            if not stripped:  # Skip empty lines
-                self.debug(f"Line {i+1}: Skipping empty line")
-                continue
-
-            # Count leading spaces to determine indentation level
-            indent = len(line) - len(line.lstrip())
-            self.debug(f"Line {i+1}: '{line}' (indent={indent}, expected={indent_stack[-1]})")
-
-            # Check block start
-            if stripped.endswith(":"):
-                if i == len(lines) - 1:  # Block header with no body
-                    self.debug(f"Line {i+1}: Block header with no body")
-                    return False
-                # Next line must be indented
-                if i + 1 < len(lines):
-                    next_line = lines[i + 1].strip()
-                    if next_line:  # If next line is not empty
-                        next_indent = len(lines[i + 1]) - len(lines[i + 1].lstrip())
-                        if next_indent <= indent:  # Must be more indented
-                            self.debug(f"Line {i+1}: Next line not properly indented (next_indent={next_indent})")
-                            return False
-                indent_stack.append(indent + 4)  # Expect 4 spaces indentation
-                self.debug(f"Line {i+1}: Added indent level {indent + 4}, stack is now {indent_stack}")
-                continue
-
-            # Check indentation against current expected level
-            if indent < indent_stack[-1]:
-                # Dedent must match a previous indentation level
-                self.debug(f"Line {i+1}: Dedent detected, checking against stack {indent_stack}")
-                while indent_stack and indent < indent_stack[-1]:
-                    popped = indent_stack.pop()
-                    self.debug(f"Line {i+1}: Popped {popped}, stack is now {indent_stack}")
-                if not indent_stack or indent != indent_stack[-1]:
-                    self.debug(f"Line {i+1}: Invalid dedent level {indent}")
-                    return False
-            elif indent > indent_stack[-1]:
-                # Unexpected indentation
-                self.debug(f"Line {i+1}: Unexpected indent level {indent}")
-                return False
-
-            # Special handling for else blocks
-            if stripped.startswith("else:"):
-                if indent != indent_stack[-1]:
-                    self.debug(f"Line {i+1}: 'else' at wrong indentation level")
-                    return False
-                if i + 1 < len(lines):
-                    next_line = lines[i + 1].strip()
-                    if next_line:  # If next line is not empty
-                        next_indent = len(lines[i + 1]) - len(lines[i + 1].lstrip())
-                        if next_indent <= indent:  # Must be more indented
-                            self.debug(f"Line {i+1}: 'else' block not properly indented")
-                            return False
-
-        # If we have a non-empty indent stack with more than just the base level,
-        # it means we're in the middle of a block
-        return len(indent_stack) <= 1
-
-
-class CommandHandler(Loggable):
-    """Handles REPL special commands."""
-
-    def __init__(self, repl: REPL):
-        """Initialize with a REPL instance."""
-        super().__init__()
-        self.repl = repl
-
-    async def handle_command(self, cmd: str) -> bool:
-        """Process a command and return True if it was a special command."""
-        cmd = cmd.strip()
-        # Process help commands
-        if cmd in ["help", "?"]:
-            self._show_help()
-            return True
-
-        # Process special "##" commands
-        if cmd.startswith("##"):
-            parts = cmd[2:].strip().split()
-            if not parts:
-                # Just "##" - force multiline mode
-                print(f"{colors.accent('✅ Forced multiline mode - type your code, end with empty line')}")
-                return True  # Handle in main loop with special flag
-
-            if parts[0] == "nlp":
-                if len(parts) == 1:
-                    self._show_nlp_status()
-                    return True
-                elif len(parts) == 2:
-                    if parts[1] == "on":
-                        self.repl.set_nlp_mode(True)
-                        print(f"{colors.accent('✅ NLP mode enabled')}")
-                        return True
-                    elif parts[1] == "off":
-                        self.repl.set_nlp_mode(False)
-                        print(f"{colors.error('❌ NLP mode disabled')}")
-                        return True
-                    elif parts[1] == "status":
-                        self._show_nlp_status()
-                        return True
-                    elif parts[1] == "test":
-                        await self._run_nlp_test()
-                        return True
-
-        return False
-
-    def _show_help(self) -> None:
-        """Show help information."""
-        width = 80
-        header_text = "Dana REPL HELP"
-        # Use the print_header utility function
-        print_header(header_text, width, colors)
-
-        print(f"{colors.bold('Basic Commands:')}")
-        print(f"  {colors.accent('help')}, {colors.accent('?')}         - Show this help message")
-        print(f"  {colors.accent('exit')}, {colors.accent('quit')}      - Exit the REPL")
-
-        print(f"\n{colors.bold('Special Commands:')}")
-        print(f"  {colors.accent('##nlp on')}        - Enable natural language processing mode")
-        print(f"  {colors.accent('##nlp off')}       - Disable natural language processing mode")
-        print(f"  {colors.accent('##nlp status')}    - Check if NLP mode is enabled")
-        print(f"  {colors.accent('##nlp test')}      - Test the NLP transcoder functionality")
-
-        # Dynamic core functions listing
-        print(f"\n{colors.bold('Core Functions:')}")
-        self._show_core_functions()
-
-        print(f"\n{colors.bold('Dana Syntax Basics:')}")
-        print(f"  {colors.bold('Variables:')}      {colors.accent('private:x = 5')}, {colors.accent('public:data = hello')}")
-        print(f"  {colors.bold('Conditionals:')}   {colors.accent('if private:x > 10:')}")
-        print(f"                  {colors.accent('    log(\"Value is high\", \"info\")')}")
-        print(f"  {colors.bold('Loops:')}          {colors.accent('while private:x < 10:')}")
-        print(f"                  {colors.accent('    private:x = private:x + 1')}")
-        print(f"  {colors.bold('Functions:')}      {colors.accent('func add(a, b): return a + b')}")
-
-        print(f"\n{colors.bold('Tips:')}")
-        print(f"  {colors.accent('•')} Use {colors.bold('Tab')} for command completion")
-        print(f"  {colors.accent('•')} Press {colors.bold('Ctrl+C')} to cancel current input")
-        print(f"  {colors.accent('•')} Use {colors.bold('##')} on a new line to force execution of multiline block")
-        print(f"  {colors.accent('•')} Multi-line mode automatically activates for incomplete statements")
-        print(f"  {colors.accent('•')} Press {colors.bold('Enter')} on an empty line to execute multiline blocks")
-        print(f"  {colors.accent('•')} Try describing actions in plain language when NLP mode is on")
-        print()
-
-    def _show_core_functions(self) -> None:
-        """Dynamically show available core functions from the function registry."""
-        try:
-            # Get the function registry from the REPL
-            registry = self.repl.interpreter.function_registry
-
-            # Get all functions in the local namespace (where core functions are registered)
-            core_functions = registry.list("local")
-
-            if not core_functions:
-                print(f"  {colors.error('No core functions found')}")
-                return
-
-            # Sort functions for consistent display
-            core_functions.sort()
-
-            # Group functions by type/category for better organization
-            printing_funcs = [f for f in core_functions if f in ["print"]]
-            logging_funcs = [f for f in core_functions if f.startswith("log")]
-            reasoning_funcs = [f for f in core_functions if f in ["reason"]]
-            other_funcs = [f for f in core_functions if f not in printing_funcs + logging_funcs + reasoning_funcs]
-
-            # Display functions by category
-            if printing_funcs:
-                print(f"  {colors.bold('Output:')}        ", end="")
-                for i, func in enumerate(printing_funcs):
-                    if i > 0:
-                        print(", ", end="")
-                    print(f"{colors.accent(func + '(...)')}", end="")
-                print()
-
-            if logging_funcs:
-                print(f"  {colors.bold('Logging:')}       ", end="")
-                for i, func in enumerate(logging_funcs):
-                    if i > 0:
-                        print(", ", end="")
-                    print(f"{colors.accent(func + '(...)')}", end="")
-                print()
-
-            if reasoning_funcs:
-                print(f"  {colors.bold('AI/Reasoning:')}  ", end="")
-                for i, func in enumerate(reasoning_funcs):
-                    if i > 0:
-                        print(", ", end="")
-                    print(f"{colors.accent(func + '(...)')}", end="")
-                print()
-
-            if other_funcs:
-                print(f"  {colors.bold('Other:')}         ", end="")
-                for i, func in enumerate(other_funcs):
-                    if i > 0:
-                        print(", ", end="")
-                    print(f"{colors.accent(func + '(...)')}", end="")
-                print()
-
-            # Show function examples
-            print(f"\n  {colors.bold('Function Examples:')}")
-            if "print" in core_functions:
-                print(f"    {colors.accent('print(\"Hello\", \"World\", 123)')}    - Print multiple values")
-            if "log" in core_functions:
-                print(f"    {colors.accent('log(\"Debug info\", \"debug\")')}      - Log with level")
-            if "log_level" in core_functions:
-                print(f"    {colors.accent('log_level(\"info\")')}               - Set logging level")
-            if "reason" in core_functions:
-                print(f"    {colors.accent('reason(\"What is 2+2?\")')}           - AI reasoning")
-
-        except Exception as e:
-            print(f"  {colors.error(f'Error listing core functions: {e}')}")
-            # Fallback to hardcoded list
-            print(
-                f"  {colors.accent('print(...)')}, {colors.accent('log(...)')}, {colors.accent('log_level(...)')}, {colors.accent('reason(...)')}"
-            )
-
-    def _show_nlp_status(self) -> None:
-        """Show NLP mode status."""
-        status = self.repl.get_nlp_mode()
-        print(f"NLP mode: {colors.bold('✅ enabled') if status else colors.error('❌ disabled')}")
-        has_transcoder = self.repl.transcoder is not None
-        print(f"LLM resource: {colors.bold('✅ available') if has_transcoder else colors.error('❌ not available')}")
-
-    async def _run_nlp_test(self) -> None:
-        """Run NLP transcoder test."""
-        if not self.repl.transcoder:
-            print(f"{colors.error('❌ No LLM resource available for transcoding')}")
-            print("Configure an LLM resource by setting one of these environment variables:")
-            print(f"  {colors.accent('- OPENAI_API_KEY, ANTHROPIC_API_KEY, AZURE_OPENAI_API_KEY, etc.')}")
-            return
-
-        print("🧪 Testing NLP transcoder with common examples...")
-        test_inputs = ["calculate 10 + 20", "add 42 and 17", "print hello world", "if x is greater than 10 then log success"]
-
-        original_mode = self.repl.get_nlp_mode()
-        self.repl.set_nlp_mode(True)
-
-        # Test each input without progress bar
-        for test_input in test_inputs:
-            print(f"\n{colors.accent(f'➡️ Test input: \'{test_input}\'')}")
-            try:
-                result = self.repl.execute(test_input)
-                print(f"{colors.bold('✅ Execution result:')}\n{result}")
-            except Exception as e:
-                print(f"{colors.error('❌ Execution failed:')}\n{e}")
-
-        self.repl.set_nlp_mode(original_mode)
 
 
 class DanaREPLApp(Loggable):
@@ -425,201 +47,46 @@ class DanaREPLApp(Loggable):
             log_level: Initial log level (default: WARN)
         """
         super().__init__()
-        self.input_state = InputState()
-        self.input_checker = InputCompleteChecker()
+
+        # Initialize color scheme
+        self.colors = ColorScheme(supports_color())
+
+        # Initialize core components
         self.repl = self._setup_repl(log_level)
-        self.command_handler = CommandHandler(self.repl)
-        self.prompt_session = self._setup_prompt_session()
+        self.input_processor = InputProcessor()
+        self.command_handler = CommandHandler(self.repl, self.colors)
+        self.prompt_manager = PromptSessionManager(self.repl, self.colors)
+        self.welcome_display = WelcomeDisplay(self.colors)
+        self.output_formatter = OutputFormatter(self.colors)
 
     def _setup_repl(self, log_level: LogLevel) -> REPL:
         """Set up the REPL instance."""
-        repl = REPL(llm_resource=LLMResource(), log_level=log_level)
-        return repl
-
-    def _setup_prompt_session(self) -> PromptSession:
-        """Set up the prompt session with history and completion."""
-        kb = KeyBindings()
-
-        @kb.add(Keys.Tab)
-        def _(event):
-            """Handle tab completion."""
-            b = event.app.current_buffer
-            if b.complete_state:
-                b.complete_next()
-            else:
-                b.start_completion(select_first=True)
-
-        # Add Ctrl+R binding for reverse history search
-        @kb.add("c-r")
-        def _(event):
-            """Start reverse incremental search."""
-            b = event.app.current_buffer
-            b.start_history_lines_completion()
-
-        keywords = [
-            # Commands
-            "help",
-            "exit",
-            "quit",
-            # Dana scopes
-            "local",
-            "private",
-            "public",
-            "system",
-            # Common prefixes
-            "local.",
-            "private.",
-            "public.",
-            "system.",
-            # Keywords
-            "if",
-            "else",
-            "while",
-            "func",
-            "return",
-            "try",
-            "except",
-            "for",
-            "in",
-            "break",
-            "continue",
-            "import",
-            "not",
-            "and",
-            "or",
-            "true",
-            "false",
-        ]
-
-        # Dynamically add core function names to keywords
-        try:
-            registry = self.repl.interpreter.function_registry
-            core_functions = registry.list("local")
-            if core_functions:
-                keywords.extend(core_functions)
-                self.debug(f"Added {len(core_functions)} core functions to tab completion: {core_functions}")
-        except Exception as e:
-            self.debug(f"Could not add core functions to tab completion: {e}")
-            # Fallback: add known common functions
-            keywords.extend(["print", "log", "log_level", "reason"])
-
-        # Define syntax highlighting style
-        style = Style.from_dict(
-            {
-                # Prompt styles
-                "prompt": "ansicyan bold",
-                "prompt.dots": "ansiblue",
-                # Syntax highlighting styles
-                "pygments.keyword": "ansigreen",  # Keywords like if, else, while
-                "pygments.name.builtin": "ansiyellow",  # Built-in names like private, public
-                "pygments.string": "ansimagenta",  # String literals
-                "pygments.number": "ansiblue",  # Numbers
-                "pygments.operator": "ansicyan",  # Operators like =, +, -
-                "pygments.comment": "ansibrightblack",  # Comments starting with #
-            }
-        )
-
-        return PromptSession(
-            history=FileHistory(HISTORY_FILE),
-            auto_suggest=AutoSuggestFromHistory(),
-            completer=WordCompleter(keywords, ignore_case=True),
-            key_bindings=kb,
-            multiline=False,
-            style=style,
-            lexer=dana_lexer,  # Use our pygments lexer for syntax highlighting
-            enable_history_search=True,
-            complete_while_typing=True,
-            complete_in_thread=True,
-            mouse_support=False,  # Disable mouse support to prevent terminal issues
-            enable_system_prompt=True,  # Enable system prompt for better terminal compatibility
-            enable_suspend=True,  # Allow suspending the REPL with Ctrl+Z
-        )
-
-    def _show_welcome(self) -> None:
-        """Show welcome message and help."""
-        # Get terminal width for header
-        width = 80
-
-        # Use print_header utility
-        print_header("Dana Interactive REPL", width, colors)
-
-        print("\nWelcome to the Dana (Domain-Aware NeuroSymbolic Architecture) REPL!")
-        print("Type Dana code or natural language commands and see them executed instantly.")
-        print(
-            f"Type {colors.bold('help')} or {colors.bold('?')} for help, {colors.bold('exit')} or {colors.bold('quit')} to end the session."
-        )
-
-        print(f"\n{colors.bold('Key Features:')}")
-        print(f"  • {colors.accent('Multi-line Code Entry')} - Continue typing for blocks, prompt changes to '... '")
-        print(f"  • {colors.accent('Press Enter on empty line')} - End multiline blocks and execute them")
-        print(f"  • {colors.accent('Natural Language Processing')} - Enable with ##nlp on to use plain English")
-        print(f"  • {colors.accent('Tab Completion')} - Press Tab to complete commands and keywords")
-        print(f"  • {colors.accent('Command History')} - Use up/down arrows to navigate previous commands")
-        print(f"  • {colors.accent('Syntax Highlighting')} - Colored syntax for better readability")
-        print(f"  • {colors.accent('History Search')} - Press Ctrl+R to search command history")
-
-        print(f"\n{colors.bold('Quick Commands:')}")
-        print(f"  • {colors.accent('##')} - Force execution of multi-line block")
-        print(f"  • {colors.accent('##nlp on/off')} - Toggle natural language processing mode")
-        print(f"  • {colors.accent('Ctrl+C')} - Cancel the current input")
-
-        print(f"\nType {colors.bold('help')} for full documentation\n")
+        return REPL(llm_resource=LLMResource(), log_level=log_level)
 
     async def run(self) -> None:
         """Run the interactive Dana REPL session."""
         self.info("Starting Dana REPL")
-        self._show_welcome()
+        self.welcome_display.show_welcome()
 
         last_executed_program = None  # Track last executed program for continuation
 
         while True:
             try:
                 # Get input with appropriate prompt
-                prompt_text = MULTILINE_PROMPT if self.input_state.in_multiline else STANDARD_PROMPT
-
-                if colors.use_colors:
-                    # Use HTML formatting for the prompt which is more reliable than ANSI
-                    if self.input_state.in_multiline:
-                        prompt = HTML("<ansicyan>... </ansicyan>")
-                    else:
-                        prompt = HTML("<ansicyan>>>> </ansicyan>")
-                else:
-                    prompt = prompt_text
-
-                line = await self.prompt_session.prompt_async(prompt)
+                prompt_text = self.prompt_manager.get_prompt(self.input_processor.in_multiline)
+                line = await self.prompt_manager.prompt_async(prompt_text)
                 self.debug(f"Got input: '{line}'")
 
-                # Handle empty lines
-                if not line.strip() and not self.input_state.in_multiline:
-                    self.debug("Empty line, continuing")
-                    continue
-
-                # Handle empty line in multiline mode - this ends the multiline block
-                if not line.strip() and self.input_state.in_multiline:
-                    self.debug("Empty line in multiline mode, executing buffer")
-                    program = self.input_state.get_buffer()
-                    self.input_state.reset()
-
-                    if program.strip():  # Only execute if there's actual content
-                        try:
-                            self.debug(f"Executing multiline program: {program}")
-                            result = self.repl.execute(program)
-                            last_executed_program = program
-
-                            if result is not None:
-                                print(f"{colors.accent(str(result))}")
-                        except Exception as e:
-                            context = ErrorContext("program execution")
-                            error = ErrorHandler.handle_error(e, context)
-                            error_lines = error.message.split("\n")
-                            formatted_error = "\n".join(f"  {line}" for line in error_lines)
-                            print(f"{colors.error('Error:')}\n{formatted_error}")
+                # Handle empty lines and multiline processing
+                should_continue, executed_program = self.input_processor.process_line(line)
+                if should_continue:
+                    if executed_program:
+                        self._execute_program(executed_program)
+                        last_executed_program = executed_program
                     continue
 
                 # Handle exit commands
-                if line.strip() in ["exit", "quit"]:
-                    self.debug("Exit command received")
-                    print("Goodbye! Dana REPL terminated.")
+                if self._handle_exit_commands(line):
                     break
 
                 # Handle special commands
@@ -627,102 +94,59 @@ class DanaREPLApp(Loggable):
                     self.debug("Handled special command")
                     # Check if it was a ## command to force multiline
                     if line.strip() == "##":
-                        self.input_state.in_multiline = True
+                        self.input_processor.state.in_multiline = True
                     continue
 
                 # Check for orphaned else/elif statements
-                if self._is_orphaned_else_statement(line) and last_executed_program:
-                    self.debug("Detected orphaned else statement, providing guidance")
-                    print(f"{colors.error('Error:')} Orphaned '{line.strip()}' statement detected.")
-                    print("")
-                    print("To write if-else blocks, start with the if statement and use multiline mode:")
-                    print(f"  1. {colors.accent('Type the if statement (ends with :):')}")
-                    print("     >>> if condition:")
-                    print("     ...     # if body")
-                    print("     ... else:")
-                    print("     ...     # else body")
-                    print(f"     ... {colors.bold('[empty line to execute]')}")
-                    print("")
-                    print(f"  2. {colors.accent('Or start with ## to force multiline mode:')}")
-                    print("     >>> ##")
-                    print("     ... if condition:")
-                    print("     ...     # statements")
-                    print("     ... else:")
-                    print("     ...     # statements")
-                    print(f"     ... {colors.bold('[empty line to execute]')}")
-                    print("")
-                    continue
-
-                # Check if input is complete - now we're more conservative
-                # Only enter multiline mode for obviously incomplete statements
-                is_complete = self._is_obviously_incomplete(line)
-                self.debug(f"Obviously incomplete: {is_complete}")
-
-                # Handle multiline input
-                if is_complete:  # is_complete is actually "is_obviously_incomplete"
-                    self.debug("Obviously incomplete input, entering multiline mode")
-                    self.input_state.in_multiline = True
-                    self.input_state.add_line(line)
-                    continue
-
-                # If we're already in multiline mode, just add the line
-                if self.input_state.in_multiline:
-                    self.debug("Adding line to multiline buffer")
-                    self.input_state.add_line(line)
+                if self._handle_orphaned_else_statement(line, last_executed_program):
                     continue
 
                 # For single-line input, execute immediately
                 self.debug("Executing single line input")
-                program = line
-
-                try:
-                    self.debug(f"Executing program: {program}")
-                    result = self.repl.execute(program)
-                    last_executed_program = program
-
-                    if result is not None:
-                        print(f"{colors.accent(str(result))}")
-                except Exception as e:
-                    context = ErrorContext("program execution")
-                    error = ErrorHandler.handle_error(e, context)
-                    error_lines = error.message.split("\n")
-                    formatted_error = "\n".join(f"  {line}" for line in error_lines)
-                    print(f"{colors.error('Error:')}\n{formatted_error}")
+                self._execute_program(line)
+                last_executed_program = line
 
             except KeyboardInterrupt:
-                print("\nOperation cancelled")
-                self.input_state.reset()
+                self.output_formatter.show_operation_cancelled()
+                self.input_processor.reset()
             except EOFError:
-                print("Goodbye! Dana REPL terminated.")
+                self.output_formatter.show_goodbye()
                 break
             except Exception as e:
-                context = ErrorContext("REPL operation")
-                error = ErrorHandler.handle_error(e, context)
-                print(f"{colors.error('Error:')}\n{error.message}")
-                self.input_state.reset()
+                self.output_formatter.format_error(e)
+                self.input_processor.reset()
 
-    def _is_orphaned_else_statement(self, line: str) -> bool:
-        """Check if the line is an orphaned else/elif statement."""
-        stripped = line.strip()
-        return (stripped.startswith("else:") or stripped.startswith("elif ")) and not self.input_state.in_multiline
+    def _execute_program(self, program: str) -> None:
+        """Execute a Dana program and handle the result or errors."""
+        try:
+            self.debug(f"Executing program: {program}")
+            result = self.repl.execute(program)
+            self.output_formatter.format_result(result)
+        except Exception as e:
+            self.output_formatter.format_error(e)
 
-    def _is_obviously_incomplete(self, line: str) -> bool:
-        """Check if input is obviously incomplete and needs continuation."""
-        line = line.strip()
+    def _handle_exit_commands(self, line: str) -> bool:
+        """Handle exit commands.
 
-        # Lines ending with : are obviously incomplete (if, while, def, etc.)
-        if line.endswith(":"):
+        Returns:
+            True if exit command was detected and we should break the main loop
+        """
+        if line.strip() in ["exit", "quit"]:
+            self.debug("Exit command received")
+            self.output_formatter.show_goodbye()
             return True
+        return False
 
-        # Incomplete assignments
-        if "=" in line and line.endswith("="):
+    def _handle_orphaned_else_statement(self, line: str, last_executed_program: Optional[str]) -> bool:
+        """Handle orphaned else/elif statements with helpful guidance.
+
+        Returns:
+            True if orphaned statement was handled and we should continue
+        """
+        if self.input_processor.is_orphaned_else_statement(line) and last_executed_program:
+            self.debug("Detected orphaned else statement, providing guidance")
+            self.command_handler.help_formatter.show_orphaned_else_guidance()
             return True
-
-        # Unbalanced brackets/parentheses
-        if not self.input_checker._has_balanced_brackets(line):
-            return True
-
-        # Everything else is considered complete for single-line execution
         return False
 
 
@@ -742,12 +166,15 @@ async def main(debug=False):
     if debug:
         args.debug = True
 
-    # Handle color settings
-    global colors, dana_lexer
+    # Handle color settings - these will be applied when ColorScheme is created
     if args.no_color:
-        colors = ColorScheme(False)
+        import os
+
+        os.environ["NO_COLOR"] = "1"
     elif args.force_color:
-        colors = ColorScheme(True)
+        import os
+
+        os.environ["FORCE_COLOR"] = "1"
 
     # Set log level based on debug flag
     log_level = LogLevel.DEBUG if args.debug else LogLevel.WARN
@@ -757,10 +184,6 @@ async def main(debug=False):
 
 
 if __name__ == "__main__":
-    import sys
-
     if sys.platform == "win32":
-        import asyncio
-
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     asyncio.run(main())

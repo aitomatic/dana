@@ -287,7 +287,7 @@ class TestDynamicHelp:
         sys.stdout = captured_output = StringIO()
 
         try:
-            app.command_handler._show_core_functions()
+            app.command_handler.help_formatter.show_core_functions()
             help_output = captured_output.getvalue()
         finally:
             sys.stdout = old_stdout
@@ -322,7 +322,7 @@ class TestDynamicHelp:
         sys.stdout = captured_output = StringIO()
 
         try:
-            app.command_handler._show_core_functions()
+            app.command_handler.help_formatter.show_core_functions()
             initial_help = captured_output.getvalue()
         finally:
             sys.stdout = old_stdout
@@ -337,7 +337,7 @@ class TestDynamicHelp:
         sys.stdout = captured_output = StringIO()
 
         try:
-            app.command_handler._show_core_functions()
+            app.command_handler.help_formatter.show_core_functions()
             updated_help = captured_output.getvalue()
         finally:
             sys.stdout = old_stdout
@@ -359,8 +359,8 @@ class TestDynamicHelp:
         registry = app.repl.interpreter.function_registry
         core_functions = registry.list("local")
 
-        # Get completer words
-        completer = app.prompt_session.completer
+        # Get completer words from prompt session
+        completer = app.prompt_manager.prompt_session.completer
         if completer is None or not hasattr(completer, "words"):
             pytest.skip("Completer not available or does not have words attribute")
 
@@ -377,12 +377,14 @@ class TestDynamicHelp:
         from unittest.mock import patch
 
         from opendxa.common.resource.llm_resource import LLMResource
-        from opendxa.dana.repl.dana_repl_app import CommandHandler
+        from opendxa.dana.common.terminal_utils import ColorScheme
+        from opendxa.dana.repl.commands.command_handler import CommandHandler
         from opendxa.dana.repl.repl import REPL
 
         # Create a REPL with normal setup
         repl = REPL(llm_resource=LLMResource())
-        command_handler = CommandHandler(repl)
+        colors = ColorScheme(use_colors=False)
+        command_handler = CommandHandler(repl, colors)
 
         # Mock the registry.list method to raise an error
         with patch.object(repl.interpreter.function_registry, "list") as mock_list:
@@ -393,7 +395,7 @@ class TestDynamicHelp:
             sys.stdout = captured_output = StringIO()
 
             try:
-                command_handler._show_core_functions()
+                command_handler.help_formatter.show_core_functions()
                 help_output = captured_output.getvalue()
             finally:
                 sys.stdout = old_stdout
