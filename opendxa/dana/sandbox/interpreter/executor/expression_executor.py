@@ -122,6 +122,9 @@ class ExpressionExecutor(BaseExecutor):
             left = self.parent.extract_value(left_raw) if hasattr(self.parent, "extract_value") else left_raw
             right = self.parent.extract_value(right_raw) if hasattr(self.parent, "extract_value") else right_raw
 
+            # Apply type coercion if enabled
+            left, right = self._apply_binary_coercion(left, right, node.operator.value)
+
             # Get the operator's string value from the enum
             op_value = node.operator.value
 
@@ -164,6 +167,33 @@ class ExpressionExecutor(BaseExecutor):
             raise SandboxError(f"Error evaluating binary expression with operator '{node.operator}': {e}")
         except StateError as e:
             raise e
+
+    def _apply_binary_coercion(self, left: Any, right: Any, operator: str) -> tuple:
+        """Apply type coercion to binary operands if enabled.
+
+        Args:
+            left: Left operand
+            right: Right operand
+            operator: Binary operator string
+
+        Returns:
+            Tuple of (potentially coerced left, potentially coerced right)
+        """
+        try:
+            from opendxa.dana.sandbox.interpreter.type_coercion import TypeCoercion
+
+            # Only apply coercion if enabled
+            if TypeCoercion.should_enable_coercion():
+                return TypeCoercion.coerce_binary_operands(left, right, operator)
+
+        except ImportError:
+            # TypeCoercion not available, return original values
+            pass
+        except Exception:
+            # Any error in coercion, return original values
+            pass
+
+        return left, right
 
     def execute_unary_expression(self, node: UnaryExpression, context: SandboxContext) -> Any:
         """Execute a unary expression.

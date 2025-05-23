@@ -18,7 +18,6 @@ from opendxa.dana.sandbox.parser.ast import (
     FunctionCall,
     Identifier,
     LiteralExpression,
-    PrintStatement,
     Program,
 )
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
@@ -54,7 +53,7 @@ def test_evaluate_function_call():
     """Test evaluating function calls."""
     context = SandboxContext()
     # Create executor with proper context
-    executor = DanaExecutor(context)
+    executor = DanaExecutor()
 
     # Register a function that doesn't take context as first param
     def add(a, b):
@@ -78,7 +77,7 @@ def test_evaluate_expressions():
     """Test evaluating various expressions."""
     context = SandboxContext()
     # Create executor with proper context
-    executor = DanaExecutor(context)
+    executor = DanaExecutor()
 
     # Literal
     assert executor.execute(LiteralExpression(42), context) == 42
@@ -100,7 +99,7 @@ def test_fstring_evaluation():
     """Test evaluating f-strings."""
     context = SandboxContext()
     # Create executor with proper context
-    executor = DanaExecutor(context)
+    executor = DanaExecutor()
 
     # F-string
     fstring = FStringExpression(parts=["foo", LiteralExpression(42)])
@@ -135,7 +134,7 @@ def test_fstring_evaluation():
 def test_assignment_and_print(capsys):
     """Test assignment and print execution."""
     context = SandboxContext()
-    executor = DanaExecutor(context)
+    executor = DanaExecutor()
 
     # Set up interpreter
     interpreter = DanaInterpreter(context)
@@ -147,8 +146,8 @@ def test_assignment_and_print(capsys):
     assert result == 99
     assert context.get("private.x") == 99
 
-    # Print
-    stmt = PrintStatement(message=LiteralExpression("hello"))
+    # Print using FunctionCall instead of PrintStatement
+    stmt = FunctionCall(name="print", args={"0": LiteralExpression("hello")})
     executor.execute(stmt, context)
     out, _ = capsys.readouterr()
     assert "hello" in out
@@ -201,7 +200,7 @@ def test_print_function_with_fstrings():
     context.set("y", "hello")
 
     # Create an executor and set it on the context
-    executor = DanaExecutor(context)
+    executor = DanaExecutor()
     interpreter = DanaInterpreter(context)
     interpreter._executor = executor  # Set the executor on the interpreter
     context.interpreter = interpreter  # Set the interpreter on the context

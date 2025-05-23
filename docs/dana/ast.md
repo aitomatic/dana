@@ -19,7 +19,7 @@ The AST is a tree-structured, semantically rich representation of a Dana program
 ## Main Node Types
 
 - **Program**: The root node, containing a list of statements.
-- **Statement**: Base type for all statements (e.g., Assignment, Conditional, WhileLoop, FunctionCall, PrintStatement, etc.).
+- **Statement**: Base type for all statements (e.g., Assignment, Conditional, WhileLoop, FunctionCall, etc.).
 - **Expression**: Base type for all expressions (e.g., LiteralExpression, Identifier, BinaryExpression, FunctionCall, etc.).
 - **Assignment**: Represents variable assignment.
 - **Conditional**: Represents if/else blocks.
@@ -69,7 +69,7 @@ graph TD
 | Group       | Node Types                                                                 |
 |-------------|----------------------------------------------------------------------------|
 | Program     | Program                                                                    |
-| Statements  | Assignment, Conditional, WhileLoop, ForLoop, TryBlock, ExceptBlock, FunctionDefinition, FunctionCall, PrintStatement, LogStatement, LogLevelSetStatement, ReasonStatement, ImportStatement, ImportFromStatement |
+| Statements  | Assignment, Conditional, WhileLoop, ForLoop, TryBlock, ExceptBlock, FunctionDefinition, FunctionCall, LogStatement, LogLevelSetStatement, ReasonStatement, ImportStatement, ImportFromStatement |
 | Expressions | LiteralExpression, Identifier, BinaryExpression, FunctionCall, AttributeAccess, SubscriptExpression, DictLiteral, SetLiteral, UnaryExpression |
 | LiteralExpression | int, float, str, bool, list, dict, set, null |
 
@@ -97,7 +97,7 @@ graph TD
     Identifier2[Identifier: x]
     LiteralExpression2[LiteralExpression: 5]
     int2[int: 5]
-    PrintStatement[PrintStatement: print 'x is greater than 5']
+    FunctionCall[FunctionCall: print 'x is greater than 5']
     LiteralExpression3[LiteralExpression: 'x is greater than 5']
     str[str: 'x is greater than 5']
 
@@ -107,11 +107,11 @@ graph TD
     Assignment --> LiteralExpression
     LiteralExpression --> int
     Conditional --> BinaryExpression
-    Conditional --> PrintStatement
+    Conditional --> FunctionCall
     BinaryExpression --> Identifier2
     BinaryExpression --> LiteralExpression2
     LiteralExpression2 --> int2
-    PrintStatement --> LiteralExpression3
+    FunctionCall --> LiteralExpression3
     LiteralExpression3 --> str
 ```
 

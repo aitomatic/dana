@@ -37,10 +37,10 @@ class VariableTransformer(BaseTransformer):
     # === Grammar Rule Methods ===
     def scoped_var(self, items):
         """
-        Transform a scoped variable (e.g., 'private:x' or 'system:foo.bar') into an Identifier node.
-        Grammar: scoped_var: scope_prefix ":" (simple_name | dotted_access)
-        Example: private:x -> Identifier(name='private.x')
-                 system:foo.bar -> Identifier(name='system.foo.bar')
+        Transform a scoped variable (e.g., 'private.x' or 'system.foo.bar') into an Identifier node.
+        Grammar: scoped_var: scope_prefix "." (simple_name | dotted_access)
+        Example: private.x -> Identifier(name='private.x')
+                 system.foo.bar -> Identifier(name='system.foo.bar')
         """
         scope_item = items[0]
         var = items[1]

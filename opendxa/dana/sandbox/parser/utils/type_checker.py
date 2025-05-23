@@ -40,7 +40,6 @@ from opendxa.dana.sandbox.parser.ast import (
     ImportStatement,
     LiteralExpression,
     PassStatement,
-    PrintStatement,
     Program,
     RaiseStatement,
     ReturnStatement,
@@ -137,8 +136,6 @@ class TypeChecker:
             self.check_assert_statement(statement)
         elif isinstance(statement, RaiseStatement):
             self.check_raise_statement(statement)
-        elif isinstance(statement, PrintStatement):
-            self.check_print_statement(statement)
         elif isinstance(statement, ReturnStatement):
             self.check_return_statement(statement)
         elif isinstance(statement, BreakStatement) or isinstance(statement, ContinueStatement) or isinstance(statement, PassStatement):
@@ -422,11 +419,6 @@ class TypeChecker:
         if node.from_value is not None:
             # The from_value should also be allowed to be any type
             self.check_expression(node.from_value)
-
-    def check_print_statement(self, node: PrintStatement) -> None:
-        """Check a print statement for type errors."""
-        # Any type can be printed, so just check the expression
-        self.check_expression(node.message)
 
     def check_return_statement(self, node: ReturnStatement) -> None:
         """Check a return statement for type errors."""

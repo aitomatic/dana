@@ -145,7 +145,7 @@ from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 # Parse Dana code
 parser = DanaParser()
-result = parser.parse("private.x = 10\nif private.x > 5:\n    print('Value is greater than 5')")
+result = parser.parse("private:x = 10\nif private:x > 5:\n    print('Value is greater than 5')")
 
 if result.is_valid:
     # Create context and interpreter
@@ -167,11 +167,11 @@ else:
 
 ```python
 # Execute a single statement
-stmt_result = parser.parse("private.result = 42 * 2")
+stmt_result = parser.parse("private:result = 42 * 2")
 if stmt_result.is_valid:
     value = interpreter.execute_statement(stmt_result.program, context)
     print("Statement result:", value)
-    print("Variable value:", context.get("private.result"))
+    print("Variable value:", context.get("private:result"))
 ```
 
 ### Expression Evaluation
@@ -201,7 +201,7 @@ interpreter.function_registry.register(
 code = "result = math.add(10, 20)"
 result = parser.parse(code)
 interpreter.execute_program(result.program)
-print(context.get("local.result"))  # Output: 30
+print(context.get("local:result"))  # Output: 30
 ```
 
 ### Hook System

@@ -158,7 +158,7 @@ private:result
         repl = REPL(log_level=initial_level)
 
         # Change log level
-        with patch("opendxa.dana.sandbox.log_manager.LogManager.set_system_log_level") as mock_set_level:
+        with patch("opendxa.dana.sandbox.log_manager.SandboxLogger.set_system_log_level") as mock_set_level:
             repl.set_log_level(LogLevel.DEBUG)
             # Verify log level was set
             mock_set_level.assert_called_once_with(LogLevel.DEBUG, repl.context)

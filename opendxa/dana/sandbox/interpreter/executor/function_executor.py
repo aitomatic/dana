@@ -171,14 +171,14 @@ class FunctionExecutor(BaseExecutor):
                 add_args = evaluated_args[1:] if len(evaluated_args) > 1 else []
 
                 # Pass the prompt first, then context - matching the function's expected signature
-                return reason_function(prompt_str, context, *add_args, **evaluated_kwargs)
+                result = reason_function(prompt_str, context, *add_args, **evaluated_kwargs)
 
             # For the process function in test_function_call_chaining
             elif func_name == "process" and evaluated_args and len(evaluated_args) == 1:
                 # Pass the single argument and context using a different parameter name
                 kwargs_copy = evaluated_kwargs.copy()
                 kwargs_copy["ctx"] = context  # Use ctx instead of context to avoid collision
-                return registry.call(node.name, context, None, evaluated_args[0], **kwargs_copy)
+                result = registry.call(node.name, context, None, evaluated_args[0], **kwargs_copy)
 
             # Special case for functions with parameters that conflict with FunctionRegistry.call parameters
             # format_message has a 'name' parameter which conflicts with FunctionRegistry.call's 'name' parameter
@@ -192,10 +192,10 @@ class FunctionExecutor(BaseExecutor):
                         from opendxa.dana.sandbox.interpreter.functions.python_function import PythonFunction
 
                         if isinstance(func, PythonFunction):
-                            return func.execute(context, *evaluated_args, **evaluated_kwargs)
+                            result = func.execute(context, *evaluated_args, **evaluated_kwargs)
                         else:
                             # Regular callable
-                            return func(*evaluated_args, **evaluated_kwargs)
+                            result = func(*evaluated_args, **evaluated_kwargs)
                     else:
                         # Not a callable, can't execute
                         raise SandboxError(f"Function '{node.name}' is not callable")
@@ -205,7 +205,7 @@ class FunctionExecutor(BaseExecutor):
 
             # Normal call
             else:
-                return registry.call(node.name, context, None, *evaluated_args, **evaluated_kwargs)
+                result = registry.call(node.name, context, None, *evaluated_args, **evaluated_kwargs)
 
         except KeyError as e:
             # Function wasn't found in registry, it might be a user-defined function in the context
@@ -219,7 +219,7 @@ class FunctionExecutor(BaseExecutor):
                 func_data = context.get(full_key)
                 if isinstance(func_data, dict) and func_data.get("type") == "function":
                     # It's a user-defined function, execute it
-                    return self._execute_user_defined_function(func_data, evaluated_args, context)
+                    result = self._execute_user_defined_function(func_data, evaluated_args, context)
                 else:
                     # Not a function or not found
                     raise SandboxError(f"Function '{node.name}' not found in registry or context")
@@ -241,11 +241,49 @@ class FunctionExecutor(BaseExecutor):
 
                     # Try again
                     try:
-                        return registry.call(node.name, context, None, *evaluated_args, **evaluated_kwargs)
+                        result = registry.call(node.name, context, None, *evaluated_args, **evaluated_kwargs)
                     except Exception as retry_e:
                         raise SandboxError(f"Error calling function '{node.name}' (retry): {retry_e}")
 
-            raise SandboxError(f"Error calling function '{node.name}': {e}")
+            if result is None:  # Only raise if we haven't got a result yet
+                raise SandboxError(f"Error calling function '{node.name}': {e}")
+
+        # Apply type coercion to function results if enabled
+        if result is not None:
+            result = self._apply_function_result_coercion(result, func_name)
+
+        return result
+
+    def _apply_function_result_coercion(self, result: Any, function_name: str) -> Any:
+        """Apply type coercion to function results based on function type.
+
+        Args:
+            result: The raw function result
+            function_name: The name of the function that was called
+
+        Returns:
+            The potentially coerced result
+        """
+        try:
+            from opendxa.dana.sandbox.interpreter.type_coercion import TypeCoercion
+
+            # Only apply LLM coercion if enabled
+            if not TypeCoercion.should_enable_llm_coercion():
+                return result
+
+            # Apply LLM-specific coercion for AI/reasoning functions
+            llm_functions = ["reason", "ask_ai", "llm_call", "generate", "summarize", "analyze"]
+            if function_name in llm_functions and isinstance(result, str):
+                return TypeCoercion.coerce_llm_response(result)
+
+        except ImportError:
+            # TypeCoercion not available, return original result
+            pass
+        except Exception as e:
+            # Log the error and return the original result
+            logging.error(f"Error during function result coercion for '{function_name}': {e}", exc_info=True)
+
+        return result
 
     def _execute_user_defined_function(self, func_data: Dict[str, Any], args: List[Any], context: SandboxContext) -> Any:
         """

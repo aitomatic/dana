@@ -36,8 +36,37 @@ class LogLevel(Enum):
     ERROR = logging.ERROR
 
 
-class LogManager:
+class SandboxLogger:
     """Log level management for Dana runtime."""
+
+    LOG_SCOPE = "opendxa.dana"
+
+    @staticmethod
+    def log(message: str, level: Union[int, str], context: Optional[SandboxContext] = None) -> None:
+        """Log a message to the sandbox logger."""
+        if isinstance(level, str):
+            level = LogLevel[level.upper()].value
+        DXA_LOGGER.log(level, message)
+
+    @staticmethod
+    def debug(message: str, context: Optional[SandboxContext] = None) -> None:
+        """Log a debug message to the sandbox logger."""
+        SandboxLogger.log(message, LogLevel.DEBUG.value, context)
+
+    @staticmethod
+    def info(message: str, context: Optional[SandboxContext] = None) -> None:
+        """Log an info message to the sandbox logger."""
+        SandboxLogger.log(message, LogLevel.INFO.value, context)
+
+    @staticmethod
+    def warn(message: str, context: Optional[SandboxContext] = None) -> None:
+        """Log a warning message to the sandbox logger."""
+        SandboxLogger.log(message, LogLevel.WARN.value, context)
+
+    @staticmethod
+    def error(message: str, context: Optional[SandboxContext] = None) -> None:
+        """Log an error message to the sandbox logger."""
+        SandboxLogger.log(message, LogLevel.ERROR.value, context)
 
     @staticmethod
     def set_system_log_level(level: Union[LogLevel, str], context: Optional[SandboxContext] = None) -> None:
@@ -52,6 +81,6 @@ class LogManager:
         if isinstance(level, str):
             level = LogLevel[level]
 
-        DXA_LOGGER.setLevel(level.value, scope="opendxa.dana")
+        DXA_LOGGER.setLevel(level.value, scope=SandboxLogger.LOG_SCOPE)
         if context:
             context.set("system.__log_level", level)

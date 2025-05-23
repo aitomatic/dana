@@ -99,7 +99,10 @@ class ControlFlowExecutor(BaseExecutor):
             The result of the last executed statement in the chosen branch
         """
         # Evaluate the condition
-        condition = self.parent.execute(node.condition, context)
+        condition_value = self.parent.execute(node.condition, context)
+
+        # Apply smart boolean coercion if enabled
+        condition = self._coerce_to_bool(condition_value)
 
         # Execute the appropriate branch
         if condition:
@@ -110,6 +113,32 @@ class ControlFlowExecutor(BaseExecutor):
             result = None
 
         return result
+
+    def _coerce_to_bool(self, value: Any) -> bool:
+        """Coerce a value to boolean using smart logic if enabled.
+
+        Args:
+            value: The value to convert to boolean
+
+        Returns:
+            Boolean representation of the value
+        """
+        try:
+            from opendxa.dana.sandbox.interpreter.type_coercion import TypeCoercion
+
+            # Use smart boolean coercion if available and enabled
+            if TypeCoercion.should_enable_coercion():
+                return TypeCoercion.coerce_to_bool_smart(value)
+
+        except ImportError:
+            # TypeCoercion not available, use standard truthiness
+            pass
+        except Exception:
+            # Any error in coercion, use standard truthiness
+            pass
+
+        # Fallback to standard Python truthiness
+        return bool(value)
 
     def execute_while_loop(self, node: WhileLoop, context: SandboxContext) -> None:
         """Execute a while loop.
@@ -126,7 +155,14 @@ class ControlFlowExecutor(BaseExecutor):
             ContinueException: If a continue statement is encountered
         """
         result = None
-        while self.parent.execute(node.condition, context):
+        while True:
+            # Evaluate condition with smart boolean coercion
+            condition_value = self.parent.execute(node.condition, context)
+            condition = self._coerce_to_bool(condition_value)
+
+            if not condition:
+                break
+
             try:
                 result = self._execute_statement_list(node.body, context)
             except BreakException:

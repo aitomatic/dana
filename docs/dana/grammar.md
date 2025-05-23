@@ -20,7 +20,7 @@ The Dana grammar is written in [Lark](https://github.com/lark-parser/lark) EBNF 
 ## Dana vs. Python: Key Differences
 
 - **Scope Prefixes:**  
-  Dana allows explicit scope prefixes for variables and functions (e.g., `private.x`, `public.y`). Python uses naming conventions and modules for visibility, not explicit prefixes.
+  Dana allows explicit scope prefixes for variables and functions (e.g., `private:x`, `public:y`). Python uses naming conventions and modules for visibility, not explicit prefixes.
 
 - **Null Value:**  
   Dana uses `None` (capitalized, like Python), but it is a literal in the grammar, not a reserved keyword.
@@ -44,12 +44,11 @@ The Dana grammar is written in [Lark](https://github.com/lark-parser/lark) EBNF 
 
 - **start**: Entry point for parsing; matches a complete Dana program.
 - **program**: Sequence of statements.
-- **statement**: Assignment, conditional, while loop, function call, print statement, bare identifier, or newline.
+- **statement**: Assignment, conditional, while loop, function call, or newline.
 - **assignment**: Variable assignment (`x = expr`).
 - **conditional**: If/else block with indented body.
 - **while_loop**: While loop with indented body.
 - **function_call**: Function or core function call.
-- **print_statement**: Print statement.
 - **bare_identifier**: Standalone identifier.
 - **expression**: Supports logical, comparison, arithmetic, and unary operations.
 - **literal**: String, number, boolean, or null.
@@ -67,7 +66,6 @@ graph TD
         Conditional
         WhileLoop
         FunctionCall
-        PrintStatement
         BareIdentifier
         ETC[...]
         Conditional --> Statement
@@ -76,7 +74,6 @@ graph TD
         Conditional --> Expression
         WhileLoop --> Expression
         FunctionCall --> Expression
-        PrintStatement --> Expression
         BareIdentifier --> Identifier
     end
     Statements --> Expressions
@@ -113,7 +110,7 @@ The grammar is designed to be extensible. New statements, expressions, or litera
 
 ```
 program       ::= statement+
-statement     ::= assignment | function_call | conditional | while_loop | for_loop | break_stmt | continue_stmt | function_def | print_statement | bare_identifier | comment | NEWLINE
+statement     ::= assignment | function_call | conditional | while_loop | for_loop | break_stmt | continue_stmt | function_def | bare_identifier | comment | NEWLINE
 assignment    ::= identifier '=' expression
 expression    ::= literal | identifier | function_call | binary_expression
 literal       ::= string | number | boolean | null | fstring | list | dict | set
@@ -124,7 +121,6 @@ for_loop      ::= 'for' identifier 'in' expression ':' NEWLINE INDENT program DE
 break_stmt    ::= 'break'
 continue_stmt ::= 'continue'
 function_def  ::= 'def' identifier '(' [identifier (',' identifier)*] ')' ':' NEWLINE INDENT program DEDENT
-print_statement ::= 'print' '(' expression ')'
 bare_identifier ::= identifier
 comment       ::= ('//' | '#') .*
 
