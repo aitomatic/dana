@@ -10,12 +10,29 @@ from typing import Any, Optional
 
 
 class DanaError(Exception):
-    """Base class for all Dana-related errors with unified formatting."""
+    """Base class for all Dana-related errors with unified formatting.
 
-    def __init__(self, message: str, line: int = 0, source_line: str = ""):
+    This is the primary exception class for all Dana-related errors.
+    It supports location information, error context, and original error chaining.
+    """
+
+    def __init__(
+        self, message: str, line: int = 0, source_line: str = "", original_error: Optional[Exception] = None, context: Optional[Any] = None
+    ):
+        """Initialize a Dana error.
+
+        Args:
+            message: Primary error message
+            line: Line number where error occurred (0 if unknown)
+            source_line: Source code line where error occurred
+            original_error: Original exception that caused this error
+            context: Additional context about where the error occurred
+        """
         self.message = message
         self.line = line
         self.source_line = source_line
+        self.original_error = original_error
+        self.context = context
         super().__init__(self.message)
 
 
@@ -65,12 +82,6 @@ class ValidationError(DanaError):
 
 class SandboxError(DanaError):
     """Error during Dana program execution."""
-
-    pass
-
-
-class DanaError(Exception):
-    """Base class for exceptions in the Dana module."""
 
     pass
 
@@ -141,9 +152,6 @@ class NarrationError(TranscoderError):
     """Raised when the narrator fails to explain a program."""
 
     pass
-
-
-# Base exceptions for Dana
 
 
 class StateError(DanaError):
