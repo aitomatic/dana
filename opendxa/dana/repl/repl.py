@@ -24,7 +24,7 @@ from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.common.utils import Misc
 from opendxa.dana.common.error_utils import DanaError
 from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
-from opendxa.dana.sandbox.log_manager import LogLevel, LogManager
+from opendxa.dana.sandbox.log_manager import LogLevel, SandboxLogger
 from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 from opendxa.dana.transcoder.transcoder import Transcoder
@@ -78,7 +78,7 @@ class REPL(Loggable):
         Args:
             level: The log level to set
         """
-        LogManager.set_system_log_level(level, self.context)
+        SandboxLogger.set_system_log_level(level, self.context)
         self.debug(f"Set log level to {level.value}")
 
     def get_nlp_mode(self) -> bool:

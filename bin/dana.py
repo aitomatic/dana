@@ -25,7 +25,7 @@ from opendxa.common.utils.logging import DXA_LOGGER
 from opendxa.dana.common.exceptions import DanaError
 from opendxa.dana.common.terminal_utils import ColorScheme, print_header, supports_color
 from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
-from opendxa.dana.sandbox.log_manager import LogLevel, LogManager
+from opendxa.dana.sandbox.log_manager import LogLevel, SandboxLogger
 from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
@@ -142,7 +142,7 @@ def main():
         # Configure the DXA_LOGGER for debug output
         DXA_LOGGER.configure(level=logging.DEBUG, console=True)
         # Set debug level using LogManager which is the recommended way
-        LogManager.set_system_log_level(LogLevel.DEBUG)
+        SandboxLogger.set_system_log_level(LogLevel.DEBUG)
 
     # Show help if requested
     if args.help:

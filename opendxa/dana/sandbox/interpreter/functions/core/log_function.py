@@ -10,17 +10,20 @@ This module provides the log function, which handles logging in the Dana interpr
 
 from typing import Any, Dict, Optional
 
+from opendxa.dana.sandbox.log_manager import SandboxLogger
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
 def log_function(
     context: SandboxContext,
+    message: str,
     options: Optional[Dict[str, Any]] = None,
 ) -> None:
     """Execute the log function.
 
     Args:
         context: The runtime context for variable resolution.
+        message: The message to log.
         options: Optional parameters for the function.
 
     Returns:
@@ -32,7 +35,7 @@ def log_function(
     if options is None:
         options = {}
 
-    message = options.get("message", "")
+    message = message or options.get("message", "")
     level = options.get("level", "info")
 
-    print(f"[{level.upper()}] {message}")
+    SandboxLogger.log(message, level=level)
