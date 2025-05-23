@@ -300,9 +300,9 @@ class FunctionExecutor(BaseExecutor):
         except ImportError:
             # TypeCoercion not available, return original result
             pass
-        except Exception:
-            # Any error in coercion, return original result
-            pass
+        except Exception as e:
+            # Log the error and return the original result
+            logging.error(f"Error during function result coercion for '{function_name}': {e}", exc_info=True)
 
         return result
 
