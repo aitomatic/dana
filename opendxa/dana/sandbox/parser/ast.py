@@ -60,7 +60,6 @@ Statement = Union[
     "ImportStatement",
     "ImportFromStatement",
     "FunctionCall",  # Can be both an expression and a statement
-    "PrintStatement",
     "BreakStatement",
     "ContinueStatement",
     "PassStatement",
@@ -238,14 +237,6 @@ class Assignment:
         AttributeAccess,
         FStringExpression,
     ]
-    location: Optional[Location] = None
-
-
-@dataclass
-class PrintStatement:
-    """Print statement (e.g., print(x)). Returns None."""
-
-    message: Expression
     location: Optional[Location] = None
 
 

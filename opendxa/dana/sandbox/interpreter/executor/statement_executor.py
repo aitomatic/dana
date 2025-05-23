@@ -27,7 +27,6 @@ from opendxa.dana.sandbox.parser.ast import (
     Assignment,
     ImportStatement,
     PassStatement,
-    PrintStatement,
     RaiseStatement,
 )
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
@@ -38,7 +37,6 @@ class StatementExecutor(BaseExecutor):
 
     Handles:
     - Assignment statements
-    - Print statements
     - Assert statements
     - Raise statements
     - Pass statements
@@ -59,7 +57,6 @@ class StatementExecutor(BaseExecutor):
         """Register handlers for statement node types."""
         self._handlers = {
             Assignment: self.execute_assignment,
-            PrintStatement: self.execute_print_statement,
             AssertStatement: self.execute_assert_statement,
             ImportStatement: self.execute_import_statement,
             PassStatement: self.execute_pass_statement,
@@ -93,36 +90,6 @@ class StatementExecutor(BaseExecutor):
 
         # Return the value for expressions
         return value
-
-    def execute_print_statement(self, node: PrintStatement, context: SandboxContext) -> Any:
-        """Execute a print statement.
-
-        Args:
-            node: The print statement to execute
-            context: The execution context
-
-        Returns:
-            None
-        """
-        # Evaluate the expression to print
-        value = self.parent.execute(node.message, context)
-
-        # Convert to string
-        output = str(value)
-
-        # Check if we have an interpreter with a print handler
-        interpreter = getattr(context, "_interpreter", None)
-        if interpreter and hasattr(interpreter, "handle_print"):
-            interpreter.handle_print(output)
-        else:
-            # Otherwise, add to buffer
-            if hasattr(self.parent, "_output_buffer"):
-                self.parent._output_buffer.append(output)
-            # And still print in case we're in a context where output is visible
-            print(output)
-
-        # Return None, print doesn't have a value
-        return None
 
     def execute_assert_statement(self, node: AssertStatement, context: SandboxContext) -> None:
         """Execute an assert statement.

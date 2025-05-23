@@ -42,7 +42,6 @@ from opendxa.dana.sandbox.parser.ast import (
     ImportStatement,
     LiteralExpression,
     PassStatement,
-    PrintStatement,
     Program,
     RaiseStatement,
     ReturnStatement,
@@ -418,11 +417,6 @@ class StatementTransformer(BaseTransformer):
         condition_expr = cast(Expression, condition)
         message_expr = cast(Expression, message) if message is not None else None
         return AssertStatement(condition=condition_expr, message=message_expr)
-
-    def print_statement(self, items):
-        """Transform a print statement rule into a PrintStatement node."""
-        message = items[0]
-        return PrintStatement(message=message)
 
     # === Import Statements ===
     def import_stmt(self, items):
