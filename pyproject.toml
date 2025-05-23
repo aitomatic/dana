@@ -47,8 +47,9 @@ dependencies = [
     "pytest-asyncio",
     "pytest-mock",
 
-    # REPL keyboard
+    # REPL utilities
     "prompt-toolkit",
+    "pygments",
 
     # Dana agent programming language parser/interpreter
     "lark",
