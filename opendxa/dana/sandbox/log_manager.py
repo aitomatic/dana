@@ -45,8 +45,8 @@ class SandboxLogger:
     def log(message: str, level: Union[int, str], context: Optional[SandboxContext] = None) -> None:
         """Log a message to the sandbox logger."""
         if isinstance(level, str):
-            level = LogLevel[level].value
-        DXA_LOGGER.log(message=message, level=level, scope=SandboxLogger.LOG_SCOPE)
+            level = LogLevel[level.upper()].value
+        DXA_LOGGER.log(level, message)
 
     @staticmethod
     def debug(message: str, context: Optional[SandboxContext] = None) -> None:
