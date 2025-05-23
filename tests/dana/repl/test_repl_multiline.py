@@ -8,7 +8,7 @@ import unittest
 
 import pytest
 
-from opendxa.dana.repl.dana_repl_app import InputCompleteChecker
+from opendxa.dana.repl.input.completeness_checker import InputCompleteChecker
 
 
 @pytest.mark.unit
@@ -103,22 +103,23 @@ else:
         # With explicit ending, complex multiline blocks are not auto-completed
         self.assertFalse(self.checker.is_complete(code))
 
-    def test_if_else_explicit_multiline_scenario(self):
-        """Test the scenario where if-else is built incrementally with explicit ending."""
-        # Simulate the user typing if statement - should be obviously incomplete
-        from opendxa.dana.repl.dana_repl_app import DanaREPLApp
+    def test_obviously_incomplete_detection(self):
+        """Test the obviously incomplete detection logic."""
+        # Test the obviously incomplete detection
+        self.assertTrue(self.checker.is_obviously_incomplete("if local.a == 365:"))
+        self.assertFalse(self.checker.is_obviously_incomplete("print(hello)"))
+        self.assertFalse(self.checker.is_obviously_incomplete("local.x = 42"))
 
-        app = DanaREPLApp()
+    def test_orphaned_else_detection(self):
+        """Test orphaned else statement detection."""
+        from opendxa.dana.repl.input.input_processor import InputProcessor
 
-        # Test the new obviously incomplete detection
-        self.assertTrue(app._is_obviously_incomplete("if local.a == 365:"))
-        self.assertFalse(app._is_obviously_incomplete("print(hello)"))
-        self.assertFalse(app._is_obviously_incomplete("local.x = 42"))
+        processor = InputProcessor()
 
         # Test orphaned else detection
-        self.assertTrue(app._is_orphaned_else_statement("else:"))
-        self.assertTrue(app._is_orphaned_else_statement("elif x > 10:"))
-        self.assertFalse(app._is_orphaned_else_statement("if x > 10:"))
+        self.assertTrue(processor.is_orphaned_else_statement("else:"))
+        self.assertTrue(processor.is_orphaned_else_statement("elif x > 10:"))
+        self.assertFalse(processor.is_orphaned_else_statement("if x > 10:"))
 
 
 if __name__ == "__main__":
