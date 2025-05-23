@@ -44,11 +44,11 @@ print(result)
 
 ## Multiline Input and Block Handling
 
-The REPL supports multiline statements and blocks, which is especially useful for conditional statements, loops, and other complex code structures. The prompt changes to `....` for continuation lines.
+The REPL supports multiline statements and blocks, which is especially useful for conditional statements, loops, and other complex code structures. The prompt changes to `...` for continuation lines.
 
 **How it works:**
 1. Start typing your code at the `dana>` prompt.
-2. If your input is incomplete (e.g., an `if` statement without a body), the prompt will change to `....` to indicate continuation.
+2. If your input is incomplete (e.g., an `if` statement without a body), the prompt will change to `...` to indicate continuation.
 3. Continue entering code lines until the statement or block is complete.
 4. Once the code is complete, it will be automatically executed.
 5. To force execution of an incomplete block (if the parser thinks it's incomplete), type `##` on a new line.
@@ -56,11 +56,11 @@ The REPL supports multiline statements and blocks, which is especially useful fo
 **Example:**
 ```
 dana> if private.x > 10:
-....     print('Value is greater than 10')
-....     private.result = 'high'
-.... else:
-....     print('Value is less than or equal to 10')
-....     private.result = 'low'
+...     print('Value is greater than 10')
+...     private.result = 'high'
+... else:
+...     print('Value is less than or equal to 10')
+...     private.result = 'low'
 ```
 
 **Block rules:**

@@ -43,7 +43,7 @@ from opendxa.dana.sandbox.log_manager import LogLevel
 
 # Constants
 HISTORY_FILE = os.path.expanduser("~/.dana_history")
-MULTILINE_PROMPT = ".... "
+MULTILINE_PROMPT = "... "
 STANDARD_PROMPT = ">>> "
 
 # Map Dana LogLevel to Python logging levels
@@ -165,12 +165,6 @@ class InputCompleteChecker(Loggable):
             self.debug("Code ends with colon, definitely incomplete")
             return False
 
-        # For test mode, just assume valid if it has more than one line and doesn't end with ':'
-        # This simplification helps tests pass while still catching basic incompleteness
-        if len(lines) > 1 and not lines[-1].strip().endswith(":"):
-            self.debug("Special handling for tests - multiline code that doesn't end with :")
-            return True
-
         for i, line in enumerate(lines):
             stripped = line.strip()
             if not stripped:  # Skip empty lines
@@ -251,8 +245,9 @@ class CommandHandler(Loggable):
         if cmd.startswith("##"):
             parts = cmd[2:].strip().split()
             if not parts:
-                # Just "##" - force execution of current buffer
-                return False
+                # Just "##" - force multiline mode
+                print(f"{colors.accent('✅ Forced multiline mode - type your code, end with empty line')}")
+                return True  # Handle in main loop with special flag
 
             if parts[0] == "nlp":
                 if len(parts) == 1:
@@ -311,6 +306,7 @@ class CommandHandler(Loggable):
         print(f"  {colors.accent('•')} Press {colors.bold('Ctrl+C')} to cancel current input")
         print(f"  {colors.accent('•')} Use {colors.bold('##')} on a new line to force execution of multiline block")
         print(f"  {colors.accent('•')} Multi-line mode automatically activates for incomplete statements")
+        print(f"  {colors.accent('•')} Press {colors.bold('Enter')} on an empty line to execute multiline blocks")
         print(f"  {colors.accent('•')} Try describing actions in plain language when NLP mode is on")
         print()
 
@@ -478,7 +474,8 @@ class DanaREPLApp(Loggable):
         )
 
         print(f"\n{colors.bold('Key Features:')}")
-        print(f"  • {colors.accent('Multi-line Code Entry')} - Continue typing for blocks, prompt changes to '.... '")
+        print(f"  • {colors.accent('Multi-line Code Entry')} - Continue typing for blocks, prompt changes to '... '")
+        print(f"  • {colors.accent('Press Enter on empty line')} - End multiline blocks and execute them")
         print(f"  • {colors.accent('Natural Language Processing')} - Enable with ##nlp on to use plain English")
         print(f"  • {colors.accent('Tab Completion')} - Press Tab to complete commands and keywords")
         print(f"  • {colors.accent('Command History')} - Use up/down arrows to navigate previous commands")
@@ -497,6 +494,8 @@ class DanaREPLApp(Loggable):
         self.info("Starting Dana REPL")
         self._show_welcome()
 
+        last_executed_program = None  # Track last executed program for continuation
+
         while True:
             try:
                 # Get input with appropriate prompt
@@ -505,7 +504,7 @@ class DanaREPLApp(Loggable):
                 if colors.use_colors:
                     # Use HTML formatting for the prompt which is more reliable than ANSI
                     if self.input_state.in_multiline:
-                        prompt = HTML("<ansicyan>.... </ansicyan>")
+                        prompt = HTML("<ansicyan>... </ansicyan>")
                     else:
                         prompt = HTML("<ansicyan>>>> </ansicyan>")
                 else:
@@ -519,6 +518,28 @@ class DanaREPLApp(Loggable):
                     self.debug("Empty line, continuing")
                     continue
 
+                # Handle empty line in multiline mode - this ends the multiline block
+                if not line.strip() and self.input_state.in_multiline:
+                    self.debug("Empty line in multiline mode, executing buffer")
+                    program = self.input_state.get_buffer()
+                    self.input_state.reset()
+
+                    if program.strip():  # Only execute if there's actual content
+                        try:
+                            self.debug(f"Executing multiline program: {program}")
+                            result = self.repl.execute(program)
+                            last_executed_program = program
+
+                            if result is not None:
+                                print(f"{colors.accent(str(result))}")
+                        except Exception as e:
+                            context = ErrorContext("program execution")
+                            error = ErrorHandler.handle_error(e, context)
+                            error_lines = error.message.split("\n")
+                            formatted_error = "\n".join(f"  {line}" for line in error_lines)
+                            print(f"{colors.error('Error:')}\n{formatted_error}")
+                    continue
+
                 # Handle exit commands
                 if line.strip() in ["exit", "quit"]:
                     self.debug("Exit command received")
@@ -528,41 +549,66 @@ class DanaREPLApp(Loggable):
                 # Handle special commands
                 if await self.command_handler.handle_command(line):
                     self.debug("Handled special command")
+                    # Check if it was a ## command to force multiline
+                    if line.strip() == "##":
+                        self.input_state.in_multiline = True
                     continue
 
-                # Check if input is complete
-                is_complete = self.input_checker.is_complete(line)
-                self.debug(f"Input complete: {is_complete}")
+                # Check for orphaned else/elif statements
+                if self._is_orphaned_else_statement(line) and last_executed_program:
+                    self.debug("Detected orphaned else statement, providing guidance")
+                    print(f"{colors.error('Error:')} Orphaned '{line.strip()}' statement detected.")
+                    print("")
+                    print("To write if-else blocks, start with the if statement and use multiline mode:")
+                    print(f"  1. {colors.accent('Type the if statement (ends with :):')}")
+                    print("     >>> if condition:")
+                    print("     ...     # if body")
+                    print("     ... else:")
+                    print("     ...     # else body")
+                    print(f"     ... {colors.bold('[empty line to execute]')}")
+                    print("")
+                    print(f"  2. {colors.accent('Or start with ## to force multiline mode:')}")
+                    print("     >>> ##")
+                    print("     ... if condition:")
+                    print("     ...     # statements")
+                    print("     ... else:")
+                    print("     ...     # statements")
+                    print(f"     ... {colors.bold('[empty line to execute]')}")
+                    print("")
+                    continue
+
+                # Check if input is complete - now we're more conservative
+                # Only enter multiline mode for obviously incomplete statements
+                is_complete = self._is_obviously_incomplete(line)
+                self.debug(f"Obviously incomplete: {is_complete}")
 
                 # Handle multiline input
-                if not is_complete:
-                    self.debug("Incomplete input, entering multiline mode")
+                if is_complete:  # is_complete is actually "is_obviously_incomplete"
+                    self.debug("Obviously incomplete input, entering multiline mode")
                     self.input_state.in_multiline = True
                     self.input_state.add_line(line)
                     continue
 
-                # Execute the input
+                # If we're already in multiline mode, just add the line
                 if self.input_state.in_multiline:
-                    self.debug("Executing multiline input")
+                    self.debug("Adding line to multiline buffer")
                     self.input_state.add_line(line)
-                    program = self.input_state.get_buffer()
-                    self.input_state.reset()
-                else:
-                    self.debug("Executing single line input")
-                    program = line
+                    continue
+
+                # For single-line input, execute immediately
+                self.debug("Executing single line input")
+                program = line
 
                 try:
                     self.debug(f"Executing program: {program}")
-                    # Execute program directly without progress bar
                     result = self.repl.execute(program)
+                    last_executed_program = program
 
-                    # Only print the result if it's not None
                     if result is not None:
                         print(f"{colors.accent(str(result))}")
                 except Exception as e:
                     context = ErrorContext("program execution")
                     error = ErrorHandler.handle_error(e, context)
-                    # Format error message with better readability
                     error_lines = error.message.split("\n")
                     formatted_error = "\n".join(f"  {line}" for line in error_lines)
                     print(f"{colors.error('Error:')}\n{formatted_error}")
@@ -578,6 +624,30 @@ class DanaREPLApp(Loggable):
                 error = ErrorHandler.handle_error(e, context)
                 print(f"{colors.error('Error:')}\n{error.message}")
                 self.input_state.reset()
+
+    def _is_orphaned_else_statement(self, line: str) -> bool:
+        """Check if the line is an orphaned else/elif statement."""
+        stripped = line.strip()
+        return (stripped.startswith("else:") or stripped.startswith("elif ")) and not self.input_state.in_multiline
+
+    def _is_obviously_incomplete(self, line: str) -> bool:
+        """Check if input is obviously incomplete and needs continuation."""
+        line = line.strip()
+
+        # Lines ending with : are obviously incomplete (if, while, def, etc.)
+        if line.endswith(":"):
+            return True
+
+        # Incomplete assignments
+        if "=" in line and line.endswith("="):
+            return True
+
+        # Unbalanced brackets/parentheses
+        if not self.input_checker._has_balanced_brackets(line):
+            return True
+
+        # Everything else is considered complete for single-line execution
+        return False
 
 
 async def main(debug=False):

@@ -30,9 +30,11 @@ class TestReplMultiline(unittest.TestCase):
         self.assertFalse(self.checker.is_complete(code))
 
     def test_complete_if_statement(self):
-        """Test that a complete if statement is recognized."""
+        """Test that a complete if statement is still not considered input-complete (needs explicit ending)."""
         code = 'if temp.x > 10:\n    log.info("Greater than 10")'
-        self.assertTrue(self.checker.is_complete(code))
+        # With explicit ending, even syntactically complete multiline blocks
+        # are not considered input-complete
+        self.assertFalse(self.checker.is_complete(code))
 
     def test_incomplete_if_statement_without_body(self):
         """Test that an if statement without a body is recognized as incomplete."""
@@ -44,16 +46,15 @@ class TestReplMultiline(unittest.TestCase):
         code = "if temp.x > 10:"
         self.assertFalse(self.checker.is_complete(code))
 
-        # Note: the current implementation of _has_complete_statements now accepts
-        # multiline code even if the indentation isn't proper, to help tests pass
-        # This test case has been modified to match that behavior
+        # Even with body, multiline code is not considered input-complete
         code = 'if temp.x > 10:\nlog.info("Greater than 10")'
-        self.assertTrue(self.checker.is_complete(code))
+        self.assertFalse(self.checker.is_complete(code))
 
     def test_complete_if_else_statement(self):
-        """Test that a complete if-else statement is recognized."""
+        """Test that even complete if-else statements require explicit ending."""
         code = 'if temp.x > 10:\n    log.info("Greater than 10")\nelse:\n    log.info("Less than or equal to 10")'
-        self.assertTrue(self.checker.is_complete(code))
+        # With explicit ending, multiline blocks are not auto-completed
+        self.assertFalse(self.checker.is_complete(code))
 
     def test_incomplete_if_else_statement(self):
         """Test that an incomplete if-else statement is recognized."""
@@ -61,9 +62,10 @@ class TestReplMultiline(unittest.TestCase):
         self.assertFalse(self.checker.is_complete(code))
 
     def test_complete_while_loop(self):
-        """Test that a complete while loop is recognized."""
+        """Test that complete while loops require explicit ending."""
         code = 'while temp.x < 10:\n    temp.x = temp.x + 1\n    log.info("Incrementing")'
-        self.assertTrue(self.checker.is_complete(code))
+        # With explicit ending, multiline blocks are not auto-completed
+        self.assertFalse(self.checker.is_complete(code))
 
     def test_incomplete_while_loop(self):
         """Test that an incomplete while loop is recognized."""
@@ -81,12 +83,13 @@ class TestReplMultiline(unittest.TestCase):
         self.assertFalse(self.checker.is_complete(code))
 
     def test_nested_blocks(self):
-        """Test that nested blocks are recognized correctly."""
+        """Test that nested blocks require explicit ending."""
         code = 'if temp.x > 10:\n    if temp.y > 20:\n        log.info("Both conditions met")\n    else:\n        log.info("Only first condition met")'
-        self.assertTrue(self.checker.is_complete(code))
+        # With explicit ending, even nested multiline blocks are not auto-completed
+        self.assertFalse(self.checker.is_complete(code))
 
     def test_complex_multiline_statement(self):
-        """Test a complex multiline statement."""
+        """Test that complex multiline statements require explicit ending."""
         code = """if temp.counter < 10:
     temp.counter = temp.counter + 1
     log.info("Counter: {temp.counter}")
@@ -97,7 +100,25 @@ class TestReplMultiline(unittest.TestCase):
 else:
     log.info("Counter reached limit")
     temp.counter = 0"""
-        self.assertTrue(self.checker.is_complete(code))
+        # With explicit ending, complex multiline blocks are not auto-completed
+        self.assertFalse(self.checker.is_complete(code))
+
+    def test_if_else_explicit_multiline_scenario(self):
+        """Test the scenario where if-else is built incrementally with explicit ending."""
+        # Simulate the user typing if statement - should be obviously incomplete
+        from opendxa.dana.repl.dana_repl_app import DanaREPLApp
+
+        app = DanaREPLApp()
+
+        # Test the new obviously incomplete detection
+        self.assertTrue(app._is_obviously_incomplete("if local.a == 365:"))
+        self.assertFalse(app._is_obviously_incomplete("print(hello)"))
+        self.assertFalse(app._is_obviously_incomplete("local.x = 42"))
+
+        # Test orphaned else detection
+        self.assertTrue(app._is_orphaned_else_statement("else:"))
+        self.assertTrue(app._is_orphaned_else_statement("elif x > 10:"))
+        self.assertFalse(app._is_orphaned_else_statement("if x > 10:"))
 
 
 if __name__ == "__main__":

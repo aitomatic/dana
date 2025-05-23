@@ -39,11 +39,11 @@ class TypeCoercion:
             return True
 
         # Safe numeric upward conversions
-        if target_type == float and isinstance(value, int):
+        if target_type is float and isinstance(value, int):
             return True
 
         # Safe string conversions for display/concatenation
-        if target_type == str and isinstance(value, (int, float, bool)):
+        if target_type is str and isinstance(value, (int, float, bool)):
             return True
 
         # Comparison context conversions
@@ -76,10 +76,10 @@ class TypeCoercion:
         if not TypeCoercion.can_coerce(value, target_type):
             raise TypeError(f"Cannot safely coerce {type(value).__name__} to {target_type.__name__}")
 
-        if target_type == float and isinstance(value, int):
+        if target_type is float and isinstance(value, int):
             return float(value)
 
-        if target_type == str and isinstance(value, (int, float, bool)):
+        if target_type is str and isinstance(value, (int, float, bool)):
             if isinstance(value, bool):
                 return "true" if value else "false"
             return str(value)
@@ -105,7 +105,7 @@ class TypeCoercion:
             Tuple of (coerced_left, coerced_right)
         """
         # If types already match, no coercion needed
-        if type(left) == type(right):
+        if type(left) is type(right):
             return left, right
 
         # Numeric promotion: int + float → float + float
