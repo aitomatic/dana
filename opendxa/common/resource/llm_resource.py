@@ -249,7 +249,12 @@ class LLMResource(BaseResource):
                 - content: The assistant's message
                 - usage: Token usage statistics
         """
-        if not self._is_available:
+        # Check if we should use mock responses first, even if resource is not available
+        should_mock = self._mock_llm_call is not None and (
+            self._mock_llm_call is True or callable(self._mock_llm_call) or os.environ.get("OPENDXA_MOCK_LLM", "").lower() == "true"
+        )
+
+        if not self._is_available and not should_mock:
             return BaseResponse(
                 success=False, content={"error": f"Resource {self.name} not available"}, error=f"Resource {self.name} not available"
             )
@@ -474,6 +479,10 @@ class LLMResource(BaseResource):
         if callable(self._mock_llm_call):
             return await self._mock_llm_call(request)
         elif self._mock_llm_call:
+            return await self._mock_llm_query(request)
+
+        # Also check environment variable for mocking
+        if os.environ.get("OPENDXA_MOCK_LLM", "").lower() == "true":
             return await self._mock_llm_query(request)
 
         if not self._client:

@@ -27,5 +27,8 @@ jobs:
         pip install pytest
         pip install -e .
     - name: Test with pytest
+      env:
+        OPENDXA_MOCK_LLM: "true"
+        OPENDXA_USE_REAL_LLM: "false"
       run: |
         pytest tests/
