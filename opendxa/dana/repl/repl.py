@@ -193,7 +193,12 @@ class REPL(Loggable):
         # Handle NLP mode if enabled
         if self.get_nlp_mode() and self.transcoder:
             self.debug("NLP mode enabled, translating input")
-            parse_result, translated_code = Misc.safe_asyncio_run(self.transcoder.to_dana, program_source)
+            # Use context-aware translation if available
+            if hasattr(self.transcoder, "to_dana_with_context"):
+                parse_result, translated_code = Misc.safe_asyncio_run(self.transcoder.to_dana_with_context, program_source, self.context)
+            else:
+                parse_result, translated_code = Misc.safe_asyncio_run(self.transcoder.to_dana, program_source)
+
             if parse_result.errors:
                 formatted = self._format_error_message(str(parse_result.errors[0]), program_source)
                 raise DanaError(formatted)
