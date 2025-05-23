@@ -31,10 +31,10 @@ ANTHROPIC_API_KEY=your_api_key
 AITOMATIC_API_KEY=your_api_key
 ```
 
-If you start up a fresh terminal session, you'll need to do this:
+If you start up a fresh terminal session, you'll need to reinitialize the environment:
 
 ```bash
-% source bin/source_env.sh
+% source ./bin/source_env.sh
 ```
 
 ## Example Dana Code
