@@ -140,8 +140,8 @@ private:result
                     with patch("opendxa.dana.repl.repl.Misc.safe_asyncio_run", mock_safe_asyncio_run):
                         result = repl.execute("set x to 5")
 
-                        # Verify expected behavior
-                        mock_safe_asyncio_run.assert_called_once_with(mock_transcoder.to_dana, "set x to 5")
+                        # Verify expected behavior - now expects to_dana_with_context with context parameter
+                        mock_safe_asyncio_run.assert_called_once_with(mock_transcoder.to_dana_with_context, "set x to 5", repl.context)
                         self.assertEqual(result, 5)
 
     def test_get_context(self):
