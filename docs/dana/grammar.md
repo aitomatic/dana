@@ -66,7 +66,6 @@ graph TD
         Conditional
         WhileLoop
         FunctionCall
-        PrintStatement
         BareIdentifier
         ETC[...]
         Conditional --> Statement
@@ -75,7 +74,6 @@ graph TD
         Conditional --> Expression
         WhileLoop --> Expression
         FunctionCall --> Expression
-        PrintStatement --> Expression
         BareIdentifier --> Identifier
     end
     Statements --> Expressions
@@ -112,7 +110,7 @@ The grammar is designed to be extensible. New statements, expressions, or litera
 
 ```
 program       ::= statement+
-statement     ::= assignment | function_call | conditional | while_loop | for_loop | break_stmt | continue_stmt | function_def | print_statement | bare_identifier | comment | NEWLINE
+statement     ::= assignment | function_call | conditional | while_loop | for_loop | break_stmt | continue_stmt | function_def | bare_identifier | comment | NEWLINE
 assignment    ::= identifier '=' expression
 expression    ::= literal | identifier | function_call | binary_expression
 literal       ::= string | number | boolean | null | fstring | list | dict | set
@@ -123,7 +121,6 @@ for_loop      ::= 'for' identifier 'in' expression ':' NEWLINE INDENT program DE
 break_stmt    ::= 'break'
 continue_stmt ::= 'continue'
 function_def  ::= 'def' identifier '(' [identifier (',' identifier)*] ')' ':' NEWLINE INDENT program DEDENT
-print_statement ::= 'print' '(' expression ')'
 bare_identifier ::= identifier
 comment       ::= ('//' | '#') .*
 
