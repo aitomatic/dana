@@ -3,17 +3,22 @@
 ## Essential Context for All Prompts
 
 **Key Reference Files** (Read before executing any prompt):
-- `docs/dana/manifesto.md` - Authoritative philosophy and vision
-- `docs/dana/language.md` - Complete Dana language specification
-- `docs/dana/syntax.md` - Current Dana syntax rules
+- `docs/archive/original-dana/manifesto.md` - Authoritative philosophy and vision
+- `docs/archive/original-dana/language.md` - Complete Dana language specification
+- `docs/archive/original-dana/syntax.md` - Current Dana syntax rules
+- `docs/for-engineers/reference/dana-syntax.md` - Practical Dana reference for developers
+- `docs/for-researchers/manifesto/vision.md` - Updated philosophical foundations
 - `docs/.ai-only/opendxa.md` - System overview and components
 - `docs/.ai-only/functions.md` - Current function catalog
 - `docs/.ai-only/project.md` - Directory structure guide
 
-**Current Documentation State**:
-- `docs/README.md` - Excellent visual entry point (keep as-is)
-- `docs/dana/` - 16 comprehensive language files (authoritative source)
-- `docs/core-concepts/` - Architecture documentation
+**Current Documentation State (Updated 2025-01-24)**:
+- `docs/README.md` - Audience routing hub (keep as-is)
+- `docs/for-engineers/` - Practical guides, recipes, and references for developers
+- `docs/for-evaluators/` - Business ROI, competitive analysis, and proof of concepts
+- `docs/for-contributors/` - Architecture, codebase navigation, and development guides
+- `docs/for-researchers/` - Philosophy, theory, neurosymbolic research, and manifesto
+- `docs/archive/` - Preserved original documentation (original-dana/, original-core-concepts/, original-architecture/)
 - `docs/.ai-only/` - AI assistant reference materials
 
 **Target Audience Organization**:

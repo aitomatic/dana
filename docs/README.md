@@ -70,48 +70,105 @@
 
 ## 🚀 What is OpenDXA?
 
-OpenDXA transforms AI development from brittle, unpredictable systems to reliable, auditable automations. Built on the Dana language - a neurosymbolic programming environment - OpenDXA enables:
+OpenDXA (Domain-eXpert Agent) Framework transforms AI development from brittle, unpredictable systems to reliable, auditable automations. Built on the Dana language - a neurosymbolic programming environment - OpenDXA enables intelligent multi-agent systems with domain expertise.
 
 ### ✨ Key Benefits
-- **🔍 Transparent**: Every step is visible and debuggable
-- **🛡️ Reliable**: Built-in verification and error correction  
-- **⚡ Fast**: 10x faster development cycles
-- **🤝 Collaborative**: Share and reuse working solutions
+- **🔍 Transparent**: Every step is visible and debuggable through imperative programming
+- **🛡️ Reliable**: Built-in verification and error correction with structured state management
+- **⚡ Fast**: 10x faster development cycles with clear control flow
+- **🤝 Collaborative**: Share and reuse working solutions across domains
+- **🧠 Domain-Aware**: Seamless integration of specialized knowledge and expertise
 
-### 🎯 Core Innovation: Dana Language
-```python
+### 🎯 Core Innovation: Dana Language & DANKE Engine
+
+Dana (Domain-Aware NeuroSymbolic Architecture) provides an imperative programming model for agent reasoning:
+
+```dana
 # Traditional AI: Opaque, brittle
 result = llm_call("analyze data", context=data)
 
-# Dana: Transparent, self-correcting
-analysis = reason("analyze data", context=data)
-while confidence(analysis) < high_confidence:
-    analysis = reason("refine analysis", context=[data, analysis])
+# Dana: Transparent, self-correcting with explicit state management
+private:analysis = reason("analyze data", context=data)
+while confidence(private:analysis) < high_confidence:
+    private:analysis = reason("refine analysis", 
+                             context=[data, private:analysis])
+
+# Clear state transitions and auditable reasoning
+public:result = private:analysis
+use("tools.report.generate", input=public:result)
 ```
 
+**DANKE** (Domain-Aware NeuroSymbolic Knowledge Engine) implements the CORRAL methodology:
+- **C**ollect: Gather and ingest domain knowledge
+- **O**rganize: Structure and index knowledge
+- **R**etrieve: Access and search for relevant knowledge
+- **R**eason: Infer, contextualize, and generate insights
+- **A**ct: Apply knowledge to take actions and solve problems
+- **L**earn: Integrate feedback and improve knowledge over time
+
 ### 🏗️ Architecture Overview
+
+OpenDXA combines declarative knowledge with imperative execution for maintainable, reliable AI systems:
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    Application Layer                        │
+│  ┌─────────────────┐  ┌─────────────────────────────────────┐ │
+│  │  User Interface │  │        Domain Applications         │ │
+│  │  & API Gateway  │  │   (Manufacturing, Finance, etc.)  │ │
+│  └─────────────────┘  └─────────────────────────────────────┘ │
 ├─────────────────────────────────────────────────────────────┤
 │                      Agent Layer                           │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
 │  │   Agent     │  │ Capabilities │  │     Resources       │ │
 │  │ Management  │  │   System     │  │    Management       │ │
+│  │  & Planning │  │ (Extensible) │  │  (Tools & LLMs)     │ │
 │  └─────────────┘  └─────────────┘  └─────────────────────┘ │
 ├─────────────────────────────────────────────────────────────┤
 │                   Dana Execution Layer                     │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
-│  │    Parser   │  │ Interpreter │  │  Runtime Context    │ │
-│  │   (AST)     │  │  (Executor) │  │  (State Manager)    │ │
+│  │    Parser   │  │ Interpreter │  │  State Management   │ │
+│  │   (AST)     │  │  (Executor) │  │ (4-Scope Context)   │ │
+│  │  & Grammar  │  │ & Reasoning │  │ private|public|     │ │
+│  │   Engine    │  │  Integration│  │ system|local        │ │
+│  └─────────────┘  └─────────────┘  └─────────────────────┘ │
+├─────────────────────────────────────────────────────────────┤
+│              DANKE Knowledge Engine                        │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
+│  │   Collect   │  │  Organize   │  │     Retrieve        │ │
+│  │  & Learn    │  │ & Structure │  │ Reason & Act        │ │
+│  │ (CORRAL)    │  │ (Indexing)  │  │ (Domain Context)    │ │
 │  └─────────────┘  └─────────────┘  └─────────────────────┘ │
 ├─────────────────────────────────────────────────────────────┤
 │                    Resource Layer                          │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
 │  │ LLM Resource│  │ Knowledge   │  │  External Tools     │ │
 │  │ Integration │  │    Base     │  │   & Services        │ │
+│  │(Multi-Model)│  │ Management  │  │    (MCP, APIs)      │ │
 │  └─────────────┘  └─────────────┘  └─────────────────────┘ │
 └─────────────────────────────────────────────────────────────┘
+```
+
+### 🔄 Execution Flow
+
+```
+User Request/Domain Problem
+    ↓
+Agent Planning Layer → Dana Program Generation
+    ↓
+Dana Parser → AST Generation
+    ↓
+Dana Interpreter with 4-Scope State Management
+    ↓ 
+Statement Execution + LLM Reasoning Integration
+    ↓
+DANKE Knowledge Engine → CORRAL Methodology
+    ↓
+Tool/Resource Access → External System Integration
+    ↓
+State Updates & Response Generation
+    ↓
+Auditable Results & Learning Integration
 ```
 
 ---
@@ -122,21 +179,25 @@ while confidence(analysis) < high_confidence:
 - **New to AI development**: [Engineers Quick Start](for-engineers/README.md#-quick-start)
 - **Experienced with LLMs**: [Migration Guide](for-engineers/setup/migration-guide.md)
 - **Need specific examples**: [Recipe Collection](for-engineers/recipes/)
+- **Dana language reference**: [Syntax Guide](for-engineers/reference/dana-syntax.md)
 
 ### 📊 Business Evaluation
 - **ROI Analysis**: [Cost-Benefit Calculator](for-evaluators/roi-analysis/calculator.md)
 - **Technical Assessment**: [Architecture Overview](for-evaluators/comparison/technical-overview.md)
 - **Proof of Concept**: [Evaluation Guide](for-evaluators/proof-of-concept/evaluation-guide.md)
+- **Competitive Analysis**: [Framework Comparison](for-evaluators/comparison/)
 
 ### 🔬 Research & Development
 - **Theoretical Foundations**: [Dana Manifesto](for-researchers/manifesto/vision.md)
 - **Neurosymbolic Computing**: [Research Opportunities](for-researchers/README.md#-research-opportunities)
 - **Academic Collaboration**: [Partnership Programs](for-researchers/README.md#-academic-collaboration)
+- **Original Documentation**: [Archive](archive/)
 
 ### 🛠️ Platform Extension
 - **Custom Capabilities**: [Extension Development](for-contributors/extending/extension-development.md)
 - **Core Contributions**: [Contribution Guide](for-contributors/development/contribution-guide.md)
 - **Architecture Understanding**: [System Design](for-contributors/architecture/system-design.md)
+- **Codebase Navigation**: [Code Guide](for-contributors/codebase/)
 
 ---
 
@@ -165,6 +226,7 @@ opendxa demo chatbot
 1. [What makes OpenDXA different](for-engineers/README.md#-what-makes-opendxa-different)
 2. [Dana language basics](for-engineers/reference/dana-syntax.md)
 3. [Agent architecture overview](for-contributors/architecture/system-design.md)
+4. [DANKE knowledge engine](for-researchers/research/)
 
 ### 🎯 Solve Your Use Case
 - [Document Processing](for-engineers/recipes/document-processor/)
@@ -195,6 +257,8 @@ opendxa demo chatbot
 
 ## 📖 Documentation Structure
 
+This documentation is organized by audience with cross-references and maintained through structured AI-assisted processes:
+
 ```
 docs/
 ├── for-engineers/          # Practical development guides
@@ -217,9 +281,30 @@ docs/
 │   ├── neurosymbolic/    # Technical and theoretical analysis
 │   ├── research/         # Research opportunities and collaboration
 │   └── future-work/      # Roadmap and future directions
+├── archive/              # Preserved original documentation
+│   ├── original-dana/    # Authoritative Dana language specification
+│   ├── original-core-concepts/ # Original architectural concepts
+│   └── original-architecture/ # Historical system design
 ├── internal/             # Internal planning and requirements
-└── archive/              # Historical documentation and references
+└── .ai-only/            # AI assistant structured references
+    ├── documentation.md      # Documentation maintenance prompts
+    ├── documentation-maintenance.md # Structured update procedures
+    ├── project.md           # Project structure guide
+    ├── opendxa.md          # System overview and components
+    ├── dana.md             # Dana language technical reference
+    └── functions.md        # Function catalog and registry
 ```
+
+### 🔄 Documentation Maintenance
+
+This documentation is maintained through structured processes that ensure:
+- **Function Registry**: Automated tracking of new Dana functions and capabilities
+- **Example Validation**: Regular testing of all code examples with current syntax
+- **Content Gap Analysis**: Weekly assessment of documentation coverage
+- **Cross-Audience Updates**: Synchronized updates across all audience trees
+- **AI-Assisted Quality**: Structured prompts for consistent maintenance
+
+The `.ai-only/` directory contains reference materials and maintenance procedures that keep this documentation current and comprehensive.
 
 ---
 
