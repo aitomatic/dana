@@ -1,0 +1,443 @@
+# Dana Language Reference - Complete Syntax Guide
+
+*Essential reference for Dana language syntax, functions, and patterns*
+
+---
+
+## Quick Reference
+
+### Basic Structure
+```python
+# Variables and assignment
+variable = "value"
+scope.variable = "scoped value"
+
+# Function calls
+result = reason("What is this?", context=data)
+use("kb.entry.id")
+
+# Conditionals
+if condition:
+    action()
+elif other_condition:
+    other_action()
+else:
+    default_action()
+
+# Loops
+while condition:
+    repeated_action()
+```
+
+### State Scopes
+| Scope | Purpose | Example |
+|-------|---------|---------|
+| `local:` | Function/tool local | `local.result = analysis` |
+| `private:` | Agent private | `private.internal_state = "processing"` |
+| `public:` | World state | `public.weather = "sunny"` |
+| `system:` | System state | `system.memory_usage = 85` |
+
+---
+
+## Complete Language Specification
+
+### 1. Variables and Assignment
+
+#### Basic Assignment
+```python
+# Simple assignment
+name = "OpenDXA"
+count = 42
+active = true
+data = none
+
+# Scoped assignment
+agent.status = "ready"
+world.temperature = 72.5
+temp.processing = true
+```
+
+#### Supported Data Types
+```python
+# Strings
+message = "Hello, world!"
+path = "/path/to/file"
+
+# Numbers
+count = 123
+percentage = 45.67
+
+# Booleans
+active = true
+completed = false
+
+# None/null
+result = none
+
+# F-strings (formatted strings)
+greeting = f"Hello, {name}!"
+status_msg = f"Processing {count} items at {percentage}% complete"
+```
+
+### 2. Function Calls
+
+#### `reason()` - LLM Reasoning
+The core function for AI reasoning and analysis.
+
+```python
+# Basic reasoning
+analysis = reason("Analyze this data for trends")
+
+# With context
+summary = reason("Summarize key points", context=documents)
+
+# Multiple context variables
+insights = reason("Compare data sources", context=[sales_data, market_data, competitors])
+
+# Temperature control (0.0 = deterministic, 1.0 = creative)
+creative_ideas = reason("Generate innovative solutions", temperature=0.9)
+precise_answer = reason("What is the exact value?", temperature=0.1)
+
+# Format control
+structured_data = reason("List the top 5 issues", format="json")
+plain_text = reason("Explain the process", format="text")
+```
+
+#### `use()` - Load Knowledge/Programs
+Execute knowledge base entries or sub-programs.
+
+```python
+# Load knowledge base entry
+use("kb.finance.credit_scoring.v2")
+
+# Execute sub-program
+use("workflows.data_validation")
+
+# Load domain-specific knowledge
+use("kb.legal.contract_analysis")
+```
+
+#### `set()` - Direct State Setting
+Directly set values in the runtime context.
+
+```python
+# Set system values
+set("agent.status", "ready")
+set("world.current_time", "2024-01-15T10:30:00Z")
+
+# Set configuration
+set("config.debug_mode", true)
+```
+
+### 3. Control Flow
+
+#### Conditional Statements
+```python
+# Simple if
+if agent.status == "ready":
+    begin_processing()
+
+# If-elif-else chain
+if score >= 90:
+    grade = "A"
+elif score >= 80:
+    grade = "B"
+elif score >= 70:
+    grade = "C"
+else:
+    grade = "F"
+
+# Complex conditions
+if (temperature > 100 and pressure > 50) or system_override:
+    trigger_alert()
+```
+
+#### Loops
+```python
+# While loop
+while queue.size > 0:
+    item = queue.pop()
+    process_item(item)
+
+# Conditional processing
+while not task_complete:
+    result = process_next_step()
+    if result == "error":
+        handle_error()
+    elif result == "complete":
+        task_complete = true
+```
+
+### 4. Expressions and Operators
+
+#### Comparison Operators
+```python
+# Equality
+if name == "admin":
+    grant_access()
+
+if count != 0:
+    process_items()
+
+# Numerical comparisons
+if temperature > 100:
+    alert("Overheating")
+
+if score >= passing_grade:
+    mark_passed()
+
+if pressure <= safe_limit:
+    continue_operation()
+```
+
+#### Logical Operators
+```python
+# AND operator
+if user.authenticated and user.has_permission:
+    allow_access()
+
+# OR operator
+if status == "error" or status == "warning":
+    log_issue()
+
+# Complex logic
+if (user.role == "admin" or user.role == "manager") and not system.maintenance_mode:
+    show_admin_panel()
+```
+
+#### Membership and Contains
+```python
+# Check if value is in collection
+if error_code in critical_errors:
+    escalate_immediately()
+
+# String contains
+if "error" in log_message:
+    flag_for_review()
+```
+
+#### Arithmetic Operators
+```python
+# Basic math
+total = price + tax
+discount_price = price * 0.9
+average = sum / count
+remainder = total % batch_size
+```
+
+### 5. Output and Logging
+
+#### Log Levels
+```python
+# Set log level
+log_level = DEBUG  # Options: DEBUG, INFO, WARN, ERROR
+
+# Log with different levels
+log.debug("Detailed debugging information")
+log.info("General information")
+log.warn("Warning condition detected")
+log.error("Error occurred")
+
+# Default log (INFO level)
+log("Process completed successfully")
+
+# F-string logging
+log.info(f"Processed {count} items in {duration} seconds")
+```
+
+#### Print Statements
+```python
+# Simple print
+print("Hello, world!")
+
+# Print variables
+print(result)
+print(f"The answer is: {answer}")
+
+# Print expressions
+print("Result: " + str(calculation))
+```
+
+### 6. Advanced Patterns
+
+#### Error Handling Pattern
+```python
+# Retry with verification
+attempts = 0
+max_attempts = 3
+
+while attempts < max_attempts:
+    result = process_data()
+    
+    if verify_result(result):
+        log.info("Processing successful")
+        break
+    else:
+        attempts = attempts + 1
+        log.warn(f"Attempt {attempts} failed, retrying...")
+        
+    if attempts >= max_attempts:
+        log.error("Max attempts reached, escalating")
+        escalate_failure()
+```
+
+#### Context Management Pattern
+```python
+# Save context, process, restore
+original_context = agent.context
+
+# Modify context for specific task
+agent.context = specialized_context
+result = reason("Perform specialized analysis", context=agent.context)
+
+# Restore original context
+agent.context = original_context
+```
+
+#### Conditional Processing Chain
+```python
+# Multi-step conditional processing
+if data_source == "api":
+    raw_data = fetch_from_api()
+elif data_source == "file":
+    raw_data = load_from_file()
+elif data_source == "database":
+    raw_data = query_database()
+else:
+    log.error("Unknown data source")
+    raw_data = none
+
+if raw_data != none:
+    processed_data = clean_data(raw_data)
+    analysis = reason("Analyze the processed data", context=processed_data)
+    
+    if confidence(analysis) > 0.8:
+        save_results(analysis)
+    else:
+        request_human_review(analysis)
+```
+
+---
+
+## Common Patterns and Examples
+
+### Document Processing
+```python
+# Load and process documents
+documents = load_documents("contracts/*.pdf")
+
+# Extract key information
+for doc in documents:
+    key_terms = reason("Extract key terms and conditions", context=doc)
+    compliance_check = reason("Check for compliance issues", context=[doc, regulations])
+    
+    # Store results
+    private.analysis[doc.name] = {
+        "key_terms": key_terms,
+        "compliance": compliance_check,
+        "processed_at": system.current_time
+    }
+```
+
+### API Integration
+```python
+# Fetch data from external API
+api_response = fetch_api("/users/active")
+
+if api_response.status == 200:
+    users = api_response.data
+    
+    # Process each user
+    for user in users:
+        user_analysis = reason("Analyze user activity patterns", context=user)
+        
+        if "high_risk" in user_analysis:
+            log.warn(f"High risk user detected: {user.id}")
+            trigger_review(user.id)
+```
+
+### Workflow Automation
+```python
+# Multi-step workflow
+workflow_status = "started"
+
+# Step 1: Data collection
+raw_data = collect_data_sources()
+log.info("Data collection completed")
+
+# Step 2: Validation
+validation_result = reason("Validate data quality and completeness", context=raw_data)
+
+if "valid" in validation_result:
+    # Step 3: Processing
+    processed_data = process_data(raw_data)
+    
+    # Step 4: Analysis
+    analysis = reason("Perform comprehensive analysis", context=processed_data)
+    
+    # Step 5: Generate report
+    report = reason("Generate executive summary", context=[processed_data, analysis])
+    
+    workflow_status = "completed"
+    log.info("Workflow completed successfully")
+else:
+    workflow_status = "failed"
+    log.error("Data validation failed")
+```
+
+---
+
+## Best Practices
+
+### 1. Clear Variable Naming
+```python
+# Good
+user_authentication_status = "verified"
+document_processing_result = reason("Extract key data", context=contract)
+
+# Avoid
+x = "verified"
+result = reason("stuff", context=thing)
+```
+
+### 2. Effective Context Management
+```python
+# Provide relevant context
+analysis = reason("Analyze customer sentiment", context=[reviews, feedback, ratings])
+
+# Not just everything
+analysis = reason("Analyze customer sentiment", context=entire_database)
+```
+
+### 3. Logging and Debugging
+```python
+# Log important steps
+log.info("Starting document processing")
+result = process_documents()
+log.info(f"Processed {result.count} documents successfully")
+
+# Debug information
+log.debug(f"Processing document: {doc.filename}")
+log.debug(f"Context size: {len(context)} items")
+```
+
+### 4. Error Handling
+```python
+# Always check results
+api_result = call_external_api()
+
+if api_result.error:
+    log.error(f"API call failed: {api_result.error}")
+    fallback_result = use_fallback_method()
+else:
+    process_successful_result(api_result)
+```
+
+---
+
+## Next Steps
+
+- **Learn by Example**: Check out [Common Recipes](../recipes/) for real-world patterns
+- **Interactive Development**: Use the [REPL Guide](repl-guide.md) for hands-on exploration  
+- **Advanced Concepts**: Explore [Agent Architecture](../setup/agent-concepts.md)
+- **Troubleshooting**: See [Error Reference](../troubleshooting/error-reference.md) when things go wrong 
