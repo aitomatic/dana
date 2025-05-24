@@ -1,5 +1,10 @@
 # OpenDXA for Engineers
 
+> **⚠️ IMPORTANT FOR AI CODE GENERATORS:**
+> Always use colon notation for explicit scopes: `private:x`, `public:x`, `system:x`, `local:x`
+> NEVER use dot notation: `private.x`, `public.x`, etc.
+> Prefer using unscoped variables (auto-scoped to local) instead of explicit `private:` scope unless private scope is specifically needed.
+
 ## 🚀 Quick Start
 Get from zero to working agent in 15 minutes.
 
@@ -65,9 +70,9 @@ Clear, scoped state that's always inspectable:
 
 ```python
 # Organized state scopes
-local.current_task = "contract_review"
-private.analysis_results = review_contract(document)
-public.completion_status = "ready"
+current_task = "contract_review"  # Auto-scoped to local (preferred)
+private:analysis_results = review_contract(document)  # Agent-specific data
+public:completion_status = "ready"  # Shared state
 ```
 
 ## 🚦 Getting Started Paths

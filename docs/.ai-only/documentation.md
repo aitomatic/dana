@@ -1,3 +1,12 @@
+# Documentation Strategy
+
+> **⚠️ IMPORTANT FOR AI CODE GENERATORS:**
+> Always use colon notation for explicit scopes: `private:x`, `public:x`, `system:x`, `local:x`
+> NEVER use dot notation: `private.x`, `public.x`, etc.
+> Prefer using unscoped variables (auto-scoped to local) instead of explicit `private:` scope unless private scope is specifically needed.
+
+## Current Status
+
 <p align="center">
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>

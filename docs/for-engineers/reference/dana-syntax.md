@@ -1,5 +1,10 @@
 # Dana Language Reference - Complete Syntax Guide
 
+> **⚠️ IMPORTANT FOR AI CODE GENERATORS:**
+> Always use colon notation for explicit scopes: `private:x`, `public:x`, `system:x`, `local:x`
+> NEVER use dot notation: `private.x`, `public.x`, etc.
+> Prefer using unscoped variables (auto-scoped to local) instead of explicit `private:` scope unless private scope is specifically needed.
+
 *Essential reference for Dana language syntax, functions, and patterns*
 
 ---
@@ -32,10 +37,10 @@ while condition:
 ### State Scopes
 | Scope | Purpose | Example |
 |-------|---------|---------|
-| `local:` | Function/tool local | `local.result = analysis` |
-| `private:` | Agent private | `private.internal_state = "processing"` |
-| `public:` | World state | `public.weather = "sunny"` |
-| `system:` | System state | `system.memory_usage = 85` |
+| `local:` | Function/tool local | `result = analysis` (auto-scoped to local, preferred) |
+| `private:` | Agent private | `private:internal_state = "processing"` |
+| `public:` | World state | `public:weather = "sunny"` |
+| `system:` | System state | `system:memory_usage = 85` |
 
 ---
 
@@ -45,16 +50,16 @@ while condition:
 
 #### Basic Assignment
 ```python
-# Simple assignment
+# Simple assignment (auto-scoped to local)
 name = "OpenDXA"
 count = 42
 active = true
 data = none
 
-# Scoped assignment
-agent.status = "ready"
-world.temperature = 72.5
-temp.processing = true
+# Explicit scoped assignment
+private:agent_status = "ready"
+public:temperature = 72.5
+processing = true  # Auto-scoped to local (preferred)
 ```
 
 #### Supported Data Types
@@ -122,19 +127,19 @@ Directly set values in the runtime context.
 
 ```python
 # Set system values
-set("agent.status", "ready")
-set("world.current_time", "2024-01-15T10:30:00Z")
+set("system:agent_status", "ready")
+set("public:current_time", "2024-01-15T10:30:00Z")
 
 # Set configuration
-set("config.debug_mode", true)
+set("system:debug_mode", true)
 ```
 
 ### 3. Control Flow
 
 #### Conditional Statements
 ```python
-# Simple if
-if agent.status == "ready":
+# Simple if with scoped variable
+if private:agent_status == "ready":
     begin_processing()
 
 # If-elif-else chain
@@ -201,7 +206,7 @@ if status == "error" or status == "warning":
     log_issue()
 
 # Complex logic
-if (user.role == "admin" or user.role == "manager") and not system.maintenance_mode:
+if (user.role == "admin" or user.role == "manager") and not system:maintenance_mode:
     show_admin_panel()
 ```
 
@@ -284,14 +289,14 @@ while attempts < max_attempts:
 #### Context Management Pattern
 ```python
 # Save context, process, restore
-original_context = agent.context
+original_context = current_context
 
 # Modify context for specific task
-agent.context = specialized_context
-result = reason("Perform specialized analysis", context=agent.context)
+current_context = specialized_context
+result = reason("Perform specialized analysis", context=current_context)
 
 # Restore original context
-agent.context = original_context
+current_context = original_context
 ```
 
 #### Conditional Processing Chain
@@ -332,10 +337,10 @@ for doc in documents:
     compliance_check = reason("Check for compliance issues", context=[doc, regulations])
     
     # Store results
-    private.analysis[doc.name] = {
+    analysis[doc.name] = {
         "key_terms": key_terms,
         "compliance": compliance_check,
-        "processed_at": system.current_time
+        "processed_at": system:current_time
     }
 ```
 

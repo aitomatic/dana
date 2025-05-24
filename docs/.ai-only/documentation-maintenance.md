@@ -1,5 +1,10 @@
 # OpenDXA Documentation Maintenance Prompts
 
+> **⚠️ IMPORTANT FOR AI CODE GENERATORS:**
+> Always use colon notation for explicit scopes: `private:x`, `public:x`, `system:x`, `local:x`
+> NEVER use dot notation: `private.x`, `public.x`, etc.
+> Prefer using unscoped variables (auto-scoped to local) instead of explicit `private:` scope unless private scope is specifically needed.
+
 ## Essential Context for All Prompts
 
 **Key Reference Files** (Read before executing any prompt):
@@ -64,8 +69,8 @@ grep -n "def " [MODIFIED_FILES] | grep -v "__"
 **Quick Example:**
 ```dana
 # Minimal working example
-private:result = function_name("example_input", default_param)
-log(f"Result: {private:result}")
+result = function_name("example_input", default_param)
+log(f"Result: {result}")
 ```
 **Expected Output:** `Result: [expected_value]`
 
@@ -172,7 +177,9 @@ class CustomFunctionExtension:
 
 **Quick Reference:**
 ```dana
-[minimal_example]
+# Minimal working example
+result = function_name("example_input", default_param)
+log(f"Result: {result}")
 ```
 
 **Documentation Links:**
@@ -241,7 +248,7 @@ done < dana_example_files.txt
 # OLD (if found):
 x = 10
 # NEW:
-private:x = 10
+x = 10  # Auto-scoped to local (preferred)
 
 # OLD:
 global_var = "value"
@@ -255,7 +262,7 @@ public:global_var = "value"
 # OLD (if outdated):
 result = reason("prompt")
 # NEW (verify current format):
-private:result = reason("prompt", context=private:context)
+result = reason("prompt", context=context)
 ```
 
 **F-String Formatting:**
@@ -283,9 +290,9 @@ log(f"Value is {private:variable_name}")
 **Example: [Purpose of example]**
 ```dana
 # [Brief comment explaining what this does]
-private:input = "example_data"
-private:result = function_name(private:input)
-log(f"Result: {private:result}")
+input_data = "example_data"
+result = function_name(input_data)
+log(f"Result: {result}")
 ```
 **Expected Output:**
 ```
@@ -656,10 +663,10 @@ grep -r "[FEATURE_NAME]" docs/ --include="*.md"
 
 ## 5-Minute Quick Start
 ```dana
-# Minimal working example that demonstrates core functionality
-private:input_data = "example_input"
-private:result = [feature_function](private:input_data)
-log(f"[FEATURE_NAME] result: {private:result}")
+# Minimal working example
+input_data = "example_input"
+result = [feature_function](input_data)
+log(f"[FEATURE_NAME] result: {result}")
 ```
 **Expected Output:**
 ```
@@ -1354,3 +1361,26 @@ bin/dana test_examples.na
 ---
 
 This completes the comprehensive, copy-paste ready prompt set for OpenDXA documentation maintenance. Each prompt includes all necessary context, reference materials, and step-by-step instructions for execution without additional guidance. 
+
+```dana
+result = function_name("example_input", default_param)
+log(f"Result: {result}")
+```
+
+```dana
+x = 10  # Auto-scoped to local (preferred)
+```
+
+```dana
+global_var = "value"  # Auto-scoped to local for examples
+```
+
+```dana
+result = reason("prompt", context=context)
+```
+
+```dana
+input_data = "example_data"
+result = function_name(input_data)
+log(f"Result: {result}")
+``` 

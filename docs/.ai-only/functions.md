@@ -14,7 +14,12 @@ This document describes the design for function calling in the Dana language and
 
 The goal is to provide a unified, extensible, and secure function system that enables seamless integration between Dana and Python, with clear boundaries for context, security, and auditability.
 
----
+# Function System
+
+> **⚠️ IMPORTANT FOR AI CODE GENERATORS:**
+> Always use colon notation for explicit scopes: `private:x`, `public:x`, `system:x`, `local:x`
+> NEVER use dot notation: `private.x`, `public.x`, etc.
+> Prefer using unscoped variables (auto-scoped to local) instead of explicit `private:` scope unless private scope is specifically needed.
 
 ## 2. The Function Registry: Central Pillar of Function Calling
 
@@ -209,7 +214,7 @@ sum = math.format(1, 2)  # Both modules can have a 'format' function, no collisi
 - Functions are defined in Dana using `func name(args): ...`.
 - Functions can be imported from other Dana modules using `import my_utils.na as util` or globally.
 - The function registry tracks all available Dana functions, supporting namespacing and global imports.
-- Parameters are mapped to the local scope (`local.param`), and each call creates a new local context.
+- Parameters are mapped to the local scope (just `param` or `local:param`), and each call creates a new local context.
 
 ### Example
 ```dana

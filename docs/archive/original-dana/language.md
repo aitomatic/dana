@@ -12,6 +12,11 @@ Dana is a minimal, interpretable, and LLM-friendly program format for reasoning 
 
 For greater detail, see the [Dana Syntax](./syntax.md) document.
 
+> **⚠️ IMPORTANT FOR AI CODE GENERATORS:**
+> Always use colon notation for explicit scopes: `private:x`, `public:x`, `system:x`, `local:x`
+> NEVER use dot notation: `private.x`, `public.x`, etc.
+> Prefer using unscoped variables (auto-scoped to local) instead of explicit `private:` scope unless private scope is specifically needed.
+
 ---
 
 ## 🧱 Program Structure
@@ -19,10 +24,10 @@ For greater detail, see the [Dana Syntax](./syntax.md) document.
 A Dana program is a sequence of **instructions**, optionally organized into **blocks**, executed linearly by the runtime.
 
 ```python
-if private.sensor.temp > 100:
-    msg = reason("Is this overheating?", context=world.sensor)
+if private:sensor_temp > 100:
+    msg = reason("Is this overheating?", context=sensor_data)
     if msg == "yes":
-        execution.alerts.append("Overheat detected")
+        system:alerts.append("Overheat detected")
 ```
 
 Supported constructs:
@@ -41,8 +46,8 @@ Supported constructs:
 Assign a literal, expression, or result of a function call to a state key.
 
 ```python
-temp.status = "ok"
-temp.result = reason("Explain this situation", context=world.system)
+status = "ok"  # Auto-scoped to local (preferred)
+result = reason("Explain this situation", context=system_data)
 ```
 
 ### `reason(prompt: str, context: list|var, temperature: float, format: str)`
@@ -52,19 +57,19 @@ Returns a value to be stored or checked.
 
 ```python
 # Basic usage
-local.analysis = reason("Is this machine in a failure state?")
+analysis = reason("Is this machine in a failure state?")
 
 # With context
-local.analysis = reason("Is this machine in a failure state?", context=world)
+analysis = reason("Is this machine in a failure state?", context=world_data)
 
 # With multiple context variables
-local.analysis = reason("Analyze this situation", context=[sensor, metrics, history])
+analysis = reason("Analyze this situation", context=[sensor, metrics, history])
 
 # With temperature control
-local.ideas = reason("Generate creative solutions", temperature=0.9)
+ideas = reason("Generate creative solutions", temperature=0.9)
 
 # With specific format (supports "json" or "text")
-local.data = reason("List 3 potential causes", format="json")
+data = reason("List 3 potential causes", format="json")
 ```
 
 ### `use(id: str)`
@@ -201,17 +206,17 @@ Variables are referenced using dot-scoped prefixes, organized by memory scope:
 The `RuntimeContext` enforces strict scope boundaries and provides controlled access to state variables through dot notation. For example:
 
 ```python
-# Local scope - internal state
-local.user = "Alice"
-user = "Alice" # same as local.user
+# Local scope - internal state (auto-scoped preferred)
+user = "Alice"  # Auto-scoped to local
+# user = "Alice" # same as local:user (explicit form)
 
 # Public scope - shared world state
-public.weather.temperature = 72
-public.time.current = "2024-03-20T10:00:00Z"
+public:weather_temperature = 72
+public:current_time = "2024-03-20T10:00:00Z"
 
 # System scope - runtime state
-system.status = "running"
-system.log_level = "DEBUG"
+system:status = "running"
+system:log_level = "DEBUG"
 ```
 
 ### Scope Access Rules
@@ -238,7 +243,7 @@ system.log_level = "DEBUG"
 ### State Management
 
 - Variables must be declared with their scope prefix
-- Nested paths are supported (e.g., `private.user.profile.name`)
+- Nested paths are supported (e.g., `private:user_profile_name`)
 - Invalid scope access raises `StateError`
 - State changes are tracked in execution history
 
@@ -347,11 +352,10 @@ For more advanced LLM configurations, refer to the `LLMResource` class documenta
 ### Basic Reasoning Example
 
 ```python
-if public.system.temperature > 90:
-    eval = reason("Is this temperature abnormal?", context=public.system)
+if public:system_temperature > 90:
+    eval = reason("Is this temperature abnormal?", context=system_data)
     if eval == "yes":
-        use("kb.maintenance.dispatch.v2")
-        log(f"High temperature detected: {public.system.temperature}°C")
+        log(f"High temperature detected: {public:system_temperature}°C")
 ```
 
 ### Advanced Reasoning with Options
@@ -362,7 +366,7 @@ ideas = reason("Generate solution ideas for the issue", temperature=0.8)
 
 # Using the format parameter to get structured JSON
 analysis = reason("Analyze system state and list problems",
-                 context=[public.sensors, public.alerts],
+                 context=[public:sensors, public:alerts],
                  format="json")
 
 # Present the analysis

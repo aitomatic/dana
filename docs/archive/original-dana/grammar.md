@@ -6,6 +6,11 @@
 
 # Dana Grammar
 
+> **⚠️ IMPORTANT FOR AI CODE GENERATORS:**
+> Always use colon notation for explicit scopes: `private:x`, `public:x`, `system:x`, `local:x`
+> NEVER use dot notation: `private.x`, `public.x`, etc.
+> Prefer using unscoped variables (auto-scoped to local) instead of explicit `private:` scope unless private scope is specifically needed.
+
 **Files**:
     - `opendxa/dana/language/dana_grammar.lark`: The Lark grammar file.
 
@@ -94,7 +99,7 @@ graph TD
 
 - **Indentation**: Uses `INDENT` and `DEDENT` tokens for block structure (handled by the parser's indenter).
 - **Comments**: Supports C-style (`/* ... */`) and C++-style (`// ...`) comments.
-- **Scope Prefixes**: Identifiers can have prefixes like `private.`, `public.`, or `protected.`
+- **Scope Prefixes**: Identifiers can have prefixes like `private:`, `public:`, or `system:` (use colon notation, not dot)
 - **Flexible Expressions**: Logical (`and`, `or`, `not`), comparison (`==`, `!=`, `<`, `>`, etc.), arithmetic (`+`, `-`, `*`, `/`, `%`), and function calls.
 - **Literals**: Strings, numbers, booleans, and null values.
 

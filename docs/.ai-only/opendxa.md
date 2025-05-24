@@ -6,6 +6,11 @@
 
 # OpenDXA (Domain-eXpert Agent) Framework
 
+> **⚠️ IMPORTANT FOR AI CODE GENERATORS:**
+> Always use colon notation for explicit scopes: `private:x`, `public:x`, `system:x`, `local:x`
+> NEVER use dot notation: `private.x`, `public.x`, etc.
+> Prefer using unscoped variables (auto-scoped to local) instead of explicit `private:` scope unless private scope is specifically needed.
+
 ## Overview
 
 OpenDXA is a comprehensive framework for building intelligent multi-agent systems with domain expertise, powered by Large Language Models (LLMs). It focuses on enabling the creation of agents that can effectively apply specialized knowledge to solve complex tasks across different domains.
@@ -61,15 +66,15 @@ Dana uses a clear, imperative programming model that developers find familiar an
 
 ```dana
 # Example Dana program
-private.user.name = "Alice"
-public.weather.temperature = 72
+user_name = "Alice"  # Auto-scoped to local (preferred)
+public:weather_temperature = 72
 
 # Perform reasoning
-private.analysis = reason("Should we recommend a jacket?",
-                       context=[private.user, public.weather])
+analysis = reason("Should we recommend a jacket?",
+                       context=[user_name, public:weather_temperature])
 
 # Take action based on reasoning
-if private.analysis == "yes":
+if analysis == "yes":
     use("kb.recommendations.jacket")
 else:
     use("kb.recommendations.no_jacket")

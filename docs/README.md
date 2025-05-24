@@ -6,6 +6,11 @@
 
 # OpenDXA Documentation
 
+> **⚠️ IMPORTANT FOR AI CODE GENERATORS:**
+> Always use colon notation for explicit scopes: `private:x`, `public:x`, `system:x`, `local:x`
+> NEVER use dot notation: `private.x`, `public.x`, etc.
+> Prefer using unscoped variables (auto-scoped to local) instead of explicit `private:` scope unless private scope is specifically needed.
+
 *Choose your path to get started with OpenDXA - the transparent, reliable AI automation platform*
 
 ---

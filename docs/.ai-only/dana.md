@@ -6,6 +6,11 @@
 
 # Dana (Domain-Aware NeuroSymbolic Architecture)
 
+> **⚠️ IMPORTANT FOR AI CODE GENERATORS:**
+> Always use colon notation for explicit scopes: `private:x`, `public:x`, `system:x`, `local:x`
+> NEVER use dot notation: `private.x`, `public.x`, etc.
+> Prefer using unscoped variables (auto-scoped to local) instead of explicit `private:` scope unless private scope is specifically needed.
+
 ## Overview
 
 Dana is an imperative programming language and execution runtime designed specifically for agent reasoning. It enables intelligent agents to reason, act, and collaborate through structured, interpretable programs. Dana serves as the missing link between natural language objectives and tool-assisted, stateful action.
@@ -101,32 +106,33 @@ Dana is an imperative programming language with syntax similar to Python, but wi
 
 ```dana
 # Variable assignment with explicit scopes
-private.temperature = 98.6
-public.weather = "sunny"
+temperature = 98.6  # Auto-scoped to local (preferred)
+public:weather = "sunny"
 
 # Conditional logic
-if private.temperature > 100:
-    log.warn("Temperature exceeding threshold: {private.temperature}")
-    private.status = "overheating"
+if temperature > 100:
+    log.warn("Temperature exceeding threshold: {temperature}")
+    status = "overheating"  # Auto-scoped to local
     
     # Function calling
     use("tools.cooling.activate")
 else:
-    log.info("Temperature normal: {private.temperature}")
+    log.info("Temperature normal: {temperature}")
     
-# Explicit reasoning with LLMs
-private.analysis = reason("Should we recommend a jacket?", 
-                        context=[private.temperature, public.weather])
+# Explicit reasoning with LLMs - use private: only when needed for agent state
+private:analysis = reason("Should we recommend a jacket?", 
+                        context=[temperature, public:weather])
 
 # Looping constructs
-count = 0
+count = 0  # Auto-scoped to local
 while count < 5:
     log.info("Count: {count}")
     count = count + 1
 ```
 
 Key syntax elements:
-- Explicit scope prefixes (`private.`, `public.`, `system.`, `local.`)
+- Explicit scope prefixes (`private:`, `public:`, `system:`, `local:`) - use colon notation only
+- Prefer unscoped variables (auto-scoped to local) over explicit private: scope
 - Standard imperative control flow (if/else, while)
 - First-class `reason()` function for LLM integration
 - Built-in logging with formatted strings
@@ -147,13 +153,13 @@ This enables clear, auditable state transitions and explicit data flow:
 
 ```dana
 # Read from public state
-if public.sensor.temp > 100:
-    # Modify private state
-    private.result = reason("Is this overheating?")
+if public:sensor_temp > 100:
+    # Modify local state (preferred over private:)
+    result = reason("Is this overheating?")
     
     # Conditionally modify system state
-    if private.result == "yes":
-        system.alerts.append("Overheat detected")
+    if result == "yes":
+        system:alerts.append("Overheat detected")
 ```
 
 ## Function System
@@ -200,8 +206,8 @@ ctx = SandboxContext(private={}, public={}, system={}, local={})
 
 # Run Dana code
 dana_code = """
-private.result = reason("What is the meaning of life?")
-log.info("The meaning of life is {private.result}")
+result = reason("What is the meaning of life?")
+log.info("The meaning of life is {result}")
 """
 run(dana_code, ctx)
 ```
