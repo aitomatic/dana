@@ -93,13 +93,12 @@ Dana (Domain-Aware NeuroSymbolic Architecture) provides an imperative programmin
 result = llm_call("analyze data", context=data)
 
 # Dana: Transparent, self-correcting with explicit state management
-private:analysis = reason("analyze data", context=data)
-while confidence(private:analysis) < high_confidence:
-    private:analysis = reason("refine analysis", 
-                             context=[data, private:analysis])
+analysis = reason("analyze data", context=data)  # Auto-scoped to local (preferred)
+while confidence(analysis) < high_confidence:
+    analysis = reason("refine analysis", context=[data, analysis])
 
 # Clear state transitions and auditable reasoning
-public:result = private:analysis
+public:result = analysis
 use("tools.report.generate", input=public:result)
 ```
 
