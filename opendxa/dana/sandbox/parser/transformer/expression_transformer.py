@@ -632,7 +632,6 @@ class ExpressionTransformer(BaseTransformer):
             elif item.data == "fstring":
                 # Handle fstring: f_prefix fstring_content
                 # For now, treat as a regular string but prepare for embedded expressions
-                parts = []
 
                 # Extract f_prefix (already processed) and fstring_content
                 content_node = item.children[1]
