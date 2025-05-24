@@ -21,7 +21,7 @@ Discord: https://discord.gg/6jGD4PYk
 """
 
 import re
-from typing import Any, Optional
+from typing import Any
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.dana.common.error_utils import ErrorUtils
@@ -69,26 +69,15 @@ ErrorUtils.format_user_error = _patched_format_user_error
 class DanaInterpreter(Loggable):
     """Interpreter for executing Dana programs."""
 
-    def __init__(self, context: Optional[SandboxContext] = None):
-        """Initialize the interpreter.
-
-        Args:
-            context: Optional runtime context to use
-        """
+    def __init__(self):
+        """Initialize the interpreter."""
         super().__init__()
-        from opendxa.dana.sandbox.context_manager import ContextManager
-
-        self.context = context or SandboxContext()
-        self._context_manager = ContextManager(self.context)
 
         # Initialize the function registry first
         self._init_function_registry()
 
         # Create a DanaExecutor with the function registry
         self._executor = DanaExecutor(function_registry=self._function_registry)
-
-        # Store the interpreter reference in the context
-        self.context._interpreter = self
 
     def _init_function_registry(self):
         """Initialize the function registry."""
@@ -104,9 +93,7 @@ class DanaInterpreter(Loggable):
         # Register all core functions automatically
         register_core_functions(self._function_registry)
 
-        # Make sure we set the registry on the context so it can be found during execution
-        self.context.set_registry(self._function_registry)
-        self.debug("Function registry initialized and set on context")
+        self.debug("Function registry initialized")
 
     @property
     def function_registry(self) -> FunctionRegistry:
@@ -131,17 +118,21 @@ class DanaInterpreter(Loggable):
         """
         return self._executor.execute(expression, context)
 
-    def execute_program(self, program: Program) -> Any:
+    def execute_program(self, program: Program, context: SandboxContext) -> Any:
         """Execute a Dana program.
 
         Args:
             program: The program to execute
+            context: The execution context to use
 
         Returns:
             The result of executing the program
         """
         result = None
-        context = self.context
+        # Temporarily inject interpreter reference
+        original_interpreter = getattr(context, "_interpreter", None)
+        context._interpreter = self
+
         try:
             context.set_execution_status(ExecutionStatus.RUNNING)
             result = self._executor.execute(program, context)
@@ -149,6 +140,9 @@ class DanaInterpreter(Loggable):
         except Exception as e:
             context.set_execution_status(ExecutionStatus.FAILED)
             raise e
+        finally:
+            # Restore original interpreter reference
+            context._interpreter = original_interpreter
         return result
 
     def execute_statement(self, statement: Any, context: SandboxContext) -> Any:
@@ -156,24 +150,13 @@ class DanaInterpreter(Loggable):
 
         Args:
             statement: The statement to execute
+            context: The context to execute the statement in
 
         Returns:
             The result of executing the statement
         """
         # All execution goes through the unified executor
         return self._executor.execute(statement, context)
-
-    @classmethod
-    def new(cls, context: SandboxContext) -> "DanaInterpreter":
-        """Create a new instance of the Interpreter.
-
-        Args:
-            context: The runtime context for the interpreter.
-
-        Returns:
-            An instance of the Interpreter.
-        """
-        return cls(context)
 
     def get_and_clear_output(self) -> str:
         """Retrieve and clear the output buffer from the executor."""

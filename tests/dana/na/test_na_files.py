@@ -69,10 +69,10 @@ def test_na_file(na_file):
         assert program is not None, f"Failed to parse {na_file}"
 
         # Initialize interpreter
-        interpreter = DanaInterpreter(context)
+        interpreter = DanaInterpreter()
 
         # Execute the program
-        result = interpreter.execute_program(program)
+        result = interpreter.execute_program(program, context)
 
         # Check the execution status
         if hasattr(result, "status"):

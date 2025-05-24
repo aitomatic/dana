@@ -26,7 +26,9 @@ from opendxa.dana.sandbox.parser.ast import (
     AttributeAccess,
     BinaryExpression,
     DictLiteral,
+    FStringExpression,
     Identifier,
+    ListLiteral,
     LiteralExpression,
     SetLiteral,
     SubscriptExpression,
@@ -69,8 +71,10 @@ class ExpressionExecutor(BaseExecutor):
             BinaryExpression: self.execute_binary_expression,
             UnaryExpression: self.execute_unary_expression,
             DictLiteral: self.execute_dict_literal,
+            ListLiteral: self.execute_list_literal,
             TupleLiteral: self.execute_tuple_literal,
             SetLiteral: self.execute_set_literal,
+            FStringExpression: self.execute_fstring_expression,
             AttributeAccess: self.execute_attribute_access,
             SubscriptExpression: self.execute_subscript_expression,
         }
@@ -85,6 +89,10 @@ class ExpressionExecutor(BaseExecutor):
         Returns:
             The literal value
         """
+        # Special handling for FStringExpression values
+        if isinstance(node.value, FStringExpression):
+            return self.execute_fstring_expression(node.value, context)
+
         return node.value
 
     def execute_identifier(self, node: Identifier, context: SandboxContext) -> Any:
@@ -252,6 +260,47 @@ class ExpressionExecutor(BaseExecutor):
         """
         return {self.parent.execute(item, context) for item in node.items}
 
+    def execute_fstring_expression(self, node: FStringExpression, context: SandboxContext) -> str:
+        """Execute a formatted string expression.
+
+        Args:
+            node: The formatted string expression to execute
+            context: The execution context
+
+        Returns:
+            The formatted string
+        """
+        # Handle both new-style expression structure (with template and expressions)
+        # and old-style parts structure
+
+        # Check if we have the new structure with template and expressions dictionary
+        if hasattr(node, "template") and node.template and hasattr(node, "expressions") and node.expressions:
+            result = node.template
+
+            # Replace each placeholder with its evaluated value
+            for placeholder, expr in node.expressions.items():
+                # Evaluate the expression within the placeholder
+                value = self.parent.execute(expr, context)
+                # Replace the placeholder with the string representation of the value
+                result = result.replace(placeholder, str(value))
+
+            return result
+
+        # Handle the older style with parts list
+        elif hasattr(node, "parts") and node.parts:
+            result = ""
+            for part in node.parts:
+                if isinstance(part, str):
+                    result += part
+                else:
+                    # Evaluate the expression part
+                    value = self.parent.execute(part, context)
+                    result += str(value)
+            return result
+
+        # If neither format is present, return an empty string as fallback
+        return ""
+
     def execute_attribute_access(self, node: AttributeAccess, context: SandboxContext) -> Any:
         """Execute an attribute access expression.
 
@@ -296,3 +345,15 @@ class ExpressionExecutor(BaseExecutor):
             return target[index]
         except (TypeError, KeyError, IndexError) as e:
             raise TypeError(f"Cannot access {type(target).__name__} with key {index}: {e}")
+
+    def execute_list_literal(self, node: ListLiteral, context: SandboxContext) -> list:
+        """Execute a list literal.
+
+        Args:
+            node: The list literal to execute
+            context: The execution context
+
+        Returns:
+            The list value
+        """
+        return [self.parent.execute(item, context) for item in node.items]

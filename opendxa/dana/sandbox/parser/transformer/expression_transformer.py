@@ -32,6 +32,7 @@ from opendxa.dana.sandbox.parser.ast import (
     FStringExpression,
     FunctionCall,
     Identifier,
+    ListLiteral,
     LiteralExpression,
     SetLiteral,
     SubscriptExpression,
@@ -123,6 +124,7 @@ class ExpressionTransformer(BaseTransformer):
                 FunctionCall,
                 TupleLiteral,
                 DictLiteral,
+                ListLiteral,
                 SetLiteral,
                 SubscriptExpression,
                 AttributeAccess,
@@ -481,16 +483,18 @@ class ExpressionTransformer(BaseTransformer):
 
     def list(self, items):
         """
-        Transform a list literal into a LiteralExpression with list of LiteralExpression values.
+        Transform a list literal into a ListLiteral AST node.
         """
-        flat_items = self.flatten_items(items)
-        processed_items = []
+        from opendxa.dana.sandbox.parser.ast import Expression
 
+        flat_items = self.flatten_items(items)
+        # Ensure each item is properly cast to Expression type
+        list_items: List[Expression] = []
         for item in flat_items:
             expr = self.expression([item])
-            processed_items.append(expr)
+            list_items.append(cast(Expression, expr))
 
-        return LiteralExpression(value=processed_items)
+        return ListLiteral(items=list_items)
 
     def dict(self, items):
         flat_items = self.flatten_items(items)

@@ -27,7 +27,6 @@ from opendxa.dana.common.runtime_scopes import RuntimeScopes
 if TYPE_CHECKING:
     from opendxa.dana.sandbox.context_manager import ContextManager
     from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
-    from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
 
 
 class ExecutionStatus(Enum):
@@ -105,13 +104,6 @@ class SandboxContext:
             The interpreter instance or None
         """
         return self._interpreter
-
-    @property
-    def function_registry(self) -> "FunctionRegistry":
-        """Get the function registry from the interpreter."""
-        if self._interpreter is None:
-            raise RuntimeError("Interpreter not set")
-        return self._interpreter.function_registry
 
     def _validate_key(self, key: str) -> Tuple[str, str]:
         """Validate a key and extract scope and variable name.
@@ -607,11 +599,3 @@ class SandboxContext:
             return self._parent.get_from_scope(var_name, scope)
 
         return None
-
-    def set_registry(self, registry: Any) -> None:
-        """Set the function registry for this context.
-
-        Args:
-            registry: The function registry to use
-        """
-        self.set("system.function_registry", registry)

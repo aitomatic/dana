@@ -45,6 +45,7 @@ Expression = Union[
     "AttributeAccess",
     "SubscriptExpression",
     "DictLiteral",
+    "ListLiteral",
     "SetLiteral",
     "TupleLiteral",
 ]
@@ -218,6 +219,14 @@ class SetLiteral:
     location: Optional[Location] = None
 
 
+@dataclass
+class ListLiteral:
+    """A list literal (e.g., [1, 2, 3])."""
+
+    items: List[Expression]
+    location: Optional[Location] = None
+
+
 # === Statements ===
 @dataclass
 class Assignment:
@@ -232,6 +241,7 @@ class Assignment:
         FunctionCall,
         TupleLiteral,
         DictLiteral,
+        ListLiteral,
         SetLiteral,
         SubscriptExpression,
         AttributeAccess,

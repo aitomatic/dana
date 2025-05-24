@@ -24,6 +24,7 @@ from opendxa.dana.sandbox.interpreter.functions.function_registry import Functio
 from opendxa.dana.sandbox.parser.ast import (
     DictLiteral,
     FStringExpression,
+    ListLiteral,
     SetLiteral,
     TupleLiteral,
 )
@@ -36,6 +37,7 @@ class CollectionExecutor(BaseExecutor):
     Handles:
     - Tuple literals
     - Dict literals
+    - List literals
     - Set literals
     - FString expressions
     """
@@ -55,6 +57,7 @@ class CollectionExecutor(BaseExecutor):
         self._handlers = {
             TupleLiteral: self.execute_tuple_literal,
             DictLiteral: self.execute_dict_literal,
+            ListLiteral: self.execute_list_literal,
             SetLiteral: self.execute_set_literal,
             FStringExpression: self.execute_fstring_expression,
         }
@@ -138,3 +141,16 @@ class CollectionExecutor(BaseExecutor):
 
         # If neither format is present, return an empty string as fallback
         return ""
+
+    def execute_list_literal(self, node: ListLiteral, context: SandboxContext) -> list:
+        """Execute a list literal.
+
+        Args:
+            node: The list literal to execute
+            context: The execution context
+
+        Returns:
+            The list value
+        """
+        # Process each item in the list, ensuring AST nodes are evaluated
+        return [self.parent.execute(item, context) for item in node.items]

@@ -11,9 +11,10 @@ def run_dana_code(code: str):
     code = code.strip()
     parser = DanaParser()
     program = parser.parse(code, do_type_check=True, do_transform=True)
-    interpreter = DanaInterpreter(SandboxContext())
-    interpreter.execute_program(program)
-    return interpreter.context
+    context = SandboxContext()
+    interpreter = DanaInterpreter()
+    interpreter.execute_program(program, context)
+    return context
 
 
 def test_basic_variable_assignment():

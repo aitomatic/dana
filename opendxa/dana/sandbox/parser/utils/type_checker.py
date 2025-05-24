@@ -38,6 +38,7 @@ from opendxa.dana.sandbox.parser.ast import (
     Identifier,
     ImportFromStatement,
     ImportStatement,
+    ListLiteral,
     LiteralExpression,
     PassStatement,
     Program,
@@ -175,8 +176,8 @@ class TypeChecker:
         iterable_type = self.check_expression(node.iterable)
 
         # Assuming iterable is a list or range
-        if iterable_type != DanaType("array") and iterable_type != DanaType("range"):
-            raise TypeError(f"For loop iterable must be a list or range, got {iterable_type}", node)
+        if iterable_type != DanaType("array") and iterable_type != DanaType("list") and iterable_type != DanaType("range"):
+            raise TypeError(f"For loop iterable must be a list, array, or range, got {iterable_type}", node)
 
         # Register the loop variable in the type environment
         # For arrays/lists, the element type is 'any' unless we can infer more specific types
@@ -275,6 +276,8 @@ class TypeChecker:
             return self.check_set_literal(expression)
         elif isinstance(expression, TupleLiteral):
             return self.check_tuple_literal(expression)
+        elif isinstance(expression, ListLiteral):
+            return self.check_list_literal(expression)
         else:
             raise TypeError(f"Unsupported expression type: {type(expression).__name__}", expression)
 
@@ -361,10 +364,10 @@ class TypeChecker:
         """Check a subscript expression for type errors."""
         object_type = self.check_expression(node.object)
         index_type = self.check_expression(node.index)
-        if object_type != DanaType("array") and object_type != DanaType("dict"):
-            raise TypeError(f"Subscript requires array or dict, got {object_type}", node)
-        if object_type == DanaType("array") and index_type != DanaType("int"):
-            raise TypeError(f"Array subscript requires int, got {index_type}", node)
+        if object_type != DanaType("array") and object_type != DanaType("list") and object_type != DanaType("dict"):
+            raise TypeError(f"Subscript requires array, list, or dict, got {object_type}", node)
+        if (object_type == DanaType("array") or object_type == DanaType("list")) and index_type != DanaType("int"):
+            raise TypeError(f"Array/list subscript requires int, got {index_type}", node)
         if object_type == DanaType("dict") and index_type != DanaType("string"):
             raise TypeError(f"Dict subscript requires string, got {index_type}", node)
         return DanaType("any")
@@ -389,6 +392,12 @@ class TypeChecker:
         for item in node.items:
             _ = self.check_expression(item)
         return DanaType("tuple")
+
+    def check_list_literal(self, node: ListLiteral) -> DanaType:
+        """Check a list literal for type errors."""
+        for item in node.items:
+            _ = self.check_expression(item)
+        return DanaType("list")
 
     def check_function_call(self, node: FunctionCall) -> DanaType:
         """Check a function call for type errors."""

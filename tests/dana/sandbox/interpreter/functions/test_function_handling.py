@@ -29,7 +29,7 @@ def test_dana_to_dana_function_call():
 
     # When the program is executed
     context = SandboxContext()
-    interpreter = DanaInterpreter(context)
+    interpreter = DanaInterpreter()
 
     # Manually create and register a function directly
     def add_function(a, b):
@@ -60,7 +60,7 @@ def test_dana_to_dana_function_call_with_args():
 
     # When the program is executed
     context = SandboxContext()
-    interpreter = DanaInterpreter(context)
+    interpreter = DanaInterpreter()
 
     # Manually create a function
     def process_function(name, age=25, city="Unknown"):
@@ -92,7 +92,7 @@ def test_dana_to_python_function():
         return a * b
 
     context = SandboxContext()
-    interpreter = DanaInterpreter(context)
+    interpreter = DanaInterpreter()
 
     # Register the Python function
     interpreter.function_registry.register("multiply", multiply, func_type="python")
@@ -119,7 +119,7 @@ def test_python_to_dana_function():
     """
 
     context = SandboxContext()
-    interpreter = DanaInterpreter(context)
+    interpreter = DanaInterpreter()
 
     # Manually create a function
     def square_function(x):

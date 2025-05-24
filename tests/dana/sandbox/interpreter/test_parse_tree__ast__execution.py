@@ -27,6 +27,7 @@ def test_arithmetic_assignment_parse_tree_ast_execution():
     code = "private:result = 2 + 3"
     parser = DanaParser()
     program = parser.parse(code, do_transform=True)
-    interpreter = DanaInterpreter(SandboxContext())
-    interpreter.execute_program(program)
-    assert interpreter.context.get("private.result") == 5
+    context = SandboxContext()
+    interpreter = DanaInterpreter()
+    interpreter.execute_program(program, context)
+    assert context.get("private.result") == 5

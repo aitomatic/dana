@@ -103,7 +103,7 @@ class FunctionExecutor(BaseExecutor):
             The result of the function call
         """
         # Get the function registry
-        registry = self.get_function_registry(context)
+        registry = self.function_registry
         if not registry:
             raise SandboxError(f"No function registry available to execute function '{node.name}'")
 

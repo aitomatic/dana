@@ -16,6 +16,7 @@ from opendxa.dana.sandbox.parser.ast import (
     FStringExpression,
     FunctionCall,
     Identifier,
+    ListLiteral,
     LiteralExpression,
     Statement,
     UnaryExpression,
@@ -352,4 +353,6 @@ def test_expression_literals_and_collections():
     et = ExpressionTransformer()
     assert cast(LiteralExpression, et.literal([LiteralExpression(True)])).value is True
     assert cast(LiteralExpression, et.literal([LiteralExpression(None)])).value is None
-    assert isinstance(cast(LiteralExpression, et.list([LiteralExpression(1), LiteralExpression(2)])).value, list)
+    list_literal = cast(ListLiteral, et.list([LiteralExpression(1), LiteralExpression(2)]))
+    assert isinstance(list_literal, ListLiteral)
+    assert len(list_literal.items) == 2

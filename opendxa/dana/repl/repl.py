@@ -46,12 +46,7 @@ class REPL(Loggable):
         self.context = context or SandboxContext()
         if llm_resource is not None:
             self.context.set("system.llm_resource", llm_resource)
-        self.interpreter = DanaInterpreter(self.context)
-
-        # Force initialization of the function registry and set it on the context
-        registry = self.interpreter.function_registry
-        self.context.set_registry(registry)
-        self.debug("Function registry initialized and set on context")
+        self.interpreter = DanaInterpreter()
 
         self.parser = DanaParser()
         self.last_result = None
@@ -215,7 +210,7 @@ class REPL(Loggable):
             program = parse_result.program if hasattr(parse_result, "program") else parse_result
 
             # Execute the program (synchronous operation)
-            result = self.interpreter.execute_program(program)
+            result = self.interpreter.execute_program(program, self.context)
             return result
         except Exception as e:
             formatted = self._format_error_message(str(e), program_source)
