@@ -1,0 +1,6 @@
+print("Demo")
+
+
+# Comment after double newlines
+def add_ten(x):
+    return x + 10

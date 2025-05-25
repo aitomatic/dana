@@ -8,10 +8,10 @@
 
 ```bash
 # Start the REPL
-python -m opendxa.dana.repl.dana_repl_app
+python -m opendxa.dana.exec.repl.dana_repl_app
 
 # Or from your code
-from opendxa.dana.repl.repl import REPL
+from opendxa.dana.exec.repl.repl import REPL
 repl = REPL()
 result = repl.execute("x = 42\nprint(x)")
 ```
@@ -301,7 +301,7 @@ dana> save_to_file("working_solution.dana", working_solution)
 ### Export to Files
 ```python
 # From your development environment
-from opendxa.dana.repl.repl import REPL
+from opendxa.dana.exec.repl.repl import REPL
 
 repl = REPL()
 
@@ -350,7 +350,7 @@ export ANTHROPIC_API_KEY="your-key-here"
 ### Custom Configuration
 ```python
 # Programmatic REPL setup
-from opendxa.dana.repl.repl import REPL
+from opendxa.dana.exec.repl.repl import REPL
 from opendxa.common.resource import LLMResource
 
 repl = REPL()

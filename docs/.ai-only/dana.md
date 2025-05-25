@@ -216,7 +216,7 @@ run(dana_code, ctx)
 
 ```bash
 # Start the Dana REPL
-python -m opendxa.dana.repl.repl
+python -m opendxa.dana.exec.repl.repl
 ```
 
 ### Converting Natural Language to Dana Code

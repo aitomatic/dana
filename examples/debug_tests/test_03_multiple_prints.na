@@ -1,0 +1,6 @@
+print("Hello")
+print("World")
+
+
+def add_ten(x):
+    return x + 10

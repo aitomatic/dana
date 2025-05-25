@@ -7,7 +7,7 @@ help messages and displays available functions.
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.dana.common.terminal_utils import ColorScheme, print_header
-from opendxa.dana.repl.repl import REPL
+from opendxa.dana.exec.repl.repl import REPL
 
 
 class HelpFormatter(Loggable):

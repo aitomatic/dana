@@ -20,7 +20,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from opendxa.dana.common.error_utils import DanaError
-from opendxa.dana.repl.repl import REPL
+from opendxa.dana.exec.repl.repl import REPL
 from opendxa.dana.sandbox.log_manager import LogLevel
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
@@ -137,7 +137,7 @@ private:result
                 # Mock interpreter to return a value
                 with patch.object(repl.interpreter, "execute_program", return_value=5):
                     # Execute with NLP input - this should use the mocked safe_asyncio_run
-                    with patch("opendxa.dana.repl.repl.Misc.safe_asyncio_run", mock_safe_asyncio_run):
+                    with patch("opendxa.dana.exec.repl.repl.Misc.safe_asyncio_run", mock_safe_asyncio_run):
                         result = repl.execute("set x to 5")
 
                         # Verify expected behavior - now expects to_dana_with_context with context parameter

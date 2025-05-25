@@ -7,8 +7,8 @@
 [◀ Interpreter](./interpreter.md) | [Transcoder ▶︎](./transcoder.md)
 
 **Files**:
-    - `opendxa.dana.repl.repl`: The main REPL class (programmatic API)
-    - `opendxa.dana.repl.dana_repl_app`: The user-facing CLI application
+    - `opendxa.dana.exec.repl.repl`: The main REPL class (programmatic API)
+    - `opendxa.dana.exec.repl.dana_repl_app`: The user-facing CLI application
 
 # Dana REPL (Read-Eval-Print Loop)
 
@@ -30,13 +30,13 @@ The REPL uses the Parser to parse a Dana program into an AST, then calls the Int
 To start the REPL CLI, run:
 
 ```bash
-python -m opendxa.dana.repl.dana_repl_app
+python -m opendxa.dana.exec.repl.dana_repl_app
 ```
 
 Or use the programmatic API:
 
 ```python
-from opendxa.dana.repl.repl import REPL
+from opendxa.dana.exec.repl.repl import REPL
 repl = REPL()
 result = repl.execute("x = 42\nprint(x)")
 print(result)

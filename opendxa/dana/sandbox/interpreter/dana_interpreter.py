@@ -21,7 +21,8 @@ Discord: https://discord.gg/6jGD4PYk
 """
 
 import re
-from typing import Any
+from pathlib import Path
+from typing import Any, Optional, Union
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.dana.common.error_utils import ErrorUtils
@@ -106,6 +107,78 @@ class DanaInterpreter(Loggable):
             self._init_function_registry()
         return self._function_registry
 
+    # ============================================================================
+    # Internal API Methods (used by DanaSandbox and advanced tools)
+    # ============================================================================
+
+    def _run(self, file_path: Union[str, Path], source_code: str, context: SandboxContext) -> Any:
+        """
+        Internal: Run Dana file with pre-read source code.
+
+        Args:
+            file_path: Path to the file (for error reporting)
+            source_code: Dana source code to execute
+            context: Execution context
+
+        Returns:
+            Raw execution result
+        """
+        return self._eval(source_code, context=context, filename=str(file_path))
+
+    def _eval(self, source_code: str, context: SandboxContext, filename: Optional[str] = None) -> Any:
+        """
+        Internal: Evaluate Dana source code.
+
+        Args:
+            source_code: Dana code to execute
+            filename: Optional filename for error reporting
+            context: Execution context
+
+        Returns:
+            Raw execution result
+        """
+        # Parse the source code
+        from opendxa.dana.sandbox.parser.dana_parser import DanaParser
+
+        parser = DanaParser()
+        ast = parser.parse(source_code)
+
+        # Execute through _execute (convergent path)
+        return self._execute(ast, context)
+
+    def _execute(self, ast: Program, context: SandboxContext) -> Any:
+        """
+        Internal: Execute pre-parsed AST.
+
+        Args:
+            ast: Parsed Dana AST
+            context: Execution context
+
+        Returns:
+            Raw execution result
+        """
+        # This is the convergent point - all execution flows through here
+        result = None
+        # Temporarily inject interpreter reference
+        original_interpreter = getattr(context, "_interpreter", None)
+        context._interpreter = self
+
+        try:
+            context.set_execution_status(ExecutionStatus.RUNNING)
+            result = self._executor.execute(ast, context)
+            context.set_execution_status(ExecutionStatus.COMPLETED)
+        except Exception as e:
+            context.set_execution_status(ExecutionStatus.FAILED)
+            raise e
+        finally:
+            # Restore original interpreter reference
+            context._interpreter = original_interpreter
+        return result
+
+    # ============================================================================
+    # Legacy API Methods (kept for backward compatibility during transition)
+    # ============================================================================
+
     def evaluate_expression(self, expression: Any, context: SandboxContext) -> Any:
         """Evaluate an expression.
 
@@ -128,22 +201,8 @@ class DanaInterpreter(Loggable):
         Returns:
             The result of executing the program
         """
-        result = None
-        # Temporarily inject interpreter reference
-        original_interpreter = getattr(context, "_interpreter", None)
-        context._interpreter = self
-
-        try:
-            context.set_execution_status(ExecutionStatus.RUNNING)
-            result = self._executor.execute(program, context)
-            context.set_execution_status(ExecutionStatus.COMPLETED)
-        except Exception as e:
-            context.set_execution_status(ExecutionStatus.FAILED)
-            raise e
-        finally:
-            # Restore original interpreter reference
-            context._interpreter = original_interpreter
-        return result
+        # Route through new _execute method for convergent code path
+        return self._execute(program, context)
 
     def execute_statement(self, statement: Any, context: SandboxContext) -> Any:
         """Execute a single statement.

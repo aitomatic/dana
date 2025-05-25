@@ -7,7 +7,7 @@ These tests verify that f-strings are properly evaluated and printed in the REPL
 import sys
 from io import StringIO
 
-from opendxa.dana.repl.repl import REPL
+from opendxa.dana.exec.repl.repl import REPL
 
 
 def test_print_direct_value_in_repl():

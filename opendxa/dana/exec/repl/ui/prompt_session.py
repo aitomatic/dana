@@ -19,7 +19,7 @@ from prompt_toolkit.styles import Style
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.dana.common.terminal_utils import ColorScheme, get_dana_lexer
-from opendxa.dana.repl.repl import REPL
+from opendxa.dana.exec.repl.repl import REPL
 
 # Constants
 HISTORY_FILE = os.path.expanduser("~/.dana_history")

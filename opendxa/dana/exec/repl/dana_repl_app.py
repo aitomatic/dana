@@ -27,10 +27,10 @@ from typing import Optional
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.dana.common.terminal_utils import ColorScheme, supports_color
-from opendxa.dana.repl.commands import CommandHandler
-from opendxa.dana.repl.input import InputProcessor
-from opendxa.dana.repl.repl import REPL
-from opendxa.dana.repl.ui import OutputFormatter, PromptSessionManager, WelcomeDisplay
+from opendxa.dana.exec.repl.commands import CommandHandler
+from opendxa.dana.exec.repl.input import InputProcessor
+from opendxa.dana.exec.repl.repl import REPL
+from opendxa.dana.exec.repl.ui import OutputFormatter, PromptSessionManager, WelcomeDisplay
 from opendxa.dana.sandbox.log_manager import LogLevel
 
 # Map Dana LogLevel to Python logging levels

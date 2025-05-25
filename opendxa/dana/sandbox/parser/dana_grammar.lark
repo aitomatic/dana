@@ -24,7 +24,8 @@ program: _NL* statements _NL*
 statements: statement+
 
 // A statement can be either compound (with block) or simple (single line)
-statement: compound_stmt | simple_stmt _NL
+// Allow optional additional newlines between statements
+statement: compound_stmt | simple_stmt _NL _NL*
 
 // ===== COMPOUND STATEMENTS =====
 compound_stmt: if_stmt

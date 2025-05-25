@@ -17,7 +17,7 @@ sys.path.insert(0, str(project_root))
 
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.dana.common.exceptions import DanaError
-from opendxa.dana.repl.repl import REPL
+from opendxa.dana.exec.repl.repl import REPL
 
 
 def run_dana_demo():

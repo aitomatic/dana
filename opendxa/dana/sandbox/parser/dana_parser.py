@@ -205,6 +205,7 @@ class DanaParser(Lark, Loggable):
 
         self.program_text = program_text
         parse_tree = super().parse(program_text)  # a parse tree
+
         if do_transform:
             ast = self.transform(parse_tree, do_type_check)
             return ast

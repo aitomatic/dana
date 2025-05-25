@@ -1,0 +1,6 @@
+# Function Composition Demo
+print("Starting demo")
+
+
+def add_ten(x):
+    return x + 10

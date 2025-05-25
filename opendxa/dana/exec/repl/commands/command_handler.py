@@ -7,7 +7,7 @@ special commands and coordinates with the help formatter.
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.dana.common.terminal_utils import ColorScheme
-from opendxa.dana.repl.repl import REPL
+from opendxa.dana.exec.repl.repl import REPL
 
 from .help_formatter import HelpFormatter
 

@@ -18,16 +18,12 @@ import os
 import sys
 
 # Adjust path to import from the opendxa package root
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..")))
 
-from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.common.utils.logging import DXA_LOGGER
-from opendxa.dana.common.exceptions import DanaError
 from opendxa.dana.common.terminal_utils import ColorScheme, print_header, supports_color
-from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
+from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
 from opendxa.dana.sandbox.log_manager import LogLevel, SandboxLogger
-from opendxa.dana.sandbox.parser.dana_parser import DanaParser
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 # Initialize color scheme
 colors = ColorScheme(supports_color())
@@ -46,56 +42,32 @@ def show_help():
 
 
 def execute_file(file_path, debug=False):
-    """Execute a DANA file."""
+    """Execute a DANA file using the new DanaSandbox API."""
     print_header(f"DANA Execution: {os.path.basename(file_path)}", colors=colors)
 
-    try:
-        with open(file_path) as f:
-            program_source = f.read()
-            print(f"{colors.accent(f'Loaded program source ({len(program_source)} bytes)')}")
-    except Exception as e:
-        print(f"{colors.error(f'Error reading file: {e}')}")
-        sys.exit(1)
+    # Use the new DanaSandbox API
+    result = DanaSandbox.quick_run(file_path, debug=debug)
 
-    # Create a context with an LLM resource
-    context = SandboxContext()
-    llm_resource = LLMResource()
-    context.set("system.llm_resource", llm_resource)
-    print(f"{colors.accent('Created execution context and initialized LLM resource')}")
-
-    # Parse the program
-    print("Parsing program...")
-    parser = DanaParser()
-    ast = parser.parse(program_source)
-    print(f"{colors.accent('Program parsed successfully')}")
-
-    # Initialize interpreter
-    print("Initializing interpreter...")
-    interpreter = DanaInterpreter(context=context)
-    print(f"{colors.accent('Interpreter initialized')}")
-
-    try:
-        # Execute the program
-        print("Executing program...")
-        result = interpreter.execute_program(ast)
+    if result.success:
         print(f"{colors.accent('Program executed successfully')}")
+
+        # Show output if any
+        if result.output:
+            print(f"\n{colors.bold('Output:')}")
+            print(result.output)
 
         # Show final context state
         print(f"\n{colors.bold('--- Final Context State ---')}")
-        print(f"{colors.accent(str(context))}")
+        print(f"{colors.accent(str(result.final_context))}")
         print(f"{colors.bold('---------------------------')}")
 
         # Get final result if available
-        if result is not None:
-            print(f"\n{colors.bold('Result:')} {colors.accent(str(result))}")
+        if result.result is not None:
+            print(f"\n{colors.bold('Result:')} {colors.accent(str(result.result))}")
 
         print(f"\n{colors.bold('✓ Program execution completed successfully')}")
-
-    except DanaError as e:
-        print(f"\n{colors.error(f'DANA Error: {e}')}")
-        sys.exit(1)
-    except Exception as e:
-        print(f"\n{colors.error(f'Error executing DANA program: {e}')}")
+    else:
+        print(f"\n{colors.error(f'Error: {result.error}')}")
         import traceback
 
         traceback.print_exc()
