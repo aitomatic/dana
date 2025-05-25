@@ -25,6 +25,7 @@ from opendxa.dana.sandbox.interpreter.functions.function_registry import Functio
 from opendxa.dana.sandbox.parser.ast import (
     AttributeAccess,
     BinaryExpression,
+    BinaryOperator,
     DictLiteral,
     FStringExpression,
     Identifier,
@@ -122,7 +123,12 @@ class ExpressionExecutor(BaseExecutor):
             The result of the binary operation
         """
         try:
-            # Evaluate left and right operands
+            # Special handling for pipe operator - we need to check for function composition
+            # before evaluating the operands
+            if node.operator == BinaryOperator.PIPE:
+                return self._execute_pipe(node.left, node.right, context)
+
+            # For all other operators, evaluate operands normally
             left_raw = self.parent.execute(node.left, context)
             right_raw = self.parent.execute(node.right, context)
 
@@ -133,48 +139,41 @@ class ExpressionExecutor(BaseExecutor):
             # Apply type coercion if enabled
             left, right = self._apply_binary_coercion(left, right, node.operator.value)
 
-            # Get the operator's string value from the enum
-            op_value = node.operator.value
-
             # Perform the operation
-            if op_value == "+":
+            if node.operator == BinaryOperator.ADD:
                 return left + right
-            elif op_value == "-":
+            elif node.operator == BinaryOperator.SUBTRACT:
                 return left - right
-            elif op_value == "*":
+            elif node.operator == BinaryOperator.MULTIPLY:
                 return left * right
-            elif op_value == "/":
+            elif node.operator == BinaryOperator.DIVIDE:
                 return left / right
-            elif op_value == "%":
+            elif node.operator == BinaryOperator.MODULO:
                 return left % right
-            elif op_value == "**":
+            elif node.operator == BinaryOperator.POWER:
                 return left**right
-            elif op_value == "//":
-                return left // right
-            elif op_value == "==":
+            elif node.operator == BinaryOperator.EQUALS:
                 return left == right
-            elif op_value == "!=":
+            elif node.operator == BinaryOperator.NOT_EQUALS:
                 return left != right
-            elif op_value == "<":
+            elif node.operator == BinaryOperator.LESS_THAN:
                 return left < right
-            elif op_value == ">":
+            elif node.operator == BinaryOperator.GREATER_THAN:
                 return left > right
-            elif op_value == "<=":
+            elif node.operator == BinaryOperator.LESS_EQUALS:
                 return left <= right
-            elif op_value == ">=":
+            elif node.operator == BinaryOperator.GREATER_EQUALS:
                 return left >= right
-            elif op_value == "and":
+            elif node.operator == BinaryOperator.AND:
                 return bool(left and right)
-            elif op_value == "or":
+            elif node.operator == BinaryOperator.OR:
                 return bool(left or right)
-            elif op_value == "in":
+            elif node.operator == BinaryOperator.IN:
                 return left in right
             else:
-                raise StateError(f"Unsupported binary operator: {node.operator}")
+                raise SandboxError(f"Unsupported binary operator: {node.operator}")
         except (TypeError, ValueError) as e:
             raise SandboxError(f"Error evaluating binary expression with operator '{node.operator}': {e}")
-        except StateError as e:
-            raise e
 
     def _apply_binary_coercion(self, left: Any, right: Any, operator: str) -> tuple:
         """Apply type coercion to binary operands if enabled.
@@ -357,3 +356,457 @@ class ExpressionExecutor(BaseExecutor):
             The list value
         """
         return [self.parent.execute(item, context) for item in node.items]
+
+    def _execute_pipe(self, left: Any, right: Any, context: SandboxContext) -> Any:
+        """Execute a pipe operator expression.
+
+        Args:
+            left: The left operand (data to pipe or function to compose)
+            right: The right operand (function to call)
+            context: The execution context
+
+        Returns:
+            The result of calling the function with piped data, or a composed function
+
+        Raises:
+            SandboxError: If the right operand is not callable or function call fails
+        """
+        # Optional: Add tracing hook for future debugging/introspection
+        self._trace_pipe_step(context, right, left)
+
+        # Always prefer registry-based calls for consistency with Dana function calling
+        registry = self.function_registry
+        if not registry:
+            raise SandboxError("No function registry available for pipe operation")
+
+        # Check if left and right operands are function identifiers (for function composition)
+        # We check this BEFORE evaluating the operands
+        left_is_function = self._is_function_operand(left, context)
+        right_is_function = self._is_function_operand(right, context)
+
+        # Case 1: Function composition (function | function)
+        if left_is_function and right_is_function:
+            return self._create_composed_function(left, right, context)
+
+        # Case 2: Data pipeline (data | function) - existing behavior
+        # For data pipeline, we need to evaluate the left operand to get the data
+        left_value = self.parent.execute(left, context) if not left_is_function else left
+        return self._execute_data_pipeline(left_value, right, context)
+
+    def _is_function_operand(self, operand: Any, context: SandboxContext) -> bool:
+        """Check if an operand represents a function.
+
+        Args:
+            operand: The operand to check
+            context: The execution context
+
+        Returns:
+            True if operand represents a function, False otherwise
+        """
+        from opendxa.dana.sandbox.parser.ast import BinaryExpression, Identifier
+
+        # Check if it's a function identifier
+        if isinstance(operand, Identifier):
+            function_name = operand.name
+            # Handle scoped identifiers
+            if "." in function_name:
+                scope, func_name = function_name.split(".", 1)
+                function_name = func_name
+
+            # Check if this identifier actually refers to a function
+            try:
+                # First check if it's a Dana function in context
+                func_data = None
+                try:
+                    func_data = context.get(operand.name)
+                except (StateError, KeyError):
+                    pass
+
+                if func_data is None:
+                    try:
+                        func_data = context.get(f"local.{function_name}")
+                    except (StateError, KeyError):
+                        pass
+
+                if func_data is not None:
+                    # If it's a Dana function definition, it's a function
+                    if isinstance(func_data, dict) and func_data.get("type") == "function":
+                        return True
+                    # If it's a callable object, it's a function
+                    elif callable(func_data):
+                        return True
+                    # If it's a composed function, it's a function
+                    elif hasattr(func_data, "_is_dana_composed_function"):
+                        return True
+                    # Otherwise, it's a value, not a function
+                    else:
+                        return False
+
+                # If not found in context, check if it's in the function registry
+                if self.function_registry is not None:
+                    try:
+                        self.function_registry.resolve(function_name, "local")
+                        return True  # Found in registry, it's a function
+                    except KeyError:
+                        pass  # Not in registry
+
+                # If we can't find it anywhere, assume it's a function for forward compatibility
+                # This allows creating compositions with functions that might be defined later
+                return True
+
+            except Exception:
+                # If there's an error checking, assume it's a function for safety
+                return True
+
+        # Check if it's a pipe expression that would create a composed function
+        elif isinstance(operand, BinaryExpression) and operand.operator == BinaryOperator.PIPE:
+            # If both sides are functions, this will be a composed function
+            left_is_func = self._is_function_operand(operand.left, context)
+            right_is_func = self._is_function_operand(operand.right, context)
+            return left_is_func and right_is_func
+
+        # Check if it's a callable object
+        elif callable(operand):
+            return True
+
+        # Check if it's a composed function (has our special marker)
+        elif hasattr(operand, "_is_dana_composed_function"):
+            return True
+
+        return False
+
+    def _create_composed_function(self, left_func: Any, right_func: Any, context: SandboxContext) -> Any:
+        """Create a composed function from two functions.
+
+        Args:
+            left_func: The first function to apply
+            right_func: The second function to apply
+            context: The execution context
+
+        Returns:
+            A composed function that applies right_func(left_func(x))
+        """
+
+        class ComposedFunction:
+            """A composed function that applies multiple functions in sequence."""
+
+            def __init__(self, left_func, right_func, registry, expression_executor):
+                self.left_func = left_func
+                self.right_func = right_func
+                self.registry = registry
+                self.expression_executor = expression_executor
+                self._is_dana_composed_function = True
+
+            def __call__(self, context, *args, **kwargs):
+                # Apply the left function first
+                intermediate_result = self.expression_executor._call_function(self.left_func, context, *args, **kwargs)
+
+                # Apply the right function to the result
+                return self.expression_executor._call_function(self.right_func, context, intermediate_result)
+
+            def __repr__(self):
+                return f"ComposedFunction({self.left_func} | {self.right_func})"
+
+        return ComposedFunction(left_func, right_func, self.function_registry, self)
+
+    def _call_function(self, func: Any, context: SandboxContext, *args, **kwargs) -> Any:
+        """Call a function with proper context detection.
+
+        Args:
+            func: The function to call (can be identifier, callable, or composed function)
+            context: The execution context
+            *args: Positional arguments
+            **kwargs: Keyword arguments
+
+        Returns:
+            The result of calling the function
+        """
+        from opendxa.dana.sandbox.parser.ast import BinaryExpression, Identifier
+
+        # Handle function identifiers
+        if isinstance(func, Identifier):
+            function_name = func.name
+            # Handle scoped identifiers
+            if "." in function_name:
+                scope, func_name = function_name.split(".", 1)
+                function_name = func_name
+
+            if self.function_registry is None:
+                raise SandboxError("No function registry available")
+
+            try:
+                return self.function_registry.call(function_name, context, None, *args, **kwargs)
+            except KeyError:
+                raise SandboxError(f"Function '{function_name}' not found in registry")
+            except Exception as e:
+                raise SandboxError(f"Error calling function '{function_name}': {e}")
+
+        # Handle binary expressions (nested pipe compositions)
+        elif isinstance(func, BinaryExpression):
+            # Evaluate the expression to get the actual function
+            evaluated_func = self.parent.execute(func, context)
+            # Now call the evaluated function
+            return self._call_function(evaluated_func, context, *args, **kwargs)
+
+        # Handle composed functions
+        elif hasattr(func, "_is_dana_composed_function"):
+            return func(context, *args, **kwargs)
+
+        # Handle direct callables
+        elif callable(func):
+            try:
+                # Use the same context detection logic as the function registry
+                from opendxa.dana.sandbox.interpreter.functions.python_function import PythonFunction
+
+                if isinstance(func, PythonFunction):
+                    return func.execute(context, *args, **kwargs)
+                else:
+                    # For other callables, check for wants_context attribute
+                    if hasattr(func, "wants_context") and func.wants_context:
+                        return func(context, *args, **kwargs)
+                    else:
+                        # Try to determine from function signature
+                        import inspect
+
+                        try:
+                            sig = inspect.signature(func)
+                            params = list(sig.parameters.keys())
+
+                            # If first parameter looks like it expects context, pass it
+                            if params and params[0] in ("context", "ctx", "sandbox_context"):
+                                return func(context, *args, **kwargs)
+                            else:
+                                # Try without context first
+                                try:
+                                    return func(*args, **kwargs)
+                                except TypeError as e:
+                                    # If that fails, try with context as fallback
+                                    if "missing" in str(e) and "required positional argument" in str(e):
+                                        return func(context, *args, **kwargs)
+                                    raise
+                        except (ValueError, TypeError):
+                            # Can't inspect signature, try both approaches
+                            try:
+                                return func(*args, **kwargs)
+                            except TypeError:
+                                return func(context, *args, **kwargs)
+
+            except Exception as e:
+                if "missing" in str(e) and "required positional argument" in str(e):
+                    raise SandboxError(f"Function signature incompatible with pipe operator: {e}")
+                raise SandboxError(f"Error calling function: {e}")
+
+        else:
+            raise SandboxError(f"Invalid function operand: {func} (type: {type(func)})")
+
+    def _execute_data_pipeline(self, left: Any, right: Any, context: SandboxContext) -> Any:
+        """Execute a data pipeline (data | function) - the original pipe behavior.
+
+        Args:
+            left: The data to pipe
+            right: The function to call (can be identifier, callable, or expression)
+            context: The execution context
+
+        Returns:
+            The result of calling the function with the data
+        """
+        from opendxa.dana.sandbox.parser.ast import BinaryExpression, Identifier
+
+        if self.function_registry is None:
+            raise SandboxError("No function registry available for pipe operation")
+
+        # Case 1: Right operand is a function name/identifier - check context first, then registry
+        if isinstance(right, Identifier):
+            function_name = right.name
+            # Handle scoped identifiers like 'local.double' - extract just the function name
+            if "." in function_name:
+                scope, func_name = function_name.split(".", 1)
+                function_name = func_name
+
+            # First, check if the function exists in the context (Dana functions)
+            try:
+                # Try both the full scoped name and just the function name
+                func_data = None
+                try:
+                    func_data = context.get(right.name)
+                except (StateError, KeyError):
+                    pass
+
+                if func_data is None:
+                    # Try just the function name in local scope
+                    try:
+                        func_data = context.get(f"local.{function_name}")
+                    except (StateError, KeyError):
+                        pass
+
+                if func_data is not None:
+                    # Check if it's a Dana function definition
+                    if isinstance(func_data, dict) and func_data.get("type") == "function":
+                        # This is a Dana function - create a callable and execute it
+                        from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
+
+                        # Extract parameter names correctly - remove scope prefix if present
+                        param_names = []
+                        for p in func_data["params"]:
+                            param_name = p.name if hasattr(p, "name") else str(p)
+                            # Remove scope prefix (e.g., 'local.x' -> 'x')
+                            if "." in param_name:
+                                param_name = param_name.split(".", 1)[1]
+                            param_names.append(param_name)
+
+                        dana_func = DanaFunction(func_data["body"], param_names, context)
+                        result = dana_func.execute(context, left)
+                        return result
+                    elif callable(func_data):
+                        # It's a callable object in the context
+                        return self._call_function(func_data, context, left)
+            except (StateError, KeyError):
+                # Context lookup failed, continue to registry
+                pass
+
+            # Fall back to function registry
+            try:
+                return self.function_registry.call(function_name, context, None, left)
+            except KeyError:
+                raise SandboxError(f"Function '{function_name}' not found in registry or context")
+            except Exception as e:
+                raise SandboxError(f"Error calling function '{function_name}' in pipe: {e}")
+
+        # Case 2: Right operand is a binary expression (composed function) - evaluate it first
+        elif isinstance(right, BinaryExpression):
+            # This could be a composed function - evaluate it to get the callable
+            composed_func = self.parent.execute(right, context)
+            # Now call the composed function with the data
+            if hasattr(composed_func, "_is_dana_composed_function"):
+                return composed_func(context, left)
+            elif callable(composed_func):
+                return self._call_function(composed_func, context, left)
+            else:
+                raise SandboxError(f"Evaluated expression is not callable: {composed_func}")
+
+        elif hasattr(right, "name") and isinstance(right.name, str):
+            function_name = right.name
+            # Handle scoped identifiers
+            if "." in function_name:
+                scope, func_name = function_name.split(".", 1)
+                function_name = func_name
+
+            # Check context first, then registry
+            try:
+                # Try both the full scoped name and just the function name
+                func_data = None
+                try:
+                    func_data = context.get(right.name)
+                except (StateError, KeyError):
+                    pass
+
+                if func_data is None:
+                    try:
+                        func_data = context.get(f"local.{function_name}")
+                    except (StateError, KeyError):
+                        pass
+
+                if func_data is not None:
+                    if isinstance(func_data, dict) and func_data.get("type") == "function":
+                        from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
+
+                        # Extract parameter names correctly - remove scope prefix if present
+                        param_names = []
+                        for p in func_data["params"]:
+                            param_name = p.name if hasattr(p, "name") else str(p)
+                            # Remove scope prefix (e.g., 'local.x' -> 'x')
+                            if "." in param_name:
+                                param_name = param_name.split(".", 1)[1]
+                            param_names.append(param_name)
+
+                        dana_func = DanaFunction(func_data["body"], param_names, context)
+                        return dana_func.execute(context, left)
+                    elif callable(func_data):
+                        return self._call_function(func_data, context, left)
+            except (StateError, KeyError):
+                pass
+
+            try:
+                return self.function_registry.call(function_name, context, None, left)
+            except KeyError:
+                raise SandboxError(f"Function '{function_name}' not found in registry or context")
+            except Exception as e:
+                raise SandboxError(f"Error calling function '{function_name}' in pipe: {e}")
+
+        elif isinstance(right, str):
+            function_name = right
+            # Handle scoped identifiers
+            if "." in function_name:
+                scope, func_name = function_name.split(".", 1)
+                function_name = func_name
+            try:
+                return self.function_registry.call(function_name, context, None, left)
+            except KeyError:
+                raise SandboxError(f"Function '{function_name}' not found in registry")
+            except Exception as e:
+                raise SandboxError(f"Error calling function '{function_name}' in pipe: {e}")
+
+        # Case 3: Right operand is a direct callable - use same context detection as registry
+        elif callable(right):
+            try:
+                # Use the same context detection logic as the function registry
+                from opendxa.dana.sandbox.interpreter.functions.python_function import PythonFunction
+
+                if isinstance(right, PythonFunction):
+                    # PythonFunction handles context detection internally
+                    return right.execute(context, left)
+                else:
+                    # For other callables, check for wants_context attribute like the registry does
+                    if hasattr(right, "wants_context") and right.wants_context:
+                        # Function explicitly wants context
+                        return right(context, left)
+                    else:
+                        # Try to determine from function signature like the registry does
+                        import inspect
+
+                        try:
+                            sig = inspect.signature(right)
+                            params = list(sig.parameters.keys())
+
+                            # If first parameter looks like it expects context, pass it
+                            if params and params[0] in ("context", "ctx", "sandbox_context"):
+                                return right(context, left)
+                            else:
+                                # Try without context first
+                                try:
+                                    return right(left)
+                                except TypeError as e:
+                                    # If that fails, try with context as fallback
+                                    if "missing" in str(e) and "required positional argument" in str(e):
+                                        return right(context, left)
+                                    raise
+                        except (ValueError, TypeError):
+                            # Can't inspect signature, try both approaches
+                            try:
+                                return right(left)
+                            except TypeError:
+                                return right(context, left)
+
+            except Exception as e:
+                if "missing" in str(e) and "required positional argument" in str(e):
+                    raise SandboxError(
+                        f"Function signature incompatible with pipe operator - function must accept appropriate arguments: {e}"
+                    )
+                raise SandboxError(f"Error calling function in pipe: {e}")
+
+        else:
+            raise SandboxError(f"Right-hand side of pipe operator is not callable or a function name: {right} (type: {type(right)})")
+
+    def _trace_pipe_step(self, context: SandboxContext, func: Any, input_data: Any) -> None:
+        """Trace a pipe step for future debugging/introspection.
+
+        This is a stub for future implementation of pipe step logging/tracing.
+
+        Args:
+            context: The execution context
+            func: The function being called
+            input_data: The input data being passed to the function
+        """
+        # TODO: Implement proper tracing/logging for pipe steps
+        # For now, this is just a placeholder for future enhancement
+        pass

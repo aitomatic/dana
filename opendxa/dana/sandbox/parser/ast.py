@@ -90,6 +90,7 @@ class BinaryOperator(Enum):
     DIVIDE = "/"
     MODULO = "%"
     POWER = "**"
+    PIPE = "|"
 
 
 # === Utility Classes ===
@@ -162,9 +163,9 @@ class UnaryExpression:
 class BinaryExpression:
     """A binary operation (e.g., x + y, a and b)."""
 
-    left: Union[LiteralExpression, Identifier, "BinaryExpression", "FunctionCall"]
+    left: Expression
     operator: BinaryOperator
-    right: Union[LiteralExpression, Identifier, "BinaryExpression", "FunctionCall"]
+    right: Expression
     location: Optional[Location] = None
 
 

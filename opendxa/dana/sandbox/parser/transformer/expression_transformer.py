@@ -223,6 +223,7 @@ class ExpressionTransformer(BaseTransformer):
             "or": BinaryOperator.OR,
             "in": BinaryOperator.IN,
             "^": BinaryOperator.POWER,
+            "|": BinaryOperator.PIPE,
         }
         return op_map[op_str]
 
@@ -247,6 +248,13 @@ class ExpressionTransformer(BaseTransformer):
                     new_items.append("and")
             items = new_items
         return self._left_associative_binop(items, lambda op: BinaryOperator.AND)
+
+    def pipe_expr(self, items):
+        """Transform pipe expressions into left-associative binary expressions.
+
+        pipe_expr: or_expr (PIPE or_expr)*
+        """
+        return self._left_associative_binop(items, self._get_binary_operator)
 
     def not_expr(self, items):
         """

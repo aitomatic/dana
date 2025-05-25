@@ -105,7 +105,9 @@ scope_prefix: PRIVATE | PUBLIC | LOCAL | SYSTEM
 target: atom
 
 // ===== EXPRESSIONS =====
-expr: or_expr
+expr: pipe_expr
+
+pipe_expr: or_expr (PIPE or_expr)*
 
 or_expr: and_expr ("or" and_expr)*
 
@@ -138,6 +140,7 @@ MUL: "*"
 DIV: "/"
 FDIV: "//"
 MOD: "%"
+PIPE: "|"
 
 // Expression precedence structure (lowest to highest)
 sum_expr: product ((ADD | SUB) product)*
