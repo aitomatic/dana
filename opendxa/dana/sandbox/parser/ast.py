@@ -45,6 +45,7 @@ Expression = Union[
     "AttributeAccess",
     "SubscriptExpression",
     "DictLiteral",
+    "ListLiteral",
     "SetLiteral",
     "TupleLiteral",
 ]
@@ -89,6 +90,7 @@ class BinaryOperator(Enum):
     DIVIDE = "/"
     MODULO = "%"
     POWER = "**"
+    PIPE = "|"
 
 
 # === Utility Classes ===
@@ -161,9 +163,9 @@ class UnaryExpression:
 class BinaryExpression:
     """A binary operation (e.g., x + y, a and b)."""
 
-    left: Union[LiteralExpression, Identifier, "BinaryExpression", "FunctionCall"]
+    left: Expression
     operator: BinaryOperator
-    right: Union[LiteralExpression, Identifier, "BinaryExpression", "FunctionCall"]
+    right: Expression
     location: Optional[Location] = None
 
 
@@ -218,6 +220,14 @@ class SetLiteral:
     location: Optional[Location] = None
 
 
+@dataclass
+class ListLiteral:
+    """A list literal (e.g., [1, 2, 3])."""
+
+    items: List[Expression]
+    location: Optional[Location] = None
+
+
 # === Statements ===
 @dataclass
 class Assignment:
@@ -232,6 +242,7 @@ class Assignment:
         FunctionCall,
         TupleLiteral,
         DictLiteral,
+        ListLiteral,
         SetLiteral,
         SubscriptExpression,
         AttributeAccess,

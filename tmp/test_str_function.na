@@ -1,0 +1,13 @@
+print("Testing str function")
+
+x = 42
+result = str(x)
+print("str(42) =")
+print(result)
+
+y = 3.14
+result2 = str(y)
+print("str(3.14) =")
+print(result2)
+
+print("str function test complete!") 

@@ -32,6 +32,7 @@ from opendxa.dana.sandbox.parser.ast import (
     FStringExpression,
     FunctionCall,
     Identifier,
+    ListLiteral,
     LiteralExpression,
     SetLiteral,
     SubscriptExpression,
@@ -123,6 +124,7 @@ class ExpressionTransformer(BaseTransformer):
                 FunctionCall,
                 TupleLiteral,
                 DictLiteral,
+                ListLiteral,
                 SetLiteral,
                 SubscriptExpression,
                 AttributeAccess,
@@ -221,6 +223,7 @@ class ExpressionTransformer(BaseTransformer):
             "or": BinaryOperator.OR,
             "in": BinaryOperator.IN,
             "^": BinaryOperator.POWER,
+            "|": BinaryOperator.PIPE,
         }
         return op_map[op_str]
 
@@ -245,6 +248,13 @@ class ExpressionTransformer(BaseTransformer):
                     new_items.append("and")
             items = new_items
         return self._left_associative_binop(items, lambda op: BinaryOperator.AND)
+
+    def pipe_expr(self, items):
+        """Transform pipe expressions into left-associative binary expressions.
+
+        pipe_expr: or_expr (PIPE or_expr)*
+        """
+        return self._left_associative_binop(items, self._get_binary_operator)
 
     def not_expr(self, items):
         """
@@ -481,16 +491,18 @@ class ExpressionTransformer(BaseTransformer):
 
     def list(self, items):
         """
-        Transform a list literal into a LiteralExpression with list of LiteralExpression values.
+        Transform a list literal into a ListLiteral AST node.
         """
-        flat_items = self.flatten_items(items)
-        processed_items = []
+        from opendxa.dana.sandbox.parser.ast import Expression
 
+        flat_items = self.flatten_items(items)
+        # Ensure each item is properly cast to Expression type
+        list_items: List[Expression] = []
         for item in flat_items:
             expr = self.expression([item])
-            processed_items.append(expr)
+            list_items.append(cast(Expression, expr))
 
-        return LiteralExpression(value=processed_items)
+        return ListLiteral(items=list_items)
 
     def dict(self, items):
         flat_items = self.flatten_items(items)
@@ -628,7 +640,6 @@ class ExpressionTransformer(BaseTransformer):
             elif item.data == "fstring":
                 # Handle fstring: f_prefix fstring_content
                 # For now, treat as a regular string but prepare for embedded expressions
-                parts = []
 
                 # Extract f_prefix (already processed) and fstring_content
                 content_node = item.children[1]

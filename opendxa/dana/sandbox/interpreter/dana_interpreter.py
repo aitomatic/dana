@@ -21,7 +21,8 @@ Discord: https://discord.gg/6jGD4PYk
 """
 
 import re
-from typing import Any, Optional
+from pathlib import Path
+from typing import Any, Optional, Union
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.dana.common.error_utils import ErrorUtils
@@ -69,26 +70,15 @@ ErrorUtils.format_user_error = _patched_format_user_error
 class DanaInterpreter(Loggable):
     """Interpreter for executing Dana programs."""
 
-    def __init__(self, context: Optional[SandboxContext] = None):
-        """Initialize the interpreter.
-
-        Args:
-            context: Optional runtime context to use
-        """
+    def __init__(self):
+        """Initialize the interpreter."""
         super().__init__()
-        from opendxa.dana.sandbox.context_manager import ContextManager
-
-        self.context = context or SandboxContext()
-        self._context_manager = ContextManager(self.context)
 
         # Initialize the function registry first
         self._init_function_registry()
 
         # Create a DanaExecutor with the function registry
         self._executor = DanaExecutor(function_registry=self._function_registry)
-
-        # Store the interpreter reference in the context
-        self.context._interpreter = self
 
     def _init_function_registry(self):
         """Initialize the function registry."""
@@ -104,9 +94,7 @@ class DanaInterpreter(Loggable):
         # Register all core functions automatically
         register_core_functions(self._function_registry)
 
-        # Make sure we set the registry on the context so it can be found during execution
-        self.context.set_registry(self._function_registry)
-        self.debug("Function registry initialized and set on context")
+        self.debug("Function registry initialized")
 
     @property
     def function_registry(self) -> FunctionRegistry:
@@ -118,6 +106,78 @@ class DanaInterpreter(Loggable):
         if self._function_registry is None:
             self._init_function_registry()
         return self._function_registry
+
+    # ============================================================================
+    # Internal API Methods (used by DanaSandbox and advanced tools)
+    # ============================================================================
+
+    def _run(self, file_path: Union[str, Path], source_code: str, context: SandboxContext) -> Any:
+        """
+        Internal: Run Dana file with pre-read source code.
+
+        Args:
+            file_path: Path to the file (for error reporting)
+            source_code: Dana source code to execute
+            context: Execution context
+
+        Returns:
+            Raw execution result
+        """
+        return self._eval(source_code, context=context, filename=str(file_path))
+
+    def _eval(self, source_code: str, context: SandboxContext, filename: Optional[str] = None) -> Any:
+        """
+        Internal: Evaluate Dana source code.
+
+        Args:
+            source_code: Dana code to execute
+            filename: Optional filename for error reporting
+            context: Execution context
+
+        Returns:
+            Raw execution result
+        """
+        # Parse the source code
+        from opendxa.dana.sandbox.parser.dana_parser import DanaParser
+
+        parser = DanaParser()
+        ast = parser.parse(source_code)
+
+        # Execute through _execute (convergent path)
+        return self._execute(ast, context)
+
+    def _execute(self, ast: Program, context: SandboxContext) -> Any:
+        """
+        Internal: Execute pre-parsed AST.
+
+        Args:
+            ast: Parsed Dana AST
+            context: Execution context
+
+        Returns:
+            Raw execution result
+        """
+        # This is the convergent point - all execution flows through here
+        result = None
+        # Temporarily inject interpreter reference
+        original_interpreter = getattr(context, "_interpreter", None)
+        context._interpreter = self
+
+        try:
+            context.set_execution_status(ExecutionStatus.RUNNING)
+            result = self._executor.execute(ast, context)
+            context.set_execution_status(ExecutionStatus.COMPLETED)
+        except Exception as e:
+            context.set_execution_status(ExecutionStatus.FAILED)
+            raise e
+        finally:
+            # Restore original interpreter reference
+            context._interpreter = original_interpreter
+        return result
+
+    # ============================================================================
+    # Legacy API Methods (kept for backward compatibility during transition)
+    # ============================================================================
 
     def evaluate_expression(self, expression: Any, context: SandboxContext) -> Any:
         """Evaluate an expression.
@@ -131,49 +191,31 @@ class DanaInterpreter(Loggable):
         """
         return self._executor.execute(expression, context)
 
-    def execute_program(self, program: Program) -> Any:
+    def execute_program(self, program: Program, context: SandboxContext) -> Any:
         """Execute a Dana program.
 
         Args:
             program: The program to execute
+            context: The execution context to use
 
         Returns:
             The result of executing the program
         """
-        result = None
-        context = self.context
-        try:
-            context.set_execution_status(ExecutionStatus.RUNNING)
-            result = self._executor.execute(program, context)
-            context.set_execution_status(ExecutionStatus.COMPLETED)
-        except Exception as e:
-            context.set_execution_status(ExecutionStatus.FAILED)
-            raise e
-        return result
+        # Route through new _execute method for convergent code path
+        return self._execute(program, context)
 
     def execute_statement(self, statement: Any, context: SandboxContext) -> Any:
         """Execute a single statement.
 
         Args:
             statement: The statement to execute
+            context: The context to execute the statement in
 
         Returns:
             The result of executing the statement
         """
         # All execution goes through the unified executor
         return self._executor.execute(statement, context)
-
-    @classmethod
-    def new(cls, context: SandboxContext) -> "DanaInterpreter":
-        """Create a new instance of the Interpreter.
-
-        Args:
-            context: The runtime context for the interpreter.
-
-        Returns:
-            An instance of the Interpreter.
-        """
-        return cls(context)
 
     def get_and_clear_output(self) -> str:
         """Retrieve and clear the output buffer from the executor."""

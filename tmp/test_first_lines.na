@@ -1,0 +1,20 @@
+# Function Composition Demo in Dana
+#
+# This demonstrates the new function composition feature using the pipe operator (|).
+# Function composition allows creating reusable function pipelines.
+#
+# Copyright © 2025 Aitomatic, Inc.
+# MIT License
+
+print("🔧 Dana Function Composition Demo")
+print("=" * 50)
+
+
+# Define some utility functions for demonstration
+def add_ten(x):
+    return x + 10
+
+
+def double(x):
+    return x * 2
+

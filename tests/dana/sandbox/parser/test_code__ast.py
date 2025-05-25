@@ -33,6 +33,7 @@ from opendxa.dana.sandbox.parser.ast import (
     Identifier,
     ImportFromStatement,
     ImportStatement,
+    ListLiteral,
     LiteralExpression,
     Program,
     SetLiteral,
@@ -120,6 +121,7 @@ def assert_assignment(node, target_name, value_type=None):
         AttributeAccess,
         SubscriptExpression,
         DictLiteral,
+        ListLiteral,
         SetLiteral,
         TupleLiteral,
     )
@@ -236,10 +238,10 @@ def test_collection_list(parser, typecheck_flag):
     program = parser.parse("l = [1, 2]", do_type_check=typecheck_flag, do_transform=True)
     stmt = get_assignment(program)
     assert_assignment(stmt, "local.l")
-    assert isinstance(stmt.value, LiteralExpression)
-    assert isinstance(stmt.value.value, list)
-    assert all(isinstance(e, LiteralExpression) for e in stmt.value.value)
-    assert [e.value for e in stmt.value.value] == [1, 2]
+    assert isinstance(stmt.value, ListLiteral)
+    assert len(stmt.value.items) == 2
+    assert all(isinstance(e, LiteralExpression) for e in stmt.value.items)
+    assert [e.value for e in stmt.value.items] == [1, 2]
 
 
 def test_collection_dict(parser, typecheck_flag):

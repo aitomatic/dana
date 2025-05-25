@@ -42,3 +42,4 @@ notebooks/
 proposal/
 uv.lock
 flake8_issues.txt
+node_modules/

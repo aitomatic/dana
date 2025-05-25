@@ -6,6 +6,11 @@
 
 # Dana User Testing: AI Engineer First-Time Experience
 
+> **⚠️ IMPORTANT FOR AI CODE GENERATORS:**
+> Always use colon notation for explicit scopes: `private:x`, `public:x`, `system:x`, `local:x`
+> NEVER use dot notation: `private.x`, `public.x`, etc.
+> Prefer using unscoped variables (auto-scoped to local) instead of explicit `private:` scope unless private scope is specifically needed.
+
 ## Experimental Design
 
 ### Purpose
@@ -128,21 +133,21 @@ Studied example programs in `examples/dana/na/` directory:
 - Clean variable assignment: `private:x = 10`
 - Support for standard data types: integers, strings, floats, booleans
 - F-string formatting: `log(f"Value: {private:x}")`
-- Arithmetic operations with proper precedence: `private.calc.value1 = 1.5 + 2.5 * 3.0`
+- Arithmetic operations with proper precedence: `calc_value1 = 1.5 + 2.5 * 3.0`  # Auto-scoped to local
 
 **Scoped State System (✅ Innovation):**
 ```dana
-private.sensor1.temp = 25    # Agent-specific data
-public.status.sensor1 = "active"  # Shared data
-system.resource = llm        # System-level state
-local.temp_var = 42         # Local scope
+sensor1_temp = 25    # Auto-scoped to local (preferred)
+public:status_sensor1 = "active"  # Shared data
+system:resource = llm        # System-level state
+temp_var = 42         # Auto-scoped to local
 ```
 
 **AI Reasoning Integration (⭐ Standout Feature):**
 ```dana
-private.issue = reason("Identify a potential server room issue")
-private.solution = reason(f"Recommend a solution for: {private.issue}")
-private.implementation = reason(f"Outline steps to implement: {private.solution}")
+issue = reason("Identify a potential server room issue")
+solution = reason(f"Recommend a solution for: {issue}")
+implementation = reason(f"Outline steps to implement: {solution}")
 ```
 
 #### REPL Interface Design Assessment
@@ -175,7 +180,7 @@ Reviewed error cases in `syntax_errors.na` and parser implementation:
 **Natural Language Processing (✅ Innovative):**
 - Bidirectional transcoder between English and Dana code
 - Context-aware translation using LLM resources
-- Example: "calculate 10 + 20" → `private.result = 10 + 20`
+- Example: "calculate 10 + 20" → `result = 10 + 20`  # Auto-scoped to local
 
 **LLM Integration Architecture (✅ Solid Foundation):**
 - Pluggable LLM resource system supporting multiple providers
@@ -192,7 +197,7 @@ Reviewed error cases in `syntax_errors.na` and parser implementation:
 5. **Python-Like Syntax**: Low learning curve for Python developers
 
 #### Limitations
-1. **Scope Syntax Inconsistency**: Both `private:x` and `private.x` work, creating confusion
+1. **Standardized Scope Syntax**: Use colon notation (`private:x`) consistently, prefer unscoped variables for local scope
 2. **Limited Standard Library**: Beyond logging and reasoning, built-in functions are sparse
 3. **Error Recovery**: Single-error-stop behavior rather than comprehensive error collection
 4. **Documentation Gaps**: Missing clear getting-started guide and LLM setup instructions
@@ -234,7 +239,7 @@ Reviewed error cases in `syntax_errors.na` and parser implementation:
 
 ### Recommendations for Improvement
 
-1. **Standardize Scope Syntax**: Choose either `:` or `.` notation consistently
+1. **Standardize Scope Syntax**: Use colon notation (`:`) consistently, encourage unscoped variables for local scope
 2. **Expand Standard Library**: Add common operations, data structures, and utilities
 3. **Improve Error Recovery**: Collect and report multiple syntax errors per parse
 4. **Add Debugging Support**: Breakpoints, step-through execution, variable inspection

@@ -62,8 +62,8 @@ def test_evaluate_function_call():
     registry = FunctionRegistry()
     registry.register("add", add)
 
-    # Make function accessible to the evaluator through the context
-    context.set_registry(registry)
+    # Create executor with function registry
+    executor = DanaExecutor(function_registry=registry)
 
     # Create a function call node
     func_call = FunctionCall(name="add", args={"0": LiteralExpression(17), "1": LiteralExpression(25)})
@@ -134,21 +134,17 @@ def test_fstring_evaluation():
 def test_assignment_and_print(capsys):
     """Test assignment and print execution."""
     context = SandboxContext()
-    executor = DanaExecutor()
-
-    # Set up interpreter
-    interpreter = DanaInterpreter(context)
-    executor.interpreter = interpreter
+    interpreter = DanaInterpreter()
 
     # Assignment
     stmt = Assignment(target=Identifier("private.x"), value=LiteralExpression(99))
-    result = executor.execute(stmt, context)
+    result = interpreter.execute_statement(stmt, context)
     assert result == 99
     assert context.get("private.x") == 99
 
     # Print using FunctionCall instead of PrintStatement
     stmt = FunctionCall(name="print", args={"0": LiteralExpression("hello")})
-    executor.execute(stmt, context)
+    interpreter.execute_statement(stmt, context)
     out, _ = capsys.readouterr()
     assert "hello" in out
 
@@ -157,17 +153,17 @@ def test_assignment_and_print(capsys):
         pass
 
     with pytest.raises(Exception):
-        executor.execute(Dummy(), context)
+        interpreter._executor.execute(Dummy(), context)
 
 
 def test_unified_interpreter_execution():
     """Test that the interpreter correctly uses the DanaExecutor."""
     context = SandboxContext()
-    interpreter = DanaInterpreter(context)
+    interpreter = DanaInterpreter()
 
     # Create and execute a program
     program = Program([Assignment(target=Identifier("private.y"), value=LiteralExpression(123))])
-    result = interpreter.execute_program(program)
+    result = interpreter.execute_program(program, context)
     assert result == 123
     assert context.get("private.y") == 123
 
@@ -201,7 +197,7 @@ def test_print_function_with_fstrings():
 
     # Create an executor and set it on the context
     executor = DanaExecutor()
-    interpreter = DanaInterpreter(context)
+    interpreter = DanaInterpreter()
     interpreter._executor = executor  # Set the executor on the interpreter
     context.interpreter = interpreter  # Set the interpreter on the context
 

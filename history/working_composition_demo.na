@@ -1,0 +1,35 @@
+print("=== Dana Function Composition - WORKING DEMO ===")
+
+def add_ten(x):
+    return x + 10
+
+
+def double(x):
+    return x * 2
+
+
+def stringify(x):
+    return "Result: " + x
+
+
+print("1. Data Pipeline:")
+result1 = 5 | add_ten | double
+print("5 | add_ten | double =")
+print(result1)
+
+print("")
+print("2. Function Composition:")
+math_pipeline = add_ten | double
+result2 = math_pipeline(7)
+print("math_pipeline(7) =")
+print(result2)
+
+print("")
+print("3. Complex Pipeline:")
+result3 = 3 | add_ten | double | stringify
+print("3 | add_ten | double | stringify =")
+print(result3)
+
+print("")
+print("SUCCESS: All function composition patterns work!")
+print("Key insight: Add blank lines after function definitions.") 

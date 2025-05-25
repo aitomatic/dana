@@ -1,0 +1,6 @@
+def add_ten(x):
+    return x + 10
+
+
+result = add_ten(5)
+print(result)

@@ -24,7 +24,8 @@ program: _NL* statements _NL*
 statements: statement+
 
 // A statement can be either compound (with block) or simple (single line)
-statement: compound_stmt | simple_stmt _NL
+// Allow optional additional newlines between statements
+statement: compound_stmt | simple_stmt _NL _NL*
 
 // ===== COMPOUND STATEMENTS =====
 compound_stmt: if_stmt
@@ -105,7 +106,9 @@ scope_prefix: PRIVATE | PUBLIC | LOCAL | SYSTEM
 target: atom
 
 // ===== EXPRESSIONS =====
-expr: or_expr
+expr: pipe_expr
+
+pipe_expr: or_expr (PIPE or_expr)*
 
 or_expr: and_expr ("or" and_expr)*
 
@@ -138,6 +141,7 @@ MUL: "*"
 DIV: "/"
 FDIV: "//"
 MOD: "%"
+PIPE: "|"
 
 // Expression precedence structure (lowest to highest)
 sum_expr: product ((ADD | SUB) product)*

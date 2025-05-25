@@ -11,7 +11,7 @@ from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxF
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
-class TestFunction(SandboxFunction):
+class MockSandboxFunction(SandboxFunction):
     """Test implementation of SandboxFunction."""
 
     def __init__(self, context=None):
@@ -45,7 +45,7 @@ def test_sandbox_function_context_sanitization():
     context_manager.set_in_context("api_key", "sk_live_1234567890abcdef", scope="system")
 
     # Create a test function
-    test_func = TestFunction(context)
+    test_func = MockSandboxFunction(context)
 
     # Call the function with the context as a positional argument and proper parameter binding
     result1 = test_func(context, None, test_context=context, other_arg="dummy")

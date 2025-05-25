@@ -114,10 +114,13 @@ class DanaExecutor(BaseExecutor):
             # Always evaluate each item in the list
             return [self.execute(item, context) for item in node]
 
-        # If the node is a LiteralExpression, evaluate and return its value directly
+        # If the node is a LiteralExpression, handle it properly
         if hasattr(node, "__class__") and node.__class__.__name__ == "LiteralExpression" and hasattr(node, "value"):
+            # Special handling for FStringExpression values - delegate to collection executor
+            if hasattr(node.value, "__class__") and node.value.__class__.__name__ == "FStringExpression":
+                return self._collection_executor.execute_fstring_expression(node.value, context)
             # If the value is another AST node, evaluate it too
-            if hasattr(node.value, "__class__") and hasattr(node.value, "__class__.__name__"):
+            elif hasattr(node.value, "__class__") and hasattr(node.value, "__class__.__name__"):
                 return self.execute(node.value, context)
             return node.value
 
@@ -159,23 +162,6 @@ class DanaExecutor(BaseExecutor):
         output = "\n".join(self._output_buffer)
         self._output_buffer = []
         return output
-
-    def get_function_registry(self, context: SandboxContext):
-        """
-        Get the function registry from the context.
-
-        Args:
-            context: The execution context
-
-        Returns:
-            The function registry
-        """
-        if hasattr(context, "_interpreter") and context._interpreter:
-            return context._interpreter.function_registry
-        elif hasattr(context, "function_registry"):
-            return context.function_registry
-        else:
-            return None
 
     def extract_value(self, node: Any) -> Any:
         """

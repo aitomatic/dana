@@ -39,12 +39,13 @@ def run_and_capture_output(input_code):
     from opendxa.dana.sandbox.parser.dana_parser import DanaParser
     from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
-    interpreter = DanaInterpreter(SandboxContext())
+    context = SandboxContext()
+    interpreter = DanaInterpreter()
     parser = DanaParser()
     try:
         try:
             ast = parser.parse(input_code)
-            result = interpreter.execute_program(ast)
+            result = interpreter.execute_program(ast, context)
             output = interpreter.get_and_clear_output()
             if result is not None:
                 if output:

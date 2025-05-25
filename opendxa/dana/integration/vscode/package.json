@@ -1,0 +1,82 @@
+{
+  "name": "dana-language",
+  "displayName": "Dana Language Support",
+  "description": "Basic language support for Dana (.na files)",
+  "version": "0.1.0",
+  "publisher": "aitomatic",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aitomatic/opendxa"
+  },
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "keywords": [
+    "dana",
+    "ai",
+    "neurosymbolic"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onLanguage:dana",
+    "onCommand:dana.runFile"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "dana",
+        "aliases": [
+          "Dana",
+          "dana"
+        ],
+        "extensions": [
+          ".na"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "dana",
+        "scopeName": "source.dana",
+        "path": "./syntaxes/dana.tmLanguage.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "dana.runFile",
+        "title": "Run Dana File",
+        "category": "Dana"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "dana.runFile",
+        "key": "f5",
+        "when": "resourceExtname == .na"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "dana.runFile",
+          "when": "resourceExtname == .na",
+          "group": "navigation"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.60.0",
+    "@types/node": "16.x",
+    "typescript": "^4.9.4"
+  }
+} 

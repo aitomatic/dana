@@ -1,3 +1,10 @@
+<!--
+⚠️ IMPORTANT FOR AI CODE GENERATORS:
+Always use colon notation for explicit scopes: `private:x`, `public:x`, `system:x`, `local:x`
+NEVER use dot notation: `private.x`, `public.x`, etc.
+Prefer using unscoped variables (auto-scoped to local) instead of explicit `private:` scope unless private scope is specifically needed.
+-->
+
 <p align="center">
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
@@ -23,7 +30,7 @@ That's it! Oh, be sure to add an LLM API key to your environment:
 - `ANTHROPIC_API_KEY`
 - `AITOMATIC_API_KEY`
 
-or put the folllwing in your `.env` file, and `OpenDXA` will pick it up automatically.
+or put the following in your `.env` file, and `OpenDXA` will pick it up automatically.
 
 ```bash
 OPENAI_API_KEY=your_api_key
@@ -37,83 +44,145 @@ If you start up a fresh terminal session, you'll need to reinitialize the enviro
 % source ./bin/source_env.sh
 ```
 
-## Example Dana Code
+---
+
+## 🎯 Choose Your Path
+
+### 🛠️ I want to build with OpenDXA
+→ **[For Engineers](docs/for-engineers/)** - Practical guides, recipes, and references  
+*Perfect for developers who want to get working quickly*
+
+**What you'll find:**
+- 5-minute setup and first agent tutorial
+- Complete Dana language reference and REPL guide
+- Real-world recipes for chatbots, document processing, and workflows
+- Troubleshooting guides and error references
+
+**Start here:** [Quick Start Guide](docs/for-engineers/README.md#-quick-start)
+
+---
+
+### 🔍 I'm evaluating OpenDXA for my team
+→ **[For Evaluators](docs/for-evaluators/)** - Comparisons, ROI analysis, and proof of concepts  
+*Perfect for technical leads and decision makers*
+
+**What you'll find:**
+- ROI calculator and competitive analysis
+- Risk assessment and technical evaluation frameworks
+- Proof of concept guides and adoption strategies
+- Decision frameworks and implementation roadmaps
+
+**Start here:** [30-Second Assessment](docs/for-evaluators/README.md#-quick-evaluation-framework)
+
+---
+
+### 🏗️ I want to contribute or extend OpenDXA
+→ **[For Contributors](docs/for-contributors/)** - Architecture, codebase, and development guides  
+*Perfect for developers who want to modify or extend the system*
+
+**What you'll find:**
+- Complete architecture deep dive and codebase navigation
+- Development environment setup and contribution guidelines
+- Extension development for capabilities and resources
+- Testing frameworks and documentation standards
+
+**Start here:** [Development Setup](docs/for-contributors/README.md#-quick-start-for-contributors)
+
+---
+
+### 🧠 I want to understand the philosophy and theory
+→ **[For Researchers](docs/for-researchers/)** - Manifesto, theory, and academic context  
+*Perfect for researchers and those interested in the theoretical foundations*
+
+**What you'll find:**
+- Dana manifesto and neurosymbolic computing foundations
+- Research opportunities and collaboration frameworks
+- Theoretical analysis and future research directions
+- Academic partnerships and publication opportunities
+
+**Start here:** [Research Overview](docs/for-researchers/README.md#-research-overview)
+
+---
+
+## 🚀 What is OpenDXA?
+
+OpenDXA (Domain-eXpert Agent) Framework transforms AI development from brittle, unpredictable systems to reliable, auditable automations. Built on the Dana language - a neurosymbolic programming environment - OpenDXA enables intelligent multi-agent systems with domain expertise.
+
+### ✨ Key Benefits
+- **🔍 Transparent**: Every step is visible and debuggable through imperative programming
+- **🛡️ Reliable**: Built-in verification and error correction with structured state management
+- **⚡ Fast**: 10x faster development cycles with clear control flow
+- **🤝 Collaborative**: Share and reuse working solutions across domains
+- **🧠 Domain-Aware**: Seamless integration of specialized knowledge and expertise
+
+### 🎯 Core Innovation: Dana Language
+
+Dana (Domain-Aware NeuroSymbolic Architecture) provides an imperative programming model for agent reasoning:
 
 ```python
-# Simple stock research agent in Dana
-def stock_research(ticker, question):
-    while confidence < 0.8:
-      answer = ask("danke.stock.research", ticker=ticker, question=question)
+# Traditional AI: Opaque, brittle
+result = llm_call("analyze data", context=data)
 
-    return answer
+# Dana: Transparent, self-correcting with explicit state management
+analysis = reason("analyze data", context=data)  # Auto-scoped to local (preferred)
+while confidence(analysis) < high_confidence:
+    analysis = reason("refine analysis", context=[data, analysis])
+
+# Clear state transitions and auditable reasoning
+public:result = analysis
+use("tools.report.generate", input=public:result)
 ```
 
-
-## Core Components
+### 🏗️ Core Components
 
 OpenDXA consists of three primary components:
 
-1. **OpenDXA Framework**
-   - Orchestrates Dana and DANKE components
-   - Manages agent lifecycle and coordination
-   - [Framework Documentation](docs/README.md)
+1. **OpenDXA Framework** - Orchestrates Dana and DANKE components, manages agent lifecycle
+2. **Dana Language** - Universal program format and runtime for agent reasoning
+3. **DANKE Engine** - Knowledge management implementing the CORRAL methodology: Collect, Organize, Retrieve, Reason, Act, Learn
 
-2. **Dana (Domain-Aware NeuroSymbolic Architecture)**
-   - A universal program format and runtime for agent reasoning
-   - [Dana Documentation](docs/dana/dana.md)
-   - [Dana Manifesto](docs/dana/manifesto.md) - Vision and philosophy
+---
 
-3. **DANKE (Domain-Aware NeuroSymbolic Knowledge Engine)**
-   - Knowledge management implementing the CORRAL methodology: Collect, Organize, Retrieve, Reason, Act, Learn
-   - [DANKE Documentation](docs/danke/README.md)
+## 🎯 Quick Navigation by Use Case
 
+### 🤖 Building AI Agents
+- **New to AI development**: [Engineers Quick Start](docs/for-engineers/README.md#-quick-start)
+- **Experienced with LLMs**: [Migration Guide](docs/for-engineers/setup/migration-guide.md)
+- **Need specific examples**: [Recipe Collection](docs/for-engineers/recipes/)
+- **Dana language reference**: [Syntax Guide](docs/for-engineers/reference/dana-syntax.md)
 
-## Documentation
+### 📊 Business Evaluation
+- **ROI Analysis**: [Cost-Benefit Calculator](docs/for-evaluators/roi-analysis/calculator.md)
+- **Technical Assessment**: [Architecture Overview](docs/for-evaluators/comparison/technical-overview.md)
+- **Proof of Concept**: [Evaluation Guide](docs/for-evaluators/proof-of-concept/evaluation-guide.md)
+- **Competitive Analysis**: [Framework Comparison](docs/for-evaluators/comparison/)
 
-### Getting Started
-- [Installation Guide](docs/getting-started/installation.md)
-- [First Agent Tutorial](docs/getting-started/first-agent.md)
-- [Examples](examples/README.md)
+### 🔬 Research & Development
+- **Theoretical Foundations**: [Dana Manifesto](docs/for-researchers/manifesto/vision.md)
+- **Neurosymbolic Computing**: [Research Opportunities](docs/for-researchers/README.md#-research-opportunities)
+- **Academic Collaboration**: [Partnership Programs](docs/for-researchers/README.md#-academic-collaboration)
+- **Original Documentation**: [Archive](docs/archive/)
 
-### Core Concepts
-- [Architecture Overview](docs/core-concepts/architecture.md)
-- [Agents](docs/core-concepts/agent.md)
-- [Capabilities](docs/core-concepts/capabilities.md)
-- [Resources](docs/core-concepts/resources.md)
-- [Mixins](docs/core-concepts/mixins.md)
-- [State Management](docs/core-concepts/state-management.md)
+### 🛠️ Platform Extension
+- **Custom Capabilities**: [Extension Development](docs/for-contributors/extending/extension-development.md)
+- **Core Contributions**: [Contribution Guide](docs/for-contributors/development/contribution-guide.md)
+- **Architecture Understanding**: [System Design](docs/for-contributors/architecture/system-design.md)
+- **Codebase Navigation**: [Code Guide](docs/for-contributors/codebase/)
 
-### Dana Language
-- [Dana Overview](docs/dana/dana.md)
-- [Language Reference](docs/dana/language.md)
-- [Sandbox Environment](docs/dana/sandbox.md)
+---
 
-### Advanced Topics
-- [Development Roadmap](docs/ROADMAP.md)
-- [Key Differentiators](docs/key-differentiators/README.md)
-- [Requirements](docs/requirements/README.md)
+## 🌟 Why OpenDXA?
 
-## Example: Dana Program
+OpenDXA stands out by enabling truly expert agents grounded in specific domain knowledge:
 
-```python
-# Simple Customer Support Agent in Dana
-if public.customer.query.type == "password_reset":
-    # Search knowledge-base engine (KE)
-    private.ke_result = use("danke.support.password_reset")
+- **🏢 Leverage Existing Knowledge** - Tap into your company's documents, databases, and expertise
+- **🎓 Embed Deep Domain Expertise** - Create reliable agents that understand your specialized processes
+- **🔄 Adaptive Knowledge Management** - Manage the full lifecycle as your knowledge evolves
+- **🌐 True Interoperability** - Seamlessly connect agents and systems based on different standards
 
-    # If no clear answer, escalate
-    if private.ke_result.confidence < 0.8:
-        private.analysis = reason("Should this be escalated to human support?", 
-                                context=[public.customer, private.ke_result])
-        if private.analysis == "yes":
-            use("tools.support.escalate")
-            system.status = "escalated"
-            return
+---
 
-    system.response = private.ke_result.answer
-```
-
-## Development Setup
+## 🛠️ Development Setup
 
 ```bash
 # Install development dependencies
@@ -123,49 +192,38 @@ pip install -e ".[dev]"
 pre-commit install
 ```
 
-This will ensure code quality checks run automatically on commit, including:
+This ensures code quality checks run automatically on commit, including:
 - Code formatting with Ruff
 - Linting with Ruff (including undefined attributes/methods)
 - Basic file checks (trailing whitespace, merge conflicts, etc.)
 
-## Key Features
+---
 
-- **Domain Expertise Integration** - Embed expert knowledge into agent behavior
-- **Structured Reasoning** - Dana programs provide clear, auditable execution
-- **Declarative + Imperative Architecture** - Clear separation of knowledge and action
-- **Extensive Capabilities** - Memory, knowledge management, planning, and more
-- **Protocol Federation (NLIP)** - Interoperability between agent standards
+## 📞 Community & Support
 
-## Why OpenDXA?
+### 💬 Get Help
+- **Technical Questions**: [GitHub Discussions](https://github.com/aitomatic/opendxa/discussions)
+- **Bug Reports**: [GitHub Issues](https://github.com/aitomatic/opendxa/issues)
+- **Real-time Chat**: [Discord Community](https://discord.gg/opendxa)
 
-OpenDXA stands out by enabling truly expert agents grounded in specific domain knowledge:
+### 🤝 Get Involved
+- **Contribute Code**: [Contribution Guidelines](docs/for-contributors/development/contribution-guide.md)
+- **Share Examples**: [Community Recipes](docs/for-engineers/recipes/)
+- **Research Collaboration**: [Academic Partnerships](docs/for-researchers/README.md#-academic-collaboration)
 
-- **Leverage Existing Knowledge** - Tap into your company's documents, databases, and expertise
-- **Embed Deep Domain Expertise** - Create reliable agents that understand your specialized processes
-- **Adaptive Knowledge Management** - Manage the full lifecycle as your knowledge evolves
-- **True Interoperability** - Seamlessly connect agents and systems based on different standards
+### 🏢 Enterprise Support
+- **Business Inquiries**: [Contact Sales](mailto:sales@aitomatic.com)
+- **Professional Services**: [Implementation Support](docs/for-evaluators/adoption-guide/professional-services.md)
+- **Custom Development**: [Enterprise Solutions](mailto:enterprise@aitomatic.com)
 
-## AST Validation
+---
 
-The AST validation system helps ensure that the parser properly transforms Lark parse trees into Dana AST nodes without leaving any Lark Tree nodes in the AST. This is important for maintaining a clean, well-defined AST structure.
-
-Key validation tools:
-
-- **`validate_ast`**: A utility function to check if an AST contains any Lark Tree nodes
-- **`StrictDanaParser`**: A variant of the parser that enforces strict AST validation
-- **`safe_strip_lark_trees`**: A recursive validation function that detects Tree nodes while avoiding infinite recursion
-
-These tools help maintain a clean separation between the parser's internal implementation and the AST, making it easier to work with the AST in downstream code.
-
-## License
+## 📄 License
 
 OpenDXA is released under the [MIT License](LICENSE.md).
 
-## Support
-
-For questions or support, please open an issue on the [GitHub repository](https://github.com/aitomatic/opendxa/issues).
-
 ---
+
 <p align="center">
 Copyright © 2024 Aitomatic, Inc. Licensed under the <a href="LICENSE.md">MIT License</a>.
 <br/>

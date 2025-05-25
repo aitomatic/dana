@@ -24,9 +24,10 @@ def test_division_from_source():
     parser = DanaParser()
     parse_tree = parser.parser.parse("private:x = 6 / 2\n")
     ast = parser.transform(parse_tree)
-    interpreter = DanaInterpreter(SandboxContext())
-    interpreter.execute_program(ast)
-    assert interpreter.context.get("private.x") == 3.0
+    context = SandboxContext()
+    interpreter = DanaInterpreter()
+    interpreter.execute_program(ast, context)
+    assert context.get("private.x") == 3.0
 
 
 def test_parse_simple_division_expression():

@@ -83,7 +83,7 @@ class TestUnifiedExecution(unittest.TestCase):
     def setUp(self):
         """Set up the test environment."""
         self.context = SandboxContext()
-        self.interpreter = DanaInterpreter(self.context)
+        self.interpreter = DanaInterpreter()
         self.parser = DanaParser()
 
         # Mock the reason function to avoid actual LLM calls
@@ -112,7 +112,7 @@ class TestUnifiedExecution(unittest.TestCase):
         # Function call as a statement
         program_source = 'reason("Test prompt as statement")'
         program = self.parser.parse(program_source)
-        result = self.interpreter.execute_program(program)
+        result = self.interpreter.execute_program(program, self.context)
 
         # Check the result
         self.assertEqual(result, self.reason_result)
@@ -124,7 +124,7 @@ class TestUnifiedExecution(unittest.TestCase):
         # Function call as an expression
         program_source = 'result = reason("Test prompt as expression")'
         program = self.parser.parse(program_source)
-        self.interpreter.execute_program(program)
+        self.interpreter.execute_program(program, self.context)
 
         # Get the result from the context
         result = self.context.get("result")
@@ -139,7 +139,7 @@ class TestUnifiedExecution(unittest.TestCase):
         # Function call nested in an expression
         program_source = 'result = "Result: " + reason("Test prompt in expression")'
         program = self.parser.parse(program_source)
-        self.interpreter.execute_program(program)
+        self.interpreter.execute_program(program, self.context)
 
         # Get the result from the context
         result = self.context.get("result")
@@ -159,7 +159,7 @@ result = reason("Test prompt with options", {
 })
 """
         program = self.parser.parse(program_source)
-        self.interpreter.execute_program(program)
+        self.interpreter.execute_program(program, self.context)
 
         # Get the result from the context
         result = self.context.get("result")
@@ -179,7 +179,7 @@ if True:
     result = reason("Test prompt in conditional")
 """
         program = self.parser.parse(program_source)
-        self.interpreter.execute_program(program)
+        self.interpreter.execute_program(program, self.context)
 
         # Get the result from the context
         result = self.context.get("result")
@@ -206,7 +206,7 @@ if True:
         # Function call chaining
         program_source = 'result = process(reason("Test prompt for chaining"))'
         program = self.parser.parse(program_source)
-        self.interpreter.execute_program(program)
+        self.interpreter.execute_program(program, self.context)
 
         # Get the result from the context
         result = self.context.get("result")
@@ -221,10 +221,10 @@ if True:
         # Execute a function call as a statement
         program_source = 'reason("Test statement path")'
         program = self.parser.parse(program_source)
-        self.interpreter.execute_program(program)
+        self.interpreter.execute_program(program, self.context)
 
-        # Check execution path
-        self.assertEqual(self.context.get("system.__last_execution_path"), "unified")
+        # Check execution path - this test may need updating since we removed the execution path tracking
+        # self.assertEqual(self.context.get("system.__last_execution_path"), "unified")
 
         # Reset calls
         self.reason_calls = []
@@ -232,10 +232,10 @@ if True:
         # Execute a function call as an expression
         program_source = 'result = reason("Test expression path")'
         program = self.parser.parse(program_source)
-        self.interpreter.execute_program(program)
+        self.interpreter.execute_program(program, self.context)
 
-        # Check execution path
-        self.assertEqual(self.context.get("system.__last_execution_path"), "unified")
+        # Check execution path - this test may need updating since we removed the execution path tracking
+        # self.assertEqual(self.context.get("system.__last_execution_path"), "unified")
 
 
 if __name__ == "__main__":

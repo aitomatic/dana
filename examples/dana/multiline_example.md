@@ -1,5 +1,10 @@
 # Dana REPL Multiline Examples
 
+> **⚠️ IMPORTANT FOR AI CODE GENERATORS:**
+> Always use colon notation for explicit scopes: `private:x`, `public:x`, `system:x`, `local:x`
+> NEVER use dot notation: `private.x`, `public.x`, etc.
+> Prefer using unscoped variables (auto-scoped to local) instead of explicit `private:` scope unless private scope is specifically needed.
+
 This file contains examples of using the Dana REPL with multiline statements and blocks.
 
 **New in this version:** The REPL now uses explicit ending for multiline blocks. Press Enter on an empty line to execute multiline code.
@@ -65,7 +70,7 @@ This new approach solves several issues:
 
 ### Old (problematic):
 ```
-dana> if local.a == 365:
+dana> if a == 365:
 ...     print(a/10)      [executes here - problematic!]
 dana> else:              [orphaned else statement]
 ...     print(1)
@@ -73,7 +78,7 @@ dana> else:              [orphaned else statement]
 
 ### New (correct):
 ```
-dana> if local.a == 365:
+dana> if a == 365:
 ...     print(a/10)
 ... else:
 ...     print(1)

@@ -173,11 +173,25 @@ class PythonFunction(SandboxFunction):
         Returns:
             The result of calling the Python function
         """
-        # If function expects context parameter, inject it
+
+        # Handle context injection properly
         if self.wants_context and self.context_param_name:
-            kwargs[self.context_param_name] = context
-            # Call the wrapped function with the arguments
-            return self.func(*args, **kwargs)
+            # Check if context parameter is the first parameter
+            try:
+                sig = inspect.signature(self.func)
+                param_names = list(sig.parameters.keys())
+                if param_names and param_names[0] == self.context_param_name:
+                    # Context is first parameter - pass as positional argument
+                    # Remove context from kwargs if it was injected there
+                    kwargs.pop(self.context_param_name, None)
+                    return self.func(context, *args, **kwargs)
+                else:
+                    # Context is not first parameter - it should be in kwargs already
+                    return self.func(*args, **kwargs)
+            except (AttributeError, OSError):
+                # Fallback to using kwargs if signature inspection fails
+                # Only catch exceptions related to signature inspection, not function execution
+                return self.func(*args, **kwargs)
         else:
-            # Call the wrapped function with the arguments
+            # No context needed - just call the function
             return self.func(*args, **kwargs)

@@ -1,0 +1,13 @@
+def add_ten(x):
+    return x + 10
+
+def double(x):
+    return x * 2
+
+print("Testing assignment")
+x = 5
+print("Assignment works")
+
+print("Testing function composition")
+math_pipeline = add_ten | double
+print("Function composition assigned") 

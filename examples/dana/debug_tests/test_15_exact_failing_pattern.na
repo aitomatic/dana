@@ -1,0 +1,6 @@
+print("x")
+
+
+# comment
+def f():
+    pass

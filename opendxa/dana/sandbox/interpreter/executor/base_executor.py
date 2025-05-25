@@ -20,6 +20,7 @@ Discord: https://discord.gg/6jGD4PYk
 from typing import Any, Dict, Optional, Type
 
 from opendxa.common.mixins.loggable import Loggable
+from opendxa.dana.common.exceptions import SandboxError
 from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
@@ -70,34 +71,31 @@ class BaseExecutor(Loggable):
         return self._parent
 
     def execute(self, node: Any, context: SandboxContext) -> Any:
-        """Execute a node with the given context.
+        """Execute any AST node using the dispatch table.
 
         Args:
-            node: The node to execute
+            node: The AST node to execute
             context: The execution context
 
         Returns:
             The result of execution
-        """
-        # Track execution path for testing/debugging
-        try:
-            context.set("system.__last_execution_path", "unified")
-        except Exception:
-            # Ignore any errors when trying to set the execution path
-            pass
 
-        # If we have a handler for this node type, use it
+        Raises:
+            SandboxError: If the node type is not supported
+        """
+        if node is None:
+            return None
+
         node_type = type(node)
         if node_type in self._handlers:
-            return self._handlers[node_type](node, context)
-
-        # Otherwise delegate to parent if available
-        if self._parent:
-            return self._parent.execute(node, context)
-
-        # If we don't have a handler or parent, raise an error
-        node_name = getattr(node, "__class__", type(node)).__name__
-        raise ValueError(f"Unsupported node type: {node_name}")
+            handler = self._handlers[node_type]
+            return handler(node, context)
+        else:
+            # If this executor can't handle it, try the parent
+            if self._parent:
+                return self._parent.execute(node, context)
+            else:
+                raise SandboxError(f"Unsupported node type: {node_type}")
 
     def register_handlers(self):
         """Register handlers for node types.
@@ -107,53 +105,10 @@ class BaseExecutor(Loggable):
         """
         pass
 
-    def get_handlers(self) -> Dict[Type, Any]:
-        """Get the node handlers dictionary.
+    def get_handlers(self) -> Dict[type, Any]:
+        """Get the handlers dictionary for this executor.
 
         Returns:
-            A dictionary mapping node types to handler methods
+            Dictionary mapping node types to handler functions
         """
         return self._handlers
-
-    def get_function_registry(self, context: SandboxContext) -> Optional[FunctionRegistry]:
-        """Get the function registry from the context or local registry.
-
-        This is used by function executors to resolve function calls.
-
-        Args:
-            context: The execution context which may contain a registry
-
-        Returns:
-            A function registry or None if not available
-        """
-        # First try to use our own registry
-        if self._function_registry:
-            return self._function_registry
-
-        # Then try to get it directly from the context's system scope
-        try:
-            registry = context.get("system.function_registry")
-            if registry:
-                return registry
-        except Exception:
-            # Ignore errors when trying to access system.function_registry
-            pass
-
-        # If the context has an interpreter property, try to get it from there
-        try:
-            if hasattr(context, "function_registry") and context.function_registry:
-                return context.function_registry
-        except RuntimeError:
-            # This may raise RuntimeError if interpreter not set
-            pass
-
-        # If the context has an interpreter, try to get it from there
-        if hasattr(context, "_interpreter") and context._interpreter:
-            if hasattr(context._interpreter, "function_registry"):
-                return context._interpreter.function_registry
-
-        # Otherwise delegate to parent if available
-        if self._parent:
-            return self._parent.get_function_registry(context)
-
-        return None

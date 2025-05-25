@@ -1,0 +1,27 @@
+# Test Dana file for Cursor
+print("Hello from Dana in Cursor!")
+
+def greet(name):
+    return "Hello, " + name + "!"
+
+result = greet("Cursor User")
+print(result)
+
+print("Dana extension is working in Cursor! 🎉")
+
+# Test pipe assignment issue
+print("Testing pipe assignment")
+
+# Define test functions first
+def add_ten(x):
+    return x + 10
+
+def double(x):
+    return x * 2
+
+print("Functions defined")
+
+# Test the problematic assignment
+result1 = 5 | add_ten | double
+print("Pipe assignment result:")
+print(result1) 

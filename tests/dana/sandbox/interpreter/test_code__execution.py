@@ -55,69 +55,71 @@ def run_dana_code(code, parser=None, do_type_check=True):
     if parser is None:
         parser = DanaParser()
     program = parser.parse(code, do_type_check=do_type_check, do_transform=True)
-    interpreter = DanaInterpreter(SandboxContext())
-    interpreter.execute_program(program)
-    return interpreter
+    context = SandboxContext()
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
+    interpreter.execute_program(program, context)
+    return context
 
 
 # --- Assignment & Scoping ---
 def test_assignment_and_scopes():
-    interpreter = run_dana_code("private:x = 1\npublic:y = 2\nz = 3")
-    assert interpreter.get_evaluated("private.x", interpreter.context) == 1
-    assert interpreter.get_evaluated("public.y", interpreter.context) == 2
-    assert interpreter.get_evaluated("local.z", interpreter.context) == 3  # default scope
+    context = run_dana_code("private:x = 1\npublic:y = 2\nz = 3")
+    assert context.get("private.x") == 1
+    assert context.get("public.y") == 2
+    assert context.get("local.z") == 3  # default scope
 
 
 # --- Literals ---
 def test_literals():
-    interpreter = run_dana_code('a = 42\nb = 3.14\nc = "hello"\nd = True\ne = None\nf = [1,2,3]\ng = {"a":1}\nh = (1,2)')
-    assert interpreter.get_evaluated("local.a", interpreter.context) == 42
-    assert interpreter.get_evaluated("local.b", interpreter.context) == 3.14
-    assert interpreter.get_evaluated("local.c", interpreter.context) == "hello"
-    assert interpreter.get_evaluated("local.d", interpreter.context) is True
-    assert interpreter.get_evaluated("local.e", interpreter.context) is None
-    assert interpreter.get_evaluated("local.f", interpreter.context) == [1, 2, 3]
-    assert interpreter.get_evaluated("local.g", interpreter.context) == {"a": 1}
-    assert interpreter.get_evaluated("local.h", interpreter.context) == (1, 2)
+    context = run_dana_code('a = 42\nb = 3.14\nc = "hello"\nd = True\ne = None\nf = [1,2,3]\ng = {"a":1}\nh = (1,2)')
+    assert context.get("local.a") == 42
+    assert context.get("local.b") == 3.14
+    assert context.get("local.c") == "hello"
+    assert context.get("local.d") is True
+    assert context.get("local.e") is None
+    assert context.get("local.f") == [1, 2, 3]
+    assert context.get("local.g") == {"a": 1}
+    assert context.get("local.h") == (1, 2)
 
 
 # --- Arithmetic & Operator Precedence ---
 def test_arithmetic_operators():
     # Force DanaParser to reload the grammar
     parser = DanaParser()
-    interpreter = run_dana_code("x = 2 + 3\ny = 5 - 1\nz = 2 * 3\nw = 8 / 2\nv = 7 % 4\nu = 2 ** 3", parser=parser)
-    assert interpreter.get_evaluated("local.x", interpreter.context) == 5
-    assert interpreter.get_evaluated("local.y", interpreter.context) == 4
-    assert interpreter.get_evaluated("local.z", interpreter.context) == 6
-    assert interpreter.get_evaluated("local.w", interpreter.context) == 4
-    assert interpreter.get_evaluated("local.v", interpreter.context) == 3
-    assert interpreter.get_evaluated("local.u", interpreter.context) == 8
+    context = run_dana_code("x = 2 + 3\ny = 5 - 1\nz = 2 * 3\nw = 8 / 2\nv = 7 % 4\nu = 2 ** 3", parser=parser)
+    assert context.get("local.x") == 5
+    assert context.get("local.y") == 4
+    assert context.get("local.z") == 6
+    assert context.get("local.w") == 4
+    assert context.get("local.v") == 3
+    assert context.get("local.u") == 8
 
 
 def test_operator_precedence():
     # Force DanaParser to reload the grammar
     parser = DanaParser()
-    interpreter = run_dana_code("x = 2 + 3 * 4\ny = (2 + 3) * 4\nz = 2 ** 3 * 2\nw = 2 * 3 ** 2", parser=parser)
-    assert interpreter.get_evaluated("local.x", interpreter.context) == 14
-    assert interpreter.get_evaluated("local.y", interpreter.context) == 20
-    assert interpreter.get_evaluated("local.z", interpreter.context) == 16
-    assert interpreter.get_evaluated("local.w", interpreter.context) == 18
+    context = run_dana_code("x = 2 + 3 * 4\ny = (2 + 3) * 4\nz = 2 ** 3 * 2\nw = 2 * 3 ** 2", parser=parser)
+    assert context.get("local.x") == 14
+    assert context.get("local.y") == 20
+    assert context.get("local.z") == 16
+    assert context.get("local.w") == 18
 
 
 # --- Comparisons & Logical Ops ---
 def test_comparisons_and_logical():
-    interpreter = run_dana_code(
+    context = run_dana_code(
         "a = 2 < 3\nb = 2 == 2\nc = 2 != 3\nd = 2 >= 2\ne = 2 <= 3\nf = 2 > 1\ng = True and False\nh = True or False\ni = not False"
     )
-    assert interpreter.get_evaluated("local.a", interpreter.context) is True
-    assert interpreter.get_evaluated("local.b", interpreter.context) is True
-    assert interpreter.get_evaluated("local.c", interpreter.context) is True
-    assert interpreter.get_evaluated("local.d", interpreter.context) is True
-    assert interpreter.get_evaluated("local.e", interpreter.context) is True
-    assert interpreter.get_evaluated("local.f", interpreter.context) is True
-    assert interpreter.get_evaluated("local.g", interpreter.context) is False
-    assert interpreter.get_evaluated("local.h", interpreter.context) is True
-    assert interpreter.get_evaluated("local.i", interpreter.context) is True
+    assert context.get("local.a") is True
+    assert context.get("local.b") is True
+    assert context.get("local.c") is True
+    assert context.get("local.d") is True
+    assert context.get("local.e") is True
+    assert context.get("local.f") is True
+    assert context.get("local.g") is False
+    assert context.get("local.h") is True
+    assert context.get("local.i") is True
 
 
 # --- Control Flow ---
@@ -131,8 +133,8 @@ elif x == 0:
 else:
     y = 30
 """
-    interpreter = run_dana_code(code)
-    assert interpreter.get_evaluated("local.y", interpreter.context) == 10
+    context = run_dana_code(code)
+    assert context.get("local.y") == 10
 
 
 def test_while_loop_integration():
@@ -141,8 +143,8 @@ x = 0
 while x < 3:
     x = x + 1
 """
-    interpreter = run_dana_code(code)
-    assert interpreter.get_evaluated("local.x", interpreter.context) == 3
+    context = run_dana_code(code)
+    assert context.get("local.x") == 3
 
 
 def test_for_loop():
@@ -151,8 +153,8 @@ sum = 0
 for i in [1,2,3]:
     sum = sum + i
 """
-    interpreter = run_dana_code(code)
-    assert interpreter.get_evaluated("local.sum", interpreter.context) == 6
+    context = run_dana_code(code)
+    assert context.get("local.sum") == 6
 
 
 # --- Functions ---
@@ -163,16 +165,16 @@ def add(a, b):
     return a + b
 x = add(2, 3)
 """
-    interpreter = run_dana_code(code)
-    assert interpreter.get_evaluated("local.x", interpreter.context) == 5
+    context = run_dana_code(code)
+    assert context.get("local.x") == 5
 
 
 # --- Strings & Collections ---
 def test_fstring_and_multiline_string():
     # First test a simple multiline string
     multiline_code = 'y = """multi\\nline"""'
-    interpreter = run_dana_code(multiline_code)
-    multiline_result = interpreter.get_evaluated("local.y", interpreter.context)
+    context = run_dana_code(multiline_code)
+    multiline_result = context.get("local.y")
     assert "multi" in multiline_result
 
     # For the f-string test, we'll use variables and literal values
@@ -183,11 +185,11 @@ x2 = f"number {42}"
 x3 = f"float {3.14}"
 x4 = f"bool {True}"
 """
-    interpreter = run_dana_code(code)
-    x1 = interpreter.get_evaluated("local.x1", interpreter.context)
-    x2 = interpreter.get_evaluated("local.x2", interpreter.context)
-    x3 = interpreter.get_evaluated("local.x3", interpreter.context)
-    x4 = interpreter.get_evaluated("local.x4", interpreter.context)
+    context = run_dana_code(code)
+    x1 = context.get("local.x1")
+    x2 = context.get("local.x2")
+    x3 = context.get("local.x3")
+    x4 = context.get("local.x4")
 
     assert "hello" in x1
     assert "42" in x1
@@ -205,8 +207,8 @@ def test_comments_and_whitespace():
 # this is a comment
 x = 1  # inline comment
 """
-    interpreter = run_dana_code(code)
-    assert interpreter.get_evaluated("local.x", interpreter.context) == 1
+    context = run_dana_code(code)
+    assert context.get("local.x") == 1
 
 
 # --- Error Handling ---
@@ -215,15 +217,16 @@ def test_assert_and_raise():
 x = 1
 assert x == 1
 """
-    interpreter = run_dana_code(code)
-    assert interpreter.get_evaluated("local.x", interpreter.context) == 1
+    context = run_dana_code(code)
+    assert context.get("local.x") == 1
     # Test raise
     code = 'raise "error message"'
     parser = DanaParser()
     program = parser.parse(code, do_type_check=True, do_transform=True)
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
     try:
-        interpreter.execute_program(program)
+        context = SandboxContext()
+        interpreter.execute_program(program, context)
     except Exception as e:
         assert "error" in str(e) or "raise" in str(e)
     else:
@@ -233,11 +236,11 @@ assert x == 1
 # --- Import & Scope Keywords ---
 def test_scope_keywords():
     code = "private:x = 1\npublic:y = 2\nsystem:z = 3\nlocal:w = 4"
-    interpreter = run_dana_code(code)
-    assert interpreter.get_evaluated("private.x", interpreter.context) == 1
-    assert interpreter.get_evaluated("public.y", interpreter.context) == 2
-    assert interpreter.get_evaluated("system.z", interpreter.context) == 3
-    assert interpreter.get_evaluated("local.w", interpreter.context) == 4
+    context = run_dana_code(code)
+    assert context.get("private.x") == 1
+    assert context.get("public.y") == 2
+    assert context.get("system.z") == 3
+    assert context.get("local.w") == 4
 
 
 # --- Control Flow with Break and Continue ---
@@ -249,8 +252,8 @@ while x < 10:
     if x == 5:
         break
 """
-    interpreter = run_dana_code(code)
-    assert interpreter.get_evaluated("local.x", interpreter.context) == 5
+    context = run_dana_code(code)
+    assert context.get("local.x") == 5
 
 
 def test_continue_in_while_loop():
@@ -263,8 +266,8 @@ while x < 5:
         continue
     sum = sum + x
 """
-    interpreter = run_dana_code(code)
-    assert interpreter.get_evaluated("local.sum", interpreter.context) == 9  # 1 + 3 + 5 = 9
+    context = run_dana_code(code)
+    assert context.get("local.sum") == 9  # 1 + 3 + 5 = 9
 
 
 def test_break_in_for_loop():
@@ -275,8 +278,8 @@ for i in [1, 2, 3, 4, 5]:
         break
     sum = sum + i
 """
-    interpreter = run_dana_code(code, do_type_check=False)
-    assert interpreter.get_evaluated("local.sum", interpreter.context) == 6
+    context = run_dana_code(code, do_type_check=False)
+    assert context.get("local.sum") == 6
 
 
 def test_continue_in_for_loop():
@@ -287,8 +290,8 @@ for i in [1, 2, 3, 4, 5]:
         continue
     sum = sum + i
 """
-    interpreter = run_dana_code(code)
-    assert interpreter.get_evaluated("local.sum", interpreter.context) == 9  # 1 + 3 + 5 = 9
+    context = run_dana_code(code)
+    assert context.get("local.sum") == 9  # 1 + 3 + 5 = 9
 
 
 # --- Additional Error Handling ---
@@ -297,9 +300,10 @@ def test_variable_not_found():
     parser = DanaParser()
     # Disable type checking since it will fail on undefined variable before runtime
     program = parser.parse(code, do_type_check=False, do_transform=True)
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
     try:
-        interpreter.execute_program(program)
+        context = SandboxContext()
+        interpreter.execute_program(program, context)
         pytest.fail("Should have raised an exception for undefined variable")
     except Exception as e:
         assert "not found" in str(e) or "undefined" in str(e) or "scope prefix" in str(e)
@@ -309,9 +313,10 @@ def test_division_by_zero():
     code = "x = 1 / 0"
     parser = DanaParser()
     program = parser.parse(code, do_type_check=True, do_transform=True)
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
     try:
-        interpreter.execute_program(program)
+        context = SandboxContext()
+        interpreter.execute_program(program, context)
         pytest.fail("Should have raised an exception for division by zero")
     except Exception as e:
         assert "zero" in str(e) or "division" in str(e)
@@ -324,9 +329,10 @@ assert x == 10, "x should be 10"
 """
     parser = DanaParser()
     program = parser.parse(code, do_type_check=True, do_transform=True)
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
     try:
-        interpreter.execute_program(program)
+        context = SandboxContext()
+        interpreter.execute_program(program, context)
         pytest.fail("Should have raised an assertion error")
     except Exception as e:
         assert "should be 10" in str(e) or "AssertionError" in str(e)
@@ -340,8 +346,8 @@ b = 2
 c = 3
 result = a + b * c - (a + b) / c
 """
-    interpreter = run_dana_code(code)
-    assert interpreter.get_evaluated("local.result", interpreter.context) == 1 + 2 * 3 - (1 + 2) / 3  # Should be 6.0
+    context = run_dana_code(code)
+    assert context.get("local.result") == 1 + 2 * 3 - (1 + 2) / 3  # Should be 6.0
 
 
 def test_nested_expressions():
@@ -350,9 +356,9 @@ a = 2
 b = 3
 c = ((a + b) * (a - b)) / (a * b)
 """
-    interpreter = run_dana_code(code)
+    context = run_dana_code(code)
     # ((2 + 3) * (2 - 3)) / (2 * 3) = (5 * -1) / 6 = -5/6 ≈ -0.8333...
-    assert abs(interpreter.get_evaluated("local.c", interpreter.context) - (-5 / 6)) < 0.0001
+    assert abs(context.get("local.c") - (-5 / 6)) < 0.0001
 
 
 # --- Lists and Collection Operations ---
@@ -363,11 +369,12 @@ a = [1, 2, 3]
 """
     parser = DanaParser()
     program = parser.parse(code, do_type_check=False, do_transform=True)
-    interpreter = DanaInterpreter(SandboxContext())
-    interpreter.execute_program(program)
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
+    interpreter.execute_program(program, context)
 
     # Check that the list was created correctly
-    list_value = interpreter.get_evaluated("local.a", interpreter.context)
+    list_value = context.get("local.a")
     assert list_value == [1, 2, 3]
 
 
@@ -379,9 +386,10 @@ has_key = "foo" in empty_dict
 """
     parser = DanaParser()
     program = parser.parse(code, do_type_check=False, do_transform=True)
-    interpreter = DanaInterpreter(SandboxContext())
-    interpreter.execute_program(program)
-    ctx = interpreter.context
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
+    interpreter.execute_program(program, context)
+    ctx = context
 
     # Verify the result
     assert ctx.get("local.has_key") is False
@@ -406,8 +414,8 @@ system:z = 3
     child_context = SandboxContext(parent=parent_context)
 
     # Execute in the child context
-    interpreter = DanaInterpreter(child_context)
-    interpreter.execute_program(program)
+    interpreter = DanaInterpreter()
+    interpreter.execute_program(program, child_context)
 
     # Verify that the child can see parent's values
     assert child_context.get("private.parent_var") == "parent_value"
@@ -430,9 +438,10 @@ e = not True
     # Disable type checking for these tests
     parser = DanaParser()
     program = parser.parse(code, do_type_check=False, do_transform=True)
-    interpreter = DanaInterpreter(SandboxContext())
-    interpreter.execute_program(program)
-    ctx = interpreter.context
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
+    interpreter.execute_program(program, context)
+    ctx = context
 
     assert ctx.get("local.a") == 5
     assert ctx.get("local.b") == -5
@@ -450,9 +459,10 @@ has_k3 = "k3" in d
 """
     parser = DanaParser()
     program = parser.parse(code, do_type_check=False, do_transform=True)
-    interpreter = DanaInterpreter(SandboxContext())
-    interpreter.execute_program(program)
-    ctx = interpreter.context
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
+    interpreter.execute_program(program, context)
+    ctx = context
 
     assert ctx.get("local.d") == {"k1": 10, "k2": 20}
     assert ctx.get("local.has_k1") is True
@@ -467,9 +477,10 @@ greeting = str1 + str2
 """
     parser = DanaParser()
     program = parser.parse(code, do_type_check=False, do_transform=True)
-    interpreter = DanaInterpreter(SandboxContext())
-    interpreter.execute_program(program)
-    ctx = interpreter.context
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
+    interpreter.execute_program(program, context)
+    ctx = context
 
     assert ctx.get("local.greeting") == "Hello, World!"
 
@@ -482,9 +493,10 @@ cubed = 2 ** 3
 """
     parser = DanaParser()
     program = parser.parse(code, do_type_check=False, do_transform=True)
-    interpreter = DanaInterpreter(SandboxContext())
-    interpreter.execute_program(program)
-    ctx = interpreter.context
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
+    interpreter.execute_program(program, context)
+    ctx = context
 
     assert ctx.get("local.squared") == 4
     assert ctx.get("local.cubed") == 8

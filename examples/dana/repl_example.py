@@ -4,7 +4,7 @@ import asyncio
 import logging
 
 from opendxa.common.resource.llm_resource import LLMResource
-from opendxa.dana.repl.repl import REPL
+from opendxa.dana.exec.repl.repl import REPL
 from opendxa.dana.sandbox.log_manager import LogLevel
 
 

@@ -25,8 +25,11 @@ from opendxa.dana.sandbox.interpreter.functions.function_registry import Functio
 from opendxa.dana.sandbox.parser.ast import (
     AttributeAccess,
     BinaryExpression,
+    BinaryOperator,
     DictLiteral,
+    FStringExpression,
     Identifier,
+    ListLiteral,
     LiteralExpression,
     SetLiteral,
     SubscriptExpression,
@@ -69,8 +72,10 @@ class ExpressionExecutor(BaseExecutor):
             BinaryExpression: self.execute_binary_expression,
             UnaryExpression: self.execute_unary_expression,
             DictLiteral: self.execute_dict_literal,
+            ListLiteral: self.execute_list_literal,
             TupleLiteral: self.execute_tuple_literal,
             SetLiteral: self.execute_set_literal,
+            FStringExpression: self.execute_fstring_expression,
             AttributeAccess: self.execute_attribute_access,
             SubscriptExpression: self.execute_subscript_expression,
         }
@@ -85,6 +90,10 @@ class ExpressionExecutor(BaseExecutor):
         Returns:
             The literal value
         """
+        # Special handling for FStringExpression values
+        if isinstance(node.value, FStringExpression):
+            return self.execute_fstring_expression(node.value, context)
+
         return node.value
 
     def execute_identifier(self, node: Identifier, context: SandboxContext) -> Any:
@@ -100,8 +109,18 @@ class ExpressionExecutor(BaseExecutor):
         name = node.name
         try:
             return context.get(name)
-        except StateError as e:
-            raise SandboxError(f"Error accessing variable '{name}': {e}")
+        except StateError:
+            # If not found in context, try the function registry
+            if self.function_registry:
+                try:
+                    func, func_type, metadata = self.function_registry.resolve(name, None)
+                    if func is not None:
+                        return func
+                except Exception:
+                    pass
+
+            # If still not found, raise the original error
+            raise SandboxError(f"Error accessing variable '{name}': Variable '{name}' not found")
 
     def execute_binary_expression(self, node: BinaryExpression, context: SandboxContext) -> Any:
         """Execute a binary expression.
@@ -114,7 +133,12 @@ class ExpressionExecutor(BaseExecutor):
             The result of the binary operation
         """
         try:
-            # Evaluate left and right operands
+            # Special handling for pipe operator - we need to check for function composition
+            # before evaluating the operands
+            if node.operator == BinaryOperator.PIPE:
+                return self._execute_pipe(node.left, node.right, context)
+
+            # For all other operators, evaluate operands normally
             left_raw = self.parent.execute(node.left, context)
             right_raw = self.parent.execute(node.right, context)
 
@@ -125,48 +149,41 @@ class ExpressionExecutor(BaseExecutor):
             # Apply type coercion if enabled
             left, right = self._apply_binary_coercion(left, right, node.operator.value)
 
-            # Get the operator's string value from the enum
-            op_value = node.operator.value
-
             # Perform the operation
-            if op_value == "+":
+            if node.operator == BinaryOperator.ADD:
                 return left + right
-            elif op_value == "-":
+            elif node.operator == BinaryOperator.SUBTRACT:
                 return left - right
-            elif op_value == "*":
+            elif node.operator == BinaryOperator.MULTIPLY:
                 return left * right
-            elif op_value == "/":
+            elif node.operator == BinaryOperator.DIVIDE:
                 return left / right
-            elif op_value == "%":
+            elif node.operator == BinaryOperator.MODULO:
                 return left % right
-            elif op_value == "**":
+            elif node.operator == BinaryOperator.POWER:
                 return left**right
-            elif op_value == "//":
-                return left // right
-            elif op_value == "==":
+            elif node.operator == BinaryOperator.EQUALS:
                 return left == right
-            elif op_value == "!=":
+            elif node.operator == BinaryOperator.NOT_EQUALS:
                 return left != right
-            elif op_value == "<":
+            elif node.operator == BinaryOperator.LESS_THAN:
                 return left < right
-            elif op_value == ">":
+            elif node.operator == BinaryOperator.GREATER_THAN:
                 return left > right
-            elif op_value == "<=":
+            elif node.operator == BinaryOperator.LESS_EQUALS:
                 return left <= right
-            elif op_value == ">=":
+            elif node.operator == BinaryOperator.GREATER_EQUALS:
                 return left >= right
-            elif op_value == "and":
+            elif node.operator == BinaryOperator.AND:
                 return bool(left and right)
-            elif op_value == "or":
+            elif node.operator == BinaryOperator.OR:
                 return bool(left or right)
-            elif op_value == "in":
+            elif node.operator == BinaryOperator.IN:
                 return left in right
             else:
-                raise StateError(f"Unsupported binary operator: {node.operator}")
+                raise SandboxError(f"Unsupported binary operator: {node.operator}")
         except (TypeError, ValueError) as e:
             raise SandboxError(f"Error evaluating binary expression with operator '{node.operator}': {e}")
-        except StateError as e:
-            raise e
 
     def _apply_binary_coercion(self, left: Any, right: Any, operator: str) -> tuple:
         """Apply type coercion to binary operands if enabled.
@@ -252,6 +269,47 @@ class ExpressionExecutor(BaseExecutor):
         """
         return {self.parent.execute(item, context) for item in node.items}
 
+    def execute_fstring_expression(self, node: FStringExpression, context: SandboxContext) -> str:
+        """Execute a formatted string expression.
+
+        Args:
+            node: The formatted string expression to execute
+            context: The execution context
+
+        Returns:
+            The formatted string
+        """
+        # Handle both new-style expression structure (with template and expressions)
+        # and old-style parts structure
+
+        # Check if we have the new structure with template and expressions dictionary
+        if hasattr(node, "template") and node.template and hasattr(node, "expressions") and node.expressions:
+            result = node.template
+
+            # Replace each placeholder with its evaluated value
+            for placeholder, expr in node.expressions.items():
+                # Evaluate the expression within the placeholder
+                value = self.parent.execute(expr, context)
+                # Replace the placeholder with the string representation of the value
+                result = result.replace(placeholder, str(value))
+
+            return result
+
+        # Handle the older style with parts list
+        elif hasattr(node, "parts") and node.parts:
+            result = ""
+            for part in node.parts:
+                if isinstance(part, str):
+                    result += part
+                else:
+                    # Evaluate the expression part
+                    value = self.parent.execute(part, context)
+                    result += str(value)
+            return result
+
+        # If neither format is present, return an empty string as fallback
+        return ""
+
     def execute_attribute_access(self, node: AttributeAccess, context: SandboxContext) -> Any:
         """Execute an attribute access expression.
 
@@ -296,3 +354,175 @@ class ExpressionExecutor(BaseExecutor):
             return target[index]
         except (TypeError, KeyError, IndexError) as e:
             raise TypeError(f"Cannot access {type(target).__name__} with key {index}: {e}")
+
+    def execute_list_literal(self, node: ListLiteral, context: SandboxContext) -> list:
+        """Execute a list literal.
+
+        Args:
+            node: The list literal to execute
+            context: The execution context
+
+        Returns:
+            The list value
+        """
+        return [self.parent.execute(item, context) for item in node.items]
+
+    def _execute_pipe(self, left: Any, right: Any, context: SandboxContext) -> Any:
+        """Execute a pipe operator expression - unified for both composition and data pipeline.
+
+        Args:
+            left: The left operand (data to pipe or function to compose)
+            right: The right operand (function to call)
+            context: The execution context
+
+        Returns:
+            The result of calling the function with piped data, or a composed function
+
+        Raises:
+            SandboxError: If the right operand is not callable or function call fails
+        """
+        from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
+
+        # Evaluate the left operand to see what we're working with
+        left_value = self.parent.execute(left, context)
+
+        # If left_value is a SandboxFunction, create a composed function
+        if isinstance(left_value, SandboxFunction):
+            return self._create_composed_function_unified(left_value, right, context)
+
+        # Otherwise, it's data - apply right function to it immediately
+        return self._call_function(right, context, left_value)
+
+    def _create_composed_function_unified(self, left_func: Any, right_func: Any, context: SandboxContext) -> Any:
+        """Create a composed function from two SandboxFunction objects.
+
+        Args:
+            left_func: The first function to apply (should be a SandboxFunction)
+            right_func: The second function to apply (identifier or SandboxFunction)
+            context: The execution context
+
+        Returns:
+            A ComposedFunction that applies right_func(left_func(x))
+        """
+        from opendxa.dana.sandbox.interpreter.functions.composed_function import ComposedFunction
+        from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
+        from opendxa.dana.sandbox.parser.ast import Identifier
+
+        # Ensure left_func is a SandboxFunction
+        if not isinstance(left_func, SandboxFunction):
+            raise SandboxError(f"Left function must be a SandboxFunction, got {type(left_func)}")
+
+        # Handle right_func - support lazy resolution for non-existent functions
+        if isinstance(right_func, Identifier):
+            # For lazy resolution, pass the function name as a string
+            # This allows composition with non-existent functions that will fail at call time
+            try:
+                # Try to resolve immediately first
+                right_func_obj = self.execute_identifier(right_func, context)
+                if isinstance(right_func_obj, SandboxFunction):
+                    right_func = right_func_obj
+                else:
+                    # Not a SandboxFunction, use lazy resolution
+                    right_func = right_func.name
+            except SandboxError:
+                # Function not found, use lazy resolution
+                right_func = right_func.name
+        elif not isinstance(right_func, SandboxFunction):
+            raise SandboxError(f"Right function must be a SandboxFunction or Identifier, got {type(right_func)}")
+
+        # Create and return the composed function
+        return ComposedFunction(left_func, right_func, context)
+
+    def _call_function(self, func: Any, context: SandboxContext, *args, **kwargs) -> Any:
+        """Call a function with proper context detection.
+
+        Args:
+            func: The function to call (can be identifier, callable, or composed function)
+            context: The execution context
+            *args: Positional arguments
+            **kwargs: Keyword arguments
+
+        Returns:
+            The result of calling the function
+        """
+        from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
+        from opendxa.dana.sandbox.parser.ast import BinaryExpression, Identifier
+
+        # Handle function identifiers - delegate to function_executor for consistency
+        if isinstance(func, Identifier):
+            # Create a FunctionCall AST node and delegate to execute_function_call
+            from opendxa.dana.sandbox.parser.ast import FunctionCall
+
+            # Convert positional args to the format expected by FunctionCall
+            function_call_args = {}
+            for i, arg in enumerate(args):
+                function_call_args[str(i)] = arg
+
+            # Add keyword arguments
+            function_call_args.update(kwargs)
+
+            # Create FunctionCall node
+            function_call = FunctionCall(name=func.name, args=function_call_args)
+
+            # Delegate to the function executor's execute_function_call method
+            return self.parent._function_executor.execute_function_call(function_call, context)
+
+        # Handle binary expressions (nested pipe compositions)
+        elif isinstance(func, BinaryExpression):
+            # Evaluate the expression to get the actual function
+            evaluated_func = self.parent.execute(func, context)
+            # Now call the evaluated function
+            return self._call_function(evaluated_func, context, *args, **kwargs)
+
+        # Handle SandboxFunction objects (including ComposedFunction)
+        elif isinstance(func, SandboxFunction):
+            return func.execute(context, *args, **kwargs)
+
+        # Handle direct callables
+        elif callable(func):
+            # For direct callables, delegate to function registry for consistent context handling
+            from opendxa.dana.sandbox.parser.ast import FunctionCall
+
+            # Create a temporary function name for the callable
+            temp_name = f"_temp_callable_{id(func)}"
+
+            # Convert positional args to the format expected by FunctionCall
+            function_call_args = {}
+            for i, arg in enumerate(args):
+                function_call_args[str(i)] = arg
+
+            # Add keyword arguments
+            function_call_args.update(kwargs)
+
+            # Create FunctionCall node
+            function_call = FunctionCall(name=temp_name, args=function_call_args)
+
+            # Temporarily register the callable in the function registry
+            if self.function_registry:
+                self.function_registry._functions["local"][temp_name] = func
+                try:
+                    result = self.parent._function_executor.execute_function_call(function_call, context)
+                    return result
+                finally:
+                    # Clean up the temporary registration
+                    if temp_name in self.function_registry._functions["local"]:
+                        del self.function_registry._functions["local"][temp_name]
+            else:
+                raise SandboxError("No function registry available for callable execution")
+
+        else:
+            raise SandboxError(f"Invalid function operand: {func} (type: {type(func)})")
+
+    def _trace_pipe_step(self, context: SandboxContext, func: Any, input_data: Any) -> None:
+        """Trace a pipe step for future debugging/introspection.
+
+        This is a stub for future implementation of pipe step logging/tracing.
+
+        Args:
+            context: The execution context
+            func: The function being called
+            input_data: The input data being passed to the function
+        """
+        # TODO: Implement proper tracing/logging for pipe steps
+        # For now, this is just a placeholder for future enhancement
+        pass

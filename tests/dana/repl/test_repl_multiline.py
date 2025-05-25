@@ -8,7 +8,7 @@ import unittest
 
 import pytest
 
-from opendxa.dana.repl.input.completeness_checker import InputCompleteChecker
+from opendxa.dana.exec.repl.input.completeness_checker import InputCompleteChecker
 
 
 @pytest.mark.unit
@@ -112,7 +112,7 @@ else:
 
     def test_orphaned_else_detection(self):
         """Test orphaned else statement detection."""
-        from opendxa.dana.repl.input.input_processor import InputProcessor
+        from opendxa.dana.exec.repl.input.input_processor import InputProcessor
 
         processor = InputProcessor()
 

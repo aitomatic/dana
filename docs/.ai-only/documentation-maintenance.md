@@ -1,19 +1,29 @@
 # OpenDXA Documentation Maintenance Prompts
 
+> **⚠️ IMPORTANT FOR AI CODE GENERATORS:**
+> Always use colon notation for explicit scopes: `private:x`, `public:x`, `system:x`, `local:x`
+> NEVER use dot notation: `private.x`, `public.x`, etc.
+> Prefer using unscoped variables (auto-scoped to local) instead of explicit `private:` scope unless private scope is specifically needed.
+
 ## Essential Context for All Prompts
 
 **Key Reference Files** (Read before executing any prompt):
-- `docs/dana/manifesto.md` - Authoritative philosophy and vision
-- `docs/dana/language.md` - Complete Dana language specification
-- `docs/dana/syntax.md` - Current Dana syntax rules
+- `docs/archive/original-dana/manifesto.md` - Authoritative philosophy and vision
+- `docs/archive/original-dana/language.md` - Complete Dana language specification
+- `docs/archive/original-dana/syntax.md` - Current Dana syntax rules
+- `docs/for-engineers/reference/dana-syntax.md` - Practical Dana reference for developers
+- `docs/for-researchers/manifesto/vision.md` - Updated philosophical foundations
 - `docs/.ai-only/opendxa.md` - System overview and components
 - `docs/.ai-only/functions.md` - Current function catalog
 - `docs/.ai-only/project.md` - Directory structure guide
 
-**Current Documentation State**:
-- `docs/README.md` - Excellent visual entry point (keep as-is)
-- `docs/dana/` - 16 comprehensive language files (authoritative source)
-- `docs/core-concepts/` - Architecture documentation
+**Current Documentation State (Updated 2025-01-24)**:
+- `docs/README.md` - Audience routing hub (keep as-is)
+- `docs/for-engineers/` - Practical guides, recipes, and references for developers
+- `docs/for-evaluators/` - Business ROI, competitive analysis, and proof of concepts
+- `docs/for-contributors/` - Architecture, codebase navigation, and development guides
+- `docs/for-researchers/` - Philosophy, theory, neurosymbolic research, and manifesto
+- `docs/archive/` - Preserved original documentation (original-dana/, original-core-concepts/, original-architecture/)
 - `docs/.ai-only/` - AI assistant reference materials
 
 **Target Audience Organization**:
@@ -59,8 +69,8 @@ grep -n "def " [MODIFIED_FILES] | grep -v "__"
 **Quick Example:**
 ```dana
 # Minimal working example
-private:result = function_name("example_input", default_param)
-log(f"Result: {private:result}")
+result = function_name("example_input", default_param)
+log(f"Result: {result}")
 ```
 **Expected Output:** `Result: [expected_value]`
 
@@ -167,7 +177,9 @@ class CustomFunctionExtension:
 
 **Quick Reference:**
 ```dana
-[minimal_example]
+# Minimal working example
+result = function_name("example_input", default_param)
+log(f"Result: {result}")
 ```
 
 **Documentation Links:**
@@ -236,7 +248,7 @@ done < dana_example_files.txt
 # OLD (if found):
 x = 10
 # NEW:
-private:x = 10
+x = 10  # Auto-scoped to local (preferred)
 
 # OLD:
 global_var = "value"
@@ -250,7 +262,7 @@ public:global_var = "value"
 # OLD (if outdated):
 result = reason("prompt")
 # NEW (verify current format):
-private:result = reason("prompt", context=private:context)
+result = reason("prompt", context=context)
 ```
 
 **F-String Formatting:**
@@ -278,9 +290,9 @@ log(f"Value is {private:variable_name}")
 **Example: [Purpose of example]**
 ```dana
 # [Brief comment explaining what this does]
-private:input = "example_data"
-private:result = function_name(private:input)
-log(f"Result: {private:result}")
+input_data = "example_data"
+result = function_name(input_data)
+log(f"Result: {result}")
 ```
 **Expected Output:**
 ```
@@ -651,10 +663,10 @@ grep -r "[FEATURE_NAME]" docs/ --include="*.md"
 
 ## 5-Minute Quick Start
 ```dana
-# Minimal working example that demonstrates core functionality
-private:input_data = "example_input"
-private:result = [feature_function](private:input_data)
-log(f"[FEATURE_NAME] result: {private:result}")
+# Minimal working example
+input_data = "example_input"
+result = [feature_function](input_data)
+log(f"[FEATURE_NAME] result: {result}")
 ```
 **Expected Output:**
 ```
@@ -1349,3 +1361,26 @@ bin/dana test_examples.na
 ---
 
 This completes the comprehensive, copy-paste ready prompt set for OpenDXA documentation maintenance. Each prompt includes all necessary context, reference materials, and step-by-step instructions for execution without additional guidance. 
+
+```dana
+result = function_name("example_input", default_param)
+log(f"Result: {result}")
+```
+
+```dana
+x = 10  # Auto-scoped to local (preferred)
+```
+
+```dana
+global_var = "value"  # Auto-scoped to local for examples
+```
+
+```dana
+result = reason("prompt", context=context)
+```
+
+```dana
+input_data = "example_data"
+result = function_name(input_data)
+log(f"Result: {result}")
+``` 

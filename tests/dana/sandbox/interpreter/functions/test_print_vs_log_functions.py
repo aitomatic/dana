@@ -276,7 +276,7 @@ class TestDynamicHelp:
         import sys
         from io import StringIO
 
-        from opendxa.dana.repl.dana_repl_app import DanaREPLApp
+        from opendxa.dana.exec.repl.dana_repl_app import DanaREPLApp
         from opendxa.dana.sandbox.log_manager import LogLevel
 
         # Create REPL app
@@ -310,7 +310,7 @@ class TestDynamicHelp:
         import sys
         from io import StringIO
 
-        from opendxa.dana.repl.dana_repl_app import DanaREPLApp
+        from opendxa.dana.exec.repl.dana_repl_app import DanaREPLApp
         from opendxa.dana.sandbox.log_manager import LogLevel
 
         # Create REPL app
@@ -349,7 +349,7 @@ class TestDynamicHelp:
 
     def test_tab_completion_includes_core_functions(self):
         """Test that tab completion includes all registered core functions."""
-        from opendxa.dana.repl.dana_repl_app import DanaREPLApp
+        from opendxa.dana.exec.repl.dana_repl_app import DanaREPLApp
         from opendxa.dana.sandbox.log_manager import LogLevel
 
         # Create REPL app
@@ -378,8 +378,8 @@ class TestDynamicHelp:
 
         from opendxa.common.resource.llm_resource import LLMResource
         from opendxa.dana.common.terminal_utils import ColorScheme
-        from opendxa.dana.repl.commands.command_handler import CommandHandler
-        from opendxa.dana.repl.repl import REPL
+        from opendxa.dana.exec.repl.commands.command_handler import CommandHandler
+        from opendxa.dana.exec.repl.repl import REPL
 
         # Create a REPL with normal setup
         repl = REPL(llm_resource=LLMResource())

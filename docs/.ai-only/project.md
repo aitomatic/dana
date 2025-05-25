@@ -30,11 +30,32 @@ opendxa/                         # Main package root
 bin/                            # Executable scripts and utilities
 
 docs/                           # Project documentation
-├── ai-readme/                  # AI-assisted documentation
-├── architecture/               # System architecture
-├── core-concepts/              # Framework core concepts
-├── dana/                       # Dana language documentation
-└── danke/                      # DANKE documentation
+├── for-engineers/              # Practical guides, recipes, and references for developers
+│   ├── setup/                  # Installation, configuration, migration guides
+│   ├── recipes/                # Real-world examples and patterns
+│   ├── reference/              # Language and API documentation
+│   └── troubleshooting/        # Common issues and solutions
+├── for-evaluators/             # Business and technical evaluation
+│   ├── comparison/             # Competitive analysis and positioning
+│   ├── roi-analysis/           # Cost-benefit and ROI calculations
+│   ├── proof-of-concept/       # Evaluation and testing guides
+│   └── adoption-guide/         # Implementation and change management
+├── for-contributors/           # Development and extension guides
+│   ├── architecture/           # System design and implementation
+│   ├── codebase/              # Code navigation and understanding
+│   ├── extending/             # Building capabilities and resources
+│   └── development/           # Contribution and testing guidelines
+├── for-researchers/            # Theoretical and academic content
+│   ├── manifesto/             # Vision and philosophical foundations
+│   ├── neurosymbolic/         # Technical and theoretical analysis
+│   ├── research/              # Research opportunities and collaboration
+│   └── future-work/           # Roadmap and future directions
+├── archive/                    # Preserved original documentation
+│   ├── original-dana/         # Original Dana language documentation
+│   ├── original-core-concepts/ # Original core concepts documentation
+│   └── original-architecture/ # Original architecture documentation
+├── internal/                   # Internal planning and requirements
+└── .ai-only/                  # AI assistant reference materials
 
 examples/                       # Example code and tutorials
 ├── 01_getting_started/         # Basic examples for new users

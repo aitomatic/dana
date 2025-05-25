@@ -36,31 +36,32 @@ from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 # --- Literals ---
 def test_integer_literal():
-    interpreter = DanaInterpreter(SandboxContext())
-    program = Program(
-        [
-            Assignment(target=Identifier("private.result"), value=LiteralExpression(42)),
-        ]
-    )
-    interpreter.execute_program(program)
-    assert interpreter.context.get("private.result") == 42
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
+
+    # Test integer literal
+    literal = LiteralExpression(42)
+    result = interpreter.evaluate_expression(literal, context)
+    assert result == 42
 
 
 # --- Assignments ---
 def test_simple_assignment():
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
     program = Program(
         [
             Assignment(target=Identifier("private.result"), value=LiteralExpression("foo")),
         ]
     )
-    interpreter.execute_program(program)
-    assert interpreter.context.get("private.result") == "foo"
+    interpreter.execute_program(program, context)
+    assert context.get("private.result") == "foo"
 
 
 # --- Arithmetic ---
 def test_addition():
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
     program = Program(
         [
             Assignment(
@@ -73,13 +74,14 @@ def test_addition():
             )
         ]
     )
-    interpreter.execute_program(program)
-    assert interpreter.context.get("private.result") == 5
+    interpreter.execute_program(program, context)
+    assert context.get("private.result") == 5
 
 
 # --- Comparison ---
 def test_comparison():
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
     program = Program(
         [
             Assignment(
@@ -92,13 +94,14 @@ def test_comparison():
             )
         ]
     )
-    interpreter.execute_program(program)
-    assert interpreter.context.get("private.result") is True
+    interpreter.execute_program(program, context)
+    assert context.get("private.result") is True
 
 
 # --- Control Flow ---
 def test_if_statement():
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
     program = Program(
         [
             Conditional(
@@ -113,12 +116,13 @@ def test_if_statement():
             )
         ]
     )
-    interpreter.execute_program(program)
-    assert interpreter.context.get("private.result") == "yes"
+    interpreter.execute_program(program, context)
+    assert context.get("private.result") == "yes"
 
 
 def test_while_loop():
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
     program = Program(
         [
             Assignment(target=Identifier("private.result"), value=LiteralExpression(0)),
@@ -142,59 +146,64 @@ def test_while_loop():
             ),
         ]
     )
-    interpreter.execute_program(program)
-    assert interpreter.context.get("private.result") == 3
+    interpreter.execute_program(program, context)
+    assert context.get("private.result") == 3
 
 
 # --- More Literals ---
 def test_float_literal():
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
     program = Program(
         [
             Assignment(target=Identifier("private.result"), value=LiteralExpression(3.14)),
         ]
     )
-    interpreter.execute_program(program)
-    assert interpreter.context.get("private.result") == 3.14
+    interpreter.execute_program(program, context)
+    assert context.get("private.result") == 3.14
 
 
 def test_bool_literal():
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
     program = Program(
         [
             Assignment(target=Identifier("private.result"), value=LiteralExpression(True)),
         ]
     )
-    interpreter.execute_program(program)
-    assert interpreter.context.get("private.result") is True
+    interpreter.execute_program(program, context)
+    assert context.get("private.result") is True
 
 
 def test_none_literal():
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
     program = Program(
         [
             Assignment(target=Identifier("private.result"), value=LiteralExpression(None)),
         ]
     )
-    interpreter.execute_program(program)
-    assert interpreter.context.get("private.result") is None
+    interpreter.execute_program(program, context)
+    assert context.get("private.result") is None
 
 
 def test_list_literal():
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
     program = Program(
         [
             Assignment(target=Identifier("private.result"), value=LiteralExpression([1, 2, 3])),
         ]
     )
-    interpreter.execute_program(program)
-    assert interpreter.context.get("private.result") == [1, 2, 3]
+    interpreter.execute_program(program, context)
+    assert context.get("private.result") == [1, 2, 3]
 
 
 def test_fstring_literal():
     from opendxa.dana.sandbox.parser.ast import FStringExpression
 
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
     program = Program(
         [
             Assignment(
@@ -202,15 +211,16 @@ def test_fstring_literal():
             ),
         ]
     )
-    interpreter.execute_program(program)
+    interpreter.execute_program(program, context)
     # Get the value and ensure it's evaluated
-    result = interpreter.get_evaluated("private.result", interpreter.context)
+    result = interpreter.get_evaluated("private.result", context)
     assert result == "foo42"
 
 
 # --- More Arithmetic ---
 def test_subtraction():
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
     program = Program(
         [
             Assignment(
@@ -223,12 +233,13 @@ def test_subtraction():
             )
         ]
     )
-    interpreter.execute_program(program)
-    assert interpreter.context.get("private.result") == 3
+    interpreter.execute_program(program, context)
+    assert context.get("private.result") == 3
 
 
 def test_multiplication():
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
     program = Program(
         [
             Assignment(
@@ -241,12 +252,13 @@ def test_multiplication():
             )
         ]
     )
-    interpreter.execute_program(program)
-    assert interpreter.context.get("private.result") == 6
+    interpreter.execute_program(program, context)
+    assert context.get("private.result") == 6
 
 
 def test_division():
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
     program = Program(
         [
             Assignment(
@@ -259,12 +271,13 @@ def test_division():
             )
         ]
     )
-    interpreter.execute_program(program)
-    assert interpreter.context.get("private.result") == 3
+    interpreter.execute_program(program, context)
+    assert context.get("private.result") == 3
 
 
 def test_modulo():
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
     program = Program(
         [
             Assignment(
@@ -277,12 +290,13 @@ def test_modulo():
             )
         ]
     )
-    interpreter.execute_program(program)
-    assert interpreter.context.get("private.result") == 3
+    interpreter.execute_program(program, context)
+    assert context.get("private.result") == 3
 
 
 def test_power():
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
     program = Program(
         [
             Assignment(
@@ -295,13 +309,14 @@ def test_power():
             )
         ]
     )
-    interpreter.execute_program(program)
-    assert interpreter.context.get("private.result") == 8
+    interpreter.execute_program(program, context)
+    assert context.get("private.result") == 8
 
 
 # --- More Comparison Operators ---
 def test_equals():
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
     program = Program(
         [
             Assignment(
@@ -314,12 +329,13 @@ def test_equals():
             )
         ]
     )
-    interpreter.execute_program(program)
-    assert interpreter.context.get("private.result") is True
+    interpreter.execute_program(program, context)
+    assert context.get("private.result") is True
 
 
 def test_not_equals():
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
     program = Program(
         [
             Assignment(
@@ -332,12 +348,13 @@ def test_not_equals():
             )
         ]
     )
-    interpreter.execute_program(program)
-    assert interpreter.context.get("private.result") is True
+    interpreter.execute_program(program, context)
+    assert context.get("private.result") is True
 
 
 def test_greater_than():
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
     program = Program(
         [
             Assignment(
@@ -350,12 +367,13 @@ def test_greater_than():
             )
         ]
     )
-    interpreter.execute_program(program)
-    assert interpreter.context.get("private.result") is True
+    interpreter.execute_program(program, context)
+    assert context.get("private.result") is True
 
 
 def test_less_equals():
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
     program = Program(
         [
             Assignment(
@@ -368,12 +386,13 @@ def test_less_equals():
             )
         ]
     )
-    interpreter.execute_program(program)
-    assert interpreter.context.get("private.result") is True
+    interpreter.execute_program(program, context)
+    assert context.get("private.result") is True
 
 
 def test_greater_equals():
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
     program = Program(
         [
             Assignment(
@@ -386,15 +405,16 @@ def test_greater_equals():
             )
         ]
     )
-    interpreter.execute_program(program)
-    assert interpreter.context.get("private.result") is True
+    interpreter.execute_program(program, context)
+    assert context.get("private.result") is True
 
 
 # --- Unary Expressions ---
 def test_unary_expression():
     from opendxa.dana.sandbox.parser.ast import UnaryExpression
 
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
     program = Program(
         [
             Assignment(
@@ -403,8 +423,8 @@ def test_unary_expression():
             )
         ]
     )
-    interpreter.execute_program(program)
-    assert interpreter.context.get("private.result") == -5
+    interpreter.execute_program(program, context)
+    assert context.get("private.result") == -5
 
 
 # --- Function Call ---
@@ -412,7 +432,8 @@ def test_unary_expression():
 def test_function_call():
     from opendxa.dana.sandbox.parser.ast import FunctionCall
 
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
     # Register a dummy function 'foo' that returns 42 and accepts context/kwargs
     FunctionRegistry().register(
         "foo",
@@ -429,15 +450,16 @@ def test_function_call():
             )
         ]
     )
-    interpreter.execute_program(program)
-    assert interpreter.context.get("private.result") == 42
+    interpreter.execute_program(program, context)
+    assert context.get("private.result") == 42
 
 
 # --- Attribute Access ---
 def test_attribute_access():
     from opendxa.dana.sandbox.parser.ast import AttributeAccess, DictLiteral
 
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
     program = Program(
         [
             Assignment(
@@ -446,15 +468,16 @@ def test_attribute_access():
             )
         ]
     )
-    interpreter.execute_program(program)
-    assert interpreter.context.get("private.result") == 1
+    interpreter.execute_program(program, context)
+    assert context.get("private.result") == 1
 
 
 # --- Subscript Expression ---
 def test_subscript_expression():
     from opendxa.dana.sandbox.parser.ast import SubscriptExpression
 
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
     program = Program(
         [
             Assignment(
@@ -463,61 +486,65 @@ def test_subscript_expression():
             )
         ]
     )
-    interpreter.execute_program(program)
-    assert interpreter.context.get("private.result") == 20
+    interpreter.execute_program(program, context)
+    assert context.get("private.result") == 20
 
 
 # --- Tuple/Dict/Set Literals ---
 def test_tuple_literal():
     from opendxa.dana.sandbox.parser.ast import TupleLiteral
 
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
     program = Program(
         [
             Assignment(target=Identifier("private.result"), value=TupleLiteral(items=[LiteralExpression(1), LiteralExpression(2)])),
         ]
     )
-    interpreter.execute_program(program)
-    assert interpreter.context.get("private.result") == (1, 2)
+    interpreter.execute_program(program, context)
+    assert context.get("private.result") == (1, 2)
 
 
 def test_dict_literal():
     from opendxa.dana.sandbox.parser.ast import DictLiteral
 
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
     program = Program(
         [
             Assignment(target=Identifier("private.result"), value=DictLiteral(items=[(LiteralExpression("a"), LiteralExpression(1))])),
         ]
     )
-    interpreter.execute_program(program)
-    assert interpreter.context.get("private.result") == {"a": 1}
+    interpreter.execute_program(program, context)
+    assert context.get("private.result") == {"a": 1}
 
 
 def test_set_literal():
     from opendxa.dana.sandbox.parser.ast import SetLiteral
 
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
     program = Program(
         [
             Assignment(target=Identifier("private.result"), value=SetLiteral(items=[LiteralExpression(1), LiteralExpression(2)])),
         ]
     )
-    interpreter.execute_program(program)
-    assert interpreter.context.get("private.result") == {1, 2}
+    interpreter.execute_program(program, context)
+    assert context.get("private.result") == {1, 2}
 
 
 # --- Other Statements ---
 def test_print_statement():
     from opendxa.dana.sandbox.parser.ast import FunctionCall
 
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
     program = Program(
         [
             FunctionCall(name="print", args={"0": LiteralExpression("hello")}),
         ]
     )
-    interpreter.execute_program(program)
+    interpreter.execute_program(program, context)
     # No assertion needed, just ensure no error
 
 
@@ -525,14 +552,15 @@ def test_break_statement():
     from opendxa.dana.sandbox.interpreter.executor.control_flow_executor import BreakException
     from opendxa.dana.sandbox.parser.ast import BreakStatement
 
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
     program = Program(
         [
             BreakStatement(),
         ]
     )
     try:
-        interpreter.execute_program(program)
+        interpreter.execute_program(program, context)
     except BreakException:
         pass
     else:
@@ -543,14 +571,15 @@ def test_continue_statement():
     from opendxa.dana.sandbox.interpreter.executor.control_flow_executor import ContinueException
     from opendxa.dana.sandbox.parser.ast import ContinueStatement
 
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
     program = Program(
         [
             ContinueStatement(),
         ]
     )
     try:
-        interpreter.execute_program(program)
+        interpreter.execute_program(program, context)
     except ContinueException:
         pass
     else:
@@ -560,27 +589,29 @@ def test_continue_statement():
 def test_pass_statement():
     from opendxa.dana.sandbox.parser.ast import PassStatement
 
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
     program = Program(
         [
             PassStatement(),
         ]
     )
-    interpreter.execute_program(program)
+    interpreter.execute_program(program, context)
 
 
 def test_return_statement():
     from opendxa.dana.sandbox.interpreter.executor.control_flow_executor import ReturnException
     from opendxa.dana.sandbox.parser.ast import ReturnStatement
 
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
     program = Program(
         [
             ReturnStatement(value=LiteralExpression(42)),
         ]
     )
     try:
-        interpreter.execute_program(program)
+        interpreter.execute_program(program, context)
     except ReturnException as e:
         assert e.value == 42
     else:
@@ -590,14 +621,15 @@ def test_return_statement():
 def test_raise_statement():
     from opendxa.dana.sandbox.parser.ast import RaiseStatement
 
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
     program = Program(
         [
             RaiseStatement(value=LiteralExpression("error")),
         ]
     )
     try:
-        interpreter.execute_program(program)
+        interpreter.execute_program(program, context)
     except Exception as e:
         assert str(e) == "error"
     else:
@@ -607,14 +639,15 @@ def test_raise_statement():
 def test_assert_statement():
     from opendxa.dana.sandbox.parser.ast import AssertStatement
 
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
     program = Program(
         [
             AssertStatement(condition=LiteralExpression(False), message=LiteralExpression("fail!")),
         ]
     )
     try:
-        interpreter.execute_program(program)
+        interpreter.execute_program(program, context)
     except AssertionError as e:
         assert str(e) == "fail!"
     else:
@@ -623,19 +656,21 @@ def test_assert_statement():
 
 # --- Bare Expression as Statement ---
 def test_bare_expression_statement():
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
     program = Program(
         [
             LiteralExpression(123),
         ]
     )
-    interpreter.execute_program(program)
+    interpreter.execute_program(program, context)
 
 
 # --- Negative/Error Case ---
 @pytest.mark.xfail(reason="Division by zero error handling not yet implemented")
 def test_division_by_zero():
-    interpreter = DanaInterpreter(SandboxContext())
+    interpreter = DanaInterpreter()
+    context = SandboxContext()
     program = Program(
         [
             Assignment(
@@ -648,7 +683,7 @@ def test_division_by_zero():
             )
         ]
     )
-    interpreter.execute_program(program)
+    interpreter.execute_program(program, context)
 
 
 # --- End-to-End Integration Tests for Dana Grammar Features ---

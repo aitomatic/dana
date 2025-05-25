@@ -1,3 +1,12 @@
+# Documentation Strategy
+
+> **⚠️ IMPORTANT FOR AI CODE GENERATORS:**
+> Always use colon notation for explicit scopes: `private:x`, `public:x`, `system:x`, `local:x`
+> NEVER use dot notation: `private.x`, `public.x`, etc.
+> Prefer using unscoped variables (auto-scoped to local) instead of explicit `private:` scope unless private scope is specifically needed.
+
+## Current Status
+
 <p align="center">
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
@@ -8,26 +17,29 @@
 
 ## Background Context for All Prompts
 
-**Current Documentation Structure**:
-- `docs/README.md` - Excellent visual entry point
-- `docs/dana/` - 16 comprehensive language files (authoritative Dana reference)
-- `docs/core-concepts/` - Architecture and system design
-- `docs/architecture/` - Technical system details
-- `docs/.ai-only/` - AI assistant reference materials
+**Current Documentation Structure (Updated 2025-01-24)**:
+- `docs/README.md` - Audience routing hub with clear paths for each user type
+- `docs/for-engineers/` - Practical guides, recipes, and references for developers
+- `docs/for-evaluators/` - Business ROI, competitive analysis, and proof of concepts
+- `docs/for-contributors/` - Architecture, codebase navigation, and development guides
+- `docs/for-researchers/` - Philosophy, theory, neurosymbolic research, and manifesto
+- `docs/archive/` - Preserved original documentation (dana/, core-concepts/, architecture/)
+- `docs/.ai-only/` - AI assistant reference materials (this directory)
 
-**Target Audience Structure**:
-- `docs/for-engineers/` - Task-oriented, practical guides
-- `docs/for-evaluators/` - Business-focused, ROI and comparisons
-- `docs/for-contributors/` - Technical depth, architecture, development
-- `docs/for-researchers/` - Philosophy, theory, academic context
-- `docs/.ai-only/` - Structured AI assistant references
-
-**Key Files to Reference**:
+**Key Reference Files**:
+- `docs/archive/original-dana/language.md` - Complete Dana language specification (authoritative)
+- `docs/archive/original-dana/manifesto.md` - Authoritative philosophy and vision
+- `docs/for-engineers/reference/dana-syntax.md` - Current practical Dana reference
+- `docs/for-researchers/manifesto/vision.md` - Updated philosophical foundations
 - `docs/.ai-only/opendxa.md` - System overview and components
 - `docs/.ai-only/functions.md` - Current function catalog
 - `docs/.ai-only/project.md` - Directory structure guide
-- `docs/dana/manifesto.md` - Authoritative philosophy and vision
-- `docs/dana/language.md` - Complete Dana language specification
+
+**Audience-Specific Update Targets**:
+- **Engineers**: Focus on practical how-to guides, working code examples, troubleshooting
+- **Evaluators**: Emphasize business value, ROI calculations, competitive advantages
+- **Contributors**: Provide technical depth, architecture details, development workflows
+- **Researchers**: Include theoretical foundations, research opportunities, academic context
 
 ## Daily Maintenance Prompts
 

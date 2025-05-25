@@ -1,10 +1,4 @@
 {
-    // === File Associations ===
-    // Treats .dana files as Python for syntax highlighting and tooling
-    "files.associations": {
-        "*.na": "python"
-    },
-
     // === Explorer Settings ===
     // Show hidden files and folders
     "files.exclude": {

@@ -20,7 +20,7 @@ def test_fstring_evaluation_in_print():
     context.set("local.message", "Hello world")
 
     # Create an interpreter
-    interpreter = DanaInterpreter(context)
+    interpreter = DanaInterpreter()
 
     # Capture output
     import sys
@@ -32,7 +32,7 @@ def test_fstring_evaluation_in_print():
 
     try:
         # Execute print with f-string
-        interpreter.execute_program(parse_program('print(f"{local.message}")'))
+        interpreter.execute_program(parse_program('print(f"{local.message}")'), context)
 
         # Get and check output
         output = captured_output.getvalue().strip()
@@ -52,10 +52,10 @@ def test_fstring_evaluation_in_reason():
         mock_reason.return_value = "Paris"
 
         # Create an interpreter
-        interpreter = DanaInterpreter(context)
+        interpreter = DanaInterpreter()
 
         # Execute reason with f-string
-        result = interpreter.execute_program(parse_program('reason(f"{local.query}")'))
+        result = interpreter.execute_program(parse_program('reason(f"{local.query}")'), context)
 
         # Verify reason_function was called with the evaluated string
         mock_reason.assert_called_once()
@@ -87,11 +87,11 @@ def test_consistency_between_print_and_reason():
 
         try:
             # Create an interpreter
-            interpreter = DanaInterpreter(context)
+            interpreter = DanaInterpreter()
 
             # Execute both functions with the same f-string
-            interpreter.execute_program(parse_program('print(f"The answer is {local.value}")'))
-            interpreter.execute_program(parse_program('reason(f"The answer is {local.value}")'))
+            interpreter.execute_program(parse_program('print(f"The answer is {local.value}")'), context)
+            interpreter.execute_program(parse_program('reason(f"The answer is {local.value}")'), context)
 
             # Get print output
             print_output = captured_output.getvalue().strip()
