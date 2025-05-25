@@ -1,0 +1,15 @@
+# Simple assignment debugging
+print("Testing simple assignments")
+
+# Test 1: Simple assignment (should work)
+x = 5
+print("Simple assignment works: " + str(x))
+
+# Test 2: Simple pipe without assignment (should work)
+# 5 | add_ten
+
+# Test 3: Assignment with simple expression (should work)
+y = 5 + 10
+print("Expression assignment works: " + str(y))
+
+print("Basic tests complete") 

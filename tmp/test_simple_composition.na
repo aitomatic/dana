@@ -1,0 +1,22 @@
+print("Testing function composition fix")
+
+def add_ten(x):
+    return x + 10
+
+
+def double(x):
+    return x * 2
+
+
+print("Creating composed function...")
+math_pipeline = add_ten | double
+
+print("Testing composed function call...")
+result = math_pipeline(5)
+print("math_pipeline(5) = " + str(result))
+
+print("Testing composed function in data pipeline...")
+result2 = 7 | math_pipeline
+print("7 | math_pipeline = " + str(result2))
+
+print("Done!") 

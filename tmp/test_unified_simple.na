@@ -1,0 +1,10 @@
+print("Testing unified pipe")
+
+def add_one(x):
+    return x + 1
+
+print("Testing data pipeline...")
+result = 5 | add_one
+print("5 | add_one = " + str(result))
+
+print("Done!") 

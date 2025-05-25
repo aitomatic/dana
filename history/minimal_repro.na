@@ -1,0 +1,10 @@
+def add_ten(x):
+    return x + 10
+
+def double(x):
+    return x * 2
+
+# Comment line 7
+# Extra line to move assignment to line 9
+print("Testing parser state activation")
+result1 = 5 | add_ten | double 

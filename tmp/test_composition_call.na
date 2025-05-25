@@ -1,0 +1,12 @@
+def add_ten(x):
+    return x + 10
+
+def double(x):
+    return x * 2
+
+print("Creating composed function")
+math_pipeline = add_ten | double
+
+print("Testing composed function call")
+result = math_pipeline(5)
+print("Result: " + str(result)) 

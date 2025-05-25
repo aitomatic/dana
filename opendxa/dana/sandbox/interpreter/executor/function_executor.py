@@ -17,6 +17,7 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
+import logging
 from typing import Any, Dict, List, Optional
 
 from opendxa.dana.common.exceptions import SandboxError
@@ -66,9 +67,23 @@ class FunctionExecutor(BaseExecutor):
         Returns:
             The defined function object
         """
-        # Simplified implementation - register function name in context
-        context.set(node.name.name, {"type": "function", "params": node.parameters, "body": node.body})
-        return None
+        # Create a DanaFunction object instead of a raw dict
+        from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
+
+        # Extract parameter names from Identifier objects
+        param_names = []
+        for param in node.parameters:
+            if hasattr(param, "name"):
+                param_names.append(param.name)
+            else:
+                param_names.append(str(param))
+
+        # Create the DanaFunction
+        dana_func = DanaFunction(body=node.body, parameters=param_names, context=context)
+
+        # Store the function in context
+        context.set(node.name.name, dana_func)
+        return dana_func
 
     def _ensure_fully_evaluated(self, value: Any, context: SandboxContext) -> Any:
         """Ensure that the value is fully evaluated, particularly f-strings.
@@ -102,6 +117,9 @@ class FunctionExecutor(BaseExecutor):
         Returns:
             The result of the function call
         """
+        # Initialize result to avoid UnboundLocalError in exception handling
+        result = None
+
         # Get the function registry
         registry = self.function_registry
         if not registry:
@@ -159,7 +177,43 @@ class FunctionExecutor(BaseExecutor):
         # Extract base function name (removing namespace if present)
         func_name = node.name.split(".")[-1]  # Get the bare function name without namespace
 
-        # Try to call through the registry first
+        # FIXED: Check local context first, then fall back to function registry
+        # This allows user-defined functions and composed functions to override built-ins
+
+        # First, try to find the function in the local context
+        local_ns = node.name.split(".")[0] if "." in node.name else "local"
+        func_key = node.name.split(".", 1)[1] if "." in node.name else node.name
+        full_key = f"{local_ns}.{func_key}"
+
+        try:
+            # Try to get the function from the context first
+            func_data = context.get(full_key)
+            if func_data is not None:
+                # Check if it's a SandboxFunction (new unified approach)
+                from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
+
+                if isinstance(func_data, SandboxFunction):
+                    # It's a SandboxFunction, use the unified execute method
+                    raw_result = func_data.execute(context, *evaluated_args, **evaluated_kwargs)
+                    result = self._assign_and_coerce_result(raw_result, func_name)
+                    return result
+                # Legacy support: Check if it's an old-style user-defined function dict
+                elif isinstance(func_data, dict) and func_data.get("type") == "function":
+                    # It's a legacy user-defined function, execute it
+                    raw_result = self._execute_user_defined_function(func_data, evaluated_args, context)
+                    result = self._assign_and_coerce_result(raw_result, func_name)
+                    return result
+                # Check if it's other callable
+                elif callable(func_data):
+                    # It's some other callable object
+                    raw_result = func_data(*evaluated_args, **evaluated_kwargs)
+                    result = self._assign_and_coerce_result(raw_result, func_name)
+                    return result
+        except Exception:
+            # Error accessing local context, continue to registry
+            pass
+
+        # If not found in local context, try the function registry
         try:
             # Special handling for test functions
             # For the reason function, pass the parameters properly in the test_unified_execution.py tests
@@ -212,26 +266,9 @@ class FunctionExecutor(BaseExecutor):
                 raw_result = registry.call(node.name, context, None, *evaluated_args, **evaluated_kwargs)
                 result = self._assign_and_coerce_result(raw_result, func_name)
 
-        except KeyError as e:
-            # Function wasn't found in registry, it might be a user-defined function in the context
-            # Check if it's a user-defined function in the context
-            local_ns = node.name.split(".")[0] if "." in node.name else "local"
-            func_key = node.name.split(".", 1)[1] if "." in node.name else node.name
-            full_key = f"{local_ns}.{func_key}"
-
-            try:
-                # Try to get the function from the context
-                func_data = context.get(full_key)
-                if isinstance(func_data, dict) and func_data.get("type") == "function":
-                    # It's a user-defined function, execute it
-                    raw_result = self._execute_user_defined_function(func_data, evaluated_args, context)
-                    result = self._assign_and_coerce_result(raw_result, func_name)
-                else:
-                    # Not a function or not found
-                    raise SandboxError(f"Function '{node.name}' not found in registry or context")
-            except Exception:
-                # Re-raise the original registry error
-                raise SandboxError(f"Error calling function '{node.name}': {e}")
+        except KeyError:
+            # Function wasn't found in registry either
+            raise SandboxError(f"Function '{node.name}' not found in local context or function registry")
         except Exception as e:
             # Try to provide more detailed error message
             if "__positional" in str(e):

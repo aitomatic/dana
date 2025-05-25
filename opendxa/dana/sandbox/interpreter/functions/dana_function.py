@@ -117,13 +117,14 @@ class DanaFunction(SandboxFunction, Loggable):
             # Create a new scope for the function
             for i, param_name in enumerate(self.parameters):
                 if i < len(args):
-                    # Directly set the parameter in the local scope
-                    context.set_in_scope(param_name, args[i], scope="local")
+                    # Parameter names are already scoped (e.g., "local.x"), so use set() directly
+                    context.set(param_name, args[i])
 
             # Set any keyword args
             for kwarg_name, kwarg_value in kwargs.items():
                 if kwarg_name in self.parameters:
-                    context.set_in_scope(kwarg_name, kwarg_value, scope="local")
+                    # Parameter names are already scoped, so use set() directly
+                    context.set(kwarg_name, kwarg_value)
 
             result = None
             for statement in self.body:
