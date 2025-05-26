@@ -20,7 +20,7 @@ Discord: https://discord.gg/6jGD4PYk
 import logging
 from typing import Any, Dict, List, Optional
 
-from opendxa.dana.common.exceptions import SandboxError
+from opendxa.dana.common.exceptions import FunctionRegistryError, SandboxError
 from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
 from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
 from opendxa.dana.sandbox.parser.ast import (
@@ -188,30 +188,34 @@ class FunctionExecutor(BaseExecutor):
         try:
             # Try to get the function from the context first
             func_data = context.get(full_key)
-            if func_data is not None:
-                # Check if it's a SandboxFunction (new unified approach)
-                from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
-
-                if isinstance(func_data, SandboxFunction):
-                    # It's a SandboxFunction, use the unified execute method
-                    raw_result = func_data.execute(context, *evaluated_args, **evaluated_kwargs)
-                    result = self._assign_and_coerce_result(raw_result, func_name)
-                    return result
-                # Legacy support: Check if it's an old-style user-defined function dict
-                elif isinstance(func_data, dict) and func_data.get("type") == "function":
-                    # It's a legacy user-defined function, execute it
-                    raw_result = self._execute_user_defined_function(func_data, evaluated_args, context)
-                    result = self._assign_and_coerce_result(raw_result, func_name)
-                    return result
-                # Check if it's other callable
-                elif callable(func_data):
-                    # It's some other callable object
-                    raw_result = func_data(*evaluated_args, **evaluated_kwargs)
-                    result = self._assign_and_coerce_result(raw_result, func_name)
-                    return result
         except Exception:
             # Error accessing local context, continue to registry
-            pass
+            func_data = None
+
+        if func_data is not None:
+            # Check if it's a SandboxFunction (new unified approach)
+            from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
+
+            if isinstance(func_data, SandboxFunction):
+                # It's a SandboxFunction, use the unified execute method
+                # Don't catch exceptions here - let them bubble up as they contain the real error
+                raw_result = func_data.execute(context, *evaluated_args, **evaluated_kwargs)
+                result = self._assign_and_coerce_result(raw_result, func_name)
+                return result
+            # Legacy support: Check if it's an old-style user-defined function dict
+            elif isinstance(func_data, dict) and func_data.get("type") == "function":
+                # It's a legacy user-defined function, execute it
+                # Don't catch exceptions here - let them bubble up as they contain the real error
+                raw_result = self._execute_user_defined_function(func_data, evaluated_args, context)
+                result = self._assign_and_coerce_result(raw_result, func_name)
+                return result
+            # Check if it's other callable
+            elif callable(func_data):
+                # It's some other callable object
+                # Don't catch exceptions here - let them bubble up as they contain the real error
+                raw_result = func_data(*evaluated_args, **evaluated_kwargs)
+                result = self._assign_and_coerce_result(raw_result, func_name)
+                return result
 
         # If not found in local context, try the function registry
         try:
@@ -266,9 +270,12 @@ class FunctionExecutor(BaseExecutor):
                 raw_result = registry.call(node.name, context, None, *evaluated_args, **evaluated_kwargs)
                 result = self._assign_and_coerce_result(raw_result, func_name)
 
-        except KeyError:
-            # Function wasn't found in registry either
-            raise SandboxError(f"Function '{node.name}' not found in local context or function registry")
+        except FunctionRegistryError as fre:
+            raise SandboxError(f"Error calling function '{node.name}': {str(fre)}") from fre
+
+        except KeyError as ke:
+            raise SandboxError(f"Error calling function '{node.name}': {str(ke)}") from ke
+
         except Exception as e:
             # Try to provide more detailed error message
             if "__positional" in str(e):
@@ -293,6 +300,44 @@ class FunctionExecutor(BaseExecutor):
                 raise SandboxError(f"Error calling function '{node.name}': {e}")
 
         return result
+
+    def _get_current_function_context(self, context: SandboxContext) -> Optional[str]:
+        """Try to determine the current function being executed for better error messages.
+
+        Args:
+            context: The execution context
+
+        Returns:
+            The name of the current function being executed, or None if unknown
+        """
+        # Try to get function context from the call stack
+        import inspect
+
+        # Look through the call stack for Dana function execution
+        for frame_info in inspect.stack():
+            frame = frame_info.frame
+
+            # Check if this frame is executing a Dana function
+            if "self" in frame.f_locals:
+                obj = frame.f_locals["self"]
+
+                # Check if it's a DanaFunction execution
+                if hasattr(obj, "__class__") and "DanaFunction" in str(obj.__class__):
+                    # Try to get the function name from the context
+                    if hasattr(obj, "parameters") and hasattr(context, "_state"):
+                        # Look for function names in the context state
+                        for key in context._state.keys():
+                            if key.startswith("local.") and context._state[key] == obj:
+                                return key.split(".", 1)[1]  # Remove 'local.' prefix
+
+                # Check if it's function executor with node information
+                elif hasattr(obj, "__class__") and "FunctionExecutor" in str(obj.__class__):
+                    if "node" in frame.f_locals:
+                        node = frame.f_locals["node"]
+                        if hasattr(node, "name"):
+                            return node.name
+
+        return None
 
     def _assign_and_coerce_result(self, raw_result: Any, function_name: str) -> Any:
         """Assign result and apply type coercion in one step.

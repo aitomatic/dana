@@ -142,6 +142,12 @@ class TypeChecker:
         elif isinstance(statement, BreakStatement) or isinstance(statement, ContinueStatement) or isinstance(statement, PassStatement):
             # These statements have no type implications
             pass
+        elif hasattr(statement, "type") and statement.type == "COMMENT":
+            # Comment tokens have no type implications
+            pass
+        elif isinstance(statement, LiteralExpression):
+            # Literal expressions as statements (e.g., standalone None) have no type implications
+            pass
         else:
             raise TypeError(f"Unsupported statement type: {type(statement).__name__}", statement)
 

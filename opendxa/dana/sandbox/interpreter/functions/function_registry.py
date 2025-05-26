@@ -11,7 +11,7 @@ import inspect
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
 
-from opendxa.dana.common.exceptions import SandboxError
+from opendxa.dana.common.exceptions import FunctionRegistryError, SandboxError
 from opendxa.dana.common.runtime_scopes import RuntimeScopes
 
 if TYPE_CHECKING:
@@ -217,6 +217,100 @@ class FunctionRegistry:
 
         self._functions[ns][name] = (func, func_type, metadata)
 
+    def _get_calling_function_context(self) -> str:
+        """Try to determine the calling function for better error messages."""
+        import inspect
+
+        function_executor_frames = []
+        dana_function_frames = []
+
+        # Look through the call stack for Dana function execution
+        for frame_info in inspect.stack():
+            frame = frame_info.frame
+
+            # Skip our own frames and registry frames
+            if "self" in frame.f_locals and (frame.f_locals["self"] is self or "FunctionRegistry" in str(type(frame.f_locals["self"]))):
+                continue
+
+            # Collect function executor frames with node information
+            if "self" in frame.f_locals:
+                obj = frame.f_locals["self"]
+                if hasattr(obj, "__class__") and "FunctionExecutor" in str(obj.__class__):
+                    if "node" in frame.f_locals:
+                        node = frame.f_locals["node"]
+                        if hasattr(node, "name"):
+                            # Get the function name without the namespace prefix for cleaner output
+                            func_name = node.name.split(".")[-1] if "." in node.name else node.name
+                            function_executor_frames.append(func_name)
+
+                # Also look for DanaFunction execution frames
+                elif hasattr(obj, "__class__") and "DanaFunction" in str(obj.__class__):
+                    # This indicates we're inside a user-defined function
+                    # Try to find the function name from the context
+                    if "context" in frame.f_locals:
+                        ctx = frame.f_locals["context"]
+                        if hasattr(ctx, "_state") and "local" in ctx._state:
+                            local_scope = ctx._state["local"]
+                            if hasattr(local_scope, "items"):
+                                # Look for the function in the local scope
+                                for key, value in local_scope.items():
+                                    if value is obj:
+                                        dana_function_frames.append(key)
+                                        break
+
+                # The logic is:
+        # 1. If we have DanaFunction frames, that's the actual user function where the error occurred
+        # 2. Otherwise, look at FunctionExecutor frames to find the calling function
+
+        if dana_function_frames:
+            # We found a DanaFunction in the stack - this is the user function calling the missing function
+            return dana_function_frames[0]
+
+        # Fallback to function executor frames
+        # Skip the first one (which is the missing function) and return the second (the caller)
+        if len(function_executor_frames) >= 2:
+            return function_executor_frames[1]
+        elif len(function_executor_frames) == 1:
+            return function_executor_frames[0]
+
+        return ""
+
+    def _get_call_stack(self) -> list:
+        """Get the current call stack of Dana functions."""
+        import inspect
+
+        call_stack = []
+
+        # Look through the call stack for Dana function execution
+        for frame_info in inspect.stack():
+            frame = frame_info.frame
+
+            # Skip our own frames and registry frames
+            if "self" in frame.f_locals and (frame.f_locals["self"] is self or "FunctionRegistry" in str(type(frame.f_locals["self"]))):
+                continue
+
+            # Look for function executor frames with node information
+            if "self" in frame.f_locals:
+                obj = frame.f_locals["self"]
+                if hasattr(obj, "__class__") and "FunctionExecutor" in str(obj.__class__):
+                    if "node" in frame.f_locals:
+                        node = frame.f_locals["node"]
+                        if hasattr(node, "name"):
+                            # Get the function name without the namespace prefix for cleaner output
+                            func_name = node.name.split(".")[-1] if "." in node.name else node.name
+                            call_stack.append(func_name)
+
+        # Remove duplicates while preserving order, and reverse to show call order
+        seen = set()
+        unique_stack = []
+        for func in call_stack:
+            if func not in seen:
+                seen.add(func)
+                unique_stack.append(func)
+
+        # Reverse to show the call order (deepest first)
+        return list(reversed(unique_stack))
+
     def resolve(self, name: str, namespace: Optional[str] = None) -> Tuple[Callable, str, FunctionMetadata]:
         """Resolve a function by name and namespace.
 
@@ -228,12 +322,23 @@ class FunctionRegistry:
             Tuple of (function, type, metadata)
 
         Raises:
-            KeyError: If function not found
+            FunctionRegistryError: If function not found
         """
         ns, name = self._remap_namespace_and_name(namespace, name)
         if ns in self._functions and name in self._functions[ns]:
             return self._functions[ns][name]
-        raise KeyError(f"Function '{name}' not found in namespace '{ns}'")
+        # Try to get calling context for better error messages
+        calling_function = self._get_calling_function_context()
+        call_stack = self._get_call_stack()
+
+        raise FunctionRegistryError(
+            f"Function '{name}' not found in namespace '{ns}'",
+            function_name=name,
+            namespace=ns,
+            operation="resolve",
+            calling_function=calling_function,
+            call_stack=call_stack,
+        )
 
     def call(
         self,

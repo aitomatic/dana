@@ -139,8 +139,9 @@ class StatementTransformer(BaseTransformer):
 
     def while_stmt(self, items):
         """Transform a while statement rule into a WhileLoop node."""
-        condition = items[0]
-        body = self._transform_block(items[1:])
+        relevant_items = self._filter_relevant_items(items)
+        condition = relevant_items[0]
+        body = self._transform_block(relevant_items[1:])
         line_num = getattr(condition, "line", 0) or 0
         condition_expr = cast(Expression, condition)
         return WhileLoop(condition=condition_expr, body=body, line_num=line_num)
@@ -151,33 +152,39 @@ class StatementTransformer(BaseTransformer):
 
         from opendxa.dana.sandbox.parser.ast import Expression, Identifier
 
+        # Filter out irrelevant items (None, comments, etc.)
+        relevant_items = self._filter_relevant_items(items)
+
         # Get the loop variable (target)
-        target = Identifier(name=items[0].value if isinstance(items[0], Token) else str(items[0]))
+        target = Identifier(name=relevant_items[0].value if isinstance(relevant_items[0], Token) else str(relevant_items[0]))
 
         # Transform the iterable expression
-        iterable = self.expression_transformer.expression([items[1]])
+        iterable = self.expression_transformer.expression([relevant_items[1]])
         if isinstance(iterable, tuple):
             raise TypeError(f"For loop iterable cannot be a tuple: {iterable}")
 
         # Ensure iterable is Expression type
         iterable_expr = cast(Expression, iterable)
 
-        # Transform the body, ensuring it's a list of Statement objects
+        # The block should be the third relevant item
+        # Grammar: "for" NAME "in" expr ":" [COMMENT] block
+        # After filtering: [NAME, expr, block]
         body_items = []
-        if len(items) > 2:
-            body = items[2]
+        if len(relevant_items) >= 3:
+            block_item = relevant_items[2]
+
             # Handle if body is a Tree (block node)
-            if isinstance(body, Tree) and getattr(body, "data", None) == "block":
-                body_items = self._transform_block(body)
+            if isinstance(block_item, Tree) and getattr(block_item, "data", None) == "block":
+                body_items = self._transform_block(block_item)
             # If body is a list, transform each item
-            elif isinstance(body, list):
-                for item in body:
+            elif isinstance(block_item, list):
+                for item in block_item:
                     transformed = self._transform_item(item)
                     if transformed is not None:
                         body_items.append(transformed)
             # Otherwise, try to transform the item
             else:
-                transformed = self._transform_item(body)
+                transformed = self._transform_item(block_item)
                 if transformed is not None:
                     if isinstance(transformed, list):
                         body_items.extend(transformed)
@@ -214,9 +221,10 @@ class StatementTransformer(BaseTransformer):
 
     def function_def(self, items):
         """Transform a function definition rule into a FunctionDefinition node."""
-        name_item = items[0]
-        params = items[1]
-        body = self._transform_block(items[2:])
+        relevant_items = self._filter_relevant_items(items)
+        name_item = relevant_items[0]
+        params = relevant_items[1]
+        body = self._transform_block(relevant_items[2:])
 
         # Handle different name formats to create an Identifier
         if isinstance(name_item, Identifier):
@@ -277,17 +285,19 @@ class StatementTransformer(BaseTransformer):
 
         from opendxa.dana.sandbox.parser.ast import Conditional
 
+        relevant_items = self._filter_relevant_items(items)
+
         # Extract main if condition and body
-        condition = self.expression_transformer.expression([items[0]])
-        if_body = self._transform_block(items[1])
+        condition = self.expression_transformer.expression([relevant_items[0]])
+        if_body = self._transform_block(relevant_items[1])
         line_num = getattr(condition, "line", 0) or 0
 
         # Default: no else or elif
         else_body = []
 
         # Handle additional clauses (elif/else)
-        if len(items) >= 3:
-            third_item = items[2]
+        if len(relevant_items) >= 3:
+            third_item = relevant_items[2]
 
             # Check if it's an elif_stmts node
             if isinstance(third_item, Tree) and getattr(third_item, "data", None) == "elif_stmts":
@@ -298,9 +308,9 @@ class StatementTransformer(BaseTransformer):
                 else_body = self._transform_block(third_item)
 
         # Handle case with both elif and else
-        if len(items) >= 4:
+        if len(relevant_items) >= 4:
             # The else block would be the 4th item
-            else_block = self._transform_block(items[3])
+            else_block = self._transform_block(relevant_items[3])
 
             # If else_body contains conditionals from elif blocks,
             # we need to add the final else block to the last conditional
@@ -332,8 +342,9 @@ class StatementTransformer(BaseTransformer):
 
     def elif_stmt(self, items):
         """Transform a single elif statement into a Conditional node."""
-        condition = self.expression_transformer.expression([items[0]])
-        body = self._transform_block(items[1])
+        relevant_items = self._filter_relevant_items(items)
+        condition = self.expression_transformer.expression([relevant_items[0]])
+        body = self._transform_block(relevant_items[1])
         line_num = getattr(condition, "line", 0) or 0
         return Conditional(condition=cast(Expression, condition), body=body, else_body=[], line_num=line_num)
 
@@ -617,3 +628,23 @@ class StatementTransformer(BaseTransformer):
             right.name = f"local.{right.name}"
 
         return BinaryExpression(left=left, operator=operator, right=right)
+
+    def _filter_relevant_items(self, items):
+        """
+        Filter out irrelevant items from parse tree items.
+        Removes None values, comment tokens, and other non-semantic elements.
+        """
+        relevant = []
+        for item in items:
+            # Skip None values (optional grammar elements that weren't present)
+            if item is None:
+                continue
+            # Skip comment tokens
+            if hasattr(item, "type") and item.type == "COMMENT":
+                continue
+            # Skip empty tokens or whitespace-only tokens
+            if isinstance(item, Token) and (not item.value or item.value.isspace()):
+                continue
+            # Keep everything else
+            relevant.append(item)
+        return relevant

@@ -1,0 +1,60 @@
+# Simplified AI-Powered Data Analysis Pipeline
+def extract_metrics(data):
+    # Extract key metrics from raw data manually without using sum() or len()
+    sales = data["sales"]
+    total_sales = sales[0] + sales[1] + sales[2] + sales[3] + sales[4]
+    
+    ratings = data["ratings"]
+    total_ratings = ratings[0] + ratings[1] + ratings[2] + ratings[3] + ratings[4]
+    avg_rating = total_ratings / 5
+    
+    products = data["products"]
+    # Count products manually
+    product_count = 5
+    
+    return {
+        "total_sales": total_sales,
+        "avg_rating": avg_rating,
+        "product_count": product_count,
+        "time_period": data["period"]
+    }
+
+def format_business_summary(metrics):
+    # Format metrics into a business-friendly summary using simple string concatenation
+    summary = "Business Performance Summary (" + str(metrics["time_period"]) + "):\n"
+    summary = summary + "- Total Sales: $" + str(metrics["total_sales"]) + "\n"
+    summary = summary + "- Average Rating: " + str(metrics["avg_rating"]) + "/5.0\n"
+    summary = summary + "- Products Analyzed: " + str(metrics["product_count"]) + " items\n"
+    return summary
+
+def analyze_with_ai(summary):
+    # Use AI reasoning to provide insights and recommendations
+    prompt = "Analyze this business performance data: " + summary
+    return reason(prompt, {
+        "temperature": 0.7,
+        "max_tokens": 300
+    })
+
+def create_action_plan(ai_analysis):
+    # Convert AI insights into actionable recommendations
+    prompt = "Based on this analysis, create an action plan: " + ai_analysis
+    return reason(prompt, {
+        "temperature": 0.5,
+        "format": "structured"
+    })
+
+# Create the complete AI-powered analysis pipeline
+business_intelligence_pipeline = extract_metrics | format_business_summary | analyze_with_ai | create_action_plan
+
+# Example usage with sample data
+sample_data = {
+    "sales": [1200, 1500, 980, 2100, 1800],
+    "ratings": [4.2, 4.5, 3.8, 4.7, 4.1],
+    "products": ["Widget A", "Widget B", "Widget C", "Widget D", "Widget E"],
+    "period": "Q1 2024"
+}
+
+# Process data through the entire pipeline
+final_report = sample_data | business_intelligence_pipeline
+print("=== AI-Generated Business Intelligence Report ===")
+print(final_report) 
