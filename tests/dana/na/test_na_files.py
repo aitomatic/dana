@@ -7,7 +7,6 @@ to ensure they can be successfully parsed and executed.
 
 import os
 from pathlib import Path
-from unittest.mock import patch
 
 import pytest
 
@@ -50,29 +49,37 @@ def test_na_file(na_file):
     # Create a context with necessary resources
     context = SandboxContext()
 
-    # Setup mocking for the reason function
-    mock_result = "This is a mocked LLM response for tests"
+    # Initialize LLM resource if needed
+    if "reason(" in program_text:
+        # Initialize the LLM resource
+        llm_resource = LLMResource()
+        # Use mock for all LLM calls
+        llm_resource = llm_resource.with_mock_llm_call(True)
+        context.set("system.llm_resource", llm_resource)
 
-    # Create a patcher for reason function
-    with patch("opendxa.dana.sandbox.interpreter.functions.core.reason_function.reason_function", return_value=mock_result) as mock_reason:
+    # Parse the program
+    program = parse_program(program_text)
+    assert program is not None, f"Failed to parse {na_file}"
 
-        # Initialize LLM resource if needed
-        if "reason(" in program_text:
-            # Initialize the LLM resource
-            llm_resource = LLMResource()
-            # Use mock for all LLM calls
-            llm_resource = llm_resource.with_mock_llm_call(True)
-            context.set("system.llm_resource", llm_resource)
+    # Initialize interpreter first (so real functions get registered)
+    interpreter = DanaInterpreter()
 
-        # Parse the program
-        program = parse_program(program_text)
-        assert program is not None, f"Failed to parse {na_file}"
+    # Use environment variable to enable mocking for reason function if needed
+    original_mock_env = None
+    if "reason(" in program_text:
+        original_mock_env = os.environ.get("OPENDXA_MOCK_LLM")
+        os.environ["OPENDXA_MOCK_LLM"] = "true"
 
-        # Initialize interpreter
-        interpreter = DanaInterpreter()
-
+    try:
         # Execute the program
         result = interpreter.execute_program(program, context)
+    finally:
+        # Restore original environment
+        if "reason(" in program_text:
+            if original_mock_env is None:
+                os.environ.pop("OPENDXA_MOCK_LLM", None)
+            else:
+                os.environ["OPENDXA_MOCK_LLM"] = original_mock_env
 
         # Check the execution status
         if hasattr(result, "status"):
