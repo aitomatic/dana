@@ -1,9 +1,10 @@
 {
   "name": "dana-language",
-  "displayName": "Dana Language Support",
-  "description": "Basic language support for Dana (.na files)",
+  "displayName": "Dana AI Agent Language",
+  "description": "Language support for Dana AI Agent Language (.na files)",
   "version": "0.1.0",
-  "publisher": "aitomatic",
+  "publisher": "Aitomatic, Inc.",
+  "icon": "images/dana-logo.jpg",
   "repository": {
     "type": "git",
     "url": "https://github.com/aitomatic/opendxa"

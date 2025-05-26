@@ -1,6 +1,6 @@
-# Dana Language Support for VS Code
+# Dana Language Support for VS Code & Cursor
 
-Basic language support for Dana (.na files) in Visual Studio Code.
+Language support for Dana AI Agent Language (.na files) in Visual Studio Code and Cursor.
 
 ## Features
 
