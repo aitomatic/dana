@@ -117,63 +117,152 @@ class FunctionExecutor(BaseExecutor):
         Returns:
             The result of the function call
         """
-        # Initialize result to avoid UnboundLocalError in exception handling
-        result = None
+        # Phase 1: Setup and validation
+        registry = self.__setup_and_validate(node)
 
+        # Phase 2: Process arguments
+        evaluated_args, evaluated_kwargs = self.__process_arguments(node, context)
+
+        # Phase 3: Parse function name and namespace
+        func_name, full_key = self.__parse_function_name(node)
+
+        # Phase 4: Try local context execution first
+        result = self.__try_local_context_execution(full_key, context, evaluated_args, evaluated_kwargs, func_name)
+        if result is not None:
+            return result
+
+        # Phase 5: Execute via registry with error handling
+        return self.__execute_via_registry_with_error_handling(node, registry, context, evaluated_args, evaluated_kwargs, func_name)
+
+    def __setup_and_validate(self, node: FunctionCall) -> Any:
+        """INTERNAL: Phase 1 helper for execute_function_call only.
+
+        Setup and validation phase.
+
+        Args:
+            node: The function call node
+
+        Returns:
+            The function registry
+
+        Raises:
+            SandboxError: If no function registry is available
+        """
         # Get the function registry
         registry = self.function_registry
         if not registry:
             raise SandboxError(f"No function registry available to execute function '{node.name}'")
+        return registry
 
-        # Evaluate arguments
+    def __process_arguments(self, node: FunctionCall, context: SandboxContext) -> tuple[List[Any], Dict[str, Any]]:
+        """INTERNAL: Phase 2 helper for execute_function_call only.
+
+        Process and evaluate function arguments.
+
+        Args:
+            node: The function call node
+            context: The execution context
+
+        Returns:
+            Tuple of (evaluated_args, evaluated_kwargs)
+        """
+        # Handle special __positional array argument vs regular arguments
+        if "__positional" in node.args:
+            return self.__process_positional_array_arguments(node, context)
+        else:
+            return self.__process_regular_arguments(node, context)
+
+    def __process_positional_array_arguments(self, node: FunctionCall, context: SandboxContext) -> tuple[List[Any], Dict[str, Any]]:
+        """INTERNAL: Process special __positional array arguments.
+
+        Args:
+            node: The function call node
+            context: The execution context
+
+        Returns:
+            Tuple of (evaluated_args, evaluated_kwargs)
+        """
         evaluated_args: List[Any] = []
         evaluated_kwargs: Dict[str, Any] = {}
 
-        # Handle special __positional array argument
-        if "__positional" in node.args:
-            positional_values = node.args["__positional"]
-            if isinstance(positional_values, list):
-                for value in positional_values:
-                    evaluated_value = self.parent.execute(value, context)
-                    # Ensure f-strings are fully evaluated to strings
-                    evaluated_value = self._ensure_fully_evaluated(evaluated_value, context)
-                    evaluated_args.append(evaluated_value)
-            else:
-                # Single value, not in a list
-                evaluated_value = self.parent.execute(positional_values, context)
-                # Ensure f-strings are fully evaluated to strings
-                evaluated_value = self._ensure_fully_evaluated(evaluated_value, context)
+        positional_values = node.args["__positional"]
+        if isinstance(positional_values, list):
+            for value in positional_values:
+                evaluated_value = self.__evaluate_and_ensure_fully_evaluated(value, context)
                 evaluated_args.append(evaluated_value)
         else:
-            # Process regular arguments
-            for key, value in node.args.items():
-                # Skip the "__positional" key if present
-                if key == "__positional":
-                    continue
+            # Single value, not in a list
+            evaluated_value = self.__evaluate_and_ensure_fully_evaluated(positional_values, context)
+            evaluated_args.append(evaluated_value)
 
-                # Regular positional arguments are strings like "0", "1", etc.
-                # Keyword arguments are strings that don't convert to integers
-                try:
-                    # If the key is a string representation of an integer, it's a positional arg
-                    int_key = int(key)
-                    # Evaluate the argument
-                    evaluated_value = self.parent.execute(value, context)
-                    # Ensure f-strings are fully evaluated to strings
-                    evaluated_value = self._ensure_fully_evaluated(evaluated_value, context)
+        return evaluated_args, evaluated_kwargs
 
-                    # Pad the args list if needed
-                    while len(evaluated_args) <= int_key:
-                        evaluated_args.append(None)
+    def __process_regular_arguments(self, node: FunctionCall, context: SandboxContext) -> tuple[List[Any], Dict[str, Any]]:
+        """INTERNAL: Process regular positional and keyword arguments.
 
-                    # Set the argument at the right position
-                    evaluated_args[int_key] = evaluated_value
-                except ValueError:
-                    # It's a keyword argument (not an integer key)
-                    evaluated_value = self.parent.execute(value, context)
-                    # Ensure f-strings are fully evaluated to strings
-                    evaluated_value = self._ensure_fully_evaluated(evaluated_value, context)
-                    evaluated_kwargs[key] = evaluated_value
+        Args:
+            node: The function call node
+            context: The execution context
 
+        Returns:
+            Tuple of (evaluated_args, evaluated_kwargs)
+        """
+        evaluated_args: List[Any] = []
+        evaluated_kwargs: Dict[str, Any] = {}
+
+        # Process regular arguments
+        for key, value in node.args.items():
+            # Skip the "__positional" key if present
+            if key == "__positional":
+                continue
+
+            # Regular positional arguments are strings like "0", "1", etc.
+            # Keyword arguments are strings that don't convert to integers
+            try:
+                # If the key is a string representation of an integer, it's a positional arg
+                int_key = int(key)
+                evaluated_value = self.__evaluate_and_ensure_fully_evaluated(value, context)
+
+                # Pad the args list if needed
+                while len(evaluated_args) <= int_key:
+                    evaluated_args.append(None)
+
+                # Set the argument at the right position
+                evaluated_args[int_key] = evaluated_value
+            except ValueError:
+                # It's a keyword argument (not an integer key)
+                evaluated_value = self.__evaluate_and_ensure_fully_evaluated(value, context)
+                evaluated_kwargs[key] = evaluated_value
+
+        return evaluated_args, evaluated_kwargs
+
+    def __evaluate_and_ensure_fully_evaluated(self, value: Any, context: SandboxContext) -> Any:
+        """INTERNAL: Evaluate an argument value and ensure f-strings are fully evaluated.
+
+        Args:
+            value: The value to evaluate
+            context: The execution context
+
+        Returns:
+            The fully evaluated value
+        """
+        # Evaluate the argument
+        evaluated_value = self.parent.execute(value, context)
+        # Ensure f-strings are fully evaluated to strings
+        evaluated_value = self._ensure_fully_evaluated(evaluated_value, context)
+        return evaluated_value
+
+    def __parse_function_name(self, node: FunctionCall) -> tuple[str, str]:
+        """INTERNAL: Phase 3 helper for execute_function_call only.
+
+        Parse function name and namespace information.
+
+        Args:
+            node: The function call node
+
+        Returns:
+            Tuple of (func_name, full_key)
+        """
         # Extract base function name (removing namespace if present)
         func_name = node.name.split(".")[-1]  # Get the bare function name without namespace
 
@@ -185,6 +274,25 @@ class FunctionExecutor(BaseExecutor):
         func_key = node.name.split(".", 1)[1] if "." in node.name else node.name
         full_key = f"{local_ns}.{func_key}"
 
+        return func_name, full_key
+
+    def __try_local_context_execution(
+        self, full_key: str, context: SandboxContext, evaluated_args: List[Any], evaluated_kwargs: Dict[str, Any], func_name: str
+    ) -> Any:
+        """INTERNAL: Phase 4 helper for execute_function_call only.
+
+        Try to execute function from local context.
+
+        Args:
+            full_key: The full function key (namespace.name)
+            context: The execution context
+            evaluated_args: Evaluated positional arguments
+            evaluated_kwargs: Evaluated keyword arguments
+            func_name: The base function name
+
+        Returns:
+            Function result if found and executed, None if not found in local context
+        """
         try:
             # Try to get the function from the context first
             func_data = context.get(full_key)
@@ -217,89 +325,170 @@ class FunctionExecutor(BaseExecutor):
                 result = self._assign_and_coerce_result(raw_result, func_name)
                 return result
 
-        # If not found in local context, try the function registry
+        return None
+
+    def __execute_via_registry_with_error_handling(
+        self,
+        node: FunctionCall,
+        registry: Any,
+        context: SandboxContext,
+        evaluated_args: List[Any],
+        evaluated_kwargs: Dict[str, Any],
+        func_name: str,
+    ) -> Any:
+        """INTERNAL: Phase 5 helper for execute_function_call only.
+
+        Execute via registry with comprehensive error handling.
+
+        Args:
+            node: The function call node
+            registry: The function registry
+            context: The execution context
+            evaluated_args: Evaluated positional arguments
+            evaluated_kwargs: Evaluated keyword arguments
+            func_name: The base function name
+
+        Returns:
+            The function execution result
+
+        Raises:
+            SandboxError: If function execution fails
+        """
         try:
-            # Special handling for test functions
-            # For the reason function, pass the parameters properly in the test_unified_execution.py tests
-            if func_name == "reason" and evaluated_args and len(evaluated_args) >= 1:
-                from opendxa.dana.sandbox.interpreter.functions.core.reason_function import reason_function
-
-                # Extract the prompt string (first argument) and any additional args
-                prompt_str = evaluated_args[0]  # Now correctly evaluated as a string
-                add_args = evaluated_args[1:] if len(evaluated_args) > 1 else []
-
-                # Pass the prompt first, then context - matching the function's expected signature
-                raw_result = reason_function(prompt_str, context, *add_args, **evaluated_kwargs)
-                result = self._assign_and_coerce_result(raw_result, func_name)
-
-            # For the process function in test_function_call_chaining
-            elif func_name == "process" and evaluated_args and len(evaluated_args) == 1:
-                # Pass the single argument and context using a different parameter name
-                kwargs_copy = evaluated_kwargs.copy()
-                kwargs_copy["ctx"] = context  # Use ctx instead of context to avoid collision
-                raw_result = registry.call(node.name, context, None, evaluated_args[0], **kwargs_copy)
-                result = self._assign_and_coerce_result(raw_result, func_name)
-
-            # Special case for functions with parameters that conflict with FunctionRegistry.call parameters
-            # format_message has a 'name' parameter which conflicts with FunctionRegistry.call's 'name' parameter
-            elif func_name == "format_message":
-                # Resolve the function directly
-                try:
-                    func, func_type, metadata = registry.resolve(node.name, None)
-                    # If it's a callable, call it directly
-                    if callable(func):
-                        # Special handling for PythonFunction
-                        from opendxa.dana.sandbox.interpreter.functions.python_function import PythonFunction
-
-                        if isinstance(func, PythonFunction):
-                            raw_result = func.execute(context, *evaluated_args, **evaluated_kwargs)
-                            result = self._assign_and_coerce_result(raw_result, func_name)
-                        else:
-                            # Regular callable
-                            raw_result = func(*evaluated_args, **evaluated_kwargs)
-                            result = self._assign_and_coerce_result(raw_result, func_name)
-                    else:
-                        # Not a callable, can't execute
-                        raise SandboxError(f"Function '{node.name}' is not callable")
-                except Exception as e:
-                    # Failed to resolve or call - raise with clear error
-                    raise SandboxError(f"Error calling function '{node.name}' directly: {e}")
-
-            # Normal call
-            else:
-                raw_result = registry.call(node.name, context, None, *evaluated_args, **evaluated_kwargs)
-                result = self._assign_and_coerce_result(raw_result, func_name)
-
+            # Try unified registry execution first
+            return self.__execute_via_unified_registry(node, registry, context, evaluated_args, evaluated_kwargs, func_name)
         except FunctionRegistryError as fre:
             raise SandboxError(f"Error calling function '{node.name}': {str(fre)}") from fre
-
         except KeyError as ke:
             raise SandboxError(f"Error calling function '{node.name}': {str(ke)}") from ke
-
         except Exception as e:
-            # Try to provide more detailed error message
-            if "__positional" in str(e):
-                # Attempt to recover from __positional error by removing it from kwargs
-                if "__positional" in evaluated_kwargs:
-                    positional_args = evaluated_kwargs.pop("__positional")
-                    if isinstance(positional_args, list):
-                        # Add the values to the beginning of evaluated_args
-                        evaluated_args = positional_args + evaluated_args
-                    else:
-                        # Add single value to the beginning
-                        evaluated_args.insert(0, positional_args)
+            # Try error recovery if possible
+            return self.__handle_registry_execution_error(e, node, registry, context, evaluated_args, evaluated_kwargs, func_name)
 
-                    # Try again
-                    try:
-                        raw_result = registry.call(node.name, context, None, *evaluated_args, **evaluated_kwargs)
-                        result = self._assign_and_coerce_result(raw_result, func_name)
-                    except Exception as retry_e:
-                        raise SandboxError(f"Error calling function '{node.name}' (retry): {retry_e}")
+    def __execute_via_unified_registry(
+        self,
+        node: FunctionCall,
+        registry: Any,
+        context: SandboxContext,
+        evaluated_args: List[Any],
+        evaluated_kwargs: Dict[str, Any],
+        func_name: str,
+    ) -> Any:
+        """INTERNAL: Execute function via registry using unified approach.
 
-            if result is None:  # Only raise if we haven't got a result yet
-                raise SandboxError(f"Error calling function '{node.name}': {e}")
+        This method replaces the special case handling with a unified approach
+        that works for all functions through the registry.
 
-        return result
+        Args:
+            node: The function call node
+            registry: The function registry
+            context: The execution context
+            evaluated_args: Evaluated positional arguments
+            evaluated_kwargs: Evaluated keyword arguments
+            func_name: The base function name
+
+        Returns:
+            The function execution result
+        """
+        # Try to resolve and execute the function directly for better control
+        try:
+            func, func_type, metadata = registry.resolve(node.name, None)
+
+            # Execute based on function type
+            if callable(func):
+                from opendxa.dana.sandbox.interpreter.functions.python_function import PythonFunction
+                from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
+
+                if isinstance(func, (PythonFunction, SandboxFunction)):
+                    # Use the function's execute method for proper context handling
+                    raw_result = func.execute(context, *evaluated_args, **evaluated_kwargs)
+                else:
+                    # Regular callable - call directly
+                    raw_result = func(*evaluated_args, **evaluated_kwargs)
+
+                return self._assign_and_coerce_result(raw_result, func_name)
+            else:
+                raise SandboxError(f"Function '{node.name}' is not callable")
+
+        except Exception:
+            # Fall back to registry.call if direct resolution fails
+            raw_result = registry.call(node.name, context, None, *evaluated_args, **evaluated_kwargs)
+            return self._assign_and_coerce_result(raw_result, func_name)
+
+    def __handle_registry_execution_error(
+        self,
+        error: Exception,
+        node: FunctionCall,
+        registry: Any,
+        context: SandboxContext,
+        evaluated_args: List[Any],
+        evaluated_kwargs: Dict[str, Any],
+        func_name: str,
+    ) -> Any:
+        """INTERNAL: Handle registry execution errors with recovery attempts.
+
+        Args:
+            error: The original error
+            node: The function call node
+            registry: The function registry
+            context: The execution context
+            evaluated_args: Evaluated positional arguments
+            evaluated_kwargs: Evaluated keyword arguments
+            func_name: The base function name
+
+        Returns:
+            The function execution result if recovery succeeds
+
+        Raises:
+            SandboxError: If recovery fails
+        """
+        # Try to recover from __positional error
+        if "__positional" in str(error) and "__positional" in evaluated_kwargs:
+            return self.__attempt_positional_error_recovery(node, registry, context, evaluated_args, evaluated_kwargs, func_name)
+
+        # No recovery possible, raise the original error
+        raise SandboxError(f"Error calling function '{node.name}': {error}")
+
+    def __attempt_positional_error_recovery(
+        self,
+        node: FunctionCall,
+        registry: Any,
+        context: SandboxContext,
+        evaluated_args: List[Any],
+        evaluated_kwargs: Dict[str, Any],
+        func_name: str,
+    ) -> Any:
+        """INTERNAL: Attempt to recover from __positional argument errors.
+
+        Args:
+            node: The function call node
+            registry: The function registry
+            context: The execution context
+            evaluated_args: Evaluated positional arguments
+            evaluated_kwargs: Evaluated keyword arguments
+            func_name: The base function name
+
+        Returns:
+            The function execution result if recovery succeeds
+
+        Raises:
+            SandboxError: If recovery fails
+        """
+        # Remove __positional from kwargs and add to args
+        positional_args = evaluated_kwargs.pop("__positional")
+        if isinstance(positional_args, list):
+            # Add the values to the beginning of evaluated_args
+            evaluated_args = positional_args + evaluated_args
+        else:
+            # Add single value to the beginning
+            evaluated_args.insert(0, positional_args)
+
+        # Try again with corrected arguments
+        try:
+            raw_result = registry.call(node.name, context, None, *evaluated_args, **evaluated_kwargs)
+            return self._assign_and_coerce_result(raw_result, func_name)
+        except Exception as retry_e:
+            raise SandboxError(f"Error calling function '{node.name}' (retry): {retry_e}")
 
     def _get_current_function_context(self, context: SandboxContext) -> Optional[str]:
         """Try to determine the current function being executed for better error messages.
