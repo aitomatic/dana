@@ -331,9 +331,21 @@ class FStringTransformer(BaseTransformer):
         Parse a single term in an f-string expression.
         Returns an Identifier if the term is a valid variable, else a LiteralExpression.
         Example: 'foo' -> Identifier(name='local.foo')
+                 'private:foo' -> Identifier(name='private.foo')
                  '42' -> LiteralExpression(value=42)
         """
         term = term.strip()
+
+        # Handle scoped variables with colons (e.g., private:name, public:temperature)
+        if ":" in term:
+            parts = term.split(":", 1)
+            if len(parts) == 2:
+                scope, var_name = parts
+                if scope in RuntimeScopes.ALL:
+                    # Convert colon notation to dot notation for internal use
+                    return Identifier(name=f"{scope}.{var_name}")
+
+        # Handle regular variables and literals
         if term.replace(".", "").isalnum():
             parts = term.split(".")
             if parts[0] not in RuntimeScopes.ALL:
