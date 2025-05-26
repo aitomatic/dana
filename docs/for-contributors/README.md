@@ -1,3 +1,9 @@
+<p align="center">
+  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
+</p>
+
+[Project Overview](../../README.md)
+
 # OpenDXA for Contributors
 
 *Comprehensive guide for developers who want to contribute to, extend, or deeply understand OpenDXA*
@@ -463,3 +469,9 @@ Where to go from here.
 ---
 
 *Ready to contribute? Start with our [Development Setup Guide](development/environment-setup.md) or check out [Good First Issues](https://github.com/aitomatic/opendxa/labels/good%20first%20issue).* 
+
+<p align="center">
+Copyright © 2025 Aitomatic, Inc. Licensed under the <a href="../../LICENSE.md">MIT License</a>.
+<br/>
+<a href="https://aitomatic.com">https://aitomatic.com</a>
+</p>
