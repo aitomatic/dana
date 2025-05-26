@@ -439,7 +439,7 @@ class StatementTransformer(BaseTransformer):
 
     def simple_import(self, items):
         """Transform a simple_import rule into an ImportStatement node."""
-        from lark import Tree
+        from lark import Token, Tree
 
         # In simple_import rule, the import keyword is not included in items.
         # items[0] should be the module_path
@@ -456,13 +456,28 @@ class StatementTransformer(BaseTransformer):
             # Fallback to string conversion if not a module_path Tree
             module = str(module_item)
 
-        # items[1] might be the alias (if present)
-        alias = items[1] if len(items) > 1 and items[1] is not None else None
+        # Handle alias: if we have AS token, the alias is the next item
+        alias = None
+        if len(items) > 1:
+            # Check if items[1] is the AS token
+            if isinstance(items[1], Token) and items[1].type == "AS":
+                # The alias name should be in items[2]
+                if len(items) > 2 and hasattr(items[2], "value"):
+                    alias = items[2].value
+                elif len(items) > 2:
+                    alias = str(items[2])
+            else:
+                # Fallback: treat items[1] as the alias directly
+                if hasattr(items[1], "value"):
+                    alias = items[1].value
+                elif items[1] is not None:
+                    alias = str(items[1])
+
         return ImportStatement(module=module, alias=alias)
 
     def from_import(self, items):
         """Transform a from_import rule into an ImportFromStatement node."""
-        from lark import Tree
+        from lark import Token, Tree
 
         # In from_import rule, the from and import keywords are not included in items.
         # items[0] should be the module_path
@@ -486,8 +501,23 @@ class StatementTransformer(BaseTransformer):
         else:
             name = str(name_item)
 
-        # items[2] might be the alias (if present)
-        alias = items[2] if len(items) > 2 and items[2] is not None else None
+        # Handle alias: if we have AS token, the alias is the next item
+        alias = None
+        if len(items) > 2:
+            # Check if items[2] is the AS token
+            if isinstance(items[2], Token) and items[2].type == "AS":
+                # The alias name should be in items[3]
+                if len(items) > 3 and hasattr(items[3], "value"):
+                    alias = items[3].value
+                elif len(items) > 3:
+                    alias = str(items[3])
+            else:
+                # Fallback: treat items[2] as the alias directly
+                if hasattr(items[2], "value"):
+                    alias = items[2].value
+                elif items[2] is not None:
+                    alias = str(items[2])
+
         return ImportFromStatement(module=module, names=[(name, alias)])
 
     # === Argument Handling ===

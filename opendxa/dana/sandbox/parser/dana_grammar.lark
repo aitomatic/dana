@@ -185,7 +185,8 @@ MULTILINE_STRING: /""".*?"""/s | /'''.*?'''/s
 
 // Define the NAME token to explicitly NOT match f" or f' or r" or r' or f""" or f'''
 // Important: Added patterns to exclude 'f"', 'f'', 'r"', 'r'', 'f"""', 'f'''', etc. in proper regex format
-NAME.1: /(?!([fF]["']{1,3}|[rR]["']|True|true|TRUE|False|false|FALSE|None|none|NONE|null|NULL|private|public|local|system|break|continue|pass|return|if|else|elif|while|for|def|try|except|finally|raise|assert|import|from|as|with|lambda|yield|global|nonlocal|del|and|or|not|in|is)\b)([a-zA-Z_][a-zA-Z0-9_]*)/
+// Fixed: Removed 'as' from the negative lookahead since it should be handled as a separate token
+NAME.1: /(?!([fF]["']{1,3}|[rR]["']|True|true|TRUE|False|false|FALSE|None|none|NONE|null|NULL|private|public|local|system|break|continue|pass|return|if|else|elif|while|for|def|try|except|finally|raise|assert|import|from|with|lambda|yield|global|nonlocal|del|and|or|not|in|is)\b)([a-zA-Z_][a-zA-Z0-9_]*)/
 
 // Basic string literals with f-strings
 string_literal: REGULAR_STRING
@@ -250,5 +251,8 @@ NONE: "None" | "none" | "NONE" | "null" | "NULL"
 
 NOT_OP: "not"
 
-simple_import: "import" module_path ["as" NAME]
-from_import: "from" module_path "import" NAME ["as" NAME]
+// AS token for import statements - defined as a separate token to avoid conflicts with variable names
+AS: "as"
+
+simple_import: "import" module_path [AS NAME]
+from_import: "from" module_path "import" NAME [AS NAME]
