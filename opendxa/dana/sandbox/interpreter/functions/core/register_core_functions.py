@@ -23,7 +23,7 @@ def register_core_functions(registry: FunctionRegistry) -> None:
 
     Args:
         registry: The function registry to register functions with
-    
+
     Security:
         Core functions have special security status.
     """
@@ -40,7 +40,10 @@ def register_core_functions(registry: FunctionRegistry) -> None:
             module = importlib.import_module(module_name)
 
             # Find all functions in the module
-            for name, obj in inspect.getmembers(module, inspect.isfunction):
+            all_functions = inspect.getmembers(module, inspect.isfunction)
+            all_members = inspect.getmembers(module)
+
+            for name, obj in all_functions:
                 # Register functions ending with '_function'
                 if name.endswith("_function"):
                     # Remove '_function' suffix for the registry name
@@ -51,5 +54,7 @@ def register_core_functions(registry: FunctionRegistry) -> None:
                         func_type="python",
                         overwrite=True,
                     )
-        except ImportError as e:
-            print(f"Error importing module {module_name}: {e}")
+
+        except ImportError:
+            # Log import errors but continue with other modules
+            pass

@@ -31,6 +31,226 @@ from opendxa.dana.sandbox.parser.ast import (
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
+class FunctionNameInfo:
+    """Information about a parsed function name."""
+
+    def __init__(self, original_name: str, func_name: str, namespace: str, full_key: str):
+        """Initialize function name information.
+
+        Args:
+            original_name: The original function name from the call
+            func_name: The base function name without namespace
+            namespace: The namespace (e.g., 'local', 'core')
+            full_key: The full key for context lookup (namespace.name)
+        """
+        self.original_name = original_name
+        self.func_name = func_name
+        self.namespace = namespace
+        self.full_key = full_key
+
+    @classmethod
+    def from_node(cls, node: FunctionCall) -> "FunctionNameInfo":
+        """Parse function name information from a FunctionCall node.
+
+        Args:
+            node: The function call node
+
+        Returns:
+            Parsed function name information. If node.name is "a.b.c", then:
+            - original_name = "a.b.c"
+            - func_name = "c"
+            - namespace = "a.b"
+            - full_key = "a.b.c"
+        """
+        original_name = node.name
+
+        # Extract base function name (removing namespace if present)
+        func_name = original_name.split(".")[-1]
+
+        # Determine namespace and full key for context lookup
+        if "." in original_name:
+            namespace = original_name.split(".")[0]
+            func_key = original_name.split(".", 1)[1]
+        else:
+            namespace = "local"
+            func_key = original_name
+
+        full_key = f"{namespace}.{func_key}"
+
+        return cls(original_name, func_name, namespace, full_key)
+
+
+class ResolvedFunction:
+    """Information about a resolved function."""
+
+    def __init__(self, func: Any, func_type: str, source: str, metadata: Optional[Dict[str, Any]] = None):
+        """Initialize resolved function information.
+
+        Args:
+            func: The resolved function object
+            func_type: The type of function ('sandbox', 'python', 'legacy', 'callable')
+            source: Where the function was found ('local_context', 'registry')
+            metadata: Optional metadata about the function
+        """
+        self.func = func
+        self.func_type = func_type
+        self.source = source
+        self.metadata = metadata or {}
+
+
+class FunctionResolver:
+    """Centralized function resolution logic.
+
+    This class handles all aspects of function resolution including:
+    - Parsing function names and namespaces
+    - Looking up functions in local context
+    - Looking up functions in the registry
+    - Determining function types and execution strategies
+    """
+
+    def __init__(self, executor: "FunctionExecutor"):
+        """Initialize the function resolver.
+
+        Args:
+            executor: The function executor instance
+        """
+        self.executor = executor
+
+    def resolve_function(self, name_info: FunctionNameInfo, context: SandboxContext, registry: Any) -> Optional[ResolvedFunction]:
+        """Resolve a function from local context or registry.
+
+        Args:
+            name_info: Parsed function name information
+            context: The execution context
+            registry: The function registry
+
+        Returns:
+            Resolved function information, or None if not found
+        """
+        # Try fully-scoped context first (local, private, public, etc.)
+        func = self._resolve_from_context(name_info, context)
+        if func:
+            return func
+
+        # Try registry second
+        registry_func = self._resolve_from_registry(name_info, registry)
+        if registry_func:
+            return registry_func
+
+        return None
+
+    def _resolve_from_context(self, name_info: FunctionNameInfo, context: SandboxContext) -> Optional[ResolvedFunction]:
+        """Resolve function from all scoped context.
+
+        Args:
+            name_info: Parsed function name information
+            context: The execution context
+
+        Returns:
+            Resolved function from all scoped context, or None if not found
+        """
+        try:
+            func_data = context.get(name_info.full_key)
+        except Exception:
+            return None
+
+        if func_data is None:
+            return None
+
+        # Determine function type and create resolved function
+        from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
+
+        if isinstance(func_data, SandboxFunction):
+            return ResolvedFunction(func_data, "sandbox", "scoped_context")
+        elif isinstance(func_data, dict) and func_data.get("type") == "function":
+            return ResolvedFunction(func_data, "legacy", "scoped_context")
+        elif callable(func_data):
+            return ResolvedFunction(func_data, "callable", "scoped_context")
+        else:
+            # Found something but it's not callable
+            return None
+
+    def _resolve_from_registry(self, name_info: FunctionNameInfo, registry: Any) -> Optional[ResolvedFunction]:
+        """Resolve function from registry. Special treatment: if the scope is "local",
+        then we need to match the base function name *without* the scope.
+
+        Args:
+            name_info: Parsed function name information
+            registry: The function registry
+
+        Returns:
+            Resolved function from registry, or None if not found
+        """
+        # Try multiple name variations for registry resolution
+        names_to_try = [name_info.original_name]
+
+        # If the original name has a namespace, also try just the base function name
+        if "." in name_info.original_name:
+            names_to_try.append(name_info.func_name)
+
+        for name_to_try in names_to_try:
+            try:
+                func, func_type, metadata = registry.resolve(name_to_try, None)
+                # Store the original name in metadata for later use
+                metadata_dict = metadata.__dict__ if hasattr(metadata, "__dict__") else {}
+                metadata_dict["original_name"] = name_info.original_name
+                metadata_dict["resolved_name"] = name_to_try
+                return ResolvedFunction(func, func_type, "registry", metadata_dict)
+            except Exception:
+                continue
+
+        return None
+
+    def execute_resolved_function(
+        self,
+        resolved_func: ResolvedFunction,
+        context: SandboxContext,
+        evaluated_args: List[Any],
+        evaluated_kwargs: Dict[str, Any],
+        func_name: str,
+    ) -> Any:
+        """Execute a resolved function using the appropriate strategy.
+
+        Args:
+            resolved_func: The resolved function information
+            context: The execution context
+            evaluated_args: Evaluated positional arguments
+            evaluated_kwargs: Evaluated keyword arguments
+            func_name: The base function name
+
+        Returns:
+            The function execution result
+        """
+        if resolved_func.func_type == "sandbox":
+            # SandboxFunction - use execute method
+            raw_result = resolved_func.func.execute(context, *evaluated_args, **evaluated_kwargs)
+            return self.executor._assign_and_coerce_result(raw_result, func_name)
+
+        elif resolved_func.func_type == "legacy":
+            # Legacy user-defined function dict
+            raw_result = self.executor._execute_user_defined_function(resolved_func.func, evaluated_args, context)
+            return self.executor._assign_and_coerce_result(raw_result, func_name)
+
+        elif resolved_func.func_type == "callable":
+            # Regular callable
+            raw_result = resolved_func.func(*evaluated_args, **evaluated_kwargs)
+            return self.executor._assign_and_coerce_result(raw_result, func_name)
+
+        elif resolved_func.source == "registry":
+            # Registry function - delegate to the registry's call method which handles context injection properly
+            registry = self.executor.function_registry
+            if registry:
+                # Use the resolved name (which worked) rather than the original name (which might not work)
+                resolved_name = resolved_func.metadata.get("resolved_name", resolved_func.metadata.get("original_name", func_name))
+                raw_result = registry.call(resolved_name, context, None, *evaluated_args, **evaluated_kwargs)
+            else:
+                raise SandboxError(f"No function registry available to execute function '{func_name}'")
+            return self.executor._assign_and_coerce_result(raw_result, func_name)
+
+        else:
+            raise SandboxError(f"Unknown function type '{resolved_func.func_type}' for function '{func_name}'")
+
+
 class FunctionExecutionErrorHandler:
     """Centralized error handling for function execution.
 
@@ -245,6 +465,7 @@ class FunctionExecutor(BaseExecutor):
         """
         super().__init__(parent_executor, function_registry)
         self.error_handler = FunctionExecutionErrorHandler(self)
+        self.function_resolver = FunctionResolver(self)
         self.register_handlers()
 
     def register_handlers(self):
@@ -320,16 +541,20 @@ class FunctionExecutor(BaseExecutor):
         # Phase 2: Process arguments
         evaluated_args, evaluated_kwargs = self.__process_arguments(node, context)
 
-        # Phase 3: Parse function name and namespace
-        func_name, full_key = self.__parse_function_name(node)
+        # Phase 3: Parse function name and resolve function
+        name_info = FunctionNameInfo.from_node(node)
+        resolved_func = self.function_resolver.resolve_function(name_info, context, registry)
 
-        # Phase 4: Try local context execution first
-        result = self.__try_local_context_execution(full_key, context, evaluated_args, evaluated_kwargs, func_name)
-        if result is not None:
-            return result
-
-        # Phase 5: Execute via registry with error handling
-        return self.__execute_via_registry_with_error_handling(node, registry, context, evaluated_args, evaluated_kwargs, func_name)
+        if resolved_func:
+            # Phase 4: Execute resolved function
+            return self.function_resolver.execute_resolved_function(
+                resolved_func, context, evaluated_args, evaluated_kwargs, name_info.func_name
+            )
+        else:
+            # Phase 5: Function not found - try registry fallback with error handling
+            return self.__execute_via_registry_with_error_handling(
+                node, registry, context, evaluated_args, evaluated_kwargs, name_info.func_name
+            )
 
     def __setup_and_validate(self, node: FunctionCall) -> Any:
         """INTERNAL: Phase 1 helper for execute_function_call only.
@@ -449,81 +674,6 @@ class FunctionExecutor(BaseExecutor):
         evaluated_value = self._ensure_fully_evaluated(evaluated_value, context)
         return evaluated_value
 
-    def __parse_function_name(self, node: FunctionCall) -> tuple[str, str]:
-        """INTERNAL: Phase 3 helper for execute_function_call only.
-
-        Parse function name and namespace information.
-
-        Args:
-            node: The function call node
-
-        Returns:
-            Tuple of (func_name, full_key)
-        """
-        # Extract base function name (removing namespace if present)
-        func_name = node.name.split(".")[-1]  # Get the bare function name without namespace
-
-        # FIXED: Check local context first, then fall back to function registry
-        # This allows user-defined functions and composed functions to override built-ins
-
-        # First, try to find the function in the local context
-        local_ns = node.name.split(".")[0] if "." in node.name else "local"
-        func_key = node.name.split(".", 1)[1] if "." in node.name else node.name
-        full_key = f"{local_ns}.{func_key}"
-
-        return func_name, full_key
-
-    def __try_local_context_execution(
-        self, full_key: str, context: SandboxContext, evaluated_args: List[Any], evaluated_kwargs: Dict[str, Any], func_name: str
-    ) -> Any:
-        """INTERNAL: Phase 4 helper for execute_function_call only.
-
-        Try to execute function from local context.
-
-        Args:
-            full_key: The full function key (namespace.name)
-            context: The execution context
-            evaluated_args: Evaluated positional arguments
-            evaluated_kwargs: Evaluated keyword arguments
-            func_name: The base function name
-
-        Returns:
-            Function result if found and executed, None if not found in local context
-        """
-        try:
-            # Try to get the function from the context first
-            func_data = context.get(full_key)
-        except Exception:
-            # Error accessing local context, continue to registry
-            func_data = None
-
-        if func_data is not None:
-            # Check if it's a SandboxFunction (new unified approach)
-            from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
-
-            if isinstance(func_data, SandboxFunction):
-                # It's a SandboxFunction, use the unified execute method
-                # Don't catch exceptions here - let them bubble up as they contain the real error
-                raw_result = func_data.execute(context, *evaluated_args, **evaluated_kwargs)
-                result = self._assign_and_coerce_result(raw_result, func_name)
-                return result
-            # Legacy support: Check if it's an old-style user-defined function dict
-            elif isinstance(func_data, dict) and func_data.get("type") == "function":
-                # It's a legacy user-defined function, execute it
-                # Don't catch exceptions here - let them bubble up as they contain the real error
-                raw_result = self._execute_user_defined_function(func_data, evaluated_args, context)
-                result = self._assign_and_coerce_result(raw_result, func_name)
-                return result
-            # Check if it's other callable
-            elif callable(func_data):
-                # It's some other callable object
-                # Don't catch exceptions here - let them bubble up as they contain the real error
-                raw_result = func_data(*evaluated_args, **evaluated_kwargs)
-                result = self._assign_and_coerce_result(raw_result, func_name)
-                return result
-
-        return None
-
     def __execute_via_registry_with_error_handling(
         self,
         node: FunctionCall,
@@ -589,29 +739,44 @@ class FunctionExecutor(BaseExecutor):
             The function execution result
         """
         # Try to resolve and execute the function directly for better control
-        try:
-            func, func_type, metadata = registry.resolve(node.name, None)
+        # Try multiple name variations like the resolver does
+        names_to_try = [node.name]
+        if "." in node.name:
+            names_to_try.append(func_name)  # Try just the base function name
 
-            # Execute based on function type
-            if callable(func):
-                from opendxa.dana.sandbox.interpreter.functions.python_function import PythonFunction
-                from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
+        for name_to_try in names_to_try:
+            try:
+                func, func_type, metadata = registry.resolve(name_to_try, None)
 
-                if isinstance(func, (PythonFunction, SandboxFunction)):
-                    # Use the function's execute method for proper context handling
-                    raw_result = func.execute(context, *evaluated_args, **evaluated_kwargs)
+                # Execute based on function type
+                if callable(func):
+                    from opendxa.dana.sandbox.interpreter.functions.python_function import PythonFunction
+                    from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
+
+                    if isinstance(func, (PythonFunction, SandboxFunction)):
+                        # Use the function's execute method for proper context handling
+                        raw_result = func.execute(context, *evaluated_args, **evaluated_kwargs)
+                    else:
+                        # Regular callable - call directly
+                        raw_result = func(*evaluated_args, **evaluated_kwargs)
+
+                    return self._assign_and_coerce_result(raw_result, func_name)
                 else:
-                    # Regular callable - call directly
-                    raw_result = func(*evaluated_args, **evaluated_kwargs)
+                    raise SandboxError(f"Function '{name_to_try}' is not callable")
 
+            except Exception:
+                continue
+
+        # If all direct resolution attempts failed, try registry.call as final fallback
+        for name_to_try in names_to_try:
+            try:
+                raw_result = registry.call(name_to_try, context, None, *evaluated_args, **evaluated_kwargs)
                 return self._assign_and_coerce_result(raw_result, func_name)
-            else:
-                raise SandboxError(f"Function '{node.name}' is not callable")
+            except Exception:
+                continue
 
-        except Exception:
-            # Fall back to registry.call if direct resolution fails
-            raw_result = registry.call(node.name, context, None, *evaluated_args, **evaluated_kwargs)
-            return self._assign_and_coerce_result(raw_result, func_name)
+        # If we get here, all attempts failed
+        raise SandboxError(f"Function '{node.name}' not found in registry")
 
     def _get_current_function_context(self, context: SandboxContext) -> Optional[str]:
         """Try to determine the current function being executed for better error messages.

@@ -1,0 +1,10 @@
+# Generate and evaluate a joke
+def generate_joke(topic):
+    return reason(f"tell me a joke about {topic}")
+
+def evaluate_joke(joke):
+    return reason(f"is this a funny joke? {joke}")
+
+# Execute the chain
+result = "bears" | generate_joke | evaluate_joke
+print(result) 
