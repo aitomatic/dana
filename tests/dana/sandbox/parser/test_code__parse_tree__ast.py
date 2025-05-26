@@ -25,57 +25,57 @@ from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 CODE_SAMPLES = {
     "nested_if_elif_else": """
     if x > 0:
-        log.setLevel("DEBUG")
+        log_level("DEBUG")
         if y < 0:
             z = 1
-            log.error("y is negative")
+            log("y is negative", "ERROR")
         else:
             z = 2
-            log.error("y is non-negative")
+            log("y is non-negative", "ERROR")
     elif x == 0:
         z = 3
-        log.setLevel("INFO")
+        log_level("INFO")
     else:
         z = 4
-        log.error("x is not positive")
+        log("x is not positive", "ERROR")
     """,
     "while_for_function": """
     while n > 0:
         n = n - 1
-        log.setLevel("TRACE")
+        log_level("TRACE")
         for i in [1,2,3]:
             total = total + i
-            log.error("iteration", i)
+            log("iteration", i, "ERROR")
     def foo(a, b):
-        log.setLevel("WARN")
+        log_level("WARN")
         if a > b:
-            log.error("a > b")
+            log("a > b", "ERROR")
             return a
         else:
-            log.error("a <= b")
+            log("a <= b", "ERROR")
             return b
     """,
     "try_except_finally": """
     try:
         risky()
-        log.setLevel("ERROR")
+        log_level("ERROR")
     except (ErrorType):
         handle()
-        log.error("exception occurred")
+        log("exception occurred", "ERROR")
     finally:
         cleanup()
-        log.setLevel("INFO")
+        log_level("INFO")
     """,
     "combined_program": """
     def main():
-        log.setLevel("INFO")
+        log_level("INFO")
         for user in users:
             if user.is_active:
                 try:
                     process(user)
-                    log.setLevel("DEBUG")
+                    log_level("DEBUG")
                 except (ProcessError):
-                    log.error("failed to process user")
+                    log("failed to process user", "ERROR")
     """,
     "agentic_workflow": """
     # Agentic workflow example
@@ -83,11 +83,11 @@ CODE_SAMPLES = {
     user_input = f"Summarize the latest news about {topic}"
     abc = reason(user_input)
     if abc:
-        log.setLevel("INFO")
-        log.error(f"Agent returned: {abc}")
+        log_level("INFO")
+        log(f"Agent returned: {abc}", "ERROR")
     else:
-        log.setLevel("ERROR")
-        log.error("No response from agent.")
+        log_level("ERROR")
+        log("No response from agent.", "ERROR")
     """,
 }
 
@@ -124,19 +124,19 @@ def assert_function_calls_in_ast(ast, sample_name):
     if sample_name == "nested_if_elif_else":
         stmt = ast.statements[0]
         assert isinstance(stmt, Conditional)
-        assert find_function_call_recursive(stmt.body, "local.log.setLevel")
+        assert find_function_call_recursive(stmt.body, "local.log_level")
     elif sample_name == "while_for_function":
         while_stmt = ast.statements[0]
         assert isinstance(while_stmt, WhileLoop)
-        assert find_function_call_recursive(while_stmt.body, "local.log.setLevel")
+        assert find_function_call_recursive(while_stmt.body, "local.log_level")
     elif sample_name == "try_except_finally":
         try_stmt = ast.statements[0]
         assert isinstance(try_stmt, TryBlock)
-        assert find_function_call_recursive(try_stmt.body, "local.log.setLevel")
+        assert find_function_call_recursive(try_stmt.body, "local.log_level")
     elif sample_name == "combined_program":
         func = ast.statements[0]
         assert isinstance(func, FunctionDefinition)
-        assert find_function_call_recursive(func.body, "local.log.setLevel")
+        assert find_function_call_recursive(func.body, "local.log_level")
     elif sample_name == "agentic_workflow":
         # Check for assignment to 'abc' and a FunctionCall to 'local.reason'
         assignments = [s for s in ast.statements if hasattr(s, "target") and getattr(s.target, "name", None) == "local.abc"]

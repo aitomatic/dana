@@ -220,11 +220,35 @@ class StatementTransformer(BaseTransformer):
             return self.expression_transformer.expression([item])
 
     def function_def(self, items):
-        """Transform a function definition rule into a FunctionDefinition node."""
+        """Transform a function definition rule into a FunctionDefinition node.
+
+        Grammar: function_def: "def" NAME "(" [parameters] ")" ":" [COMMENT] block
+        After filtering None values, we typically have:
+        - relevant_items[0]: NAME (function name)
+        - relevant_items[1]: parameters (if present) OR block (if no parameters)
+        - relevant_items[2]: block (if parameters were present)
+        """
         relevant_items = self._filter_relevant_items(items)
+
         name_item = relevant_items[0]
-        params = relevant_items[1]
-        body = self._transform_block(relevant_items[2:])
+
+        # Determine if we have parameters or not
+        # If relevant_items[1] is a block, then no parameters
+        # If relevant_items[1] is not a block, then it's parameters and block is at [2]
+        if len(relevant_items) >= 2:
+            second_item = relevant_items[1]
+            if hasattr(second_item, "data") and second_item.data == "block":
+                # No parameters, this is the block
+                params = []
+                body = self._transform_block(second_item)
+            else:
+                # Has parameters, block should be next
+                params = second_item
+                body = self._transform_block(relevant_items[2]) if len(relevant_items) > 2 else []
+        else:
+            # No parameters, no body
+            params = []
+            body = []
 
         # Handle different name formats to create an Identifier
         if isinstance(name_item, Identifier):
@@ -273,11 +297,56 @@ class StatementTransformer(BaseTransformer):
         return FunctionDefinition(name=name, parameters=param_list, body=transformed_body)
 
     def try_stmt(self, items):
-        """Transform a try statement rule into a TryBlock node."""
-        body = self._transform_block(items[0])
-        except_blocks = self._transform_block(items[1]) if len(items) > 1 else []
-        finally_block = self._transform_block(items[2]) if len(items) > 2 else []
-        return TryBlock(body=body, except_blocks=except_blocks, finally_block=finally_block)
+        """Transform a try statement rule into a TryBlock node.
+
+        Grammar: try_stmt: "try" ":" [COMMENT] block "except" ["(" expr ")"] ":" [COMMENT] block ["finally" ":" [COMMENT] block]
+        Items structure:
+        - items[0]: try block
+        - items[1]: optional exception type expression (if present)
+        - items[2]: except block (or items[1] if no exception type)
+        - items[3]: optional finally block (or items[2] if no exception type)
+        """
+        from opendxa.dana.sandbox.parser.ast import ExceptBlock
+
+        # Filter out None items and comments
+        relevant_items = [item for item in items if item is not None]
+
+        # First item is always the try body
+        try_body = self._transform_block(relevant_items[0])
+
+        # Find except and finally blocks
+        except_block_statements = []
+        finally_block_statements = []
+        exception_type = None
+
+        # Look for except block (should be the second or third relevant item)
+        if len(relevant_items) >= 2:
+            # Check if we have an exception type expression
+            # If items[1] is not a block-like structure, it might be an exception type
+            second_item = relevant_items[1]
+            if hasattr(second_item, "data") and second_item.data == "block":
+                # No exception type, this is the except block
+                except_block_statements = self._transform_block(second_item)
+            else:
+                # This might be an exception type, except block should be next
+                exception_type = second_item
+                if len(relevant_items) >= 3:
+                    except_block_statements = self._transform_block(relevant_items[2])
+
+        # Look for finally block
+        finally_index = 3 if exception_type else 2
+        if len(relevant_items) > finally_index:
+            finally_block_statements = self._transform_block(relevant_items[finally_index])
+
+        # Create ExceptBlock object
+        except_blocks = []
+        if except_block_statements:
+            except_block = ExceptBlock(body=except_block_statements, exception_type=exception_type, location=None)
+            except_blocks.append(except_block)
+
+        return TryBlock(
+            body=try_body, except_blocks=except_blocks, finally_block=finally_block_statements if finally_block_statements else None
+        )
 
     def if_stmt(self, items):
         """Transform an if_stmt rule into a Conditional AST node, handling if/elif/else blocks."""
