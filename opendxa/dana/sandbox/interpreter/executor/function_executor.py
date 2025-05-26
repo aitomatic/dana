@@ -31,6 +31,202 @@ from opendxa.dana.sandbox.parser.ast import (
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
+class FunctionExecutionErrorHandler:
+    """Centralized error handling for function execution.
+
+    This class encapsulates all error handling logic for function execution,
+    including exception mapping, error recovery, and message formatting.
+    """
+
+    def __init__(self, executor: "FunctionExecutor"):
+        """Initialize the error handler.
+
+        Args:
+            executor: The function executor instance
+        """
+        self.executor = executor
+
+    def handle_registry_execution_error(
+        self,
+        error: Exception,
+        node: FunctionCall,
+        registry: Any,
+        context: SandboxContext,
+        evaluated_args: List[Any],
+        evaluated_kwargs: Dict[str, Any],
+        func_name: str,
+    ) -> Any:
+        """Handle registry execution errors with recovery attempts.
+
+        Args:
+            error: The original error
+            node: The function call node
+            registry: The function registry
+            context: The execution context
+            evaluated_args: Evaluated positional arguments
+            evaluated_kwargs: Evaluated keyword arguments
+            func_name: The base function name
+
+        Returns:
+            The function execution result if recovery succeeds
+
+        Raises:
+            SandboxError: If recovery fails
+        """
+        # Try recovery strategies in order of preference
+        recovery_strategies = [
+            PositionalErrorRecoveryStrategy(),
+            # Future: Add more recovery strategies here
+        ]
+
+        for strategy in recovery_strategies:
+            if strategy.can_handle(error, evaluated_kwargs):
+                try:
+                    return strategy.recover(error, node, registry, context, evaluated_args, evaluated_kwargs, func_name, self.executor)
+                except Exception:
+                    # Strategy failed, try next one
+                    continue
+
+        # No recovery possible, raise enhanced error
+        raise self._create_enhanced_sandbox_error(error, node, func_name)
+
+    def handle_standard_exceptions(
+        self,
+        error: Exception,
+        node: FunctionCall,
+    ) -> SandboxError:
+        """Handle standard exception types with appropriate error messages.
+
+        Args:
+            error: The original exception
+            node: The function call node
+
+        Returns:
+            Enhanced SandboxError with appropriate message
+        """
+        if isinstance(error, FunctionRegistryError):
+            sandbox_error = SandboxError(f"Error calling function '{node.name}': {str(error)}")
+            sandbox_error.__cause__ = error
+            return sandbox_error
+        elif isinstance(error, KeyError):
+            sandbox_error = SandboxError(f"Error calling function '{node.name}': {str(error)}")
+            sandbox_error.__cause__ = error
+            return sandbox_error
+        else:
+            return self._create_enhanced_sandbox_error(error, node, node.name.split(".")[-1])
+
+    def _create_enhanced_sandbox_error(
+        self,
+        error: Exception,
+        node: FunctionCall,
+        func_name: str,
+    ) -> SandboxError:
+        """Create an enhanced SandboxError with context information.
+
+        Args:
+            error: The original error
+            node: The function call node
+            func_name: The function name
+
+        Returns:
+            Enhanced SandboxError
+        """
+        # Get additional context
+        error_context = self._get_error_context(node, func_name)
+
+        # Format the error message
+        base_message = f"Error calling function '{node.name}': {error}"
+        if error_context:
+            enhanced_message = f"{base_message}\nContext: {error_context}"
+        else:
+            enhanced_message = base_message
+
+        return SandboxError(enhanced_message)
+
+    def _get_error_context(self, node: FunctionCall, func_name: str) -> Optional[str]:
+        """Get additional context information for error messages.
+
+        Args:
+            node: The function call node
+            func_name: The function name
+
+        Returns:
+            Context string or None
+        """
+        context_parts = []
+
+        # Add function name context
+        if "." in node.name:
+            context_parts.append(f"namespace: {node.name.split('.')[0]}")
+
+        # Add argument count context
+        arg_count = len(node.args)
+        context_parts.append(f"arguments: {arg_count}")
+
+        return ", ".join(context_parts) if context_parts else None
+
+
+class PositionalErrorRecoveryStrategy:
+    """Recovery strategy for __positional argument errors."""
+
+    def can_handle(self, error: Exception, evaluated_kwargs: Dict[str, Any]) -> bool:
+        """Check if this strategy can handle the error.
+
+        Args:
+            error: The error to check
+            evaluated_kwargs: The evaluated keyword arguments
+
+        Returns:
+            True if this strategy can handle the error
+        """
+        return "__positional" in str(error) and "__positional" in evaluated_kwargs
+
+    def recover(
+        self,
+        error: Exception,
+        node: FunctionCall,
+        registry: Any,
+        context: SandboxContext,
+        evaluated_args: List[Any],
+        evaluated_kwargs: Dict[str, Any],
+        func_name: str,
+        executor: "FunctionExecutor",
+    ) -> Any:
+        """Attempt to recover from __positional argument errors.
+
+        Args:
+            error: The original error
+            node: The function call node
+            registry: The function registry
+            context: The execution context
+            evaluated_args: Evaluated positional arguments
+            evaluated_kwargs: Evaluated keyword arguments
+            func_name: The base function name
+            executor: The function executor instance
+
+        Returns:
+            The function execution result if recovery succeeds
+
+        Raises:
+            SandboxError: If recovery fails
+        """
+        # Remove __positional from kwargs and add to args
+        positional_args = evaluated_kwargs.pop("__positional")
+        if isinstance(positional_args, list):
+            # Add the values to the beginning of evaluated_args
+            evaluated_args = positional_args + evaluated_args
+        else:
+            # Add single value to the beginning
+            evaluated_args.insert(0, positional_args)
+
+        # Try again with corrected arguments
+        try:
+            raw_result = registry.call(node.name, context, None, *evaluated_args, **evaluated_kwargs)
+            return executor._assign_and_coerce_result(raw_result, func_name)
+        except Exception as retry_e:
+            raise SandboxError(f"Error calling function '{node.name}' (retry): {retry_e}")
+
+
 class FunctionExecutor(BaseExecutor):
     """Specialized executor for function-related operations.
 
@@ -48,6 +244,7 @@ class FunctionExecutor(BaseExecutor):
             function_registry: Optional function registry (defaults to parent's)
         """
         super().__init__(parent_executor, function_registry)
+        self.error_handler = FunctionExecutionErrorHandler(self)
         self.register_handlers()
 
     def register_handlers(self):
@@ -357,13 +554,14 @@ class FunctionExecutor(BaseExecutor):
         try:
             # Try unified registry execution first
             return self.__execute_via_unified_registry(node, registry, context, evaluated_args, evaluated_kwargs, func_name)
-        except FunctionRegistryError as fre:
-            raise SandboxError(f"Error calling function '{node.name}': {str(fre)}") from fre
-        except KeyError as ke:
-            raise SandboxError(f"Error calling function '{node.name}': {str(ke)}") from ke
+        except (FunctionRegistryError, KeyError) as e:
+            # Handle standard exceptions
+            raise self.error_handler.handle_standard_exceptions(e, node)
         except Exception as e:
             # Try error recovery if possible
-            return self.__handle_registry_execution_error(e, node, registry, context, evaluated_args, evaluated_kwargs, func_name)
+            return self.error_handler.handle_registry_execution_error(
+                e, node, registry, context, evaluated_args, evaluated_kwargs, func_name
+            )
 
     def __execute_via_unified_registry(
         self,
@@ -414,81 +612,6 @@ class FunctionExecutor(BaseExecutor):
             # Fall back to registry.call if direct resolution fails
             raw_result = registry.call(node.name, context, None, *evaluated_args, **evaluated_kwargs)
             return self._assign_and_coerce_result(raw_result, func_name)
-
-    def __handle_registry_execution_error(
-        self,
-        error: Exception,
-        node: FunctionCall,
-        registry: Any,
-        context: SandboxContext,
-        evaluated_args: List[Any],
-        evaluated_kwargs: Dict[str, Any],
-        func_name: str,
-    ) -> Any:
-        """INTERNAL: Handle registry execution errors with recovery attempts.
-
-        Args:
-            error: The original error
-            node: The function call node
-            registry: The function registry
-            context: The execution context
-            evaluated_args: Evaluated positional arguments
-            evaluated_kwargs: Evaluated keyword arguments
-            func_name: The base function name
-
-        Returns:
-            The function execution result if recovery succeeds
-
-        Raises:
-            SandboxError: If recovery fails
-        """
-        # Try to recover from __positional error
-        if "__positional" in str(error) and "__positional" in evaluated_kwargs:
-            return self.__attempt_positional_error_recovery(node, registry, context, evaluated_args, evaluated_kwargs, func_name)
-
-        # No recovery possible, raise the original error
-        raise SandboxError(f"Error calling function '{node.name}': {error}")
-
-    def __attempt_positional_error_recovery(
-        self,
-        node: FunctionCall,
-        registry: Any,
-        context: SandboxContext,
-        evaluated_args: List[Any],
-        evaluated_kwargs: Dict[str, Any],
-        func_name: str,
-    ) -> Any:
-        """INTERNAL: Attempt to recover from __positional argument errors.
-
-        Args:
-            node: The function call node
-            registry: The function registry
-            context: The execution context
-            evaluated_args: Evaluated positional arguments
-            evaluated_kwargs: Evaluated keyword arguments
-            func_name: The base function name
-
-        Returns:
-            The function execution result if recovery succeeds
-
-        Raises:
-            SandboxError: If recovery fails
-        """
-        # Remove __positional from kwargs and add to args
-        positional_args = evaluated_kwargs.pop("__positional")
-        if isinstance(positional_args, list):
-            # Add the values to the beginning of evaluated_args
-            evaluated_args = positional_args + evaluated_args
-        else:
-            # Add single value to the beginning
-            evaluated_args.insert(0, positional_args)
-
-        # Try again with corrected arguments
-        try:
-            raw_result = registry.call(node.name, context, None, *evaluated_args, **evaluated_kwargs)
-            return self._assign_and_coerce_result(raw_result, func_name)
-        except Exception as retry_e:
-            raise SandboxError(f"Error calling function '{node.name}' (retry): {retry_e}")
 
     def _get_current_function_context(self, context: SandboxContext) -> Optional[str]:
         """Try to determine the current function being executed for better error messages.
