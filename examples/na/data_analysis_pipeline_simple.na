@@ -10,7 +10,7 @@ def extract_metrics(data):
     
     products = data["products"]
     # Count products manually
-    product_count = 5
+    product_count = len(products)
     
     return {
         "total_sales": total_sales,
