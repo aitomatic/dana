@@ -12,6 +12,7 @@ from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
+@pytest.mark.deep
 class TestBuiltinIntegrationBasic:
     """Basic integration tests for built-in functions."""
 
@@ -131,6 +132,7 @@ class TestBuiltinIntegrationBasic:
         assert result == 3.14
 
 
+@pytest.mark.deep
 class TestBuiltinIntegrationAdvanced:
     """Advanced integration tests with complex expressions."""
 
@@ -344,6 +346,7 @@ class TestBuiltinFunctionPrecedence:
         assert result == 888
 
 
+@pytest.mark.deep
 class TestBuiltinRealWorldScenarios:
     """Test built-in functions in realistic scenarios."""
 

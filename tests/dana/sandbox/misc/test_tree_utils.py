@@ -34,6 +34,7 @@ class SimpleTransformer:
         return int(token.value) * 2  # Double numbers as a test
 
 
+@pytest.mark.deep
 class TestTreeTraverser:
     """Tests for the TreeTraverser class."""
 

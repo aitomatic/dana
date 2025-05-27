@@ -291,6 +291,7 @@ class TestUnsupportedFunctionRegistry:
         assert result == "Safe evaluation of: test"
 
 
+@pytest.mark.deep
 class TestUnsupportedFunctionIntegration:
     """Test unsupported function handling with the Dana interpreter."""
 
@@ -338,6 +339,7 @@ class TestUnsupportedFunctionIntegration:
             interpreter.function_registry.call("eval", context, args=["1 + 1"])
 
 
+@pytest.mark.deep
 class TestUnsupportedFunctionEdgeCases:
     """Test edge cases for unsupported function handling."""
 

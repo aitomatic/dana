@@ -12,6 +12,7 @@ from opendxa.dana.sandbox.interpreter.functions.pythonic.function_factory import
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
+@pytest.mark.deep
 class TestLenFunction:
     """Comprehensive tests for the len() function."""
 
@@ -99,6 +100,7 @@ class TestLenFunction:
             assert "Invalid arguments for 'len'" in str(exc_info.value)
 
 
+@pytest.mark.deep
 class TestSumFunction:
     """Comprehensive tests for the sum() function."""
 
@@ -175,6 +177,7 @@ class TestSumFunction:
         assert "Built-in function 'sum' failed" in str(exc_info.value)
 
 
+@pytest.mark.deep
 class TestMaxMinFunctions:
     """Comprehensive tests for max() and min() functions."""
 
