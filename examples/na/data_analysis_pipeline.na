@@ -1,7 +1,6 @@
 #### AI-Powered Data Analysis Pipeline
 # Define data processing functions
 def extract_metrics(data):
-    # Comment within function is a problem. Related to INDENT perhaps.
     # Extract key metrics from raw data
     total_sales = sum(data["sales"])
     avg_rating = sum(data["ratings"]) / len(data["ratings"])
