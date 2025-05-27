@@ -21,6 +21,10 @@ def register_core_functions(registry: FunctionRegistry) -> None:
     This function scans the core/ directory for Python modules and registers
     any function ending with '_function' as a Dana function in the registry.
 
+    Registration order ensures correct function lookup precedence:
+    1. Core functions (registered first - highest priority after user functions)
+    2. Built-in functions (registered last - lowest priority)
+
     Args:
         registry: The function registry to register functions with
 
@@ -41,7 +45,7 @@ def register_core_functions(registry: FunctionRegistry) -> None:
 
             # Find all functions in the module
             all_functions = inspect.getmembers(module, inspect.isfunction)
-            all_members = inspect.getmembers(module)
+            all_members = inspect.getmembers(module)  # noqa: F841
 
             for name, obj in all_functions:
                 # Register functions ending with '_function'
@@ -58,3 +62,13 @@ def register_core_functions(registry: FunctionRegistry) -> None:
         except ImportError:
             # Log import errors but continue with other modules
             pass
+
+    # Register Pythonic built-in functions AFTER core functions
+    # This ensures core functions have higher priority than built-ins
+    try:
+        from opendxa.dana.sandbox.interpreter.functions.pythonic.function_factory import register_pythonic_builtins
+
+        register_pythonic_builtins(registry)
+    except ImportError:
+        # Pythonic built-ins not available, continue without them
+        pass

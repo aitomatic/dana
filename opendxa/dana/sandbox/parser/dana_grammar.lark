@@ -152,7 +152,7 @@ sum_expr: product ((ADD | SUB) product)*
 product: power ((MUL | DIV | FDIV | MOD) power)*
 
 // Power is right-associative, so use recursion on the right side 
-power: atom (POW power)?
+power: factor (POW power)?
 factor: (ADD | SUB) factor | atom trailer*
 
 trailer: "(" [arguments] ")"    // Function call

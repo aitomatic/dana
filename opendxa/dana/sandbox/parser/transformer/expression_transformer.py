@@ -339,6 +339,14 @@ class ExpressionTransformer(BaseTransformer):
 
         if isinstance(op_token, Token):
             op_str = op_token.value
+        elif isinstance(op_token, BinaryOperator):
+            # Handle case where token was already transformed to BinaryOperator
+            if op_token == BinaryOperator.ADD:
+                op_str = "+"
+            elif op_token == BinaryOperator.SUBTRACT:
+                op_str = "-"
+            else:
+                op_str = str(op_token.value)
         else:
             op_str = str(op_token)
 
