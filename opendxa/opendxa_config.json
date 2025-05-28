@@ -1,10 +1,6 @@
 {
     "preferred_models": [
         {
-            "name": "aitomatic:llamarine",
-            "required_api_keys": ["AITOMATIC_API_KEY"]
-        },
-        {
             "name": "groq:deepseek-r1-distill-llama-70b",
             "required_api_keys": ["GROQ_API_KEY"]
         },
