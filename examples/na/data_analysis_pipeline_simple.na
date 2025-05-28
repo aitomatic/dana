@@ -6,7 +6,7 @@ def extract_metrics(data):
     
     ratings = data["ratings"]
     total_ratings = sum(ratings)
-    avg_rating = total_ratings / 5
+    avg_rating = total_ratings / len(ratings)
     
     products = data["products"]
     # Count products manually
