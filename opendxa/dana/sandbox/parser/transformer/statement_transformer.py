@@ -42,6 +42,7 @@ from opendxa.dana.sandbox.parser.ast import (
     ImportStatement,
     ListLiteral,
     LiteralExpression,
+    Parameter,
     PassStatement,
     Program,
     RaiseStatement,
@@ -50,6 +51,7 @@ from opendxa.dana.sandbox.parser.ast import (
     SubscriptExpression,
     TryBlock,
     TupleLiteral,
+    TypeHint,
     WhileLoop,
 )
 from opendxa.dana.sandbox.parser.transformer.base_transformer import BaseTransformer
@@ -222,33 +224,16 @@ class StatementTransformer(BaseTransformer):
     def function_def(self, items):
         """Transform a function definition rule into a FunctionDefinition node.
 
-        Grammar: function_def: "def" NAME "(" [parameters] ")" ":" [COMMENT] block
+        Grammar: function_def: "def" NAME "(" [parameters] ")" ["->" basic_type] ":" [COMMENT] block
         After filtering None values, we typically have:
         - relevant_items[0]: NAME (function name)
-        - relevant_items[1]: parameters (if present) OR block (if no parameters)
-        - relevant_items[2]: block (if parameters were present)
+        - relevant_items[1]: parameters (if present) OR return_type OR block
+        - relevant_items[2]: return_type OR block (depending on what's at [1])
+        - relevant_items[3]: block (if both parameters and return_type are present)
         """
         relevant_items = self._filter_relevant_items(items)
 
         name_item = relevant_items[0]
-
-        # Determine if we have parameters or not
-        # If relevant_items[1] is a block, then no parameters
-        # If relevant_items[1] is not a block, then it's parameters and block is at [2]
-        if len(relevant_items) >= 2:
-            second_item = relevant_items[1]
-            if hasattr(second_item, "data") and second_item.data == "block":
-                # No parameters, this is the block
-                params = []
-                body = self._transform_block(second_item)
-            else:
-                # Has parameters, block should be next
-                params = second_item
-                body = self._transform_block(relevant_items[2]) if len(relevant_items) > 2 else []
-        else:
-            # No parameters, no body
-            params = []
-            body = []
 
         # Handle different name formats to create an Identifier
         if isinstance(name_item, Identifier):
@@ -260,24 +245,51 @@ class StatementTransformer(BaseTransformer):
         else:
             name = Identifier(name=str(name_item))
 
-        # Extract parameters as list of Identifiers
+        # Parse the remaining items to find parameters, return_type, and body
+        params = []
+        return_type = None
+        body = []
+
+        # Start from index 1 (after function name)
+        i = 1
+
+        # Check if we have parameters (list of Parameter objects)
+        if i < len(relevant_items) and isinstance(relevant_items[i], list):
+            # This should be the parameters list
+            params = relevant_items[i]
+            i += 1
+
+        # Check if we have a return type (TypeHint object)
+        if i < len(relevant_items) and hasattr(relevant_items[i], "name"):
+            # This should be a TypeHint for return type
+            return_type = relevant_items[i]
+            i += 1
+
+        # The remaining item should be the block
+        if i < len(relevant_items):
+            body = self._transform_block(relevant_items[i])
+
+        # Convert parameters to Parameter objects if they aren't already
         param_list = []
         if isinstance(params, list):
             for p in params:
-                if isinstance(p, Identifier):
-                    # If already an Identifier, ensure it has local scope
+                if isinstance(p, Parameter):
+                    # Already a Parameter object from typed_parameter
+                    param_list.append(p)
+                elif isinstance(p, Identifier):
+                    # Convert Identifier to Parameter
                     param_name = p.name if "." in p.name else f"local.{p.name}"
-                    param_list.append(Identifier(name=param_name))
+                    param_list.append(Parameter(name=param_name))
                 elif hasattr(p, "value"):
                     # For raw parameter names, add local scope
                     param_name = f"local.{p.value}"
-                    param_list.append(Identifier(name=param_name))
+                    param_list.append(Parameter(name=param_name))
                 else:
                     raise TypeError(f"Unexpected parameter: {p} (type: {type(p)})")
         elif isinstance(params, Token):
             # Single parameter as Token
             param_name = f"local.{params.value}"
-            param_list.append(Identifier(name=param_name))
+            param_list.append(Parameter(name=param_name))
 
         # Transform unscoped variables in function body to use local scope
         transformed_body = []
@@ -294,7 +306,7 @@ class StatementTransformer(BaseTransformer):
                     stmt.right.name = f"local.{stmt.right.name}"
             transformed_body.append(stmt)
 
-        return FunctionDefinition(name=name, parameters=param_list, body=transformed_body)
+        return FunctionDefinition(name=name, parameters=param_list, body=transformed_body, return_type=return_type)
 
     def try_stmt(self, items):
         """Transform a try statement rule into a TryBlock node.
@@ -421,40 +433,11 @@ class StatementTransformer(BaseTransformer):
     def assignment(self, items):
         """
         Transform an assignment rule into an Assignment node.
-        Grammar:
-        assignment: variable "=" expr NEWLINE
+        Grammar: assignment: typed_assignment | simple_assignment
 
-        An assignment is a statement that assigns a value to a variable.
+        This rule is just a choice, so return the result of whichever was chosen.
         """
-        if len(items) < 2:
-            self.error(f"Assignment requires at least two items (target and value), got {len(items)}: {items}")
-
-        target_tree = items[0]
-        # Always use VariableTransformer to get a clean Identifier
-        target = VariableTransformer().variable([target_tree])
-        if not isinstance(target, Identifier):
-            raise TypeError(f"Assignment target must be Identifier, got {type(target)}")
-        value_tree = items[1]
-        ast_types = (
-            LiteralExpression,
-            Identifier,
-            BinaryExpression,
-            FunctionCall,
-            TupleLiteral,
-            DictLiteral,
-            SetLiteral,
-            SubscriptExpression,
-            AttributeAccess,
-            FStringExpression,
-        )
-        if isinstance(value_tree, tuple):
-            raise TypeError(f"Assignment value cannot be a tuple: {value_tree}")
-        if not isinstance(value_tree, ast_types):
-            value = self.expression_transformer.expression([value_tree])
-        else:
-            value = value_tree
-        value_expr = cast(AllowedAssignmentValue, value)
-        return Assignment(target=target, value=value_expr)
+        return items[0]
 
     def expr_stmt(self, items):
         """Transform a bare expression statement (expr_stmt) into an Expression AST node."""
@@ -677,18 +660,31 @@ class StatementTransformer(BaseTransformer):
 
     # === Parameter Handling ===
     def parameters(self, items):
-        """Transform parameters rule into a list of Identifier objects.
+        """Transform parameters rule into a list of Parameter objects.
 
-        Grammar: parameters: parameter ("," parameter)*
+        Grammar: parameters: typed_parameter ("," typed_parameter)*
         """
         result = []
         for item in items:
-            if isinstance(item, Identifier):
+            if isinstance(item, Parameter):
+                # Already a Parameter object from typed_parameter
                 result.append(item)
-            elif hasattr(item, "data") and item.data == "parameter":
-                # Handle parameter via the parameter method
-                param = self.parameter(item.children)
+            elif isinstance(item, Identifier):
+                # Convert Identifier to Parameter
+                param_name = item.name if "." in item.name else f"local.{item.name}"
+                result.append(Parameter(name=param_name))
+            elif hasattr(item, "data") and item.data == "typed_parameter":
+                # Handle typed_parameter via the typed_parameter method
+                param = self.typed_parameter(item.children)
                 result.append(param)
+            elif hasattr(item, "data") and item.data == "parameter":
+                # Handle old-style parameter via the parameter method
+                param = self.parameter(item.children)
+                # Convert Identifier to Parameter
+                if isinstance(param, Identifier):
+                    result.append(Parameter(name=param.name))
+                else:
+                    result.append(param)
             else:
                 # Handle unexpected item
                 self.warning(f"Unexpected parameter item: {item}")
@@ -747,3 +743,74 @@ class StatementTransformer(BaseTransformer):
             # Keep everything else
             relevant.append(item)
         return relevant
+
+    # === Type Hint Support ===
+    def basic_type(self, items):
+        """Transform a basic_type rule into a TypeHint node."""
+        if not items:
+            raise ValueError("basic_type rule received empty items list")
+
+        type_name = items[0].value if hasattr(items[0], "value") else str(items[0])
+        return TypeHint(name=type_name)
+
+    def typed_assignment(self, items):
+        """Transform a typed assignment rule into an Assignment node with type hint."""
+
+        # Grammar: typed_assignment: variable ":" basic_type "=" expr
+        target_tree = items[0]
+        type_hint = items[1]  # Should be a TypeHint from basic_type
+        value_tree = items[2]
+
+        # Get target identifier
+        target = VariableTransformer().variable([target_tree])
+        if not isinstance(target, Identifier):
+            raise TypeError(f"Assignment target must be Identifier, got {type(target)}")
+
+        # Transform value
+        value = self.expression_transformer.expression([value_tree])
+        if isinstance(value, tuple):
+            raise TypeError(f"Assignment value cannot be a tuple: {value}")
+        value_expr = cast(AllowedAssignmentValue, value)
+
+        return Assignment(target=target, value=value_expr, type_hint=type_hint)
+
+    def simple_assignment(self, items):
+        """Transform a simple assignment rule into an Assignment node without type hint."""
+        # Grammar: simple_assignment: variable "=" expr
+        target_tree = items[0]
+        value_tree = items[1]
+
+        # Get target identifier
+        target = VariableTransformer().variable([target_tree])
+        if not isinstance(target, Identifier):
+            raise TypeError(f"Assignment target must be Identifier, got {type(target)}")
+
+        # Transform value
+        value = self.expression_transformer.expression([value_tree])
+        if isinstance(value, tuple):
+            raise TypeError(f"Assignment value cannot be a tuple: {value}")
+        value_expr = cast(AllowedAssignmentValue, value)
+
+        return Assignment(target=target, value=value_expr)
+
+    def typed_parameter(self, items):
+        """Transform a typed parameter rule into a Parameter object."""
+
+        # Grammar: typed_parameter: NAME [":" basic_type] ["=" expr]
+        name_item = items[0]
+        param_name = name_item.value if hasattr(name_item, "value") else str(name_item)
+
+        type_hint = None
+        default_value = None
+
+        # Check for type hint and default value
+        for item in items[1:]:
+            if hasattr(item, "name"):  # TypeHint object
+                type_hint = item
+            else:
+                # Assume it's a default value expression
+                default_value = self.expression_transformer.expression([item])
+                if isinstance(default_value, tuple):
+                    raise TypeError(f"Parameter default value cannot be a tuple: {default_value}")
+
+        return Parameter(name=param_name, type_hint=type_hint, default_value=default_value)

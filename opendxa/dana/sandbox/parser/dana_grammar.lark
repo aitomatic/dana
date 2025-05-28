@@ -50,12 +50,28 @@ elif_stmt: "elif" expr ":" [COMMENT] block
 // Other compound statements
 while_stmt: "while" expr ":" [COMMENT] block
 for_stmt: "for" NAME "in" expr ":" [COMMENT] block
-function_def: "def" NAME "(" [parameters] ")" ":" [COMMENT] block
+function_def: "def" NAME "(" [parameters] ")" ["->" basic_type] ":" [COMMENT] block
 try_stmt: "try" ":" [COMMENT] block "except" ["(" expr ")"] ":" [COMMENT] block ["finally" ":" [COMMENT] block]
 
 // Function parameters
-parameters: parameter ("," parameter)*
-parameter: NAME ["=" expr]
+parameters: typed_parameter ("," typed_parameter)*
+typed_parameter: NAME [":" basic_type] ["=" expr]
+
+// ===== TYPE ANNOTATIONS =====
+// Basic type annotation support for KISS implementation
+basic_type: INT_TYPE | FLOAT_TYPE | STR_TYPE | BOOL_TYPE | LIST_TYPE | DICT_TYPE | TUPLE_TYPE | SET_TYPE | NONE_TYPE | ANY_TYPE
+
+// Type tokens - must be defined before NAME for precedence
+INT_TYPE: "int"
+FLOAT_TYPE: "float"
+STR_TYPE: "str"
+BOOL_TYPE: "bool"
+LIST_TYPE: "list"
+DICT_TYPE: "dict"
+TUPLE_TYPE: "tuple"
+SET_TYPE: "set"
+NONE_TYPE: "None"
+ANY_TYPE: "any"
 
 // ===== SIMPLE STATEMENTS =====
 simple_stmt: assignment
@@ -71,7 +87,9 @@ simple_stmt: assignment
 
 comment_stmt: COMMENT
 
-assignment: target "=" expr
+assignment: typed_assignment | simple_assignment
+typed_assignment: target ":" basic_type "=" expr
+simple_assignment: target "=" expr
 expr_stmt: expr
 return_stmt: "return" [expr]
 break_stmt: "break"
@@ -217,12 +235,13 @@ atom: variable trailer*
     | "(" expr ")"
 
 // ===== COLLECTIONS =====
-collection: list | dict | tuple
+collection: list | dict | tuple | set
 
 list: "[" [list_items] "]"
 dict: "{" [dict_items] "}"
 tuple: "(" ")"
      | "(" expr "," [list_items] ")"
+set: "{" list_items "}"
 
 list_items: expr ("," expr)* [","]
 dict_items: key_value_pair ("," key_value_pair)* [","]

@@ -103,6 +103,24 @@ class Location:
     source: str
 
 
+@dataclass
+class TypeHint:
+    """A type annotation (e.g., int, str, list, dict)."""
+
+    name: str  # The type name (int, str, list, dict, etc.)
+    location: Optional[Location] = None
+
+
+@dataclass
+class Parameter:
+    """A function parameter with optional type hint."""
+
+    name: str
+    type_hint: Optional[TypeHint] = None
+    default_value: Optional[Expression] = None
+    location: Optional[Location] = None
+
+
 # === Literals and Identifiers ===
 @dataclass
 class LiteralExpression:
@@ -248,6 +266,7 @@ class Assignment:
         AttributeAccess,
         FStringExpression,
     ]
+    type_hint: Optional[TypeHint] = None  # For typed assignments like x: int = 42
     location: Optional[Location] = None
 
 
@@ -307,8 +326,9 @@ class FunctionDefinition:
     """Function definition statement."""
 
     name: Identifier
-    parameters: List[Identifier]
+    parameters: List[Parameter]
     body: List[Statement]
+    return_type: Optional[TypeHint] = None
     location: Optional[Location] = None
 
 

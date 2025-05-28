@@ -40,6 +40,7 @@ from opendxa.dana.sandbox.parser.ast import (
     ImportStatement,
     ListLiteral,
     LiteralExpression,
+    Parameter,
     PassStatement,
     Program,
     RaiseStatement,
@@ -66,6 +67,26 @@ class DanaType:
         if not isinstance(other, DanaType):
             return False
         return self.name == other.name
+
+    @staticmethod
+    def from_type_hint(type_hint: "TypeHint") -> "DanaType":
+        """Convert a TypeHint to a DanaType."""
+        # Map type hint names to DanaType names
+        type_mapping = {
+            "int": "int",
+            "float": "float",
+            "str": "string",  # Map str to string for consistency
+            "bool": "bool",
+            "list": "list",
+            "dict": "dict",
+            "tuple": "tuple",
+            "set": "set",
+            "None": "null",  # Map None to null for consistency
+            "any": "any",
+        }
+
+        dana_type_name = type_mapping.get(type_hint.name, type_hint.name)
+        return DanaType(dana_type_name)
 
 
 class TypeEnvironment:
@@ -154,7 +175,23 @@ class TypeChecker:
     def check_assignment(self, node: Assignment) -> None:
         """Check an assignment for type errors."""
         value_type = self.check_expression(node.value)
-        self.environment.set(node.target.name, value_type)
+
+        # If there's a type hint, validate it matches the value type
+        if node.type_hint is not None:
+            expected_type = DanaType.from_type_hint(node.type_hint)
+
+            # Allow 'any' type to match anything
+            if expected_type != DanaType("any") and value_type != DanaType("any"):
+                if value_type != expected_type:
+                    raise TypeError(
+                        f"Type hint mismatch: expected {expected_type}, got {value_type} for variable '{node.target.name}'", node
+                    )
+
+            # Use the type hint as the variable's type
+            self.environment.set(node.target.name, expected_type)
+        else:
+            # No type hint, use inferred type
+            self.environment.set(node.target.name, value_type)
 
     def check_conditional(self, node: Conditional) -> None:
         """Check a conditional for type errors."""
@@ -228,7 +265,27 @@ class TypeChecker:
 
         # Add parameters to the environment
         for param in node.parameters:
-            if isinstance(param, Identifier):
+            if isinstance(param, Parameter):
+                # Handle Parameter objects with optional type hints
+                param_name = param.name
+                if "." not in param_name:
+                    param_name = f"local.{param_name}"
+
+                # Use type hint if available, otherwise default to 'any'
+                if param.type_hint is not None:
+                    param_type = DanaType.from_type_hint(param.type_hint)
+                else:
+                    param_type = DanaType("any")
+
+                self.environment.set(param_name, param_type)
+
+                # Also add unscoped version for convenience
+                if "." in param_name:
+                    _, name = param_name.split(".", 1)
+                    self.environment.set(name, param_type)
+
+            elif isinstance(param, Identifier):
+                # Handle legacy Identifier parameters (for backward compatibility)
                 # Handle scoped parameters (e.g. local:a)
                 if ":" in param.name:
                     scope, name = param.name.split(":", 1)
@@ -325,10 +382,6 @@ class TypeChecker:
             else:
                 return left_type
 
-        # Regular type checking for non-'any' types
-        if left_type != right_type:
-            raise TypeError(f"Binary expression operands must be of the same type, got {left_type} and {right_type}", node)
-
         # Boolean result for comparison operators
         if node.operator in [
             BinaryOperator.EQUALS,
@@ -346,6 +399,33 @@ class TypeChecker:
             if left_type != DanaType("bool"):
                 raise TypeError(f"Logical operators require boolean operands, got {left_type}", node)
             return DanaType("bool")
+
+        # Arithmetic operations: allow int/float compatibility
+        if node.operator in [
+            BinaryOperator.ADD,
+            BinaryOperator.SUBTRACT,
+            BinaryOperator.MULTIPLY,
+            BinaryOperator.DIVIDE,
+            BinaryOperator.MODULO,
+            BinaryOperator.POWER,
+        ]:
+            # Allow int and float to be mixed in arithmetic operations
+            numeric_types = [DanaType("int"), DanaType("float")]
+            if left_type in numeric_types and right_type in numeric_types:
+                # Return float if either operand is float, otherwise int
+                if left_type == DanaType("float") or right_type == DanaType("float"):
+                    return DanaType("float")
+                else:
+                    return DanaType("int")
+            # For non-numeric types, require exact match
+            elif left_type != right_type:
+                raise TypeError(f"Binary expression operands must be of the same type, got {left_type} and {right_type}", node)
+            else:
+                return left_type
+
+        # For other operations, require exact type match
+        if left_type != right_type:
+            raise TypeError(f"Binary expression operands must be of the same type, got {left_type} and {right_type}", node)
 
         # For arithmetic, return the operand type
         return left_type
@@ -370,12 +450,18 @@ class TypeChecker:
         """Check a subscript expression for type errors."""
         object_type = self.check_expression(node.object)
         index_type = self.check_expression(node.index)
-        if object_type != DanaType("array") and object_type != DanaType("list") and object_type != DanaType("dict"):
+
+        # Basic validation that the object supports subscripting
+        if object_type not in [DanaType("array"), DanaType("list"), DanaType("dict"), DanaType("any")]:
             raise TypeError(f"Subscript requires array, list, or dict, got {object_type}", node)
-        if (object_type == DanaType("array") or object_type == DanaType("list")) and index_type != DanaType("int"):
+
+        # Basic validation of index type for specific containers
+        if object_type in [DanaType("array"), DanaType("list")] and index_type not in [DanaType("int"), DanaType("any")]:
             raise TypeError(f"Array/list subscript requires int, got {index_type}", node)
-        if object_type == DanaType("dict") and index_type != DanaType("string"):
+        if object_type == DanaType("dict") and index_type not in [DanaType("string"), DanaType("any")]:
             raise TypeError(f"Dict subscript requires string, got {index_type}", node)
+
+        # Always return 'any' type for subscript results to be flexible with type hints
         return DanaType("any")
 
     def check_dict_literal(self, node: DictLiteral) -> DanaType:
