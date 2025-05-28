@@ -340,7 +340,8 @@ class LLMResource(BaseResource):
             request,
             "system_messages",
             [
-                "You are an assistant. Use tools when necessary to complete tasks. "
+                "You are an expert in maritime navigation. Try your best to answer as an expert. "
+                "Use tools when necessary to complete tasks. "
                 "After receiving tool results, you can request additional tools if needed."
             ],
         )
