@@ -298,3 +298,183 @@ def test_python_function_context_detection():
 
     assert not py_func3.wants_context
     assert py_func3.context_param_name is None
+
+
+def test_enhanced_function_registry_operations():
+    """Test enhanced function registry operations.
+
+    Migrated from tests/dana/sandbox/test_fixed_functions.py::test_function_registry_basic()
+    Enhanced with additional registry functionality testing.
+    """
+    registry = FunctionRegistry()
+
+    # Register a function
+    def foo(context, x):
+        return x + 1
+
+    registry.register("foo", foo)
+
+    # Check if exists
+    assert registry.has("foo")
+    assert not registry.has("bar")
+
+    # Resolve the function
+    func, func_type, metadata = registry.resolve("foo")
+    assert callable(func)
+    assert func_type == "python"
+    assert isinstance(metadata, FunctionMetadata)
+
+    # Call the function
+    context = SandboxContext()
+    result = registry.call("foo", context, args=[41])
+    assert result == 42
+
+    # Test multiple function registration
+    def bar(context, x, y):
+        return x * y
+
+    registry.register("bar", bar)
+    assert registry.has("bar")
+
+    result = registry.call("bar", context, args=[6, 7])
+    assert result == 42
+
+    # Test function overwrite
+    def new_foo(context, x):
+        return x + 10
+
+    registry.register("foo", new_foo, overwrite=True)
+    result = registry.call("foo", context, args=[32])
+    assert result == 42
+
+
+def test_enhanced_function_call_evaluation():
+    """Test enhanced function call evaluation through executor.
+
+    Migrated from tests/dana/sandbox/test_fixed_functions.py::test_evaluate_function_call()
+    Enhanced with additional function call scenarios.
+    """
+    from opendxa.dana.sandbox.interpreter.executor.dana_executor import DanaExecutor
+    from opendxa.dana.sandbox.parser.ast import FunctionCall, LiteralExpression
+
+    context = SandboxContext()
+
+    # Register multiple test functions
+    def add(a, b):
+        return a + b
+
+    def multiply(a, b, c=1):
+        return a * b * c
+
+    registry = FunctionRegistry()
+    registry.register("add", add)
+    registry.register("multiply", multiply)
+
+    # Create executor with function registry
+    executor = DanaExecutor(function_registry=registry)
+
+    # Test basic function call
+    func_call = FunctionCall(name="add", args={"0": LiteralExpression(17), "1": LiteralExpression(25)})
+    result = executor.execute(func_call, context)
+    assert result == 42
+
+    # Test function call with default parameters
+    func_call = FunctionCall(name="multiply", args={"0": LiteralExpression(6), "1": LiteralExpression(7)})
+    result = executor.execute(func_call, context)
+    assert result == 42
+
+    # Test function call with all parameters
+    func_call = FunctionCall(name="multiply", args={"0": LiteralExpression(2), "1": LiteralExpression(3), "2": LiteralExpression(7)})
+    result = executor.execute(func_call, context)
+    assert result == 42
+
+
+def test_expression_evaluation_comprehensive():
+    """Test comprehensive expression evaluation.
+
+    Migrated from tests/dana/sandbox/test_fixed_functions.py::test_evaluate_expressions()
+    Enhanced with additional expression types and edge cases.
+    """
+    from opendxa.dana.sandbox.interpreter.executor.dana_executor import DanaExecutor
+    from opendxa.dana.sandbox.parser.ast import BinaryExpression, BinaryOperator, Identifier, LiteralExpression
+
+    context = SandboxContext()
+    executor = DanaExecutor()
+
+    # Test literals
+    assert executor.execute(LiteralExpression(42), context) == 42
+    assert executor.execute(LiteralExpression("hello"), context) == "hello"
+    assert executor.execute(LiteralExpression(3.14), context) == 3.14
+    assert executor.execute(LiteralExpression(True), context) == True
+
+    # Test binary expressions
+    expr = BinaryExpression(
+        left=LiteralExpression(17),
+        operator=BinaryOperator.ADD,
+        right=LiteralExpression(25),
+    )
+    assert executor.execute(expr, context) == 42
+
+    expr = BinaryExpression(
+        left=LiteralExpression(6),
+        operator=BinaryOperator.MULTIPLY,
+        right=LiteralExpression(7),
+    )
+    assert executor.execute(expr, context) == 42
+
+    # Test identifiers with context
+    context.set("answer", 42)
+    context.set("name", "Dana")
+    context.set("pi", 3.14159)
+
+    assert executor.execute(Identifier("answer"), context) == 42
+    assert executor.execute(Identifier("name"), context) == "Dana"
+    assert executor.execute(Identifier("pi"), context) == 3.14159
+
+    # Test nested binary expressions
+    nested_expr = BinaryExpression(
+        left=BinaryExpression(left=LiteralExpression(10), operator=BinaryOperator.ADD, right=LiteralExpression(5)),
+        operator=BinaryOperator.MULTIPLY,
+        right=LiteralExpression(2),
+    )
+    assert executor.execute(nested_expr, context) == 30
+
+
+def test_assignment_and_execution_comprehensive():
+    """Test comprehensive assignment and execution scenarios.
+
+    Migrated from tests/dana/sandbox/test_fixed_functions.py::test_assignment_and_print()
+    Enhanced with additional assignment patterns and execution scenarios.
+    """
+    from opendxa.dana.sandbox.parser.ast import Assignment, Identifier, LiteralExpression
+
+    context = SandboxContext()
+    interpreter = DanaInterpreter()
+
+    # Test basic assignment
+    stmt = Assignment(target=Identifier("private.x"), value=LiteralExpression(99))
+    result = interpreter.execute_statement(stmt, context)
+    assert result == 99
+    assert context.get("private.x") == 99
+
+    # Test assignment with expressions
+    from opendxa.dana.sandbox.parser.ast import BinaryExpression, BinaryOperator
+
+    expr_stmt = Assignment(
+        target=Identifier("private.y"),
+        value=BinaryExpression(left=LiteralExpression(20), operator=BinaryOperator.ADD, right=LiteralExpression(22)),
+    )
+    result = interpreter.execute_statement(expr_stmt, context)
+    assert result == 42
+    assert context.get("private.y") == 42
+
+    # Test assignment to different scopes
+    stmt = Assignment(target=Identifier("public.z"), value=LiteralExpression(123))
+    result = interpreter.execute_statement(stmt, context)
+    assert result == 123
+    assert context.get("public.z") == 123
+
+    stmt = Assignment(target=Identifier("local.w"), value=LiteralExpression(456))
+    result = interpreter.execute_statement(stmt, context)
+    assert result == 456
+    assert context.get("local.w") == 456

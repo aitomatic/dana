@@ -443,3 +443,137 @@ any_long_words = any([False, True, False])"""
         assert context.get("sorted_words") == ["dana", "hello", "python", "test", "world"]
         assert context.get("all_non_empty")
         assert context.get("any_long_words")
+
+
+@pytest.mark.deep
+class TestFStringFunctionArguments:
+    """Test f-string evaluation in function arguments.
+
+    Migrated from tests/dana/functions/test_fstring_function_args.py
+    These tests ensure f-strings are properly evaluated before being passed to functions.
+    """
+
+    def test_fstring_evaluation_in_print(self, capsys):
+        """Test that f-strings are properly evaluated when passed to print()."""
+        # Create a context and set a variable
+        context = SandboxContext()
+        context.set("local.message", "Hello world")
+
+        # Create an interpreter
+        interpreter = DanaInterpreter()
+
+        # Execute print with f-string
+        interpreter._eval('print(f"{local.message}")', context=context)
+
+        # Get and check output
+        captured = capsys.readouterr()
+        assert "Hello world" in captured.out
+
+    def test_fstring_evaluation_in_reason(self):
+        """Test that f-strings are properly evaluated when passed to reason()."""
+        # Create a context and set a variable
+        context = SandboxContext()
+        context.set("local.query", "What is the capital of France?")
+
+        # Create an interpreter
+        interpreter = DanaInterpreter()
+
+        # Use the real reason function with built-in mocking (use_mock=True)
+        # We'll set an environment variable to force mocking
+        import os
+
+        original_mock_env = os.environ.get("OPENDXA_MOCK_LLM")
+        os.environ["OPENDXA_MOCK_LLM"] = "true"
+
+        try:
+            # Execute reason with f-string - this should work without any patching
+            result = interpreter._eval('reason(f"{local.query}")', context=context)
+
+            # The key test: if f-string evaluation works, the function should execute successfully
+            # If f-strings weren't evaluated, we'd get an error about FStringExpression not being a string
+            assert result is not None, "Function should return a result"
+
+            # The result could be a string or dict depending on the mock implementation
+            # What matters is that it executed successfully, proving f-string was evaluated
+            assert isinstance(result, (str, dict)), f"Result should be a string or dict, got {type(result)}"
+
+        finally:
+            # Restore original environment
+            if original_mock_env is None:
+                os.environ.pop("OPENDXA_MOCK_LLM", None)
+            else:
+                os.environ["OPENDXA_MOCK_LLM"] = original_mock_env
+
+    def test_consistency_between_print_and_reason(self, capsys):
+        """Test that print() and reason() behave consistently with f-string arguments."""
+        # Create a context and set a variable
+        context = SandboxContext()
+        context.set("local.value", 42)
+
+        # Create an interpreter
+        interpreter = DanaInterpreter()
+
+        # Use environment variable to enable mocking for reason function
+        import os
+
+        original_mock_env = os.environ.get("OPENDXA_MOCK_LLM")
+        os.environ["OPENDXA_MOCK_LLM"] = "true"
+
+        try:
+            # Execute both functions with the same f-string
+            interpreter._eval('print(f"The answer is {local.value}")', context=context)
+            reason_result = interpreter._eval('reason(f"The answer is {local.value}")', context=context)
+
+            # Get print output
+            captured = capsys.readouterr()
+            print_output = captured.out.strip()
+
+            # Both functions should handle f-strings consistently
+            # Print should output the evaluated string
+            assert "The answer is 42" in print_output
+
+            # Reason should execute successfully (proving f-string was evaluated)
+            assert reason_result is not None, "Reason should return a result"
+            assert isinstance(reason_result, (str, dict)), "Reason should return a string or dict result"
+
+            # The key test: both functions should work with the same f-string syntax
+            # If f-string evaluation is inconsistent, one would fail
+
+        finally:
+            # Restore original environment
+            if original_mock_env is None:
+                os.environ.pop("OPENDXA_MOCK_LLM", None)
+            else:
+                os.environ["OPENDXA_MOCK_LLM"] = original_mock_env
+
+    def test_fstring_with_builtin_functions(self):
+        """Test f-strings work correctly with built-in functions."""
+        context = SandboxContext()
+        context.set("local.numbers", [1, 2, 3, 4, 5])
+
+        interpreter = DanaInterpreter()
+
+        # Test f-string with len function
+        result = interpreter._eval('f"Length: {len(local.numbers)}"', context=context)
+        assert result == "Length: 5"
+
+        # Test f-string with sum function
+        result = interpreter._eval('f"Sum: {sum(local.numbers)}"', context=context)
+        assert result == "Sum: 15"
+
+        # Test f-string with max function
+        result = interpreter._eval('f"Max: {max(local.numbers)}"', context=context)
+        assert result == "Max: 5"
+
+    def test_nested_fstring_function_calls(self):
+        """Test nested f-strings with function calls."""
+        context = SandboxContext()
+        context.set("local.data", [10, 20, 30])
+
+        interpreter = DanaInterpreter()
+
+        # Test nested function calls in f-string
+        result = interpreter._eval(
+            'f"Stats: len={len(local.data)}, sum={sum(local.data)}, avg={sum(local.data)/len(local.data)}"', context=context
+        )
+        assert result == "Stats: len=3, sum=60, avg=20.0"

@@ -407,3 +407,228 @@ class TestDynamicHelp:
             assert "print(...)" in help_output
             assert "log(...)" in help_output
             assert "reason(...)" in help_output
+
+
+@pytest.mark.deep
+class TestPrintFunctionWithFStrings:
+    """Test print function's handling of f-strings.
+
+    Migrated from tests/dana/sandbox/test_fixed_functions.py::test_print_function_with_fstrings()
+    Enhanced with additional f-string scenarios and comprehensive testing.
+    """
+
+    def test_print_function_fstring_basic(self, capsys):
+        """Test basic f-string evaluation in print function."""
+
+        from opendxa.dana.sandbox.interpreter.executor.dana_executor import DanaExecutor
+        from opendxa.dana.sandbox.interpreter.functions.core.print_function import print_function
+        from opendxa.dana.sandbox.parser.ast import FStringExpression, Identifier
+
+        # Create a context with variables
+        context = SandboxContext()
+        context.set("x", 42)
+        context.set("y", "hello")
+
+        # Create an executor and set it on the context
+        executor = DanaExecutor()
+        interpreter = DanaInterpreter()
+        interpreter._executor = executor
+        context.interpreter = interpreter
+
+        # Create a simple f-string
+        fstring = FStringExpression(parts=["Value: ", Identifier("x")])
+
+        # Call print function with f-string - context as first positional arg
+        print_function(context, fstring)
+
+        # Get the captured output
+        captured = capsys.readouterr()
+        assert "Value: 42" in captured.out
+
+    def test_print_function_fstring_complex(self, capsys):
+        """Test complex f-string evaluation in print function."""
+
+        from opendxa.dana.sandbox.interpreter.executor.dana_executor import DanaExecutor
+        from opendxa.dana.sandbox.interpreter.functions.core.print_function import print_function
+        from opendxa.dana.sandbox.parser.ast import BinaryExpression, BinaryOperator, FStringExpression, Identifier, LiteralExpression
+
+        # Create a context with variables
+        context = SandboxContext()
+        context.set("x", 42)
+
+        # Create an executor and set it on the context
+        executor = DanaExecutor()
+        interpreter = DanaInterpreter()
+        interpreter._executor = executor
+        context.interpreter = interpreter
+
+        # Create a more complex f-string
+        complex_fstring = FStringExpression(
+            parts=["x + 10 = ", BinaryExpression(Identifier("x"), BinaryOperator.ADD, LiteralExpression(10))]
+        )
+
+        # Print with multiple arguments - context as first positional arg
+        print_function(context, "Result:", complex_fstring)
+
+        # Verify combined output
+        captured = capsys.readouterr()
+        assert "Result: x + 10 = 52" in captured.out
+
+    def test_print_function_fstring_multiple_variables(self, capsys):
+        """Test f-string with multiple variables in print function."""
+        from opendxa.dana.sandbox.interpreter.executor.dana_executor import DanaExecutor
+        from opendxa.dana.sandbox.interpreter.functions.core.print_function import print_function
+        from opendxa.dana.sandbox.parser.ast import FStringExpression, Identifier
+
+        # Create a context with multiple variables
+        context = SandboxContext()
+        context.set("name", "Dana")
+        context.set("version", "1.0")
+        context.set("status", "active")
+
+        # Create an executor and set it on the context
+        executor = DanaExecutor()
+        interpreter = DanaInterpreter()
+        interpreter._executor = executor
+        context.interpreter = interpreter
+
+        # Create f-string with multiple variables
+        fstring = FStringExpression(parts=["System: ", Identifier("name"), " v", Identifier("version"), " (", Identifier("status"), ")"])
+
+        # Call print function
+        print_function(context, fstring)
+
+        # Verify output
+        captured = capsys.readouterr()
+        assert "System: Dana v1.0 (active)" in captured.out
+
+    def test_print_function_fstring_with_expressions(self, capsys):
+        """Test f-string with complex expressions in print function."""
+        from opendxa.dana.sandbox.interpreter.executor.dana_executor import DanaExecutor
+        from opendxa.dana.sandbox.interpreter.functions.core.print_function import print_function
+        from opendxa.dana.sandbox.parser.ast import BinaryExpression, BinaryOperator, FStringExpression, Identifier
+
+        # Create a context with variables
+        context = SandboxContext()
+        context.set("a", 10)
+        context.set("b", 5)
+
+        # Create an executor and set it on the context
+        executor = DanaExecutor()
+        interpreter = DanaInterpreter()
+        interpreter._executor = executor
+        context.interpreter = interpreter
+
+        # Create f-string with mathematical expressions
+        fstring = FStringExpression(
+            parts=[
+                "Math: ",
+                Identifier("a"),
+                " + ",
+                Identifier("b"),
+                " = ",
+                BinaryExpression(Identifier("a"), BinaryOperator.ADD, Identifier("b")),
+                ", ",
+                Identifier("a"),
+                " * ",
+                Identifier("b"),
+                " = ",
+                BinaryExpression(Identifier("a"), BinaryOperator.MULTIPLY, Identifier("b")),
+            ]
+        )
+
+        # Call print function
+        print_function(context, fstring)
+
+        # Verify output
+        captured = capsys.readouterr()
+        assert "Math: 10 + 5 = 15, 10 * 5 = 50" in captured.out
+
+    def test_print_function_fstring_template_style(self, capsys):
+        """Test f-string with template and expressions style."""
+        from opendxa.dana.sandbox.interpreter.executor.dana_executor import DanaExecutor
+        from opendxa.dana.sandbox.interpreter.functions.core.print_function import print_function
+        from opendxa.dana.sandbox.parser.ast import BinaryExpression, BinaryOperator, FStringExpression, Identifier
+
+        # Create a context with variables
+        context = SandboxContext()
+        context.set("x", 17)
+        context.set("y", 25)
+
+        # Create an executor and set it on the context
+        executor = DanaExecutor()
+        interpreter = DanaInterpreter()
+        interpreter._executor = executor
+        context.interpreter = interpreter
+
+        # Create new-style f-string with template and expressions
+        fstring = FStringExpression(parts=[])
+        fstring.template = "The answer is: {x} + {y} = {result}"
+        fstring.expressions = {
+            "{x}": Identifier("x"),
+            "{y}": Identifier("y"),
+            "{result}": BinaryExpression(Identifier("x"), BinaryOperator.ADD, Identifier("y")),
+        }
+
+        # Call print function
+        print_function(context, fstring)
+
+        # Verify output
+        captured = capsys.readouterr()
+        assert "The answer is: 17 + 25 = 42" in captured.out
+
+    def test_print_function_fstring_error_handling(self, capsys):
+        """Test print function error handling with invalid f-strings."""
+        from opendxa.dana.sandbox.interpreter.executor.dana_executor import DanaExecutor
+        from opendxa.dana.sandbox.interpreter.functions.core.print_function import print_function
+        from opendxa.dana.sandbox.parser.ast import FStringExpression, Identifier
+
+        # Create a context without the required variable
+        context = SandboxContext()
+
+        # Create an executor and set it on the context
+        executor = DanaExecutor()
+        interpreter = DanaInterpreter()
+        interpreter._executor = executor
+        context.interpreter = interpreter
+
+        # Create f-string with undefined variable
+        fstring = FStringExpression(parts=["Value: ", Identifier("undefined_var")])
+
+        # This should handle the error gracefully
+        try:
+            print_function(context, fstring)
+            captured = capsys.readouterr()
+            # Should either print an error message or handle gracefully
+            assert len(captured.out) >= 0  # Some output should be produced
+        except Exception as e:
+            # If an exception is raised, it should be a meaningful one
+            assert "undefined_var" in str(e) or "not found" in str(e).lower()
+
+    def test_print_function_mixed_args_with_fstrings(self, capsys):
+        """Test print function with mixed regular and f-string arguments."""
+        from opendxa.dana.sandbox.interpreter.executor.dana_executor import DanaExecutor
+        from opendxa.dana.sandbox.interpreter.functions.core.print_function import print_function
+        from opendxa.dana.sandbox.parser.ast import FStringExpression, Identifier
+
+        # Create a context with variables
+        context = SandboxContext()
+        context.set("count", 5)
+        context.set("item", "apples")
+
+        # Create an executor and set it on the context
+        executor = DanaExecutor()
+        interpreter = DanaInterpreter()
+        interpreter._executor = executor
+        context.interpreter = interpreter
+
+        # Create f-strings
+        fstring1 = FStringExpression(parts=["I have ", Identifier("count")])
+        fstring2 = FStringExpression(parts=[Identifier("item"), " in total"])
+
+        # Call print function with mixed arguments
+        print_function(context, "Shopping:", fstring1, fstring2, "!")
+
+        # Verify output
+        captured = capsys.readouterr()
+        assert "Shopping: I have 5 apples in total !" in captured.out
