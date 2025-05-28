@@ -22,7 +22,7 @@ Discord: https://discord.gg/6jGD4PYk
 
 import re
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.dana.common.error_utils import ErrorUtils
@@ -236,3 +236,31 @@ class DanaInterpreter(Loggable):
 
         # Return it through the executor to ensure AST nodes are evaluated
         return self._executor.execute(value, context)
+
+    def call_function(
+        self,
+        function_name: str,
+        args: Optional[List[Any]] = None,
+        kwargs: Optional[Dict[str, Any]] = None,
+        context: Optional[SandboxContext] = None,
+    ) -> Any:
+        """Call a function by name with the given arguments.
+
+        Args:
+            function_name: The name of the function to call
+            args: Positional arguments to pass to the function
+            kwargs: Keyword arguments to pass to the function
+            context: The context to use for the function call (optional)
+
+        Returns:
+            The result of calling the function
+        """
+        if args is None:
+            args = []
+        if kwargs is None:
+            kwargs = {}
+        if context is None:
+            context = SandboxContext()
+
+        # Use the function registry to call the function
+        return self.function_registry.call(function_name, context, args=args, kwargs=kwargs)

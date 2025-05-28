@@ -12,7 +12,7 @@ from unittest.mock import MagicMock, patch
 
 from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
 from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
-from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
+from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionMetadata, FunctionRegistry
 from opendxa.dana.sandbox.interpreter.functions.python_function import PythonFunction
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 

@@ -419,8 +419,8 @@ class FunctionRegistry:
 
             # Special case for the reason function in test_unified_execution.py
             if func_name == "reason" and len(positional_args) >= 1:
-                # The mock_reason expects (prompt, *args, context=None, **kwargs)
-                # We need to make sure the prompt parameter is the literal string, not a context object
+                # The reason_function expects (prompt, context, options=None, use_mock=None)
+                # We need to package any keyword arguments into the options dictionary
                 prompt = positional_args[0]
                 if isinstance(prompt, SandboxContext):
                     # If the first parameter is a context object, this is probably wrong
@@ -432,8 +432,28 @@ class FunctionRegistry:
                     else:
                         # We don't have enough arguments, so just use an empty string
                         prompt = ""
-                # Now call with the prompt as first arg and context as keyword arg
-                return wrapped_func(prompt, *positional_args[1:], context=context, **func_kwargs)
+
+                # Package keyword arguments into options dictionary
+                options = {}
+                use_mock = None
+
+                # Extract special parameters
+                if "use_mock" in func_kwargs:
+                    use_mock = func_kwargs.pop("use_mock")
+
+                # All remaining kwargs go into options
+                if func_kwargs:
+                    options.update(func_kwargs)
+
+                # Call with proper signature: reason_function(prompt, context, options, use_mock)
+                if options and use_mock is not None:
+                    return wrapped_func(prompt, context, options, use_mock)
+                elif options:
+                    return wrapped_func(prompt, context, options)
+                elif use_mock is not None:
+                    return wrapped_func(prompt, context, None, use_mock)
+                else:
+                    return wrapped_func(prompt, context)
             # Special case for the process function
             elif func_name == "process" and len(positional_args) == 1:
                 # Pass the single argument followed by context

@@ -200,7 +200,7 @@ def test_statement_assignment():
     st = StatementTransformer()
     target = Identifier(name="local.x")
     value = LiteralExpression(value=1)
-    stmt = st.assignment([target, value])
+    stmt = st.simple_assignment([target, value])
     assert stmt.target.name == "local.x"
     assert isinstance(stmt.value, LiteralExpression)
     assert stmt.value.value == 1
