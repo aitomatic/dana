@@ -437,6 +437,13 @@ class FunctionRegistry:
                 options = {}
                 use_mock = None
 
+                # Check if the second positional argument is a dictionary (options)
+                if len(positional_args) >= 2 and isinstance(positional_args[1], dict):
+                    # The second argument is a dictionary, treat it as options
+                    options.update(positional_args[1])
+                    # Remove the options dict from positional args
+                    positional_args = [positional_args[0]] + positional_args[2:]
+
                 # Extract special parameters
                 if "use_mock" in func_kwargs:
                     use_mock = func_kwargs.pop("use_mock")
