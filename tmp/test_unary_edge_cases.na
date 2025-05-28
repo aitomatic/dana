@@ -1,0 +1,7 @@
+# Edge cases for unary operators
+a = -(-5)  # Double negative with parentheses
+b = +(+10) # Double positive with parentheses
+c = -+5    # Unary minus of unary plus
+d = +-(-3) # Complex unary combination
+e = -(2 * 3) # Unary minus of expression
+f = +(7 - 2) # Unary plus of expression 

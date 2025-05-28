@@ -1,0 +1,88 @@
+#### Real-World Customer Support Pipeline
+def parse_customer_message(message):
+    # Extract key information from customer message
+    return {
+        "original_message": message,
+        "timestamp": "2024-01-15 14:30:00",
+        "customer_id": "CUST_12345"
+    }
+
+def classify_issue(parsed_data):
+    # AI classification of the customer issue
+    prompt = f"""
+    Classify this customer message into categories:
+    - Issue Type: (technical, billing, general_inquiry, complaint, compliment)
+    - Urgency: (low, medium, high, critical)
+    - Department: (support, billing, technical, sales)
+    
+    Message: {parsed_data["original_message"]}
+    
+    Respond in JSON format.
+    """
+    classification = reason(prompt, {
+        "temperature": 0.2,
+        "format": "json"
+    })
+    
+    # Merge classification with original data
+    parsed_data["classification"] = classification
+    return parsed_data
+
+def generate_response(classified_data):
+    # Generate appropriate response based on classification
+    issue_type = classified_data["classification"]["issue_type"]
+    urgency = classified_data["classification"]["urgency"]
+    
+    prompt = f"""
+    Generate a professional customer service response for:
+    
+    Issue Type: {issue_type}
+    Urgency: {urgency}
+    Original Message: {classified_data["original_message"]}
+    
+    The response should be:
+    - Professional and empathetic
+    - Specific to the issue type
+    - Include next steps
+    - Appropriate for the urgency level
+    """
+    
+    response = reason(prompt, {
+        "temperature": 0.4,
+        "max_tokens": 250
+    })
+    
+    classified_data["suggested_response"] = response
+    return classified_data
+
+def create_ticket(response_data):
+    # Create a support ticket with all information
+    ticket = {
+        "ticket_id": f"TKT_{response_data['customer_id']}_{response_data['timestamp'].replace(' ', '_')}",
+        "customer_id": response_data["customer_id"],
+        "issue_classification": response_data["classification"],
+        "original_message": response_data["original_message"],
+        "suggested_response": response_data["suggested_response"],
+        "status": "pending_review",
+        "created_at": response_data["timestamp"]
+    }
+    return ticket
+
+# Create the complete customer support pipeline
+customer_support_pipeline = parse_customer_message | classify_issue | generate_response | create_ticket
+
+# Example customer messages
+messages = [
+    "My internet has been down for 3 hours and I work from home!",
+    "I was charged twice for my monthly subscription",
+    "Thank you for the excellent service, very happy with the product",
+    "How do I reset my password?"
+]
+
+# Process each message through the pipeline
+for message in messages:
+    ticket = message | customer_support_pipeline
+    print(f"=== Ticket {ticket['ticket_id']} ===")
+    print(f"Classification: {ticket['issue_classification']}")
+    print(f"Suggested Response: {ticket['suggested_response']}")
+    print("---")

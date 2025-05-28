@@ -14,6 +14,7 @@ from opendxa.dana.sandbox.interpreter.functions.core.print_function import print
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
+@pytest.mark.deep
 class TestPrintVsLogFunctions:
     """Test suite comparing print and log function behaviors."""
 
@@ -171,6 +172,7 @@ class TestPrintVsLogFunctions:
         assert True
 
 
+@pytest.mark.deep
 class TestLogFunctionFix:
     """Test cases for the fixed log function."""
 
@@ -190,6 +192,7 @@ class TestLogFunctionFix:
             mock_dxa_log.assert_called_once_with(level, message)
 
 
+@pytest.mark.deep
 class TestLogLevelFunction:
     """Test suite for the log_level function."""
 

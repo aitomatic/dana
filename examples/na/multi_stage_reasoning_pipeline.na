@@ -1,0 +1,62 @@
+#### Multi-Stage AI Reasoning Pipeline
+def prepare_research_query(topic):
+    # Prepare a structured research query
+    return f"Research topic: {topic}. Provide comprehensive background information."
+
+def conduct_research(query):
+    # First AI call: Gather information
+    return reason(query, {
+        "temperature": 0.3,
+        "max_tokens": 500,
+        "system_message": "You are a research assistant. Provide factual, well-sourced information."
+    })
+
+def analyze_findings(research):
+    # Second AI call: Analyze the research
+    prompt = f"""
+    Analyze this research and identify:
+    1. Key themes and patterns
+    2. Potential gaps or limitations
+    3. Most important insights
+    
+    Research: {research}
+    """
+    return reason(prompt, {
+        "temperature": 0.5,
+        "max_tokens": 400
+    })
+
+def generate_recommendations(analysis):
+    # Third AI call: Generate actionable recommendations
+    prompt = f"""
+    Based on this analysis, provide specific, actionable recommendations:
+    
+    Analysis: {analysis}
+    
+    Focus on practical steps that can be implemented.
+    """
+    return reason(prompt, {
+        "temperature": 0.6,
+        "max_tokens": 300
+    })
+
+# Create a multi-stage AI reasoning pipeline
+research_pipeline = prepare_research_query | conduct_research | analyze_findings | generate_recommendations
+
+# Example: Research a complex topic
+topic = "sustainable energy adoption in urban environments"
+comprehensive_report = topic | research_pipeline
+
+print(f"=== Comprehensive Research Report: {topic} ===")
+print(comprehensive_report)
+
+# You can also use partial pipelines for different purposes
+quick_research = prepare_research_query | conduct_research
+detailed_analysis = analyze_findings | generate_recommendations
+
+# Quick research only
+basic_info = "renewable energy trends" | quick_research
+
+# Detailed analysis of existing research
+existing_research = "Solar panel efficiency has improved 20% in the last 5 years..."
+recommendations = existing_research | detailed_analysis

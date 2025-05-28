@@ -5,7 +5,6 @@ This test verifies that the reason function can be called correctly in a Dana pr
 """
 
 import os
-from unittest.mock import patch
 
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.dana.sandbox.interpreter.functions.core.reason_function import reason_function
@@ -90,22 +89,42 @@ class TestUnifiedExecution(unittest.TestCase):
         self.reason_result = "mocked reason result"
         self.reason_calls = []
 
-        # Create a patcher for the original reason_function
-        self.reason_patcher = patch("opendxa.dana.sandbox.interpreter.functions.core.reason_function.reason_function")
-        self.mock_reason = self.reason_patcher.start()
-        self.mock_reason.return_value = self.reason_result
+        # Create a mock function that records calls
+        def mock_reason_function(*args, **kwargs):
+            # Extract arguments based on what we receive
+            prompt = args[0] if len(args) > 0 else kwargs.get("prompt", "")
+            context = args[1] if len(args) > 1 else kwargs.get("context", self.context)
+            options = args[2] if len(args) > 2 else kwargs.get("options", {})
 
-        # Record calls to our mock
-        def side_effect(prompt, context, options=None, use_mock=None):
+            # If context is a dict and we don't have explicit options, it might be the options
+            if isinstance(context, dict) and not options and context != self.context:
+                options = context
+                context = self.context
+
+            # Merge any remaining kwargs into options
+            if kwargs:
+                remaining_kwargs = {k: v for k, v in kwargs.items() if k not in ["prompt", "context", "options"]}
+                if remaining_kwargs:
+                    if isinstance(options, dict):
+                        options.update(remaining_kwargs)
+                    else:
+                        options = remaining_kwargs
+
             self.reason_calls.append({"prompt": prompt, "context": context, "options": options or {}})
             return self.reason_result
 
-        self.mock_reason.side_effect = side_effect
+        # Register the mock function in the registry (this is the correct approach for our unified system)
+        self.interpreter.function_registry.register(
+            name="reason",
+            func=mock_reason_function,
+            func_type="python",
+            overwrite=True,  # Override the real reason function
+        )
 
     def tearDown(self):
         """Clean up after tests."""
-        # Stop the patcher
-        self.reason_patcher.stop()
+        # No cleanup needed since we're using registry registration instead of patching
+        pass
 
     def test_function_call_as_statement(self):
         """Test function calls as statements."""

@@ -1,0 +1,10 @@
+# Dana's Power: Seamless Context Integration
+temperature = 75
+weather = "sunny"
+user_location = "San Francisco"
+
+def suggest_activity(mood):
+    return reason(f"User feels {mood}. Temperature: {temperature}°F, {weather} in {user_location}. Suggest an activity.")
+
+print(suggest_activity("energetic"))
+print(suggest_activity("relaxed")) 

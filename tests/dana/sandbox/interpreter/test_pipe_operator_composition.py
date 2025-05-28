@@ -79,7 +79,7 @@ def test_composed_function_call():
     interpreter.function_registry.register("f", composed_func)
 
     # Create a function call: result = f(7)
-    func_call = FunctionCall(name="f", args={"args": [LiteralExpression(7)]})
+    func_call = FunctionCall(name="f", args={"0": LiteralExpression(7)})
 
     program2 = Program([Assignment(target=Identifier("local.result"), value=func_call)])
 

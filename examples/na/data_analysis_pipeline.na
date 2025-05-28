@@ -1,0 +1,76 @@
+#### AI-Powered Data Analysis Pipeline
+# Define data processing functions
+def extract_metrics(data):
+    # Extract key metrics from raw data
+    total_sales = sum(data["sales"])
+    avg_rating = sum(data["ratings"]) / len(data["ratings"])
+    return {
+        "total_sales": total_sales,
+        "avg_rating": avg_rating,
+        "product_count": len(data["products"]),
+        "time_period": data["period"]
+    }
+
+def format_business_summary(metrics):
+    # Format metrics into a business-friendly summary
+    return f"""
+    Business Performance Summary ({metrics["time_period"]}):
+    - Total Sales: ${metrics["total_sales"]:,.2f}
+    - Average Rating: {metrics["avg_rating"]:.1f}/5.0
+    - Products Analyzed: {metrics["product_count"]} items
+    - Performance Trend: {metrics["total_sales"] / metrics["product_count"]:.0f} avg per product
+    """
+
+def analyze_with_ai(summary):
+    # Use AI reasoning to provide insights and recommendations
+    prompt = f"""
+    Analyze this business performance data and provide:
+    1. Key insights about the performance
+    2. Specific recommendations for improvement
+    3. Potential risks or opportunities
+    
+    Data: {summary}
+    """
+    return reason(prompt, {
+        "temperature": 0.7,
+        "max_tokens": 300
+    })
+
+def create_action_plan(ai_analysis):
+    # Convert AI insights into actionable recommendations
+    prompt = f"""
+    Based on this analysis, create a prioritized action plan with:
+    1. Top 3 immediate actions (next 30 days)
+    2. Medium-term goals (next quarter)
+    3. Success metrics to track
+    
+    Analysis: {ai_analysis}
+    
+    Format as a structured action plan.
+    """
+    return reason(prompt, {
+        "temperature": 0.5,
+        "format": "structured"
+    })
+
+# Create the complete AI-powered analysis pipeline
+business_intelligence_pipeline = extract_metrics | format_business_summary | analyze_with_ai | create_action_plan
+
+# Example usage with sample data
+sample_data = {
+    "sales": [1200, 1500, 980, 2100, 1800],
+    "ratings": [4.2, 4.5, 3.8, 4.7, 4.1],
+    "products": ["Widget A", "Widget B", "Widget C", "Widget D", "Widget E"],
+    "period": "Q1 2024"
+}
+
+# Process data through the entire pipeline
+final_report = sample_data | business_intelligence_pipeline
+print("=== AI-Generated Business Intelligence Report ===")
+print(final_report)
+
+# Alternative: Use individual pipeline components
+metrics = sample_data | extract_metrics
+summary = metrics | format_business_summary
+insights = summary | analyze_with_ai
+action_plan = insights | create_action_plan

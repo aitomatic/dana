@@ -294,6 +294,44 @@ def call_function(self, name: str, args: list = None, kwargs: dict = None, conte
 
 ---
 
+## 7.5. Pythonic Built-in Functions
+
+Dana provides a comprehensive set of Pythonic built-in functions that are automatically available in all Dana code. These functions provide familiar Python-like functionality while maintaining Dana's security and type safety principles.
+
+### Key Features
+- **15+ Built-in Functions**: Including `len()`, `sum()`, `max()`, `min()`, `abs()`, `round()`, type conversion functions, and collection utilities
+- **Dynamic Function Factory**: Central dispatch approach for efficient management and extensibility
+- **Multi-Layered Security**: Explicit blocking of dangerous functions with detailed security rationales
+- **Type Safety**: Comprehensive type validation with clear error messages
+- **Function Lookup Precedence**: User functions → Core functions → Built-in functions
+
+### Quick Reference
+
+| Category | Functions | Example |
+|----------|-----------|---------|
+| **Numeric** | `len()`, `sum()`, `max()`, `min()`, `abs()`, `round()` | `sum([1, 2, 3])` → `6` |
+| **Type Conversion** | `int()`, `float()`, `bool()` | `int("42")` → `42` |
+| **Collections** | `sorted()`, `reversed()`, `enumerate()`, `list()` | `sorted([3, 1, 2])` → `[1, 2, 3]` |
+| **Logic** | `all()`, `any()` | `all([true, 1, "yes"])` → `true` |
+| **Range** | `range()` | `range(1, 4)` → `[1, 2, 3]` |
+
+### Security Architecture
+- **25+ Blocked Functions**: Dangerous functions like `eval()`, `exec()`, `open()`, `globals()` are explicitly blocked
+- **Threat Mitigation**: Protection against arbitrary code execution, file system access, memory manipulation, and introspection abuse
+- **Sandboxed Execution**: All functions execute within Dana's secure sandbox environment
+- **Security Reporting**: Comprehensive reporting of function restrictions and security measures
+
+### Implementation Status
+- ✅ **Complete**: Dynamic function factory with central dispatch
+- ✅ **Complete**: Comprehensive type validation and error handling
+- ✅ **Complete**: Security blocking of dangerous functions
+- ✅ **Complete**: Integration with function registry and lookup order
+- ✅ **Complete**: Comprehensive test suite with 11+ test scenarios
+
+**📖 For detailed documentation, security analysis, and implementation details, see: [Pythonic Built-in Functions](pythonic-builtins.md)**
+
+---
+
 ## 8. Unified Function Registry & Dispatch
 - All callable functions (Dana and Python) are registered in a single registry, supporting namespacing and global imports.
 - At call time, the registry inspects the function signature and binds arguments from Dana code and context.
@@ -330,6 +368,7 @@ def call_function(self, name: str, args: list = None, kwargs: dict = None, conte
 ---
 
 ## 12. References
+- [Pythonic Built-in Functions](pythonic-builtins.md) - Detailed documentation and security analysis
 - [Dana Function Design Guide](../../dana/functions/design-guide.md)
 - [Dana Function User Guide](../../dana/functions/user-guide.md)
 - [Dana Grammar](../../dana/grammar.md)
@@ -349,7 +388,8 @@ def call_function(self, name: str, args: list = None, kwargs: dict = None, conte
 | 4 | Module Import and Registration | [~] Partial | ⚠️ Grammar and AST support imports, but StatementExecutor shows "Import statements are not yet supported". |
 | 5 | Collision Handling | [x] Complete | ✅ Registry enforces collision detection with `overwrite` parameter and namespace separation. |
 | 6 | Python→Dana API | [x] Complete | ✅ Interpreter exposes `call_function` API via registry for Python to call Dana functions. |
-| 7 | Tests and Documentation | [x] Complete | ✅ Comprehensive test suite covering end-to-end scenarios, unified execution, and function handling. |
+| 7 | Pythonic Built-in Functions | [x] Complete | ✅ Dynamic function factory with 15+ built-ins (len, sum, max, min, etc.) using central dispatch approach. |
+| 8 | Tests and Documentation | [x] Complete | ✅ Comprehensive test suite covering end-to-end scenarios, unified execution, and function handling. |
 
 This table should be updated as each step is started, in progress, or completed.
 
@@ -362,6 +402,7 @@ This table should be updated as each step is started, in progress, or completed.
 | Python→Dana function calls       | [x] Pass   | ✅ Interpreter API tested with function registry integration. |
 | Namespacing                      | [x] Pass   | ✅ Registry supports and tests namespace resolution and collision handling. |
 | Collision handling               | [x] Pass   | ✅ Registry enforces collision detection and namespace separation. |
+| Pythonic built-in functions      | [x] Pass   | ✅ Comprehensive test suite with 11 tests covering factory, functions, validation, and integration. |
 | Module imports                   | [-] Not Implemented | ❌ Import statements parsed but not executed (StatementExecutor raises SandboxError). |
 | Edge cases & extensibility       | [x] Pass   | ✅ Comprehensive test coverage including error handling and chaining. |
 
@@ -370,6 +411,7 @@ Update this table as tests are added and pass for each scenario.
 ### Review Summary
 - **Current state:**
   - The unified function system for Dana is **functionally complete** for core function calling: Dana↔Dana, Dana→Python, and Python→Dana calls all work via a single registry, with namespacing, context, and collision handling.
+  - **Pythonic built-in functions** are fully implemented using a dynamic function factory approach, providing 15+ essential functions (len, sum, max, min, abs, round, int, float, bool, sorted, reversed, enumerate, all, any, range) with comprehensive type validation and proper function lookup precedence.
   - All major function calling scenarios are supported and well-tested.
   - **Missing component**: Module import execution - while the grammar and AST support import statements, the StatementExecutor explicitly raises "Import statements are not yet supported in Dana".
   - Function calling system is production-ready, but module system needs import statement implementation to be fully complete.
@@ -400,7 +442,13 @@ Update this table as tests are added and pass for each scenario.
 #### **Step 6: Python→Dana API**
 - Expose a `call_function` method on the interpreter that uses the unified registry to call Dana functions by name.
 
-#### **Step 7: Tests and Documentation**
+#### **Step 7: Pythonic Built-in Functions**
+- Implement a comprehensive set of Pythonic built-in functions using a dynamic function factory approach.
+- Provide essential functions like `len()`, `sum()`, `max()`, `min()`, `abs()`, `round()`, type conversion functions, and collection utilities.
+- Ensure proper function lookup precedence: user functions → core functions → built-in functions.
+- Include comprehensive type validation and error handling for all built-in functions.
+
+#### **Step 8: Tests and Documentation**
 - Add/expand tests for all scenarios: Dana→Dana, Dana→Python, Python→Dana, namespacing, and collision handling.
 - Update documentation and usage examples.
 

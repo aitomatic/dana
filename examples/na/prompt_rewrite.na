@@ -1,0 +1,9 @@
+# Prompt rewriting pipeline
+def infer_user_intent(message):
+    return reason(f"Infer the user intent from the message: {message} and create a prompt to satisfy the user's intent.")
+
+def assess_response(response):
+    return reason(f"Assess the response: {response} and see if it satisfies the user's intent. If yes, output the response again. If no, try to satisfy the user's intent.")
+
+assist = infer_user_intent | assess_response
+assist("2 more than 2")

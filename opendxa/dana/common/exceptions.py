@@ -86,6 +86,47 @@ class SandboxError(DanaError):
     pass
 
 
+class FunctionRegistryError(SandboxError):
+    """Error related to function registry operations (registration, lookup, execution)."""
+
+    def __init__(
+        self,
+        message: str,
+        function_name: str = "",
+        namespace: str = "",
+        operation: str = "",
+        calling_function: str = "",
+        call_stack: Optional[list] = None,
+        **kwargs,
+    ):
+        """Initialize a function registry error.
+
+        Args:
+            message: Primary error message
+            function_name: Name of the function involved in the error
+            namespace: Namespace where the error occurred
+            operation: Operation that failed (e.g., 'resolve', 'call', 'register')
+            calling_function: Name of the function that was trying to call this function
+            call_stack: List of function names in the call stack
+            **kwargs: Additional arguments passed to parent DanaError
+        """
+        self.function_name = function_name
+        self.namespace = namespace
+        self.operation = operation
+        self.calling_function = calling_function
+        self.call_stack = call_stack or []
+
+        # Enhance the message with context
+        enhanced_message = message
+        if calling_function:
+            enhanced_message = f"{message} (called from '{calling_function}')"
+        if call_stack and len(call_stack) > 1:
+            stack_str = " -> ".join(call_stack)
+            enhanced_message = f"{enhanced_message}\nCall stack: {stack_str}"
+
+        super().__init__(enhanced_message, **kwargs)
+
+
 class LanguageError(DanaError):
     """Base class for errors related to program language (parsing, validation)."""
 

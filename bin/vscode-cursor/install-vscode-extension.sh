@@ -38,7 +38,7 @@ if ! command -v $EDITOR &> /dev/null; then
 fi
 
 # Get the project root directory
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 EXTENSION_DIR="$PROJECT_ROOT/opendxa/dana/integration/vscode"
 
 echo -e "${BLUE}📁 Extension directory: ${EXTENSION_DIR}${NC}"
