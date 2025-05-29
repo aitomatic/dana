@@ -81,31 +81,24 @@ class CodeContextAnalyzer(Loggable):
 
     def analyze_context(self, context: Any, variable_name: Optional[str] = None) -> CodeContext:
         """
-        Analyze the execution context to extract relevant information.
+        Analyze the execution context to extract code context information.
 
         Args:
-            context: The sandbox context or execution environment
-            variable_name: Name of the variable being assigned (if available)
+            context: Execution context (e.g., SandboxContext for Dana)
+            variable_name: Name of the variable being assigned (optional)
 
         Returns:
-            CodeContext object with extracted raw information
+            CodeContext containing extracted information
         """
         code_context = CodeContext()
 
-        try:
-            # Extract AST-based context
-            self._extract_ast_context(context, code_context, variable_name)
+        # Store context for use in frame extraction
+        self._context = context
 
-            # Extract frame-based context
-            self._extract_frame_context(code_context, variable_name)
-
-            # Extract variable context
-            self._extract_variable_context(context, code_context, variable_name)
-
-            self.debug(f"Extracted code context: {code_context.get_context_summary()}")
-
-        except Exception as e:
-            self.warning(f"Error analyzing code context: {e}")
+        # Extract context from different sources
+        self._extract_ast_context(context, code_context, variable_name)
+        self._extract_frame_context(code_context, variable_name)
+        self._extract_variable_context(context, code_context, variable_name)
 
         return code_context
 
@@ -147,6 +140,14 @@ class CodeContextAnalyzer(Loggable):
     def _extract_frame_context(self, code_context: CodeContext, variable_name: Optional[str]) -> None:
         """Extract context from the call stack and source code."""
         try:
+            # First, check if we have REPL input context available
+            if hasattr(self, "_context") and self._context:
+                repl_input_context = self._context.get("system.__repl_input_context")
+                if repl_input_context:
+                    self.debug(f"Found REPL input context: {repl_input_context}")
+                    self._analyze_repl_input_context(repl_input_context, code_context)
+                    return
+
             # Get the calling frame to access source code
             frame = inspect.currentframe()
             # Go up the stack to find the Dana code execution frame
@@ -198,6 +199,38 @@ class CodeContextAnalyzer(Loggable):
         except Exception as e:
             self.debug(f"Error extracting frame context: {e}")
 
+    def _analyze_repl_input_context(self, repl_context: str, code_context: CodeContext) -> None:
+        """Analyze REPL input context for comments and code patterns."""
+        try:
+            lines = repl_context.split("\n")
+
+            for line in lines:
+                line = line.strip()
+                if not line:
+                    continue
+
+                # Look for comments
+                if line.startswith("#"):
+                    comment_text = line.lstrip("#").strip()
+                    if comment_text:  # Only add non-empty comments
+                        code_context.comments.append(comment_text)
+                elif "#" in line:
+                    # Inline comment
+                    comment_part = line.split("#", 1)[1].strip()
+                    if comment_part:  # Only add non-empty comments
+                        code_context.inline_comments.append(comment_part)
+
+                # Store surrounding code for analysis (non-comment lines)
+                if not line.startswith("#"):
+                    code_context.surrounding_code.append(line)
+
+            self.debug(
+                f"Extracted from REPL context: {len(code_context.comments)} comments, {len(code_context.inline_comments)} inline comments"
+            )
+
+        except Exception as e:
+            self.debug(f"Error analyzing REPL input context: {e}")
+
     def _extract_variable_context(self, context: Any, code_context: CodeContext, variable_name: Optional[str]) -> None:
         """Extract context about variables from the execution context."""
         try:
@@ -233,7 +266,7 @@ class CodeContextAnalyzer(Loggable):
 
         # Add type information (high confidence signal)
         if expected_type:
-            context_parts.append(f"Expected return type: {expected_type}")
+            context_parts.append(f"Expected output type: {expected_type}")
 
         if code_context.type_hints:
             type_info = ", ".join([f"{k}: {v}" for k, v in code_context.type_hints.items()])

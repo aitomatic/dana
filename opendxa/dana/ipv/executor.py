@@ -9,10 +9,13 @@ import time
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
+from opendxa.common.mixins.loggable import Loggable
+from opendxa.common.utils.logging import DXA_LOGGER
+
 from .base import IPVConfig, IPVExecutionError
 
 
-class IPVExecutor(ABC):
+class IPVExecutor(ABC, Loggable):
     """
     Base IPV executor that implements the standard IPV control loop.
 
@@ -26,6 +29,7 @@ class IPVExecutor(ABC):
 
     def __init__(self):
         """Initialize the IPV executor."""
+        super().__init__()
         self._debug_mode = False
         self._execution_history: List[Dict[str, Any]] = []
 
@@ -57,7 +61,7 @@ class IPVExecutor(ABC):
         start_time = time.time()
         execution_id = f"ipv_{int(start_time * 1000)}"
 
-        self._log_debug(f"Starting IPV execution {execution_id}")
+        self.debug(f"Starting IPV execution {execution_id}")
 
         # Track execution for debugging and learning
         execution_record = {
@@ -83,7 +87,7 @@ class IPVExecutor(ABC):
 
             self._execution_history.append(execution_record)
 
-            self._log_debug(f"IPV execution {execution_id} completed successfully in {execution_record['total_time']:.3f}s")
+            self.debug(f"IPV execution {execution_id} completed successfully in {execution_record['total_time']:.3f}s")
 
             return final_result
 
@@ -94,7 +98,7 @@ class IPVExecutor(ABC):
 
             self._execution_history.append(execution_record)
 
-            self._log_debug(f"IPV execution {execution_id} failed: {e}")
+            self.debug(f"IPV execution {execution_id} failed: {e}")
 
             raise IPVExecutionError(f"IPV execution failed: {e}", original_error=e)
 
@@ -106,18 +110,18 @@ class IPVExecutor(ABC):
         for iteration in range(max_iterations):
             execution_record["iterations"] = iteration + 1
 
-            self._log_debug(f"Starting iteration {iteration + 1}/{max_iterations}")
+            self.debug(f"Starting iteration {iteration + 1}/{max_iterations}")
 
             try:
                 # Execute single iteration
                 result = self._execute_single_iteration(intent, context, config, iteration, execution_record, **kwargs)
 
-                self._log_debug(f"Iteration {iteration + 1} succeeded")
+                self.debug(f"Iteration {iteration + 1} succeeded")
                 return result
 
             except Exception as e:
                 last_error = e
-                self._log_debug(f"Iteration {iteration + 1} failed: {e}")
+                self.debug(f"Iteration {iteration + 1} failed: {e}")
 
                 # For now, don't retry - just fail
                 # In a full implementation, we would analyze the error
@@ -138,7 +142,7 @@ class IPVExecutor(ABC):
 
         try:
             # Phase 1: INFER
-            self._log_debug("Executing INFER phase")
+            self.debug("Executing INFER phase")
             start_time = time.time()
             infer_result = self.infer_phase(intent, context, **kwargs)
             infer_time = time.time() - start_time
@@ -150,7 +154,7 @@ class IPVExecutor(ABC):
             }
 
             # Phase 2: PROCESS
-            self._log_debug("Executing PROCESS phase")
+            self.debug("Executing PROCESS phase")
             start_time = time.time()
             process_result = self.process_phase(intent, infer_result, **kwargs)
             process_time = time.time() - start_time
@@ -162,7 +166,7 @@ class IPVExecutor(ABC):
             }
 
             # Phase 3: VALIDATE
-            self._log_debug("Executing VALIDATE phase")
+            self.debug("Executing VALIDATE phase")
             start_time = time.time()
             validate_result = self.validate_phase(process_result, infer_result, **kwargs)
             validate_time = time.time() - start_time
@@ -234,11 +238,6 @@ class IPVExecutor(ABC):
         """Enable or disable debug mode."""
         self._debug_mode = enabled
 
-    def _log_debug(self, message: str, **kwargs) -> None:
-        """Log debug information if debug mode is enabled."""
-        if self._debug_mode:
-            print(f"[{self.__class__.__name__.upper()}] {message}", **kwargs)
-
     def get_execution_history(self) -> List[Dict[str, Any]]:
         """Get the execution history for debugging and analysis."""
         return self._execution_history.copy()
@@ -289,7 +288,7 @@ class IPVReason(IPVExecutor):
         - Prompt optimization strategy based on type hints
         - Code context from comments and surrounding code
         """
-        self._log_debug(f"Starting INFER phase for prompt: {intent}")
+        self.debug(f"Starting INFER phase for prompt: {intent}")
 
         # Get expected type from context if available
         expected_type = None
@@ -297,7 +296,7 @@ class IPVReason(IPVExecutor):
             if context and hasattr(context, "get_assignment_target_type"):
                 expected_type = context.get_assignment_target_type()
         except Exception as e:
-            self._log_debug(f"Could not extract assignment target type: {e}")
+            self.debug(f"Could not extract assignment target type: {e}")
 
         # Extract code context from comments and surrounding code
         variable_name = kwargs.get("variable_name")
@@ -312,21 +311,21 @@ class IPVReason(IPVExecutor):
             code_context = context_analyzer.analyze_context(context, variable_name)
 
             if code_context and code_context.has_context():
-                self._log_debug(f"Code context extracted: {code_context.get_context_summary()}")
+                self.debug(f"Code context extracted: {code_context.get_context_summary()}")
             else:
-                self._log_debug("No additional code context found")
+                self.debug("No additional code context found")
 
         except ImportError:
-            self._log_debug("CodeContextAnalyzer not available")
+            self.debug("CodeContextAnalyzer not available")
         except Exception as e:
-            self._log_debug(f"Error extracting code context: {e}")
+            self.debug(f"Error extracting code context: {e}")
 
         # Get optimization hints from reliable type information
         try:
             if context_analyzer and code_context:
                 optimization_hints = context_analyzer.get_optimization_hints_from_types(expected_type, code_context)
         except Exception as e:
-            self._log_debug(f"Error getting optimization hints: {e}")
+            self.debug(f"Error getting optimization hints: {e}")
 
         # Build enhanced context with raw information
         # The LLM will handle domain/intent detection in the PROCESS phase
@@ -339,7 +338,7 @@ class IPVReason(IPVExecutor):
             "use_llm_analysis": True,  # Flag to use LLM for context analysis
         }
 
-        self._log_debug(f"INFER phase completed: basic context with {len(optimization_hints)} type hints")
+        self.debug(f"INFER phase completed: basic context with {len(optimization_hints)} type hints")
         return enhanced_context
 
     def process_phase(self, intent: str, enhanced_context: Dict[str, Any], **kwargs) -> Any:
@@ -349,7 +348,7 @@ class IPVReason(IPVExecutor):
         Uses the LLM to intelligently analyze context and provide optimized responses.
         The LLM receives full context and makes smart decisions about domain and approach.
         """
-        self._log_debug("Starting PROCESS phase with LLM-driven analysis")
+        self.debug("Starting PROCESS phase with LLM-driven analysis")
 
         # Get LLM options and mocking settings from kwargs
         llm_options = kwargs.get("llm_options", {})
@@ -362,29 +361,27 @@ class IPVReason(IPVExecutor):
         optimization_hints = enhanced_context.get("optimization_hints", [])
 
         # Format the prompt with context for LLM analysis
-        if code_context and code_context.has_context():
+        minimal_types = (int, float, bool, str)
+        if expected_type in minimal_types and not (code_context and code_context.has_context()):
+            # Minimal prompt for simple type-hinted assignments
+            type_name = expected_type.__name__ if expected_type else "value"
+            enhanced_prompt = f"""Request: {intent}\n\nInstructions:\n- Return only the {type_name} value as your response. Do not include any explanation, context, domain, task type, or formatting—just the value itself.\n- If the user's request includes explicit instructions about the format or content, follow those instructions exactly.\n"""
+        elif code_context and code_context.has_context():
             try:
                 from opendxa.dana.ipv.context_analyzer import CodeContextAnalyzer
 
                 context_analyzer = CodeContextAnalyzer()
                 enhanced_prompt = context_analyzer.format_context_for_llm(intent, code_context, expected_type)
 
-                self._log_debug(f"Prompt enhanced with context for LLM analysis: {len(enhanced_prompt) - len(intent)} characters added")
+                self.debug(f"Prompt enhanced with context for LLM analysis: {len(enhanced_prompt) - len(intent)} characters added")
 
             except Exception as e:
-                self._log_debug(f"Error formatting context for LLM: {e}")
+                self.debug(f"Error formatting context for LLM: {e}")
                 enhanced_prompt = intent
         else:
             # Even without code context, add type guidance for the LLM
             if expected_type:
-                enhanced_prompt = f"""Please respond to this request with attention to the expected output format:
-
-Request: {intent}
-
-Expected output type: {expected_type}
-{"Optimization hints: " + ", ".join(optimization_hints) if optimization_hints else ""}
-
-Please provide a response that's optimized for the expected type and context."""
+                enhanced_prompt = f"""Please respond to this request with attention to the expected output format:\n\nRequest: {intent}\n\nExpected output type: {expected_type}\n{"Optimization hints: " + ", ".join(optimization_hints) if optimization_hints else ""}\n\nPlease provide a response that's optimized for the expected type and context."""
             else:
                 enhanced_prompt = intent
 
@@ -392,11 +389,11 @@ Please provide a response that's optimized for the expected type and context."""
         try:
             result = self._execute_llm_call(enhanced_prompt, context, llm_options, use_mock)
         except Exception as e:
-            self._log_debug(f"LLM call failed: {e}")
+            self.debug(f"LLM call failed: {e}")
             # Fallback to simple response for robustness
             result = f"LLM Response to: {intent}"
 
-        self._log_debug(f"PROCESS phase completed with result length: {len(str(result))}")
+        self.debug(f"PROCESS phase completed with result length: {len(str(result))}")
         return result
 
     def validate_phase(self, result: Any, enhanced_context: Dict[str, Any], **kwargs) -> Any:
@@ -406,14 +403,14 @@ Please provide a response that's optimized for the expected type and context."""
         Validates and cleans the LLM response to ensure it meets
         the expected type and quality requirements.
         """
-        self._log_debug(f"Starting VALIDATE phase with result type: {type(result)}")
+        self.debug(f"Starting VALIDATE phase with result type: {type(result)}")
 
         expected_type = enhanced_context.get("expected_type")
 
         # Apply type-specific validation and cleaning
         validated_result = self._validate_and_clean_result(result, expected_type, enhanced_context)
 
-        self._log_debug(f"VALIDATE phase completed with validated type: {type(validated_result)}")
+        self.debug(f"VALIDATE phase completed with validated type: {type(validated_result)}")
         return validated_result
 
     def _validate_and_clean_result(self, result: Any, expected_type: Any, enhanced_context: Dict[str, Any]) -> Any:
@@ -583,6 +580,8 @@ Please provide a response that's optimized for the expected type and context."""
         from opendxa.common.types import BaseRequest
         from opendxa.dana.common.exceptions import SandboxError
 
+        logger = DXA_LOGGER.getLogger("opendxa.dana.reason.llm")
+
         # Check if we should use mock responses
         should_mock = use_mock if use_mock is not None else os.environ.get("OPENDXA_MOCK_LLM", "").lower() == "true"
 
@@ -600,7 +599,7 @@ Please provide a response that's optimized for the expected type and context."""
 
         # Apply mocking if needed
         if should_mock:
-            self._log_debug(f"Using mock LLM for enhanced prompt: {prompt[:50]}...")
+            self.debug(f"Using mock LLM for enhanced prompt: {prompt[:50]}...")
             llm_resource = llm_resource.with_mock_llm_call(True)
 
         # Prepare system message
@@ -608,6 +607,23 @@ Please provide a response that's optimized for the expected type and context."""
 
         # Set up the messages
         messages = [{"role": "system", "content": system_message}, {"role": "user", "content": prompt}]
+
+        # Log the LLM prompt using DXA_LOGGER
+        logger.debug("=" * 80)
+        logger.debug("LLM CONVERSATION:")
+        logger.debug("SYSTEM MESSAGE:\n%s", system_message)
+        logger.debug("USER PROMPT:\n%s", prompt)
+        logger.debug("-" * 40)
+
+        # Log the conversation if debug mode is enabled
+        if self._debug_mode:
+            self.debug("=" * 80)
+            self.debug("LLM CONVERSATION:")
+            self.debug("=" * 80)
+            self.debug(f"SYSTEM MESSAGE:\n{system_message}")
+            self.debug("-" * 40)
+            self.debug(f"USER PROMPT:\n{prompt}")
+            self.debug("-" * 40)
 
         # Prepare LLM parameters and execute the query
         request_params = {
@@ -647,12 +663,21 @@ Please provide a response that's optimized for the expected type and context."""
             else:
                 # For mock responses that don't follow standard format,
                 # use a default mock response
-                self._log_debug(f"Unexpected response format: {result}")
+                self.debug(f"Unexpected response format: {result}")
                 result = "Mock LLM response for enhanced prompt"
 
         # If result is still a complex object, convert to string
         if not isinstance(result, (str, int, float, bool, list, dict)) and hasattr(result, "__str__"):
             result = str(result)
+
+        # Log the LLM response using DXA_LOGGER
+        logger.debug("LLM RESPONSE:\n%s", result)
+        logger.debug("=" * 80)
+
+        # Log the LLM response if debug mode is enabled
+        if self._debug_mode:
+            self.debug(f"LLM RESPONSE:\n{result}")
+            self.debug("=" * 80)
 
         # Handle format conversion if needed
         format_type = options.get("format", "text")
@@ -660,7 +685,7 @@ Please provide a response that's optimized for the expected type and context."""
             try:
                 result = json.loads(result)
             except json.JSONDecodeError:
-                self._log_debug(f"Could not parse LLM response as JSON: {result[:100]}")
+                self.debug(f"Could not parse LLM response as JSON: {result[:100]}")
 
         return result
 

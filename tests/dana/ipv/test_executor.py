@@ -765,7 +765,7 @@ class TestIPVReasonContextIntegration:
 
         # Verify context information was included in the prompt
         assert "Variables in scope: total" in captured_prompt
-        assert "Expected return type: <class 'str'>" in captured_prompt
+        assert "Expected output type: <class 'str'>" in captured_prompt
         assert result == "Enhanced response"
 
     def test_complete_ipv_flow_with_comments(self):

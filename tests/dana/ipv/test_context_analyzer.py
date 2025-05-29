@@ -160,8 +160,8 @@ class TestCodeContextAnalyzer:
 
         result = self.analyzer.format_context_for_llm(original_prompt, empty_context, expected_type=float)
 
-        # Updated to match the actual format (uses "Expected return type" not "Expected output type")
-        assert "Expected return type: <class 'float'>" in result
+        # Updated to match the actual format (uses "Expected output type" not "Expected return type")
+        assert "Expected output type: <class 'float'>" in result
         assert "Extract the price" in result
 
     def test_format_context_for_llm_with_full_context(self):
@@ -177,7 +177,7 @@ class TestCodeContextAnalyzer:
         result = self.analyzer.format_context_for_llm(original_prompt, context, expected_type=dict)
 
         # Updated to match the actual format
-        assert "Expected return type: <class 'dict'>" in result
+        assert "Expected output type: <class 'dict'>" in result
         assert "Code comments: Process financial data | Use precise calculations" in result
         assert "Variable type hints: price: float, quantity: int" in result
         assert "Variables in scope: customer_id" in result

@@ -44,7 +44,7 @@ class TestContextIntegration:
 
         # Verify the prompt was enhanced with type information (using new format)
         assert captured_prompt is not None
-        assert "Expected return type: <class 'float'>" in captured_prompt
+        assert "Expected output type: <class 'float'>" in captured_prompt
         assert "Extract the price" in captured_prompt
 
     def test_llm_receives_code_context(self):
