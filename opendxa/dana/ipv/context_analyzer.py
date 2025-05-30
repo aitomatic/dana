@@ -25,6 +25,10 @@ class CodeContext:
         self.type_hints: Dict[str, str] = {}
         self.surrounding_code: List[str] = []
         self.error_context: List[str] = []
+        # Track the current line being executed and its line number
+        self.current_line: Optional[str] = None
+        self.current_line_number: Optional[int] = None
+        self.surrounding_code_line_numbers: List[int] = []
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -36,6 +40,9 @@ class CodeContext:
             "type_hints": self.type_hints,
             "surrounding_code": self.surrounding_code,
             "error_context": self.error_context,
+            "current_line": self.current_line,
+            "current_line_number": self.current_line_number,
+            "surrounding_code_line_numbers": self.surrounding_code_line_numbers,
         }
 
     def has_context(self) -> bool:
@@ -66,6 +73,12 @@ class CodeContext:
             summary_parts.append(f"{len(self.surrounding_code)} lines of surrounding code")
 
         return "Context: " + ", ".join(summary_parts) if summary_parts else "Minimal context available"
+
+    def get_current_line(self):
+        return self.current_line
+
+    def get_current_line_number(self):
+        return self.current_line_number
 
 
 class CodeContextAnalyzer(Loggable):
@@ -191,6 +204,12 @@ class CodeContextAnalyzer(Loggable):
                     # Store surrounding code for analysis
                     if line and not line.startswith("#"):
                         code_context.surrounding_code.append(line)
+                        code_context.surrounding_code_line_numbers.append(line_idx + 1)
+
+                # Set the current line being executed and its number
+                if lineno - 1 >= 0 and lineno - 1 < len(lines):
+                    code_context.current_line = lines[lineno - 1].strip()
+                    code_context.current_line_number = lineno
 
             except OSError:
                 # Can't read the file, skip source analysis
@@ -203,8 +222,7 @@ class CodeContextAnalyzer(Loggable):
         """Analyze REPL input context for comments and code patterns."""
         try:
             lines = repl_context.split("\n")
-
-            for line in lines:
+            for idx, line in enumerate(lines):
                 line = line.strip()
                 if not line:
                     continue
@@ -223,6 +241,14 @@ class CodeContextAnalyzer(Loggable):
                 # Store surrounding code for analysis (non-comment lines)
                 if not line.startswith("#"):
                     code_context.surrounding_code.append(line)
+                    code_context.surrounding_code_line_numbers.append(idx + 1)
+
+            # Set the current line as the last non-empty code line
+            for rev_idx, line in enumerate(reversed(code_context.surrounding_code)):
+                if line:
+                    code_context.current_line = line
+                    code_context.current_line_number = len(code_context.surrounding_code) - rev_idx
+                    break
 
             self.debug(
                 f"Extracted from REPL context: {len(code_context.comments)} comments, {len(code_context.inline_comments)} inline comments"
