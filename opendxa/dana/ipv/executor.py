@@ -360,30 +360,36 @@ class IPVReason(IPVExecutor):
         expected_type = enhanced_context.get("expected_type")
         optimization_hints = enhanced_context.get("optimization_hints", [])
 
-        # Format the prompt with context for LLM analysis
-        minimal_types = (int, float, bool, str)
-        if expected_type in minimal_types and not (code_context and code_context.has_context()):
-            # Minimal prompt for simple type-hinted assignments
-            type_name = expected_type.__name__ if expected_type else "value"
-            enhanced_prompt = f"""Request: {intent}\n\nInstructions:\n- Return only the {type_name} value as your response. Do not include any explanation, context, domain, task type, or formatting—just the value itself.\n- If the user's request includes explicit instructions about the format or content, follow those instructions exactly.\n"""
-        elif code_context and code_context.has_context():
-            try:
-                from opendxa.dana.ipv.context_analyzer import CodeContextAnalyzer
+        # Build the enhanced prompt with labeled sections and precedence instructions
+        def build_enhanced_prompt(intent, expected_type, code_context):
+            prompt_sections = []
+            prompt_sections.append(f"Request:\n{intent}")
 
-                context_analyzer = CodeContextAnalyzer()
-                enhanced_prompt = context_analyzer.format_context_for_llm(intent, code_context, expected_type)
+            # Add Type hint section if present
+            type_name = expected_type.__name__ if expected_type else None
+            if type_name:
+                prompt_sections.append(f"Type hint:\n{type_name}")
 
-                self.debug(f"Prompt enhanced with context for LLM analysis: {len(enhanced_prompt) - len(intent)} characters added")
+            # Add Code context section if present and non-empty
+            context_lines = None
+            if code_context and code_context.has_context():
+                context_summary = code_context.get_context_summary()
+                if context_summary:
+                    context_lines = context_summary
+            if context_lines:
+                prompt_sections.append(f"Code context:\n{context_lines}")
 
-            except Exception as e:
-                self.debug(f"Error formatting context for LLM: {e}")
-                enhanced_prompt = intent
-        else:
-            # Even without code context, add type guidance for the LLM
-            if expected_type:
-                enhanced_prompt = f"""Please respond to this request with attention to the expected output format:\n\nRequest: {intent}\n\nExpected output type: {expected_type}\n{"Optimization hints: " + ", ".join(optimization_hints) if optimization_hints else ""}\n\nPlease provide a response that's optimized for the expected type and context."""
-            else:
-                enhanced_prompt = intent
+            # Always add Instructions section
+            prompt_sections.append(
+                "Instructions:\n- When generating your response, follow this order of precedence:\n"
+                "  1. If the user's prompt (the 'Request' section above) contains explicit instructions about the format or content of the response, you must strictly follow those instructions above all else.\n"
+                "  2. If a type annotation is provided (see 'Type hint' above), return only a value of that type.\n"
+                "  3. If there are relevant comments or code context (see 'Code context' above), use them to guide your response.\n"
+                "  4. Otherwise, return only the value requested, with no explanation, context, or formatting."
+            )
+            return "\n\n".join(prompt_sections)
+
+        enhanced_prompt = build_enhanced_prompt(intent, expected_type, code_context)
 
         # Make the LLM call with the enhanced prompt
         try:

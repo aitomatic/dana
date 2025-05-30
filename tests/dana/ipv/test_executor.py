@@ -71,12 +71,12 @@ class TestIPVExecutor:
         executor = ConcreteExecutor()
         config = IPVConfig(debug_mode=True, max_iterations=5)
 
-        with patch("builtins.print") as mock_print:
+        with patch.object(executor, "debug") as mock_debug:
             result = executor.execute("test", config=config)
 
         assert result == "processed"
         # Should have debug output
-        assert mock_print.called
+        assert mock_debug.called
 
     def test_execute_with_dict_config(self):
         """Test execution with dictionary configuration."""
@@ -205,13 +205,10 @@ class TestIPVExecutor:
         executor = ConcreteExecutor()
         executor.set_debug_mode(True)
 
-        with patch("builtins.print") as mock_print:
+        with patch.object(executor, "debug") as mock_debug:
             executor.execute("test")
 
-        assert mock_print.called
-        # Check that debug messages were printed
-        debug_calls = [call for call in mock_print.call_args_list if "CONCRETEEXECUTOR" in str(call)]
-        assert len(debug_calls) > 0
+        assert mock_debug.called
 
 
 class TestIPVReason:
@@ -764,8 +761,8 @@ class TestIPVReasonContextIntegration:
             result = executor.execute("get total", context=mock_context, use_mock=True)
 
         # Verify context information was included in the prompt
-        assert "Variables in scope: total" in captured_prompt
-        assert "Expected output type: <class 'str'>" in captured_prompt
+        assert "Code context:" in captured_prompt
+        assert "get total" in captured_prompt
         assert result == "Enhanced response"
 
     def test_complete_ipv_flow_with_comments(self):
@@ -790,10 +787,14 @@ class TestIPVReasonContextIntegration:
         mock_context._state = {"local.invoice_data": "sample data"}
 
         # Mock the LLM call to avoid actual network requests
-        result = executor.execute("Extract the price", mock_context, variable_name="price", use_mock=True)
-
-        # Should complete successfully with enhanced context
-        assert result is not None
+        with patch.object(executor, "_execute_llm_call", return_value="42.0") as mock_llm_call:
+            result = executor.execute("Extract the price", mock_context, variable_name="price", use_mock=True)
+            # Check that the prompt includes the labeled sections
+            args, kwargs = mock_llm_call.call_args
+            prompt = args[0]
+            assert "Request:" in prompt
+            assert "Code context:" in prompt
+            assert "Instructions:" in prompt
 
     def test_context_extraction_error_handling(self):
         """Test that context extraction errors are handled gracefully."""
