@@ -365,9 +365,10 @@ class IPVReason(IPVExecutor):
             prompt_sections = []
             prompt_sections.append(f"Request:\n{intent}")
 
-            # Add Type hint section if present
-            type_name = expected_type.__name__ if expected_type else None
-            if type_name:
+            # Add Type hint section if present and valid
+            type_name = None
+            if expected_type and hasattr(expected_type, "__name__"):
+                type_name = expected_type.__name__
                 prompt_sections.append(f"Type hint:\n{type_name}")
 
             # Add Code context section if present and non-empty
@@ -380,13 +381,19 @@ class IPVReason(IPVExecutor):
                 prompt_sections.append(f"Code context:\n{context_lines}")
 
             # Always add Instructions section
-            prompt_sections.append(
+            instructions = (
                 "Instructions:\n- When generating your response, follow this order of precedence:\n"
                 "  1. If the user's prompt (the 'Request' section above) contains explicit instructions about the format or content of the response, you must strictly follow those instructions above all else.\n"
-                "  2. If a type annotation is provided (see 'Type hint' above), return only a value of that type.\n"
+            )
+            if type_name:
+                instructions += "  2. If a type annotation is provided (see 'Type hint' above), return only a value of that type.\n"
+            else:
+                instructions += "  2. If a type annotation is provided, return only a value of that type.\n"
+            instructions += (
                 "  3. If there are relevant comments or code context (see 'Code context' above), use them to guide your response.\n"
                 "  4. Otherwise, return only the value requested, with no explanation, context, or formatting."
             )
+            prompt_sections.append(instructions)
             return "\n\n".join(prompt_sections)
 
         enhanced_prompt = build_enhanced_prompt(intent, expected_type, code_context)
