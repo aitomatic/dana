@@ -9,7 +9,7 @@
             "required_api_keys": ["GROQ_API_KEY"]
         },
         {
-            "name": "openai:gpt-4o-mini",
+            "name": "openai:gpt-4.1",
             "required_api_keys": ["OPENAI_API_KEY"]
         },
         {

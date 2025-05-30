@@ -65,6 +65,12 @@ class PythonicFunctionFactory:
             "doc": "Convert a value to a boolean",
             "signatures": [(str,), (int,), (float,), (list,), (dict,)],
         },
+        "type": {
+            "func": lambda v: type(v).__name__,
+            "types": [object],
+            "doc": "Return the type name of a value as a string (e.g., 'int', 'list', 'dict').",
+            "signatures": [(object,)],
+        },
         # Collection functions
         "sorted": {
             "func": sorted,
@@ -197,11 +203,6 @@ class PythonicFunctionFactory:
             "alternative": "Use try/catch blocks or explicit interface checks",
         },
         # Class and type manipulation
-        "type": {
-            "reason": UnsupportedReason.SECURITY_RISK,
-            "message": "Type introspection can reveal sensitive implementation details",
-            "alternative": "Use isinstance() checks or Dana's type system",
-        },
         "isinstance": {
             "reason": UnsupportedReason.COMPLEXITY,
             "message": "Type checking is handled by Dana's type system",

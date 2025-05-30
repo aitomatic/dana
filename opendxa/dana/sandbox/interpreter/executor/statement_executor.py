@@ -104,6 +104,15 @@ class StatementExecutor(BaseExecutor):
             # Evaluate the right side expression
             value = self.parent.execute(node.value, context)
 
+            # Julia-style: If a type hint is present, coerce the value
+            if target_type is not None:
+                try:
+                    from opendxa.dana.sandbox.interpreter.type_coercion import TypeCoercion
+
+                    value = TypeCoercion.coerce_value(value, target_type)
+                except Exception as e:
+                    raise SandboxError(f"Assignment to '{var_name}' failed: cannot coerce value '{value}' to type '{type_name}': {e}")
+
             # Set the variable in the context
             context.set(var_name, value)
 

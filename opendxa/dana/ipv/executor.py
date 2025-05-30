@@ -343,12 +343,12 @@ class IPVReason(IPVExecutor):
 
     def process_phase(self, intent: str, enhanced_context: Dict[str, Any], **kwargs) -> Any:
         """
-        PROCESS phase for prompt optimization.
-
-        Uses the LLM to intelligently analyze context and provide optimized responses.
-        The LLM receives full context and makes smart decisions about domain and approach.
+        PROCESS phase for prompt optimization using meta-prompting:
+        1. Provide a simple initial example prompt (no CoT/confidence loop) as a starting point.
+        2. Ask the LLM to design the best possible prompt for itself, simulate answering, self-evaluate, and iterate up to N times.
+        3. Output is a JSON object with steps (each with designed_prompt, simulated_answer, reasoning, confidence, revision_plan), and final_prompt, final_answer, final_confidence.
         """
-        self.debug("Starting PROCESS phase with LLM-driven analysis")
+        self.debug("Starting PROCESS phase with LLM meta-prompting (self-prompting loop)")
 
         # Get LLM options and mocking settings from kwargs
         llm_options = kwargs.get("llm_options", {})
@@ -360,54 +360,123 @@ class IPVReason(IPVExecutor):
         expected_type = enhanced_context.get("expected_type")
         optimization_hints = enhanced_context.get("optimization_hints", [])
 
-        # Build the enhanced prompt with labeled sections and precedence instructions
-        def build_enhanced_prompt(intent, expected_type, code_context):
-            prompt_sections = []
-            prompt_sections.append(f"Request:\n{intent}")
+        # Determine max steps (N)
+        max_steps = llm_options.get("max_meta_steps") or llm_options.get("max_iterations") or kwargs.get("max_meta_steps") or 3
 
-            # Add Type hint section if present and valid
-            type_name = None
-            if expected_type and hasattr(expected_type, "__name__"):
-                type_name = expected_type.__name__
-                prompt_sections.append(f"Type hint:\n{type_name}")
+        # Build the initial example prompt (no CoT/confidence loop)
+        prompt_sections = []
+        prompt_sections.append(f"Request:\n{intent}")
 
-            # Add Code context section if present and non-empty
-            context_lines = None
-            if code_context and code_context.has_context():
-                context_summary = code_context.get_context_summary()
-                if context_summary:
-                    context_lines = context_summary
-            if context_lines:
-                prompt_sections.append(f"Code context:\n{context_lines}")
+        # Add Type hint section if present and valid
+        type_name = None
+        if expected_type and hasattr(expected_type, "__name__"):
+            type_name = expected_type.__name__
+            prompt_sections.append(f"Type hint:\n{type_name}")
 
-            # Always add Instructions section
-            instructions = (
-                "Instructions:\n- When generating your response, follow this order of precedence:\n"
-                "  1. If the user's prompt (the 'Request' section above) contains explicit instructions about the format or content of the response, you must strictly follow those instructions above all else.\n"
-            )
-            if type_name:
-                instructions += "  2. If a type annotation is provided (see 'Type hint' above), return only a value of that type.\n"
+        # Add Code context section if present and non-empty
+        context_lines = None
+        current_line = None
+        current_line_number = None
+        if code_context and hasattr(code_context, "has_context") and code_context.has_context():
+            # Use actual code lines if available
+            if hasattr(code_context, "surrounding_code") and code_context.surrounding_code:
+                if hasattr(code_context, "surrounding_code_line_numbers") and code_context.surrounding_code_line_numbers:
+                    context_lines = "\n".join(
+                        f"{ln}: {line}" for ln, line in zip(code_context.surrounding_code_line_numbers, code_context.surrounding_code)
+                    )
+                else:
+                    context_lines = "\n".join(code_context.surrounding_code)
+            if hasattr(code_context, "get_current_line"):
+                current_line = code_context.get_current_line()
+            if hasattr(code_context, "get_current_line_number"):
+                current_line_number = code_context.get_current_line_number()
+        if context_lines:
+            prompt_sections.append(f"Code context (surrounding lines):\n{context_lines}")
+        if current_line:
+            if current_line_number is not None:
+                prompt_sections.append(
+                    f"Current line being executed:\n{current_line_number}: {current_line}\n(This is the specific line of code currently being run. Use this to better understand the user's intent and context.)"
+                )
             else:
-                instructions += "  2. If a type annotation is provided, return only a value of that type.\n"
-            instructions += (
-                "  3. If there are relevant comments or code context (see 'Code context' above), use them to guide your response.\n"
-                "  4. Otherwise, return only the value requested, with no explanation, context, or formatting."
-            )
-            prompt_sections.append(instructions)
-            return "\n\n".join(prompt_sections)
+                prompt_sections.append(
+                    f"Current line being executed:\n{current_line}\n(This is the specific line of code currently being run. Use this to better understand the user's intent and context.)"
+                )
 
-        enhanced_prompt = build_enhanced_prompt(intent, expected_type, code_context)
+        # The initial example prompt is just the basic context and request
+        initial_example_prompt = "\n\n".join(prompt_sections)
 
-        # Make the LLM call with the enhanced prompt
+        # Build the meta-prompt
+        meta_prompt = f"""
+You are an expert AI agent and prompt engineer. Your task is to design the best possible prompt for yourself to answer the user's request, given the code context and requirements.
+
+Here is an initial example prompt you may use as a starting point:
+---
+{initial_example_prompt}
+---
+
+Your process:
+1. Review the initial example prompt and the user's request/context.
+2. Design a new or improved prompt for yourself to best answer the user's request.
+3. Simulate answering the user's request using your new prompt.
+4. Evaluate whether your simulated answer fully meets the user's intent and objective.
+5. If not, revise your prompt and repeat the process.
+
+Repeat this process up to {max_steps} times, or until you are 100% confident that your answer fully meets the user's intent.
+
+At each step, output:
+- The prompt you designed
+- The simulated answer
+- Your reasoning and confidence (0-100%) that the answer meets the user's intent
+- If confidence < 100%, explain what is missing and how you will revise the prompt
+
+At the end, output the best prompt, the final answer, and your confidence.
+
+Format your output as JSON:
+{{
+  "steps": [
+    {{
+      "designed_prompt": "...",
+      "simulated_answer": "...",
+      "reasoning": "...",
+      "confidence": ...,
+      "revision_plan": "..."
+    }},
+    ...
+  ],
+  "final_prompt": "...",
+  "final_answer": "...",
+  "final_confidence": ...
+}}
+"""
+
+        # Make the LLM call with the meta-prompt
         try:
-            result = self._execute_llm_call(enhanced_prompt, context, llm_options, use_mock)
+            raw_result = self._execute_llm_call(meta_prompt, context, llm_options, use_mock)
         except Exception as e:
             self.debug(f"LLM call failed: {e}")
             # Fallback to simple response for robustness
-            result = f"LLM Response to: {intent}"
+            return {"final_answer": f"LLM Response to: {intent}", "final_confidence": 0, "steps": []}
 
-        self.debug(f"PROCESS phase completed with result length: {len(str(result))}")
-        return result
+        # Parse the JSON result
+        import json
+
+        parsed = None
+        if isinstance(raw_result, dict):
+            parsed = raw_result
+        elif isinstance(raw_result, str):
+            try:
+                start = raw_result.find("{")
+                end = raw_result.rfind("}") + 1
+                if start != -1 and end != -1:
+                    json_str = raw_result[start:end]
+                    parsed = json.loads(json_str)
+            except Exception as e:
+                self.debug(f"Could not parse LLM JSON output: {e}")
+        if not parsed:
+            return {"final_answer": raw_result, "final_confidence": 0, "steps": []}
+
+        self.debug(f"PROCESS phase completed with final_confidence: {parsed.get('final_confidence')}")
+        return parsed
 
     def validate_phase(self, result: Any, enhanced_context: Dict[str, Any], **kwargs) -> Any:
         """
@@ -420,9 +489,15 @@ class IPVReason(IPVExecutor):
 
         expected_type = enhanced_context.get("expected_type")
 
-        # Apply type-specific validation and cleaning
-        validated_result = self._validate_and_clean_result(result, expected_type, enhanced_context)
+        # If result is a dict with 'final_answer', extract it for validation/cleaning
+        if isinstance(result, dict) and "final_answer" in result:
+            answer = result["final_answer"]
+            validated_result = self._validate_and_clean_result(answer, expected_type, enhanced_context)
+            self.debug(f"VALIDATE phase completed with validated type: {type(validated_result)} (from final_answer)")
+            return validated_result
 
+        # Otherwise, apply type-specific validation and cleaning as before
+        validated_result = self._validate_and_clean_result(result, expected_type, enhanced_context)
         self.debug(f"VALIDATE phase completed with validated type: {type(validated_result)}")
         return validated_result
 

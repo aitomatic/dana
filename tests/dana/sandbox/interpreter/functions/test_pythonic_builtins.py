@@ -214,3 +214,16 @@ def test_unknown_function():
         factory.create_function("unknown_function")
 
     assert "not a recognized built-in function" in str(exc_info.value)
+
+
+def test_type_function():
+    """Test the supported type() function."""
+    factory = PythonicFunctionFactory()
+    type_func = factory.create_function("type")
+    context = SandboxContext()
+    assert type_func(context, 42) == "int"
+    assert type_func(context, "hello") == "str"
+    assert type_func(context, [1, 2, 3]) == "list"
+    assert type_func(context, {"a": 1}) == "dict"
+    assert type_func(context, 3.14) == "float"
+    assert type_func(context, True) == "bool"
