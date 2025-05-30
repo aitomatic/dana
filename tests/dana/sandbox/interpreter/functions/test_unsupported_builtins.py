@@ -147,15 +147,24 @@ class TestUnsupportedFunctions:
             assert "memory" in error_msg.lower()
 
     def test_type_introspection_blocked(self):
-        """Test that type introspection functions are blocked."""
+        """Test that type introspection functions are handled correctly."""
         factory = PythonicFunctionFactory()
+        context = SandboxContext()
 
-        blocked_functions = ["type", "isinstance", "issubclass", "callable"]
+        # type() is now supported
+        type_func = factory.create_function("type")
+        assert type_func(context, 42) == "int"
+        assert type_func(context, "hello") == "str"
+        assert type_func(context, [1, 2, 3]) == "list"
+        assert type_func(context, {"a": 1}) == "dict"
+        assert type_func(context, 3.14) == "float"
+        assert type_func(context, True) == "bool"
 
+        # The others are still blocked
+        blocked_functions = ["isinstance", "issubclass", "callable"]
         for func_name in blocked_functions:
             with pytest.raises(SandboxError) as exc_info:
                 factory.create_function(func_name)
-
             error_msg = str(exc_info.value)
             assert func_name in error_msg
             assert "not supported" in error_msg
