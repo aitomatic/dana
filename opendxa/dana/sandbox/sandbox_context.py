@@ -599,3 +599,25 @@ class SandboxContext:
             return self._parent.get_from_scope(var_name, scope)
 
         return None
+
+    def get_assignment_target_type(self) -> Optional[Any]:
+        """Get the expected type for the current assignment target.
+
+        This method is used by IPV to determine the expected output type
+        for intelligent optimization and validation.
+
+        Returns:
+            The expected type (e.g., float, int, str, dict, list) or None if unknown
+        """
+        # Try to get type information from the current assignment context
+        # This is set by the assignment executor when processing typed assignments
+        current_assignment_type = self.get("system.__current_assignment_type")
+        if current_assignment_type:
+            return current_assignment_type
+
+        # Fallback: Check if there's a type hint in the execution metadata
+        execution_metadata = self.get("system.__execution_metadata")
+        if execution_metadata and isinstance(execution_metadata, dict):
+            return execution_metadata.get("target_type")
+
+        return None

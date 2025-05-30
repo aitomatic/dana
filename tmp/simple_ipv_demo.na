@@ -1,0 +1,36 @@
+# Simple IPV Demo in Dana
+# This demonstrates the basic IPV pattern for data analysis
+
+log("Starting Simple IPV Demo")
+
+# Simple function to demonstrate IPV pattern
+def simple_ipv_analysis(objective):
+    log(f"Analyzing: {objective}")
+    
+    # INFER: Understand the objective
+    local:planning_result = reason(f"Plan analysis for: {objective}")
+    log(f"Plan: {local:planning_result}")
+    
+    # PROCESS: Execute analysis
+    local:analysis_result = reason(f"Execute analysis for: {objective}")
+    log(f"Analysis: {local:analysis_result}")
+    
+    # VALIDATE: Check results
+    local:validation_result = reason(f"Validate analysis for: {objective}")
+    log(f"Validation: {local:validation_result}")
+    
+    return {
+        "objective": objective,
+        "plan": local:planning_result,
+        "analysis": local:analysis_result,
+        "validation": local:validation_result
+    }
+
+# Test the IPV function
+private:test_objective = "analyze sales data"
+private:result = simple_ipv_analysis(private:test_objective)
+
+log("IPV Analysis Complete")
+log(f"Result: {private:result}")
+
+print("Simple IPV Demo finished successfully!") 

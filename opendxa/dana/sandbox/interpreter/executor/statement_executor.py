@@ -79,17 +79,44 @@ class StatementExecutor(BaseExecutor):
         # Get the variable name
         var_name = node.target.name
 
-        # Evaluate the right side expression
-        value = self.parent.execute(node.value, context)
+        # Set type information in context if this is a typed assignment
+        target_type = None
+        if hasattr(node, "type_hint") and node.type_hint:
+            # Convert type hint to Python type for IPV
+            if hasattr(node.type_hint, "name"):
+                type_name = node.type_hint.name.lower()
+                type_mapping = {
+                    "int": int,
+                    "float": float,
+                    "str": str,
+                    "bool": bool,
+                    "list": list,
+                    "dict": dict,
+                    "tuple": tuple,
+                    "set": set,
+                }
+                target_type = type_mapping.get(type_name)
 
-        # Set the variable in the context
-        context.set(var_name, value)
+                # Set the type information for IPV to access
+                context.set("system.__current_assignment_type", target_type)
 
-        # Store the last value for implicit return
-        context.set("system.__last_value", value)
+        try:
+            # Evaluate the right side expression
+            value = self.parent.execute(node.value, context)
 
-        # Return the value for expressions
-        return value
+            # Set the variable in the context
+            context.set(var_name, value)
+
+            # Store the last value for implicit return
+            context.set("system.__last_value", value)
+
+            # Return the value for expressions
+            return value
+
+        finally:
+            # Clean up the type information after assignment
+            if target_type:
+                context.set("system.__current_assignment_type", None)
 
     def execute_assert_statement(self, node: AssertStatement, context: SandboxContext) -> None:
         """Execute an assert statement.
