@@ -343,12 +343,10 @@ class IPVReason(IPVExecutor):
 
     def process_phase(self, intent: str, enhanced_context: Dict[str, Any], **kwargs) -> Any:
         """
-        PROCESS phase for prompt optimization.
-
-        Uses the LLM to intelligently analyze context and provide optimized responses.
-        The LLM receives full context and makes smart decisions about domain and approach.
+        PROCESS phase for prompt optimization with internal LLM CoT/confidence loop in a single call.
+        The LLM is instructed to simulate its own iterative reasoning, up to N steps or until 100% confidence.
         """
-        self.debug("Starting PROCESS phase with LLM-driven analysis")
+        self.debug("Starting PROCESS phase with LLM-driven internal CoT/confidence loop")
 
         # Get LLM options and mocking settings from kwargs
         llm_options = kwargs.get("llm_options", {})
@@ -360,54 +358,89 @@ class IPVReason(IPVExecutor):
         expected_type = enhanced_context.get("expected_type")
         optimization_hints = enhanced_context.get("optimization_hints", [])
 
-        # Build the enhanced prompt with labeled sections and precedence instructions
-        def build_enhanced_prompt(intent, expected_type, code_context):
-            prompt_sections = []
-            prompt_sections.append(f"Request:\n{intent}")
+        # Determine max steps (N)
+        max_steps = llm_options.get("max_cot_steps") or llm_options.get("max_iterations") or kwargs.get("max_cot_steps") or 3
 
-            # Add Type hint section if present and valid
-            type_name = None
-            if expected_type and hasattr(expected_type, "__name__"):
-                type_name = expected_type.__name__
-                prompt_sections.append(f"Type hint:\n{type_name}")
+        # Build the CoT/confidence loop prompt
+        prompt_sections = []
+        prompt_sections.append(f"Request:\n{intent}")
 
-            # Add Code context section if present and non-empty
-            context_lines = None
-            if code_context and code_context.has_context():
-                context_summary = code_context.get_context_summary()
-                if context_summary:
-                    context_lines = context_summary
-            if context_lines:
-                prompt_sections.append(f"Code context:\n{context_lines}")
+        # Add Type hint section if present and valid
+        type_name = None
+        if expected_type and hasattr(expected_type, "__name__"):
+            type_name = expected_type.__name__
+            prompt_sections.append(f"Type hint:\n{type_name}")
 
-            # Always add Instructions section
-            instructions = (
-                "Instructions:\n- When generating your response, follow this order of precedence:\n"
-                "  1. If the user's prompt (the 'Request' section above) contains explicit instructions about the format or content of the response, you must strictly follow those instructions above all else.\n"
-            )
-            if type_name:
-                instructions += "  2. If a type annotation is provided (see 'Type hint' above), return only a value of that type.\n"
-            else:
-                instructions += "  2. If a type annotation is provided, return only a value of that type.\n"
-            instructions += (
-                "  3. If there are relevant comments or code context (see 'Code context' above), use them to guide your response.\n"
-                "  4. Otherwise, return only the value requested, with no explanation, context, or formatting."
-            )
-            prompt_sections.append(instructions)
-            return "\n\n".join(prompt_sections)
+        # Add Code context section if present and non-empty
+        context_lines = None
+        if code_context and hasattr(code_context, "has_context") and code_context.has_context():
+            context_summary = code_context.get_context_summary()
+            if context_summary:
+                context_lines = context_summary
+        if context_lines:
+            prompt_sections.append(f"Code context:\n{context_lines}")
 
-        enhanced_prompt = build_enhanced_prompt(intent, expected_type, code_context)
+        # Add instructions for the LLM's internal loop
+        instructions = f"""
+Instructions:
+You are an expert AI reasoner. Your task is to answer the user's request as accurately as possible, using a step-by-step internal thinking loop.
+For each step:
+  1. Generate a candidate answer to the request.
+  2. Show your reasoning for this answer.
+  3. Assess your confidence (0-100%) that your answer fully satisfies the user's intent, given all context.
+  4. If your confidence is less than 100%, explain what is missing or uncertain, and then try again, using your previous answer and reasoning to improve.
+Repeat this loop up to {max_steps} times, or until you reach 100% confidence.
+At the end, output your final answer, your final confidence, and a trace of your thinking steps.
+Format your output as JSON with these fields:
+{{
+  "steps": [
+    {{
+      "answer": "...",
+      "reasoning": "...",
+      "confidence": ...,
+      "uncertainty": "..."
+    }},
+    ...
+  ],
+  "final_answer": "...",
+  "final_confidence": ...,
+  "final_reasoning": "..."
+}}
+"""
+        prompt_sections.append(instructions)
+        enhanced_prompt = "\n\n".join(prompt_sections)
 
         # Make the LLM call with the enhanced prompt
         try:
-            result = self._execute_llm_call(enhanced_prompt, context, llm_options, use_mock)
+            raw_result = self._execute_llm_call(enhanced_prompt, context, llm_options, use_mock)
         except Exception as e:
             self.debug(f"LLM call failed: {e}")
             # Fallback to simple response for robustness
-            result = f"LLM Response to: {intent}"
+            return {"final_answer": f"LLM Response to: {intent}", "final_confidence": 0, "steps": []}
 
-        self.debug(f"PROCESS phase completed with result length: {len(str(result))}")
-        return result
+        # Parse the JSON result
+        import json
+
+        parsed = None
+        if isinstance(raw_result, dict):
+            parsed = raw_result
+        elif isinstance(raw_result, str):
+            # Try to extract the first JSON object from the string
+            try:
+                # Find the first and last curly braces
+                start = raw_result.find("{")
+                end = raw_result.rfind("}") + 1
+                if start != -1 and end != -1:
+                    json_str = raw_result[start:end]
+                    parsed = json.loads(json_str)
+            except Exception as e:
+                self.debug(f"Could not parse LLM JSON output: {e}")
+        if not parsed:
+            # Fallback: return the raw result as the answer
+            return {"final_answer": raw_result, "final_confidence": 0, "steps": []}
+
+        self.debug(f"PROCESS phase completed with final_confidence: {parsed.get('final_confidence')}")
+        return parsed
 
     def validate_phase(self, result: Any, enhanced_context: Dict[str, Any], **kwargs) -> Any:
         """
@@ -420,9 +453,15 @@ class IPVReason(IPVExecutor):
 
         expected_type = enhanced_context.get("expected_type")
 
-        # Apply type-specific validation and cleaning
-        validated_result = self._validate_and_clean_result(result, expected_type, enhanced_context)
+        # If result is a dict with 'final_answer', extract it for validation/cleaning
+        if isinstance(result, dict) and "final_answer" in result:
+            answer = result["final_answer"]
+            validated_result = self._validate_and_clean_result(answer, expected_type, enhanced_context)
+            self.debug(f"VALIDATE phase completed with validated type: {type(validated_result)} (from final_answer)")
+            return validated_result
 
+        # Otherwise, apply type-specific validation and cleaning as before
+        validated_result = self._validate_and_clean_result(result, expected_type, enhanced_context)
         self.debug(f"VALIDATE phase completed with validated type: {type(validated_result)}")
         return validated_result
 
