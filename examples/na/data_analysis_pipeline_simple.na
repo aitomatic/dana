@@ -2,15 +2,15 @@
 def extract_metrics(data):
     # Extract key metrics from raw data manually without using sum() or len()
     sales = data["sales"]
-    total_sales = sales[0] + sales[1] + sales[2] + sales[3] + sales[4]
+    total_sales = sum(sales)
     
     ratings = data["ratings"]
-    total_ratings = ratings[0] + ratings[1] + ratings[2] + ratings[3] + ratings[4]
-    avg_rating = total_ratings / 5
+    total_ratings = sum(ratings)
+    avg_rating = total_ratings / len(ratings)
     
     products = data["products"]
     # Count products manually
-    product_count = 5
+    product_count = len(products)
     
     return {
         "total_sales": total_sales,

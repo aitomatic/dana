@@ -1,19 +1,38 @@
-# aisuite[OpenAI, Anthropic, Azure, Google, AWS, Groq, Mistral, HuggingFace, Ollama, Sambanova, Watsonx]
+# Core dependencies from pyproject.toml
+
+# HTTP and API clients
 aiohttp
+aioconsole
+websockets
+
+# AI/LLM services
 aisuite[openai,anthropic,azure,google,groq,huggingface,ollama]
-llm-code-executor
-matplotlib
-mcp
-nest_asyncio
 openai
+mcp
+llm-code-executor
+
+# Data processing and visualization
 pandas
+matplotlib
+seaborn
+
+# Database
+sqlalchemy
+
+# Utilities
+nest_asyncio
+python-dotenv
+pyyaml
+structlog
+
+# Testing
 pytest
 pytest-asyncio
 pytest-mock
-lark-parser
-python-dotenv
-pyyaml
-seaborn
-sqlalchemy
-structlog
-websockets
+
+# REPL utilities
+prompt-toolkit
+pygments
+
+# Dana agent programming language parser/interpreter
+lark

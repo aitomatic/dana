@@ -81,6 +81,8 @@ class DanaREPLApp(Loggable):
                 should_continue, executed_program = self.input_processor.process_line(line)
                 if should_continue:
                     if executed_program:
+                        # Store input context for multiline programs too
+                        self._store_input_context()
                         self._execute_program(executed_program)
                         last_executed_program = executed_program
                     continue
@@ -103,6 +105,10 @@ class DanaREPLApp(Loggable):
 
                 # For single-line input, execute immediately
                 self.debug("Executing single line input")
+                # Track single-line input in history for IPV context
+                self.input_processor.state.add_to_history(line)
+                # Store input context in sandbox context for IPV access
+                self._store_input_context()
                 self._execute_program(line)
                 last_executed_program = line
 
@@ -115,6 +121,16 @@ class DanaREPLApp(Loggable):
             except Exception as e:
                 self.output_formatter.format_error(e)
                 self.input_processor.reset()
+
+    def _store_input_context(self) -> None:
+        """Store the current input context in the sandbox context for IPV access."""
+        try:
+            input_context = self.input_processor.state.get_input_context()
+            if input_context:
+                self.repl.context.set("system.__repl_input_context", input_context)
+                self.debug(f"Stored input context: {input_context}")
+        except Exception as e:
+            self.debug(f"Could not store input context: {e}")
 
     def _execute_program(self, program: str) -> None:
         """Execute a Dana program and handle the result or errors."""

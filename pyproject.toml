@@ -52,8 +52,7 @@ dependencies = [
     "pygments",
 
     # Dana agent programming language parser/interpreter
-    "lark",
-    "lark-parser"
+    "lark"
 ]
 
 # Development dependencies
