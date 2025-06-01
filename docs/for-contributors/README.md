@@ -24,20 +24,24 @@ Whether you're looking to contribute code, extend functionality, or deeply under
 
 ## 🚀 Quick Start for Contributors
 
-### 1. Development Environment Setup (15 minutes)
+### 1. Development Environment Setup (5 minutes)
 ```bash
 # Clone the repository
 git clone https://github.com/aitomatic/opendxa.git
 cd opendxa
 
 # Set up development environment
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-pip install -e ".[dev]"
+uv sync --extra dev && uv run pre-commit install --hook-type post-checkout --hook-type post-merge --hook-type post-rewrite
 
 # Run tests to verify setup
-pytest tests/
+uv run pytest tests/
 ```
+
+It will be assumed that you either write `uv run` before any command or that you activate the venv first. 
+```bash
+source .venv/bin/activate
+```
+
 
 ### 2. Understand the Architecture (30 minutes)
 - [System Architecture Overview](architecture/system-design.md)
@@ -169,27 +173,7 @@ common/
 
 ### Setting Up Your Development Environment
 
-#### Prerequisites
-- Python 3.8+ (3.10+ recommended)
-- Git
-- Virtual environment tool (venv, conda, etc.)
-
 #### Development Installation
-```bash
-# Clone and setup
-git clone https://github.com/aitomatic/opendxa.git
-cd opendxa
-
-# Create virtual environment
-python -m venv .venv
-source .venv/bin/activate
-
-# Install in development mode with all dependencies
-pip install -e ".[dev,test,docs]"
-
-# Install pre-commit hooks
-pre-commit install
-```
 
 #### Running Tests
 ```bash
