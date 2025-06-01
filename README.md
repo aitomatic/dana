@@ -57,6 +57,7 @@ open .env
 Now you can start the DANA shell, just like Python!
 
 ```bash
+# Simply run this in the OpenDXA folder to start the Dana REPL from here on out.
 uv run bin/dana
 
 # You can also activate the venv beforehand instead of letting uv automatically handle it.
