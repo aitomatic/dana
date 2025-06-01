@@ -17,21 +17,15 @@ Prefer using unscoped variables (auto-scoped to local) instead of explicit `priv
 
 ### Requirements
 
+Install the following tools.
 - [git](https://github.com/git-guides/install-git)
 - [uv](https://github.com/astral-sh/uv)
 
-To install uv, run their installation script in your terminal.
-
-```bash
-# On macOS and Linux.
-curl -LsSf https://astral.sh/uv/install.sh | sh
-# On Windows.
-powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-```
-
-Close and reopen your terminal, then check that the `uv` command works.
+If this is your first time installing uv, remember to close and reopen your shell after running the installation command.
 
 ### Steps
+
+In your terminal, run the following.
 
 ```bash
 # Clone the repo
@@ -48,20 +42,16 @@ Add your API key of choice to your .env file.
 
 ```bash
 # Create your .env file
-cp .env.example .env
+cp .env.template .env
 
 # Open the file to edit it
-open .env
+open .env 
 ```
 
 Now you can start the DANA shell, just like Python!
 
 ```bash
 uv run bin/dana
-
-# You can also activate the venv beforehand instead of letting uv automatically handle it.
-source .venv/bin/activate
-bin/dana
 ```
 ---
 
