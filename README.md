@@ -21,6 +21,8 @@ Install the following tools.
 - [git](https://github.com/git-guides/install-git)
 - [uv](https://github.com/astral-sh/uv)
 
+If this is your first time installing uv, remember to close and reopen your shell after running the installation command.
+
 ### Steps
 
 In your terminal, run the following.
