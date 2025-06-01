@@ -16,6 +16,8 @@ Prefer using unscoped variables (auto-scoped to local) instead of explicit `priv
 ## TL;DR
 
 ### Requirements
+
+Install the following tools.
 - [git](https://github.com/git-guides/install-git)
 - [uv](https://github.com/astral-sh/uv)
 
