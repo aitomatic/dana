@@ -61,6 +61,7 @@ dev = [
     # Code formatting and linting
     "black",
     "ruff",
+    "pylint",
     "pre-commit",
 
     # Testing with coverage

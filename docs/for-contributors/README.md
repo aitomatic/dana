@@ -31,7 +31,7 @@ git clone https://github.com/aitomatic/opendxa.git
 cd opendxa
 
 # Set up development environment
-uv sync --extra dev && uv run pre-commit install --hook-type post-checkout --hook-type post-merge --hook-type post-rewrite
+uv sync --extra dev && uv run pre-commit install
 
 # Run tests to verify setup
 uv run pytest tests/
