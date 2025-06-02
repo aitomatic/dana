@@ -45,3 +45,4 @@ repos:
       # Sync dependencies on checkout/merge/rebase
       - id: uv-sync
         stages: [post-checkout, post-merge, post-rewrite]
+        args: [--all-extras]
