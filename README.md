@@ -15,35 +15,63 @@ Prefer using unscoped variables (auto-scoped to local) instead of explicit `priv
 
 ## TL;DR
 
-```bash
-# Clone and setup
-% git clone https://github.com/aitomatic/opendxa.git
-% cd opendxa
-% source ./SOURCE_ME.sh
+### Requirements
 
-# Start the Dana shell, just like Python
-% bin/dana
-```
+- [git](https://github.com/git-guides/install-git)
+- [uv](https://github.com/astral-sh/uv)
 
-That's it! Oh, be sure to add an LLM API key to your environment:
-- `OPENAI_API_KEY`
-- `ANTHROPIC_API_KEY`
-- `AITOMATIC_API_KEY`
-
-or put the following in your `.env` file, and `OpenDXA` will pick it up automatically.
+To install uv, run their installation script in your terminal.
 
 ```bash
-OPENAI_API_KEY=your_api_key
-ANTHROPIC_API_KEY=your_api_key
-AITOMATIC_API_KEY=your_api_key
+# On macOS and Linux.
+curl -LsSf https://astral.sh/uv/install.sh | sh
+# On Windows.
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
-If you start up a fresh terminal session, you'll need to reinitialize the environment:
+Close and reopen your terminal, then check that the `uv` command works.
+
+### Steps
 
 ```bash
-% source ./bin/source_env.sh
+# Clone the repo
+git clone https://github.com/aitomatic/opendxa.git
+
+# Go to the folder
+cd opendxa
+
+# Set up the virtual environment
+uv sync
 ```
 
+Add your API key of choice to your .env file.
+
+```bash
+# Create your .env file
+cp .env.example .env
+
+# Open the file to edit it
+open .env
+```
+
+Now you can start the DANA shell, just like Python!
+
+```bash
+# Simply run this in the OpenDXA folder to start the Dana REPL from here on out.
+uv run bin/dana
+
+# You can also activate the venv beforehand instead of letting uv automatically handle it.
+source .venv/bin/activate
+bin/dana
+```
+
+### Contributors
+
+For developers contributing to the repo use:
+
+```bash
+uv sync --extra dev && uv run pre-commit install
+```
 ---
 
 ## 🎯 Choose Your Path

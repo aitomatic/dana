@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "opendxa"
 version = "0.4.0"
 description = "Domain-Expert Agent Framework"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 authors = [
     {name = "Christopher Nguyen", email = "ctn@aitomatic.com"},
     {name = "William Nguyen", email = "william@aitomatic.com"},
@@ -61,6 +61,7 @@ dev = [
     # Code formatting and linting
     "black",
     "ruff",
+    "pylint",
     "pre-commit",
 
     # Testing with coverage

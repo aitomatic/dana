@@ -78,21 +78,16 @@ tests/                          # Test suite
 ### Key Configuration Files
 
 #### `pyproject.toml`
-Main project configuration file containing:
-- Project metadata (name, version, authors)
-- Dependencies and optional dependencies
-- Build system configuration
-- Tool configurations (black, ruff, pylint, etc.)
+
+Defines project dependencies and development tools using modern Python packaging standards.
 
 #### `SOURCE_ME.sh`
-Environment setup script that:
-- Creates and activates a virtual environment
-- Installs the OpenDXA package in development mode
-- Sets up pre-commit hooks
-- Installs dependencies from requirements.txt
 
-#### `requirements.txt`
-Lists all project dependencies for easy installation.
+Sets up the environment by installing dependencies and configuring paths.
+
+- Uses uv sync to install dependencies from pyproject.toml
+- Sets up the Python environment
+- Configures PATH for Dana executables
 
 #### `.env.example` (if present)
 Example environment variable configuration for local development.

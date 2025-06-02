@@ -20,7 +20,7 @@ class OpenAILLM:
             self.model = model
             self.call_count = 0
         except ImportError:
-            raise ImportError("Install openai: pip install openai")
+            raise ImportError("Install openai: uv add openai")
 
     def call(self, prompt: str) -> str:
         self.call_count += 1
@@ -45,7 +45,7 @@ class AnthropicLLM:
             self.model = model
             self.call_count = 0
         except ImportError:
-            raise ImportError("Install anthropic: pip install anthropic")
+            raise ImportError("Install anthropic: uv add anthropic")
 
     def call(self, prompt: str) -> str:
         self.call_count += 1
@@ -67,7 +67,7 @@ class OllamaLLM:
             self.call_count = 0
             self.base_url = "http://localhost:11434"
         except ImportError:
-            raise ImportError("Install requests: pip install requests")
+            raise ImportError("Install requests: uv add requests")
 
     def call(self, prompt: str) -> str:
         self.call_count += 1
@@ -149,18 +149,18 @@ def setup_instructions():
     print("=" * 60)
 
     print("\n1. OpenAI Setup:")
-    print("   pip install openai")
+    print("   uv add openai")
     print("   export OPENAI_API_KEY='your-api-key'")
 
     print("\n2. Anthropic Setup:")
-    print("   pip install anthropic")
+    print("   uv add anthropic")
     print("   export ANTHROPIC_API_KEY='your-api-key'")
 
     print("\n3. Ollama Setup (Local):")
     print("   # Install Ollama from https://ollama.ai")
     print("   ollama pull llama3.2")
     print("   ollama serve")
-    print("   pip install requests")
+    print("   uv add requests")
 
     print("\n4. Then run this script to test with real LLMs!")
 
