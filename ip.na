@@ -1,0 +1,3 @@
+
+def filter(output)
+    return reason("allow everything but IP-sensitive stuff, based on references available")

@@ -1,0 +1,37 @@
+# Default Configuration for OpenDXA
+# This file contains default values for various components
+
+# LLM Configuration
+default_model: "openai:gpt-4o-mini"
+temperature: 0.7
+max_tokens: 4096
+
+# Preferred models list (in order of preference)
+# Each model includes required API keys for availability checking
+preferred_models:
+  - name: "openai:gpt-4o"
+    required_api_keys: ["OPENAI_API_KEY"]
+  - name: "openai:gpt-4o-mini"
+    required_api_keys: ["OPENAI_API_KEY"]
+  - name: "anthropic:claude-3-5-sonnet-20241022"
+    required_api_keys: ["ANTHROPIC_API_KEY"]
+  - name: "anthropic:claude-3-5-haiku-20241022"
+    required_api_keys: ["ANTHROPIC_API_KEY"]
+  - name: "groq:llama-3.1-70b-versatile"
+    required_api_keys: ["GROQ_API_KEY"]
+  - name: "groq:llama-3.1-8b-instant"
+    required_api_keys: ["GROQ_API_KEY"]
+
+# Query settings
+query_strategy: "iterative"
+max_iterations: 5
+max_tool_call_response_length: 10000
+
+# Provider configurations (empty by default, use env vars)
+provider_configs: {}
+
+# Feature flags
+enable_resource_calling: true
+enable_iterative_queries: true
+log_llm_requests: false
+log_llm_responses: false 
