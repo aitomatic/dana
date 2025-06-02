@@ -64,6 +64,14 @@ uv run bin/dana
 source .venv/bin/activate
 bin/dana
 ```
+
+### Contributors
+
+For developers contributing to the repo use:
+
+```bash
+uv sync --extra dev && uv run pre-commit install
+```
 ---
 
 ## 🎯 Choose Your Path
