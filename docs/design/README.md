@@ -6,12 +6,12 @@ This directory contains the authoritative design specifications for the OpenDXA 
 
 The design documents are organized into the following main sections:
 
-1.  **[00_dana_philosophy/](./00_dana_philosophy/)**: Core vision, goals, and guiding principles behind Dana.
-2.  **[01_dana_language_specification/](./01_dana_language_specification/)**: Detailed definition of the Dana language itself – syntax, semantics, data types, functions, state management, etc.
-3.  **[02_dana_runtime_and_execution/](./02_dana_runtime_and_execution/)**: How Dana code is executed, including the interpreter, sandbox, REPL, and the IPV architecture.
-4.  **[03_dana_tooling_and_processing/](./03_dana_tooling_and_processing/)**: Components involved in processing Dana code, such as the parser, AST, validators, and transcoders.
-5.  **[04_opendxa_integration_and_extension/](./04_opendxa_integration_and_extension/)**: How Dana integrates with the broader OpenDXA system, including agents and capabilities.
-6.  **[archive/](./archive/)**: Older or superseded design documents.
+1.  **Dana Philosophy**: Core vision, goals, and guiding principles behind Dana.
+2.  **Dana Language Specification**: Detailed definition of the Dana language itself – syntax, semantics, data types, functions, state management, etc.
+3.  **Dana Runtime and Execution**: How Dana code is executed, including the interpreter, sandbox, REPL, and the core **PAV (Perceive → Act → Validate) execution model**.
+4.  **Core Capabilities and Resources**: Core capabilities and resources abstraction model for Dana programs to interact with internal and external functionalities.
+5.  **Agent and Orchestration**: Higher-level constructs for building intelligent agents and orchestrating complex workflows using Dana.
+6.  **Tooling and Developer Experience**: Developer tools, IDE integration, debugging, testing frameworks, and other developer experience improvements.
 
 ## Document Status
 

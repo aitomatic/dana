@@ -1,9 +1,3 @@
-<p align="center">
-  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
-</p>
-
-[◀ Language](./language.md)
-
 # Dana Language Syntax Reference
 
 Dana is a domain-specific language designed for AI-driven automation and reasoning. This document provides a comprehensive reference for Dana's syntax and language features, as supported by the current grammar and runtime.

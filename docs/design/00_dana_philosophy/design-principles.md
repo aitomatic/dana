@@ -1,9 +1,3 @@
-<p align="center">
-  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
-</p>
-
-[Project Overview](../README.md)
-
 # Dana Design Principles
 
 These principles guide the design and evolution of Dana as an agentic language and sandbox. They are intended for Dana creators, AI coding assistants, and advanced users who want to understand or extend the system.
@@ -14,6 +8,7 @@ These principles guide the design and evolution of Dana as an agentic language a
 
 - **Postel's Law:**
   > "Be conservative in what you do, be liberal in what you accept from others."
+  This principle is a cornerstone of Dana's design and is directly embodied in its **PAV (Perceive → Act → Validate)** execution model, which structures robust function calls to be liberal in input processing and conservative in their output.
 - **Simple things should be easy. Complex things should be possible.**
 - **KISS:** Keep It Simple, Stupid.
 - **YAGNI:** You Aren't Gonna Need It.

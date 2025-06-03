@@ -1,9 +1,3 @@
-<p align="center">
-  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
-</p>
-
-[Project Overview](../../README.md) | [Dana Documentation](./dana.md)
-
 # Enough of brittle, black-box AI.
 
 > *You've spent days wiring up LLM calls, passing context, and debugging fragile automations. The code works—until it doesn't. A new document, a new edge case, and suddenly you're back to square one. Sound familiar?*
@@ -109,6 +103,7 @@ LLMs hallucinate. Pipelines break. You're always on call. Dana builds in verific
 **How Dana Does It:**
 - **Verification Loops:** Dana checks results and retries or escalates as needed, replacing days of manual QA.
 - **Error Correction:** Suggestions and fixes are proposed automatically, slashing debugging time.
+- **Robust by Design with PAV (Perceive → Act → Validate)**: Key operations are governed by the PAV protocol, a cycle of perceiving inputs flexibly, acting intelligently, and validating outputs strictly, complete with automatic retries. This neurosymbolic approach embeds Postel's Law ("be liberal in, conservative out") into the core, ensuring dependable AI behavior.
 
 **Example:**
 ```python
