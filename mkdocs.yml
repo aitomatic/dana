@@ -150,9 +150,6 @@ nav:
       - Testing Framework: design/05_tooling_and_dev_experience/testing_framework.md
       - Documentation Generation: design/05_tooling_and_dev_experience/documentation_generation.md
       - Packaging and Distribution: design/05_tooling_and_dev_experience/packaging_distribution.md
-  - Archive:
-    - Overview: archive/README.md
-    - Historical Comparisons: archive/historical-comparisons/framework-comparison-2024.md
 
 # Plugins
 plugins:

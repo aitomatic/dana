@@ -49,6 +49,14 @@ What's missing is an **execution framework** that:
 
 ## ✅ PAV: A Universal Contract for Robust Agent Execution
 
+```mermaid
+graph LR
+    Perceive[Perceive-Stage] -- Perceived Input --> Act[Act-Stage];
+    Act -- Raw Output --> Validate{Validate-Stage?};
+    Validate -- Valid --> Success[PAV-Success];
+    Validate -- Invalid, Retry --> Act;
+```
+
 The **Perceive → Act → Validate (PAV)** protocol embodies this pattern:
 
 1. **Perceive**: Accept inputs with fault tolerance and context sensitivity. For instance, in the email summarization example above, this phase would go beyond naively accepting the raw email. It would normalize the user's request, identify the actual email content, potentially use a `CodeContextAnalyzer` to understand that a concise summary is expected (based on how `email_summary` might be used later in the code), and **transform this into an optimized prompt** (e.g., by truncating the email, adding specific instructions like "Summarize the key points of the following email in 3 sentences:", and removing irrelevant headers). This optimized prompt is then passed to the `Act` phase.
