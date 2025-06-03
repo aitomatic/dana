@@ -9,13 +9,14 @@ This simple but profound principle, coined in the early days of internet protoco
 
 As we enter the **GenAI era**, we are witnessing a rapid convergence of **natural language understanding, symbolic reasoning, tool-use, and program synthesis**. Language models can now infer vague intent, generate structured plans, and execute arbitrary code. But they do so with **unpredictable semantics**, **fragile formatting**, and **opaque failure modes**.
 
-### ❗ The Problem
+Consider a simple agent task: summarizing an email. A naive approach might be:
 
-Generative systems—especially LLM-based agents—tend to be:
+```
+# Naive approach - directly passing user input as prompt
+email_summary = llm.generate(prompt=user_provided_email_text)
+```
 
-* **Liberal in input**, but also **liberal in output**
-* **Probabilistic**, not **principled**
-* **Powerful**, but **unstable** without scaffolding
+This often fails because `user_provided_email_text` might be too long, lack clear instructions, or contain confusing metadata. The agent needs to intelligently **perceive** the core summarization intent and the relevant content, then **act** by sending a well-formed, optimized prompt to the LLM. Without a structured approach, this "pre-processing" becomes complex, ad-hoc, and error-prone.
 
 This makes integration into **symbolic, software, or API-driven systems** extremely difficult. Outputs may be:
 
@@ -50,7 +51,7 @@ What's missing is an **execution framework** that:
 
 The **Perceive → Act → Validate (PAV)** protocol embodies this pattern:
 
-1. **Perceive**: Accept inputs with fault tolerance and context sensitivity. Normalize ambiguous user input, language, or unstructured data into a form your system can understand. This phase can also involve enriching the initial input with further context (e.g., from a `CodeContextAnalyzer`) or transforming it into an optimized internal representation (like a refined prompt) ready for the `Act` phase.
+1. **Perceive**: Accept inputs with fault tolerance and context sensitivity. For instance, in the email summarization example above, this phase would go beyond naively accepting the raw email. It would normalize the user's request, identify the actual email content, potentially use a `CodeContextAnalyzer` to understand that a concise summary is expected (based on how `email_summary` might be used later in the code), and **transform this into an optimized prompt** (e.g., by truncating the email, adding specific instructions like "Summarize the key points of the following email in 3 sentences:", and removing irrelevant headers). This optimized prompt is then passed to the `Act` phase.
 
 2. **Act**: Execute the core function or plan using the (potentially optimized) input from the `Perceive` phase. This can be a tool call, LLM generation (with an enhanced prompt), symbolic program, or composite chain, utilizing the (potentially rich) `perceived_input`.
 
