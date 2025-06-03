@@ -131,7 +131,7 @@ from opendxa.common.utils import (
     DXALogger,
     LLMInteractionAnalyzer,
     LLMInteractionVisualizer,
-    Misc,
+    Misc
 )
 
 __all__ = [
