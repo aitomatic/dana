@@ -3098,6 +3098,15 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#pav-in-action-reason-adapting-to-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      ✨ PAV in Action: reason() Adapting to Context
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#pav-decorator" class="md-nav__link">
     <span class="md-ellipsis">
       🔹 @pav(...) Decorator
@@ -4131,6 +4140,15 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#pav-in-action-reason-adapting-to-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      ✨ PAV in Action: reason() Adapting to Context
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#pav-decorator" class="md-nav__link">
     <span class="md-ellipsis">
       🔹 @pav(...) Decorator
@@ -4269,7 +4287,7 @@
 <p>What's missing is an <strong>execution framework</strong> that:</p>
 <ul>
 <li><strong>Tolerates fuzziness</strong> on the input side</li>
-<li><strong>Enables intelligent action</strong> at the core</li>
+<li><strong>Enables intelligent, adaptive action</strong> at the core, including dynamic prompt optimization or context-sensitive adjustments to how tasks are performed.</li>
 <li><strong>Enforces structure and validation</strong> on the output side</li>
 <li><strong>Retries, recovers, and learns from failure</strong></li>
 </ul>
@@ -4278,15 +4296,10 @@
 <p>The <strong>Perceive → Act → Validate (PAV)</strong> protocol embodies this pattern:</p>
 <ol>
 <li>
-<p><strong>Perceive</strong>: Accept inputs with fault tolerance and context sensitivity. Normalize ambiguous user input, language, or unstructured data into a form your system can understand. This phase can involve sophisticated context gathering, potentially including:</p>
-<ul>
-<li><strong>Code-Site Context</strong>: Information derived from the function's call site in Dana code (e.g., comments, surrounding variable names/types, type hints on assignment).</li>
-<li><strong>Ambient System Context</strong>: Relevant information from the broader execution environment (e.g., <code>system:__current_task_id</code>, <code>system:__user_id</code>, <code>system:__locale</code>, active operational domains).
-The output of this phase, the <code>perceived_input</code>, can therefore be a rich structure containing not just the normalized primary input but also this gathered context, which is then available to the <code>Act</code> and <code>Validate</code> phases.</li>
-</ul>
+<p><strong>Perceive</strong>: Accept inputs with fault tolerance and context sensitivity. Normalize ambiguous user input, language, or unstructured data into a form your system can understand. This phase can also involve enriching the initial input with further context (e.g., from a <code>CodeContextAnalyzer</code>) or transforming it into an optimized internal representation (like a refined prompt) ready for the <code>Act</code> phase.</p>
 </li>
 <li>
-<p><strong>Act</strong>: Execute the core function or plan. This can be a tool call, LLM generation, symbolic program, or composite chain, utilizing the (potentially rich) <code>perceived_input</code>.</p>
+<p><strong>Act</strong>: Execute the core function or plan using the (potentially optimized) input from the <code>Perceive</code> phase. This can be a tool call, LLM generation (with an enhanced prompt), symbolic program, or composite chain, utilizing the (potentially rich) <code>perceived_input</code>.</p>
 </li>
 <li>
 <p><strong>Validate</strong>: Strictly check the output against <code>pav_status.expected_output_type</code> and other criteria. Ensure it meets structural, semantic, or type-based expectations. If it doesn't, retry the act stage with introspective awareness of failure context.</p>
@@ -4344,6 +4357,28 @@ It allows us to tolerate ambiguity, act intelligently, and enforce correctness�
 It's the execution protocol at the <strong>center of modern neurosymbolic intelligence</strong>.</p>
 <hr />
 <h2 id="pav-design-and-specification">🔧 PAV Design and Specification<a class="headerlink" href="#pav-design-and-specification" title="Permanent link">&para;</a></h2>
+<h3 id="pav-in-action-reason-adapting-to-context">✨ PAV in Action: <code>reason()</code> Adapting to Context<a class="headerlink" href="#pav-in-action-reason-adapting-to-context" title="Permanent link">&para;</a></h3>
+<p>The power and everyday utility of the PAV execution model are clearly demonstrated by Dana's built-in <code>reason()</code> function. <code>reason()</code> leverages PAV to adapt its output based on the context provided by the Dana engineer, particularly through type hints. Consider the following interaction:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="o">&gt;&gt;&gt;</span> <span class="n">pi_description</span> <span class="o">=</span> <span class="n">reason</span><span class="p">(</span><span class="s2">&quot;what is pi?&quot;</span><span class="p">)</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="c1"># pi_description is now a string:</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># &quot;Pi (π) is a mathematical constant representing the ratio of a circle&#39;s circumference to its diameter. Its approximate value is:</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># π ≈ 3.14159</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="c1"># But it is an irrational number, meaning: ...&quot;</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="o">&gt;&gt;&gt;</span> <span class="n">pi_float</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">reason</span><span class="p">(</span><span class="s2">&quot;what is pi?&quot;</span><span class="p">)</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="c1"># pi_float is now the float: 3.14159265</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="o">&gt;&gt;&gt;</span> <span class="n">radius</span> <span class="o">=</span> <span class="mi">2</span> <span class="p">;</span> <span class="n">area</span> <span class="o">=</span> <span class="n">pi_float</span> <span class="o">*</span> <span class="n">radius</span><span class="o">**</span><span class="mi">2</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="c1"># area is now the float: 12.5663706</span>
+</span></code></pre></div>
+<p>In the first call, with no specific type hint for <code>pi_description</code> (or if <code>-&gt; any</code> or <code>-&gt; str</code> was implied), <code>reason()</code> returns a descriptive string. In the second call, the explicit type hint <code>pi_float: float</code> signals to PAV that a floating-point number is desired. The PAV framework, underpinning <code>reason()</code>:</p>
+<ol>
+<li><strong>Perceives</strong> the request "what is pi?" and critically, the <code>expected_output_type</code> of <code>float</code> from the type hint.</li>
+<li><strong>Acts</strong> by querying its underlying AI model, likely instructing it to provide a numerical value for Pi.</li>
+<li><strong>Validates</strong> that the AI's output can be (or is) a float, ensuring the assignment to <code>pi_float</code> is type-safe and that <code>pi_float</code> can be immediately used in numerical calculations like <code>area = pi_float * radius**2</code>.</li>
+</ol>
+<p>This dynamic adaptation based on context, especially the desired output type, without changing the core textual prompt, is a hallmark of the PAV model and a key to Dana's expressive power and developer convenience.</p>
+<hr />
 <p>This section outlines the PAV (Perceive → Act → Validate) framework, designed for implementation in Python as part of the Dana runtime.</p>
 <ul>
 <li>The <strong>PAV control logic</strong> and retry loop is implemented in Python.</li>
@@ -4422,17 +4457,17 @@ It's the execution protocol at the <strong>center of modern neurosymbolic intell
 <hr />
 <h3 id="pav_status-in-dana">🔹 <code>pav_status</code> in Dana<a class="headerlink" href="#pav_status-in-dana" title="Permanent link">&para;</a></h3>
 <p>Exposed in the Dana local scope (per invocation), structured as:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>  <span class="s2">&quot;attempt&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>  <span class="s2">&quot;last_failure&quot;</span><span class="p">:</span> <span class="nb">str</span> <span class="ow">or</span> <span class="n">null</span><span class="p">,</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>  <span class="s2">&quot;max_retries&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>  <span class="s2">&quot;successful&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>  <span class="s2">&quot;perceived_input&quot;</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>    <span class="c1"># Output of the Perceive phase. Can be a simple transformed value or a richer structure/dictionary \</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>                             <span class="c1"># containing the normalized input along with relevant code-site and ambient system context \</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>                             <span class="c1"># gathered during perception.</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>  <span class="s2">&quot;raw_output&quot;</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>         <span class="c1"># Python object output by the Act phase.</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>  <span class="s2">&quot;expected_output_type&quot;</span><span class="p">:</span> <span class="n">Any</span> <span class="c1"># The type/structure expected for the final output. Populated from decorator arg or Perceive phase.</span>
-</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="p">}</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">{</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>  <span class="s2">&quot;attempt&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  <span class="s2">&quot;last_failure&quot;</span><span class="p">:</span> <span class="nb">str</span> <span class="ow">or</span> <span class="n">null</span><span class="p">,</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>  <span class="s2">&quot;max_retries&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>  <span class="s2">&quot;successful&quot;</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>  <span class="s2">&quot;perceived_input&quot;</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>    <span class="c1"># Output of the Perceive phase. Can be a simple transformed value or a richer structure/dictionary \</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>                             <span class="c1"># containing the normalized input along with relevant code-site and ambient system context \</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>                             <span class="c1"># gathered during perception.</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>  <span class="s2">&quot;raw_output&quot;</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>         <span class="c1"># Python object output by the Act phase.</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>  <span class="s2">&quot;expected_output_type&quot;</span><span class="p">:</span> <span class="n">Any</span> <span class="c1"># The type/structure expected for the final output. Populated from decorator arg or Perceive phase.</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="p">}</span>
 </span></code></pre></div>
 <p>Can be used in Dana validation functions for adaptive logic (e.g. "on second retry, try a stricter check").</p>
 <hr />
@@ -4465,13 +4500,13 @@ The mechanism for gathering this (e.g., a conceptual <code>CodeContextAnalyzer</
 <p>By making this context available (primarily through the <code>perceived_input</code> object passed from <code>Perceive</code> to <code>Act</code>, and available in <code>pav_status</code>), the PAV framework enables functions to be highly adaptive to their specific invocation circumstances and the broader operational environment.</p>
 <hr />
 <h2 id="example-usage-in-python">✅ Example Usage (in Python)<a class="headerlink" href="#example-usage-in-python" title="Permanent link">&para;</a></h2>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nd">@pav</span><span class="p">(</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="n">perceive</span><span class="o">=</span><span class="s2">&quot;Dana::parse_input&quot;</span><span class="p">,</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="n">validate</span><span class="o">=</span><span class="s2">&quot;Dana::check_valid_summary&quot;</span><span class="p">,</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="n">max_retries</span><span class="o">=</span><span class="mi">3</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="p">)</span>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="k">def</span><span class="w"> </span><span class="nf">summarize</span><span class="p">(</span><span class="n">perceived_input</span><span class="p">):</span>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="k">return</span> <span class="n">llm_generate</span><span class="p">(</span><span class="n">perceived_input</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nd">@pav</span><span class="p">(</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="n">perceive</span><span class="o">=</span><span class="s2">&quot;Dana::parse_input&quot;</span><span class="p">,</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="n">validate</span><span class="o">=</span><span class="s2">&quot;Dana::check_valid_summary&quot;</span><span class="p">,</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="n">max_retries</span><span class="o">=</span><span class="mi">3</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="p">)</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="k">def</span><span class="w"> </span><span class="nf">summarize</span><span class="p">(</span><span class="n">perceived_input</span><span class="p">):</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="k">return</span> <span class="n">llm_generate</span><span class="p">(</span><span class="n">perceived_input</span><span class="p">)</span>
 </span></code></pre></div>
 <p>Where:</p>
 <ul>
@@ -4562,7 +4597,7 @@ These profiles could be implemented by allowing different Dana functions (or eve
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-datetime" title="June 3, 2025 21:15:07 UTC">June 3, 2025 21:15:07</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-datetime" title="June 3, 2025 21:36:31 UTC">June 3, 2025 21:36:31</span>
   </span>
 
     
