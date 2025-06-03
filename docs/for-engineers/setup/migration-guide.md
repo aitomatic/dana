@@ -172,7 +172,7 @@ insights = reason(f"Provide insights based on: {summary}")
 ### Additional Resources
 - [Installation Guide](installation.md) - Set up OpenDXA environment
 - [Quick Start Examples](../recipes/first-agent.md) - Get started quickly
-- [Best Practices](../reference/best-practices.md) - Follow proven patterns
+- [Reference Guide](../reference/README.md) - Follow proven patterns
 
 ---
 

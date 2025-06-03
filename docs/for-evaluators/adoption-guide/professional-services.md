@@ -355,12 +355,12 @@ For existing customers with urgent issues:
 ### Pre-Engagement Resources
 - [Technical Assessment Checklist](../proof-of-concept/evaluation-guide.md)
 - [ROI Calculator](../roi-analysis/calculator.md)
-- [Implementation Planning Template](implementation-roadmap.md)
-- [Security Compliance Guide](../comparison/security-overview.md)
+- [Implementation Planning Overview](README.md)
+- [Security Overview](../comparison/README.md)
 
 ### Post-Engagement Resources
-- [Production Deployment Guide](../../for-engineers/setup/deployment-guide.md)
-- [Monitoring and Maintenance](../../for-engineers/reference/operations-guide.md)
+- [Setup Guide](../../for-engineers/setup/README.md)
+- [Reference Guide](../../for-engineers/reference/README.md)
 - [Community Support](https://community.opendxa.ai)
 - [Documentation Portal](../../README.md)
 

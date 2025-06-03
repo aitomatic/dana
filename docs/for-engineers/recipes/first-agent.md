@@ -26,5 +26,5 @@ This tutorial will walk you through:
 ## Related Resources
 
 - [Recipes Overview](README.md)
-- [Agent Configuration](../../reference/api/README.md)
-- [Examples](../../../examples/README.md)
+- [Agent Configuration](../reference/api/README.md)
+- [Examples Repository](https://github.com/aitomatic/opendxa/tree/main/examples)

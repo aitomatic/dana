@@ -345,23 +345,23 @@ OpenDXA serves as an educational platform for AI concepts:
 ## 📞 Getting Involved
 
 ### For Individual Researchers
-- **Explore the Platform**: [Start with the manifesto](manifesto/vision.md) and [theoretical foundations](neurosymbolic/foundations.md)
+- **Explore the Platform**: [Start with the manifesto](manifesto/vision.md) and [theoretical foundations](neurosymbolic/README.md)
 - **Join Research Community**: [Research mailing list](mailto:research@aitomatic.com) and [Discord channel](https://discord.gg/opendxa-research)
-- **Propose Collaboration**: [Submit research proposal](research/collaboration-proposal.md)
+- **Propose Collaboration**: [Submit research proposal](research/README.md)
 
 ### For Research Groups
 - **Partnership Inquiry**: [Contact research partnerships](mailto:partnerships@aitomatic.com)
-- **Grant Collaboration**: [Joint funding opportunities](research/funding-opportunities.md)
-- **Data Access Request**: [Research data access program](research/data-access.md)
+- **Grant Collaboration**: [Joint funding opportunities](research/README.md)
+- **Data Access Request**: [Research data access program](research/README.md)
 
 ### For Students
-- **Thesis Projects**: [Student research program](research/student-program.md)
-- **Internship Opportunities**: [Research internships](research/internships.md)
-- **Open Source Contributions**: [Student contributor guide](research/student-contributions.md)
+- **Thesis Projects**: [Student research program](research/README.md)
+- **Internship Opportunities**: [Research internships](research/README.md)
+- **Open Source Contributions**: [Student contributor guide](research/README.md)
 
 ---
 
-*Ready to advance the frontiers of neurosymbolic AI? Start with our [research manifesto](manifesto/vision.md) or [explore collaboration opportunities](research/collaboration-opportunities.md).* 
+*Ready to advance the frontiers of neurosymbolic AI? Start with our [research manifesto](manifesto/vision.md) or [explore collaboration opportunities](research/README.md).* 
 
 
 <p align="center">

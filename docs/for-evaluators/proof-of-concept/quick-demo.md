@@ -32,4 +32,4 @@ Detailed demo instructions and interactive examples will be provided here.
 
 - [Proof of Concept Overview](README.md)
 - [Technical Overview](../comparison/technical-overview.md)
-- [Examples](../../examples/README.md)
+- [Examples Repository](https://github.com/aitomatic/opendxa/tree/main/examples)

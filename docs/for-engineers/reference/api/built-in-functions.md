@@ -710,7 +710,7 @@ public:shared_data = {"key": "value"}
 | `any()` | `(iterable: list) -> bool` | ✅ Complete | Supports list, tuple |
 | `range()` | `(start: int, stop: int = None, step: int = 1) -> list` | ✅ Complete | Multiple signature support |
 
-**📖 For detailed implementation and security analysis, see: [Pythonic Built-in Functions](../../../../.ai-only/pythonic-builtins.md)**
+**📖 For detailed implementation and security analysis, see the source code.**
 
 ---
 

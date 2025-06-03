@@ -316,4 +316,4 @@ def process_document(document):
 
 ---
 
-*Ready to start your evaluation? Begin with the [Quick Demo](quick-demo.md) or contact our [Professional Services](../../adoption-guide/professional-services.md) team for guided evaluation support.*
+*Ready to start your evaluation? Begin with the [Quick Demo](quick-demo.md) or contact our [Professional Services](../adoption-guide/professional-services.md) team for guided evaluation support.*
