@@ -7,10 +7,10 @@ def test_basic_indentation():
     """Test basic indentation handling."""
     parser = DanaParser()
     code = """
-private.x = 0
-while private.x < 3:
-    private.x = private.x + 1
-    if private.x == 2:
+private:x = 0
+while private:x < 3:
+    private:x = private:x + 1
+    if private:x == 2:
         print("x is 2")
 """
     result = parser.parse(code)

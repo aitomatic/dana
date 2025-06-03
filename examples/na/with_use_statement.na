@@ -1,0 +1,5 @@
+log_level("DEBUG")
+
+with use("mcp", url="http://localhost:8880/websearch") as mcp:
+    answer : str = reason("Who is the CEO of Aitomatic")
+print(answer)
