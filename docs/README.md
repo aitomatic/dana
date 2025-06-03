@@ -16,7 +16,7 @@
 - Real-world recipes for chatbots, document processing, and workflows
 - Troubleshooting guides and error references
 
-**Start here:** [Quick Start Guide](for-engineers/README.md#quick-start)
+**Start here:** [Getting Started](for-engineers/README.md#🚦-getting-started-paths)
 
 ---
 
@@ -30,7 +30,7 @@
 - Proof of concept guides and adoption strategies
 - Decision frameworks and implementation roadmaps
 
-**Start here:** [30-Second Assessment](for-evaluators/README.md#quick-evaluation-framework)
+**Start here:** [Evaluation Guide](for-evaluators/README.md)
 
 ---
 
@@ -44,7 +44,7 @@
 - Extension development for capabilities and resources
 - Testing frameworks and documentation standards
 
-**Start here:** [Development Setup](for-contributors/README.md#quick-start-for-contributors)
+**Start here:** [Development Setup](for-contributors/README.md)
 
 ---
 

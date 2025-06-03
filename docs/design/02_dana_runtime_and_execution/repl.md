@@ -11,12 +11,12 @@
 
 The Dana REPL (Read-Eval-Print Loop) provides an interactive command-line environment for executing Dana code snippets and, optionally, natural language statements that can be transcoded to Dana. It is a crucial tool for learning, experimenting, and debugging Dana programs.
 
-The REPL utilizes the [Dana Parser](../../01_dana_language_specification/parser.md) (placeholder for actual parser doc) to parse input into an AST, and then the [Dana Interpreter](./interpreter.md) executes this AST. The state across REPL interactions is managed within a persistent `SandboxContext` (see [Sandbox](./sandbox.md) and [State and Scopes](../../01_dana_language_specification/state_and_scopes.md)).
+The REPL utilizes the Dana Parser to parse input into an AST, and then the [Dana Interpreter](./interpreter.md) executes this AST. The state across REPL interactions is managed within a persistent `SandboxContext` (see [Sandbox](./sandbox.md) and [State and Scopes](../01_dana_language_specification/state_and_scopes.md)).
 
 ## 2. Features
 
 -   **Interactive Execution**: Directly execute Dana statements and expressions.
--   **Natural Language Transcoding**: If an LLM resource is configured, natural language input can be translated into Dana code and then executed. (Relies on a [Transcoder](../../../TODO_LINK_TRANSCODER_DESIGN.md) component - placeholder).
+-   **Natural Language Transcoding**: If an LLM resource is configured, natural language input can be translated into Dana code and then executed.
 -   **Command History**: Recall and reuse previous commands (typically using arrow keys, via `prompt_toolkit`).
 -   **Tab Completion**: Keyword-based completion for Dana syntax elements.
 -   **Multiline Input**: Supports entering complex, multiline Dana statements and blocks (e.g., `if/else`, `for`, function definitions).

@@ -84,7 +84,7 @@ print("Analysis result:", result)
 - [Type System: AI function signatures](type-system.md#ai-functions)
 
 ### Data Processing
-- [Built-in Functions: Collections](built-in-functions.md#collections) - `len()`, `sum()`, `max()`, `min()`
+- [Built-in Functions: Collections](built-in-functions.md#collection-functions) - `len()`, `sum()`, `max()`, `min()`
 - [Type System: Data types](type-system.md#data-types) - `list`, `dict`, `tuple`, `set`
 
 ### Logging and Output
@@ -97,7 +97,7 @@ print("Analysis result:", result)
 
 ### Function Integration
 - [Function Calling](function-calling.md) - Dana↔Python integration
-- [Type System: Function signatures](type-system.md#function-signatures)
+- [Type System: Function signatures](type-system.md#function-type-signatures)
 
 ## 🛠️ Development Tools
 

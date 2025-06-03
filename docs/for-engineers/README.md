@@ -20,13 +20,13 @@ Jump directly to solutions for typical engineering problems.
 Quick lookup for syntax, functions, and commands.
 
 - [Dana Language Reference](reference/dana-syntax.md) - Complete syntax guide
-- [Function Catalog](reference/functions.md) - All available functions with examples
+- [API Reference](reference/api/README.md) - All available functions with examples
 - [REPL Commands](reference/repl-guide.md) - Interactive development environment
-- [Error Messages](troubleshooting/error-reference.md) - Error codes and fixes
+- [Troubleshooting](troubleshooting/README.md) - Common problems and solutions
 
 ## 🎯 By Experience Level
-- **New to OpenDXA**: Start with [Quick Start](#quick-start)
-- **Experienced Developer**: Jump to [Common Tasks](#common-tasks)
+- **New to OpenDXA**: Start with [Getting Started](#🚦-getting-started-paths)
+- **Experienced Developer**: Jump to [Common Tasks](#📋-common-tasks)
 - **Debugging Issue**: Check [Troubleshooting](troubleshooting/README.md)
 
 ## 💡 What Makes OpenDXA Different

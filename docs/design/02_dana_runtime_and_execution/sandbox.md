@@ -61,12 +61,12 @@ Optional)
 
 -   **Input (Script / REPL)**: Entry points for user-provided Dana code.
 -   **Sandbox Environment / Dana Runtime**: The overarching container and process that manages code processing and execution.
-    -   **Parser**: Converts source code into an Abstract Syntax Tree (AST) based on the Dana [Grammar](../../01_dana_language_specification/grammar.md).
+    -   **Parser**: Converts source code into an Abstract Syntax Tree (AST) based on the Dana [Grammar](../01_dana_language_specification/grammar.md).
     -   **AST Transformer (Optional)**: Modifies the AST for various purposes (e.g., optimization, desugaring complex syntax).
-    -   **Type Information**: While Dana is dynamically typed, the system can use type hints or caller-specified desired types (via `__dana_desired_type` in `SandboxContext`) to guide execution, especially for polymorphic functions and LLM interactions. See [Type System and Casting](./type_system_and_casting.md) and [Functions and Polymorphism](../../01_dana_language_specification/functions_and_polymorphism.md).
+    -   **Type Information**: While Dana is dynamically typed, the system can use type hints or caller-specified desired types (via `__dana_desired_type` in `SandboxContext`) to guide execution, especially for polymorphic functions and LLM interactions. See [Type System and Casting](./type_system_and_casting.md) and [Functions and Polymorphism](../01_dana_language_specification/functions_and_polymorphism.md).
     -   **Interpreter**: The core component that executes the AST. It interacts with the `SandboxContext` for state and the `FunctionRegistry` for function calls. See [Interpreter](./interpreter.md).
-    -   **`SandboxContext`**: Holds all runtime state, including variables across different scopes (`local:`, `private:`, `public:`, `system:`), registered resources, and potentially the `__dana_desired_type`. See [State and Scopes](../../01_dana_language_specification/state_and_scopes.md) and [Execution Model](./execution_model.md).
-    -   **Function Registry**: Manages all available functions (built-in, user-defined Dana, Python-backed). See [Functions and Polymorphism](../../01_dana_language_specification/functions_and_polymorphism.md).
+    -   **`SandboxContext`**: Holds all runtime state, including variables across different scopes (`local:`, `private:`, `public:`, `system:`), registered resources, and potentially the `__dana_desired_type`. See [State and Scopes](../01_dana_language_specification/state_and_scopes.md) and [Execution Model](./execution_model.md).
+    -   **Function Registry**: Manages all available functions (built-in, user-defined Dana, Python-backed). See [Functions and Polymorphism](../01_dana_language_specification/functions_and_polymorphism.md).
 -   **Program Output / Effects**: The results or side effects (e.g., state changes in `SandboxContext`, external API calls, logged messages) produced by running the program.
 
 ## 5. Key Goals of the Sandbox Approach

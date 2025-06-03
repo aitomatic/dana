@@ -200,7 +200,7 @@ local:sum_val = add(5,3)
 
 A key application of decorators in Dana is to enable and configure the **PAV (Perceive → Act → Validate)** execution model for user-defined Dana functions. This allows Dana functions to benefit from robust, context-aware execution with built-in retry and validation logic.
 
-Refer to the full [PAV Execution Model documentation](../../02_dana_runtime_and_execution/pav_execution_model.md) for details on PAV.
+Refer to the full [PAV Execution Model documentation](../02_dana_runtime_and_execution/pav_execution_model.md) for details on PAV.
 
 **Conceptual Usage:**
 

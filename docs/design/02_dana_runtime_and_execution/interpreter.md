@@ -5,7 +5,7 @@
 
 **Module**: `opendxa.dana.sandbox.interpreter`
 
-Given the program AST after transformation (and optional type checking), we are ready to execute the program. See [AST documentation](../../01_dana_language_specification/ast.md) (Note: placeholder, to be created or linked) and [Type System and Casting](./type_system_and_casting.md) for more details.
+Given the program AST after transformation (and optional type checking), we are ready to execute the program. See [Type System and Casting](./type_system_and_casting.md) for more details.
 
 This document describes the architecture, responsibilities, and flow of the Dana Interpreter, which is responsible for executing Dana programs by traversing the AST and managing sandbox context. Refer to the [Execution Model](./execution_model.md) for an overview of how the interpreter fits into the broader execution flow.
 
@@ -37,14 +37,14 @@ The interpreter uses a **unified execution model** where every AST node is treat
 -   **StatementExecutor**: Executes statements (assignments, conditionals, loops)
 -   **ControlFlowExecutor**: Manages control flow (if/else, while, for, return, break, continue)
 -   **CollectionExecutor**: Handles collections and f-string expressions
--   **FunctionExecutor**: Manages function definitions and calls (see also [Functions and Polymorphism](../../01_dana_language_specification/functions_and_polymorphism.md))
+-   **FunctionExecutor**: Manages function definitions and calls (see also [Functions and Polymorphism](../01_dana_language_specification/functions_and_polymorphism.md))
 -   **ProgramExecutor**: Executes complete programs and statement blocks
 
 ### Supporting Infrastructure
 
 -   **BaseExecutor**: Base class providing common functionality for all executors
 -   **FunctionRegistry**: Unified registry for Dana and Python functions with namespacing support.
--   **SandboxContext**: Provides execution context, variable scope management (see [State and Scopes](../../01_dana_language_specification/state_and_scopes.md) and [Sandbox](./sandbox.md)), and access to LLM resources.
+-   **SandboxContext**: Provides execution context, variable scope management (see [State and Scopes](../01_dana_language_specification/state_and_scopes.md) and [Sandbox](./sandbox.md)), and access to LLM resources.
 -   **Hooks**: Extensible hook system for monitoring and extending execution
 
 ## Execution Flow
@@ -127,7 +127,7 @@ graph TB
 
 -   **Improved Error Messages**: User-friendly error formatting with context
 -   **Execution Path Tracking**: Debugging support with execution path information
--   **Exception Handling**: Proper handling of control flow exceptions (return, break, continue). See also [Error Handling](../../01_dana_language_specification/error_handling.md).
+-   **Exception Handling**: Proper handling of control flow exceptions (return, break, continue). See also [Error Handling](../01_dana_language_specification/error_handling.md).
 
 ## Example Usage
 

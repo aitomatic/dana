@@ -8,7 +8,7 @@ Dana's type hinting system provides clear type annotations for variables and fun
 - [Variable Type Annotations](#variable-type-annotations)
 - [Function Type Signatures](#function-type-signatures)
 - [Type Validation](#type-validation)
-- [AI Function Types](#ai-function-types)
+- [AI Function Types](#ai-functions)
 - [Data Types](#data-types)
 - [Type Compatibility](#type-compatibility)
 - [Best Practices](#best-practices)

@@ -22,7 +22,7 @@
     *   Retry mechanisms for fallible tasks (e.g., network calls).
 *   **State Management Across Tasks**: 
     *   Leveraging `SandboxContext` to maintain and share state between tasks in an orchestration.
-*   **Parallel Task Execution** (Dependent on [Concurrency Model](./concurrency_model.md)):
+*   **Parallel Task Execution** (Dependent on Concurrency Model):
     *   Syntax and semantics for launching tasks in parallel.
     *   Synchronization points (e.g., waiting for all parallel tasks to complete).
     *   Handling results and errors from parallel tasks.
