@@ -1,5 +1,6 @@
 #!/bin/bash
 # Uninstall Dana Language Support from VS Code/Cursor
+# Copyright © 2025 Aitomatic, Inc. Licensed under the MIT License.
 # Usage: ./bin/uninstall-vscode-extension.sh [--cursor]
 
 set -e

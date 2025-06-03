@@ -11,67 +11,34 @@ Prefer using unscoped variables (auto-scoped to local) instead of explicit `priv
 
 # OpenDXA - Domain-Expert Agent Framework
 
-> A comprehensive framework for easily coding and deploying smart, multi-agent systems with domain expertise, powered by Dana, a Pythonic agentic programming language and secure sandboxed runtime.
+> OpenDXA is a comprehensive framework for easily coding and deploying domain-expert multi-agent systems.
 
-## TL;DR
+> Powered by Dana, a Pythonic agentic programming language and secure sandboxed runtime.
 
-### Requirements
+---
 
-- [git](https://github.com/git-guides/install-git)
-- [uv](https://github.com/astral-sh/uv)
+## TL;DR - Get Running in 30 Seconds! 🚀
 
-To install uv, run their installation script in your terminal.
-
+### One-Command Setup
 ```bash
-# On macOS and Linux.
-curl -LsSf https://astral.sh/uv/install.sh | sh
-# On Windows.
-powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+git clone https://github.com/aitomatic/opendxa.git && cd opendxa && make
 ```
+This installs everything and creates your `.env` file. Then just:
+1. Add your API key to `.env` 
+2. Run `bin/dana` to start the Dana REPL (interactive shell)
 
-Close and reopen your terminal, then check that the `uv` command works.
+*First time using uv? See [Project Maintenance with uv](#-project-maintenance-with-uv) for essential commands.*
 
-### Steps
+---
 
-```bash
-# Clone the repo
-git clone https://github.com/aitomatic/opendxa.git
+### Manual Setup (if you prefer)
+1. Install [uv](https://astral.sh/uv/): `curl -LsSf https://astral.sh/uv/install.sh | sh`
+2. Setup: `git clone https://github.com/aitomatic/opendxa.git && cd opendxa && uv sync`
+3. Configure: `cp .env.example .env` (then add your API keys)
+4. Run: `bin/dana` to start the Dana REPL
 
-# Go to the folder
-cd opendxa
+*New to uv? Check out [Project Maintenance with uv](#-project-maintenance-with-uv) for helpful commands.*
 
-# Set up the virtual environment
-uv sync
-```
-
-Add your API key of choice to your .env file.
-
-```bash
-# Create your .env file
-cp .env.example .env
-
-# Open the file to edit it
-open .env
-```
-
-Now you can start the DANA shell, just like Python!
-
-```bash
-# Simply run this in the OpenDXA folder to start the Dana REPL from here on out.
-uv run bin/dana
-
-# You can also activate the venv beforehand instead of letting uv automatically handle it.
-source .venv/bin/activate
-bin/dana
-```
-
-### Contributors
-
-For developers contributing to the repo use:
-
-```bash
-uv sync --extra dev && uv run pre-commit install
-```
 ---
 
 ## 🎯 Choose Your Path
@@ -214,16 +181,161 @@ OpenDXA stands out by enabling truly expert agents grounded in specific domain k
 
 ```bash
 # Install development dependencies
-pip install -e ".[dev]"
+uv sync --extra dev
 
-# Set up pre-commit hooks
-pre-commit install
+# Set up pre-commit hooks  
+uv run pre-commit install
+
+# Or use the convenience script
+uv run setup-dev
+```
+
+### Available Development Scripts
+
+With uv, you can use convenient scripts for common tasks:
+
+```bash
+# Testing
+uv run test           # Run all tests
+uv run test-fast      # Run fast tests only
+uv run test-cov       # Run tests with coverage
+
+# Code Quality  
+uv run lint           # Check code with ruff
+uv run format         # Format code with black
+uv run check          # Run all quality checks
+uv run fix            # Auto-fix formatting and linting
+```
+
+Or use the Makefile for traditional commands:
+```bash
+make help            # Show all available commands
+make dev             # Complete development setup
+make test            # Run tests
+make check           # Code quality checks
 ```
 
 This ensures code quality checks run automatically on commit, including:
 - Code formatting with Ruff
 - Linting with Ruff (including undefined attributes/methods)
 - Basic file checks (trailing whitespace, merge conflicts, etc.)
+
+---
+
+## 🔧 Project Maintenance with uv
+
+*New to uv? This section covers essential commands for maintaining the OpenDXA project.*
+
+### 📦 Dependency Management
+
+```bash
+# Add a new dependency
+uv add package-name                    # Production dependency
+uv add --dev package-name             # Development-only dependency
+uv add "package-name>=1.0,<2.0"      # With version constraints
+
+# Remove dependencies
+uv remove package-name                 # Remove from pyproject.toml and uv.lock
+uv remove --dev package-name          # Remove dev dependency
+
+# Update dependencies
+uv sync                               # Install/sync to match uv.lock exactly
+uv lock --upgrade                     # Update uv.lock to latest versions
+uv sync --extra dev                   # Sync with development dependencies
+```
+
+### 🐍 Python Environment Management
+
+```bash
+# Python version management
+uv python install 3.12               # Install Python 3.12
+uv python list                       # List available Python versions
+uv run python --version              # Check current Python version
+
+# Virtual environment
+uv venv                              # Create .venv (done automatically)
+uv venv --python 3.12                # Create with specific Python version
+source .venv/bin/activate            # Activate manually (rarely needed)
+```
+
+### 🏃‍♂️ Running Commands
+
+```bash
+# Run commands in the uv environment
+uv run python script.py              # Run Python scripts
+uv run pytest                       # Run tests
+uv run dana                          # Start Dana REPL
+
+# Use predefined scripts (see pyproject.toml [tool.uv.scripts])
+uv run test                          # Equivalent to: uv run pytest tests/
+uv run lint                          # Equivalent to: uv run ruff check .
+uv run format                        # Equivalent to: uv run black .
+```
+
+### 🔄 Common Workflows
+
+```bash
+# Daily development workflow
+uv sync                              # Sync dependencies
+uv run test-fast                     # Run quick tests
+uv run check                         # Code quality checks
+
+# Adding a new feature
+uv add new-package                   # Add new dependency
+uv run test                          # Run full test suite
+uv run fix                           # Auto-fix code issues
+
+# Updating the project
+git pull                             # Get latest changes
+uv sync                              # Sync to new dependencies
+uv run test-fast                     # Verify everything works
+```
+
+### 🆚 uv vs pip/virtualenv Cheat Sheet
+
+| Task | Old Way (pip/venv) | New Way (uv) |
+|------|-------------------|-------------|
+| Create environment | `python -m venv .venv` | `uv venv` (automatic) |
+| Activate environment | `source .venv/bin/activate` | Not needed with `uv run` |
+| Install dependencies | `pip install -r requirements.txt` | `uv sync` |
+| Add dependency | `pip install package && pip freeze > requirements.txt` | `uv add package` |
+| Run script | `python script.py` | `uv run python script.py` |
+| Run tests | `pytest` | `uv run pytest` |
+
+### 🚨 Troubleshooting Tips
+
+**"Command not found: uv"**
+```bash
+# Install uv
+curl -LsSf https://astral.sh/uv/install.sh | sh
+# Or: pip install uv
+```
+
+**"Python version not found"**
+```bash
+uv python install 3.12              # Install missing Python version
+uv python list                      # Check available versions
+```
+
+**"Dependencies out of sync"**
+```bash
+uv sync --reinstall                 # Reinstall all dependencies
+uv lock --upgrade                   # Update lock file
+```
+
+**"Can't find module after adding dependency"**
+```bash
+uv sync                             # Ensure dependencies are installed
+uv run python -c "import module"   # Test import with uv run
+```
+
+### 💡 Pro Tips
+
+- **Always use `uv run`** for commands instead of activating the virtual environment
+- **Use `uv sync`** regularly to stay in sync with `uv.lock`
+- **Add dependencies with `uv add`** instead of editing `pyproject.toml` manually
+- **Use `make` commands** for complex workflows (they use uv internally)
+- **Check `pyproject.toml [tool.uv.scripts]`** for available shortcuts
 
 ---
 

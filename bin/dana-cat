@@ -1,0 +1,46 @@
+#!/bin/bash
+# dana-cat - View Dana files with syntax highlighting
+# Copyright © 2025 Aitomatic, Inc. Licensed under the MIT License.
+# Usage: dana-cat file.na
+
+set -e
+
+# Colors for output
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+# Check if file argument provided
+if [ $# -eq 0 ]; then
+    echo "Usage: dana-cat <file.na>"
+    echo "View Dana files with syntax highlighting"
+    exit 1
+fi
+
+FILE="$1"
+
+# Check if file exists
+if [ ! -f "$FILE" ]; then
+    echo "Error: File '$FILE' not found"
+    exit 1
+fi
+
+# Try different syntax highlighting tools in order of preference
+if command -v bat &> /dev/null; then
+    # bat is the best option - use Python syntax for now
+    echo -e "${BLUE}📄 Viewing with bat (Python syntax)...${NC}"
+    bat --language=python --style=numbers,changes,header "$FILE"
+elif command -v pygmentize &> /dev/null; then
+    # Pygments with Python lexer
+    echo -e "${BLUE}📄 Viewing with pygments (Python syntax)...${NC}"
+    pygmentize -l python "$FILE"
+elif command -v highlight &> /dev/null; then
+    # GNU source-highlight
+    echo -e "${BLUE}📄 Viewing with highlight (Python syntax)...${NC}"
+    highlight --syntax=python --out-format=ansi "$FILE"
+else
+    # Fallback to plain cat
+    echo -e "${YELLOW}⚠️  No syntax highlighter found. Install 'bat' for best experience.${NC}"
+    echo -e "${BLUE}📄 Viewing with cat (no syntax highlighting)...${NC}"
+    cat "$FILE"
+fi 

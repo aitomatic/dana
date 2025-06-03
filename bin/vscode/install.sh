@@ -1,5 +1,6 @@
 #!/bin/bash
 # Install Dana Language Support for VS Code/Cursor
+# Copyright © 2025 Aitomatic, Inc. Licensed under the MIT License.
 # Usage: ./bin/install-vscode-extension.sh [--cursor]
 
 set -e

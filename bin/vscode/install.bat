@@ -1,5 +1,6 @@
 @echo off
 REM Install Dana Language Support for VS Code/Cursor
+REM Copyright (C) 2025 Aitomatic, Inc. Licensed under the MIT License.
 REM Usage: bin\install-vscode-extension.bat [--cursor]
 
 setlocal enabledelayedexpansion

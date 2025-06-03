@@ -1,3 +1,4 @@
+<!-- AI Assistants: documentation markdowns should have this logo at the top -->
 <p align="center">
   <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
 </p>
@@ -256,6 +257,7 @@ text = string.capitalize("hello")
 - **[Type System API Reference](../for-engineers/reference/api/type-system.md)** - Type annotations
 - **[Scoping System API Reference](../for-engineers/reference/api/scoping.md)** - Variable scopes
 
+<!-- AI Assistants: documentation markdowns should have this logo at the bottom -->
 ---
 
 <p align="center">

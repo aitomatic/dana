@@ -1,3 +1,6 @@
+# .pre-commit-config.yaml - Pre-commit Hooks Configuration
+# Copyright © 2025 Aitomatic, Inc. Licensed under the MIT License.
+
 default_install_hook_types:
   - pre-commit
   - post-checkout
