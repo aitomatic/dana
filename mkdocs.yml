@@ -1,4 +1,4 @@
-site_name: OpenDXA with Dana Documentation
+site_name: OpenDXA with Dana
 site_description: Comprehensive documentation for OpenDXA - Domain-Aware NeuroSymbolic Architecture
 site_url: https://opendxa.readthedocs.io/
 repo_url: https://github.com/aitomatic/opendxa
@@ -7,8 +7,8 @@ repo_name: aitomatic/opendxa
 # Documentation and theme
 theme:
   name: material
-  logo: images/aitomatic-logo.png
-  favicon: images/aitomatic-logo.png
+  logo: images/aitomatic-logo-white.png
+  favicon: images/aitomatic-favicon.png
   features:
     - navigation.tabs
     - navigation.sections
@@ -43,41 +43,66 @@ nav:
     - Roadmap: ROADMAP.md
   - For Engineers:
     - Overview: for-engineers/README.md
-    - Setup: for-engineers/setup/
+    - Setup: 
+      - Overview: for-engineers/setup/README.md
+      - Installation: for-engineers/setup/installation.md
+      - Migration Guide: for-engineers/setup/migration-guide.md
     - Reference:
-      - Overview: for-engineers/reference/api/README.md
+      - Overview: for-engineers/reference/README.md
       - Dana Syntax: for-engineers/reference/dana-syntax.md
       - REPL Guide: for-engineers/reference/repl-guide.md
       - IPV Usage: for-engineers/reference/ipv-usage-guide.md
       - API Reference:
+        - Overview: for-engineers/reference/api/README.md
         - Core Functions: for-engineers/reference/api/core-functions.md
         - Built-in Functions: for-engineers/reference/api/built-in-functions.md
         - Function Calling: for-engineers/reference/api/function-calling.md
         - Type System: for-engineers/reference/api/type-system.md
         - Scoping: for-engineers/reference/api/scoping.md
         - Sandbox Security: for-engineers/reference/api/sandbox-security.md
-    - Recipes: for-engineers/recipes/
-    - Troubleshooting: for-engineers/troubleshooting/
+    - Recipes:
+      - Overview: for-engineers/recipes/README.md
+      - First Agent: for-engineers/recipes/first-agent.md
+      - Chatbot: for-engineers/recipes/chatbot/README.md
+      - Document Processor: for-engineers/recipes/document-processor/README.md
+      - API Integration: for-engineers/recipes/api-integration/README.md
+      - Workflow Agent: for-engineers/recipes/workflow-agent/README.md
+    - Troubleshooting: for-engineers/troubleshooting/README.md
   - For Evaluators:
     - Overview: for-evaluators/README.md
     - Comparison:
+      - Overview: for-evaluators/comparison/README.md
       - Framework Pain Points: for-evaluators/comparison/framework-pain-points.md
-    - Adoption Guide: for-evaluators/adoption-guide/
-    - Proof of Concept: for-evaluators/proof-of-concept/
-    - ROI Analysis: for-evaluators/roi-analysis/
+      - Technical Overview: for-evaluators/comparison/technical-overview.md
+    - Adoption Guide:
+      - Overview: for-evaluators/adoption-guide/README.md
+      - Professional Services: for-evaluators/adoption-guide/professional-services.md
+    - Proof of Concept:
+      - Overview: for-evaluators/proof-of-concept/README.md
+      - Quick Demo: for-evaluators/proof-of-concept/quick-demo.md
+      - Evaluation Guide: for-evaluators/proof-of-concept/evaluation-guide.md
+    - ROI Analysis:
+      - Overview: for-evaluators/roi-analysis/README.md
+      - Calculator: for-evaluators/roi-analysis/calculator.md
   - For Researchers:
     - Overview: for-researchers/README.md
     - Manifesto:
       - Vision: for-researchers/manifesto/vision.md
-    - Research: for-researchers/research/
-    - NeuroSymbolic: for-researchers/neurosymbolic/
-    - Future Work: for-researchers/future-work/
+    - Research: for-researchers/research/README.md
+    - NeuroSymbolic: for-researchers/neurosymbolic/README.md
+    - Future Work: for-researchers/future-work/README.md
   - For Contributors:
     - Overview: for-contributors/README.md
-    - Architecture: for-contributors/architecture/
-    - Codebase: for-contributors/codebase/
-    - Development: for-contributors/development/
-    - Extending: for-contributors/extending/
+    - Architecture:
+      - Overview: for-contributors/architecture/README.md
+      - System Design: for-contributors/architecture/system-design.md
+    - Codebase: for-contributors/codebase/README.md
+    - Development:
+      - Overview: for-contributors/development/README.md
+      - Contribution Guide: for-contributors/development/contribution-guide.md
+    - Extending:
+      - Overview: for-contributors/extending/README.md
+      - Extension Development: for-contributors/extending/extension-development.md
   - Designs:
     - Overview: designs/README.md
     - System Overview: designs/system-overview.md
@@ -98,6 +123,7 @@ nav:
       - Syntax: designs/dana/syntax.md
       - Grammar: designs/dana/grammar.md
       - Auto Type Casting: designs/dana/auto-type-casting.md
+      - Structs and Polymorphism: designs/dana/structs-and-polymorphism.md
     - Components:
       - AST: designs/ast.md
       - AST Validation: designs/ast-validation.md
@@ -185,6 +211,9 @@ extra:
 
 # Documentation directory
 docs_dir: docs
+
+# Exclude internal documentation from build
+exclude_docs: internal/
 
 # Build directory
 site_dir: site

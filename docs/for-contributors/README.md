@@ -1,9 +1,3 @@
-<p align="center">
-  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
-</p>
-
-[Project Overview](../../README.md)
-
 # OpenDXA for Contributors
 
 *Comprehensive guide for developers who want to contribute to, extend, or deeply understand OpenDXA*
@@ -15,9 +9,13 @@
 Whether you're looking to contribute code, extend functionality, or deeply understand OpenDXA's architecture, this guide provides everything you need to become an effective contributor to the OpenDXA ecosystem.
 
 ### Types of Contributors
+
 - **Core Contributors**: Developers working on the OpenDXA core platform
+
 - **Extension Developers**: Building capabilities, resources, and integrations
+
 - **Community Contributors**: Documentation, examples, and ecosystem tools
+
 - **Research Contributors**: Advancing the theoretical foundations
 
 ---
@@ -64,23 +62,23 @@ OpenDXA is built on a modular, extensible architecture with clear separation of 
 ┌─────────────────────────────────────────────────────────────┐
 │                    Application Layer                        │
 ├─────────────────────────────────────────────────────────────┤
-│                      Agent Layer                           │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
-│  │   Agent     │  │ Capabilities │  │     Resources       │ │
-│  │ Management  │  │   System     │  │    Management       │ │
-│  └─────────────┘  └─────────────┘  └─────────────────────┘ │
+│                      Agent Layer                            │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
+│  │   Agent     │  │ Capabilities│  │     Resources       │  │
+│  │ Management  │  │   System    │  │    Management       │  │
+│  └─────────────┘  └─────────────┘  └─────────────────────┘  │
 ├─────────────────────────────────────────────────────────────┤
-│                   Dana Execution Layer                     │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
-│  │    Parser   │  │ Interpreter │  │  Runtime Context    │ │
-│  │   (AST)     │  │  (Executor) │  │  (State Manager)    │ │
-│  └─────────────┘  └─────────────┘  └─────────────────────┘ │
+│                   Dana Execution Layer                      │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
+│  │    Parser   │  │ Interpreter │  │  Runtime Context    │  │
+│  │   (AST)     │  │  (Executor) │  │  (State Manager)    │  │
+│  └─────────────┘  └─────────────┘  └─────────────────────┘  │
 ├─────────────────────────────────────────────────────────────┤
-│                    Resource Layer                          │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
-│  │ LLM Resource│  │ Knowledge   │  │  External Tools     │ │
-│  │ Integration │  │    Base     │  │   & Services        │ │
-│  └─────────────┘  └─────────────┘  └─────────────────────┘ │
+│                    Resource Layer                           │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
+│  │ LLM Resource│  │ Knowledge   │  │  External Tools     │  │
+│  │ Integration │  │    Base     │  │   & Services        │  │
+│  └─────────────┘  └─────────────┘  └─────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
 ```
 

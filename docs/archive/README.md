@@ -17,10 +17,10 @@ Documents are moved to this archive when:
 ## Current Documentation
 
 For current, actively maintained documentation, see:
-- **[Design Specifications](../designs/)** - Authoritative design documents
-- **[User Documentation](../for-engineers/)** - Practical guides and recipes
-- **[API Reference](../for-engineers/reference/)** - Complete API documentation
-- **[Architecture Guide](../for-contributors/architecture/)** - Implementation details
+- **[Design Specifications](../designs/README.md)** - Authoritative design documents
+- **[User Documentation](../for-engineers/README.md)** - Practical guides and recipes
+- **[API Reference](../for-engineers/reference/api/README.md)** - Complete API documentation
+- **[Architecture Guide](../for-contributors/architecture/README.md)** - Implementation details
 
 ---
 

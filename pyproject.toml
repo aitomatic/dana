@@ -79,14 +79,14 @@ docs = [
     "mkdocs-mermaid2-plugin",
     
     # Auto-sync with code (solves staleness problem)
-    "mkdocstrings[python]>=0.24",     # API docs from docstrings (auto-update)
-    "mkdocs-gen-files",               # Generate docs from code structure  
-    "mkdocs-literate-nav",            # Auto-generate navigation
-    "mkdocs-section-index",           # Clickable sections
+    "mkdocstrings[python]>=0.24",    # API docs from docstrings (auto-update)
+    "mkdocs-gen-files",              # Generate docs from code structure  
+    "mkdocs-literate-nav",           # Auto-generate navigation
+    "mkdocs-section-index",          # Clickable sections
     
     # Validation tools (catch problems early)
-    "mkdocs-htmlproofer-plugin",      # Broken link detection  
-    "linkcheckmd",                    # Fast async link checking
+    "mkdocs-htmlproofer-plugin",     # Broken link detection  
+    "linkcheckmd",                   # Fast async link checking
     "doc8",                          # Documentation style checking
     
     # Multi-constituency features
@@ -95,7 +95,7 @@ docs = [
     "mkdocs-print-site-plugin",      # PDF export for offline reading
     
     # Content enhancement
-    "mkdocs-include-markdown-plugin", # Reusable content blocks
+    "mkdocs-include-markdown-plugin",# Reusable content blocks
     "mkdocs-macros-plugin",          # Variables and templating
     "mkdocs-table-reader-plugin",    # Data tables from CSV/JSON
     "mkdocs-git-revision-date-localized-plugin", # Last updated dates
@@ -123,8 +123,8 @@ packages = ["opendxa"]
 #
 # Testing workflows:
 #   uv run pytest tests/                              # Run all tests
-#   uv run pytest -m 'not live and not deep' tests/  # Fast tests only
-#   uv run pytest -m 'live' tests/                   # Live/integration tests
+#   uv run pytest -m 'not live and not deep' tests/   # Fast tests only
+#   uv run pytest -m 'live' tests/                    # Live/integration tests
 #   uv run pytest --cov=opendxa --cov-report=html tests/  # With coverage
 #
 # Code quality workflows:
@@ -139,12 +139,13 @@ packages = ["opendxa"]
 #   uv run python -m mkdocs serve --dev-addr=0.0.0.0:8000  # Live preview (remote accessible)
 #   uv run python -m mkdocs build                     # Build docs
 #   uv run python -m mkdocs build --strict            # Build with warnings as errors
+#   uv run mkdocs gh-deploy --force                   # Build and deploy to GitHub Pages
 #
 # Documentation validation (catch staleness):
-#   uv run pytest --doctest-modules opendxa/         # Test code examples in docstrings
-#   uv run python -m linkcheckmd docs/               # Check all markdown links (fast async)  
+#   uv run pytest --doctest-modules opendxa/          # Test code examples in docstrings
+#   uv run python -m linkcheckmd docs/                # Check all markdown links (fast async)  
 #   uv run doc8 docs/                                 # Documentation style checking
-#   uv run python -m mkdocs build --strict           # Validate complete build
+#   uv run python -m mkdocs build --strict            # Validate complete build
 #
 # Environment management:
 #   uv sync                                           # Sync dependencies

@@ -1,9 +1,3 @@
-<p align="center">
-  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
-</p>
-
-[Project Overview](../../README.md)
-
 # OpenDXA for Researchers
 
 *Exploring the theoretical foundations, research implications, and academic opportunities in neurosymbolic AI*
@@ -18,6 +12,14 @@ OpenDXA represents a significant advancement in neurosymbolic computing, bridgin
 - **Research Platform**: Tools for studying human-AI collaboration and cognitive architectures
 - **Theoretical Foundations**: New approaches to reliability, transparency, and verification in AI systems
 - **Empirical Opportunities**: Real-world data on AI system behavior and performance
+
+### Foundational Research: DANA Paper
+
+A key publication outlining the principles behind OpenDXA is:
+
+- **[DANA: Domain-Aware Neurosymbolic Agents for Consistency and Accuracy](https://arxiv.org/abs/2410.02823)**. *V. Luong, S. Dinh, S. Raghavan, et al.* (arXiv:2410.02823) - This paper introduces DANA (Domain-Aware Neurosymbolic Agent), an architecture that addresses inconsistency and inaccuracy in LLMs by integrating domain-specific knowledge with neurosymbolic approaches. It demonstrates how DANA achieves high accuracy and consistency, for example, on financial benchmarks. [[DOI](https://doi.org/10.48550/arXiv.2410.02823)]
+
+  ![DANA Accuracy and Consistency](../images/dana-accuracy-consistency.png)
 
 ---
 

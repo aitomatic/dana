@@ -367,7 +367,7 @@ repl.add_resource("llm", LLMResource(model="gpt-4"))
 
 ## Next Steps
 
-- **Build Real Agents**: Apply REPL learnings to [Agent Recipes](../recipes/)
+- **Build Real Agents**: Apply REPL learnings to [Agent Recipes](../recipes/README.md)
 - **Advanced Debugging**: See [Troubleshooting Guide](../troubleshooting/debugging-guide.md)
 - **Production Deployment**: Learn [Best Practices](../setup/production-guide.md)
 - **Language Mastery**: Deep dive into [Dana Syntax](dana-syntax.md) 

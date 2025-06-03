@@ -65,8 +65,8 @@
 /* General body styling */
 body {
   font-family: 'Poppins', Arial, sans-serif;
-  font-size: 1rem; /* 16px */
-  line-height: 1.75rem;
+  font-size: 1.1rem; /* 16px */
+  line-height: 1.4rem;
   color: var(--md-default-fg-color);
   background-color: var(--md-default-bg-color);
 }
@@ -115,14 +115,14 @@ body {
   font-weight: 500; /* Default weight from guide */
 }
 .md-typeset h1 {
-  font-size: 2.75rem; /* Was 4.375rem (70px) */
-  line-height: 3.25rem; /* Was 5rem */
+  font-size: 2.0rem; /* Was 4.375rem (70px) */
+  line-height: 2.5rem; /* Was 5rem */
   font-weight: 500;
   letter-spacing: -0.02rem; /* Adjusted from -0.04rem */
 }
 .md-typeset h2 {
-  font-size: 2.25rem; /* Was 3.125rem (50px) */
-  line-height: 2.75rem; /* Was 3.75rem */
+  font-size: 1.5rem; /* Was 3.125rem (50px) */
+  line-height: 2.0rem; /* Was 3.75rem */
   font-weight: 500;
 }
 .md-typeset h3 {
@@ -215,11 +215,11 @@ body {
 
 /* Table of Contents (on-page navigation) */
 .md-nav--secondary .md-nav__link {
-    font-size: 0.8rem; /* Smaller font for TOC links */
+    font-size: 0.7rem; /* Smaller font for TOC links */
     line-height: 1.3;
 }
 .md-nav--secondary .md-nav__title {
-    font-size: 0.85rem; /* Slightly larger for TOC section titles if any */
+    font-size: 1.25rem; /* Slightly larger for TOC section titles if any */
     font-weight: 700;
 }
 

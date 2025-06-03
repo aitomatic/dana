@@ -448,7 +448,7 @@ else:
 
 ## Next Steps
 
-- **Learn by Example**: Check out [Common Recipes](../recipes/) for real-world patterns
+- **Learn by Example**: Check out [Common Recipes](../recipes/README.md) for real-world patterns
 - **Interactive Development**: Use the [REPL Guide](repl-guide.md) for hands-on exploration  
 - **Advanced Concepts**: Explore [Agent Architecture](../setup/agent-concepts.md)
 - **Troubleshooting**: See [Error Reference](../troubleshooting/error-reference.md) when things go wrong 
