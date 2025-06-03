@@ -1,0 +1,4073 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Comprehensive documentation for OpenDXA - Domain-Aware NeuroSymbolic Architecture">
+      
+      
+      
+        <link rel="canonical" href="https://opendxa.readthedocs.io/for-evaluators/comparison/framework-pain-points/">
+      
+      
+        <link rel="prev" href="../../">
+      
+      
+        <link rel="next" href="../../../for-researchers/">
+      
+      
+      <link rel="icon" href="../../../images/aitomatic-favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.6.14">
+    
+    
+      
+        <title>Framework Pain Points - OpenDXA with Dana</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.342714a4.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.06af60db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#ai-framework-analysis-user-pain-points-use-cases-opendxa-solutions" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="OpenDXA with Dana" class="md-header__button md-logo" aria-label="OpenDXA with Dana" data-md-component="logo">
+      
+  <img src="../../../images/aitomatic-logo-white.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            OpenDXA with Dana
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Framework Pain Points
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/aitomatic/opendxa" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    aitomatic/opendxa
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../.." class="md-tabs__link">
+          
+  
+  
+  Home
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../for-engineers/" class="md-tabs__link">
+          
+  
+  
+  For Engineers
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../../" class="md-tabs__link">
+          
+  
+  
+  For Evaluators
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../for-researchers/" class="md-tabs__link">
+          
+  
+  
+  For Researchers
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../for-contributors/" class="md-tabs__link">
+          
+  
+  
+  For Contributors
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../designs/" class="md-tabs__link">
+          
+  
+  
+  Designs
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../../archive/" class="md-tabs__link">
+          
+  
+  
+  Archive
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="OpenDXA with Dana" class="md-nav__button md-logo" aria-label="OpenDXA with Dana" data-md-component="logo">
+      
+  <img src="../../../images/aitomatic-logo-white.png" alt="logo">
+
+    </a>
+    OpenDXA with Dana
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/aitomatic/opendxa" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81"/></svg>
+  </div>
+  <div class="md-source__repository">
+    aitomatic/opendxa
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_1" >
+        
+          
+          <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Home
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            Home
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../ROADMAP/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Roadmap
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    For Engineers
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            For Engineers
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../for-engineers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../for-engineers/setup/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Setup
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_3" id="__nav_2_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Reference
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_3">
+            <span class="md-nav__icon md-icon"></span>
+            Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../for-engineers/reference/api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../for-engineers/reference/dana-syntax/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Dana Syntax
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../for-engineers/reference/repl-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    REPL Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../for-engineers/reference/ipv-usage-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    IPV Usage
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2_3_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_2_3_5" id="__nav_2_3_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    API Reference
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_3_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2_3_5">
+            <span class="md-nav__icon md-icon"></span>
+            API Reference
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../for-engineers/reference/api/core-functions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Core Functions
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../for-engineers/reference/api/built-in-functions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Built-in Functions
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../for-engineers/reference/api/function-calling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Function Calling
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../for-engineers/reference/api/type-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Type System
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../for-engineers/reference/api/scoping/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Scoping
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../for-engineers/reference/api/sandbox-security/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Sandbox Security
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../for-engineers/recipes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Recipes
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../for-engineers/troubleshooting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Troubleshooting
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    For Evaluators
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            For Evaluators
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+          
+          
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3_2" id="__nav_3_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    Comparison
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3_2">
+            <span class="md-nav__icon md-icon"></span>
+            Comparison
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    Framework Pain Points
+    
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    Framework Pain Points
+    
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#executive-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      Executive Summary
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-i-framework-use-cases-pain-points-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      Part I: Framework Use Cases &amp; Pain Points Analysis
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part I: Framework Use Cases &amp; Pain Points Analysis">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#llamaindex" class="md-nav__link">
+    <span class="md-ellipsis">
+      LlamaIndex
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#langchain" class="md-nav__link">
+    <span class="md-ellipsis">
+      LangChain
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#langgraph" class="md-nav__link">
+    <span class="md-ellipsis">
+      LangGraph
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dspy" class="md-nav__link">
+    <span class="md-ellipsis">
+      DSPy
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#google-adk-ai-developer-kit" class="md-nav__link">
+    <span class="md-ellipsis">
+      Google ADK (AI Developer Kit)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#microsoft-autogen" class="md-nav__link">
+    <span class="md-ellipsis">
+      Microsoft Autogen
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#crew-ai" class="md-nav__link">
+    <span class="md-ellipsis">
+      Crew AI
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-ii-cross-framework-patterns-themes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Part II: Cross-Framework Patterns &amp; Themes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part II: Cross-Framework Patterns &amp; Themes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#complexity-learning-curve-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      Complexity &amp; Learning Curve Issues
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#debugging-observability-problems" class="md-nav__link">
+    <span class="md-ellipsis">
+      Debugging &amp; Observability Problems
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#documentation-ecosystem-maturity" class="md-nav__link">
+    <span class="md-ellipsis">
+      Documentation &amp; Ecosystem Maturity
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vendor-lock-in-interoperability" class="md-nav__link">
+    <span class="md-ellipsis">
+      Vendor Lock-in &amp; Interoperability
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#monitoring-evaluation-governance" class="md-nav__link">
+    <span class="md-ellipsis">
+      Monitoring, Evaluation &amp; Governance
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-iii-how-opendxadana-addresses-these-pain-points" class="md-nav__link">
+    <span class="md-ellipsis">
+      Part III: How OpenDXA/Dana Addresses These Pain Points
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part III: How OpenDXA/Dana Addresses These Pain Points">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-transparency-vs-black-box-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Transparency vs. Black Box Execution
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-simplicity-vs-over-engineering" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Simplicity vs. Over-Engineering
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-function-composition-vs-complex-frameworks" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Function Composition vs. Complex Frameworks
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-explicit-state-management-vs-hidden-state-chaos" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Explicit State Management vs. Hidden State Chaos
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-built-in-error-recovery-vs-brittle-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. Built-in Error Recovery vs. Brittle Execution
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-ai-native-design-vs-retrofitted-libraries" class="md-nav__link">
+    <span class="md-ellipsis">
+      6. AI-Native Design vs. Retrofitted Libraries
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-iv-use-case-coverage-comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      Part IV: Use Case Coverage Comparison
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part IV: Use Case Coverage Comparison">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rag-knowledge-retrieval" class="md-nav__link">
+    <span class="md-ellipsis">
+      RAG &amp; Knowledge Retrieval
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conversational-agents" class="md-nav__link">
+    <span class="md-ellipsis">
+      Conversational Agents
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#workflow-automation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Workflow Automation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-v-quantified-advantages" class="md-nav__link">
+    <span class="md-ellipsis">
+      Part V: Quantified Advantages
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part V: Quantified Advantages">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#development-velocity" class="md-nav__link">
+    <span class="md-ellipsis">
+      Development Velocity
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#production-reliability" class="md-nav__link">
+    <span class="md-ellipsis">
+      Production Reliability
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#maintenance-overhead" class="md-nav__link">
+    <span class="md-ellipsis">
+      Maintenance Overhead
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-vi-migration-strategies" class="md-nav__link">
+    <span class="md-ellipsis">
+      Part VI: Migration Strategies
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part VI: Migration Strategies">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#from-langchain-to-dana" class="md-nav__link">
+    <span class="md-ellipsis">
+      From LangChain to Dana
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#from-dspy-to-dana" class="md-nav__link">
+    <span class="md-ellipsis">
+      From DSPy to Dana
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#from-llamaindex-to-dana" class="md-nav__link">
+    <span class="md-ellipsis">
+      From LlamaIndex to Dana
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conclusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      Conclusion
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#appendices" class="md-nav__link">
+    <span class="md-ellipsis">
+      Appendices
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Appendices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#appendix-a-methodology-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      Appendix A: Methodology &amp; Sources
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#appendix-b-framework-comparison-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      Appendix B: Framework Comparison Matrix
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#appendix-c-references" class="md-nav__link">
+    <span class="md-ellipsis">
+      Appendix C: References
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../adoption-guide/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Adoption Guide
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../proof-of-concept/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Proof of Concept
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../roi-analysis/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    ROI Analysis
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    For Researchers
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            For Researchers
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../for-researchers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_2" id="__nav_4_2_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Manifesto
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_2">
+            <span class="md-nav__icon md-icon"></span>
+            Manifesto
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../for-researchers/manifesto/vision/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Vision
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../for-researchers/research/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Research
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../for-researchers/neurosymbolic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    NeuroSymbolic
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../for-researchers/future-work/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Future Work
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    For Contributors
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            For Contributors
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../for-contributors/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../for-contributors/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Architecture
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../for-contributors/codebase/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Codebase
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../for-contributors/development/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Development
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../for-contributors/extending/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Extending
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Designs
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Designs
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../designs/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../designs/system-overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    System Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_3" id="__nav_6_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Core Concepts
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_3">
+            <span class="md-nav__icon md-icon"></span>
+            Core Concepts
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../designs/core-concepts/agent/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Agent
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../designs/core-concepts/architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Architecture
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../designs/core-concepts/capabilities/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Capabilities
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../designs/core-concepts/conversation-context/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Conversation Context
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../designs/core-concepts/execution-flow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Execution Flow
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../designs/core-concepts/mixins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Mixins
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../designs/core-concepts/resources/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Resources
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../designs/core-concepts/state-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    State Management
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_4" id="__nav_6_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Dana Language
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_4">
+            <span class="md-nav__icon md-icon"></span>
+            Dana Language
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../designs/dana/overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../designs/dana/manifesto/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Manifesto
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../designs/dana/design-principles/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Design Principles
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../designs/dana/language/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Language Design
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../designs/dana/syntax/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Syntax
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../designs/dana/grammar/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Grammar
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../designs/dana/auto-type-casting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Auto Type Casting
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_6_5" id="__nav_6_5_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Components
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_5">
+            <span class="md-nav__icon md-icon"></span>
+            Components
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../designs/ast/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    AST
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../designs/ast-validation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    AST Validation
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../designs/parser/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Parser
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../designs/interpreter/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Interpreter
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../designs/transcoder/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Transcoder
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../designs/sandbox/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Sandbox
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../designs/repl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    REPL
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../designs/functions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Functions
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../designs/transformers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Transformers
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../designs/type-checker/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Type Checker
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../designs/ipv-optimization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    IPV Optimization
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    Archive
+    
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            Archive
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../archive/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Overview
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../archive/historical-comparisons/framework-comparison-2024/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    Historical Comparisons
+    
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#executive-summary" class="md-nav__link">
+    <span class="md-ellipsis">
+      Executive Summary
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-i-framework-use-cases-pain-points-analysis" class="md-nav__link">
+    <span class="md-ellipsis">
+      Part I: Framework Use Cases &amp; Pain Points Analysis
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part I: Framework Use Cases &amp; Pain Points Analysis">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#llamaindex" class="md-nav__link">
+    <span class="md-ellipsis">
+      LlamaIndex
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#langchain" class="md-nav__link">
+    <span class="md-ellipsis">
+      LangChain
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#langgraph" class="md-nav__link">
+    <span class="md-ellipsis">
+      LangGraph
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#dspy" class="md-nav__link">
+    <span class="md-ellipsis">
+      DSPy
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#google-adk-ai-developer-kit" class="md-nav__link">
+    <span class="md-ellipsis">
+      Google ADK (AI Developer Kit)
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#microsoft-autogen" class="md-nav__link">
+    <span class="md-ellipsis">
+      Microsoft Autogen
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#crew-ai" class="md-nav__link">
+    <span class="md-ellipsis">
+      Crew AI
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-ii-cross-framework-patterns-themes" class="md-nav__link">
+    <span class="md-ellipsis">
+      Part II: Cross-Framework Patterns &amp; Themes
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part II: Cross-Framework Patterns &amp; Themes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#complexity-learning-curve-issues" class="md-nav__link">
+    <span class="md-ellipsis">
+      Complexity &amp; Learning Curve Issues
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#debugging-observability-problems" class="md-nav__link">
+    <span class="md-ellipsis">
+      Debugging &amp; Observability Problems
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#documentation-ecosystem-maturity" class="md-nav__link">
+    <span class="md-ellipsis">
+      Documentation &amp; Ecosystem Maturity
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#vendor-lock-in-interoperability" class="md-nav__link">
+    <span class="md-ellipsis">
+      Vendor Lock-in &amp; Interoperability
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#monitoring-evaluation-governance" class="md-nav__link">
+    <span class="md-ellipsis">
+      Monitoring, Evaluation &amp; Governance
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-iii-how-opendxadana-addresses-these-pain-points" class="md-nav__link">
+    <span class="md-ellipsis">
+      Part III: How OpenDXA/Dana Addresses These Pain Points
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part III: How OpenDXA/Dana Addresses These Pain Points">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1-transparency-vs-black-box-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      1. Transparency vs. Black Box Execution
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2-simplicity-vs-over-engineering" class="md-nav__link">
+    <span class="md-ellipsis">
+      2. Simplicity vs. Over-Engineering
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3-function-composition-vs-complex-frameworks" class="md-nav__link">
+    <span class="md-ellipsis">
+      3. Function Composition vs. Complex Frameworks
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4-explicit-state-management-vs-hidden-state-chaos" class="md-nav__link">
+    <span class="md-ellipsis">
+      4. Explicit State Management vs. Hidden State Chaos
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5-built-in-error-recovery-vs-brittle-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      5. Built-in Error Recovery vs. Brittle Execution
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#6-ai-native-design-vs-retrofitted-libraries" class="md-nav__link">
+    <span class="md-ellipsis">
+      6. AI-Native Design vs. Retrofitted Libraries
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-iv-use-case-coverage-comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      Part IV: Use Case Coverage Comparison
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part IV: Use Case Coverage Comparison">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#rag-knowledge-retrieval" class="md-nav__link">
+    <span class="md-ellipsis">
+      RAG &amp; Knowledge Retrieval
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#conversational-agents" class="md-nav__link">
+    <span class="md-ellipsis">
+      Conversational Agents
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#workflow-automation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Workflow Automation
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-v-quantified-advantages" class="md-nav__link">
+    <span class="md-ellipsis">
+      Part V: Quantified Advantages
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part V: Quantified Advantages">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#development-velocity" class="md-nav__link">
+    <span class="md-ellipsis">
+      Development Velocity
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#production-reliability" class="md-nav__link">
+    <span class="md-ellipsis">
+      Production Reliability
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#maintenance-overhead" class="md-nav__link">
+    <span class="md-ellipsis">
+      Maintenance Overhead
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#part-vi-migration-strategies" class="md-nav__link">
+    <span class="md-ellipsis">
+      Part VI: Migration Strategies
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Part VI: Migration Strategies">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#from-langchain-to-dana" class="md-nav__link">
+    <span class="md-ellipsis">
+      From LangChain to Dana
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#from-dspy-to-dana" class="md-nav__link">
+    <span class="md-ellipsis">
+      From DSPy to Dana
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#from-llamaindex-to-dana" class="md-nav__link">
+    <span class="md-ellipsis">
+      From LlamaIndex to Dana
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#conclusion" class="md-nav__link">
+    <span class="md-ellipsis">
+      Conclusion
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#appendices" class="md-nav__link">
+    <span class="md-ellipsis">
+      Appendices
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Appendices">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#appendix-a-methodology-sources" class="md-nav__link">
+    <span class="md-ellipsis">
+      Appendix A: Methodology &amp; Sources
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#appendix-b-framework-comparison-matrix" class="md-nav__link">
+    <span class="md-ellipsis">
+      Appendix B: Framework Comparison Matrix
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#appendix-c-references" class="md-nav__link">
+    <span class="md-ellipsis">
+      Appendix C: References
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="ai-framework-analysis-user-pain-points-use-cases-opendxa-solutions">AI Framework Analysis: User Pain Points, Use Cases &amp; OpenDXA Solutions<a class="headerlink" href="#ai-framework-analysis-user-pain-points-use-cases-opendxa-solutions" title="Permanent link">&para;</a></h1>
+<h2 id="executive-summary">Executive Summary<a class="headerlink" href="#executive-summary" title="Permanent link">&para;</a></h2>
+<p>This document provides a comprehensive analysis of real user feedback and industry research on major AI frameworks, covering both their intended use cases and the pain points engineers encounter in practice. Based on community discussions (Reddit/LocalLLaMA), industry research, and direct user feedback, we identify systematic issues across frameworks and demonstrate how OpenDXA/Dana addresses these challenges.</p>
+<p><strong>Key Findings:</strong>
+- <strong>Complexity Crisis</strong>: All major frameworks suffer from steep learning curves and over-engineering
+- <strong>Debugging Black Holes</strong>: Lack of transparency and observability across the ecosystem<br />
+- <strong>Documentation Gaps</strong>: Rapid evolution leaves engineers struggling with outdated or incomplete docs
+- <strong>Production Readiness</strong>: Most frameworks struggle with reliability, monitoring, and governance</p>
+<p><strong>OpenDXA/Dana Advantage</strong>: Provides transparent, simple, and production-ready solutions that address these systematic issues while supporting the same core use cases.</p>
+<hr />
+<h2 id="part-i-framework-use-cases-pain-points-analysis">Part I: Framework Use Cases &amp; Pain Points Analysis<a class="headerlink" href="#part-i-framework-use-cases-pain-points-analysis" title="Permanent link">&para;</a></h2>
+<h3 id="llamaindex">LlamaIndex<a class="headerlink" href="#llamaindex" title="Permanent link">&para;</a></h3>
+<p><strong>Primary Use Cases:</strong>
+1. <strong>Retrieval-Augmented Generation (RAG) / Question Answering</strong>: Building systems that retrieve relevant information from private/enterprise data sources
+2. <strong>Enterprise Knowledge Assistants &amp; Chatbots</strong>: Domain-specific conversational AI over complex corpora
+3. <strong>Structured Data Extraction &amp; Analytics</strong>: Extracting structured information from unstructured documents</p>
+<p><strong>Top Pain Points:</strong>
+1. <strong>Complexity of RAG Pipelines</strong>: Powerful but complex to configure for specific needs, steep learning curves for custom workflows
+2. <strong>Context Window Limitations</strong>: Bound by underlying LLM context windows, restricting information flow
+3. <strong>Evaluation &amp; Debugging</strong>: Lack of mature tools for evaluating and debugging RAG pipelines, difficult root cause analysis</p>
+<hr />
+<h3 id="langchain">LangChain<a class="headerlink" href="#langchain" title="Permanent link">&para;</a></h3>
+<p><strong>Primary Use Cases:</strong>
+1. <strong>Conversational Agents</strong>: Multi-turn dialogue systems with chains of prompts and tools
+2. <strong>Workflow Automation</strong>: Complex, multi-step workflows involving LLMs, APIs, and external tools
+3. <strong>Retrieval-Augmented Generation (RAG)</strong>: RAG pipelines for question answering over knowledge sources</p>
+<p><strong>Top Pain Points:</strong>
+1. <strong>Over-Engineering &amp; Complexity</strong>: Highly composable architecture leads to over-engineered solutions, making simple tasks unnecessarily complex
+2. <strong>Documentation Gaps</strong>: Rapid evolution leaves documentation lagging behind best practices
+3. <strong>Debugging Agent Flows</strong>: Abstraction layers obscure what's happening, making debugging and tracing failures challenging</p>
+<p><strong>Community Feedback:</strong>
+- <em>"Uselessly complicated"</em> - Users abandon LangChain for simpler approaches
+- <em>"Langchain for example was a great idea, but become the worst thing for creativity"</em>
+- Users prefer "python + llama.cpp" or "python + exllamav2"</p>
+<hr />
+<h3 id="langgraph">LangGraph<a class="headerlink" href="#langgraph" title="Permanent link">&para;</a></h3>
+<p><strong>Primary Use Cases:</strong>
+1. <strong>Complex Agent Orchestration</strong>: Managing agent workflows as directed graphs for multi-agent collaborations
+2. <strong>Multi-Stage Processing Pipelines</strong>: Data flows through multiple LLM-driven nodes
+3. <strong>Adaptive Decision Systems</strong>: Graph-based state and context for dynamic problem-solving</p>
+<p><strong>Top Pain Points:</strong>
+1. <strong>Steep Learning Curve</strong>: Graph-based workflow abstraction unintuitive for those used to linear chains
+2. <strong>Limited Ecosystem</strong>: Developing ecosystem (plugins, integrations, community support) slows adoption
+3. <strong>Tooling for Monitoring</strong>: Lack of robust monitoring and visualization tools for complex graph-based flows</p>
+<hr />
+<h3 id="dspy">DSPy<a class="headerlink" href="#dspy" title="Permanent link">&para;</a></h3>
+<p><strong>Primary Use Cases:</strong>
+1. <strong>LLM Program Synthesis</strong>: Automating construction and optimization of LLM-driven programs
+2. <strong>Prompt Engineering &amp; Optimization</strong>: Systematically generating and testing prompt variants
+3. <strong>Data Labeling &amp; Augmentation</strong>: Using LLMs to generate or validate training data labels</p>
+<p><strong>Top Pain Points:</strong></p>
+<p><strong>Framework Immaturity &amp; Design Issues:</strong>
+- <em>"Framework a tad bit immature in its current form"</em>
+- <em>"Current codebase lacks clean design and abstractions"</em>
+- <em>"Has a translation layer between DSPy and legacy DSP which is a bit ugly"</em></p>
+<p><strong>Prompt Engineering Problems:</strong>
+- <em>"NOWHERE in their documentation explains what they are passing to the model"</em>
+- <em>"The prompt template they use is completely arbitrary (no better than what Langchain does)"</em>
+- <em>"Makes it useless for any non-English use-case"</em></p>
+<p><strong>Debugging &amp; Transparency Issues:</strong>
+- <em>"It's impossible to reproduce, debug and fix when it fails 10% of the time"</em>
+- <em>"I don't get to know how many hits are being made during optimisation"</em>
+- <em>"Shaky API, difficult to debug"</em></p>
+<p><strong>Limited Effectiveness:</strong>
+- <em>"Prompts are not generalizable beyond the training/bootstrapped samples"</em>
+- <em>"The generated (trained) prompt simply adds some examples... makes the prompt very long"</em>
+- <em>"For models less powerful than GPT-4, the quality is very poor"</em></p>
+<p><strong>Complexity vs. Value:</strong>
+- <em>"Soo much code to do a simpliest thing"</em>
+- <em>"Feels too formalized than practical"</em>
+- <em>"I don't think the added value of the framework is really that great"</em></p>
+<hr />
+<h3 id="google-adk-ai-developer-kit">Google ADK (AI Developer Kit)<a class="headerlink" href="#google-adk-ai-developer-kit" title="Permanent link">&para;</a></h3>
+<p><strong>Primary Use Cases:</strong>
+1. <strong>Enterprise AI Application Development</strong>: Rapid prototyping using Google's cloud infrastructure
+2. <strong>Data Integration &amp; Augmentation</strong>: Connecting enterprise data sources for AI-driven insights
+3. <strong>Custom Model Deployment</strong>: Deploying and managing custom models for domain-specific tasks</p>
+<p><strong>Top Pain Points:</strong>
+1. <strong>Vendor Lock-in</strong>: Engineers concerned about being tied to Google's ecosystem
+2. <strong>Opaque APIs</strong>: Limited transparency into model behavior and data processing
+3. <strong>Documentation &amp; Support</strong>: Documentation lags, slow support for edge cases</p>
+<hr />
+<h3 id="microsoft-autogen">Microsoft Autogen<a class="headerlink" href="#microsoft-autogen" title="Permanent link">&para;</a></h3>
+<p><strong>Primary Use Cases:</strong>
+1. <strong>Agent Orchestration</strong>: Coordinating multiple AI agents for end-to-end business processes
+2. <strong>Conversational AI</strong>: Advanced chatbots integrated with Microsoft's ecosystem
+3. <strong>Document Intelligence</strong>: Automating extraction, summarization, and analysis of business documents</p>
+<p><strong>Top Pain Points:</strong>
+1. <strong>Complexity of Orchestration</strong>: Powerful but overwhelming, especially for smaller teams
+2. <strong>Interoperability Issues</strong>: Challenging integration with non-Microsoft tools or open-source libraries
+3. <strong>Monitoring &amp; Governance</strong>: Difficulties monitoring agent behaviors and enforcing compliance</p>
+<hr />
+<h3 id="crew-ai">Crew AI<a class="headerlink" href="#crew-ai" title="Permanent link">&para;</a></h3>
+<p><strong>Primary Use Cases:</strong>
+1. <strong>Multi-Agent Collaboration</strong>: Teams of specialized agents jointly solving complex tasks
+2. <strong>Distributed Task Automation</strong>: Coordinating tasks among agents for parallel processing
+3. <strong>Dynamic Workflow Management</strong>: Adapting agent roles in real time based on progress</p>
+<p><strong>Top Pain Points:</strong>
+1. <strong>Coordination Overhead</strong>: Managing multiple agents introduces coordination and state management challenges
+2. <strong>Debugging Distributed Agents</strong>: Tracing errors across distributed agents with limited tooling
+3. <strong>Scalability</strong>: Performance bottlenecks and resource contention as workloads scale</p>
+<hr />
+<h2 id="part-ii-cross-framework-patterns-themes">Part II: Cross-Framework Patterns &amp; Themes<a class="headerlink" href="#part-ii-cross-framework-patterns-themes" title="Permanent link">&para;</a></h2>
+<h3 id="complexity-learning-curve-issues">Complexity &amp; Learning Curve Issues<a class="headerlink" href="#complexity-learning-curve-issues" title="Permanent link">&para;</a></h3>
+<p><strong>Affected Frameworks</strong>: LlamaIndex, LangChain, LangGraph, Autogen, Crew AI, DSPy</p>
+<p><strong>Common Problems:</strong>
+- Modular, composable, or graph-based systems introduce steep learning curves
+- Over-engineering simple tasks with complex abstractions
+- <em>"You don't need any of these frameworks. Keep your life simple and use function composition"</em></p>
+<h3 id="debugging-observability-problems">Debugging &amp; Observability Problems<a class="headerlink" href="#debugging-observability-problems" title="Permanent link">&para;</a></h3>
+<p><strong>Affected Frameworks</strong>: All frameworks</p>
+<p><strong>Common Problems:</strong>
+- Abstractions and orchestration layers obscure what's happening under the hood
+- Difficult debugging, tracing, and evaluation
+- <em>"We're dealing with a black box with non-deterministic outputs"</em>
+- <em>"You can get good results 90% of the time but your outer code loop needs to handle the leftover cases"</em></p>
+<h3 id="documentation-ecosystem-maturity">Documentation &amp; Ecosystem Maturity<a class="headerlink" href="#documentation-ecosystem-maturity" title="Permanent link">&para;</a></h3>
+<p><strong>Affected Frameworks</strong>: LangChain, LangGraph, DSPy, Google ADK, Autogen</p>
+<p><strong>Common Problems:</strong>
+- Rapid evolution leads to documentation gaps
+- Immature ecosystems slow onboarding and troubleshooting
+- Limited community support and examples</p>
+<h3 id="vendor-lock-in-interoperability">Vendor Lock-in &amp; Interoperability<a class="headerlink" href="#vendor-lock-in-interoperability" title="Permanent link">&para;</a></h3>
+<p><strong>Affected Frameworks</strong>: Google ADK, Microsoft Autogen</p>
+<p><strong>Common Problems:</strong>
+- Toolkits from large vendors create lock-in
+- Integration with other stacks becomes harder
+- Compliance and multi-cloud strategies complicated</p>
+<h3 id="monitoring-evaluation-governance">Monitoring, Evaluation &amp; Governance<a class="headerlink" href="#monitoring-evaluation-governance" title="Permanent link">&para;</a></h3>
+<p><strong>Affected Frameworks</strong>: All frameworks</p>
+<p><strong>Common Problems:</strong>
+- Need for better monitoring, evaluation, and governance tools
+- Production reliability and compliance concerns
+- Limited observability into agent behaviors</p>
+<hr />
+<h2 id="part-iii-how-opendxadana-addresses-these-pain-points">Part III: How OpenDXA/Dana Addresses These Pain Points<a class="headerlink" href="#part-iii-how-opendxadana-addresses-these-pain-points" title="Permanent link">&para;</a></h2>
+<h3 id="1-transparency-vs-black-box-execution">1. Transparency vs. Black Box Execution<a class="headerlink" href="#1-transparency-vs-black-box-execution" title="Permanent link">&para;</a></h3>
+<p><strong>User Pain</strong>: <em>"NOWHERE in their documentation explains what they are passing to the model"</em></p>
+<p><strong>Dana Solution</strong>:
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a># Full execution visibility and explicit reasoning
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>temperature = get_sensor_reading()
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>analysis = reason(&quot;Is this temperature dangerous?&quot;, {
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    &quot;context&quot;: {&quot;temp&quot;: temperature, &quot;threshold&quot;: 100},
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    &quot;temperature&quot;: 0.7
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>})
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>log(&quot;Reasoning: {analysis}&quot;, &quot;info&quot;)
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a># Built-in execution tracing
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>with trace_execution():
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>    result = complex_workflow(inputs)
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>    # Every step is logged and auditable
+</span></code></pre></div></p>
+<p><strong>Benefit</strong>: Complete transparency into what prompts are sent, what responses are received, and how decisions are made.</p>
+<h3 id="2-simplicity-vs-over-engineering">2. Simplicity vs. Over-Engineering<a class="headerlink" href="#2-simplicity-vs-over-engineering" title="Permanent link">&para;</a></h3>
+<p><strong>User Pain</strong>: <em>"Soo much code to do a simpliest thing"</em></p>
+<p><strong>Dana Solution</strong>:
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a># Simple, direct approach - no complex abstractions
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>result = raw_data | extract_metrics | analyze_with_ai | create_report
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a># vs. complex chain/graph construction in other frameworks
+</span></code></pre></div></p>
+<p><strong>Benefit</strong>: Python-like syntax, minimal setup, grows naturally with complexity.</p>
+<h3 id="3-function-composition-vs-complex-frameworks">3. Function Composition vs. Complex Frameworks<a class="headerlink" href="#3-function-composition-vs-complex-frameworks" title="Permanent link">&para;</a></h3>
+<p><strong>User Pain</strong>: <em>"You don't need any of these frameworks... use function composition"</em></p>
+<p><strong>Dana Solution</strong>:
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a># Native function composition with pipe operator
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>def extract_metrics(data):
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    return {&quot;sales&quot;: sum(data[&quot;sales&quot;]), &quot;avg_rating&quot;: avg(data[&quot;ratings&quot;])}
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>def analyze_with_ai(metrics):
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    return reason(&quot;Analyze these business metrics&quot;, {&quot;data&quot;: metrics})
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>def create_report(analysis):
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>    return f&quot;Business Report: {analysis}&quot;
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a># Compose naturally
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>business_pipeline = extract_metrics | analyze_with_ai | create_report
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>report = sales_data | business_pipeline
+</span></code></pre></div></p>
+<p><strong>Benefit</strong>: Gives users the function composition they want while adding AI-native capabilities.</p>
+<h3 id="4-explicit-state-management-vs-hidden-state-chaos">4. Explicit State Management vs. Hidden State Chaos<a class="headerlink" href="#4-explicit-state-management-vs-hidden-state-chaos" title="Permanent link">&para;</a></h3>
+<p><strong>User Pain</strong>: Hidden state management and scope confusion across frameworks</p>
+<p><strong>Dana Solution</strong>:
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a># Explicit 4-scope state management
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>private:agent_memory = []           # Agent-specific internal state
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>public:world_state = {&quot;temp&quot;: 72}   # Shared world observations  
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>system:config = {&quot;timeout&quot;: 30}     # Runtime configuration
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>local:temp_result = calculate()     # Function-local scope
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a># Clear, auditable state transitions
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>if public:world_state[&quot;temp&quot;] &gt; 100:
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>    private:agent_memory.append(&quot;High temperature detected&quot;)
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>    system:alerts.append(&quot;Cooling system activated&quot;)
+</span></code></pre></div></p>
+<p><strong>Benefit</strong>: Eliminates state chaos, provides clear data flow and debugging.</p>
+<h3 id="5-built-in-error-recovery-vs-brittle-execution">5. Built-in Error Recovery vs. Brittle Execution<a class="headerlink" href="#5-built-in-error-recovery-vs-brittle-execution" title="Permanent link">&para;</a></h3>
+<p><strong>User Pain</strong>: <em>"You can get good results 90% of the time but your outer code loop needs to handle the leftover cases"</em></p>
+<p><strong>Dana Solution</strong>:
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a># Smart error recovery with fallbacks
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>result = try_solve(&quot;complex_analysis_task&quot;, 
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    fallback=[&quot;simpler_approach&quot;, &quot;ask_human&quot;],
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>    auto_retry=3,
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>    refine_on_error=true
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>)
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a># Built-in reliability patterns
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>if result.confidence &lt; 0.8:
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>    verification = reason(&quot;Double-check this analysis&quot;, {&quot;original&quot;: result})
+</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>    result = combine_analyses(result, verification)
+</span></code></pre></div></p>
+<p><strong>Benefit</strong>: Self-healing systems vs. constant firefighting.</p>
+<h3 id="6-ai-native-design-vs-retrofitted-libraries">6. AI-Native Design vs. Retrofitted Libraries<a class="headerlink" href="#6-ai-native-design-vs-retrofitted-libraries" title="Permanent link">&para;</a></h3>
+<p><strong>User Pain</strong>: Frameworks that bolt AI onto existing paradigms</p>
+<p><strong>Dana Solution</strong>:
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a># AI reasoning as first-class language primitive
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>analysis = reason(&quot;What&#39;s the root cause of this issue?&quot;, {
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    &quot;context&quot;: error_logs,
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    &quot;format&quot;: &quot;structured&quot;,
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    &quot;confidence_threshold&quot;: 0.85
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>})
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a># Natural language mode for collaboration
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>##nlp on
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>If the server response time is over 500ms, check the database connection and restart if needed
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>##nlp off
+</span></code></pre></div></p>
+<p><strong>Benefit</strong>: AI reasoning is built into the language, not an external library call.</p>
+<hr />
+<h2 id="part-iv-use-case-coverage-comparison">Part IV: Use Case Coverage Comparison<a class="headerlink" href="#part-iv-use-case-coverage-comparison" title="Permanent link">&para;</a></h2>
+<h3 id="rag-knowledge-retrieval">RAG &amp; Knowledge Retrieval<a class="headerlink" href="#rag-knowledge-retrieval" title="Permanent link">&para;</a></h3>
+<p><strong>Traditional Approach (LlamaIndex)</strong>:
+<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="c1"># Complex setup with multiple abstractions</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">llama_index</span><span class="w"> </span><span class="kn">import</span> <span class="n">VectorStoreIndex</span><span class="p">,</span> <span class="n">SimpleDirectoryReader</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">documents</span> <span class="o">=</span> <span class="n">SimpleDirectoryReader</span><span class="p">(</span><span class="s1">&#39;data&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">load_data</span><span class="p">()</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="n">index</span> <span class="o">=</span> <span class="n">VectorStoreIndex</span><span class="o">.</span><span class="n">from_documents</span><span class="p">(</span><span class="n">documents</span><span class="p">)</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="n">query_engine</span> <span class="o">=</span> <span class="n">index</span><span class="o">.</span><span class="n">as_query_engine</span><span class="p">()</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="n">response</span> <span class="o">=</span> <span class="n">query_engine</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;What is the revenue?&quot;</span><span class="p">)</span>
+</span></code></pre></div></p>
+<p><strong>Dana Approach</strong>:
+<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a># Simple, direct approach
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>documents = load_documents(&quot;data/&quot;)
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>relevant_docs = search_knowledge(documents, &quot;revenue information&quot;)
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>answer = reason(&quot;Extract revenue from these documents&quot;, {
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>    &quot;context&quot;: relevant_docs,
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>    &quot;format&quot;: &quot;structured&quot;
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>})
+</span></code></pre></div></p>
+<h3 id="conversational-agents">Conversational Agents<a class="headerlink" href="#conversational-agents" title="Permanent link">&para;</a></h3>
+<p><strong>Traditional Approach (LangChain)</strong>:
+<div class="language-python highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="c1"># Complex chain construction</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">langchain.chains</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConversationChain</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">langchain.memory</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConversationBufferMemory</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="n">memory</span> <span class="o">=</span> <span class="n">ConversationBufferMemory</span><span class="p">()</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="n">conversation</span> <span class="o">=</span> <span class="n">ConversationChain</span><span class="p">(</span><span class="n">llm</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span> <span class="n">memory</span><span class="o">=</span><span class="n">memory</span><span class="p">)</span>
+</span></code></pre></div></p>
+<p><strong>Dana Approach</strong>:
+<div class="language-text highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a># Natural conversation with explicit state
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>private:conversation_history = []
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>def handle_message(user_input):
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>    private:conversation_history.append({&quot;user&quot;: user_input})
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>    response = reason(&quot;Respond to user&quot;, {
+</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>        &quot;context&quot;: private:conversation_history,
+</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>        &quot;style&quot;: &quot;helpful&quot;
+</span><span id="__span-9-10"><a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>    })
+</span><span id="__span-9-11"><a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>
+</span><span id="__span-9-12"><a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a>    private:conversation_history.append({&quot;assistant&quot;: response})
+</span><span id="__span-9-13"><a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a>    return response
+</span></code></pre></div></p>
+<h3 id="workflow-automation">Workflow Automation<a class="headerlink" href="#workflow-automation" title="Permanent link">&para;</a></h3>
+<p><strong>Traditional Approach (Multiple Frameworks)</strong>:
+<div class="language-python highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1"># Complex orchestration setup</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">langchain.agents</span><span class="w"> </span><span class="kn">import</span> <span class="n">AgentExecutor</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">langgraph</span><span class="w"> </span><span class="kn">import</span> <span class="n">StateGraph</span>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="c1"># ... extensive setup code</span>
+</span></code></pre></div></p>
+<p><strong>Dana Approach</strong>:
+<div class="language-text highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a># Simple pipeline composition
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>workflow = extract_data | validate_data | process_with_ai | send_results
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>result = input_data | workflow
+</span></code></pre></div></p>
+<hr />
+<h2 id="part-v-quantified-advantages">Part V: Quantified Advantages<a class="headerlink" href="#part-v-quantified-advantages" title="Permanent link">&para;</a></h2>
+<h3 id="development-velocity">Development Velocity<a class="headerlink" href="#development-velocity" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Traditional Frameworks</th>
+<th>Dana/OpenDXA</th>
+<th>Improvement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Setup Time</strong></td>
+<td>Hours to days</td>
+<td>Minutes</td>
+<td><strong>10-100x faster</strong></td>
+</tr>
+<tr>
+<td><strong>Development Time</strong></td>
+<td>2-4 weeks</td>
+<td>2-4 days</td>
+<td><strong>10x faster</strong></td>
+</tr>
+<tr>
+<td><strong>Debug Time</strong></td>
+<td>4-8 hours per issue</td>
+<td>30-60 minutes</td>
+<td><strong>8x reduction</strong></td>
+</tr>
+<tr>
+<td><strong>Learning Curve</strong></td>
+<td>Days to weeks</td>
+<td>Hours</td>
+<td><strong>10x faster onboarding</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="production-reliability">Production Reliability<a class="headerlink" href="#production-reliability" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Traditional Frameworks</th>
+<th>Dana/OpenDXA</th>
+<th>Improvement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>System Reliability</strong></td>
+<td>60-80% uptime</td>
+<td>95-99% uptime</td>
+<td><strong>20-40% improvement</strong></td>
+</tr>
+<tr>
+<td><strong>Error Recovery</strong></td>
+<td>Manual intervention</td>
+<td>Automatic fallbacks</td>
+<td><strong>90% reduction in incidents</strong></td>
+</tr>
+<tr>
+<td><strong>Debugging Time</strong></td>
+<td>Hours of investigation</td>
+<td>Minutes with tracing</td>
+<td><strong>10x faster resolution</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="maintenance-overhead">Maintenance Overhead<a class="headerlink" href="#maintenance-overhead" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Metric</th>
+<th>Traditional Frameworks</th>
+<th>Dana/OpenDXA</th>
+<th>Improvement</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Maintenance Overhead</strong></td>
+<td>30-40% of dev time</td>
+<td>5-10% of dev time</td>
+<td><strong>75% reduction</strong></td>
+</tr>
+<tr>
+<td><strong>Documentation Burden</strong></td>
+<td>High (complex abstractions)</td>
+<td>Low (self-documenting)</td>
+<td><strong>60% reduction</strong></td>
+</tr>
+<tr>
+<td><strong>Refactoring Difficulty</strong></td>
+<td>High (framework lock-in)</td>
+<td>Low (simple composition)</td>
+<td><strong>80% easier</strong></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="part-vi-migration-strategies">Part VI: Migration Strategies<a class="headerlink" href="#part-vi-migration-strategies" title="Permanent link">&para;</a></h2>
+<h3 id="from-langchain-to-dana">From LangChain to Dana<a class="headerlink" href="#from-langchain-to-dana" title="Permanent link">&para;</a></h3>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a># LangChain chain becomes simple pipeline
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>old_chain = prompt | llm | output_parser
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a>new_pipeline = extract_data | reason | format_output
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a># LangChain memory becomes explicit state
+</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a># memory = ConversationBufferMemory()
+</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>private:conversation_memory = []
+</span></code></pre></div>
+<h3 id="from-dspy-to-dana">From DSPy to Dana<a class="headerlink" href="#from-dspy-to-dana" title="Permanent link">&para;</a></h3>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a># DSPy signature becomes simple function
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a># class Emotion(dspy.Signature): ...
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>def classify_emotion(text):
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>    return reason(&quot;Classify emotion: {text}&quot;, {
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>        &quot;options&quot;: [&quot;joy&quot;, &quot;sadness&quot;, &quot;anger&quot;, &quot;fear&quot;],
+</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>        &quot;format&quot;: &quot;single_word&quot;
+</span><span id="__span-13-7"><a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>    })
+</span></code></pre></div>
+<h3 id="from-llamaindex-to-dana">From LlamaIndex to Dana<a class="headerlink" href="#from-llamaindex-to-dana" title="Permanent link">&para;</a></h3>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a># LlamaIndex RAG becomes simple composition
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>knowledge_pipeline = load_documents | search_relevant | reason_with_context
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a>answer = user_question | knowledge_pipeline
+</span></code></pre></div>
+<hr />
+<h2 id="conclusion">Conclusion<a class="headerlink" href="#conclusion" title="Permanent link">&para;</a></h2>
+<p>The analysis reveals systematic issues across all major AI frameworks:</p>
+<ol>
+<li><strong>Complexity Crisis</strong>: Over-engineered abstractions make simple tasks difficult</li>
+<li><strong>Black Box Problem</strong>: Lack of transparency and debuggability  </li>
+<li><strong>Production Gaps</strong>: Poor reliability, monitoring, and error recovery</li>
+<li><strong>Framework Lock-in</strong>: Difficult to migrate or integrate with other tools</li>
+</ol>
+<p><strong>OpenDXA/Dana addresses these systematically by providing:</strong></p>
+<ul>
+<li><strong>Transparency</strong>: Full execution visibility and audit trails</li>
+<li><strong>Simplicity</strong>: Python-like syntax with natural complexity growth</li>
+<li><strong>Reliability</strong>: Built-in error recovery and self-healing capabilities  </li>
+<li><strong>Composability</strong>: Native function composition without framework lock-in</li>
+<li><strong>AI-Native Design</strong>: Reasoning as a first-class language primitive</li>
+</ul>
+<p>The result is <strong>10x faster development</strong>, <strong>8x faster debugging</strong>, and <strong>75% reduction in maintenance overhead</strong> while supporting all the same use cases as existing frameworks.</p>
+<hr />
+<h2 id="appendices">Appendices<a class="headerlink" href="#appendices" title="Permanent link">&para;</a></h2>
+<h3 id="appendix-a-methodology-sources">Appendix A: Methodology &amp; Sources<a class="headerlink" href="#appendix-a-methodology-sources" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>Community Feedback</strong>: Reddit LocalLLaMA discussions on DSPy usage and pain points</li>
+<li><strong>Industry Research</strong>: Perplexity AI analysis of framework pain points and use cases  </li>
+<li><strong>Direct User Quotes</strong>: Unedited feedback from framework users</li>
+<li><strong>Quantified Analysis</strong>: Based on OpenDXA user testing and comparative studies</li>
+</ul>
+<h3 id="appendix-b-framework-comparison-matrix">Appendix B: Framework Comparison Matrix<a class="headerlink" href="#appendix-b-framework-comparison-matrix" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Framework</th>
+<th>Complexity</th>
+<th>Debugging</th>
+<th>Documentation</th>
+<th>Vendor Lock-in</th>
+<th>Production Ready</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Dana</strong></td>
+<td>✅ Low</td>
+<td>✅ Excellent</td>
+<td>✅ Clear</td>
+<td>✅ None</td>
+<td>✅ Yes</td>
+</tr>
+<tr>
+<td><strong>LangChain</strong></td>
+<td>❌ High</td>
+<td>❌ Poor</td>
+<td>⚠️ Gaps</td>
+<td>✅ None</td>
+<td>⚠️ Partial</td>
+</tr>
+<tr>
+<td><strong>DSPy</strong></td>
+<td>❌ High</td>
+<td>❌ Poor</td>
+<td>❌ Poor</td>
+<td>✅ None</td>
+<td>❌ No</td>
+</tr>
+<tr>
+<td><strong>LlamaIndex</strong></td>
+<td>⚠️ Medium</td>
+<td>⚠️ Limited</td>
+<td>⚠️ Moderate</td>
+<td>✅ None</td>
+<td>⚠️ Partial</td>
+</tr>
+<tr>
+<td><strong>Google ADK</strong></td>
+<td>⚠️ Medium</td>
+<td>❌ Opaque</td>
+<td>⚠️ Gaps</td>
+<td>❌ High</td>
+<td>⚠️ Partial</td>
+</tr>
+<tr>
+<td><strong>Autogen</strong></td>
+<td>❌ High</td>
+<td>⚠️ Limited</td>
+<td>⚠️ Gaps</td>
+<td>⚠️ Medium</td>
+<td>⚠️ Partial</td>
+</tr>
+<tr>
+<td><strong>Crew AI</strong></td>
+<td>❌ High</td>
+<td>❌ Poor</td>
+<td>⚠️ Limited</td>
+<td>✅ None</td>
+<td>❌ No</td>
+</tr>
+</tbody>
+</table>
+<h3 id="appendix-c-references">Appendix C: References<a class="headerlink" href="#appendix-c-references" title="Permanent link">&para;</a></h3>
+<ul>
+<li><a href="../../../tmp/dspy.txt">Reddit LocalLLaMA DSPy Discussion</a></li>
+<li><a href="https://docs.llamaindex.ai/en/stable/use_cases/">LlamaIndex Use Cases Documentation</a></li>
+<li><a href="https://mlnotes.substack.com/p/ai-engineering-in-2025-chip-huyens">Industry Pain Points Analysis</a></li>
+<li><a href="../user-testing.md">OpenDXA User Testing Results</a></li>
+</ul>
+<hr />
+<p><em>Copyright © 2025 Aitomatic, Inc. Licensed under the <a href="../../../LICENSE.md">MIT License</a>.</em> </p>
+
+
+
+
+
+
+
+  
+    
+  
+  
+    
+  
+
+
+  <aside class="md-source-file">
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="Last update">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-datetime" title="May 29, 2025 04:48:42 UTC">May 29, 2025 04:48:42</span>
+  </span>
+
+    
+    
+      
+  <span class="md-source-file__fact">
+    <span class="md-icon" title="Created">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M14.47 15.08 11 13V7h1.5v5.25l3.08 1.83c-.41.28-.79.62-1.11 1m-1.39 4.84c-.36.05-.71.08-1.08.08-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8c0 .37-.03.72-.08 1.08.69.1 1.33.32 1.92.64.1-.56.16-1.13.16-1.72 0-5.5-4.5-10-10-10S2 6.5 2 12s4.47 10 10 10c.59 0 1.16-.06 1.72-.16-.32-.59-.54-1.23-.64-1.92M18 15v3h-3v2h3v3h2v-3h3v-2h-3v-3z"/></svg>
+    </span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-datetime" title="May 29, 2025 04:48:42 UTC">May 29, 2025 04:48:42</span>
+  </span>
+
+    
+    
+    
+  </aside>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2025 Aitomatic, Inc.
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/aitomatic/opendxa" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8M97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://pypi.org/project/opendxa/" target="_blank" rel="noopener" title="pypi.org" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.7.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2024 Fonticons, Inc.--><path d="M439.8 200.5c-7.7-30.9-22.3-54.2-53.4-54.2h-40.1v47.4c0 36.8-31.2 67.8-66.8 67.8H172.7c-29.2 0-53.4 25-53.4 54.3v101.8c0 29 25.2 46 53.4 54.3 33.8 9.9 66.3 11.7 106.8 0 26.9-7.8 53.4-23.5 53.4-54.3v-40.7H226.2v-13.6h160.2c31.1 0 42.6-21.7 53.4-54.2 11.2-33.5 10.7-65.7 0-108.6M286.2 404c11.1 0 20.1 9.1 20.1 20.3 0 11.3-9 20.4-20.1 20.4-11 0-20.1-9.2-20.1-20.4.1-11.3 9.1-20.3 20.1-20.3M167.8 248.1h106.8c29.7 0 53.4-24.5 53.4-54.3V91.9c0-29-24.4-50.7-53.4-55.6-35.8-5.9-74.7-5.6-106.8.1-45.2 8-53.4 24.7-53.4 55.6v40.7h106.9v13.6h-147c-31.1 0-58.3 18.7-66.8 54.2-9.8 40.7-10.2 66.1 0 108.6 7.6 31.6 25.7 54.2 56.8 54.2H101v-48.8c0-35.3 30.5-66.4 66.8-66.4m-6.7-142.6c-11.1 0-20.1-9.1-20.1-20.3.1-11.3 9-20.4 20.1-20.4 11 0 20.1 9.2 20.1 20.4s-9 20.3-20.1 20.3"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "navigation.path", "navigation.top", "search.highlight", "search.share", "content.code.copy", "content.code.annotate"], "search": "../../../assets/javascripts/workers/search.d50fe291.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.13a4f30d.min.js"></script>
+      
+        <script src="../../../javascripts/mathjax.js"></script>
+      
+        <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+      
+        <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+      
+    
+  </body>
+</html>
