@@ -65,6 +65,47 @@ customer_info = reason("John Smith, age 30, email john@example.com") -> dict
 # - Validate dictionary structure
 ```
 
+### 4. Output Type Adaptability with `reason()`
+
+A key strength of PAV-enabled functions like `reason()` is their ability to adapt the output based on the `expected_output_type` inferred from your Dana code (e.g., via type hints on assignment). The same conceptual prompt can yield different, type-appropriate results.
+
+**Example: Describing Pi**
+
+Consider the task of getting information about Pi:
+
+```dana
+# Scenario 1: Requesting a string description
+# PAV's Perceive phase notes the '-> str' (or type hint on assignment).
+# Validate phase ensures a string is returned.
+local:pi_description: str = reason("Tell me about Pi.")
+# Expected: "Pi is a mathematical constant, approximately 3.14159..."
+
+# Scenario 2: Requesting a floating-point value
+# PAV's Perceive phase notes '-> float'.
+# Validate phase ensures a float is returned, potentially parsing it from a more verbose LLM output.
+local:pi_float: float = reason("Tell me about Pi.")
+# Expected: 3.14159 (or similar float representation)
+
+# Scenario 3: Requesting an integer value (perhaps the whole number part)
+# PAV's Perceive phase notes '-> int'.
+# Validate phase ensures an integer, possibly truncating or rounding.
+local:pi_integer: int = reason("Tell me about Pi.")
+# Expected: 3
+
+# Scenario 4: Requesting a more structured representation (e.g., a dict)
+# PAV's Perceive phase notes '-> dict'.
+# Validate phase ensures a dictionary.
+local:pi_details: dict = reason("Tell me about Pi.")
+# Expected: {"symbol": "π", "value": 3.14159, "type": "mathematical constant"} (or similar structure)
+```
+
+In each case, the `reason()` function, powered by PAV:
+1.  **Perceives** the core request ("Tell me about Pi.") and also the `expected_output_type` from the Dana code context.
+2.  **Acts** by querying an LLM, possibly providing the desired output type as a hint in the prompt to the LLM.
+3.  **Validates** that the LLM's output can be successfully coerced or represented as the `expected_output_type` (string, float, int, dict), performing necessary transformations or retrying if the initial output isn't suitable.
+
+This demonstrates how PAV allows functions to be flexible in what they accept (the general intent) while being conservative and precise in what they produce, aligning with the caller's specific needs.
+
 ## 🎛️ Advanced Usage (Python Customization)
 
 This section details how developers can customize the PAV framework using Python, for instance by creating custom PAV executors or configurations. For general Dana usage of PAV-enabled functions, refer to the Dana-level decorator documentation and examples.

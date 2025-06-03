@@ -265,7 +265,62 @@ def process_text_with_pav(data: str) -> str: # 'data' is the raw_input to my_per
 
 The exact naming and parameters of the built-in PAV-related decorators will be finalized as the PAV runtime is implemented.
 
-## 7. Modules and Imports
+## 7. Function Composition (Pipelining)
+
+Dana supports function composition using the `|` (pipe) operator, allowing you to chain functions together in a readable and powerful way. The output of one function becomes the input of the next function in the chain.
+
+### 7.1. Syntax and Behavior
+
+You can compose two or more functions using the `|` operator:
+
+```dana
+local:composed_function = function_one | function_two | function_three
+```
+
+*   `function_one` is called with the initial arguments.
+*   The result of `function_one` is passed as the argument to `function_two`.
+*   The result of `function_two` is passed as the argument to `function_three`.
+*   The `composed_function` itself takes the same arguments as the *first* function in the chain (`function_one`).
+*   The return type of `composed_function` is the return type of the *last* function in the chain (`function_three`).
+*   The resulting `composed_function` is a new callable that executes the chain.
+
+For the composition to be valid, the return type of each function in the chain (except the last) must be compatible with the input parameter type of the next function. Dana's type system will aim to validate these compatibilities.
+
+### 7.2. Example: Planning and Costing a Trip
+
+Let's illustrate with your example of planning a day and estimating its cost:
+
+```dana
+# Assume these functions are defined elsewhere:
+# def plan_a_day(location: str, weather_condition: str) -> PlanDetails:
+#     # ... returns some structured plan details ...
+#
+# def estimate_cost(details: PlanDetails) -> CostEstimate:
+#     # ... returns a cost estimation based on plan details ...
+
+# Compose the functions
+>>> pipeline = plan_a_day | estimate_cost
+# pipeline is now a new callable, conceptually a ComposedFunction
+
+# Call the composed pipeline
+>>> trip_cost = pipeline("half moon bay", "foggy")
+# This is equivalent to:
+# local:plan = plan_a_day("half moon bay", "foggy")
+# local:trip_cost = estimate_cost(local:plan)
+#
+# trip_cost will hold the CostEstimate.
+```
+
+In this example:
+1.  `pipeline` is created by composing `plan_a_day` and `estimate_cost`.
+2.  When `pipeline("half moon bay", "foggy")` is called:
+    *   `plan_a_day("half moon bay", "foggy")` is executed first.
+    *   Its result (of type `PlanDetails`) is then automatically passed to `estimate_cost`.
+    *   The final result (`trip_cost`) is the `CostEstimate` returned by `estimate_cost`.
+
+Function composition provides a concise and expressive way to define sequential data processing workflows in Dana.
+
+## 8. Modules and Imports
 
 Dana code can be organized into multiple files and imported using the `import` statement. This allows for better code organization and reusability. (Further details on module resolution and namespacing will be provided in `modules_and_imports.md`).
 

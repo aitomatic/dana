@@ -104,6 +104,34 @@ It's the execution protocol at the **center of modern neurosymbolic intelligence
 
 ## 🔧 PAV Design and Specification
 
+### ✨ PAV in Action: `reason()` Adapting to Context
+
+The power and everyday utility of the PAV execution model are clearly demonstrated by Dana's built-in `reason()` function. `reason()` leverages PAV to adapt its output based on the context provided by the Dana engineer, particularly through type hints. Consider the following interaction:
+
+```python
+>>> pi_description = reason("what is pi?")
+# pi_description is now a string:
+# "Pi (π) is a mathematical constant representing the ratio of a circle's circumference to its diameter. Its approximate value is:
+# π ≈ 3.14159
+# But it is an irrational number, meaning: ..."
+
+>>> pi_float: float = reason("what is pi?")
+# pi_float is now the float: 3.14159265
+
+>>> radius = 2 ; area = pi_float * radius**2
+# area is now the float: 12.5663706
+```
+
+In the first call, with no specific type hint for `pi_description` (or if `-> any` or `-> str` was implied), `reason()` returns a descriptive string. In the second call, the explicit type hint `pi_float: float` signals to PAV that a floating-point number is desired. The PAV framework, underpinning `reason()`:
+
+1.  **Perceives** the request "what is pi?" and critically, the `expected_output_type` of `float` from the type hint.
+2.  **Acts** by querying its underlying AI model, likely instructing it to provide a numerical value for Pi.
+3.  **Validates** that the AI's output can be (or is) a float, ensuring the assignment to `pi_float` is type-safe and that `pi_float` can be immediately used in numerical calculations like `area = pi_float * radius**2`.
+
+This dynamic adaptation based on context, especially the desired output type, without changing the core textual prompt, is a hallmark of the PAV model and a key to Dana's expressive power and developer convenience.
+
+---
+
 This section outlines the PAV (Perceive → Act → Validate) framework, designed for implementation in Python as part of the Dana runtime.
 
 * The **PAV control logic** and retry loop is implemented in Python.
