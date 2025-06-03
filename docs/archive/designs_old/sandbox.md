@@ -9,9 +9,9 @@ The Dana runtime is designed to securely and robustly process and execute code f
 At a high level, the Dana runtime flow is as follows:
 
 1. [`opendxa.dana.language.parser`](./parser.md): Parses the source code into a parse tree.
-2. [`opendxa.dana.language.dana_grammar.lark`](./grammar.md): The Dana grammar (Lark grammar).
+2. [`opendxa.dana.language.dana_grammar.lark`](./dana/grammar.md): The Dana grammar (Lark grammar).
 3. [`opendxa.dana.language.transformers`](./transformers.md): Transforms the parse tree into an AST.
-4. [`opendxa.dana.language.type_checker`](./type_checker.md): Type checks the AST.
+4. [`opendxa.dana.language.type_checker`](./type-checker.md): Type checks the AST.
 5. [`opendxa.dana.runtime.interpreter`](./interpreter.md): Executes the AST.
 
 ## Flow Diagram

@@ -10,7 +10,7 @@ This document describes the architecture, responsibilities, and flow of the Dana
 
 The Dana parser is built on top of the [Lark](https://github.com/lark-parser/lark) parsing library. It is responsible for:
 
-- Loading the Dana [grammar](./grammar.md) (from file or embedded)
+- Loading the Dana [grammar](./dana/grammar.md) (from file or embedded)
 - Parsing source code into a parse tree
 - Transforming the parse tree into a Dana AST using modular transformers
 - Optionally performing type checking on the AST

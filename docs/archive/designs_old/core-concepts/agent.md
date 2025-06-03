@@ -29,7 +29,7 @@ Agents in OpenDXA are autonomous entities that can perceive their environment, m
 - [State management](./state-management.md)
 - Decision making with Dana
 - Action execution
-- [Learning and adaptation](../cognitive-functions/learning.md)
+- Learning and adaptation
 
 ## Architecture
 

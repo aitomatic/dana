@@ -51,7 +51,7 @@ nav:
       - Overview: for-engineers/reference/README.md
       - Dana Syntax: for-engineers/reference/dana-syntax.md
       - REPL Guide: for-engineers/reference/repl-guide.md
-      - PAV Usage Guide: docs/for-engineers/reference/pav-usage-guide.md
+      - PAV Usage Guide: for-engineers/reference/pav-usage-guide.md
       - API Reference:
         - Overview: for-engineers/reference/api/README.md
         - Core Functions: for-engineers/reference/api/core-functions.md

@@ -161,7 +161,7 @@ Not an AI expert? No problem.
 - **Why does it matter?** Dana helps teams avoid costly errors, collaborate better, and build trust in AI systems.
 - **How do I start?** Try a simple example, explore the docs, or join the community. You don't need to be a coding expert—Dana is designed to be approachable.
 
-Learn more: [Dana Documentation](./dana.md)
+Learn more: [Dana Language Specification](../01_dana_language_specification/overview.md)
 
 ---
 

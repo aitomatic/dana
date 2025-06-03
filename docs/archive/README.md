@@ -17,11 +17,11 @@ Documents are moved to this archive when:
 ## Current Documentation
 
 For current, actively maintained documentation, see:
-- **[Design Specifications](../designs/README.md)** - Authoritative design documents
+- **[Design Specifications](../design/README.md)** - Authoritative design documents
 - **[User Documentation](../for-engineers/README.md)** - Practical guides and recipes
 - **[API Reference](../for-engineers/reference/api/README.md)** - Complete API documentation
 - **[Architecture Guide](../for-contributors/architecture/README.md)** - Implementation details
 
 ---
 
-**Note:** If you're looking for current Dana language specifications, design documents, or implementation guides, they have been moved to the `docs/designs/` directory. 
+**Note:** If you're looking for current Dana language specifications, design documents, or implementation guides, they have been moved to the `docs/design/` directory. 

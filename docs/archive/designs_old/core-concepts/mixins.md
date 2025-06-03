@@ -228,7 +228,7 @@ class AnalysisAgent(Loggable, Configurable, ToolCallable):
 
 ## Implementation Details
 
-For detailed implementation information, parameter references, and advanced usage examples, please refer to the [Mixins Module README](../../opendxa/common/mixins/README.md).
+For detailed implementation information, parameter references, and advanced usage examples, please refer to the [Mixins Module README](../../../../opendxa/common/mixins/README.md).
 
 ---
 <p align="center">

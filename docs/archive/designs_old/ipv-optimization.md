@@ -1,6 +1,6 @@
 > **Note: This IPV (Infer-Process-Validate) document is archived.**
 > The core concepts and goals described herein have been superseded and further developed under the **PAV (Perceive → Act → Validate) execution model**.
-> For the current design, please refer to the [PAV Execution Model documentation](../../../02_dana_runtime_and_execution/pav_execution_model.md).
+> For the current design, please refer to the [PAV Execution Model documentation](../../design/02_dana_runtime_and_execution/pav_execution_model.md).
 
 # IPV (Infer-Process-Validate) Architecture for Dana Functions
 
