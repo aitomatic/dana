@@ -43,13 +43,13 @@ source .venv/bin/activate
 
 ### 2. Understand the Architecture (30 minutes)
 - [System Architecture Overview](architecture/system-design.md)
-- [Dana Language Implementation](architecture/dana-implementation.md)
-- [Core Components Deep Dive](architecture/component-architecture.md)
+- [Architecture Overview](architecture/README.md)
+- [System Design](architecture/system-design.md)
 
 ### 3. Make Your First Contribution (1 hour)
 - [Contribution Guidelines](development/contribution-guide.md)
-- [Code Style and Standards](development/coding-standards.md)
-- [Testing Requirements](development/testing-guide.md)
+- [Development Guide](development/README.md)
+- [Contribution Guide](development/contribution-guide.md)
 
 ---
 
@@ -163,7 +163,7 @@ common/
    - Model configuration and switching
    - Response handling and caching
 
-[Detailed Codebase Guide](codebase/navigation-guide.md)
+[Codebase Overview](codebase/README.md)
 
 ---
 
@@ -201,7 +201,7 @@ pylint opendxa/
 mypy opendxa/
 ```
 
-[Complete Development Setup](development/environment-setup.md)
+[Development Guide](development/README.md)
 
 ---
 
@@ -337,7 +337,7 @@ class TestDanaInterpreter:
         assert "result" in interpreter.context
 ```
 
-[Testing Guidelines](development/testing-guide.md)
+[Contribution Guidelines](development/contribution-guide.md)
 
 ---
 
@@ -378,7 +378,7 @@ Where to go from here.
 - **Docstrings**: Inline code documentation
 - **Markdown**: General documentation format
 
-[Documentation Guidelines](development/documentation-guide.md)
+[Development Guide](development/README.md)
 
 ---
 
@@ -431,7 +431,7 @@ Where to go from here.
 - **Federated Knowledge**: Distributed knowledge sharing between agents
 - **Quantum Integration**: Quantum computing resource integration
 
-[Detailed Roadmap](development/roadmap.md)
+[Development Guide](development/README.md)
 
 ---
 
@@ -450,7 +450,7 @@ Where to go from here.
 
 ---
 
-*Ready to contribute? Start with our [Development Setup Guide](development/environment-setup.md) or check out [Good First Issues](https://github.com/aitomatic/opendxa/labels/good%20first%20issue).* 
+*Ready to contribute? Start with our [Development Guide](development/README.md) or check out [Good First Issues](https://github.com/aitomatic/opendxa/labels/good%20first%20issue).* 
 
 <p align="center">
 Copyright © 2025 Aitomatic, Inc. Licensed under the <a href="../../LICENSE.md">MIT License</a>.

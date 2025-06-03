@@ -88,8 +88,8 @@ opendxa demo chatbot
 
 ### Path 3: Migrate Existing Code (30 minutes)
 1. [Migration Guide](setup/migration-guide.md)
-2. [Converting LLM calls to Dana](recipes/migration-patterns.md)
-3. [Testing and validation](troubleshooting/migration-issues.md)
+2. Converting LLM calls to Dana (see recipes)
+3. Testing and validation (see troubleshooting)
 
 ---
 
@@ -108,7 +108,7 @@ for-engineers/
 │   ├── document-processor/README.md # Process and analyze documents
 │   ├── workflow-agent/README.md  # Multi-step automation
 │   ├── api-integration/README.md # Connect external services
-│   └── migration-patterns.md     # Common migration patterns
+│   └── README.md                 # Recipe guides
 ├── reference/
 │   ├── dana-syntax.md            # Complete Dana language reference
 │   ├── functions.md              # All available functions
@@ -117,9 +117,7 @@ for-engineers/
 │   └── state-management.md       # State scopes and management
 └── troubleshooting/README.md
     ├── common-issues.md          # Frequent problems and solutions
-    ├── error-reference.md        # Error codes and meanings
-    ├── debugging-guide.md        # Debugging techniques
-    └── migration-issues.md       # Migration-specific problems
+    └── README.md                 # Troubleshooting guide
 ```
 
 ---

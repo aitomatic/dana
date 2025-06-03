@@ -13,7 +13,7 @@ This document outlines the overall runtime flow and the role of the sandbox.
 
 At a high level, the Dana runtime flow involves several key stages:
 
-1.  **Parsing**: Source code is parsed into an Abstract Syntax Tree (AST). (See [Parser Details Placeholder](../../01_dana_language_specification/parser.md) and [Grammar Details](../../01_dana_language_specification/grammar.md)).
+1.  **Parsing**: Source code is parsed into an Abstract Syntax Tree (AST). (See [Grammar Details](../01_dana_language_specification/grammar.md)).
 2.  **AST Transformation (Optional)**: The AST might undergo transformations for optimization or to prepare it for execution.
 3.  **Type System Interaction (Optional)**: Dana is dynamically typed, but type hints can inform behavior (e.g., polymorphism, AI assistance). (See [Type System and Casting](./type_system_and_casting.md)).
 4.  **Interpretation**: The [Dana Interpreter](./interpreter.md) executes the AST, managing state within the `SandboxContext`.
