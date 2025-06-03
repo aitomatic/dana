@@ -13,119 +13,287 @@
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
+         <loc>https://opendxa.readthedocs.io/archive/designs_old/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/archive/designs_old/ast-validation/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/archive/designs_old/ast/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/archive/designs_old/functions/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/archive/designs_old/interpreter/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/archive/designs_old/ipv-optimization/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/archive/designs_old/parser/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/archive/designs_old/repl/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/archive/designs_old/sandbox/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/archive/designs_old/system-overview/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/archive/designs_old/transcoder/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/archive/designs_old/transformers/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/archive/designs_old/type-checker/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/archive/designs_old/core-concepts/agent/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/archive/designs_old/core-concepts/architecture/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/archive/designs_old/core-concepts/capabilities/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/archive/designs_old/core-concepts/conversation-context/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/archive/designs_old/core-concepts/execution-flow/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/archive/designs_old/core-concepts/mixins/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/archive/designs_old/core-concepts/resources/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/archive/designs_old/core-concepts/state-management/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/archive/designs_old/dana/auto-type-casting/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/archive/designs_old/dana/design-principles/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/archive/designs_old/dana/grammar/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/archive/designs_old/dana/language/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/archive/designs_old/dana/manifesto/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/archive/designs_old/dana/overview/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/archive/designs_old/dana/structs-and-polymorphism/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/archive/designs_old/dana/syntax/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
          <loc>https://opendxa.readthedocs.io/archive/historical-comparisons/framework-comparison-2024/</loc>
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
-         <loc>https://opendxa.readthedocs.io/designs/</loc>
+         <loc>https://opendxa.readthedocs.io/design/</loc>
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
-         <loc>https://opendxa.readthedocs.io/designs/ast-validation/</loc>
+         <loc>https://opendxa.readthedocs.io/design/00_dana_philosophy/design-principles/</loc>
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
-         <loc>https://opendxa.readthedocs.io/designs/ast/</loc>
+         <loc>https://opendxa.readthedocs.io/design/00_dana_philosophy/manifesto/</loc>
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
-         <loc>https://opendxa.readthedocs.io/designs/functions/</loc>
+         <loc>https://opendxa.readthedocs.io/design/01_dana_language_specification/data_types_and_structs/</loc>
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
-         <loc>https://opendxa.readthedocs.io/designs/interpreter/</loc>
+         <loc>https://opendxa.readthedocs.io/design/01_dana_language_specification/error_handling/</loc>
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
-         <loc>https://opendxa.readthedocs.io/designs/ipv-optimization/</loc>
+         <loc>https://opendxa.readthedocs.io/design/01_dana_language_specification/functions_and_polymorphism/</loc>
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
-         <loc>https://opendxa.readthedocs.io/designs/parser/</loc>
+         <loc>https://opendxa.readthedocs.io/design/01_dana_language_specification/grammar/</loc>
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
-         <loc>https://opendxa.readthedocs.io/designs/repl/</loc>
+         <loc>https://opendxa.readthedocs.io/design/01_dana_language_specification/modules_and_imports/</loc>
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
-         <loc>https://opendxa.readthedocs.io/designs/sandbox/</loc>
+         <loc>https://opendxa.readthedocs.io/design/01_dana_language_specification/overview/</loc>
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
-         <loc>https://opendxa.readthedocs.io/designs/system-overview/</loc>
+         <loc>https://opendxa.readthedocs.io/design/01_dana_language_specification/state_and_scopes/</loc>
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
-         <loc>https://opendxa.readthedocs.io/designs/transcoder/</loc>
+         <loc>https://opendxa.readthedocs.io/design/01_dana_language_specification/syntax/</loc>
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
-         <loc>https://opendxa.readthedocs.io/designs/transformers/</loc>
+         <loc>https://opendxa.readthedocs.io/design/02_dana_runtime_and_execution/concurrency_model/</loc>
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
-         <loc>https://opendxa.readthedocs.io/designs/type-checker/</loc>
+         <loc>https://opendxa.readthedocs.io/design/02_dana_runtime_and_execution/debugging_profiling/</loc>
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
-         <loc>https://opendxa.readthedocs.io/designs/core-concepts/agent/</loc>
+         <loc>https://opendxa.readthedocs.io/design/02_dana_runtime_and_execution/execution_model/</loc>
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
-         <loc>https://opendxa.readthedocs.io/designs/core-concepts/architecture/</loc>
+         <loc>https://opendxa.readthedocs.io/design/02_dana_runtime_and_execution/external_interfaces/</loc>
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
-         <loc>https://opendxa.readthedocs.io/designs/core-concepts/capabilities/</loc>
+         <loc>https://opendxa.readthedocs.io/design/02_dana_runtime_and_execution/interpreter/</loc>
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
-         <loc>https://opendxa.readthedocs.io/designs/core-concepts/conversation-context/</loc>
+         <loc>https://opendxa.readthedocs.io/design/02_dana_runtime_and_execution/ipv_architecture/</loc>
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
-         <loc>https://opendxa.readthedocs.io/designs/core-concepts/execution-flow/</loc>
+         <loc>https://opendxa.readthedocs.io/design/02_dana_runtime_and_execution/pav_execution_model/</loc>
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
-         <loc>https://opendxa.readthedocs.io/designs/core-concepts/mixins/</loc>
+         <loc>https://opendxa.readthedocs.io/design/02_dana_runtime_and_execution/repl/</loc>
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
-         <loc>https://opendxa.readthedocs.io/designs/core-concepts/resources/</loc>
+         <loc>https://opendxa.readthedocs.io/design/02_dana_runtime_and_execution/sandbox/</loc>
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
-         <loc>https://opendxa.readthedocs.io/designs/core-concepts/state-management/</loc>
+         <loc>https://opendxa.readthedocs.io/design/02_dana_runtime_and_execution/security_considerations/</loc>
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
-         <loc>https://opendxa.readthedocs.io/designs/dana/auto-type-casting/</loc>
+         <loc>https://opendxa.readthedocs.io/design/02_dana_runtime_and_execution/type_system_and_casting/</loc>
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
-         <loc>https://opendxa.readthedocs.io/designs/dana/design-principles/</loc>
+         <loc>https://opendxa.readthedocs.io/design/03_core_capabilities_resources/</loc>
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
-         <loc>https://opendxa.readthedocs.io/designs/dana/grammar/</loc>
+         <loc>https://opendxa.readthedocs.io/design/03_core_capabilities_resources/capabilities_overview/</loc>
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
-         <loc>https://opendxa.readthedocs.io/designs/dana/language/</loc>
+         <loc>https://opendxa.readthedocs.io/design/03_core_capabilities_resources/capability_invocation/</loc>
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
-         <loc>https://opendxa.readthedocs.io/designs/dana/manifesto/</loc>
+         <loc>https://opendxa.readthedocs.io/design/03_core_capabilities_resources/resource_model/</loc>
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
-         <loc>https://opendxa.readthedocs.io/designs/dana/overview/</loc>
+         <loc>https://opendxa.readthedocs.io/design/03_core_capabilities_resources/system_resources/</loc>
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
-         <loc>https://opendxa.readthedocs.io/designs/dana/syntax/</loc>
+         <loc>https://opendxa.readthedocs.io/design/03_core_capabilities_resources/user_defined_resources/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/design/04_agent_and_orchestration/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/design/04_agent_and_orchestration/agent_model/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/design/04_agent_and_orchestration/human_in_the_loop/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/design/04_agent_and_orchestration/inter_agent_communication/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/design/04_agent_and_orchestration/task_orchestration/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/design/04_agent_and_orchestration/workflow_patterns/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/design/05_tooling_and_dev_experience/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/design/05_tooling_and_dev_experience/debugging_tools/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/design/05_tooling_and_dev_experience/documentation_generation/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/design/05_tooling_and_dev_experience/ide_integration_vscode/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/design/05_tooling_and_dev_experience/packaging_distribution/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/design/05_tooling_and_dev_experience/repl_enhancements/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/design/05_tooling_and_dev_experience/testing_framework/</loc>
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
@@ -133,7 +301,63 @@
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
+         <loc>https://opendxa.readthedocs.io/for-contributors/architecture/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/for-contributors/architecture/system-design/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/for-contributors/codebase/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/for-contributors/development/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/for-contributors/development/contribution-guide/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/for-contributors/extending/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/for-contributors/extending/extension-development/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
          <loc>https://opendxa.readthedocs.io/for-engineers/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/for-engineers/recipes/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/for-engineers/recipes/first-agent/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/for-engineers/recipes/api-integration/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/for-engineers/recipes/chatbot/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/for-engineers/recipes/document-processor/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/for-engineers/recipes/workflow-agent/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/for-engineers/reference/</loc>
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
@@ -141,7 +365,7 @@
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
-         <loc>https://opendxa.readthedocs.io/for-engineers/reference/ipv-usage-guide/</loc>
+         <loc>https://opendxa.readthedocs.io/for-engineers/reference/pav-usage-guide/</loc>
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
@@ -177,7 +401,35 @@
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
+         <loc>https://opendxa.readthedocs.io/for-engineers/setup/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/for-engineers/setup/installation/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/for-engineers/setup/migration-guide/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/for-engineers/troubleshooting/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
          <loc>https://opendxa.readthedocs.io/for-evaluators/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/for-evaluators/adoption-guide/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/for-evaluators/adoption-guide/professional-services/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/for-evaluators/comparison/</loc>
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
@@ -185,7 +437,35 @@
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
+         <loc>https://opendxa.readthedocs.io/for-evaluators/comparison/technical-overview/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/for-evaluators/proof-of-concept/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/for-evaluators/proof-of-concept/evaluation-guide/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/for-evaluators/proof-of-concept/quick-demo/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/for-evaluators/roi-analysis/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/for-evaluators/roi-analysis/calculator/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
          <loc>https://opendxa.readthedocs.io/for-researchers/</loc>
+         <lastmod>2025-06-03</lastmod>
+    </url>
+    <url>
+         <loc>https://opendxa.readthedocs.io/for-researchers/future-work/</loc>
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
@@ -193,67 +473,11 @@
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
-         <loc>https://opendxa.readthedocs.io/internal/marketing/conceptual-and-structured-knowledge/</loc>
+         <loc>https://opendxa.readthedocs.io/for-researchers/neurosymbolic/</loc>
          <lastmod>2025-06-03</lastmod>
     </url>
     <url>
-         <loc>https://opendxa.readthedocs.io/internal/marketing/declarative-imperative/</loc>
-         <lastmod>2025-06-03</lastmod>
-    </url>
-    <url>
-         <loc>https://opendxa.readthedocs.io/internal/marketing/domain-expertise/</loc>
-         <lastmod>2025-06-03</lastmod>
-    </url>
-    <url>
-         <loc>https://opendxa.readthedocs.io/internal/marketing/knowledge-evolution/</loc>
-         <lastmod>2025-06-03</lastmod>
-    </url>
-    <url>
-         <loc>https://opendxa.readthedocs.io/internal/marketing/protocol-federation/</loc>
-         <lastmod>2025-06-03</lastmod>
-    </url>
-    <url>
-         <loc>https://opendxa.readthedocs.io/internal/requirements/requirements/</loc>
-         <lastmod>2025-06-03</lastmod>
-    </url>
-    <url>
-         <loc>https://opendxa.readthedocs.io/internal/requirements/requirements/BATCH-PROCESS-AUTOMATION/</loc>
-         <lastmod>2025-06-03</lastmod>
-    </url>
-    <url>
-         <loc>https://opendxa.readthedocs.io/internal/requirements/requirements/ENTERPRISE-INTERFACE-GUIDE/</loc>
-         <lastmod>2025-06-03</lastmod>
-    </url>
-    <url>
-         <loc>https://opendxa.readthedocs.io/internal/requirements/requirements/FAB-FAULT-DIAGNOSIS/</loc>
-         <lastmod>2025-06-03</lastmod>
-    </url>
-    <url>
-         <loc>https://opendxa.readthedocs.io/internal/requirements/requirements/FAB-LOG-ANALYSIS/</loc>
-         <lastmod>2025-06-03</lastmod>
-    </url>
-    <url>
-         <loc>https://opendxa.readthedocs.io/internal/requirements/requirements/FABLESS-CUSTOMER-SUPPORT/</loc>
-         <lastmod>2025-06-03</lastmod>
-    </url>
-    <url>
-         <loc>https://opendxa.readthedocs.io/internal/requirements/requirements/FABLESS-FAE-SUPPORT/</loc>
-         <lastmod>2025-06-03</lastmod>
-    </url>
-    <url>
-         <loc>https://opendxa.readthedocs.io/internal/requirements/requirements/TEMPLATE/</loc>
-         <lastmod>2025-06-03</lastmod>
-    </url>
-    <url>
-         <loc>https://opendxa.readthedocs.io/internal/requirements/requirements/UTILITY-FAULT-DIAGNOSIS/</loc>
-         <lastmod>2025-06-03</lastmod>
-    </url>
-    <url>
-         <loc>https://opendxa.readthedocs.io/internal/requirements/requirements/VISUAL-DEFECT-ANALYSIS/</loc>
-         <lastmod>2025-06-03</lastmod>
-    </url>
-    <url>
-         <loc>https://opendxa.readthedocs.io/internal/requirements/requirements/VISUAL-PART-MATCHING/</loc>
+         <loc>https://opendxa.readthedocs.io/for-researchers/research/</loc>
          <lastmod>2025-06-03</lastmod>
     </url>
 </urlset>
