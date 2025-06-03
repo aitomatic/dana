@@ -5,10 +5,6 @@ NEVER use dot notation: `private.x`, `public.x`, etc.
 Prefer using unscoped variables (auto-scoped to local) instead of explicit `private:` scope unless private scope is specifically needed.
 -->
 
-<p align="center">
-  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
-</p>
-
 # OpenDXA - Domain-Expert Agent Framework
 
 > OpenDXA is a comprehensive framework for easily coding and deploying domain-expert multi-agent systems.
@@ -365,7 +361,7 @@ OpenDXA is released under the [MIT License](LICENSE.md).
 ---
 
 <p align="center">
-Copyright © 2024 Aitomatic, Inc. Licensed under the <a href="LICENSE.md">MIT License</a>.
+Copyright © 2025 Aitomatic, Inc. Licensed under the <a href="LICENSE.md">MIT License</a>.
 <br/>
 <a href="https://aitomatic.com">https://aitomatic.com</a>
 </p>

@@ -1,0 +1,262 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap');
+
+/* Custom styles for OpenDXA documentation */
+
+/* Theme-aware text and background colors */
+[data-md-color-scheme="default"] {
+  /* Aitomatic Palette */
+  --ait-body-font: #5d6066;
+  --ait-heading-main-color: #022a5b;
+  --ait-pale-yellow: #ffbb5c;
+  --ait-white: white;
+  --ait-transparent: transparent;
+  --ait-light-background: #fffaf4;
+  --ait-heading-color: #060f1a; /* General heading, if different from h1-h3 */
+  --ait-footer-color: #141a29;
+  --ait-deep-grey: #aa9b86;
+  --ait-light-white: #ffffffb3;
+
+  /* Overriding Material Design theme variables with Aitomatic palette */
+  --md-default-fg-color: var(--ait-body-font);
+  --md-default-fg-color--light: var(--ait-body-font); /* Lighter version of body font, can adjust if needed */
+  --md-default-bg-color: var(--ait-light-background);
+
+  --md-primary-fg-color: #022a5b; /* Main brand color for header, etc. - Using dark blue from headings */
+  --md-primary-fg-color--dark: var(--ait-white); /* Text on primary color - white for contrast on dark blue */
+  
+  --md-accent-fg-color: var(--ait-pale-yellow); /* Accent color */
+  --md-accent-fg-color--transparent: rgba(255, 187, 92, 0.1); /* Transparent version of accent */
+
+  --md-typeset-a-color: var(--ait-heading-main-color); /* Links use main heading color */
+  --md-typeset-h1-color: var(--ait-heading-main-color);
+  --md-typeset-h2-color: var(--ait-heading-main-color);
+  --md-typeset-h3-color: var(--ait-heading-main-color);
+  /* Add other heading levels if needed */
+
+  --md-code-fg-color: var(--ait-body-font);
+  --md-code-bg-color: #f0f0f0; /* A light grey for code blocks, can be adjusted */
+
+  --md-footer-bg-color: var(--ait-footer-color);
+  --md-footer-fg-color: var(--ait-light-white);
+  --md-footer-fg-color--light: #cecfd0; /* For footer links */
+}
+
+[data-md-color-scheme="slate"] {
+  /* Aitomatic Palette - Dark Theme (TODO: Define appropriate dark theme colors based on aitomatic.com if available) */
+  --ait-body-font-slate: #cccccc; /* Example */
+  --ait-heading-main-color-slate: #e0e0e0; /* Example */
+  --ait-pale-yellow-slate: #ffbb5c; /* Accent remains same or can be adjusted */
+  --ait-light-background-slate: #121212; /* Example dark background */
+  --ait-footer-color-slate: #0e121c; /* Example dark footer */
+
+
+  --md-default-fg-color: #cccccc; /* Lighter gray for body text in dark mode */
+  --md-default-fg-color--light: #aaaaaa;
+  --md-default-bg-color: #1e1e1e; /* Dark background for slate mode */
+  /* --md-primary-fg-color--dark: #000000; /* Ensure header text is black on indigo if header inverts */
+  /* Revisit primary color for slate */
+  --md-primary-fg-color: #333; /* Example dark header */
+  --md-primary-fg-color--dark: var(--ait-white);
+
+
+  --md-typeset-a-color: var(--md-accent-fg-color); /* Links use accent color in dark mode for better contrast */
+}
+
+/* General body styling */
+body {
+  font-family: 'Poppins', Arial, sans-serif;
+  font-size: 1rem; /* 16px */
+  line-height: 1.75rem;
+  color: var(--md-default-fg-color);
+  background-color: var(--md-default-bg-color);
+}
+
+/* Ensure content background is also set */
+.md-main .md-content {
+    background-color: var(--md-default-bg-color);
+}
+
+/* Header styling */
+.md-header {
+  background-color: var(--md-primary-fg-color); /* Using the new primary color */
+  color: var(--md-primary-fg-color--dark); /* Text on header */
+  /* height: 100px; */ /* From CSS guide, adjust if needed with Material theme structure */
+  /* border-bottom: 1px solid #525558; */ /* From CSS guide, this might conflict or need adjustment */
+}
+.md-header a {
+    color: var(--md-primary-fg-color--dark); /* For links in header */
+}
+.md-tabs { /* Tabs below header, if used */
+    background-color: var(--md-primary-fg-color);
+}
+.md-tabs__link {
+    color: var(--md-primary-fg-color--dark);
+    opacity: 0.8; /* Slight fade for non-active tabs */
+}
+.md-tabs__link--active {
+    color: var(--md-primary-fg-color--dark);
+    opacity: 1;
+}
+
+
+.md-nav__title {
+  font-weight: 700;
+}
+
+/* Headings: Poppins font, with sizes and colors from style guide */
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3,
+.md-typeset h4,
+.md-typeset h5,
+.md-typeset h6 {
+  font-family: 'Poppins', Arial, sans-serif;
+  color: var(--ait-heading-main-color); /* Default for all headings */
+  font-weight: 500; /* Default weight from guide */
+}
+.md-typeset h1 {
+  font-size: 2.75rem; /* Was 4.375rem (70px) */
+  line-height: 3.25rem; /* Was 5rem */
+  font-weight: 500;
+  letter-spacing: -0.02rem; /* Adjusted from -0.04rem */
+}
+.md-typeset h2 {
+  font-size: 2.25rem; /* Was 3.125rem (50px) */
+  line-height: 2.75rem; /* Was 3.75rem */
+  font-weight: 500;
+}
+.md-typeset h3 {
+  font-size: 1.25rem; /* Was 1.375rem (22px) */
+  line-height: 1.75rem; /* Was 2rem */
+  font-weight: 500;
+}
+/* For h4, h5, h6 - use a smaller size or define if specified in full guide */
+.md-typeset h4 {
+    font-size: 1.0rem; /* Was 1.125rem (18px) */
+    line-height: 1.5rem; /* Was 1.75rem */
+    font-weight: 500;
+}
+
+
+/* Link styling - uses variables defined above */
+.md-typeset a {
+  color: var(--md-typeset-a-color);
+  font-weight: 500;
+  text-decoration: none; /* Common practice, can be adjusted */
+}
+.md-typeset a:hover {
+  color: var(--ait-pale-yellow); /* Hover color from footer example */
+  opacity: 1; /* Ensure full color on hover */
+  text-decoration: underline; /* Optional: add underline on hover */
+}
+
+/* Code block styling */
+.highlight pre, 
+.md-typeset pre > code { /* Target code blocks more specifically */
+  border-radius: 8px;
+  background-color: var(--md-code-bg-color); /* Use theme's code background */
+  border: 1px solid var(--md-default-fg-color--lightest); /* Subtle border */
+}
+.md-typeset code { /* Inline code */
+    background-color: var(--md-code-bg-color);
+    border-radius: 3px;
+    padding: 0.2em 0.4em;
+    color: var(--md-code-fg-color); /* Ensure inline code text color also uses variable */
+}
+
+/* Admonition styling */
+.md-typeset .admonition {
+  border-radius: 8px;
+  border-left-width: 4px; /* Emphasize left border */
+}
+
+/* Dana code highlighting */
+.language-dana {
+  background-color: #f8f9fa;
+}
+[data-md-color-scheme="slate"] .language-dana {
+    background-color: #2d2d2d; /* Darker background for Dana in slate mode */
+    color: #cccccc; /* Ensure text is light */
+}
+
+/* Aitomatic logo styling */
+.md-header__button.md-logo img,
+.md-logo img {
+  height: 15px;
+  width: auto;
+  max-width: 200px;
+}
+
+/* Logo in header - ensure proper sizing */
+.md-header .md-header__button.md-logo {
+  margin: 0.4rem;
+}
+
+/* Ensure logo doesn't overlap with navigation */
+@media screen and (max-width: 76.1875em) {
+  .md-nav--primary .md-nav__title[for="__drawer"] {
+    /* background-color is already var(--md-primary-fg-color) via Material theme */
+  }
+}
+
+/* Footer styling */
+.md-footer {
+    background-color: var(--md-footer-bg-color);
+    color: var(--md-footer-fg-color);
+    /* padding-top: 107px; From CSS guide, Material theme has its own padding */
+}
+.md-footer a {
+    color: var(--md-footer-fg-color--light); /* For links in footer */
+    transition: color 0.45s;
+}
+.md-footer a:hover {
+    color: var(--ait-pale-yellow); /* Hover color from style guide */
+}
+
+/* Table of Contents (on-page navigation) */
+.md-nav--secondary .md-nav__link {
+    font-size: 0.8rem; /* Smaller font for TOC links */
+    line-height: 1.3;
+}
+.md-nav--secondary .md-nav__title {
+    font-size: 0.85rem; /* Slightly larger for TOC section titles if any */
+    font-weight: 700;
+}
+
+/* Button Styles */
+/* Default Material buttons, primary action buttons */
+.md-button,
+.md-button--primary {
+  background-color: var(--ait-pale-yellow);
+  color: var(--ait-heading-main-color); /* Text color from btn style */
+  /* padding: 1rem 2rem; /* From CSS btn, may need adjustment for Material's structure */
+  font-family: 'Inter', 'Poppins', sans-serif; /* Font from btn style, fallback to Poppins */
+  font-size: 0.9375rem;
+  font-weight: 500;
+  border-radius: 0;
+  transition: color 0.3s, background-color 0.3s;
+  border: 1px solid var(--ait-pale-yellow); /* Ensure border matches bg or is transparent */
+  text-transform: none; /* Material buttons are often uppercase */
+}
+
+.md-button:hover,
+.md-button--primary:hover {
+  background-color: var(--ait-heading-main-color); /* Example hover: Invert colors */
+  color: var(--ait-pale-yellow);
+  border: 1px solid var(--ait-heading-main-color);
+}
+
+/* Secondary/generic buttons (e.g. w-button, if applicable to elements) */
+/* More specific selectors might be needed if Material uses different classes for secondary actions */
+.md-button--secondary { /* This is a hypothetical class, adjust if Material uses a different one */
+  color: var(--ait-white); /* from .w-button */
+  background-color: #3898ec; /* from .w-button */
+  border: 0;
+  border-radius: 0;
+  /* padding: 9px 15px; */
+  font-family: 'Inter', 'Poppins', sans-serif;
+  text-transform: none;
+}
+.md-button--secondary:hover {
+  opacity: 0.8; /* Simple hover effect */
+} 

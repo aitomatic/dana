@@ -98,12 +98,12 @@ OpenDXA is a comprehensive framework for building intelligent multi-agent system
 
 1. **Dana (Domain-Aware NeuroSymbolic Architecture)**: An imperative programming language and execution runtime for agent reasoning. Key components include:
    - **Parser**: Converts Dana source code into an Abstract Syntax Tree (AST) using a formal grammar
-   - **Interpreter**: Executes Dana programs by processing the AST
+   - **Interpreter**: Executes Dana programs by processing the AST with IPV (Infer-Process-Validate) optimization for reasoning
    - **Sandbox**: Provides a safe execution environment with controlled state management
    - **Transcoder**: Translates between natural language and Dana code
    - **REPL**: Interactive environment for executing Dana code
 
-2. **DANKE (Domain-Aware NeuroSymbolic Knowledge Engine)**: A knowledge management system implementing the CORRAL methodology (Collect, Organize, Retrieve, Reason, Act, Learn).
+2. **DANKE (Domain-Aware NeuroSymbolic Knowledge Engine)** *(Planned)*: A knowledge management system that will implement the CORRAL methodology (Collect, Organize, Retrieve, Reason, Act, Learn). Currently in early development stages.
 
 The framework enables building domain-expert agents with clear, auditable reasoning steps and the ability to apply specialized knowledge to solve complex tasks across different domains. 
 

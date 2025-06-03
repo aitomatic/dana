@@ -1,8 +1,3 @@
-<!-- AI Assistants: documentation markdowns should have this logo at the top -->
-<p align="center">
-  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
-</p>
-
 [Project Overview](../../README.md)
 
 # Dana (Domain-Aware NeuroSymbolic Architecture)
@@ -21,10 +16,11 @@ Dana is an imperative programming language and execution runtime designed specif
 - 🧠 **Imperative Programming Language**: Clear, explicit control flow and state modification
 - 📦 **Shared State Management**: Explicit state containers (`private`, `public`, `system`, `local`) 
 - 🧩 **Structured Function Calling**: Clean interface to tools and knowledge bases
-- 🧾 **First-Class Agent Reasoning**: Explicit LLM reasoning as a language primitive
+- 🧾 **First-Class Agent Reasoning**: Explicit LLM reasoning as a language primitive with IPV optimization
 - 📜 **Bidirectional Mapping with Natural Language**: Translation between code and plain English
 - 🔗 **Function Composition**: Pipe operator (`|`) for creating reusable function pipelines
 - 📥 **Module System**: Import Dana and Python modules with namespace support
+- ✨ **F-String Support**: Powerful string interpolation with expression evaluation
 
 ## Core Components
 
@@ -120,7 +116,7 @@ else:
     log("Temperature normal: {temperature}", "info")
     
 # Explicit reasoning with LLMs - use private: only when needed for agent state
-private:analysis = reason("Should we recommend a jacket?", 
+analysis = reason("Should we recommend a jacket?", 
                         {"context": [temperature, public:weather]})
 
 # Looping constructs
@@ -156,11 +152,12 @@ Key syntax elements:
 - Explicit scope prefixes (`private:`, `public:`, `system:`, `local:`) - use colon notation only
 - Prefer unscoped variables (auto-scoped to local) over explicit private: scope
 - Standard imperative control flow (if/else, while, for)
-- First-class `reason()` function for LLM integration
+- First-class `reason()` function for LLM integration with IPV optimization
 - Built-in logging and printing functions
 - **Function composition with pipe operator (`|`)**
 - **Module import system with namespace support**
 - **Data pipelines for immediate execution**
+- **F-string support for variable interpolation**
 
 ## Function Composition
 
@@ -323,6 +320,10 @@ Dana's imperative nature is evident in its explicit state management system. Eve
 | `public:`  | Openly accessible world state (time, weather, etc.)              |
 | `system:`  | System-related mechanical state with controlled access           |
 
+**Scope Syntax**: Dana supports both colon (`:`) and dot (`.`) notation internally for scope access, but **colon notation is strongly preferred** for user code:
+- ✅ **Preferred**: `private:variable`, `public:data`, `system:config`
+- ❌ **Avoid**: `private.variable`, `public.data`, `system.config`
+
 This enables clear, auditable state transitions and explicit data flow:
 
 ```dana
@@ -333,7 +334,16 @@ if public:sensor_temp > 100:
     
     # Conditionally modify system state
     if result == "yes":
-        system:alerts.append("Overheat detected")
+        system:alert_count = system:alert_count + 1
+        log("Overheat detected - Alert #{system:alert_count}", "warn")
+```
+
+**Note**: Unscoped variables automatically receive `local:` scope, which is the preferred approach for most use cases:
+
+```dana
+# These are equivalent:
+temperature = 98.6     # Preferred - auto-scoped to local
+local:temperature = 98.6  # Explicit but unnecessary
 ```
 
 ## Function System

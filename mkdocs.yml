@@ -1,0 +1,206 @@
+site_name: OpenDXA with Dana Documentation
+site_description: Comprehensive documentation for OpenDXA - Domain-Aware NeuroSymbolic Architecture
+site_url: https://opendxa.readthedocs.io/
+repo_url: https://github.com/aitomatic/opendxa
+repo_name: aitomatic/opendxa
+
+# Documentation and theme
+theme:
+  name: material
+  logo: images/aitomatic-logo.png
+  favicon: images/aitomatic-logo.png
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.path
+    - navigation.top
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  font:
+    text: Roboto
+    code: Roboto Mono
+
+# Navigation structure
+nav:
+  - Home: 
+    - Overview: README.md
+    - Roadmap: ROADMAP.md
+  - For Engineers:
+    - Overview: for-engineers/README.md
+    - Setup: for-engineers/setup/
+    - Reference:
+      - Overview: for-engineers/reference/api/README.md
+      - Dana Syntax: for-engineers/reference/dana-syntax.md
+      - REPL Guide: for-engineers/reference/repl-guide.md
+      - IPV Usage: for-engineers/reference/ipv-usage-guide.md
+      - API Reference:
+        - Core Functions: for-engineers/reference/api/core-functions.md
+        - Built-in Functions: for-engineers/reference/api/built-in-functions.md
+        - Function Calling: for-engineers/reference/api/function-calling.md
+        - Type System: for-engineers/reference/api/type-system.md
+        - Scoping: for-engineers/reference/api/scoping.md
+        - Sandbox Security: for-engineers/reference/api/sandbox-security.md
+    - Recipes: for-engineers/recipes/
+    - Troubleshooting: for-engineers/troubleshooting/
+  - For Evaluators:
+    - Overview: for-evaluators/README.md
+    - Comparison:
+      - Framework Pain Points: for-evaluators/comparison/framework-pain-points.md
+    - Adoption Guide: for-evaluators/adoption-guide/
+    - Proof of Concept: for-evaluators/proof-of-concept/
+    - ROI Analysis: for-evaluators/roi-analysis/
+  - For Researchers:
+    - Overview: for-researchers/README.md
+    - Manifesto:
+      - Vision: for-researchers/manifesto/vision.md
+    - Research: for-researchers/research/
+    - NeuroSymbolic: for-researchers/neurosymbolic/
+    - Future Work: for-researchers/future-work/
+  - For Contributors:
+    - Overview: for-contributors/README.md
+    - Architecture: for-contributors/architecture/
+    - Codebase: for-contributors/codebase/
+    - Development: for-contributors/development/
+    - Extending: for-contributors/extending/
+  - Designs:
+    - Overview: designs/README.md
+    - System Overview: designs/system-overview.md
+    - Core Concepts:
+      - Agent: designs/core-concepts/agent.md
+      - Architecture: designs/core-concepts/architecture.md
+      - Capabilities: designs/core-concepts/capabilities.md
+      - Conversation Context: designs/core-concepts/conversation-context.md
+      - Execution Flow: designs/core-concepts/execution-flow.md
+      - Mixins: designs/core-concepts/mixins.md
+      - Resources: designs/core-concepts/resources.md
+      - State Management: designs/core-concepts/state-management.md
+    - Dana Language:
+      - Overview: designs/dana/overview.md
+      - Manifesto: designs/dana/manifesto.md
+      - Design Principles: designs/dana/design-principles.md
+      - Language Design: designs/dana/language.md
+      - Syntax: designs/dana/syntax.md
+      - Grammar: designs/dana/grammar.md
+      - Auto Type Casting: designs/dana/auto-type-casting.md
+    - Components:
+      - AST: designs/ast.md
+      - AST Validation: designs/ast-validation.md
+      - Parser: designs/parser.md
+      - Interpreter: designs/interpreter.md
+      - Transcoder: designs/transcoder.md
+      - Sandbox: designs/sandbox.md
+      - REPL: designs/repl.md
+      - Functions: designs/functions.md
+      - Transformers: designs/transformers.md
+      - Type Checker: designs/type-checker.md
+      - IPV Optimization: designs/ipv-optimization.md
+  - Archive:
+    - Overview: archive/README.md
+    - Historical Comparisons: archive/historical-comparisons/framework-comparison-2024.md
+
+# Plugins
+plugins:
+  - search
+  - mermaid2
+  - section-index
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: google
+            members_order: source
+            show_source: true
+            show_bases: true
+  - git-revision-date-localized:
+      type: datetime
+      enable_creation_date: true
+
+# Markdown extensions
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: "material/twemoji"
+      emoji_generator: "material/to-svg"
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink:
+      repo_url_shorthand: true
+      user: aitomatic
+      repo: opendxa
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: '!!python/name:pymdownx.superfences.fence_code_format'
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+# Extra settings
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/aitomatic/opendxa
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/opendxa/
+
+# Documentation directory
+docs_dir: docs
+
+# Build directory
+site_dir: site
+
+# Additional settings
+strict: false
+use_directory_urls: true
+
+# Copyright
+copyright: Copyright &copy; 2025 Aitomatic, Inc.
+
+# Custom CSS/JS
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js 

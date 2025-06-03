@@ -23,7 +23,7 @@ For too long, building with AI has meant wrestling with hidden state, endless co
 ## Dana in the Computing Landscape
 
 <p align="center">
-  <img src="../../images/dana-io.jpg" alt="Dana Positioning Quadrant" width="400"/>
+  <img src="../../../images/dana-io.jpg" alt="Dana Positioning Quadrant" width="400"/>
 </p>
 <p align="center" style="font-size: 12px; font-style: italic;">Dana's unique position in the computing landscape.</p>
 

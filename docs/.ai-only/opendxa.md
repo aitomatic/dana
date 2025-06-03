@@ -27,20 +27,21 @@ Dana is an imperative programming language and execution runtime that forms the 
   - `private:` - Agent-specific internal state
   - `public:` - Shared world state and observations
   - `system:` - Runtime configuration and execution state
-  - `local:` - Function-specific temporary state
+  - `local:` - Function-specific temporary state (default scope for unscoped variables)
 - **First-Class Reasoning**: Native LLM integration with the `reason()` statement
-- **Knowledge Integration**: Seamless access to structured knowledge and tools
+- **Function Composition**: Pipe operator (`|`) for creating reusable function pipelines
+- **Module System**: Import Dana and Python modules with namespace support
 
 Dana programs are executed by the Dana interpreter, which provides:
 - Deterministic execution of standard operations
-- Controlled LLM reasoning integration
+- Controlled LLM reasoning integration with IPV (Infer-Process-Validate) optimization
 - State management and scope enforcement
 - Tool and knowledge base integration
 - Execution monitoring and logging
 
-### 2. DANKE (Domain-Aware NeuroSymbolic Knowledge Engine)
+### 2. DANKE (Domain-Aware NeuroSymbolic Knowledge Engine) - Planned
 
-DANKE is the knowledge management system implementing the CORRAL methodology:
+DANKE is the planned knowledge management system that will implement the CORRAL methodology:
 - **C**ollect: Gather and ingest domain knowledge
 - **O**rganize: Structure and index knowledge
 - **R**etrieve: Access and search for relevant knowledge
@@ -48,11 +49,11 @@ DANKE is the knowledge management system implementing the CORRAL methodology:
 - **A**ct: Apply knowledge to take actions and solve problems
 - **L**earn: Integrate feedback and improve knowledge over time
 
-DANKE enables both semantic search and precise rule-based reasoning, ensuring the right knowledge is available in the right context.
+*Note: DANKE is currently in early development stages and not yet fully implemented.*
 
 ### 3. OpenDXA Framework Core
 
-The framework orchestrates Dana and DANKE components, providing:
+The framework orchestrates Dana components, providing:
 - Agent lifecycle management
 - Multi-agent coordination
 - Tool integration and execution
@@ -69,15 +70,15 @@ Dana uses a clear, imperative programming model that developers find familiar an
 user_name = "Alice"  # Auto-scoped to local (preferred)
 public:weather_temperature = 72
 
-# Perform reasoning
+# Perform reasoning with IPV optimization
 analysis = reason("Should we recommend a jacket?",
-                       context=[user_name, public:weather_temperature])
+                       {"context": [user_name, public:weather_temperature]})
 
 # Take action based on reasoning
 if analysis == "yes":
-    use("kb.recommendations.jacket")
+    print("Recommend wearing a jacket")
 else:
-    use("kb.recommendations.no_jacket")
+    print("No jacket needed")
 ```
 
 This imperative approach provides:
@@ -85,6 +86,7 @@ This imperative approach provides:
 - Easily auditable reasoning steps
 - Traceable state changes
 - Familiar control structures (if/else, loops)
+- Function composition for building complex pipelines
 
 ### Domain Expertise Integration
 
