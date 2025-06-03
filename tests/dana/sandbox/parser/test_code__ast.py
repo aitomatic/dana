@@ -41,6 +41,8 @@ from opendxa.dana.sandbox.parser.ast import (
     TupleLiteral,
     UnaryExpression,
     WhileLoop,
+    WithStatement,
+    PassStatement,
 )
 from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 
@@ -478,3 +480,36 @@ def test_syntax_error_malformed_block(parser):
 # =========================
 # TODO: Cover for-loop, function def/call, import, try/except/finally, pass/return/break/continue, property access, trailers, more error cases, only comments, blank lines, minimal/nested blocks, etc.
 # See test_parse.py for more ideas.
+
+@pytest.mark.parametrize(
+    "code, expected_args, expected_kwargs, should_raise",
+    [
+        ("with foo(1, 2) as bar:\n    pass", [1, 2], {}, False),
+        ("with foo(a=1, b=2) as bar:\n    pass", [], {"a": 1, "b": 2}, False),
+        ("with foo(1, b=2) as bar:\n    pass", [1], {"b": 2}, False),
+        ("with foo() as bar:\n    pass", [], {}, False),
+        ("with foo(1, 2) as bar:\n    pass", [1, 2], {}, False),
+        ("with foo(a=1, b=2) as bar:\n    pass", [], {"a": 1, "b": 2}, False),
+        ("with foo(1, b=2) as bar:\n    pass", [1], {"b": 2}, False),
+        ("with foo(1, 2) as bar:\n    pass", [1, 2], {}, False),
+        ("with foo(a=1, b=2) as bar:\n    pass", [], {"a": 1, "b": 2}, False),
+        ("with foo(1, b=2) as bar:\n    pass", [1], {"b": 2}, False),
+        ("with foo() as bar:\n    pass", [], {}, False),
+        ("with foo(a, b=1, c, d) as bar:\n    pass", None, None, True),  # Positional args after keyword args
+    ]
+)
+def test_with_stmt_ast(code, expected_args, expected_kwargs, should_raise):
+    parser = DanaParser()
+    
+    if should_raise:
+        with pytest.raises(Exception):  # noqa: B017
+            parser.parse(code, do_transform=True)
+    else:
+        program = parser.parse(code, do_transform=True)
+        stmt = program.statements[0]
+        assert isinstance(stmt, WithStatement)
+        assert stmt.context_manager_name == "foo"
+        assert [a.value for a in stmt.args] == expected_args
+        assert {k: v.value for k, v in stmt.kwargs.items()} == expected_kwargs
+        assert stmt.as_var == "bar"
+        assert isinstance(stmt.body[0], PassStatement)

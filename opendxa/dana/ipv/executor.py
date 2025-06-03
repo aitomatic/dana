@@ -11,6 +11,8 @@ from typing import Any, Dict, List, Optional
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.utils.logging import DXA_LOGGER
+from opendxa.common.resource.base_resource import BaseResource
+from opendxa.common.mixins.queryable import QueryStrategy
 
 from .base import IPVConfig, IPVExecutionError
 
@@ -155,6 +157,8 @@ class IPVExecutor(ABC, Loggable):
 
             # Phase 2: PROCESS
             self.debug("Executing PROCESS phase")
+            if 'context' not in kwargs:
+                kwargs['context'] = context
             start_time = time.time()
             process_result = self.process_phase(intent, infer_result, **kwargs)
             process_time = time.time() - start_time
@@ -720,8 +724,31 @@ Format your output as JSON:
             "max_tokens": options.get("max_tokens", None),
         }
 
+        # Get resources from context and filter by included_resources
+        resource_names = context.list_resources() if context else []
+
+        included_resources = options.get("resources", None)
+        if included_resources is not None:
+            included_resources = [resource.name if isinstance(resource, BaseResource) else resource for resource in included_resources]
+        
+        resource_names = filter(lambda name: (included_resources is None or name in included_resources), resource_names)
+
+        resources = {name : context.get_resource(name) for name in resource_names}
+
+        # Set query strategy and max iterations to iterative and 5 respectively to ultilize tools calls
+        previous_query_strategy = llm_resource._query_strategy
+        previous_query_max_iterations = llm_resource._query_max_iterations
+        if resources:
+            request_params["available_resources"] = resources
+            llm_resource._query_strategy = QueryStrategy.ITERATIVE
+            llm_resource._query_max_iterations = options.get("max_iterations", 5)
+
         request = BaseRequest(arguments=request_params)
         response = llm_resource.query_sync(request)
+
+        # Reset query strategy and max iterations
+        llm_resource._query_strategy = previous_query_strategy
+        llm_resource._query_max_iterations = previous_query_max_iterations
 
         if not response.success:
             raise SandboxError(f"LLM reasoning failed: {response.error}")

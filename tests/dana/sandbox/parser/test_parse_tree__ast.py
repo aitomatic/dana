@@ -20,28 +20,21 @@ from opendxa.dana.sandbox.parser.ast import (
     LiteralExpression,
     Statement,
     UnaryExpression,
+    WithStatement,
+    PassStatement,
 )
 from opendxa.dana.sandbox.parser.transformer.expression_transformer import ExpressionTransformer
 from opendxa.dana.sandbox.parser.transformer.fstring_transformer import FStringTransformer
 from opendxa.dana.sandbox.parser.transformer.statement_transformer import StatementTransformer
 from opendxa.dana.sandbox.parser.transformer.variable_transformer import VariableTransformer
+from lark import Tree
 
 # 1. VariableTransformer tests
 
 
 def make_token(type_, value):
-    class FakeToken:
-        def __init__(self, value):
-            self.type = type_
-            self.value = value
-
-        def __str__(self):
-            return str(self.value)
-
-        def __repr__(self):
-            return str(self.value)
-
-    return FakeToken(value)
+    from lark import Token
+    return Token(type_, value)
 
 
 def test_simple_name():
@@ -260,6 +253,73 @@ def test_statement_return_break_continue_pass():
     assert st.break_stmt([]) is not None
     assert st.continue_stmt([]) is not None
     assert st.pass_stmt([]) is not None
+
+
+def test_statement_with_stmt_positional():
+    st = StatementTransformer()
+    context_manager_name = make_token("NAME", "foo")
+    # Simulate positional_args: [LiteralExpression(1), LiteralExpression(2)]
+    pos_args = Tree('positional_args', [LiteralExpression(1), LiteralExpression(2)])
+    as_var = make_token("NAME", "bar")
+    block = [PassStatement()]
+    items = [context_manager_name, pos_args, as_var, block]
+    node = st.with_stmt(items)
+    assert isinstance(node, WithStatement)
+    assert node.context_manager_name == "foo"
+    assert [a.value for a in node.args] == [1, 2]
+    assert node.kwargs == {}
+    assert node.as_var == "bar"
+    assert isinstance(node.body[0], PassStatement)
+
+
+def test_statement_with_stmt_kwargs():
+    st = StatementTransformer()
+    context_manager_name = make_token("NAME", "foo")
+    # Simulate kw_args: [Tree('kw_arg', [make_token('NAME', 'a'), LiteralExpression(1)]), ...]
+    kw_args = Tree('kw_args', [Tree('kw_arg', [make_token('NAME', 'a'), LiteralExpression(1)]), Tree('kw_arg', [make_token('NAME', 'b'), LiteralExpression(2)])])
+    as_var = make_token("NAME", "bar")
+    block = [PassStatement()]
+    items = [context_manager_name, kw_args, as_var, block]
+    node = st.with_stmt(items)
+    assert isinstance(node, WithStatement)
+    assert node.context_manager_name == "foo"
+    assert node.args == []
+    assert node.kwargs == {"a": LiteralExpression(1), "b": LiteralExpression(2)}
+    assert node.as_var == "bar"
+    assert isinstance(node.body[0], PassStatement)
+
+
+def test_statement_with_stmt_both():
+    st = StatementTransformer()
+    context_manager_name = make_token("NAME", "foo")
+    pos_args = Tree('positional_args', [LiteralExpression(1)])
+    kw_args = Tree('kw_args', [Tree('kw_arg', [make_token('NAME', 'b'), LiteralExpression(2)])])
+    with_args = Tree('mixed_arguments', [pos_args, kw_args])
+    as_var = make_token("NAME", "bar")
+    block = [PassStatement()]
+    items = [context_manager_name, with_args, as_var, block]
+    node = st.with_stmt(items)
+    assert isinstance(node, WithStatement)
+    assert node.context_manager_name == "foo"
+    assert [a.value for a in node.args] == [1]
+    assert node.kwargs == {"b": LiteralExpression(2)}
+    assert node.as_var == "bar"
+    assert isinstance(node.body[0], PassStatement)
+
+
+def test_statement_with_stmt_none():
+    st = StatementTransformer()
+    context_manager_name = make_token("NAME", "foo")
+    as_var = make_token("NAME", "bar")
+    block = [PassStatement()]
+    items = [context_manager_name, None, as_var, block]
+    node = st.with_stmt(items)
+    assert isinstance(node, WithStatement)
+    assert node.context_manager_name == "foo"
+    assert node.args == []
+    assert node.kwargs == {}
+    assert node.as_var == "bar"
+    assert isinstance(node.body[0], PassStatement)
 
 
 # 4. ExpressionTransformer tests

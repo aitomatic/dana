@@ -67,6 +67,10 @@ dev = [
     "pytest-cov"
 ]
 
+# Entrypoint for dana. Instead of `bin/dana` we can use `dana`
+[project.scripts]
+dana = "opendxa.dana.exec.dana:main"
+
 # Package configuration
 [tool.setuptools]
 packages = ["opendxa"]

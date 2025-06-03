@@ -19,7 +19,7 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from typing import Union, cast
+from typing import Union, cast, List
 
 from lark import Token, Tree
 
@@ -53,6 +53,7 @@ from opendxa.dana.sandbox.parser.ast import (
     TupleLiteral,
     TypeHint,
     WhileLoop,
+    WithStatement,
 )
 from opendxa.dana.sandbox.parser.transformer.base_transformer import BaseTransformer
 from opendxa.dana.sandbox.parser.transformer.expression_transformer import ExpressionTransformer
@@ -814,3 +815,55 @@ class StatementTransformer(BaseTransformer):
                     raise TypeError(f"Parameter default value cannot be a tuple: {default_value}")
 
         return Parameter(name=param_name, type_hint=type_hint, default_value=default_value)
+
+    def mixed_arguments(self, items):
+        """Transform mixed_arguments rule into a structured list."""
+        # items is a list of with_arg items
+        return items
+    
+    def with_arg(self, items):
+        """Transform with_arg rule - pass through the child (either kw_arg or expr)."""
+        # items[0] is either a kw_arg Tree or an expression
+        return items[0]
+
+    def with_stmt(self, items):
+        """Transform a with statement rule into a WithStatement node."""
+        # items: [context_manager_name, mixed_arguments, as_var, block]
+        context_manager_name = items[0].value
+        with_args = items[1] if len(items) > 3 else None
+        as_var = items[-3].value
+        block = self._transform_block(items[-1])
+        
+        # Handle mixed_arguments - now a list of with_arg items
+        args: List[Expression] = []
+        kwargs = {}
+        seen_keyword_arg = False  # Track if we've seen any keyword arguments
+
+        if with_args is not None:
+            if isinstance(with_args, list):
+                # Process each item
+                for arg_item in with_args:
+                    if isinstance(arg_item, Tree) and arg_item.data == 'kw_arg':
+                        # Keyword argument: NAME "=" expr
+                        seen_keyword_arg = True
+                        name = arg_item.children[0].value
+                        value = self.expression_transformer.expression([arg_item.children[1]])
+                        kwargs[name] = value
+                    else:
+                        # Positional argument: expr
+                        if seen_keyword_arg:
+                            # Error: positional argument after keyword argument
+                            raise SyntaxError("Positional argument follows keyword argument in with statement")
+                        args.append(cast(Expression, self.expression_transformer.expression([arg_item])))
+            else:
+                # Single argument
+                if isinstance(with_args, Tree) and with_args.data == 'kw_arg':
+                    # Keyword argument: NAME "=" expr
+                    name = with_args.children[0].value
+                    value = self.expression_transformer.expression([with_args.children[1]])
+                    kwargs[name] = value
+                else:
+                    # Positional argument: expr
+                    args.append(cast(Expression, self.expression_transformer.expression([with_args])))
+
+        return WithStatement(context_manager_name=context_manager_name, args=args, kwargs=kwargs, as_var=as_var, body=block)

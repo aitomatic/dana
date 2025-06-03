@@ -4,12 +4,6 @@ from opendxa.common import Misc
 from opendxa.common.utils.misc import ParsedArgKwargsResults
 
 class BaseTransport(ABC):
-
-    @abstractmethod
-    def is_valid(self) -> bool:
-        """Validate if this transport can successfully communicate with the server."""
-        return True
-
     @classmethod
     def parse_init_params(cls, *args, **kwargs) -> ParsedArgKwargsResults:
         """Get the initialization parameters for this transport."""

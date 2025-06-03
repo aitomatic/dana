@@ -28,6 +28,7 @@ from opendxa.dana.sandbox.parser.ast import (
     ForLoop,
     ReturnStatement,
     WhileLoop,
+    WithStatement,
 )
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
@@ -86,6 +87,7 @@ class ControlFlowExecutor(BaseExecutor):
             BreakStatement: self.execute_break_statement,
             ContinueStatement: self.execute_continue_statement,
             ReturnStatement: self.execute_return_statement,
+            WithStatement: self.execute_with_stmt,
         }
 
     def execute_conditional(self, node: Conditional, context: SandboxContext) -> Any:
@@ -201,6 +203,67 @@ class ControlFlowExecutor(BaseExecutor):
             except ContinueException:
                 continue
 
+        return result
+
+    def execute_with_stmt(self, node: WithStatement, context: SandboxContext) -> Any:
+        """Execute a with statement.
+
+        Args:
+            node: The with statement to execute
+            context: The execution context
+
+        Returns:
+            The result of the last statement executed in the with block
+        """
+        # Get the context manager function from the function registry
+        function_registry = self.function_registry
+        if not function_registry:
+            raise RuntimeError("No function registry available for with statement")
+            
+        context_manager_name = self.parent.execute(node.context_manager_name, context)
+
+         # Prepare arguments for the context manager
+        args = []
+        kwargs = {}
+
+        # Evaluate positional arguments
+        for arg in node.args:
+            args.append(self.parent.execute(arg, context))
+
+        # Evaluate keyword arguments
+        for key, value in node.kwargs.items():
+            kwargs[key] = self.parent.execute(value, context)
+
+        kwargs["_name"] = node.as_var
+
+        context_manager = function_registry.call(context_manager_name, context, None, *args, **kwargs)
+
+        # Check if the context manager has __enter__ and __exit__ methods
+        if not (hasattr(context_manager, '__enter__') and hasattr(context_manager, '__exit__')):
+            raise TypeError(f"'{node.context_manager_name}' does not return a context manager (missing __enter__ or __exit__)")
+
+        # Execute the with statement using the context manager protocol
+        try:
+            # Enter the context
+            context_value = context_manager.__enter__()
+            
+            # Bind the context value to the 'as' variable
+            context.set(node.as_var, context_value)
+            
+            # Execute the body
+            result = self._execute_statement_list(node.body, context)
+            
+        except Exception as exc:
+            # Exit with exception information
+            if not context_manager.__exit__(type(exc), exc, exc.__traceback__):
+                # If __exit__ returns False (or None), re-raise the exception
+                raise
+            # If __exit__ returns True, suppress the exception
+            result = None
+        else:
+            # Exit without exception
+            context_manager.__exit__(None, None, None)
+            
         return result
 
     def execute_break_statement(self, node: BreakStatement, context: SandboxContext) -> None:

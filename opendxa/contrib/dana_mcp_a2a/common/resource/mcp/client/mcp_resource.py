@@ -26,23 +26,23 @@ class MCPResource(BaseResource):
     def __init__(
         self,
         name: str,
-        url: str,
         description: Optional[str] = None,
         config: Optional[Dict[str, Any]] = None,
+        *client_args,
         **client_kwargs
     ):
         """Initialize MCP resource.
         
         Args:
             name: Resource name
-            url: MCP server URL  
             description: Optional resource description
             config: Optional additional configuration
+            *client_args: Additional MCP client parameters
             **client_kwargs: Additional MCP client parameters
         """
         super().__init__(name, description, config)
         
-        self.client = MCPClient(url, **client_kwargs)
+        self.client = MCPClient(*client_args, **client_kwargs)
         self._mcp_tools_cache: Optional[List[McpTool]] = None
         
     async def initialize(self) -> None:
@@ -58,6 +58,10 @@ class MCPResource(BaseResource):
         except Exception as e:
             self._is_available = False
             raise
+
+    def list_tools(self) -> List[Any]:
+        """Return cached tools in OpenAI format."""
+        return self._list_tools(OpenAIToolFormat(self.name, self.id))
             
     def _list_tools(self, format_converter: ToolFormat) -> List[Any]:
         """Return cached tools in OpenAI format."""
@@ -76,6 +80,7 @@ class MCPResource(BaseResource):
         
     async def call_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Any:
         """Execute MCP tool."""
+        self.debug(f"Calling tool {tool_name} with arguments {arguments}")
         async with self.client as _client:
             results = await _client.call_tool(tool_name, arguments) # This will raise ToolError if the tool call fails.
 

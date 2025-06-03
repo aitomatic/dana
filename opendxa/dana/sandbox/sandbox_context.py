@@ -21,8 +21,10 @@ from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
 
+from opendxa.common.resource.base_resource import BaseResource
 from opendxa.dana.common.exceptions import StateError
 from opendxa.dana.common.runtime_scopes import RuntimeScopes
+from typing import List
 
 if TYPE_CHECKING:
     from opendxa.dana.sandbox.context_manager import ContextManager
@@ -60,7 +62,7 @@ class SandboxContext:
                 "history": [],
             },
         }
-
+        self.__resources: Dict[str, BaseResource] = {}
         # If parent exists, share global scopes instead of copying
         if parent:
             for scope in RuntimeScopes.GLOBAL:
@@ -621,3 +623,19 @@ class SandboxContext:
             return execution_metadata.get("target_type")
 
         return None
+
+    def set_resource(self, name: str, resource: BaseResource) -> None:
+        # If another resource with the same name is set, the old resource will be replaced
+        self.__resources[name] = resource
+        self.set_in_scope(name, resource, scope="local")
+
+    def get_resource(self, name: str) -> BaseResource:
+        return self._state["local"][name]
+
+    def soft_delete_resource(self, name: str) -> None:
+        # resource will remain in private variable self.__resources but will be removed from the local scope
+        self.delete(name)
+
+    def list_resources(self) -> List[str]:
+        # list all resources that are in the local scope (not soft deleted)
+        return [name for name in self.__resources.keys() if name in self._state["local"]]

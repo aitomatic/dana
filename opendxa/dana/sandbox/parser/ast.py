@@ -322,6 +322,18 @@ class ExceptBlock:
 
 
 @dataclass
+class WithStatement:
+    """With statement (e.g., with mcp('hi') as foo: ...)."""
+
+    context_manager_name: str
+    args: List[Expression]
+    kwargs: Dict[str, Expression]
+    as_var: str
+    body: List[Statement]
+    location: Optional[Location] = None
+
+
+@dataclass
 class FunctionDefinition:
     """Function definition statement."""
 
