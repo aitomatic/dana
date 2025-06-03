@@ -4117,11 +4117,11 @@
 - <code>opendxa.dana.exec.repl.dana_repl_app</code>: The user-facing CLI application</p>
 <h2 id="1-overview">1. Overview<a class="headerlink" href="#1-overview" title="Permanent link">&para;</a></h2>
 <p>The Dana REPL (Read-Eval-Print Loop) provides an interactive command-line environment for executing Dana code snippets and, optionally, natural language statements that can be transcoded to Dana. It is a crucial tool for learning, experimenting, and debugging Dana programs.</p>
-<p>The REPL utilizes the <a href="../../01_dana_language_specification/parser.md">Dana Parser</a> (placeholder for actual parser doc) to parse input into an AST, and then the <a href="../interpreter/">Dana Interpreter</a> executes this AST. The state across REPL interactions is managed within a persistent <code>SandboxContext</code> (see <a href="../sandbox/">Sandbox</a> and <a href="../../01_dana_language_specification/state_and_scopes.md">State and Scopes</a>).</p>
+<p>The REPL utilizes the Dana Parser to parse input into an AST, and then the <a href="../interpreter/">Dana Interpreter</a> executes this AST. The state across REPL interactions is managed within a persistent <code>SandboxContext</code> (see <a href="../sandbox/">Sandbox</a> and <a href="../../01_dana_language_specification/state_and_scopes/">State and Scopes</a>).</p>
 <h2 id="2-features">2. Features<a class="headerlink" href="#2-features" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Interactive Execution</strong>: Directly execute Dana statements and expressions.</li>
-<li><strong>Natural Language Transcoding</strong>: If an LLM resource is configured, natural language input can be translated into Dana code and then executed. (Relies on a <a href="../../../TODO_LINK_TRANSCODER_DESIGN.md">Transcoder</a> component - placeholder).</li>
+<li><strong>Natural Language Transcoding</strong>: If an LLM resource is configured, natural language input can be translated into Dana code and then executed.</li>
 <li><strong>Command History</strong>: Recall and reuse previous commands (typically using arrow keys, via <code>prompt_toolkit</code>).</li>
 <li><strong>Tab Completion</strong>: Keyword-based completion for Dana syntax elements.</li>
 <li><strong>Multiline Input</strong>: Supports entering complex, multiline Dana statements and blocks (e.g., <code>if/else</code>, <code>for</code>, function definitions).</li>

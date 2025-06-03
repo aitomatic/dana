@@ -1756,7 +1756,7 @@
 </table>
 <h1 id="dana-interpreter">Dana Interpreter<a class="headerlink" href="#dana-interpreter" title="Permanent link">¶</a></h1>
 <p><strong>Module</strong>: <code>opendxa.dana.sandbox.interpreter</code></p>
-<p>Given the program AST after transformation (and optional type checking), we are ready to execute the program. See <a href="../../01_dana_language_specification/ast.md">AST documentation</a> (Note: placeholder, to be created or linked) and <a href="../type_system_and_casting/">Type System and Casting</a> for more details.</p>
+<p>Given the program AST after transformation (and optional type checking), we are ready to execute the program. See <a href="../type_system_and_casting/">Type System and Casting</a> for more details.</p>
 <p>This document describes the architecture, responsibilities, and flow of the Dana Interpreter, which is responsible for executing Dana programs by traversing the AST and managing sandbox context. Refer to the <a href="../execution_model/">Execution Model</a> for an overview of how the interpreter fits into the broader execution flow.</p>
 <h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">¶</a></h2>
 <p>The Dana Interpreter has been significantly refactored into a modular, unified execution architecture. It executes Dana programs by processing the Abstract Syntax Tree (AST) through specialized executor components, treating all nodes as expressions that produce values while handling their statement-like side effects.</p>
@@ -1781,14 +1781,14 @@
 <li><strong>StatementExecutor</strong>: Executes statements (assignments, conditionals, loops)</li>
 <li><strong>ControlFlowExecutor</strong>: Manages control flow (if/else, while, for, return, break, continue)</li>
 <li><strong>CollectionExecutor</strong>: Handles collections and f-string expressions</li>
-<li><strong>FunctionExecutor</strong>: Manages function definitions and calls (see also <a href="../../01_dana_language_specification/functions_and_polymorphism.md">Functions and Polymorphism</a>)</li>
+<li><strong>FunctionExecutor</strong>: Manages function definitions and calls (see also <a href="../../01_dana_language_specification/functions_and_polymorphism/">Functions and Polymorphism</a>)</li>
 <li><strong>ProgramExecutor</strong>: Executes complete programs and statement blocks</li>
 </ul>
 <h3 id="supporting-infrastructure">Supporting Infrastructure<a class="headerlink" href="#supporting-infrastructure" title="Permanent link">¶</a></h3>
 <ul>
 <li><strong>BaseExecutor</strong>: Base class providing common functionality for all executors</li>
 <li><strong>FunctionRegistry</strong>: Unified registry for Dana and Python functions with namespacing support.</li>
-<li><strong>SandboxContext</strong>: Provides execution context, variable scope management (see <a href="../../01_dana_language_specification/state_and_scopes.md">State and Scopes</a> and <a href="../sandbox/">Sandbox</a>), and access to LLM resources.</li>
+<li><strong>SandboxContext</strong>: Provides execution context, variable scope management (see <a href="../../01_dana_language_specification/state_and_scopes/">State and Scopes</a> and <a href="../sandbox/">Sandbox</a>), and access to LLM resources.</li>
 <li><strong>Hooks</strong>: Extensible hook system for monitoring and extending execution</li>
 </ul>
 <h2 id="execution-flow">Execution Flow<a class="headerlink" href="#execution-flow" title="Permanent link">¶</a></h2>
@@ -1866,7 +1866,7 @@
 <ul>
 <li><strong>Improved Error Messages</strong>: User-friendly error formatting with context</li>
 <li><strong>Execution Path Tracking</strong>: Debugging support with execution path information</li>
-<li><strong>Exception Handling</strong>: Proper handling of control flow exceptions (return, break, continue). See also <a href="../../01_dana_language_specification/error_handling.md">Error Handling</a>.</li>
+<li><strong>Exception Handling</strong>: Proper handling of control flow exceptions (return, break, continue). See also <a href="../../01_dana_language_specification/error_handling/">Error Handling</a>.</li>
 </ul>
 <h2 id="example-usage">Example Usage<a class="headerlink" href="#example-usage" title="Permanent link">¶</a></h2>
 <h3 id="basic-program-execution">Basic Program Execution<a class="headerlink" href="#basic-program-execution" title="Permanent link">¶</a></h3>
