@@ -72,6 +72,32 @@ dev = [
     "pytest-cov", # Test coverage reporting
 ]
 
+# Documentation tooling - focused on auto-sync and validation
+docs = [
+    # Core: MkDocs for DevRel team productivity
+    "mkdocs-material>=9.0",
+    "mkdocs-mermaid2-plugin",
+    
+    # Auto-sync with code (solves staleness problem)
+    "mkdocstrings[python]>=0.24",     # API docs from docstrings (auto-update)
+    "mkdocs-gen-files",               # Generate docs from code structure  
+    "mkdocs-literate-nav",            # Auto-generate navigation from folders
+    
+    # Content validation (catch staleness)
+    "mkdocs-linkchecker-plugin",      # Catch broken links during build
+    "mkdocs-awesome-pages-plugin",    # Organize content automatically
+    
+    # Dana language support
+    "pygments>=2.17",                 # Custom syntax highlighting
+]
+
+# Documentation validation and testing
+docs-validation = [
+    "pytest-doctest",                # Test code examples in docs
+    "markdown-link-check",           # CLI tool for comprehensive link validation  
+    "doc8",                          # Documentation style checking
+]
+
 # Command-line entry points for end users
 [project.scripts]
 dana = "opendxa.dana.exec.dana:main"
@@ -105,9 +131,23 @@ packages = ["opendxa"]
 #   uv run black --check .                            # Check formatting
 #   uv run mypy .                                     # Type checking
 #
+# Documentation workflows (for DevRel team):
+#   uv run mkdocs serve                               # Live preview during writing
+#   uv run mkdocs serve --dev-addr=0.0.0.0:8000      # Live preview (remote accessible)
+#   uv run mkdocs build                               # Build docs
+#   uv run mkdocs build --strict                      # Build with warnings as errors
+#
+# Documentation validation (catch staleness):
+#   uv run pytest --doctest-modules opendxa/         # Test code examples in docstrings
+#   uv run markdown-link-check docs/**/*.md          # Check all markdown links
+#   uv run doc8 docs/                                 # Documentation style checking
+#   uv run python -m mkdocs build --strict           # Validate complete build
+#
 # Environment management:
 #   uv sync                                           # Sync dependencies
 #   uv sync --extra dev                               # Sync with dev dependencies
+#   uv sync --extra docs                              # Sync with documentation tools
+#   uv sync --extra docs-validation                   # Sync with validation tools
 #   uv add <package>                                  # Add new dependency
 #   uv remove <package>                               # Remove dependency
 #
