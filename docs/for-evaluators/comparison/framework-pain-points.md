@@ -484,11 +484,11 @@ The result is **10x faster development**, **8x faster debugging**, and **75% red
 | **Crew AI** | ❌ High | ❌ Poor | ⚠️ Limited | ✅ None | ❌ No |
 
 ### Appendix C: References
-- [Reddit LocalLLaMA DSPy Discussion](../../../tmp/dspy.txt)
+- External Research Sources (see community forums)
 - [LlamaIndex Use Cases Documentation](https://docs.llamaindex.ai/en/stable/use_cases/)
 - [Industry Pain Points Analysis](https://mlnotes.substack.com/p/ai-engineering-in-2025-chip-huyens)
-- [OpenDXA User Testing Results](../user-testing.md)
+- [OpenDXA Evaluation Guide](../proof-of-concept/evaluation-guide.md)
 
 ---
 
-*Copyright © 2025 Aitomatic, Inc. Licensed under the [MIT License](../../../LICENSE.md).* 
+*Copyright © 2025 Aitomatic, Inc. Licensed under the MIT License.* 

@@ -1,6 +1,17 @@
+# pyproject.toml - OpenDXA Project Configuration
+# Copyright © 2025 Aitomatic, Inc. Licensed under the MIT License.
+
+# =============================================================================
+# Build System Configuration
+# =============================================================================
+
 [build-system]
 requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
+
+# =============================================================================
+# Project Metadata & Dependencies
+# =============================================================================
 
 [project]
 name = "opendxa"
@@ -9,123 +20,222 @@ description = "Domain-Expert Agent Framework"
 requires-python = ">=3.10"
 authors = [
     {name = "Christopher Nguyen", email = "ctn@aitomatic.com"},
-    {name = "William Nguyen", email = "william@aitomatic.com"},
-    {name = "Lam Nguyen", email = "lam@aitomatic.com"},
-    {name = "Zooey Nguyen", email = "zooey@aitomatic.com"},
-    {name = "Vinh Luong", email = "vinh@aitomatic.com"}
 ]
 
-# Core dependencies
+# Production dependencies - keep minimal and well-organized
 dependencies = [
-    # HTTP and API clients
-    "aiohttp",
-    "aioconsole",
-    "websockets",
-
-    # AI/LLM services
+    # AI/LLM Integration - Core functionality for agent reasoning
     "aisuite[openai,anthropic,azure,google,groq,huggingface,ollama]",
     "openai",
     "mcp",
     "llm-code-executor",
-
-    # Data processing and visualization
+    
+    # Data Processing - Required for agent data handling
     "pandas",
-    "matplotlib",
+    "matplotlib", 
     "seaborn",
-
-    # Database
+    
+    # Database & Storage
     "sqlalchemy",
-
-    # Utilities
+    
+    # Networking & I/O
+    "aiohttp",
+    "aioconsole", 
+    "websockets",
+    
+    # Configuration & Utilities
     "nest_asyncio",
     "python-dotenv",
     "pyyaml",
     "structlog",
-
-    # Testing
-    "pytest",
-    "pytest-asyncio",
-    "pytest-mock",
-
-    # REPL utilities
+    
+    # Language Processing - Dana language parser
+    "lark",
+    
+    # Interactive Features - REPL and user interface
     "prompt-toolkit",
     "pygments",
-
-    # Dana agent programming language parser/interpreter
-    "lark"
+    
+    # Testing - Core testing framework (needed for Dana runtime)
+    "pytest",
+    "pytest-asyncio", 
+    "pytest-mock",
 ]
 
-# Development dependencies
+# Development-only dependencies
 [project.optional-dependencies]
 dev = [
-    # Code formatting and linting
-    "black",
-    "ruff",
-    "pylint",
-    "pre-commit",
-
-    # Testing with coverage
-    "pytest-cov"
+    "black",       # Code formatting
+    "ruff",        # Fast Python linter (replaces flake8, isort, etc.)
+    "pylint",      # Additional code analysis
+    "pre-commit",  # Git hooks for code quality
+    "pytest-cov", # Test coverage reporting
 ]
 
-# Package configuration
+# Documentation tooling - focused on auto-sync and validation
+docs = [
+    # Core: MkDocs for DevRel team productivity
+    "mkdocs-material>=9.0",
+    "mkdocs-mermaid2-plugin",
+    
+    # Auto-sync with code (solves staleness problem)
+    "mkdocstrings[python]>=0.24",    # API docs from docstrings (auto-update)
+    "mkdocs-gen-files",              # Generate docs from code structure  
+    "mkdocs-literate-nav",           # Auto-generate navigation
+    "mkdocs-section-index",          # Clickable sections
+    
+    # Validation tools (catch problems early)
+    "mkdocs-htmlproofer-plugin",     # Broken link detection  
+    "linkcheckmd",                   # Fast async link checking
+    "doc8",                          # Documentation style checking
+    
+    # Multi-constituency features
+    "mkdocs-redirects",              # Handle URL changes
+    "mkdocs-awesome-nav",            # Advanced navigation control
+    "mkdocs-print-site-plugin",      # PDF export for offline reading
+    
+    # Content enhancement
+    "mkdocs-include-markdown-plugin",# Reusable content blocks
+    "mkdocs-macros-plugin",          # Variables and templating
+    "mkdocs-table-reader-plugin",    # Data tables from CSV/JSON
+    "mkdocs-git-revision-date-localized-plugin", # Last updated dates
+]
+
+# Command-line entry points for end users
+[project.scripts]
+dana = "opendxa.dana.exec.dana:main"
+
+# =============================================================================
+# Package Configuration
+# =============================================================================
+
 [tool.setuptools]
 packages = ["opendxa"]
 
-# Code formatting configuration
+# =============================================================================
+# Development Tools & Scripts (uv-specific)
+# =============================================================================
+
+# NOTE: Native task runner support ([tool.uv.tasks] or [tool.uv.scripts]) 
+# is planned but not yet available in uv 0.7.9
+# 
+# Use these direct uv run commands for common development tasks:
+#
+# Testing workflows:
+#   uv run pytest tests/                              # Run all tests
+#   uv run pytest -m 'not live and not deep' tests/   # Fast tests only
+#   uv run pytest -m 'live' tests/                    # Live/integration tests
+#   uv run pytest --cov=opendxa --cov-report=html tests/  # With coverage
+#
+# Code quality workflows:
+#   uv run ruff check .                               # Lint code
+#   uv run ruff check --fix .                         # Lint and auto-fix
+#   uv run black .                                    # Format code
+#   uv run black --check .                            # Check formatting
+#   uv run mypy .                                     # Type checking
+#
+# Documentation workflows (for DevRel team):
+#   uv run python -m mkdocs serve                     # Live preview during writing
+#   uv run python -m mkdocs serve --dev-addr=0.0.0.0:8000  # Live preview (remote accessible)
+#   uv run python -m mkdocs build                     # Build docs
+#   uv run python -m mkdocs build --strict            # Build with warnings as errors
+#   uv run mkdocs gh-deploy --force                   # Build and deploy to GitHub Pages
+#
+# Documentation validation (catch staleness):
+#   uv run pytest --doctest-modules opendxa/          # Test code examples in docstrings
+#   uv run python -m linkcheckmd docs/                # Check all markdown links (fast async)  
+#   uv run doc8 docs/                                 # Documentation style checking
+#   uv run python -m mkdocs build --strict            # Validate complete build
+#
+# Environment management:
+#   uv sync                                           # Sync dependencies
+#   uv sync --extra dev                               # Sync with dev dependencies
+#   uv sync --extra docs                              # Sync with documentation tools
+#   uv add <package>                                  # Add new dependency
+#   uv remove <package>                               # Remove dependency
+#
+# Dana-specific commands:
+#   uv run python -m opendxa.dana.exec.dana examples/dana/debug_tests/test_basic.na
+#   uv run python -m opendxa.dana.exec.repl.repl
+#
+# When native task support is added, these will become:
+# [tool.uv.tasks]
+# test = "pytest tests/"
+# lint = "ruff check ."
+# format = "black ."
+
+# =============================================================================
+# Code Quality Tools
+# =============================================================================
+
+# Code Formatting
 [tool.black]
 line-length = 140
-target-version = ["py38"]
+target-version = ["py310"]  # Align with requires-python
 
-# Primary linter configuration
+# Linting (Primary)
 [tool.ruff]
 line-length = 140
-target-version = "py38"
+target-version = "py310"    # Align with requires-python
 
 [tool.ruff.lint]
-# Rule selection
+# Enable these rule categories
 select = [
-    "E",   # pycodestyle errors (critical issues)
-    "F",   # pyflakes (unused imports, undefined variables)
+    "E",   # pycodestyle errors
+    "F",   # pyflakes 
     "I",   # isort (import sorting)
-    "B",   # bugbear (likely bugs and design problems)
-    "UP",  # pyupgrade (use modern Python features)
-    "N801", "N803", "N804",  # naming conventions for classes and functions only
-    "F821",  # undefined name
-    "F822",  # undefined attribute
-    "F841",  # unused variable
-    "F401",  # unused import
+    "B",   # bugbear (common Python gotchas)
+    "UP",  # pyupgrade (modern Python features)
+    "N801", "N803", "N804",  # naming conventions (classes & functions only)
+    "F821", "F822", "F841", "F401",  # undefined names, unused variables/imports
 ]
 
-# Rules to ignore
+# Disable these specific rules
 ignore = [
-    "E203",  # Whitespace before ':' (Black handles this)
-    "E501",  # Line too long (we use the line-length parameter instead)
-    "B008",  # Function call in default argument (common in web frameworks)
-    "B010",  # Setting attributes in class body (common in web frameworks)
-    "B904",  # Require raise Error(..) from ...
-    "N802",  # Function name should be lowercase (ignored for transformer functions)
+    "E203",  # Whitespace before ':' (conflicts with Black)
+    "E501",  # Line too long (handled by line-length setting)
+    "B008",  # Function call in default argument (common in frameworks)
+    "B010",  # setattr in class body (common in frameworks) 
+    "B904",  # raise ... from ... (not always needed)
+    "N802",  # Function name should be lowercase (conflicts with transformers)
 ]
 
-# Exclusion patterns
+# Files/directories to skip
 exclude = [
-    "*.na",
-    ".git",
-    ".venv",
-    "opendxa.egg-info",
+    "*.na",              # Dana language files (not Python)
+    ".git",              # Version control
+    ".venv",             # Virtual environment
+    "opendxa.egg-info",  # Build artifacts
 ]
 
-# Disabled linters (in favor of Ruff)
-[tool.flake8]
-# ignore = ["*"]
-# exclude = ["*"]
-
-[tool.pylint.MASTER]
-# disable-all = true
-# ignore-patterns = [".*"]
-
-# Pylance (Pyright)
+# Type Checking
 [tool.pyright]
 reportAttributeAccessIssue = false
-reportGeneralTypeIssues = false
+reportGeneralTypeIssues = false  
 reportAssignmentType = false
+
+# =============================================================================
+# Package Manager Configuration (uv)
+# =============================================================================
+
+[tool.uv]
+package = true
+
+# Enable preview features for scripts support
+preview = true
+
+# Dependency resolution strategy
+resolution = "highest"      # Always use highest compatible versions
+prerelease = "disallow"     # Avoid pre-release versions in production
+
+# Python environment preferences  
+python-preference = "only-managed"  # Use uv-managed Python installations
+compile-bytecode = true             # Pre-compile .pyc files for performance
+
+# Future: Custom dependency sources
+[tool.uv.sources]
+# opendxa = { workspace = true }  # For workspace/monorepo setup
+
+# Future: Workspace configuration for multi-package projects
+# [tool.uv.workspace]  
+# members = ["opendxa", "extensions/*"]

@@ -1,9 +1,3 @@
-<p align="center">
-  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
-</p>
-
-[Project Overview](../../../../README.md) | [For Engineers](../../README.md) | [Reference](../README.md)
-
 # Dana API Reference
 
 Complete reference documentation for the Dana programming language and runtime.
@@ -90,12 +84,12 @@ print("Analysis result:", result)
 - [Type System: AI function signatures](type-system.md#ai-functions)
 
 ### Data Processing
-- [Built-in Functions: Collections](built-in-functions.md#collections) - `len()`, `sum()`, `max()`, `min()`
+- [Built-in Functions: Collections](built-in-functions.md#collection-functions) - `len()`, `sum()`, `max()`, `min()`
 - [Type System: Data types](type-system.md#data-types) - `list`, `dict`, `tuple`, `set`
 
 ### Logging and Output
-- [Core Functions: Logging](core-functions.md#logging) - `log()`, `log_level()`
-- [Core Functions: Output](core-functions.md#output) - `print()`
+- [Core Functions: Logging](core-functions.md#logging-functions) - `log()`, `log_level()`
+- [Core Functions: Output](core-functions.md#output-functions) - `print()`
 
 ### Security and Isolation
 - [Scoping System](scoping.md) - Variable scope security
@@ -103,7 +97,7 @@ print("Analysis result:", result)
 
 ### Function Integration
 - [Function Calling](function-calling.md) - Dana↔Python integration
-- [Type System: Function signatures](type-system.md#function-types)
+- [Type System: Function signatures](type-system.md#function-type-signatures)
 
 ## 🛠️ Development Tools
 
@@ -145,7 +139,7 @@ Found an error or want to improve the API documentation? See our [contribution g
 ---
 
 <p align="center">
-Copyright © 2025 Aitomatic, Inc. Licensed under the <a href="../../../../LICENSE.md">MIT License</a>.
+Copyright © 2025 Aitomatic, Inc. Licensed under the <a href="../../../LICENSE.md">MIT License</a>.
 <br/>
 <a href="https://aitomatic.com">https://aitomatic.com</a>
 </p> 

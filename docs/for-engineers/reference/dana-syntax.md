@@ -1,9 +1,3 @@
-<p align="center">
-  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
-</p>
-
-[Project Overview](../../README.md)
-
 # Dana Language Reference - Complete Syntax Guide
 
 > **⚠️ IMPORTANT FOR AI CODE GENERATORS:**
@@ -448,10 +442,10 @@ else:
 
 ## Next Steps
 
-- **Learn by Example**: Check out [Common Recipes](../recipes/) for real-world patterns
+- **Learn by Example**: Check out [Common Recipes](../recipes/README.md) for real-world patterns
 - **Interactive Development**: Use the [REPL Guide](repl-guide.md) for hands-on exploration  
-- **Advanced Concepts**: Explore [Agent Architecture](../setup/agent-concepts.md)
-- **Troubleshooting**: See [Error Reference](../troubleshooting/error-reference.md) when things go wrong 
+- **Advanced Concepts**: Explore [Setup Guide](../setup/README.md)
+- **Troubleshooting**: See [Troubleshooting Guide](../troubleshooting/README.md) when things go wrong 
 
 ---
 

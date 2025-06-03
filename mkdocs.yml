@@ -1,0 +1,249 @@
+site_name: OpenDXA with Dana
+site_description: Comprehensive documentation for OpenDXA - Domain-Aware NeuroSymbolic Architecture
+site_url: https://opendxa.readthedocs.io/
+repo_url: https://github.com/aitomatic/opendxa
+repo_name: aitomatic/opendxa
+
+# Documentation and theme
+theme:
+  name: material
+  logo: images/aitomatic-logo-white.png
+  favicon: images/aitomatic-favicon.png
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.path
+    - navigation.top
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  font:
+    text: Roboto
+    code: Roboto Mono
+
+# Navigation structure
+nav:
+  - Home: 
+    - Overview: README.md
+    - Roadmap: ROADMAP.md
+  - For Engineers:
+    - Overview: for-engineers/README.md
+    - Setup: 
+      - Overview: for-engineers/setup/README.md
+      - Installation: for-engineers/setup/installation.md
+      - Migration Guide: for-engineers/setup/migration-guide.md
+    - Reference:
+      - Overview: for-engineers/reference/README.md
+      - Dana Syntax: for-engineers/reference/dana-syntax.md
+      - REPL Guide: for-engineers/reference/repl-guide.md
+      - PAV Usage Guide: for-engineers/reference/pav-usage-guide.md
+      - API Reference:
+        - Overview: for-engineers/reference/api/README.md
+        - Core Functions: for-engineers/reference/api/core-functions.md
+        - Built-in Functions: for-engineers/reference/api/built-in-functions.md
+        - Function Calling: for-engineers/reference/api/function-calling.md
+        - Type System: for-engineers/reference/api/type-system.md
+        - Scoping: for-engineers/reference/api/scoping.md
+        - Sandbox Security: for-engineers/reference/api/sandbox-security.md
+    - Recipes:
+      - Overview: for-engineers/recipes/README.md
+      - First Agent: for-engineers/recipes/first-agent.md
+      - Chatbot: for-engineers/recipes/chatbot/README.md
+      - Document Processor: for-engineers/recipes/document-processor/README.md
+      - API Integration: for-engineers/recipes/api-integration/README.md
+      - Workflow Agent: for-engineers/recipes/workflow-agent/README.md
+    - Troubleshooting: for-engineers/troubleshooting/README.md
+  - For Evaluators:
+    - Overview: for-evaluators/README.md
+    - Comparison:
+      - Overview: for-evaluators/comparison/README.md
+      - Framework Pain Points: for-evaluators/comparison/framework-pain-points.md
+      - Technical Overview: for-evaluators/comparison/technical-overview.md
+    - Adoption Guide:
+      - Overview: for-evaluators/adoption-guide/README.md
+      - Professional Services: for-evaluators/adoption-guide/professional-services.md
+    - Proof of Concept:
+      - Overview: for-evaluators/proof-of-concept/README.md
+      - Quick Demo: for-evaluators/proof-of-concept/quick-demo.md
+      - Evaluation Guide: for-evaluators/proof-of-concept/evaluation-guide.md
+    - ROI Analysis:
+      - Overview: for-evaluators/roi-analysis/README.md
+      - Calculator: for-evaluators/roi-analysis/calculator.md
+  - For Researchers:
+    - Overview: for-researchers/README.md
+    - Manifesto:
+      - Vision: for-researchers/manifesto/vision.md
+    - Research: for-researchers/research/README.md
+    - NeuroSymbolic: for-researchers/neurosymbolic/README.md
+    - Future Work: for-researchers/future-work/README.md
+  - For Contributors:
+    - Overview: for-contributors/README.md
+    - Architecture:
+      - Overview: for-contributors/architecture/README.md
+      - System Design: for-contributors/architecture/system-design.md
+    - Codebase: for-contributors/codebase/README.md
+    - Development:
+      - Overview: for-contributors/development/README.md
+      - Contribution Guide: for-contributors/development/contribution-guide.md
+    - Extending:
+      - Overview: for-contributors/extending/README.md
+      - Extension Development: for-contributors/extending/extension-development.md
+  - Design:
+    - Overview: design/README.md
+    - Dana Philosophy:
+      - Design Principles: design/00_dana_philosophy/design-principles.md
+      - Manifesto: design/00_dana_philosophy/manifesto.md
+    - Dana Language Specification:
+      - Overview: design/01_dana_language_specification/overview.md
+      - Syntax: design/01_dana_language_specification/syntax.md
+      - Grammar: design/01_dana_language_specification/grammar.md
+      - Data Types and Structs: design/01_dana_language_specification/data_types_and_structs.md
+      - Functions and Polymorphism: design/01_dana_language_specification/functions_and_polymorphism.md
+      - State and Scopes: design/01_dana_language_specification/state_and_scopes.md
+      - Modules and Imports: design/01_dana_language_specification/modules_and_imports.md
+      - Error Handling: design/01_dana_language_specification/error_handling.md
+    - Dana Runtime and Execution:
+      - Execution Model: design/02_dana_runtime_and_execution/execution_model.md
+      - Interpreter: design/02_dana_runtime_and_execution/interpreter.md
+      - Sandbox: design/02_dana_runtime_and_execution/sandbox.md
+      - REPL: design/02_dana_runtime_and_execution/repl.md
+      - PAV Execution Model: design/02_dana_runtime_and_execution/pav_execution_model.md
+      - Type System and Casting: design/02_dana_runtime_and_execution/type_system_and_casting.md
+      - Concurrency Model: design/02_dana_runtime_and_execution/concurrency_model.md
+      - External Interfaces: design/02_dana_runtime_and_execution/external_interfaces.md
+      - Security Considerations: design/02_dana_runtime_and_execution/security_considerations.md
+      - Debugging and Profiling: design/02_dana_runtime_and_execution/debugging_profiling.md
+    - Core Capabilities and Resources:
+      - Overview: design/03_core_capabilities_resources/README.md
+      - Capabilities Overview: design/03_core_capabilities_resources/capabilities_overview.md
+      - Resource Model: design/03_core_capabilities_resources/resource_model.md
+      - System Resources: design/03_core_capabilities_resources/system_resources.md
+      - User-defined Resources: design/03_core_capabilities_resources/user_defined_resources.md
+      - Capability Invocation: design/03_core_capabilities_resources/capability_invocation.md
+    - Agent and Orchestration:
+      - Overview: design/04_agent_and_orchestration/README.md
+      - Agent Model: design/04_agent_and_orchestration/agent_model.md
+      - Task Orchestration: design/04_agent_and_orchestration/task_orchestration.md
+      - Workflow Patterns: design/04_agent_and_orchestration/workflow_patterns.md
+      - Inter-Agent Communication: design/04_agent_and_orchestration/inter_agent_communication.md
+      - Human-in-the-Loop: design/04_agent_and_orchestration/human_in_the_loop.md
+    - Tooling and Developer Experience:
+      - Overview: design/05_tooling_and_dev_experience/README.md
+      - IDE Integration (VSCode): design/05_tooling_and_dev_experience/ide_integration_vscode.md
+      - REPL Enhancements: design/05_tooling_and_dev_experience/repl_enhancements.md
+      - Debugging Tools: design/05_tooling_and_dev_experience/debugging_tools.md
+      - Testing Framework: design/05_tooling_and_dev_experience/testing_framework.md
+      - Documentation Generation: design/05_tooling_and_dev_experience/documentation_generation.md
+      - Packaging and Distribution: design/05_tooling_and_dev_experience/packaging_distribution.md
+  - Archive:
+    - Overview: archive/README.md
+    - Historical Comparisons: archive/historical-comparisons/framework-comparison-2024.md
+
+# Plugins
+plugins:
+  - search
+  - mermaid2
+  - section-index
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: google
+            members_order: source
+            show_source: true
+            show_bases: true
+  - git-revision-date-localized:
+      type: datetime
+      enable_creation_date: true
+
+# Markdown extensions
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink:
+      repo_url_shorthand: true
+      user: aitomatic
+      repo: opendxa
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.snippets
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+# Extra settings
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/aitomatic/opendxa
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/opendxa/
+
+# Documentation directory
+docs_dir: docs
+
+# Exclude internal documentation from build
+exclude_docs: internal/
+
+# Build directory
+site_dir: site
+
+# Additional settings
+strict: false
+use_directory_urls: true
+
+# Copyright
+copyright: Copyright &copy; 2025 Aitomatic, Inc.
+
+# Custom CSS/JS
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://polyfill.io/v3/polyfill.min.js?features=es6
+  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js 

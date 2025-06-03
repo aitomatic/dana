@@ -1,3 +1,6 @@
+# .gitignore - OpenDXA Git Ignore Rules
+# Copyright © 2025 Aitomatic, Inc. Licensed under the MIT License.
+
 # Python
 __pycache__/
 *.py[cod]
@@ -36,6 +39,7 @@ configs/
 build/
 dist/
 *.egg
+site/
 
 # Development files
 notebooks/

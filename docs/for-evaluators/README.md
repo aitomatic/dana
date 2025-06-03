@@ -1,9 +1,3 @@
-<p align="center">
-  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
-</p>
-
-[Project Overview](../../README.md)
-
 # OpenDXA for Evaluators
 
 *Technical evaluation guide for decision makers, team leads, and technology evaluators*
@@ -29,14 +23,14 @@ OpenDXA transforms AI development from unpredictable, brittle systems to reliabl
 - **Proof**: [Run the 5-minute demo](proof-of-concept/quick-demo.md) to see immediate results
 
 ### 5-Minute Deep Dive
-1. [Compare with current solutions](comparison/competitive-analysis.md)
-2. [Review ROI projections](roi-analysis/cost-benefit.md)
+1. [Compare with current solutions](comparison/framework-pain-points.md)
+2. [Review ROI projections](roi-analysis/calculator.md)
 3. [Examine technical architecture](comparison/technical-overview.md)
 
 ### 30-Minute Evaluation
 1. [Complete proof of concept](proof-of-concept/evaluation-guide.md)
-2. [Assess team fit](adoption-guide/team-readiness.md)
-3. [Plan implementation](adoption-guide/implementation-roadmap.md)
+2. [Assess team fit](adoption-guide/README.md)
+3. [Plan implementation](adoption-guide/README.md)
 
 ---
 
@@ -79,7 +73,7 @@ OpenDXA transforms AI development from unpredictable, brittle systems to reliabl
 | **Expertise Required** | AI specialists | Regular developers |
 | **Scalability** | Custom scaling challenges | Built-in enterprise features |
 
-[Complete Competitive Analysis](comparison/detailed-comparison.md)
+[Complete Competitive Analysis](comparison/framework-pain-points.md)
 
 ---
 
@@ -103,7 +97,7 @@ OpenDXA transforms AI development from unpredictable, brittle systems to reliabl
 - ✅ **Training Resources**: Comprehensive documentation and examples
 - ✅ **Professional Services**: Available for complex implementations
 
-[Detailed Risk Analysis](comparison/risk-assessment.md)
+[Detailed Risk Analysis](comparison/README.md)
 
 ---
 
@@ -121,26 +115,26 @@ OpenDXA transforms AI development from unpredictable, brittle systems to reliabl
 - **Deployment**: Container-ready, cloud-native architecture
 - **Monitoring**: Built-in observability and debugging tools
 
-[Technical Deep Dive](comparison/technical-architecture.md)
+[Technical Deep Dive](comparison/technical-overview.md)
 
 ---
 
 ## 🚀 Proof of Concept Guide
 
 ### Phase 1: Quick Validation (1 day)
-1. [Install and setup](proof-of-concept/installation.md)
-2. [Run sample applications](proof-of-concept/sample-apps.md)
-3. [Evaluate against your use case](proof-of-concept/use-case-mapping.md)
+1. [Install and setup](proof-of-concept/README.md)
+2. [Run sample applications](proof-of-concept/quick-demo.md)
+3. [Evaluate against your use case](proof-of-concept/evaluation-guide.md)
 
 ### Phase 2: Team Evaluation (1 week)
-1. [Developer onboarding](proof-of-concept/developer-trial.md)
-2. [Build prototype for your domain](proof-of-concept/prototype-guide.md)
-3. [Performance and reliability testing](proof-of-concept/testing-guide.md)
+1. [Developer onboarding](proof-of-concept/evaluation-guide.md)
+2. [Build prototype for your domain](proof-of-concept/evaluation-guide.md)
+3. [Performance and reliability testing](proof-of-concept/evaluation-guide.md)
 
 ### Phase 3: Production Readiness (2-4 weeks)
-1. [Integration with existing systems](proof-of-concept/integration-testing.md)
-2. [Security and compliance review](proof-of-concept/security-evaluation.md)
-3. [Scalability and performance validation](proof-of-concept/performance-testing.md)
+1. [Integration with existing systems](proof-of-concept/evaluation-guide.md)
+2. [Security and compliance review](proof-of-concept/evaluation-guide.md)
+3. [Scalability and performance validation](proof-of-concept/evaluation-guide.md)
 
 [Complete PoC Guide](proof-of-concept/evaluation-guide.md)
 
@@ -174,7 +168,7 @@ OpenDXA transforms AI development from unpredictable, brittle systems to reliabl
 - **Risk**: Very low
 - **Learning**: Full OpenDXA capabilities demonstration
 
-[Detailed Adoption Guide](adoption-guide/implementation-strategy.md)
+[Detailed Adoption Guide](adoption-guide/README.md)
 
 ---
 
@@ -183,6 +177,7 @@ OpenDXA transforms AI development from unpredictable, brittle systems to reliabl
 ### Go/No-Go Criteria
 
 **Strong Fit Indicators:**
+
 - ✅ Team struggles with AI development complexity
 - ✅ Need for transparent, auditable AI systems
 - ✅ Requirement for rapid AI prototype development
@@ -190,12 +185,14 @@ OpenDXA transforms AI development from unpredictable, brittle systems to reliabl
 - ✅ Value placed on developer productivity
 
 **Potential Concerns:**
+
 - ⚠️ Heavily invested in alternative AI frameworks
 - ⚠️ Extremely specialized AI requirements
 - ⚠️ Resistance to new technology adoption
 - ⚠️ Very small team with limited development capacity
 
 ### Evaluation Checklist
+
 - [ ] Completed technical proof of concept
 - [ ] Validated ROI projections with actual use case
 - [ ] Assessed team readiness and training needs
@@ -203,23 +200,26 @@ OpenDXA transforms AI development from unpredictable, brittle systems to reliabl
 - [ ] Evaluated integration with existing systems
 - [ ] Confirmed licensing and support options
 
-[Complete Decision Guide](adoption-guide/decision-framework.md)
+[Complete Decision Guide](adoption-guide/README.md)
 
 ---
 
 ## 📞 Next Steps
 
 ### Immediate Actions
+
 1. **[Quick Demo](proof-of-concept/quick-demo.md)** - 5 minutes to see OpenDXA in action
 2. **[ROI Calculator](roi-analysis/calculator.md)** - Quantify potential benefits for your team
 3. **[Technical Overview](comparison/technical-overview.md)** - Understand the architecture and capabilities
 
 ### Evaluation Process
+
 1. **[Start Proof of Concept](proof-of-concept/evaluation-guide.md)** - Hands-on evaluation with your use cases
-2. **[Team Assessment](adoption-guide/team-readiness.md)** - Evaluate organizational fit and readiness
-3. **[Implementation Planning](adoption-guide/implementation-roadmap.md)** - Plan your adoption strategy
+2. **[Team Assessment](adoption-guide/README.md)** - Evaluate organizational fit and readiness
+3. **[Implementation Planning](adoption-guide/README.md)** - Plan your adoption strategy
 
 ### Support and Resources
+
 - **Technical Questions**: [Community Forum](https://community.opendxa.ai)
 - **Business Inquiries**: [Contact Sales](mailto:sales@aitomatic.com)
 - **Implementation Support**: [Professional Services](adoption-guide/professional-services.md)

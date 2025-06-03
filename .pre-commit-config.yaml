@@ -1,3 +1,6 @@
+# .pre-commit-config.yaml - Pre-commit Hooks Configuration
+# Copyright © 2025 Aitomatic, Inc. Licensed under the MIT License.
+
 default_install_hook_types:
   - pre-commit
   - post-checkout
@@ -13,6 +16,7 @@ repos:
       # - id: end-of-file-fixer
       #   exclude: ^opendxa/dana/runtime/executor/(expression_evaluator|context_manager|statement_executor)\.py$
       - id: check-yaml
+        exclude: ^mkdocs\.yml$
       - id: check-added-large-files
       # - id: check-ast
       - id: check-json

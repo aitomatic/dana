@@ -1,9 +1,3 @@
-<p align="center">
-  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
-</p>
-
-[Project Overview](../../../README.md)
-
 # The Dana Manifesto: Transforming AI Development
 
 *A philosophical and theoretical foundation for reliable, transparent AI automation*
@@ -23,7 +17,7 @@ For too long, building with AI has meant wrestling with hidden state, endless co
 ## Dana in the Computing Landscape
 
 <p align="center">
-  <img src="../../images/dana-io.jpg" alt="Dana Positioning Quadrant" width="400"/>
+  <img src="../../../images/dana-io.jpg" alt="Dana Positioning Quadrant" width="400"/>
 </p>
 <p align="center" style="font-size: 12px; font-style: italic;">Dana's unique position in the computing landscape.</p>
 

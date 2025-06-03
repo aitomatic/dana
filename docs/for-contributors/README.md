@@ -1,9 +1,3 @@
-<p align="center">
-  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
-</p>
-
-[Project Overview](../../README.md)
-
 # OpenDXA for Contributors
 
 *Comprehensive guide for developers who want to contribute to, extend, or deeply understand OpenDXA*
@@ -15,9 +9,13 @@
 Whether you're looking to contribute code, extend functionality, or deeply understand OpenDXA's architecture, this guide provides everything you need to become an effective contributor to the OpenDXA ecosystem.
 
 ### Types of Contributors
+
 - **Core Contributors**: Developers working on the OpenDXA core platform
+
 - **Extension Developers**: Building capabilities, resources, and integrations
+
 - **Community Contributors**: Documentation, examples, and ecosystem tools
+
 - **Research Contributors**: Advancing the theoretical foundations
 
 ---
@@ -45,13 +43,13 @@ source .venv/bin/activate
 
 ### 2. Understand the Architecture (30 minutes)
 - [System Architecture Overview](architecture/system-design.md)
-- [Dana Language Implementation](architecture/dana-implementation.md)
-- [Core Components Deep Dive](architecture/component-architecture.md)
+- [Architecture Overview](architecture/README.md)
+- [System Design](architecture/system-design.md)
 
 ### 3. Make Your First Contribution (1 hour)
 - [Contribution Guidelines](development/contribution-guide.md)
-- [Code Style and Standards](development/coding-standards.md)
-- [Testing Requirements](development/testing-guide.md)
+- [Development Guide](development/README.md)
+- [Contribution Guide](development/contribution-guide.md)
 
 ---
 
@@ -64,23 +62,23 @@ OpenDXA is built on a modular, extensible architecture with clear separation of 
 ┌─────────────────────────────────────────────────────────────┐
 │                    Application Layer                        │
 ├─────────────────────────────────────────────────────────────┤
-│                      Agent Layer                           │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
-│  │   Agent     │  │ Capabilities │  │     Resources       │ │
-│  │ Management  │  │   System     │  │    Management       │ │
-│  └─────────────┘  └─────────────┘  └─────────────────────┘ │
+│                      Agent Layer                            │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
+│  │   Agent     │  │ Capabilities│  │     Resources       │  │
+│  │ Management  │  │   System    │  │    Management       │  │
+│  └─────────────┘  └─────────────┘  └─────────────────────┘  │
 ├─────────────────────────────────────────────────────────────┤
-│                   Dana Execution Layer                     │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
-│  │    Parser   │  │ Interpreter │  │  Runtime Context    │ │
-│  │   (AST)     │  │  (Executor) │  │  (State Manager)    │ │
-│  └─────────────┘  └─────────────┘  └─────────────────────┘ │
+│                   Dana Execution Layer                      │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
+│  │    Parser   │  │ Interpreter │  │  Runtime Context    │  │
+│  │   (AST)     │  │  (Executor) │  │  (State Manager)    │  │
+│  └─────────────┘  └─────────────┘  └─────────────────────┘  │
 ├─────────────────────────────────────────────────────────────┤
-│                    Resource Layer                          │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
-│  │ LLM Resource│  │ Knowledge   │  │  External Tools     │ │
-│  │ Integration │  │    Base     │  │   & Services        │ │
-│  └─────────────┘  └─────────────┘  └─────────────────────┘ │
+│                    Resource Layer                           │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐  │
+│  │ LLM Resource│  │ Knowledge   │  │  External Tools     │  │
+│  │ Integration │  │    Base     │  │   & Services        │  │
+│  └─────────────┘  └─────────────┘  └─────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -165,7 +163,7 @@ common/
    - Model configuration and switching
    - Response handling and caching
 
-[Detailed Codebase Guide](codebase/navigation-guide.md)
+[Codebase Overview](codebase/README.md)
 
 ---
 
@@ -203,7 +201,7 @@ pylint opendxa/
 mypy opendxa/
 ```
 
-[Complete Development Setup](development/environment-setup.md)
+[Development Guide](development/README.md)
 
 ---
 
@@ -339,7 +337,7 @@ class TestDanaInterpreter:
         assert "result" in interpreter.context
 ```
 
-[Testing Guidelines](development/testing-guide.md)
+[Contribution Guidelines](development/contribution-guide.md)
 
 ---
 
@@ -380,7 +378,7 @@ Where to go from here.
 - **Docstrings**: Inline code documentation
 - **Markdown**: General documentation format
 
-[Documentation Guidelines](development/documentation-guide.md)
+[Development Guide](development/README.md)
 
 ---
 
@@ -433,7 +431,7 @@ Where to go from here.
 - **Federated Knowledge**: Distributed knowledge sharing between agents
 - **Quantum Integration**: Quantum computing resource integration
 
-[Detailed Roadmap](development/roadmap.md)
+[Development Guide](development/README.md)
 
 ---
 
@@ -452,7 +450,7 @@ Where to go from here.
 
 ---
 
-*Ready to contribute? Start with our [Development Setup Guide](development/environment-setup.md) or check out [Good First Issues](https://github.com/aitomatic/opendxa/labels/good%20first%20issue).* 
+*Ready to contribute? Start with our [Development Guide](development/README.md) or check out [Good First Issues](https://github.com/aitomatic/opendxa/labels/good%20first%20issue).* 
 
 <p align="center">
 Copyright © 2025 Aitomatic, Inc. Licensed under the <a href="../../LICENSE.md">MIT License</a>.
