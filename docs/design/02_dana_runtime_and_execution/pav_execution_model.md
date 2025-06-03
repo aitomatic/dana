@@ -40,7 +40,7 @@ But today's tooling lacks a unifying control structure to bridge the two safely.
 What's missing is an **execution framework** that:
 
 * **Tolerates fuzziness** on the input side
-* **Enables intelligent action** at the core
+* **Enables intelligent, adaptive action** at the core, including dynamic prompt optimization or context-sensitive adjustments to how tasks are performed.
 * **Enforces structure and validation** on the output side
 * **Retries, recovers, and learns from failure**
 
@@ -50,12 +50,9 @@ What's missing is an **execution framework** that:
 
 The **Perceive → Act → Validate (PAV)** protocol embodies this pattern:
 
-1. **Perceive**: Accept inputs with fault tolerance and context sensitivity. Normalize ambiguous user input, language, or unstructured data into a form your system can understand. This phase can involve sophisticated context gathering, potentially including:
-    *   **Code-Site Context**: Information derived from the function's call site in Dana code (e.g., comments, surrounding variable names/types, type hints on assignment).
-    *   **Ambient System Context**: Relevant information from the broader execution environment (e.g., `system:__current_task_id`, `system:__user_id`, `system:__locale`, active operational domains).
-    The output of this phase, the `perceived_input`, can therefore be a rich structure containing not just the normalized primary input but also this gathered context, which is then available to the `Act` and `Validate` phases.
+1. **Perceive**: Accept inputs with fault tolerance and context sensitivity. Normalize ambiguous user input, language, or unstructured data into a form your system can understand. This phase can also involve enriching the initial input with further context (e.g., from a `CodeContextAnalyzer`) or transforming it into an optimized internal representation (like a refined prompt) ready for the `Act` phase.
 
-2. **Act**: Execute the core function or plan. This can be a tool call, LLM generation, symbolic program, or composite chain, utilizing the (potentially rich) `perceived_input`.
+2. **Act**: Execute the core function or plan using the (potentially optimized) input from the `Perceive` phase. This can be a tool call, LLM generation (with an enhanced prompt), symbolic program, or composite chain, utilizing the (potentially rich) `perceived_input`.
 
 3. **Validate**: Strictly check the output against `pav_status.expected_output_type` and other criteria. Ensure it meets structural, semantic, or type-based expectations. If it doesn't, retry the act stage with introspective awareness of failure context.
 

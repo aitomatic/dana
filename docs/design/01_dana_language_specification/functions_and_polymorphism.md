@@ -57,9 +57,9 @@ log_message(message="An error occurred", severity="error")
 
 ## 3. Polymorphic Functions
 
-Polymorphic functions allow a single function name to have multiple distinct implementations (signatures). The Dana runtime dispatches the call to the correct implementation based on the types (and potentially number) of arguments provided.
+Polymorphic functions in Dana allow a single function name to be associated with multiple distinct implementations (or signatures). This is a key feature for writing flexible and intuitive code, as it enables the same conceptual operation to behave differently and appropriately based on the types of data it receives.
 
-This provides a powerful way to handle different data types with the same conceptual operation, enhancing code clarity and flexibility, especially when used with user-defined `structs`.
+**The core benefits of polymorphism are enhanced code clarity and adaptability.** By using the same function name for operations that are semantically similar but apply to different data types (especially user-defined `structs`), developers can create more readable and maintainable code. The Dana runtime automatically dispatches a function call to the correct underlying implementation based on the types (and potentially number) of arguments provided by the caller.
 
 ### 3.1. Definition
 
@@ -267,58 +267,57 @@ The exact naming and parameters of the built-in PAV-related decorators will be f
 
 ## 7. Function Composition (Pipelining)
 
-Dana supports function composition using the `|` (pipe) operator, allowing you to chain functions together in a readable and powerful way. The output of one function becomes the input of the next function in the chain.
+Function composition is a powerful capability in Dana for building complex operations by chaining simpler, reusable functions. This approach enhances code clarity, promotes modularity, and simplifies the management of sequential data processing tasks.
 
-### 7.1. Syntax and Behavior
+### 7.1. Function Composition in Action: Planning and Costing a Trip
 
-You can compose two or more functions using the `|` operator:
+A common scenario where function composition shines is in multi-step data transformations or workflow execution. Consider planning a day trip:
+
+```dana
+# Assume these functions are defined elsewhere:
+# def plan_a_day(location: str, weather_condition: str) -> PlanDetails:
+#     # ... returns some structured plan details (e.g., a dict or struct) ...
+#
+# def estimate_trip_cost(details: PlanDetails) -> CostEstimate:
+#     # ... returns a cost estimation (e.g., a float or struct) ...
+
+# Compose the functions to create a reusable pipeline
+>>> daily_trip_planner_and_estimator = plan_a_day | estimate_trip_cost
+# daily_trip_planner_and_estimator is now a new callable
+
+# Execute the pipeline with initial arguments
+>>> cost_for_hmb_foggy = daily_trip_planner_and_estimator("half moon bay", "foggy")
+# This single call executes:
+# 1. plan_a_day("half moon bay", "foggy") to get PlanDetails
+# 2. estimate_trip_cost(output_from_plan_a_day) to get the final CostEstimate
+#
+# cost_for_hmb_foggy now holds the CostEstimate.
+```
+This example demonstrates how easily two distinct steps (`plan_a_day` and `estimate_trip_cost`) can be combined into a single, coherent operation (`daily_trip_planner_and_estimator`).
+
+### 7.2. Why Use Function Composition?
+
+*   **Readability**: Chains like `process_data | filter_results | format_output` clearly express the flow of data and operations.
+*   **Reusability**: Individual functions in the chain remain simple and can be reused in other compositions or standalone.
+*   **Modularity**: Complex tasks are broken down into smaller, manageable, and testable units.
+*   **Maintainability**: Changes to one step in the pipeline are localized to the specific function, reducing the risk of unintended side effects.
+*   **Expressiveness**: It provides a natural way to represent sequential workflows and data transformations directly in the language.
+
+### 7.3. Syntax and Behavior: The `|` Operator
+
+Dana uses the `|` (pipe) operator for function composition:
 
 ```dana
 local:composed_function = function_one | function_two | function_three
 ```
 
-*   `function_one` is called with the initial arguments.
-*   The result of `function_one` is passed as the argument to `function_two`.
-*   The result of `function_two` is passed as the argument to `function_three`.
-*   The `composed_function` itself takes the same arguments as the *first* function in the chain (`function_one`).
-*   The return type of `composed_function` is the return type of the *last* function in the chain (`function_three`).
-*   The resulting `composed_function` is a new callable that executes the chain.
-
-For the composition to be valid, the return type of each function in the chain (except the last) must be compatible with the input parameter type of the next function. Dana's type system will aim to validate these compatibilities.
-
-### 7.2. Example: Planning and Costing a Trip
-
-Let's illustrate with your example of planning a day and estimating its cost:
-
-```dana
-# Assume these functions are defined elsewhere:
-# def plan_a_day(location: str, weather_condition: str) -> PlanDetails:
-#     # ... returns some structured plan details ...
-#
-# def estimate_cost(details: PlanDetails) -> CostEstimate:
-#     # ... returns a cost estimation based on plan details ...
-
-# Compose the functions
->>> pipeline = plan_a_day | estimate_cost
-# pipeline is now a new callable, conceptually a ComposedFunction
-
-# Call the composed pipeline
->>> trip_cost = pipeline("half moon bay", "foggy")
-# This is equivalent to:
-# local:plan = plan_a_day("half moon bay", "foggy")
-# local:trip_cost = estimate_cost(local:plan)
-#
-# trip_cost will hold the CostEstimate.
-```
-
-In this example:
-1.  `pipeline` is created by composing `plan_a_day` and `estimate_cost`.
-2.  When `pipeline("half moon bay", "foggy")` is called:
-    *   `plan_a_day("half moon bay", "foggy")` is executed first.
-    *   Its result (of type `PlanDetails`) is then automatically passed to `estimate_cost`.
-    *   The final result (`trip_cost`) is the `CostEstimate` returned by `estimate_cost`.
-
-Function composition provides a concise and expressive way to define sequential data processing workflows in Dana.
+*   **Execution Order**: Functions are executed from left to right.
+*   **Data Flow**: The return value of `function_one` is passed as the first (and often only) argument to `function_two`. The return value of `function_two` is passed to `function_three`, and so on.
+*   **Signature of Composed Function**:
+    *   The `composed_function` accepts the same arguments as the *first* function in the chain (`function_one` in the example above).
+    *   The return type of the `composed_function` is the return type of the *last* function in the chain (`function_three` above).
+*   **Type Compatibility**: For a composition to be valid at compile-time or runtime, the return type of each function (except the last) must be compatible with the input parameter type of the immediately following function. Dana's type system will aim to verify this. If `function_one` returns a `TypeA`, and `function_two` expects a `TypeB` as its first argument, then `TypeA` must be assignable to or convertible to `TypeB`.
+*   **Result**: The expression `function_one | function_two` evaluates to a new callable (the composed function). This composed function can be stored in a variable, passed as an argument, or called immediately.
 
 ## 8. Modules and Imports
 

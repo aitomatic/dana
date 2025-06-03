@@ -106,6 +106,28 @@ In each case, the `reason()` function, powered by PAV:
 
 This demonstrates how PAV allows functions to be flexible in what they accept (the general intent) while being conservative and precise in what they produce, aligning with the caller's specific needs.
 
+## 💡 The Purpose of PAV: Robust and Intelligent Execution
+
+You've seen PAV in action with functions like `reason()`. But why is this model so central to Dana?
+
+PAV (Perceive → Act → Validate) is designed to address common challenges in building reliable AI-powered workflows, especially when interacting with probabilistic systems like Large Language Models (LLMs). Its core goals are to:
+
+1.  **Embrace Intent, Enforce Precision (Postel's Law)**:
+    *   **Perceive**: Flexibly interpret ambiguous inputs, user intent, and diverse data formats. This phase can gather rich context from your code (comments, type hints via a `CodeContextAnalyzer`) and the environment. Crucially, it can also *transform and optimize* the initial input, for example, by **rewriting a vague user prompt into a more detailed and effective prompt** for an LLM, or by selecting the best strategy for the `Act` phase.
+    *   **Act**: Execute the primary task (e.g., calling an LLM with the optimized prompt, running a tool, or executing a Dana function) using the refined input from the `Perceive` stage.
+    *   **Validate**: Rigorously check the output of the `Act` phase against expected types (using `expected_output_type`), structures, or other quality criteria. This ensures that downstream components receive reliable, predictable data.
+
+2.  **Automate Resilience**:
+    *   The built-in **retry loop** automatically re-attempts the `Act` (and subsequently `Validate`) phase upon validation failure. This handles transient issues or allows for iterative refinement.
+    *   The `pav_status` object provides context about attempts and failures, enabling more intelligent retry strategies or fallback mechanisms within custom P/A/V functions.
+
+3.  **Enhance Developer Experience**:
+    *   By standardizing this robust execution pattern, PAV reduces boilerplate code for error handling, input sanitization, output validation, and retry logic.
+    *   It allows Dana engineers to focus on the core logic of their `Act` functions, while leveraging PAV for the surrounding scaffolding.
+    *   Features like automatic context gathering and prompt optimization aim to make interactions with complex AI services more powerful and less error-prone.
+
+In essence, PAV provides a structured, configurable, and resilient "wrapper" around core operations, making them more dependable and "smarter" by systematically handling the complexities of real-world AI interactions.
+
 ## 🎛️ Advanced Usage (Python Customization)
 
 This section details how developers can customize the PAV framework using Python, for instance by creating custom PAV executors or configurations. For general Dana usage of PAV-enabled functions, refer to the Dana-level decorator documentation and examples.
