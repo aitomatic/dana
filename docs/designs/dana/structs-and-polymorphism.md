@@ -314,43 +314,45 @@ It is crucial to reiterate that **Dana remains a fundamentally dynamically-typed
 1.  **Role of Type Hints**:
     *   **Clarity and Documentation**: Type hints (`var: type`, `param: type`, `-> ReturnType`) primarily enhance code readability and serve as documentation for developers and AI code generators.
     *   **Enabling Polymorphism**: They provide the necessary information for the Dana runtime to dispatch calls to the correct polymorphic function signature based on argument types.
-    *   **Not Strict Static Enforcement**: Type hints do *not* typically lead to traditional ahead-of-time (AOT) static type checking that would reject programs. Runtime type *validation* might occur (e.g., a function expecting an `int` gets a `string` it cannot handle), but the system embraces dynamic typing.
+    *   **Not Strict Static Enforcement**: Type hints do *not* typically lead to traditional ahead-of-time (AOT) static type checking that would automatically reject code. Instead, they are more like runtime assertions or guides, especially for return types. The primary enforcement is at the boundary of polymorphic function dispatch (matching argument types).
 
-2.  **Declared Return Types (`-> ReturnType`)**:
-    *   When a function signature includes `-> ReturnType` (e.g., `def get_user_data() -> UserProfile:`), this is a declaration by the function author about the *intended or typical type* of data that specific signature will return.
-    *   It is perfectly valid for a function signature to declare `-> any` if its return type is genuinely variable or cannot be known upfront for that specific implementation.
-    *   This declaration guides developers and AI tools but does not prevent a function from returning a more specific subtype (if Dana had them) or, in dynamically-typed scenarios, a different type if the function's logic and its overall contract (e.g., returning `any`) allow for it.
+2.  **Declared Return Types (`-> ReturnType`) as Author Intent**:
+    *   When a function is defined with `-> ReturnType`, this signals the author's primary intention for the function's output.
+    *   Functions should generally strive to return data conforming to this type.
+    *   The interpreter *may* perform light coercion or validation against this declared type upon return, especially if the caller hasn't provided a more specific desired type.
 
-3.  **Caller-Informed Return Schemas (via `_dana_desired_schema`)**:
-    To enhance flexibility, especially for functions interacting with dynamic sources like LLMs (e.g., `reason()`), Dana will support a mechanism for callers to suggest a desired return structure.
+3.  **Caller-Informed Return Types (via `system:__dana_desired_type`)**:
+    To enhance flexibility, especially for functions interacting with dynamic sources like LLMs (e.g., `reason()`), Dana supports a mechanism for callers to suggest a desired return structure/type. This allows a single function to adapt its output format based on the caller's specific needs.
 
-    *   **Mechanism**: A special optional keyword argument, conventionally named `_dana_desired_schema`, can be passed to any function.
+    *   **Mechanism**: When a Dana expression implies a specific desired type for a function's return value (e.g., through assignment to a typed variable: `private:my_var: MyStruct = some_function(...)`), the Dana interpreter makes this desired type available to the called function.
+    *   **Passing via `SandboxContext`**: The interpreter conveys this information by placing the desired type into the `system:` scope of the `SandboxContext` for that specific function call. It will be accessible via the key `system:__dana_desired_type`.
+    *   **Access by Functions**:
+        *   **Built-in functions** (implemented in Python) can retrieve this value from the `SandboxContext` object they receive (e.g., `context.get("system:__dana_desired_type")`).
+        *   **User-defined Dana functions** can, if necessary, inspect `system:__dana_desired_type` directly in their code, although this is expected to be an advanced use case.
+    *   **Precedence**: If `system:__dana_desired_type` is present, it generally takes precedence over the function's declared `-> ReturnType` in guiding the function's output formatting and validation, especially for adaptable functions like `reason()`. If absent, the function's declared `-> ReturnType` is the primary guide.
+    *   **Best-Effort Basis**: Functions, particularly those like `reason()` that generate complex data, should attempt to honor `system:__dana_desired_type` on a best-effort basis. It's a hint to guide output, not a strict contract that will fail compilation if not perfectly met by the function's internal logic. The final validation might occur by the interpreter upon return, comparing against the `system:__dana_desired_type` if present, or the function's declared `-> ReturnType`.
+    *   **Example with `reason()`**:
         ```dana
-        # Caller requests a UserProfile structure
-        user_info = get_llm_data(query="user 123 details", _dana_desired_schema=UserProfile)
+        # Caller desires a string
+        private:summary_text: str = reason("Summarize the input")
 
-        # reason() attempting to populate a specific struct
-        parsed_intent = reason(
-            prompt="Understand this user query: ...",
-            _dana_desired_schema=UserIntentStruct
-        )
+        # Caller desires a list of strings
+        private:key_points: list[str] = reason("Extract key points")
+
+        # Caller desires a custom struct
+        struct MyData {
+            name: str
+            value: int
+        }
+        private:structured_data: MyData = reason("Extract name and value from the report")
         ```
+        In these examples, the `reason()` function would find `str`, `list[str]`, or `MyData` respectively in `system:__dana_desired_type` within its execution context and tailor its LLM prompt and output parsing accordingly.
 
-    *   **Function Behavior**:
-        *   A function can inspect the value of `_dana_desired_schema` if provided.
-        *   If provided (e.g., `_dana_desired_schema=MyStruct`), the function should *attempt* to structure its output according to this schema.
-            *   For the `reason()` function, this hint can be used to guide the LLM's output format (e.g., by adding specific formatting instructions or few-shot examples to the prompt).
-            *   For other Dana functions, this might involve populating an instance of the specified struct type.
-        *   **Best-Effort Basis**: This is a *hint* or a *request*. If the function cannot reasonably or successfully produce data matching the `_dana_desired_schema` (e.g., LLM output doesn't conform, internal logic cannot adapt), it should:
-            1.  Fall back to returning data according to its declared `-> ReturnType` for the matched signature.
-            2.  Return `None` or raise an appropriate error if the desired schema was critical and could not be fulfilled (this behavior would be up to the function's design).
-            3.  Return a more generic type like `dict` or `list` if its declared return type is `any` or `dict`.
+4.  **Error Handling and Type Mismatches**:
+    *   While Dana is dynamically typed, mismatches encountered at runtime (e.g., a function returning a string when an integer was strongly expected by the caller and cannot be coerced) will result in runtime errors, similar to Python.
+    *   The goal is to provide flexibility for LLM outputs while still allowing for structured data processing where needed.
 
-    *   **Interaction with Declared `-> ReturnType`**:
-        *   The `_dana_desired_schema` does not override the function signature's contract. If a function `def process() -> Point:` is called with `_dana_desired_schema=UserProfile`, the function still primarily promises a `Point`. It might try to populate a `Point` from the `UserProfile` context if that makes sense, or it might ignore the hint if it's incompatible.
-        *   For functions designed to be highly adaptable to `_dana_desired_schema` (like `reason()`), their declared return type should likely be `-> any` or `-> dict` to reflect this flexibility.
-
-This approach ensures that Dana can leverage type information for structure and clarity while preserving the dynamic flexibility essential for its neurosymbolic goals.
+This approach maintains Dana's dynamic nature while providing robust hints for both AI code generation and runtime behavior, especially for functions that need to adapt their output structure.
 
 ### 5.5. Backward Compatibility
 -   Existing Dana code that does not use `struct`s or polymorphic functions should remain fully compatible.

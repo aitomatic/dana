@@ -17,6 +17,7 @@ This document proposes implementing **smart, conservative auto type casting** in
 ## Current State
 
 Dana currently has:
+
 - ✅ Strong typing with explicit type checking via `TypeChecker`
 - ✅ Support for int, float, string, bool, collections  
 - ✅ F-string preference for string formatting
