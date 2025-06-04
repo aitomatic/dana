@@ -6,42 +6,42 @@ This directory contains the authoritative design specifications for the OpenDXA 
 
 The design documents are organized into the following main sections:
 
-1.  **Dana Philosophy**: Core vision, goals, and guiding principles behind Dana.
-2.  **Dana Language Specification**: Detailed definition of the Dana language itself – syntax, semantics, data types, functions, state management, etc.
-3.  **Dana Runtime and Execution**: How Dana code is executed, including the interpreter, sandbox, REPL, and the core **PAV (Perceive → Act → Validate) execution model**.
-4.  **Core Capabilities and Resources**: Core capabilities and resources abstraction model for Dana programs to interact with internal and external functionalities.
-5.  **Agent and Orchestration**: Higher-level constructs for building intelligent agents and orchestrating complex workflows using Dana.
-6.  **Tooling and Developer Experience**: Developer tools, IDE integration, debugging, testing frameworks, and other developer experience improvements.
+1. **Dana Philosophy**: Core vision, goals, and guiding principles behind Dana.
+2. **Dana Language Specification**: Detailed definition of the Dana language itself – syntax, semantics, data types, functions, state management, etc.
+3. **Dana Runtime and Execution**: How Dana code is executed, including the interpreter, sandbox, REPL, and the core **POV (Perceive → Operate → Validate) execution model**.
+4. **Core Capabilities and Resources**: Core capabilities and resources abstraction model for Dana programs to interact with internal and external functionalities.
+5. **Agent and Orchestration**: Higher-level constructs for building intelligent agents and orchestrating complex workflows using Dana.
+6. **Tooling and Developer Experience**: Developer tools, IDE integration, debugging, testing frameworks, and other developer experience improvements.
 
 ## Document Status
 
 All documents in this directory (outside of `archive/`) are considered **active design specifications**. They define the current and planned implementation of Dana and its role within OpenDXA. These are the authoritative sources for:
 
--   Dana language syntax and semantics
--   System architecture decisions related to Dana
--   Implementation patterns and best practices for Dana components
--   Design rationale and trade-offs
+- Dana language syntax and semantics
+- System architecture decisions related to Dana
+- Implementation patterns and best practices for Dana components
+- Design rationale and trade-offs
 
 ## For Contributors
 
 When modifying Dana or its related OpenDXA components:
 
-1.  **Consult relevant design documents** before making changes.
-2.  **Update design documents** when making architectural or significant behavioral changes.
-3.  **Follow established patterns** and principles documented here.
-4.  **Maintain consistency** with the overall design philosophy.
+1. **Consult relevant design documents** before making changes.
+2. **Update design documents** when making architectural or significant behavioral changes.
+3. **Follow established patterns** and principles documented here.
+4. **Maintain consistency** with the overall design philosophy.
 
 ## For Users & Developers
 
 These documents provide deep technical insight into:
 
--   How Dana language features work internally.
--   The rationale behind specific design decisions.
--   How to extend or integrate with Dana and OpenDXA at a deeper level.
--   Understanding system behavior and limitations.
+- How Dana language features work internally.
+- The rationale behind specific design decisions.
+- How to extend or integrate with Dana and OpenDXA at a deeper level.
+- Understanding system behavior and limitations.
 
 ---
 
-**See Also:**
+See Also:
 
-- User-facing documentation (e.g., in `docs/for-engineers/`, `docs/for-contributors/`) 
+- User-facing documentation (e.g., in `docs/for-engineers/`, `docs/for-contributors/`)

@@ -9,8 +9,8 @@ A key differentiator for OpenDXA is its ability to seamlessly integrate and leve
 ## The Challenge
 
 Many systems excel at one type of knowledge retrieval but struggle to combine them effectively:
-- **RAG-focused systems:** Strong with documents but may lack precision with structured data or process knowledge.
-- **Structured data systems:** Precise with databases/APIs but often cannot incorporate insights from unstructured text.
+- RAG-focused systems: Strong with documents but may lack precision with structured data or process knowledge.
+- Structured data systems: Precise with databases/APIs but often cannot incorporate insights from unstructured text.
 
 ## OpenDXA's Approach
 

@@ -24,47 +24,47 @@ OpenDXA's architecture is built around a clear separation between declarative (w
 
 ```mermaid
 graph LR
-    subgraph DA["Declarative Aspect"]
-        K[Knowledge]
-        R[Resources]
-        K --> R
-    end
+ subgraph DA["Declarative Aspect"]
+ K[Knowledge]
+ R[Resources]
+ K --> R
+ end
 
-    subgraph IA["Imperative Aspect"]
-        P[Planning]
-        RE[Reasoning]
-        P --- RE
-    end
+ subgraph IA["Imperative Aspect"]
+ P[Planning]
+ RE[Reasoning]
+ P --- RE
+ end
 
-    subgraph S["State"]
-        WS[WorldState]
-        AS[AgentState]
-        WS --- AS
-    end
+ subgraph S["State"]
+ WS[WorldState]
+ AS[AgentState]
+ WS --- AS
+ end
 
-    DA --> IA
-    IA --> S
+ DA --> IA
+ IA --> S
 ```
 
 ## Key Benefits
 
 1. **Clear Separation of Concerns**
-   - Knowledge management is separate from execution
-   - Easier to maintain and evolve
-   - Better testability
-   - More predictable behavior
+ - Knowledge management is separate from execution
+ - Easier to maintain and evolve
+ - Better testability
+ - More predictable behavior
 
 2. **Improved Maintainability**
-   - Knowledge can be updated independently
-   - Execution logic can be modified without affecting knowledge
-   - Easier to debug and troubleshoot
-   - Better code organization
+ - Knowledge can be updated independently
+ - Execution logic can be modified without affecting knowledge
+ - Easier to debug and troubleshoot
+ - Better code organization
 
 3. **Enhanced Scalability**
-   - Knowledge can be distributed
-   - Execution can be parallelized
-   - Resources can be shared
-   - State can be managed efficiently
+ - Knowledge can be distributed
+ - Execution can be parallelized
+ - Resources can be shared
+ - State can be managed efficiently
 
 ## Implementation
 
@@ -98,66 +98,66 @@ reasoner = Reasoner(resources=resources)
 ## Best Practices
 
 1. **Knowledge Organization**
-   - Structure knowledge clearly
-   - Use appropriate representations
-   - Maintain version control
-   - Document knowledge sources
+ - Structure knowledge clearly
+ - Use appropriate representations
+ - Maintain version control
+ - Document knowledge sources
 
 2. **Execution Design**
-   - Keep execution logic clean
-   - Use appropriate patterns
-   - Handle errors gracefully
-   - Monitor performance
+ - Keep execution logic clean
+ - Use appropriate patterns
+ - Handle errors gracefully
+ - Monitor performance
 
 3. **Integration**
-   - Define clear interfaces
-   - Use appropriate abstractions
-   - Maintain separation
-   - Test thoroughly
+ - Define clear interfaces
+ - Use appropriate abstractions
+ - Maintain separation
+ - Test thoroughly
 
 ## Common Patterns
 
 1. **Knowledge Access**
-   ```python
-   # Declarative: Define knowledge
-   class ProcessKnowledge:
-       def __init__(self):
-           self.steps = []
-           self.parameters = {}
+ ```python
+ # Declarative: Define knowledge
+ class ProcessKnowledge:
+ def __init__(self):
+ self.steps = []
+ self.parameters = {}
 
-   # Imperative: Use knowledge
-   def execute_process(knowledge: ProcessKnowledge):
-       for step in knowledge.steps:
-           execute_step(step, knowledge.parameters)
-   ```
+ # Imperative: Use knowledge
+ def execute_process(knowledge: ProcessKnowledge):
+ for step in knowledge.steps:
+ execute_step(step, knowledge.parameters)
+ ```
 
 2. **Resource Management**
-   ```python
-   # Declarative: Define resources
-   resources = {
-       "llm": LLMResource(),
-       "calculator": ToolResource()
-   }
+ ```python
+ # Declarative: Define resources
+ resources = {
+ "llm": LLMResource(),
+ "calculator": ToolResource()
+ }
 
-   # Imperative: Use resources
-   async def process_with_resources(resources):
-       result = await resources["llm"].query("Calculate 2+2")
-       return resources["calculator"].calculate(result)
-   ```
+ # Imperative: Use resources
+ async def process_with_resources(resources):
+ result = await resources["llm"].query("Calculate 2+2")
+ return resources["calculator"].calculate(result)
+ ```
 
 3. **State Management**
-   ```python
-   # Declarative: Define state
-   class ProcessState:
-       def __init__(self):
-           self.current_step = 0
-           self.results = []
+ ```python
+ # Declarative: Define state
+ class ProcessState:
+ def __init__(self):
+ self.current_step = 0
+ self.results = []
 
-   # Imperative: Update state
-   def update_process_state(state: ProcessState, result):
-       state.current_step += 1
-       state.results.append(result)
-   ```
+ # Imperative: Update state
+ def update_process_state(state: ProcessState, result):
+ state.current_step += 1
+ state.results.append(result)
+ ```
 
 ## Next Steps
 

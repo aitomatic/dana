@@ -5,7 +5,7 @@
 ## Business/Technical Problem Statement
 
 ### Persona
-**Sarah Chen, Quality Control Inspector**
+Sarah Chen, Quality Control Inspector
 - 5+ years experience in semiconductor manufacturing quality control
 - Responsible for visual inspection of critical components
 - Must maintain high throughput while ensuring accuracy
@@ -33,159 +33,159 @@ This document describes the requirements for manufacturing quality control teams
 ### System Components
 
 1. **Image Processing System**
-   - Image preprocessor (supports standard formats: PNG, JPEG, TIFF, BMP)
-   - Feature extractor
-   - Pattern analyzer
-   - Measurement system
-   - Color/texture analyzer
-   - Real-time feedback system
-   - Interactive annotation tools
-   - Image upload interface
-   - Analysis results dashboard
-   - Side-by-side comparison tools
-   - Measurement overlay tools
-   - Defect highlighting tools
-   - Visual reporting tools
+ - Image preprocessor (supports standard formats: PNG, JPEG, TIFF, BMP)
+ - Feature extractor
+ - Pattern analyzer
+ - Measurement system
+ - Color/texture analyzer
+ - Real-time feedback system
+ - Interactive annotation tools
+ - Image upload interface
+ - Analysis results dashboard
+ - Side-by-side comparison tools
+ - Measurement overlay tools
+ - Defect highlighting tools
+ - Visual reporting tools
 
 2. **Knowledge Base**
-   - Defect pattern database
-   - Quality specifications
-   - Historical resolutions
-   - Process parameters
-   - Product specifications
-   - Reference image library
-   - Measurement calibration data
-   - Multi-site standardization data
-   - Training materials
-   - Quality system compliance requirements
+ - Defect pattern database
+ - Quality specifications
+ - Historical resolutions
+ - Process parameters
+ - Product specifications
+ - Reference image library
+ - Measurement calibration data
+ - Multi-site standardization data
+ - Training materials
+ - Quality system compliance requirements
 
 3. **Analysis Engine**
-   - Defect classification
-   - Pattern matching
-   - Root cause analysis
-   - Severity assessment
-   - Resolution generation
-   - State preservation system
-   - Recovery management
-   - Failed analysis recovery
-   - Interrupted session handling
-   - Temporary image handling
-   - Analysis state preservation
+ - Defect classification
+ - Pattern matching
+ - Root cause analysis
+ - Severity assessment
+ - Resolution generation
+ - State preservation system
+ - Recovery management
+ - Failed analysis recovery
+ - Interrupted session handling
+ - Temporary image handling
+ - Analysis state preservation
 
 4. **Reporting System**
-   - Analysis report generator
-   - Visual comparison tools
-   - Corrective action planner
-   - Documentation references
-   - Side-by-side comparison tools
-   - Measurement overlay tools
-   - Defect highlighting tools
-   - Shift handover reports
-   - Reference image browser
+ - Analysis report generator
+ - Visual comparison tools
+ - Corrective action planner
+ - Documentation references
+ - Side-by-side comparison tools
+ - Measurement overlay tools
+ - Defect highlighting tools
+ - Shift handover reports
+ - Reference image browser
 
 ### Example Scenario: Defect Analysis Process
 
 ```mermaid
 sequenceDiagram
-    participant Q as QC Inspector
-    participant D as DXA
-    participant K as Knowledge Base
-    participant P as Production
+ participant Q as QC Inspector
+ participant D as DXA
+ participant K as Knowledge Base
+ participant P as Production
 
-    Q->>D: Upload defect image
-    D->>D: Preprocess image
-    D->>K: Query defect patterns
-    D->>D: Analyze features
-    D->>D: Match patterns
-    D->>P: Check process parameters
-    D->>Q: Generate report
+ Q->>D: Upload defect image
+ D->>D: Preprocess image
+ D->>K: Query defect patterns
+ D->>D: Analyze features
+ D->>D: Match patterns
+ D->>P: Check process parameters
+ D->>Q: Generate report
 ```
 
 #### Context
 
 - Manufacturing quality control environment
 - DXA has access to:
-  - Defect pattern database
-  - Quality control specifications
-  - Historical defect resolutions
-  - Production process parameters
-  - High-resolution image processing
-  - Production line integration
-  - Multi-site standardization data
+ - Defect pattern database
+ - Quality control specifications
+ - Historical defect resolutions
+ - Production process parameters
+ - High-resolution image processing
+ - Production line integration
+ - Multi-site standardization data
 
 #### Challenge
 
 1. Accurate Analysis
-   - Process high-resolution images
-   - Extract defect features
-   - Match known patterns
-   - Assess severity
-   - Identify root causes
+ - Process high-resolution images
+ - Extract defect features
+ - Match known patterns
+ - Assess severity
+ - Identify root causes
 
 2. Timely Response
-   - Quick image processing
-   - Rapid pattern matching
-   - Fast root cause analysis
-   - Immediate corrective actions
-   - Clear documentation
+ - Quick image processing
+ - Rapid pattern matching
+ - Fast root cause analysis
+ - Immediate corrective actions
+ - Clear documentation
 
 3. Quality Compliance
-   - Meet quality standards
-   - Follow inspection protocols
-   - Maintain documentation
-   - Ensure traceability
-   - Support audits
-   - Comply with security protocols
-   - Support all required product types
+ - Meet quality standards
+ - Follow inspection protocols
+ - Maintain documentation
+ - Ensure traceability
+ - Support audits
+ - Comply with security protocols
+ - Support all required product types
 
 #### DXA Actions
 
 1. **Image Analysis**
-   - Preprocess images
-   - Extract features
-   - Analyze patterns
-   - Measure dimensions
-   - Assess severity
-   - Provide real-time feedback
-   - Enable interactive annotation
+ - Preprocess images
+ - Extract features
+ - Analyze patterns
+ - Measure dimensions
+ - Assess severity
+ - Provide real-time feedback
+ - Enable interactive annotation
 
 2. **Defect Resolution**
-   - Match known patterns
-   - Identify root causes
-   - Generate solutions
-   - Plan corrective actions
-   - Document findings
-   - Support shift handover
-   - Ensure multi-site standardization
+ - Match known patterns
+ - Identify root causes
+ - Generate solutions
+ - Plan corrective actions
+ - Document findings
+ - Support shift handover
+ - Ensure multi-site standardization
 
 ## Solution Architecture
 
 ```mermaid
 graph TB
-    subgraph "Input Layer"
-        I[Images]
-        S[Specifications]
-        P[Process Data]
-        H[Historical Data]
-    end
+ subgraph "Input Layer"
+ I[Images]
+ S[Specifications]
+ P[Process Data]
+ H[Historical Data]
+ end
 
-    subgraph "DXA Core"
-        D[DXA System]
-        D <--> IP[Image Processor]
-        D <--> PA[Pattern Analyzer]
-        D <--> RC[Root Cause Analyzer]
-        D <--> CA[Corrective Action]
-    end
+ subgraph "DXA Core"
+ D[DXA System]
+ D <--> IP[Image Processor]
+ D <--> PA[Pattern Analyzer]
+ D <--> RC[Root Cause Analyzer]
+ D <--> CA[Corrective Action]
+ end
 
-    subgraph "Output Layer"
-        R[Reports]
-        V[Visualizations]
-        A[Actions]
-        D[Documentation]
-    end
+ subgraph "Output Layer"
+ R[Reports]
+ V[Visualizations]
+ A[Actions]
+ D[Documentation]
+ end
 
-    I & S & P & H --> D
-    D --> R & V & A & D
+ I & S & P & H --> D
+ D --> R & V & A & D
 ```
 
 ### 1. Input Components
@@ -284,10 +284,10 @@ graph TB
 - Data retention compliance
 - User interaction satisfaction
 - Image processing performance:
-  - Maximum supported resolution: 4K (3840x2160)
-  - Supported formats: PNG, JPEG, TIFF, BMP
-  - Processing time: <5 seconds for standard images
-  - Storage retention: 30 days for temporary files
+ - Maximum supported resolution: 4K (3840x2160)
+ - Supported formats: PNG, JPEG, TIFF, BMP
+ - Processing time: <5 seconds for standard images
+ - Storage retention: 30 days for temporary files
 - Training effectiveness metrics
 - Multi-site consistency score
 - Shift handover success rate

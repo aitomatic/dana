@@ -1,6 +1,6 @@
 # Dana (Domain-Aware NeuroSymbolic Architecture)
 
-## 🧭 Vision
+## Vision
 
 Dana is a universal program format and execution runtime that enables intelligent agents — human or machine — to reason, act, and collaborate through structured, interpretable programs.
 
@@ -8,14 +8,14 @@ It serves as the missing link between natural language objectives and tool-assis
 
 ---
 
-## 💡 Motivation & Problem
+## Motivation & Problem
 
 Modern AI systems struggle with:
 
-* ✖️ **Prompt chains are fragile** — hard to debug, hard to maintain
-* ✖️ **Plans are opaque** — impossible to inspect or explain mid-flight
-* ✖️ **Tool use is scattered** — logic is buried in code, not declarative programs
-* ✖️ **State is implicit** — no shared memory model or traceable updates
+* Prompt chains are fragile — hard to debug, hard to maintain
+* Plans are opaque — impossible to inspect or explain mid-flight
+* Tool use is scattered — logic is buried in code, not declarative programs
+* State is implicit — no shared memory model or traceable updates
 
 Symbolic systems offer structure but lack adaptability. LLMs offer creativity but lack transparency. Dana bridges the two.
 
@@ -25,11 +25,11 @@ Symbolic systems offer structure but lack adaptability. LLMs offer creativity bu
 
 Dana introduces a lightweight domain-aware program language and runtime. It allows:
 
-* 🧠 **Programs as first-class reasoning artifacts**
-* 📦 **Shared state containers** (`agent`, `world`, `temp`, `execution`)
-* 🧩 **Reusable logic units** via a structured Knowledge Base (KB)
-* 🧾 **Declarative goals**, **imperative execution**
-* 📜 **Bidirectional mapping to/from natural language**
+* Programs as first-class reasoning artifacts
+* Shared state containers (`agent`, `world`, `temp`, `execution`)
+* Reusable logic units via a structured Knowledge Base (KB)
+* Declarative goals, **imperative execution**
+* Bidirectional mapping to/from natural language
 
 Dana can:
 
@@ -40,34 +40,34 @@ Dana can:
 
 ---
 
-## 🔄 Architecture Overview
+## Architecture Overview
 
 ### Emitters and Interpreters of Dana
 
-| Actor             | Type               | Role(s) in Dana            | Description                                                        |
+| Actor | Type | Role(s) in Dana | Description |
 | ----------------- | ------------------ | -------------------------- | ------------------------------------------------------------------ |
-| **User (Human)**  | Person             | 🖋 Emitter                 | Writes Dana directly to define goals, logic, or KB entries         |
-| **GMA**           | Agent              | 🖋 Emitter                 | General planner that emits Dana plans from objectives              |
-| **DXA**           | Domain Agent       | 🖋 Emitter                 | Emits specialized domain logic/workflows, often tied to KB content |
-| **KB Maintainer** | Person or Agent    | 🖋 Emitter                 | Curates reusable Dana programs as structured knowledge             |
-| **Tool Resource** | System Component   | ✅ Interpreter              | Executes atomic tool-backed actions referenced in Dana             |
-| **Local Runtime** | System Component   | ✅ Interpreter              | Executes Dana deterministically except for `reason(...)`           |
-| **Dana_LLM**      | LLM Wrapper Module | 🖋 Emitter + ✅ Interpreter | Emits code and executes reasoning operations                       |
-| **AgentRuntime**  | System Component   | 🔁 Coordinator             | Orchestrates execution and manages delegation across all actors    |
+| **User (Human)** | Person | 🖋 Emitter | Writes Dana directly to define goals, logic, or KB entries |
+| **GMA** | Agent | 🖋 Emitter | General planner that emits Dana plans from objectives |
+| **DXA** | Domain Agent | 🖋 Emitter | Emits specialized domain logic/workflows, often tied to KB content |
+| **KB Maintainer** | Person or Agent | 🖋 Emitter | Curates reusable Dana programs as structured knowledge |
+| **Tool Resource** | System Component | ✅ Interpreter | Executes atomic tool-backed actions referenced in Dana |
+| **Local Runtime** | System Component | ✅ Interpreter | Executes Dana deterministically except for `reason(...)` |
+| **Dana_LLM** | LLM Wrapper Module | 🖋 Emitter + ✅ Interpreter | Emits code and executes reasoning operations |
+| **AgentRuntime** | System Component | 🔁 Coordinator | Orchestrates execution and manages delegation across all actors |
 
 ### State Model
 
 Dana programs operate over a shared `RuntimeContext`, which is composed of four memory scopes (state containers):
 
-| Scope      | Description                                                      |
+| Scope | Description |
 |------------|------------------------------------------------------------------|
-| `local:`   | Local to the current agent/resource/tool/function (default scope)|
-| `private:` | Private to the agent, resource, or tool itself                   |
-| `public:`  | Openly accessible world state (time, weather, etc.)              |
-| `system:`  | System-related mechanical state with controlled access           |
+| `local:` | Local to the current agent/resource/tool/function (default scope)|
+| `private:` | Private to the agent, resource, or tool itself |
+| `public:` | Openly accessible world state (time, weather, etc.) |
+| `system:` | System-related mechanical state with controlled access |
 
-> **Note:** Only these four scopes are valid in the Dana language and enforced by the parser. Any references to other scopes (such as `agent:`, `world:`, `temp:`, `stmem:`, `ltmem:`, `execution:`, or custom scopes) are not supported in the current grammar and will result in a parse error.
+> Note: Only these four scopes are valid in the Dana language and enforced by the parser. Any references to other scopes (such as `agent:`, `world:`, `temp:`, `stmem:`, `ltmem:`, `execution:`, or custom scopes) are not supported in the current grammar and will result in a parse error.
 
 ### Security Design
 
-**The `dana.runtime` 
+**The `dana.runtime`
