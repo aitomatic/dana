@@ -262,6 +262,7 @@ class ControlFlowExecutor(BaseExecutor):
             result = None
         else:
             # Exit without exception
+            context.delete(node.as_var)
             context_manager.__exit__(None, None, None)
             
         return result

@@ -52,6 +52,7 @@ from opendxa.dana.sandbox.parser.ast import (
     TryBlock,
     TupleLiteral,
     TypeHint,
+    UseStatement,
     WhileLoop,
     WithStatement,
 )
@@ -73,6 +74,7 @@ AllowedAssignmentValue = Union[
     SubscriptExpression,
     AttributeAccess,
     FStringExpression,
+    UseStatement,
 ]
 
 
@@ -484,6 +486,57 @@ class StatementTransformer(BaseTransformer):
         message_expr = cast(Expression, message) if message is not None else None
         return AssertStatement(condition=condition_expr, message=message_expr)
 
+    def use_stmt(self, items):
+        """Transform a use_stmt rule into a UseStatement node.
+        
+        Grammar: use_stmt: USE "(" [mixed_arguments] ")"
+        
+        The grammar passes:
+        - items[0] = USE token (ignored)
+        - items[1] = result from mixed_arguments (None if no arguments, or list of arguments)
+        """
+        from lark import Tree
+        
+        # Initialize collections for arguments
+        args = []        # List[Expression] for positional arguments
+        kwargs = {}      # Dict[str, Expression] for keyword arguments
+        
+        # Handle the case where mixed_arguments is present
+        # items[0] is the USE token, items[1] is the mixed_arguments result
+        if len(items) > 1 and items[1] is not None:
+            mixed_args_result = items[1]
+            
+            # Process mixed_arguments following with_stmt pattern
+            seen_keyword_arg = False  # Track if we've seen any keyword arguments
+            
+            if isinstance(mixed_args_result, list):
+                # Process each argument
+                for arg_item in mixed_args_result:
+                    if isinstance(arg_item, Tree) and arg_item.data == 'kw_arg':
+                        # Keyword argument: NAME "=" expr
+                        seen_keyword_arg = True
+                        name = arg_item.children[0].value
+                        value = arg_item.children[1]  # Value is already processed
+                        kwargs[name] = value
+                    else:
+                        # Positional argument: expr
+                        if seen_keyword_arg:
+                            # Error: positional argument after keyword argument
+                            raise SyntaxError("Positional argument follows keyword argument in use statement")
+                        args.append(cast(Expression, arg_item))
+            else:
+                # Single argument
+                if isinstance(mixed_args_result, Tree) and mixed_args_result.data == 'kw_arg':
+                    # Keyword argument: NAME "=" expr
+                    name = mixed_args_result.children[0].value
+                    value = self.expression_transformer.expression([mixed_args_result.children[1]])
+                    kwargs[name] = value
+                else:
+                    # Positional argument: expr
+                    args.append(cast(Expression, mixed_args_result))
+        
+        return UseStatement(args=args, kwargs=kwargs)
+
     # === Import Statements ===
     def import_stmt(self, items):
         """Transform an import statement rule into an ImportStatement or ImportFromStatement node."""
@@ -794,6 +847,42 @@ class StatementTransformer(BaseTransformer):
 
         return Assignment(target=target, value=value_expr)
 
+    def function_call_assignment(self, items):
+        """Transform a function_call_assignment rule into an Assignment node with object-returning statement."""
+        # Grammar: function_call_assignment: target "=" return_object_stmt
+        target_tree = items[0]
+        return_object_tree = items[1]
+
+        # Get target identifier
+        target = VariableTransformer().variable([target_tree])
+        if not isinstance(target, Identifier):
+            raise TypeError(f"Assignment target must be Identifier, got {type(target)}")
+
+        # Transform the return_object_stmt (which should be a UseStatement)
+        # The return_object_tree should already be transformed by return_object_stmt method
+        if isinstance(return_object_tree, UseStatement):
+            if return_object_tree.target is None:
+                # If the target is not set, set it to the target of the assignment
+                return_object_tree.target = target
+            value_expr = cast(AllowedAssignmentValue, return_object_tree)
+        else:
+            # Fallback transformation if needed
+            value_expr = cast(AllowedAssignmentValue, return_object_tree)
+
+        return Assignment(target=target, value=value_expr)
+
+    def return_object_stmt(self, items):
+        """Transform a return_object_stmt rule into the appropriate object-returning statement."""
+        # Grammar: return_object_stmt: use_stmt
+        # items[0] should be the result of use_stmt transformation
+        
+        # The use_stmt should already be transformed into a UseStatement by use_stmt method
+        if len(items) > 0 and items[0] is not None:
+            return items[0]
+        
+        # Fallback - this shouldn't happen in normal cases
+        raise ValueError("return_object_stmt received empty or None items")
+
     def typed_parameter(self, items):
         """Transform a typed parameter rule into a Parameter object."""
 
@@ -847,7 +936,7 @@ class StatementTransformer(BaseTransformer):
                         # Keyword argument: NAME "=" expr
                         seen_keyword_arg = True
                         name = arg_item.children[0].value
-                        value = self.expression_transformer.expression([arg_item.children[1]])
+                        value = arg_item.children[1]  # Value is already processed
                         kwargs[name] = value
                     else:
                         # Positional argument: expr

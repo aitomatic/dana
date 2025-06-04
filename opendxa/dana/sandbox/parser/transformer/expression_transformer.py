@@ -38,6 +38,7 @@ from opendxa.dana.sandbox.parser.ast import (
     SubscriptExpression,
     TupleLiteral,
     UnaryExpression,
+    ObjectFunctionCall,
 )
 from opendxa.dana.sandbox.parser.transformer.base_transformer import BaseTransformer
 
@@ -122,6 +123,7 @@ class ExpressionTransformer(BaseTransformer):
                 Identifier,
                 BinaryExpression,
                 FunctionCall,
+                ObjectFunctionCall,
                 TupleLiteral,
                 DictLiteral,
                 ListLiteral,
@@ -391,21 +393,18 @@ class ExpressionTransformer(BaseTransformer):
     def atom(self, items):
         if not items:
             return None
-        # Handle function call on Identifier (including dotted)
-        if len(items) >= 2:
-            base = self.unwrap_single_child_tree(items[0])
-            trailer = items[1]
-            from lark import Tree
-
-            from opendxa.dana.sandbox.parser.ast import FunctionCall, Identifier
-
-            if isinstance(base, Identifier) and isinstance(trailer, Tree) and getattr(trailer, "data", None) == "arguments":
-                name = base.name
-                args = trailer.children if hasattr(trailer, "children") else []
-                if not isinstance(args, dict):
-                    args = {"__positional": args}
-                return FunctionCall(name=name, args=args, location=getattr(base, "location", None))
-        item = self.unwrap_single_child_tree(items[0])
+        
+        # Get the base atom (first item)
+        base = self.unwrap_single_child_tree(items[0])
+        
+        # If there are trailers, process them using the trailer method
+        if len(items) > 1:
+            # Create a list with base + trailers and delegate to trailer method
+            trailer_items = [base] + items[1:]
+            return self.trailer(trailer_items)
+        
+        # No trailers, just process the base atom
+        item = base
         from lark import Token, Tree
 
         # Handle Token
@@ -549,15 +548,117 @@ class ExpressionTransformer(BaseTransformer):
     def trailer(self, items):
         """
         Handles function calls, attribute access, and indexing after an atom.
-        If the base is an Identifier (including dotted), and the trailer is a function call, produce a FunctionCall node.
+        
+        This method is responsible for detecting object method calls and creating the
+        appropriate AST nodes. It distinguishes between:
+        
+        1. Object method calls (obj.method()) -> ObjectFunctionCall
+        2. Regular function calls (func()) -> FunctionCall  
+        3. Attribute access (obj.attr) -> Identifier with dotted name
+        4. Indexing operations (obj[key]) -> SubscriptExpression
+        
+        Object Method Call Detection:
+        ----------------------------
+        The method uses two strategies to detect object method calls:
+        
+        Strategy 1: Dotted identifier analysis
+        - If base is an Identifier with dots (e.g., "local.obj.method")
+        - And trailer is function call arguments
+        - Split the dotted name into object parts and method name
+        - Create ObjectFunctionCall with proper object and method separation
+        
+        Strategy 2: Sequential trailer analysis  
+        - Process trailers in sequence (e.g., obj -> .method -> ())
+        - When a function call follows attribute access
+        - Create ObjectFunctionCall with the base as object and previous trailer as method
+        
+        Examples:
+        ---------
+        - `websearch.list_tools()` -> ObjectFunctionCall(object=Identifier("local.websearch"), method_name="list_tools")
+        - `obj.add(10)` -> ObjectFunctionCall(object=Identifier("local.obj"), method_name="add", args={"__positional": [10]})
+        - `func()` -> FunctionCall(name="func")
+        - `obj.attr` -> Identifier(name="local.obj.attr")
+        
+        Args:
+            items: List containing base expression and trailer elements from parse tree
+            
+        Returns:
+            AST node (ObjectFunctionCall, FunctionCall, Identifier, or SubscriptExpression)
         """
+        from opendxa.dana.sandbox.parser.ast import Identifier, ObjectFunctionCall, FunctionCall, SubscriptExpression
+        
         base = items[0]
         trailers = items[1:]
-        for t in trailers:
+        
+        # Special case: if we have a dotted identifier followed by function call arguments,
+        # this might be an object method call that was parsed as a dotted variable
+        if (len(trailers) == 1 and 
+            isinstance(base, Identifier) and "." in base.name):
+            
+            # Check if the trailer is either arguments or None (empty arguments)
+            trailer = trailers[0]
+            is_function_call = (
+                (hasattr(trailer, "data") and trailer.data == "arguments") or
+                trailer is None  # Empty arguments case: obj.method()
+            )
+            
+            if is_function_call:
+                # Check if this looks like an object method call
+                # Split the dotted name to see if we can separate object from method
+                name_parts = base.name.split(".")
+                if len(name_parts) >= 3:  # e.g., "local.obj.method"
+                    # Extract scope, object parts, and method name
+                    scope = name_parts[0]  # "local"
+                    method_name = name_parts[-1]  # "method"
+                    object_parts = name_parts[1:-1]  # ["obj"] or ["obj", "subobj"]
+                    
+                    # Create object identifier
+                    object_name = f"{scope}.{'.'.join(object_parts)}"
+                    object_expr = Identifier(name=object_name, location=getattr(base, "location", None))
+                    
+                    # Create ObjectFunctionCall
+                    if trailer is not None and hasattr(trailer, "children"):
+                        args = trailer.children
+                    else:
+                        args = []  # Empty arguments
+                    
+                    if not isinstance(args, dict):
+                        args = {"__positional": args}
+                    
+                    return ObjectFunctionCall(
+                        object=object_expr,
+                        method_name=method_name,
+                        args=args,
+                        location=getattr(base, "location", None)
+                    )
+        
+        # Original logic for other cases
+        for i, t in enumerate(trailers):
             # Function call: ( ... )
             if hasattr(t, "data") and t.data == "arguments":
-                from opendxa.dana.sandbox.parser.ast import FunctionCall
-
+                # Check if this function call follows an attribute access
+                if i > 0:
+                    # Look at the previous trailer to see if it was attribute access
+                    prev_trailer = trailers[i - 1]
+                    if hasattr(prev_trailer, "type") and prev_trailer.type == "NAME":
+                        # We have obj.method() - create ObjectFunctionCall
+                        
+                        # The base object is everything except the last attribute
+                        object_expr = base
+                        method_name = prev_trailer.value
+                        
+                        args = t.children if hasattr(t, "children") else []
+                        if not isinstance(args, dict):
+                            args = {"__positional": args}
+                        
+                        return ObjectFunctionCall(
+                            object=object_expr, 
+                            method_name=method_name, 
+                            args=args, 
+                            location=getattr(base, "location", None)
+                        )
+                
+                # Regular function call on base
                 name = getattr(base, "name", None)
                 if not isinstance(name, str):
                     name = str(base)
@@ -567,8 +668,6 @@ class ExpressionTransformer(BaseTransformer):
                 return FunctionCall(name=name, args=args, location=getattr(base, "location", None))
             # Attribute access: .NAME
             elif hasattr(t, "type") and t.type == "NAME":
-                from opendxa.dana.sandbox.parser.ast import Identifier
-
                 name = getattr(base, "name", None)
                 if not isinstance(name, str):
                     name = str(base)
@@ -576,8 +675,6 @@ class ExpressionTransformer(BaseTransformer):
                 base = Identifier(name=name, location=getattr(base, "location", None))
             # Indexing: [ ... ]
             elif hasattr(t, "data") and t.data == "expr":
-                from opendxa.dana.sandbox.parser.ast import SubscriptExpression
-
                 base = SubscriptExpression(
                     object=base, index=t.children[0] if hasattr(t, "children") else t, location=getattr(base, "location", None)
                 )

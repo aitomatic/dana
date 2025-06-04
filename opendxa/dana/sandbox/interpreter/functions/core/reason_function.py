@@ -176,18 +176,10 @@ def _reason_original_implementation(
 
         # Get resources from context and filter by included_resources
         try:
-            resource_names = context.list_resources() if context else []
-
-            included_resources = options.get("resources", None)
-            if included_resources is not None:
-                included_resources = [resource.name if isinstance(resource, BaseResource) else resource for resource in included_resources]
-            
-            resource_names = filter(lambda name: (included_resources is None or name in included_resources), resource_names)
+            resources = context.get_resources(options.get("resources", None)) if context is not None else {}
         except Exception as e:
             logger.warning(f"Error getting resources from context: {e}")
-            resource_names = []
-
-        resources = {name : context.get_resource(name) for name in resource_names}
+            resources = {}
 
         # Set query strategy and max iterations to iterative and 5 respectively to ultilize tools calls
         previous_query_strategy = llm_resource._query_strategy
