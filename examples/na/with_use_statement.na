@@ -3,8 +3,11 @@ log_level("DEBUG")
 # NEED TO SUPPORT REPL PROPERLY
 
 with use("mcp", url="http://localhost:8880/websearch") as websearch:
+    print(websearch.list_openai_functions())
     answer : str = reason("Who is the CEO of Aitomatic", {"enable_ipv" : True})
 print(answer)
+
+# print(websearch.list_openai_functions()) # THIS SHOULD FAILED
 
 with use("mcp", url="http://localhost:8880/sensors") as sensor:
      answer : str = reason("List me all the sensors", {"enable_ipv" : False})

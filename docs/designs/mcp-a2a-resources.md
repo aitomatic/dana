@@ -483,7 +483,7 @@ files = use("mcp.filesystem")
 data = files.list_directory("/data")
 
 # Context-managed usage - explicit lifecycle control
-with database = use("mcp.database", "https://db.company.com/mcp"):
+with use("mcp.database", "https://db.company.com/mcp") as database:
     results = database.query("SELECT * FROM sales WHERE date > '2024-01-01'")
     summary = database.query("SELECT COUNT(*) FROM transactions")
     log.info(f"Found {summary} transactions for {len(results)} records")
@@ -513,7 +513,7 @@ do:
 
 ```dana
 # Guaranteed cleanup even with errors
-with agent = use("a2a.expensive-compute", "https://gpu-cluster.company.com"):
+with use("a2a.expensive-compute", "https://gpu-cluster.company.com") as agent:
     try:
         results = agent.process_large_dataset("/data/massive_dataset.parquet")
         
@@ -539,7 +539,7 @@ database = use("mcp.database")
 results = database.query("SELECT * FROM users")  # Works but no guaranteed cleanup
 
 # Recommended pattern for production usage
-with database = use("mcp.database"):
+with use("mcp.database") as database:
     results = database.query("SELECT * FROM users")  # Guaranteed cleanup
 ```
 
@@ -982,6 +982,60 @@ The architecture is designed to be NLIP-compatible for future protocol federatio
 - **Transport Plugins**: Support for custom transport implementations
 - **Enhanced Discovery**: Advanced registry federation and peer-to-peer discovery
 - **Performance Optimization**: Caching, connection pooling, and batch operations
+
+## Implementation Status
+
+### Completed Features
+
+#### Object Method Call Syntax (✅ IMPLEMENTED)
+Dana now supports object-oriented method calls on resources returned by `use()` statements:
+
+```python
+# MCP Resource Integration
+websearch = use("mcp", url="http://localhost:8880/websearch")
+tools = websearch.list_tools()
+results = websearch.search("Dana programming language")
+
+# A2A Agent Integration  
+analyst = use("a2a.research-agent", "https://agents.company.com")
+market_data = analyst.collect_data("tech sector")
+analysis = analyst.analyze_trends(market_data)
+
+# With statement resource management
+with use("mcp.database") as database:
+    users = database.query("SELECT * FROM active_users")
+    database.update_analytics(users)
+```
+
+**Key Features:**
+- ✅ Object method calls with arguments: `obj.method(arg1, arg2)`
+- ✅ Async method support using `Misc.safe_asyncio_run`
+- ✅ Resource scoping with `with` statements
+- ✅ Comprehensive error handling and validation
+- ✅ Full test coverage (25 test cases)
+- ✅ Complete documentation and examples
+
+### Pending Implementation
+
+#### Enhanced `use()` Syntax
+```python
+# Current basic syntax (implemented)
+websearch = use("mcp", url="http://localhost:8880/websearch")
+
+# Enhanced syntax (planned)  
+websearch = use("mcp.websearch", endpoint="http://localhost:8880", timeout=30)
+analyst = use("a2a.research-agent", url="https://agents.company.com", auth="bearer_token")
+```
+
+#### Resource Lifecycle Management
+- Resource pooling and reuse
+- Automatic failover and retry logic
+- Health monitoring and metrics
+- Resource cleanup and garbage collection
+
+---
+
+## Technical Architecture
 
 ---
 

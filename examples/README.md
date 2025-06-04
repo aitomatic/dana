@@ -142,6 +142,79 @@ When adding new examples:
 5. Add cross-references to related examples
 6. Update this README with new example information
 
+## 📁 Available Examples
+
+Each example includes:
+- **Runnable Dana script** (`.dana` file)
+- **Documentation** explaining the use case
+- **Sample data** when applicable
+- **Expected outputs** for verification
+
+## MCP Integration Examples (NEW)
+
+### `mcp-websearch/`
+**Object Method Calls with MCP WebSearch**
+```python
+# Connect to MCP WebSearch service
+websearch = use("mcp", url="http://localhost:8880/websearch")
+
+# Call methods on the websearch object
+tools = websearch.list_tools()
+log.info(f"Available tools: {tools}")
+
+# Perform searches with method calls
+search_results = websearch.search("Dana programming language")
+if len(search_results) > 0:
+    log.info(f"Found {len(search_results)} results")
+    
+    # Process results
+    for result in search_results:
+        analysis = reason("Summarize this search result", context=result)
+        log.info(f"Summary: {analysis}")
+```
+
+### `mcp-database/`
+**Database Operations with Object Methods**
+```python
+# Scoped database connection
+with use("mcp.database", "https://db.company.com") as database:
+    # Call database methods
+    users = database.query("SELECT * FROM users WHERE active = true")
+    count = database.count_records("users")
+    
+    log.info(f"Processing {count} active users")
+    
+    # Process users and update
+    for user in users:
+        activity = database.get_user_activity(user.id)
+        analysis = reason("Analyze user engagement", context=activity)
+        
+        if "low_engagement" in analysis:
+            database.update_user_status(user.id, "needs_attention")
+```
+
+### `a2a-agents/`  
+**Agent-to-Agent Communication**
+```python
+# Connect to specialized agents
+research_agent = use("a2a.research-agent", "https://agents.company.com")
+planning_agent = use("a2a.workflow-coordinator")
+
+# Async method calls handled automatically
+market_data = research_agent.collect_data("technology sector")
+analysis = research_agent.analyze_trends(market_data)
+
+# Pass results between agents
+workflow = planning_agent.create_action_plan(analysis)
+execution_status = planning_agent.execute_workflow(workflow)
+
+log.info(f"Workflow status: {execution_status}")
+```
+
+---
+
+## Traditional Dana Examples
+
 ---
 <p align="center">
 Copyright © 2024 Aitomatic, Inc. Licensed under the [MIT License](../LICENSE.md).
