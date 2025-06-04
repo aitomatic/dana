@@ -6,7 +6,7 @@
 
 ## Enough of brittle, black-box AI.
 
-> *You've spent days wiring up LLM calls, passing context, and debugging fragile automations. The code works—until it doesn't. A new document, a new edge case, and suddenly you're back to square one. Sound familiar?*
+> *You've spent days wiring up LLM calls, passing context, and debugging fragile prompts and automations. The code works—until it doesn't. A new document, a new edge case, and suddenly you're back to square one. Sound familiar?*
 
 For too long, building with AI has meant wrestling with hidden state, endless configuration, and code that's impossible to trust or explain. We're tired of debugging, of losing context, of watching our automations break for reasons we can't see. We've had enough of magic we can't inspect, and complexity we can't control.
 

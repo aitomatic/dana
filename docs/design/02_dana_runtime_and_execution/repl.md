@@ -1,4 +1,4 @@
-| [← Sandbox](./sandbox.md) | [IPV Architecture →](./ipv_architecture.md) |
+| [← Sandbox](./sandbox.md) | [PAV Execution Model →](./pav_execution_model.md) |
 |---|---|
 
 # Dana REPL (Read-Eval-Print Loop)

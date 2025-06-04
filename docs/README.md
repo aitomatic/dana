@@ -16,7 +16,7 @@
 - Real-world recipes for chatbots, document processing, and workflows
 - Troubleshooting guides and error references
 
-**Start here:** [Getting Started](for-engineers/README.md#🚦-getting-started-paths)
+**Start here:** [Getting Started](for-engineers/README.md#getting-started-paths)
 
 ---
 
@@ -169,7 +169,7 @@ Auditable Results & Learning Integration
 ## 🎯 Quick Navigation by Use Case
 
 ### 🤖 Building AI Agents
-- **New to AI development**: [Engineers Quick Start](for-engineers/README.md#quick-start)
+- **New to AI development**: [Engineers Quick Start](for-engineers/README.md#getting-started-paths)
 - **Experienced with LLMs**: [Migration Guide](for-engineers/setup/migration-guide.md)
 - **Need specific examples**: [Recipe Collection](for-engineers/recipes/README.md)
 - **Dana language reference**: [Syntax Guide](for-engineers/reference/dana-syntax.md)
@@ -184,7 +184,7 @@ Auditable Results & Learning Integration
 - **Theoretical Foundations**: [Dana Manifesto](for-researchers/manifesto/vision.md)
 - **Neurosymbolic Computing**: [Research Opportunities](for-researchers/README.md#research-opportunities)
 - **Academic Collaboration**: [Partnership Programs](for-researchers/README.md#academic-collaboration)
-- **Original Documentation**: [Archive](archive/README.md)
+- **Original Documentation**: [Archive](https://github.com/aitomatic/opendxa/tree/main/docs/.archive)
 
 ### 🛠️ Platform Extension
 - **Custom Capabilities**: [Extension Development](for-contributors/extending/extension-development.md)
@@ -216,7 +216,7 @@ opendxa demo chatbot
 [Try the demo →](for-engineers/README.md#path-1-quick-demo-5-minutes)
 
 ### 📚 Learn the Concepts
-1. [What makes OpenDXA different](for-engineers/README.md#-what-makes-opendxa-different)
+1. [What makes OpenDXA different](for-engineers/README.md#what-makes-opendxa-different)
 2. [Dana language basics](for-engineers/reference/dana-syntax.md)
 3. [Agent architecture overview](for-contributors/architecture/system-design.md)
 4. [DANKE knowledge engine](for-researchers/research/README.md)

@@ -1,4 +1,4 @@
-| [← IPV Architecture](./ipv_architecture.md) | [Concurrency Model →](./concurrency_model.md) |
+| [← PAV Execution Model](./pav_execution_model.md) | [Concurrency Model →](./concurrency_model.md) |
 |---|---|
 
 # Type System and Casting

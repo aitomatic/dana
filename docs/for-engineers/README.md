@@ -25,8 +25,8 @@ Quick lookup for syntax, functions, and commands.
 - [Troubleshooting](troubleshooting/README.md) - Common problems and solutions
 
 ## 🎯 By Experience Level
-- **New to OpenDXA**: Start with [Getting Started](#🚦-getting-started-paths)
-- **Experienced Developer**: Jump to [Common Tasks](#📋-common-tasks)
+- **New to OpenDXA**: Start with [Getting Started](#getting-started-paths)
+- **Experienced Developer**: Jump to [Common Tasks](#common-tasks)
 - **Debugging Issue**: Check [Troubleshooting](troubleshooting/README.md)
 
 ## 💡 What Makes OpenDXA Different
@@ -122,7 +122,7 @@ for-engineers/
 
 ---
 
-*Ready to build? Start with [Quick Start](#quick-start) or jump to [Common Tasks](#common-tasks)* 
+*Ready to build? Start with [Getting Started](#getting-started-paths) or jump to [Common Tasks](#common-tasks)* 
 
 
 <p align="center">

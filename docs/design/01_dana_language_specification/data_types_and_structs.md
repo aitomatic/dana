@@ -214,7 +214,7 @@ The specifics of auto-coercion, especially for LLM responses (e.g., "conservativ
 
 ## 6. Caller-Informed Desired Type (`__dana_desired_type`)
 
-While detailed in `functions_and_polymorphism.md` and `ipv_architecture.md`, it's relevant to note here that functions (especially `reason()` and other IPV-enabled functions) can be informed of an expected return type or structure by the caller. This is achieved via a special `system:__dana_desired_type` variable passed in the `SandboxContext`.
+While detailed in `functions_and_polymorphism.md` and `pav_execution_model.md`, it's relevant to note here that functions (especially `reason()` and other IPV-enabled functions) can be informed of an expected return type or structure by the caller. This is achieved via a special `system:__dana_desired_type` variable passed in the `SandboxContext`.
 
 This mechanism allows functions to attempt to format their output according to the caller's needs, further enhancing the synergy between dynamic typing and context-aware execution. For example, `reason("Extract user details", __dana_desired_type=UserProfile)` might guide the LLM to return a structure compatible with the `UserProfile` struct.
 
