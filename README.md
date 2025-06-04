@@ -1,29 +1,35 @@
 # OpenDXA - Domain-Expert Agent Framework
 
 > OpenDXA is a comprehensive framework for easily coding and deploying domain-expert multi-agent systems.
-
 > Powered by Dana, a Pythonic agentic programming language and secure sandboxed runtime.
 ---
 ## TL;DR - Get Running in 30 Seconds! 🚀
 ### One-Command Setup
 ```bash
-git clone https://github.com/aitomatic/opendxa.git && cd opendxa && make
+% git clone https://github.com/aitomatic/opendxa.git
+% cd opendxa
+% make
 ```
 This installs everything and creates your `.env` file. Then just:
 1. Add your API key to `.env` 
 2. Run `bin/dana` to start the Dana REPL (interactive shell)
 
-*First time using uv? See [Project Maintenance with uv](#project-maintenance-with-uv) for essential commands.*
-
 ---
 
 ### Manual Setup (if you prefer)
-1. Install [uv](https://astral.sh/uv/): `curl -LsSf https://astral.sh/uv/install.sh | sh`
-2. Setup: `git clone https://github.com/aitomatic/opendxa.git && cd opendxa && uv sync`
-3. Configure: `cp .env.example .env` (then add your API keys)
-4. Run: `bin/dana` to start the Dana REPL
 
-*New to uv? Check out [Project Maintenance with uv](#project-maintenance-with-uv) for helpful commands.*
+```bash
+% curl -LsSf https://astral.sh/uv/install.sh | sh # Install uv
+% git clone https://github.com/aitomatic/opendxa.git && cd opendxa && uv sync # Setup OpenDXA
+% cp .env.example .env # Configure your API keys
+% bin/dana # Start the Dana REPL
+```
+
+- First time using uv? See [Project Maintenance with uv](#project-maintenance-with-uv) for essential commands.
+
+---
+
+- View the full OpenDXA with Dana documentation at: [https://aitomatic.github.io/opendxa/](https://aitomatic.github.io/opendxa/)
 
 ---
 

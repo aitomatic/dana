@@ -1,7 +1,5 @@
 # OpenDXA Documentation
 
-*Choose your path to get started with OpenDXA - the a comprehensive framework for easily coding and deploying domain-expert multi-agent systems.*
-
 *Powered by Dana, a Pythonic agentic programming language and secure sandboxed runtime.*
 
 ## Choose Your Path
