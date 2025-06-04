@@ -1,12 +1,5 @@
 <!-- markdownlint-disable MD041 -->
 <!-- markdownlint-disable MD033 -->
-<p align="center">
-  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
-</p>
-
-[Project Overview](../../README.md)
-
-
 # Utility Fault Diagnosis Scenario
 
 This scenario describes how a Domain Expert Agent (DXA) performs root-cause analysis of alarms in an electrical grid base station, supporting grid operators in fault diagnosis and resolution.
@@ -14,7 +7,7 @@ This scenario describes how a Domain Expert Agent (DXA) performs root-cause anal
 ## Business/Technical Problem Statement
 
 ### Persona
-**David Wilson, Grid Operator**
+David Wilson, Grid Operator
 - 15+ years experience in electrical grid operations
 - Responsible for monitoring and maintaining grid stability
 - Must ensure continuous power supply while preventing system failures
@@ -42,71 +35,71 @@ The Domain Expert Agent (DXA) assists grid operators in diagnosing and resolving
 ### Grid Station Components
 
 1. **Alarm System**
-   - Real-time monitoring
-   - Alarm classification
-   - Severity assessment
-   - Historical tracking
+ - Real-time monitoring
+ - Alarm classification
+ - Severity assessment
+ - Historical tracking
 
 2. **Knowledge Base**
-   - Grid configuration data
-   - Equipment blueprints
-   - Control system documentation
-   - Historical alarm patterns
+ - Grid configuration data
+ - Equipment blueprints
+ - Control system documentation
+ - Historical alarm patterns
 
 ### System Architecture
 
 ```mermaid
 graph TB
-    subgraph "Control Room"
-        A[Alarm System] --> D[DXA]
-        O[Operator] --> D
-    end
+ subgraph "Control Room"
+ A[Alarm System] --> D[DXA]
+ O[Operator] --> D
+ end
 
-    subgraph "DXA System"
-        D <--> KB[Knowledge Base]
-        D <--> BP[Blueprint Parser]
-        D <--> RT[Real-time Data]
-        D <--> RCA[Root Cause Analyzer]
-    end
+ subgraph "DXA System"
+ D <--> KB[Knowledge Base]
+ D <--> BP[Blueprint Parser]
+ D <--> RT[Real-time Data]
+ D <--> RCA[Root Cause Analyzer]
+ end
 
-    subgraph "Knowledge Sources"
-        KB --> GC[Grid Configuration]
-        KB --> TD[Topology Data]
-        KB --> HP[Historical Patterns]
-        KB --> EQ[Equipment Specs]
-    end
+ subgraph "Knowledge Sources"
+ KB --> GC[Grid Configuration]
+ KB --> TD[Topology Data]
+ KB --> HP[Historical Patterns]
+ KB --> EQ[Equipment Specs]
+ end
 ```
 
 ### Root Cause Analysis Process
 
 ```mermaid
 sequenceDiagram
-    participant A as Alarm System
-    participant D as DXA
-    participant K as Knowledge Base
-    participant B as Blueprint Analysis
-    participant H as Human Expert
+ participant A as Alarm System
+ participant D as DXA
+ participant K as Knowledge Base
+ participant B as Blueprint Analysis
+ participant H as Human Expert
 
-    A->>D: Alarm triggered
-    activate D
-    D->>K: Query grid configuration
-    D->>B: Scan relevant blueprints
-    par Analysis
-        D->>K: Check historical patterns
-        D->>A: Query related alarms
-    end
+ A->>D: Alarm triggered
+ activate D
+ D->>K: Query grid configuration
+ D->>B: Scan relevant blueprints
+ par Analysis
+ D->>K: Check historical patterns
+ D->>A: Query related alarms
+ end
 
-    loop Deep Analysis
-        D->>D: Cross-reference data
-        D->>D: Apply diagnostic rules
-        alt Needs Human Input
-            D->>H: Request expert judgment
-            H-->>D: Provide insight
-        end
-    end
+ loop Deep Analysis
+ D->>D: Cross-reference data
+ D->>D: Apply diagnostic rules
+ alt Needs Human Input
+ D->>H: Request expert judgment
+ H-->>D: Provide insight
+ end
+ end
 
-    D-->>O: Present root cause
-    deactivate D
+ D-->>O: Present root cause
+ deactivate D
 ```
 
 ### Success Criteria
@@ -142,10 +135,10 @@ sequenceDiagram
 
 - Grid control room view showing base station monitoring interface
 - Split screen displaying:
-  - Alarm notification system
-  - DXA analysis interface
-  - Grid topology visualization
-  - Blueprint analysis window
+ - Alarm notification system
+ - DXA analysis interface
+ - Grid topology visualization
+ - Blueprint analysis window
 
 ### Demo Flow
 
@@ -154,17 +147,17 @@ sequenceDiagram
 - Show normal grid monitoring state
 - Trigger alarm from critical subsystem
 - DXA immediately begins data collection:
-  - Real-time sensor readings
-  - Related alarms/events
-  - Equipment state
+ - Real-time sensor readings
+ - Related alarms/events
+ - Equipment state
 
 #### 0:30-1:30 - Root Cause Analysis
 
 - DXA performs multi-source analysis:
-  - Parse relevant blueprints
-  - Query grid configuration
-  - Analyze historical patterns
-  - Cross-reference documentation
+ - Parse relevant blueprints
+ - Query grid configuration
+ - Analyze historical patterns
+ - Cross-reference documentation
 - Show real-time reasoning process
 - Display confidence levels for potential causes
 

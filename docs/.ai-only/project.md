@@ -1,9 +1,3 @@
-<p align="center">
-  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
-</p>
-
-[Project Overview](../../README.md)
-
 # OpenDXA Project Structure
 
 This document provides an overview of the OpenDXA (Domain-eXpert Agent) Framework project structure, including key directories and configuration files.
@@ -78,21 +72,16 @@ tests/                          # Test suite
 ### Key Configuration Files
 
 #### `pyproject.toml`
-Main project configuration file containing:
-- Project metadata (name, version, authors)
-- Dependencies and optional dependencies
-- Build system configuration
-- Tool configurations (black, ruff, pylint, etc.)
+
+Defines project dependencies and development tools using modern Python packaging standards.
 
 #### `SOURCE_ME.sh`
-Environment setup script that:
-- Creates and activates a virtual environment
-- Installs the OpenDXA package in development mode
-- Sets up pre-commit hooks
-- Installs dependencies from requirements.txt
 
-#### `requirements.txt`
-Lists all project dependencies for easy installation.
+Sets up the environment by installing dependencies and configuring paths.
+
+- Uses uv sync to install dependencies from pyproject.toml
+- Sets up the Python environment
+- Configures PATH for Dana executables
 
 #### `.env.example` (if present)
 Example environment variable configuration for local development.
@@ -103,12 +92,12 @@ OpenDXA is a comprehensive framework for building intelligent multi-agent system
 
 1. **Dana (Domain-Aware NeuroSymbolic Architecture)**: An imperative programming language and execution runtime for agent reasoning. Key components include:
    - **Parser**: Converts Dana source code into an Abstract Syntax Tree (AST) using a formal grammar
-   - **Interpreter**: Executes Dana programs by processing the AST
+   - **Interpreter**: Executes Dana programs by processing the AST with IPV (Infer-Process-Validate) optimization for reasoning
    - **Sandbox**: Provides a safe execution environment with controlled state management
    - **Transcoder**: Translates between natural language and Dana code
    - **REPL**: Interactive environment for executing Dana code
 
-2. **DANKE (Domain-Aware NeuroSymbolic Knowledge Engine)**: A knowledge management system implementing the CORRAL methodology (Collect, Organize, Retrieve, Reason, Act, Learn).
+2. **DANKE (Domain-Aware NeuroSymbolic Knowledge Engine)** *(Planned)*: A knowledge management system that will implement the CORRAL methodology (Collect, Organize, Retrieve, Reason, Act, Learn). Currently in early development stages.
 
 The framework enables building domain-expert agents with clear, auditable reasoning steps and the ability to apply specialized knowledge to solve complex tasks across different domains. 
 

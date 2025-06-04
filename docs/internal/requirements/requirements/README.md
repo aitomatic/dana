@@ -1,12 +1,5 @@
 <!-- markdownlint-disable MD041 -->
 <!-- markdownlint-disable MD033 -->
-<p align="center">
-  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
-</p>
-
-[Project Overview](../../README.md)
-
-
 # Domain Expert Agent (OpenDXA) Requirements Documentation
 
 This directory contains requirements specifications for different OpenDXA deployment scenarios.
@@ -16,72 +9,72 @@ This directory contains requirements specifications for different OpenDXA deploy
 ### Manufacturing & Process Control
 
 - [Semiconductor Manufacturing](FAB-FAULT-DIAGNOSIS.md)
-  - Fab equipment fault diagnosis
-  - RIE chamber monitoring
-  - SPC/FDC data analysis
-  - Process parameter optimization
+ - Fab equipment fault diagnosis
+ - RIE chamber monitoring
+ - SPC/FDC data analysis
+ - Process parameter optimization
 
 - [Batch Process Automation](BATCH-PROCESS-AUTOMATION.md)
-  - Specialty chemicals manufacturing
-  - Process optimization
-  - Quality control
-  - Resource allocation
+ - Specialty chemicals manufacturing
+ - Process optimization
+ - Quality control
+ - Resource allocation
 
 - [Visual Defect Analysis](VISUAL-DEFECT-ANALYSIS.md)
-  - Product quality inspection
-  - Defect classification
-  - Root cause analysis
-  - Quality assurance
+ - Product quality inspection
+ - Defect classification
+ - Root cause analysis
+ - Quality assurance
 
 ### Semiconductor
 
 - [FAB Log Analysis](FAB-LOG-ANALYSIS.md)
-  - System log analysis
-  - Error detection
-  - Parameter validation
-  - Troubleshooting support
+ - System log analysis
+ - Error detection
+ - Parameter validation
+ - Troubleshooting support
 
 - [Fabless FAE Support](FABLESS-FAE-SUPPORT.md)
-  - Design implementation guidance
-  - Technical consultation
-  - Parameter validation
-  - Documentation support
+ - Design implementation guidance
+ - Technical consultation
+ - Parameter validation
+ - Documentation support
 
 - [Fabless Customer Support](FABLESS-CUSTOMER-SUPPORT.md)
-  - Circuit design consultation
-  - Technical documentation support
-  - Parameter validation
-  - Design optimization guidance
+ - Circuit design consultation
+ - Technical documentation support
+ - Parameter validation
+ - Design optimization guidance
 
 ### Utilities & Infrastructure
 
 - [Utility Grid Diagnosis](UTILITY-FAULT-DIAGNOSIS.md)
-  - Electrical grid base station monitoring
-  - Alarm root cause analysis
-  - Blueprint-based diagnosis
-  - Grid topology analysis
+ - Electrical grid base station monitoring
+ - Alarm root cause analysis
+ - Blueprint-based diagnosis
+ - Grid topology analysis
 
 ### Enterprise
 
 - [Enterprise Interface Guide](ENTERPRISE-INTERFACE-GUIDE.md)
-  - Screenshot analysis
-  - Data validation
-  - Error troubleshooting
-  - Form requirement guidance
+ - Screenshot analysis
+ - Data validation
+ - Error troubleshooting
+ - Form requirement guidance
 
 - [Visual Part Matching](VISUAL-PART-MATCHING.md)
-  - Parts identification
-  - Inventory lookup
-  - Replacement part finding
-  - Maintenance support
+ - Parts identification
+ - Inventory lookup
+ - Replacement part finding
+ - Maintenance support
 
 ## Document Structure
 
 Each scenario document follows a consistent format:
 - Business/Technical Problem Statement
-  - Persona
-  - Use Case
-  - Scenario
+ - Persona
+ - Use Case
+ - Scenario
 - Scenario Overview
 - System Components
 - Example Scenarios

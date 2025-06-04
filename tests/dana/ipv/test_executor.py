@@ -250,7 +250,7 @@ class TestIPVReason:
 
         enhanced_context = {"domain": "financial", "task_type": "extraction", "prompt_strategy": "precise_extraction"}
 
-        result = executor.process_phase("get price", enhanced_context)
+        result = executor.process_phase("get price", enhanced_context, use_mock=True)
 
         # Accept dict result with 'final_answer' (new format) or string (legacy)
         if isinstance(result, dict):
@@ -344,7 +344,7 @@ class TestIPVReason:
         mock_context.get_assignment_target_type.return_value = float
 
         # This should go through the complete IPV pipeline
-        result = executor.execute("Extract the price from: Item costs $29.99", mock_context)
+        result = executor.execute("Extract the price from: Item costs $29.99", mock_context, use_mock=True)
 
         # The result should be a float extracted from the simulated LLM response or a dict with 'final_answer'
         if isinstance(result, dict):
@@ -479,9 +479,9 @@ class TestIPVExecutorIntegration:
         api_executor = IPVAPIIntegrator()
 
         # Execute different operations
-        reason_result = reason_executor.execute("Extract price: $10.50")
-        data_result = data_executor.execute("Analyze trends", data=[1, 2, 3])
-        api_result = api_executor.execute("Get user info")
+        reason_result = reason_executor.execute("Extract price: $10.50", use_mock=True)
+        data_result = data_executor.execute("Analyze trends", data=[1, 2, 3], use_mock=True)
+        api_result = api_executor.execute("Get user info", use_mock=True)
 
         # Check that execution histories are independent
         assert len(reason_executor.get_execution_history()) == 1
@@ -498,7 +498,7 @@ class TestIPVExecutorIntegration:
 
         # Execute operations on each
         for executor in executors:
-            executor.execute("test operation")
+            executor.execute("test operation", use_mock=True)
 
         # Check that all have performance stats
         for executor in executors:
