@@ -3161,29 +3161,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../02_dana_runtime_and_execution/ipv_architecture.md" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    IPV Architecture
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../02_dana_runtime_and_execution/pav_execution_model/" class="md-nav__link">
         
   
@@ -4326,7 +4303,7 @@
 <h3 id="54-configuration">5.4. Configuration<a class="headerlink" href="#54-configuration" title="Permanent link">&para;</a></h3>
 <p>The specifics of auto-coercion, especially for LLM responses (e.g., "conservative" vs. "smart" modes for extracting numbers from text), might be configurable via system settings or IPV profiles, but the general rules above form the baseline.</p>
 <h2 id="6-caller-informed-desired-type-__dana_desired_type">6. Caller-Informed Desired Type (<code>__dana_desired_type</code>)<a class="headerlink" href="#6-caller-informed-desired-type-__dana_desired_type" title="Permanent link">&para;</a></h2>
-<p>While detailed in <code>functions_and_polymorphism.md</code> and <code>ipv_architecture.md</code>, it's relevant to note here that functions (especially <code>reason()</code> and other IPV-enabled functions) can be informed of an expected return type or structure by the caller. This is achieved via a special <code>system:__dana_desired_type</code> variable passed in the <code>SandboxContext</code>.</p>
+<p>While detailed in <code>functions_and_polymorphism.md</code> and <code>pav_execution_model.md</code>, it's relevant to note here that functions (especially <code>reason()</code> and other IPV-enabled functions) can be informed of an expected return type or structure by the caller. This is achieved via a special <code>system:__dana_desired_type</code> variable passed in the <code>SandboxContext</code>.</p>
 <p>This mechanism allows functions to attempt to format their output according to the caller's needs, further enhancing the synergy between dynamic typing and context-aware execution. For example, <code>reason("Extract user details", __dana_desired_type=UserProfile)</code> might guide the LLM to return a structure compatible with the <code>UserProfile</code> struct.</p>
 <p>This is a hint and a best-effort mechanism, not a strict compile-time or runtime cast enforced on all functions. </p>
 
