@@ -1,9 +1,7 @@
 # Quick Demo
 
 ## Overview
-
-**Status: Under Development**
-
+Status: Under Development
 A rapid proof-of-concept demonstration to showcase OpenDXA capabilities.
 
 ## Coming Soon

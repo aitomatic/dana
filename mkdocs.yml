@@ -51,7 +51,7 @@ nav:
       - Overview: for-engineers/reference/README.md
       - Dana Syntax: for-engineers/reference/dana-syntax.md
       - REPL Guide: for-engineers/reference/repl-guide.md
-      - PAV Usage Guide: for-engineers/reference/pav-usage-guide.md
+      - POV Usage Guide: for-engineers/reference/pov-usage-guide.md
       - API Reference:
         - Overview: for-engineers/reference/api/README.md
         - Core Functions: for-engineers/reference/api/core-functions.md
@@ -123,7 +123,7 @@ nav:
       - Sandbox: design/02_dana_runtime_and_execution/sandbox.md
       - REPL: design/02_dana_runtime_and_execution/repl.md
       - Code Context Analyzer: design/02_dana_runtime_and_execution/code_context_analyzer.md
-      - PAV Execution Model: design/02_dana_runtime_and_execution/pav_execution_model.md
+      - POV Execution Model: design/02_dana_runtime_and_execution/pov_execution_model.md
       - Type System and Casting: design/02_dana_runtime_and_execution/type_system_and_casting.md
       - Concurrency Model: design/02_dana_runtime_and_execution/concurrency_model.md
       - External Interfaces: design/02_dana_runtime_and_execution/external_interfaces.md

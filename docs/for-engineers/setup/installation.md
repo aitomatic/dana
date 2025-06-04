@@ -1,9 +1,7 @@
 # Installation Guide
 
 ## Overview
-
-**Status: Under Development**
-
+Status: Under Development
 Complete installation and setup instructions for OpenDXA.
 
 ## Coming Soon
@@ -19,7 +17,7 @@ Complete installation and setup instructions for OpenDXA.
 
 ```bash
 # Installation instructions will be provided here
-pip install opendxa  # (when available)
+pip install opendxa # (when available)
 ```
 
 ## Related Documentation

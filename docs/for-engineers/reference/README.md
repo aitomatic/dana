@@ -8,7 +8,7 @@ This section contains comprehensive reference documentation for OpenDXA develope
 
 - [API Reference](api/README.md) - Core APIs and function references
 - [Dana Syntax](dana-syntax.md) - Complete Dana language syntax guide
-- [PAV Usage Guide](pav-usage-guide.md) - Perceive-Act-Validate usage patterns
+- [POV Usage Guide](pov-usage-guide.md) - Perceive-Operate-Validate usage patterns
 - [REPL Guide](repl-guide.md) - Working with the Dana REPL
 
 ## Coming Soon

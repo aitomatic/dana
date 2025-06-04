@@ -1,9 +1,7 @@
 # ROI Calculator
 
 ## Overview
-
-**Status: Under Development**
-
+Status: Under Development
 Interactive calculator to help evaluate the return on investment for adopting OpenDXA in your organization.
 
 ## Coming Soon
@@ -25,18 +23,15 @@ The ROI calculator will consider:
 - Training and adoption costs
 
 ## Benefits Categories
-
-**Development Efficiency**
+Development Efficiency
 - Faster agent development
 - Reduced debugging time
 - Simplified deployment
-
-**Operational Savings**
+Operational Savings
 - Lower maintenance overhead
 - Improved system reliability
 - Enhanced monitoring capabilities
-
-**Strategic Value**
+Strategic Value
 - Competitive advantages
 - Innovation acceleration
 - Future-proofing investments

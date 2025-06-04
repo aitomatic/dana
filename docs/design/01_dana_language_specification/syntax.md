@@ -34,7 +34,7 @@ system:status = value
 
 For convenience in the REPL environment, variables without a scope prefix are automatically placed in the `local` scope:
 ```dana
-my_variable = value  # Equivalent to local:my_variable = value
+my_variable = value # Equivalent to local:my_variable = value
 ```
 
 ### Basic Data Types
@@ -54,16 +54,16 @@ public:message = "Hello"
 ### Conditional Statements
 ```dana
 if private:x > 5:
-    print("x is greater than 5")
+ print("x is greater than 5")
 else:
-    print("x is not greater than 5")
+ print("x is not greater than 5")
 ```
 
 ### While Loops
 ```dana
 while private:x < 10:
-    print(private:x)
-    private:x = private:x + 1
+ print(private:x)
+ private:x = private:x + 1
 ```
 
 ### Function Calls
@@ -121,21 +121,21 @@ print(public:count)
 
 # Conditional logic
 if public:count > 3:
-    print("Count is high")
+ print("Count is high")
 else:
-    print("Count is normal")
+ print("Count is normal")
 ```
 
 ### While Loop Example
 ```dana
 private:x = 0
 while private:x < 3:
-    print(private:x)
-    private:x = private:x + 1
+ print(private:x)
+ private:x = private:x + 1
 ```
 
 ---
 <p align="center">
 Copyright © 2025 Aitomatic, Inc. Licensed under the <a href="../LICENSE.md">MIT License</a>.<br/>
 <a href="https://aitomatic.com">https://aitomatic.com</a>
-</p> 
+</p>

@@ -1,9 +1,7 @@
 # Creating Your First Agent
 
 ## Overview
-
-**Status: Under Development**
-
+Status: Under Development
 Step-by-step guide to creating your first OpenDXA agent.
 
 ## Coming Soon

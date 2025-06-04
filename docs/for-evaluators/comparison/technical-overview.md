@@ -1,9 +1,7 @@
 # Technical Overview
 
 ## Overview
-
-**Status: Under Development**
-
+Status: Under Development
 Comprehensive technical comparison of OpenDXA with other agent frameworks and AI development platforms.
 
 ## Coming Soon

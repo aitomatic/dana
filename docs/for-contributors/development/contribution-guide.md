@@ -1,9 +1,7 @@
 # Contribution Guide
 
 ## Overview
-
-**Status: Under Development**
-
+Status: Under Development
 This guide will help you get started contributing to the OpenDXA project.
 
 ## Coming Soon

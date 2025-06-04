@@ -1,4 +1,4 @@
-| [← Sandbox](./sandbox.md) | [PAV Execution Model →](./pav_execution_model.md) |
+| [← Sandbox](./sandbox.md) | [POV Execution Model →](./pov_execution_model.md) |
 |---|---|
 
 # Dana REPL (Read-Eval-Print Loop)
@@ -15,13 +15,13 @@ The REPL utilizes the Dana Parser to parse input into an AST, and then the [Dana
 
 ## 2. Features
 
--   **Interactive Execution**: Directly execute Dana statements and expressions.
--   **Natural Language Transcoding**: If an LLM resource is configured, natural language input can be translated into Dana code and then executed.
--   **Command History**: Recall and reuse previous commands (typically using arrow keys, via `prompt_toolkit`).
--   **Tab Completion**: Keyword-based completion for Dana syntax elements.
--   **Multiline Input**: Supports entering complex, multiline Dana statements and blocks (e.g., `if/else`, `for`, function definitions).
--   **Special Commands**: Meta-commands (e.g., prefixed with `##`) for controlling REPL behavior, such as toggling NLP mode.
--   **Persistent Context**: The `SandboxContext` persists across multiple inputs within a single REPL session, allowing variables and state to be maintained.
+- Interactive Execution: Directly execute Dana statements and expressions.
+- Natural Language Transcoding: If an LLM resource is configured, natural language input can be translated into Dana code and then executed.
+- Command History: Recall and reuse previous commands (typically using arrow keys, via `prompt_toolkit`).
+- Tab Completion: Keyword-based completion for Dana syntax elements.
+- Multiline Input: Supports entering complex, multiline Dana statements and blocks (e.g., `if/else`, `for`, function definitions).
+- Special Commands: Meta-commands (e.g., prefixed with `##`) for controlling REPL behavior, such as toggling NLP mode.
+- Persistent Context: The `SandboxContext` persists across multiple inputs within a single REPL session, allowing variables and state to be maintained.
 
 ## 3. Usage
 
@@ -52,36 +52,36 @@ result_info = repl_engine.execute("private:x = 42\nlog(private:x)")
 # result_info might contain execution status, output, or errors
 print(f"Execution Status: {result_info.status}")
 if result_info.value is not None:
-    print(f"Returned Value: {result_info.value}")
+ print(f"Returned Value: {result_info.value}")
 if result_info.output_log:
-    print(f"Logged Output: {result_info.output_log}")
+ print(f"Logged Output: {result_info.output_log}")
 
 # Example of getting a variable from the context after execution
 # print(f"Value of x in context: {context.get('private:x')}")
 ```
-*Note: The exact structure of `result_info` and context interaction in the programmatic API example is illustrative and depends on the `REPL` class implementation.* 
+*Note: The exact structure of `result_info` and context interaction in the programmatic API example is illustrative and depends on the `REPL` class implementation.*
 
 ## 4. Multiline Input and Block Handling
 
 The REPL intelligently handles multiline input, which is essential for Dana's block-structured syntax (e.g., for `if`, `for`, `while`, `func` statements). The prompt typically changes (e.g., to `... `) for continuation lines.
 
 **Mechanism**:
-1.  User types a line of Dana code.
-2.  The REPL internally attempts to parse the cumulative input so far.
-3.  If the parser indicates the input is incomplete (e.g., an `if` statement expecting an indented block), the REPL prompts for more input.
-4.  This continues until the parser deems a statement or block complete.
-5.  A special sequence (e.g., `##` on a new line, or sometimes just dedenting) can signal the end of a multiline block if auto-detection is ambiguous or needs override.
+1. User types a line of Dana code.
+2. The REPL internally attempts to parse the cumulative input so far.
+3. If the parser indicates the input is incomplete (e.g., an `if` statement expecting an indented block), the REPL prompts for more input.
+4. This continues until the parser deems a statement or block complete.
+5. A special sequence (e.g., `##` on a new line, or sometimes just dedenting) can signal the end of a multiline block if auto-detection is ambiguous or needs override.
 
 **Example**:
 ```dana
 dana> private:my_var = 15
 dana> if private:my_var > 10:
-...     log("Variable is greater than 10")
-...     private:category = "high"
+... log("Variable is greater than 10")
+... private:category = "high"
 ... else:
-...     log("Variable is less than or equal to 10")
-...     private:category = "low"
-... 
+... log("Variable is less than or equal to 10")
+... private:category = "low"
+...
 # Execution happens after the final empty continuation or explicit end signal
 ```
 
@@ -89,11 +89,11 @@ dana> if private:my_var > 10:
 
 The REPL often includes special commands, usually prefixed (e.g., `##`), for meta-operations:
 
--   `##nlp on|off|status`: Manage Natural Language Processing mode.
--   `##clear_context`: Potentially a command to reset parts or all of the `SandboxContext`.
--   `##`: Force execution/completion of a multiline block.
--   `help` or `?`: Display help information.
--   `exit` or `quit`: Terminate the REPL session.
+- `##nlp on|off|status`: Manage Natural Language Processing mode.
+- `##clear_context`: Potentially a command to reset parts or all of the `SandboxContext`.
+- `##`: Force execution/completion of a multiline block.
+- `help` or `?`: Display help information.
+- `exit` or `quit`: Terminate the REPL session.
 
 When NLP mode is active (and an LLM is available), non-command input might be first sent to a transcoder to convert it to Dana code before execution.
 
@@ -114,9 +114,9 @@ The REPL maintains a single `SandboxContext` throughout its session. This means 
 ## 7. Error Handling
 
 The REPL displays errors encountered during:
--   Parsing (syntax errors)
--   Interpretation (runtime errors, type issues if checks are performed)
--   LLM interaction (if NLP mode is used)
+- Parsing (syntax errors)
+- Interpretation (runtime errors, type issues if checks are performed)
+- LLM interaction (if NLP mode is used)
 
 After an error, the REPL usually resets its input state, allowing the user to try again, while the `SandboxContext` generally persists.
 
@@ -125,4 +125,4 @@ After an error, the REPL usually resets its input state, allowing the user to tr
 For NLP capabilities, the REPL system integrates with an LLM, typically configured via API keys (e.g., `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, etc.) or a configuration file (`opendxa_config.json`). This enables the transcoding of natural language queries into executable Dana code.
 
 ---
-*Self-reflection: This document needs to be kept in sync with the actual CLI REPL (`dana_repl_app.py`) and the programmatic REPL (`repl.py`) as they evolve. Links to Parser and Transcoder design documents are important once those are finalized in the new structure.* 
+*Self-reflection: This document needs to be kept in sync with the actual CLI REPL (`dana_repl_app.py`) and the programmatic REPL (`repl.py`) as they evolve. Links to Parser and Transcoder design documents are important once those are finalized in the new structure.*

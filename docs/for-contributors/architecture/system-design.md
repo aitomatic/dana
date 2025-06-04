@@ -1,9 +1,7 @@
 # System Design
 
 ## Overview
-
-**Status: Under Development**
-
+Status: Under Development
 This document will provide a comprehensive overview of the OpenDXA system architecture and design principles.
 
 ## Coming Soon
