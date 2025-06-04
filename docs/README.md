@@ -103,43 +103,50 @@ use("tools.report.generate", input=public:result)
 
 OpenDXA combines declarative knowledge with imperative execution for maintainable, reliable AI systems:
 
-```text
-┌───────────────────────────────────────────────────────────────┐
-│ Application Layer │
-│ ┌─────────────────┐ ┌─────────────────────────────────────┐ │
-│ │ User Interface │ │ Domain Applications │ │
-│ │ & API Gateway │ │ (Manufacturing, Finance, etc.) │ │
-│ └─────────────────┘ └─────────────────────────────────────┘ │
-├───────────────────────────────────────────────────────────────┤
-│ Agent Workflow Layer │
-│ ┌─────────────┐ ┌───────────────┐ ┌──────────────────────┐ │
-│ │ Agent │ │ Capabilities │ │ Resources │ │
-│ │ Management │ │ System │ │ Management │ │
-│ │ & Planning │ │ (Extensible) │ │ (Tools & LLMs) │ │
-│ └─────────────┘ └───────────────┘ └──────────────────────┘ │
-├───────────────────────────────────────────────────────────────┤
-│ Dana Execution Layer │
-│ ┌─────────────┐ ┌───────────────┐ ┌──────────────────────┐ │
-│ │ Parser │ │ Interpreter │ │ State Management │ │
-│ │ (AST) │ │ (Executor) │ │ (4-Scope Context) │ │
-│ │ & Grammar │ │ & Reasoning │ │ private|public| │ │
-│ │ Engine │ │ Integration │ │ system|local │ │
-│ └─────────────┘ └───────────────┘ └──────────────────────┘ │
-├───────────────────────────────────────────────────────────────┤
-│ DANKE Knowledge Engine │
-│ ┌─────────────┐ ┌───────────────┐ ┌──────────────────────┐ │
-│ │ Collect │ │ Organize │ │ Retrieve │ │
-│ │ & Learn │ │ & Structure │ │ Reason & Act │ │
-│ │ (CORRAL) │ │ (Indexing) │ │ (Domain Context) │ │
-│ └─────────────┘ └───────────────┘ └──────────────────────┘ │
-├───────────────────────────────────────────────────────────────┤
-│ Resource & Communication Layer │
-│ ┌─────────────┐ ┌───────────────┐ ┌──────────────────────┐ │
-│ │ LLM Resource│ │ Knowledge │ │ External Tools │ │
-│ │ Integration │ │ Base │ │ & Services │ │
-│ │(Multi-Model)│ │ Management │ │ (MCP, APIs) │ │
-│ └─────────────┘ └───────────────┘ └──────────────────────┘ │
-└───────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    subgraph "Application Layer"
+        UI["User Interface & API Gateway"]
+        DomainApps["Domain Applications (Manufacturing, Finance, etc.)"]
+    end
+
+    subgraph "Agent Workflow Layer"
+        AgentMgmt["Agent Management & Planning"]
+        Capabilities["Capabilities System (Extensible)"]
+        ResourcesMgmt["Resources Management (Tools & LLMs)"]
+    end
+
+    subgraph "Dana Execution Layer"
+        Parser["Parser (AST) & Grammar Engine"]
+        Interpreter["Interpreter (Executor) & Reasoning Integration"]
+        StateMgmt["State Management (4-Scope Context: private|public|system|local)"]
+    end
+
+    subgraph "DANKE Knowledge Engine"
+        CollectLearn["Collect & Learn (CORRAL)"]
+        OrganizeStructure["Organize & Structure (Indexing)"]
+        RetrieveReasonAct["Retrieve, Reason & Act (Domain Context)"]
+    end
+
+    subgraph "Resource & Communication Layer"
+        LLMIntegration["LLM Resource Integration (Multi-Model)"]
+        KBManagement["Knowledge Base Management"]
+        ExternalTools["External Tools & Services (MCP, APIs)"]
+    end
+
+    UI --> AgentMgmt
+    DomainApps --> AgentMgmt
+    AgentMgmt --> Parser
+    Capabilities --> Interpreter
+    ResourcesMgmt --> Interpreter
+    Parser --> Interpreter
+    Interpreter --> StateMgmt
+    StateMgmt --> CollectLearn
+    CollectLearn --> OrganizeStructure
+    OrganizeStructure --> RetrieveReasonAct
+    RetrieveReasonAct --> LLMIntegration
+    RetrieveReasonAct --> KBManagement
+    RetrieveReasonAct --> ExternalTools
 ```
 
 ### Execution Flow
