@@ -28,6 +28,7 @@ dependencies = [
     "aisuite[openai,anthropic,azure,google,groq,huggingface,ollama]",
     "openai",
     "mcp",
+    "fastmcp",
     "llm-code-executor",
     
     # Data Processing - Required for agent data handling
