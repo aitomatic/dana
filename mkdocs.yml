@@ -40,7 +40,14 @@ theme:
 nav:
   - Home: 
     - Overview: README.md
-    - Roadmap: ROADMAP.md
+    - For You:
+      - Engineers: for-engineers/README.md
+      - Evaluators: for-evaluators/README.md
+      - Researchers: for-researchers/README.md
+      - Contributors: for-contributors/README.md
+    - More:
+      - Design: design/README.md
+      - Roadmap: ROADMAP.md
   - For Engineers:
     - Overview: for-engineers/README.md
     - Setup: 
