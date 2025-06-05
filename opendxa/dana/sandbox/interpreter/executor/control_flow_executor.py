@@ -215,32 +215,41 @@ class ControlFlowExecutor(BaseExecutor):
         Returns:
             The result of the last statement executed in the with block
         """
-        # Get the context manager function from the function registry
-        function_registry = self.function_registry
-        if not function_registry:
-            raise RuntimeError("No function registry available for with statement")
-            
-        context_manager_name = self.parent.execute(node.context_manager_name, context)
+        # Check for variable name shadowing before executing
+        self._check_with_variable_shadowing(node, context)
+        
+        # Check if we have a function call or direct context manager object
+        if isinstance(node.context_manager, str):
+            # Function call pattern: with mcp(*args, **kwargs) as var:
+            function_registry = self.function_registry
+            if not function_registry:
+                raise RuntimeError("No function registry available for with statement")
+                
+            context_manager_name = node.context_manager
 
-         # Prepare arguments for the context manager
-        args = []
-        kwargs = {}
+            # Prepare arguments for the context manager
+            args = []
+            kwargs = {}
 
-        # Evaluate positional arguments
-        for arg in node.args:
-            args.append(self.parent.execute(arg, context))
+            # Evaluate positional arguments
+            for arg in node.args:
+                args.append(self.parent.execute(arg, context))
 
-        # Evaluate keyword arguments
-        for key, value in node.kwargs.items():
-            kwargs[key] = self.parent.execute(value, context)
+            # Evaluate keyword arguments
+            for key, value in node.kwargs.items():
+                kwargs[key] = self.parent.execute(value, context)
 
-        kwargs["_name"] = node.as_var
+            kwargs["_name"] = node.as_var
 
-        context_manager = function_registry.call(context_manager_name, context, None, *args, **kwargs)
+            context_manager = function_registry.call(context_manager_name, context, None, *args, **kwargs)
+        else:
+            # Direct context manager pattern: with mcp_object as var:
+            context_manager = self.parent.execute(node.context_manager, context)
 
         # Check if the context manager has __enter__ and __exit__ methods
         if not (hasattr(context_manager, '__enter__') and hasattr(context_manager, '__exit__')):
-            raise TypeError(f"'{node.context_manager_name}' does not return a context manager (missing __enter__ or __exit__)")
+            context_manager_desc = node.context_manager if isinstance(node.context_manager, str) else str(node.context_manager)
+            raise TypeError(f"'{context_manager_desc}' does not return a context manager (missing __enter__ or __exit__)")
 
         # Execute the with statement using the context manager protocol
         try:
@@ -266,6 +275,50 @@ class ControlFlowExecutor(BaseExecutor):
             context_manager.__exit__(None, None, None)
             
         return result
+
+    def _check_with_variable_shadowing(self, node: WithStatement, context: SandboxContext) -> None:
+        """Check for variable name shadowing in with statements and raise an error if detected.
+        
+        Args:
+            node: The with statement node
+            context: The execution context
+            
+        Raises:
+            ValueError: If dangerous variable name shadowing is detected
+        """
+        as_var = node.as_var
+        
+        # Check if the 'as' variable already exists in the current scope
+        if context.has(f"local.{as_var}"):
+            # For direct context manager pattern, check if it's the same variable being shadowed
+            if not isinstance(node.context_manager, str):
+                # Get the variable name being used as context manager
+                from opendxa.dana.sandbox.parser.ast import Identifier
+                if isinstance(node.context_manager, Identifier):
+                    context_manager_var = node.context_manager.name
+                    # Remove scope prefix to compare just the variable name
+                    if "." in context_manager_var:
+                        context_manager_var_name = context_manager_var.split(".")[-1]
+                    else:
+                        context_manager_var_name = context_manager_var
+                        
+                    if context_manager_var_name == as_var:
+                        raise ValueError(
+                            f"Variable name shadowing detected: '{as_var}' is being used as both "
+                            f"the context manager and the 'as' variable in the with statement. "
+                            f"This can lead to confusion and loss of access to the original variable. "
+                            f"Consider using a different name for the 'as' variable, "
+                            f"such as 'with {as_var} as {as_var}_client:'"
+                        )
+            
+            # General warning for any existing variable being shadowed
+            import warnings
+            warnings.warn(
+                f"Variable '{as_var}' already exists and will be shadowed by the with statement. "
+                f"Consider using a different name for the 'as' variable to avoid confusion.",
+                category=UserWarning,
+                stacklevel=2
+            )
 
     def execute_break_statement(self, node: BreakStatement, context: SandboxContext) -> None:
         """Execute a break statement.

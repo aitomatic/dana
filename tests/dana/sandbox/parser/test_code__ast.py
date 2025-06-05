@@ -509,7 +509,7 @@ def test_with_stmt_ast(code, expected_args, expected_kwargs, should_raise):
         program = parser.parse(code, do_transform=True)
         stmt = program.statements[0]
         assert isinstance(stmt, WithStatement)
-        assert stmt.context_manager_name == "foo"
+        assert stmt.context_manager == "foo"  # Updated to use new field name
         assert [a.value for a in stmt.args] == expected_args
         assert {k: v.value for k, v in stmt.kwargs.items()} == expected_kwargs
         assert stmt.as_var == "bar"
@@ -669,11 +669,36 @@ def test_with_use_stmt():
     # First statement should be a WithStatement using "use" as context manager
     with_stmt = program.statements[0]
     assert isinstance(with_stmt, WithStatement)
-    assert with_stmt.context_manager_name == "use"
+    assert with_stmt.context_manager == "use"  # Updated to use new field name
     assert len(with_stmt.args) == 1
     assert with_stmt.args[0].value == "mcp"
     assert len(with_stmt.kwargs) == 1
     assert "url" in with_stmt.kwargs
     assert with_stmt.kwargs["url"].value == "http://localhost:8880/websearch"
+    assert with_stmt.as_var == "mcp"
+    assert len(with_stmt.body) == 1
+
+
+def test_with_direct_object():
+    """Test with mcp_object syntax for direct context manager usage."""
+    parser = DanaParser()
+    
+    code = textwrap.dedent('''
+        mcp_resource = use("mcp", url="http://localhost:8880/websearch")
+        with mcp_resource as mcp:
+            answer = reason("Who is the CEO of Aitomatic")
+        print(answer)
+    ''').strip()
+    
+    program = parser.parse(code, do_transform=True)
+    assert len(program.statements) == 3
+    
+    # Second statement should be a WithStatement using direct object as context manager
+    with_stmt = program.statements[1]
+    assert isinstance(with_stmt, WithStatement)
+    assert isinstance(with_stmt.context_manager, Identifier)  # Should be an Identifier (expression)
+    assert with_stmt.context_manager.name == "local.mcp_resource"
+    assert len(with_stmt.args) == 0  # No args when using direct object
+    assert len(with_stmt.kwargs) == 0  # No kwargs when using direct object
     assert with_stmt.as_var == "mcp"
     assert len(with_stmt.body) == 1

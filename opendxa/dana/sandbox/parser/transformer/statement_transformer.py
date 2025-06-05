@@ -915,44 +915,104 @@ class StatementTransformer(BaseTransformer):
         # items[0] is either a kw_arg Tree or an expression
         return items[0]
 
+    def with_context_manager(self, items):
+        """Transform with_context_manager rule - pass through the expression."""
+        return self.expression_transformer.expression(items)
+
     def with_stmt(self, items):
         """Transform a with statement rule into a WithStatement node."""
-        # items: [context_manager_name, mixed_arguments, as_var, block]
-        context_manager_name = items[0].value
-        with_args = items[1] if len(items) > 3 else None
-        as_var = items[-3].value
-        block = self._transform_block(items[-1])
+        # Filter out None items (like optional comments) and parse the structure
+        filtered_items = [item for item in items if item is not None]
         
-        # Handle mixed_arguments - now a list of with_arg items
-        args: List[Expression] = []
-        kwargs = {}
-        seen_keyword_arg = False  # Track if we've seen any keyword arguments
 
-        if with_args is not None:
-            if isinstance(with_args, list):
-                # Process each item
-                for arg_item in with_args:
-                    if isinstance(arg_item, Tree) and arg_item.data == 'kw_arg':
+        # Based on the parse tree: [foo, mixed_arguments, as, bar, None, block]
+        # Find components in the structure
+        context_manager_part = filtered_items[0]
+        as_var = None
+        block = None
+        with_args = None
+        
+        # Look for 'as' token to find variable name and block
+        for i, item in enumerate(filtered_items):
+            if hasattr(item, 'value') and item.value == 'as':
+                # Next item should be the variable name
+                if i + 1 < len(filtered_items):
+                    as_var_token = filtered_items[i + 1]
+                    as_var = as_var_token.value if hasattr(as_var_token, 'value') else str(as_var_token)
+                # Block should be the last item in the list (after filtering)
+                for j in range(len(filtered_items) - 1, -1, -1):
+                    if hasattr(filtered_items[j], 'data') and filtered_items[j].data == 'block':
+                        block = self._transform_block(filtered_items[j])
+                        break
+                break
+        
+        if as_var is None:
+            raise SyntaxError("Missing 'as' variable in with statement")
+        if block is None:
+            raise SyntaxError("Missing block in with statement")
+        
+        # Check if this is a function call pattern by looking at the structure
+        # Function call pattern: [NAME, mixed_arguments_or_none, 'as', NAME, None, block]
+        # Direct object pattern: [expression, 'as', NAME, None, block]
+        
+        # If the first item is a simple token (NAME/USE) and we have the right structure, it's a function call
+        if (hasattr(context_manager_part, 'value') and isinstance(context_manager_part.value, str) and
+            not hasattr(context_manager_part, 'data')):  # Simple token, not a tree
+            
+            # Function call pattern: NAME [mixed_arguments] as var block
+            context_manager_name = context_manager_part.value
+            
+            # Handle mixed_arguments - could be None (empty args) or a tree with arguments
+            args: List[Expression] = []
+            kwargs = {}
+            seen_keyword_arg = False
+            
+            # Look for mixed_arguments (second item if it exists and is not 'as')
+            if (len(filtered_items) >= 2 and 
+                isinstance(filtered_items[1], list)):
+                
+                # mixed_arguments has already been transformed into a list of expressions/trees
+                args_list = filtered_items[1]
+                
+                # Process each item in the list
+                for item in args_list:
+                    if hasattr(item, 'data') and item.data == 'kw_arg':
                         # Keyword argument: NAME "=" expr
                         seen_keyword_arg = True
-                        name = arg_item.children[0].value
-                        value = arg_item.children[1]  # Value is already processed
+                        name = item.children[0].value
+                        value = self.expression_transformer.expression([item.children[1]])
                         kwargs[name] = value
                     else:
                         # Positional argument: expr
                         if seen_keyword_arg:
-                            # Error: positional argument after keyword argument
                             raise SyntaxError("Positional argument follows keyword argument in with statement")
-                        args.append(cast(Expression, self.expression_transformer.expression([arg_item])))
-            else:
-                # Single argument
-                if isinstance(with_args, Tree) and with_args.data == 'kw_arg':
-                    # Keyword argument: NAME "=" expr
-                    name = with_args.children[0].value
-                    value = self.expression_transformer.expression([with_args.children[1]])
-                    kwargs[name] = value
-                else:
-                    # Positional argument: expr
-                    args.append(cast(Expression, self.expression_transformer.expression([with_args])))
+                        args.append(cast(Expression, item))
+            elif (len(filtered_items) >= 2 and 
+                  hasattr(filtered_items[1], 'data') and 
+                  filtered_items[1].data == 'mixed_arguments'):
+                
+                mixed_args_tree = filtered_items[1]
+                
+                # mixed_arguments contains with_arg children
+                for with_arg_tree in mixed_args_tree.children:
+                    if hasattr(with_arg_tree, 'data') and with_arg_tree.data == 'with_arg':
+                        # with_arg contains either kw_arg or expr
+                        if len(with_arg_tree.children) > 0:
+                            arg_content = with_arg_tree.children[0]
+                            if hasattr(arg_content, 'data') and arg_content.data == 'kw_arg':
+                                # Keyword argument: NAME "=" expr
+                                seen_keyword_arg = True
+                                name = arg_content.children[0].value
+                                value = self.expression_transformer.expression([arg_content.children[1]])
+                                kwargs[name] = value
+                            else:
+                                # Positional argument: expr
+                                if seen_keyword_arg:
+                                    raise SyntaxError("Positional argument follows keyword argument in with statement")
+                                args.append(cast(Expression, self.expression_transformer.expression([arg_content])))
 
-        return WithStatement(context_manager_name=context_manager_name, args=args, kwargs=kwargs, as_var=as_var, body=block)
+            return WithStatement(context_manager=context_manager_name, args=args, kwargs=kwargs, as_var=as_var, body=block)
+        else:
+            # Direct context manager pattern: with_context_manager as var block
+            context_manager_expr = cast(Expression, self.expression_transformer.expression([context_manager_part]))
+            return WithStatement(context_manager=context_manager_expr, args=[], kwargs={}, as_var=as_var, body=block)

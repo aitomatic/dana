@@ -363,11 +363,11 @@ class ExceptBlock:
 
 @dataclass
 class WithStatement:
-    """With statement (e.g., with mcp('hi') as foo: ...)."""
+    """With statement (e.g., with mcp('hi') as foo: ... or with mcp_object as foo: ...)."""
 
-    context_manager_name: str
-    args: List[Expression]
-    kwargs: Dict[str, Expression]
+    context_manager: Union[str, Expression]  # Either function name (str) or context manager object (Expression)
+    args: List[Expression]  # Empty when using direct object
+    kwargs: Dict[str, Expression]  # Empty when using direct object
     as_var: str
     body: List[Statement]
     location: Optional[Location] = None

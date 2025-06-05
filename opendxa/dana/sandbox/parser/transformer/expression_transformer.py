@@ -484,6 +484,41 @@ class ExpressionTransformer(BaseTransformer):
             return Identifier(name=items[0].value)
         raise TypeError(f"Cannot transform identifier: {items}")
 
+    def argument(self, items):
+        """Transform an argument rule into an expression or keyword argument pair."""
+        # items[0] is either a kw_arg tree or an expression
+        arg_item = items[0]
+        
+        # If it's a kw_arg tree, return it as-is for now
+        # The function call handler will process it properly
+        if hasattr(arg_item, 'data') and arg_item.data == 'kw_arg':
+            return arg_item
+        
+        # Otherwise, transform it as a regular expression
+        return self.expression([arg_item])
+
+    def _process_function_arguments(self, arg_children):
+        """Process function call arguments, handling both positional and keyword arguments."""
+        args = []  # List of positional arguments
+        kwargs = {}  # Dict of keyword arguments
+        
+        for arg_child in arg_children:
+            # Check if this is a kw_arg tree
+            if hasattr(arg_child, 'data') and arg_child.data == 'kw_arg':
+                # Extract keyword argument name and value
+                name = arg_child.children[0].value
+                value = self.expression([arg_child.children[1]])
+                kwargs[name] = value
+            else:
+                # Regular positional argument
+                expr = self.expression([arg_child])
+                args.append(expr)
+        
+        # Build the final args dict
+        result = {"__positional": args}
+        result.update(kwargs)
+        return result
+
     def tuple(self, items):
         from opendxa.dana.sandbox.parser.ast import Expression, TupleLiteral
 
@@ -618,12 +653,9 @@ class ExpressionTransformer(BaseTransformer):
                     
                     # Create ObjectFunctionCall
                     if trailer is not None and hasattr(trailer, "children"):
-                        args = trailer.children
+                        args = self._process_function_arguments(trailer.children)
                     else:
-                        args = []  # Empty arguments
-                    
-                    if not isinstance(args, dict):
-                        args = {"__positional": args}
+                        args = {"__positional": []}  # Empty arguments
                     
                     return ObjectFunctionCall(
                         object=object_expr,
@@ -647,9 +679,7 @@ class ExpressionTransformer(BaseTransformer):
                         object_expr = base
                         method_name = prev_trailer.value
                         
-                        args = t.children if hasattr(t, "children") else []
-                        if not isinstance(args, dict):
-                            args = {"__positional": args}
+                        args = self._process_function_arguments(t.children) if hasattr(t, "children") else {"__positional": []}
                         
                         return ObjectFunctionCall(
                             object=object_expr, 
@@ -662,9 +692,7 @@ class ExpressionTransformer(BaseTransformer):
                 name = getattr(base, "name", None)
                 if not isinstance(name, str):
                     name = str(base)
-                args = t.children if hasattr(t, "children") else []
-                if not isinstance(args, dict):
-                    args = {"__positional": args}
+                args = self._process_function_arguments(t.children) if hasattr(t, "children") else {"__positional": []}
                 return FunctionCall(name=name, args=args, location=getattr(base, "location", None))
             # Attribute access: .NAME
             elif hasattr(t, "type") and t.type == "NAME":

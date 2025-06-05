@@ -11,7 +11,7 @@ from opendxa.common.resource.base_resource import BaseResource
 from opendxa.common.types import BaseRequest, BaseResponse
 from opendxa.common.mixins.tool_formats import ToolFormat, OpenAIToolFormat
 from opendxa.common import Misc
-
+import inspect
 
 class MCPResource(BaseResource):
     """MCP Resource for OpenDXA integration.
@@ -44,6 +44,26 @@ class MCPResource(BaseResource):
         
         self.client = MCPClient(*client_args, **client_kwargs)
         self._mcp_tools_cache: Optional[List[McpTool]] = None
+        self.list_tools() # Pre-fetch the MCP tools first
+
+    def mcp_tool_decorator(self, func_name:str) -> Any:
+        """Decorator to wrap a function as an MCP tool."""
+        def wrapper(**kwargs) -> Any:
+            if inspect.iscoroutinefunction(self.call_tool):
+                return Misc.safe_asyncio_run(self.call_tool, func_name, kwargs)
+            else:
+                return self.call_tool(func_name, kwargs)
+        return wrapper
+
+    def __getattr__(self, name: str) -> Any:
+        try:
+            return BaseResource.__getattribute__(self, name)
+        except AttributeError:
+            tools = BaseResource.__getattribute__(self, "_mcp_tools_cache")
+            for tool in tools:
+                if tool.name == name:
+                    return self.mcp_tool_decorator(tool.name)
+            raise
         
     async def initialize(self) -> None:
         """Initialize the MCP resource."""
@@ -69,6 +89,7 @@ class MCPResource(BaseResource):
         for tool in self._mcp_tools_cache:
             tools.append(format_converter.from_mcp_tool_format(tool))
         return tools
+    
         
     async def call_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Any:
         """Execute MCP tool."""

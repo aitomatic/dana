@@ -53,7 +53,9 @@ while_stmt: "while" expr ":" [COMMENT] block
 for_stmt: "for" NAME "in" expr ":" [COMMENT] block
 function_def: "def" NAME "(" [parameters] ")" ["->" basic_type] ":" [COMMENT] block
 try_stmt: "try" ":" [COMMENT] block "except" ["(" expr ")"] ":" [COMMENT] block ["finally" ":" [COMMENT] block]
-with_stmt: "with" (NAME | USE) "(" [mixed_arguments] ")" AS NAME ":" [COMMENT] block
+with_stmt: "with" (with_context_manager | (NAME | USE) "(" [mixed_arguments] ")") AS NAME ":" [COMMENT] block
+
+with_context_manager: expr
 mixed_arguments: with_arg ("," with_arg)*
 
 with_arg: kw_arg
@@ -194,7 +196,10 @@ trailer: "(" [arguments] ")"    // Function call
        | "[" expr "]"           // Indexing
        | "." NAME               // Property access
 
-arguments: expr ("," expr)* [","]
+arguments: argument ("," argument)* [","]
+
+argument: kw_arg
+        | expr
 
 // ===== STRING LITERALS =====
 // Regular string literals, referenced from common
