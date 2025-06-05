@@ -35,6 +35,11 @@ configs/
 .aider*
 .claude/
 
+# macOS
+.DS_Store
+.DS_Store?
+
+
 # Build artifacts
 build/
 dist/

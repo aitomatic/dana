@@ -14,7 +14,9 @@ import json
 import os
 from typing import Any, Dict, Optional
 
+from opendxa.common.resource.base_resource import BaseResource
 from opendxa.common.resource.llm_resource import LLMResource
+from opendxa.common.mixins.queryable import QueryStrategy
 from opendxa.common.types import BaseRequest
 from opendxa.common.utils.logging import DXA_LOGGER
 from opendxa.dana.common.exceptions import SandboxError
@@ -42,6 +44,7 @@ def reason_function(
             - format: Output format ("text" or "json")
             - enable_ipv: Enable IPV optimization (default: True)
             - use_original: Force use of original implementation (default: False)
+            - resources: List of resources to use with the LLM call
         use_mock: Force use of mock responses (True) or real LLM calls (False).
                   If None, defaults to checking OPENDXA_MOCK_LLM environment variable.
 
@@ -171,8 +174,27 @@ def _reason_original_implementation(
             "max_tokens": options.get("max_tokens", None),
         }
 
+        # Get resources from context and filter by included_resources
+        try:
+            resources = context.get_resources(options.get("resources", None)) if context is not None else {}
+        except Exception as e:
+            logger.warning(f"Error getting resources from context: {e}")
+            resources = {}
+
+        # Set query strategy and max iterations to iterative and 5 respectively to ultilize tools calls
+        previous_query_strategy = llm_resource._query_strategy
+        previous_query_max_iterations = llm_resource._query_max_iterations
+        if resources:
+            request_params["available_resources"] = resources
+            llm_resource._query_strategy = QueryStrategy.ITERATIVE
+            llm_resource._query_max_iterations = options.get("max_iterations", 5)
+
         request = BaseRequest(arguments=request_params)
         response = llm_resource.query_sync(request)
+
+        # Reset query strategy and max iterations
+        llm_resource._query_strategy = previous_query_strategy
+        llm_resource._query_max_iterations = previous_query_max_iterations
 
         if not response.success:
             raise SandboxError(f"LLM reasoning failed: {response.error}")

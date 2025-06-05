@@ -219,6 +219,91 @@ Dana is under active development and currently embedded inside `OpenDXA` as a mo
 
 Want to help shape how intelligent agents reason and act? Reach out or contribute to the `dana/` module inside the OpenDXA repository.
 
+# Interactive Development
+You can also explore Dana interactively using the REPL:
+
+```bash
+# Start the Dana REPL
+python -m opendxa.dana.sandbox.repl
+
+# Try some commands
+dana> name = "OpenDXA"
+dana> log.info(f"Hello from {name}!")
+dana> use("workflows.example")
+```
+
+---
+
+## NEW: Object Method Calls & MCP Integration
+
+Dana now supports object-oriented patterns with MCP (Model Context Protocol) and A2A (Agent-to-Agent) integration:
+
+### MCP Resource Integration
+```python
+# Connect to MCP services
+websearch = use("mcp", url="http://localhost:8880/websearch")
+database = use("mcp.database", "https://db.company.com/mcp")
+
+# Call methods on MCP resources
+tools = websearch.list_tools()
+search_results = websearch.search("Dana programming examples")
+db_records = database.query("SELECT * FROM projects WHERE active = true")
+
+# Use in control structures
+if websearch.health_check():
+    results = websearch.search(query)
+    log.info(f"Found {len(results)} search results")
+```
+
+### A2A Agent Integration
+```python
+# Connect to specialized agents
+analyst = use("a2a.research-agent", "https://agents.company.com")
+planner = use("a2a.workflow-coordinator")
+
+# Call agent methods (handles async automatically)
+market_data = analyst.collect_data("tech sector")
+analysis = analyst.analyze_trends(market_data)
+workflow = planner.create_workflow(analysis)
+```
+
+### With Statement Resource Management
+
+> **⚠️ Current Limitation**: `with` statements currently support only a single `as` clause. 
+> Multiple resources require nested `with` statements.
+
+```python
+# Scoped resource management
+with use("mcp.database") as database:
+    users = database.query("SELECT * FROM users WHERE active = true")
+    database.update_last_seen(users)
+    # Database connection automatically cleaned up
+
+# Multiple resources - use nested statements
+with use("mcp", url="http://localhost:8880/websearch") as websearch:
+    with use("mcp.database") as database:
+        search_results = websearch.search("customer feedback")
+        database.store_analysis(search_results)
+```
+
+---
+
+## Architecture and Design
+
+---
+
+## 🛠 Status
+
+Dana is under active development and currently embedded inside `OpenDXA` as a module. Refactoring and extraction to an independent package is supported by clean modular structure.
+
+> Future direction includes formal spec, test suite, and runtime service for multi-agent environments.
+
+---
+
+## 📣 Contribute
+
+Want to help shape how intelligent agents reason and act? Reach out or contribute to the `dana/` module inside the OpenDXA repository.
+
 
 ---
 <p align="center">

@@ -20,28 +20,21 @@ from opendxa.dana.sandbox.parser.ast import (
     LiteralExpression,
     Statement,
     UnaryExpression,
+    WithStatement,
+    PassStatement,
 )
 from opendxa.dana.sandbox.parser.transformer.expression_transformer import ExpressionTransformer
 from opendxa.dana.sandbox.parser.transformer.fstring_transformer import FStringTransformer
 from opendxa.dana.sandbox.parser.transformer.statement_transformer import StatementTransformer
 from opendxa.dana.sandbox.parser.transformer.variable_transformer import VariableTransformer
+from lark import Tree
 
 # 1. VariableTransformer tests
 
 
 def make_token(type_, value):
-    class FakeToken:
-        def __init__(self, value):
-            self.type = type_
-            self.value = value
-
-        def __str__(self):
-            return str(self.value)
-
-        def __repr__(self):
-            return str(self.value)
-
-    return FakeToken(value)
+    from lark import Token
+    return Token(type_, value)
 
 
 def test_simple_name():

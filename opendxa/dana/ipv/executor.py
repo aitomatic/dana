@@ -5,12 +5,15 @@ This module provides the IPVExecutor inheritance hierarchy that implements
 the Infer-Process-Validate pattern for different types of intelligent operations.
 """
 
+from importlib import resources
 import time
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.utils.logging import DXA_LOGGER
+from opendxa.common.resource.base_resource import BaseResource
+from opendxa.common.mixins.queryable import QueryStrategy
 
 from .base import IPVConfig, IPVExecutionError
 
@@ -155,6 +158,8 @@ class IPVExecutor(ABC, Loggable):
 
             # Phase 2: PROCESS
             self.debug("Executing PROCESS phase")
+            if 'context' not in kwargs:
+                kwargs['context'] = context
             start_time = time.time()
             process_result = self.process_phase(intent, infer_result, **kwargs)
             process_time = time.time() - start_time
@@ -327,6 +332,13 @@ class IPVReason(IPVExecutor):
         except Exception as e:
             self.debug(f"Error getting optimization hints: {e}")
 
+         # Get resources from context and filter by included_resources
+        try:
+            resources = context.get_resources(kwargs.get("llm_options", {}).get("resources", None)) if context is not None else {}
+        except Exception as e:
+            self.warning(f"Error getting resources from context: {e}")
+            resources = {}
+
         # Build enhanced context with raw information
         # The LLM will handle domain/intent detection in the PROCESS phase
         enhanced_context = {
@@ -336,6 +348,7 @@ class IPVReason(IPVExecutor):
             "code_context": code_context,
             "optimization_hints": optimization_hints,
             "use_llm_analysis": True,  # Flag to use LLM for context analysis
+            "resources": resources,
         }
 
         self.debug(f"INFER phase completed: basic context with {len(optimization_hints)} type hints")
@@ -359,6 +372,7 @@ class IPVReason(IPVExecutor):
         code_context = enhanced_context.get("code_context")
         expected_type = enhanced_context.get("expected_type")
         optimization_hints = enhanced_context.get("optimization_hints", [])
+        resources = enhanced_context.get("resources", {})
 
         # Determine max steps (N)
         max_steps = llm_options.get("max_meta_steps") or llm_options.get("max_iterations") or kwargs.get("max_meta_steps") or 3
@@ -372,6 +386,17 @@ class IPVReason(IPVExecutor):
         if expected_type and hasattr(expected_type, "__name__"):
             type_name = expected_type.__name__
             prompt_sections.append(f"Type hint:\n{type_name}")
+
+        try:
+            if resources:
+                # NOTE : NEED HELP WITH PROMPTING SO PROCESS PHASE CAN PERFORM TOOL CALLS
+                import json
+                resource_dict_str = {}
+                for resource_name, resource in resources.items():
+                    resource_dict_str[resource_name] = resource.list_openai_functions()
+                prompt_sections.append(f"Resources and tools:\n{json.dumps(resource_dict_str, indent=2)}")
+        except Exception as e:
+            self.warning(f"Error getting resources from context: {e}")
 
         # Add Code context section if present and non-empty
         context_lines = None
@@ -720,8 +745,27 @@ Format your output as JSON:
             "max_tokens": options.get("max_tokens", None),
         }
 
+        # Get resources from context and filter by included_resources
+        try:
+            resources = context.get_resources(options.get("resources", None)) if context is not None else {}
+        except Exception as e:
+            self.warning(f"Error getting resources from context: {e}")
+            resources = {}
+
+        # Set query strategy and max iterations to iterative and 5 respectively to ultilize tools calls
+        previous_query_strategy = llm_resource._query_strategy
+        previous_query_max_iterations = llm_resource._query_max_iterations
+        if resources:
+            request_params["available_resources"] = resources
+            llm_resource._query_strategy = QueryStrategy.ITERATIVE
+            llm_resource._query_max_iterations = options.get("max_iterations", 5)
+
         request = BaseRequest(arguments=request_params)
         response = llm_resource.query_sync(request)
+
+        # Reset query strategy and max iterations
+        llm_resource._query_strategy = previous_query_strategy
+        llm_resource._query_max_iterations = previous_query_max_iterations
 
         if not response.success:
             raise SandboxError(f"LLM reasoning failed: {response.error}")

@@ -120,6 +120,15 @@ use("workflows.data_validation")
 
 # Load domain-specific knowledge
 use("kb.legal.contract_analysis")
+
+# MCP Resource Integration (NEW)
+websearch = use("mcp", url="http://localhost:8880/websearch")
+database = use("mcp.database", "https://db.company.com/mcp")
+api_client = use("mcp.weather")
+
+# A2A Agent Integration (NEW)
+analyst = use("a2a.research-agent", "https://agents.company.com")
+planner = use("a2a.workflow-coordinator")
 ```
 
 #### `set()` - Direct State Setting
@@ -448,6 +457,94 @@ else:
 - Troubleshooting: See [Troubleshooting Guide](../troubleshooting/README.md) when things go wrong
 
 ---
+
+## `while` - Loops
+```python
+counter = 0
+while counter < 10:
+    log.info(f"Processing item {counter}")
+    counter = counter + 1
+```
+
+---
+
+## Object Method Calls (NEW)
+
+Dana now supports calling methods on objects returned by `use()` or other sources:
+
+```python
+# Basic object method calls
+websearch = use("mcp", url="http://localhost:8880/websearch")
+tools = websearch.list_tools()
+search_results = websearch.search("Dana programming language")
+
+# Chained method calls with arguments
+database = use("mcp.database")
+query_result = database.query("SELECT * FROM users WHERE active = true")
+record_count = database.count_records("users")
+
+# Method calls with mixed arguments
+api_client = use("mcp.weather")
+weather_data = api_client.get_forecast("San Francisco", days=7, detailed=true)
+
+# Object method calls in expressions
+if websearch.health_check():
+    search_results = websearch.search(query)
+    log.info(f"Found {len(search_results)} results")
+```
+
+### Async Method Support
+Object methods can be synchronous or asynchronous - Dana handles both automatically:
+
+```python
+# Works with both sync and async methods
+agent = use("a2a.research-agent")
+analysis = agent.analyze_market("tech stocks")  # May be async internally
+report = agent.generate_report(analysis)        # May be async internally
+```
+
+---
+
+## With Statements (NEW)
+
+> **⚠️ Current Limitation**: `with` statements currently support only a single `as` clause. 
+> Multiple resources require nested `with` statements:
+> ```python
+> # ❌ Not supported yet
+> with use("mcp.database") as db, use("mcp.search") as search:
+> 
+> # ✅ Use nested statements instead
+> with use("mcp.database") as db:
+>     with use("mcp.search") as search:
+>         # your code here
+> ```
+
+Use `with` statements for scoped resource management and temporary contexts:
+
+```python
+# Resource scoping
+with use("mcp.database", "https://db.company.com") as database:
+    users = database.query("SELECT * FROM users")
+    database.update("UPDATE users SET last_seen = NOW()")
+    # database automatically cleaned up after this block
+
+# Temporary context management  
+with use("a2a.research-agent") as analyst:
+    market_data = analyst.collect_data("tech sector")
+    analysis = analyst.analyze(market_data)
+    report = analyst.generate_summary(analysis)
+    # analyst resources released after this block
+
+# Multiple resource management - use nested statements
+with use("mcp", url="http://localhost:8880/websearch") as websearch:
+    with use("mcp.database") as database:
+        search_results = websearch.search("customer feedback")
+        database.store_results(search_results)
+```
+
+---
+
+## Advanced Control Structures
 
 <p align="center">
 Copyright © 2025 Aitomatic, Inc. Licensed under the <a href="../../LICENSE.md">MIT License</a>.

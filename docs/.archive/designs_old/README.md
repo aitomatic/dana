@@ -1,3 +1,9 @@
+<p align="center">
+  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
+</p>
+
+[Project Overview](../README.md) | [Main Documentation](../docs/README.md)
+
 # OpenDXA Design Documentation
 This directory contains the authoritative design specifications for OpenDXA and the Dana language. These documents define the architecture, implementation details, and design decisions that guide the project.
 
@@ -101,9 +107,13 @@ These documents provide deep technical insight into:
 ---
 
 **See Also:**
+- [User Documentation](../for-engineers/) - Practical guides and recipes
+- [API Reference](../for-engineers/reference/) - Complete API documentation
+- [Architecture Guide](../for-contributors/architecture/) - Implementation details 
 
-- [User Documentation](../../for-engineers/README.md) - Practical guides and recipes
-
-- [API Reference](../../for-engineers/reference/api/README.md) - Complete API documentation
-
-- [Architecture Guide](../../for-contributors/architecture/README.md) - Implementation details 
+---
+<p align="center">
+Copyright © 2024 Aitomatic, Inc. Licensed under the [MIT License](../LICENSE.md).
+<br/>
+<a href="https://aitomatic.com">https://aitomatic.com</a>
+</p>
