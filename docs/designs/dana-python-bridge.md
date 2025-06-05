@@ -9,13 +9,13 @@
 **Status**: Design Phase  
 **Module**: `opendxa.dana`
 
-Seamless Dana-Python integration following the Objective-C/Swift bridging model. Dana and Python share the same runtime, objects, and memory space - feeling like one unified language.
+Seamless Dana-Python integration through a unified runtime architecture. Dana and Python share the same runtime, objects, and memory space - feeling like one unified language.
 
 ## Overview
 
-Like Objective-C and Swift, Dana and Python operate as a **unified runtime** where objects, functions, and variables are shared transparently across language boundaries with zero overhead.
+Dana and Python operate as a **unified runtime** where objects, functions, and variables are shared transparently across language boundaries with zero overhead.
 
-### Design Principles (Inspired by Objective-C/Swift)
+### Design Principles
 
 1. **Module Integration**: Import Dana modules like Python modules and vice versa
 2. **Transparent Interop**: Objects flow between languages without explicit conversion
@@ -24,7 +24,7 @@ Like Objective-C and Swift, Dana and Python operate as a **unified runtime** whe
 5. **Zero Overhead**: Cross-language calls are as fast as native calls
 
 
-## Integration Patterns (Objective-C/Swift Style)
+## Integration Patterns
 
 ### Step 1: Creating a Dana Module
 
@@ -66,7 +66,7 @@ else:
 
 ## Unified Runtime Model
 
-### Shared Object Space (Like Objective-C/Swift)
+### Shared Object Space
 
 ```python
 # Variables exist in both environments simultaneously
@@ -175,7 +175,7 @@ async def analyze_data():
 ```
 
 
-## Real-World Example (Unified Runtime Style)
+## Real-World Example
 
 ```python
 # File: monitor_system.py
@@ -308,7 +308,7 @@ print(f"System status: {result['status']}")
 - **Error Handling**: Need unified error model across languages
 - **Module System**: Custom import system implementation needed
 
-## Implementation Phases (Like Swift Evolution)
+## Implementation Phases
 
 ### Phase 1: Core Runtime Integration
 ```python
@@ -353,7 +353,7 @@ dana_result = data_analysis.process(python_dataframe)  # Direct object passing
 
 ## Conclusion
 
-This **Objective-C/Swift-inspired design** creates a unified runtime where Dana and Python feel like one language. Instead of bridging between separate environments, we create a **shared execution space** where:
+This **unified runtime design** creates a shared execution environment where Dana and Python feel like one language. Instead of bridging between separate environments, we create a **shared execution space** where:
 
 - Dana modules import like Python modules
 - Objects flow transparently without conversion
