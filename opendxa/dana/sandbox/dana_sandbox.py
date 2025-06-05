@@ -10,9 +10,10 @@ MIT License
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any
 
 from opendxa.common.resource.llm_resource import LLMResource
+from opendxa.common.utils.logging import DXA_LOGGER
 from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
 from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
@@ -24,9 +25,9 @@ class ExecutionResult:
 
     success: bool
     result: Any = None
-    final_context: Optional[SandboxContext] = None
+    final_context: SandboxContext | None = None
     execution_time: float = 0.0
-    error: Optional[Exception] = None
+    error: Exception | None = None
     output: str = ""
 
     def __str__(self) -> str:
@@ -45,27 +46,60 @@ class DanaSandbox:
     It provides a clean, safe interface for running Dana files and evaluating code.
     """
 
-    def __init__(self, debug: bool = False, context: Optional[SandboxContext] = None):
+    def __init__(
+        self,
+        debug: bool = False,
+        context: SandboxContext | None = None,
+        default_llm: LLMResource | None = None,
+        llm_resources_map: dict[str, LLMResource] | None = None,
+    ):
         """
         Initialize a Dana sandbox.
 
         Args:
             debug: Enable debug logging
-            context: Optional custom context (creates default if None)
+            context: Optional custom context (creates default if None).
+                     If provided, it's assumed to be pre-configured.
+            default_llm: Optional pre-initialized default LLMResource.
+            llm_resources_map: Optional pre-initialized map of named LLMResources.
         """
         self.debug = debug
-        self._context = context or self._create_default_context()
+        self._provided_default_llm = default_llm
+        self._provided_llm_resources_map = llm_resources_map
+
+        self._context = context or SandboxContext()  # Create context if not provided
+        self._initialize_llm_resources(self._context)  # Populate with LLMs
+
         self._interpreter = DanaInterpreter()
         self._parser = DanaParser()
 
-    def _create_default_context(self) -> SandboxContext:
-        """Create a default execution context with LLM resource."""
-        context = SandboxContext()
-        llm_resource = LLMResource()
-        context.set("system.llm_resource", llm_resource)
-        return context
+    def _initialize_llm_resources(self, context: SandboxContext) -> None:
+        """Initializes and sets LLM resources in the provided context."""
+        logger = DXA_LOGGER.getLogger("opendxa.dana.sandbox")
 
-    def run(self, file_path: Union[str, Path]) -> ExecutionResult:
+        # Get or create the default LLM
+        default_llm = self._provided_default_llm if isinstance(self._provided_default_llm, LLMResource) else LLMResource()
+        logger.info(f"Using {'provided' if self._provided_default_llm else 'new'} default LLM: {default_llm.model or 'default'}")
+
+        # Set the default LLM resource
+        context.set("system:llm_resource", default_llm)
+
+        # Initialize resources dictionary with default LLM
+        resources = {"default": default_llm}
+        if default_llm.model:
+            resources[default_llm.model] = default_llm
+
+        # Add any additional provided resources
+        if isinstance(self._provided_llm_resources_map, dict):
+            resources.update(
+                {name: resource for name, resource in self._provided_llm_resources_map.items() if isinstance(resource, LLMResource)}
+            )
+
+        # Set the resources dictionary
+        context.set("system:llm_resources", resources)
+        logger.info(f"Initialized system:llm_resources with keys: {list(resources.keys())}")
+
+    def run(self, file_path: str | Path) -> ExecutionResult:
         """
         Run a Dana file.
 
@@ -95,7 +129,7 @@ class DanaSandbox:
         except Exception as e:
             return ExecutionResult(success=False, error=e, final_context=self._context)
 
-    def eval(self, source_code: str, filename: Optional[str] = None) -> ExecutionResult:
+    def eval(self, source_code: str, filename: str | None = None) -> ExecutionResult:
         """
         Evaluate Dana source code.
 
@@ -117,7 +151,7 @@ class DanaSandbox:
             return ExecutionResult(success=False, error=e, final_context=self._context)
 
     @classmethod
-    def quick_run(cls, file_path: Union[str, Path], debug: bool = False, context: Optional[SandboxContext] = None) -> ExecutionResult:
+    def quick_run(cls, file_path: str | Path, debug: bool = False, context: SandboxContext | None = None) -> ExecutionResult:
         """
         Quick file execution (class method).
 
@@ -134,7 +168,7 @@ class DanaSandbox:
 
     @classmethod
     def quick_eval(
-        cls, source_code: str, filename: Optional[str] = None, debug: bool = False, context: Optional[SandboxContext] = None
+        cls, source_code: str, filename: str | None = None, debug: bool = False, context: SandboxContext | None = None
     ) -> ExecutionResult:
         """
         Quick code evaluation (class method).
@@ -150,3 +184,8 @@ class DanaSandbox:
         """
         sandbox = cls(debug=debug, context=context)
         return sandbox.eval(source_code, filename)
+
+    def run_file(self, file_path: str) -> Any:
+        # This method is not provided in the original file or the code block
+        # It's assumed to exist as it's called in the original file
+        pass

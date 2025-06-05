@@ -23,7 +23,7 @@ def test_reason_function_direct_call():
     # Test with environment variable approach
     os.environ["OPENDXA_MOCK_LLM"] = "true"
     llm_resource = LLMResource()
-    context.set("system.llm_resource", llm_resource)
+    context.set("system:llm_resource", llm_resource)
 
     # Call function using environment variable-based mocking
     result1 = reason_function("What is 2+2?", context)
@@ -44,7 +44,7 @@ def test_reason_function_parameter_order():
     llm_resource = LLMResource()
 
     # Set up context with LLM resource
-    context.set("system.llm_resource", llm_resource)
+    context.set("system:llm_resource", llm_resource)
 
     # Test with explicit mocking parameter
     result1 = reason_function("test prompt", context, use_mock=True)

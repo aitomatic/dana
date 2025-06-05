@@ -1,6 +1,10 @@
 {
     "preferred_models": [
         {
+            "name": "openai:gpt-4.1-mini",
+            "required_api_keys": ["OPENAI_API_KEY"]
+        },
+        {
             "name": "groq:deepseek-r1-distill-llama-70b",
             "required_api_keys": ["GROQ_API_KEY"]
         },
