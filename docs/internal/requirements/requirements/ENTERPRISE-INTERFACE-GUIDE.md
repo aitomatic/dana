@@ -1,18 +1,11 @@
 <!-- markdownlint-disable MD041 -->
 <!-- markdownlint-disable MD033 -->
-<p align="center">
-  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
-</p>
-
-[Project Overview](../../README.md)
-
-
 # Enterprise Software Screenshot Analysis Requirements
 
 ## Business/Technical Problem Statement
 
 ### Persona
-**Emily Rodriguez, Business Analyst**
+Emily Rodriguez, Business Analyst
 - 5+ years experience in enterprise software implementation
 - Responsible for helping users navigate complex enterprise systems
 - Must ensure accurate data entry and troubleshoot user issues
@@ -40,123 +33,123 @@ This document describes the requirements for enterprise software users who need 
 ### System Components
 
 1. **Screenshot Processing System**
-   - Image preprocessor
-   - OCR engine
-   - Interface element recognizer
-   - Error message extractor
-   - Field content analyzer
+ - Image preprocessor
+ - OCR engine
+ - Interface element recognizer
+ - Error message extractor
+ - Field content analyzer
 
 2. **Knowledge Base**
-   - Interface templates
-   - Error code database
-   - Field requirements
-   - Historical patterns
-   - System documentation
+ - Interface templates
+ - Error code database
+ - Field requirements
+ - Historical patterns
+ - System documentation
 
 3. **Analysis Engine**
-   - Data validation
-   - Error resolution
-   - Field requirement analysis
-   - Pattern matching
-   - Version compatibility
+ - Data validation
+ - Error resolution
+ - Field requirement analysis
+ - Pattern matching
+ - Version compatibility
 
 4. **Reporting System**
-   - Validation report generator
-   - Error resolution guide
-   - Field requirement display
-   - Step-by-step guidance
-   - Documentation references
+ - Validation report generator
+ - Error resolution guide
+ - Field requirement display
+ - Step-by-step guidance
+ - Documentation references
 
 ### Example Scenario: Interface Analysis Process
 
 ```mermaid
 sequenceDiagram
-    participant U as User
-    participant D as DXA
-    participant K as Knowledge Base
-    participant S as System
+ participant U as User
+ participant D as DXA
+ participant K as Knowledge Base
+ participant S as System
 
-    U->>D: Upload screenshot
-    D->>D: Preprocess image
-    D->>K: Query templates
-    D->>D: Analyze elements
-    D->>D: Extract content
-    D->>S: Validate data
-    D->>U: Generate guidance
+ U->>D: Upload screenshot
+ D->>D: Preprocess image
+ D->>K: Query templates
+ D->>D: Analyze elements
+ D->>D: Extract content
+ D->>S: Validate data
+ D->>U: Generate guidance
 ```
 
 #### Context
 
 - Enterprise software environment
 - DXA has access to:
-  - Interface templates
-  - Error code database
-  - Field requirements
-  - Historical patterns
-  - System documentation
+ - Interface templates
+ - Error code database
+ - Field requirements
+ - Historical patterns
+ - System documentation
 
 #### Challenge
 
 1. Accurate Analysis
-   - Process various screenshot qualities
-   - Recognize interface elements
-   - Extract error messages
-   - Validate data patterns
-   - Match field requirements
+ - Process various screenshot qualities
+ - Recognize interface elements
+ - Extract error messages
+ - Validate data patterns
+ - Match field requirements
 
 2. Timely Response
-   - Quick image processing
-   - Rapid element recognition
-   - Fast error resolution
-   - Immediate guidance
-   - Clear documentation
+ - Quick image processing
+ - Rapid element recognition
+ - Fast error resolution
+ - Immediate guidance
+ - Clear documentation
 
 3. Security
-   - Protect sensitive data
-   - Handle user information
-   - Maintain compliance
-   - Control access levels
-   - Manage data retention
+ - Protect sensitive data
+ - Handle user information
+ - Maintain compliance
+ - Control access levels
+ - Manage data retention
 
 #### DXA Actions
 
 1. **Screenshot Analysis**
-   - Preprocess images
-   - Recognize elements
-   - Extract content
-   - Validate data
-   - Match patterns
+ - Preprocess images
+ - Recognize elements
+ - Extract content
+ - Validate data
+ - Match patterns
 
 2. **Guidance Generation**
-   - Verify data entry
-   - Resolve errors
-   - Clarify requirements
-   - Provide steps
-   - Document findings
+ - Verify data entry
+ - Resolve errors
+ - Clarify requirements
+ - Provide steps
+ - Document findings
 
 ## Solution Architecture
 
 ```mermaid
 graph TD
-    A[User] -->|Takes Screenshot| B[Interface Analysis]
-    B -->|Analyzes| C[Data Validation]
-    B -->|Analyzes| D[Error Resolution]
-    C -->|Validates| E[Data Entry]
-    D -->|Resolves| F[Error Messages]
-    E -->|Updates| G[Database]
-    F -->|Updates| G
-    G -->|Provides| H[Historical Data]
-    H -->|Informs| B
-    I[DXA System] -->|Processes| B
-    I -->|Generates| J[Action Plan]
-    J -->|Executes| K[Actions]
-    K -->|Updates| G
-    L[Interface Templates] -->|Provides| M[Field Requirements]
-    M -->|Informs| C
-    N[Error Code Database] -->|Provides| O[Error Patterns]
-    O -->|Informs| D
-    DOC[Documentation] -->|Provides| Q[User Guides]
-    Q -->|Informs| A
+ A[User] -->|Takes Screenshot| B[Interface Analysis]
+ B -->|Analyzes| C[Data Validation]
+ B -->|Analyzes| D[Error Resolution]
+ C -->|Validates| E[Data Entry]
+ D -->|Resolves| F[Error Messages]
+ E -->|Updates| G[Database]
+ F -->|Updates| G
+ G -->|Provides| H[Historical Data]
+ H -->|Informs| B
+ I[DXA System] -->|Processes| B
+ I -->|Generates| J[Action Plan]
+ J -->|Executes| K[Actions]
+ K -->|Updates| G
+ L[Interface Templates] -->|Provides| M[Field Requirements]
+ M -->|Informs| C
+ N[Error Code Database] -->|Provides| O[Error Patterns]
+ O -->|Informs| D
+ DOC[Documentation] -->|Provides| Q[User Guides]
+ Q -->|Informs| A
 ```
 
 ### 1. Input Components

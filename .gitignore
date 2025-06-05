@@ -39,6 +39,7 @@ configs/
 build/
 dist/
 *.egg
+site/
 
 # Development files
 notebooks/

@@ -1,12 +1,5 @@
 <!-- markdownlint-disable MD041 -->
 <!-- markdownlint-disable MD033 -->
-<p align="center">
-  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
-</p>
-
-[Project Overview](../../README.md)
-
-
 # Knowledge Evolution in OpenDXA
 
 ## Overview
@@ -33,35 +26,35 @@ OpenDXA's knowledge evolution system enables agents to learn and adapt over time
 
 ```mermaid
 graph TB
-    subgraph "Knowledge Sources"
-        direction TB
-        E[Experts]
-        D[Documents]
-        H[History]
-        F[Feedback]
-    end
+ subgraph "Knowledge Sources"
+ direction TB
+ E[Experts]
+ D[Documents]
+ H[History]
+ F[Feedback]
+ end
 
-    subgraph "Evolution System"
-        KB[Knowledge Base]
-        VE[Version Engine]
-        QE[Quality Engine]
-        LE[Learning Engine]
-    end
+ subgraph "Evolution System"
+ KB[Knowledge Base]
+ VE[Version Engine]
+ QE[Quality Engine]
+ LE[Learning Engine]
+ end
 
-    subgraph "Agent System"
-        A[Agent]
-        C[Capabilities]
-        M[Monitoring]
-    end
+ subgraph "Agent System"
+ A[Agent]
+ C[Capabilities]
+ M[Monitoring]
+ end
 
-    E & D & H & F --> KB
-    KB --> VE
-    KB --> QE
-    KB --> LE
-    VE & QE & LE --> A
-    A --> C
-    A --> M
-    M --> F
+ E & D & H & F --> KB
+ KB --> VE
+ KB --> QE
+ KB --> LE
+ VE & QE & LE --> A
+ A --> C
+ A --> M
+ M --> F
 ```
 
 ## Implementation
@@ -77,9 +70,9 @@ kb = KnowledgeBase()
 # Capture new knowledge
 capture = KnowledgeCapture(kb)
 new_knowledge = capture.from_expert(
-    expert="process_engineer",
-    content=process_improvement,
-    context="wafer_inspection"
+ expert="process_engineer",
+ content=process_improvement,
+ context="wafer_inspection"
 )
 ```
 
@@ -90,14 +83,14 @@ from opendxa.metrics import QualityMetrics
 
 # Initialize validation
 validator = KnowledgeValidator(
-    metrics=QualityMetrics(),
-    rules=validation_rules
+ metrics=QualityMetrics(),
+ rules=validation_rules
 )
 
 # Validate new knowledge
 result = validator.validate(
-    knowledge=new_knowledge,
-    context="semiconductor"
+ knowledge=new_knowledge,
+ context="semiconductor"
 )
 ```
 
@@ -110,110 +103,110 @@ integrator = KnowledgeIntegrator(kb)
 
 # Integrate validated knowledge
 version = integrator.integrate(
-    knowledge=new_knowledge,
-    validation_result=result,
-    source="expert_feedback"
+ knowledge=new_knowledge,
+ validation_result=result,
+ source="expert_feedback"
 )
 ```
 
 ## Best Practices
 
 1. **Knowledge Capture**
-   - Document sources clearly
-   - Capture context
-   - Validate inputs
-   - Track provenance
+ - Document sources clearly
+ - Capture context
+ - Validate inputs
+ - Track provenance
 
 2. **Knowledge Validation**
-   - Define clear rules
-   - Use appropriate metrics
-   - Consider context
-   - Document decisions
+ - Define clear rules
+ - Use appropriate metrics
+ - Consider context
+ - Document decisions
 
 3. **Knowledge Integration**
-   - Version control
-   - Quality assurance
-   - Performance monitoring
-   - Feedback loops
+ - Version control
+ - Quality assurance
+ - Performance monitoring
+ - Feedback loops
 
 ## Common Patterns
 
 1. **Knowledge Update**
-   ```python
-   # Capture new knowledge
-   new_knowledge = capture.from_expert(
-       expert="process_engineer",
-       content=improvement
-   )
+ ```python
+ # Capture new knowledge
+ new_knowledge = capture.from_expert(
+ expert="process_engineer",
+ content=improvement
+ )
 
-   # Validate
-   result = validator.validate(new_knowledge)
+ # Validate
+ result = validator.validate(new_knowledge)
 
-   # Integrate if valid
-   if result.is_valid:
-       version = integrator.integrate(
-           knowledge=new_knowledge,
-           validation_result=result
-       )
-   ```
+ # Integrate if valid
+ if result.is_valid:
+ version = integrator.integrate(
+ knowledge=new_knowledge,
+ validation_result=result
+ )
+ ```
 
 2. **Quality Tracking**
-   ```python
-   # Track knowledge quality
-   metrics = QualityMetrics()
-   metrics.track(
-       knowledge_id="process_001",
-       metric="accuracy",
-       value=0.95
-   )
+ ```python
+ # Track knowledge quality
+ metrics = QualityMetrics()
+ metrics.track(
+ knowledge_id="process_001",
+ metric="accuracy",
+ value=0.95
+ )
 
-   # Analyze trends
-   analysis = metrics.analyze(
-       knowledge_id="process_001",
-       timeframe="last_month"
-   )
-   ```
+ # Analyze trends
+ analysis = metrics.analyze(
+ knowledge_id="process_001",
+ timeframe="last_month"
+ )
+ ```
 
 3. **Feedback Integration**
-   ```python
-   # Collect feedback
-   feedback = collect_feedback(
-       knowledge_id="process_001",
-       user="operator",
-       rating=4,
-       comments="Very helpful"
-   )
+ ```python
+ # Collect feedback
+ feedback = collect_feedback(
+ knowledge_id="process_001",
+ user="operator",
+ rating=4,
+ comments="Very helpful"
+ )
 
-   # Process feedback
-   result = process_feedback(
-       feedback=feedback,
-       knowledge_base=kb
-   )
+ # Process feedback
+ result = process_feedback(
+ feedback=feedback,
+ knowledge_base=kb
+ )
 
-   # Update if needed
-   if result.needs_update:
-       update_knowledge(result)
-   ```
+ # Update if needed
+ if result.needs_update:
+ update_knowledge(result)
+ ```
 
 ## Evolution Examples
 
 1. **Process Optimization**
-   - Capture improvements
-   - Validate effectiveness
-   - Integrate changes
-   - Monitor results
+ - Capture improvements
+ - Validate effectiveness
+ - Integrate changes
+ - Monitor results
 
 2. **Quality Assurance**
-   - Track metrics
-   - Identify issues
-   - Implement fixes
-   - Verify improvements
+ - Track metrics
+ - Identify issues
+ - Implement fixes
+ - Verify improvements
 
 3. **Expert Knowledge**
-   - Document expertise
-   - Validate accuracy
-   - Integrate into system
-   - Maintain relevance
+ - Document expertise
+ - Validate accuracy
+ - Integrate into system
+ - Maintain relevance
 
 ## Next Steps
 

@@ -1,50 +1,42 @@
-<!--
-⚠️ IMPORTANT FOR AI CODE GENERATORS:
-Always use colon notation for explicit scopes: `private:x`, `public:x`, `system:x`, `local:x`
-NEVER use dot notation: `private.x`, `public.x`, etc.
-Prefer using unscoped variables (auto-scoped to local) instead of explicit `private:` scope unless private scope is specifically needed.
--->
-
-<p align="center">
-  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
-</p>
-
 # OpenDXA - Domain-Expert Agent Framework
 
 > OpenDXA is a comprehensive framework for easily coding and deploying domain-expert multi-agent systems.
-
 > Powered by Dana, a Pythonic agentic programming language and secure sandboxed runtime.
-
 ---
-
 ## TL;DR - Get Running in 30 Seconds! 🚀
-
 ### One-Command Setup
 ```bash
-git clone https://github.com/aitomatic/opendxa.git && cd opendxa && make
+% git clone https://github.com/aitomatic/opendxa.git
+% cd opendxa
+% make
 ```
 This installs everything and creates your `.env` file. Then just:
 1. Add your API key to `.env` 
 2. Run `bin/dana` to start the Dana REPL (interactive shell)
 
-*First time using uv? See [Project Maintenance with uv](#-project-maintenance-with-uv) for essential commands.*
-
 ---
 
 ### Manual Setup (if you prefer)
-1. Install [uv](https://astral.sh/uv/): `curl -LsSf https://astral.sh/uv/install.sh | sh`
-2. Setup: `git clone https://github.com/aitomatic/opendxa.git && cd opendxa && uv sync`
-3. Configure: `cp .env.example .env` (then add your API keys)
-4. Run: `bin/dana` to start the Dana REPL
 
-*New to uv? Check out [Project Maintenance with uv](#-project-maintenance-with-uv) for helpful commands.*
+```bash
+% curl -LsSf https://astral.sh/uv/install.sh | sh # Install uv
+% git clone https://github.com/aitomatic/opendxa.git && cd opendxa && uv sync # Setup OpenDXA
+% cp .env.example .env # Configure your API keys
+% bin/dana # Start the Dana REPL
+```
+
+- First time using uv? See [Project Maintenance with uv](#project-maintenance-with-uv) for essential commands.
+
+---
+
+- View the full OpenDXA with Dana documentation at: [https://aitomatic.github.io/opendxa/](https://aitomatic.github.io/opendxa/)
 
 ---
 
 ## 🎯 Choose Your Path
 
 ### 🛠️ I want to build with OpenDXA
-→ **[For Engineers](docs/for-engineers/)** - Practical guides, recipes, and references  
+→ **[For Engineers](docs/for-engineers/README.md)** - Practical guides, recipes, and references  
 *Perfect for developers who want to get working quickly*
 
 **What you'll find:**
@@ -53,12 +45,12 @@ This installs everything and creates your `.env` file. Then just:
 - Real-world recipes for chatbots, document processing, and workflows
 - Troubleshooting guides and error references
 
-**Start here:** [Quick Start Guide](docs/for-engineers/README.md#-quick-start)
+**Start here:** [Quick Start Guide](docs/for-engineers/README.md#quick-start)
 
 ---
 
 ### 🔍 I'm evaluating OpenDXA for my team
-→ **[For Evaluators](docs/for-evaluators/)** - Comparisons, ROI analysis, and proof of concepts  
+→ **[For Evaluators](docs/for-evaluators/README.md)** - Comparisons, ROI analysis, and proof of concepts  
 *Perfect for technical leads and decision makers*
 
 **What you'll find:**
@@ -67,12 +59,12 @@ This installs everything and creates your `.env` file. Then just:
 - Proof of concept guides and adoption strategies
 - Decision frameworks and implementation roadmaps
 
-**Start here:** [30-Second Assessment](docs/for-evaluators/README.md#-quick-evaluation-framework)
+**Start here:** [30-Second Assessment](docs/for-evaluators/README.md#quick-evaluation-framework)
 
 ---
 
 ### 🏗️ I want to contribute or extend OpenDXA
-→ **[For Contributors](docs/for-contributors/)** - Architecture, codebase, and development guides  
+→ **[For Contributors](docs/for-contributors/README.md)** - Architecture, codebase, and development guides  
 *Perfect for developers who want to modify or extend the system*
 
 **What you'll find:**
@@ -81,12 +73,12 @@ This installs everything and creates your `.env` file. Then just:
 - Extension development for capabilities and resources
 - Testing frameworks and documentation standards
 
-**Start here:** [Development Setup](docs/for-contributors/README.md#-quick-start-for-contributors)
+**Start here:** [Development Setup](docs/for-contributors/README.md#quick-start-for-contributors)
 
 ---
 
 ### 🧠 I want to understand the philosophy and theory
-→ **[For Researchers](docs/for-researchers/)** - Manifesto, theory, and academic context  
+→ **[For Researchers](docs/for-researchers/README.md)** - Manifesto, theory, and academic context  
 *Perfect for researchers and those interested in the theoretical foundations*
 
 **What you'll find:**
@@ -95,7 +87,7 @@ This installs everything and creates your `.env` file. Then just:
 - Theoretical analysis and future research directions
 - Academic partnerships and publication opportunities
 
-**Start here:** [Research Overview](docs/for-researchers/README.md#-research-overview)
+**Start here:** [Research Overview](docs/for-researchers/README.md#research-overview)
 
 ---
 
@@ -141,28 +133,29 @@ OpenDXA consists of three primary components:
 ## 🎯 Quick Navigation by Use Case
 
 ### 🤖 Building AI Agents
-- **New to AI development**: [Engineers Quick Start](docs/for-engineers/README.md#-quick-start)
+- **New to AI development**: [Engineers Quick Start](docs/for-engineers/README.md#quick-start)
 - **Experienced with LLMs**: [Migration Guide](docs/for-engineers/setup/migration-guide.md)
-- **Need specific examples**: [Recipe Collection](docs/for-engineers/recipes/)
+- **Need specific examples**: [Recipe Collection](docs/for-engineers/recipes/README.md)
 - **Dana language reference**: [Syntax Guide](docs/for-engineers/reference/dana-syntax.md)
 
 ### 📊 Business Evaluation
 - **ROI Analysis**: [Cost-Benefit Calculator](docs/for-evaluators/roi-analysis/calculator.md)
 - **Technical Assessment**: [Architecture Overview](docs/for-evaluators/comparison/technical-overview.md)
 - **Proof of Concept**: [Evaluation Guide](docs/for-evaluators/proof-of-concept/evaluation-guide.md)
-- **Competitive Analysis**: [Framework Comparison](docs/for-evaluators/comparison/)
+- **Competitive Analysis**: [Framework Comparison](docs/for-evaluators/comparison/README.md)
 
 ### 🔬 Research & Development
+- **[DANA: Domain-Aware Neurosymbolic Agents for Consistency and Accuracy](https://arxiv.org/abs/2410.02823)**. *V. Luong, S. Dinh, S. Raghavan, et al.* (arXiv:2410.02823) - This paper introduces DANA (Domain-Aware Neurosymbolic Agent), an architecture that addresses inconsistency and inaccuracy in LLMs by integrating domain-specific knowledge with neurosymbolic approaches. [[DOI](https://doi.org/10.48550/arXiv.2410.02823)]
 - **Theoretical Foundations**: [Dana Manifesto](docs/for-researchers/manifesto/vision.md)
-- **Neurosymbolic Computing**: [Research Opportunities](docs/for-researchers/README.md#-research-opportunities)
-- **Academic Collaboration**: [Partnership Programs](docs/for-researchers/README.md#-academic-collaboration)
-- **Original Documentation**: [Archive](docs/archive/)
+- **Neurosymbolic Computing**: [Research Opportunities](docs/for-researchers/README.md#research-opportunities)
+- **Academic Collaboration**: [Partnership Programs](docs/for-researchers/README.md#academic-collaboration)
+- **Original Documentation**: [Archive](docs/archive/README.md)
 
 ### 🛠️ Platform Extension
 - **Custom Capabilities**: [Extension Development](docs/for-contributors/extending/extension-development.md)
 - **Core Contributions**: [Contribution Guide](docs/for-contributors/development/contribution-guide.md)
 - **Architecture Understanding**: [System Design](docs/for-contributors/architecture/system-design.md)
-- **Codebase Navigation**: [Code Guide](docs/for-contributors/codebase/)
+- **Codebase Navigation**: [Code Guide](docs/for-contributors/codebase/README.md)
 
 ---
 
@@ -179,163 +172,150 @@ OpenDXA stands out by enabling truly expert agents grounded in specific domain k
 
 ## 🛠️ Development Setup
 
+This project uses `uv` for managing dependencies and running development tasks.
+
+### Initial Setup
+
+1.  **Install uv**: If you haven't already, install uv:
+    ```bash
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    ```
+2.  **Clone the repository**:
+    ```bash
+    git clone https://github.com/aitomatic/opendxa.git
+    cd opendxa
+    ```
+3.  **Sync dependencies**:
+    ```bash
+    # Install all dependencies, including optional 'dev' and 'docs' groups
+    uv sync --extra dev --extra docs
+    ```
+4.  **Configure environment**:
+    ```bash
+    cp .env.example .env
+    # Then, add your API keys to .env
+    ```
+5.  **Set up pre-commit hooks**:
+    ```bash
+    uv run pre-commit install
+    ```
+
+### Common Development Tasks
+
+The following `uv run` commands are available for common development workflows. These are direct commands as native task runner support in `uv` is evolving.
+
+#### Testing Workflows
 ```bash
-# Install development dependencies
-uv sync --extra dev
+# Run all tests
+uv run pytest tests/
 
-# Set up pre-commit hooks  
-uv run pre-commit install
+# Fast tests only (excluding 'live' and 'deep' tests)
+uv run pytest -m 'not live and not deep' tests/
 
-# Or use the convenience script
-uv run setup-dev
+# Live/integration tests only
+uv run pytest -m 'live' tests/
+
+# Run tests with coverage report
+uv run pytest --cov=opendxa --cov-report=html tests/
 ```
 
-### Available Development Scripts
-
-With uv, you can use convenient scripts for common tasks:
-
+#### Code Quality Workflows
 ```bash
-# Testing
-uv run test           # Run all tests
-uv run test-fast      # Run fast tests only
-uv run test-cov       # Run tests with coverage
+# Lint code
+uv run ruff check .
 
-# Code Quality  
-uv run lint           # Check code with ruff
-uv run format         # Format code with black
-uv run check          # Run all quality checks
-uv run fix            # Auto-fix formatting and linting
+# Lint and auto-fix
+uv run ruff check --fix .
+
+# Format code
+uv run black .
+
+# Check formatting
+uv run black --check .
+
+# Type checking
+uv run mypy .
 ```
 
-Or use the Makefile for traditional commands:
+#### Documentation Workflows (for DevRel team)
 ```bash
-make help            # Show all available commands
-make dev             # Complete development setup
-make test            # Run tests
-make check           # Code quality checks
+# Live preview during writing
+uv run python -m mkdocs serve
+
+# Live preview (remote accessible)
+uv run python -m mkdocs serve --dev-addr=0.0.0.0:8000
+
+# Build docs
+uv run python -m mkdocs build
+
+# Build with warnings as errors
+uv run python -m mkdocs build --strict
 ```
 
-This ensures code quality checks run automatically on commit, including:
-- Code formatting with Ruff
-- Linting with Ruff (including undefined attributes/methods)
-- Basic file checks (trailing whitespace, merge conflicts, etc.)
+#### Deploying to GitHub Pages
+To deploy the documentation to GitHub Pages, ensure your `mkdocs.yml` is configured correctly for the GitHub Pages repository and then run:
+
+```bash
+# Build and deploy to GitHub Pages
+uv run mkdocs gh-deploy --force
+```
+Make sure you have the necessary permissions to push to the `gh-pages` branch of your repository.
+
+#### Documentation Validation (Catch Staleness)
+```bash
+# Test code examples in docstrings
+uv run pytest --doctest-modules opendxa/
+
+# Check all markdown links (fast async)
+uv run python -m linkcheckmd docs/
+
+# Documentation style checking
+uv run doc8 docs/
+
+# Validate complete build (same as build --strict)
+uv run python -m mkdocs build --strict
+```
+
+#### Dana-Specific Commands
+```bash
+# Run a Dana script
+uv run python -m opendxa.dana.exec.dana examples/dana/debug_tests/test_basic.na
+
+# Start the Dana REPL
+uv run python -m opendxa.dana.exec.repl.repl
+```
 
 ---
 
-## 🔧 Project Maintenance with uv
+## 🛠️ Project Maintenance with uv
 
-*New to uv? This section covers essential commands for maintaining the OpenDXA project.*
+`uv` is also used for managing project dependencies. Here are some essential commands:
 
-### 📦 Dependency Management
-
+### Environment Management
 ```bash
-# Add a new dependency
-uv add package-name                    # Production dependency
-uv add --dev package-name             # Development-only dependency
-uv add "package-name>=1.0,<2.0"      # With version constraints
+# Sync dependencies with pyproject.toml (installs new, removes unused)
+uv sync
 
-# Remove dependencies
-uv remove package-name                 # Remove from pyproject.toml and uv.lock
-uv remove --dev package-name          # Remove dev dependency
+# Sync with development dependencies
+uv sync --extra dev
 
-# Update dependencies
-uv sync                               # Install/sync to match uv.lock exactly
-uv lock --upgrade                     # Update uv.lock to latest versions
-uv sync --extra dev                   # Sync with development dependencies
+# Sync with documentation tool dependencies
+uv sync --extra docs
+
+# Sync with all optional dependencies
+uv sync --extra dev --extra docs
+
+# Add a new production dependency
+uv add <package_name>
+
+# Add a new development dependency
+uv add --group dev <package_name>
+
+# Remove a dependency
+uv remove <package_name>
 ```
-
-### 🐍 Python Environment Management
-
-```bash
-# Python version management
-uv python install 3.12               # Install Python 3.12
-uv python list                       # List available Python versions
-uv run python --version              # Check current Python version
-
-# Virtual environment
-uv venv                              # Create .venv (done automatically)
-uv venv --python 3.12                # Create with specific Python version
-source .venv/bin/activate            # Activate manually (rarely needed)
-```
-
-### 🏃‍♂️ Running Commands
-
-```bash
-# Run commands in the uv environment
-uv run python script.py              # Run Python scripts
-uv run pytest                       # Run tests
-uv run dana                          # Start Dana REPL
-
-# Use predefined scripts (see pyproject.toml [tool.uv.scripts])
-uv run test                          # Equivalent to: uv run pytest tests/
-uv run lint                          # Equivalent to: uv run ruff check .
-uv run format                        # Equivalent to: uv run black .
-```
-
-### 🔄 Common Workflows
-
-```bash
-# Daily development workflow
-uv sync                              # Sync dependencies
-uv run test-fast                     # Run quick tests
-uv run check                         # Code quality checks
-
-# Adding a new feature
-uv add new-package                   # Add new dependency
-uv run test                          # Run full test suite
-uv run fix                           # Auto-fix code issues
-
-# Updating the project
-git pull                             # Get latest changes
-uv sync                              # Sync to new dependencies
-uv run test-fast                     # Verify everything works
-```
-
-### 🆚 uv vs pip/virtualenv Cheat Sheet
-
-| Task | Old Way (pip/venv) | New Way (uv) |
-|------|-------------------|-------------|
-| Create environment | `python -m venv .venv` | `uv venv` (automatic) |
-| Activate environment | `source .venv/bin/activate` | Not needed with `uv run` |
-| Install dependencies | `pip install -r requirements.txt` | `uv sync` |
-| Add dependency | `pip install package && pip freeze > requirements.txt` | `uv add package` |
-| Run script | `python script.py` | `uv run python script.py` |
-| Run tests | `pytest` | `uv run pytest` |
-
-### 🚨 Troubleshooting Tips
-
-**"Command not found: uv"**
-```bash
-# Install uv
-curl -LsSf https://astral.sh/uv/install.sh | sh
-# Or: pip install uv
-```
-
-**"Python version not found"**
-```bash
-uv python install 3.12              # Install missing Python version
-uv python list                      # Check available versions
-```
-
-**"Dependencies out of sync"**
-```bash
-uv sync --reinstall                 # Reinstall all dependencies
-uv lock --upgrade                   # Update lock file
-```
-
-**"Can't find module after adding dependency"**
-```bash
-uv sync                             # Ensure dependencies are installed
-uv run python -c "import module"   # Test import with uv run
-```
-
-### 💡 Pro Tips
-
-- **Always use `uv run`** for commands instead of activating the virtual environment
-- **Use `uv sync`** regularly to stay in sync with `uv.lock`
-- **Add dependencies with `uv add`** instead of editing `pyproject.toml` manually
-- **Use `make` commands** for complex workflows (they use uv internally)
-- **Check `pyproject.toml [tool.uv.scripts]`** for available shortcuts
+The `pyproject.toml` also mentions `[project.optional-dependencies]` for `dev` and `docs`.
+Make sure these are covered when syncing.
 
 ---
 
@@ -349,7 +329,7 @@ uv run python -c "import module"   # Test import with uv run
 ### 🤝 Get Involved
 - **Contribute Code**: [Contribution Guidelines](docs/for-contributors/development/contribution-guide.md)
 - **Share Examples**: [Community Recipes](docs/for-engineers/recipes/)
-- **Research Collaboration**: [Academic Partnerships](docs/for-researchers/README.md#-academic-collaboration)
+- **Research Collaboration**: [Academic Partnerships](docs/for-researchers/README.md#academic-collaboration)
 
 ### 🏢 Enterprise Support
 - **Business Inquiries**: [Contact Sales](mailto:sales@aitomatic.com)
@@ -365,7 +345,7 @@ OpenDXA is released under the [MIT License](LICENSE.md).
 ---
 
 <p align="center">
-Copyright © 2024 Aitomatic, Inc. Licensed under the <a href="LICENSE.md">MIT License</a>.
+Copyright © 2025 Aitomatic, Inc. Licensed under the <a href="LICENSE.md">MIT License</a>.
 <br/>
 <a href="https://aitomatic.com">https://aitomatic.com</a>
 </p>

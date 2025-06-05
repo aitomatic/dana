@@ -1,18 +1,11 @@
 <!-- markdownlint-disable MD041 -->
 <!-- markdownlint-disable MD033 -->
-<p align="center">
-  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
-</p>
-
-[Project Overview](../../README.md)
-
-
 # Batch Process Automation Requirements
 
 ## Business/Technical Problem Statement
 
 ### Persona
-**Jennifer Martinez, Process Engineer**
+Jennifer Martinez, Process Engineer
 - 7+ years of experience in specialty chemicals manufacturing
 - Responsible for optimizing batch processes and ensuring product quality
 - Must maintain consistent product quality while maximizing throughput
@@ -40,141 +33,141 @@ This document describes how Domain Expert Agents (DXAs) enable autonomous batch 
 ### Batch Process Components
 
 1. **Sensor Network**
-   - Temperature sensors
-   - Pressure sensors
-   - Level sensors
-   - Analytical data
-   - Valve/agitator controls
+ - Temperature sensors
+ - Pressure sensors
+ - Level sensors
+ - Analytical data
+ - Valve/agitator controls
 
 2. **DXA Core**
-   - Recipe optimizer
-   - Knowledge base
-   - Batch workflow engine
-   - Real-time monitoring
+ - Recipe optimizer
+ - Knowledge base
+ - Batch workflow engine
+ - Real-time monitoring
 
 3. **Integration Layer**
-   - Experion Batch system
-   - Honeywell Forge platform
-   - Operator interface
-   - Recipe management
+ - Experion Batch system
+ - Honeywell Forge platform
+ - Operator interface
+ - Recipe management
 
 4. **Network Components**
-   - Edge processing nodes
-   - Distributed DXA network
-   - Market interface
-   - Production scheduling
+ - Edge processing nodes
+ - Distributed DXA network
+ - Market interface
+ - Production scheduling
 
 ### Example Scenario: Batch Process Optimization
 
 ```mermaid
 sequenceDiagram
-    participant S as Batch Sensors
-    participant D as DXA
-    participant E as Experion
-    participant O as Operator
+ participant S as Batch Sensors
+ participant D as DXA
+ participant E as Experion
+ participant O as Operator
 
-    loop Each Batch Cycle
-        S->>D: Process parameters
-        D->>D: Recipe analysis
-        D->>D: Phase optimization
-        alt Standard Batch
-            D->>E: Execute phase
-            E->>D: Phase complete
-        else Quality Deviation
-            D->>O: Alert with adjustments
-            O->>D: Approve changes
-            D->>E: Modified parameters
-        end
-    end
+ loop Each Batch Cycle
+ S->>D: Process parameters
+ D->>D: Recipe analysis
+ D->>D: Phase optimization
+ alt Standard Batch
+ D->>E: Execute phase
+ E->>D: Phase complete
+ else Quality Deviation
+ D->>O: Alert with adjustments
+ O->>D: Approve changes
+ D->>E: Modified parameters
+ end
+ end
 ```
 
 #### Context
 
 - Specialty chemicals batch process optimization environment
 - DXA has access to:
-  - Multi-variable batch data streams
-  - Experion Batch execution system
-  - Honeywell Forge platform
-  - Historical batch records
-  - Master recipe database
-  - Standard operating procedures
-  - Batch quality parameters
-  - Clean-in-place procedures
+ - Multi-variable batch data streams
+ - Experion Batch execution system
+ - Honeywell Forge platform
+ - Historical batch records
+ - Master recipe database
+ - Standard operating procedures
+ - Batch quality parameters
+ - Clean-in-place procedures
 
 #### Challenge
 
 1. Process Optimization
-   - Reduce batch cycle time
-   - Improve product quality consistency
-   - Minimize operator interventions
-   - Prevent batch failures
-   - Optimize recipes in real-time
-   - Manage phase transitions
+ - Reduce batch cycle time
+ - Improve product quality consistency
+ - Minimize operator interventions
+ - Prevent batch failures
+ - Optimize recipes in real-time
+ - Manage phase transitions
 
 2. Network Coordination
-   - Coordinate multi-site production
-   - Optimize recipes across plants
-   - Respond to market demand
-   - Maintain quality standards
-   - Protect recipe IP
-   - Maximize resource utilization
+ - Coordinate multi-site production
+ - Optimize recipes across plants
+ - Respond to market demand
+ - Maintain quality standards
+ - Protect recipe IP
+ - Maximize resource utilization
 
 3. Knowledge Management
-   - Capture process expertise
-   - Learn from historical batches
-   - Adapt to equipment variations
-   - Standardize quality metrics
-   - Share improvements across network
-   - Maintain security protocols
+ - Capture process expertise
+ - Learn from historical batches
+ - Adapt to equipment variations
+ - Standardize quality metrics
+ - Share improvements across network
+ - Maintain security protocols
 
 #### DXA Actions
 
 1. **Batch Monitoring**
-   - Track process parameters
-   - Analyze recipe performance
-   - Detect quality deviations
-   - Predict outcomes
-   - Recommend adjustments
-   - Execute approved changes
+ - Track process parameters
+ - Analyze recipe performance
+ - Detect quality deviations
+ - Predict outcomes
+ - Recommend adjustments
+ - Execute approved changes
 
 2. **Network Orchestration**
-   - Schedule production
-   - Distribute recipes
-   - Monitor execution
-   - Collect analytics
-   - Improve recipes
-   - Maintain quality standards
+ - Schedule production
+ - Distribute recipes
+ - Monitor execution
+ - Collect analytics
+ - Improve recipes
+ - Maintain quality standards
 
 ## Solution Architecture
 
 ```mermaid
 graph TB
-    subgraph "Batch Unit"
-        T[Temperature Sensors]
-        P[Pressure Sensors]
-        L[Level Sensors]
-        A[Analytical Data]
-        V[Valve/Agitator Controls]
-    end
+ subgraph "Batch Unit"
+ T[Temperature Sensors]
+ P[Pressure Sensors]
+ L[Level Sensors]
+ A[Analytical Data]
+ V[Valve/Agitator Controls]
+ end
 
-    subgraph "DXA System"
-        D[DXA Core]
-        D <--> OPT[Recipe Optimizer]
-        D <--> KB[Knowledge Base]
-        D <--> WF[Batch Workflow Engine]
-    end
+ subgraph "DXA System"
+ D[DXA Core]
+ D <--> OPT[Recipe Optimizer]
+ D <--> KB[Knowledge Base]
+ D <--> WF[Batch Workflow Engine]
+ end
 
-    subgraph "Integration Layer"
-        EXP[Experion Batch]
-        HF[Honeywell Forge]
-        OP[Operator Interface]
-    end
+ subgraph "Integration Layer"
+ EXP[Experion Batch]
+ HF[Honeywell Forge]
+ OP[Operator Interface]
+ end
 
-    T & P & L & A --> EXP
-    EXP <--> D
-    D <--> HF
-    D <--> OP
-    D --> V
+ T & P & L & A --> EXP
+ EXP <--> D
+ D <--> HF
+ D <--> OP
+ D --> V
 ```
 
 ### 1. Batch Unit Components

@@ -1,9 +1,3 @@
-<p align="center">
-  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
-</p>
-
-[Project Overview](../../README.md)
-
 # Dana REPL Guide - Interactive Development Environment
 
 *Your interactive workspace for Dana development, testing, and debugging*
@@ -64,15 +58,15 @@ The REPL automatically handles multiline input for complex logic:
 ### Conditional Logic
 ```
 dana> if temperature > 100:
-...     alert_level = "critical"
-...     log.error("Temperature critical!")
-...     trigger_alert()
+... alert_level = "critical"
+... log.error("Temperature critical!")
+... trigger_alert()
 ... elif temperature > 80:
-...     alert_level = "warning"
-...     log.warn("Temperature elevated")
+... alert_level = "warning"
+... log.warn("Temperature elevated")
 ... else:
-...     alert_level = "normal"
-...     log.info("Temperature normal")
+... alert_level = "normal"
+... log.info("Temperature normal")
 ```
 
 ### Loops and Processing
@@ -80,26 +74,26 @@ dana> if temperature > 100:
 dana> items = ["doc1.pdf", "doc2.pdf", "doc3.pdf"]
 dana> processed = []
 dana> for item in items:
-...     result = reason("Summarize document", context=item)
-...     processed.append(result)
-...     log.info(f"Processed {item}")
+... result = reason("Summarize document", context=item)
+... processed.append(result)
+... log.info(f"Processed {item}")
 ```
 
 ### Complex Functions
 ```
 dana> def analyze_document(doc_path):
-...     document = load_document(doc_path)
-...     
-...     # Multi-step analysis
-...     summary = reason("Summarize key points", context=document)
-...     risks = reason("Identify potential risks", context=document)
-...     recommendations = reason("Suggest actions", context=[summary, risks])
-...     
-...     return {
-...         "summary": summary,
-...         "risks": risks,
-...         "recommendations": recommendations
-...     }
+... document = load_document(doc_path)
+...
+... # Multi-step analysis
+... summary = reason("Summarize key points", context=document)
+... risks = reason("Identify potential risks", context=document)
+... recommendations = reason("Suggest actions", context=[summary, risks])
+...
+... return {
+... "summary": summary,
+... "risks": risks,
+... "recommendations": recommendations
+... }
 ```
 
 ---
@@ -179,11 +173,11 @@ dana> ##nlp off
 dana> # Test API integration
 dana> api_response = fetch_api("/users/123")
 dana> if api_response.status == 200:
-...     user_data = api_response.data
-...     analysis = reason("Analyze user behavior", context=user_data)
-...     print(f"User analysis: {analysis}")
+... user_data = api_response.data
+... analysis = reason("Analyze user behavior", context=user_data)
+... print(f"User analysis: {analysis}")
 ... else:
-...     log.error(f"API error: {api_response.status}")
+... log.error(f"API error: {api_response.status}")
 
 dana> # Test error handling
 dana> try_api_call("invalid_endpoint")
@@ -203,9 +197,9 @@ dana> print(f"Key terms: {key_terms}")
 dana> # Process all documents
 dana> results = []
 dana> for doc in docs:
-...     result = reason("Extract key information", context=doc)
-...     results.append({"doc": doc.name, "info": result})
-...     print(f"Processed: {doc.name}")
+... result = reason("Extract key information", context=doc)
+... results.append({"doc": doc.name, "info": result})
+... print(f"Processed: {doc.name}")
 ```
 
 ### Agent Behavior Testing
@@ -239,7 +233,7 @@ dana> print(f"System info: {system}")
 
 dana> # Trace execution
 dana> log_level = DEBUG
-dana> result = complex_operation()  # Will show detailed logs
+dana> result = complex_operation() # Will show detailed logs
 ```
 
 ### Error Investigation
@@ -247,10 +241,10 @@ dana> result = complex_operation()  # Will show detailed logs
 dana> # Reproduce error conditions
 dana> test_data = create_problematic_data()
 dana> try:
-...     result = process_data(test_data)
+... result = process_data(test_data)
 ... except Exception as e:
-...     log.error(f"Error details: {e}")
-...     log.debug(f"Data that caused error: {test_data}")
+... log.error(f"Error details: {e}")
+... log.debug(f"Data that caused error: {test_data}")
 ```
 
 ### Performance Testing
@@ -320,24 +314,24 @@ results = analyze_all(documents)
 
 result = repl.execute(test_code)
 if result.success:
-    # Export to production file
-    save_to_production_file(test_code)
+ # Export to production file
+ save_to_production_file(test_code)
 ```
 
 ### Automated Testing
 ```python
 # Create REPL tests
 def test_document_processing():
-    repl = REPL()
-    
-    # Set up test data
-    repl.execute("test_docs = load_test_documents()")
-    
-    # Test processing
-    result = repl.execute("process_documents(test_docs)")
-    
-    assert result.success
-    assert "processed" in result.output.lower()
+ repl = REPL()
+
+ # Set up test data
+ repl.execute("test_docs = load_test_documents()")
+
+ # Test processing
+ result = repl.execute("process_documents(test_docs)")
+
+ assert result.success
+ assert "processed" in result.output.lower()
 ```
 
 ---
@@ -367,10 +361,10 @@ repl.add_resource("llm", LLMResource(model="gpt-4"))
 
 ## Next Steps
 
-- **Build Real Agents**: Apply REPL learnings to [Agent Recipes](../recipes/)
-- **Advanced Debugging**: See [Troubleshooting Guide](../troubleshooting/debugging-guide.md)
-- **Production Deployment**: Learn [Best Practices](../setup/production-guide.md)
-- **Language Mastery**: Deep dive into [Dana Syntax](dana-syntax.md) 
+- Build Real Agents: Apply REPL learnings to [Agent Recipes](../recipes/README.md)
+- Advanced Debugging: See [Troubleshooting Guide](../troubleshooting/README.md)
+- Production Deployment: See [Setup Guide](../setup/README.md)
+- Language Mastery: Deep dive into [Dana Syntax](dana-syntax.md)
 
 ---
 

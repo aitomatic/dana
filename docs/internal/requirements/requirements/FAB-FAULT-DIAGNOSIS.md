@@ -1,18 +1,11 @@
 <!-- markdownlint-disable MD041 -->
 <!-- markdownlint-disable MD033 -->
-<p align="center">
-  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
-</p>
-
-[Project Overview](../../README.md)
-
-
 # Fab Domain Expert Agent (DXA) Requirements
 
 ## Business/Technical Problem Statement
 
 ### Persona
-**Michael Chen, Semiconductor Process Engineer**
+Michael Chen, Semiconductor Process Engineer
 - 10+ years experience in semiconductor manufacturing
 - Responsible for monitoring and troubleshooting RIE (Reactive Ion Etch) equipment
 - Must maintain high throughput while ensuring process quality
@@ -40,187 +33,187 @@ The system monitors a single semiconductor etcher (RIE) through continuous SPC a
 ### Critical RIE Parameters & Potential Issues
 
 1. **Plasma Generation & Stability**
-   - RF matching network faults
-   - Power delivery issues
-   - Plasma ignition failures
-   - Unstable plasma conditions
+ - RF matching network faults
+ - Power delivery issues
+ - Plasma ignition failures
+ - Unstable plasma conditions
 
 2. **Process Chemistry**
-   - Gas flow irregularities
-   - Gas ratio deviations
-   - Mass flow controller (MFC) issues
-   - Gas line contamination
-   - Reaction byproduct buildup
+ - Gas flow irregularities
+ - Gas ratio deviations
+ - Mass flow controller (MFC) issues
+ - Gas line contamination
+ - Reaction byproduct buildup
 
 3. **Chamber Conditions**
-   - Pressure control issues
-   - Temperature uniformity problems
-   - Chamber leak detection
-   - Particle contamination
-   - Wall coating/polymer buildup
-   - O-ring degradation
+ - Pressure control issues
+ - Temperature uniformity problems
+ - Chamber leak detection
+ - Particle contamination
+ - Wall coating/polymer buildup
+ - O-ring degradation
 
 4. **Wafer Processing**
-   - Etch rate variations
-   - Uniformity issues
-   - Selectivity problems
-   - Loading effects
-   - Micro-loading effects
-   - Pattern dependent etching
+ - Etch rate variations
+ - Uniformity issues
+ - Selectivity problems
+ - Loading effects
+ - Micro-loading effects
+ - Pattern dependent etching
 
 5. **Mechanical Systems**
-   - Vacuum system failures
-   - Wafer handling issues
-   - Chuck/ESC problems
-   - Cooling system malfunctions
-   - Valve operation issues
+ - Vacuum system failures
+ - Wafer handling issues
+ - Chuck/ESC problems
+ - Cooling system malfunctions
+ - Valve operation issues
 
 ### DXA Monitoring & Response Capabilities
 
 1. **Real-time Parameter Monitoring**
-   - Process parameters (pressure, power, gas flows)
-   - Equipment state parameters
-   - In-situ measurements where available
-   - End-point detection signals
+ - Process parameters (pressure, power, gas flows)
+ - Equipment state parameters
+ - In-situ measurements where available
+ - End-point detection signals
 
 2. **Anomaly Detection Scope**
-   - Single parameter deviations
-   - Multi-parameter correlations
-   - Pattern recognition in time series
-   - Process sequence violations
-   - Equipment state transitions
+ - Single parameter deviations
+ - Multi-parameter correlations
+ - Pattern recognition in time series
+ - Process sequence violations
+ - Equipment state transitions
 
 3. **Diagnostic Capabilities**
-   - Root cause analysis across all subsystems
-   - Historical case matching
-   - Fault tree analysis
-   - Parameter correlation analysis
-   - Trend analysis and prediction
+ - Root cause analysis across all subsystems
+ - Historical case matching
+ - Fault tree analysis
+ - Parameter correlation analysis
+ - Trend analysis and prediction
 
 ### Example Scenario: RIE RF Matching Fault Detection
 
 ```mermaid
 sequenceDiagram
-    participant RIE as RIE Chamber
-    participant FDC as FDC Monitor
-    participant DXA as DXA System
-    participant Op as Operator
+ participant RIE as RIE Chamber
+ participant FDC as FDC Monitor
+ participant DXA as DXA System
+ participant Op as Operator
 
-    Note over RIE,FDC: Continuous monitoring of<br/>RF matching network
-    RIE->>FDC: RF Power Data Stream
-    FDC->>DXA: Matching Network Parameters
-    DXA->>DXA: Detect RF matching<br/>anomalies
+ Note over RIE,FDC: Continuous monitoring of<br/>RF matching network
+ RIE->>FDC: RF Power Data Stream
+ FDC->>DXA: Matching Network Parameters
+ DXA->>DXA: Detect RF matching<br/>anomalies
 
-    alt Severe Mismatch
-        DXA->>Op: Alert: RF matching<br/>fault detected
-        DXA->>Op: Recommend matching<br/>network adjustment
-    else Minor Deviation
-        DXA->>DXA: Log pattern
-        DXA->>DXA: Monitor trend
-    end
+ alt Severe Mismatch
+ DXA->>Op: Alert: RF matching<br/>fault detected
+ DXA->>Op: Recommend matching<br/>network adjustment
+ else Minor Deviation
+ DXA->>DXA: Log pattern
+ DXA->>DXA: Monitor trend
+ end
 ```
 
 #### Context
 
 - Single RIE chamber operation
 - Critical parameters monitored:
-  - RF forward/reflected power
-  - Matching network positions
-  - Chamber pressure
-  - Process gas flows
-  - Plasma stability indicators
+ - RF forward/reflected power
+ - Matching network positions
+ - Chamber pressure
+ - Process gas flows
+ - Plasma stability indicators
 
 #### Challenge
 
 1. Early Detection
-   - Identify process deviations before yield impact
-   - Detect subtle parameter drifts across multiple subsystems
-   - Recognize complex fault patterns
-   - Monitor interdependent parameter relationships
+ - Identify process deviations before yield impact
+ - Detect subtle parameter drifts across multiple subsystems
+ - Recognize complex fault patterns
+ - Monitor interdependent parameter relationships
 
 2. Accurate Diagnosis
-   - Handle multiple concurrent issues
-   - Determine root causes across different subsystems
-   - Differentiate between symptoms and causes
-   - Account for process history and maintenance state
+ - Handle multiple concurrent issues
+ - Determine root causes across different subsystems
+ - Differentiate between symptoms and causes
+ - Account for process history and maintenance state
 
 3. Timely Response
-   - Minimize time to diagnosis
-   - Prevent unnecessary tool downtime
-   - Prioritize issues based on severity
-   - Balance quick fixes vs. long-term solutions
+ - Minimize time to diagnosis
+ - Prevent unnecessary tool downtime
+ - Prioritize issues based on severity
+ - Balance quick fixes vs. long-term solutions
 
 4. Knowledge Management
-   - Capture tribal knowledge from experts
-   - Maintain up-to-date SOPs
-   - Learn from historical cases
-   - Adapt to process and tool modifications
+ - Capture tribal knowledge from experts
+ - Maintain up-to-date SOPs
+ - Learn from historical cases
+ - Adapt to process and tool modifications
 
 #### DXA Actions
 
 1. **Continuous Monitoring**
-   - Multi-parameter real-time analysis
-   - System state tracking
-   - Process sequence validation
-   - Equipment health monitoring
-   - Maintenance schedule integration
+ - Multi-parameter real-time analysis
+ - System state tracking
+ - Process sequence validation
+ - Equipment health monitoring
+ - Maintenance schedule integration
 
 2. **Anomaly Detection**
-   - Statistical process control
-   - Multi-variate analysis
-   - Pattern recognition across subsystems
-   - Correlation analysis
-   - Trend prediction
+ - Statistical process control
+ - Multi-variate analysis
+ - Pattern recognition across subsystems
+ - Correlation analysis
+ - Trend prediction
 
 3. **Diagnosis & Resolution**
-   - Systematic fault tree analysis
-   - Cross-subsystem correlation
-   - Historical case comparison
-   - Expert knowledge application
-   - SOP selection and execution
-   - Escalation path determination
+ - Systematic fault tree analysis
+ - Cross-subsystem correlation
+ - Historical case comparison
+ - Expert knowledge application
+ - SOP selection and execution
+ - Escalation path determination
 
 4. **Learning & Optimization**
-   - Case history documentation
-   - Success/failure tracking
-   - SOP effectiveness analysis
-   - Knowledge base enrichment
-   - Expert feedback integration
-   - Continuous model refinement
+ - Case history documentation
+ - Success/failure tracking
+ - SOP effectiveness analysis
+ - Knowledge base enrichment
+ - Expert feedback integration
+ - Continuous model refinement
 
 ## Solution Architecture
 
 ```mermaid
 graph TB
-    subgraph "Data Layer"
-        SPC[SPC Data]
-        FDC[FDC Data]
-        AD[Anomaly Detection]
-    end
-    subgraph "DXA Core"
-        direction LR
-        WF[Workflow Engine]
-        PS[Planning System]
-        RE[Reasoning Engine]
-        SEMI[SEMIKONG LLM]
-    end
-    subgraph "Knowledge Layer"
-        KB[(Knowledge Base)]
-        RAG[RAG Pipeline]
-        DP[Document Processor]
-        TG[Template Generator]
-    end
-    SPC --> AD
-    FDC --> AD
-    AD --> WF
-    WF <--> PS
-    PS <--> RE
-    RE <--> KB
-    KB <--> SEMI
-    KB <--> RAG
-    SEMI <--> RAG
-    KB <--> DP
-    KB <--> TG
+ subgraph "Data Layer"
+ SPC[SPC Data]
+ FDC[FDC Data]
+ AD[Anomaly Detection]
+ end
+ subgraph "DXA Core"
+ direction LR
+ WF[Workflow Engine]
+ PS[Planning System]
+ RE[Reasoning Engine]
+ SEMI[SEMIKONG LLM]
+ end
+ subgraph "Knowledge Layer"
+ KB[(Knowledge Base)]
+ RAG[RAG Pipeline]
+ DP[Document Processor]
+ TG[Template Generator]
+ end
+ SPC --> AD
+ FDC --> AD
+ AD --> WF
+ WF <--> PS
+ PS <--> RE
+ RE <--> KB
+ KB <--> SEMI
+ KB <--> RAG
+ SEMI <--> RAG
+ KB <--> DP
+ KB <--> TG
 ```
 
 ### 1. Data Monitoring & Anomaly Detection Layer
@@ -314,24 +307,24 @@ graph TB
 
 ```mermaid
 sequenceDiagram
-    participant IoT as IoT Streams
-    participant AD as Anomaly Detector
-    participant DXA as DXA Core
-    participant KB as Knowledge Base
-    participant Expert as Human Expert
+ participant IoT as IoT Streams
+ participant AD as Anomaly Detector
+ participant DXA as DXA Core
+ participant KB as Knowledge Base
+ participant Expert as Human Expert
 
-    IoT->>AD: Stream SPC/FDC Data
-    AD->>AD: Process Signals
-    AD->>DXA: Detect Anomaly
-    DXA->>KB: Query Similar Cases
-    KB-->>DXA: Return Relevant Cases
-    DXA->>DXA: Analyze Severity
-    alt Severe Case
-        DXA->>Expert: Alert & Recommend Action
-    else Known Case
-        DXA->>DXA: Execute SOP
-    end
-    DXA->>KB: Log Case & Resolution
+ IoT->>AD: Stream SPC/FDC Data
+ AD->>AD: Process Signals
+ AD->>DXA: Detect Anomaly
+ DXA->>KB: Query Similar Cases
+ KB-->>DXA: Return Relevant Cases
+ DXA->>DXA: Analyze Severity
+ alt Severe Case
+ DXA->>Expert: Alert & Recommend Action
+ else Known Case
+ DXA->>DXA: Execute SOP
+ end
+ DXA->>KB: Log Case & Resolution
 ```
 
 ## Demo Script (3 minutes)
@@ -340,10 +333,10 @@ sequenceDiagram
 
 - RIE process monitoring interface
 - Split screen showing:
-  - Real-time RF matching data
-  - DXA analysis dashboard
-  - Plasma stability metrics
-  - Knowledge base interface
+ - Real-time RF matching data
+ - DXA analysis dashboard
+ - Plasma stability metrics
+ - Knowledge base interface
 
 ### Demo Flow
 
@@ -351,19 +344,19 @@ sequenceDiagram
 
 - Show real-time monitoring of RF matching
 - Display key metrics:
-  - Forward/reflected power
-  - Matching network positions
-  - Plasma stability indicators
+ - Forward/reflected power
+ - Matching network positions
+ - Plasma stability indicators
 - Highlight autonomous monitoring by DXA
 
 #### 0:30-1:30 - Drift Detection & Analysis
 
 - Introduce gradual drift in etch rate matching
 - DXA performs multi-parameter analysis:
-  - Historical pattern matching
-  - Cross-chamber correlation
-  - Process window validation
-  - Root cause determination
+ - Historical pattern matching
+ - Cross-chamber correlation
+ - Process window validation
+ - Root cause determination
 - Show real-time reasoning process
 - Display drift classification confidence
 
@@ -372,18 +365,18 @@ sequenceDiagram
 - DXA generates correction strategy
 - Show parameter adjustment calculations
 - Demonstrate SOP execution:
-  - Safety bound validation
-  - Step-by-step workflow
-  - Real-time verification
+ - Safety bound validation
+ - Step-by-step workflow
+ - Real-time verification
 - Display recovery metrics
 
 #### 2:30-3:00 - Learning & Optimization
 
 - Show case capture in knowledge base
 - Display optimization metrics:
-  - Time to detection
-  - Correction accuracy
-  - Learning integration
+ - Time to detection
+ - Correction accuracy
+ - Learning integration
 - Demonstrate value vs. manual process
 
 ### Interactive Elements
@@ -430,14 +423,14 @@ sequenceDiagram
 #### Operational Modes
 
 1. Autonomous Operation
-   - Independent decision making
-   - Confidence thresholds
-   - Auto-execution criteria
+ - Independent decision making
+ - Confidence thresholds
+ - Auto-execution criteria
 
 2. Collaborative Operation
-   - Expert consultation triggers
-   - Knowledge validation workflow
-   - Feedback integration
+ - Expert consultation triggers
+ - Knowledge validation workflow
+ - Feedback integration
 
 #### SEMIKONG Integration
 

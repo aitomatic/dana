@@ -1,9 +1,3 @@
-<p align="center">
-  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
-</p>
-
-[Project Overview](../../../../README.md) | [For Engineers](../../README.md) | [Reference](../README.md) | [API Reference](README.md)
-
 # Type System API Reference
 
 Dana's type hinting system provides clear type annotations for variables and functions to help AI code generators write better Dana code. The system follows KISS (Keep It Simple, Stupid) principles with basic types and straightforward syntax.
@@ -14,7 +8,7 @@ Dana's type hinting system provides clear type annotations for variables and fun
 - [Variable Type Annotations](#variable-type-annotations)
 - [Function Type Signatures](#function-type-signatures)
 - [Type Validation](#type-validation)
-- [AI Function Types](#ai-function-types)
+- [AI Function Types](#ai-functions)
 - [Data Types](#data-types)
 - [Type Compatibility](#type-compatibility)
 - [Best Practices](#best-practices)
@@ -25,10 +19,10 @@ Dana's type hinting system provides clear type annotations for variables and fun
 ## Overview
 
 ### Design Philosophy
-- **KISS/YAGNI approach**: Basic types only, no generics (`list[int]`), no unions, no complex types
-- **Prompt optimization focus**: Help AI code generators write better Dana code
-- **Security preservation**: Type hints are documentation only, don't affect runtime security
-- **Backward compatibility**: All existing Dana code continues working
+- KISS/YAGNI approach: Basic types only, no generics (`list[int]`), no unions, no complex types
+- Prompt optimization focus: Help AI code generators write better Dana code
+- Security preservation: Type hints are documentation only, don't affect runtime security
+- Backward compatibility: All existing Dana code continues working
 
 ### Key Features
 - ✅ **Variable type annotations**: `x: int = 42`, `y: str = "hello"`
@@ -97,9 +91,9 @@ is_admin: bool = false
 # Collections
 scores: list = [85, 92, 78, 96]
 user_profile: dict = {
-    "name": "Alice",
-    "age": 25,
-    "role": "engineer"
+ "name": "Alice",
+ "age": 25,
+ "role": "engineer"
 }
 rgb_color: tuple = (255, 128, 0)
 tags: set = {"python", "dana", "ai"}
@@ -113,10 +107,10 @@ dynamic_data: any = {"could": "be", "anything": 123}
 When no type hint is provided, Dana infers the type from the value:
 ```dana
 # These work without type hints
-count = 42              # Inferred as int
-name = "Alice"          # Inferred as str
-active = true           # Inferred as bool
-items = [1, 2, 3]       # Inferred as list
+count = 42 # Inferred as int
+name = "Alice" # Inferred as str
+active = true # Inferred as bool
+items = [1, 2, 3] # Inferred as list
 ```
 
 ---
@@ -126,57 +120,57 @@ items = [1, 2, 3]       # Inferred as list
 ### Parameter Type Hints
 ```dana
 def function_name(param1: type1, param2: type2) -> return_type:
-    # function body
+ # function body
 ```
 
 ### Examples
 ```dana
 # Simple function with typed parameters
 def greet(name: str, age: int) -> str:
-    return f"Hello {name}, you are {age} years old"
+ return f"Hello {name}, you are {age} years old"
 
 # Function with multiple parameter types
 def calculate_bmi(weight: float, height: float) -> float:
-    return weight / (height * height)
+ return weight / (height * height)
 
 # Function with collection parameters
 def process_scores(scores: list, threshold: int) -> dict:
-    passed = []
-    failed = []
-    for score in scores:
-        if score >= threshold:
-            passed.append(score)
-        else:
-            failed.append(score)
-    
-    return {
-        "passed": passed,
-        "failed": failed,
-        "pass_rate": len(passed) / len(scores)
-    }
+ passed = []
+ failed = []
+ for score in scores:
+ if score >= threshold:
+ passed.append(score)
+ else:
+ failed.append(score)
+
+ return {
+ "passed": passed,
+ "failed": failed,
+ "pass_rate": len(passed) / len(scores)
+ }
 
 # Function with optional parameters (using any for flexibility)
 def log_event(message: str, level: str, metadata: any) -> None:
-    # Log implementation
-    print(f"[{level}] {message}")
-    if metadata:
-        print(f"Metadata: {metadata}")
+ # Log implementation
+ print(f"[{level}] {message}")
+ if metadata:
+ print(f"Metadata: {metadata}")
 
 # Function returning None (procedures)
 def update_user_status(user_id: int, status: bool) -> None:
-    # Update implementation
-    print(f"User {user_id} status updated to {status}")
+ # Update implementation
+ print(f"User {user_id} status updated to {status}")
 ```
 
 ### Mixed Typed/Untyped Parameters
 ```dana
 # You can mix typed and untyped parameters
 def flexible_function(required_id: int, name, optional_data: dict):
-    return f"Processing {name} with ID {required_id}"
+ return f"Processing {name} with ID {required_id}"
 
 # Untyped functions still work
 def legacy_function(a, b, c):
-    return a + b + c
+ return a + b + c
 ```
 
 ---
@@ -193,39 +187,39 @@ user_name: str = "Alice"
 scores: list = [85, 92, 78]
 
 # ❌ Type validation errors
-user_age: int = "twenty-five"  # TypeError: Type hint mismatch: expected int, got string
-temperature: float = [98, 6]   # TypeError: Type hint mismatch: expected float, got list
-is_active: bool = "yes"        # TypeError: Type hint mismatch: expected bool, got string
+user_age: int = "twenty-five" # TypeError: Type hint mismatch: expected int, got string
+temperature: float = [98, 6] # TypeError: Type hint mismatch: expected float, got list
+is_active: bool = "yes" # TypeError: Type hint mismatch: expected bool, got string
 ```
 
 ### Function Parameter Validation
 ```dana
 def calculate_area(length: float, width: float) -> float:
-    return length * width
+ return length * width
 
 # ✅ Valid calls
 area = calculate_area(10.5, 8.2)
-area = calculate_area(10, 8)      # int is compatible with float
+area = calculate_area(10, 8) # int is compatible with float
 
 # ❌ Invalid calls would cause type errors
-# area = calculate_area("10", "8")  # TypeError: expected float, got string
-# area = calculate_area([10], [8])  # TypeError: expected float, got list
+# area = calculate_area("10", "8") # TypeError: expected float, got string
+# area = calculate_area([10], [8]) # TypeError: expected float, got list
 ```
 
 ### Return Type Validation
 ```dana
 def get_user_count() -> int:
-    return 42  # ✅ Valid
+ return 42 # ✅ Valid
 
 def get_user_name() -> str:
-    return "Alice"  # ✅ Valid
+ return "Alice" # ✅ Valid
 
 def get_user_data() -> dict:
-    return {"name": "Alice", "age": 25}  # ✅ Valid
+ return {"name": "Alice", "age": 25} # ✅ Valid
 
 # ❌ Return type mismatches would cause errors
 def bad_function() -> int:
-    return "not a number"  # TypeError: expected int return, got string
+ return "not a number" # TypeError: expected int return, got string
 ```
 
 ---
@@ -238,73 +232,73 @@ Special considerations for AI-related functions:
 ```dana
 # reason() function - LLM integration
 def analyze_data(data: dict, query: str) -> str:
-    # Type-safe AI reasoning
-    analysis: str = reason(f"Analyze this data: {data} for: {query}")
-    return analysis
+ # Type-safe AI reasoning
+ analysis: str = reason(f"Analyze this data: {data} for: {query}")
+ return analysis
 
 # log() function - Structured logging
 def process_with_logging(items: list, operation: str) -> dict:
-    log(f"Starting {operation} on {len(items)} items", "info")
-    
-    results: list = []
-    for item in items:
-        processed = f"processed_{item}"
-        results.append(processed)
-    
-    log(f"Completed {operation}", "info")
-    return {"results": results, "count": len(results)}
+ log(f"Starting {operation} on {len(items)} items", "info")
+
+ results: list = []
+ for item in items:
+ processed = f"processed_{item}"
+ results.append(processed)
+
+ log(f"Completed {operation}", "info")
+ return {"results": results, "count": len(results)}
 ```
 
 ### AI-Generated Code Patterns
 ```dana
 # Pattern: Data analysis with type safety
 def ai_data_analysis(dataset: dict, analysis_type: str) -> dict:
-    # Validate inputs with type hints
-    log(f"Analyzing dataset with {len(dataset)} fields", "info")
-    
-    # AI reasoning with proper types
-    prompt: str = f"Perform {analysis_type} analysis on: {dataset}"
-    analysis: str = reason(prompt, {
-        "temperature": 0.3,
-        "format": "json"
-    })
-    
-    # Return structured result
-    result: dict = {
-        "analysis": analysis,
-        "dataset_size": len(dataset),
-        "analysis_type": analysis_type,
-        "timestamp": "2025-01-01T12:00:00Z"
-    }
-    
-    return result
+ # Validate inputs with type hints
+ log(f"Analyzing dataset with {len(dataset)} fields", "info")
+
+ # AI reasoning with proper types
+ prompt: str = f"Perform {analysis_type} analysis on: {dataset}"
+ analysis: str = reason(prompt, {
+ "temperature": 0.3,
+ "format": "json"
+ })
+
+ # Return structured result
+ result: dict = {
+ "analysis": analysis,
+ "dataset_size": len(dataset),
+ "analysis_type": analysis_type,
+ "timestamp": "2025-01-01T12:00:00Z"
+ }
+
+ return result
 
 # Pattern: Multi-step AI workflow
 def ai_workflow(input_data: list, steps: list) -> dict:
-    current_data: any = input_data
-    results: list = []
-    
-    for step in steps:
-        step_name: str = step["name"]
-        step_prompt: str = step["prompt"]
-        
-        log(f"Executing step: {step_name}", "info")
-        
-        # AI processing with type safety
-        step_result: str = reason(f"{step_prompt}: {current_data}")
-        results.append({
-            "step": step_name,
-            "result": step_result
-        })
-        
-        # Update current data for next step
-        current_data = step_result
-    
-    return {
-        "final_result": current_data,
-        "step_results": results,
-        "total_steps": len(steps)
-    }
+ current_data: any = input_data
+ results: list = []
+
+ for step in steps:
+ step_name: str = step["name"]
+ step_prompt: str = step["prompt"]
+
+ log(f"Executing step: {step_name}", "info")
+
+ # AI processing with type safety
+ step_result: str = reason(f"{step_prompt}: {current_data}")
+ results.append({
+ "step": step_name,
+ "result": step_result
+ })
+
+ # Update current data for next step
+ current_data = step_result
+
+ return {
+ "final_result": current_data,
+ "step_results": results,
+ "total_steps": len(steps)
+ }
 ```
 
 ---
@@ -322,15 +316,15 @@ mixed: list = [1, "hello", true, [1, 2]]
 
 # List operations with type safety
 def process_numbers(data: list) -> dict:
-    total: int = sum(data)
-    count: int = len(data)
-    average: float = total / count
-    
-    return {
-        "total": total,
-        "count": count,
-        "average": average
-    }
+ total: int = sum(data)
+ count: int = len(data)
+ average: float = total / count
+
+ return {
+ "total": total,
+ "count": count,
+ "average": average
+ }
 ```
 
 #### Dictionaries
@@ -338,18 +332,18 @@ def process_numbers(data: list) -> dict:
 # Dictionary type annotations
 user: dict = {"name": "Alice", "age": 25, "role": "engineer"}
 config: dict = {
-    "debug": true,
-    "max_retries": 3,
-    "timeout": 30.0
+ "debug": true,
+ "max_retries": 3,
+ "timeout": 30.0
 }
 
 # Dictionary operations with type safety
 def merge_user_data(base_data: dict, updates: dict) -> dict:
-    merged: dict = base_data.copy()
-    for key, value in updates.items():
-        merged[key] = value
-    
-    return merged
+ merged: dict = base_data.copy()
+ for key, value in updates.items():
+ merged[key] = value
+
+ return merged
 ```
 
 #### Tuples
@@ -361,11 +355,11 @@ rgb_color: tuple = (255, 128, 0)
 
 # Tuple operations with type safety
 def calculate_distance(point1: tuple, point2: tuple) -> float:
-    x_diff: float = point1[0] - point2[0]
-    y_diff: float = point1[1] - point2[1]
-    
-    distance: float = (x_diff * x_diff + y_diff * y_diff) ** 0.5
-    return distance
+ x_diff: float = point1[0] - point2[0]
+ y_diff: float = point1[1] - point2[1]
+
+ distance: float = (x_diff * x_diff + y_diff * y_diff) ** 0.5
+ return distance
 ```
 
 #### Sets
@@ -376,8 +370,8 @@ tags: set = {"python", "dana", "ai", "ml"}
 
 # Set operations with type safety
 def find_common_tags(tags1: set, tags2: set) -> set:
-    common: set = tags1.intersection(tags2)
-    return common
+ common: set = tags1.intersection(tags2)
+ return common
 ```
 
 ---
@@ -393,13 +387,13 @@ x: int = 10
 y: float = 3.14
 
 # These operations work and return appropriate types
-sum_result: float = x + y      # int + float = float
-product: float = x * y         # int * float = float
-division: float = x / y        # int / float = float
+sum_result: float = x + y # int + float = float
+product: float = x * y # int * float = float
+division: float = x / y # int / float = float
 
 # Type checker understands compatibility
 def calculate_total(base: int, multiplier: float) -> float:
-    return base * multiplier   # Returns float (correct)
+ return base * multiplier # Returns float (correct)
 ```
 
 ### Type Coercion Rules
@@ -415,17 +409,17 @@ Use `any` as an escape hatch for flexible typing:
 ```dana
 # When you need flexibility
 def process_dynamic_data(data: any) -> any:
-    # Can handle any type of input
-    if isinstance(data, list):
-        return len(data)
-    elif isinstance(data, dict):
-        return data.keys()
-    else:
-        return str(data)
+ # Can handle any type of input
+ if isinstance(data, list):
+ return len(data)
+ elif isinstance(data, dict):
+ return data.keys()
+ else:
+ return str(data)
 
 # Useful for configuration or API responses
-config: any = load_config()  # Could be dict, list, or other types
-api_response: any = call_external_api()  # Unknown structure
+config: any = load_config() # Could be dict, list, or other types
+api_response: any = call_external_api() # Unknown structure
 ```
 
 ---
@@ -436,11 +430,11 @@ api_response: any = call_external_api()  # Unknown structure
 ```dana
 # ✅ Good: Clear function signature
 def calculate_bmi(weight: float, height: float) -> float:
-    return weight / (height * height)
+ return weight / (height * height)
 
 # ❌ Avoid: Unclear function signature
 def calculate_bmi(weight, height):
-    return weight / (height * height)
+ return weight / (height * height)
 ```
 
 ### 2. Use Descriptive Variable Names with Types
@@ -460,57 +454,57 @@ msg: str = "Invalid input provided"
 ```dana
 # ✅ Good: Typed complex data
 user_profile: dict = {
-    "personal_info": {
-        "name": "Alice",
-        "age": 25
-    },
-    "preferences": {
-        "theme": "dark",
-        "notifications": true
-    }
+ "personal_info": {
+ "name": "Alice",
+ "age": 25
+ },
+ "preferences": {
+ "theme": "dark",
+ "notifications": true
+ }
 }
 
 # Function that processes complex data
 def update_user_preferences(profile: dict, new_prefs: dict) -> dict:
-    updated_profile: dict = profile.copy()
-    updated_profile["preferences"].update(new_prefs)
-    return updated_profile
+ updated_profile: dict = profile.copy()
+ updated_profile["preferences"].update(new_prefs)
+ return updated_profile
 ```
 
 ### 4. Use `any` Sparingly
 ```dana
 # ✅ Good: Specific types when possible
 def process_user_data(name: str, age: int, metadata: dict) -> dict:
-    return {"name": name, "age": age, "metadata": metadata}
+ return {"name": name, "age": age, "metadata": metadata}
 
 # ✅ Acceptable: Use any when truly needed
 def handle_api_response(response: any) -> dict:
-    # When dealing with unknown external data
-    return {"status": "processed", "data": response}
+ # When dealing with unknown external data
+ return {"status": "processed", "data": response}
 ```
 
 ### 5. Type AI Function Calls
 ```dana
 # ✅ Good: Typed AI interactions
 def ai_content_analysis(content: str, analysis_type: str) -> dict:
-    # Clear input types
-    prompt: str = f"Analyze this {analysis_type}: {content}"
-    
-    # Typed AI call
-    analysis: str = reason(prompt, {
-        "temperature": 0.5,
-        "max_tokens": 500
-    })
-    
-    # Structured return
-    result: dict = {
-        "content": content,
-        "analysis": analysis,
-        "type": analysis_type,
-        "confidence": 0.85
-    }
-    
-    return result
+ # Clear input types
+ prompt: str = f"Analyze this {analysis_type}: {content}"
+
+ # Typed AI call
+ analysis: str = reason(prompt, {
+ "temperature": 0.5,
+ "max_tokens": 500
+ })
+
+ # Structured return
+ result: dict = {
+ "content": content,
+ "analysis": analysis,
+ "type": analysis_type,
+ "confidence": 0.85
+ }
+
+ return result
 ```
 
 ---
@@ -541,15 +535,15 @@ def ai_content_analysis(content: str, analysis_type: str) -> dict:
 
 ## See Also
 
-- **[Core Functions](core-functions.md)** - Essential Dana functions with type signatures
-- **[Built-in Functions](built-in-functions.md)** - Pythonic built-in functions with type validation
-- **[Function Calling](function-calling.md)** - Function calling and import system
-- **[Scoping System](scoping.md)** - Variable scopes and security model
+- [Core Functions](core-functions.md) - Essential Dana functions with type signatures
+- [Built-in Functions](built-in-functions.md) - Pythonic built-in functions with type validation
+- [Function Calling](function-calling.md) - Function calling and import system
+- [Scoping System](scoping.md) - Variable scopes and security model
 
 ---
 
 <p align="center">
-Copyright © 2025 Aitomatic, Inc. Licensed under the <a href="../../../../LICENSE.md">MIT License</a>.
+Copyright © 2025 Aitomatic, Inc. Licensed under the <a href="../../../LICENSE.md">MIT License</a>.
 <br/>
 <a href="https://aitomatic.com">https://aitomatic.com</a>
-</p> 
+</p>

@@ -1,28 +1,26 @@
-<p align="center">
-  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
-</p>
-
-[Project Overview](../../README.md)
-
 # OpenDXA for Contributors
 
 *Comprehensive guide for developers who want to contribute to, extend, or deeply understand OpenDXA*
 
 ---
 
-## 🎯 Welcome Contributors
+## Welcome Contributors
 
 Whether you're looking to contribute code, extend functionality, or deeply understand OpenDXA's architecture, this guide provides everything you need to become an effective contributor to the OpenDXA ecosystem.
 
 ### Types of Contributors
-- **Core Contributors**: Developers working on the OpenDXA core platform
-- **Extension Developers**: Building capabilities, resources, and integrations
-- **Community Contributors**: Documentation, examples, and ecosystem tools
-- **Research Contributors**: Advancing the theoretical foundations
+
+- Core Contributors: Developers working on the OpenDXA core platform
+
+- Extension Developers: Building capabilities, resources, and integrations
+
+- Community Contributors: Documentation, examples, and ecosystem tools
+
+- Research Contributors: Advancing the theoretical foundations
 
 ---
 
-## 🚀 Quick Start for Contributors
+## Quick Start for Contributors
 
 ### 1. Development Environment Setup (5 minutes)
 ```bash
@@ -37,72 +35,71 @@ uv sync --extra dev && uv run pre-commit install
 uv run pytest tests/
 ```
 
-It will be assumed that you either write `uv run` before any command or that you activate the venv first. 
+It will be assumed that you either write `uv run` before any command or that you activate the venv first.
 ```bash
 source .venv/bin/activate
 ```
 
-
 ### 2. Understand the Architecture (30 minutes)
 - [System Architecture Overview](architecture/system-design.md)
-- [Dana Language Implementation](architecture/dana-implementation.md)
-- [Core Components Deep Dive](architecture/component-architecture.md)
+- [Architecture Overview](architecture/README.md)
+- [System Design](architecture/system-design.md)
 
 ### 3. Make Your First Contribution (1 hour)
 - [Contribution Guidelines](development/contribution-guide.md)
-- [Code Style and Standards](development/coding-standards.md)
-- [Testing Requirements](development/testing-guide.md)
+- [Development Guide](development/README.md)
+- [Contribution Guide](development/contribution-guide.md)
 
 ---
 
-## 🏗️ Architecture Deep Dive
+## Architecture Deep Dive
 
 ### System Overview
 OpenDXA is built on a modular, extensible architecture with clear separation of concerns:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Application Layer                        │
+│ Application Layer │
 ├─────────────────────────────────────────────────────────────┤
-│                      Agent Layer                           │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
-│  │   Agent     │  │ Capabilities │  │     Resources       │ │
-│  │ Management  │  │   System     │  │    Management       │ │
-│  └─────────────┘  └─────────────┘  └─────────────────────┘ │
+│ Agent Layer │
+│ ┌─────────────┐ ┌─────────────┐ ┌─────────────────────┐ │
+│ │ Agent │ │ Capabilities│ │ Resources │ │
+│ │ Management │ │ System │ │ Management │ │
+│ └─────────────┘ └─────────────┘ └─────────────────────┘ │
 ├─────────────────────────────────────────────────────────────┤
-│                   Dana Execution Layer                     │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
-│  │    Parser   │  │ Interpreter │  │  Runtime Context    │ │
-│  │   (AST)     │  │  (Executor) │  │  (State Manager)    │ │
-│  └─────────────┘  └─────────────┘  └─────────────────────┘ │
+│ Dana Execution Layer │
+│ ┌─────────────┐ ┌─────────────┐ ┌─────────────────────┐ │
+│ │ Parser │ │ Interpreter │ │ Runtime Context │ │
+│ │ (AST) │ │ (Executor) │ │ (State Manager) │ │
+│ └─────────────┘ └─────────────┘ └─────────────────────┘ │
 ├─────────────────────────────────────────────────────────────┤
-│                    Resource Layer                          │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
-│  │ LLM Resource│  │ Knowledge   │  │  External Tools     │ │
-│  │ Integration │  │    Base     │  │   & Services        │ │
-│  └─────────────┘  └─────────────┘  └─────────────────────┘ │
+│ Resource Layer │
+│ ┌─────────────┐ ┌─────────────┐ ┌─────────────────────┐ │
+│ │ LLM Resource│ │ Knowledge │ │ External Tools │ │
+│ │ Integration │ │ Base │ │ & Services │ │
+│ └─────────────┘ └─────────────┘ └─────────────────────┘ │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ### Key Components
 
 #### Dana Language Engine
-- **Parser**: Converts Dana code to Abstract Syntax Tree (AST)
-- **Interpreter**: Executes Dana programs with state management
-- **Type System**: Dynamic typing with runtime validation
-- **Context Manager**: Handles scoped state and memory management
+- Parser: Converts Dana code to Abstract Syntax Tree (AST)
+- Interpreter: Executes Dana programs with state management
+- Type System: Dynamic typing with runtime validation
+- Context Manager: Handles scoped state and memory management
 
 #### Agent Runtime
-- **Agent Lifecycle**: Creation, configuration, execution, and cleanup
-- **Capability Integration**: Modular functionality system
-- **Resource Management**: External service and tool integration
-- **State Persistence**: Durable state across agent executions
+- Agent Lifecycle: Creation, configuration, execution, and cleanup
+- Capability Integration: Modular functionality system
+- Resource Management: External service and tool integration
+- State Persistence: Durable state across agent executions
 
 #### Extension System
-- **Capability Framework**: Plugin architecture for new functionality
-- **Resource Providers**: Standardized external service integration
-- **Custom Functions**: User-defined Dana functions and operations
-- **Event System**: Hooks for monitoring and extension
+- Capability Framework: Plugin architecture for new functionality
+- Resource Providers: Standardized external service integration
+- Custom Functions: User-defined Dana functions and operations
+- Event System: Hooks for monitoring and extension
 
 [Complete Architecture Guide](architecture/system-design.md)
 
@@ -116,60 +113,60 @@ OpenDXA is built on a modular, extensible architecture with clear separation of 
 The heart of the Dana language implementation:
 ```
 dana/
-├── parser/           # Dana language parser and AST
-├── interpreter/      # Dana program execution engine
-├── sandbox/         # Execution context and state management
-├── repl/            # Interactive development environment
-└── transcoder/      # Natural language to Dana conversion
+├── parser/ # Dana language parser and AST
+├── interpreter/ # Dana program execution engine
+├── sandbox/ # Execution context and state management
+├── repl/ # Interactive development environment
+└── transcoder/ # Natural language to Dana conversion
 ```
 
 #### `opendxa/agent/`
 Agent management and execution:
 ```
 agent/
-├── agent.py         # Core Agent class and lifecycle
+├── agent.py # Core Agent class and lifecycle
 ├── agent_runtime.py # Runtime execution environment
-├── capability/      # Capability system implementation
-└── resource/        # Resource management and integration
+├── capability/ # Capability system implementation
+└── resource/ # Resource management and integration
 ```
 
 #### `opendxa/common/`
 Shared utilities and base classes:
 ```
 common/
-├── config/          # Configuration management
-├── resource/        # Base resource classes
-├── utils/           # Utility functions and helpers
-└── mixins/          # Reusable component mixins
+├── config/ # Configuration management
+├── resource/ # Base resource classes
+├── utils/ # Utility functions and helpers
+└── mixins/ # Reusable component mixins
 ```
 
 ### Key Files to Understand
 
 1. **`opendxa/dana/interpreter/interpreter.py`**
-   - Core Dana program execution logic
-   - State management and function dispatch
-   - Error handling and recovery
+ - Core Dana program execution logic
+ - State management and function dispatch
+ - Error handling and recovery
 
 2. **`opendxa/dana/parser/parser.py`**
-   - Dana language grammar and parsing
-   - AST generation and validation
-   - Syntax error handling
+ - Dana language grammar and parsing
+ - AST generation and validation
+ - Syntax error handling
 
 3. **`opendxa/agent/agent.py`**
-   - Agent lifecycle and configuration
-   - Capability and resource integration
-   - High-level agent operations
+ - Agent lifecycle and configuration
+ - Capability and resource integration
+ - High-level agent operations
 
 4. **`opendxa/common/resource/llm_resource.py`**
-   - LLM integration and management
-   - Model configuration and switching
-   - Response handling and caching
+ - LLM integration and management
+ - Model configuration and switching
+ - Response handling and caching
 
-[Detailed Codebase Guide](codebase/navigation-guide.md)
+[Codebase Overview](codebase/README.md)
 
 ---
 
-## 🔧 Development Workflows
+## Development Workflows
 
 ### Setting Up Your Development Environment
 
@@ -181,9 +178,9 @@ common/
 pytest
 
 # Run specific test categories
-pytest tests/dana/          # Dana language tests
-pytest tests/agent/         # Agent system tests
-pytest tests/integration/   # Integration tests
+pytest tests/dana/ # Dana language tests
+pytest tests/agent/ # Agent system tests
+pytest tests/integration/ # Integration tests
 
 # Run with coverage
 pytest --cov=opendxa --cov-report=html
@@ -203,7 +200,7 @@ pylint opendxa/
 mypy opendxa/
 ```
 
-[Complete Development Setup](development/environment-setup.md)
+[Development Guide](development/README.md)
 
 ---
 
@@ -217,28 +214,28 @@ Capabilities extend agent functionality with reusable, composable modules:
 from opendxa.agent.capability.base_capability import BaseCapability
 
 class CustomAnalysisCapability(BaseCapability):
-    """Custom capability for specialized data analysis."""
-    
-    def __init__(self, config: dict = None):
-        super().__init__(config)
-        self.analysis_model = self._load_model()
-    
-    def get_functions(self) -> dict:
-        """Return Dana functions provided by this capability."""
-        return {
-            "analyze_data": self.analyze_data,
-            "generate_insights": self.generate_insights,
-        }
-    
-    def analyze_data(self, data, analysis_type="standard"):
-        """Analyze data using custom algorithms."""
-        # Implementation here
-        return analysis_results
-    
-    def generate_insights(self, analysis_results):
-        """Generate insights from analysis results."""
-        # Implementation here
-        return insights
+ """Custom capability for specialized data analysis."""
+
+ def __init__(self, config: dict = None):
+ super().__init__(config)
+ self.analysis_model = self._load_model()
+
+ def get_functions(self) -> dict:
+ """Return Dana functions provided by this capability."""
+ return {
+ "analyze_data": self.analyze_data,
+ "generate_insights": self.generate_insights,
+ }
+
+ def analyze_data(self, data, analysis_type="standard"):
+ """Analyze data using custom algorithms."""
+ # Implementation here
+ return analysis_results
+
+ def generate_insights(self, analysis_results):
+ """Generate insights from analysis results."""
+ # Implementation here
+ return insights
 ```
 
 ### Creating Custom Resources
@@ -249,25 +246,25 @@ Resources provide external service integration:
 from opendxa.common.resource.base_resource import BaseResource
 
 class CustomAPIResource(BaseResource):
-    """Resource for integrating with custom API service."""
-    
-    def __init__(self, api_key: str, base_url: str):
-        super().__init__()
-        self.api_key = api_key
-        self.base_url = base_url
-        self.client = self._initialize_client()
-    
-    def get_functions(self) -> dict:
-        """Return Dana functions for API operations."""
-        return {
-            "fetch_data": self.fetch_data,
-            "submit_request": self.submit_request,
-        }
-    
-    def fetch_data(self, endpoint: str, params: dict = None):
-        """Fetch data from the API."""
-        # Implementation here
-        return api_response
+ """Resource for integrating with custom API service."""
+
+ def __init__(self, api_key: str, base_url: str):
+ super().__init__()
+ self.api_key = api_key
+ self.base_url = base_url
+ self.client = self._initialize_client()
+
+ def get_functions(self) -> dict:
+ """Return Dana functions for API operations."""
+ return {
+ "fetch_data": self.fetch_data,
+ "submit_request": self.submit_request,
+ }
+
+ def fetch_data(self, endpoint: str, params: dict = None):
+ """Fetch data from the API."""
+ # Implementation here
+ return api_response
 ```
 
 ### Dana Function Development
@@ -279,13 +276,13 @@ from opendxa.dana.interpreter.function_registry import register_function
 
 @register_function("custom_transform")
 def custom_transform(data, transformation_type="default"):
-    """Custom data transformation function for Dana."""
-    if transformation_type == "normalize":
-        return normalize_data(data)
-    elif transformation_type == "aggregate":
-        return aggregate_data(data)
-    else:
-        return apply_default_transform(data)
+ """Custom data transformation function for Dana."""
+ if transformation_type == "normalize":
+ return normalize_data(data)
+ elif transformation_type == "aggregate":
+ return aggregate_data(data)
+ else:
+ return apply_default_transform(data)
 ```
 
 [Complete Extension Guide](extending/extension-development.md)
@@ -297,23 +294,23 @@ def custom_transform(data, transformation_type="default"):
 ### Testing Philosophy
 OpenDXA follows a comprehensive testing strategy:
 
-- **Unit Tests**: Test individual components in isolation
-- **Integration Tests**: Test component interactions
-- **End-to-End Tests**: Test complete user workflows
-- **Performance Tests**: Validate performance characteristics
-- **Regression Tests**: Prevent breaking changes
+- Unit Tests: Test individual components in isolation
+- Integration Tests: Test component interactions
+- End-to-End Tests: Test complete user workflows
+- Performance Tests: Validate performance characteristics
+- Regression Tests: Prevent breaking changes
 
 ### Test Structure
 ```
 tests/
-├── unit/                # Unit tests for individual components
-│   ├── dana/           # Dana language tests
-│   ├── agent/          # Agent system tests
-│   └── common/         # Common utilities tests
-├── integration/         # Integration tests
-├── e2e/                # End-to-end tests
-├── performance/        # Performance and load tests
-└── fixtures/           # Test data and fixtures
+├── unit/ # Unit tests for individual components
+│ ├── dana/ # Dana language tests
+│ ├── agent/ # Agent system tests
+│ └── common/ # Common utilities tests
+├── integration/ # Integration tests
+├── e2e/ # End-to-end tests
+├── performance/ # Performance and load tests
+└── fixtures/ # Test data and fixtures
 ```
 
 ### Writing Tests
@@ -322,34 +319,34 @@ import pytest
 from opendxa.dana.interpreter import DanaInterpreter
 
 class TestDanaInterpreter:
-    """Test suite for Dana interpreter functionality."""
-    
-    def test_basic_assignment(self):
-        """Test basic variable assignment."""
-        interpreter = DanaInterpreter()
-        result = interpreter.execute("x = 42")
-        assert result.success
-        assert interpreter.context.get("x") == 42
-    
-    def test_function_call(self):
-        """Test function call execution."""
-        interpreter = DanaInterpreter()
-        result = interpreter.execute('result = reason("test prompt")')
-        assert result.success
-        assert "result" in interpreter.context
+ """Test suite for Dana interpreter functionality."""
+
+ def test_basic_assignment(self):
+ """Test basic variable assignment."""
+ interpreter = DanaInterpreter()
+ result = interpreter.execute("x = 42")
+ assert result.success
+ assert interpreter.context.get("x") == 42
+
+ def test_function_call(self):
+ """Test function call execution."""
+ interpreter = DanaInterpreter()
+ result = interpreter.execute('result = reason("test prompt")')
+ assert result.success
+ assert "result" in interpreter.context
 ```
 
-[Testing Guidelines](development/testing-guide.md)
+[Contribution Guidelines](development/contribution-guide.md)
 
 ---
 
-## 📚 Documentation Contribution
+## Documentation Contribution
 
 ### Documentation Structure
-- **User Documentation**: Guides for end users and developers
-- **API Documentation**: Auto-generated from code docstrings
-- **Architecture Documentation**: System design and implementation details
-- **Contribution Documentation**: Guides for contributors
+- User Documentation: Guides for end users and developers
+- API Documentation: Auto-generated from code docstrings
+- Architecture Documentation: System design and implementation details
+- Contribution Documentation: Guides for contributors
 
 ### Writing Documentation
 ```markdown
@@ -375,12 +372,12 @@ Where to go from here.
 ```
 
 ### Documentation Tools
-- **Sphinx**: API documentation generation
-- **MkDocs**: User documentation site
-- **Docstrings**: Inline code documentation
-- **Markdown**: General documentation format
+- Sphinx: API documentation generation
+- MkDocs: User documentation site
+- Docstrings: Inline code documentation
+- Markdown: General documentation format
 
-[Documentation Guidelines](development/documentation-guide.md)
+[Development Guide](development/README.md)
 
 ---
 
@@ -397,62 +394,62 @@ Where to go from here.
 8. **Merge**: Once approved, your changes are merged
 
 ### Code Review Guidelines
-- **Clear Description**: Explain what your changes do and why
-- **Small, Focused PRs**: Keep changes focused and reviewable
-- **Test Coverage**: Include tests for new functionality
-- **Documentation**: Update docs for user-facing changes
-- **Backward Compatibility**: Avoid breaking existing functionality
+- Clear Description: Explain what your changes do and why
+- Small, Focused PRs: Keep changes focused and reviewable
+- Test Coverage: Include tests for new functionality
+- Documentation: Update docs for user-facing changes
+- Backward Compatibility: Avoid breaking existing functionality
 
 ### Communication Channels
-- **GitHub Issues**: Bug reports and feature requests
-- **GitHub Discussions**: General questions and community discussion
-- **Discord**: Real-time chat with the community
-- **Email**: Direct contact for sensitive issues
+- GitHub Issues: Bug reports and feature requests
+- GitHub Discussions: General questions and community discussion
+- Discord: Real-time chat with the community
+- Email: Direct contact for sensitive issues
 
 [Contribution Guidelines](development/contribution-guide.md)
 
 ---
 
-## 🎯 Roadmap and Future Development
+## Roadmap and Future Development
 
 ### Current Focus Areas
-- **Performance Optimization**: Improving execution speed and memory usage
-- **Language Features**: Expanding Dana language capabilities
-- **Integration Ecosystem**: More resource providers and capabilities
-- **Developer Experience**: Better tooling and debugging support
+- Performance Optimization: Improving execution speed and memory usage
+- Language Features: Expanding Dana language capabilities
+- Integration Ecosystem: More resource providers and capabilities
+- Developer Experience: Better tooling and debugging support
 
 ### Upcoming Features
-- **Visual Debugging**: Graphical debugging and state inspection
-- **Distributed Execution**: Multi-node agent execution
-- **Advanced Analytics**: Built-in performance and behavior analytics
-- **IDE Integration**: Enhanced support for popular development environments
+- Visual Debugging: Graphical debugging and state inspection
+- Distributed Execution: Multi-node agent execution
+- Advanced Analytics: Built-in performance and behavior analytics
+- IDE Integration: Enhanced support for popular development environments
 
 ### Research Directions
-- **Formal Verification**: Mathematical proofs of program correctness
-- **Adaptive Learning**: Self-improving agent capabilities
-- **Federated Knowledge**: Distributed knowledge sharing between agents
-- **Quantum Integration**: Quantum computing resource integration
+- Formal Verification: Mathematical proofs of program correctness
+- Adaptive Learning: Self-improving agent capabilities
+- Federated Knowledge: Distributed knowledge sharing between agents
+- Quantum Integration: Quantum computing resource integration
 
-[Detailed Roadmap](development/roadmap.md)
+[Development Guide](development/README.md)
 
 ---
 
 ## 📞 Getting Help
 
 ### For Contributors
-- **Technical Questions**: [GitHub Discussions](https://github.com/aitomatic/opendxa/discussions)
-- **Bug Reports**: [GitHub Issues](https://github.com/aitomatic/opendxa/issues)
-- **Feature Requests**: [GitHub Issues](https://github.com/aitomatic/opendxa/issues)
-- **Real-time Chat**: [Discord Community](https://discord.gg/opendxa)
+- Technical Questions: [GitHub Discussions](https://github.com/aitomatic/opendxa/discussions)
+- Bug Reports: [GitHub Issues](https://github.com/aitomatic/opendxa/issues)
+- Feature Requests: [GitHub Issues](https://github.com/aitomatic/opendxa/issues)
+- Real-time Chat: [Discord Community](https://discord.gg/opendxa)
 
 ### For Maintainers
-- **Security Issues**: security@aitomatic.com
-- **Partnership Inquiries**: partnerships@aitomatic.com
-- **Commercial Support**: support@aitomatic.com
+- Security Issues: security@aitomatic.com
+- Partnership Inquiries: partnerships@aitomatic.com
+- Commercial Support: support@aitomatic.com
 
 ---
 
-*Ready to contribute? Start with our [Development Setup Guide](development/environment-setup.md) or check out [Good First Issues](https://github.com/aitomatic/opendxa/labels/good%20first%20issue).* 
+*Ready to contribute? Start with our [Development Guide](development/README.md) or check out [Good First Issues](https://github.com/aitomatic/opendxa/labels/good%20first%20issue).*
 
 <p align="center">
 Copyright © 2025 Aitomatic, Inc. Licensed under the <a href="../../LICENSE.md">MIT License</a>.
