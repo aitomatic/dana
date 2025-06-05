@@ -8,7 +8,7 @@
 ```bash
 % git clone https://github.com/aitomatic/opendxa.git
 % cd opendxa
-% make
+% make # This will check for uv and install it if missing, then set up everything.
 ```
 This installs everything and creates your `.env` file. Then just:
 1. Add your API key to `.env` 
@@ -17,15 +17,20 @@ This installs everything and creates your `.env` file. Then just:
 ---
 
 ### Manual Setup (if you prefer)
-
+**1. Install uv (if not already installed):**
 ```bash
 % curl -LsSf https://astral.sh/uv/install.sh | sh # Install uv
-% git clone https://github.com/aitomatic/opendxa.git && cd opendxa && uv sync # Setup OpenDXA
+```
+For other installation methods, see the [official uv documentation](https://docs.astral.sh/uv/getting-started/installation/).
+
+**2. Setup OpenDXA:**
+```bash
+% git clone https://github.com/aitomatic/opendxa.git && cd opendxa && uv sync --extra dev --extra docs # Setup OpenDXA & install dev/docs dependencies
 % cp .env.example .env # Configure your API keys
 % bin/dana # Start the Dana REPL
 ```
 
-- First time using uv? See [Project Maintenance with uv](#project-maintenance-with-uv) for essential commands.
+- First time using uv? See [Development Setup & Project Maintenance with uv](#development-setup--project-maintenance-with-uv) for essential commands.
 
 ---
 
@@ -176,33 +181,98 @@ This project uses `uv` for managing dependencies and running development tasks.
 
 ### Initial Setup
 
-1.  **Install uv**: If you haven't already, install uv:
+1.  **Install uv**: If you haven't already, install uv. The `make` command in the quickstart will handle this, or you can do it manually:
     ```bash
     curl -LsSf https://astral.sh/uv/install.sh | sh
     ```
+    For other installation methods, see the [official uv documentation](https://docs.astral.sh/uv/getting-started/installation/).
 2.  **Clone the repository**:
     ```bash
     git clone https://github.com/aitomatic/opendxa.git
     cd opendxa
     ```
-3.  **Sync dependencies**:
+3.  **Sync dependencies & Set up pre-commit hooks**:
     ```bash
-    # Install all dependencies, including optional 'dev' and 'docs' groups
-    uv sync --extra dev --extra docs
+    # Install all dependencies, including optional 'dev' and 'docs' groups, and set up pre-commit hooks
+    make setup-dev 
+    # or, if you prefer to run uv commands directly:
+    # uv sync --extra dev --extra docs
+    # uv run pre-commit install
     ```
+    Our `dev` and `docs` dependencies are specified under `[project.optional-dependencies]` in `pyproject.toml`.
 4.  **Configure environment**:
     ```bash
     cp .env.example .env
     # Then, add your API keys to .env
     ```
-5.  **Set up pre-commit hooks**:
-    ```bash
-    uv run pre-commit install
-    ```
 
 ### Common Development Tasks
 
-The following `uv run` commands are available for common development workflows. These are direct commands as native task runner support in `uv` is evolving.
+Most common development tasks are available via `make` commands, which wrap `uv run ...` commands. As `uv`'s task runner capabilities evolve, direct `uv run <task_name>` might become more prevalent.
+
+**Using `make` (Recommended):**
+```bash
+# Run all tests
+make test
+
+# Fast tests only (excluding 'live' and 'deep' tests)
+make test-fast
+
+# Live/integration tests only
+make test-live
+
+# Run tests with coverage report
+make coverage
+
+# Lint code
+make lint
+
+# Lint and auto-fix
+make fix
+
+# Format code (Black)
+make format
+
+# Check formatting (Black)
+make check-format
+
+# Type checking (MyPy)
+make mypy
+
+# Live preview docs during writing
+make docs-serve
+
+# Live preview docs (remote accessible)
+make docs-serve-remote
+
+# Build docs
+make docs-build
+
+# Build docs with warnings as errors
+make docs-build-strict
+
+# Build and deploy docs to GitHub Pages
+make docs-deploy
+
+# Test code examples in docstrings
+make doctest
+
+# Check all markdown links
+make linkcheck
+
+# Documentation style checking (doc8)
+make doc8
+
+# Run a Dana script (example)
+make run-dana SCRIPT=examples/dana/debug_tests/test_basic.na
+
+# Start the Dana REPL
+make repl
+```
+
+**Direct `uv run` commands (for reference or if `make` is not available):**
+
+The `Makefile` contains aliases for these `uv run` commands. For example, `make test` runs `uv run pytest tests/`.
 
 #### Testing Workflows
 ```bash
@@ -321,20 +391,18 @@ Make sure these are covered when syncing.
 
 ## 📞 Community & Support
 
-### 💬 Get Help
-- **Technical Questions**: [GitHub Discussions](https://github.com/aitomatic/opendxa/discussions)
+### 💬 Get Help & Discuss
+- **Technical Questions & Discussions**: [GitHub Discussions](https://github.com/aitomatic/opendxa/discussions)
 - **Bug Reports**: [GitHub Issues](https://github.com/aitomatic/opendxa/issues)
 - **Real-time Chat**: [Discord Community](https://discord.gg/opendxa)
 
 ### 🤝 Get Involved
-- **Contribute Code**: [Contribution Guidelines](docs/for-contributors/development/contribution-guide.md)
-- **Share Examples**: [Community Recipes](docs/for-engineers/recipes/)
-- **Research Collaboration**: [Academic Partnerships](docs/for-researchers/README.md#academic-collaboration)
+- **Contribute Code**: See [For Contributors](docs/for-contributors/README.md) and our [Contribution Guidelines](docs/for-contributors/development/contribution-guide.md)
+- **Share Examples & Recipes**: We're building a space for this, stay tuned! In the meantime, share on Discord or GitHub Discussions.
 
-### 🏢 Enterprise Support
-- **Business Inquiries**: [Contact Sales](mailto:sales@aitomatic.com)
-- **Professional Services**: [Implementation Support](docs/for-evaluators/adoption-guide/professional-services.md)
-- **Custom Development**: [Enterprise Solutions](mailto:enterprise@aitomatic.com)
+### 🏢 Enterprise & Aitomatic Product
+- **Business Inquiries & Aitomatic Enterprise**: [Contact Sales](mailto:sales@aitomatic.com)
+- **Professional Services**: See [Professional Services](docs/for-evaluators/adoption-guide/professional-services.md)
 
 ---
 
