@@ -73,11 +73,43 @@ dev = [
     "pytest-cov", # Test coverage reporting
 ]
 
-# Entrypoint for dana. Instead of `bin/dana` we can use `dana`
+# Documentation tooling - focused on auto-sync and validation
+docs = [
+    # Core: MkDocs for DevRel team productivity
+    "mkdocs-material>=9.0",
+    "mkdocs-mermaid2-plugin",
+    
+    # Auto-sync with code (solves staleness problem)
+    "mkdocstrings[python]>=0.24",    # API docs from docstrings (auto-update)
+    "mkdocs-gen-files",              # Generate docs from code structure  
+    "mkdocs-literate-nav",           # Auto-generate navigation
+    "mkdocs-section-index",          # Clickable sections
+    
+    # Validation tools (catch problems early)
+    "mkdocs-htmlproofer-plugin",     # Broken link detection  
+    "linkcheckmd",                   # Fast async link checking
+    "doc8",                          # Documentation style checking
+    
+    # Multi-constituency features
+    "mkdocs-redirects",              # Handle URL changes
+    "mkdocs-awesome-nav",            # Advanced navigation control
+    "mkdocs-print-site-plugin",      # PDF export for offline reading
+    
+    # Content enhancement
+    "mkdocs-include-markdown-plugin",# Reusable content blocks
+    "mkdocs-macros-plugin",          # Variables and templating
+    "mkdocs-table-reader-plugin",    # Data tables from CSV/JSON
+    "mkdocs-git-revision-date-localized-plugin", # Last updated dates
+]
+
+# Command-line entry points for end users
 [project.scripts]
 dana = "opendxa.dana.exec.dana:main"
 
-# Package configuration
+# =============================================================================
+# Package Configuration
+# =============================================================================
+
 [tool.setuptools]
 packages = ["opendxa"]
 
