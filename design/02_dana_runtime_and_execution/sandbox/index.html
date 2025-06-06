@@ -219,6 +219,79 @@
   </span>
 </a>
 </li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_1_2" type="checkbox"/>
+<label class="md-nav__link" for="__nav_1_2" id="__nav_1_2_label" tabindex="0">
+<span class="md-ellipsis">
+    For You
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_1_2_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_1_2">
+<span class="md-nav__icon md-icon"></span>
+            For You
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../for-engineers/">
+<span class="md-ellipsis">
+    Engineers
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../for-evaluators/">
+<span class="md-ellipsis">
+    Evaluators
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../for-researchers/">
+<span class="md-ellipsis">
+    Researchers
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../for-contributors/">
+<span class="md-ellipsis">
+    Contributors
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_1_3" type="checkbox"/>
+<label class="md-nav__link" for="__nav_1_3" id="__nav_1_3_label" tabindex="0">
+<span class="md-ellipsis">
+    More
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_1_3_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_1_3">
+<span class="md-nav__icon md-icon"></span>
+            More
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../">
+<span class="md-ellipsis">
+    Design
+    
+  </span>
+</a>
+</li>
 <li class="md-nav__item">
 <a class="md-nav__link" href="../../../ROADMAP/">
 <span class="md-ellipsis">
@@ -226,6 +299,9 @@
     
   </span>
 </a>
+</li>
+</ul>
+</nav>
 </li>
 </ul>
 </nav>
@@ -248,7 +324,7 @@
 <li class="md-nav__item">
 <a class="md-nav__link" href="../../../for-engineers/">
 <span class="md-ellipsis">
-    Overview
+    Engineers
     
   </span>
 </a>
@@ -335,9 +411,9 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../../for-engineers/reference/pav-usage-guide/">
+<a class="md-nav__link" href="../../../for-engineers/reference/pov-usage-guide/">
 <span class="md-ellipsis">
-    PAV Usage Guide
+    POV Usage Guide
     
   </span>
 </a>
@@ -514,7 +590,7 @@
 <li class="md-nav__item">
 <a class="md-nav__link" href="../../../for-evaluators/">
 <span class="md-ellipsis">
-    Overview
+    Evaluators
     
   </span>
 </a>
@@ -692,7 +768,7 @@
 <li class="md-nav__item">
 <a class="md-nav__link" href="../../../for-researchers/">
 <span class="md-ellipsis">
-    Overview
+    Researchers
     
   </span>
 </a>
@@ -768,7 +844,7 @@
 <li class="md-nav__item">
 <a class="md-nav__link" href="../../../for-contributors/">
 <span class="md-ellipsis">
-    Overview
+    Contributors
     
   </span>
 </a>
@@ -904,7 +980,7 @@
 <li class="md-nav__item">
 <a class="md-nav__link" href="../../">
 <span class="md-ellipsis">
-    Overview
+    Design
     
   </span>
 </a>
@@ -1132,9 +1208,9 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../pav_execution_model/">
+<a class="md-nav__link" href="../pov_execution_model/">
 <span class="md-ellipsis">
-    PAV Execution Model
+    POV Execution Model
     
   </span>
 </a>
@@ -1476,69 +1552,67 @@
 </ol>
 <h2 id="3-flow-diagram">3. Flow Diagram<a class="headerlink" href="#3-flow-diagram" title="Permanent link">¶</a></h2>
 <pre class="mermaid"><code>graph TB
-    subgraph UserInput
-        direction LR
-        SCRIPT[Dana Script] 
-        REPL_INPUT[REPL Input]
-    end
+ subgraph UserInput
+ direction LR
+ SCRIPT[Dana Script]
+ REPL_INPUT[REPL Input]
+ end
 
-    UserInput --&gt; SANDBOX_ENV[Sandbox Environment]
+ UserInput --&gt; SANDBOX_ENV[Sandbox Environment]
 
-    subgraph SANDBOX_ENV [Dana Runtime / Sandbox]
-        direction LR
-        PARSER[1. Parser] --&gt; AST_GEN[[AST]]
-        AST_GEN --&gt; TRANSFORMER(2. AST Transformer 
+ subgraph SANDBOX_ENV [Dana Runtime / Sandbox]
+ direction LR
+ PARSER[1. Parser] --&gt; AST_GEN[[AST]]
+ AST_GEN --&gt; TRANSFORMER(2. AST Transformer
 Optional)
-        TRANSFORMER --&gt; AST_PROC[[Processed AST]]
-        AST_PROC --&gt; TYPE_INFO([3. Type Info 
+ TRANSFORMER --&gt; AST_PROC[[Processed AST]]
+ AST_PROC --&gt; TYPE_INFO([3. Type Info
 (Hints, Desired Type)])
-        TYPE_INFO --&gt; INTERPRETER[4. Interpreter]
-        INTERPRETER --&gt; EXEC_CONTEXT[SandboxContext]
-        INTERPRETER --&gt; FUNC_REG[Function Registry]
-        EXEC_CONTEXT &lt;--&gt; INTERPRETER
-        FUNC_REG &lt;--&gt; INTERPRETER
-    end
+ TYPE_INFO --&gt; INTERPRETER[4. Interpreter]
+ INTERPRETER --&gt; EXEC_CONTEXT[SandboxContext]
+ INTERPRETER --&gt; FUNC_REG[Function Registry]
+ EXEC_CONTEXT &lt;--&gt; INTERPRETER
+ FUNC_REG &lt;--&gt; INTERPRETER
+ end
 
-    INTERPRETER --&gt; PROGRAM_OUTPUT[[Program Output / Effects]]
+ INTERPRETER --&gt; PROGRAM_OUTPUT[[Program Output / Effects]]
 
-    style SCRIPT fill:#cde4ff
-    style REPL_INPUT fill:#cde4ff
-    style AST_GEN fill:#e1f5fe
-    style AST_PROC fill:#e1f5fe
-    style PROGRAM_OUTPUT fill:#d4edda
-    style EXEC_CONTEXT fill:#fff9c4
-    style FUNC_REG fill:#ffe0b2</code></pre>
+ style SCRIPT fill:#cde4ff
+ style REPL_INPUT fill:#cde4ff
+ style AST_GEN fill:#e1f5fe
+ style AST_PROC fill:#e1f5fe
+ style PROGRAM_OUTPUT fill:#d4edda
+ style EXEC_CONTEXT fill:#fff9c4
+ style FUNC_REG fill:#ffe0b2</code></pre>
 <h2 id="4-stages-explained">4. Stages Explained<a class="headerlink" href="#4-stages-explained" title="Permanent link">¶</a></h2>
 <ul>
-<li><strong>Input (Script / REPL)</strong>: Entry points for user-provided Dana code.</li>
-<li><strong>Sandbox Environment / Dana Runtime</strong>: The overarching container and process that manages code processing and execution.<ul>
-<li><strong>Parser</strong>: Converts source code into an Abstract Syntax Tree (AST) based on the Dana <a href="../../01_dana_language_specification/grammar/">Grammar</a>.</li>
-<li><strong>AST Transformer (Optional)</strong>: Modifies the AST for various purposes (e.g., optimization, desugaring complex syntax).</li>
-<li><strong>Type Information</strong>: While Dana is dynamically typed, the system can use type hints or caller-specified desired types (via <code>__dana_desired_type</code> in <code>SandboxContext</code>) to guide execution, especially for polymorphic functions and LLM interactions. See <a href="../type_system_and_casting/">Type System and Casting</a> and <a href="../../01_dana_language_specification/functions_and_polymorphism/">Functions and Polymorphism</a>.</li>
-<li><strong>Interpreter</strong>: The core component that executes the AST. It interacts with the <code>SandboxContext</code> for state and the <code>FunctionRegistry</code> for function calls. See <a href="../interpreter/">Interpreter</a>.</li>
-<li><strong><code>SandboxContext</code></strong>: Holds all runtime state, including variables across different scopes (<code>local:</code>, <code>private:</code>, <code>public:</code>, <code>system:</code>), registered resources, and potentially the <code>__dana_desired_type</code>. See <a href="../../01_dana_language_specification/state_and_scopes/">State and Scopes</a> and <a href="../execution_model/">Execution Model</a>.</li>
-<li><strong>Function Registry</strong>: Manages all available functions (built-in, user-defined Dana, Python-backed). See <a href="../../01_dana_language_specification/functions_and_polymorphism/">Functions and Polymorphism</a>.</li>
-</ul>
-</li>
-<li><strong>Program Output / Effects</strong>: The results or side effects (e.g., state changes in <code>SandboxContext</code>, external API calls, logged messages) produced by running the program.</li>
+<li>Input (Script / REPL): Entry points for user-provided Dana code.</li>
+<li>Sandbox Environment / Dana Runtime: The overarching container and process that manages code processing and execution.</li>
+<li>Parser: Converts source code into an Abstract Syntax Tree (AST) based on the Dana <a href="../../01_dana_language_specification/grammar/">Grammar</a>.</li>
+<li>AST Transformer (Optional): Modifies the AST for various purposes (e.g., optimization, desugaring complex syntax).</li>
+<li>Type Information: While Dana is dynamically typed, the system can use type hints or caller-specified desired types (via <code>__dana_desired_type</code> in <code>SandboxContext</code>) to guide execution, especially for polymorphic functions and LLM interactions. See <a href="../type_system_and_casting/">Type System and Casting</a> and <a href="../../01_dana_language_specification/functions_and_polymorphism/">Functions and Polymorphism</a>.</li>
+<li>Interpreter: The core component that executes the AST. It interacts with the <code>SandboxContext</code> for state and the <code>FunctionRegistry</code> for function calls. See <a href="../interpreter/">Interpreter</a>.</li>
+<li><code>SandboxContext</code>: Holds all runtime state, including variables across different scopes (<code>local:</code>, <code>private:</code>, <code>public:</code>, <code>system:</code>), registered resources, and potentially the <code>__dana_desired_type</code>. See <a href="../../01_dana_language_specification/state_and_scopes/">State and Scopes</a> and <a href="../execution_model/">Execution Model</a>.</li>
+<li>Function Registry: Manages all available functions (built-in, user-defined Dana, Python-backed). See <a href="../../01_dana_language_specification/functions_and_polymorphism/">Functions and Polymorphism</a>.</li>
+<li>Program Output / Effects: The results or side effects (e.g., state changes in <code>SandboxContext</code>, external API calls, logged messages) produced by running the program.</li>
 </ul>
 <h2 id="5-key-goals-of-the-sandbox-approach">5. Key Goals of the Sandbox Approach<a class="headerlink" href="#5-key-goals-of-the-sandbox-approach" title="Permanent link">¶</a></h2>
 <ul>
-<li><strong>Controlled Execution</strong>: Ensures that all Dana code, regardless of origin, is processed and executed within a managed and observable environment.</li>
-<li><strong>State Management</strong>: Centralizes state via <code>SandboxContext</code>, making it explicit and manageable.</li>
-<li><strong>Resource Management (Future)</strong>: The sandbox concept can be extended to manage and limit access to system resources (CPU, memory, network) if Dana execution is exposed to less trusted environments.</li>
-<li><strong>Security (Future)</strong>: For scenarios involving code from untrusted sources, the sandbox would be critical for preventing malicious actions by restricting capabilities.</li>
-<li><strong>Consistency</strong>: Both REPL interactions and script executions share the same runtime pipeline, ensuring consistent behavior.</li>
+<li>Controlled Execution: Ensures that all Dana code, regardless of origin, is processed and executed within a managed and observable environment.</li>
+<li>State Management: Centralizes state via <code>SandboxContext</code>, making it explicit and manageable.</li>
+<li>Resource Management (Future): The sandbox concept can be extended to manage and limit access to system resources (CPU, memory, network) if Dana execution is exposed to less trusted environments.</li>
+<li>Security (Future): For scenarios involving code from untrusted sources, the sandbox would be critical for preventing malicious actions by restricting capabilities.</li>
+<li>Consistency: Both REPL interactions and script executions share the same runtime pipeline, ensuring consistent behavior.</li>
 </ul>
 <p>This document provides a high-level view. Detailed designs for components like the Parser, Interpreter, <code>SandboxContext</code>, and Type System are covered in their respective documents.</p>
 <hr/>
-<p><em>Self-reflection: The term "Sandbox" is used here more as a conceptual wrapper for the entire runtime environment rather than a strict, isolated process like a browser sandbox, though it can evolve towards stricter isolation if needed. The focus is on controlled execution via the <code>SandboxContext</code> and interpreter. Links to parser and transformer specifics are placeholders.</em> </p>
+<p><em>Self-reflection: The term "Sandbox" is used here more as a conceptual wrapper for the entire runtime environment rather than a strict, isolated process like a browser sandbox, though it can evolve towards stricter isolation if needed. The focus is on controlled execution via the <code>SandboxContext</code> and interpreter. Links to parser and transformer specifics are placeholders.</em></p>
 <aside class="md-source-file">
 <span class="md-source-file__fact">
 <span class="md-icon" title="Last update">
 <svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"></path></svg>
 </span>
-<span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-datetime" title="June 3, 2025 22:07:11 UTC">June 3, 2025 22:07:11</span>
+<span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-datetime" title="June 4, 2025 01:34:16 UTC">June 4, 2025 01:34:16</span>
 </span>
 <span class="md-source-file__fact">
 <span class="md-icon" title="Created">

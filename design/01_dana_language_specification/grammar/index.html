@@ -219,6 +219,79 @@
   </span>
 </a>
 </li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_1_2" type="checkbox"/>
+<label class="md-nav__link" for="__nav_1_2" id="__nav_1_2_label" tabindex="0">
+<span class="md-ellipsis">
+    For You
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_1_2_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_1_2">
+<span class="md-nav__icon md-icon"></span>
+            For You
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../for-engineers/">
+<span class="md-ellipsis">
+    Engineers
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../for-evaluators/">
+<span class="md-ellipsis">
+    Evaluators
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../for-researchers/">
+<span class="md-ellipsis">
+    Researchers
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../for-contributors/">
+<span class="md-ellipsis">
+    Contributors
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_1_3" type="checkbox"/>
+<label class="md-nav__link" for="__nav_1_3" id="__nav_1_3_label" tabindex="0">
+<span class="md-ellipsis">
+    More
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_1_3_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_1_3">
+<span class="md-nav__icon md-icon"></span>
+            More
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../">
+<span class="md-ellipsis">
+    Design
+    
+  </span>
+</a>
+</li>
 <li class="md-nav__item">
 <a class="md-nav__link" href="../../../ROADMAP/">
 <span class="md-ellipsis">
@@ -226,6 +299,9 @@
     
   </span>
 </a>
+</li>
+</ul>
+</nav>
 </li>
 </ul>
 </nav>
@@ -248,7 +324,7 @@
 <li class="md-nav__item">
 <a class="md-nav__link" href="../../../for-engineers/">
 <span class="md-ellipsis">
-    Overview
+    Engineers
     
   </span>
 </a>
@@ -335,9 +411,9 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../../for-engineers/reference/pav-usage-guide/">
+<a class="md-nav__link" href="../../../for-engineers/reference/pov-usage-guide/">
 <span class="md-ellipsis">
-    PAV Usage Guide
+    POV Usage Guide
     
   </span>
 </a>
@@ -514,7 +590,7 @@
 <li class="md-nav__item">
 <a class="md-nav__link" href="../../../for-evaluators/">
 <span class="md-ellipsis">
-    Overview
+    Evaluators
     
   </span>
 </a>
@@ -692,7 +768,7 @@
 <li class="md-nav__item">
 <a class="md-nav__link" href="../../../for-researchers/">
 <span class="md-ellipsis">
-    Overview
+    Researchers
     
   </span>
 </a>
@@ -768,7 +844,7 @@
 <li class="md-nav__item">
 <a class="md-nav__link" href="../../../for-contributors/">
 <span class="md-ellipsis">
-    Overview
+    Contributors
     
   </span>
 </a>
@@ -904,7 +980,7 @@
 <li class="md-nav__item">
 <a class="md-nav__link" href="../../">
 <span class="md-ellipsis">
-    Overview
+    Design
     
   </span>
 </a>
@@ -1153,9 +1229,9 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../02_dana_runtime_and_execution/pav_execution_model/">
+<a class="md-nav__link" href="../../02_dana_runtime_and_execution/pov_execution_model/">
 <span class="md-ellipsis">
-    PAV Execution Model
+    POV Execution Model
     
   </span>
 </a>
@@ -1491,13 +1567,13 @@
 <article class="md-content__inner md-typeset">
 <h1 id="dana-grammar">Dana Grammar<a class="headerlink" href="#dana-grammar" title="Permanent link">¶</a></h1>
 <blockquote>
-<p><strong>⚠️ IMPORTANT FOR AI CODE GENERATORS:</strong>
+<p>⚠️ IMPORTANT FOR AI CODE GENERATORS:
 Always use colon notation for explicit scopes: <code>private:x</code>, <code>public:x</code>, <code>system:x</code>, <code>local:x</code>
 NEVER use dot notation: <code>private.x</code>, <code>public.x</code>, etc.
 Prefer using unscoped variables (auto-scoped to local) instead of explicit <code>private:</code> scope unless private scope is specifically needed.</p>
 </blockquote>
 <p><strong>Files</strong>:
-    - <code>opendxa/dana/language/dana_grammar.lark</code>: The Lark grammar file.</p>
+ - <code>opendxa/dana/language/dana_grammar.lark</code>: The Lark grammar file.</p>
 <p>The Dana Parser uses the Lark parser to parse the Dana source code into a parse tree.</p>
 <p>This document describes the formal grammar definition for the Dana language, as implemented in the Lark grammar file. The grammar defines the syntax rules for parsing Dana source code into a parse tree, which is then transformed into an AST.</p>
 <h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">¶</a></h2>
@@ -1505,87 +1581,87 @@ Prefer using unscoped variables (auto-scoped to local) instead of explicit <code
 <h2 id="dana-vs-python-key-differences">Dana vs. Python: Key Differences<a class="headerlink" href="#dana-vs-python-key-differences" title="Permanent link">¶</a></h2>
 <ul>
 <li>
-<p><strong>Scope Prefixes:</strong><br/>
-  Dana allows explicit scope prefixes for variables and functions (e.g., <code>private:x</code>, <code>public:y</code>). Python uses naming conventions and modules for visibility, not explicit prefixes.</p>
+<p>Scope Prefixes:
+ Dana allows explicit scope prefixes for variables and functions (e.g., <code>private:x</code>, <code>public:y</code>). Python uses naming conventions and modules for visibility, not explicit prefixes.</p>
 </li>
 <li>
-<p><strong>Null Value:</strong><br/>
-  Dana uses <code>None</code> (capitalized, like Python), but it is a literal in the grammar, not a reserved keyword.</p>
+<p>Null Value:
+ Dana uses <code>None</code> (capitalized, like Python), but it is a literal in the grammar, not a reserved keyword.</p>
 </li>
 <li>
-<p><strong>Comments:</strong><br/>
-  Dana only supports single-line comments with <code>#</code>. Python also supports docstrings (<code>'''</code> or <code>"""</code>), which Dana does not.</p>
+<p>Comments:
+ Dana only supports single-line comments with <code>#</code>. Python also supports docstrings (<code>'''</code> or <code>"""</code>), which Dana does not.</p>
 </li>
 <li>
-<p><strong>F-Strings:</strong><br/>
-  Dana supports f-strings with embedded expressions (e.g., <code>f"Value: {x+1}"</code>), but the implementation and parsing are defined by a formal grammar. Some advanced Python f-string features (like format specifiers) may not be supported.</p>
+<p>F-Strings:
+ Dana supports f-strings with embedded expressions (e.g., <code>f"Value: {x+1}"</code>), but the implementation and parsing are defined by a formal grammar. Some advanced Python f-string features (like format specifiers) may not be supported.</p>
 </li>
 <li>
-<p><strong>Operator Precedence:</strong><br/>
-  Dana's operator precedence is defined explicitly in its grammar. While similar to Python, there may be subtle differences—check the grammar if you rely on complex expressions.</p>
+<p>Operator Precedence:
+ Dana's operator precedence is defined explicitly in its grammar. While similar to Python, there may be subtle differences—check the grammar if you rely on complex expressions.</p>
 </li>
 <li>
-<p><strong>Comments in Parse Tree:</strong><br/>
-  In Dana, comments are ignored by the parser and do not appear in the parse tree. In Python, comments are ignored by the interpreter, but some tools can access them via the AST.</p>
+<p>Comments in Parse Tree:
+ In Dana, comments are ignored by the parser and do not appear in the parse tree. In Python, comments are ignored by the interpreter, but some tools can access them via the AST.</p>
 </li>
 <li>
-<p><strong>Formal Grammar:</strong><br/>
-  Dana is defined by a strict formal grammar (Lark), which may restrict or clarify certain constructs more than Python's more flexible syntax.</p>
+<p>Formal Grammar:
+ Dana is defined by a strict formal grammar (Lark), which may restrict or clarify certain constructs more than Python's more flexible syntax.</p>
 </li>
 </ul>
 <h2 id="main-rules">Main Rules<a class="headerlink" href="#main-rules" title="Permanent link">¶</a></h2>
 <ul>
-<li><strong>start</strong>: Entry point for parsing; matches a complete Dana program.</li>
-<li><strong>program</strong>: Sequence of statements.</li>
-<li><strong>statement</strong>: Assignment, conditional, while loop, function call, or newline.</li>
-<li><strong>assignment</strong>: Variable assignment (<code>x = expr</code>).</li>
-<li><strong>conditional</strong>: If/else block with indented body.</li>
-<li><strong>while_loop</strong>: While loop with indented body.</li>
-<li><strong>function_call</strong>: Function or core function call.</li>
-<li><strong>bare_identifier</strong>: Standalone identifier.</li>
-<li><strong>expression</strong>: Supports logical, comparison, arithmetic, and unary operations.</li>
-<li><strong>literal</strong>: String, number, boolean, or null.</li>
-<li><strong>identifier</strong>: Variable or function name, with optional scope prefix.</li>
+<li>start: Entry point for parsing; matches a complete Dana program.</li>
+<li>program: Sequence of statements.</li>
+<li>statement: Assignment, conditional, while loop, function call, or newline.</li>
+<li>assignment: Variable assignment (<code>x = expr</code>).</li>
+<li>conditional: If/else block with indented body.</li>
+<li>while_loop: While loop with indented body.</li>
+<li>function_call: Function or core function call.</li>
+<li>bare_identifier: Standalone identifier.</li>
+<li>expression: Supports logical, comparison, arithmetic, and unary operations.</li>
+<li>literal: String, number, boolean, or null.</li>
+<li>identifier: Variable or function name, with optional scope prefix.</li>
 </ul>
 <h2 id="grammar-structure-diagram">Grammar Structure Diagram<a class="headerlink" href="#grammar-structure-diagram" title="Permanent link">¶</a></h2>
 <pre class="mermaid"><code>graph TD
-    Start["start"] --&gt; Program["program"]
-    Program --&gt; Statements
-    subgraph Statements
-        direction TB
-        Assignment
-        Conditional
-        WhileLoop
-        FunctionCall
-        BareIdentifier
-        ETC[...]
-        Conditional --&gt; Statement
-        WhileLoop --&gt; Statement
-        Assignment --&gt; Expression
-        Conditional --&gt; Expression
-        WhileLoop --&gt; Expression
-        FunctionCall --&gt; Expression
-        BareIdentifier --&gt; Identifier
-    end
-    Statements --&gt; Expressions
-    subgraph Expressions
-        direction TB
-        Expression
-        Identifier
-        Literal
-        ETC2[...]
-        Expression --&gt; Identifier
-        Expression --&gt; Literal
-        Identifier --&gt; ETC2
-        Literal --&gt; ETC2
-    end</code></pre>
+ Start["start"] --&gt; Program["program"]
+ Program --&gt; Statements
+ subgraph Statements
+ direction TB
+ Assignment
+ Conditional
+ WhileLoop
+ FunctionCall
+ BareIdentifier
+ ETC[...]
+ Conditional --&gt; Statement
+ WhileLoop --&gt; Statement
+ Assignment --&gt; Expression
+ Conditional --&gt; Expression
+ WhileLoop --&gt; Expression
+ FunctionCall --&gt; Expression
+ BareIdentifier --&gt; Identifier
+ end
+ Statements --&gt; Expressions
+ subgraph Expressions
+ direction TB
+ Expression
+ Identifier
+ Literal
+ ETC2[...]
+ Expression --&gt; Identifier
+ Expression --&gt; Literal
+ Identifier --&gt; ETC2
+ Literal --&gt; ETC2
+ end</code></pre>
 <h2 id="special-syntax-and-features">Special Syntax and Features<a class="headerlink" href="#special-syntax-and-features" title="Permanent link">¶</a></h2>
 <ul>
-<li><strong>Indentation</strong>: Uses <code>INDENT</code> and <code>DEDENT</code> tokens for block structure (handled by the parser's indenter).</li>
-<li><strong>Comments</strong>: Supports C-style (<code>/* ... */</code>) and C++-style (<code>// ...</code>) comments.</li>
-<li><strong>Scope Prefixes</strong>: Identifiers can have prefixes like <code>private:</code>, <code>public:</code>, or <code>system:</code> (use colon notation, not dot)</li>
-<li><strong>Flexible Expressions</strong>: Logical (<code>and</code>, <code>or</code>, <code>not</code>), comparison (<code>==</code>, <code>!=</code>, <code>&lt;</code>, <code>&gt;</code>, etc.), arithmetic (<code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>%</code>), and function calls.</li>
-<li><strong>Literals</strong>: Strings, numbers, booleans, and null values.</li>
+<li>Indentation: Uses <code>INDENT</code> and <code>DEDENT</code> tokens for block structure (handled by the parser's indenter).</li>
+<li>Comments: Supports C-style (<code>/* ... */</code>) and C++-style (<code>// ...</code>) comments.</li>
+<li>Scope Prefixes: Identifiers can have prefixes like <code>private:</code>, <code>public:</code>, or <code>system:</code> (use colon notation, not dot)</li>
+<li>Flexible Expressions: Logical (<code>and</code>, <code>or</code>, <code>not</code>), comparison (<code>==</code>, <code>!=</code>, <code>&lt;</code>, <code>&gt;</code>, etc.), arithmetic (<code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>%</code>), and function calls.</li>
+<li>Literals: Strings, numbers, booleans, and null values.</li>
 </ul>
 <h2 id="extensibility">Extensibility<a class="headerlink" href="#extensibility" title="Permanent link">¶</a></h2>
 <p>The grammar is designed to be extensible. New statements, expressions, or literal types can be added by extending the grammar file and updating the parser and transformers accordingly.</p>
@@ -1594,36 +1670,36 @@ Prefer using unscoped variables (auto-scoped to local) instead of explicit <code
 <blockquote>
 <p>This EBNF is kept in sync with the Lark grammar and parser implementation in <code>opendxa/dana/language/dana_grammar.lark</code>.</p>
 </blockquote>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a href="#__codelineno-0-1" id="__codelineno-0-1" name="__codelineno-0-1"></a>program       ::= statement+
-</span><span id="__span-0-2"><a href="#__codelineno-0-2" id="__codelineno-0-2" name="__codelineno-0-2"></a>statement     ::= assignment | function_call | conditional | while_loop | for_loop | break_stmt | continue_stmt | function_def | bare_identifier | comment | NEWLINE
-</span><span id="__span-0-3"><a href="#__codelineno-0-3" id="__codelineno-0-3" name="__codelineno-0-3"></a>assignment    ::= identifier '=' expression
-</span><span id="__span-0-4"><a href="#__codelineno-0-4" id="__codelineno-0-4" name="__codelineno-0-4"></a>expression    ::= literal | identifier | function_call | binary_expression
-</span><span id="__span-0-5"><a href="#__codelineno-0-5" id="__codelineno-0-5" name="__codelineno-0-5"></a>literal       ::= string | number | boolean | null | fstring | list | dict | set
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a href="#__codelineno-0-1" id="__codelineno-0-1" name="__codelineno-0-1"></a>program ::= statement+
+</span><span id="__span-0-2"><a href="#__codelineno-0-2" id="__codelineno-0-2" name="__codelineno-0-2"></a>statement ::= assignment | function_call | conditional | while_loop | for_loop | break_stmt | continue_stmt | function_def | bare_identifier | comment | NEWLINE
+</span><span id="__span-0-3"><a href="#__codelineno-0-3" id="__codelineno-0-3" name="__codelineno-0-3"></a>assignment ::= identifier '=' expression
+</span><span id="__span-0-4"><a href="#__codelineno-0-4" id="__codelineno-0-4" name="__codelineno-0-4"></a>expression ::= literal | identifier | function_call | binary_expression
+</span><span id="__span-0-5"><a href="#__codelineno-0-5" id="__codelineno-0-5" name="__codelineno-0-5"></a>literal ::= string | number | boolean | null | fstring | list | dict | set
 </span><span id="__span-0-6"><a href="#__codelineno-0-6" id="__codelineno-0-6" name="__codelineno-0-6"></a>function_call ::= identifier '(' [expression (',' expression)*] ')'
-</span><span id="__span-0-7"><a href="#__codelineno-0-7" id="__codelineno-0-7" name="__codelineno-0-7"></a>conditional   ::= 'if' expression ':' NEWLINE INDENT program DEDENT [ 'else:' NEWLINE INDENT program DEDENT ]
-</span><span id="__span-0-8"><a href="#__codelineno-0-8" id="__codelineno-0-8" name="__codelineno-0-8"></a>while_loop    ::= 'while' expression ':' NEWLINE INDENT program DEDENT
-</span><span id="__span-0-9"><a href="#__codelineno-0-9" id="__codelineno-0-9" name="__codelineno-0-9"></a>for_loop      ::= 'for' identifier 'in' expression ':' NEWLINE INDENT program DEDENT
-</span><span id="__span-0-10"><a href="#__codelineno-0-10" id="__codelineno-0-10" name="__codelineno-0-10"></a>break_stmt    ::= 'break'
+</span><span id="__span-0-7"><a href="#__codelineno-0-7" id="__codelineno-0-7" name="__codelineno-0-7"></a>conditional ::= 'if' expression ':' NEWLINE INDENT program DEDENT [ 'else:' NEWLINE INDENT program DEDENT ]
+</span><span id="__span-0-8"><a href="#__codelineno-0-8" id="__codelineno-0-8" name="__codelineno-0-8"></a>while_loop ::= 'while' expression ':' NEWLINE INDENT program DEDENT
+</span><span id="__span-0-9"><a href="#__codelineno-0-9" id="__codelineno-0-9" name="__codelineno-0-9"></a>for_loop ::= 'for' identifier 'in' expression ':' NEWLINE INDENT program DEDENT
+</span><span id="__span-0-10"><a href="#__codelineno-0-10" id="__codelineno-0-10" name="__codelineno-0-10"></a>break_stmt ::= 'break'
 </span><span id="__span-0-11"><a href="#__codelineno-0-11" id="__codelineno-0-11" name="__codelineno-0-11"></a>continue_stmt ::= 'continue'
-</span><span id="__span-0-12"><a href="#__codelineno-0-12" id="__codelineno-0-12" name="__codelineno-0-12"></a>function_def  ::= 'def' identifier '(' [identifier (',' identifier)*] ')' ':' NEWLINE INDENT program DEDENT
+</span><span id="__span-0-12"><a href="#__codelineno-0-12" id="__codelineno-0-12" name="__codelineno-0-12"></a>function_def ::= 'def' identifier '(' [identifier (',' identifier)*] ')' ':' NEWLINE INDENT program DEDENT
 </span><span id="__span-0-13"><a href="#__codelineno-0-13" id="__codelineno-0-13" name="__codelineno-0-13"></a>bare_identifier ::= identifier
-</span><span id="__span-0-14"><a href="#__codelineno-0-14" id="__codelineno-0-14" name="__codelineno-0-14"></a>comment       ::= ('//' | '#') .*
+</span><span id="__span-0-14"><a href="#__codelineno-0-14" id="__codelineno-0-14" name="__codelineno-0-14"></a>comment ::= ('//' | '#') .*
 </span><span id="__span-0-15"><a href="#__codelineno-0-15" id="__codelineno-0-15" name="__codelineno-0-15"></a>
-</span><span id="__span-0-16"><a href="#__codelineno-0-16" id="__codelineno-0-16" name="__codelineno-0-16"></a>identifier    ::= [a-zA-Z_][a-zA-Z0-9_.]*
-</span><span id="__span-0-17"><a href="#__codelineno-0-17" id="__codelineno-0-17" name="__codelineno-0-17"></a>list          ::= '[' expression (',' expression)* ']'
-</span><span id="__span-0-18"><a href="#__codelineno-0-18" id="__codelineno-0-18" name="__codelineno-0-18"></a>fstring       ::= 'f' ( '"' &lt;any chars except unescaped '"'&gt; '"' | '\'' &lt;any chars except unescaped '\''&gt; '\'' )
+</span><span id="__span-0-16"><a href="#__codelineno-0-16" id="__codelineno-0-16" name="__codelineno-0-16"></a>identifier ::= [a-zA-Z_][a-zA-Z0-9_.]*
+</span><span id="__span-0-17"><a href="#__codelineno-0-17" id="__codelineno-0-17" name="__codelineno-0-17"></a>list ::= '[' expression (',' expression)* ']'
+</span><span id="__span-0-18"><a href="#__codelineno-0-18" id="__codelineno-0-18" name="__codelineno-0-18"></a>fstring ::= 'f' ( '"' &lt;any chars except unescaped '"'&gt; '"' | '\'' &lt;any chars except unescaped '\''&gt; '\'' )
 </span><span id="__span-0-19"><a href="#__codelineno-0-19" id="__codelineno-0-19" name="__codelineno-0-19"></a>fstring_parts ::= (fstring_text | fstring_expr)*
-</span><span id="__span-0-20"><a href="#__codelineno-0-20" id="__codelineno-0-20" name="__codelineno-0-20"></a>fstring_expr  ::= '{' expression '}'
-</span><span id="__span-0-21"><a href="#__codelineno-0-21" id="__codelineno-0-21" name="__codelineno-0-21"></a>fstring_text  ::= &lt;any text not containing '{' or '}'&gt;
+</span><span id="__span-0-20"><a href="#__codelineno-0-20" id="__codelineno-0-20" name="__codelineno-0-20"></a>fstring_expr ::= '{' expression '}'
+</span><span id="__span-0-21"><a href="#__codelineno-0-21" id="__codelineno-0-21" name="__codelineno-0-21"></a>fstring_text ::= &lt;any text not containing '{' or '}'&gt;
 </span><span id="__span-0-22"><a href="#__codelineno-0-22" id="__codelineno-0-22" name="__codelineno-0-22"></a>fstring_start ::= '"' | '\''
-</span><span id="__span-0-23"><a href="#__codelineno-0-23" id="__codelineno-0-23" name="__codelineno-0-23"></a>fstring_end   ::= fstring_start
-</span><span id="__span-0-24"><a href="#__codelineno-0-24" id="__codelineno-0-24" name="__codelineno-0-24"></a>dict          ::= '{' [key_value_pair (',' key_value_pair)*] '}'
+</span><span id="__span-0-23"><a href="#__codelineno-0-23" id="__codelineno-0-23" name="__codelineno-0-23"></a>fstring_end ::= fstring_start
+</span><span id="__span-0-24"><a href="#__codelineno-0-24" id="__codelineno-0-24" name="__codelineno-0-24"></a>dict ::= '{' [key_value_pair (',' key_value_pair)*] '}'
 </span><span id="__span-0-25"><a href="#__codelineno-0-25" id="__codelineno-0-25" name="__codelineno-0-25"></a>key_value_pair ::= expression ':' expression
-</span><span id="__span-0-26"><a href="#__codelineno-0-26" id="__codelineno-0-26" name="__codelineno-0-26"></a>set           ::= '{' expression (',' expression)* '}'
+</span><span id="__span-0-26"><a href="#__codelineno-0-26" id="__codelineno-0-26" name="__codelineno-0-26"></a>set ::= '{' expression (',' expression)* '}'
 </span><span id="__span-0-27"><a href="#__codelineno-0-27" id="__codelineno-0-27" name="__codelineno-0-27"></a>binary_expression ::= expression binary_op expression
-</span><span id="__span-0-28"><a href="#__codelineno-0-28" id="__codelineno-0-28" name="__codelineno-0-28"></a>binary_op     ::= '==' | '!=' | '&lt;' | '&gt;' | '&lt;=' | '&gt;=' | 'and' | 'or' | 'in' | '+' | '-' | '*' | '/'
+</span><span id="__span-0-28"><a href="#__codelineno-0-28" id="__codelineno-0-28" name="__codelineno-0-28"></a>binary_op ::= '==' | '!=' | '&lt;' | '&gt;' | '&lt;=' | '&gt;=' | 'and' | 'or' | 'in' | '+' | '-' | '*' | '/'
 </span><span id="__span-0-29"><a href="#__codelineno-0-29" id="__codelineno-0-29" name="__codelineno-0-29"></a>
-</span><span id="__span-0-30"><a href="#__codelineno-0-30" id="__codelineno-0-30" name="__codelineno-0-30"></a>string        ::= '"' &lt;any chars except unescaped '"'&gt; '"' | '\'' &lt;any chars except unescaped '\''&gt; '\''
+</span><span id="__span-0-30"><a href="#__codelineno-0-30" id="__codelineno-0-30" name="__codelineno-0-30"></a>string ::= '"' &lt;any chars except unescaped '"'&gt; '"' | '\'' &lt;any chars except unescaped '\''&gt; '\''
 </span></code></pre></div>
 <ul>
 <li>All blocks must be indented consistently</li>
@@ -1644,7 +1720,7 @@ Prefer using unscoped variables (auto-scoped to local) instead of explicit <code
 <span class="md-icon" title="Last update">
 <svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"></path></svg>
 </span>
-<span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-datetime" title="June 3, 2025 21:15:07 UTC">June 3, 2025 21:15:07</span>
+<span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-datetime" title="June 4, 2025 01:34:16 UTC">June 4, 2025 01:34:16</span>
 </span>
 <span class="md-source-file__fact">
 <span class="md-icon" title="Created">

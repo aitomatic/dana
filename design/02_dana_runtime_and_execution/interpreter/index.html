@@ -219,6 +219,79 @@
   </span>
 </a>
 </li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_1_2" type="checkbox"/>
+<label class="md-nav__link" for="__nav_1_2" id="__nav_1_2_label" tabindex="0">
+<span class="md-ellipsis">
+    For You
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_1_2_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_1_2">
+<span class="md-nav__icon md-icon"></span>
+            For You
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../for-engineers/">
+<span class="md-ellipsis">
+    Engineers
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../for-evaluators/">
+<span class="md-ellipsis">
+    Evaluators
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../for-researchers/">
+<span class="md-ellipsis">
+    Researchers
+    
+  </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../../for-contributors/">
+<span class="md-ellipsis">
+    Contributors
+    
+  </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_1_3" type="checkbox"/>
+<label class="md-nav__link" for="__nav_1_3" id="__nav_1_3_label" tabindex="0">
+<span class="md-ellipsis">
+    More
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
+<nav aria-expanded="false" aria-labelledby="__nav_1_3_label" class="md-nav" data-md-level="2">
+<label class="md-nav__title" for="__nav_1_3">
+<span class="md-nav__icon md-icon"></span>
+            More
+          </label>
+<ul class="md-nav__list" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../../">
+<span class="md-ellipsis">
+    Design
+    
+  </span>
+</a>
+</li>
 <li class="md-nav__item">
 <a class="md-nav__link" href="../../../ROADMAP/">
 <span class="md-ellipsis">
@@ -226,6 +299,9 @@
     
   </span>
 </a>
+</li>
+</ul>
+</nav>
 </li>
 </ul>
 </nav>
@@ -248,7 +324,7 @@
 <li class="md-nav__item">
 <a class="md-nav__link" href="../../../for-engineers/">
 <span class="md-ellipsis">
-    Overview
+    Engineers
     
   </span>
 </a>
@@ -335,9 +411,9 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../../for-engineers/reference/pav-usage-guide/">
+<a class="md-nav__link" href="../../../for-engineers/reference/pov-usage-guide/">
 <span class="md-ellipsis">
-    PAV Usage Guide
+    POV Usage Guide
     
   </span>
 </a>
@@ -514,7 +590,7 @@
 <li class="md-nav__item">
 <a class="md-nav__link" href="../../../for-evaluators/">
 <span class="md-ellipsis">
-    Overview
+    Evaluators
     
   </span>
 </a>
@@ -692,7 +768,7 @@
 <li class="md-nav__item">
 <a class="md-nav__link" href="../../../for-researchers/">
 <span class="md-ellipsis">
-    Overview
+    Researchers
     
   </span>
 </a>
@@ -768,7 +844,7 @@
 <li class="md-nav__item">
 <a class="md-nav__link" href="../../../for-contributors/">
 <span class="md-ellipsis">
-    Overview
+    Contributors
     
   </span>
 </a>
@@ -904,7 +980,7 @@
 <li class="md-nav__item">
 <a class="md-nav__link" href="../../">
 <span class="md-ellipsis">
-    Overview
+    Design
     
   </span>
 </a>
@@ -1261,9 +1337,9 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../pav_execution_model/">
+<a class="md-nav__link" href="../pov_execution_model/">
 <span class="md-ellipsis">
-    PAV Execution Model
+    POV Execution Model
     
   </span>
 </a>
@@ -1737,67 +1813,67 @@
 <h2 id="main-components">Main Components<a class="headerlink" href="#main-components" title="Permanent link">¶</a></h2>
 <h3 id="core-interpreter">Core Interpreter<a class="headerlink" href="#core-interpreter" title="Permanent link">¶</a></h3>
 <ul>
-<li><strong>DanaInterpreter</strong>: Main entry point that initializes the execution environment, manages the function registry, and coordinates with the unified executor</li>
-<li><strong>DanaExecutor</strong>: Central execution engine that dispatches to specialized executors based on node type</li>
+<li>DanaInterpreter: Main entry point that initializes the execution environment, manages the function registry, and coordinates with the unified executor</li>
+<li>DanaExecutor: Central execution engine that dispatches to specialized executors based on node type</li>
 </ul>
 <h3 id="specialized-executors">Specialized Executors<a class="headerlink" href="#specialized-executors" title="Permanent link">¶</a></h3>
 <ul>
-<li><strong>ExpressionExecutor</strong>: Handles expressions (arithmetic, logical, identifiers, literals, function calls)</li>
-<li><strong>StatementExecutor</strong>: Executes statements (assignments, conditionals, loops)</li>
-<li><strong>ControlFlowExecutor</strong>: Manages control flow (if/else, while, for, return, break, continue)</li>
-<li><strong>CollectionExecutor</strong>: Handles collections and f-string expressions</li>
-<li><strong>FunctionExecutor</strong>: Manages function definitions and calls (see also <a href="../../01_dana_language_specification/functions_and_polymorphism/">Functions and Polymorphism</a>)</li>
-<li><strong>ProgramExecutor</strong>: Executes complete programs and statement blocks</li>
+<li>ExpressionExecutor: Handles expressions (arithmetic, logical, identifiers, literals, function calls)</li>
+<li>StatementExecutor: Executes statements (assignments, conditionals, loops)</li>
+<li>ControlFlowExecutor: Manages control flow (if/else, while, for, return, break, continue)</li>
+<li>CollectionExecutor: Handles collections and f-string expressions</li>
+<li>FunctionExecutor: Manages function definitions and calls (see also <a href="../../01_dana_language_specification/functions_and_polymorphism/">Functions and Polymorphism</a>)</li>
+<li>ProgramExecutor: Executes complete programs and statement blocks</li>
 </ul>
 <h3 id="supporting-infrastructure">Supporting Infrastructure<a class="headerlink" href="#supporting-infrastructure" title="Permanent link">¶</a></h3>
 <ul>
-<li><strong>BaseExecutor</strong>: Base class providing common functionality for all executors</li>
-<li><strong>FunctionRegistry</strong>: Unified registry for Dana and Python functions with namespacing support.</li>
-<li><strong>SandboxContext</strong>: Provides execution context, variable scope management (see <a href="../../01_dana_language_specification/state_and_scopes/">State and Scopes</a> and <a href="../sandbox/">Sandbox</a>), and access to LLM resources.</li>
-<li><strong>Hooks</strong>: Extensible hook system for monitoring and extending execution</li>
+<li>BaseExecutor: Base class providing common functionality for all executors</li>
+<li>FunctionRegistry: Unified registry for Dana and Python functions with namespacing support.</li>
+<li>SandboxContext: Provides execution context, variable scope management (see <a href="../../01_dana_language_specification/state_and_scopes/">State and Scopes</a> and <a href="../sandbox/">Sandbox</a>), and access to LLM resources.</li>
+<li>Hooks: Extensible hook system for monitoring and extending execution</li>
 </ul>
 <h2 id="execution-flow">Execution Flow<a class="headerlink" href="#execution-flow" title="Permanent link">¶</a></h2>
 <pre class="mermaid"><code>graph TB
-    AST[[AST Node]] --&gt; DI[DanaInterpreter]
-    DI --&gt; DE[DanaExecutor]
-    DE --&gt; Dispatch{Node Type}
+ AST[[AST Node]] --&gt; DI[DanaInterpreter]
+ DI --&gt; DE[DanaExecutor]
+ DE --&gt; Dispatch{Node Type}
 
-    subgraph SEG [Specialized Executors]
-        direction TB
+ subgraph SEG [Specialized Executors]
+ direction TB
 
-        SC[SandboxContext]
-        FR[FunctionRegistry]
+ SC[SandboxContext]
+ FR[FunctionRegistry]
 
-        EE[ExpressionExecutor]
-        EE --&gt; ER[[Expression Result]]
+ EE[ExpressionExecutor]
+ EE --&gt; ER[[Expression Result]]
 
-        CE[CollectionExecutor]
-        CE --&gt; CoR[[Collection/String]]
+ CE[CollectionExecutor]
+ CE --&gt; CoR[[Collection/String]]
 
-        FE[FunctionExecutor]
-        FE --&gt; FuR[[Function Result]]
+ FE[FunctionExecutor]
+ FE --&gt; FuR[[Function Result]]
 
-        PE[ProgramExecutor]
-        PE --&gt; Hooks[Hook System]
-        PE --&gt; PR[[Program Result]]
+ PE[ProgramExecutor]
+ PE --&gt; Hooks[Hook System]
+ PE --&gt; PR[[Program Result]]
 
-        SE[StatementExecutor]
-        SE --&gt; SR[[Statement Result]]
+ SE[StatementExecutor]
+ SE --&gt; SR[[Statement Result]]
 
-        CFE[ControlFlowExecutor]
-        CFE --&gt; CR[[Control Flow Result]]
-    end
+ CFE[ControlFlowExecutor]
+ CFE --&gt; CR[[Control Flow Result]]
+ end
 
-    Dispatch --&gt; SEG
+ Dispatch --&gt; SEG
 
-    style AST fill:#e1f5fe
-    style DE fill:#f3e5f5
-    style ER fill:#e8f5e8
-    style SR fill:#e8f5e8
-    style CR fill:#e8f5e8
-    style CoR fill:#e8f5e8
-    style FuR fill:#e8f5e8
-    style PR fill:#e8f5e8</code></pre>
+ style AST fill:#e1f5fe
+ style DE fill:#f3e5f5
+ style ER fill:#e8f5e8
+ style SR fill:#e8f5e8
+ style CR fill:#e8f5e8
+ style CoR fill:#e8f5e8
+ style FuR fill:#e8f5e8
+ style PR fill:#e8f5e8</code></pre>
 <h3 id="execution-steps">Execution Steps<a class="headerlink" href="#execution-steps" title="Permanent link">¶</a></h3>
 <ol>
 <li><strong>AST Node</strong>: Any AST node from the parser (statement, expression, program)</li>
@@ -1810,28 +1886,28 @@
 <h2 id="key-features">Key Features<a class="headerlink" href="#key-features" title="Permanent link">¶</a></h2>
 <h3 id="unified-execution-model">Unified Execution Model<a class="headerlink" href="#unified-execution-model" title="Permanent link">¶</a></h3>
 <ul>
-<li><strong>Single Entry Point</strong>: All nodes execute through <code>DanaExecutor.execute()</code></li>
-<li><strong>Consistent Interface</strong>: Every node produces a value, simplifying chaining and composition</li>
-<li><strong>Type Dispatch</strong>: Automatic routing to appropriate specialized executors</li>
+<li>Single Entry Point: All nodes execute through <code>DanaExecutor.execute()</code></li>
+<li>Consistent Interface: Every node produces a value, simplifying chaining and composition</li>
+<li>Type Dispatch: Automatic routing to appropriate specialized executors</li>
 </ul>
 <h3 id="function-system-integration">Function System Integration<a class="headerlink" href="#function-system-integration" title="Permanent link">¶</a></h3>
 <ul>
-<li><strong>Unified Function Registry</strong>: Supports both Dana and Python functions</li>
-<li><strong>Namespacing</strong>: Functions can be organized into namespaces (e.g., <code>math.sin</code>)</li>
-<li><strong>Context Injection</strong>: Automatic context passing to functions that need it</li>
-<li><strong>Cross-Language Calls</strong>: Seamless calling between Dana and Python</li>
+<li>Unified Function Registry: Supports both Dana and Python functions</li>
+<li>Namespacing: Functions can be organized into namespaces (e.g., <code>math.sin</code>)</li>
+<li>Context Injection: Automatic context passing to functions that need it</li>
+<li>Cross-Language Calls: Seamless calling between Dana and Python</li>
 </ul>
 <h3 id="modular-architecture">Modular Architecture<a class="headerlink" href="#modular-architecture" title="Permanent link">¶</a></h3>
 <ul>
-<li><strong>Specialized Executors</strong>: Each executor handles a specific domain (expressions, control flow, etc.)</li>
-<li><strong>Inheritance Hierarchy</strong>: All executors inherit from <code>BaseExecutor</code> for consistency</li>
-<li><strong>Handler Registration</strong>: Dynamic registration of node type handlers</li>
+<li>Specialized Executors: Each executor handles a specific domain (expressions, control flow, etc.)</li>
+<li>Inheritance Hierarchy: All executors inherit from <code>BaseExecutor</code> for consistency</li>
+<li>Handler Registration: Dynamic registration of node type handlers</li>
 </ul>
 <h3 id="error-handling-and-diagnostics">Error Handling and Diagnostics<a class="headerlink" href="#error-handling-and-diagnostics" title="Permanent link">¶</a></h3>
 <ul>
-<li><strong>Improved Error Messages</strong>: User-friendly error formatting with context</li>
-<li><strong>Execution Path Tracking</strong>: Debugging support with execution path information</li>
-<li><strong>Exception Handling</strong>: Proper handling of control flow exceptions (return, break, continue). See also <a href="../../01_dana_language_specification/error_handling/">Error Handling</a>.</li>
+<li>Improved Error Messages: User-friendly error formatting with context</li>
+<li>Execution Path Tracking: Debugging support with execution path information</li>
+<li>Exception Handling: Proper handling of control flow exceptions (return, break, continue). See also <a href="../../01_dana_language_specification/error_handling/">Error Handling</a>.</li>
 </ul>
 <h2 id="example-usage">Example Usage<a class="headerlink" href="#example-usage" title="Permanent link">¶</a></h2>
 <h3 id="basic-program-execution">Basic Program Execution<a class="headerlink" href="#basic-program-execution" title="Permanent link">¶</a></h3>
@@ -1841,66 +1917,66 @@
 </span><span id="__span-0-4"><a href="#__codelineno-0-4" id="__codelineno-0-4" name="__codelineno-0-4"></a>
 </span><span id="__span-0-5"><a href="#__codelineno-0-5" id="__codelineno-0-5" name="__codelineno-0-5"></a><span class="c1"># Parse Dana code (refer to Parser documentation)</span>
 </span><span id="__span-0-6"><a href="#__codelineno-0-6" id="__codelineno-0-6" name="__codelineno-0-6"></a><span class="c1"># parser = DanaParser()</span>
-</span><span id="__span-0-7"><a href="#__codelineno-0-7" id="__codelineno-0-7" name="__codelineno-0-7"></a><span class="c1"># result = parser.parse("private:x = 10\nif private:x &gt; 5:\n    log('Value is greater than 5')") # using log instead of print</span>
+</span><span id="__span-0-7"><a href="#__codelineno-0-7" id="__codelineno-0-7" name="__codelineno-0-7"></a><span class="c1"># result = parser.parse("private:x = 10\nif private:x &gt; 5:\n log('Value is greater than 5')") # using log instead of print</span>
 </span><span id="__span-0-8"><a href="#__codelineno-0-8" id="__codelineno-0-8" name="__codelineno-0-8"></a><span class="c1">#</span>
 </span><span id="__span-0-9"><a href="#__codelineno-0-9" id="__codelineno-0-9" name="__codelineno-0-9"></a><span class="c1"># if result.is_valid:</span>
-</span><span id="__span-0-10"><a href="#__codelineno-0-10" id="__codelineno-0-10" name="__codelineno-0-10"></a><span class="c1">#     # Create context and interpreter</span>
-</span><span id="__span-0-11"><a href="#__codelineno-0-11" id="__codelineno-0-11" name="__codelineno-0-11"></a><span class="c1">#     context = SandboxContext()</span>
-</span><span id="__span-0-12"><a href="#__codelineno-0-12" id="__codelineno-0-12" name="__codelineno-0-12"></a><span class="c1">#     interpreter = DanaInterpreter(context)</span>
+</span><span id="__span-0-10"><a href="#__codelineno-0-10" id="__codelineno-0-10" name="__codelineno-0-10"></a><span class="c1"># # Create context and interpreter</span>
+</span><span id="__span-0-11"><a href="#__codelineno-0-11" id="__codelineno-0-11" name="__codelineno-0-11"></a><span class="c1"># context = SandboxContext()</span>
+</span><span id="__span-0-12"><a href="#__codelineno-0-12" id="__codelineno-0-12" name="__codelineno-0-12"></a><span class="c1"># interpreter = DanaInterpreter(context)</span>
 </span><span id="__span-0-13"><a href="#__codelineno-0-13" id="__codelineno-0-13" name="__codelineno-0-13"></a><span class="c1">#</span>
-</span><span id="__span-0-14"><a href="#__codelineno-0-14" id="__codelineno-0-14" name="__codelineno-0-14"></a><span class="c1">#     # Execute the program</span>
-</span><span id="__span-0-15"><a href="#__codelineno-0-15" id="__codelineno-0-15" name="__codelineno-0-15"></a><span class="c1">#     output = interpreter.execute_program(result.program)</span>
+</span><span id="__span-0-14"><a href="#__codelineno-0-14" id="__codelineno-0-14" name="__codelineno-0-14"></a><span class="c1"># # Execute the program</span>
+</span><span id="__span-0-15"><a href="#__codelineno-0-15" id="__codelineno-0-15" name="__codelineno-0-15"></a><span class="c1"># output = interpreter.execute_program(result.program)</span>
 </span><span id="__span-0-16"><a href="#__codelineno-0-16" id="__codelineno-0-16" name="__codelineno-0-16"></a><span class="c1">#</span>
-</span><span id="__span-0-17"><a href="#__codelineno-0-17" id="__codelineno-0-17" name="__codelineno-0-17"></a><span class="c1">#     # Get any logged output (assuming a mechanism for this, e.g., from context or a log handler)</span>
-</span><span id="__span-0-18"><a href="#__codelineno-0-18" id="__codelineno-0-18" name="__codelineno-0-18"></a><span class="c1">#     # logged_output = context.get_logs() # Example</span>
-</span><span id="__span-0-19"><a href="#__codelineno-0-19" id="__codelineno-0-19" name="__codelineno-0-19"></a><span class="c1">#     print("Execution result:", output)</span>
-</span><span id="__span-0-20"><a href="#__codelineno-0-20" id="__codelineno-0-20" name="__codelineno-0-20"></a><span class="c1">#     # print("Program output:", logged_output)</span>
+</span><span id="__span-0-17"><a href="#__codelineno-0-17" id="__codelineno-0-17" name="__codelineno-0-17"></a><span class="c1"># # Get any logged output (assuming a mechanism for this, e.g., from context or a log handler)</span>
+</span><span id="__span-0-18"><a href="#__codelineno-0-18" id="__codelineno-0-18" name="__codelineno-0-18"></a><span class="c1"># # logged_output = context.get_logs() # Example</span>
+</span><span id="__span-0-19"><a href="#__codelineno-0-19" id="__codelineno-0-19" name="__codelineno-0-19"></a><span class="c1"># print("Execution result:", output)</span>
+</span><span id="__span-0-20"><a href="#__codelineno-0-20" id="__codelineno-0-20" name="__codelineno-0-20"></a><span class="c1"># # print("Program output:", logged_output)</span>
 </span><span id="__span-0-21"><a href="#__codelineno-0-21" id="__codelineno-0-21" name="__codelineno-0-21"></a><span class="c1"># else:</span>
-</span><span id="__span-0-22"><a href="#__codelineno-0-22" id="__codelineno-0-22" name="__codelineno-0-22"></a><span class="c1">#     print("Parse errors:", result.errors)</span>
+</span><span id="__span-0-22"><a href="#__codelineno-0-22" id="__codelineno-0-22" name="__codelineno-0-22"></a><span class="c1"># print("Parse errors:", result.errors)</span>
 </span></code></pre></div>
 <em>Note: The example above is illustrative. The exact API for parsing and accessing output/logs might differ based on the final Parser and SandboxContext implementation. <code>print</code> is not a standard Dana function; <code>log</code> or similar should be used.</em></p>
 <h3 id="single-statement-execution">Single Statement Execution<a class="headerlink" href="#single-statement-execution" title="Permanent link">¶</a></h3>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a href="#__codelineno-1-1" id="__codelineno-1-1" name="__codelineno-1-1"></a><span class="c1"># # Execute a single statement</span>
 </span><span id="__span-1-2"><a href="#__codelineno-1-2" id="__codelineno-1-2" name="__codelineno-1-2"></a><span class="c1"># stmt_result = parser.parse("private:result = 42 * 2")</span>
 </span><span id="__span-1-3"><a href="#__codelineno-1-3" id="__codelineno-1-3" name="__codelineno-1-3"></a><span class="c1"># if stmt_result.is_valid:</span>
-</span><span id="__span-1-4"><a href="#__codelineno-1-4" id="__codelineno-1-4" name="__codelineno-1-4"></a><span class="c1">#     value = interpreter.execute_statement(stmt_result.program, context) # context might be passed differently</span>
-</span><span id="__span-1-5"><a href="#__codelineno-1-5" id="__codelineno-1-5" name="__codelineno-1-5"></a><span class="c1">#     print("Statement result:", value)</span>
-</span><span id="__span-1-6"><a href="#__codelineno-1-6" id="__codelineno-1-6" name="__codelineno-1-6"></a><span class="c1">#     print("Variable value:", context.get("private:result"))</span>
+</span><span id="__span-1-4"><a href="#__codelineno-1-4" id="__codelineno-1-4" name="__codelineno-1-4"></a><span class="c1"># value = interpreter.execute_statement(stmt_result.program, context) # context might be passed differently</span>
+</span><span id="__span-1-5"><a href="#__codelineno-1-5" id="__codelineno-1-5" name="__codelineno-1-5"></a><span class="c1"># print("Statement result:", value)</span>
+</span><span id="__span-1-6"><a href="#__codelineno-1-6" id="__codelineno-1-6" name="__codelineno-1-6"></a><span class="c1"># print("Variable value:", context.get("private:result"))</span>
 </span></code></pre></div>
 <h3 id="expression-evaluation">Expression Evaluation<a class="headerlink" href="#expression-evaluation" title="Permanent link">¶</a></h3>
 <p><div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a href="#__codelineno-2-1" id="__codelineno-2-1" name="__codelineno-2-1"></a><span class="c1"># # Evaluate an expression</span>
 </span><span id="__span-2-2"><a href="#__codelineno-2-2" id="__codelineno-2-2" name="__codelineno-2-2"></a><span class="c1"># expr_result = parser.parse("10 + 20 * 3")</span>
 </span><span id="__span-2-3"><a href="#__codelineno-2-3" id="__codelineno-2-3" name="__codelineno-2-3"></a><span class="c1"># if expr_result.is_valid:</span>
-</span><span id="__span-2-4"><a href="#__codelineno-2-4" id="__codelineno-2-4" name="__codelineno-2-4"></a><span class="c1">#     value = interpreter.evaluate_expression(expr_result.program, context) # context might be passed differently</span>
-</span><span id="__span-2-5"><a href="#__codelineno-2-5" id="__codelineno-2-5" name="__codelineno-2-5"></a><span class="c1">#     print("Expression value:", value)  # Output: 70</span>
+</span><span id="__span-2-4"><a href="#__codelineno-2-4" id="__codelineno-2-4" name="__codelineno-2-4"></a><span class="c1"># value = interpreter.evaluate_expression(expr_result.program, context) # context might be passed differently</span>
+</span><span id="__span-2-5"><a href="#__codelineno-2-5" id="__codelineno-2-5" name="__codelineno-2-5"></a><span class="c1"># print("Expression value:", value) # Output: 70</span>
 </span></code></pre></div>
 <em>Note: Direct execution of single statements or expressions might be exposed via specific methods on the interpreter or a higher-level sandbox API.</em></p>
 <h2 id="advanced-features">Advanced Features<a class="headerlink" href="#advanced-features" title="Permanent link">¶</a></h2>
 <h3 id="function-registration-and-calling">Function Registration and Calling<a class="headerlink" href="#function-registration-and-calling" title="Permanent link">¶</a></h3>
 <p><div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a href="#__codelineno-3-1" id="__codelineno-3-1" name="__codelineno-3-1"></a><span class="c1"># Register a Python function</span>
 </span><span id="__span-3-2"><a href="#__codelineno-3-2" id="__codelineno-3-2" name="__codelineno-3-2"></a><span class="c1"># def my_function(a, b):</span>
-</span><span id="__span-3-3"><a href="#__codelineno-3-3" id="__codelineno-3-3" name="__codelineno-3-3"></a><span class="c1">#     return a + b</span>
+</span><span id="__span-3-3"><a href="#__codelineno-3-3" id="__codelineno-3-3" name="__codelineno-3-3"></a><span class="c1"># return a + b</span>
 </span><span id="__span-3-4"><a href="#__codelineno-3-4" id="__codelineno-3-4" name="__codelineno-3-4"></a><span class="c1">#</span>
 </span><span id="__span-3-5"><a href="#__codelineno-3-5" id="__codelineno-3-5" name="__codelineno-3-5"></a><span class="c1"># interpreter.function_registry.register(</span>
-</span><span id="__span-3-6"><a href="#__codelineno-3-6" id="__codelineno-3-6" name="__codelineno-3-6"></a><span class="c1">#     "add", my_function, namespace="math", func_type="python"</span>
+</span><span id="__span-3-6"><a href="#__codelineno-3-6" id="__codelineno-3-6" name="__codelineno-3-6"></a><span class="c1"># "add", my_function, namespace="math", func_type="python"</span>
 </span><span id="__span-3-7"><a href="#__codelineno-3-7" id="__codelineno-3-7" name="__codelineno-3-7"></a><span class="c1"># )</span>
 </span><span id="__span-3-8"><a href="#__codelineno-3-8" id="__codelineno-3-8" name="__codelineno-3-8"></a>
 </span><span id="__span-3-9"><a href="#__codelineno-3-9" id="__codelineno-3-9" name="__codelineno-3-9"></a><span class="c1"># Call from Dana code</span>
 </span><span id="__span-3-10"><a href="#__codelineno-3-10" id="__codelineno-3-10" name="__codelineno-3-10"></a><span class="c1"># dana_code_calling_add = "local:sum = math:add(5, 3)"</span>
 </span><span id="__span-3-11"><a href="#__codelineno-3-11" id="__codelineno-3-11" name="__codelineno-3-11"></a><span class="c1"># result = parser.parse(dana_code_calling_add)</span>
 </span><span id="__span-3-12"><a href="#__codelineno-3-12" id="__codelineno-3-12" name="__codelineno-3-12"></a><span class="c1"># if result.is_valid:</span>
-</span><span id="__span-3-13"><a href="#__codelineno-3-13" id="__codelineno-3-13" name="__codelineno-3-13"></a><span class="c1">#    interpreter.execute_program(result.program, context)</span>
-</span><span id="__span-3-14"><a href="#__codelineno-3-14" id="__codelineno-3-14" name="__codelineno-3-14"></a><span class="c1">#    print("Sum from Dana:", context.get("local:sum"))</span>
+</span><span id="__span-3-13"><a href="#__codelineno-3-13" id="__codelineno-3-13" name="__codelineno-3-13"></a><span class="c1"># interpreter.execute_program(result.program, context)</span>
+</span><span id="__span-3-14"><a href="#__codelineno-3-14" id="__codelineno-3-14" name="__codelineno-3-14"></a><span class="c1"># print("Sum from Dana:", context.get("local:sum"))</span>
 </span></code></pre></div>
 <em>Note: The <code>FunctionRegistry</code> is a key component. The specifics of registering and how namespaces are handled (e.g., <code>math:add</code> vs <code>math.add</code>) would be detailed in its own documentation or within the Functions and Polymorphism section.</em></p>
 <hr/>
-<p><em>Self-reflection: This document needs an accompanying <code>ast.md</code> for full context. The examples involving <code>parser.parse</code> and direct execution methods like <code>execute_statement</code> or <code>evaluate_expression</code> should be harmonized with the final API of the Dana Sandbox/Runtime. The <code>print()</code> in Dana examples was replaced with <code>log()</code> or comments about logging, as <code>print</code> isn't a standard Dana function.</em> </p>
+<p><em>Self-reflection: This document needs an accompanying <code>ast.md</code> for full context. The examples involving <code>parser.parse</code> and direct execution methods like <code>execute_statement</code> or <code>evaluate_expression</code> should be harmonized with the final API of the Dana Sandbox/Runtime. The <code>print()</code> in Dana examples was replaced with <code>log()</code> or comments about logging, as <code>print</code> isn't a standard Dana function.</em></p>
 <aside class="md-source-file">
 <span class="md-source-file__fact">
 <span class="md-icon" title="Last update">
 <svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"></path></svg>
 </span>
-<span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-datetime" title="June 3, 2025 22:03:30 UTC">June 3, 2025 22:03:30</span>
+<span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-datetime" title="June 4, 2025 01:34:16 UTC">June 4, 2025 01:34:16</span>
 </span>
 <span class="md-source-file__fact">
 <span class="md-icon" title="Created">
