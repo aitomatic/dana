@@ -1,0 +1,21 @@
+# Test model selection and raw prompt features in reason function
+
+# Test default model
+result1: float = reason("What is 2+2?")
+print(f"result1: {result1}")
+
+# Test specific model selection
+result2 = reason("What is 2+2?", {"model": "gpt-4", "enable_ipv": false})
+print(f"result2: {result2}")
+
+# Test raw prompt
+result3 = reason("What is 2+2?", {"raw_prompt": true})
+print(f"result3: {result3}")
+
+# Test model selection with raw prompt
+result4 = reason("What is 2+2?", {"model": "claude", "raw_prompt": true})
+print(f"result4: {result4}")
+
+# Test model fallback
+result5 = reason("What is 2+2?", {"model": "nonexistent-model"})
+print(f"result5: {result5}") 

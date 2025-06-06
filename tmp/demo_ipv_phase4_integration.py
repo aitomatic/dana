@@ -24,7 +24,7 @@ def demo_transparent_ipv_optimization():
     context = SandboxContext()
     llm_resource = LLMResource()
     llm_resource = llm_resource.with_mock_llm_call(True)
-    context.set("system.llm_resource", llm_resource)
+    context.set("system:llm_resource", llm_resource)
 
     # Set environment for mocking
     os.environ["OPENDXA_MOCK_LLM"] = "true"
@@ -45,7 +45,7 @@ def demo_domain_detection():
 
     context = SandboxContext()
     llm_resource = LLMResource().with_mock_llm_call(True)
-    context.set("system.llm_resource", llm_resource)
+    context.set("system:llm_resource", llm_resource)
     os.environ["OPENDXA_MOCK_LLM"] = "true"
 
     test_cases = [
@@ -72,7 +72,7 @@ def demo_backward_compatibility():
 
     context = SandboxContext()
     llm_resource = LLMResource().with_mock_llm_call(True)
-    context.set("system.llm_resource", llm_resource)
+    context.set("system:llm_resource", llm_resource)
     os.environ["OPENDXA_MOCK_LLM"] = "true"
 
     # Old-style calls work unchanged
@@ -100,7 +100,7 @@ def demo_ipv_control_options():
 
     context = SandboxContext()
     llm_resource = LLMResource().with_mock_llm_call(True)
-    context.set("system.llm_resource", llm_resource)
+    context.set("system:llm_resource", llm_resource)
     os.environ["OPENDXA_MOCK_LLM"] = "true"
 
     prompt = "Analyze this data trend"

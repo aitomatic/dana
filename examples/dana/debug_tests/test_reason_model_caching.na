@@ -1,0 +1,21 @@
+# Test model caching and system resource integration
+
+# First call with GPT-4 should create and cache the resource
+result1 = reason("What is 2+2?", {"model": "gpt-4", "enable_ipv": false})
+print(result1)
+
+# Second call with GPT-4 should use cached resource
+result2 = reason("What is 3+3?", {"model": "gpt-4", "enable_ipv": false})
+print(result2)
+
+# Call with Claude should create and cache a new resource
+result3 = reason("What is 4+4?", {"model": "claude", "enable_ipv": false})
+print(result3)
+
+# Switch back to GPT-4 should use cached resource
+result4 = reason("What is 5+5?", {"model": "gpt-4", "enable_ipv": false})
+print(result4)
+
+# Switch to Claude should use cached resource
+result5 = reason("What is 6+6?", {"model": "claude", "enable_ipv": false})
+print(result5) 
