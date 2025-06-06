@@ -113,8 +113,7 @@ Instead of a unified runtime, we implement a **Secure Gateway Pattern** where:
 #### Threats We Mitigate
 1. **Malicious Python Code**: Cannot access sensitive Dana state
 2. **Data Exfiltration**: Dana's sanitization prevents sensitive data leakage
-3. **Privilege Escalation**: Python cannot gain Dana admin permissions
-4. **Code Injection**: Input validation prevents injection attacks
+3. **Code Injection**: Input validation prevents injection attacks
 
 #### Attack Vectors & Mitigations
 
@@ -225,79 +224,6 @@ if trip_plan['estimated_cost'] > budget:
     print("⚠️  Trip exceeds budget, consider adjustments")
 else:
     print("✅ Trip fits within budget!")
-```
-
-## Real-World Example: Secure Integration
-
-```python
-# File: monitor_system.py - SECURE VERSION
-import pandas as pd
-import dana.temperature_analysis as temp_analysis  # Dana module
-
-class TemperatureMonitor:
-    def __init__(self):
-        self.threshold = 100.0
-        self.sensor_data = pd.read_csv('sensors.csv')
-    
-    def monitor_continuous(self):
-        """Secure monitoring with Dana reasoning."""
-        
-        # Python data processing (in Python environment)
-        recent_temps = self.sensor_data['temperature'].tail(10).tolist()
-        avg_temp = sum(recent_temps) / len(recent_temps)
-        
-        # Prepare safe inputs for Dana (automatically sanitized)
-        safe_inputs = {
-            "average": avg_temp,
-            "readings": recent_temps,
-            "threshold": self.threshold
-        }
-        
-        ###
-        # Dana reasoning call (crosses security boundary)
-        # Input is sanitized, execution is isolated, output is filtered
-        ###
-        risk_assessment = temp_analysis.assess_temperature_risk(**safe_inputs)
-        
-        # Python control flow (back in Python environment)
-        if risk_assessment.get("risk_level", 0) > 0.7:
-            self._send_alert(risk_assessment)
-            return {"status": "alert_sent", "data": risk_assessment}
-        
-        return {"status": "normal", "average": avg_temp}
-    
-    def _send_alert(self, assessment):
-        """Python method - cannot access Dana internals."""
-        print(f"🚨 Risk Level: {assessment.get('risk_level', 'unknown')}")
-
-# File: dana/temperature_analysis.na - ISOLATED DANA MODULE
-def assess_temperature_risk(average, readings, threshold):
-    # This executes in complete isolation from Python
-    # Cannot access Python variables or state
-    
-    trend = reason("Analyze temperature trend", {
-        "recent_average": average,
-        "all_readings": readings,
-        "safety_threshold": threshold
-    })
-    
-    risk_level = reason("Calculate risk level 0-1", {
-        "trend": trend,
-        "current_avg": average,
-        "threshold": threshold
-    })
-    
-    # Return value will be filtered before reaching Python
-    return {
-        "risk_level": risk_level,
-        "trend_analysis": trend,
-        "recommendation": reason("What should we do?", {"risk": risk_level})
-        # Any private: or system: data automatically removed
-    }
-
-# Usage - secure by design
-monitor = TemperatureMonitor()
-result = monitor.monitor_continuous()  # Safe, no sandbox violations
 ```
 
 ## Architecture Design
