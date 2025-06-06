@@ -84,6 +84,8 @@ nav:
     - ROI Analysis:
       - Overview: for-evaluators/roi-analysis/README.md
       - Calculator: for-evaluators/roi-analysis/calculator.md
+  - For Investors:
+    - Overview: for-investors/README.md
   - For Researchers:
     - Overview: for-researchers/README.md
     - Manifesto:
