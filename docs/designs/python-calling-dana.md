@@ -4,7 +4,7 @@
 
 [▲ Main Designs](./README.md) | [◀ Interpreter](./interpreter.md) | [Sandbox ▶](./sandbox.md)
 
-# Dana-Python Bridge: Secure Integration Architecture
+# Python-Calling-Dana: Secure Integration Architecture
 
 **Status**: Design Phase  
 **Module**: `opendxa.dana`
@@ -230,7 +230,7 @@ else:
 
 ### System Architecture Overview
 
-The Dana-Python Bridge implements a **Secure Gateway Pattern** with clear separation between Python and Dana execution environments. The architecture ensures complete sandbox isolation while providing familiar Python import semantics.
+Python-Calling-Dana implements a **Secure Gateway Pattern** with clear separation between Python and Dana execution environments. The architecture ensures complete sandbox isolation while providing familiar Python import semantics.
 
 #### High-Level Architecture
 
@@ -789,7 +789,7 @@ graph TD
 - `SecurityPolicy`: Configurable rules for what's allowed/denied
 
 **Success Criteria**:
-- All Python→Dana calls go through sanitization pipeline
+- All Python-calling-Dana goes through sanitization pipeline
 - No sensitive Dana data can leak to Python
 - Comprehensive security logging and monitoring
 - Zero-trust validation of all cross-boundary data
@@ -906,7 +906,7 @@ print(insights)
 
 ### Definition of Success
 
-The Dana-Python Bridge will be considered successful when it achieves all primary goals:
+Python-Calling-Dana will be considered successful when it achieves all primary goals:
 
 #### ✅ Security Success Metrics
 - **100% Sandbox Isolation**: No Python code can access Dana's internal state
