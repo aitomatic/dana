@@ -19,7 +19,7 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from typing import Union, cast
+from typing import Union, cast, List
 
 from lark import Token, Tree
 
@@ -52,7 +52,9 @@ from opendxa.dana.sandbox.parser.ast import (
     TryBlock,
     TupleLiteral,
     TypeHint,
+    UseStatement,
     WhileLoop,
+    WithStatement,
 )
 from opendxa.dana.sandbox.parser.transformer.base_transformer import BaseTransformer
 from opendxa.dana.sandbox.parser.transformer.expression_transformer import ExpressionTransformer
@@ -72,6 +74,7 @@ AllowedAssignmentValue = Union[
     SubscriptExpression,
     AttributeAccess,
     FStringExpression,
+    UseStatement,
 ]
 
 
@@ -483,6 +486,57 @@ class StatementTransformer(BaseTransformer):
         message_expr = cast(Expression, message) if message is not None else None
         return AssertStatement(condition=condition_expr, message=message_expr)
 
+    def use_stmt(self, items):
+        """Transform a use_stmt rule into a UseStatement node.
+        
+        Grammar: use_stmt: USE "(" [mixed_arguments] ")"
+        
+        The grammar passes:
+        - items[0] = USE token (ignored)
+        - items[1] = result from mixed_arguments (None if no arguments, or list of arguments)
+        """
+        from lark import Tree
+        
+        # Initialize collections for arguments
+        args = []        # List[Expression] for positional arguments
+        kwargs = {}      # Dict[str, Expression] for keyword arguments
+        
+        # Handle the case where mixed_arguments is present
+        # items[0] is the USE token, items[1] is the mixed_arguments result
+        if len(items) > 1 and items[1] is not None:
+            mixed_args_result = items[1]
+            
+            # Process mixed_arguments following with_stmt pattern
+            seen_keyword_arg = False  # Track if we've seen any keyword arguments
+            
+            if isinstance(mixed_args_result, list):
+                # Process each argument
+                for arg_item in mixed_args_result:
+                    if isinstance(arg_item, Tree) and arg_item.data == 'kw_arg':
+                        # Keyword argument: NAME "=" expr
+                        seen_keyword_arg = True
+                        name = arg_item.children[0].value
+                        value = arg_item.children[1]  # Value is already processed
+                        kwargs[name] = value
+                    else:
+                        # Positional argument: expr
+                        if seen_keyword_arg:
+                            # Error: positional argument after keyword argument
+                            raise SyntaxError("Positional argument follows keyword argument in use statement")
+                        args.append(cast(Expression, arg_item))
+            else:
+                # Single argument
+                if isinstance(mixed_args_result, Tree) and mixed_args_result.data == 'kw_arg':
+                    # Keyword argument: NAME "=" expr
+                    name = mixed_args_result.children[0].value
+                    value = self.expression_transformer.expression([mixed_args_result.children[1]])
+                    kwargs[name] = value
+                else:
+                    # Positional argument: expr
+                    args.append(cast(Expression, mixed_args_result))
+        
+        return UseStatement(args=args, kwargs=kwargs)
+
     # === Import Statements ===
     def import_stmt(self, items):
         """Transform an import statement rule into an ImportStatement or ImportFromStatement node."""
@@ -793,6 +847,42 @@ class StatementTransformer(BaseTransformer):
 
         return Assignment(target=target, value=value_expr)
 
+    def function_call_assignment(self, items):
+        """Transform a function_call_assignment rule into an Assignment node with object-returning statement."""
+        # Grammar: function_call_assignment: target "=" return_object_stmt
+        target_tree = items[0]
+        return_object_tree = items[1]
+
+        # Get target identifier
+        target = VariableTransformer().variable([target_tree])
+        if not isinstance(target, Identifier):
+            raise TypeError(f"Assignment target must be Identifier, got {type(target)}")
+
+        # Transform the return_object_stmt (which should be a UseStatement)
+        # The return_object_tree should already be transformed by return_object_stmt method
+        if isinstance(return_object_tree, UseStatement):
+            if return_object_tree.target is None:
+                # If the target is not set, set it to the target of the assignment
+                return_object_tree.target = target
+            value_expr = cast(AllowedAssignmentValue, return_object_tree)
+        else:
+            # Fallback transformation if needed
+            value_expr = cast(AllowedAssignmentValue, return_object_tree)
+
+        return Assignment(target=target, value=value_expr)
+
+    def return_object_stmt(self, items):
+        """Transform a return_object_stmt rule into the appropriate object-returning statement."""
+        # Grammar: return_object_stmt: use_stmt
+        # items[0] should be the result of use_stmt transformation
+        
+        # The use_stmt should already be transformed into a UseStatement by use_stmt method
+        if len(items) > 0 and items[0] is not None:
+            return items[0]
+        
+        # Fallback - this shouldn't happen in normal cases
+        raise ValueError("return_object_stmt received empty or None items")
+
     def typed_parameter(self, items):
         """Transform a typed parameter rule into a Parameter object."""
 
@@ -814,3 +904,115 @@ class StatementTransformer(BaseTransformer):
                     raise TypeError(f"Parameter default value cannot be a tuple: {default_value}")
 
         return Parameter(name=param_name, type_hint=type_hint, default_value=default_value)
+
+    def mixed_arguments(self, items):
+        """Transform mixed_arguments rule into a structured list."""
+        # items is a list of with_arg items
+        return items
+    
+    def with_arg(self, items):
+        """Transform with_arg rule - pass through the child (either kw_arg or expr)."""
+        # items[0] is either a kw_arg Tree or an expression
+        return items[0]
+
+    def with_context_manager(self, items):
+        """Transform with_context_manager rule - pass through the expression."""
+        return self.expression_transformer.expression(items)
+
+    def with_stmt(self, items):
+        """Transform a with statement rule into a WithStatement node."""
+        # Filter out None items (like optional comments) and parse the structure
+        filtered_items = [item for item in items if item is not None]
+        
+
+        # Based on the parse tree: [foo, mixed_arguments, as, bar, None, block]
+        # Find components in the structure
+        context_manager_part = filtered_items[0]
+        as_var = None
+        block = None
+        with_args = None
+        
+        # Look for 'as' token to find variable name and block
+        for i, item in enumerate(filtered_items):
+            if hasattr(item, 'value') and item.value == 'as':
+                # Next item should be the variable name
+                if i + 1 < len(filtered_items):
+                    as_var_token = filtered_items[i + 1]
+                    as_var = as_var_token.value if hasattr(as_var_token, 'value') else str(as_var_token)
+                # Block should be the last item in the list (after filtering)
+                for j in range(len(filtered_items) - 1, -1, -1):
+                    if hasattr(filtered_items[j], 'data') and filtered_items[j].data == 'block':
+                        block = self._transform_block(filtered_items[j])
+                        break
+                break
+        
+        if as_var is None:
+            raise SyntaxError("Missing 'as' variable in with statement")
+        if block is None:
+            raise SyntaxError("Missing block in with statement")
+        
+        # Check if this is a function call pattern by looking at the structure
+        # Function call pattern: [NAME, mixed_arguments_or_none, 'as', NAME, None, block]
+        # Direct object pattern: [expression, 'as', NAME, None, block]
+        
+        # If the first item is a simple token (NAME/USE) and we have the right structure, it's a function call
+        if (hasattr(context_manager_part, 'value') and isinstance(context_manager_part.value, str) and
+            not hasattr(context_manager_part, 'data')):  # Simple token, not a tree
+            
+            # Function call pattern: NAME [mixed_arguments] as var block
+            context_manager_name = context_manager_part.value
+            
+            # Handle mixed_arguments - could be None (empty args) or a tree with arguments
+            args: List[Expression] = []
+            kwargs = {}
+            seen_keyword_arg = False
+            
+            # Look for mixed_arguments (second item if it exists and is not 'as')
+            if (len(filtered_items) >= 2 and 
+                isinstance(filtered_items[1], list)):
+                
+                # mixed_arguments has already been transformed into a list of expressions/trees
+                args_list = filtered_items[1]
+                
+                # Process each item in the list
+                for item in args_list:
+                    if hasattr(item, 'data') and item.data == 'kw_arg':
+                        # Keyword argument: NAME "=" expr
+                        seen_keyword_arg = True
+                        name = item.children[0].value
+                        value = self.expression_transformer.expression([item.children[1]])
+                        kwargs[name] = value
+                    else:
+                        # Positional argument: expr
+                        if seen_keyword_arg:
+                            raise SyntaxError("Positional argument follows keyword argument in with statement")
+                        args.append(cast(Expression, item))
+            elif (len(filtered_items) >= 2 and 
+                  hasattr(filtered_items[1], 'data') and 
+                  filtered_items[1].data == 'mixed_arguments'):
+                
+                mixed_args_tree = filtered_items[1]
+                
+                # mixed_arguments contains with_arg children
+                for with_arg_tree in mixed_args_tree.children:
+                    if hasattr(with_arg_tree, 'data') and with_arg_tree.data == 'with_arg':
+                        # with_arg contains either kw_arg or expr
+                        if len(with_arg_tree.children) > 0:
+                            arg_content = with_arg_tree.children[0]
+                            if hasattr(arg_content, 'data') and arg_content.data == 'kw_arg':
+                                # Keyword argument: NAME "=" expr
+                                seen_keyword_arg = True
+                                name = arg_content.children[0].value
+                                value = self.expression_transformer.expression([arg_content.children[1]])
+                                kwargs[name] = value
+                            else:
+                                # Positional argument: expr
+                                if seen_keyword_arg:
+                                    raise SyntaxError("Positional argument follows keyword argument in with statement")
+                                args.append(cast(Expression, self.expression_transformer.expression([arg_content])))
+
+            return WithStatement(context_manager=context_manager_name, args=args, kwargs=kwargs, as_var=as_var, body=block)
+        else:
+            # Direct context manager pattern: with_context_manager as var block
+            context_manager_expr = cast(Expression, self.expression_transformer.expression([context_manager_part]))
+            return WithStatement(context_manager=context_manager_expr, args=[], kwargs={}, as_var=as_var, body=block)

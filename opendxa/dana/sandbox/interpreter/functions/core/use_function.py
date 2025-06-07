@@ -1,0 +1,26 @@
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from opendxa.common import Misc
+from opendxa.common.resource.base_resource import BaseResource
+
+
+def use_function(context: SandboxContext, function_name: str, *args, _name:str|None=None, **kwargs) -> BaseResource:
+    """Use a function in the context.
+    This function is used to call a function in the context.
+    It is used to call a function in the context.
+    It is used to call a function in the context.
+
+    Args:
+        context: The sandbox context
+        function_name: The name of the function to use
+        *args: Positional arguments
+        **kwargs: Keyword arguments
+    """
+    if _name is None:
+        _name = Misc.generate_base64_uuid(length=6)
+    if function_name.lower() == "mcp":
+        from opendxa.contrib.dana_mcp_a2a.common.resource.mcp.client.mcp_resource import MCPResource
+        resource = MCPResource(name=_name, *args, **kwargs)
+        context.set_resource(_name, resource)
+        return resource
+    else:
+        raise NotImplementedError(f"Function {function_name} not implemented")

@@ -17,7 +17,7 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from typing import Any
+from typing import Any, Dict, Optional
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.resource.llm_resource import LLMResource
@@ -33,7 +33,9 @@ from opendxa.dana.transcoder.transcoder import Transcoder
 class REPL(Loggable):
     """Read-Eval-Print Loop for executing and managing Dana programs."""
 
-    def __init__(self, llm_resource: LLMResource | None = None, log_level: LogLevel | None = None, context: SandboxContext | None = None):
+    def __init__(
+        self, llm_resource: Optional[LLMResource] = None, log_level: Optional[LogLevel] = None, context: Optional[SandboxContext] = None
+    ):
         """Initialize the REPL.
 
         Args:
@@ -43,7 +45,7 @@ class REPL(Loggable):
         super().__init__()  # Initialize Loggable
         self.context = context or SandboxContext()
         if llm_resource is not None:
-            self.context.set("system:llm_resource", llm_resource)
+            self.context.set("system.llm_resource", llm_resource)
         self.interpreter = DanaInterpreter()
 
         self.parser = DanaParser()
@@ -57,7 +59,7 @@ class REPL(Loggable):
         if log_level:
             self.set_log_level(log_level)
 
-    def _handle_log_level_change(self, context: dict[str, Any]) -> None:
+    def _handle_log_level_change(self, context: Dict[str, Any]) -> None:
         """Handle log level change hook."""
         level = context.get("level")
         if level:
@@ -165,7 +167,7 @@ class REPL(Loggable):
             formatted.append(f"  {tip}")
         return "\n".join(formatted)
 
-    def execute(self, program_source: str, initial_context: dict[str, Any] | None = None) -> Any:
+    def execute(self, program_source: str, initial_context: Optional[Dict[str, Any]] = None) -> Any:
         """Execute a Dana program and return the result value.
 
         Args:

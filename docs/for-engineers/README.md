@@ -122,6 +122,60 @@ for-engineers/
 
 ---
 
+*Ready to build? Start with [Quick Start](#-quick-start) or jump to [Common Tasks](#-common-tasks)* 
+
+## Quick Examples
+
+### Basic Dana Script
+```python
+# Simple reasoning and logging
+name = "OpenDXA Agent"
+analysis = reason("What are the key benefits of this system?", context=specs)
+log.info(f"Analysis complete for {name}")
+
+# Load knowledge and process data
+use("kb.finance.risk_assessment")
+risk_level = reason("Assess portfolio risk", context=portfolio_data)
+```
+
+### Object Method Calls & MCP Integration (NEW)
+```python
+# Connect to MCP services and call methods
+websearch = use("mcp", url="http://localhost:8880/websearch")
+tools = websearch.list_tools()
+results = websearch.search("OpenDXA documentation")
+
+# A2A Agent integration
+analyst = use("a2a.research-agent")
+market_analysis = analyst.analyze_trends(financial_data)
+report = analyst.generate_report(market_analysis)
+
+# Resource management with 'with' statements
+with use("mcp.database") as database:
+    users = database.query("SELECT * FROM active_users")
+    database.update_analytics(users)
+```
+
+### Advanced Control Flow
+```python
+# Process multiple data sources
+data_sources = ["api", "database", "files"]
+
+for source in data_sources:
+    if source == "api":
+        raw_data = fetch_api_data()
+    elif source == "database": 
+        raw_data = query_database()
+    else:
+        raw_data = load_file_data()
+    
+    processed = reason("Clean and validate data", context=raw_data)
+    results[source] = processed
+```
+
+---
+
+## 🎯 Core Concepts
 *Ready to build? Start with [Getting Started](#getting-started-paths) or jump to [Common Tasks](#common-tasks)*
 
 <p align="center">

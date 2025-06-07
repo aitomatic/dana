@@ -49,7 +49,7 @@ from pydantic import BaseModel, ValidationError, create_model
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.mixins.registerable import Registerable
-from opendxa.common.mixins.tool_formats import McpToolFormat, OpenAIToolFormat, ToolFormat
+from opendxa.common.mixins.tool_formats import McpToolFormat, OpenAIToolFormat, ToolFormat, RawToolFormat
 
 # Type variable for the decorated function
 F = TypeVar("F", bound=Callable[..., Any])
@@ -278,6 +278,14 @@ class ToolCallable(Registerable, Loggable):
             formatted_tools.append(formatted_tool)
 
         return formatted_tools
+    
+    def list_tools(self) -> List[Any]:
+        """List all tools available to the agent in raw format."""
+        if self.__openai_function_list_cache is not None:
+            return self.__openai_function_list_cache
+
+        self.__openai_function_list_cache = self._list_tools(RawToolFormat(self.name, self.id))
+        return self.__openai_function_list_cache
 
     def list_mcp_tools(self) -> List[McpTool]:
         """List all tools available to the agent in MCP format."""

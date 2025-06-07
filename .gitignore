@@ -31,9 +31,13 @@ configs/
 .vscode/
 *.swp
 *.swo
-.cursorrules
 .aider*
 .claude/
+
+# macOS
+.DS_Store
+.DS_Store?
+
 
 # Build artifacts
 build/

@@ -11,6 +11,15 @@ from typing import Any, Callable, Dict, Optional, Type, Union
 
 import nest_asyncio
 import yaml
+from pydantic import BaseModel
+
+class ParsedArgKwargsResults(BaseModel):
+    matched_args: list[Any]
+    matched_kwargs: dict[str, Any]
+    varargs: list[Any]
+    varkwargs: dict[str, Any]
+    unmatched_args: list[Any]
+    unmatched_kwargs: dict[str, Any]
 
 
 class Misc:
@@ -189,3 +198,71 @@ class Misc:
             return encoded[:length]
 
         return encoded
+
+    @staticmethod
+    def parse_args_kwargs(func, *args, **kwargs) -> ParsedArgKwargsResults:
+        import inspect
+        """
+        Bind (args, kwargs) to `func`’s signature, returning a dict with:
+        - matched_args:      positional args that were bound to named parameters
+        - matched_kwargs:    keyword args that were bound to named or kw-only parameters
+        - varargs:           values that ended up in func’s *args (if it has one)
+        - varkwargs:         values that ended up in func’s **kwargs (if it has one)
+        - unmatched_args:    positional args that couldn’t be bound (and no *args present)
+        - unmatched_kwargs:  keyword args that couldn’t be bound (and no **kwargs present)
+        """
+        sig = inspect.signature(func)
+        params = list(sig.parameters.values())
+
+        matched_args = []
+        matched_kwargs = {}
+        varargs = []
+        varkwargs = {}
+        unmatched_args = []
+        unmatched_kwargs = {}
+
+        # Separate out which parameters are “named positional” (POSITIONAL_ONLY, POSITIONAL_OR_KEYWORD)
+        pos_params = [
+            p for p in params
+            if p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD)
+        ]
+        # Which are keyword-only
+        kwonly_params = [p for p in params if p.kind == p.KEYWORD_ONLY]
+
+        # Check if func has *args or **kwargs
+        has_var_pos = any(p.kind == p.VAR_POSITIONAL for p in params)
+        has_var_kw  = any(p.kind == p.VAR_KEYWORD    for p in params)
+
+        # 1) Assign positional arguments
+        for index, value in enumerate(args):
+            if index < len(pos_params):
+                # Still within the “named positional” slots
+                matched_args.append(value)
+            else:
+                # No more named positional slots left
+                if has_var_pos:
+                    varargs.append(value)
+                else:
+                    unmatched_args.append(value)
+
+        # 2) Assign keyword arguments
+        #    If the key matches one of the named parameters (positional or kw-only), consume it.
+        named_param_names = {p.name for p in (pos_params + kwonly_params)}
+        for key, value in kwargs.items():
+            if key in named_param_names:
+                matched_kwargs[key] = value
+            else:
+                if has_var_kw:
+                    varkwargs[key] = value
+                else:
+                    unmatched_kwargs[key] = value
+
+        return ParsedArgKwargsResults(
+            matched_args=matched_args,
+            matched_kwargs=matched_kwargs,
+            varargs=varargs,
+            varkwargs=varkwargs,
+            unmatched_args=unmatched_args,
+            unmatched_kwargs=unmatched_kwargs,
+        )
+

@@ -101,7 +101,7 @@ LLMs hallucinate. Pipelines break. You're always on call. Dana builds in verific
 How Dana Does It:
 - Verification Loops: Dana checks results and retries or escalates as needed, replacing days of manual QA.
 - Error Correction: Suggestions and fixes are proposed automatically, slashing debugging time.
-- Robust by Design with POV (Perceive → Operate → Validate): Key operations are governed by the POV protocol, a cycle of perceiving inputs flexibly, operating intelligently, and validating outputs strictly, complete with automatic retries. This neurosymbolic approach embeds Postel's Law ("be liberal in, conservative out") into the core, ensuring dependable AI behavior.
+- Robust by Design with POET (Perceive → Operate → Encode → Train): Key operations are governed by the POET protocol, a cycle of perceiving inputs flexibly, operating intelligently, encoding outputs strictly, and training from outcomes, complete with automatic retries. This neurosymbolic approach embeds Postel's Law ("be liberal in, conservative out") into the core, ensuring dependable AI behavior.
 
 Example:
 ```python
