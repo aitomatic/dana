@@ -33,16 +33,19 @@ fi
 # Expected extension ID (publisher.name)
 # Publisher in package.json: "Aitomatic, Inc." (likely sanitized to 'aitomatic' or similar by vsce/vscode)
 # Name in package.json: "dana-language"
-EXTENSION_ID="aitomatic, inc..dana-language" # This is the most common assumed ID
+EXTENSION_ID_1="aitomatic.dana-language" # This is the most common assumed ID
+EXTENSION_ID_2="aitomatic, inc..dana-language" # This is the most common assumed ID
 
-echo -e "${BLUE}🔧 Attempting to remove extension '$EXTENSION_ID' from ${EDITOR_NAME}...${NC}"
+echo -e "${BLUE}🔧 Attempting to remove extension '$EXTENSION_ID_1' from ${EDITOR_NAME}...${NC}"
 
 # Attempt to uninstall. The `if` statement handles the exit code.
-if "$EDITOR_CMD" --uninstall-extension "$EXTENSION_ID"; then
-    echo -e "${GREEN}✅ Dana Language Support ('$EXTENSION_ID') successfully uninstalled from ${EDITOR_NAME}!${NC}"
+if "$EDITOR_CMD" --uninstall-extension "$EXTENSION_ID_1"; then
+    echo -e "${GREEN}✅ Dana Language Support ('$EXTENSION_ID_1') successfully uninstalled from ${EDITOR_NAME}!${NC}"
+elif "$EDITOR_CMD" --uninstall-extension "$EXTENSION_ID_2"; then
+    echo -e "${GREEN}✅ Dana Language Support ('$EXTENSION_ID_2') successfully uninstalled from ${EDITOR_NAME}!${NC}"
 else
     # The command failed (returned non-zero exit code).
-    echo -e "${YELLOW}⚠️  Failed to uninstall '$EXTENSION_ID'.${NC}"
+    echo -e "${YELLOW}⚠️  Failed to uninstall '$EXTENSION_ID_1' or '$EXTENSION_ID_2'.${NC}"
     echo -e "${YELLOW}   This can happen if the extension was not installed with this exact ID, or was already removed.${NC}"
     echo -e "${YELLOW}💡 To find the correct extension ID, please list your installed extensions:${NC}"
     echo -e "   ${EDITOR_CMD} --list-extensions | grep -i dana"
