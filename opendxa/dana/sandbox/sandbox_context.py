@@ -631,6 +631,22 @@ class SandboxContext:
 
     def get_resource(self, name: str) -> BaseResource:
         return self._state["local"][name]
+    
+    def get_resources(self, included : Optional[List[str|BaseResource]] = None) -> Dict[str, BaseResource]:
+        """Get a dictionary of resources from the context.
+
+        Args:
+            included: Optional list of resource names or resources to include
+
+        Returns:
+            A dictionary of resources
+        """
+        resource_names = self.list_resources()
+        if included is not None:
+            # Convert to list of strings
+            included = [resource.name if isinstance(resource, BaseResource) else resource for resource in included]
+        resource_names = filter(lambda name: (included is None or name in included), resource_names)
+        return {name : self.get_resource(name) for name in resource_names}
 
     def soft_delete_resource(self, name: str) -> None:
         # resource will remain in private variable self.__resources but will be removed from the local scope

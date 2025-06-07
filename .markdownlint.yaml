@@ -1,3 +1,6 @@
+# .markdownlint.yaml - Markdown Linting Configuration
+# Copyright © 2025 Aitomatic, Inc. Licensed under the MIT License.
+
 # Disable rule MD004 - Unordered list style
 MD004: false
 ul-style: false

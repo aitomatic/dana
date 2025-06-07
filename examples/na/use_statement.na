@@ -1,3 +1,17 @@
+# Let's test with a simpler version that avoids the use() runtime error
 websearch = use("mcp", url="http://localhost:8880/websearch")
 
-#NOTE : Implement this  websearch.list_tools()
+# For testing parsing, let's create a mock object and test the method call
+print("Testing method call with keyword arguments...")
+
+# First let's test if we can parse the problematic line correctly
+# Comment out the use statement for now since it has runtime issues
+print(websearch.specialized_websearch(query="Who is the CEO of Aitomatic"))
+
+print(websearch.list_tools())
+# print(websearch.call_tool("specialized_websearch", {"query" : "Who is the CEO of Aitomatic"}))
+websearch.specialized_websearch(query="Who is the CEO of Aitomatic")
+
+with websearch as _websearch:
+    print(_websearch.list_openai_functions())
+print(websearch.list_openai_functions())

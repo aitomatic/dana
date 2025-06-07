@@ -1,9 +1,3 @@
-<p align="center">
-  <img src="https://cdn.prod.website-files.com/62a10970901ba826988ed5aa/62d942adcae82825089dabdb_aitomatic-logo-black.png" alt="Aitomatic Logo" width="400" style="border: 2px solid #666; border-radius: 10px; padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);"/>
-</p>
-
-[Project Overview](../../../../README.md) | [For Engineers](../../README.md) | [Reference](../README.md) | [API Reference](README.md)
-
 # Scoping System API Reference
 
 Dana's scoping system provides structured variable organization with four distinct scopes: `local`, `private`, `public`, and `system`. This system ensures clear data flow, security boundaries, and auditable state transitions.
@@ -24,10 +18,10 @@ Dana's scoping system provides structured variable organization with four distin
 ## Overview
 
 ### Design Philosophy
-- **Explicit scoping**: Clear separation of variable contexts
-- **Security boundaries**: Controlled access to sensitive data
-- **Auditable state**: Trackable state transitions
-- **Hierarchical organization**: Nested variable paths supported
+- Explicit scoping: Clear separation of variable contexts
+- Security boundaries: Controlled access to sensitive data
+- Auditable state: Trackable state transitions
+- Hierarchical organization: Nested variable paths supported
 
 ### Key Features
 - ✅ **Four distinct scopes**: local, private, public, system
@@ -51,10 +45,10 @@ Dana's scoping system provides structured variable organization with four distin
 ### Scope Characteristics
 
 #### `local` Scope
-- **Purpose**: Local to the current function, tool, or execution context
-- **Lifetime**: Exists only during current execution
-- **Access**: Current context only
-- **Default**: Unscoped variables automatically use local scope
+- Purpose: Local to the current function, tool, or execution context
+- Lifetime: Exists only during current execution
+- Access: Current context only
+- Default: Unscoped variables automatically use local scope
 
 ```dana
 # These are equivalent
@@ -63,15 +57,15 @@ local:result = calculate_value()
 
 # Local variables are isolated
 def process_data():
-    temp_value = 42  # local:temp_value
-    return temp_value * 2
+ temp_value = 42 # local:temp_value
+ return temp_value * 2
 ```
 
 #### `private` Scope
-- **Purpose**: Private to the agent, resource, or tool
-- **Lifetime**: Persists across function calls within the same agent
-- **Access**: Agent-specific, not shared
-- **Security**: Considered sensitive, can be sanitized
+- Purpose: Private to the agent, resource, or tool
+- Lifetime: Persists across function calls within the same agent
+- Access: Agent-specific, not shared
+- Security: Considered sensitive, can be sanitized
 
 ```dana
 # Agent internal state
@@ -86,10 +80,10 @@ private:analysis.results = []
 ```
 
 #### `public` Scope
-- **Purpose**: Shared world state accessible to all agents
-- **Lifetime**: Persists globally
-- **Access**: Readable and writable by all agents
-- **Use cases**: Environmental data, shared observations
+- Purpose: Shared world state accessible to all agents
+- Lifetime: Persists globally
+- Access: Readable and writable by all agents
+- Use cases: Environmental data, shared observations
 
 ```dana
 # Shared environmental state
@@ -107,10 +101,10 @@ public:shared_results = {"analysis": "complete", "confidence": 0.95}
 ```
 
 #### `system` Scope
-- **Purpose**: System-related runtime state and configuration
-- **Lifetime**: Persists for system lifetime
-- **Access**: Controlled, typically read-only for user code
-- **Security**: Considered sensitive, can be sanitized
+- Purpose: System-related runtime state and configuration
+- Lifetime: Persists for system lifetime
+- Access: Controlled, typically read-only for user code
+- Security: Considered sensitive, can be sanitized
 
 ```dana
 # System runtime state
@@ -125,8 +119,8 @@ system:debug_mode = false
 
 # Execution history
 system:history = [
-    {"action": "function_call", "timestamp": "2025-01-01T12:00:00Z"},
-    {"action": "variable_set", "timestamp": "2025-01-01T12:00:01Z"}
+ {"action": "function_call", "timestamp": "2025-01-01T12:00:00Z"},
+ {"action": "variable_set", "timestamp": "2025-01-01T12:00:01Z"}
 ]
 ```
 
@@ -151,9 +145,9 @@ system:config.logging.level = "debug"
 ### Auto-scoping (Default)
 ```dana
 # Unscoped variables default to local scope
-result = 42              # Equivalent to local:result = 42
-user_name = "Alice"      # Equivalent to local:user_name = "Alice"
-is_complete = true       # Equivalent to local:is_complete = true
+result = 42 # Equivalent to local:result = 42
+user_name = "Alice" # Equivalent to local:user_name = "Alice"
+is_complete = true # Equivalent to local:is_complete = true
 ```
 
 ### Dot Notation (Internal)
@@ -161,7 +155,7 @@ is_complete = true       # Equivalent to local:is_complete = true
 
 ```dana
 # Internal representation (not recommended for user code)
-private.variable_name = value  # Internally stored as private:variable_name
+private.variable_name = value # Internally stored as private:variable_name
 ```
 
 ---
@@ -184,39 +178,39 @@ private.variable_name = value  # Internally stored as private:variable_name
 ```dana
 # Parent-child context relationships
 def parent_function():
-    local:parent_var = "parent value"
-    private:shared_state = "accessible to child"
-    
-    def child_function():
-        # Can access parent's local variables
-        parent_value = local:parent_var  # Inherits from parent
-        
-        # Can access shared private state
-        shared = private:shared_state
-        
-        # Child's local variables don't affect parent
-        local:child_var = "child only"
-    
-    child_function()
-    # parent_var and shared_state still accessible
-    # child_var is not accessible here
+ local:parent_var = "parent value"
+ private:shared_state = "accessible to child"
+
+ def child_function():
+ # Can access parent's local variables
+ parent_value = local:parent_var # Inherits from parent
+
+ # Can access shared private state
+ shared = private:shared_state
+
+ # Child's local variables don't affect parent
+ local:child_var = "child only"
+
+ child_function()
+ # parent_var and shared_state still accessible
+ # child_var is not accessible here
 ```
 
 ### Global Scope Sharing
 ```dana
 # Global scopes (private, public, system) are shared across contexts
 def function_a():
-    private:shared_data = {"step": 1}
-    public:status = "processing"
+ private:shared_data = {"step": 1}
+ public:status = "processing"
 
 def function_b():
-    # Can access global scopes set by function_a
-    step = private:shared_data["step"]  # Gets 1
-    status = public:status              # Gets "processing"
-    
-    # Modifications affect global state
-    private:shared_data["step"] = 2
-    public:status = "complete"
+ # Can access global scopes set by function_a
+ step = private:shared_data["step"] # Gets 1
+ status = public:status # Gets "processing"
+
+ # Modifications affect global state
+ private:shared_data["step"] = 2
+ public:status = "complete"
 ```
 
 ---
@@ -304,12 +298,35 @@ parent.set("public:global_data", "accessible to all")
 child = SandboxContext(parent=parent)
 
 # Child can access parent's global scopes
-shared_state = child.get("private:shared_state")  # "parent value"
-global_data = child.get("public:global_data")     # "accessible to all"
+shared_state = child.get("private:shared_state") # "parent value"
+global_data = child.get("public:global_data") # "accessible to all"
 
 # Child's local scope is independent
 child.set("local:child_data", "child only")
 # parent.get("local:child_data") would raise StateError
+```
+
+```mermaid
+graph LR
+    subgraph ParentContext["Parent SandboxContext"]
+        direction TB
+        P_Private["private:shared_state = 'parent value'"]
+        P_Public["public:global_data = 'accessible to all'"]
+        P_Local["local:parent_local = 'parent only (not directly accessible by child)'"]
+        note_P("Parent's `private` and `public` variables are accessible to Child.")
+    end
+
+    subgraph ChildContext["Child SandboxContext (parent=ParentContext)"]
+        direction LR
+        C_Local["local:child_data = 'child only'"]
+        note_C("Child has its own `local` scope. Child cannot directly access Parent's `local` variables. Changes to `public` by Child are visible to Parent. Changes to `private` (if same agent) are visible to Parent.")
+    end
+
+    ParentContext -- "Inherits non-local scopes" --> ChildContext
+
+    ChildContext -- "Can Read Inherited" --> P_Private
+    ChildContext -- "Can Read Inherited" --> P_Public
+    
 ```
 
 ---
@@ -337,7 +354,7 @@ public:sensor_data = {"temperature": 72, "humidity": 65}
 system:log_level = "debug"
 
 # ❌ Avoid: Unclear scope for important data
-config = {"retries": 3, "timeout": 30}  # Goes to local scope
+config = {"retries": 3, "timeout": 30} # Goes to local scope
 ```
 
 ### 3. Use Nested Paths for Organization
@@ -358,50 +375,50 @@ public:sensor.humidity.max = 80
 ```dana
 # ✅ Good: Use local scope for temporary data
 def process_data(input_data):
-    # Temporary processing variables
-    cleaned_data = clean_input(input_data)
-    processed_result = transform_data(cleaned_data)
-    
-    # Only use private for persistent agent state
-    private:last_processed_count = len(processed_result)
-    
-    return processed_result
+ # Temporary processing variables
+ cleaned_data = clean_input(input_data)
+ processed_result = transform_data(cleaned_data)
+
+ # Only use private for persistent agent state
+ private:last_processed_count = len(processed_result)
+
+ return processed_result
 
 # ❌ Avoid: Overusing private scope
 def process_data(input_data):
-    private:temp_data = clean_input(input_data)      # Should be local
-    private:temp_result = transform_data(temp_data)  # Should be local
-    private:final_count = len(temp_result)           # OK for persistence
-    
-    return private:temp_result
+ private:temp_data = clean_input(input_data) # Should be local
+ private:temp_result = transform_data(temp_data) # Should be local
+ private:final_count = len(temp_result) # OK for persistence
+
+ return private:temp_result
 ```
 
 ### 5. Document Scope Usage
 ```dana
 # ✅ Good: Clear documentation of scope purpose
 def ai_analysis_workflow(data):
-    # Local processing variables
-    cleaned_data = preprocess(data)
-    
-    # Private agent state for tracking
-    private:analysis.current_step = 1
-    private:analysis.total_steps = 3
-    
-    # Public shared results
-    public:analysis.status = "in_progress"
-    public:analysis.start_time = get_current_time()
-    
-    # Process each step
-    for step in range(3):
-        private:analysis.current_step = step + 1
-        step_result = process_step(cleaned_data, step)
-        public:analysis.results.append(step_result)
-    
-    # Final status
-    public:analysis.status = "complete"
-    public:analysis.end_time = get_current_time()
-    
-    return public:analysis.results
+ # Local processing variables
+ cleaned_data = preprocess(data)
+
+ # Private agent state for tracking
+ private:analysis.current_step = 1
+ private:analysis.total_steps = 3
+
+ # Public shared results
+ public:analysis.status = "in_progress"
+ public:analysis.start_time = get_current_time()
+
+ # Process each step
+ for step in range(3):
+ private:analysis.current_step = step + 1
+ step_result = process_step(cleaned_data, step)
+ public:analysis.results.append(step_result)
+
+ # Final status
+ public:analysis.status = "complete"
+ public:analysis.end_time = get_current_time()
+
+ return public:analysis.results
 ```
 
 ---
@@ -434,112 +451,136 @@ system:debug_enabled = false
 ### AI Workflow with Scoping
 ```dana
 def ai_data_analysis(dataset):
-    # Local processing variables
-    start_time = get_current_time()
-    analysis_id = generate_id()
-    
-    # Private agent state
-    private:current_analysis.id = analysis_id
-    private:current_analysis.dataset_size = len(dataset)
-    private:current_analysis.start_time = start_time
-    
-    # Public status for monitoring
-    public:analysis_status = "starting"
-    public:analysis_progress = 0
-    
-    # System resource tracking
-    system:active_analyses.append(analysis_id)
-    
-    # Perform analysis
-    log(f"Starting analysis {analysis_id}", "info")
-    
-    # Step 1: Data preprocessing
-    public:analysis_progress = 25
-    cleaned_data = preprocess_data(dataset)
-    private:current_analysis.preprocessing_complete = true
-    
-    # Step 2: AI reasoning
-    public:analysis_progress = 50
-    analysis_prompt = f"Analyze this dataset: {cleaned_data}"
-    ai_result = reason(analysis_prompt, {
-        "temperature": 0.3,
-        "max_tokens": 1000
-    })
-    private:current_analysis.ai_result = ai_result
-    
-    # Step 3: Post-processing
-    public:analysis_progress = 75
-    final_result = postprocess_result(ai_result)
-    
-    # Final results
-    public:analysis_progress = 100
-    public:analysis_status = "complete"
-    public:latest_analysis = {
-        "id": analysis_id,
-        "result": final_result,
-        "timestamp": get_current_time()
-    }
-    
-    # Update private state
-    private:current_analysis.complete = true
-    private:current_analysis.end_time = get_current_time()
-    
-    # Clean up system resources
-    system:active_analyses.remove(analysis_id)
-    
-    log(f"Analysis {analysis_id} completed", "info")
-    return final_result
+ # Local processing variables
+ start_time = get_current_time()
+ analysis_id = generate_id()
+
+ # Private agent state
+ private:current_analysis.id = analysis_id
+ private:current_analysis.dataset_size = len(dataset)
+ private:current_analysis.start_time = start_time
+
+ # Public status for monitoring
+ public:analysis_status = "starting"
+ public:analysis_progress = 0
+
+ # System resource tracking
+ system:active_analyses.append(analysis_id)
+
+ # Perform analysis
+ log(f"Starting analysis {analysis_id}", "info")
+
+ # Step 1: Data preprocessing
+ public:analysis_progress = 25
+ cleaned_data = preprocess_data(dataset)
+ private:current_analysis.preprocessing_complete = true
+
+ # Step 2: AI reasoning
+ public:analysis_progress = 50
+ analysis_prompt = f"Analyze this dataset: {cleaned_data}"
+ ai_result = reason(analysis_prompt, {
+ "temperature": 0.3,
+ "max_tokens": 1000
+ })
+ private:current_analysis.ai_result = ai_result
+
+ # Step 3: Post-processing
+ public:analysis_progress = 75
+ final_result = postprocess_result(ai_result)
+
+ # Final results
+ public:analysis_progress = 100
+ public:analysis_status = "complete"
+ public:latest_analysis = {
+ "id": analysis_id,
+ "result": final_result,
+ "timestamp": get_current_time()
+ }
+
+ # Update private state
+ private:current_analysis.complete = true
+ private:current_analysis.end_time = get_current_time()
+
+ # Clean up system resources
+ system:active_analyses.remove(analysis_id)
+
+ log(f"Analysis {analysis_id} completed", "info")
+ return final_result
 ```
 
 ### Multi-Agent Coordination
 ```dana
 # Agent A: Data collector
 def collect_sensor_data():
-    # Local processing
-    raw_data = read_sensors()
-    timestamp = get_current_time()
-    
-    # Private agent state
-    private:collector.last_reading = timestamp
-    private:collector.readings_count += 1
-    
-    # Public shared data for other agents
-    public:sensor.temperature = raw_data["temp"]
-    public:sensor.humidity = raw_data["humidity"]
-    public:sensor.last_update = timestamp
-    
-    # System monitoring
-    system:sensor_readings.append({
-        "timestamp": timestamp,
-        "agent": "collector",
-        "data": raw_data
-    })
+ # Local processing
+ raw_data = read_sensors()
+ timestamp = get_current_time()
+
+ # Private agent state
+ private:collector.last_reading = timestamp
+ private:collector.readings_count += 1
+
+ # Public shared data for other agents
+ public:sensor.temperature = raw_data["temp"]
+ public:sensor.humidity = raw_data["humidity"]
+ public:sensor.last_update = timestamp
+
+ # System monitoring
+ system:sensor_readings.append({
+ "timestamp": timestamp,
+ "agent": "collector",
+ "data": raw_data
+ })
 
 # Agent B: Data analyzer
 def analyze_sensor_trends():
-    # Access public data from Agent A
-    current_temp = public:sensor.temperature
-    current_humidity = public:sensor.humidity
-    last_update = public:sensor.last_update
-    
-    # Private analysis state
-    private:analyzer.last_analysis = get_current_time()
-    
-    # Perform trend analysis
-    if current_temp > 80:
-        trend_analysis = reason(f"Temperature is {current_temp}°F. Is this concerning?")
-        
-        # Share analysis results publicly
-        public:analysis.temperature_trend = trend_analysis
-        public:analysis.alert_level = "high" if "concerning" in trend_analysis else "normal"
-        
-        # Log to system
-        system:alerts.append({
-            "type": "temperature",
-            "level": public:analysis.alert_level,
-            "timestamp": get_current_time(),
-            "agent": "analyzer"
-        })
+ # Access public data from Agent A
+ current_temp = public:sensor.temperature
+ current_humidity = public:sensor.humidity
+ last_update = public:sensor.last_update
+
+ # Private analysis state
+ private:analyzer.last_analysis = get_current_time()
+
+ # Perform trend analysis
+ if current_temp > 80:
+ trend_analysis = reason(f"Temperature is {current_temp}°F. Is this concerning?")
+
+ # Share analysis results publicly
+ public:analysis.temperature_trend = trend_analysis
+ public:analysis.alert_level = "high" if "concerning" in trend_analysis else "normal"
+
+ # Log to system
+ system:alerts.append({
+ "type": "temperature",
+ "level": public:analysis.alert_level,
+ "timestamp": get_current_time(),
+ "agent": "analyzer"
+ })
+```
+
+```mermaid
+graph TB
+    subgraph Agent_A ["Agent A (Collector)"]
+        direction TB
+        A_Private["private:collector.*<br>(last_reading, readings_count)"]
+        A_Action["collect_sensor_data()"] -- Writes --> A_Private
+        A_Action -- Writes --> PublicSensor["public:sensor.*<br>(temperature, humidity, last_update)"]
+        A_Action -- Appends --> SystemSensorReadings["system:sensor_readings"]
+        Note_A("Agent A writes to its private scope and shares data via public and system scopes.")
+
+    end
+
+    subgraph Agent_B ["Agent B (Analyzer)"]
+        direction TB
+        B_Private["private:analyzer.*<br>(last_analysis)"]
+        PublicSensor -- Read by --> B_Action["analyze_sensor_trends()"]
+        B_Action -- Writes --> B_Private
+        B_Action -- Writes --> PublicAnalysis["public:analysis.*<br>(temperature_trend, alert_level)"]
+        B_Action -- Appends --> SystemAlerts["system:alerts"]
+        Note_B("Agent B reads shared public data, writes to its private scope, and shares results via public and system scopes.")
+    end
+
 ```
 
 ---
@@ -560,13 +601,13 @@ NOT_SENSITIVE = ["local", "public"]
 ```python
 # Internal context state structure
 _state = {
-    "local": {},     # Fresh for each context
-    "private": {},   # Shared across agent contexts
-    "public": {},    # Shared globally
-    "system": {      # Shared globally, controlled access
-        "execution_status": ExecutionStatus.IDLE,
-        "history": [],
-    }
+ "local": {}, # Fresh for each context
+ "private": {}, # Shared across agent contexts
+ "public": {}, # Shared globally
+ "system": { # Shared globally, controlled access
+ "execution_status": ExecutionStatus.IDLE,
+ "history": [],
+ }
 }
 ```
 
@@ -588,15 +629,15 @@ StateError("Invalid key format: malformed_key")
 
 ## See Also
 
-- **[Core Functions](core-functions.md)** - Essential Dana functions with scoping considerations
-- **[Type System](type-system.md)** - Type annotations work with all scopes
-- **[Function Calling](function-calling.md)** - Function calls and scope inheritance
-- **[Built-in Functions](built-in-functions.md)** - Built-in functions and scope access
+- [Core Functions](core-functions.md) - Essential Dana functions with scoping considerations
+- [Type System](type-system.md) - Type annotations work with all scopes
+- [Function Calling](function-calling.md) - Function calls and scope inheritance
+- [Built-in Functions](built-in-functions.md) - Built-in functions and scope access
 
 ---
 
 <p align="center">
-Copyright © 2025 Aitomatic, Inc. Licensed under the <a href="../../../../LICENSE.md">MIT License</a>.
+Copyright © 2025 Aitomatic, Inc. Licensed under the <a href="../../../LICENSE.md">MIT License</a>.
 <br/>
 <a href="https://aitomatic.com">https://aitomatic.com</a>
-</p> 
+</p>

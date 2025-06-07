@@ -213,3 +213,8 @@ class OpenAIToolFormat(ToolFormat):
                 "strict": False,
             },
         }
+    
+class RawToolFormat(OpenAIToolFormat):
+    @classmethod
+    def build_tool_name(cls, resource_name: str, resource_id: str, tool_name: str) -> str:
+        return tool_name

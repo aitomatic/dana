@@ -1,0 +1,42 @@
+#!/bin/bash
+# dana-less - Page through Dana files with syntax highlighting
+# Copyright © 2025 Aitomatic, Inc. Licensed under the MIT License.
+# Usage: dana-less file.na
+
+set -e
+
+# Colors for output
+BLUE='\033[0;34m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+# Check if file argument provided
+if [ $# -eq 0 ]; then
+    echo "Usage: dana-less <file.na>"
+    echo "Page through Dana files with syntax highlighting"
+    exit 1
+fi
+
+FILE="$1"
+
+# Check if file exists
+if [ ! -f "$FILE" ]; then
+    echo "Error: File '$FILE' not found"
+    exit 1
+fi
+
+# Try different syntax highlighting tools in order of preference
+if command -v bat &> /dev/null; then
+    # bat with paging
+    echo -e "${BLUE}📄 Viewing with bat (paged, Python syntax)...${NC}"
+    bat --language=python --style=numbers,changes,header --paging=always "$FILE"
+elif command -v pygmentize &> /dev/null && command -v less &> /dev/null; then
+    # Pygments with less
+    echo -e "${BLUE}📄 Viewing with pygments + less (Python syntax)...${NC}"
+    pygmentize -l python "$FILE" | less -R
+else
+    # Fallback to plain less
+    echo -e "${YELLOW}⚠️  No syntax highlighter found. Install 'bat' for best experience.${NC}"
+    echo -e "${BLUE}📄 Viewing with less (no syntax highlighting)...${NC}"
+    less "$FILE"
+fi 
