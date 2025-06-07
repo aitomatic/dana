@@ -40,6 +40,7 @@ Expression = Union[
     "Identifier",
     "BinaryExpression",
     "FunctionCall",
+    "ObjectFunctionCall",
     "FStringExpression",
     "UnaryExpression",
     "AttributeAccess",
@@ -61,12 +62,14 @@ Statement = Union[
     "ImportStatement",
     "ImportFromStatement",
     "FunctionCall",  # Can be both an expression and a statement
+    "ObjectFunctionCall",  # Can also be both an expression and a statement
     "BreakStatement",
     "ContinueStatement",
     "PassStatement",
     "ReturnStatement",
     "RaiseStatement",
     "AssertStatement",
+    "UseStatement",
     Expression,  # Any expression can be used as a statement
 ]
 
@@ -197,6 +200,41 @@ class FunctionCall:
 
 
 @dataclass
+class ObjectFunctionCall:
+    """An object method call (e.g., obj.method(args)).
+    
+    This AST node represents calling a method on an object, which is different from
+    accessing an attribute or calling a standalone function. It handles expressions
+    like `websearch.list_tools()`, `obj.method(arg1, arg2)`, etc.
+    
+    The ObjectFunctionCall distinguishes between:
+    - The target object (which can be any expression that evaluates to an object)
+    - The method name (a string identifier)
+    - The arguments passed to the method call
+    
+    This enables Dana to support object-oriented programming patterns and method
+    chaining while maintaining clear separation between attribute access and
+    method invocation.
+    
+    Examples:
+        - `websearch.list_tools()` - call list_tools method on websearch object
+        - `obj.add(10)` - call add method with argument 10
+        - `api.get_data("users")` - call get_data method with string argument
+    
+    Attributes:
+        object: The target object expression to call the method on
+        method_name: The name of the method to call (string)
+        args: Dictionary of arguments (positional and keyword) to pass to the method
+        location: Optional source location for error reporting
+    """
+
+    object: Expression  # The object on which to call the method
+    method_name: str    # The method name
+    args: Dict[str, Any]  # Arguments to the method
+    location: Optional[Location] = None
+
+
+@dataclass
 class AttributeAccess:
     """Attribute access (e.g., obj.attr)."""
 
@@ -258,6 +296,7 @@ class Assignment:
         BinaryExpression,
         UnaryExpression,
         FunctionCall,
+        ObjectFunctionCall,
         TupleLiteral,
         DictLiteral,
         ListLiteral,
@@ -265,6 +304,7 @@ class Assignment:
         SubscriptExpression,
         AttributeAccess,
         FStringExpression,
+        "UseStatement",  # Added to support function_call_assignment: target = use_stmt
     ]
     type_hint: Optional[TypeHint] = None  # For typed assignments like x: int = 42
     location: Optional[Location] = None
@@ -275,9 +315,9 @@ class Conditional:
     """If/elif/else conditional statement. Returns the value of the last executed statement."""
 
     condition: Expression
-    body: List[Union[Assignment, "Conditional", "WhileLoop", FunctionCall]]
+    body: List[Union[Assignment, "Conditional", "WhileLoop", FunctionCall, "ObjectFunctionCall"]]
     line_num: int  # Line number where this conditional was defined
-    else_body: List[Union[Assignment, "Conditional", "WhileLoop", FunctionCall]] = field(default_factory=list)
+    else_body: List[Union[Assignment, "Conditional", "WhileLoop", FunctionCall, "ObjectFunctionCall"]] = field(default_factory=list)
     location: Optional[Location] = None
 
 
@@ -286,7 +326,7 @@ class WhileLoop:
     """While loop statement."""
 
     condition: Expression
-    body: List[Union[Assignment, "Conditional", "WhileLoop", FunctionCall]]
+    body: List[Union[Assignment, "Conditional", "WhileLoop", FunctionCall, "ObjectFunctionCall"]]
     line_num: int
     location: Optional[Location] = None
 
@@ -322,6 +362,18 @@ class ExceptBlock:
 
 
 @dataclass
+class WithStatement:
+    """With statement (e.g., with mcp('hi') as foo: ... or with mcp_object as foo: ...)."""
+
+    context_manager: Union[str, Expression]  # Either function name (str) or context manager object (Expression)
+    args: List[Expression]  # Empty when using direct object
+    kwargs: Dict[str, Expression]  # Empty when using direct object
+    as_var: str
+    body: List[Statement]
+    location: Optional[Location] = None
+
+
+@dataclass
 class FunctionDefinition:
     """Function definition statement."""
 
@@ -347,6 +399,16 @@ class ImportFromStatement:
 
     module: str
     names: List[Tuple[str, Optional[str]]]
+    location: Optional[Location] = None
+
+
+@dataclass
+class UseStatement:
+    """Use statement for external resources (e.g., use("mcp", url="..."))."""
+    
+    args: List[Expression]        # Positional arguments
+    kwargs: Dict[str, Expression] # Keyword arguments
+    target: Optional[Identifier] = None
     location: Optional[Location] = None
 
 
@@ -402,7 +464,7 @@ class AssertStatement:
 class Program:
     """The root node for a Dana program (list of statements)."""
 
-    statements: List[Union[Assignment, FunctionCall]]
+    statements: List[Union[Assignment, FunctionCall, "ObjectFunctionCall"]]
     source_text: str = ""
     location: Optional[Location] = None
 

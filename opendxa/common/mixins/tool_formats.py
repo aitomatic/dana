@@ -201,3 +201,20 @@ class OpenAIToolFormat(ToolFormat):
                 "strict": False,  # Make it more lenient and less error-prone
             },
         }
+
+    def from_mcp_tool_format(self, mcp_tool: McpTool) -> Dict[str, Any]:
+        """Convert an MCP tool to OpenAI function format."""
+        return {
+            "type": "function",
+            "function": {
+                "name": self.build_tool_name(self.resource_name, self.resource_id, mcp_tool.name),
+                "description": mcp_tool.description,
+                "parameters": mcp_tool.inputSchema,
+                "strict": False,
+            },
+        }
+    
+class RawToolFormat(OpenAIToolFormat):
+    @classmethod
+    def build_tool_name(cls, resource_name: str, resource_id: str, tool_name: str) -> str:
+        return tool_name

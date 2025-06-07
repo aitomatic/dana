@@ -17,6 +17,8 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
+import asyncio
+import inspect
 from typing import Any, Optional
 
 from opendxa.dana.common.exceptions import SandboxError, StateError
@@ -31,11 +33,13 @@ from opendxa.dana.sandbox.parser.ast import (
     Identifier,
     ListLiteral,
     LiteralExpression,
+    ObjectFunctionCall,
     SetLiteral,
     SubscriptExpression,
     TupleLiteral,
     UnaryExpression,
 )
+from opendxa.common import Misc
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
@@ -78,6 +82,7 @@ class ExpressionExecutor(BaseExecutor):
             FStringExpression: self.execute_fstring_expression,
             AttributeAccess: self.execute_attribute_access,
             SubscriptExpression: self.execute_subscript_expression,
+            ObjectFunctionCall: self.execute_object_function_call,
         }
 
     def execute_literal_expression(self, node: LiteralExpression, context: SandboxContext) -> Any:
@@ -119,8 +124,20 @@ class ExpressionExecutor(BaseExecutor):
                 except Exception:
                     pass
 
+            try:
+                parts = name.split(".")
+                result = None
+                for part in parts:
+                    if result is None:
+                        result = context._state[part]
+                    else:
+                        result = Misc.get_field(result, part)
+                if result is not None:
+                    return result
+            except Exception as e:
+                raise SandboxError(f"Error accessing variable '{name}': Variable '{name}' not found in context") from e
             # If still not found, raise the original error
-            raise SandboxError(f"Error accessing variable '{name}': Variable '{name}' not found")
+            raise SandboxError(f"Error accessing variable '{name}': Variable '{name}' not found in context")
 
     def execute_binary_expression(self, node: BinaryExpression, context: SandboxContext) -> Any:
         """Execute a binary expression.
@@ -332,6 +349,146 @@ class ExpressionExecutor(BaseExecutor):
             return target[node.attribute]
 
         raise AttributeError(f"'{type(target).__name__}' object has no attribute '{node.attribute}'")
+
+    def execute_object_function_call(self, node: ObjectFunctionCall, context: SandboxContext) -> Any:
+        """Execute an object method call expression.
+        
+        This method handles the execution of object method calls (e.g., obj.method(args))
+        by evaluating the target object, retrieving the method, and calling it with the
+        provided arguments. It supports both synchronous and asynchronous methods.
+        
+        The execution process:
+        1. Evaluate the target object expression to get the actual object
+        2. Get the method from the object using getattr() or dict access
+        3. Verify the method is callable
+        4. Process and convert arguments from AST format to Python format
+        5. Check if the method is async (coroutine function)
+        6. Call the method with proper async/sync handling and error handling
+        7. Return the method's result
+        
+        Async Method Support:
+        --------------------
+        The method automatically detects async methods using inspect.iscoroutinefunction()
+        and executes them using Misc.safe_asyncio_run(), which handles:
+        - Running async methods in the appropriate event loop
+        - Proper exception propagation from async contexts
+        - Thread-safe execution in sync contexts
+        
+        Argument Processing:
+        -------------------
+        Arguments are stored in the AST as a dictionary with special keys:
+        - "__positional": List of positional arguments (if any)
+        - Other keys: Keyword arguments with their names as keys
+        
+        The method converts these to standard Python *args and **kwargs format
+        for the method call.
+        
+        Object Support:
+        --------------
+        Supports method calls on:
+        - Regular Python objects (using getattr)
+        - Dictionary objects (using dict key access for callable values)
+        - Any object that implements the method as an attribute
+        - Both sync and async methods on any of the above
+        
+        Error Handling:
+        --------------
+        - AttributeError: If the method doesn't exist on the object
+        - SandboxError: If method call fails or arguments are invalid
+        - TypeError: If the found attribute is not callable
+        - Async exceptions are properly propagated through Misc.safe_asyncio_run
+        
+        Examples:
+        --------
+        - `websearch.list_tools()` -> calls list_tools() on websearch object (sync)
+        - `obj.add(10)` -> calls add(10) on obj (sync)
+        - `api.async_query("data")` -> calls async method using safe_asyncio_run (async)
+        - `dict_obj.method()` -> calls method stored in dict_obj["method"] (sync/async)
+
+        Args:
+            node: The object function call expression to execute
+            context: The execution context
+
+        Returns:
+            The result of calling the method on the object
+            
+        Raises:
+            AttributeError: If the object doesn't have the specified method
+            SandboxError: If the method call fails or arguments are invalid
+        """
+        # Get the target object
+        target = self.parent.execute(node.object, context)
+
+        # Get the method from the object
+        if hasattr(target, node.method_name):
+            method = getattr(target, node.method_name)
+            
+            # Check if the method is callable
+            if callable(method):
+                # Convert arguments to the format expected by the method
+                args = []
+                kwargs = {}
+                
+                # Process the arguments from the node
+                for key, value in node.args.items():
+                    if key == "__positional":
+                        # Handle positional arguments
+                        if isinstance(value, list):
+                            for arg in value:
+                                args.append(self.parent.execute(arg, context))
+                        else:
+                            args.append(self.parent.execute(value, context))
+                    else:
+                        # Handle keyword arguments
+                        kwargs[key] = self.parent.execute(value, context)
+                
+                # Call the method
+                try:
+                    # Check if the method is an async function (coroutine function)
+                    if inspect.iscoroutinefunction(method):
+                        # Use Misc.safe_asyncio_run for async methods
+                        return Misc.safe_asyncio_run(method, *args, **kwargs)
+                    else:
+                        # Regular synchronous method call
+                        return method(*args, **kwargs)
+                except Exception as e:
+                    raise SandboxError(f"Error calling method '{node.method_name}' on {type(target).__name__}: {e}")
+            else:
+                # Method exists but is not callable - return it
+                return method
+        
+        # Support dictionary access with method-like syntax
+        if isinstance(target, dict) and node.method_name in target:
+            method = target[node.method_name]
+            if callable(method):
+                # Convert arguments as above
+                args = []
+                kwargs = {}
+                
+                for key, value in node.args.items():
+                    if key == "__positional":
+                        if isinstance(value, list):
+                            for arg in value:
+                                args.append(self.parent.execute(arg, context))
+                        else:
+                            args.append(self.parent.execute(value, context))
+                    else:
+                        kwargs[key] = self.parent.execute(value, context)
+                
+                try:
+                    # Check if the method is an async function (coroutine function)
+                    if inspect.iscoroutinefunction(method):
+                        # Use Misc.safe_asyncio_run for async methods
+                        return Misc.safe_asyncio_run(method, *args, **kwargs)
+                    else:
+                        # Regular synchronous method call
+                        return method(*args, **kwargs)
+                except Exception as e:
+                    raise SandboxError(f"Error calling method '{node.method_name}' on dict: {e}")
+            else:
+                return method
+
+        raise AttributeError(f"'{type(target).__name__}' object has no method '{node.method_name}'")
 
     def execute_subscript_expression(self, node: SubscriptExpression, context: SandboxContext) -> Any:
         """Execute a subscript expression (indexing).

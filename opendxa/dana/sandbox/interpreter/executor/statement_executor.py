@@ -28,6 +28,7 @@ from opendxa.dana.sandbox.parser.ast import (
     ImportStatement,
     PassStatement,
     RaiseStatement,
+    UseStatement,
 )
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
@@ -61,6 +62,7 @@ class StatementExecutor(BaseExecutor):
             ImportStatement: self.execute_import_statement,
             PassStatement: self.execute_pass_statement,
             RaiseStatement: self.execute_raise_statement,
+            UseStatement: self.execute_use_statement,
         }
 
     def execute_assignment(self, node: Assignment, context: SandboxContext) -> Any:
@@ -211,3 +213,31 @@ class StatementExecutor(BaseExecutor):
         else:
             # Convert to string and raise as runtime error
             raise RuntimeError(str(value))
+
+    def execute_use_statement(self, node: UseStatement, context: SandboxContext) -> Any:
+        """Execute a use statement.
+
+        Args:
+            node: The use statement to execute
+            context: The execution context
+
+        Returns:
+            A resource object that can be used to call methods
+        """
+        # Evaluate the arguments
+        args = [self.parent.execute(arg, context) for arg in node.args]
+        kwargs = {k: self.parent.execute(v, context) for k, v in node.kwargs.items()}
+        target = node.target
+        if target is not None:
+            target = target.name
+            target_name = target.split(".")[-1]
+            kwargs["_name"] = target_name
+
+
+        if self.function_registry is not None:
+            result = self.function_registry.call("use", context, None, *args, **kwargs)
+        else:
+            self.warning(f"No function registry available for {self.__class__.__name__}.execute_use_statement")
+            result = None
+
+        return result

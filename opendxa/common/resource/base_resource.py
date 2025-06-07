@@ -28,6 +28,7 @@ from opendxa.common.mixins.configurable import Configurable
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.mixins.queryable import Queryable
 from opendxa.common.types import BaseRequest, BaseResponse
+from ..utils.misc import Misc
 
 T = TypeVar("T", bound="BaseResource")
 
@@ -123,3 +124,10 @@ class BaseResource(Configurable, Queryable, ToolCallable):
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         await self.cleanup()
+
+    def __enter__(self) -> "BaseResource":
+        Misc.safe_asyncio_run(self.__aenter__)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        Misc.safe_asyncio_run(self.__aexit__, exc_type, exc_val, exc_tb)
