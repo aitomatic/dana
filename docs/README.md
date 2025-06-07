@@ -60,6 +60,20 @@ Start here: [Research Overview](for-researchers/README.md#research-overview)
 
 ---
 
+### I'm interested in investment opportunities
+→ **[For Investors](for-investors/README.md)** - The first true runtime for the AI era
+*For accredited investors and principals only (no agents or intermediaries)*
+
+What you'll find:
+- How adaptive functions transform critical domains like semiconductor manufacturing and financial trading
+- Technical foundation that enables self-learning systems with deterministic control
+- $30B+ immediately addressable market in enterprise AI infrastructure
+- Applications in regulated, mission-critical industries
+
+Contact: [investors@aitomatic.com](mailto:investors@aitomatic.com)
+
+---
+
 ## What is OpenDXA?
 
 OpenDXA (Domain-eXpert Agent) Framework transforms AI development from brittle, unpredictable systems to reliable, auditable automations. Built on the Dana language - a neurosymbolic programming environment - OpenDXA enables intelligent multi-agent systems with domain expertise.
