@@ -55,7 +55,7 @@ def test_na_file(na_file):
         llm_resource = LLMResource()
         # Use mock for all LLM calls
         llm_resource = llm_resource.with_mock_llm_call(True)
-        context.set("system:llm_resource", llm_resource)
+        context.set("system.llm_resource", llm_resource)
 
     # Parse the program
     program = parse_program(program_text)

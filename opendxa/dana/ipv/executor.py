@@ -702,9 +702,9 @@ Format your output as JSON:
         if hasattr(context, "llm_resource") and context.llm_resource:
             llm_resource = context.llm_resource
         else:
-            # Try to get from system:llm_resource
+            # Try to get from system.llm_resource
             try:
-                llm_resource = context.get("system:llm_resource") if context else None
+                llm_resource = context.get("system.llm_resource") if context else None
                 if not llm_resource:
                     llm_resource = LLMResource()
             except Exception:
