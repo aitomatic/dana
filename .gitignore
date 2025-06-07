@@ -31,7 +31,6 @@ configs/
 .vscode/
 *.swp
 *.swo
-.cursorrules
 .aider*
 .claude/
 

@@ -29,6 +29,29 @@ This is not a peripheral issue. It is the **central challenge** of turning gener
 
 ---
 
+## POET Execution Flow
+
+The POET execution model provides a structured, learning-enabled approach to AI interactions:
+
+```mermaid
+graph LR
+    A[Input Data] --> B[Perceive<br/>Fault-tolerant<br/>Context Processing]
+    B --> C[Operate<br/>Business Logic<br/>Engineer-Written]
+    C --> D[Encode<br/>Error-free<br/>Deterministic Output]
+    D --> E[Output Results]
+    D --> F[Train<br/>Self-Learning<br/>Feedback Loop]
+    F --> B
+    
+    style B fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px,color:#000
+    style C fill:#fff3e0,stroke:#f57c00,stroke-width:3px,color:#000
+    style D fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style F fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#000
+```
+
+This flow ensures that engineers focus on writing business logic (Operate) while the runtime automatically handles fault-tolerant input processing (Perceive), reliable output generation (Encode), and continuous learning (Train).
+
+---
+
 ## The Neurosymbolic and Learning Opportunity
 
 The promise of **neurosymbolic systems** is to **combine the flexibility of learning-based models with the rigor of symbolic computation**. The POET model extends this by explicitly incorporating a learning cycle.

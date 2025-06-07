@@ -2,14 +2,14 @@
 
 ## 1. Purpose and Goals
 
-The `CodeContextAnalyzer` is a critical component of the Dana runtime, specifically designed to support the **Perceive** phase of the POV (Perceive → Operate → Validate) execution model. Its primary goal is to extract rich, actionable context from the Dana source code surrounding a function call, particularly for POV-enabled functions.
+The `CodeContextAnalyzer` is a critical component of the Dana runtime, specifically designed to support the **Perceive** phase of the POET (Perceive → Operate → Encode → Train) execution model. Its primary goal is to extract rich, actionable context from the Dana source code surrounding a function call, particularly for POET-enabled functions.
 
 This contextual information allows the `Perceive` phase to:
 
 * Infer implicit intent: Understand what the user likely wants based on how a function is called, even if the direct arguments are ambiguous.
 * Optimize inputs: Tailor prompts or arguments for the `Operate` phase based on expected output types or surrounding logic. For example, it can inform prompt engineering for LLM calls by providing constraints or desired output formats.
 * Enhance fault tolerance: Provide clues for how to interpret or recover from potentially malformed inputs.
-* Enable adaptive behavior: Allow POV-decorated functions to behave differently based on where and how they are invoked in the code.
+* Enable adaptive behavior: Allow POET-decorated functions to behave differently based on where and how they are invoked in the code.
 
 Essentially, the `CodeContextAnalyzer` provides the "eyes" for the `Perceive` stage, allowing it to "read" the code and make more intelligent decisions.
 
@@ -79,25 +79,25 @@ This structure is illustrative and can be refined. The key is to provide a rich,
 
 The `CodeContextAnalyzer` will employ a combination of strategies to extract information:
 
-* Lexical Analysis/Regex: For quickly finding comments, keywords, and basic code structures around the call site, especially if an AST is not available or too slow for rapid C.P.O.V. cycles. This is good for `source_extracts`.
+* Lexical Analysis/Regex: For quickly finding comments, keywords, and basic code structures around the call site, especially if an AST is not available or too slow for rapid C.P.O.E.T. cycles. This is good for `source_extracts`.
 * Lightweight Parsing/Heuristics: To identify the `call_structure` (e.g., if it's an assignment, what variable is it assigned to, any type hints). This might involve pattern matching on common Dana syntax constructs without full parsing.
 * AST Traversal (if AST node is provided): If an AST node for the call site (or the whole file) is available, this would be the most robust way to determine `call_structure`, `lexical_context` (like enclosing function/class), and relationships between code elements.
 * Scope Analysis (if `current_scope_details` provided): Leverages runtime information about visible variables and their types.
-* Heuristic-Based Intent Inference: Combining information from comments, variable names, type hints (e.g., `x: list[str] = my_pav_func(...)` strongly suggests `expected_output_type` is `list[str]`), and surrounding code patterns to populate `inferred_intent_hints`.
+* Heuristic-Based Intent Inference: Combining information from comments, variable names, type hints (e.g., `x: list[str] = my_poet_func(...)` strongly suggests `expected_output_type` is `list[str]`), and surrounding code patterns to populate `inferred_intent_hints`.
 
 The analyzer should be designed to be:
-* Fast: Context analysis should not significantly slow down POV execution.
+* Fast: Context analysis should not significantly slow down POET execution.
 * Robust: Gracefully handle incomplete or unusual code patterns.
 * Configurable/Extensible: Allow new heuristics or analysis techniques to be added.
 
-## 5. Integration with POV
+## 5. Integration with POET
 
-The POV execution framework will invoke the `CodeContextAnalyzer` during its **Perceive** phase.
+The POET execution framework will invoke the `CodeContextAnalyzer` during its **Perceive** phase.
 
-1. When a POV-decorated Python function is called, the POV machinery (before calling the user's `perceive` Dana function) would gather the necessary inputs (file path, line/col of the *Dana call site* that ultimately invoked the Python function).
+1. When a POET-decorated Python function is called, the POET machinery (before calling the user's `perceive` Dana function) would gather the necessary inputs (file path, line/col of the *Dana call site* that ultimately invoked the Python function).
 2. It calls `CodeContextAnalyzer.analyze(file_path, line, col, source_code_snapshot, ...)`
 3. The resulting `CodeSiteContext` object is then made available to the Dana `perceive` function, typically as part of the `perceived_input` structure or a dedicated context variable (e.g., `code_site_context`).
-4. The `perceive` Dana function can then use this `CodeSiteContext` to inform its logic (e.g., extract `expected_output_type_from_assignment` to set `pov_status.expected_output_type`, or use `keywords_in_comments` to modify a prompt).
+4. The `perceive` Dana function can then use this `CodeSiteContext` to inform its logic (e.g., extract `expected_output_type_from_assignment` to set `poet_status.expected_output_type`, or use `keywords_in_comments` to modify a prompt).
 
 ## 6. Examples
 
@@ -106,7 +106,7 @@ The POV execution framework will invoke the `CodeContextAnalyzer` during its **P
 Dana Code:
 ```dana
 # Function to get user details
-@pov(perceive="Perceive::UserDetails", validate="Validate::UserDetails")
+@poet(perceive="Perceive::UserDetails", encode="Encode::UserDetails")
 def get_user_data(user_id: string) -> dict:
  # Act: Python code to fetch from DB
  pass
@@ -134,7 +134,7 @@ user_profile: dict[string, string] = get_user_data("user123")
  // ...
 }
 ```
-The `Perceive::UserDetails` Dana function could then use `code_site_context.inferred_intent_hints.expected_output_type_from_assignment` to populate `pov_status.expected_output_type`.
+The `Perceive::UserDetails` Dana function could then use `code_site_context.inferred_intent_hints.expected_output_type_from_assignment` to populate `poet_status.expected_output_type`.
 
 ### Example 2: Using Comments to Guide Behavior
 
@@ -160,7 +160,7 @@ archive_summary: string = reason("Summarize this long article: " + article_conte
  // ...
 }
 ```
-The `Perceive` stage for `reason` (which is POV-enabled) could use these `keywords_in_comments` to modify the prompt sent to the LLM, e.g., "Summarize this long article *very concisely for a mobile view*: ..."
+The `Perceive` stage for `reason` (which is POET-enabled) could use these `keywords_in_comments` to modify the prompt sent to the LLM, e.g., "Summarize this long article *very concisely for a mobile view*: ..."
 
 ## 7. Open Questions & Future Considerations
 

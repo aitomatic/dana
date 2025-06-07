@@ -2,6 +2,16 @@
     // === Explorer Settings ===
     // Show hidden files and folders
     "files.exclude": {
+        "**/Makefile": true,
+        "**/mkdocs.yml": true,
+        "**/pytest.ini": true,
+        "**/.env.example": true,
+        "**/.cursorrules": true,
+        "**/.markdownlint.yaml": true,
+        "**/.pre-commit-config.yaml": true,
+        "**/.python-version": true,
+        "**/.gitignore": true,
+        "**/.github": true,
         "**/.claude": true,
         "**/.git": true,
         "**/.svn": true,

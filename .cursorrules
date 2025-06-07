@@ -1,0 +1,151 @@
+# OpenDXA - Domain-Expert Agent Framework
+
+Cursor AI Configuration and Guidelines
+
+## Project Context
+- OpenDXA is a framework for building domain-expert multi-agent systems
+- Built on Dana (Domain-Aware NeuroSymbolic Architecture) language
+- Core components: OpenDXA Framework, Dana Language, DANKE Engine
+- Primary language: Python 3.12+
+- Uses uv for dependency management
+@file pyproject.toml
+@file .python-version
+
+## Coding Standards
+- Follow PEP 8 style guide for Python code
+- Use 4-space indentation (no tabs)
+- Maximum line length: 100 characters
+- Use type hints for all function parameters and return values
+- Use docstrings for all public modules, classes, and functions
+- Prefer f-strings over .format() or % formatting
+
+### Linting Requirements
+- All code must pass Ruff linting checks before being accepted
+- Line length limit is 140 characters (configured in pyproject.toml)
+- Must follow enabled rules in pyproject.toml:
+  - pycodestyle errors (E)
+  - pyflakes (F)
+  - isort for import sorting (I)
+  - bugbear for common gotchas (B)
+  - pyupgrade for modern Python (UP)
+  - naming conventions for classes & functions (N801, N803, N804)
+  - undefined names and unused variables/imports (F821, F822, F841, F401)
+- Run `uv run ruff check .` to verify compliance
+- Run `uv run ruff check --fix .` to auto-fix issues
+
+### Type Hint Conventions (PEP 604 Style)
+- Use modern type hinting syntax (PEP 604) for all code
+- Use built-in types in lowercase: dict, list, set (not Dict, List, Set)
+- Use | for union types: str | None (not Optional[str])
+- Use | for multiple types: str | dict (not Union[str, dict])
+- Use None as the second type: str | None (not None | str)
+- Only import typing.TYPE_CHECKING, Never, NoReturn, TypeVar, TypeAlias, and Protocol from typing
+- Use built-in generics: dict[str, int] (not Dict[str, int])
+
+## Best Practices and Patterns
+- Use dataclasses or Pydantic models for data structures
+- Prefer composition over inheritance
+- Use async/await for I/O operations
+- Follow SOLID principles
+- Use dependency injection where appropriate
+- Implement proper error handling with custom exceptions
+
+### Diagnostic Verification
+- For complex issues, verify diagnoses before making code changes
+- Add logging statements to confirm assumptions
+- Write temporary test cases to validate behavior
+- Run relevant test suites to ensure no regressions
+- Use debugger breakpoints when needed
+- Document verification steps taken
+
+### Temporary Files and Testing
+- Place all temporary files and test artifacts under tmp/
+- Never create test files in project root
+- Clean up temporary files after testing
+- Use meaningful prefixes for temp files (e.g., tmp_test_, tmp_debug_)
+- Keep temporary test files isolated from production code
+- Document purpose of temporary files in comments
+
+## Documentation Requirements
+- All public APIs must have docstrings following Google style
+- Include type hints in docstrings
+- Document any non-obvious algorithms or complex logic
+- Keep docstrings up to date with code changes
+- Add examples for complex functionality
+
+## File Structure
+- Place core framework code in opendxa/
+- Tests go in tests/ directory matching source structure
+- Examples in examples/ directory
+- Documentation in docs/
+- Scripts and tools in bin/
+- Use __init__.py files for package organization
+
+## Module-Specific Rules
+
+### Dana Language (opendxa/dana/)
+- Follow Dana language specification strictly
+- Use Dana's built-in error handling mechanisms
+- Document all language extensions thoroughly
+- Test against Dana's reference implementation
+
+### Agent Framework (opendxa/agent/)
+- Use capability-based architecture
+- Follow resource management patterns
+- Implement proper state management
+- Document agent interactions clearly
+
+### Common Utilities (opendxa/common/)
+- Keep utilities generic and reusable
+- Document performance implications
+- Use appropriate design patterns
+- Implement proper error handling
+
+## Common Methods and Utilities
+- Use logging from opendxa.common.utils.logging
+- Use configuration from opendxa.common.config
+- Use graph operations from opendxa.common.graph
+- Use IO utilities from opendxa.common.io
+
+## Known Issues and Workarounds
+- Avoid direct LLM calls without Dana wrappers
+- Use proper error handling for async operations
+- Be careful with circular imports
+- Handle resource cleanup properly
+
+## Testing Requirements
+- Write unit tests for all new code
+- Use pytest for testing
+- Mock external dependencies
+- Test edge cases and error conditions
+- Maintain test coverage above 80%
+
+## Security Guidelines
+- Never commit API keys or secrets
+- Use environment variables for configuration
+- Validate all inputs
+- Follow secure coding practices
+- Use proper authentication and authorization
+
+### DanaSandbox Security
+- Never expose DanaSandbox instances to untrusted code through careful interface design
+- Validate all data crossing sandbox boundaries
+- Keep sandbox initialization code isolated from untrusted user code
+- Use strict type checking for sandbox interfaces
+- Document security assumptions in sandbox-related code
+- Run sandbox operations in isolated contexts when dealing with untrusted code
+- Clearly document when code assumes a trusted Python runtime environment
+- When passing sandbox references to Python runtime, ensure and document that it is a trusted environment
+
+## Performance Considerations
+- Profile code for performance bottlenecks
+- Use appropriate data structures
+- Cache expensive operations
+- Handle memory management properly
+- Consider async operations for I/O
+
+## References
+@file .gitignore
+@file pyproject.toml
+@file Makefile
+@file README.md 

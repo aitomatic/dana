@@ -3,7 +3,7 @@
   "displayName": "Dana AI Agent Language",
   "description": "Language support for Dana AI Agent Language (.na files)",
   "version": "0.1.0",
-  "publisher": "Aitomatic, Inc.",
+  "publisher": "Aitomatic",
   "icon": "images/dana-logo.jpg",
   "repository": {
     "type": "git",

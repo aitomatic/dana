@@ -45,6 +45,7 @@ nav:
       - Evaluators: for-evaluators/README.md
       - Researchers: for-researchers/README.md
       - Contributors: for-contributors/README.md
+      - Investors: for-investors/README.md
     - More:
       - Design: design/README.md
       - Roadmap: ROADMAP.md
@@ -58,7 +59,7 @@ nav:
       - Overview: for-engineers/reference/README.md
       - Dana Syntax: for-engineers/reference/dana-syntax.md
       - REPL Guide: for-engineers/reference/repl-guide.md
-      - POV Usage Guide: for-engineers/reference/pov-usage-guide.md
+      - POET Usage Guide: for-engineers/reference/poet-usage-guide.md
       - API Reference:
         - Overview: for-engineers/reference/api/README.md
         - Core Functions: for-engineers/reference/api/core-functions.md
@@ -110,6 +111,8 @@ nav:
     - Extending:
       - Overview: for-contributors/extending/README.md
       - Extension Development: for-contributors/extending/extension-development.md
+  - For Investors:
+    - Overview: for-investors/README.md
   - Design:
     - Overview: design/README.md
     - Dana Philosophy:
@@ -175,6 +178,7 @@ plugins:
   - git-revision-date-localized:
       type: datetime
       enable_creation_date: true
+      enable_git_follow: false
 
 # Markdown extensions
 markdown_extensions:
