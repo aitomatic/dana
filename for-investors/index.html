@@ -575,7 +575,7 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../for-engineers/reference/pov-usage-guide/">
+<a class="md-nav__link" href="../for-engineers/reference/pov-usage-guide.md">
 <span class="md-ellipsis">
     POV Usage Guide
     
@@ -1964,6 +1964,18 @@
 <li><strong>Train</strong>: Continuous adaptation based on feedback signals</li>
 </ul>
 <p><strong>This is the breakthrough</strong>: Engineers write business logic once. The runtime handles perception, encoding, and training automatically—creating functions that improve themselves while maintaining enterprise reliability.</p>
+<pre class="mermaid"><code>graph LR
+    A[Input Data] --&gt; B[Perceive&lt;br/&gt;Fault-tolerant&lt;br/&gt;Context Processing]
+    B --&gt; C[Operate&lt;br/&gt;Business Logic&lt;br/&gt;Engineer-Written]
+    C --&gt; D[Encode&lt;br/&gt;Error-free&lt;br/&gt;Deterministic Output]
+    D --&gt; E[Output Results]
+    D --&gt; F[Train&lt;br/&gt;Self-Learning&lt;br/&gt;Feedback Loop]
+    F --&gt; B
+
+    style B fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px,color:#000
+    style C fill:#fff3e0,stroke:#f57c00,stroke-width:3px,color:#000
+    style D fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style F fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#000</code></pre>
 <h2 id="proven-roi-early-adopters-are-already-winning">Proven ROI: Early Adopters Are Already Winning<a class="headerlink" href="#proven-roi-early-adopters-are-already-winning" title="Permanent link">¶</a></h2>
 <p><strong>Semiconductor Manufacturing</strong>: 15-25% yield improvements worth $50M+ annually per fab
 <strong>Financial Services</strong>: 60% compliance cost reduction with improved accuracy

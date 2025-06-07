@@ -1062,7 +1062,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../for-engineers/reference/pov-usage-guide/" class="md-nav__link">
+      <a href="../../../for-engineers/reference/pov-usage-guide.md" class="md-nav__link">
         
   
   
@@ -3167,9 +3167,9 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#5-guiding-function-output-type-hinting-and-pov" class="md-nav__link">
+  <a href="#5-guiding-function-output-type-hinting-and-poet" class="md-nav__link">
     <span class="md-ellipsis">
-      5. Guiding Function Output: Type Hinting and POV
+      5. Guiding Function Output: Type Hinting and POET
     </span>
   </a>
   
@@ -3204,9 +3204,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#63-decorators-for-pov-perceive-operate-validate" class="md-nav__link">
+  <a href="#63-decorators-for-poet-perceive-operate-encode-train" class="md-nav__link">
     <span class="md-ellipsis">
-      6.3. Decorators for POV (Perceive → Operate → Validate)
+      6.3. Decorators for POET (Perceive → Operate → Encode → Train)
     </span>
   </a>
   
@@ -4371,9 +4371,9 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#5-guiding-function-output-type-hinting-and-pov" class="md-nav__link">
+  <a href="#5-guiding-function-output-type-hinting-and-poet" class="md-nav__link">
     <span class="md-ellipsis">
-      5. Guiding Function Output: Type Hinting and POV
+      5. Guiding Function Output: Type Hinting and POET
     </span>
   </a>
   
@@ -4408,9 +4408,9 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#63-decorators-for-pov-perceive-operate-validate" class="md-nav__link">
+  <a href="#63-decorators-for-poet-perceive-operate-encode-train" class="md-nav__link">
     <span class="md-ellipsis">
-      6.3. Decorators for POV (Perceive → Operate → Validate)
+      6.3. Decorators for POET (Perceive → Operate → Encode → Train)
     </span>
   </a>
   
@@ -4584,21 +4584,21 @@ Example: Polymorphic <code>describe</code> function
 </span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a># describe([1,2,3]) # This would cause a runtime error if no describe(item: list) is defined.
 </span></code></pre></div>
 <h3 id="33-return-types">3.3. Return Types<a class="headerlink" href="#33-return-types" title="Permanent link">&para;</a></h3>
-<p>Each signature of a polymorphic function can have its own distinct return type. The caller should be aware of this, or the type system and POV framework's <code>expected_output_type</code> mechanism (for POV-enabled functions) can guide the expected return.</p>
+<p>Each signature of a polymorphic function can have its own distinct return type. The caller should be aware of this, or the type system and POET framework's <code>expected_output_type</code> mechanism (for POET-enabled functions) can guide the expected return.</p>
 <h2 id="4-built-in-and-core-functions">4. Built-in and Core Functions<a class="headerlink" href="#4-built-in-and-core-functions" title="Permanent link">&para;</a></h2>
 <p>Dana provides a set of built-in functions (e.g., <code>len()</code>, <code>print()</code>, <code>int()</code>, <code>str()</code>) and core functions that are essential for agent operations (e.g., <code>reason()</code>, <code>log()</code>). These functions are globally available.</p>
 <p>Their specific signatures and behaviors are documented in the API reference materials.</p>
-<h2 id="5-guiding-function-output-type-hinting-and-pov">5. Guiding Function Output: Type Hinting and POV<a class="headerlink" href="#5-guiding-function-output-type-hinting-and-pov" title="Permanent link">&para;</a></h2>
+<h2 id="5-guiding-function-output-type-hinting-and-poet">5. Guiding Function Output: Type Hinting and POET<a class="headerlink" href="#5-guiding-function-output-type-hinting-and-poet" title="Permanent link">&para;</a></h2>
 <p>Previously, a system-level variable <code>system:__dana_desired_type</code> was used as a general mechanism for callers to suggest a desired return structure or type, especially for dynamic functions like those interacting with LLMs. This mechanism is now deprecated in favor of more integrated approaches:</p>
 <ol>
 <li>
 <p><strong>Standard Type Hinting</strong>: For regular Dana functions, the primary way to indicate expected return types is through the function's own return type annotation (e.g., <code>-&gt; MyStruct</code>) and the type hint at the assignment site (e.g., <code>local:my_var: MyStruct = my_func()</code>). The Dana type system will enforce these where possible.</p>
 </li>
 <li>
-<p><strong>POV's <code>expected_output_type</code></strong>: For functions using the POV (Perceive → Operate → Validate) execution model, the desired output type is a formal part of the POV configuration. It can be specified as a parameter to the <code>@pov</code> decorator (e.g., <code>@pov(expected_output_type=MyStruct, ...)</code>). This <code>expected_output_type</code> is then available in the <code>pov_status</code> context and is used by the <code>Validate</code> phase to ensure the function's output conforms to the expectation.</p>
+<p><strong>POET's <code>expected_output_type</code></strong>: For functions using the POET (Perceive → Operate → Encode → Train) execution model, the desired output type is a formal part of the POET configuration. It can be specified as a parameter to the <code>@poet</code> decorator (e.g., <code>@poet(expected_output_type=MyStruct, ...)</code>). This <code>expected_output_type</code> is then available in the <code>poet_status</code> context and is used by the <code>Encode</code> phase to ensure the function's output conforms to the expectation.</p>
 </li>
 </ol>
-<p>This shift provides a clearer and more robust way to manage function return types, either through static type checking or through the explicit contract of the POV framework for functions requiring advanced, robust execution.</p>
+<p>This shift provides a clearer and more robust way to manage function return types, either through static type checking or through the explicit contract of the POET framework for functions requiring advanced, robust execution.</p>
 <h2 id="6-decorators">6. Decorators<a class="headerlink" href="#6-decorators" title="Permanent link">&para;</a></h2>
 <p>Decorators provide a way to modify or enhance functions and methods in a declarative way. They are a form of metaprogramming where a function (the decorator) wraps another function to extend its behavior without explicitly modifying its core implementation.</p>
 <h3 id="61-syntax">6.1. Syntax<a class="headerlink" href="#61-syntax" title="Permanent link">&para;</a></h3>
@@ -4636,67 +4636,67 @@ Example: A simple logging decorator
 </span><span id="__span-9-13"><a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a># Calling add(5, 3) will now also produce log messages.
 </span><span id="__span-9-14"><a id="__codelineno-9-14" name="__codelineno-9-14" href="#__codelineno-9-14"></a>local:sum_val = add(5,3)
 </span></code></pre></div></p>
-<h3 id="63-decorators-for-pov-perceive-operate-validate">6.3. Decorators for POV (Perceive → Operate → Validate)<a class="headerlink" href="#63-decorators-for-pov-perceive-operate-validate" title="Permanent link">&para;</a></h3>
-<p>A key application of decorators in Dana is to enable and configure the <strong>POV (Perceive → Operate → Validate)</strong> execution model for user-defined Dana functions. This allows Dana functions to benefit from robust, context-aware execution with built-in retry and validation logic.</p>
-<p>Refer to the full <a href="../../02_dana_runtime_and_execution/pov_execution_model/">POV Execution Model documentation</a> for details on POV.</p>
+<h3 id="63-decorators-for-poet-perceive-operate-encode-train">6.3. Decorators for POET (Perceive → Operate → Encode → Train)<a class="headerlink" href="#63-decorators-for-poet-perceive-operate-encode-train" title="Permanent link">&para;</a></h3>
+<p>A key application of decorators in Dana is to enable and configure the <strong>POET (Perceive → Operate → Encode → Train)</strong> execution model for user-defined Dana functions. This allows Dana functions to benefit from robust, context-aware execution with built-in retry and encoding logic.</p>
+<p>Refer to the full <a href="../../02_dana_runtime_and_execution/pov_execution_model/">POET Execution Model documentation</a> for details on POET.</p>
 <p>Conceptual Usage:</p>
-<p>Dana might provide a built-in <code>@pov</code> decorator or allow for custom POV-configuring decorators.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a># Example: Using a hypothetical built-in @pov decorator
+<p>Dana might provide a built-in <code>@poet</code> decorator or allow for custom POET-configuring decorators.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a># Example: Using a hypothetical built-in @poet decorator
 </span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>
 </span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a># Dana function to be used for the &#39;Perceive&#39; phase
 </span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>def my_perceiver(raw_input: str) -&gt; dict:
 </span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a> # ... normalize input, gather context ...
 </span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a> local:perceived = {&quot;text&quot;: raw_input.lower(), &quot;length&quot;: len(raw_input)}
-</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a> # This &#39;perceived&#39; dict becomes pov_status.perceived_input for Operate and Validate
+</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a> # This &#39;perceived&#39; dict becomes poet_status.perceived_input for Operate and Encode
 </span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a> return local:perceived
 </span><span id="__span-10-9"><a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>
-</span><span id="__span-10-10"><a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a># Dana function to be used for the &#39;Validate&#39; phase
-</span><span id="__span-10-11"><a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>def my_validator(operate_output: any, pov_status: dict) -&gt; bool:
-</span><span id="__span-10-12"><a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a> # pov_status contains {attempt, last_failure, max_retries, successful, perceived_input, raw_output, expected_output_type}
-</span><span id="__span-10-13"><a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a> # Here, operate_output is the same as pov_status.raw_output
-</span><span id="__span-10-14"><a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a> log(f&quot;Attempt {pov_status.attempt} to validate: {operate_output} against type {pov_status.expected_output_type}&quot;) # Assuming &#39;log&#39; is a core/built-in function
+</span><span id="__span-10-10"><a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a># Dana function to be used for the &#39;Encode&#39; phase
+</span><span id="__span-10-11"><a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>def my_encoder(operate_output: any, poet_status: dict) -&gt; bool:
+</span><span id="__span-10-12"><a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a> # poet_status contains {attempt, last_failure, max_retries, successful, perceived_input, raw_output, expected_output_type}
+</span><span id="__span-10-13"><a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a> # Here, operate_output is the same as poet_status.raw_output
+</span><span id="__span-10-14"><a id="__codelineno-10-14" name="__codelineno-10-14" href="#__codelineno-10-14"></a> log(f&quot;Attempt {poet_status.attempt} to encode: {operate_output} against type {poet_status.expected_output_type}&quot;) # Assuming &#39;log&#39; is a core/built-in function
 </span><span id="__span-10-15"><a id="__codelineno-10-15" name="__codelineno-10-15" href="#__codelineno-10-15"></a>
-</span><span id="__span-10-16"><a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a> # Example: Check against a specific type if provided in pov_status
-</span><span id="__span-10-17"><a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a> if pov_status.expected_output_type and typeof(operate_output) != pov_status.expected_output_type:
-</span><span id="__span-10-18"><a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a> pov_status.last_failure = f&quot;Output type {typeof(operate_output)} does not match expected type {pov_status.expected_output_type}.&quot;
+</span><span id="__span-10-16"><a id="__codelineno-10-16" name="__codelineno-10-16" href="#__codelineno-10-16"></a> # Example: Check against a specific type if provided in poet_status
+</span><span id="__span-10-17"><a id="__codelineno-10-17" name="__codelineno-10-17" href="#__codelineno-10-17"></a> if poet_status.expected_output_type and typeof(operate_output) != poet_status.expected_output_type:
+</span><span id="__span-10-18"><a id="__codelineno-10-18" name="__codelineno-10-18" href="#__codelineno-10-18"></a> poet_status.last_failure = f&quot;Output type {typeof(operate_output)} does not match expected type {poet_status.expected_output_type}.&quot;
 </span><span id="__span-10-19"><a id="__codelineno-10-19" name="__codelineno-10-19" href="#__codelineno-10-19"></a> return False
 </span><span id="__span-10-20"><a id="__codelineno-10-20" name="__codelineno-10-20" href="#__codelineno-10-20"></a>
-</span><span id="__span-10-21"><a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a> # Original example validation logic (can be combined with type check)
-</span><span id="__span-10-22"><a id="__codelineno-10-22" name="__codelineno-10-22" href="#__codelineno-10-22"></a> if typeof(operate_output) == &quot;str&quot; and len(operate_output) &gt; pov_status.perceived_input.length / 2:
+</span><span id="__span-10-21"><a id="__codelineno-10-21" name="__codelineno-10-21" href="#__codelineno-10-21"></a> # Original example encoding logic (can be combined with type check)
+</span><span id="__span-10-22"><a id="__codelineno-10-22" name="__codelineno-10-22" href="#__codelineno-10-22"></a> if typeof(operate_output) == &quot;str&quot; and len(operate_output) &gt; poet_status.perceived_input.length / 2:
 </span><span id="__span-10-23"><a id="__codelineno-10-23" name="__codelineno-10-23" href="#__codelineno-10-23"></a> return True
 </span><span id="__span-10-24"><a id="__codelineno-10-24" name="__codelineno-10-24" href="#__codelineno-10-24"></a> else:
-</span><span id="__span-10-25"><a id="__codelineno-10-25" name="__codelineno-10-25" href="#__codelineno-10-25"></a> pov_status.last_failure = &quot;Output string too short or not a string (and/or type mismatch).&quot;
+</span><span id="__span-10-25"><a id="__codelineno-10-25" name="__codelineno-10-25" href="#__codelineno-10-25"></a> poet_status.last_failure = &quot;Output string too short or not a string (and/or type mismatch).&quot;
 </span><span id="__span-10-26"><a id="__codelineno-10-26" name="__codelineno-10-26" href="#__codelineno-10-26"></a> return False
 </span><span id="__span-10-27"><a id="__codelineno-10-27" name="__codelineno-10-27" href="#__codelineno-10-27"></a>
-</span><span id="__span-10-28"><a id="__codelineno-10-28" name="__codelineno-10-28" href="#__codelineno-10-28"></a>@pov(
+</span><span id="__span-10-28"><a id="__codelineno-10-28" name="__codelineno-10-28" href="#__codelineno-10-28"></a>@poet(
 </span><span id="__span-10-29"><a id="__codelineno-10-29" name="__codelineno-10-29" href="#__codelineno-10-29"></a> perceive=my_perceiver, # Reference to a Dana function
-</span><span id="__span-10-30"><a id="__codelineno-10-30" name="__codelineno-10-30" href="#__codelineno-10-30"></a> validate=my_validator, # Reference to a Dana function
+</span><span id="__span-10-30"><a id="__codelineno-10-30" name="__codelineno-10-30" href="#__codelineno-10-30"></a> encode=my_encoder, # Reference to a Dana function
 </span><span id="__span-10-31"><a id="__codelineno-10-31" name="__codelineno-10-31" href="#__codelineno-10-31"></a> max_retries=2,
 </span><span id="__span-10-32"><a id="__codelineno-10-32" name="__codelineno-10-32" href="#__codelineno-10-32"></a> expected_output_type=&quot;str&quot; # Example: explicitly requesting a string output
 </span><span id="__span-10-33"><a id="__codelineno-10-33" name="__codelineno-10-33" href="#__codelineno-10-33"></a>)
-</span><span id="__span-10-34"><a id="__codelineno-10-34" name="__codelineno-10-34" href="#__codelineno-10-34"></a>def process_text_with_pov(data: str) -&gt; str: # &#39;data&#39; is the raw_input to my_perceiver
+</span><span id="__span-10-34"><a id="__codelineno-10-34" name="__codelineno-10-34" href="#__codelineno-10-34"></a>def process_text_with_poet(data: str) -&gt; str: # &#39;data&#39; is the raw_input to my_perceiver
 </span><span id="__span-10-35"><a id="__codelineno-10-35" name="__codelineno-10-35" href="#__codelineno-10-35"></a> # This is the &#39;Operate&#39; phase.
 </span><span id="__span-10-36"><a id="__codelineno-10-36" name="__codelineno-10-36" href="#__codelineno-10-36"></a> # It receives the output of &#39;my_perceiver&#39; as its input argument.
 </span><span id="__span-10-37"><a id="__codelineno-10-37" name="__codelineno-10-37" href="#__codelineno-10-37"></a> # In this setup, &#39;data&#39; would actually be the dictionary from my_perceiver.
-</span><span id="__span-10-38"><a id="__codelineno-10-38" name="__codelineno-10-38" href="#__codelineno-10-38"></a> # Let&#39;s assume POV handles passing perceived_input to Operate.
-</span><span id="__span-10-39"><a id="__codelineno-10-39" name="__codelineno-10-39" href="#__codelineno-10-39"></a> # Or, the signature might be: def process_text_with_pov(perceived_data: dict) -&gt; str:
+</span><span id="__span-10-38"><a id="__codelineno-10-38" name="__codelineno-10-38" href="#__codelineno-10-38"></a> # Let&#39;s assume POET handles passing perceived_input to Operate.
+</span><span id="__span-10-39"><a id="__codelineno-10-39" name="__codelineno-10-39" href="#__codelineno-10-39"></a> # Or, the signature might be: def process_text_with_poet(perceived_data: dict) -&gt; str:
 </span><span id="__span-10-40"><a id="__codelineno-10-40" name="__codelineno-10-40" href="#__codelineno-10-40"></a> # For now, assume &#39;data&#39; is the perceived input.
 </span><span id="__span-10-41"><a id="__codelineno-10-41" name="__codelineno-10-41" href="#__codelineno-10-41"></a> return f&quot;OPERATED ON: {data.text.upper()}&quot;
 </span><span id="__span-10-42"><a id="__codelineno-10-42" name="__codelineno-10-42" href="#__codelineno-10-42"></a>
-</span><span id="__span-10-43"><a id="__codelineno-10-43" name="__codelineno-10-43" href="#__codelineno-10-43"></a># When process_text_with_pov(&quot;Hello World&quot;) is called:
+</span><span id="__span-10-43"><a id="__codelineno-10-43" name="__codelineno-10-43" href="#__codelineno-10-43"></a># When process_text_with_poet(&quot;Hello World&quot;) is called:
 </span><span id="__span-10-44"><a id="__codelineno-10-44" name="__codelineno-10-44" href="#__codelineno-10-44"></a># 1. my_perceiver(&quot;Hello World&quot;) runs.
-</span><span id="__span-10-45"><a id="__codelineno-10-45" name="__codelineno-10-45" href="#__codelineno-10-45"></a># 2. The Operate phase (process_text_with_pov body) runs with perceived input.
-</span><span id="__span-10-46"><a id="__codelineno-10-46" name="__codelineno-10-46" href="#__codelineno-10-46"></a># 3. my_validator(output_of_operate, pov_status) runs.
-</span><span id="__span-10-47"><a id="__codelineno-10-47" name="__codelineno-10-47" href="#__codelineno-10-47"></a># 4. Retries occur if my_validator returns false, up to max_retries.
+</span><span id="__span-10-45"><a id="__codelineno-10-45" name="__codelineno-10-45" href="#__codelineno-10-45"></a># 2. The Operate phase (process_text_with_poet body) runs with perceived input.
+</span><span id="__span-10-46"><a id="__codelineno-10-46" name="__codelineno-10-46" href="#__codelineno-10-46"></a># 3. my_encoder(output_of_operate, poet_status) runs.
+</span><span id="__span-10-47"><a id="__codelineno-10-47" name="__codelineno-10-47" href="#__codelineno-10-47"></a># 4. Retries occur if my_encoder returns false, up to max_retries.
 </span></code></pre></div>
-<p>Key Aspects for POV Decorators in Dana:</p>
+<p>Key Aspects for POET Decorators in Dana:</p>
 <ul>
-<li>Specifying P/O/V Functions: Decorators allow clear association of Dana functions for the Perceive, Operate (the decorated function itself), and Validate stages.</li>
-<li>POV Profiles: Decorators might also select pre-configured POV profiles that define default P/O/V stages or behaviors (e.g., <code>@pov_profile("llm_reasoning")</code>).</li>
-<li><code>pov_status</code> Availability: As shown in <code>my_validator</code>, the <code>pov_status</code> dictionary (containing <code>attempt</code>, <code>last_failure</code>, <code>perceived_input</code>, etc.) is made available to Dana functions participating in the POV lifecycle, enabling adaptive logic.</li>
-<li>Integration with Python Runtime: The underlying POV execution loop (managing retries, calling P/O/V stages) is implemented in Python (as described in the POV execution model), but Dana decorators provide the language-level syntax to hook Dana functions into this system.</li>
+<li>Specifying P/O/E/T Functions: Decorators allow clear association of Dana functions for the Perceive, Operate (the decorated function itself), Encode, and Train stages.</li>
+<li>POET Profiles: Decorators might also select pre-configured POET profiles that define default P/O/E/T stages or behaviors (e.g., <code>@poet_profile("llm_reasoning")</code>).</li>
+<li><code>poet_status</code> Availability: As shown in <code>my_encoder</code>, the <code>poet_status</code> dictionary (containing <code>attempt</code>, <code>last_failure</code>, <code>perceived_input</code>, etc.) is made available to Dana functions participating in the POET lifecycle, enabling adaptive logic.</li>
+<li>Integration with Python Runtime: The underlying POET execution loop (managing retries, calling P/O/E/T stages) is implemented in Python (as described in the POET execution model), but Dana decorators provide the language-level syntax to hook Dana functions into this system.</li>
 </ul>
-<p>The exact naming and parameters of the built-in POV-related decorators will be finalized as the POV runtime is implemented.</p>
+<p>The exact naming and parameters of the built-in POET-related decorators will be finalized as the POET runtime is implemented.</p>
 <h2 id="7-function-composition-pipelining">7. Function Composition (Pipelining)<a class="headerlink" href="#7-function-composition-pipelining" title="Permanent link">&para;</a></h2>
 <p>Function composition is a powerful capability in Dana for building complex operations by chaining simpler, reusable functions. This approach enhances code clarity, promotes modularity, and simplifies the management of sequential data processing tasks.</p>
 <h3 id="71-function-composition-in-action-planning-and-costing-a-trip">7.1. Function Composition in Action: Planning and Costing a Trip<a class="headerlink" href="#71-function-composition-in-action-planning-and-costing-a-trip" title="Permanent link">&para;</a></h3>

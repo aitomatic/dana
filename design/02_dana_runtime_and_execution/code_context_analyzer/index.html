@@ -1062,7 +1062,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../for-engineers/reference/pov-usage-guide/" class="md-nav__link">
+      <a href="../../../for-engineers/reference/pov-usage-guide.md" class="md-nav__link">
         
   
   
@@ -3374,9 +3374,9 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#5-integration-with-pov" class="md-nav__link">
+  <a href="#5-integration-with-poet" class="md-nav__link">
     <span class="md-ellipsis">
-      5. Integration with POV
+      5. Integration with POET
     </span>
   </a>
   
@@ -4254,9 +4254,9 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#5-integration-with-pov" class="md-nav__link">
+  <a href="#5-integration-with-poet" class="md-nav__link">
     <span class="md-ellipsis">
-      5. Integration with POV
+      5. Integration with POET
     </span>
   </a>
   
@@ -4325,13 +4325,13 @@
 
 <h1 id="codecontextanalyzer-design">CodeContextAnalyzer Design<a class="headerlink" href="#codecontextanalyzer-design" title="Permanent link">&para;</a></h1>
 <h2 id="1-purpose-and-goals">1. Purpose and Goals<a class="headerlink" href="#1-purpose-and-goals" title="Permanent link">&para;</a></h2>
-<p>The <code>CodeContextAnalyzer</code> is a critical component of the Dana runtime, specifically designed to support the <strong>Perceive</strong> phase of the POV (Perceive → Operate → Validate) execution model. Its primary goal is to extract rich, actionable context from the Dana source code surrounding a function call, particularly for POV-enabled functions.</p>
+<p>The <code>CodeContextAnalyzer</code> is a critical component of the Dana runtime, specifically designed to support the <strong>Perceive</strong> phase of the POET (Perceive → Operate → Encode → Train) execution model. Its primary goal is to extract rich, actionable context from the Dana source code surrounding a function call, particularly for POET-enabled functions.</p>
 <p>This contextual information allows the <code>Perceive</code> phase to:</p>
 <ul>
 <li>Infer implicit intent: Understand what the user likely wants based on how a function is called, even if the direct arguments are ambiguous.</li>
 <li>Optimize inputs: Tailor prompts or arguments for the <code>Operate</code> phase based on expected output types or surrounding logic. For example, it can inform prompt engineering for LLM calls by providing constraints or desired output formats.</li>
 <li>Enhance fault tolerance: Provide clues for how to interpret or recover from potentially malformed inputs.</li>
-<li>Enable adaptive behavior: Allow POV-decorated functions to behave differently based on where and how they are invoked in the code.</li>
+<li>Enable adaptive behavior: Allow POET-decorated functions to behave differently based on where and how they are invoked in the code.</li>
 </ul>
 <p>Essentially, the <code>CodeContextAnalyzer</code> provides the "eyes" for the <code>Perceive</code> stage, allowing it to "read" the code and make more intelligent decisions.</p>
 <h2 id="2-inputs">2. Inputs<a class="headerlink" href="#2-inputs" title="Permanent link">&para;</a></h2>
@@ -4393,29 +4393,29 @@
 <h2 id="4-core-logicstrategies">4. Core Logic/Strategies<a class="headerlink" href="#4-core-logicstrategies" title="Permanent link">&para;</a></h2>
 <p>The <code>CodeContextAnalyzer</code> will employ a combination of strategies to extract information:</p>
 <ul>
-<li>Lexical Analysis/Regex: For quickly finding comments, keywords, and basic code structures around the call site, especially if an AST is not available or too slow for rapid C.P.O.V. cycles. This is good for <code>source_extracts</code>.</li>
+<li>Lexical Analysis/Regex: For quickly finding comments, keywords, and basic code structures around the call site, especially if an AST is not available or too slow for rapid C.P.O.E.T. cycles. This is good for <code>source_extracts</code>.</li>
 <li>Lightweight Parsing/Heuristics: To identify the <code>call_structure</code> (e.g., if it's an assignment, what variable is it assigned to, any type hints). This might involve pattern matching on common Dana syntax constructs without full parsing.</li>
 <li>AST Traversal (if AST node is provided): If an AST node for the call site (or the whole file) is available, this would be the most robust way to determine <code>call_structure</code>, <code>lexical_context</code> (like enclosing function/class), and relationships between code elements.</li>
 <li>Scope Analysis (if <code>current_scope_details</code> provided): Leverages runtime information about visible variables and their types.</li>
-<li>Heuristic-Based Intent Inference: Combining information from comments, variable names, type hints (e.g., <code>x: list[str] = my_pav_func(...)</code> strongly suggests <code>expected_output_type</code> is <code>list[str]</code>), and surrounding code patterns to populate <code>inferred_intent_hints</code>.</li>
+<li>Heuristic-Based Intent Inference: Combining information from comments, variable names, type hints (e.g., <code>x: list[str] = my_poet_func(...)</code> strongly suggests <code>expected_output_type</code> is <code>list[str]</code>), and surrounding code patterns to populate <code>inferred_intent_hints</code>.</li>
 </ul>
 <p>The analyzer should be designed to be:
-* Fast: Context analysis should not significantly slow down POV execution.
+* Fast: Context analysis should not significantly slow down POET execution.
 * Robust: Gracefully handle incomplete or unusual code patterns.
 * Configurable/Extensible: Allow new heuristics or analysis techniques to be added.</p>
-<h2 id="5-integration-with-pov">5. Integration with POV<a class="headerlink" href="#5-integration-with-pov" title="Permanent link">&para;</a></h2>
-<p>The POV execution framework will invoke the <code>CodeContextAnalyzer</code> during its <strong>Perceive</strong> phase.</p>
+<h2 id="5-integration-with-poet">5. Integration with POET<a class="headerlink" href="#5-integration-with-poet" title="Permanent link">&para;</a></h2>
+<p>The POET execution framework will invoke the <code>CodeContextAnalyzer</code> during its <strong>Perceive</strong> phase.</p>
 <ol>
-<li>When a POV-decorated Python function is called, the POV machinery (before calling the user's <code>perceive</code> Dana function) would gather the necessary inputs (file path, line/col of the <em>Dana call site</em> that ultimately invoked the Python function).</li>
+<li>When a POET-decorated Python function is called, the POET machinery (before calling the user's <code>perceive</code> Dana function) would gather the necessary inputs (file path, line/col of the <em>Dana call site</em> that ultimately invoked the Python function).</li>
 <li>It calls <code>CodeContextAnalyzer.analyze(file_path, line, col, source_code_snapshot, ...)</code></li>
 <li>The resulting <code>CodeSiteContext</code> object is then made available to the Dana <code>perceive</code> function, typically as part of the <code>perceived_input</code> structure or a dedicated context variable (e.g., <code>code_site_context</code>).</li>
-<li>The <code>perceive</code> Dana function can then use this <code>CodeSiteContext</code> to inform its logic (e.g., extract <code>expected_output_type_from_assignment</code> to set <code>pov_status.expected_output_type</code>, or use <code>keywords_in_comments</code> to modify a prompt).</li>
+<li>The <code>perceive</code> Dana function can then use this <code>CodeSiteContext</code> to inform its logic (e.g., extract <code>expected_output_type_from_assignment</code> to set <code>poet_status.expected_output_type</code>, or use <code>keywords_in_comments</code> to modify a prompt).</li>
 </ol>
 <h2 id="6-examples">6. Examples<a class="headerlink" href="#6-examples" title="Permanent link">&para;</a></h2>
 <h3 id="example-1-inferring-expected-output-type">Example 1: Inferring Expected Output Type<a class="headerlink" href="#example-1-inferring-expected-output-type" title="Permanent link">&para;</a></h3>
 <p>Dana Code:
 <div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a># Function to get user details
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>@pov(perceive=&quot;Perceive::UserDetails&quot;, validate=&quot;Validate::UserDetails&quot;)
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>@poet(perceive=&quot;Perceive::UserDetails&quot;, encode=&quot;Encode::UserDetails&quot;)
 </span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>def get_user_data(user_id: string) -&gt; dict:
 </span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a> # Act: Python code to fetch from DB
 </span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a> pass
@@ -4441,7 +4441,7 @@
 </span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w"> </span><span class="c1">// ...</span>
 </span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="p">}</span>
 </span></code></pre></div>
-The <code>Perceive::UserDetails</code> Dana function could then use <code>code_site_context.inferred_intent_hints.expected_output_type_from_assignment</code> to populate <code>pov_status.expected_output_type</code>.</p>
+The <code>Perceive::UserDetails</code> Dana function could then use <code>code_site_context.inferred_intent_hints.expected_output_type_from_assignment</code> to populate <code>poet_status.expected_output_type</code>.</p>
 <h3 id="example-2-using-comments-to-guide-behavior">Example 2: Using Comments to Guide Behavior<a class="headerlink" href="#example-2-using-comments-to-guide-behavior" title="Permanent link">&para;</a></h3>
 <p>Dana Code:
 <div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a># Needs a very concise summary for the mobile app view
@@ -4462,7 +4462,7 @@ The <code>Perceive::UserDetails</code> Dana function could then use <code>code_s
 </span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a><span class="w"> </span><span class="c1">// ...</span>
 </span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="p">}</span>
 </span></code></pre></div>
-The <code>Perceive</code> stage for <code>reason</code> (which is POV-enabled) could use these <code>keywords_in_comments</code> to modify the prompt sent to the LLM, e.g., "Summarize this long article <em>very concisely for a mobile view</em>: ..."</p>
+The <code>Perceive</code> stage for <code>reason</code> (which is POET-enabled) could use these <code>keywords_in_comments</code> to modify the prompt sent to the LLM, e.g., "Summarize this long article <em>very concisely for a mobile view</em>: ..."</p>
 <h2 id="7-open-questions-future-considerations">7. Open Questions &amp; Future Considerations<a class="headerlink" href="#7-open-questions-future-considerations" title="Permanent link">&para;</a></h2>
 <ul>
 <li>Performance implications of detailed analysis, especially AST parsing.</li>
