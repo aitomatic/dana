@@ -33,7 +33,7 @@ fi
 # Expected extension ID (publisher.name)
 # Publisher in package.json: "Aitomatic, Inc." (likely sanitized to 'aitomatic' or similar by vsce/vscode)
 # Name in package.json: "dana-language"
-EXTENSION_ID="aitomatic.dana-language" # This is the most common assumed ID
+EXTENSION_ID="aitomatic, inc..dana-language" # This is the most common assumed ID
 
 echo -e "${BLUE}🔧 Attempting to remove extension '$EXTENSION_ID' from ${EDITOR_NAME}...${NC}"
 

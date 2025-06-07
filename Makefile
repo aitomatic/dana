@@ -7,6 +7,15 @@
 # Modern Python development with uv package manager
 # Requires uv to be installed: https://docs.astral.sh/uv/
 
+# Platform detection
+ifeq ($(OS),Windows_NT)
+    DETECTED_OS := Windows
+    SCRIPT_EXT := .bat
+else
+    DETECTED_OS := $(shell uname -s)
+    SCRIPT_EXT := .sh
+endif
+
 # Default target
 .DEFAULT_GOAL := quickstart
 
@@ -22,7 +31,8 @@
 	dev update-deps sync \
 	onboard env-check env-setup examples demo-basic demo-reasoning jupyter \
 	docs-build docs-serve docs-check docs-validate docs-deploy \
-	security validate-config release-check
+	security validate-config release-check \
+	install-cursor install-vscode install-vim uninstall-cursor uninstall-vscode uninstall-vim install-editors uninstall-editors
 
 # =============================================================================
 # Help & Information
@@ -53,6 +63,9 @@ help: ## Show this help message with available commands
 	@echo ""
 	@echo "\033[1mMaintenance & Security:\033[0m"
 	@awk 'BEGIN {FS = ":.*?## "} /^(clean|security|validate-config|release-check).*:.*?## / {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@echo ""
+	@echo "\033[1mEditor Integration:\033[0m"
+	@awk 'BEGIN {FS = ":.*?## "} /^(install-cursor|install-vscode|install-vim|uninstall-cursor|uninstall-vscode|uninstall-vim|install-editors|uninstall-editors).*:.*?## / {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
 	@echo "\033[33mTip: New to OpenDXA? Start with 'make quickstart' or 'make onboard'\033[0m"
 	@echo ""
@@ -379,6 +392,94 @@ release-check: clean verify docs-validate security validate-config ## Complete p
 	@echo ""
 	@echo "\033[33m🎯 Ready for release!\033[0m"
 	@echo ""
+
+# =============================================================================
+# Editor Integration
+# =============================================================================
+
+install-cursor: ## Install Dana extension for Cursor
+	@echo "🔧 Installing Dana extension for Cursor ($(DETECTED_OS))..."
+	@if [ -f ./bin/cursor/install$(SCRIPT_EXT) ]; then \
+		./bin/cursor/install$(SCRIPT_EXT); \
+	else \
+		echo "❌ Cursor install script not found for $(DETECTED_OS)"; \
+	fi
+
+install-vscode: ## Install Dana extension for VS Code
+	@echo "🔧 Installing Dana extension for VS Code ($(DETECTED_OS))..."
+	@if [ -f ./bin/vscode/install$(SCRIPT_EXT) ]; then \
+		./bin/vscode/install$(SCRIPT_EXT); \
+	else \
+		echo "❌ VS Code install script not found for $(DETECTED_OS)"; \
+	fi
+
+install-vim: ## Install Dana syntax for Vim/Neovim (Unix only)
+ifeq ($(DETECTED_OS),Windows)
+	@echo "❌ Vim integration not available on Windows"
+else
+	@echo "🔧 Installing Dana syntax for Vim/Neovim..."
+	@if [ -f ./bin/vim/install.sh ]; then \
+		./bin/vim/install.sh; \
+	else \
+		echo "❌ Vim install script not found"; \
+	fi
+endif
+
+uninstall-cursor: ## Remove Dana extension from Cursor
+	@echo "🗑️  Removing Dana extension from Cursor ($(DETECTED_OS))..."
+	@if [ -f ./bin/cursor/uninstall$(SCRIPT_EXT) ]; then \
+		./bin/cursor/uninstall$(SCRIPT_EXT); \
+	else \
+		echo "❌ Cursor uninstall script not found for $(DETECTED_OS)"; \
+	fi
+
+uninstall-vscode: ## Remove Dana extension from VS Code
+	@echo "🗑️  Removing Dana extension from VS Code ($(DETECTED_OS))..."
+	@if [ -f ./bin/vscode/uninstall$(SCRIPT_EXT) ]; then \
+		./bin/vscode/uninstall$(SCRIPT_EXT); \
+	else \
+		echo "❌ VS Code uninstall script not found for $(DETECTED_OS)"; \
+	fi
+
+uninstall-vim: ## Remove Dana syntax from Vim/Neovim (Unix only)
+ifeq ($(DETECTED_OS),Windows)
+	@echo "❌ Vim integration not available on Windows"
+else
+	@echo "🗑️  Removing Dana syntax from Vim/Neovim..."
+	@if [ -f ./bin/vim/uninstall.sh ]; then \
+		./bin/vim/uninstall.sh; \
+	else \
+		echo "❌ Vim uninstall script not found"; \
+	fi
+endif
+
+install-editors: ## Install Dana support for all available editors
+	@echo "🚀 Installing Dana support for all available editors..."
+	@echo "📍 Step 1/3: Installing Cursor extension..."
+	@$(MAKE) install-cursor
+	@echo "📍 Step 2/3: Installing VS Code extension..."
+	@$(MAKE) install-vscode
+ifneq ($(DETECTED_OS),Windows)
+	@echo "📍 Step 3/3: Installing Vim syntax..."
+	@$(MAKE) install-vim
+else
+	@echo "📍 Step 3/3: Skipping Vim (Windows not supported)"
+endif
+	@echo "✅ Editor integration complete!"
+
+uninstall-editors: ## Remove Dana support from all editors
+	@echo "🗑️  Removing Dana support from all editors..."
+	@echo "📍 Step 1/3: Removing Cursor extension..."
+	@$(MAKE) uninstall-cursor
+	@echo "📍 Step 2/3: Removing VS Code extension..."
+	@$(MAKE) uninstall-vscode
+ifneq ($(DETECTED_OS),Windows)
+	@echo "📍 Step 3/3: Removing Vim syntax..."
+	@$(MAKE) uninstall-vim
+else
+	@echo "📍 Step 3/3: Skipping Vim (Windows not supported)"
+endif
+	@echo "✅ Editor cleanup complete!"
 
 # =============================================================================
 # Documentation (legacy placeholder kept for compatibility)
