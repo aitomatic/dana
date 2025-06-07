@@ -1,25 +1,44 @@
 # This is a placeholder for the pov-usage-guide.md content.
 # The original ipv-usage-guide.md content will be moved here and updated.
 
-# POV Usage Guide: Complete Reference
+# POET Usage Guide: Complete Reference
 
 ## Overview
 
-POV (Perceive-Operate-Validate) is Dana's intelligent optimization pattern that automatically enhances AI interactions with **comment-aware context analysis** and **LLM-driven optimization**. This guide provides comprehensive usage examples and best practices.
+POET (Perceive-Operate-Encode-Train) is Dana's intelligent execution pattern that automatically enhances AI interactions with **fault-tolerant context processing**, **self-learning optimization**, and **enterprise-grade reliability**. This guide provides comprehensive usage examples and best practices.
 
 ## Core Concepts
 
-### The POV Pattern
-```
-PERCEIVE: Extract context from code, comments, and type hints
- ↓
-OPERATE: Use LLM to analyze context and optimize prompts
- ↓
-VALIDATE: Apply type-driven validation and formatting
+### The POET Flow
+
+```mermaid
+graph LR
+    A[Input Data] --> B[Perceive<br/>Fault-tolerant<br/>Context Processing]
+    B --> C[Operate<br/>Business Logic<br/>Engineer-Written]
+    C --> D[Encode<br/>Error-free<br/>Deterministic Output]
+    D --> E[Output Results]
+    D --> F[Train<br/>Self-Learning<br/>Feedback Loop]
+    F --> B
+    
+    style B fill:#e8f5e8,stroke:#2e7d32,stroke-width:2px,color:#000
+    style C fill:#fff3e0,stroke:#f57c00,stroke-width:3px,color:#000
+    style D fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#000
+    style F fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#000
 ```
 
+### What Engineers Write vs. What Runtime Provides
+
+**Engineers Write (Operate):**
+- Business logic and decision-making code
+- The core operational intelligence
+
+**Runtime Provides Automatically:**
+- **Perceive**: Fault-tolerant contextual input processing
+- **Encode**: Error-free deterministic output generation  
+- **Train**: Continuous adaptation based on feedback signals
+
 ### Comment-Aware Context Analysis
-POV automatically extracts and analyzes:
+POET automatically extracts and analyzes:
 - Comments in your Dana code
 - Type hints from variable assignments
 - Surrounding code context
@@ -27,16 +46,17 @@ POV automatically extracts and analyzes:
 
 ## Basic Usage
 
-### 1. Simple Reasoning with POV
+### 1. Simple Reasoning with POET
 
 ```dana
 # Extract financial data from text
 price = reason("Find the cost: Item sells for $29.99") -> float
 
-# POV automatically:
-# - Detects financial domain from "$" symbol
-# - Applies numerical extraction for float type
-# - Validates and cleans the result
+# POET automatically:
+# - PERCEIVE: Detects financial domain from "$" symbol and context
+# - OPERATE: Applies your business logic for numerical extraction
+# - ENCODE: Validates and formats result as float type
+# - TRAIN: Learns from successful extractions to improve future performance
 ```
 
 ### 2. Comment-Driven Optimization
@@ -46,8 +66,8 @@ price = reason("Find the cost: Item sells for $29.99") -> float
 # Patient temperature should be in Celsius
 temperature = reason("Patient reports feeling feverish at 101.5°F") -> float
 
-# POV leverages comments to:
-# - Understand medical context from comment
+# POET leverages comments to:
+# - PERCEIVE: Understand medical context and accuracy requirements
 # - Apply temperature conversion logic
 # - Ensure precise numerical extraction
 ```
