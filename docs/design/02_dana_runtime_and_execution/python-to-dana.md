@@ -12,6 +12,8 @@ Python-based APIs that use Dana's reasoning capabilities. For this, users should
 
 Implementing such a bridge would be easy, except for one problem: we want to preserve Dana's security sandbox integrity, with clear rules of engagement, e.g., trusted vs untrusted Python code.
 
+> **Security Note**: The Dana sandbox's primary purpose is to contain potentially malicious Dana code and prevent it from harming the host system. When Python code calls Dana, the sandbox ensures that any Dana code executed (whether from files, LLM-generated, or other sources) cannot escape its containment to access or harm the host system.
+
 **Core Challenge**: How do we enable seamless Python-calling-Dana integration while preserving Dana's security sandbox integrity?
 
 ## Goals
@@ -612,7 +614,7 @@ The design ensures that **Python-calling-Dana** is safe and maintainable while p
 ---
 
 **Related Documents:**
-- [Dana Language Specification](./dana/language.md)
+- [Dana Language Specification](../01_dana_language_specification/overview.md)
 - [Interpreter Design](./interpreter.md)
 - [Sandbox Security](./sandbox.md)
 

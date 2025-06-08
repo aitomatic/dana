@@ -110,6 +110,8 @@ def area(a: float, b: float) -> float:
 
 ## 5. Future Sandbox Migration
 
+> **Security Note**: While Dana's sandbox primarily exists to contain potentially malicious Dana code from harming the host system, when Dana calls Python code, we need additional security considerations. The sandbox in this direction is about isolating the Python execution environment to protect against potentially malicious Python packages or code that Dana might try to use.
+
 To move out-of-process:
 
 1. **Drop-in `RpcTransport`**
