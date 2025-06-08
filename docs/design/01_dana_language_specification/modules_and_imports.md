@@ -1,3 +1,12 @@
+```text
+Author: Christopher Nguyen
+Version: 0.1
+Status: Design Phase
+Module: opendxa.dana
+```
+
+Also see: [Data Types and Structs](data_types_and_structs.md)
+
 # Dana Modules and Imports
 
 This document describes how Dana code can be organized into modules (separate files) and how these modules can be imported and used in other Dana programs.
@@ -13,25 +22,25 @@ As Dana programs grow in complexity, a mechanism for organizing code into reusab
 
 ## 2. Defining a Module
 
-A Dana module is simply a `.dna` file (or the conventional future extension for Dana files) containing Dana code (struct definitions, function definitions, and potentially top-level variable assignments that act as constants or module-level state if appropriate to the design).
-Example: `string_utils.dna`
+A Dana module is simply a `.na` file (or the conventional future extension for Dana files) containing Dana code (struct definitions, function definitions, and potentially top-level variable assignments that act as constants or module-level state if appropriate to the design).
+Example: `string_utils.na`
 ```dana
-# Module: string_utils.dna
+# Module: string_utils.na
 
 struct StringMetrics:
  length: int
  word_count: int
 
 def calculate_metrics(text: str) -> StringMetrics:
- local:len = len(text)
+ len = len(text)
  # Basic word count, can be made more sophisticated
- local:words = 0
- if local:len > 0:
+ words = 0
+ if len > 0:
  # This is a simplistic word count
- local:parts = text.split(' ') # Assuming a string split method
- local:words = len(local:parts)
+ parts = text.split(' ') # Assuming a string split method
+ words = len(parts)
 
- return StringMetrics(length=local:len, word_count=local:words)
+ return StringMetrics(length=len, word_count=words)
 
 def to_uppercase(text: str) -> str:
  # This would ideally call a built-in string method or a resource providing this.
@@ -58,14 +67,17 @@ import <module_path>
 Example:
 
 ```dana
-# In main.dna
-import path/to/string_utils.dna # Path relative to a defined search path or current file
+# In main.na
+import path/to/string_utils.na # Path relative package root, DANAPATH, or current file
+from path/to/string_utils.na import StringMetrics, calculate_metrics, some_dana_object
+from path/to/string_utils import some_other_dana_object # .na is optional
+from path/to/other_utils.py import some_python_object # .py is required
 
-local:text: str = "Sample text for analysis."
-local:metrics: string_utils.dna.StringMetrics = string_utils.dna.calculate_metrics(local:text)
-print(f"Length: {local:metrics.length}, Words: {local:metrics.word_count}")
+text: str = "Sample text for analysis."
+metrics: string_utils.StringMetrics = string_utils.calculate_metrics(text)
+print(f"Length: {metrics.length}, Words: {metrics.word_count}")
 
-local:greeting: str = string_utils.dna.DEFAULT_GREETING
+greeting: str = string_utils.DEFAULT_GREETING
 ```
 
 ### 3.2. Import with Alias
@@ -81,15 +93,15 @@ import <module_path> as <alias>
 Example:
 
 ```dana
-# In main.dna
-import path/to/string_utils.dna as str_util
+# In main.na
+import path/to/string_utils.na as str_util
 
-local:text: str = "Sample text for analysis."
-local:metrics: str_util.StringMetrics = str_util.calculate_metrics(local:text)
-print(f"Length: {local:metrics.length}, Words: {local:metrics.word_count}")
+text: str = "Sample text for analysis."
+metrics: str_util.StringMetrics = str_util.calculate_metrics(text)
+print(f"Length: {metrics.length}, Words: {metrics.word_count}")
 
-local:upper_text: str = str_util.to_uppercase("dana language")
-print(local:upper_text)
+upper_text: str = str_util.to_uppercase("dana language")
+print(upper_text)
 
 print(str_util.DEFAULT_GREETING)
 ```
@@ -122,7 +134,7 @@ While this document focuses on Dana-to-Dana modules, Dana also supports importin
 ## 7. Open Questions and Future Considerations
 
 * Circular Imports: How are circular dependencies between modules handled or prevented?
-* Dynamic Imports: Is there a need for importing modules based on a string variable (e.g., `import(local:module_name_var)`)?
+* Dynamic Imports: Is there a need for importing modules based on a string variable (e.g., `import(module_name_var)`)?
 * Reloading Modules: For development, a mechanism to reload a module that has changed without restarting the entire application might be useful (e.g., `reload(my_module)`).
 * Package Structure: For larger collections of modules, a directory-based package structure (e.g., `import my_package.my_module`) might be needed.
 

@@ -1,6 +1,7 @@
 {
   "comments": {
-    "lineComment": "#"
+    "lineComment": "#",
+    "blockComment": ["\"\"\"", "\"\"\""]
   },
   "brackets": [
     ["{", "}"],
@@ -12,17 +13,28 @@
     ["[", "]"],
     ["(", ")"],
     ["\"", "\""],
-    ["'", "'"]
+    ["'", "'"],
+    ["\"\"\"", "\"\"\""],
+    ["'''", "'''"]
   ],
   "surroundingPairs": [
     ["{", "}"],
     ["[", "]"],
     ["(", ")"],
     ["\"", "\""],
-    ["'", "'"]
+    ["'", "'"],
+    ["\"\"\"", "\"\"\""],
+    ["'''", "'''"]
   ],
   "indentationRules": {
-    "increaseIndentPattern": "^\\s*(if|else|elif|while|for|def|class|try|except|finally|with).*:$",
+    "increaseIndentPattern": "^\\s*(struct|interface|enum|def|if|else|elif|while|for|try|except|finally|with).*:$",
     "decreaseIndentPattern": "^\\s*(else|elif|except|finally).*:$"
-  }
+  },
+  "folding": {
+    "markers": {
+      "start": "^\\s*#\\s*region\\b",
+      "end": "^\\s*#\\s*endregion\\b"
+    }
+  },
+  "wordPattern": "(-?\\d*\\.\\d\\w*)|([^\\`\\~\\!\\@\\#\\%\\^\\&\\*\\(\\)\\-\\=\\+\\[\\{\\]\\}\\\\\\|\\;\\:\\'\\\"\\,\\.\\<\\>\\/\\?\\s]+)"
 } 

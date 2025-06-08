@@ -1,0 +1,14 @@
+# Simple Dana module for testing import system
+
+def reason_about(topic):
+    analysis = reason("What do you think about this topic?", {
+        "topic": topic,
+        "context": "general analysis"
+    })
+    return analysis
+
+def add_numbers(a, b):
+    return a + b
+
+def get_greeting(name):
+    return f"Hello, {name}!" 
