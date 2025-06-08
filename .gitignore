@@ -33,6 +33,7 @@ configs/
 *.swo
 .aider*
 .claude/
+dana-*.vsix
 
 # macOS
 .DS_Store
