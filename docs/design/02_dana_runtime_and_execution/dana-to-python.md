@@ -1,7 +1,11 @@
-# Dana → Python Integration: Same-Process Design
+# Design Document: Dana-to-Python Integration
 
-**Status**: Current ("same-process") Design  
-**Module**: `opendxa.dana.python`
+```text
+Author: Christopher Nguyen
+Version: 0.1
+Status: Design Phase
+Module: opendxa.dana.python
+```
 
 ## Problem Statement
 
@@ -13,7 +17,7 @@ In order for Dana users to enjoy the full benefits of the Python ecosystem, Dana
 3. **Resource Management**: Handle Python resources properly
 4. **Error Handling**: Propagate Python errors to Dana meaningfully
 
-## Design Goals
+## Goals
 
 1. **Simple Developer Experience**: Make calling Python from Dana feel natural
 2. **Type Safety**: Clear and predictable type conversions
@@ -27,11 +31,11 @@ In order for Dana users to enjoy the full benefits of the Python ecosystem, Dana
 2. ❌ Complete type safety guarantees
 3. ❌ Process isolation in initial implementation (but design must support it)
 
-## Core Design
+## Proposed Solution
 
 **Goal**: Enable Dana scripts to call Python *today* with zero IPC overhead, while ensuring every call site is ready for a hardened out-of-process sandbox tomorrow.
 
-## Directional Design Choice
+### Directional Design Choice
 
 Dana↔Python integration is intentionally split into two separate designs:
 
@@ -51,7 +55,9 @@ This separation exists because:
 - Different use cases (Dana using Python libraries vs. Python embedding Dana)
 - Different implementation needs (transport layer vs. sandbox protocol)
 
-## 1. Core Runtime Abstractions
+## Proposed Design
+
+### Core Runtime Abstractions
 
 | Runtime Object | Contents | Usage Pattern |
 |---------------|----------|----------------|
@@ -61,7 +67,7 @@ This separation exists because:
 
 All public behavior (function calls, method calls, destruction) funnels through **one pluggable transport**.
 
-## 2. Transport Abstraction
+### Transport Abstraction
 
 This API is frozen and must not change:
 
@@ -76,7 +82,7 @@ class Transport:
 
 *All Dana-generated stubs—present and future—**must** use this interface only.*
 
-## 3. InProcTransport Implementation
+### InProcTransport Implementation
 
 Current implementation that ships today:
 
@@ -92,7 +98,7 @@ Current implementation that ships today:
 
 Result: Everything runs in a single CPython interpreter with no serialization cost.
 
-## 4. Stub Generation
+### Stub Generation
 
 Build-time code generation process:
 
@@ -108,7 +114,7 @@ def area(a: float, b: float) -> float:
     return result.asFloat()
 ```
 
-## 5. Future Sandbox Migration
+### Future Sandbox Migration
 
 > **Security Note**: While Dana's sandbox primarily exists to contain potentially malicious Dana code from harming the host system, when Dana calls Python code, we need additional security considerations. The sandbox in this direction is about isolating the Python execution environment to protect against potentially malicious Python packages or code that Dana might try to use.
 
@@ -127,7 +133,7 @@ To move out-of-process:
    - Change `PythonFunction/Class/Object` to import `RpcTransport` instead of `InProcTransport`
    - Dana source, stubs, and public runtime classes remain untouched
 
-## 6. Migration Safety Rules
+### Migration Safety Rules
 
 | Rule | Future Impact |
 |------|--------------|
@@ -136,7 +142,7 @@ To move out-of-process:
 | Keep `PythonFunction`, `PythonClass`, `PythonObject` signatures **stable** | Preserves binary compatibility with compiled stubs |
 | Never expose transport implementation to user code | Prevents reliance on in-process shortcuts |
 
-## 7. Future Sandbox Implementation
+### Future Sandbox Implementation
 
 Key components to add later:
 
@@ -158,246 +164,60 @@ Key components to add later:
 
 Because every call site already goes through the transport layer, **no change is required in Dana scripts or the public runtime objects** when enabling the sandbox.
 
-## Implementation Plan
+## Design Review Checklist
+
+- [ ] Security review completed
+  - [ ] Transport layer security verified
+  - [ ] Object lifecycle validated
+  - [ ] Resource management checked
+- [ ] Performance impact assessed
+  - [ ] Call overhead measured
+  - [ ] Memory usage optimized
+  - [ ] Resource cleanup verified
+- [ ] Developer experience validated
+  - [ ] API usability confirmed
+  - [ ] Error messages clear
+  - [ ] Documentation complete
+- [ ] Future compatibility confirmed
+  - [ ] Transport abstraction solid
+  - [ ] Migration path clear
+  - [ ] Sandbox ready
+- [ ] Testing strategy defined
+  - [ ] Unit tests planned
+  - [ ] Integration tests designed
+  - [ ] Performance benchmarks ready
+
+## Implementation Phases
 
 ### Phase 1: Core Transport Layer
-- [ ] Implement `Transport` base class with core interface
-  - [ ] Function call handling (`call_fn`)
-  - [ ] Object creation (`create`)
-  - [ ] Method calls (`call_method`)
-  - [ ] Object cleanup (`destroy`)
-- [ ] Create `InProcTransport` implementation
-  - [ ] Object lifecycle management
-  - [ ] Method delegation
-  - [ ] Error propagation
-- [ ] Add comprehensive tests
-  - [ ] Function call tests
-  - [ ] Object lifecycle tests
-  - [ ] Error handling tests
-  - [ ] Resource cleanup tests
+- [ ] Implement Transport base class
+- [ ] Create InProcTransport
+- [ ] Add core tests
 
 ### Phase 2: Type System
-- [ ] Implement type conversion layer
-  - [ ] Basic type mappings
-  - [ ] Complex type handling
-  - [ ] Custom type converters
-- [ ] Add type validation system
-  - [ ] Input validation
-  - [ ] Output validation
-  - [ ] Error reporting
-- [ ] Create type system tests
-  - [ ] Basic type conversion tests
-  - [ ] Complex type tests
-  - [ ] Error case tests
-  - [ ] Performance benchmarks
+- [ ] Build type conversion
+- [ ] Add validation
+- [ ] Create type tests
 
 ### Phase 3: Runtime Objects
-- [ ] Implement `PythonFunction` wrapper
-  - [ ] FQN-based function lookup
-  - [ ] Argument type conversion
-  - [ ] Error handling and propagation
-- [ ] Implement `PythonClass` wrapper
-  - [ ] Constructor handling
-  - [ ] Instance creation via transport
-  - [ ] Method resolution
-- [ ] Implement `PythonObject` wrapper
-  - [ ] Method delegation
-  - [ ] Attribute access
-  - [ ] Resource cleanup
-- [ ] Add runtime object tests
-  - [ ] Function wrapping tests
-  - [ ] Class instantiation tests
-  - [ ] Method call tests
-  - [ ] Cleanup behavior tests
+- [ ] Implement PythonFunction
+- [ ] Implement PythonClass
+- [ ] Implement PythonObject
 
-### Phase 4: Integration and Testing
-- [ ] Integrate with Dana runtime
-  - [ ] Import statement handling
-  - [ ] Symbol resolution
-  - [ ] Error reporting
-- [ ] Add context management
-  - [ ] Scope handling
-  - [ ] State persistence
-  - [ ] Resource lifecycle
-- [ ] Create integration tests
-  - [ ] End-to-end workflow tests
-  - [ ] Error propagation tests
-  - [ ] Resource cleanup tests
-  - [ ] Performance benchmarks
+### Phase 4: Integration & Testing
+- [ ] Dana runtime integration
+- [ ] Context management
+- [ ] Integration tests
 
 ### Phase 5: Developer Experience
 - [ ] Add debugging support
-  - [ ] Stack trace integration
-  - [ ] Variable inspection
-  - [ ] Breakpoint handling
 - [ ] Improve error messages
-  - [ ] Clear error contexts
-  - [ ] Helpful suggestions
-  - [ ] Stack trace formatting
-- [ ] Create developer documentation
-  - [ ] API reference
-  - [ ] Usage examples
-  - [ ] Best practices
-  - [ ] Troubleshooting guide
+- [ ] Create documentation
 
 ### Phase 6: Error Handling
-- [ ] Implement error translation system
-  - [ ] Python-to-Dana error mapping
-  - [ ] Stack trace preservation
-  - [ ] Context enrichment
-- [ ] Add error recovery mechanisms
-  - [ ] Automatic retry logic
-  - [ ] Fallback strategies
-  - [ ] Resource cleanup
-- [ ] Create error handling tests
-  - [ ] Error translation tests
-  - [ ] Recovery tests
-  - [ ] Cleanup verification
-  - [ ] Integration tests
-
-### Phase 7: Performance Optimization
-- [ ] Implement caching system
-  - [ ] Function lookup caching
-  - [ ] Type conversion caching
-  - [ ] Object handle caching
-- [ ] Add performance monitoring
-  - [ ] Call latency tracking
-  - [ ] Memory usage monitoring
-  - [ ] Resource utilization
-- [ ] Create optimization tests
-  - [ ] Cache effectiveness tests
-  - [ ] Memory usage tests
-  - [ ] Load tests
-  - [ ] Benchmark suite
-
-### Phase 8: Security Hardening
-- [ ] Implement sandbox isolation
-  - [ ] Process separation
-  - [ ] Resource limits
-  - [ ] Security boundaries
-- [ ] Add security monitoring
-  - [ ] Access logging
-  - [ ] Resource tracking
-  - [ ] Violation detection
-- [ ] Create security tests
-  - [ ] Isolation tests
-  - [ ] Resource limit tests
-  - [ ] Security boundary tests
-  - [ ] Penetration tests
-
-## Design Review
-
-### ✓ Goal: Simple Developer Experience
-- [x] Natural import syntax
-  ```dana
-  from numpy import array, mean
-  data = array([1, 2, 3, 4])  # Auto-scoped to local
-  ```
-- [x] Method calls look like regular Dana code
-- [x] No explicit transport handling needed
-- [x] Resources managed automatically
-- [x] Errors propagated naturally
-
-### ✓ Goal: Type Safety
-- [x] Compile-time type checking via generated stubs
-  ```dana
-  def area(a: float, b: float) -> float:
-      result = __py_transport.call_fn("geom.area", [a, b])
-      return result.asFloat()
-  ```
-- [x] FQN-based symbol resolution
-- [x] Explicit type conversions in stubs
-- [x] No implicit coercion
-- [x] Clear type boundaries
-
-### ✓ Goal: Resource Management
-- [x] Explicit object lifecycle
-  ```python
-  def destroy(obj_id: int) -> None:
-      OBJECTS.pop(obj_id, None)  # Guaranteed cleanup
-  ```
-- [x] Automatic cleanup via `__del__`
-- [x] Handle-based tracking
-- [x] No resource leaks
-- [x] Clear ownership model
-
-### ✓ Goal: Error Handling
-- [x] Transport layer error translation
-- [x] Python exceptions → Dana errors
-- [x] Stack traces preserved
-- [x] Clear error propagation
-- [x] Predictable failure modes
-
-### ✓ Goal: Future Compatibility
-- [x] Transport abstraction ready for IPC
-- [x] Handle-based design works cross-process
-- [x] No in-process assumptions in API
-- [x] Clean sandbox migration path
-- [x] Pluggable transport layer
-
-### ✓ Non-Goal: General Import System
-- [x] Simple FQN-based imports only
-  ```python
-  functions[fqn] → callable
-  classes[fqn] → type
-  ```
-- [x] No complex module hierarchy
-- [x] Direct symbol imports only
-- [x] Avoids Python import machinery
-- [x] Clear import limitations
-
-### ✓ Non-Goal: Complete Type Safety
-- [x] Focuses on common type mappings
-- [x] Accepts some runtime checks where needed
-- [x] Documents type limitations clearly
-- [x] Pragmatic safety vs. complexity balance
-- [x] No false guarantees
-
-### ✓ Non-Goal: Initial Process Isolation
-- [x] Starts with efficient in-process calls
-  ```python
-  # Today: Direct calls
-  def call_method(cls_fqn, obj_id, name, args):
-      return getattr(OBJECTS[obj_id], name)(*args)
-  ```
-- [x] But design ready for future isolation
-  ```python
-  # Tomorrow: Same API, different transport
-  def call_method(cls_fqn, obj_id, name, args):
-      return rpc_client.invoke("call_method", 
-                             cls_fqn, obj_id, name, args)
-  ```
-- [x] No premature complexity
-- [x] Clear upgrade path
-- [x] Zero-cost abstractions
-
-### Key Design Decisions
-
-✓ **Abstraction Layer**
-- [x] Transport interface hides details
-- [x] Runtime objects protect internals
-- [x] Generated stubs provide safety
-- [x] Handle-based design enables sandboxing
-
-✓ **Migration Strategy**
-- [x] Start simple with direct calls
-- [x] Preserve API compatibility
-- [x] Enable gradual hardening
-- [x] No user code changes needed
-
-✓ **Security Architecture**
-- [x] Security through API design
-- [x] No exposed Python internals
-- [x] Clear trust boundaries
-- [x] Ready for future hardening
-
-### Summary
-
-The design successfully:
-- ✓ Achieves all primary goals
-- ✓ Respects stated non-goals
-- ✓ Provides clear migration paths
-- ✓ Maintains simplicity while enabling power
+- [ ] Error translation
+- [ ] Recovery mechanisms
+- [ ] Error tests
 
 ---
 

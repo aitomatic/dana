@@ -1,7 +1,11 @@
-# Python-Calling-Dana: Secure Integration Architecture
+# Design Document: Python-to-Dana Integration
 
-**Status**: Design Phase  
-**Module**: `opendxa.dana`
+```text
+Author: Christopher Nguyen
+Version: 0.1
+Status: Design Phase
+Module: opendxa.dana
+```
 
 ## Problem Statement
 
@@ -182,9 +186,7 @@ The design optimizes for both developer experience and runtime performance:
    - Type conversion caching
    - Shared memory for large data (future)
 
-## Implementation Recommendations
-
-The following are suggested implementations that satisfy the design requirements. Implementation engineers may adapt or modify these based on specific needs or constraints encountered during development.
+## Proposed Implementation
 
 ### Suggested Type System
 
@@ -351,194 +353,54 @@ These implementations are suggestions that satisfy the design requirements while
 
 The key is maintaining the developer experience and performance goals while potentially using different implementation approaches.
 
-## Implementation Plan
-
-### Phase 1: Core Sandbox Interface
-- [ ] Implement `DanaSandbox` base class
-  - [ ] Core function calling interface
-  - [ ] State management
-  - [ ] Resource handling
-  - [ ] Error propagation
-- [ ] Create initial in-process implementation
-  - [ ] Direct interpreter integration
-  - [ ] Context management
-  - [ ] Resource lifecycle
-- [ ] Add comprehensive tests
-  - [ ] Function call tests
-  - [ ] State management tests
-  - [ ] Error handling tests
-  - [ ] Resource lifecycle tests
-
-### Phase 2: Type System
-- [ ] Implement type conversion layer
-  - [ ] Basic type mappings
-  - [ ] Complex type handling
-  - [ ] Custom type registration
-- [ ] Add type validation system
-  - [ ] Input validation
-  - [ ] Output validation
-  - [ ] Error reporting
-- [ ] Create type system tests
-  - [ ] Basic type conversion tests
-  - [ ] Complex type tests
-  - [ ] Error case tests
-  - [ ] Performance benchmarks
-
-### Phase 3: Import System
-- [ ] Implement module import mechanism
-  - [ ] Dana module discovery
-  - [ ] Module caching
-  - [ ] Lazy loading
-- [ ] Create module wrapper system
-  - [ ] Function wrapping
-  - [ ] Type conversion
-  - [ ] Error translation
-- [ ] Add import system tests
-  - [ ] Module loading tests
-  - [ ] Import caching tests
-  - [ ] Error handling tests
-  - [ ] Memory leak tests
-
-### Phase 4: Integration and Testing
-- [ ] Integrate with Python runtime
-  - [ ] Module system integration
-  - [ ] Exception handling
-  - [ ] Resource management
-- [ ] Add context management
-  - [ ] Scope handling
-  - [ ] State persistence
-  - [ ] Resource lifecycle
-- [ ] Create integration tests
-  - [ ] End-to-end workflow tests
-  - [ ] Error propagation tests
-  - [ ] Resource cleanup tests
-  - [ ] Performance benchmarks
-
-### Phase 5: Developer Experience
-- [ ] Add IDE support
-  - [ ] Type hints
-  - [ ] Autocompletion
-  - [ ] Documentation
-- [ ] Implement debugging tools
-  - [ ] Stack trace integration
-  - [ ] Variable inspection
-  - [ ] Breakpoint support
-- [ ] Create developer documentation
-  - [ ] API reference
-  - [ ] Usage examples
-  - [ ] Best practices
-  - [ ] Troubleshooting guide
-
-### Phase 6: Error Handling
-- [ ] Implement error translation system
-  - [ ] Dana-to-Python error mapping
-  - [ ] Stack trace preservation
-  - [ ] Context enrichment
-- [ ] Add error recovery mechanisms
-  - [ ] Automatic retry logic
-  - [ ] Fallback strategies
-  - [ ] Resource cleanup
-- [ ] Create error handling tests
-  - [ ] Error translation tests
-  - [ ] Recovery tests
-  - [ ] Cleanup verification
-  - [ ] Integration tests
-
-### Phase 7: Performance Optimization
-- [ ] Implement caching system
-  - [ ] Module caching
-  - [ ] Type conversion caching
-  - [ ] Result caching
-- [ ] Add performance monitoring
-  - [ ] Call latency tracking
-  - [ ] Memory usage monitoring
-  - [ ] Resource utilization
-- [ ] Create optimization tests
-  - [ ] Cache effectiveness tests
-  - [ ] Memory usage tests
-  - [ ] Load tests
-  - [ ] Benchmark suite
-
-### Phase 8: Security Hardening
-- [ ] Implement sandbox isolation
-  - [ ] Input validation
-  - [ ] Output sanitization
-  - [ ] Resource limits
-- [ ] Add security monitoring
-  - [ ] Access logging
-  - [ ] Resource tracking
-  - [ ] Violation detection
-- [ ] Create security tests
-  - [ ] Isolation tests
-  - [ ] Resource limit tests
-  - [ ] Security boundary tests
-  - [ ] Penetration tests
-
 ## Design Review Checklist
 
-### 1. API Design & Developer Experience
-✅ Import syntax matches Python conventions (`from opendxa.dana import dana`)
-✅ Function signatures are intuitive (`reason(prompt: str, options: dict | None = None)`)
-✅ Type hints are comprehensive and accurate
-✅ Error messages are clear and actionable
-✅ Documentation follows Python standards (docstrings, type hints)
-✅ Examples cover common use cases
-✅ Resource management follows Python patterns (context managers)
-✅ Async support is properly implemented
+- [ ] Security review completed
+  - [ ] Sandbox integrity verified
+  - [ ] Data flow boundaries checked
+  - [ ] Type safety validated
+- [ ] Performance impact assessed
+  - [ ] Call overhead within targets
+  - [ ] Resource management optimized
+- [ ] Developer experience validated
+  - [ ] Import system works naturally
+  - [ ] Error messages are clear
+  - [ ] IDE support confirmed
+- [ ] Documentation planned
+  - [ ] API reference
+  - [ ] Usage examples
+  - [ ] Security guidelines
+- [ ] Future compatibility confirmed
+  - [ ] Process isolation ready
+  - [ ] Type system extensible
+  - [ ] Resource management scalable
 
-### 2. Security Model
-✅ Dana sandbox integrity is preserved for Dana's own security features
-❌ Input validation is comprehensive
-❌ Output filtering catches all sensitive data
-✅ Resource access is properly controlled
-✅ Error messages are clear and actionable
-✅ API boundaries are well defined
+## Implementation Phases
 
-### 3. Performance & Resources
-✅ Function call overhead is minimized
-✅ Memory usage is optimized
-✅ Resource pooling is implemented
-✅ Type conversion is efficient
-✅ Batch operations are supported
-✅ Async operations are non-blocking
-❌ Memory leaks are prevented
-❌ Resource cleanup is guaranteed
+### Phase 1: Core Infrastructure
+- [ ] Implement sandbox interface
+- [ ] Create type system foundation
+- [ ] Build basic import system
 
-### 4. Integration & Compatibility
-✅ Works with common Python data types (str, int, float, bool)
-✅ Supports complex Python types (pandas, numpy)
-✅ Compatible with Python async/await
-✅ Works with Python debugging tools
-✅ Supports Python logging
-✅ IDE integration works (autocomplete, type hints)
-✅ Testing frameworks can interact with Dana code
-✅ Error handling integrates with Python try/except
+### Phase 2: Developer Experience
+- [ ] Implement natural import syntax
+- [ ] Add type conversion system
+- [ ] Create error handling system
 
-### 5. Implementation Feasibility
-✅ All components are technically feasible
-✅ Required dependencies are reasonable
-✅ Performance targets are achievable
-✅ Resource management is practical
-✅ Error handling is implementable
-✅ Testing strategy is viable
-✅ Documentation can be generated
+### Phase 3: Performance Optimization
+- [ ] Implement call caching
+- [ ] Add resource pooling
+- [ ] Optimize type conversion
 
-### 6. Documentation & Support
-❌ API documentation is complete
-❌ Examples are comprehensive
-❌ Performance characteristics are documented
-❌ Resource usage is documented
-❌ Error conditions are documented
-❌ Debugging guide is provided
+### Phase 4: Security Hardening
+- [ ] Add process isolation support
+- [ ] Implement secure channels
+- [ ] Add security validation
 
-### 7. Testing Strategy
-✅ Unit tests can be written
-✅ Integration tests are possible
-❌ Performance tests are planned
-❌ Resource tests are specified
-❌ Error handling can be tested
-✅ Edge cases are identified
-❌ Test coverage goals are set
+### Phase 5: Documentation & Testing
+- [ ] Write comprehensive docs
+- [ ] Create example suite
+- [ ] Build test framework
 
 ## Goals Review
 
