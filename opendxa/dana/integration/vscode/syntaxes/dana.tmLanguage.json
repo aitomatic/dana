@@ -7,6 +7,12 @@
       "include": "#comments"
     },
     {
+      "include": "#docstrings"
+    },
+    {
+      "include": "#declarations"
+    },
+    {
       "include": "#keywords"
     },
     {
@@ -36,15 +42,158 @@
       "patterns": [
         {
           "name": "comment.line.number-sign.dana",
-          "match": "#.*$"
+          "begin": "#",
+          "end": "$",
+          "patterns": [
+            {
+              "include": "#markdown-inline"
+            }
+          ]
+        }
+      ]
+    },
+    "docstrings": {
+      "patterns": [
+        {
+          "name": "string.quoted.docstring.multi.dana",
+          "begin": "\"\"\"",
+          "end": "\"\"\"",
+          "patterns": [
+            {
+              "include": "#markdown-inline"
+            },
+            {
+              "include": "#markdown-block"
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.docstring.multi.dana",
+          "begin": "'''",
+          "end": "'''",
+          "patterns": [
+            {
+              "include": "#markdown-inline"
+            },
+            {
+              "include": "#markdown-block"
+            }
+          ]
+        }
+      ]
+    },
+    "markdown-inline": {
+      "patterns": [
+        {
+          "name": "markup.bold.markdown",
+          "match": "\\*\\*[^\\*\\n]+\\*\\*|__[^_\\n]+__"
+        },
+        {
+          "name": "markup.italic.markdown",
+          "match": "\\*[^\\*\\n]+\\*|_[^_\\n]+_"
+        },
+        {
+          "name": "markup.inline.raw.string.markdown",
+          "match": "`[^`\\n]+`"
+        },
+        {
+          "name": "markup.underline.link.markdown",
+          "match": "\\[([^\\]]+)\\]\\(([^\\)]+)\\)"
+        }
+      ]
+    },
+    "markdown-block": {
+      "patterns": [
+        {
+          "name": "markup.heading.markdown",
+          "match": "^\\s*(#{1,6})\\s+(.+)$",
+          "captures": {
+            "1": { "name": "punctuation.definition.heading.markdown" },
+            "2": { "name": "entity.name.section.markdown" }
+          }
+        },
+        {
+          "name": "markup.list.unnumbered.markdown",
+          "match": "^\\s*[-*+]\\s+(.+)$",
+          "captures": {
+            "1": { "name": "meta.paragraph.markdown" }
+          }
+        },
+        {
+          "name": "markup.list.numbered.markdown",
+          "match": "^\\s*\\d+\\.\\s+(.+)$",
+          "captures": {
+            "1": { "name": "meta.paragraph.markdown" }
+          }
+        },
+        {
+          "name": "markup.quote.markdown",
+          "begin": "^\\s*>\\s+",
+          "end": "$",
+          "patterns": [
+            {
+              "include": "#markdown-inline"
+            }
+          ]
+        },
+        {
+          "name": "markup.fenced_code.block.markdown",
+          "begin": "^\\s*(`{3,}|~{3,})\\s*(\\w+)?$",
+          "end": "^\\s*\\1\\s*$",
+          "captures": {
+            "2": { "name": "entity.name.type.markdown" }
+          },
+          "contentName": "meta.embedded.block.$2"
+        }
+      ]
+    },
+    "declarations": {
+      "patterns": [
+        {
+          "name": "meta.class.dana",
+          "match": "\\b(struct|interface|enum)\\s+([A-Za-z_][A-Za-z0-9_]*)\\b",
+          "captures": {
+            "1": { "name": "storage.type.class.dana" },
+            "2": { "name": "entity.name.type.class.dana" }
+          }
+        },
+        {
+          "name": "meta.function.dana",
+          "match": "\\b(def)\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*\\(",
+          "captures": {
+            "1": { "name": "storage.type.function.dana" },
+            "2": { "name": "entity.name.function.dana" }
+          }
+        },
+        {
+          "name": "meta.import.dana",
+          "match": "\\b(from|import)\\b\\s*([A-Za-z_][A-Za-z0-9_\\.]*)(?:\\s*(as)\\s*([A-Za-z_][A-Za-z0-9_]*))?",
+          "captures": {
+            "1": { "name": "keyword.control.import.dana" },
+            "2": { "name": "entity.name.namespace.dana" },
+            "3": { "name": "keyword.control.import.dana" },
+            "4": { "name": "entity.name.alias.dana" }
+          }
         }
       ]
     },
     "keywords": {
       "patterns": [
         {
-          "name": "keyword.control.dana",
-          "match": "\\b(if|elif|else|while|for|in|def|try|except|finally|return|break|continue|pass|import|from|as|raise|assert|and|or|not|is)\\b"
+          "name": "keyword.control.flow.dana",
+          "match": "\\b(if|elif|else|while|for|in|try|except|finally|return|break|continue|pass|raise)\\b"
+        },
+        {
+          "name": "keyword.control.import.dana",
+          "match": "\\b(from|import|as)\\b"
+        },
+        {
+          "name": "storage.modifier.dana",
+          "match": "\\b(abstract|static|final|override|async|await)\\b"
+        },
+        {
+          "name": "keyword.operator.logical.dana",
+          "match": "\\b(and|or|not|is|in)\\b"
         },
         {
           "name": "constant.language.boolean.dana",
@@ -60,7 +209,11 @@
       "patterns": [
         {
           "name": "storage.type.dana",
-          "match": "\\b(int|float|str|bool|list|dict|tuple|set|any)\\b"
+          "match": "\\b(int|float|str|bool|list|dict|tuple|set|any|void|object)\\b"
+        },
+        {
+          "name": "storage.type.generic.dana",
+          "match": "\\b[A-Z][A-Za-z0-9_]*\\b"
         }
       ]
     },
