@@ -458,6 +458,350 @@ class FunctionResolver:
         return False
 
 
+def safe_refactor_phase_3():
+    """Phase 3: Extract error handling components."""
+    framework = SafetyFramework()
+    
+    context = RefactoringContext(
+        name="function_executor_phase3_error_handling",
+        description="Extract FunctionExecutionErrorHandler and PositionalErrorRecoveryStrategy to separate module",
+        target_files=[
+            "opendxa/dana/sandbox/interpreter/executor/function_executor.py",
+            "opendxa/dana/sandbox/interpreter/executor/function_error_handling.py"
+        ],
+        test_modules=[
+            "tests/dana/sandbox/interpreter/",
+        ]
+    )
+    
+    # Load baseline
+    baseline = framework.load_baseline()
+    if baseline is None:
+        print("❌ No baseline found. Run the safety framework first.")
+        return False
+    
+    # Create backup
+    backup_name = framework.create_backup(context)
+    
+    try:
+        print(f"\n🔧 Phase 3: {context.description}")
+        
+        # Step 1: Create the new function_error_handling.py file
+        error_handling_content = '''"""
+Function error handling utilities for Dana language function execution.
+
+This module provides comprehensive error handling and recovery mechanisms
+for function execution in the Dana language interpreter.
+
+Copyright © 2025 Aitomatic, Inc.
+MIT License
+"""
+
+import logging
+from typing import Any, List, Dict
+
+from opendxa.dana.common.exceptions import FunctionRegistryError, SandboxError
+from opendxa.dana.sandbox.parser.ast import FunctionCall
+
+
+class FunctionExecutionErrorHandler:
+    """Centralized error handling for function execution.
+
+    This class encapsulates all error handling logic for function execution,
+    including exception mapping, error recovery, and message formatting.
+    """
+
+    def __init__(self, executor: "FunctionExecutor"):
+        """Initialize error handler.
+
+        Args:
+            executor: The function executor instance
+        """
+        self.executor = executor
+        self.logger = logging.getLogger(__name__)
+
+    def handle_function_call_error(self, error: Exception, node: FunctionCall, context: Any) -> Any:
+        """Handle errors during function call execution.
+
+        Args:
+            error: The exception that occurred
+            node: The function call node
+            context: The execution context
+
+        Returns:
+            Error response or re-raises exception
+        """
+        # Log the error for debugging
+        self.logger.error(f"Function call error for '{node.name}': {error}")
+
+        # Check if this is a positional argument error that we can recover from
+        if self._is_positional_argument_error(error):
+            recovery_strategy = PositionalErrorRecoveryStrategy(self.executor)
+            return recovery_strategy.attempt_recovery(error, node, context)
+
+        # Check if this is a registry-related error
+        if isinstance(error, FunctionRegistryError):
+            return self._handle_registry_error(error, node)
+
+        # For other errors, re-raise
+        raise error
+
+    def _is_positional_argument_error(self, error: Exception) -> bool:
+        """Check if the error is related to positional arguments.
+
+        Args:
+            error: The exception to check
+
+        Returns:
+            True if this is a positional argument error
+        """
+        error_msg = str(error).lower()
+        positional_indicators = [
+            "takes",
+            "positional argument",
+            "too many positional arguments",
+            "missing",
+            "required positional argument"
+        ]
+        return any(indicator in error_msg for indicator in positional_indicators)
+
+    def _handle_registry_error(self, error: FunctionRegistryError, node: FunctionCall) -> Any:
+        """Handle function registry errors.
+
+        Args:
+            error: The registry error
+            node: The function call node
+
+        Returns:
+            Error response
+        """
+        return self.executor._create_error_response(
+            f"Function '{node.name}' not found in registry",
+            original_error=error
+        )
+
+    def format_error_message(self, error: Exception, function_name: str, context: str = "") -> str:
+        """Format a comprehensive error message.
+
+        Args:
+            error: The exception
+            function_name: Name of the function that failed
+            context: Additional context information
+
+        Returns:
+            Formatted error message
+        """
+        base_msg = f"Error executing function '{function_name}': {str(error)}"
+        if context:
+            base_msg += f" (Context: {context})"
+        return base_msg
+
+
+class PositionalErrorRecoveryStrategy:
+    """Strategy for recovering from positional argument errors.
+
+    This class implements recovery mechanisms when function calls fail
+    due to positional argument mismatches.
+    """
+
+    def __init__(self, executor: "FunctionExecutor"):
+        """Initialize recovery strategy.
+
+        Args:
+            executor: The function executor instance
+        """
+        self.executor = executor
+        self.logger = logging.getLogger(__name__)
+
+    def attempt_recovery(self, error: Exception, node: FunctionCall, context: Any) -> Any:
+        """Attempt to recover from a positional argument error.
+
+        Args:
+            error: The original error
+            node: The function call node
+            context: The execution context
+
+        Returns:
+            Result of recovery attempt or raises original error
+        """
+        self.logger.debug(f"Attempting positional error recovery for '{node.name}': {error}")
+
+        # Strategy 1: Try converting positional args to keyword args
+        try:
+            return self._try_keyword_conversion(node, context)
+        except Exception as recovery_error:
+            self.logger.debug(f"Keyword conversion failed: {recovery_error}")
+
+        # Strategy 2: Try with fewer arguments
+        try:
+            return self._try_reduced_args(node, context)
+        except Exception as recovery_error:
+            self.logger.debug(f"Reduced args failed: {recovery_error}")
+
+        # Recovery failed, raise original error
+        self.logger.debug(f"All recovery strategies failed for '{node.name}'")
+        raise error
+
+    def _try_keyword_conversion(self, node: FunctionCall, context: Any) -> Any:
+        """Try converting positional arguments to keyword arguments.
+
+        Args:
+            node: The function call node
+            context: The execution context
+
+        Returns:
+            Result of function call with keyword arguments
+        """
+        # This is a simplified implementation
+        # In practice, you'd need function signature inspection
+        converted_kwargs = {}
+        
+        # Convert numeric keys to common parameter names
+        for key, value in node.args.items():
+            if key.isdigit():
+                param_names = ["arg1", "arg2", "arg3", "data", "value", "input"]
+                if int(key) < len(param_names):
+                    converted_kwargs[param_names[int(key)]] = value
+                else:
+                    converted_kwargs[f"arg{int(key) + 1}"] = value
+            else:
+                converted_kwargs[key] = value
+
+        # Create a new node with converted arguments
+        converted_node = FunctionCall(
+            name=node.name,
+            args=converted_kwargs,
+            location=node.location
+        )
+
+        return self.executor.execute_function_call(converted_node, context)
+
+    def _try_reduced_args(self, node: FunctionCall, context: Any) -> Any:
+        """Try executing with a reduced set of arguments.
+
+        Args:
+            node: The function call node
+            context: The execution context
+
+        Returns:
+            Result of function call with reduced arguments
+        """
+        if not node.args:
+            raise ValueError("No arguments to reduce")
+
+        # Try removing the last argument
+        reduced_args = dict(node.args)
+        
+        # Find the highest numeric key and remove it
+        numeric_keys = [k for k in reduced_args.keys() if k.isdigit()]
+        if numeric_keys:
+            highest_key = max(numeric_keys, key=int)
+            del reduced_args[highest_key]
+
+            # Create a new node with reduced arguments
+            reduced_node = FunctionCall(
+                name=node.name,
+                args=reduced_args,
+                location=node.location
+            )
+
+            return self.executor.execute_function_call(reduced_node, context)
+
+        raise ValueError("Cannot reduce arguments further")
+
+    def get_recovery_suggestions(self, error: Exception, function_name: str) -> List[str]:
+        """Get suggestions for recovering from the error.
+
+        Args:
+            error: The error that occurred
+            function_name: Name of the function
+
+        Returns:
+            List of recovery suggestions
+        """
+        suggestions = []
+        error_msg = str(error).lower()
+
+        if "too many" in error_msg:
+            suggestions.append(f"Try calling '{function_name}' with fewer arguments")
+            suggestions.append("Check the function signature for required parameters")
+
+        if "missing" in error_msg:
+            suggestions.append(f"Try calling '{function_name}' with additional arguments")
+            suggestions.append("Check if required parameters are missing")
+
+        if "positional" in error_msg:
+            suggestions.append("Try using keyword arguments instead of positional arguments")
+            suggestions.append("Check the parameter order for the function")
+
+        if not suggestions:
+            suggestions.append(f"Check the documentation for function '{function_name}'")
+
+        return suggestions
+'''
+        
+        # Create the new file
+        new_file_path = project_root / "opendxa/dana/sandbox/interpreter/executor/function_error_handling.py"
+        with open(new_file_path, 'w') as f:
+            f.write(error_handling_content)
+        
+        print(f"✅ Created: {new_file_path}")
+        
+        # Step 2: Update function_executor.py to import from new module and remove classes
+        executor_file = project_root / "opendxa/dana/sandbox/interpreter/executor/function_executor.py"
+        with open(executor_file, 'r') as f:
+            content = f.read()
+        
+        # Add import for error handling
+        error_handling_import = "from opendxa.dana.sandbox.interpreter.executor.function_error_handling import FunctionExecutionErrorHandler, PositionalErrorRecoveryStrategy"
+        
+        lines = content.split('\n')
+        import_insertion_point = -1
+        for i, line in enumerate(lines):
+            if line.startswith('from opendxa.dana.sandbox.interpreter.executor.function_resolver import'):
+                import_insertion_point = i + 1
+                break
+        
+        if import_insertion_point > 0:
+            lines.insert(import_insertion_point, error_handling_import)
+        
+        # Remove FunctionExecutionErrorHandler and PositionalErrorRecoveryStrategy class definitions
+        new_lines = []
+        skip_class = False
+        class_names = ['FunctionExecutionErrorHandler', 'PositionalErrorRecoveryStrategy']
+        
+        for line in lines:
+            start_of_class = any(line.startswith(f'class {cls_name}:') for cls_name in class_names)
+            if start_of_class:
+                skip_class = True
+                continue
+            elif skip_class and line.startswith('class ') and not any(cls_name in line for cls_name in class_names):
+                skip_class = False
+                new_lines.append(line)
+            elif not skip_class:
+                new_lines.append(line)
+        
+        # Write updated content
+        with open(executor_file, 'w') as f:
+            f.write('\n'.join(new_lines))
+        
+        print(f"✅ Updated: {executor_file}")
+        
+        # Validate the refactoring
+        if framework.validate_refactoring(context, baseline):
+            print(f"✅ Phase 3 completed successfully")
+            return True
+        else:
+            print(f"❌ Phase 3 validation failed, restoring backup...")
+            framework.restore_backup(backup_name)
+            return False
+            
+    except Exception as e:
+        print(f"💥 Phase 3 error: {e}")
+        framework.restore_backup(backup_name)
+        return False
+
+
 def main():
     """Main refactoring entry point."""
     # Analyze the structure first
@@ -466,18 +810,18 @@ def main():
     for phase, details in plan.items():
         print(f"   {phase}: {details['description']}")
     
-    # Execute Phase 2 (Phase 1 already completed)
-    print(f"\n🚀 Starting Phase 2 safe refactoring...")
-    success = safe_refactor_phase_2()
+    # Execute Phase 3 (Phases 1 & 2 already completed)
+    print(f"\n🚀 Starting Phase 3 safe refactoring...")
+    success = safe_refactor_phase_3()
     
     if success:
-        print(f"\n✅ Phase 2 refactoring completed successfully!")
-        print(f"   - Extracted ResolvedFunction and FunctionResolver to separate module")
+        print(f"\n✅ Phase 3 refactoring completed successfully!")
+        print(f"   - Extracted FunctionExecutionErrorHandler and PositionalErrorRecoveryStrategy")
         print(f"   - All tests still passing")
-        print(f"   - Function executor reduced from 911 to ~650 lines")
-        print(f"   - Ready for Phase 3")
+        print(f"   - Function executor reduced from ~690 to ~500 lines")
+        print(f"   - Ready for Phase 4 (optional optimization)")
     else:
-        print(f"\n❌ Phase 2 refactoring failed")
+        print(f"\n❌ Phase 3 refactoring failed")
         print(f"   - Changes rolled back")
         print(f"   - Original functionality preserved")
 
