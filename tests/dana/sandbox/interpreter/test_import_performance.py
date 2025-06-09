@@ -11,10 +11,13 @@ import os
 import time
 from pathlib import Path
 
+import pytest
+
 from opendxa.dana.module.core import initialize_module_system, reset_module_system
 from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
 
 
+@pytest.mark.deep
 class TestImportPerformance:
     """Performance baseline tests for import functionality."""
 
@@ -157,7 +160,7 @@ class TestImportPerformance:
         perf_stats = self.measure_execution_time(multiple_imports, iterations=3)
 
         # Performance assertions
-        avg_per_import = perf_stats["avg_time"] / 3  # 3 imports per iteration
+        avg_per_import = perf_stats["avg_time"] / 5  # 5 imports per iteration
         assert avg_per_import < 0.5, f"Multiple imports too slow: {avg_per_import:.4f}s per import"
 
         print(f"Multiple imports performance: {perf_stats['avg_time']:.4f}s total, {avg_per_import:.4f}s per import")

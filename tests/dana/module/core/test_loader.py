@@ -3,7 +3,6 @@
 import pytest
 
 from opendxa.dana.module.core.errors import (
-    ModuleNotFoundError,
     SyntaxError,
 )
 from opendxa.dana.module.core.types import Module, ModuleSpec
@@ -70,8 +69,10 @@ def broken function() -> str  # Missing colon
 
 def test_loader_module_not_found(loader):
     """Test handling non-existent modules."""
-    with pytest.raises(ModuleNotFoundError):
-        loader.find_spec("nonexistent_module", None)
+    # find_spec should return None for non-existent modules (not raise)
+    # This is the correct behavior for MetaPathFinder protocol
+    spec = loader.find_spec("nonexistent_module", None)
+    assert spec is None
 
 
 def test_loader_package_handling(loader, sample_package):
