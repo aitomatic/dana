@@ -6,7 +6,7 @@ This source code is licensed under the license found in the LICENSE file in the 
 Custom exceptions for the Dana module.
 """
 
-from typing import Any, Optional
+from typing import Any
 
 
 class DanaError(Exception):
@@ -17,7 +17,7 @@ class DanaError(Exception):
     """
 
     def __init__(
-        self, message: str, line: int = 0, source_line: str = "", original_error: Optional[Exception] = None, context: Optional[Any] = None
+        self, message: str, line: int = 0, source_line: str = "", original_error: Exception | None = None, context: Any | None = None
     ):
         """Initialize a Dana error.
 
@@ -96,7 +96,7 @@ class FunctionRegistryError(SandboxError):
         namespace: str = "",
         operation: str = "",
         calling_function: str = "",
-        call_stack: Optional[list] = None,
+        call_stack: list | None = None,
         **kwargs,
     ):
         """Initialize a function registry error.
@@ -210,7 +210,7 @@ class InterpretError(DanaError):
 class TypeError(Exception):
     """Custom error for type checking in Dana."""
 
-    def __init__(self, message: str, node: Optional[Any] = None):
+    def __init__(self, message: str, node: Any | None = None):
         self.message = message
         self.node = node
         super().__init__(self.message)

@@ -5,9 +5,10 @@ This module defines the core abstractions that all IPV implementations must foll
 """
 
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Callable, Dict, Optional
+from typing import Any
 
 
 class IPVPhaseType(Enum):
@@ -75,21 +76,21 @@ class IPVConfig:
     context: ContextLevel = ContextLevel.STANDARD
 
     # Phase-specific configurations
-    infer_config: Dict[str, Any] = field(default_factory=dict)
-    process_config: Dict[str, Any] = field(default_factory=dict)
-    validate_config: Dict[str, Any] = field(default_factory=dict)
+    infer_config: dict[str, Any] = field(default_factory=dict)
+    process_config: dict[str, Any] = field(default_factory=dict)
+    validate_config: dict[str, Any] = field(default_factory=dict)
 
     # Custom functions for each phase
-    infer_function: Optional[Callable] = None
-    process_function: Optional[Callable] = None
-    validate_function: Optional[Callable] = None
+    infer_function: Callable | None = None
+    process_function: Callable | None = None
+    validate_function: Callable | None = None
 
     # General settings
     max_iterations: int = 3
-    timeout_seconds: Optional[float] = None
+    timeout_seconds: float | None = None
     debug_mode: bool = False
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert config to dictionary format."""
         return {
             "reliability": self.reliability.value,
@@ -106,7 +107,7 @@ class IPVConfig:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "IPVConfig":
+    def from_dict(cls, data: dict[str, Any]) -> "IPVConfig":
         """Create config from dictionary."""
         config = cls()
 
@@ -136,9 +137,9 @@ class IPVResult:
 
     success: bool
     result: Any
-    error: Optional[Exception] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    execution_time: Optional[float] = None
+    error: Exception | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+    execution_time: float | None = None
 
     def is_success(self) -> bool:
         """Check if the phase execution was successful."""
@@ -196,7 +197,7 @@ class IPVPhase(ABC):
         if not isinstance(config, IPVConfig):
             raise ValueError(f"Expected IPVConfig, got {type(config)}")
 
-    def get_phase_config(self, config: IPVConfig) -> Dict[str, Any]:
+    def get_phase_config(self, config: IPVConfig) -> dict[str, Any]:
         """Get the configuration specific to this phase."""
         if self.phase_type == IPVPhaseType.INFER:
             return config.infer_config
@@ -211,7 +212,7 @@ class IPVPhase(ABC):
 class IPVError(Exception):
     """Base exception for IPV-related errors."""
 
-    def __init__(self, message: str, phase: Optional[IPVPhaseType] = None, original_error: Optional[Exception] = None):
+    def __init__(self, message: str, phase: IPVPhaseType | None = None, original_error: Exception | None = None):
         super().__init__(message)
         self.phase = phase
         self.original_error = original_error

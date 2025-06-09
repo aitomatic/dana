@@ -85,6 +85,7 @@ from opendxa.common.graph import (
     TopologicalTraversal,
     TraversalStrategy,
 )
+
 # Note: IO imports removed to break circular dependency
 # BaseIO extends BaseResource, so importing IO here creates circular imports
 # Import IO classes directly where needed instead
@@ -104,12 +105,6 @@ from opendxa.common.resource.base_resource import BaseResource
 from opendxa.common.resource.human_resource import HumanResource
 from opendxa.common.resource.kb_resource import KBResource
 from opendxa.common.resource.llm_resource import LLMResource
-from opendxa.common.resource.memory_resource import (
-    LTMemoryResource,
-    MemoryResource,
-    PermMemoryResource,
-    STMemoryResource,
-)
 from opendxa.common.resource.mcp import (
     BaseMcpService,
     HttpTransportParams,
@@ -117,7 +112,14 @@ from opendxa.common.resource.mcp import (
     McpResource,
     StdioTransportParams,
 )
+from opendxa.common.resource.memory_resource import (
+    LTMemoryResource,
+    MemoryResource,
+    PermMemoryResource,
+    STMemoryResource,
+)
 from opendxa.common.resource.wot_resource import WoTResource
+
 
 # Exception for when a resource is unavailable
 class ResourceUnavailableError(Exception):
@@ -129,13 +131,7 @@ from opendxa.common.types import (
     JsonPrimitive,
     JsonType,
 )
-from opendxa.common.utils import (
-    DXA_LOGGER,
-    DXALogger,
-    LLMInteractionAnalyzer,
-    LLMInteractionVisualizer,
-    Misc
-)
+from opendxa.common.utils import DXA_LOGGER, DXALogger, LLMInteractionAnalyzer, LLMInteractionVisualizer, Misc
 
 __all__ = [
     # Exceptions (from exceptions.py)

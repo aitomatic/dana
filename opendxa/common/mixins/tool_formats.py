@@ -5,12 +5,12 @@ that can be used with the ToolCallable mixin.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Set, Tuple
+from typing import Any
 
 from mcp import Tool as McpTool
 
 
-def _strip_fields(schema: Dict[str, Any], fields_to_strip: Set[str]) -> Dict[str, Any]:
+def _strip_fields(schema: dict[str, Any], fields_to_strip: set[str]) -> dict[str, Any]:
     """Recursively remove specified fields from a schema dictionary."""
     if not isinstance(schema, dict):
         return schema
@@ -32,7 +32,7 @@ class ToolFormat(ABC):
     """Base class for tool format converters."""
 
     @classmethod
-    def parse_tool_name(cls, name: str) -> Tuple[str, str, str]:
+    def parse_tool_name(cls, name: str) -> tuple[str, str, str]:
         """Parse a function name string into its components.
 
         The function name string is expected to be in the format:
@@ -75,7 +75,7 @@ class ToolFormat(ABC):
         return f"{resource_name}__{resource_id}__{tool_name}"
 
     @abstractmethod
-    def convert(self, name: str, description: str, schema: Dict[str, Any]) -> Any:
+    def convert(self, name: str, description: str, schema: dict[str, Any]) -> Any:
         """Convert tool information to the desired format.
 
         Args:
@@ -92,7 +92,7 @@ class ToolFormat(ABC):
 class McpToolFormat(ToolFormat):
     """Converter for MCP tool format."""
 
-    def __init__(self, fields_to_strip: Set[str] = None):
+    def __init__(self, fields_to_strip: set[str] = None):
         """Initialize the MCP format converter.
 
         Args:
@@ -100,7 +100,7 @@ class McpToolFormat(ToolFormat):
         """
         self.fields_to_strip = fields_to_strip or {"title", "default", "additionalProperties"}
 
-    def convert(self, name: str, description: str, schema: Dict[str, Any]) -> McpTool:
+    def convert(self, name: str, description: str, schema: dict[str, Any]) -> McpTool:
         """Convert to MCP tool format.
 
         Returns:
@@ -142,7 +142,7 @@ class McpToolFormat(ToolFormat):
 class OpenAIToolFormat(ToolFormat):
     """Converter for OpenAI function format."""
 
-    def __init__(self, resource_name: str, resource_id: str, fields_to_strip: Set[str] = None):
+    def __init__(self, resource_name: str, resource_id: str, fields_to_strip: set[str] = None):
         """Initialize the OpenAI format converter.
 
         Args:
@@ -154,7 +154,7 @@ class OpenAIToolFormat(ToolFormat):
         self.resource_id = resource_id
         self.fields_to_strip = fields_to_strip or {"title", "default", "additionalProperties"}
 
-    def convert(self, name: str, description: str, schema: Dict[str, Any]) -> Dict[str, Any]:
+    def convert(self, name: str, description: str, schema: dict[str, Any]) -> dict[str, Any]:
         """Convert to OpenAI function format.
 
         Args:
@@ -202,7 +202,7 @@ class OpenAIToolFormat(ToolFormat):
             },
         }
 
-    def from_mcp_tool_format(self, mcp_tool: McpTool) -> Dict[str, Any]:
+    def from_mcp_tool_format(self, mcp_tool: McpTool) -> dict[str, Any]:
         """Convert an MCP tool to OpenAI function format."""
         return {
             "type": "function",

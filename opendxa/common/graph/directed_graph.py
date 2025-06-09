@@ -1,8 +1,9 @@
 """Base directed graph implementation."""
 
+from collections.abc import Iterator
 from enum import Enum
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, TextIO, Union
+from typing import TYPE_CHECKING, Any, Optional, TextIO
 
 from pydantic import BaseModel, Field
 
@@ -38,7 +39,7 @@ class Node(BaseModel):
     node_id: str
     node_type: NodeType = Field(default=NodeType.NODE)
     description: str = Field(default="")
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
 
     def __hash__(self) -> int:
         """Make node hashable by id."""
@@ -56,17 +57,17 @@ class Edge(BaseModel):
 
     source: str
     target: str
-    metadata: Dict[str, Any] = Field(default_factory=dict)
-    condition: Optional[str] = None
-    state_updates: Dict[str, Any] = Field(default_factory=dict)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    condition: str | None = None
+    state_updates: dict[str, Any] = Field(default_factory=dict)
 
     def __init__(
         self,
-        source: Union[str, Node],
-        target: Union[str, Node],
-        metadata: Optional[Dict[str, Any]] = None,
-        condition: Optional[str] = None,
-        state_updates: Optional[Dict[str, Any]] = None,
+        source: str | Node,
+        target: str | Node,
+        metadata: dict[str, Any] | None = None,
+        condition: str | None = None,
+        state_updates: dict[str, Any] | None = None,
         **data,
     ):
         source_id = source.node_id if isinstance(source, Node) else source
@@ -92,13 +93,13 @@ class DirectedGraph(Configurable):
 
     def __init__(self):
         super().__init__()
-        self._nodes: Dict[str, Node] = {}
-        self._edges: List[Edge] = []
-        self._outgoing: Dict[str, List[Edge]] = {}
-        self._incoming: Dict[str, List[Edge]] = {}
-        self._visualizer: Optional[GraphVisualizer] = None
-        self._serializer: Optional[GraphSerializer] = None
-        self._default_traversal: Optional[TopologicalTraversal] = None
+        self._nodes: dict[str, Node] = {}
+        self._edges: list[Edge] = []
+        self._outgoing: dict[str, list[Edge]] = {}
+        self._incoming: dict[str, list[Edge]] = {}
+        self._visualizer: GraphVisualizer | None = None
+        self._serializer: GraphSerializer | None = None
+        self._default_traversal: TopologicalTraversal | None = None
         self._cursor = None
 
     @property
@@ -111,22 +112,22 @@ class DirectedGraph(Configurable):
         self._cursor = cursor
 
     @property
-    def nodes(self) -> Dict[str, Node]:
+    def nodes(self) -> dict[str, Node]:
         """Get all nodes in the graph."""
         return self._nodes
 
     @nodes.setter
-    def nodes(self, nodes: Dict[str, Node]) -> None:
+    def nodes(self, nodes: dict[str, Node]) -> None:
         """Set all nodes in the graph."""
         self._nodes = nodes
 
     @property
-    def edges(self) -> List[Edge]:
+    def edges(self) -> list[Edge]:
         """Get all edges in the graph."""
         return self._edges
 
     @edges.setter
-    def edges(self, edges: List[Edge]) -> None:
+    def edges(self, edges: list[Edge]) -> None:
         """Set all edges in the graph."""
         self._edges = edges
 
@@ -139,7 +140,7 @@ class DirectedGraph(Configurable):
         return any(edge.source == source_id and edge.target == target_id for edge in self.edges)
 
     @classmethod
-    def from_yaml(cls, stream: Union[str, TextIO, Path]) -> "DirectedGraph":
+    def from_yaml(cls, stream: str | TextIO | Path) -> "DirectedGraph":
         """Create graph from YAML specification."""
         serializer: GraphSerializer = GraphSerializer()
         return serializer.from_yaml(stream, cls)
@@ -171,19 +172,19 @@ class DirectedGraph(Configurable):
         self._outgoing[source_id] = [edge for edge in self._outgoing[source_id] if edge.target != target_id]
         self._incoming[target_id] = [edge for edge in self._incoming[target_id] if edge.source != source_id]
 
-    def get_node_by_id(self, node_id: str) -> Optional[Node]:
+    def get_node_by_id(self, node_id: str) -> Node | None:
         """Get node by ID."""
         return self.nodes.get(node_id)
 
-    def get_edges_from(self, node_id: str) -> List[Edge]:
+    def get_edges_from(self, node_id: str) -> list[Edge]:
         """Get all edges from node."""
         return self._outgoing.get(node_id, [])
 
-    def get_next_nodes(self, node_id: str) -> List[Node]:
+    def get_next_nodes(self, node_id: str) -> list[Node]:
         """Get nodes that can be reached directly from given node."""
         return [self.nodes[edge.target] for edge in self._outgoing[node_id]]
 
-    def get_prev_nodes(self, node_id: str) -> List[Node]:
+    def get_prev_nodes(self, node_id: str) -> list[Node]:
         """Get nodes that can reach given node directly."""
         return [self.nodes[edge.source] for edge in self._incoming[node_id]]
 
@@ -224,7 +225,7 @@ class DirectedGraph(Configurable):
             raise ValueError("Visualizer is not set")
         return self._visualizer.to_ascii_art(self)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary representation."""
         if self._serializer is None:
             raise ValueError("Serializer is not set")
@@ -237,7 +238,7 @@ class DirectedGraph(Configurable):
         cursor_class = Misc.get_class_by_name(_CURSOR_CLASS_NAME)
         return cursor_class(self, start_node, strategy)
 
-    def get_current_node(self) -> Optional[Node]:
+    def get_current_node(self) -> Node | None:
         """Get current node from cursor if it exists."""
         return self._cursor.current if self._cursor else None
 
@@ -249,11 +250,11 @@ class DirectedGraph(Configurable):
         self._cursor = self.get_a_cursor(start_node)
         return self._cursor
 
-    def get_start_node(self) -> Optional[Node]:
+    def get_start_node(self) -> Node | None:
         """Get the first START type node found."""
         return next((node for node in self.nodes.values() if node.node_type == NodeType.START), None)
 
-    def get_end_nodes(self) -> List[Node]:
+    def get_end_nodes(self) -> list[Node]:
         """Get all END type nodes."""
         return [node for node in self.nodes.values() if node.node_type == NodeType.END]
 
@@ -263,6 +264,6 @@ class DirectedGraph(Configurable):
             raise ValueError(f"Node {node_id} not found in graph")
         self._cursor = self.get_a_cursor(self.nodes[node_id])
 
-    def get_outgoing_edges(self, node_id: str) -> List[Edge]:
+    def get_outgoing_edges(self, node_id: str) -> list[Edge]:
         """Get all edges going out from node."""
         return self._outgoing.get(node_id, [])

@@ -8,12 +8,12 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from typing import Any, Union
+from typing import Any
 
 from opendxa.dana.common.exceptions import ParseError
 
 
-def insert_local_scope(parts: Union[list[str], str]) -> Any:
+def insert_local_scope(parts: list[str] | str) -> Any:
     """Insert local scope prefix to parts if not already present.
     
     Args:

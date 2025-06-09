@@ -21,7 +21,7 @@ Example:
 """
 
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -35,15 +35,15 @@ class MemoryEntry(BaseModel):
 
     content: Any = Field(..., description="The content of the memory")
     timestamp: float = Field(default_factory=lambda: datetime.now().timestamp(), description="When the memory was created")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata about the memory")
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata about the memory")
     importance: float = Field(default=1.0, description="Importance of the memory (higher = more important)")
-    context: Dict[str, Any] = Field(default_factory=dict, description="Contextual information for the memory")
+    context: dict[str, Any] = Field(default_factory=dict, description="Contextual information for the memory")
 
 
 class MemoryCapability(BaseCapability):
     """Capability to manage agent's memory and state."""
 
-    def __init__(self, max_size: Optional[int] = None, decay_rate: float = 0.1, importance_threshold: float = 0.5):
+    def __init__(self, max_size: int | None = None, decay_rate: float = 0.1, importance_threshold: float = 0.5):
         """Initialize memory capability.
 
         Args:
@@ -55,10 +55,10 @@ class MemoryCapability(BaseCapability):
         self.max_size = max_size
         self.decay_rate = decay_rate
         self.importance_threshold = importance_threshold
-        self._memories: List[MemoryEntry] = []
-        self._working_memory: Dict[str, Any] = {}
+        self._memories: list[MemoryEntry] = []
+        self._working_memory: dict[str, Any] = {}
 
-    async def apply(self, context: Dict[str, Any], **kwargs) -> Dict[str, Any]:
+    async def apply(self, context: dict[str, Any], **kwargs) -> dict[str, Any]:
         """Use memory capability.
 
         Args:
@@ -83,11 +83,11 @@ class MemoryCapability(BaseCapability):
             return await self._clear_memories(kwargs.get("filter", {}))
         return {"success": False, "error": f"Unknown operation: {operation}"}
 
-    def can_handle(self, request: Dict[str, Any]) -> bool:
+    def can_handle(self, request: dict[str, Any]) -> bool:
         """Check if memory capability can handle the request."""
         return True  # Memory capability can always be used
 
-    async def _store_memory(self, content: Any, metadata: Dict, importance: float, context: Dict) -> Dict[str, Any]:
+    async def _store_memory(self, content: Any, metadata: dict, importance: float, context: dict) -> dict[str, Any]:
         """Store a new memory."""
         try:
             # Create new memory entry
@@ -107,7 +107,7 @@ class MemoryCapability(BaseCapability):
         except Exception as e:
             raise DXAMemoryError(f"Failed to store memory: {str(e)}") from e
 
-    async def _retrieve_memories(self, query: Dict, limit: Optional[int] = None) -> Dict[str, Any]:
+    async def _retrieve_memories(self, query: dict, limit: int | None = None) -> dict[str, Any]:
         """Retrieve memories matching query."""
         try:
             # Apply importance decay
@@ -136,7 +136,7 @@ class MemoryCapability(BaseCapability):
         except Exception as e:
             raise DXAMemoryError(f"Failed to retrieve memories: {str(e)}") from e
 
-    async def _update_working_memory(self, updates: Dict[str, Any]) -> Dict[str, Any]:
+    async def _update_working_memory(self, updates: dict[str, Any]) -> dict[str, Any]:
         """Update working memory."""
         try:
             self._working_memory.update(updates)
@@ -146,7 +146,7 @@ class MemoryCapability(BaseCapability):
         except Exception as e:
             raise DXAMemoryError(f"Failed to update working memory: {str(e)}") from e
 
-    async def _clear_memories(self, filter_dict: Dict) -> Dict[str, Any]:
+    async def _clear_memories(self, filter_dict: dict) -> dict[str, Any]:
         """Clear memories matching filter."""
         try:
             initial_count = len(self._memories)
@@ -175,7 +175,7 @@ class MemoryCapability(BaseCapability):
             time_diff = current_time - memory.timestamp
             memory.importance *= (1 - self.decay_rate) ** time_diff
 
-    def _matches_query(self, memory: MemoryEntry, query: Dict) -> bool:
+    def _matches_query(self, memory: MemoryEntry, query: dict) -> bool:
         """Check if memory matches query conditions."""
         for key, value in query.items():
             if key in memory.metadata:

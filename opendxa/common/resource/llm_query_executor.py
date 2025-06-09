@@ -261,9 +261,17 @@ class LLMQueryExecutor(Loggable):
             response
             if isinstance(response, BaseResponse)
             else {
-                "choices": (response.choices if hasattr(response, "choices") else []),
-                "usage": (response.usage if hasattr(response, "usage") else {}),
-                "model": (response.model if hasattr(response, "model") else ""),
+                "choices": (
+                    response.get("choices", [])
+                    if isinstance(response, dict)
+                    else (response.choices if hasattr(response, "choices") else [])
+                ),
+                "usage": (
+                    response.get("usage", {}) if isinstance(response, dict) else (response.usage if hasattr(response, "usage") else {})
+                ),
+                "model": (
+                    response.get("model", "") if isinstance(response, dict) else (response.model if hasattr(response, "model") else "")
+                ),
             }
         )
 

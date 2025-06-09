@@ -10,7 +10,7 @@ and execution of Dana programs.
 """
 
 import re
-from typing import Any, Optional, Tuple
+from typing import Any
 
 from opendxa.dana.common.exceptions import DanaError, ParseError, SandboxError, StateError
 
@@ -18,7 +18,7 @@ from opendxa.dana.common.exceptions import DanaError, ParseError, SandboxError, 
 class ErrorContext:
     """Context information for error handling."""
 
-    def __init__(self, operation: str, node: Optional[Any] = None):
+    def __init__(self, operation: str, node: Any | None = None):
         """Initialize error context.
 
         Args:
@@ -29,7 +29,7 @@ class ErrorContext:
         self.node = node
         self.location = self._get_location(node) if node else None
 
-    def _get_location(self, node: Any) -> Optional[str]:
+    def _get_location(self, node: Any) -> str | None:
         """Get formatted location information from a node.
 
         Args:
@@ -90,7 +90,7 @@ class ErrorUtils:
         return f"\nAt line {line}, column {column}:\n{source_text}\n{padding}^"
 
     @staticmethod
-    def create_parse_error(message: str, node: Any, original_error: Optional[Exception] = None) -> ParseError:
+    def create_parse_error(message: str, node: Any, original_error: Exception | None = None) -> ParseError:
         """Create a ParseError with location information.
 
         Args:
@@ -108,7 +108,7 @@ class ErrorUtils:
         return error
 
     @staticmethod
-    def create_runtime_error(message: str, node: Any, original_error: Optional[Exception] = None) -> SandboxError:
+    def create_runtime_error(message: str, node: Any, original_error: Exception | None = None) -> SandboxError:
         """Create a RuntimeError with location information.
 
         Args:
@@ -126,7 +126,7 @@ class ErrorUtils:
         return error
 
     @staticmethod
-    def create_state_error(message: str, node: Any, original_error: Optional[Exception] = None) -> StateError:
+    def create_state_error(message: str, node: Any, original_error: Exception | None = None) -> StateError:
         """Create a StateError with location information.
 
         Args:
@@ -173,7 +173,7 @@ class ErrorUtils:
         return f"{error_text}\n{source_line}\n{caret_line}"
 
     @staticmethod
-    def handle_parse_error(e: Exception, node: Any, operation: str, program_text: Optional[str] = None) -> Tuple[Exception, bool]:
+    def handle_parse_error(e: Exception, node: Any, operation: str, program_text: str | None = None) -> tuple[Exception, bool]:
         """Handle an error during parsing.
 
         Args:
@@ -213,7 +213,7 @@ class ErrorUtils:
         return error, False
 
     @staticmethod
-    def handle_execution_error(e: Exception, node: Any, operation: str) -> Tuple[Exception, bool]:
+    def handle_execution_error(e: Exception, node: Any, operation: str) -> tuple[Exception, bool]:
         """Handle an error during execution.
 
         Args:

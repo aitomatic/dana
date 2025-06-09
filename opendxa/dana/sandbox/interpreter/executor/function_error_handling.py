@@ -9,7 +9,7 @@ MIT License
 """
 
 import logging
-from typing import Any, List, Dict
+from typing import Any
 
 from opendxa.dana.common.exceptions import FunctionRegistryError, SandboxError
 from opendxa.dana.sandbox.parser.ast import FunctionCall
@@ -113,8 +113,8 @@ class FunctionExecutionErrorHandler:
         node: FunctionCall,
         registry: Any,
         context: Any,
-        evaluated_args: List[Any],
-        evaluated_kwargs: Dict[str, Any],
+        evaluated_args: list[Any],
+        evaluated_kwargs: dict[str, Any],
         func_name: str,
     ) -> Any:
         """Handle registry execution errors with recovery attempts.
@@ -280,7 +280,7 @@ class PositionalErrorRecoveryStrategy:
 
         raise ValueError("Cannot reduce arguments further")
 
-    def get_recovery_suggestions(self, error: Exception, function_name: str) -> List[str]:
+    def get_recovery_suggestions(self, error: Exception, function_name: str) -> list[str]:
         """Get suggestions for recovering from the error.
 
         Args:
@@ -310,7 +310,7 @@ class PositionalErrorRecoveryStrategy:
 
         return suggestions
 
-    def can_handle(self, error: Exception, evaluated_kwargs: Dict[str, Any]) -> bool:
+    def can_handle(self, error: Exception, evaluated_kwargs: dict[str, Any]) -> bool:
         """Check if this strategy can handle the given error.
 
         Args:
@@ -342,7 +342,7 @@ class PositionalErrorRecoveryStrategy:
         return any(indicator in error_msg for indicator in positional_indicators)
 
     def recover(self, error: Exception, node: FunctionCall, registry: Any, context: Any,
-                evaluated_args: List[Any], evaluated_kwargs: Dict[str, Any], func_name: str, executor: Any) -> Any:
+                evaluated_args: list[Any], evaluated_kwargs: dict[str, Any], func_name: str, executor: Any) -> Any:
         """Recover from the error by trying different execution strategies.
 
         Args:

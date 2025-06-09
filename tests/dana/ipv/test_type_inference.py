@@ -4,7 +4,6 @@ Unit tests for IPV type inference system.
 Tests the TypeInferenceEngine class that detects expected types from various sources.
 """
 
-from typing import Dict, List
 
 from opendxa.dana.ipv.base import ContextLevel, PrecisionLevel, ReliabilityLevel, SafetyLevel, StructureLevel
 from opendxa.dana.ipv.type_inference import TypeInferenceEngine
@@ -114,10 +113,9 @@ class TestTypeInferenceEngine:
     def test_generic_type_detection(self):
         """Test detection of generic types."""
         # Test with actual generic types
-        from typing import Dict, List
 
-        assert self.engine.is_generic_type(List[str]) is True
-        assert self.engine.is_generic_type(Dict[str, int]) is True
+        assert self.engine.is_generic_type(list[str]) is True
+        assert self.engine.is_generic_type(dict[str, int]) is True
 
         # Test with basic types
         assert self.engine.is_generic_type(str) is False
@@ -128,12 +126,12 @@ class TestTypeInferenceEngine:
         """Test extraction of generic type information."""
 
         # Test List[str]
-        list_info = self.engine.get_generic_info(List[str])
+        list_info = self.engine.get_generic_info(list[str])
         assert list_info["origin"] == list
         assert str in list_info["args"]
 
         # Test Dict[str, int]
-        dict_info = self.engine.get_generic_info(Dict[str, int])
+        dict_info = self.engine.get_generic_info(dict[str, int])
         assert dict_info["origin"] == dict
         assert str in dict_info["args"]
         assert int in dict_info["args"]
@@ -184,13 +182,13 @@ class TestTypeInferenceEngine:
         """Test getting type-specific defaults for generic types."""
 
         # Test List[str] defaults
-        list_str_defaults = self.engine.get_type_defaults(List[str])
+        list_str_defaults = self.engine.get_type_defaults(list[str])
         assert list_str_defaults["reliability"] == ReliabilityLevel.HIGH
         assert "generic_args" in list_str_defaults
         assert str in list_str_defaults["generic_args"]
 
         # Test Dict[str, int] defaults
-        dict_defaults = self.engine.get_type_defaults(Dict[str, int])
+        dict_defaults = self.engine.get_type_defaults(dict[str, int])
         assert dict_defaults["structure"] == StructureLevel.STRICT
         assert "generic_args" in dict_defaults
         assert str in dict_defaults["generic_args"]

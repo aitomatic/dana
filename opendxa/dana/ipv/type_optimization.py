@@ -5,7 +5,8 @@ This module provides the TypeOptimizationRegistry that manages optimization
 rules and automatic profile selection based on inferred types.
 """
 
-from typing import Any, Callable, Dict, List, Optional, Type
+from collections.abc import Callable
+from typing import Any
 
 from .base import ContextLevel, IPVConfig, PrecisionLevel, ReliabilityLevel, SafetyLevel, StructureLevel
 from .type_inference import TypeInferenceEngine
@@ -18,13 +19,13 @@ class TypeOptimizationRule:
 
     def __init__(
         self,
-        target_type: Type,
+        target_type: type,
         name: str,
         description: str,
-        config_overrides: Dict[str, Any],
-        infer_customizations: Optional[Dict[str, Any]] = None,
-        process_customizations: Optional[Dict[str, Any]] = None,
-        validate_customizations: Optional[Dict[str, Any]] = None,
+        config_overrides: dict[str, Any],
+        infer_customizations: dict[str, Any] | None = None,
+        process_customizations: dict[str, Any] | None = None,
+        validate_customizations: dict[str, Any] | None = None,
         priority: int = 100,
     ):
         """
@@ -49,7 +50,7 @@ class TypeOptimizationRule:
         self.validate_customizations = validate_customizations or {}
         self.priority = priority
 
-    def applies_to(self, type_obj: Type) -> bool:
+    def applies_to(self, type_obj: type) -> bool:
         """Check if this rule applies to the given type."""
         return type_obj == self.target_type
 
@@ -93,9 +94,9 @@ class TypeOptimizationRegistry:
 
     def __init__(self):
         self.type_inference = TypeInferenceEngine()
-        self._rules: List[TypeOptimizationRule] = []
-        self._type_profiles: Dict[Type, str] = {}
-        self._custom_optimizers: Dict[Type, Callable[[IPVConfig], IPVConfig]] = {}
+        self._rules: list[TypeOptimizationRule] = []
+        self._type_profiles: dict[type, str] = {}
+        self._custom_optimizers: dict[type, Callable[[IPVConfig], IPVConfig]] = {}
 
         # Initialize with default type optimization rules
         self._register_default_rules()
@@ -106,11 +107,11 @@ class TypeOptimizationRegistry:
         # Sort by priority (lower priority number = higher precedence)
         self._rules.sort(key=lambda r: r.priority)
 
-    def register_custom_optimizer(self, target_type: Type, optimizer_func: Callable[[IPVConfig], IPVConfig]) -> None:
+    def register_custom_optimizer(self, target_type: type, optimizer_func: Callable[[IPVConfig], IPVConfig]) -> None:
         """Register a custom optimization function for a specific type."""
         self._custom_optimizers[target_type] = optimizer_func
 
-    def optimize_config_for_type(self, config: IPVConfig, target_type: Type) -> IPVConfig:
+    def optimize_config_for_type(self, config: IPVConfig, target_type: type) -> IPVConfig:
         """
         Optimize an IPV config for a specific target type.
 
@@ -134,11 +135,11 @@ class TypeOptimizationRegistry:
 
         return optimized_config
 
-    def get_profile_for_type(self, target_type: Type) -> Optional[str]:
+    def get_profile_for_type(self, target_type: type) -> str | None:
         """Get the recommended profile name for a specific type."""
         return self._type_profiles.get(target_type)
 
-    def infer_and_optimize(self, config: IPVConfig, context: Any = None, variable_name: Optional[str] = None) -> IPVConfig:
+    def infer_and_optimize(self, config: IPVConfig, context: Any = None, variable_name: str | None = None) -> IPVConfig:
         """
         Infer the target type from context and optimize the config accordingly.
 
@@ -160,11 +161,11 @@ class TypeOptimizationRegistry:
             # No type inferred, return original config
             return config
 
-    def get_type_specific_settings(self, target_type: Type) -> Dict[str, Any]:
+    def get_type_specific_settings(self, target_type: type) -> dict[str, Any]:
         """Get all type-specific settings for a given type."""
         return self.type_inference.get_type_defaults(target_type)
 
-    def list_rules_for_type(self, target_type: Type) -> List[TypeOptimizationRule]:
+    def list_rules_for_type(self, target_type: type) -> list[TypeOptimizationRule]:
         """Get all rules that apply to a specific type."""
         return [rule for rule in self._rules if rule.applies_to(target_type)]
 
@@ -348,7 +349,7 @@ class TypeOptimizationProfile:
     A named collection of type optimization settings.
     """
 
-    def __init__(self, name: str, description: str, type_rules: Dict[Type, Dict[str, Any]]):
+    def __init__(self, name: str, description: str, type_rules: dict[type, dict[str, Any]]):
         """
         Initialize a type optimization profile.
 
@@ -361,7 +362,7 @@ class TypeOptimizationProfile:
         self.description = description
         self.type_rules = type_rules
 
-    def get_config_for_type(self, target_type: Type, base_config: IPVConfig) -> IPVConfig:
+    def get_config_for_type(self, target_type: type, base_config: IPVConfig) -> IPVConfig:
         """Get optimized config for a specific type using this profile."""
         if target_type not in self.type_rules:
             return base_config

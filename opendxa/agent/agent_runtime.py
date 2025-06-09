@@ -47,7 +47,7 @@ Example:
     ```
 """
 
-from typing import TYPE_CHECKING, Any, Dict, Optional, Union
+from typing import TYPE_CHECKING, Any
 
 # Local imports
 from opendxa.agent.dummy import ExecutionState, Plan, Planner, PlanStrategy, Reasoner, ReasoningStrategy, RuntimeContext, WorldState
@@ -78,9 +78,9 @@ class AgentRuntime(Loggable):
     # ===== Configuration Methods =====
     def with_planning(
         self,
-        strategy: Optional[PlanStrategy] = None,
-        planner: Optional[Planner] = None,
-        llm: Optional[Union[Dict, str, LLMResource]] = None,
+        strategy: PlanStrategy | None = None,
+        planner: Planner | None = None,
+        llm: dict | str | LLMResource | None = None,
     ) -> "AgentRuntime":
         """Configure planning strategy and LLM.
 
@@ -111,9 +111,9 @@ class AgentRuntime(Loggable):
 
     def with_reasoning(
         self,
-        strategy: Optional[ReasoningStrategy] = None,
-        reasoner: Optional[Reasoner] = None,
-        llm: Optional[Union[Dict, str, LLMResource]] = None,
+        strategy: ReasoningStrategy | None = None,
+        reasoner: Reasoner | None = None,
+        llm: dict | str | LLMResource | None = None,
     ) -> "AgentRuntime":
         """Configure reasoning strategy and LLM.
 
@@ -140,13 +140,13 @@ class AgentRuntime(Loggable):
             self.reasoner = Reasoner(strategy=strategy or ReasoningStrategy.DEFAULT, llm=llm_resource)
         return self
 
-    def _create_llm(self, llm: Union[Dict, str, LLMResource], name: str) -> LLMResource:
+    def _create_llm(self, llm: dict | str | LLMResource, name: str) -> LLMResource:
         """Create LLM from various input types."""
         if isinstance(llm, LLMResource):
             return llm
         if isinstance(llm, str):
             return LLMResource(name=f"{self._agent.name}_{name}", config={"model": llm})
-        if isinstance(llm, Dict):
+        if isinstance(llm, dict):
             return LLMResource(name=f"{self._agent.name}_{name}", config=llm)
         raise ValueError(f"Invalid LLM configuration: {llm}")
 
@@ -166,7 +166,7 @@ class AgentRuntime(Loggable):
         return self._planner
 
     @planner.setter
-    def planner(self, planner: Optional[Planner]) -> None:
+    def planner(self, planner: Planner | None) -> None:
         """Set the planner instance."""
         self._planner = planner
 
@@ -178,7 +178,7 @@ class AgentRuntime(Loggable):
         return self._reasoner
 
     @reasoner.setter
-    def reasoner(self, reasoner: Optional[Reasoner]) -> None:
+    def reasoner(self, reasoner: Reasoner | None) -> None:
         """Set the reasoner instance."""
         self._reasoner = reasoner
 

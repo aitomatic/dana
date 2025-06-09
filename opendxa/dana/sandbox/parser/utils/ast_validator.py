@@ -17,7 +17,7 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from typing import List, Optional, Tuple, cast
+from typing import cast
 
 from lark import Tree
 
@@ -32,7 +32,7 @@ class AstValidator(Loggable):
     without modifying the existing implementation.
     """
 
-    def validate_ast(self, ast: object, strict: bool = False, max_nodes: int = 5) -> Tuple[bool, List[Tuple[List[str], Tree]]]:
+    def validate_ast(self, ast: object, strict: bool = False, max_nodes: int = 5) -> tuple[bool, list[tuple[list[str], Tree]]]:
         """
         Validate that an AST does not contain any remaining Lark Tree nodes.
 
@@ -70,7 +70,7 @@ class AstValidator(Loggable):
 
         return True, []
 
-    def transform_and_validate(self, parse_tree: Tree, transformer: Optional[object] = None, strict: bool = False) -> Program:
+    def transform_and_validate(self, parse_tree: Tree, transformer: object | None = None, strict: bool = False) -> Program:
         """
         Transform a parse tree into an AST and validate it.
 

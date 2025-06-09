@@ -1,4 +1,3 @@
-from typing import List
 
 from llm_pyexecutor.cli import PipCommandsExtrator as PipParser
 from llm_pyexecutor.code import PythonCodeExtractor as PythonParser
@@ -67,7 +66,7 @@ class CodeResource(BaseResource):
 
         return clean_code
 
-    def _extract_packages(self, text: str, code: str) -> List[str]:
+    def _extract_packages(self, text: str, code: str) -> list[str]:
         """Extract unique non-standard package names from text and code."""
         try:
             python_path = self.runner._executor_venv.get_pyexecutor()
@@ -81,7 +80,7 @@ class CodeResource(BaseResource):
         except Exception as e:
             raise Exception(f"Failed to extract required packages: {str(e)}")
 
-    def _extract_pip_packages(self, text: str, separator: str = "```") -> List[str]:
+    def _extract_pip_packages(self, text: str, separator: str = "```") -> list[str]:
         """Extract unique package names from pip install commands in the text."""
         if separator in text and len(text.split(separator)) > 1:
             codes = text.split(separator)
@@ -94,7 +93,7 @@ class CodeResource(BaseResource):
         clean_code = PipParser.remove_repititive_lines(clean_code)
         return list(set(PipParser.get_packages(clean_code)))
 
-    def _install_dependencies(self, packages: List[str]) -> None:
+    def _install_dependencies(self, packages: list[str]) -> None:
         """Install the specified packages into the virtual environment if not already installed."""
         if not packages:
             return

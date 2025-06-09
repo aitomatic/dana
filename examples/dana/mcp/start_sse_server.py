@@ -16,6 +16,7 @@ The server will start on http://localhost:8080/sse and provide:
 
 import sys
 from datetime import datetime
+
 from fastmcp import FastMCP
 
 # Initialize FastMCP server for SSE transport

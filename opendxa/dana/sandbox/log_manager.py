@@ -21,7 +21,6 @@ Log level management for Dana runtime.
 
 import logging
 from enum import Enum
-from typing import Optional, Union
 
 from opendxa.common.utils.logging.dxa_logger import DXA_LOGGER
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
@@ -42,34 +41,34 @@ class SandboxLogger:
     LOG_SCOPE = "opendxa.dana"
 
     @staticmethod
-    def log(message: str, level: Union[int, str], context: Optional[SandboxContext] = None) -> None:
+    def log(message: str, level: int | str, context: SandboxContext | None = None) -> None:
         """Log a message to the sandbox logger."""
         if isinstance(level, str):
             level = LogLevel[level.upper()].value
         DXA_LOGGER.log(level, message)
 
     @staticmethod
-    def debug(message: str, context: Optional[SandboxContext] = None) -> None:
+    def debug(message: str, context: SandboxContext | None = None) -> None:
         """Log a debug message to the sandbox logger."""
         SandboxLogger.log(message, LogLevel.DEBUG.value, context)
 
     @staticmethod
-    def info(message: str, context: Optional[SandboxContext] = None) -> None:
+    def info(message: str, context: SandboxContext | None = None) -> None:
         """Log an info message to the sandbox logger."""
         SandboxLogger.log(message, LogLevel.INFO.value, context)
 
     @staticmethod
-    def warn(message: str, context: Optional[SandboxContext] = None) -> None:
+    def warn(message: str, context: SandboxContext | None = None) -> None:
         """Log a warning message to the sandbox logger."""
         SandboxLogger.log(message, LogLevel.WARN.value, context)
 
     @staticmethod
-    def error(message: str, context: Optional[SandboxContext] = None) -> None:
+    def error(message: str, context: SandboxContext | None = None) -> None:
         """Log an error message to the sandbox logger."""
         SandboxLogger.log(message, LogLevel.ERROR.value, context)
 
     @staticmethod
-    def set_system_log_level(level: Union[LogLevel, str], context: Optional[SandboxContext] = None) -> None:
+    def set_system_log_level(level: LogLevel | str, context: SandboxContext | None = None) -> None:
         """Set the log level for Dana runtime.
 
         This is the single source of truth for setting log levels in Dana.

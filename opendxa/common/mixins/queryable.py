@@ -1,7 +1,7 @@
 """Mixin for queryable objects."""
 
 from enum import Enum, auto
-from typing import Any, Dict
+from typing import Any
 
 from opendxa.common.mixins.tool_callable import ToolCallable
 from opendxa.common.types import BaseRequest, BaseResponse
@@ -29,7 +29,7 @@ class Queryable:
         self._query_max_iterations = getattr(self, "_query_max_iterations", 3)
 
     @ToolCallable.tool
-    async def query(self, request: Dict[str, Any]) -> BaseResponse:
+    async def query(self, request: dict[str, Any]) -> BaseResponse:
         """Query the Queryable object.
 
         Args:

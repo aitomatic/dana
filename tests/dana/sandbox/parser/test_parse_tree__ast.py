@@ -3,7 +3,7 @@
 #
 # This source code is licensed under the license found in the LICENSE file in the root directory of this source tree
 #
-from typing import List, cast
+from typing import cast
 
 import pytest
 
@@ -20,14 +20,11 @@ from opendxa.dana.sandbox.parser.ast import (
     LiteralExpression,
     Statement,
     UnaryExpression,
-    WithStatement,
-    PassStatement,
 )
 from opendxa.dana.sandbox.parser.transformer.expression_transformer import ExpressionTransformer
 from opendxa.dana.sandbox.parser.transformer.fstring_transformer import FStringTransformer
 from opendxa.dana.sandbox.parser.transformer.statement_transformer import StatementTransformer
 from opendxa.dana.sandbox.parser.transformer.variable_transformer import VariableTransformer
-from lark import Tree
 
 # 1. VariableTransformer tests
 
@@ -227,7 +224,7 @@ def test_statement_while_loop():
 def test_statement_for_loop():
     target = Identifier(name="i")
     iterable = Identifier(name="local.xs")
-    body: List[Statement] = [Assignment(target=Identifier("local.i"), value=LiteralExpression(1))]
+    body: list[Statement] = [Assignment(target=Identifier("local.i"), value=LiteralExpression(1))]
     loop = ForLoop(target=target, iterable=iterable, body=body)
     assert loop.target.name == "i"
     assert loop.iterable.name == "local.xs"

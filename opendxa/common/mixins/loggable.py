@@ -1,7 +1,7 @@
 """Loggable abstract base class for standardized logging across the codebase."""
 
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from opendxa.common.utils.logging.dxa_logger import DXA_LOGGER
 
@@ -28,7 +28,7 @@ class Loggable:
     """
 
     def __init__(
-        self, logger_name: Optional[str] = None, prefix: Optional[str] = None, log_data: bool = False, level: Optional[int] = None
+        self, logger_name: str | None = None, prefix: str | None = None, log_data: bool = False, level: int | None = None
     ):
         """Initialize with a standardized logger.
 
@@ -43,7 +43,7 @@ class Loggable:
         self._logger = self.__instantiate_logger(logger_name, prefix, log_data, level)
 
     def __instantiate_logger(
-        self, logger_name: Optional[str] = None, prefix: Optional[str] = None, log_data: bool = False, level: Optional[int] = None
+        self, logger_name: str | None = None, prefix: str | None = None, log_data: bool = False, level: int | None = None
     ):
         """Initialize a logger instance.
 

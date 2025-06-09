@@ -1,6 +1,6 @@
 """Factory for creating DXA resources."""
 
-from typing import Any, Dict
+from typing import Any
 
 # Local imports
 from opendxa.agent.resource.expert_resource import ExpertResource
@@ -13,7 +13,7 @@ class ResourceFactory:
     """Creates resources based on type."""
 
     @classmethod
-    def create_resource(cls, resource_type: str, config: Dict[str, Any]) -> BaseResource:
+    def create_resource(cls, resource_type: str, config: dict[str, Any]) -> BaseResource:
         """Create resource instance."""
         if resource_type == "llm":
             return LLMResource(name=config.get("name", "llm"), config=config)
@@ -22,6 +22,6 @@ class ResourceFactory:
         raise ValueError(f"Unknown resource type: {resource_type}")
 
     @classmethod
-    def create_llm_resource(cls, config: Dict[str, Any]) -> LLMResource:
+    def create_llm_resource(cls, config: dict[str, Any]) -> LLMResource:
         """Create a LLM resource with the given configuration."""
         return LLMResource(**config)

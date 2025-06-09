@@ -134,11 +134,11 @@ update-deps: ## Update dependencies to latest versions
 
 test: ## Run all tests
 	@echo "🧪 Running all tests..."
-	uv run pytest tests/
+	OPENDXA_MOCK_LLM=true uv run pytest tests/
 
 test-fast: ## Run fast tests only (excludes live/deep tests)
 	@echo "⚡ Running fast tests..."
-	uv run pytest -m "not live and not deep" tests/
+	OPENDXA_MOCK_LLM=true uv run pytest -m "not live and not deep" tests/
 
 test-live: ## Run live tests (requires API keys)
 	@echo "🌐 Running live tests (requires API keys)..."
@@ -146,7 +146,7 @@ test-live: ## Run live tests (requires API keys)
 
 test-cov: ## Run tests with coverage report
 	@echo "📊 Running tests with coverage..."
-	uv run pytest --cov=opendxa --cov-report=html --cov-report=term tests/
+	OPENDXA_MOCK_LLM=true uv run pytest --cov=opendxa --cov-report=html --cov-report=term tests/
 	@echo "📈 Coverage report generated in htmlcov/"
 
 test-watch: ## Run tests in watch mode (reruns on file changes)

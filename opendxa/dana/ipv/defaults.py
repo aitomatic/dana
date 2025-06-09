@@ -5,7 +5,7 @@ This module provides default implementations of IPV phases that can be used
 out-of-the-box or as base classes for custom implementations.
 """
 
-from typing import Any, Dict
+from typing import Any
 
 from .base import IPVConfig
 from .phases import InferPhase, ProcessPhase, ValidatePhase
@@ -22,7 +22,7 @@ class DefaultInferPhase(InferPhase):
     def __init__(self):
         super().__init__()
 
-    def _infer_strategy(self, input_data: Any, context: Any, config: IPVConfig) -> Dict[str, Any]:
+    def _infer_strategy(self, input_data: Any, context: Any, config: IPVConfig) -> dict[str, Any]:
         """Enhanced strategy inference with more sophisticated logic."""
         strategy = super()._infer_strategy(input_data, context, config)
 
@@ -119,7 +119,7 @@ class DefaultInferPhase(InferPhase):
 
         return strategy
 
-    def _collect_context(self, input_data: Any, context: Any, config: IPVConfig) -> Dict[str, Any]:
+    def _collect_context(self, input_data: Any, context: Any, config: IPVConfig) -> dict[str, Any]:
         """Enhanced context collection with more comprehensive gathering."""
         collected = super()._collect_context(input_data, context, config)
 
@@ -164,7 +164,7 @@ class DefaultProcessPhase(ProcessPhase):
         super().__init__()
 
     def _execute_processing(
-        self, original_input: Any, enhanced_context: Dict[str, Any], context: Any, config: IPVConfig, approach: Dict[str, Any]
+        self, original_input: Any, enhanced_context: dict[str, Any], context: Any, config: IPVConfig, approach: dict[str, Any]
     ) -> Any:
         """Enhanced processing with more sophisticated logic."""
 
@@ -186,7 +186,7 @@ class DefaultProcessPhase(ProcessPhase):
         else:
             return self._process_general(original_input, enhanced_context, config)
 
-    def _process_financial(self, input_data: Any, context: Dict[str, Any], config: IPVConfig) -> Any:
+    def _process_financial(self, input_data: Any, context: dict[str, Any], config: IPVConfig) -> Any:
         """Process financial-domain requests with high precision."""
         # Simulate financial processing with high precision requirements
         if isinstance(input_data, str) and any(word in input_data.lower() for word in ["price", "cost", "$"]):
@@ -201,7 +201,7 @@ class DefaultProcessPhase(ProcessPhase):
 
         return f"Financial analysis: {input_data}"
 
-    def _process_medical(self, input_data: Any, context: Dict[str, Any], config: IPVConfig) -> Any:
+    def _process_medical(self, input_data: Any, context: dict[str, Any], config: IPVConfig) -> Any:
         """Process medical-domain requests with maximum safety."""
         # Medical processing requires maximum safety
         return {
@@ -210,22 +210,22 @@ class DefaultProcessPhase(ProcessPhase):
             "safety_level": "maximum",
         }
 
-    def _process_creative(self, input_data: Any, context: Dict[str, Any], config: IPVConfig) -> Any:
+    def _process_creative(self, input_data: Any, context: dict[str, Any], config: IPVConfig) -> Any:
         """Process creative requests with flexibility."""
         # Creative processing allows more variation
         return f"Creative response to: {input_data} (with creative variation)"
 
-    def _process_extraction(self, input_data: Any, context: Dict[str, Any], config: IPVConfig) -> Any:
+    def _process_extraction(self, input_data: Any, context: dict[str, Any], config: IPVConfig) -> Any:
         """Process extraction requests with precision focus."""
         # Extraction processing focuses on precision
         return f"Extracted: {input_data}"
 
-    def _process_analysis(self, input_data: Any, context: Dict[str, Any], config: IPVConfig) -> Any:
+    def _process_analysis(self, input_data: Any, context: dict[str, Any], config: IPVConfig) -> Any:
         """Process analysis requests with structured output."""
         # Analysis processing returns structured data
         return {"input": str(input_data), "analysis": f"Analysis of {input_data}", "confidence": 0.85, "methodology": "default_analysis"}
 
-    def _process_general(self, input_data: Any, context: Dict[str, Any], config: IPVConfig) -> Any:
+    def _process_general(self, input_data: Any, context: dict[str, Any], config: IPVConfig) -> Any:
         """Process general requests with balanced approach."""
         return f"Processed: {input_data}"
 

@@ -5,7 +5,6 @@ This module provides the InputProcessor class that coordinates
 input state management and completeness checking.
 """
 
-from typing import Optional, Tuple
 
 from opendxa.common.mixins.loggable import Loggable
 
@@ -22,7 +21,7 @@ class InputProcessor(Loggable):
         self.state = InputState()
         self.checker = InputCompleteChecker()
 
-    def process_line(self, line: str) -> Tuple[bool, Optional[str]]:
+    def process_line(self, line: str) -> tuple[bool, str | None]:
         """Process a single input line.
 
         Args:
@@ -59,7 +58,7 @@ class InputProcessor(Loggable):
         # For single-line input, return False to indicate it should be executed
         return False, None
 
-    def _execute_multiline_buffer(self) -> Optional[str]:
+    def _execute_multiline_buffer(self) -> str | None:
         """Get the multiline buffer content and reset state.
 
         Returns:

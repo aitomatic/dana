@@ -5,38 +5,30 @@ This test verifies that the reason function can be called correctly in a Dana pr
 """
 
 import os
+import unittest
+from unittest.mock import patch
 
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.dana.sandbox.interpreter.functions.core.reason_function import reason_function
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
+@patch.dict(os.environ, {"OPENDXA_MOCK_LLM": "true"})
 def test_reason_function_direct_call():
-    """Test calling the reason function directly with expected parameters."""
-    # Create minimal test context
+    """Test reason function with direct call to verify basic functionality."""
+    # Create context
     context = SandboxContext()
-
-    # Two approaches to test mocking:
-    # 1. Use our environment variable approach
-    # 2. Directly use use_mock parameter
-
-    # Test with environment variable approach
-    os.environ["OPENDXA_MOCK_LLM"] = "true"
     llm_resource = LLMResource()
+
+    # Set up context with LLM resource
     context.set("system.llm_resource", llm_resource)
 
-    # Call function using environment variable-based mocking
-    result1 = reason_function("What is 2+2?", context)
-    assert result1 is not None
-
-    # Reset environment
-    os.environ.pop("OPENDXA_MOCK_LLM", None)
-
-    # Alternate approach: directly pass use_mock parameter
-    result2 = reason_function("What is 2+2?", context, use_mock=True)
-    assert result2 is not None
+    # Test basic call
+    result = reason_function("test prompt", context)
+    assert result is not None
 
 
+@patch.dict(os.environ, {"OPENDXA_MOCK_LLM": "true"})
 def test_reason_function_parameter_order():
     """Test reason function with different parameter orders to verify robustness."""
     # Create context
@@ -69,8 +61,6 @@ Tests for the unified execution behavior in Dana.
 These tests verify that statements and expressions are executed consistently,
 particularly focusing on function calls in different contexts.
 """
-
-import unittest
 
 from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
 from opendxa.dana.sandbox.parser.dana_parser import DanaParser

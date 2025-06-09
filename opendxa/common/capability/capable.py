@@ -1,6 +1,6 @@
 """Mixin for capable objects."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -24,20 +24,20 @@ class CapabilityNotFoundError(CapabilityError):
 class CapabilityRequest(BaseModel):
     """Request for applying a capability."""
 
-    parameters: Dict[str, Any] = Field(default_factory=dict)
+    parameters: dict[str, Any] = Field(default_factory=dict)
 
 
 class Capable:
     """Mixin for capable objects."""
 
-    def __init__(self, capabilities: Optional[List[BaseCapability]] = None):
+    def __init__(self, capabilities: list[BaseCapability] | None = None):
         """Initialize the Capable object.
 
         Args:
             capabilities: A list of BaseCapability objects.
         """
         super().__init__()  # Initialize ToolCallable first
-        self._capabilities: List[BaseCapability] = capabilities or []
+        self._capabilities: list[BaseCapability] = capabilities or []
 
     def __contains__(self, capability: BaseCapability) -> bool:
         """Check if capability exists using 'in' operator.
@@ -51,12 +51,12 @@ class Capable:
         return capability in self._capabilities
 
     @property
-    def capabilities(self) -> List[BaseCapability]:
+    def capabilities(self) -> list[BaseCapability]:
         """Get the list of capabilities."""
         return self._capabilities.copy()
 
     @ToolCallable.tool
-    def apply_capability(self, capability: BaseCapability, request: Optional[BaseRequest] = None) -> CapabilityApplicationResult:
+    def apply_capability(self, capability: BaseCapability, request: BaseRequest | None = None) -> CapabilityApplicationResult:
         """Apply a capability to the Capable object.
 
         Args:

@@ -24,8 +24,9 @@ Discord: https://discord.gg/6jGD4PYk
 """
 
 import os
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, NamedTuple, Sequence, cast
+from typing import Any, NamedTuple, cast
 
 from lark import Lark, Tree
 from lark.indenter import PythonIndenter

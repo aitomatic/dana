@@ -17,13 +17,13 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Union
 
 from pydantic import BaseModel
 
 # Basic JSON-compatible types
 JsonPrimitive = Union[str, int, float, bool, None]
-JsonType = Union[JsonPrimitive, List["JsonType"], Dict[str, "JsonType"]]
+JsonType = Union[JsonPrimitive, list["JsonType"], dict[str, "JsonType"]]
 
 # Add any other common type definitions here as needed
 
@@ -38,7 +38,7 @@ class BaseRequest(BaseModel):
         arguments: Arguments/parameters for the request
     """
 
-    arguments: Dict[str, Any] = {}
+    arguments: dict[str, Any] = {}
 
 
 class BaseResponse(BaseModel):
@@ -54,10 +54,10 @@ class BaseResponse(BaseModel):
     """
 
     success: bool
-    error: Optional[str] = None
-    content: Optional[Any] = None
+    error: str | None = None
+    content: Any | None = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert the response to a dictionary.
 
         Returns:

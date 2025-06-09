@@ -18,7 +18,7 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
 from opendxa.dana.sandbox.interpreter.executor.collection_executor import CollectionExecutor
@@ -55,7 +55,7 @@ class DanaExecutor(BaseExecutor):
         result = executor.execute(node, context)  # node can be any AST node
     """
 
-    def __init__(self, function_registry: Optional[FunctionRegistry] = None):
+    def __init__(self, function_registry: FunctionRegistry | None = None):
         """Initialize the executor.
 
         Args:
@@ -132,7 +132,7 @@ class DanaExecutor(BaseExecutor):
         return super().execute(node, context)
 
     def _execute_hook(
-        self, hook_type: HookType, node: Any, context: SandboxContext, additional_context: Optional[Dict[str, Any]] = None
+        self, hook_type: HookType, node: Any, context: SandboxContext, additional_context: dict[str, Any] | None = None
     ) -> None:
         """Execute hooks for the given hook type.
 

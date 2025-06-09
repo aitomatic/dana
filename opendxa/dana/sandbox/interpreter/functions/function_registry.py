@@ -8,8 +8,9 @@ MIT License
 """
 
 import inspect
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Optional
 
 from opendxa.dana.common.exceptions import FunctionRegistryError, SandboxError
 from opendxa.dana.common.runtime_scopes import RuntimeScopes
@@ -22,8 +23,8 @@ if TYPE_CHECKING:
 class FunctionMetadata:
     """Metadata for registered functions."""
 
-    source_file: Optional[str] = None  # Source file where function is defined
-    _context_aware: Optional[bool] = None  # Whether function expects context parameter
+    source_file: str | None = None  # Source file where function is defined
+    _context_aware: bool | None = None  # Whether function expects context parameter
     _is_public: bool = True  # Whether function is accessible from public code
     _doc: str = ""  # Function documentation
 
@@ -85,7 +86,7 @@ class FunctionRegistry:
     def __init__(self):
         """Initialize a function registry."""
         # {namespace: {name: (func, type, metadata)}}
-        self._functions: Dict[str, Dict[str, Tuple[Callable, str, FunctionMetadata]]] = {}
+        self._functions: dict[str, dict[str, tuple[Callable, str, FunctionMetadata]]] = {}
         self._arg_processor = None  # Will be initialized on first use
 
     def _get_arg_processor(self):
@@ -108,7 +109,7 @@ class FunctionRegistry:
 
         return self._arg_processor
 
-    def _remap_namespace_and_name(self, ns: Optional[str] = None, name: Optional[str] = None) -> Tuple[str, str]:
+    def _remap_namespace_and_name(self, ns: str | None = None, name: str | None = None) -> tuple[str, str]:
         """
         Normalize and validate function namespace/name pairs for consistent registration and lookup.
 
@@ -165,9 +166,9 @@ class FunctionRegistry:
         self,
         name: str,
         func: Callable,
-        namespace: Optional[str] = None,
+        namespace: str | None = None,
         func_type: str = "dana",
-        metadata: Optional[FunctionMetadata] = None,
+        metadata: FunctionMetadata | None = None,
         overwrite: bool = False,
     ) -> None:
         """Register a function with optional namespace and metadata.
@@ -311,7 +312,7 @@ class FunctionRegistry:
         # Reverse to show the call order (deepest first)
         return list(reversed(unique_stack))
 
-    def resolve(self, name: str, namespace: Optional[str] = None) -> Tuple[Callable, str, FunctionMetadata]:
+    def resolve(self, name: str, namespace: str | None = None) -> tuple[Callable, str, FunctionMetadata]:
         """Resolve a function by name and namespace.
 
         Args:
@@ -344,7 +345,7 @@ class FunctionRegistry:
         self,
         name: str,
         context: Optional["SandboxContext"] = None,
-        namespace: Optional[str] = None,
+        namespace: str | None = None,
         *args: Any,
         **kwargs: Any,
     ) -> Any:
@@ -506,7 +507,7 @@ class FunctionRegistry:
                 # Not a callable
                 raise SandboxError(f"Function '{name}' is not callable")
 
-    def list(self, namespace: Optional[str] = None) -> List[str]:
+    def list(self, namespace: str | None = None) -> list[str]:
         """List all functions in a namespace.
 
         Args:
@@ -518,7 +519,7 @@ class FunctionRegistry:
         ns, _ = self._remap_namespace_and_name(namespace, "")
         return list(self._functions.get(ns, {}).keys())
 
-    def has(self, name: str, namespace: Optional[str] = None) -> bool:
+    def has(self, name: str, namespace: str | None = None) -> bool:
         """Check if a function exists.
 
         Args:
@@ -531,7 +532,7 @@ class FunctionRegistry:
         ns, name = self._remap_namespace_and_name(namespace, name)
         return ns in self._functions and name in self._functions[ns]
 
-    def get_metadata(self, name: str, namespace: Optional[str] = None) -> FunctionMetadata:
+    def get_metadata(self, name: str, namespace: str | None = None) -> FunctionMetadata:
         """Get metadata for a function.
 
         Args:

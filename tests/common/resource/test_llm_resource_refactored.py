@@ -2,11 +2,10 @@
 
 import os
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
-from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.common.resource.llm_configuration_manager import LLMConfigurationManager
-from opendxa.common.exceptions import LLMError
+from opendxa.common.resource.llm_resource import LLMResource
 
 
 class TestLLMResourceRefactored(unittest.TestCase):
@@ -171,8 +170,9 @@ class TestLLMResourceRefactored(unittest.TestCase):
     def test_code_reduction_verification(self):
         """Verify that the refactoring actually reduced code complexity."""
         import inspect
-        from opendxa.common.resource.llm_resource import LLMResource
+
         from opendxa.common.resource.llm_configuration_manager import LLMConfigurationManager
+        from opendxa.common.resource.llm_resource import LLMResource
         
         # Get method source code lengths for verification
         llm_validate_lines = len(inspect.getsource(LLMResource._validate_model).split('\n'))
@@ -214,7 +214,7 @@ class TestLLMResourceRefactored(unittest.TestCase):
         self.assertTrue(hasattr(llm, '_find_first_available_model'))
         
         # Verify property behavior
-        self.assertTrue(callable(getattr(llm, 'get_available_models')))
+        self.assertTrue(callable(llm.get_available_models))
         
         # Verify model property works as expected
         original_model = llm.model
