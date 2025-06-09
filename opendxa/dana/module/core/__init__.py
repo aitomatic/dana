@@ -25,7 +25,7 @@ def initialize_module_system(search_paths: list[str] | None = None) -> None:
 
     Args:
         search_paths: Optional list of paths to search for modules. If not provided,
-                     defaults to current directory and DANA_PATH environment variable.
+                     defaults to current directory and DANAPATH environment variable.
     """
     global _module_registry, _module_loader
 
@@ -36,18 +36,18 @@ def initialize_module_system(search_paths: list[str] | None = None) -> None:
             str(Path.cwd() / "dana"),  # ./dana directory
         ]
 
-        # Add paths from DANA_PATH environment variable
+        # Add paths from DANAPATH environment variable
         import os
 
-        if "DANA_PATH" in os.environ:
-            search_paths.extend(os.environ["DANA_PATH"].split(os.pathsep))
+        if "DANAPATH" in os.environ:
+            search_paths.extend(os.environ["DANAPATH"].split(os.pathsep))
 
     # Create registry and loader
     _module_registry = ModuleRegistry()
     _module_loader = ModuleLoader(search_paths, _module_registry)
 
-    # Install import hook
-    sys.meta_path.insert(0, _module_loader)
+    # DO NOT install import hook in sys.meta_path to avoid interfering with Python imports
+    # The loader will be called directly by Dana's import statement executor
 
 
 def get_module_registry() -> ModuleRegistry:

@@ -661,8 +661,8 @@ class ExpressionTransformer(BaseTransformer):
 
         # Original logic for other cases
         for i, t in enumerate(trailers):
-            # Function call: ( ... )
-            if hasattr(t, "data") and t.data == "arguments":
+            # Function call: ( ... ) or empty arguments (None)
+            if (hasattr(t, "data") and t.data == "arguments") or t is None:
                 # Check if this function call follows an attribute access
                 if i > 0:
                     # Look at the previous trailer to see if it was attribute access
@@ -674,7 +674,10 @@ class ExpressionTransformer(BaseTransformer):
                         object_expr = base
                         method_name = prev_trailer.value
 
-                        args = self._process_function_arguments(t.children) if hasattr(t, "children") else {"__positional": []}
+                        if t is not None and hasattr(t, "children"):
+                            args = self._process_function_arguments(t.children)
+                        else:
+                            args = {"__positional": []}  # Empty arguments
 
                         return ObjectFunctionCall(
                             object=object_expr, method_name=method_name, args=args, location=getattr(base, "location", None)
@@ -684,7 +687,12 @@ class ExpressionTransformer(BaseTransformer):
                 name = getattr(base, "name", None)
                 if not isinstance(name, str):
                     name = str(base)
-                args = self._process_function_arguments(t.children) if hasattr(t, "children") else {"__positional": []}
+
+                if t is not None and hasattr(t, "children"):
+                    args = self._process_function_arguments(t.children)
+                else:
+                    args = {"__positional": []}  # Empty arguments
+
                 return FunctionCall(name=name, args=args, location=getattr(base, "location", None))
             # Attribute access: .NAME
             elif hasattr(t, "type") and t.type == "NAME":
@@ -855,6 +863,10 @@ class ExpressionTransformer(BaseTransformer):
             # Regular string
             elif item.type == "REGULAR_STRING":
                 value = item.value[1:-1]  # Strip quotes
+                return LiteralExpression(value)
+            # Single-quoted string
+            elif item.type == "SINGLE_QUOTED_STRING":
+                value = item.value[1:-1]  # Strip single quotes
                 return LiteralExpression(value)
             # Raw string
             elif item.type == "RAW_STRING":

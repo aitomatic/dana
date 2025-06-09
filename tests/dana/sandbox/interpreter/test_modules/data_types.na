@@ -1,0 +1,17 @@
+# data_types.na - Custom data structures for testing
+
+# Simple functions without structs for initial testing
+def create_point(x: int, y: int) -> dict:
+    return {"x": x, "y": y}
+
+def create_person(name: str, age: int, email: str) -> dict:
+    return {"name": name, "age": age, "email": email}
+
+def distance_from_origin(point: dict) -> float:
+    return (point["x"] ** 2 + point["y"] ** 2) ** 0.5
+
+def format_person(person: dict) -> str:
+    return f"{person['name']} ({person['age']} years old) - {person['email']}"
+
+# Public constant for testing
+public:ORIGIN = {"x": 0, "y": 0} 

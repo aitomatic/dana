@@ -117,6 +117,15 @@ class DanaFunction(SandboxFunction, Loggable):
                 # If context is not a SandboxContext, assume it's a positional argument
                 args = (context,) + args
                 context = self.context.copy() if self.context else SandboxContext()
+            else:
+                # We have a SandboxContext - merge with our stored context for variable access
+                if self.context is not None:
+                    # Create execution context that inherits from our stored module context
+                    execution_context = self.context.copy()
+                    # Set the interpreter from the current context
+                    if hasattr(context, "_interpreter") and context._interpreter is not None:
+                        execution_context._interpreter = context._interpreter
+                    context = execution_context
 
             # If the context doesn't have an interpreter, assign the one from self.context
             if not hasattr(context, "_interpreter") or context._interpreter is None:

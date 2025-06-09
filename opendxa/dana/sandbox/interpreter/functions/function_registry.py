@@ -491,8 +491,16 @@ class FunctionRegistry:
                 context = SandboxContext()  # Create a default context if none provided
             return func.execute(context, *positional_args, **func_kwargs)
         else:
-            # Fallback - call the function directly if it's a callable
-            if callable(func):
+            # Check if it's a DanaFunction and call via execute method
+            from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
+            
+            if isinstance(func, DanaFunction):
+                # DanaFunction objects have an execute method that needs context
+                if context is None:
+                    context = SandboxContext()  # Create a default context if none provided
+                return func.execute(context, *positional_args, **func_kwargs)
+            elif callable(func):
+                # Fallback - call the function directly if it's a regular callable
                 return func(context, *positional_args, **func_kwargs)
             else:
                 # Not a callable

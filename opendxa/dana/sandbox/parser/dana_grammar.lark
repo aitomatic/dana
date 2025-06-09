@@ -14,6 +14,9 @@
 %import common.WS
 %declare _INDENT _DEDENT
 
+// Add single-quoted string support  
+SINGLE_QUOTED_STRING: /'([^'\\]|\\.)*'/
+
 // ===== PROGRAM STRUCTURE =====
 // The program is the top-level structure, consisting of a sequence of statements
 // Optional newlines at the beginning and end make the grammar more forgiving
@@ -145,6 +148,12 @@ assert_stmt: "assert" expr ["," expr]
 // Module paths for imports
 module_path: NAME ("." NAME)*
 
+// Relative module paths for package imports (e.g., .submodule, ..parent.module)
+relative_module_path: DOT+ [module_path]
+
+// Add DOT token for relative imports
+DOT: "."
+
 // ===== VARIABLES AND ACCESS =====
 // Variable with optional scope prefix
 variable: scoped_var    // Variable with explicit scope (private:x)
@@ -249,6 +258,7 @@ NAME.3: /(?!(True|true|TRUE|False|false|FALSE|None|none|NONE|null|NULL|private|p
 
 // Basic string literals with f-strings
 string_literal: REGULAR_STRING
+              | SINGLE_QUOTED_STRING
               | F_STRING_TOKEN
               | RAW_STRING
               | MULTILINE_STRING
@@ -308,4 +318,4 @@ NOT_OP.2: "not"
 
 // Import statements
 simple_import: IMPORT module_path ["as" NAME]
-from_import: FROM module_path IMPORT NAME ["as" NAME]
+from_import: FROM (relative_module_path | module_path) IMPORT NAME ["as" NAME]

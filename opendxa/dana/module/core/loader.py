@@ -34,6 +34,8 @@ class ModuleLoader(MetaPathFinder, Loader):
         """Find a module specification.
 
         This implements the MetaPathFinder protocol for Python's import system.
+        IMPORTANT: Only handles Dana modules (.na files). Returns None for all
+        other modules to let Python's normal import system handle them.
 
         Args:
             fullname: Fully qualified module name
@@ -41,11 +43,146 @@ class ModuleLoader(MetaPathFinder, Loader):
             target: Module object if reload (unused)
 
         Returns:
-            Module specification if found, None otherwise
-
-        Raises:
-            ModuleNotFoundError: If module not found
+            Module specification if found, None otherwise (does NOT raise)
         """
+        # Only handle Dana module names (no internal Python modules)
+        # Skip Python internal modules and standard library modules
+        if (
+            fullname.startswith("_")
+            or "." in fullname
+            and fullname.split(".")[0]
+            in {
+                "collections",
+                "sys",
+                "os",
+                "json",
+                "math",
+                "datetime",
+                "traceback",
+                "importlib",
+                "threading",
+                "logging",
+                "urllib",
+                "http",
+                "xml",
+                "html",
+                "email",
+                "calendar",
+                "time",
+                "random",
+                "hashlib",
+                "pickle",
+                "copy",
+                "itertools",
+                "functools",
+                "operator",
+                "pathlib",
+                "re",
+                "uuid",
+                "base64",
+                "binascii",
+                "struct",
+                "array",
+                "weakref",
+                "gc",
+                "types",
+                "inspect",
+                "ast",
+                "dis",
+                "encodings",
+                "codecs",
+                "io",
+                "tempfile",
+                "shutil",
+                "glob",
+                "fnmatch",
+                "subprocess",
+                "signal",
+                "socket",
+                "select",
+                "errno",
+                "stat",
+                "platform",
+                "getpass",
+                "pwd",
+                "grp",
+                "ctypes",
+                "concurrent",
+                "asyncio",
+                "multiprocessing",
+                "queue",
+                "heapq",
+                "bisect",
+                "contextlib",
+                "decimal",
+                "fractions",
+                "statistics",
+                "zlib",
+                "gzip",
+                "bz2",
+                "lzma",
+                "zipfile",
+                "tarfile",
+                "csv",
+                "configparser",
+                "netrc",
+                "xdrlib",
+                "plistlib",
+                "sqlite3",
+                "dbm",
+                "zoneinfo",
+                "argparse",
+                "getopt",
+                "shlex",
+                "readline",
+                "rlcompleter",
+                "cmd",
+                "pdb",
+                "profile",
+                "pstats",
+                "timeit",
+                "trace",
+                "cProfile",
+                "unittest",
+                "doctest",
+                "test",
+                "bdb",
+                "faulthandler",
+                "warnings",
+                "dataclasses",
+                "contextlib2",
+                "typing_extensions",
+                "packaging",
+                "setuptools",
+                "pip",
+                "wheel",
+                "distutils",
+                "pkg_resources",
+                "six",
+                "certifi",
+                "urllib3",
+                "requests",
+                "click",
+                "jinja2",
+                "werkzeug",
+                "flask",
+                "django",
+                "lark",
+                "pytest",
+                "numpy",
+                "pandas",
+                "matplotlib",
+                "scipy",
+                "sklearn",
+                "tensorflow",
+                "torch",
+                "boto3",
+                "pydantic",
+                "fastapi",
+            }
+        ):
+            return None
+
         # Check if spec already exists in registry
         try:
             dana_spec = self.registry.get_spec(fullname)
@@ -94,8 +231,8 @@ class ModuleLoader(MetaPathFinder, Loader):
             py_spec.submodule_search_locations = dana_spec.submodule_search_locations
             return py_spec
 
-        # Module not found after checking all paths
-        raise ModuleNotFoundError(fullname)
+        # Module not found after checking all paths - return None to let Python handle it
+        return None
 
     def create_module(self, spec: PyModuleSpec) -> Module | None:
         """Create a new module object.
@@ -176,6 +313,9 @@ class ModuleLoader(MetaPathFinder, Loader):
             context = SandboxContext()
             context._interpreter = interpreter  # Set the interpreter in the context
 
+            # Set current module for relative import resolution
+            context._current_module = module.__name__
+
             # Initialize module dict with context
             for key, value in module.__dict__.items():
                 context.set_in_scope(key, value, scope="local")
@@ -186,12 +326,19 @@ class ModuleLoader(MetaPathFinder, Loader):
             # Update module dict with local scope
             module.__dict__.update(context.get_scope("local"))
 
+            # Also include public scope variables in the module namespace
+            # Public variables should be accessible as module attributes
+            public_vars = context.get_scope("public")
+            module.__dict__.update(public_vars)
+
             # Handle exports
             if hasattr(context, "_exports"):
                 module.__exports__ = context._exports
             else:
-                # If no explicit exports, export all local variables
-                module.__exports__ = set(context.get_scope("local").keys())
+                # If no explicit exports, export all local and public variables
+                local_vars = set(context.get_scope("local").keys())
+                public_vars_set = set(public_vars.keys())
+                module.__exports__ = local_vars | public_vars_set
 
             # Remove internal variables from exports
             module.__exports__ = {name for name in module.__exports__ if not name.startswith("__")}

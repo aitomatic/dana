@@ -591,42 +591,65 @@ class StatementTransformer(BaseTransformer):
         """Transform a from_import rule into an ImportFromStatement node.
 
         Grammar:
-            from_import: FROM module_path IMPORT NAME ["as" NAME]
+            from_import: FROM (relative_module_path | module_path) IMPORT NAME ["as" NAME]
             module_path: NAME ("." NAME)*
-        """
-        # Skip the FROM token and get the module_path
-        module_path = items[1]
+            relative_module_path: DOT+ [module_path]
 
-        # Extract the module path from the Tree
-        if isinstance(module_path, Tree) and getattr(module_path, "data", None) == "module_path":
-            parts = []
-            for child in module_path.children:
-                if isinstance(child, Token):
-                    parts.append(child.value)
-                elif hasattr(child, "value"):
-                    parts.append(child.value)
-            module = ".".join(parts)
-        elif isinstance(module_path, Token):
-            module = module_path.value
+        Parse tree structure: [FROM, module_path_or_relative, IMPORT, NAME, [alias_name | None]]
+        """
+        # Skip the FROM token and get the module_path or relative_module_path
+        module_path_item = items[1]
+
+        # Handle relative_module_path (starts with dots)
+        if isinstance(module_path_item, Tree) and getattr(module_path_item, "data", None) == "relative_module_path":
+            # Extract dots and optional module path
+            dots = []
+            module_parts = []
+
+            for child in module_path_item.children:
+                if isinstance(child, Token) and child.type == "DOT":
+                    dots.append(".")
+                elif isinstance(child, Tree) and getattr(child, "data", None) == "module_path":
+                    # Extract module path parts
+                    for subchild in child.children:
+                        if isinstance(subchild, Token):
+                            module_parts.append(subchild.value)
+                        elif hasattr(subchild, "value"):
+                            module_parts.append(subchild.value)
+                elif isinstance(child, Token):
+                    module_parts.append(child.value)
+
+            # Build relative module name
+            module = "".join(dots)
+            if module_parts:
+                module += ".".join(module_parts)
         else:
-            # Fallback to string representation
-            module = str(module_path)
+            # Handle absolute module_path (existing logic)
+            if isinstance(module_path_item, Tree) and getattr(module_path_item, "data", None) == "module_path":
+                parts = []
+                for child in module_path_item.children:
+                    if isinstance(child, Token):
+                        parts.append(child.value)
+                    elif hasattr(child, "value"):
+                        parts.append(child.value)
+                module = ".".join(parts)
+            elif isinstance(module_path_item, Token):
+                module = module_path_item.value
+            else:
+                # Fallback to string representation
+                module = str(module_path_item)
 
         # Get the imported name (after IMPORT token)
-        name = ""  # Initialize as empty string
-        for i, item in enumerate(items):
-            if isinstance(item, Token) and item.type == "IMPORT":
-                if i + 1 < len(items):
-                    name = items[i + 1].value
-                break
-
-        # Handle alias: if we have AS token, the alias is the next item
+        # Structure: [FROM, module_path_or_relative, IMPORT, name_token, alias_token_or_none]
+        name = ""
         alias = None
-        for i, item in enumerate(items):
-            if isinstance(item, Token) and item.type == "AS":
-                if i + 1 < len(items):
-                    alias = items[i + 1].value
-                break
+
+        if len(items) >= 4 and isinstance(items[3], Token) and items[3].type == "NAME":
+            name = items[3].value
+
+        # Check for alias (5th element)
+        if len(items) >= 5 and items[4] is not None and isinstance(items[4], Token) and items[4].type == "NAME":
+            alias = items[4].value
 
         return ImportFromStatement(module=module, names=[(name, alias)])
 
