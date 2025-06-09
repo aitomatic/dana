@@ -1,5 +1,12 @@
 # POET: Perceive → Operate → Encode → Train Execution Model
 
+```text
+Author: Christopher Nguyen & Vinh Luong
+Version: 0.4
+Status: Design Phase
+Module: opendxa.dana.poet
+```
+
 ## Motivation: POET – A Robust, Learning-Enabled Execution Protocol for the GenAI Era
 
 > "**Be liberal in what you accept, and conservative in what you send.**"
@@ -259,7 +266,7 @@ The power of the POET model is significantly enhanced by its ability to leverage
  The mechanism for gathering this (e.g., a conceptual `CodeContextAnalyzer` invoked by the POET framework during the Perceive phase) is an important implementation detail.
 
 * Ambient System Context: Broader operational parameters available from the Dana sandbox or system environment. These provide overarching guidance or constraints. Examples:
- * `system:__poet_profile` (or `system:__dana_ipv_profile` if aligning with older concepts): An identifier for an active POET execution profile (e.g., "default", "strict_validation", "creative_generation", "fault_tolerant_integration"). This can dictate the behavior of P, O, and E stages.
+ * `system:__poet_profile`: An identifier for an active POET execution profile (e.g., "default", "strict_validation", "creative_generation", "fault_tolerant_integration"). This can dictate the behavior of P, O, and E stages.
  * `system:__poet_settings_override`: A dictionary allowing fine-grained overrides for specific POET behaviors.
  * `system:__current_task_id`, `system:__current_task_description`: Information about the ongoing agent task.
  * `system:__session_id`, `system:__user_id`: Session and user identifiers.

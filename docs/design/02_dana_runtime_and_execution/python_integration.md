@@ -1,3 +1,6 @@
+| [Dana-to-Python →](./dana-to-python.md) | [Python-to-Dana →](./python-to-dana.md) |
+|---|---|
+
 # Python Integration in Dana
 
 ```text

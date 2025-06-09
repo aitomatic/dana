@@ -1,3 +1,6 @@
+| [← Modules and Imports](./modules_and_imports.md) | [Error Handling →](./error_handling.md) |
+|---|---|
+
 # Design Document: AI Magic Functions in Dana
 
 ```text

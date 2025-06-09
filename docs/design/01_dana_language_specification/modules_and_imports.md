@@ -13,6 +13,7 @@ Current Capabilities:
 ✅ Basic error handling and recovery
 ✅ Module-level exports
 ✅ Basic lazy loading
+🚧 Import statement syntax (parsing only - execution not implemented)
 ⏳ Advanced package features (partial)
 ⏳ Module reloading (planned)
 ⏳ Dynamic imports (planned)
@@ -166,8 +167,8 @@ public:DEFAULT_GREETING: str = "Hello, Dana!"
 # In main.na
 import path/to/string_utils.na
 from path/to/string_utils.na import StringMetrics, calculate_metrics
-from path/to/string_utils import some_other_dana_object # .na is optional
-from path/to/other_utils.py import some_python_object # .py is required
+from path/to/string_utils import some_other_dana_reference # .na is optional
+from path/to/other_utils.py import some_python_reference # .py is required
 
 text: str = "Sample text for analysis."
 metrics: string_utils.StringMetrics = string_utils.calculate_metrics(text)
@@ -249,7 +250,11 @@ graph TD
 
 ### 2.8 Python Module Integration
 
-Dana supports seamless integration with Python modules:
+Dana supports seamless integration with Python modules. For detailed design information, see:
+
+- [Python Integration Overview](../02_dana_runtime_and_execution/python_integration.md)
+- [Dana to Python Integration](../02_dana_runtime_and_execution/dana-to-python.md)  
+- [Python to Dana Integration](../02_dana_runtime_and_execution/python-to-dana.md)
 
 ```mermaid
 classDiagram
@@ -366,6 +371,17 @@ class ModuleSpec:
 
 ### 3.2 Implementation Status
 
+> **⚠️ Important Note on Import Statements:**
+> 
+> While import statement syntax is fully supported in Dana's parser and type checker, **import statement execution is not yet implemented**. The `execute_import_statement` method in `StatementExecutor` currently raises a `SandboxError("Import statements are not yet supported in Dana")`.
+> 
+> **Current Status:**
+> - ✅ **Parsing**: `import math` and `from collections import deque` parse correctly
+> - ✅ **Type Checking**: Import statements pass type validation
+> - ❌ **Execution**: Import statements fail at runtime with SandboxError
+> 
+> The module loading infrastructure exists but needs to be connected to the import statement executor.
+
 #### Phase 1: Core Module System ✅
 - [x] Basic module loading and execution
 - [x] Module registry singleton
@@ -378,7 +394,11 @@ class ModuleSpec:
 - [x] Basic export declarations
 - [x] Scope isolation
 - [x] Basic cross-module references
-- [x] Import statement handling
+- [~] Import statement handling
+  - [x] Import statement syntax parsing (`import module`, `from module import name`)
+  - [x] Import statement AST nodes (`ImportStatement`, `ImportFromStatement`)
+  - [x] Import statement type checking
+  - [ ] **Import statement execution (currently raises SandboxError)**
 - [x] Dependency graph building
 - [x] Circular dependency detection
 - [ ] Module reloading support
@@ -426,6 +446,7 @@ class ModuleSpec:
 Legend:
 ✅ Complete
 🟨 Partially Complete
+🚧 Syntax Only (Not Executed)
 ⭕ Not Started
 
 ## 4. Future Work

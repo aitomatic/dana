@@ -1,7 +1,10 @@
+| [← Dana-to-Python](./dana-to-python.md) | [Python Integration Overview](./python_integration.md) |
+|---|---|
+
 # Design Document: Python-to-Dana Integration
 
 ```text
-Author: Christopher Nguyen
+Author: Roy Vu & Christopher Nguyen
 Version: 0.1
 Status: Design Phase
 Module: opendxa.dana

@@ -64,7 +64,7 @@ docs/design/02_dana_runtime_and_execution/
 - Developer experience
 
 ### 5. magic_functions.md - DONE
-- Magic function mechanism
+- Magic function mechanism ([Design Doc](../01_dana_language_specification/magic_functions.md))
 - AI integration design
 - Code generation system
 - Security considerations

@@ -1,3 +1,6 @@
+| [← User-defined Resources](./user_defined_resources.md) | [Capability Invocation →](./capability_invocation.md) |
+|---|---|
+
 # Design Document: Dana Use Statement for Resource Acquisition
 
 ```text
@@ -53,8 +56,8 @@ The `use` statement provides a unified interface for resource acquisition that:
 ### Architecture Overview
 
 ```mermaid
-graph TD
-    A[Dana Code: use("mcp", url="...")] --> B[Use Statement Parser]
+graph LR
+    A[Dana Code: use#40;#34;mcp#34;, url=#34;...#34;#41;] --> B[Use Statement Parser]
     B --> C[Statement Executor]
     C --> D[Use Function Registry]
     D --> E[Resource Factory]
@@ -406,7 +409,7 @@ with use("mcp", url="http://localhost:8880/sensors") as sensors:
 ```dana
 # Enhanced reasoning with external tools
 with use("mcp", url="http://localhost:8880/websearch") as search:
-    answer = reason("Who is the CEO of Aitomatic", {"enable_ipv": True})
+    answer = reason("Who is the CEO of Aitomatic", {"enable_poet": True})
     print(answer)
 ```
 
