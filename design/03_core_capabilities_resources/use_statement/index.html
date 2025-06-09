@@ -2146,8 +2146,8 @@
 <li><strong>Lifecycle Management</strong>: Automatic resource registration and cleanup</li>
 </ol>
 <h3 id="architecture-overview">Architecture Overview<a class="headerlink" href="#architecture-overview" title="Permanent link">¶</a></h3>
-<pre class="mermaid"><code>graph TD
-    A[Dana Code: use("mcp", url="...")] --&gt; B[Use Statement Parser]
+<pre class="mermaid"><code>graph LR
+    A[Dana Code: use#40;#34;mcp#34;, url=#34;...#34;#41;] --&gt; B[Use Statement Parser]
     B --&gt; C[Statement Executor]
     C --&gt; D[Use Function Registry]
     D --&gt; E[Resource Factory]
