@@ -32,9 +32,9 @@ from mcp.types import Tool, Resource, Prompt
 from pydantic import AnyUrl
 from opendxa.contrib.dana_mcp_a2a.common.resource.mcp.client.transport import MCPSSETransport, MCPHTTPTransport, BaseTransport
 from fastmcp import Client
-from common.resource import Misc
+from opendxa.common.utils.misc import Misc
 from typing import Any, Generic, Literal, cast, overload
-from common.resource import Loggable
+from opendxa.common.mixins.loggable import Loggable
 
 class MCPMetaclass(type):
     def __call__(cls, *args: Any, **kwds: Any) -> Any:

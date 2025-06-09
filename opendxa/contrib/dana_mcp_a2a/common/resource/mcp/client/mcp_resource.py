@@ -10,7 +10,7 @@ from opendxa.contrib.dana_mcp_a2a.common.resource.mcp.client.mcp_client import M
 from opendxa.common.resource.base_resource import BaseResource
 from opendxa.common.types import BaseRequest, BaseResponse
 from opendxa.common.mixins.tool_formats import ToolFormat, OpenAIToolFormat
-from common.resource import Misc
+from opendxa.common.utils.misc import Misc
 import inspect
 
 class MCPResource(BaseResource):

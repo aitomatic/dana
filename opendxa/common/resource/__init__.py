@@ -85,12 +85,9 @@ from opendxa.common.graph import (
     TopologicalTraversal,
     TraversalStrategy,
 )
-from opendxa.common.io import (
-    BaseIO,
-    ConsoleIO,
-    IOFactory,
-    WebSocketIO,
-)
+# Note: IO imports removed to break circular dependency
+# BaseIO extends BaseResource, so importing IO here creates circular imports
+# Import IO classes directly where needed instead
 from opendxa.common.mixins import (
     Configurable,
     Identifiable,
@@ -103,23 +100,29 @@ from opendxa.common.mixins import (
     ToolCallable,
     ToolFormat,
 )
-from opendxa.common.resource import (
-    BaseMcpService,
-    BaseResource,
-    HttpTransportParams,
-    HumanResource,
-    KBResource,
-    LLMResource,
+from opendxa.common.resource.base_resource import BaseResource
+from opendxa.common.resource.human_resource import HumanResource
+from opendxa.common.resource.kb_resource import KBResource
+from opendxa.common.resource.llm_resource import LLMResource
+from opendxa.common.resource.memory_resource import (
     LTMemoryResource,
-    McpEchoService,
-    McpResource,
     MemoryResource,
     PermMemoryResource,
-    ResourceUnavailableError,
-    StdioTransportParams,
     STMemoryResource,
-    WoTResource,
 )
+from opendxa.common.resource.mcp import (
+    BaseMcpService,
+    HttpTransportParams,
+    McpEchoService,
+    McpResource,
+    StdioTransportParams,
+)
+from opendxa.common.resource.wot_resource import WoTResource
+
+# Exception for when a resource is unavailable
+class ResourceUnavailableError(Exception):
+    """Raised when a resource is not available."""
+    pass
 from opendxa.common.types import (
     BaseRequest,
     BaseResponse,
@@ -179,11 +182,7 @@ __all__ = [
     "GraphVisualizer",
     "GraphSerializer",
     "GraphFactory",
-    # IO (from io/)
-    "BaseIO",
-    "IOFactory",
-    "ConsoleIO",
-    "WebSocketIO",
+    # IO classes removed to break circular dependency
     # Mixins (from mixins/)
     "Loggable",
     "ToolCallable",

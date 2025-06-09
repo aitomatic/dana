@@ -1,4 +1,4 @@
-from common.resource import Misc
+from opendxa.common.utils.misc import Misc
 from opendxa.common.resource.base_resource import BaseResource
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
