@@ -3357,7 +3357,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../pov_execution_model/" class="md-nav__link">
+      <a href="../pov_execution_model.md" class="md-nav__link">
         
   
   
@@ -3641,6 +3641,15 @@
   
     <nav class="md-nav" aria-label="Proposed Design">
       <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example Code
+    </span>
+  </a>
+  
+</li>
         
           <li class="md-nav__item">
   <a href="#core-runtime-abstractions" class="md-nav__link">
@@ -4620,6 +4629,15 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#example-code" class="md-nav__link">
+    <span class="md-ellipsis">
+      Example Code
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#core-runtime-abstractions" class="md-nav__link">
     <span class="md-ellipsis">
       Core Runtime Abstractions
@@ -4832,8 +4850,12 @@
 <h3 id="directional-design-choice">Directional Design Choice<a class="headerlink" href="#directional-design-choice" title="Permanent link">&para;</a></h3>
 <p>Dana↔Python integration is intentionally split into two separate designs:</p>
 <ol>
-<li><strong>Dana → Python</strong> (this document)</li>
-<li>Dana code calling Python functions</li>
+<li>
+<p><strong>Dana → Python</strong> (this document)</p>
+</li>
+<li>
+<p>Dana code calling Python functions</p>
+</li>
 <li>Managing Python objects from Dana</li>
 <li>
 <p>Future sandboxing of Python execution</p>
@@ -4841,16 +4863,34 @@
 <li>
 <p><strong>Python → Dana</strong> (<a href="../python-to-dana/">python-to-dana.md</a>)</p>
 </li>
-<li>Python code calling Dana functions</li>
+<li>
+<p>Python code calling Dana functions</p>
+</li>
 <li>Dana runtime embedding in Python</li>
 <li>Dana sandbox security model</li>
 </ol>
-<p>This separation exists because:
-- Different security models (Dana sandbox vs. Python process)
-- Different trust boundaries (Dana trusts Python runtime vs. Python isolated from Dana)
-- Different use cases (Dana using Python libraries vs. Python embedding Dana)
-- Different implementation needs (transport layer vs. sandbox protocol)</p>
+<p>This separation exists because:</p>
+<ul>
+<li>Different security models (Dana sandbox vs. Python process)</li>
+<li>Different trust boundaries (Dana trusts Python runtime vs. Python isolated from Dana)</li>
+<li>Different use cases (Dana using Python libraries vs. Python embedding Dana)</li>
+<li>Different implementation needs (transport layer vs. sandbox protocol)</li>
+</ul>
 <h2 id="proposed-design">Proposed Design<a class="headerlink" href="#proposed-design" title="Permanent link">&para;</a></h2>
+<h3 id="example-code">Example Code<a class="headerlink" href="#example-code" title="Permanent link">&para;</a></h3>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>from a/b/c/d.py import SomeClass
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>some_object = SomeClass()     # some_object is a PythonObject, which is effectively of `Any` Python type
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>x = some_object.some_property # x is a PythonObject
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>y = some_object.some_method() # y is a PythonObject
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>some_object.close()           # either evaluates to a PythonObject, or None
+</span></code></pre></div>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>import pandas as pd
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>df = pd.read_csv(&quot;data.csv&quot;) # df is a PythonObject, which is effectively of `Any` Python type
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>mean_values = df.groupby(&quot;column_name&quot;).mean()
+</span></code></pre></div>
 <h3 id="core-runtime-abstractions">Core Runtime Abstractions<a class="headerlink" href="#core-runtime-abstractions" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
@@ -4881,12 +4921,12 @@
 <p>All public behavior (function calls, method calls, destruction) funnels through <strong>one pluggable transport</strong>.</p>
 <h3 id="transport-abstraction">Transport Abstraction<a class="headerlink" href="#transport-abstraction" title="Permanent link">&para;</a></h3>
 <p>This API is frozen and must not change:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Transport</span><span class="p">:</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">call_fn</span><span class="p">(</span><span class="n">fqn</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span> <span class="o">...</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">create</span><span class="p">(</span><span class="n">cls_fqn</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>   <span class="c1"># returns obj-id</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">call_method</span><span class="p">(</span><span class="n">cls_fqn</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">obj_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>                   <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span> <span class="o">...</span>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">destroy</span><span class="p">(</span><span class="n">obj_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">class</span><span class="w"> </span><span class="nc">Transport</span><span class="p">:</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">call_fn</span><span class="p">(</span><span class="n">fqn</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span> <span class="o">...</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">create</span><span class="p">(</span><span class="n">cls_fqn</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>   <span class="c1"># returns obj-id</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">call_method</span><span class="p">(</span><span class="n">cls_fqn</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">obj_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>                   <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">args</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span> <span class="o">...</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">destroy</span><span class="p">(</span><span class="n">obj_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span> <span class="o">...</span>
 </span></code></pre></div>
 <p><em>All Dana-generated stubs—present and future—<strong>must</strong> use this interface only.</em></p>
 <h3 id="inproctransport-implementation">InProcTransport Implementation<a class="headerlink" href="#inproctransport-implementation" title="Permanent link">&para;</a></h3>
@@ -4911,9 +4951,9 @@
 <li>Wrapper bodies never touch real Python objects directly—only the transport</li>
 </ol>
 <p>Example generated wrapper:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>def area(a: float, b: float) -&gt; float:
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    result = __py_transport.call_fn(&quot;geom.area&quot;, [a, b])
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    return result.asFloat()
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>def area(a: float, b: float) -&gt; float:
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>    result = __py_transport.call_fn(&quot;geom.area&quot;, [a, b])
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>    return result.asFloat()
 </span></code></pre></div>
 <h3 id="future-sandbox-migration">Future Sandbox Migration<a class="headerlink" href="#future-sandbox-migration" title="Permanent link">&para;</a></h3>
 <blockquote>
@@ -5081,7 +5121,7 @@ Copyright © 2025 Aitomatic, Inc. Licensed under the <a href="../../LICENSE.md">
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-datetime" title="June 8, 2025 16:04:05 UTC">June 8, 2025 16:04:05</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-datetime" title="June 9, 2025 08:11:26 UTC">June 9, 2025 08:11:26</span>
   </span>
 
     

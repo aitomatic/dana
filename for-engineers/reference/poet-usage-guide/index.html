@@ -26,7 +26,7 @@
 <input autocomplete="off" class="md-toggle" data-md-toggle="search" id="__search" type="checkbox"/>
 <label class="md-overlay" for="__drawer"></label>
 <div data-md-component="skip">
-<a class="md-skip" href="#this-is-a-placeholder-for-the-pov-usage-guidemd-content">
+<a class="md-skip" href="#poet-usage-guide-complete-reference">
           Skip to content
         </a>
 </div>
@@ -429,12 +429,286 @@
 </li>
 <li class="md-nav__item md-nav__item--active">
 <input class="md-nav__toggle md-toggle" id="__toc" type="checkbox"/>
+<label class="md-nav__link md-nav__link--active" for="__toc">
+<span class="md-ellipsis">
+    POET Usage Guide
+    
+  </span>
+<span class="md-nav__icon md-icon"></span>
+</label>
 <a class="md-nav__link md-nav__link--active" href="./">
 <span class="md-ellipsis">
     POET Usage Guide
     
   </span>
 </a>
+<nav aria-label="Table of contents" class="md-nav md-nav--secondary">
+<label class="md-nav__title" for="__toc">
+<span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+<ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#overview">
+<span class="md-ellipsis">
+      Overview
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#core-concepts">
+<span class="md-ellipsis">
+      Core Concepts
+    </span>
+</a>
+<nav aria-label="Core Concepts" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#the-poet-flow">
+<span class="md-ellipsis">
+      The POET Flow
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#what-engineers-write-vs-what-runtime-provides">
+<span class="md-ellipsis">
+      What Engineers Write vs. What Runtime Provides
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#comment-aware-context-analysis">
+<span class="md-ellipsis">
+      Comment-Aware Context Analysis
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#basic-usage">
+<span class="md-ellipsis">
+      Basic Usage
+    </span>
+</a>
+<nav aria-label="Basic Usage" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#1-simple-reasoning-with-poet">
+<span class="md-ellipsis">
+      1. Simple Reasoning with POET
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#2-comment-driven-optimization">
+<span class="md-ellipsis">
+      2. Comment-Driven Optimization
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#3-complex-type-handling">
+<span class="md-ellipsis">
+      3. Complex Type Handling
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#4-output-type-adaptability-with-reason">
+<span class="md-ellipsis">
+      4. Output Type Adaptability with reason()
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#the-purpose-of-poet-robust-and-intelligent-execution">
+<span class="md-ellipsis">
+      The Purpose of POET: Robust and Intelligent Execution
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#advanced-usage-python-customization">
+<span class="md-ellipsis">
+      🎛️ Advanced Usage (Python Customization)
+    </span>
+</a>
+<nav aria-label="🎛️ Advanced Usage (Python Customization)" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#1-multiple-poet-executorsprofiles">
+<span class="md-ellipsis">
+      1. Multiple POET Executors/Profiles
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#2-custom-poet-configuration">
+<span class="md-ellipsis">
+      2. Custom POET Configuration
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#3-debug-mode-and-monitoring-framework-level">
+<span class="md-ellipsis">
+      3. Debug Mode and Monitoring (Framework Level)
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#type-driven-validation-examples-leveraging-expected_output_type">
+<span class="md-ellipsis">
+      📊 Type-Driven Validation Examples (Leveraging expected_output_type)
+    </span>
+</a>
+<nav aria-label="📊 Type-Driven Validation Examples (Leveraging expected_output_type)" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#numerical-types">
+<span class="md-ellipsis">
+      Numerical Types
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#structured-types">
+<span class="md-ellipsis">
+      Structured Types
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#complex-validation">
+<span class="md-ellipsis">
+      Complex Validation
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#integration-patterns-dana-centric-view">
+<span class="md-ellipsis">
+      Integration Patterns (Dana-centric View)
+    </span>
+</a>
+<nav aria-label="Integration Patterns (Dana-centric View)" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#1-using-poet-enabled-functions-eg-reason">
+<span class="md-ellipsis">
+      1. Using POET-enabled Functions (e.g., reason())
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#2-authoring-dana-functions-for-poet-stages-poet-decorator">
+<span class="md-ellipsis">
+      2. Authoring Dana Functions for POET Stages (@poet decorator)
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#3-leveraging-poet_status-in-dana">
+<span class="md-ellipsis">
+      3. Leveraging poet_status in Dana
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#best-practices-for-dana-engineers-with-poet">
+<span class="md-ellipsis">
+      🎨 Best Practices for Dana Engineers with POET
+    </span>
+</a>
+<nav aria-label="🎨 Best Practices for Dana Engineers with POET" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#1-write-effective-comments-and-use-type-hints">
+<span class="md-ellipsis">
+      1. Write Effective Comments and Use Type Hints
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#2-design-clear-perceive-and-encode-functions">
+<span class="md-ellipsis">
+      2. Design Clear Perceive and Encode Functions
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#3-understand-expected_output_type">
+<span class="md-ellipsis">
+      3. Understand expected_output_type
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#4-enable-learning-through-feedback">
+<span class="md-ellipsis">
+      4. Enable Learning Through Feedback
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#5-error-handling-for-poet-enabled-functions">
+<span class="md-ellipsis">
+      5. Error Handling for POET-enabled functions
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#6-leverage-poet-profiles">
+<span class="md-ellipsis">
+      6. Leverage POET Profiles
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#learning-and-feedback-integration">
+<span class="md-ellipsis">
+      Learning and Feedback Integration
+    </span>
+</a>
+<nav aria-label="Learning and Feedback Integration" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#providing-feedback-to-poet">
+<span class="md-ellipsis">
+      Providing Feedback to POET
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#monitoring-learning-progress">
+<span class="md-ellipsis">
+      Monitoring Learning Progress
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
+</nav>
 </li>
 <li class="md-nav__item md-nav__item--nested">
 <input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_2_3_5" type="checkbox"/>
@@ -1217,7 +1491,7 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../../design/02_dana_runtime_and_execution/pov_execution_model/">
+<a class="md-nav__link" href="../../../design/02_dana_runtime_and_execution/pov_execution_model.md">
 <span class="md-ellipsis">
     POV Execution Model
     
@@ -1535,15 +1809,283 @@
 <div class="md-sidebar__scrollwrap">
 <div class="md-sidebar__inner">
 <nav aria-label="Table of contents" class="md-nav md-nav--secondary">
+<label class="md-nav__title" for="__toc">
+<span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+<ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#overview">
+<span class="md-ellipsis">
+      Overview
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#core-concepts">
+<span class="md-ellipsis">
+      Core Concepts
+    </span>
+</a>
+<nav aria-label="Core Concepts" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#the-poet-flow">
+<span class="md-ellipsis">
+      The POET Flow
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#what-engineers-write-vs-what-runtime-provides">
+<span class="md-ellipsis">
+      What Engineers Write vs. What Runtime Provides
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#comment-aware-context-analysis">
+<span class="md-ellipsis">
+      Comment-Aware Context Analysis
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#basic-usage">
+<span class="md-ellipsis">
+      Basic Usage
+    </span>
+</a>
+<nav aria-label="Basic Usage" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#1-simple-reasoning-with-poet">
+<span class="md-ellipsis">
+      1. Simple Reasoning with POET
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#2-comment-driven-optimization">
+<span class="md-ellipsis">
+      2. Comment-Driven Optimization
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#3-complex-type-handling">
+<span class="md-ellipsis">
+      3. Complex Type Handling
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#4-output-type-adaptability-with-reason">
+<span class="md-ellipsis">
+      4. Output Type Adaptability with reason()
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#the-purpose-of-poet-robust-and-intelligent-execution">
+<span class="md-ellipsis">
+      The Purpose of POET: Robust and Intelligent Execution
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#advanced-usage-python-customization">
+<span class="md-ellipsis">
+      🎛️ Advanced Usage (Python Customization)
+    </span>
+</a>
+<nav aria-label="🎛️ Advanced Usage (Python Customization)" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#1-multiple-poet-executorsprofiles">
+<span class="md-ellipsis">
+      1. Multiple POET Executors/Profiles
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#2-custom-poet-configuration">
+<span class="md-ellipsis">
+      2. Custom POET Configuration
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#3-debug-mode-and-monitoring-framework-level">
+<span class="md-ellipsis">
+      3. Debug Mode and Monitoring (Framework Level)
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#type-driven-validation-examples-leveraging-expected_output_type">
+<span class="md-ellipsis">
+      📊 Type-Driven Validation Examples (Leveraging expected_output_type)
+    </span>
+</a>
+<nav aria-label="📊 Type-Driven Validation Examples (Leveraging expected_output_type)" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#numerical-types">
+<span class="md-ellipsis">
+      Numerical Types
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#structured-types">
+<span class="md-ellipsis">
+      Structured Types
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#complex-validation">
+<span class="md-ellipsis">
+      Complex Validation
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#integration-patterns-dana-centric-view">
+<span class="md-ellipsis">
+      Integration Patterns (Dana-centric View)
+    </span>
+</a>
+<nav aria-label="Integration Patterns (Dana-centric View)" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#1-using-poet-enabled-functions-eg-reason">
+<span class="md-ellipsis">
+      1. Using POET-enabled Functions (e.g., reason())
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#2-authoring-dana-functions-for-poet-stages-poet-decorator">
+<span class="md-ellipsis">
+      2. Authoring Dana Functions for POET Stages (@poet decorator)
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#3-leveraging-poet_status-in-dana">
+<span class="md-ellipsis">
+      3. Leveraging poet_status in Dana
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#best-practices-for-dana-engineers-with-poet">
+<span class="md-ellipsis">
+      🎨 Best Practices for Dana Engineers with POET
+    </span>
+</a>
+<nav aria-label="🎨 Best Practices for Dana Engineers with POET" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#1-write-effective-comments-and-use-type-hints">
+<span class="md-ellipsis">
+      1. Write Effective Comments and Use Type Hints
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#2-design-clear-perceive-and-encode-functions">
+<span class="md-ellipsis">
+      2. Design Clear Perceive and Encode Functions
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#3-understand-expected_output_type">
+<span class="md-ellipsis">
+      3. Understand expected_output_type
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#4-enable-learning-through-feedback">
+<span class="md-ellipsis">
+      4. Enable Learning Through Feedback
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#5-error-handling-for-poet-enabled-functions">
+<span class="md-ellipsis">
+      5. Error Handling for POET-enabled functions
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#6-leverage-poet-profiles">
+<span class="md-ellipsis">
+      6. Leverage POET Profiles
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#learning-and-feedback-integration">
+<span class="md-ellipsis">
+      Learning and Feedback Integration
+    </span>
+</a>
+<nav aria-label="Learning and Feedback Integration" class="md-nav">
+<ul class="md-nav__list">
+<li class="md-nav__item">
+<a class="md-nav__link" href="#providing-feedback-to-poet">
+<span class="md-ellipsis">
+      Providing Feedback to POET
+    </span>
+</a>
+</li>
+<li class="md-nav__item">
+<a class="md-nav__link" href="#monitoring-learning-progress">
+<span class="md-ellipsis">
+      Monitoring Learning Progress
+    </span>
+</a>
+</li>
+</ul>
+</nav>
+</li>
+</ul>
 </nav>
 </div>
 </div>
 </div>
 <div class="md-content" data-md-component="content">
 <article class="md-content__inner md-typeset">
-<h1 id="this-is-a-placeholder-for-the-pov-usage-guidemd-content">This is a placeholder for the pov-usage-guide.md content.<a class="headerlink" href="#this-is-a-placeholder-for-the-pov-usage-guidemd-content" title="Permanent link">¶</a></h1>
-<h1 id="the-original-ipv-usage-guidemd-content-will-be-moved-here-and-updated">The original ipv-usage-guide.md content will be moved here and updated.<a class="headerlink" href="#the-original-ipv-usage-guidemd-content-will-be-moved-here-and-updated" title="Permanent link">¶</a></h1>
 <h1 id="poet-usage-guide-complete-reference">POET Usage Guide: Complete Reference<a class="headerlink" href="#poet-usage-guide-complete-reference" title="Permanent link">¶</a></h1>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a href="#__codelineno-0-1" id="__codelineno-0-1" name="__codelineno-0-1"></a>Author: Christopher Nguyen &amp; Vinh Luong
+</span><span id="__span-0-2"><a href="#__codelineno-0-2" id="__codelineno-0-2" name="__codelineno-0-2"></a>Version: 0.4
+</span><span id="__span-0-3"><a href="#__codelineno-0-3" id="__codelineno-0-3" name="__codelineno-0-3"></a>Status: Design Phase
+</span><span id="__span-0-4"><a href="#__codelineno-0-4" id="__codelineno-0-4" name="__codelineno-0-4"></a>Module: opendxa.dana.poet
+</span></code></pre></div>
 <h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">¶</a></h2>
 <p>POET (Perceive-Operate-Encode-Train) is Dana's intelligent execution pattern that automatically enhances AI interactions with <strong>fault-tolerant context processing</strong>, <strong>self-learning optimization</strong>, and <strong>enterprise-grade reliability</strong>. This guide provides comprehensive usage examples and best practices.</p>
 <h2 id="core-concepts">Core Concepts<a class="headerlink" href="#core-concepts" title="Permanent link">¶</a></h2>
@@ -1565,262 +2107,320 @@
 - Business logic and decision-making code
 - The core operational intelligence</p>
 <p><strong>Runtime Provides Automatically:</strong>
-- <strong>Perceive</strong>: Fault-tolerant contextual input processing
-- <strong>Encode</strong>: Error-free deterministic output generation<br/>
-- <strong>Train</strong>: Continuous adaptation based on feedback signals</p>
+- <strong>Perceive</strong>: Fault-tolerant contextual input processing with learning retrieval
+- <strong>Encode</strong>: Error-free deterministic output generation with validation and execution ID generation
+- <strong>Train</strong>: Continuous adaptation based on feedback signals and learning storage</p>
 <h3 id="comment-aware-context-analysis">Comment-Aware Context Analysis<a class="headerlink" href="#comment-aware-context-analysis" title="Permanent link">¶</a></h3>
 <p>POET automatically extracts and analyzes:
 - Comments in your Dana code
 - Type hints from variable assignments
 - Surrounding code context
-- Domain indicators and <strong>intent signals</strong></p>
+- Domain indicators and <strong>intent signals</strong>
+- Past learnings from the LearningStore</p>
 <h2 id="basic-usage">Basic Usage<a class="headerlink" href="#basic-usage" title="Permanent link">¶</a></h2>
 <h3 id="1-simple-reasoning-with-poet">1. Simple Reasoning with POET<a class="headerlink" href="#1-simple-reasoning-with-poet" title="Permanent link">¶</a></h3>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a href="#__codelineno-0-1" id="__codelineno-0-1" name="__codelineno-0-1"></a># Extract financial data from text
-</span><span id="__span-0-2"><a href="#__codelineno-0-2" id="__codelineno-0-2" name="__codelineno-0-2"></a>price = reason("Find the cost: Item sells for $29.99") -&gt; float
-</span><span id="__span-0-3"><a href="#__codelineno-0-3" id="__codelineno-0-3" name="__codelineno-0-3"></a>
-</span><span id="__span-0-4"><a href="#__codelineno-0-4" id="__codelineno-0-4" name="__codelineno-0-4"></a># POET automatically:
-</span><span id="__span-0-5"><a href="#__codelineno-0-5" id="__codelineno-0-5" name="__codelineno-0-5"></a># - PERCEIVE: Detects financial domain from "$" symbol and context
-</span><span id="__span-0-6"><a href="#__codelineno-0-6" id="__codelineno-0-6" name="__codelineno-0-6"></a># - OPERATE: Applies your business logic for numerical extraction
-</span><span id="__span-0-7"><a href="#__codelineno-0-7" id="__codelineno-0-7" name="__codelineno-0-7"></a># - ENCODE: Validates and formats result as float type
-</span><span id="__span-0-8"><a href="#__codelineno-0-8" id="__codelineno-0-8" name="__codelineno-0-8"></a># - TRAIN: Learns from successful extractions to improve future performance
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a href="#__codelineno-1-1" id="__codelineno-1-1" name="__codelineno-1-1"></a># Extract financial data from text
+</span><span id="__span-1-2"><a href="#__codelineno-1-2" id="__codelineno-1-2" name="__codelineno-1-2"></a>price = reason("Find the cost: Item sells for $29.99") -&gt; float
+</span><span id="__span-1-3"><a href="#__codelineno-1-3" id="__codelineno-1-3" name="__codelineno-1-3"></a>
+</span><span id="__span-1-4"><a href="#__codelineno-1-4" id="__codelineno-1-4" name="__codelineno-1-4"></a># POET automatically:
+</span><span id="__span-1-5"><a href="#__codelineno-1-5" id="__codelineno-1-5" name="__codelineno-1-5"></a># - PERCEIVE: Detects financial domain from "$" symbol and context, retrieves past learning strategies
+</span><span id="__span-1-6"><a href="#__codelineno-1-6" id="__codelineno-1-6" name="__codelineno-1-6"></a># - OPERATE: Applies your business logic for numerical extraction
+</span><span id="__span-1-7"><a href="#__codelineno-1-7" id="__codelineno-1-7" name="__codelineno-1-7"></a># - ENCODE: Validates and formats result as float type, generates execution_id
+</span><span id="__span-1-8"><a href="#__codelineno-1-8" id="__codelineno-1-8" name="__codelineno-1-8"></a># - TRAIN: Learns from successful extractions to improve future performance
 </span></code></pre></div>
 <h3 id="2-comment-driven-optimization">2. Comment-Driven Optimization<a class="headerlink" href="#2-comment-driven-optimization" title="Permanent link">¶</a></h3>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a href="#__codelineno-1-1" id="__codelineno-1-1" name="__codelineno-1-1"></a># Medical data extraction - requires high accuracy
-</span><span id="__span-1-2"><a href="#__codelineno-1-2" id="__codelineno-1-2" name="__codelineno-1-2"></a># Patient temperature should be in Celsius
-</span><span id="__span-1-3"><a href="#__codelineno-1-3" id="__codelineno-1-3" name="__codelineno-1-3"></a>temperature = reason("Patient reports feeling feverish at 101.5°F") -&gt; float
-</span><span id="__span-1-4"><a href="#__codelineno-1-4" id="__codelineno-1-4" name="__codelineno-1-4"></a>
-</span><span id="__span-1-5"><a href="#__codelineno-1-5" id="__codelineno-1-5" name="__codelineno-1-5"></a># POET leverages comments to:
-</span><span id="__span-1-6"><a href="#__codelineno-1-6" id="__codelineno-1-6" name="__codelineno-1-6"></a># - PERCEIVE: Understand medical context and accuracy requirements
-</span><span id="__span-1-7"><a href="#__codelineno-1-7" id="__codelineno-1-7" name="__codelineno-1-7"></a># - Apply temperature conversion logic
-</span><span id="__span-1-8"><a href="#__codelineno-1-8" id="__codelineno-1-8" name="__codelineno-1-8"></a># - Ensure precise numerical extraction
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a href="#__codelineno-2-1" id="__codelineno-2-1" name="__codelineno-2-1"></a># Medical data extraction - requires high accuracy
+</span><span id="__span-2-2"><a href="#__codelineno-2-2" id="__codelineno-2-2" name="__codelineno-2-2"></a># Patient temperature should be in Celsius
+</span><span id="__span-2-3"><a href="#__codelineno-2-3" id="__codelineno-2-3" name="__codelineno-2-3"></a>temperature = reason("Patient reports feeling feverish at 101.5°F") -&gt; float
+</span><span id="__span-2-4"><a href="#__codelineno-2-4" id="__codelineno-2-4" name="__codelineno-2-4"></a>
+</span><span id="__span-2-5"><a href="#__codelineno-2-5" id="__codelineno-2-5" name="__codelineno-2-5"></a># POET leverages comments to:
+</span><span id="__span-2-6"><a href="#__codelineno-2-6" id="__codelineno-2-6" name="__codelineno-2-6"></a># - PERCEIVE: Understand medical context and accuracy requirements, apply past medical learnings
+</span><span id="__span-2-7"><a href="#__codelineno-2-7" id="__codelineno-2-7" name="__codelineno-2-7"></a># - OPERATE: Apply temperature conversion logic
+</span><span id="__span-2-8"><a href="#__codelineno-2-8" id="__codelineno-2-8" name="__codelineno-2-8"></a># - ENCODE: Ensure precise numerical extraction and validation
+</span><span id="__span-2-9"><a href="#__codelineno-2-9" id="__codelineno-2-9" name="__codelineno-2-9"></a># - TRAIN: Store successful medical conversion patterns for future use
 </span></code></pre></div>
 <h3 id="3-complex-type-handling">3. Complex Type Handling<a class="headerlink" href="#3-complex-type-handling" title="Permanent link">¶</a></h3>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a href="#__codelineno-2-1" id="__codelineno-2-1" name="__codelineno-2-1"></a># Extract structured customer data
-</span><span id="__span-2-2"><a href="#__codelineno-2-2" id="__codelineno-2-2" name="__codelineno-2-2"></a># Return as key-value pairs for database storage
-</span><span id="__span-2-3"><a href="#__codelineno-2-3" id="__codelineno-2-3" name="__codelineno-2-3"></a>customer_info = reason("John Smith, age 30, email john@example.com") -&gt; dict
-</span><span id="__span-2-4"><a href="#__codelineno-2-4" id="__codelineno-2-4" name="__codelineno-2-4"></a>
-</span><span id="__span-2-5"><a href="#__codelineno-2-5" id="__codelineno-2-5" name="__codelineno-2-5"></a># POV will:
-</span><span id="__span-2-6"><a href="#__codelineno-2-6" id="__codelineno-2-6" name="__codelineno-2-6"></a># - Parse natural language into structured data
-</span><span id="__span-2-7"><a href="#__codelineno-2-7" id="__codelineno-2-7" name="__codelineno-2-7"></a># - Return: {"name": "John Smith", "age": 30, "email": "john@example.com"}
-</span><span id="__span-2-8"><a href="#__codelineno-2-8" id="__codelineno-2-8" name="__codelineno-2-8"></a># - Validate dictionary structure
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a href="#__codelineno-3-1" id="__codelineno-3-1" name="__codelineno-3-1"></a># Extract structured customer data
+</span><span id="__span-3-2"><a href="#__codelineno-3-2" id="__codelineno-3-2" name="__codelineno-3-2"></a># Return as key-value pairs for database storage
+</span><span id="__span-3-3"><a href="#__codelineno-3-3" id="__codelineno-3-3" name="__codelineno-3-3"></a>customer_info = reason("John Smith, age 30, email john@example.com") -&gt; dict
+</span><span id="__span-3-4"><a href="#__codelineno-3-4" id="__codelineno-3-4" name="__codelineno-3-4"></a>
+</span><span id="__span-3-5"><a href="#__codelineno-3-5" id="__codelineno-3-5" name="__codelineno-3-5"></a># POET will:
+</span><span id="__span-3-6"><a href="#__codelineno-3-6" id="__codelineno-3-6" name="__codelineno-3-6"></a># - PERCEIVE: Parse natural language structure requirements, retrieve past parsing strategies
+</span><span id="__span-3-7"><a href="#__codelineno-3-7" id="__codelineno-3-7" name="__codelineno-3-7"></a># - OPERATE: Execute structured data extraction logic
+</span><span id="__span-3-8"><a href="#__codelineno-3-8" id="__codelineno-3-8" name="__codelineno-3-8"></a># - ENCODE: Return validated: {"name": "John Smith", "age": 30, "email": "john@example.com"}
+</span><span id="__span-3-9"><a href="#__codelineno-3-9" id="__codelineno-3-9" name="__codelineno-3-9"></a># - TRAIN: Learn improved parsing patterns for future customer data
 </span></code></pre></div>
 <h3 id="4-output-type-adaptability-with-reason">4. Output Type Adaptability with <code>reason()</code><a class="headerlink" href="#4-output-type-adaptability-with-reason" title="Permanent link">¶</a></h3>
-<p>A key strength of POV-enabled functions like <code>reason()</code> is their ability to adapt the output based on the <code>expected_output_type</code> inferred from your Dana code (e.g., via type hints on assignment). The same conceptual prompt can yield different, type-appropriate results.
-Example: Describing Pi
+<p>A key strength of POET-enabled functions like <code>reason()</code> is their ability to adapt the output based on the <code>expected_output_type</code> inferred from your Dana code (e.g., via type hints on assignment). The same conceptual prompt can yield different, type-appropriate results.</p>
+<p>Example: Describing Pi
 Consider the task of getting information about Pi:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a href="#__codelineno-3-1" id="__codelineno-3-1" name="__codelineno-3-1"></a># Scenario 1: Requesting a string description
-</span><span id="__span-3-2"><a href="#__codelineno-3-2" id="__codelineno-3-2" name="__codelineno-3-2"></a># POV's Perceive phase notes the '-&gt; str' (or type hint on assignment).
-</span><span id="__span-3-3"><a href="#__codelineno-3-3" id="__codelineno-3-3" name="__codelineno-3-3"></a># Validate phase ensures a string is returned.
-</span><span id="__span-3-4"><a href="#__codelineno-3-4" id="__codelineno-3-4" name="__codelineno-3-4"></a>local:pi_description: str = reason("Tell me about Pi.")
-</span><span id="__span-3-5"><a href="#__codelineno-3-5" id="__codelineno-3-5" name="__codelineno-3-5"></a># Expected: "Pi is a mathematical constant, approximately 3.14159..."
-</span><span id="__span-3-6"><a href="#__codelineno-3-6" id="__codelineno-3-6" name="__codelineno-3-6"></a>
-</span><span id="__span-3-7"><a href="#__codelineno-3-7" id="__codelineno-3-7" name="__codelineno-3-7"></a># Scenario 2: Requesting a floating-point value
-</span><span id="__span-3-8"><a href="#__codelineno-3-8" id="__codelineno-3-8" name="__codelineno-3-8"></a># POV's Perceive phase notes '-&gt; float'.
-</span><span id="__span-3-9"><a href="#__codelineno-3-9" id="__codelineno-3-9" name="__codelineno-3-9"></a># Validate phase ensures a float is returned, potentially parsing it from a more verbose LLM output.
-</span><span id="__span-3-10"><a href="#__codelineno-3-10" id="__codelineno-3-10" name="__codelineno-3-10"></a>local:pi_float: float = reason("Tell me about Pi.")
-</span><span id="__span-3-11"><a href="#__codelineno-3-11" id="__codelineno-3-11" name="__codelineno-3-11"></a># Expected: 3.14159 (or similar float representation)
-</span><span id="__span-3-12"><a href="#__codelineno-3-12" id="__codelineno-3-12" name="__codelineno-3-12"></a>
-</span><span id="__span-3-13"><a href="#__codelineno-3-13" id="__codelineno-3-13" name="__codelineno-3-13"></a># Scenario 3: Requesting an integer value (perhaps the whole number part)
-</span><span id="__span-3-14"><a href="#__codelineno-3-14" id="__codelineno-3-14" name="__codelineno-3-14"></a># POV's Perceive phase notes '-&gt; int'.
-</span><span id="__span-3-15"><a href="#__codelineno-3-15" id="__codelineno-3-15" name="__codelineno-3-15"></a># Validate phase ensures an integer, possibly truncating or rounding.
-</span><span id="__span-3-16"><a href="#__codelineno-3-16" id="__codelineno-3-16" name="__codelineno-3-16"></a>local:pi_integer: int = reason("Tell me about Pi.")
-</span><span id="__span-3-17"><a href="#__codelineno-3-17" id="__codelineno-3-17" name="__codelineno-3-17"></a># Expected: 3
-</span><span id="__span-3-18"><a href="#__codelineno-3-18" id="__codelineno-3-18" name="__codelineno-3-18"></a>
-</span><span id="__span-3-19"><a href="#__codelineno-3-19" id="__codelineno-3-19" name="__codelineno-3-19"></a># Scenario 4: Requesting a more structured representation (e.g., a dict)
-</span><span id="__span-3-20"><a href="#__codelineno-3-20" id="__codelineno-3-20" name="__codelineno-3-20"></a># POV's Perceive phase notes '-&gt; dict'.
-</span><span id="__span-3-21"><a href="#__codelineno-3-21" id="__codelineno-3-21" name="__codelineno-3-21"></a># Validate phase ensures a dictionary.
-</span><span id="__span-3-22"><a href="#__codelineno-3-22" id="__codelineno-3-22" name="__codelineno-3-22"></a>local:pi_details: dict = reason("Tell me about Pi.")
-</span><span id="__span-3-23"><a href="#__codelineno-3-23" id="__codelineno-3-23" name="__codelineno-3-23"></a># Expected: {"symbol": "π", "value": 3.14159, "type": "mathematical constant"} (or similar structure)
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a href="#__codelineno-4-1" id="__codelineno-4-1" name="__codelineno-4-1"></a># Scenario 1: Requesting a string description
+</span><span id="__span-4-2"><a href="#__codelineno-4-2" id="__codelineno-4-2" name="__codelineno-4-2"></a># POET's Perceive phase notes the '-&gt; str' (or type hint on assignment).
+</span><span id="__span-4-3"><a href="#__codelineno-4-3" id="__codelineno-4-3" name="__codelineno-4-3"></a># Encode phase ensures a string is returned.
+</span><span id="__span-4-4"><a href="#__codelineno-4-4" id="__codelineno-4-4" name="__codelineno-4-4"></a>local:pi_description: str = reason("Tell me about Pi.")
+</span><span id="__span-4-5"><a href="#__codelineno-4-5" id="__codelineno-4-5" name="__codelineno-4-5"></a># Expected: "Pi is a mathematical constant, approximately 3.14159..."
+</span><span id="__span-4-6"><a href="#__codelineno-4-6" id="__codelineno-4-6" name="__codelineno-4-6"></a>
+</span><span id="__span-4-7"><a href="#__codelineno-4-7" id="__codelineno-4-7" name="__codelineno-4-7"></a># Scenario 2: Requesting a floating-point value
+</span><span id="__span-4-8"><a href="#__codelineno-4-8" id="__codelineno-4-8" name="__codelineno-4-8"></a># POET's Perceive phase notes '-&gt; float', retrieves past numerical extraction learnings.
+</span><span id="__span-4-9"><a href="#__codelineno-4-9" id="__codelineno-4-9" name="__codelineno-4-9"></a># Encode phase ensures a float is returned, potentially parsing it from a more verbose LLM output.
+</span><span id="__span-4-10"><a href="#__codelineno-4-10" id="__codelineno-4-10" name="__codelineno-4-10"></a>local:pi_float: float = reason("Tell me about Pi.")
+</span><span id="__span-4-11"><a href="#__codelineno-4-11" id="__codelineno-4-11" name="__codelineno-4-11"></a># Expected: 3.14159 (or similar float representation)
+</span><span id="__span-4-12"><a href="#__codelineno-4-12" id="__codelineno-4-12" name="__codelineno-4-12"></a>
+</span><span id="__span-4-13"><a href="#__codelineno-4-13" id="__codelineno-4-13" name="__codelineno-4-13"></a># Scenario 3: Requesting an integer value (perhaps the whole number part)
+</span><span id="__span-4-14"><a href="#__codelineno-4-14" id="__codelineno-4-14" name="__codelineno-4-14"></a># POET's Perceive phase notes '-&gt; int'.
+</span><span id="__span-4-15"><a href="#__codelineno-4-15" id="__codelineno-4-15" name="__codelineno-4-15"></a># Encode phase ensures an integer, possibly truncating or rounding.
+</span><span id="__span-4-16"><a href="#__codelineno-4-16" id="__codelineno-4-16" name="__codelineno-4-16"></a>local:pi_integer: int = reason("Tell me about Pi.")
+</span><span id="__span-4-17"><a href="#__codelineno-4-17" id="__codelineno-4-17" name="__codelineno-4-17"></a># Expected: 3
+</span><span id="__span-4-18"><a href="#__codelineno-4-18" id="__codelineno-4-18" name="__codelineno-4-18"></a>
+</span><span id="__span-4-19"><a href="#__codelineno-4-19" id="__codelineno-4-19" name="__codelineno-4-19"></a># Scenario 4: Requesting a more structured representation (e.g., a dict)
+</span><span id="__span-4-20"><a href="#__codelineno-4-20" id="__codelineno-4-20" name="__codelineno-4-20"></a># POET's Perceive phase notes '-&gt; dict'.
+</span><span id="__span-4-21"><a href="#__codelineno-4-21" id="__codelineno-4-21" name="__codelineno-4-21"></a># Encode phase ensures a dictionary.
+</span><span id="__span-4-22"><a href="#__codelineno-4-22" id="__codelineno-4-22" name="__codelineno-4-22"></a>local:pi_details: dict = reason("Tell me about Pi.")
+</span><span id="__span-4-23"><a href="#__codelineno-4-23" id="__codelineno-4-23" name="__codelineno-4-23"></a># Expected: {"symbol": "π", "value": 3.14159, "type": "mathematical constant"} (or similar structure)
 </span></code></pre></div>
-<p>In each case, the <code>reason()</code> function, powered by POV:
-1. <strong>Perceives</strong> the core request ("Tell me about Pi.") and also the <code>expected_output_type</code> from the Dana code context.
+<p>In each case, the <code>reason()</code> function, powered by POET:
+1. <strong>Perceives</strong> the core request ("Tell me about Pi.") and also the <code>expected_output_type</code> from the Dana code context, retrieving relevant past learnings.
 2. <strong>Operates</strong> by querying an LLM, possibly providing the desired output type as a hint in the prompt to the LLM.
-3. <strong>Validates</strong> that the LLM's output can be successfully coerced or represented as the <code>expected_output_type</code> (string, float, int, dict), performing necessary transformations or retrying if the initial output isn't suitable.</p>
-<p>This demonstrates how POV allows functions to be flexible in what they accept (the general intent) while being conservative and precise in what they produce, aligning with the caller's specific needs.</p>
-<h2 id="the-purpose-of-pov-robust-and-intelligent-execution">The Purpose of POV: Robust and Intelligent Execution<a class="headerlink" href="#the-purpose-of-pov-robust-and-intelligent-execution" title="Permanent link">¶</a></h2>
-<p>You've seen POV in action with functions like <code>reason()</code>. But why is this model so central to Dana?</p>
-<p>POV (Perceive → Operate → Validate) is designed to address common challenges in building reliable AI-powered workflows, especially when interacting with probabilistic systems like Large Language Models (LLMs). Its core goals are to:</p>
+3. <strong>Encodes</strong> that the LLM's output can be successfully coerced or represented as the <code>expected_output_type</code> (string, float, int, dict), performing necessary transformations or retrying if the initial output isn't suitable, and generates an execution_id.
+4. <strong>Trains</strong> (when feedback is received) by updating the LearningStore with successful strategies for Pi-related queries.</p>
+<p>This demonstrates how POET allows functions to be flexible in what they accept (the general intent) while being conservative and precise in what they produce, aligning with the caller's specific needs.</p>
+<h2 id="the-purpose-of-poet-robust-and-intelligent-execution">The Purpose of POET: Robust and Intelligent Execution<a class="headerlink" href="#the-purpose-of-poet-robust-and-intelligent-execution" title="Permanent link">¶</a></h2>
+<p>You've seen POET in action with functions like <code>reason()</code>. But why is this model so central to Dana?</p>
+<p>POET (Perceive → Operate → Encode → Train) is designed to address common challenges in building reliable AI-powered workflows, especially when interacting with probabilistic systems like Large Language Models (LLMs). Its core goals are to:</p>
 <ol>
 <li><strong>Embrace Intent, Enforce Precision (Postel's Law)</strong>:</li>
-<li>Perceive: Flexibly interpret ambiguous inputs, user intent, and diverse data formats. This phase can gather rich context from your code (comments, type hints via a <code>CodeContextAnalyzer</code>) and the environment. Crucially, it can also <em>transform and optimize</em> the initial input, for example, by <strong>rewriting a vague user prompt into a more detailed and effective prompt</strong> for an LLM, or by selecting the best strategy for the <code>Operate</code> phase.</li>
+<li>Perceive: Flexibly interpret ambiguous inputs, user intent, and diverse data formats. This phase can gather rich context from your code (comments, type hints via a <code>CodeContextAnalyzer</code>) and the environment. Crucially, it can also <em>transform and optimize</em> the initial input, for example, by <strong>rewriting a vague user prompt into a more detailed and effective prompt</strong> for an LLM, or by selecting the best strategy for the <code>Operate</code> phase using past learnings.</li>
 <li>Operate: Execute the primary task (e.g., calling an LLM with the optimized prompt, running a tool, or executing a Dana function) using the refined input from the <code>Perceive</code> stage.</li>
+<li>Encode: Rigorously check the output of the <code>Operate</code> phase against expected types (using <code>expected_output_type</code>), structures, or other quality criteria. This ensures that downstream components receive reliable, predictable data. Also generates execution_id for training correlation.</li>
 <li>
-<p>Validate: Rigorously check the output of the <code>Operate</code> phase against expected types (using <code>expected_output_type</code>), structures, or other quality criteria. This ensures that downstream components receive reliable, predictable data.</p>
+<p>Train: Process feedback correlated with execution_id to update the LearningStore, improving future Perceive and Operate strategies.</p>
 </li>
 <li>
 <p><strong>Automate Resilience</strong>:</p>
 </li>
-<li>The built-in <strong>retry loop</strong> automatically re-attempts the <code>Operate</code> (and subsequently <code>Validate</code>) phase upon validation failure. This handles transient issues or allows for iterative refinement.</li>
+<li>The built-in <strong>retry loop</strong> automatically re-attempts the <code>Operate</code> (and subsequently <code>Encode</code> validation) phase upon validation failure. This handles transient issues or allows for iterative refinement.</li>
 <li>
-<p>The <code>pov_status</code> object provides context about attempts and failures, enabling more intelligent retry strategies or fallback mechanisms within custom P/O/V functions.</p>
+<p>The <code>poet_status</code> object provides context about attempts and failures, enabling more intelligent retry strategies or fallback mechanisms within custom P/O/E functions.</p>
+</li>
+<li>
+<p><strong>Enable Continuous Learning</strong>:</p>
+</li>
+<li>The <strong>Train stage</strong> processes external feedback to continuously improve system performance</li>
+<li>The <strong>LearningStore</strong> accumulates knowledge across executions to enhance future operations</li>
+<li>
+<p><strong>Execution IDs</strong> enable precise correlation between feedback and execution context</p>
 </li>
 <li>
 <p><strong>Enhance Developer Experience</strong>:</p>
 </li>
-<li>By standardizing this robust execution pattern, POV reduces boilerplate code for error handling, input sanitization, output validation, and retry logic.</li>
-<li>It allows Dana engineers to focus on the core logic of their <code>Operate</code> functions, while leveraging POV for the surrounding scaffolding.</li>
+<li>By standardizing this robust execution pattern, POET reduces boilerplate code for error handling, input sanitization, output validation, and retry logic.</li>
+<li>It allows Dana engineers to focus on the core logic of their <code>Operate</code> functions, while leveraging POET for the surrounding scaffolding.</li>
 <li>Features like automatic context gathering and prompt optimization aim to make interactions with complex AI services more powerful and less error-prone.</li>
 </ol>
-<p>In essence, POV provides a structured, configurable, and resilient "wrapper" around core operations, making them more dependable and "smarter" by systematically handling the complexities of real-world AI interactions.</p>
+<p>In essence, POET provides a structured, configurable, and resilient "wrapper" around core operations, making them more dependable and "smarter" by systematically handling the complexities of real-world AI interactions while continuously learning and improving.</p>
 <h2 id="advanced-usage-python-customization">🎛️ Advanced Usage (Python Customization)<a class="headerlink" href="#advanced-usage-python-customization" title="Permanent link">¶</a></h2>
-<p>This section details how developers can customize the POV framework using Python, for instance by creating custom POV executors or configurations. For general Dana usage of POV-enabled functions, refer to the Dana-level decorator documentation and examples.</p>
-<h3 id="1-multiple-pov-executorsprofiles">1. Multiple POV Executors/Profiles<a class="headerlink" href="#1-multiple-pov-executorsprofiles" title="Permanent link">¶</a></h3>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a href="#__codelineno-4-1" id="__codelineno-4-1" name="__codelineno-4-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">opendxa.dana.pov.executor</span><span class="w"> </span><span class="kn">import</span> <span class="n">POVReason</span><span class="p">,</span> <span class="n">POVDataProcessor</span><span class="p">,</span> <span class="n">POVAPIIntegrator</span> <span class="c1"># Note: Path and class names are illustrative</span>
-</span><span id="__span-4-2"><a href="#__codelineno-4-2" id="__codelineno-4-2" name="__codelineno-4-2"></a>
-</span><span id="__span-4-3"><a href="#__codelineno-4-3" id="__codelineno-4-3" name="__codelineno-4-3"></a><span class="c1"># Reasoning tasks</span>
-</span><span id="__span-4-4"><a href="#__codelineno-4-4" id="__codelineno-4-4" name="__codelineno-4-4"></a><span class="n">reasoner</span> <span class="o">=</span> <span class="n">POVReason</span><span class="p">()</span>
-</span><span id="__span-4-5"><a href="#__codelineno-4-5" id="__codelineno-4-5" name="__codelineno-4-5"></a><span class="n">result</span> <span class="o">=</span> <span class="n">reasoner</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">"Analyze this financial report..."</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span> <span class="c1"># `execute` signature may vary</span>
-</span><span id="__span-4-6"><a href="#__codelineno-4-6" id="__codelineno-4-6" name="__codelineno-4-6"></a>
-</span><span id="__span-4-7"><a href="#__codelineno-4-7" id="__codelineno-4-7" name="__codelineno-4-7"></a><span class="c1"># Data processing tasks</span>
-</span><span id="__span-4-8"><a href="#__codelineno-4-8" id="__codelineno-4-8" name="__codelineno-4-8"></a><span class="n">processor</span> <span class="o">=</span> <span class="n">POVDataProcessor</span><span class="p">()</span>
-</span><span id="__span-4-9"><a href="#__codelineno-4-9" id="__codelineno-4-9" name="__codelineno-4-9"></a><span class="n">analysis</span> <span class="o">=</span> <span class="n">processor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">"Find trends in sales data"</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">sales_data</span><span class="p">)</span>
-</span><span id="__span-4-10"><a href="#__codelineno-4-10" id="__codelineno-4-10" name="__codelineno-4-10"></a>
-</span><span id="__span-4-11"><a href="#__codelineno-4-11" id="__codelineno-4-11" name="__codelineno-4-11"></a><span class="c1"># API integration tasks</span>
-</span><span id="__span-4-12"><a href="#__codelineno-4-12" id="__codelineno-4-12" name="__codelineno-4-12"></a><span class="n">integrator</span> <span class="o">=</span> <span class="n">POVAPIIntegrator</span><span class="p">()</span>
-</span><span id="__span-4-13"><a href="#__codelineno-4-13" id="__codelineno-4-13" name="__codelineno-4-13"></a><span class="n">api_result</span> <span class="o">=</span> <span class="n">integrator</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">"Get weather for San Francisco"</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
-</span></code></pre></div>
-<h3 id="2-custom-pov-configuration">2. Custom POV Configuration<a class="headerlink" href="#2-custom-pov-configuration" title="Permanent link">¶</a></h3>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a href="#__codelineno-5-1" id="__codelineno-5-1" name="__codelineno-5-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">opendxa.dana.pov.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">POVConfig</span> <span class="c1"># Note: Path and class name are illustrative</span>
+<p>This section details how developers can customize the POET framework using Python, for instance by creating custom POET executors or configurations. For general Dana usage of POET-enabled functions, refer to the Dana-level decorator documentation and examples.</p>
+<h3 id="1-multiple-poet-executorsprofiles">1. Multiple POET Executors/Profiles<a class="headerlink" href="#1-multiple-poet-executorsprofiles" title="Permanent link">¶</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a href="#__codelineno-5-1" id="__codelineno-5-1" name="__codelineno-5-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">opendxa.dana.poet.executor</span><span class="w"> </span><span class="kn">import</span> <span class="n">POETReason</span><span class="p">,</span> <span class="n">POETDataProcessor</span><span class="p">,</span> <span class="n">POETAPIIntegrator</span>
 </span><span id="__span-5-2"><a href="#__codelineno-5-2" id="__codelineno-5-2" name="__codelineno-5-2"></a>
-</span><span id="__span-5-3"><a href="#__codelineno-5-3" id="__codelineno-5-3" name="__codelineno-5-3"></a><span class="c1"># Create custom configuration</span>
-</span><span id="__span-5-4"><a href="#__codelineno-5-4" id="__codelineno-5-4" name="__codelineno-5-4"></a><span class="n">config</span> <span class="o">=</span> <span class="n">POVConfig</span><span class="p">(</span>
-</span><span id="__span-5-5"><a href="#__codelineno-5-5" id="__codelineno-5-5" name="__codelineno-5-5"></a> <span class="n">max_retries</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="c1"># Default from POV decorator, can be part of a profile</span>
-</span><span id="__span-5-6"><a href="#__codelineno-5-6" id="__codelineno-5-6" name="__codelineno-5-6"></a> <span class="n">enable_caching</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="c1"># Caching strategy would be specific to POV profile/executor</span>
-</span><span id="__span-5-7"><a href="#__codelineno-5-7" id="__codelineno-5-7" name="__codelineno-5-7"></a> <span class="n">fallback_strategy</span><span class="o">=</span><span class="s2">"simple"</span><span class="p">,</span> <span class="c1"># Fallback strategy would be specific to POV profile/executor</span>
-</span><span id="__span-5-8"><a href="#__codelineno-5-8" id="__codelineno-5-8" name="__codelineno-5-8"></a> <span class="n">custom_system_message</span><span class="o">=</span><span class="s2">"You are a financial analysis expert..."</span> <span class="c1"># Relevant for LLM-based POV profiles</span>
-</span><span id="__span-5-9"><a href="#__codelineno-5-9" id="__codelineno-5-9" name="__codelineno-5-9"></a><span class="p">)</span>
+</span><span id="__span-5-3"><a href="#__codelineno-5-3" id="__codelineno-5-3" name="__codelineno-5-3"></a><span class="c1"># Reasoning tasks</span>
+</span><span id="__span-5-4"><a href="#__codelineno-5-4" id="__codelineno-5-4" name="__codelineno-5-4"></a><span class="n">reasoner</span> <span class="o">=</span> <span class="n">POETReason</span><span class="p">()</span>
+</span><span id="__span-5-5"><a href="#__codelineno-5-5" id="__codelineno-5-5" name="__codelineno-5-5"></a><span class="n">result</span> <span class="o">=</span> <span class="n">reasoner</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">"Analyze this financial report..."</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+</span><span id="__span-5-6"><a href="#__codelineno-5-6" id="__codelineno-5-6" name="__codelineno-5-6"></a>
+</span><span id="__span-5-7"><a href="#__codelineno-5-7" id="__codelineno-5-7" name="__codelineno-5-7"></a><span class="c1"># Data processing tasks</span>
+</span><span id="__span-5-8"><a href="#__codelineno-5-8" id="__codelineno-5-8" name="__codelineno-5-8"></a><span class="n">processor</span> <span class="o">=</span> <span class="n">POETDataProcessor</span><span class="p">()</span>
+</span><span id="__span-5-9"><a href="#__codelineno-5-9" id="__codelineno-5-9" name="__codelineno-5-9"></a><span class="n">analysis</span> <span class="o">=</span> <span class="n">processor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">"Find trends in sales data"</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">sales_data</span><span class="p">)</span>
 </span><span id="__span-5-10"><a href="#__codelineno-5-10" id="__codelineno-5-10" name="__codelineno-5-10"></a>
-</span><span id="__span-5-11"><a href="#__codelineno-5-11" id="__codelineno-5-11" name="__codelineno-5-11"></a><span class="c1"># Use with POV executor (illustrative)</span>
-</span><span id="__span-5-12"><a href="#__codelineno-5-12" id="__codelineno-5-12" name="__codelineno-5-12"></a><span class="n">reasoner</span> <span class="o">=</span> <span class="n">POVReason</span><span class="p">()</span> <span class="c1"># Or some base POV executor</span>
-</span><span id="__span-5-13"><a href="#__codelineno-5-13" id="__codelineno-5-13" name="__codelineno-5-13"></a><span class="c1"># result = reasoner.execute(intent, context, config=config) # Actual API TBD</span>
+</span><span id="__span-5-11"><a href="#__codelineno-5-11" id="__codelineno-5-11" name="__codelineno-5-11"></a><span class="c1"># API integration tasks</span>
+</span><span id="__span-5-12"><a href="#__codelineno-5-12" id="__codelineno-5-12" name="__codelineno-5-12"></a><span class="n">integrator</span> <span class="o">=</span> <span class="n">POETAPIIntegrator</span><span class="p">()</span>
+</span><span id="__span-5-13"><a href="#__codelineno-5-13" id="__codelineno-5-13" name="__codelineno-5-13"></a><span class="n">api_result</span> <span class="o">=</span> <span class="n">integrator</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">"Get weather for San Francisco"</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+</span></code></pre></div>
+<h3 id="2-custom-poet-configuration">2. Custom POET Configuration<a class="headerlink" href="#2-custom-poet-configuration" title="Permanent link">¶</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a href="#__codelineno-6-1" id="__codelineno-6-1" name="__codelineno-6-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">opendxa.dana.poet.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">POETConfig</span>
+</span><span id="__span-6-2"><a href="#__codelineno-6-2" id="__codelineno-6-2" name="__codelineno-6-2"></a>
+</span><span id="__span-6-3"><a href="#__codelineno-6-3" id="__codelineno-6-3" name="__codelineno-6-3"></a><span class="c1"># Create custom configuration</span>
+</span><span id="__span-6-4"><a href="#__codelineno-6-4" id="__codelineno-6-4" name="__codelineno-6-4"></a><span class="n">config</span> <span class="o">=</span> <span class="n">POETConfig</span><span class="p">(</span>
+</span><span id="__span-6-5"><a href="#__codelineno-6-5" id="__codelineno-6-5" name="__codelineno-6-5"></a> <span class="n">max_retries</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="c1"># Default from POET decorator, can be part of a profile</span>
+</span><span id="__span-6-6"><a href="#__codelineno-6-6" id="__codelineno-6-6" name="__codelineno-6-6"></a> <span class="n">enable_caching</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="c1"># Caching strategy would be specific to POET profile/executor</span>
+</span><span id="__span-6-7"><a href="#__codelineno-6-7" id="__codelineno-6-7" name="__codelineno-6-7"></a> <span class="n">fallback_strategy</span><span class="o">=</span><span class="s2">"simple"</span><span class="p">,</span> <span class="c1"># Fallback strategy would be specific to POET profile/executor</span>
+</span><span id="__span-6-8"><a href="#__codelineno-6-8" id="__codelineno-6-8" name="__codelineno-6-8"></a> <span class="n">custom_system_message</span><span class="o">=</span><span class="s2">"You are a financial analysis expert..."</span><span class="p">,</span> <span class="c1"># Relevant for LLM-based POET profiles</span>
+</span><span id="__span-6-9"><a href="#__codelineno-6-9" id="__codelineno-6-9" name="__codelineno-6-9"></a> <span class="n">learning_store_config</span><span class="o">=</span><span class="p">{</span><span class="s2">"type"</span><span class="p">:</span> <span class="s2">"persistent"</span><span class="p">,</span> <span class="s2">"version"</span><span class="p">:</span> <span class="s2">"v1"</span><span class="p">}</span> <span class="c1"># Learning store configuration</span>
+</span><span id="__span-6-10"><a href="#__codelineno-6-10" id="__codelineno-6-10" name="__codelineno-6-10"></a><span class="p">)</span>
+</span><span id="__span-6-11"><a href="#__codelineno-6-11" id="__codelineno-6-11" name="__codelineno-6-11"></a>
+</span><span id="__span-6-12"><a href="#__codelineno-6-12" id="__codelineno-6-12" name="__codelineno-6-12"></a><span class="c1"># Use with POET executor</span>
+</span><span id="__span-6-13"><a href="#__codelineno-6-13" id="__codelineno-6-13" name="__codelineno-6-13"></a><span class="n">reasoner</span> <span class="o">=</span> <span class="n">POETReason</span><span class="p">()</span>
+</span><span id="__span-6-14"><a href="#__codelineno-6-14" id="__codelineno-6-14" name="__codelineno-6-14"></a><span class="n">result</span> <span class="o">=</span> <span class="n">reasoner</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">intent</span><span class="p">,</span> <span class="n">context</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">)</span>
 </span></code></pre></div>
 <h3 id="3-debug-mode-and-monitoring-framework-level">3. Debug Mode and Monitoring (Framework Level)<a class="headerlink" href="#3-debug-mode-and-monitoring-framework-level" title="Permanent link">¶</a></h3>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a href="#__codelineno-6-1" id="__codelineno-6-1" name="__codelineno-6-1"></a><span class="c1"># Debugging and monitoring are generally part of the POV framework itself or specific executor/profile implementations.</span>
-</span><span id="__span-6-2"><a href="#__codelineno-6-2" id="__codelineno-6-2" name="__codelineno-6-2"></a><span class="c1"># Dana-level functions decorated with @pov would benefit from this automatically.</span>
-</span><span id="__span-6-3"><a href="#__codelineno-6-3" id="__codelineno-6-3" name="__codelineno-6-3"></a>
-</span><span id="__span-6-4"><a href="#__codelineno-6-4" id="__codelineno-6-4" name="__codelineno-6-4"></a><span class="c1"># Illustrative Python-level access if directly using executors:</span>
-</span><span id="__span-6-5"><a href="#__codelineno-6-5" id="__codelineno-6-5" name="__codelineno-6-5"></a><span class="c1"># reasoner = POVReason()</span>
-</span><span id="__span-6-6"><a href="#__codelineno-6-6" id="__codelineno-6-6" name="__codelineno-6-6"></a><span class="c1"># reasoner.set_debug_mode(True)</span>
-</span><span id="__span-6-7"><a href="#__codelineno-6-7" id="__codelineno-6-7" name="__codelineno-6-7"></a>
-</span><span id="__span-6-8"><a href="#__codelineno-6-8" id="__codelineno-6-8" name="__codelineno-6-8"></a><span class="c1"># result = reasoner.execute("Complex analysis task...", context)</span>
-</span><span id="__span-6-9"><a href="#__codelineno-6-9" id="__codelineno-6-9" name="__codelineno-6-9"></a>
-</span><span id="__span-6-10"><a href="#__codelineno-6-10" id="__codelineno-6-10" name="__codelineno-6-10"></a><span class="c1"># history = reasoner.get_execution_history()</span>
-</span><span id="__span-6-11"><a href="#__codelineno-6-11" id="__codelineno-6-11" name="__codelineno-6-11"></a><span class="c1"># print(f"Processed {len(history)} requests")</span>
-</span><span id="__span-6-12"><a href="#__codelineno-6-12" id="__codelineno-6-12" name="__codelineno-6-12"></a>
-</span><span id="__span-6-13"><a href="#__codelineno-6-13" id="__codelineno-6-13" name="__codelineno-6-13"></a><span class="c1"># stats = reasoner.get_performance_stats()</span>
-</span><span id="__span-6-14"><a href="#__codelineno-6-14" id="__codelineno-6-14" name="__codelineno-6-14"></a><span class="c1"># print(f"Average processing time: {stats['average_duration']:.2f}s")</span>
-</span><span id="__span-6-15"><a href="#__codelineno-6-15" id="__codelineno-6-15" name="__codelineno-6-15"></a><span class="c1"># print(f"Success rate: {stats['success_rate']:.1%}")</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a href="#__codelineno-7-1" id="__codelineno-7-1" name="__codelineno-7-1"></a><span class="c1"># Debugging and monitoring are generally part of the POET framework itself or specific executor/profile implementations.</span>
+</span><span id="__span-7-2"><a href="#__codelineno-7-2" id="__codelineno-7-2" name="__codelineno-7-2"></a><span class="c1"># Dana-level functions decorated with @poet would benefit from this automatically.</span>
+</span><span id="__span-7-3"><a href="#__codelineno-7-3" id="__codelineno-7-3" name="__codelineno-7-3"></a>
+</span><span id="__span-7-4"><a href="#__codelineno-7-4" id="__codelineno-7-4" name="__codelineno-7-4"></a><span class="c1"># Illustrative Python-level access if directly using executors:</span>
+</span><span id="__span-7-5"><a href="#__codelineno-7-5" id="__codelineno-7-5" name="__codelineno-7-5"></a><span class="n">reasoner</span> <span class="o">=</span> <span class="n">POETReason</span><span class="p">()</span>
+</span><span id="__span-7-6"><a href="#__codelineno-7-6" id="__codelineno-7-6" name="__codelineno-7-6"></a><span class="n">reasoner</span><span class="o">.</span><span class="n">set_debug_mode</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-7-7"><a href="#__codelineno-7-7" id="__codelineno-7-7" name="__codelineno-7-7"></a>
+</span><span id="__span-7-8"><a href="#__codelineno-7-8" id="__codelineno-7-8" name="__codelineno-7-8"></a><span class="n">result</span> <span class="o">=</span> <span class="n">reasoner</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">"Complex analysis task..."</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span>
+</span><span id="__span-7-9"><a href="#__codelineno-7-9" id="__codelineno-7-9" name="__codelineno-7-9"></a>
+</span><span id="__span-7-10"><a href="#__codelineno-7-10" id="__codelineno-7-10" name="__codelineno-7-10"></a><span class="c1"># Monitor execution history and learning</span>
+</span><span id="__span-7-11"><a href="#__codelineno-7-11" id="__codelineno-7-11" name="__codelineno-7-11"></a><span class="n">history</span> <span class="o">=</span> <span class="n">reasoner</span><span class="o">.</span><span class="n">get_execution_history</span><span class="p">()</span>
+</span><span id="__span-7-12"><a href="#__codelineno-7-12" id="__codelineno-7-12" name="__codelineno-7-12"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Processed </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">history</span><span class="p">)</span><span class="si">}</span><span class="s2"> requests"</span><span class="p">)</span>
+</span><span id="__span-7-13"><a href="#__codelineno-7-13" id="__codelineno-7-13" name="__codelineno-7-13"></a>
+</span><span id="__span-7-14"><a href="#__codelineno-7-14" id="__codelineno-7-14" name="__codelineno-7-14"></a><span class="n">stats</span> <span class="o">=</span> <span class="n">reasoner</span><span class="o">.</span><span class="n">get_performance_stats</span><span class="p">()</span>
+</span><span id="__span-7-15"><a href="#__codelineno-7-15" id="__codelineno-7-15" name="__codelineno-7-15"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Average processing time: </span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">'average_duration'</span><span class="p">]</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">s"</span><span class="p">)</span>
+</span><span id="__span-7-16"><a href="#__codelineno-7-16" id="__codelineno-7-16" name="__codelineno-7-16"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Success rate: </span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">'success_rate'</span><span class="p">]</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</span><span id="__span-7-17"><a href="#__codelineno-7-17" id="__codelineno-7-17" name="__codelineno-7-17"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Learning improvements: </span><span class="si">{</span><span class="n">stats</span><span class="p">[</span><span class="s1">'learning_iterations'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</span><span id="__span-7-18"><a href="#__codelineno-7-18" id="__codelineno-7-18" name="__codelineno-7-18"></a>
+</span><span id="__span-7-19"><a href="#__codelineno-7-19" id="__codelineno-7-19" name="__codelineno-7-19"></a><span class="c1"># Access training data</span>
+</span><span id="__span-7-20"><a href="#__codelineno-7-20" id="__codelineno-7-20" name="__codelineno-7-20"></a><span class="n">training_data</span> <span class="o">=</span> <span class="n">reasoner</span><span class="o">.</span><span class="n">get_learning_store</span><span class="p">()</span><span class="o">.</span><span class="n">get_recent_feedback</span><span class="p">()</span>
+</span><span id="__span-7-21"><a href="#__codelineno-7-21" id="__codelineno-7-21" name="__codelineno-7-21"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Recent feedback entries: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">training_data</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </span></code></pre></div>
 <h2 id="type-driven-validation-examples-leveraging-expected_output_type">📊 Type-Driven Validation Examples (Leveraging <code>expected_output_type</code>)<a class="headerlink" href="#type-driven-validation-examples-leveraging-expected_output_type" title="Permanent link">¶</a></h2>
-<p>The POV framework's <code>Validate</code> phase is strongly guided by the <code>expected_output_type</code> defined in the <code>@pov</code> decorator or inferred during the <code>Perceive</code> phase. Dana's <code>reason()</code> function inherently benefits from this type-driven validation.</p>
+<p>The POET framework's <code>Encode</code> phase is strongly guided by the <code>expected_output_type</code> defined in the <code>@poet</code> decorator or inferred during the <code>Perceive</code> phase. Dana's <code>reason()</code> function inherently benefits from this type-driven validation.</p>
 <h3 id="numerical-types">Numerical Types<a class="headerlink" href="#numerical-types" title="Permanent link">¶</a></h3>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a href="#__codelineno-7-1" id="__codelineno-7-1" name="__codelineno-7-1"></a># Float extraction with validation (expected_output_type is float)
-</span><span id="__span-7-2"><a href="#__codelineno-7-2" id="__codelineno-7-2" name="__codelineno-7-2"></a>price = reason("The item costs twenty-nine dollars and ninety-nine cents") -&gt; float
-</span><span id="__span-7-3"><a href="#__codelineno-7-3" id="__codelineno-7-3" name="__codelineno-7-3"></a># Result: 29.99
-</span><span id="__span-7-4"><a href="#__codelineno-7-4" id="__codelineno-7-4" name="__codelineno-7-4"></a>
-</span><span id="__span-7-5"><a href="#__codelineno-7-5" id="__codelineno-7-5" name="__codelineno-7-5"></a># Integer extraction (expected_output_type is int)
-</span><span id="__span-7-6"><a href="#__codelineno-7-6" id="__codelineno-7-6" name="__codelineno-7-6"></a>count = reason("We have fifteen items in stock") -&gt; int
-</span><span id="__span-7-7"><a href="#__codelineno-7-7" id="__codelineno-7-7" name="__codelineno-7-7"></a># Result: 15
-</span><span id="__span-7-8"><a href="#__codelineno-7-8" id="__codelineno-7-8" name="__codelineno-7-8"></a>
-</span><span id="__span-7-9"><a href="#__codelineno-7-9" id="__codelineno-7-9" name="__codelineno-7-9"></a># Boolean extraction (expected_output_type is bool)
-</span><span id="__span-7-10"><a href="#__codelineno-7-10" id="__codelineno-7-10" name="__codelineno-7-10"></a>approved = reason("The request was approved by management") -&gt; bool
-</span><span id="__span-7-11"><a href="#__codelineno-7-11" id="__codelineno-7-11" name="__codelineno-7-11"></a># Result: true
+<div class="language-text highlight"><pre><span></span><code><span id="__span-8-1"><a href="#__codelineno-8-1" id="__codelineno-8-1" name="__codelineno-8-1"></a># Float extraction with validation (expected_output_type is float)
+</span><span id="__span-8-2"><a href="#__codelineno-8-2" id="__codelineno-8-2" name="__codelineno-8-2"></a>price = reason("The item costs twenty-nine dollars and ninety-nine cents") -&gt; float
+</span><span id="__span-8-3"><a href="#__codelineno-8-3" id="__codelineno-8-3" name="__codelineno-8-3"></a># Result: 29.99
+</span><span id="__span-8-4"><a href="#__codelineno-8-4" id="__codelineno-8-4" name="__codelineno-8-4"></a># POET learns successful numerical extraction patterns
+</span><span id="__span-8-5"><a href="#__codelineno-8-5" id="__codelineno-8-5" name="__codelineno-8-5"></a>
+</span><span id="__span-8-6"><a href="#__codelineno-8-6" id="__codelineno-8-6" name="__codelineno-8-6"></a># Integer extraction (expected_output_type is int)
+</span><span id="__span-8-7"><a href="#__codelineno-8-7" id="__codelineno-8-7" name="__codelineno-8-7"></a>count = reason("We have fifteen items in stock") -&gt; int
+</span><span id="__span-8-8"><a href="#__codelineno-8-8" id="__codelineno-8-8" name="__codelineno-8-8"></a># Result: 15
+</span><span id="__span-8-9"><a href="#__codelineno-8-9" id="__codelineno-8-9" name="__codelineno-8-9"></a># POET learns text-to-number conversion strategies
+</span><span id="__span-8-10"><a href="#__codelineno-8-10" id="__codelineno-8-10" name="__codelineno-8-10"></a>
+</span><span id="__span-8-11"><a href="#__codelineno-8-11" id="__codelineno-8-11" name="__codelineno-8-11"></a># Boolean extraction (expected_output_type is bool)
+</span><span id="__span-8-12"><a href="#__codelineno-8-12" id="__codelineno-8-12" name="__codelineno-8-12"></a>approved = reason("The request was approved by management") -&gt; bool
+</span><span id="__span-8-13"><a href="#__codelineno-8-13" id="__codelineno-8-13" name="__codelineno-8-13"></a># Result: true
+</span><span id="__span-8-14"><a href="#__codelineno-8-14" id="__codelineno-8-14" name="__codelineno-8-14"></a># POET learns sentiment and approval language patterns
 </span></code></pre></div>
 <h3 id="structured-types">Structured Types<a class="headerlink" href="#structured-types" title="Permanent link">¶</a></h3>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-8-1"><a href="#__codelineno-8-1" id="__codelineno-8-1" name="__codelineno-8-1"></a># Dictionary extraction (expected_output_type is dict or a specific Dana struct)
-</span><span id="__span-8-2"><a href="#__codelineno-8-2" id="__codelineno-8-2" name="__codelineno-8-2"></a>product = reason("iPhone 14, $999, 128GB storage, Blue color") -&gt; dict
-</span><span id="__span-8-3"><a href="#__codelineno-8-3" id="__codelineno-8-3" name="__codelineno-8-3"></a># Result: {"name": "iPhone 14", "price": 999, "storage": "128GB", "color": "Blue"}
-</span><span id="__span-8-4"><a href="#__codelineno-8-4" id="__codelineno-8-4" name="__codelineno-8-4"></a>
-</span><span id="__span-8-5"><a href="#__codelineno-8-5" id="__codelineno-8-5" name="__codelineno-8-5"></a># List extraction (expected_output_type is list or list[str], etc.)
-</span><span id="__span-8-6"><a href="#__codelineno-8-6" id="__codelineno-8-6" name="__codelineno-8-6"></a>colors = reason("Available in red, blue, green, and yellow") -&gt; list
-</span><span id="__span-8-7"><a href="#__codelineno-8-7" id="__codelineno-8-7" name="__codelineno-8-7"></a># Result: ["red", "blue", "green", "yellow"]
+<div class="language-text highlight"><pre><span></span><code><span id="__span-9-1"><a href="#__codelineno-9-1" id="__codelineno-9-1" name="__codelineno-9-1"></a># Dictionary extraction (expected_output_type is dict or a specific Dana struct)
+</span><span id="__span-9-2"><a href="#__codelineno-9-2" id="__codelineno-9-2" name="__codelineno-9-2"></a>product = reason("iPhone 14, $999, 128GB storage, Blue color") -&gt; dict
+</span><span id="__span-9-3"><a href="#__codelineno-9-3" id="__codelineno-9-3" name="__codelineno-9-3"></a># Result: {"name": "iPhone 14", "price": 999, "storage": "128GB", "color": "Blue"}
+</span><span id="__span-9-4"><a href="#__codelineno-9-4" id="__codelineno-9-4" name="__codelineno-9-4"></a># POET learns structured data extraction patterns
+</span><span id="__span-9-5"><a href="#__codelineno-9-5" id="__codelineno-9-5" name="__codelineno-9-5"></a>
+</span><span id="__span-9-6"><a href="#__codelineno-9-6" id="__codelineno-9-6" name="__codelineno-9-6"></a># List extraction (expected_output_type is list or list[str], etc.)
+</span><span id="__span-9-7"><a href="#__codelineno-9-7" id="__codelineno-9-7" name="__codelineno-9-7"></a>colors = reason("Available in red, blue, green, and yellow") -&gt; list
+</span><span id="__span-9-8"><a href="#__codelineno-9-8" id="__codelineno-9-8" name="__codelineno-9-8"></a># Result: ["red", "blue", "green", "yellow"]
+</span><span id="__span-9-9"><a href="#__codelineno-9-9" id="__codelineno-9-9" name="__codelineno-9-9"></a># POET learns list identification and parsing strategies
 </span></code></pre></div>
 <h3 id="complex-validation">Complex Validation<a class="headerlink" href="#complex-validation" title="Permanent link">¶</a></h3>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-9-1"><a href="#__codelineno-9-1" id="__codelineno-9-1" name="__codelineno-9-1"></a># JSON-structured response (expected_output_type is a dict or specific Dana struct)
-</span><span id="__span-9-2"><a href="#__codelineno-9-2" id="__codelineno-9-2" name="__codelineno-9-2"></a>config = reason("Set timeout to 30 seconds, retries to 3, debug mode on") -&gt; dict
-</span><span id="__span-9-3"><a href="#__codelineno-9-3" id="__codelineno-9-3" name="__codelineno-9-3"></a># Result: {"timeout": 30, "retries": 3, "debug": true}
+<div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a href="#__codelineno-10-1" id="__codelineno-10-1" name="__codelineno-10-1"></a># JSON-structured response (expected_output_type is a dict or specific Dana struct)
+</span><span id="__span-10-2"><a href="#__codelineno-10-2" id="__codelineno-10-2" name="__codelineno-10-2"></a>config = reason("Set timeout to 30 seconds, retries to 3, debug mode on") -&gt; dict
+</span><span id="__span-10-3"><a href="#__codelineno-10-3" id="__codelineno-10-3" name="__codelineno-10-3"></a># Result: {"timeout": 30, "retries": 3, "debug": true}
+</span><span id="__span-10-4"><a href="#__codelineno-10-4" id="__codelineno-10-4" name="__codelineno-10-4"></a># POET learns configuration parsing and validation patterns
 </span></code></pre></div>
 <h2 id="integration-patterns-dana-centric-view">Integration Patterns (Dana-centric View)<a class="headerlink" href="#integration-patterns-dana-centric-view" title="Permanent link">¶</a></h2>
-<p>This section focuses on how Dana engineers interact with POV-enabled functions and contribute to the POV lifecycle, primarily through Dana code.
-For details on the POV architecture itself, see the <a href="../../../design/02_dana_runtime_and_execution/pov_execution_model/">POV Execution Model documentation</a>.</p>
-<h3 id="1-using-pov-enabled-functions-eg-reason">1. Using POV-enabled Functions (e.g., <code>reason()</code>)<a class="headerlink" href="#1-using-pov-enabled-functions-eg-reason" title="Permanent link">¶</a></h3>
-<p>Many core Dana functions, like <code>reason()</code>, are implicitly POV-enabled. You use them like regular functions, and POV works behind the scenes.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a href="#__codelineno-10-1" id="__codelineno-10-1" name="__codelineno-10-1"></a># User provides minimal prompt with context and type hint
-</span><span id="__span-10-2"><a href="#__codelineno-10-2" id="__codelineno-10-2" name="__codelineno-10-2"></a># Extract total price from medical invoice
-</span><span id="__span-10-3"><a href="#__codelineno-10-3" id="__codelineno-10-3" name="__codelineno-10-3"></a># POV's Perceive phase uses comments, code context, and the -&gt; float hint
-</span><span id="__span-10-4"><a href="#__codelineno-10-4" id="__codelineno-10-4" name="__codelineno-10-4"></a># to determine the expected_output_type and guide validation.
-</span><span id="__span-10-5"><a href="#__codelineno-10-5" id="__codelineno-10-5" name="__codelineno-10-5"></a>private:price: float = reason("get price from 'Invoice total: $125.50'")
+<p>This section focuses on how Dana engineers interact with POET-enabled functions and contribute to the POET lifecycle, primarily through Dana code.
+For details on the POET architecture itself, see the <a href="../../../design/02_dana_runtime_and_execution/poet_execution_model/">POET Execution Model documentation</a>.</p>
+<h3 id="1-using-poet-enabled-functions-eg-reason">1. Using POET-enabled Functions (e.g., <code>reason()</code>)<a class="headerlink" href="#1-using-poet-enabled-functions-eg-reason" title="Permanent link">¶</a></h3>
+<p>Many core Dana functions, like <code>reason()</code>, are implicitly POET-enabled. You use them like regular functions, and POET works behind the scenes.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-11-1"><a href="#__codelineno-11-1" id="__codelineno-11-1" name="__codelineno-11-1"></a># User provides minimal prompt with context and type hint
+</span><span id="__span-11-2"><a href="#__codelineno-11-2" id="__codelineno-11-2" name="__codelineno-11-2"></a># Extract total price from medical invoice
+</span><span id="__span-11-3"><a href="#__codelineno-11-3" id="__codelineno-11-3" name="__codelineno-11-3"></a># POET's Perceive phase uses comments, code context, and the -&gt; float hint
+</span><span id="__span-11-4"><a href="#__codelineno-11-4" id="__codelineno-11-4" name="__codelineno-11-4"></a># to determine the expected_output_type and guide validation.
+</span><span id="__span-11-5"><a href="#__codelineno-11-5" id="__codelineno-11-5" name="__codelineno-11-5"></a>private:price: float = reason("get price from 'Invoice total: $125.50'")
 </span></code></pre></div>
-<h3 id="2-authoring-dana-functions-for-pov-stages-pov-decorator">2. Authoring Dana Functions for POV Stages (<code>@pov</code> decorator)<a class="headerlink" href="#2-authoring-dana-functions-for-pov-stages-pov-decorator" title="Permanent link">¶</a></h3>
-<p>Dana functions can be designated as <code>Perceive</code> or <code>Validate</code> stages for a POV-enabled operation using Dana's <code>@pov</code> decorator. The decorated function itself becomes the <code>Operate</code> stage.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-11-1"><a href="#__codelineno-11-1" id="__codelineno-11-1" name="__codelineno-11-1"></a># (Conceptual example, see Dana Language Spec for definitive @pov syntax)
-</span><span id="__span-11-2"><a href="#__codelineno-11-2" id="__codelineno-11-2" name="__codelineno-11-2"></a>
-</span><span id="__span-11-3"><a href="#__codelineno-11-3" id="__codelineno-11-3" name="__codelineno-11-3"></a># Dana function for the 'Perceive' phase
-</span><span id="__span-11-4"><a href="#__codelineno-11-4" id="__codelineno-11-4" name="__codelineno-11-4"></a>def my_input_parser(raw_text: str, pov_status: dict) -&gt; dict:
-</span><span id="__span-11-5"><a href="#__codelineno-11-5" id="__codelineno-11-5" name="__codelineno-11-5"></a> # pov_status might provide initial context like expected_output_type from decorator
-</span><span id="__span-11-6"><a href="#__codelineno-11-6" id="__codelineno-11-6" name="__codelineno-11-6"></a> local:parsed = {"input": raw_text.lower(), "char_count": len(raw_text)}
-</span><span id="__span-11-7"><a href="#__codelineno-11-7" id="__codelineno-11-7" name="__codelineno-11-7"></a> # This dict becomes pov_status.perceived_input for Operate and Validate
-</span><span id="__span-11-8"><a href="#__codelineno-11-8" id="__codelineno-11-8" name="__codelineno-11-8"></a> return local:parsed
-</span><span id="__span-11-9"><a href="#__codelineno-11-9" id="__codelineno-11-9" name="__codelineno-11-9"></a>
-</span><span id="__span-11-10"><a href="#__codelineno-11-10" id="__codelineno-11-10" name="__codelineno-11-10"></a># Dana function for the 'Validate' phase
-</span><span id="__span-11-11"><a href="#__codelineno-11-11" id="__codelineno-11-11" name="__codelineno-11-11"></a>def my_output_checker(operate_result: any, pov_status: dict) -&gt; bool:
-</span><span id="__span-11-12"><a href="#__codelineno-11-12" id="__codelineno-11-12" name="__codelineno-11-12"></a> # pov_status includes {attempt, perceived_input, raw_output, expected_output_type, ...}
-</span><span id="__span-11-13"><a href="#__codelineno-11-13" id="__codelineno-11-13" name="__codelineno-11-13"></a> log(f"Attempt {pov_status.attempt} validating {operate_result} against {pov_status.expected_output_type}")
-</span><span id="__span-11-14"><a href="#__codelineno-11-14" id="__codelineno-11-14" name="__codelineno-11-14"></a> if pov_status.expected_output_type and typeof(operate_result) != pov_status.expected_output_type:
-</span><span id="__span-11-15"><a href="#__codelineno-11-15" id="__codelineno-11-15" name="__codelineno-11-15"></a> return False
-</span><span id="__span-11-16"><a href="#__codelineno-11-16" id="__codelineno-11-16" name="__codelineno-11-16"></a> # Further custom checks...
-</span><span id="__span-11-17"><a href="#__codelineno-11-17" id="__codelineno-11-17" name="__codelineno-11-17"></a> return len(operate_result) &gt; 5
-</span><span id="__span-11-18"><a href="#__codelineno-11-18" id="__codelineno-11-18" name="__codelineno-11-18"></a>
-</span><span id="__span-11-19"><a href="#__codelineno-11-19" id="__codelineno-11-19" name="__codelineno-11-19"></a>@pov(
-</span><span id="__span-11-20"><a href="#__codelineno-11-20" id="__codelineno-11-20" name="__codelineno-11-20"></a> perceive=my_input_parser,
-</span><span id="__span-11-21"><a href="#__codelineno-11-21" id="__codelineno-11-21" name="__codelineno-11-21"></a> validate=my_output_checker,
-</span><span id="__span-11-22"><a href="#__codelineno-11-22" id="__codelineno-11-22" name="__codelineno-11-22"></a> expected_output_type="str" # Explicitly state the final desired type
-</span><span id="__span-11-23"><a href="#__codelineno-11-23" id="__codelineno-11-23" name="__codelineno-11-23"></a>)
-</span><span id="__span-11-24"><a href="#__codelineno-11-24" id="__codelineno-11-24" name="__codelineno-11-24"></a>def process_complex_text(parsed_input: dict) -&gt; str:
-</span><span id="__span-11-25"><a href="#__codelineno-11-25" id="__codelineno-11-25" name="__codelineno-11-25"></a> # This is the 'Operate' phase.
-</span><span id="__span-11-26"><a href="#__codelineno-11-26" id="__codelineno-11-26" name="__codelineno-11-26"></a> # 'parsed_input' is the output from my_input_parser (pov_status.perceived_input)
-</span><span id="__span-11-27"><a href="#__codelineno-11-27" id="__codelineno-11-27" name="__codelineno-11-27"></a> return f"PROCESSED ({parsed_input.char_count} chars): {parsed_input.input.upper()}"
-</span><span id="__span-11-28"><a href="#__codelineno-11-28" id="__codelineno-11-28" name="__codelineno-11-28"></a>
-</span><span id="__span-11-29"><a href="#__codelineno-11-29" id="__codelineno-11-29" name="__codelineno-11-29"></a># Usage
-</span><span id="__span-11-30"><a href="#__codelineno-11-30" id="__codelineno-11-30" name="__codelineno-11-30"></a>local:final_result = process_complex_text("Some initial text.")
+<h3 id="2-authoring-dana-functions-for-poet-stages-poet-decorator">2. Authoring Dana Functions for POET Stages (<code>@poet</code> decorator)<a class="headerlink" href="#2-authoring-dana-functions-for-poet-stages-poet-decorator" title="Permanent link">¶</a></h3>
+<p>Dana functions can be designated as <code>Perceive</code> or <code>Encode</code> (validation logic) stages for a POET-enabled operation using Dana's <code>@poet</code> decorator. The decorated function itself becomes the <code>Operate</code> stage.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-12-1"><a href="#__codelineno-12-1" id="__codelineno-12-1" name="__codelineno-12-1"></a># Dana function for the 'Perceive' phase
+</span><span id="__span-12-2"><a href="#__codelineno-12-2" id="__codelineno-12-2" name="__codelineno-12-2"></a>def my_input_parser(raw_text: str, poet_status: dict) -&gt; dict:
+</span><span id="__span-12-3"><a href="#__codelineno-12-3" id="__codelineno-12-3" name="__codelineno-12-3"></a> # poet_status might provide initial context like expected_output_type from decorator
+</span><span id="__span-12-4"><a href="#__codelineno-12-4" id="__codelineno-12-4" name="__codelineno-12-4"></a> # Retrieve past learnings for similar input patterns
+</span><span id="__span-12-5"><a href="#__codelineno-12-5" id="__codelineno-12-5" name="__codelineno-12-5"></a> local:parsed = {"input": raw_text.lower(), "char_count": len(raw_text)}
+</span><span id="__span-12-6"><a href="#__codelineno-12-6" id="__codelineno-12-6" name="__codelineno-12-6"></a> # This dict becomes poet_status.perceived_input for Operate and Encode
+</span><span id="__span-12-7"><a href="#__codelineno-12-7" id="__codelineno-12-7" name="__codelineno-12-7"></a> return local:parsed
+</span><span id="__span-12-8"><a href="#__codelineno-12-8" id="__codelineno-12-8" name="__codelineno-12-8"></a>
+</span><span id="__span-12-9"><a href="#__codelineno-12-9" id="__codelineno-12-9" name="__codelineno-12-9"></a># Dana function for the 'Encode' phase (validation logic)
+</span><span id="__span-12-10"><a href="#__codelineno-12-10" id="__codelineno-12-10" name="__codelineno-12-10"></a>def my_output_checker(operate_result: any, poet_status: dict) -&gt; bool:
+</span><span id="__span-12-11"><a href="#__codelineno-12-11" id="__codelineno-12-11" name="__codelineno-12-11"></a> # poet_status includes {execution_id, attempt, perceived_input, raw_output, expected_output_type, ...}
+</span><span id="__span-12-12"><a href="#__codelineno-12-12" id="__codelineno-12-12" name="__codelineno-12-12"></a> log(f"Attempt {poet_status.attempt} validating {operate_result} against {poet_status.expected_output_type}")
+</span><span id="__span-12-13"><a href="#__codelineno-12-13" id="__codelineno-12-13" name="__codelineno-12-13"></a> if poet_status.expected_output_type and typeof(operate_result) != poet_status.expected_output_type:
+</span><span id="__span-12-14"><a href="#__codelineno-12-14" id="__codelineno-12-14" name="__codelineno-12-14"></a> return False
+</span><span id="__span-12-15"><a href="#__codelineno-12-15" id="__codelineno-12-15" name="__codelineno-12-15"></a> # Further custom checks...
+</span><span id="__span-12-16"><a href="#__codelineno-12-16" id="__codelineno-12-16" name="__codelineno-12-16"></a> return len(operate_result) &gt; 5
+</span><span id="__span-12-17"><a href="#__codelineno-12-17" id="__codelineno-12-17" name="__codelineno-12-17"></a>
+</span><span id="__span-12-18"><a href="#__codelineno-12-18" id="__codelineno-12-18" name="__codelineno-12-18"></a>@poet(
+</span><span id="__span-12-19"><a href="#__codelineno-12-19" id="__codelineno-12-19" name="__codelineno-12-19"></a> perceive=my_input_parser,
+</span><span id="__span-12-20"><a href="#__codelineno-12-20" id="__codelineno-12-20" name="__codelineno-12-20"></a> validate=my_output_checker, # Used by Encode stage for internal validation
+</span><span id="__span-12-21"><a href="#__codelineno-12-21" id="__codelineno-12-21" name="__codelineno-12-21"></a> expected_output_type="str" # Explicitly state the final desired type
+</span><span id="__span-12-22"><a href="#__codelineno-12-22" id="__codelineno-12-22" name="__codelineno-12-22"></a>)
+</span><span id="__span-12-23"><a href="#__codelineno-12-23" id="__codelineno-12-23" name="__codelineno-12-23"></a>def process_complex_text(parsed_input: dict) -&gt; str:
+</span><span id="__span-12-24"><a href="#__codelineno-12-24" id="__codelineno-12-24" name="__codelineno-12-24"></a> # This is the 'Operate' phase.
+</span><span id="__span-12-25"><a href="#__codelineno-12-25" id="__codelineno-12-25" name="__codelineno-12-25"></a> # 'parsed_input' is the output from my_input_parser (poet_status.perceived_input)
+</span><span id="__span-12-26"><a href="#__codelineno-12-26" id="__codelineno-12-26" name="__codelineno-12-26"></a> return f"PROCESSED ({parsed_input.char_count} chars): {parsed_input.input.upper()}"
+</span><span id="__span-12-27"><a href="#__codelineno-12-27" id="__codelineno-12-27" name="__codelineno-12-27"></a>
+</span><span id="__span-12-28"><a href="#__codelineno-12-28" id="__codelineno-12-28" name="__codelineno-12-28"></a># Usage
+</span><span id="__span-12-29"><a href="#__codelineno-12-29" id="__codelineno-12-29" name="__codelineno-12-29"></a>local:final_result = process_complex_text("Some initial text.")
 </span></code></pre></div>
-<h3 id="3-leveraging-pov_status-in-dana">3. Leveraging <code>pov_status</code> in Dana<a class="headerlink" href="#3-leveraging-pov_status-in-dana" title="Permanent link">¶</a></h3>
-<p>Dana functions used in <code>Perceive</code> and <code>Validate</code> stages (and potentially <code>Operate</code> if structured to receive it) can access the <code>pov_status</code> dictionary. This allows for adaptive logic based on retry attempts, last failure reasons, perceived input, and the expected output type.</p>
-<p>See the <code>pov_status</code> structure in the <a href="../../../design/02_dana_runtime_and_execution/pov_execution_model/#pov_status-in-dana">POV Execution Model documentation</a>.</p>
-<h2 id="best-practices-for-dana-engineers-with-pov">🎨 Best Practices for Dana Engineers with POV<a class="headerlink" href="#best-practices-for-dana-engineers-with-pov" title="Permanent link">¶</a></h2>
+<h3 id="3-leveraging-poet_status-in-dana">3. Leveraging <code>poet_status</code> in Dana<a class="headerlink" href="#3-leveraging-poet_status-in-dana" title="Permanent link">¶</a></h3>
+<p>Dana functions used in <code>Perceive</code> and <code>Encode</code> stages (and potentially <code>Operate</code> if structured to receive it) can access the <code>poet_status</code> dictionary. This allows for adaptive logic based on retry attempts, last failure reasons, perceived input, and the expected output type.</p>
+<p>See the <code>poet_status</code> structure in the <a href="../../../design/02_dana_runtime_and_execution/poet_execution_model/#poet_status-in-dana">POET Execution Model documentation</a>.</p>
+<h2 id="best-practices-for-dana-engineers-with-poet">🎨 Best Practices for Dana Engineers with POET<a class="headerlink" href="#best-practices-for-dana-engineers-with-poet" title="Permanent link">¶</a></h2>
 <h3 id="1-write-effective-comments-and-use-type-hints">1. Write Effective Comments and Use Type Hints<a class="headerlink" href="#1-write-effective-comments-and-use-type-hints" title="Permanent link">¶</a></h3>
-<p>The <code>Perceive</code> phase of POV (especially its <code>CodeContextAnalyzer</code> component) relies heavily on good comments and clear type hints in your Dana code to infer intent and <code>expected_output_type</code>.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-12-1"><a href="#__codelineno-12-1" id="__codelineno-12-1" name="__codelineno-12-1"></a># ✅ Good: Specific, actionable context, clear type hint for POV
-</span><span id="__span-12-2"><a href="#__codelineno-12-2" id="__codelineno-12-2" name="__codelineno-12-2"></a># Financial analysis - extract currency values in USD.
-</span><span id="__span-12-3"><a href="#__codelineno-12-3" id="__codelineno-12-3" name="__codelineno-12-3"></a># Result should be a floating point number.
-</span><span id="__span-12-4"><a href="#__codelineno-12-4" id="__codelineno-12-4" name="__codelineno-12-4"></a>local:revenue: float = reason("Q3 revenue was $1.2M")
-</span><span id="__span-12-5"><a href="#__codelineno-12-5" id="__codelineno-12-5" name="__codelineno-12-5"></a>
-</span><span id="__span-12-6"><a href="#__codelineno-12-6" id="__codelineno-12-6" name="__codelineno-12-6"></a># ❌ Poor: Vague comments, no type hint for POV to leverage
-</span><span id="__span-12-7"><a href="#__codelineno-12-7" id="__codelineno-12-7" name="__codelineno-12-7"></a># Get some number
-</span><span id="__span-12-8"><a href="#__codelineno-12-8" id="__codelineno-12-8" name="__codelineno-12-8"></a>local:value = reason("Extract the number")
+<p>The <code>Perceive</code> phase of POET (especially its <code>CodeContextAnalyzer</code> component) relies heavily on good comments and clear type hints in your Dana code to infer intent and <code>expected_output_type</code>.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-13-1"><a href="#__codelineno-13-1" id="__codelineno-13-1" name="__codelineno-13-1"></a># ✅ Good: Specific, actionable context, clear type hint for POET
+</span><span id="__span-13-2"><a href="#__codelineno-13-2" id="__codelineno-13-2" name="__codelineno-13-2"></a># Financial analysis - extract currency values in USD.
+</span><span id="__span-13-3"><a href="#__codelineno-13-3" id="__codelineno-13-3" name="__codelineno-13-3"></a># Result should be a floating point number.
+</span><span id="__span-13-4"><a href="#__codelineno-13-4" id="__codelineno-13-4" name="__codelineno-13-4"></a>local:revenue: float = reason("Q3 revenue was $1.2M")
+</span><span id="__span-13-5"><a href="#__codelineno-13-5" id="__codelineno-13-5" name="__codelineno-13-5"></a>
+</span><span id="__span-13-6"><a href="#__codelineno-13-6" id="__codelineno-13-6" name="__codelineno-13-6"></a># ❌ Poor: Vague comments, no type hint for POET to leverage
+</span><span id="__span-13-7"><a href="#__codelineno-13-7" id="__codelineno-13-7" name="__codelineno-13-7"></a># Get some number
+</span><span id="__span-13-8"><a href="#__codelineno-13-8" id="__codelineno-13-8" name="__codelineno-13-8"></a>local:value = reason("Extract the number")
 </span></code></pre></div>
-<h3 id="2-design-clear-perceive-and-validate-functions">2. Design Clear <code>Perceive</code> and <code>Validate</code> Functions<a class="headerlink" href="#2-design-clear-perceive-and-validate-functions" title="Permanent link">¶</a></h3>
-<p>When using the <code>@pov</code> decorator with custom Dana functions for P and V stages:
-* Perceive: Focus on normalizing input and gathering all necessary context. The output of <code>Perceive</code> (<code>pov_status.perceived_input</code>) is critical for <code>Operate</code> and <code>Validate</code>.
-* Validate: Be strict. Use <code>pov_status.expected_output_type</code> and <code>pov_status.perceived_input</code> to perform thorough checks. Set <code>pov_status.last_failure</code> clearly on validation failure to aid retries or debugging.</p>
+<h3 id="2-design-clear-perceive-and-encode-functions">2. Design Clear <code>Perceive</code> and <code>Encode</code> Functions<a class="headerlink" href="#2-design-clear-perceive-and-encode-functions" title="Permanent link">¶</a></h3>
+<p>When using the <code>@poet</code> decorator with custom Dana functions for P and E stages:
+* Perceive: Focus on normalizing input and gathering all necessary context, including retrieving relevant learnings from the LearningStore. The output of <code>Perceive</code> (<code>poet_status.perceived_input</code>) is critical for <code>Operate</code> and <code>Encode</code>.
+* Encode (validation): Be strict. Use <code>poet_status.expected_output_type</code> and <code>poet_status.perceived_input</code> to perform thorough checks. Set <code>poet_status.last_internal_failure</code> clearly on validation failure to aid retries or debugging.</p>
 <h3 id="3-understand-expected_output_type">3. Understand <code>expected_output_type</code><a class="headerlink" href="#3-understand-expected_output_type" title="Permanent link">¶</a></h3>
-<p>This is a key part of the POV contract. Ensure it is specified correctly in <code>@pov</code> decorators, or provide strong type hints at assignment sites for POV-enabled functions like <code>reason()</code> so the <code>Perceive</code> phase can infer it accurately. This drives the <code>Validate</code> phase.</p>
-<h3 id="4-error-handling-for-pov-enabled-functions">4. Error Handling for POV-enabled functions<a class="headerlink" href="#4-error-handling-for-pov-enabled-functions" title="Permanent link">¶</a></h3>
-<p>While POV aims to handle many transient errors with retries, fundamental issues or repeated validation failures will still result in errors. Use standard Dana <code>try-catch</code> blocks if you need to handle failures from POV-enabled function calls.</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-13-1"><a href="#__codelineno-13-1" id="__codelineno-13-1" name="__codelineno-13-1"></a># (Conceptual, assuming POV-decorated function can raise an error after max_retries)
-</span><span id="__span-13-2"><a href="#__codelineno-13-2" id="__codelineno-13-2" name="__codelineno-13-2"></a>try:
-</span><span id="__span-13-3"><a href="#__codelineno-13-3" id="__codelineno-13-3" name="__codelineno-13-3"></a> local:processed_data = process_complex_text("some input")
-</span><span id="__span-13-4"><a href="#__codelineno-13-4" id="__codelineno-13-4" name="__codelineno-13-4"></a>catch Error as e:
-</span><span id="__span-13-5"><a href="#__codelineno-13-5" id="__codelineno-13-5" name="__codelineno-13-5"></a> log(f"POV processing failed after multiple attempts: {e.message}")
-</span><span id="__span-13-6"><a href="#__codelineno-13-6" id="__codelineno-13-6" name="__codelineno-13-6"></a> # Handle the error, e.g., use a fallback or notify user
+<p>This is a key part of the POET contract. Ensure it is specified correctly in <code>@poet</code> decorators, or provide strong type hints at assignment sites for POET-enabled functions like <code>reason()</code> so the <code>Perceive</code> phase can infer it accurately. This drives the <code>Encode</code> phase validation.</p>
+<h3 id="4-enable-learning-through-feedback">4. Enable Learning Through Feedback<a class="headerlink" href="#4-enable-learning-through-feedback" title="Permanent link">¶</a></h3>
+<p>Consider how your POET-enabled functions can receive feedback for the Train stage:
+* Use meaningful execution_ids returned by POET functions
+* Provide feedback through the POET feedback API when outcomes are known
+* Design validation functions that capture useful learning signals</p>
+<h3 id="5-error-handling-for-poet-enabled-functions">5. Error Handling for POET-enabled functions<a class="headerlink" href="#5-error-handling-for-poet-enabled-functions" title="Permanent link">¶</a></h3>
+<p>While POET aims to handle many transient errors with retries, fundamental issues or repeated validation failures will still result in errors. Use standard Dana <code>try-catch</code> blocks if you need to handle failures from POET-enabled function calls.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-14-1"><a href="#__codelineno-14-1" id="__codelineno-14-1" name="__codelineno-14-1"></a># POET-decorated function can raise an error after max_retries
+</span><span id="__span-14-2"><a href="#__codelineno-14-2" id="__codelineno-14-2" name="__codelineno-14-2"></a>try:
+</span><span id="__span-14-3"><a href="#__codelineno-14-3" id="__codelineno-14-3" name="__codelineno-14-3"></a> local:processed_data = process_complex_text("some input")
+</span><span id="__span-14-4"><a href="#__codelineno-14-4" id="__codelineno-14-4" name="__codelineno-14-4"></a>catch Error as e:
+</span><span id="__span-14-5"><a href="#__codelineno-14-5" id="__codelineno-14-5" name="__codelineno-14-5"></a> log(f"POET processing failed after multiple attempts: {e.message}")
+</span><span id="__span-14-6"><a href="#__codelineno-14-6" id="__codelineno-14-6" name="__codelineno-14-6"></a> # Handle the error, e.g., use a fallback or notify user
+</span><span id="__span-14-7"><a href="#__codelineno-14-7" id="__codelineno-14-7" name="__codelineno-14-7"></a> # Consider providing negative feedback to POET for learning
+</span></code></pre></div>
+<h3 id="6-leverage-poet-profiles">6. Leverage POET Profiles<a class="headerlink" href="#6-leverage-poet-profiles" title="Permanent link">¶</a></h3>
+<p>Use appropriate POET execution profiles for different types of tasks:
+* <code>LLMInteractionPOET</code> for natural language processing tasks
+* <code>DataValidationPOET</code> for data quality and transformation tasks<br/>
+* <code>SafeToolCallPOET</code> for external API and tool integration
+* Custom profiles for domain-specific requirements</p>
+<h2 id="learning-and-feedback-integration">Learning and Feedback Integration<a class="headerlink" href="#learning-and-feedback-integration" title="Permanent link">¶</a></h2>
+<h3 id="providing-feedback-to-poet">Providing Feedback to POET<a class="headerlink" href="#providing-feedback-to-poet" title="Permanent link">¶</a></h3>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-15-1"><a href="#__codelineno-15-1" id="__codelineno-15-1" name="__codelineno-15-1"></a># Execute a POET-enabled function and capture execution_id
+</span><span id="__span-15-2"><a href="#__codelineno-15-2" id="__codelineno-15-2" name="__codelineno-15-2"></a>local:result, execution_id = reason_with_id("Analyze customer sentiment")
+</span><span id="__span-15-3"><a href="#__codelineno-15-3" id="__codelineno-15-3" name="__codelineno-15-3"></a>
+</span><span id="__span-15-4"><a href="#__codelineno-15-4" id="__codelineno-15-4" name="__codelineno-15-4"></a># Later, when outcome is known, provide feedback
+</span><span id="__span-15-5"><a href="#__codelineno-15-5" id="__codelineno-15-5" name="__codelineno-15-5"></a>poet_feedback(execution_id, {
+</span><span id="__span-15-6"><a href="#__codelineno-15-6" id="__codelineno-15-6" name="__codelineno-15-6"></a>    "success": true,
+</span><span id="__span-15-7"><a href="#__codelineno-15-7" id="__codelineno-15-7" name="__codelineno-15-7"></a>    "quality_score": 0.95,
+</span><span id="__span-15-8"><a href="#__codelineno-15-8" id="__codelineno-15-8" name="__codelineno-15-8"></a>    "user_correction": null
+</span><span id="__span-15-9"><a href="#__codelineno-15-9" id="__codelineno-15-9" name="__codelineno-15-9"></a>})
+</span></code></pre></div>
+<h3 id="monitoring-learning-progress">Monitoring Learning Progress<a class="headerlink" href="#monitoring-learning-progress" title="Permanent link">¶</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-16-1"><a href="#__codelineno-16-1" id="__codelineno-16-1" name="__codelineno-16-1"></a><span class="c1"># Python-level monitoring of POET learning</span>
+</span><span id="__span-16-2"><a href="#__codelineno-16-2" id="__codelineno-16-2" name="__codelineno-16-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">opendxa.dana.poet.monitoring</span><span class="w"> </span><span class="kn">import</span> <span class="n">POETMonitor</span>
+</span><span id="__span-16-3"><a href="#__codelineno-16-3" id="__codelineno-16-3" name="__codelineno-16-3"></a>
+</span><span id="__span-16-4"><a href="#__codelineno-16-4" id="__codelineno-16-4" name="__codelineno-16-4"></a><span class="n">monitor</span> <span class="o">=</span> <span class="n">POETMonitor</span><span class="p">()</span>
+</span><span id="__span-16-5"><a href="#__codelineno-16-5" id="__codelineno-16-5" name="__codelineno-16-5"></a><span class="n">learning_stats</span> <span class="o">=</span> <span class="n">monitor</span><span class="o">.</span><span class="n">get_learning_statistics</span><span class="p">()</span>
+</span><span id="__span-16-6"><a href="#__codelineno-16-6" id="__codelineno-16-6" name="__codelineno-16-6"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Functions improved: </span><span class="si">{</span><span class="n">learning_stats</span><span class="p">[</span><span class="s1">'improved_functions'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</span><span id="__span-16-7"><a href="#__codelineno-16-7" id="__codelineno-16-7" name="__codelineno-16-7"></a><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Average quality improvement: </span><span class="si">{</span><span class="n">learning_stats</span><span class="p">[</span><span class="s1">'avg_improvement'</span><span class="p">]</span><span class="si">:</span><span class="s2">.2%</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </span></code></pre></div>
 <aside class="md-source-file">
 <span class="md-source-file__fact">
 <span class="md-icon" title="Last update">
 <svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"></path></svg>
 </span>
-<span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-datetime" title="June 7, 2025 07:11:44 UTC">June 7, 2025 07:11:44</span>
+<span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-datetime" title="June 9, 2025 08:11:26 UTC">June 9, 2025 08:11:26</span>
 </span>
 <span class="md-source-file__fact">
 <span class="md-icon" title="Created">

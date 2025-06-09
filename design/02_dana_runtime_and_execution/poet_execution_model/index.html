@@ -6,12 +6,10 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width,initial-scale=1" name="viewport"/>
 <meta content="Comprehensive documentation for OpenDXA - Domain-Aware NeuroSymbolic Architecture" name="description"/>
-<link href="https://opendxa.readthedocs.io/design/02_dana_runtime_and_execution/pov_execution_model/" rel="canonical"/>
-<link href="../code_context_analyzer/" rel="prev"/>
-<link href="../type_system_and_casting/" rel="next"/>
+<link href="https://opendxa.readthedocs.io/design/02_dana_runtime_and_execution/poet_execution_model/" rel="canonical"/>
 <link href="../../../images/aitomatic-favicon.png" rel="icon"/>
 <meta content="mkdocs-1.6.1, mkdocs-material-9.6.14" name="generator"/>
-<title>POV Execution Model - OpenDXA with Dana</title>
+<title>POET: Perceive → Operate → Encode → Train Execution Model - OpenDXA with Dana</title>
 <link href="../../../assets/stylesheets/main.342714a4.min.css" rel="stylesheet"/>
 <link href="../../../assets/stylesheets/palette.06af60db.min.css" rel="stylesheet"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
@@ -50,7 +48,7 @@
 <div class="md-header__topic" data-md-component="header-topic">
 <span class="md-ellipsis">
             
-              POV Execution Model
+              POET: Perceive → Operate → Encode → Train Execution Model
             
           </span>
 </div>
@@ -170,7 +168,7 @@
 
         </a>
 </li>
-<li class="md-tabs__item md-tabs__item--active">
+<li class="md-tabs__item">
 <a class="md-tabs__link" href="../../">
           
   
@@ -1013,16 +1011,16 @@
 </ul>
 </nav>
 </li>
-<li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
-<input checked="" class="md-nav__toggle md-toggle" id="__nav_7" type="checkbox"/>
-<label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="">
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_7" type="checkbox"/>
+<label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
 <span class="md-ellipsis">
     Design
     
   </span>
 <span class="md-nav__icon md-icon"></span>
 </label>
-<nav aria-expanded="true" aria-labelledby="__nav_7_label" class="md-nav" data-md-level="1">
+<nav aria-expanded="false" aria-labelledby="__nav_7_label" class="md-nav" data-md-level="1">
 <label class="md-nav__title" for="__nav_7">
 <span class="md-nav__icon md-icon"></span>
             Design
@@ -1036,9 +1034,9 @@
   </span>
 </a>
 </li>
-<li class="md-nav__item md-nav__item--section md-nav__item--nested">
+<li class="md-nav__item md-nav__item--nested">
 <input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_7_2" type="checkbox"/>
-<label class="md-nav__link" for="__nav_7_2" id="__nav_7_2_label" tabindex="">
+<label class="md-nav__link" for="__nav_7_2" id="__nav_7_2_label" tabindex="0">
 <span class="md-ellipsis">
     Dana Philosophy
     
@@ -1070,9 +1068,9 @@
 </ul>
 </nav>
 </li>
-<li class="md-nav__item md-nav__item--section md-nav__item--nested">
+<li class="md-nav__item md-nav__item--nested">
 <input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_7_3" type="checkbox"/>
-<label class="md-nav__link" for="__nav_7_3" id="__nav_7_3_label" tabindex="">
+<label class="md-nav__link" for="__nav_7_3" id="__nav_7_3_label" tabindex="0">
 <span class="md-ellipsis">
     Dana Language Specification
     
@@ -1160,16 +1158,16 @@
 </ul>
 </nav>
 </li>
-<li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
-<input checked="" class="md-nav__toggle md-toggle" id="__nav_7_4" type="checkbox"/>
-<label class="md-nav__link" for="__nav_7_4" id="__nav_7_4_label" tabindex="">
+<li class="md-nav__item md-nav__item--nested">
+<input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_7_4" type="checkbox"/>
+<label class="md-nav__link" for="__nav_7_4" id="__nav_7_4_label" tabindex="0">
 <span class="md-ellipsis">
     Dana Runtime and Execution
     
   </span>
 <span class="md-nav__icon md-icon"></span>
 </label>
-<nav aria-expanded="true" aria-labelledby="__nav_7_4_label" class="md-nav" data-md-level="2">
+<nav aria-expanded="false" aria-labelledby="__nav_7_4_label" class="md-nav" data-md-level="2">
 <label class="md-nav__title" for="__nav_7_4">
 <span class="md-nav__icon md-icon"></span>
             Dana Runtime and Execution
@@ -1215,138 +1213,13 @@
   </span>
 </a>
 </li>
-<li class="md-nav__item md-nav__item--active">
-<input class="md-nav__toggle md-toggle" id="__toc" type="checkbox"/>
-<label class="md-nav__link md-nav__link--active" for="__toc">
-<span class="md-ellipsis">
-    POV Execution Model
-    
-  </span>
-<span class="md-nav__icon md-icon"></span>
-</label>
-<a class="md-nav__link md-nav__link--active" href="./">
+<li class="md-nav__item">
+<a class="md-nav__link" href="../pov_execution_model.md">
 <span class="md-ellipsis">
     POV Execution Model
     
   </span>
 </a>
-<nav aria-label="Table of contents" class="md-nav md-nav--secondary">
-<label class="md-nav__title" for="__toc">
-<span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-<ul class="md-nav__list" data-md-component="toc" data-md-scrollfix="">
-<li class="md-nav__item">
-<a class="md-nav__link" href="#motivation-poet-a-robust-learning-enabled-execution-protocol-for-the-genai-era">
-<span class="md-ellipsis">
-      Motivation: POET – A Robust, Learning-Enabled Execution Protocol for the GenAI Era
-    </span>
-</a>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="#poet-execution-flow">
-<span class="md-ellipsis">
-      POET Execution Flow
-    </span>
-</a>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="#the-neurosymbolic-and-learning-opportunity">
-<span class="md-ellipsis">
-      The Neurosymbolic and Learning Opportunity
-    </span>
-</a>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="#poet-a-universal-contract-for-robust-adaptive-agent-execution">
-<span class="md-ellipsis">
-      ✅ POET: A Universal Contract for Robust, Adaptive Agent Execution
-    </span>
-</a>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="#why-poet-is-necessary-now">
-<span class="md-ellipsis">
-      🛠 Why POET Is Necessary Now
-    </span>
-</a>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="#positioning-poet-as-the-core-neurosymbolic-bridge">
-<span class="md-ellipsis">
-      🌉 Positioning POET as the Core Neurosymbolic Bridge
-    </span>
-</a>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="#final-word">
-<span class="md-ellipsis">
-      Final Word
-    </span>
-</a>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="#poet-design-and-specification">
-<span class="md-ellipsis">
-      POET Design and Specification
-    </span>
-</a>
-<nav aria-label="POET Design and Specification" class="md-nav">
-<ul class="md-nav__list">
-<li class="md-nav__item">
-<a class="md-nav__link" href="#poet-in-action-reason-adapting-to-context">
-<span class="md-ellipsis">
-      ✨ POET in Action: reason() Adapting to Context
-    </span>
-</a>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="#poet-decorator">
-<span class="md-ellipsis">
-      🔹 @poet(...) Decorator
-    </span>
-</a>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="#dana-python-interface-contracts-for-p-o-e-stages">
-<span class="md-ellipsis">
-      🔹 Dana ↔ Python Interface Contracts (for P, O, E stages)
-    </span>
-</a>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="#poet_status-in-dana">
-<span class="md-ellipsis">
-      🔹 poet_status in Dana
-    </span>
-</a>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="#kontext-rich-context-in-poet">
-<span class="md-ellipsis">
-      Kontext Rich Context in POET
-    </span>
-</a>
-</li>
-</ul>
-</nav>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="#example-usage-in-python">
-<span class="md-ellipsis">
-      ✅ Example Usage (in Python)
-    </span>
-</a>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="#future-proofing-considerations">
-<span class="md-ellipsis">
-      Future-Proofing Considerations
-    </span>
-</a>
-</li>
-</ul>
-</nav>
 </li>
 <li class="md-nav__item">
 <a class="md-nav__link" href="../type_system_and_casting/">
@@ -1433,9 +1306,9 @@
 </ul>
 </nav>
 </li>
-<li class="md-nav__item md-nav__item--section md-nav__item--nested">
+<li class="md-nav__item md-nav__item--nested">
 <input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_7_5" type="checkbox"/>
-<label class="md-nav__link" for="__nav_7_5" id="__nav_7_5_label" tabindex="">
+<label class="md-nav__link" for="__nav_7_5" id="__nav_7_5_label" tabindex="0">
 <span class="md-ellipsis">
     Core Capabilities and Resources
     
@@ -1507,9 +1380,9 @@
 </ul>
 </nav>
 </li>
-<li class="md-nav__item md-nav__item--section md-nav__item--nested">
+<li class="md-nav__item md-nav__item--nested">
 <input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_7_6" type="checkbox"/>
-<label class="md-nav__link" for="__nav_7_6" id="__nav_7_6_label" tabindex="">
+<label class="md-nav__link" for="__nav_7_6" id="__nav_7_6_label" tabindex="0">
 <span class="md-ellipsis">
     Agent and Orchestration
     
@@ -1573,9 +1446,9 @@
 </ul>
 </nav>
 </li>
-<li class="md-nav__item md-nav__item--section md-nav__item--nested">
+<li class="md-nav__item md-nav__item--nested">
 <input class="md-nav__toggle md-toggle md-toggle--indeterminate" id="__nav_7_7" type="checkbox"/>
-<label class="md-nav__link" for="__nav_7_7" id="__nav_7_7_label" tabindex="">
+<label class="md-nav__link" for="__nav_7_7" id="__nav_7_7_label" tabindex="0">
 <span class="md-ellipsis">
     Tooling and Developer Experience
     
@@ -1781,6 +1654,11 @@
 <div class="md-content" data-md-component="content">
 <article class="md-content__inner md-typeset">
 <h1 id="poet-perceive-operate-encode-train-execution-model">POET: Perceive → Operate → Encode → Train Execution Model<a class="headerlink" href="#poet-perceive-operate-encode-train-execution-model" title="Permanent link">¶</a></h1>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a href="#__codelineno-0-1" id="__codelineno-0-1" name="__codelineno-0-1"></a>Author: Christopher Nguyen &amp; Vinh Luong
+</span><span id="__span-0-2"><a href="#__codelineno-0-2" id="__codelineno-0-2" name="__codelineno-0-2"></a>Version: 0.4
+</span><span id="__span-0-3"><a href="#__codelineno-0-3" id="__codelineno-0-3" name="__codelineno-0-3"></a>Status: Design Phase
+</span><span id="__span-0-4"><a href="#__codelineno-0-4" id="__codelineno-0-4" name="__codelineno-0-4"></a>Module: opendxa.dana.poet
+</span></code></pre></div>
 <h2 id="motivation-poet-a-robust-learning-enabled-execution-protocol-for-the-genai-era">Motivation: POET – A Robust, Learning-Enabled Execution Protocol for the GenAI Era<a class="headerlink" href="#motivation-poet-a-robust-learning-enabled-execution-protocol-for-the-genai-era" title="Permanent link">¶</a></h2>
 <blockquote>
 <p>"<strong>Be liberal in what you accept, and conservative in what you send.</strong>"
@@ -1789,8 +1667,8 @@
 <p>This simple but profound principle, coined in the early days of internet protocol design, remains one of the most enduring foundations for building resilient systems. In today's world of probabilistic AI and structured computation, its relevance has never been greater, especially when combined with the ability to learn and adapt.</p>
 <p>As we enter the <strong>GenAI era</strong>, we are witnessing a rapid convergence of <strong>natural language understanding, symbolic reasoning, tool-use, and program synthesis</strong>. Language models can now infer vague intent, generate structured plans, and execute arbitrary code. But they do so with <strong>unpredictable semantics</strong>, <strong>fragile formatting</strong>, and <strong>opaque failure modes</strong>. Furthermore, to truly improve, these systems must learn from their successes and failures.</p>
 <p>Consider a simple agent task: summarizing an email. A naive approach might be:</p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a href="#__codelineno-0-1" id="__codelineno-0-1" name="__codelineno-0-1"></a># Naive approach - directly passing user input as prompt
-</span><span id="__span-0-2"><a href="#__codelineno-0-2" id="__codelineno-0-2" name="__codelineno-0-2"></a>email_summary = llm.generate(prompt=user_provided_email_text)
+<div class="language-text highlight"><pre><span></span><code><span id="__span-1-1"><a href="#__codelineno-1-1" id="__codelineno-1-1" name="__codelineno-1-1"></a># Naive approach - directly passing user input as prompt
+</span><span id="__span-1-2"><a href="#__codelineno-1-2" id="__codelineno-1-2" name="__codelineno-1-2"></a>email_summary = llm.generate(prompt=user_provided_email_text)
 </span></code></pre></div>
 <p>This often fails because <code>user_provided_email_text</code> might be too long, lack clear instructions, or contain confusing metadata. The agent needs to intelligently <strong>perceive</strong> the core summarization intent and the relevant content, then <strong>operate</strong> by sending a well-formed, optimized prompt to the LLM. The output then needs to be <strong>encoded</strong> (which includes validation) and an <code>execution_id</code> generated so that feedback can be used to <strong>train</strong> and improve future performance. Without a structured approach like POET, this becomes complex, ad-hoc, error-prone, and static.</p>
 <p>This makes integration into <strong>symbolic, software, or API-driven systems</strong> extremely difficult. Outputs may be:</p>
@@ -1930,17 +1808,17 @@ It's the execution protocol at the <strong>center of modern neurosymbolic intell
 <h2 id="poet-design-and-specification">POET Design and Specification<a class="headerlink" href="#poet-design-and-specification" title="Permanent link">¶</a></h2>
 <h3 id="poet-in-action-reason-adapting-to-context">✨ POET in Action: <code>reason()</code> Adapting to Context<a class="headerlink" href="#poet-in-action-reason-adapting-to-context" title="Permanent link">¶</a></h3>
 <p>The power and everyday utility of the POET execution model are clearly demonstrated by Dana's built-in <code>reason()</code> function. <code>reason()</code> leverages POET to adapt its output based on the context provided by the Dana engineer, particularly through type hints. Consider the following interaction:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a href="#__codelineno-1-1" id="__codelineno-1-1" name="__codelineno-1-1"></a><span class="o">&gt;&gt;&gt;</span> <span class="n">pi_description</span> <span class="o">=</span> <span class="n">reason</span><span class="p">(</span><span class="s2">"what is pi?"</span><span class="p">)</span>
-</span><span id="__span-1-2"><a href="#__codelineno-1-2" id="__codelineno-1-2" name="__codelineno-1-2"></a><span class="c1"># pi_description is now a string:</span>
-</span><span id="__span-1-3"><a href="#__codelineno-1-3" id="__codelineno-1-3" name="__codelineno-1-3"></a><span class="c1"># "Pi (π) is a mathematical constant representing the ratio of a circle's circumference to its diameter. Its approximate value is:</span>
-</span><span id="__span-1-4"><a href="#__codelineno-1-4" id="__codelineno-1-4" name="__codelineno-1-4"></a><span class="c1"># π ≈ 3.14159</span>
-</span><span id="__span-1-5"><a href="#__codelineno-1-5" id="__codelineno-1-5" name="__codelineno-1-5"></a><span class="c1"># But it is an irrational number, meaning: ..."</span>
-</span><span id="__span-1-6"><a href="#__codelineno-1-6" id="__codelineno-1-6" name="__codelineno-1-6"></a>
-</span><span id="__span-1-7"><a href="#__codelineno-1-7" id="__codelineno-1-7" name="__codelineno-1-7"></a><span class="o">&gt;&gt;&gt;</span> <span class="n">pi_float</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">reason</span><span class="p">(</span><span class="s2">"what is pi?"</span><span class="p">)</span>
-</span><span id="__span-1-8"><a href="#__codelineno-1-8" id="__codelineno-1-8" name="__codelineno-1-8"></a><span class="c1"># pi_float is now the float: 3.14159265</span>
-</span><span id="__span-1-9"><a href="#__codelineno-1-9" id="__codelineno-1-9" name="__codelineno-1-9"></a>
-</span><span id="__span-1-10"><a href="#__codelineno-1-10" id="__codelineno-1-10" name="__codelineno-1-10"></a><span class="o">&gt;&gt;&gt;</span> <span class="n">radius</span> <span class="o">=</span> <span class="mi">2</span> <span class="p">;</span> <span class="n">area</span> <span class="o">=</span> <span class="n">pi_float</span> <span class="o">*</span> <span class="n">radius</span><span class="o">**</span><span class="mi">2</span>
-</span><span id="__span-1-11"><a href="#__codelineno-1-11" id="__codelineno-1-11" name="__codelineno-1-11"></a><span class="c1"># area is now the float: 12.5663706</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a href="#__codelineno-2-1" id="__codelineno-2-1" name="__codelineno-2-1"></a><span class="o">&gt;&gt;&gt;</span> <span class="n">pi_description</span> <span class="o">=</span> <span class="n">reason</span><span class="p">(</span><span class="s2">"what is pi?"</span><span class="p">)</span>
+</span><span id="__span-2-2"><a href="#__codelineno-2-2" id="__codelineno-2-2" name="__codelineno-2-2"></a><span class="c1"># pi_description is now a string:</span>
+</span><span id="__span-2-3"><a href="#__codelineno-2-3" id="__codelineno-2-3" name="__codelineno-2-3"></a><span class="c1"># "Pi (π) is a mathematical constant representing the ratio of a circle's circumference to its diameter. Its approximate value is:</span>
+</span><span id="__span-2-4"><a href="#__codelineno-2-4" id="__codelineno-2-4" name="__codelineno-2-4"></a><span class="c1"># π ≈ 3.14159</span>
+</span><span id="__span-2-5"><a href="#__codelineno-2-5" id="__codelineno-2-5" name="__codelineno-2-5"></a><span class="c1"># But it is an irrational number, meaning: ..."</span>
+</span><span id="__span-2-6"><a href="#__codelineno-2-6" id="__codelineno-2-6" name="__codelineno-2-6"></a>
+</span><span id="__span-2-7"><a href="#__codelineno-2-7" id="__codelineno-2-7" name="__codelineno-2-7"></a><span class="o">&gt;&gt;&gt;</span> <span class="n">pi_float</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">reason</span><span class="p">(</span><span class="s2">"what is pi?"</span><span class="p">)</span>
+</span><span id="__span-2-8"><a href="#__codelineno-2-8" id="__codelineno-2-8" name="__codelineno-2-8"></a><span class="c1"># pi_float is now the float: 3.14159265</span>
+</span><span id="__span-2-9"><a href="#__codelineno-2-9" id="__codelineno-2-9" name="__codelineno-2-9"></a>
+</span><span id="__span-2-10"><a href="#__codelineno-2-10" id="__codelineno-2-10" name="__codelineno-2-10"></a><span class="o">&gt;&gt;&gt;</span> <span class="n">radius</span> <span class="o">=</span> <span class="mi">2</span> <span class="p">;</span> <span class="n">area</span> <span class="o">=</span> <span class="n">pi_float</span> <span class="o">*</span> <span class="n">radius</span><span class="o">**</span><span class="mi">2</span>
+</span><span id="__span-2-11"><a href="#__codelineno-2-11" id="__codelineno-2-11" name="__codelineno-2-11"></a><span class="c1"># area is now the float: 12.5663706</span>
 </span></code></pre></div>
 <p>In the first call, with no specific type hint for <code>pi_description</code> (or if <code>-&gt; any</code> or <code>-&gt; str</code> was implied), <code>reason()</code> returns a descriptive string. In the second call, the explicit type hint <code>pi_float: float</code> signals to POET that a floating-point number is desired. The POET framework, underpinning <code>reason()</code>:</p>
 <ol>
@@ -2030,19 +1908,19 @@ It's the execution protocol at the <strong>center of modern neurosymbolic intell
 <hr/>
 <h3 id="poet_status-in-dana">🔹 <code>poet_status</code> in Dana<a class="headerlink" href="#poet_status-in-dana" title="Permanent link">¶</a></h3>
 <p>Exposed in the Dana local scope (per P,O,E invocation), and logged for the <code>Train</code> stage, structured as:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a href="#__codelineno-2-1" id="__codelineno-2-1" name="__codelineno-2-1"></a><span class="p">{</span>
-</span><span id="__span-2-2"><a href="#__codelineno-2-2" id="__codelineno-2-2" name="__codelineno-2-2"></a> <span class="s2">"execution_id"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="c1"># Unique ID for this POET execution, generated in Encode stage</span>
-</span><span id="__span-2-3"><a href="#__codelineno-2-3" id="__codelineno-2-3" name="__codelineno-2-3"></a> <span class="s2">"attempt"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="c1"># Current attempt number for Operate-Encode(Validate) cycle</span>
-</span><span id="__span-2-4"><a href="#__codelineno-2-4" id="__codelineno-2-4" name="__codelineno-2-4"></a> <span class="s2">"last_internal_failure"</span><span class="p">:</span> <span class="nb">str</span> <span class="ow">or</span> <span class="n">null</span><span class="p">,</span> <span class="c1"># Reason for last internal validation failure in Encode</span>
-</span><span id="__span-2-5"><a href="#__codelineno-2-5" id="__codelineno-2-5" name="__codelineno-2-5"></a> <span class="s2">"max_retries"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-</span><span id="__span-2-6"><a href="#__codelineno-2-6" id="__codelineno-2-6" name="__codelineno-2-6"></a> <span class="s2">"is_internally_validated"</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="c1"># True if Encode stage validation passed</span>
-</span><span id="__span-2-7"><a href="#__codelineno-2-7" id="__codelineno-2-7" name="__codelineno-2-7"></a> <span class="s2">"perceived_input"</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="c1"># Output of the Perceive phase.</span>
-</span><span id="__span-2-8"><a href="#__codelineno-2-8" id="__codelineno-2-8" name="__codelineno-2-8"></a> <span class="s2">"raw_output"</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="c1"># Python object output by the Operate phase.</span>
-</span><span id="__span-2-9"><a href="#__codelineno-2-9" id="__codelineno-2-9" name="__codelineno-2-9"></a> <span class="s2">"validated_output"</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="c1"># Output after successful validation in Encode (often same as raw_output if no transformation)</span>
-</span><span id="__span-2-10"><a href="#__codelineno-2-10" id="__codelineno-2-10" name="__codelineno-2-10"></a> <span class="s2">"expected_output_type"</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="c1"># The type/structure expected for the final output.</span>
-</span><span id="__span-2-11"><a href="#__codelineno-2-11" id="__codelineno-2-11" name="__codelineno-2-11"></a> <span class="s2">"active_profile"</span><span class="p">:</span> <span class="nb">str</span> <span class="ow">or</span> <span class="n">null</span><span class="p">,</span> <span class="c1"># The active POET profile, e.g., system:__poet_profile</span>
-</span><span id="__span-2-12"><a href="#__codelineno-2-12" id="__codelineno-2-12" name="__codelineno-2-12"></a> <span class="s2">"learnings_applied"</span><span class="p">:</span> <span class="n">Any</span> <span class="ow">or</span> <span class="n">null</span> <span class="c1"># Optional: summary of learnings applied by Perceive</span>
-</span><span id="__span-2-13"><a href="#__codelineno-2-13" id="__codelineno-2-13" name="__codelineno-2-13"></a><span class="p">}</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a href="#__codelineno-3-1" id="__codelineno-3-1" name="__codelineno-3-1"></a><span class="p">{</span>
+</span><span id="__span-3-2"><a href="#__codelineno-3-2" id="__codelineno-3-2" name="__codelineno-3-2"></a> <span class="s2">"execution_id"</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="c1"># Unique ID for this POET execution, generated in Encode stage</span>
+</span><span id="__span-3-3"><a href="#__codelineno-3-3" id="__codelineno-3-3" name="__codelineno-3-3"></a> <span class="s2">"attempt"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="c1"># Current attempt number for Operate-Encode(Validate) cycle</span>
+</span><span id="__span-3-4"><a href="#__codelineno-3-4" id="__codelineno-3-4" name="__codelineno-3-4"></a> <span class="s2">"last_internal_failure"</span><span class="p">:</span> <span class="nb">str</span> <span class="ow">or</span> <span class="n">null</span><span class="p">,</span> <span class="c1"># Reason for last internal validation failure in Encode</span>
+</span><span id="__span-3-5"><a href="#__codelineno-3-5" id="__codelineno-3-5" name="__codelineno-3-5"></a> <span class="s2">"max_retries"</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span id="__span-3-6"><a href="#__codelineno-3-6" id="__codelineno-3-6" name="__codelineno-3-6"></a> <span class="s2">"is_internally_validated"</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="c1"># True if Encode stage validation passed</span>
+</span><span id="__span-3-7"><a href="#__codelineno-3-7" id="__codelineno-3-7" name="__codelineno-3-7"></a> <span class="s2">"perceived_input"</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="c1"># Output of the Perceive phase.</span>
+</span><span id="__span-3-8"><a href="#__codelineno-3-8" id="__codelineno-3-8" name="__codelineno-3-8"></a> <span class="s2">"raw_output"</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="c1"># Python object output by the Operate phase.</span>
+</span><span id="__span-3-9"><a href="#__codelineno-3-9" id="__codelineno-3-9" name="__codelineno-3-9"></a> <span class="s2">"validated_output"</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="c1"># Output after successful validation in Encode (often same as raw_output if no transformation)</span>
+</span><span id="__span-3-10"><a href="#__codelineno-3-10" id="__codelineno-3-10" name="__codelineno-3-10"></a> <span class="s2">"expected_output_type"</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="c1"># The type/structure expected for the final output.</span>
+</span><span id="__span-3-11"><a href="#__codelineno-3-11" id="__codelineno-3-11" name="__codelineno-3-11"></a> <span class="s2">"active_profile"</span><span class="p">:</span> <span class="nb">str</span> <span class="ow">or</span> <span class="n">null</span><span class="p">,</span> <span class="c1"># The active POET profile, e.g., system:__poet_profile</span>
+</span><span id="__span-3-12"><a href="#__codelineno-3-12" id="__codelineno-3-12" name="__codelineno-3-12"></a> <span class="s2">"learnings_applied"</span><span class="p">:</span> <span class="n">Any</span> <span class="ow">or</span> <span class="n">null</span> <span class="c1"># Optional: summary of learnings applied by Perceive</span>
+</span><span id="__span-3-13"><a href="#__codelineno-3-13" id="__codelineno-3-13" name="__codelineno-3-13"></a><span class="p">}</span>
 </span></code></pre></div>
 <p>Can be used in Dana validation functions (within <code>Encode</code>) for adaptive logic. The <code>Train</code> stage uses this entire status, correlated with external feedback, to update the <code>LearningStore</code>.</p>
 <hr/>
@@ -2061,7 +1939,7 @@ It's the execution protocol at the <strong>center of modern neurosymbolic intell
 <li>
 <p>Ambient System Context: Broader operational parameters available from the Dana sandbox or system environment. These provide overarching guidance or constraints. Examples:</p>
 </li>
-<li><code>system:__poet_profile</code> (or <code>system:__dana_ipv_profile</code> if aligning with older concepts): An identifier for an active POET execution profile (e.g., "default", "strict_validation", "creative_generation", "fault_tolerant_integration"). This can dictate the behavior of P, O, and E stages.</li>
+<li><code>system:__poet_profile</code>: An identifier for an active POET execution profile (e.g., "default", "strict_validation", "creative_generation", "fault_tolerant_integration"). This can dictate the behavior of P, O, and E stages.</li>
 <li><code>system:__poet_settings_override</code>: A dictionary allowing fine-grained overrides for specific POET behaviors.</li>
 <li><code>system:__current_task_id</code>, <code>system:__current_task_description</code>: Information about the ongoing agent task.</li>
 <li><code>system:__session_id</code>, <code>system:__user_id</code>: Session and user identifiers.</li>
@@ -2071,26 +1949,26 @@ It's the execution protocol at the <strong>center of modern neurosymbolic intell
 <p>By making this context available (primarily through the <code>perceived_input</code> object passed from <code>Perceive</code> to <code>Operate</code>, and available in <code>poet_status</code>), the POET framework enables functions to be highly adaptive to their specific invocation circumstances and the broader operational environment. This context is also crucial for the <code>Train</code> stage when correlating feedback.</p>
 <hr/>
 <h2 id="example-usage-in-python">✅ Example Usage (in Python)<a class="headerlink" href="#example-usage-in-python" title="Permanent link">¶</a></h2>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a href="#__codelineno-3-1" id="__codelineno-3-1" name="__codelineno-3-1"></a><span class="nd">@poet</span><span class="p">(</span>
-</span><span id="__span-3-2"><a href="#__codelineno-3-2" id="__codelineno-3-2" name="__codelineno-3-2"></a> <span class="n">perceive</span><span class="o">=</span><span class="s2">"Dana::parse_and_retrieve_learnings"</span><span class="p">,</span>
-</span><span id="__span-3-3"><a href="#__codelineno-3-3" id="__codelineno-3-3" name="__codelineno-3-3"></a> <span class="n">validate</span><span class="o">=</span><span class="s2">"Dana::check_valid_summary"</span><span class="p">,</span> <span class="c1"># Used by the Encode stage for internal validation</span>
-</span><span id="__span-3-4"><a href="#__codelineno-3-4" id="__codelineno-3-4" name="__codelineno-3-4"></a> <span class="n">max_retries</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
-</span><span id="__span-3-5"><a href="#__codelineno-3-5" id="__codelineno-3-5" name="__codelineno-3-5"></a> <span class="n">expected_output_type</span><span class="o">=</span><span class="s2">"str"</span>
-</span><span id="__span-3-6"><a href="#__codelineno-3-6" id="__codelineno-3-6" name="__codelineno-3-6"></a><span class="p">)</span>
-</span><span id="__span-3-7"><a href="#__codelineno-3-7" id="__codelineno-3-7" name="__codelineno-3-7"></a><span class="k">def</span><span class="w"> </span><span class="nf">summarize_article</span><span class="p">(</span><span class="n">perceived_input_with_learnings</span><span class="p">):</span>
-</span><span id="__span-3-8"><a href="#__codelineno-3-8" id="__codelineno-3-8" name="__codelineno-3-8"></a> <span class="c1"># perceived_input_with_learnings contains original input + any relevant past learnings</span>
-</span><span id="__span-3-9"><a href="#__codelineno-3-9" id="__codelineno-3-9" name="__codelineno-3-9"></a> <span class="n">text_to_summarize</span> <span class="o">=</span> <span class="n">perceived_input_with_learnings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"text"</span><span class="p">)</span>
-</span><span id="__span-3-10"><a href="#__codelineno-3-10" id="__codelineno-3-10" name="__codelineno-3-10"></a> <span class="n">prompt_strategy</span> <span class="o">=</span> <span class="n">perceived_input_with_learnings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"strategy"</span><span class="p">,</span> <span class="s2">"default_summary_prompt"</span><span class="p">)</span>
-</span><span id="__span-3-11"><a href="#__codelineno-3-11" id="__codelineno-3-11" name="__codelineno-3-11"></a> <span class="k">return</span> <span class="n">llm_generate</span><span class="p">(</span><span class="n">prompt_strategy</span><span class="p">,</span> <span class="n">text_to_summarize</span><span class="p">)</span>
-</span><span id="__span-3-12"><a href="#__codelineno-3-12" id="__codelineno-3-12" name="__codelineno-3-12"></a>
-</span><span id="__span-3-13"><a href="#__codelineno-3-13" id="__codelineno-3-13" name="__codelineno-3-13"></a><span class="c1"># When summarize_article is called:</span>
-</span><span id="__span-3-14"><a href="#__codelineno-3-14" id="__codelineno-3-14" name="__codelineno-3-14"></a><span class="c1"># 1. Perceive: "Dana::parse_and_retrieve_learnings" runs, fetches from LearningStore.</span>
-</span><span id="__span-3-15"><a href="#__codelineno-3-15" id="__codelineno-3-15" name="__codelineno-3-15"></a><span class="c1"># 2. Operate: summarize_article body runs with this enhanced input.</span>
-</span><span id="__span-3-16"><a href="#__codelineno-3-16" id="__codelineno-3-16" name="__codelineno-3-16"></a><span class="c1"># 3. Encode: Output of summarize_article is validated by "Dana::check_valid_summary".</span>
-</span><span id="__span-3-17"><a href="#__codelineno-3-17" id="__codelineno-3-17" name="__codelineno-3-17"></a><span class="c1">#    - If fails, retry O-E (up to max_retries).</span>
-</span><span id="__span-3-18"><a href="#__codelineno-3-18" id="__codelineno-3-18" name="__codelineno-3-18"></a><span class="c1">#    - If passes, execution_id is generated, output and ID returned.</span>
-</span><span id="__span-3-19"><a href="#__codelineno-3-19" id="__codelineno-3-19" name="__codelineno-3-19"></a><span class="c1">#    - poet_status (including perceived_input, raw_output, etc.) is logged/stored for potential training.</span>
-</span><span id="__span-3-20"><a href="#__codelineno-3-20" id="__codelineno-3-20" name="__codelineno-3-20"></a><span class="c1"># 4. Train (later, if feedback submitted for execution_id): Feedback + stored poet_status updates LearningStore.</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a href="#__codelineno-4-1" id="__codelineno-4-1" name="__codelineno-4-1"></a><span class="nd">@poet</span><span class="p">(</span>
+</span><span id="__span-4-2"><a href="#__codelineno-4-2" id="__codelineno-4-2" name="__codelineno-4-2"></a> <span class="n">perceive</span><span class="o">=</span><span class="s2">"Dana::parse_and_retrieve_learnings"</span><span class="p">,</span>
+</span><span id="__span-4-3"><a href="#__codelineno-4-3" id="__codelineno-4-3" name="__codelineno-4-3"></a> <span class="n">validate</span><span class="o">=</span><span class="s2">"Dana::check_valid_summary"</span><span class="p">,</span> <span class="c1"># Used by the Encode stage for internal validation</span>
+</span><span id="__span-4-4"><a href="#__codelineno-4-4" id="__codelineno-4-4" name="__codelineno-4-4"></a> <span class="n">max_retries</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+</span><span id="__span-4-5"><a href="#__codelineno-4-5" id="__codelineno-4-5" name="__codelineno-4-5"></a> <span class="n">expected_output_type</span><span class="o">=</span><span class="s2">"str"</span>
+</span><span id="__span-4-6"><a href="#__codelineno-4-6" id="__codelineno-4-6" name="__codelineno-4-6"></a><span class="p">)</span>
+</span><span id="__span-4-7"><a href="#__codelineno-4-7" id="__codelineno-4-7" name="__codelineno-4-7"></a><span class="k">def</span><span class="w"> </span><span class="nf">summarize_article</span><span class="p">(</span><span class="n">perceived_input_with_learnings</span><span class="p">):</span>
+</span><span id="__span-4-8"><a href="#__codelineno-4-8" id="__codelineno-4-8" name="__codelineno-4-8"></a> <span class="c1"># perceived_input_with_learnings contains original input + any relevant past learnings</span>
+</span><span id="__span-4-9"><a href="#__codelineno-4-9" id="__codelineno-4-9" name="__codelineno-4-9"></a> <span class="n">text_to_summarize</span> <span class="o">=</span> <span class="n">perceived_input_with_learnings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"text"</span><span class="p">)</span>
+</span><span id="__span-4-10"><a href="#__codelineno-4-10" id="__codelineno-4-10" name="__codelineno-4-10"></a> <span class="n">prompt_strategy</span> <span class="o">=</span> <span class="n">perceived_input_with_learnings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"strategy"</span><span class="p">,</span> <span class="s2">"default_summary_prompt"</span><span class="p">)</span>
+</span><span id="__span-4-11"><a href="#__codelineno-4-11" id="__codelineno-4-11" name="__codelineno-4-11"></a> <span class="k">return</span> <span class="n">llm_generate</span><span class="p">(</span><span class="n">prompt_strategy</span><span class="p">,</span> <span class="n">text_to_summarize</span><span class="p">)</span>
+</span><span id="__span-4-12"><a href="#__codelineno-4-12" id="__codelineno-4-12" name="__codelineno-4-12"></a>
+</span><span id="__span-4-13"><a href="#__codelineno-4-13" id="__codelineno-4-13" name="__codelineno-4-13"></a><span class="c1"># When summarize_article is called:</span>
+</span><span id="__span-4-14"><a href="#__codelineno-4-14" id="__codelineno-4-14" name="__codelineno-4-14"></a><span class="c1"># 1. Perceive: "Dana::parse_and_retrieve_learnings" runs, fetches from LearningStore.</span>
+</span><span id="__span-4-15"><a href="#__codelineno-4-15" id="__codelineno-4-15" name="__codelineno-4-15"></a><span class="c1"># 2. Operate: summarize_article body runs with this enhanced input.</span>
+</span><span id="__span-4-16"><a href="#__codelineno-4-16" id="__codelineno-4-16" name="__codelineno-4-16"></a><span class="c1"># 3. Encode: Output of summarize_article is validated by "Dana::check_valid_summary".</span>
+</span><span id="__span-4-17"><a href="#__codelineno-4-17" id="__codelineno-4-17" name="__codelineno-4-17"></a><span class="c1">#    - If fails, retry O-E (up to max_retries).</span>
+</span><span id="__span-4-18"><a href="#__codelineno-4-18" id="__codelineno-4-18" name="__codelineno-4-18"></a><span class="c1">#    - If passes, execution_id is generated, output and ID returned.</span>
+</span><span id="__span-4-19"><a href="#__codelineno-4-19" id="__codelineno-4-19" name="__codelineno-4-19"></a><span class="c1">#    - poet_status (including perceived_input, raw_output, etc.) is logged/stored for potential training.</span>
+</span><span id="__span-4-20"><a href="#__codelineno-4-20" id="__codelineno-4-20" name="__codelineno-4-20"></a><span class="c1"># 4. Train (later, if feedback submitted for execution_id): Feedback + stored poet_status updates LearningStore.</span>
 </span></code></pre></div>
 <p>Where:</p>
 <ul>
@@ -2119,13 +1997,13 @@ It's the execution protocol at the <strong>center of modern neurosymbolic intell
 <span class="md-icon" title="Last update">
 <svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"></path></svg>
 </span>
-<span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-datetime" title="June 7, 2025 07:11:44 UTC">June 7, 2025 07:11:44</span>
+<span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-datetime" title="June 9, 2025 08:11:26 UTC">June 9, 2025 08:11:26</span>
 </span>
 <span class="md-source-file__fact">
 <span class="md-icon" title="Created">
 <svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M14.47 15.08 11 13V7h1.5v5.25l3.08 1.83c-.41.28-.79.62-1.11 1m-1.39 4.84c-.36.05-.71.08-1.08.08-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8c0 .37-.03.72-.08 1.08.69.1 1.33.32 1.92.64.1-.56.16-1.13.16-1.72 0-5.5-4.5-10-10-10S2 6.5 2 12s4.47 10 10 10c.59 0 1.16-.06 1.72-.16-.32-.59-.54-1.23-.64-1.92M18 15v3h-3v2h3v3h2v-3h3v-2h-3v-3z"></path></svg>
 </span>
-<span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-datetime" title="June 4, 2025 01:34:16 UTC">June 4, 2025 01:34:16</span>
+<span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-datetime" title="June 9, 2025 08:11:26 UTC">June 9, 2025 08:11:26</span>
 </span>
 </aside>
 </article>
