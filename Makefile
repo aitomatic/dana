@@ -32,7 +32,8 @@ endif
 	onboard env-check env-setup examples demo-basic demo-reasoning jupyter \
 	docs-build docs-serve docs-check docs-validate docs-deploy \
 	security validate-config release-check \
-	install-cursor install-vscode install-vim uninstall-cursor uninstall-vscode uninstall-vim install-editors uninstall-editors
+	install-cursor install-vscode install-vim uninstall-cursor uninstall-vscode uninstall-vim install-editors uninstall-editors \
+	install-ollama update-ollama uninstall-ollama
 
 # =============================================================================
 # Help & Information
@@ -66,6 +67,9 @@ help: ## Show this help message with available commands
 	@echo ""
 	@echo "\033[1mEditor Integration:\033[0m"
 	@awk 'BEGIN {FS = ":.*?## "} /^(install-cursor|install-vscode|install-vim|uninstall-cursor|uninstall-vscode|uninstall-vim|install-editors|uninstall-editors).*:.*?## / {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+	@echo ""
+	@echo "\033[1mOllama Management:\033[0m"
+	@awk 'BEGIN {FS = ":.*?## "} /^(install-ollama|update-ollama|uninstall-ollama).*:.*?## / {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
 	@echo "\033[33mTip: New to OpenDXA? Start with 'make quickstart' or 'make onboard'\033[0m"
 	@echo ""
@@ -480,6 +484,116 @@ else
 	@echo "📍 Step 3/3: Skipping Vim (Windows not supported)"
 endif
 	@echo "✅ Editor cleanup complete!"
+
+# =============================================================================
+# Ollama Management
+# =============================================================================
+
+install-ollama: ## Install Ollama on current platform
+ifeq ($(DETECTED_OS),Darwin)
+	@$(MAKE) install-ollama-macos
+else ifeq ($(DETECTED_OS),Linux)
+	@$(MAKE) install-ollama-linux
+else ifeq ($(DETECTED_OS),Windows)
+	@$(MAKE) install-ollama-windows
+else
+	@echo "❌ Unsupported platform: $(DETECTED_OS)"
+	@echo "Please visit https://ollama.com/download for manual installation"
+endif
+
+update-ollama: ## Update Ollama on current platform
+ifeq ($(DETECTED_OS),Darwin)
+	@$(MAKE) update-ollama-macos
+else ifeq ($(DETECTED_OS),Linux)
+	@$(MAKE) update-ollama-linux
+else ifeq ($(DETECTED_OS),Windows)
+	@$(MAKE) update-ollama-windows
+else
+	@echo "❌ Unsupported platform: $(DETECTED_OS)"
+	@echo "Please visit https://ollama.com/download for manual update"
+endif
+
+uninstall-ollama: ## Uninstall Ollama on current platform
+ifeq ($(DETECTED_OS),Darwin)
+	@$(MAKE) uninstall-ollama-macos
+else ifeq ($(DETECTED_OS),Linux)
+	@$(MAKE) uninstall-ollama-linux
+else ifeq ($(DETECTED_OS),Windows)
+	@echo "🗑️  To uninstall Ollama on Windows:"
+	@echo "   1. Go to Settings > Apps"
+	@echo "   2. Search for 'Ollama'"
+	@echo "   3. Click Uninstall"
+else
+	@echo "❌ Unsupported platform: $(DETECTED_OS)"
+endif
+
+# Platform-specific Ollama targets
+
+install-ollama-macos: # Install Ollama on macOS using Homebrew
+	@echo "🦄 Installing Ollama on macOS..."
+	@if command -v brew >/dev/null 2>&1; then \
+		brew install ollama || brew upgrade ollama; \
+		echo "✅ Ollama installed/updated successfully"; \
+	else \
+		echo "❌ Homebrew not found. Please install Homebrew first:"; \
+		echo "   /bin/bash -c \"\$$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""; \
+		echo "   Then run: make install-ollama-macos"; \
+	fi
+
+update-ollama-macos: # Update Ollama on macOS using Homebrew
+	@echo "⬆️  Updating Ollama on macOS..."
+	@if command -v brew >/dev/null 2>&1; then \
+		brew update; \
+		brew upgrade ollama; \
+		echo "✅ Ollama updated successfully"; \
+	else \
+		echo "❌ Homebrew not found"; \
+	fi
+
+uninstall-ollama-macos: # Uninstall Ollama on macOS using Homebrew
+	@echo "🗑️  Uninstalling Ollama on macOS..."
+	@if command -v brew >/dev/null 2>&1; then \
+		brew uninstall ollama; \
+		echo "✅ Ollama uninstalled successfully"; \
+	else \
+		echo "❌ Homebrew not found"; \
+	fi
+
+install-ollama-linux: # Install Ollama on Linux using official script
+	@echo "🐧 Installing Ollama on Linux..."
+	@echo "📥 Downloading and running official install script..."
+	@curl -fsSL https://ollama.com/install.sh | sh
+	@echo "✅ Ollama installed successfully"
+
+update-ollama-linux: install-ollama-linux # Update Ollama on Linux (same as install)
+
+uninstall-ollama-linux: # Uninstall Ollama on Linux
+	@echo "🗑️  Uninstalling Ollama on Linux..."
+	@if command -v systemctl >/dev/null 2>&1; then \
+		sudo systemctl stop ollama || true; \
+		sudo systemctl disable ollama || true; \
+		sudo rm -f /etc/systemd/system/ollama.service; \
+		sudo systemctl daemon-reload; \
+	fi
+	@sudo rm -f /usr/local/bin/ollama
+	@sudo rm -rf /usr/share/ollama
+	@sudo userdel ollama 2>/dev/null || true
+	@sudo groupdel ollama 2>/dev/null || true
+	@echo "✅ Ollama uninstalled successfully"
+	@echo "💡 Note: Model files in ~/.ollama may remain. Remove manually if desired."
+
+install-ollama-windows: # Install Ollama on Windows (instructions only)
+	@echo "🪟 Installing Ollama on Windows..."
+	@echo "📝 Please follow these steps:"
+	@echo "   1. Download OllamaSetup.exe from https://ollama.com/download"
+	@echo "   2. Run the installer as administrator"
+	@echo "   3. Follow the setup wizard"
+	@echo ""
+	@echo "💡 Alternative - using PowerShell:"
+	@echo "   Start-BitsTransfer -Source 'https://ollama.com/download/OllamaSetup.exe' -Destination 'OllamaSetup.exe'"
+	@echo "   Then run OllamaSetup.exe"
+
+update-ollama-windows: install-ollama-windows # Update Ollama on Windows (same as install)
 
 # =============================================================================
 # Documentation (legacy placeholder kept for compatibility)

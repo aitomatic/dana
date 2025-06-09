@@ -361,13 +361,9 @@ if __name__ == "__main__":
     # Example usage
     framework = SafetyFramework()
     
-    # Establish baseline if it doesn't exist
-    baseline = framework.load_baseline()
-    if baseline is None:
-        print("📊 No baseline found, establishing one...")
-        baseline = framework.establish_baseline()
-    else:
-        print(f"📊 Using existing baseline: {baseline.passed}/{baseline.total} tests passing")
+    # Establish baseline (refresh after our fixes)
+    print("📊 Refreshing baseline after refactoring fixes...")
+    baseline = framework.establish_baseline()
     
     print("\n🛡️  Safety framework ready for refactoring operations!")
     print(f"   Baseline: {baseline.success_rate:.1f}% success rate")
