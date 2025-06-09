@@ -2,6 +2,18 @@
     // === Explorer Settings ===
     // Show hidden files and folders
     "files.exclude": {
+        "**/tmp": true,
+        "**/bin": true,
+        "**/docs/.ai-only": true,
+        "**/docs/.archive": true,
+        "**/docs/internal": true,
+        "**/docs/javascripts": true,
+        "**/docs/stylesheets": true,
+        "**/docs/images": true,
+        "**/uv.lock": true,
+        "**/.env": true,
+        "**/.vscode": true,
+        "**/pyproject.toml": true,
         "**/Makefile": true,
         "**/mkdocs.yml": true,
         "**/pytest.ini": true,

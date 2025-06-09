@@ -16,12 +16,15 @@ else
     SCRIPT_EXT := .sh
 endif
 
+# UV command helper - use system uv if available, otherwise fallback to ~/.local/bin/uv
+UV_CMD = $(shell command -v uv 2>/dev/null || echo ~/.local/bin/uv)
+
 # Default target
 .DEFAULT_GOAL := quickstart
 
 # All targets are phony (don't create files)
 .PHONY: help \
-	quickstart \
+	quickstart check-uv \
 	install install-dev setup-dev \
 	test test-fast test-live test-cov test-watch \
 	lint lint-fix format format-check typecheck \
@@ -74,13 +77,23 @@ help: ## Show this help message with available commands
 # Quick Start (Get Running in 30 seconds!)
 # =============================================================================
 
-quickstart: ## 🚀 QUICK START: Get OpenDXA running in 30 seconds!
+# Check if uv is installed, install if missing
+check-uv:
+	@if ! command -v uv >/dev/null 2>&1 && ! test -f ~/.local/bin/uv; then \
+		echo "🔧 uv not found, installing..."; \
+		curl -LsSf https://astral.sh/uv/install.sh | sh; \
+		echo "✅ uv installed successfully"; \
+	else \
+		echo "✅ uv already available"; \
+	fi
+
+quickstart: check-uv ## 🚀 QUICK START: Get OpenDXA running in 30 seconds!
 	@echo ""
 	@echo "🚀 \033[1m\033[32mOpenDXA Quick Start\033[0m"
 	@echo "==================="
 	@echo ""
 	@echo "📦 Installing dependencies..."
-	@uv sync --quiet
+	@$(UV_CMD) sync --quiet
 	@echo "🔧 Setting up environment..."
 	@if [ ! -f .env ]; then \
 		cp .env.example .env; \
