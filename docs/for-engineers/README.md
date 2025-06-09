@@ -122,7 +122,7 @@ for-engineers/
 
 ---
 
-*Ready to build? Start with [Quick Start](#-quick-start) or jump to [Common Tasks](#-common-tasks)* 
+*Ready to build? Start with [Getting Started](#getting-started-paths) or jump to [Common Tasks](#common-tasks)* 
 
 ## Quick Examples
 

@@ -68,6 +68,8 @@ nav:
         - Type System: for-engineers/reference/api/type-system.md
         - Scoping: for-engineers/reference/api/scoping.md
         - Sandbox Security: for-engineers/reference/api/sandbox-security.md
+        - Dana Sandbox: for-engineers/reference/api/dana-sandbox.md
+        - OpenDXA Common: for-engineers/reference/api/opendxa-common.md
     - Recipes:
       - Overview: for-engineers/recipes/README.md
       - First Agent: for-engineers/recipes/first-agent.md
@@ -135,7 +137,7 @@ nav:
       - Sandbox: design/02_dana_runtime_and_execution/sandbox.md
       - REPL: design/02_dana_runtime_and_execution/repl.md
       - Code Context Analyzer: design/02_dana_runtime_and_execution/code_context_analyzer.md
-      - POV Execution Model: design/02_dana_runtime_and_execution/pov_execution_model.md
+      - POET Execution Model: design/02_dana_runtime_and_execution/poet_execution_model.md
       - Type System and Casting: design/02_dana_runtime_and_execution/type_system_and_casting.md
       - Concurrency Model: design/02_dana_runtime_and_execution/concurrency_model.md
       - External Interfaces: design/02_dana_runtime_and_execution/external_interfaces.md
