@@ -64,6 +64,21 @@ def get_module_loader() -> ModuleLoader:
     return _module_loader
 
 
+def reset_module_system() -> None:
+    """Reset the module system, clearing all cached modules and specs.
+
+    This is primarily useful for testing when you need to reinitialize
+    the module system with different search paths.
+    """
+    global _module_registry, _module_loader
+
+    if _module_registry is not None:
+        _module_registry.clear()
+
+    _module_registry = None
+    _module_loader = None
+
+
 __all__ = [
     # Core types
     "Module",
@@ -72,6 +87,7 @@ __all__ = [
     "ModuleError",
     # Core functions
     "initialize_module_system",
+    "reset_module_system",
     "get_module_registry",
     "get_module_loader",
 ]

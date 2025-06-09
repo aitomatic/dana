@@ -29,6 +29,11 @@ class TestDanaModuleImports:
         if self.test_modules_path not in os.environ["DANAPATH"]:
             os.environ["DANAPATH"] = f"{self.test_modules_path}{os.pathsep}{os.environ['DANAPATH']}"
 
+        # Reset and reinitialize the module system to pick up the updated DANAPATH
+        from opendxa.dana.module.core import reset_module_system, initialize_module_system
+        reset_module_system()
+        initialize_module_system()
+
     def test_basic_dana_module_import(self):
         """Test basic Dana module import: import simple_math."""
         result = self.sandbox.eval("import simple_math")

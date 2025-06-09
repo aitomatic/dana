@@ -66,7 +66,7 @@ This separation exists because:
 ### Example Code
 
 ```dana
-from a/b/c/d.py import SomeClass
+from a.b.c.d.py import SomeClass
 
 some_object = SomeClass()     # some_object is a PythonObject, which is effectively of `Any` Python type
 x = some_object.some_property # x is a PythonObject
