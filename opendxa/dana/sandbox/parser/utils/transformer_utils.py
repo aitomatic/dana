@@ -8,19 +8,19 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from typing import Any, Set, Union
+from typing import Any
 
 from lark import Token, Tree
 
 from opendxa.dana.sandbox.parser.ast import ASTNode
 
 
-def get_leaf_node(item: Union[Tree, Token, ASTNode]) -> Union[Token, ASTNode]:
+def get_leaf_node(item: Tree | Token | ASTNode) -> Token | ASTNode:
     """Recursively unwrap a Tree until an AST node or token is reached.
-    
+
     Args:
         item: Tree, Token, or ASTNode to unwrap
-        
+
     Returns:
         The leaf node (Token or ASTNode)
     """
@@ -31,12 +31,12 @@ def get_leaf_node(item: Union[Tree, Token, ASTNode]) -> Union[Token, ASTNode]:
 
 def flatten_items(items: list) -> list:
     """Recursively flatten lists and Tree nodes, returning a flat list of AST nodes or tokens.
-    
+
     Useful for collection and statement flattening.
-    
+
     Args:
         items: List of items to flatten
-        
+
     Returns:
         Flattened list of AST nodes or tokens
     """
@@ -51,31 +51,31 @@ def flatten_items(items: list) -> list:
     return flat
 
 
-def unwrap_single_child_tree(item: Any, stop_at: Set[str] = None) -> Any:
+def unwrap_single_child_tree(item: Any, stop_at: set[str] | None = None) -> Any:
     """Recursively unwrap single-child Tree nodes, stopping at rule names in stop_at.
-    
+
     If stop_at is None, unwrap all single-child Trees.
-    
+
     Args:
         item: Item to unwrap
         stop_at: Set of rule names to stop unwrapping at
-        
+
     Returns:
         Unwrapped item
     """
     stop_at = stop_at or set()
-    
+
     while isinstance(item, Tree) and len(item.children) == 1 and getattr(item, "data", None) not in stop_at:
         item = item.children[0]
     return item
 
 
-def extract_token_value(item: Union[Token, Tree, Any]) -> str:
+def extract_token_value(item: Token | Tree | Any) -> str:
     """Extract the string value from a Token, Tree, or other item.
-    
+
     Args:
         item: Item to extract value from
-        
+
     Returns:
         String value of the item
     """
@@ -90,11 +90,11 @@ def extract_token_value(item: Union[Token, Tree, Any]) -> str:
 
 def is_tree_with_data(item: Any, data_name: str) -> bool:
     """Check if an item is a Tree with specific data name.
-    
+
     Args:
         item: Item to check
         data_name: Expected data name
-        
+
     Returns:
         True if item is a Tree with the specified data name
     """
@@ -103,10 +103,10 @@ def is_tree_with_data(item: Any, data_name: str) -> bool:
 
 def get_tree_children_safe(item: Any) -> list:
     """Safely get children from a Tree, returning empty list if not a Tree.
-    
+
     Args:
         item: Item to get children from
-        
+
     Returns:
         List of children or empty list
     """
@@ -115,12 +115,12 @@ def get_tree_children_safe(item: Any) -> list:
     return []
 
 
-def extract_name_from_token_or_tree(item: Union[Token, Tree, Any]) -> str:
+def extract_name_from_token_or_tree(item: Token | Tree | Any) -> str:
     """Extract a name/identifier from a Token, Tree, or AST node.
-    
+
     Args:
         item: Item to extract name from
-        
+
     Returns:
         Extracted name as string
     """
@@ -136,8 +136,8 @@ def extract_name_from_token_or_tree(item: Union[Token, Tree, Any]) -> str:
             return extract_name_from_token_or_tree(item.children[0])
     elif hasattr(item, "name"):
         # AST nodes with name attribute
-        name = getattr(item, "name")
+        name = item.name
         return name if isinstance(name, str) else str(name)
-    
+
     # Fallback to string representation
     return str(item)
