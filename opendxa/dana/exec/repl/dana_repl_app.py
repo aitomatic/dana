@@ -22,7 +22,6 @@ Dana REPL: Interactive command-line interface for Dana.
 import asyncio
 import logging
 import sys
-from typing import Optional
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.resource.llm_resource import LLMResource
@@ -137,6 +136,13 @@ class DanaREPLApp(Loggable):
         try:
             self.debug(f"Executing program: {program}")
             result = self.repl.execute(program)
+
+            # Capture and display any print output from the interpreter
+            print_output = self.repl.interpreter.get_and_clear_output()
+            if print_output:
+                print(print_output)
+
+            # Display the result if it's not None
             self.output_formatter.format_result(result)
         except Exception as e:
             self.output_formatter.format_error(e)
@@ -153,7 +159,7 @@ class DanaREPLApp(Loggable):
             return True
         return False
 
-    def _handle_orphaned_else_statement(self, line: str, last_executed_program: Optional[str]) -> bool:
+    def _handle_orphaned_else_statement(self, line: str, last_executed_program: str | None) -> bool:
         """Handle orphaned else/elif statements with helpful guidance.
 
         Returns:
