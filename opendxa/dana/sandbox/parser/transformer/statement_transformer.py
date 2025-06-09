@@ -19,7 +19,7 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from typing import Union, cast, List
+from typing import Union, cast
 
 from lark import Token, Tree
 
@@ -488,31 +488,31 @@ class StatementTransformer(BaseTransformer):
 
     def use_stmt(self, items):
         """Transform a use_stmt rule into a UseStatement node.
-        
+
         Grammar: use_stmt: USE "(" [mixed_arguments] ")"
-        
+
         The grammar passes:
         - items[0] = USE token (ignored)
         - items[1] = result from mixed_arguments (None if no arguments, or list of arguments)
         """
         from lark import Tree
-        
+
         # Initialize collections for arguments
-        args = []        # List[Expression] for positional arguments
-        kwargs = {}      # Dict[str, Expression] for keyword arguments
-        
+        args = []  # List[Expression] for positional arguments
+        kwargs = {}  # Dict[str, Expression] for keyword arguments
+
         # Handle the case where mixed_arguments is present
         # items[0] is the USE token, items[1] is the mixed_arguments result
         if len(items) > 1 and items[1] is not None:
             mixed_args_result = items[1]
-            
+
             # Process mixed_arguments following with_stmt pattern
             seen_keyword_arg = False  # Track if we've seen any keyword arguments
-            
+
             if isinstance(mixed_args_result, list):
                 # Process each argument
                 for arg_item in mixed_args_result:
-                    if isinstance(arg_item, Tree) and arg_item.data == 'kw_arg':
+                    if isinstance(arg_item, Tree) and arg_item.data == "kw_arg":
                         # Keyword argument: NAME "=" expr
                         seen_keyword_arg = True
                         name = arg_item.children[0].value
@@ -526,7 +526,7 @@ class StatementTransformer(BaseTransformer):
                         args.append(cast(Expression, arg_item))
             else:
                 # Single argument
-                if isinstance(mixed_args_result, Tree) and mixed_args_result.data == 'kw_arg':
+                if isinstance(mixed_args_result, Tree) and mixed_args_result.data == "kw_arg":
                     # Keyword argument: NAME "=" expr
                     name = mixed_args_result.children[0].value
                     value = self.expression_transformer.expression([mixed_args_result.children[1]])
@@ -534,7 +534,7 @@ class StatementTransformer(BaseTransformer):
                 else:
                     # Positional argument: expr
                     args.append(cast(Expression, mixed_args_result))
-        
+
         return UseStatement(args=args, kwargs=kwargs)
 
     # === Import Statements ===
@@ -544,68 +544,29 @@ class StatementTransformer(BaseTransformer):
         return items[0]
 
     def simple_import(self, items):
-        """Transform a simple_import rule into an ImportStatement node."""
-        from lark import Token, Tree
+        """Transform a simple_import rule into an ImportStatement node.
 
-        # In simple_import rule, the import keyword is not included in items.
-        # items[0] should be the module_path
-        module_item = items[0]
-
-        # Extract the module path from the Tree
-        if isinstance(module_item, Tree) and getattr(module_item, "data", None) == "module_path":
-            parts = []
-            for child in module_item.children:
-                if hasattr(child, "value"):
-                    parts.append(child.value)
-            module = ".".join(parts)
-        else:
-            # Fallback to string conversion if not a module_path Tree
-            module = str(module_item)
-
-        # Handle alias: if we have AS token, the alias is the next item
-        alias = None
-        if len(items) > 1:
-            # Check if items[1] is the AS token
-            if isinstance(items[1], Token) and items[1].type == "AS":
-                # The alias name should be in items[2]
-                if len(items) > 2 and hasattr(items[2], "value"):
-                    alias = items[2].value
-                elif len(items) > 2:
-                    alias = str(items[2])
-            else:
-                # Fallback: treat items[1] as the alias directly
-                if hasattr(items[1], "value"):
-                    alias = items[1].value
-                elif items[1] is not None:
-                    alias = str(items[1])
-
-        return ImportStatement(module=module, alias=alias)
-
-    def from_import(self, items):
-        """Transform a from_import rule into an ImportFromStatement node."""
-        from lark import Token, Tree
-
-        # In from_import rule, the from and import keywords are not included in items.
-        # items[0] should be the module_path
-        module_item = items[0]
+        Grammar:
+            simple_import: IMPORT module_path ["as" NAME]
+            module_path: NAME ("." NAME)*
+        """
+        # Skip the IMPORT token and get the module_path
+        module_path = items[1]
 
         # Extract the module path from the Tree
-        if isinstance(module_item, Tree) and getattr(module_item, "data", None) == "module_path":
+        if isinstance(module_path, Tree) and getattr(module_path, "data", None) == "module_path":
             parts = []
-            for child in module_item.children:
-                if hasattr(child, "value"):
+            for child in module_path.children:
+                if isinstance(child, Token):
+                    parts.append(child.value)
+                elif hasattr(child, "value"):
                     parts.append(child.value)
             module = ".".join(parts)
+        elif isinstance(module_path, Token):
+            module = module_path.value
         else:
-            # Fallback to string conversion if not a module_path Tree
-            module = str(module_item)
-
-        # items[1] should be the name to import
-        name_item = items[1]
-        if hasattr(name_item, "value"):
-            name = name_item.value
-        else:
-            name = str(name_item)
+            # Fallback to string representation
+            module = str(module_path)
 
         # Handle alias: if we have AS token, the alias is the next item
         alias = None
@@ -623,6 +584,49 @@ class StatementTransformer(BaseTransformer):
                     alias = items[2].value
                 elif items[2] is not None:
                     alias = str(items[2])
+
+        return ImportStatement(module=module, alias=alias)
+
+    def from_import(self, items):
+        """Transform a from_import rule into an ImportFromStatement node.
+
+        Grammar:
+            from_import: FROM module_path IMPORT NAME ["as" NAME]
+            module_path: NAME ("." NAME)*
+        """
+        # Skip the FROM token and get the module_path
+        module_path = items[1]
+
+        # Extract the module path from the Tree
+        if isinstance(module_path, Tree) and getattr(module_path, "data", None) == "module_path":
+            parts = []
+            for child in module_path.children:
+                if isinstance(child, Token):
+                    parts.append(child.value)
+                elif hasattr(child, "value"):
+                    parts.append(child.value)
+            module = ".".join(parts)
+        elif isinstance(module_path, Token):
+            module = module_path.value
+        else:
+            # Fallback to string representation
+            module = str(module_path)
+
+        # Get the imported name (after IMPORT token)
+        name = ""  # Initialize as empty string
+        for i, item in enumerate(items):
+            if isinstance(item, Token) and item.type == "IMPORT":
+                if i + 1 < len(items):
+                    name = items[i + 1].value
+                break
+
+        # Handle alias: if we have AS token, the alias is the next item
+        alias = None
+        for i, item in enumerate(items):
+            if isinstance(item, Token) and item.type == "AS":
+                if i + 1 < len(items):
+                    alias = items[i + 1].value
+                break
 
         return ImportFromStatement(module=module, names=[(name, alias)])
 
@@ -875,11 +879,11 @@ class StatementTransformer(BaseTransformer):
         """Transform a return_object_stmt rule into the appropriate object-returning statement."""
         # Grammar: return_object_stmt: use_stmt
         # items[0] should be the result of use_stmt transformation
-        
+
         # The use_stmt should already be transformed into a UseStatement by use_stmt method
         if len(items) > 0 and items[0] is not None:
             return items[0]
-        
+
         # Fallback - this shouldn't happen in normal cases
         raise ValueError("return_object_stmt received empty or None items")
 
@@ -909,7 +913,7 @@ class StatementTransformer(BaseTransformer):
         """Transform mixed_arguments rule into a structured list."""
         # items is a list of with_arg items
         return items
-    
+
     def with_arg(self, items):
         """Transform with_arg rule - pass through the child (either kw_arg or expr)."""
         # items[0] is either a kw_arg Tree or an expression
@@ -920,99 +924,103 @@ class StatementTransformer(BaseTransformer):
         return self.expression_transformer.expression(items)
 
     def with_stmt(self, items):
-        """Transform a with statement rule into a WithStatement node."""
-        # Filter out None items (like optional comments) and parse the structure
+        """Transform a with statement rule into a WithStatement node.
+
+        Grammar:
+            with_stmt: "with" (with_context_manager | (NAME | USE) "(" [mixed_arguments] ")") AS NAME ":" [COMMENT] block
+            with_context_manager: expr
+            mixed_arguments: with_arg ("," with_arg)*
+            with_arg: kw_arg | expr
+            kw_arg: NAME "=" expr
+        """
+        from opendxa.dana.sandbox.parser.ast import Expression
+
+        # Filter out None items
         filtered_items = [item for item in items if item is not None]
-        
 
-        # Based on the parse tree: [foo, mixed_arguments, as, bar, None, block]
-        # Find components in the structure
-        context_manager_part = filtered_items[0]
-        as_var = None
-        block = None
-        with_args = None
-        
-        # Look for 'as' token to find variable name and block
-        for i, item in enumerate(filtered_items):
-            if hasattr(item, 'value') and item.value == 'as':
-                # Next item should be the variable name
-                if i + 1 < len(filtered_items):
-                    as_var_token = filtered_items[i + 1]
-                    as_var = as_var_token.value if hasattr(as_var_token, 'value') else str(as_var_token)
-                # Block should be the last item in the list (after filtering)
-                for j in range(len(filtered_items) - 1, -1, -1):
-                    if hasattr(filtered_items[j], 'data') and filtered_items[j].data == 'block':
-                        block = self._transform_block(filtered_items[j])
+        # Initialize variables
+        context_manager: str | Expression | None = None
+        args = []
+        kwargs = {}
+
+        # First item is either a Token (NAME/USE), an Expression, or an Identifier
+        first_item = filtered_items[0]
+
+        # Handle direct expression case
+        if isinstance(first_item, Tree) and first_item.data == "with_context_manager":
+            expr = self.expression_transformer.expression([first_item.children[0]])
+            if expr is not None:
+                context_manager = cast(Expression, expr)
+        # Handle direct object reference
+        elif isinstance(first_item, Identifier):
+            context_manager = cast(Expression, first_item)
+            # Don't add local prefix if the identifier is already scoped (contains ":" or starts with a scope)
+            if not (
+                context_manager.name.startswith("local.")
+                or ":" in context_manager.name
+                or context_manager.name.startswith("private.")
+                or context_manager.name.startswith("public.")
+                or context_manager.name.startswith("system.")
+            ):
+                context_manager = cast(Expression, Identifier(name=f"local.{context_manager.name}"))
+        # Handle function call case
+        elif isinstance(first_item, Token):
+            # Keep the name as a string for function calls
+            context_manager = first_item.value
+
+            # Check if we have arguments
+            if len(filtered_items) > 1 and filtered_items[1] is not None:
+                # Process arguments
+                arg_items = []
+                for item in filtered_items[1:]:
+                    # Handle both Tree form and already-transformed list form
+                    if isinstance(item, Tree) and item.data == "mixed_arguments":
+                        arg_items = item.children
                         break
-                break
-        
-        if as_var is None:
-            raise SyntaxError("Missing 'as' variable in with statement")
-        if block is None:
-            raise SyntaxError("Missing block in with statement")
-        
-        # Check if this is a function call pattern by looking at the structure
-        # Function call pattern: [NAME, mixed_arguments_or_none, 'as', NAME, None, block]
-        # Direct object pattern: [expression, 'as', NAME, None, block]
-        
-        # If the first item is a simple token (NAME/USE) and we have the right structure, it's a function call
-        if (hasattr(context_manager_part, 'value') and isinstance(context_manager_part.value, str) and
-            not hasattr(context_manager_part, 'data')):  # Simple token, not a tree
-            
-            # Function call pattern: NAME [mixed_arguments] as var block
-            context_manager_name = context_manager_part.value
-            
-            # Handle mixed_arguments - could be None (empty args) or a tree with arguments
-            args: List[Expression] = []
-            kwargs = {}
-            seen_keyword_arg = False
-            
-            # Look for mixed_arguments (second item if it exists and is not 'as')
-            if (len(filtered_items) >= 2 and 
-                isinstance(filtered_items[1], list)):
-                
-                # mixed_arguments has already been transformed into a list of expressions/trees
-                args_list = filtered_items[1]
-                
-                # Process each item in the list
-                for item in args_list:
-                    if hasattr(item, 'data') and item.data == 'kw_arg':
-                        # Keyword argument: NAME "=" expr
-                        seen_keyword_arg = True
-                        name = item.children[0].value
-                        value = self.expression_transformer.expression([item.children[1]])
-                        kwargs[name] = value
-                    else:
-                        # Positional argument: expr
-                        if seen_keyword_arg:
-                            raise SyntaxError("Positional argument follows keyword argument in with statement")
-                        args.append(cast(Expression, item))
-            elif (len(filtered_items) >= 2 and 
-                  hasattr(filtered_items[1], 'data') and 
-                  filtered_items[1].data == 'mixed_arguments'):
-                
-                mixed_args_tree = filtered_items[1]
-                
-                # mixed_arguments contains with_arg children
-                for with_arg_tree in mixed_args_tree.children:
-                    if hasattr(with_arg_tree, 'data') and with_arg_tree.data == 'with_arg':
-                        # with_arg contains either kw_arg or expr
-                        if len(with_arg_tree.children) > 0:
-                            arg_content = with_arg_tree.children[0]
-                            if hasattr(arg_content, 'data') and arg_content.data == 'kw_arg':
-                                # Keyword argument: NAME "=" expr
-                                seen_keyword_arg = True
-                                name = arg_content.children[0].value
-                                value = self.expression_transformer.expression([arg_content.children[1]])
-                                kwargs[name] = value
-                            else:
-                                # Positional argument: expr
-                                if seen_keyword_arg:
-                                    raise SyntaxError("Positional argument follows keyword argument in with statement")
-                                args.append(cast(Expression, self.expression_transformer.expression([arg_content])))
+                    elif isinstance(item, list):
+                        # mixed_arguments was already transformed to a list
+                        arg_items = item
+                        break
 
-            return WithStatement(context_manager=context_manager_name, args=args, kwargs=kwargs, as_var=as_var, body=block)
-        else:
-            # Direct context manager pattern: with_context_manager as var block
-            context_manager_expr = cast(Expression, self.expression_transformer.expression([context_manager_part]))
-            return WithStatement(context_manager=context_manager_expr, args=[], kwargs={}, as_var=as_var, body=block)
+                # Process each argument
+                seen_kwarg = False
+                for arg in arg_items:
+                    if isinstance(arg, Tree) and arg.data == "kw_arg":
+                        # Keyword argument
+                        seen_kwarg = True
+                        key = arg.children[0].value
+                        value = self.expression_transformer.expression([arg.children[1]])
+                        if value is not None:
+                            kwargs[key] = value
+                    else:
+                        # Positional argument
+                        if seen_kwarg:
+                            raise SyntaxError("Positional argument follows keyword argument")
+                        value = self.expression_transformer.expression([arg])
+                        if value is not None:
+                            args.append(value)
+
+        # Find the 'as' variable name
+        as_var = None
+        for i, item in enumerate(filtered_items):
+            if isinstance(item, Token) and item.type == "AS":
+                if i + 1 < len(filtered_items):
+                    next_item = filtered_items[i + 1]
+                    if isinstance(next_item, Token) and next_item.type == "NAME":
+                        as_var = next_item.value
+                break
+
+        if as_var is None:
+            raise SyntaxError("With statement requires 'as' variable")
+
+        # Get the block
+        block = []
+        for item in filtered_items:
+            if isinstance(item, Tree) and item.data == "block":
+                block = self._transform_block(item)
+                break
+
+        if context_manager is None:
+            raise ValueError("Failed to process context manager")
+
+        return WithStatement(context_manager=context_manager, args=args, kwargs=kwargs, as_var=as_var, body=block)

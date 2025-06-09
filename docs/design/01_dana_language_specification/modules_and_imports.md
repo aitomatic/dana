@@ -1,28 +1,140 @@
 ```text
 Author: Christopher Nguyen
-Version: 0.1
-Status: Design Phase
+Version: 0.5
+Status: Released
 Module: opendxa.dana
+
+Current Capabilities:
+✅ Basic module loading and execution
+✅ Module namespace isolation
+✅ Basic package support with __init__.na
+✅ Python module integration
+✅ Circular dependency detection
+✅ Basic error handling and recovery
+✅ Module-level exports
+✅ Basic lazy loading
+⏳ Advanced package features (partial)
+⏳ Module reloading (planned)
+⏳ Dynamic imports (planned)
+⏳ Advanced caching (planned)
 ```
 
 Also see: [Data Types and Structs](data_types_and_structs.md)
 
 # Dana Modules and Imports
 
-This document describes how Dana code can be organized into modules (separate files) and how these modules can be imported and used in other Dana programs.
+## 1. Overview
 
-## 1. Motivation
+### 1.1 Motivation
+Dana's module system provides a way to organize code into reusable and manageable units. Key benefits include:
+* Code Reusability: Define functions, structs, and constants once, use them anywhere
+* Namespacing: Avoid naming conflicts through distinct namespaces
+* Logical Organization: Group related code by functionality or domain
+* Collaboration: Enable independent development of different components
 
-As Dana programs grow in complexity, a mechanism for organizing code into reusable and manageable units becomes essential. Modules allow for:
+### 1.2 Key Concepts
+* Module: A `.na` file containing Dana code (functions, structs, variables)
+* Package: A directory containing related modules and an optional `__init__.na`
+* Import: A mechanism to use code from other modules
+* Namespace: A scope containing module-specific names and symbols
 
-* Code Reusability: Define functions, structs, and constants in one place and use them across multiple programs.
-* Namespacing: Avoid naming conflicts by organizing code into distinct namespaces.
-* Logical Organization: Group related code (e.g., a set of utility functions, definitions for a specific data domain) into separate files.
-* Collaboration: Allow different developers or teams to work on different modules independently.
+### 1.3 Example Usage
 
-## 2. Defining a Module
+#### *`export` Statement*
 
-A Dana module is simply a `.na` file (or the conventional future extension for Dana files) containing Dana code (struct definitions, function definitions, and potentially top-level variable assignments that act as constants or module-level state if appropriate to the design).
+```dana
+# string_utils.na
+export StringMetrics, calculate_metrics
+
+struct StringMetrics:
+  length: int
+  word_count: int
+
+def calculate_metrics(text: str) -> StringMetrics:
+  len = len(text)
+  words = len(text.split()) if len > 0 else 0
+  return StringMetrics(length=len, word_count=words)
+
+def to_uppercase(text: str) -> str:
+  return text.upper()
+```
+
+#### *`import` Statement*
+
+```dana
+# main.na
+import path/to/string_utils.na
+
+text: str = "Analyze this text."
+metrics: string_utils.StringMetrics = string_utils.calculate_metrics(text)
+print(f"Length: {metrics.length}, Words: {metrics.word_count}")
+```
+
+## 2. Module System Design
+
+### 2.1 Module Structure and Lifecycle
+```mermaid
+graph LR
+    A[Source Code] --> B[Parse]
+    B --> C[AST]
+    C --> D[Type Check]
+    D --> E[Execute]
+    
+    style A fill:#f9f,stroke:#333
+    style C fill:#bbf,stroke:#333
+    style E fill:#fbb,stroke:#333
+```
+
+Each module goes through several stages:
+1. Parsing: Source code is converted to an Abstract Syntax Tree (AST)
+2. Type Checking: AST nodes are validated for type correctness
+3. Execution: Code is executed in a module-specific context
+
+### 2.2 Module Components
+* AST: Represents the module's code structure
+* Namespace: Contains module-specific variables and imports
+* Exports: Symbols explicitly made available to other modules
+* Dependencies: Other modules required for operation
+
+### 2.3 Import Resolution
+1. Module path resolution using search paths
+2. Dependency graph construction
+3. Circular dependency detection
+4. Module loading and execution
+5. Namespace population
+
+### 2.4 Module AST and Runtime Relationships
+
+The relationship between a module's AST and the runtime environment is carefully managed:
+
+#### AST Structure
+- Each module has its own AST with a `Program` node at the root
+- The `Program` node contains a list of statements (assignments, function calls, etc.)
+- The AST represents the module's code structure independent of execution state
+
+#### Execution Context
+- Each module gets its own namespace stored in `module.__dict__`
+- The module's AST is executed by the `DanaInterpreter` in a `SandboxContext`
+- The sandbox context manages scoped state during execution:
+  - `local`: Module-specific variables
+  - `private`: Internal module state
+  - `public`: Exported module interface
+  - `system`: Runtime metadata
+
+#### Module Loading Flow
+```mermaid
+graph TD
+    A[Import Statement] --> B[ModuleLoader]
+    B --> C[Parse Module]
+    C --> D[Create Module AST]
+    D --> E[Create Module Object]
+    E --> F[Execute Module AST]
+    F --> G[Update Module Dict]
+    G --> H[Register Module]
+```
+
+### 2.5 Example Module
+
 Example: `string_utils.na`
 ```dana
 # Module: string_utils.na
@@ -36,106 +148,297 @@ def calculate_metrics(text: str) -> StringMetrics:
  # Basic word count, can be made more sophisticated
  words = 0
  if len > 0:
- # This is a simplistic word count
- parts = text.split(' ') # Assuming a string split method
- words = len(parts)
+   parts = text.split(' ')
+   words = len(parts)
 
  return StringMetrics(length=len, word_count=words)
 
 def to_uppercase(text: str) -> str:
- # This would ideally call a built-in string method or a resource providing this.
- # For now, conceptual:
- return text # Placeholder - actual uppercasing TBD
+ return text.upper()
 
 public:DEFAULT_GREETING: str = "Hello, Dana!"
 ```
 
-## 3. Importing Modules
+### 2.6 Import System
 
-Dana modules are imported using the `import` statement.
-
-### 3.1. Basic Import
-
-Imports the module and requires a fully qualified name to access its members.
-
-Syntax:
-
-```dana
-import <module_path>
-```
-
-Example:
-
+#### Basic Import Syntax
 ```dana
 # In main.na
-import path/to/string_utils.na # Path relative package root, DANAPATH, or current file
-from path/to/string_utils.na import StringMetrics, calculate_metrics, some_dana_object
+import path/to/string_utils.na
+from path/to/string_utils.na import StringMetrics, calculate_metrics
 from path/to/string_utils import some_other_dana_object # .na is optional
 from path/to/other_utils.py import some_python_object # .py is required
 
 text: str = "Sample text for analysis."
 metrics: string_utils.StringMetrics = string_utils.calculate_metrics(text)
 print(f"Length: {metrics.length}, Words: {metrics.word_count}")
-
-greeting: str = string_utils.DEFAULT_GREETING
 ```
 
-### 3.2. Import with Alias
-
-Imports the module and provides an alias (a shorter name) for it.
-
-Syntax:
-
+#### Import with Alias
 ```dana
-import <module_path> as <alias>
-```
-
-Example:
-
-```dana
-# In main.na
 import path/to/string_utils.na as str_util
 
 text: str = "Sample text for analysis."
 metrics: str_util.StringMetrics = str_util.calculate_metrics(text)
-print(f"Length: {metrics.length}, Words: {metrics.word_count}")
-
-upper_text: str = str_util.to_uppercase("dana language")
-print(upper_text)
-
-print(str_util.DEFAULT_GREETING)
 ```
-This is generally the recommended way to import modules to maintain clarity and avoid name clashes.
 
-### 3.3. Importing Specific Members (Consideration for Future)
+#### Import Process Flow
+```mermaid
+sequenceDiagram
+    participant App as Application
+    participant IM as ImportManager
+    participant ML as ModuleLoader
+    participant MR as ModuleRegistry
+    participant FS as FileSystem
+    participant Cache as ModuleCache
+    
+    App->>IM: import module
+    IM->>ML: load_module(path)
+    ML->>MR: get_module(path)
+    
+    alt Module in Registry
+        MR-->>ML: return cached module
+        ML-->>IM: return module
+    else Module not found
+        ML->>Cache: check_cache(path)
+        alt Cache hit
+            Cache-->>ML: return cached module
+        else Cache miss
+            ML->>FS: read_file(path)
+            FS-->>ML: source code
+            ML->>ML: parse(source)
+            ML->>Cache: cache_module()
+        end
+        ML->>MR: register_module()
+        ML-->>IM: return new module
+    end
+    
+    IM-->>App: module ready
+```
 
-A `from <module_path> import <member1>, <member2> as <alias2>` syntax, similar to Python, could be considered in the future if there's a strong need. However, to keep initial simplicity and encourage explicit namespacing, the primary import mechanisms are `import <module>` and `import <module> as <alias>`.
+### 2.7 Module Search Path Resolution
 
-## 4. Module Scope and State
+The Dana runtime uses the following search strategy:
 
-* Namespacing: Each imported module creates its own namespace. Members (functions, structs, module-level variables) are accessed via `module_name.member_name` or `alias.member_name`.
-* Execution: When a module is imported for the first time in an execution context, its top-level statements are executed once. This allows modules to initialize module-level state if necessary.
-* Caching: The Dana runtime should cache imported modules so that subsequent imports of the same module (within the same execution context or session) do not re-execute its top-level code but rather provide a reference to the already loaded module.
+1. **Current Directory**: Look in the same directory as the importing file
+2. **Package Directory**: Check for package-relative imports
+3. **Standard Library**: Search in Dana's standard library path
+4. **DANA_PATH**: Search in paths specified in the DANA_PATH environment variable
+5. **Project Config**: Search in paths specified in project configuration
 
-## 5. Module Search Path
+```mermaid
+graph TD
+    A[Module Search Path] --> B[Current Directory]
+    A --> C[Standard Library]
+    A --> D[User-defined Paths]
+    
+    B --> E[./my_module.na]
+    B --> F[./subdir/module.na]
+    
+    C --> G[stdlib/string.na]
+    C --> H[stdlib/math.na]
+    
+    D --> I[DANAPATH/module1]
+    D --> J[Project Config Path]
+    
+    style A fill:#f9f,stroke:#333,stroke-width:2px
+    style B fill:#bbf,stroke:#333
+    style C fill:#bbf,stroke:#333
+    style D fill:#bbf,stroke:#333
+```
 
-The Dana runtime will need a defined strategy for locating modules specified in `import` statements:
+### 2.8 Python Module Integration
 
-1. **Relative to the current file**: Look in the same directory as the importing file.
-2. **Standard Library Path**: A designated directory for Dana's standard library modules (if any).
-3. **User-defined Paths**: Potentially configurable paths where the runtime should look for modules (e.g., via an environment variable or a configuration file for a project).
+Dana supports seamless integration with Python modules:
 
-The exact resolution order needs to be clearly defined.
+```mermaid
+classDiagram
+    class DanaModule {
+        +str name
+        +dict namespace
+        +set exports
+        +load()
+        +execute()
+    }
+    
+    class PythonModule {
+        +str name
+        +PyObject module
+        +dict conversions
+        +load()
+        +convert_types()
+    }
+    
+    class ModuleInterface {
+        <<interface>>
+        +load()
+        +execute()
+    }
+    
+    ModuleInterface <|.. DanaModule
+    ModuleInterface <|.. PythonModule
+```
 
-## 6. Python Module Integration
+### 3.3 Error Handling
 
-While this document focuses on Dana-to-Dana modules, Dana also supports importing Python modules. This typically involves the Dana runtime interacting with the Python interpreter. The syntax might be similar, possibly with a differentiator (e.g., `import python my_python_module as py_mod`). The interaction with Python objects and functions would then be managed by the Dana-Python bridge. (This is detailed further in OpenDXA's Python integration design).
+The module system includes comprehensive error handling:
 
-## 7. Open Questions and Future Considerations
+```dana
+struct ModuleError:
+    path: str
+    message: str
+    cause: Exception | None
+    
+struct CircularImportError(ModuleError):
+    cycle: list[str]  # The import cycle
+    
+struct ModuleNotFoundError(ModuleError):
+    searched_paths: list[str]  # Paths that were searched
+    
+def handle_import_error(error: ModuleError):
+    """Handle module import errors."""
+    match error:
+        case CircularImportError():
+            log.error(f"Circular import detected: {' -> '.join(error.cycle)}")
+        case ModuleNotFoundError():
+            log.error(f"Module not found: {error.path}")
+            log.debug(f"Searched paths: {error.searched_paths}")
+        case _:
+            log.error(f"Module error: {error.message}")
+```
 
-* Circular Imports: How are circular dependencies between modules handled or prevented?
-* Dynamic Imports: Is there a need for importing modules based on a string variable (e.g., `import(module_name_var)`)?
-* Reloading Modules: For development, a mechanism to reload a module that has changed without restarting the entire application might be useful (e.g., `reload(my_module)`).
-* Package Structure: For larger collections of modules, a directory-based package structure (e.g., `import my_package.my_module`) might be needed.
+### 3.4 Performance Optimizations
 
-This section will be expanded as the module system design matures.
+#### Lazy Loading
+```dana
+struct LazyModule:
+    path: str
+    _loaded: bool = False
+    _module: Module | None = None
+    
+    def __getattr__(name: str) -> any:
+        """Load module on first attribute access."""
+        if not self._loaded:
+            self._module = load_module(self.path)
+            self._loaded = True
+        return getattr(self._module, name)
+```
+
+## 3. Implementation
+
+### 3.1 Core Components
+
+The module system is built on three main components that work together:
+
+1. **Module Registry**: Central manager for module state
+```python
+class ModuleRegistry:
+    """Registry for tracking Dana modules and their dependencies."""
+    def __init__(self):
+        self._modules: dict[str, Module] = {}        # name -> module
+        self._specs: dict[str, ModuleSpec] = {}      # name -> spec
+        self._aliases: dict[str, str] = {}           # alias -> real name
+        self._dependencies: dict[str, set[str]] = {} # module -> dependencies
+        self._loading: set[str] = set()              # modules being loaded
+```
+
+2. **Module Loader**: Handles finding and loading modules
+```python
+class ModuleLoader(MetaPathFinder, Loader):
+    """Loader responsible for finding and loading Dana modules."""
+    def __init__(self, search_paths: list[str], registry: ModuleRegistry):
+        self.search_paths = [Path(p).resolve() for p in search_paths]
+        self.registry = registry
+```
+
+3. **Module Types**: Core data structures
+```python
+@dataclass
+class ModuleSpec:
+    """Specification for a module during import."""
+    name: str                                    # Fully qualified name
+    loader: ModuleLoader                         # Loader instance
+    origin: str                                  # File path/description
+    parent: str | None = None                    # Parent package
+    has_location: bool = True                    # Has concrete location
+    submodule_search_locations: list[str] | None = None  # For packages
+```
+
+### 3.2 Implementation Status
+
+#### Phase 1: Core Module System ✅
+- [x] Basic module loading and execution
+- [x] Module registry singleton
+- [x] Module loader with search path support
+- [x] Basic module object with namespace
+- [x] AST execution in module context
+
+#### Phase 2: Module Features 🟨
+- [x] Basic module state management
+- [x] Basic export declarations
+- [x] Scope isolation
+- [x] Basic cross-module references
+- [x] Import statement handling
+- [x] Dependency graph building
+- [x] Circular dependency detection
+- [ ] Module reloading support
+- [ ] Dynamic imports
+- [ ] Full package support
+
+#### Phase 3: Performance & Security 🟨
+- [~] Performance optimizations
+  - [x] Basic lazy loading
+  - [ ] Advanced caching strategies
+  - [ ] Import path optimization
+  - [ ] Memory usage optimization
+- [x] Basic security features
+  - [x] Module isolation
+  - [x] Safe cross-module calls
+  - [x] Basic resource cleanup
+  - [x] Error boundaries
+
+#### Phase 4: Advanced Features ⭕
+- [ ] Hot Reloading
+  - [ ] File watching
+  - [ ] State preservation
+  - [ ] Dependency updates
+- [ ] Advanced Package Features
+  - [ ] Resource management
+  - [ ] Namespace packages
+  - [ ] Version handling
+- [ ] Development Tools
+  - [ ] Import graph visualization
+  - [ ] Debugging helpers
+  - [ ] Performance profiling
+
+#### Phase 5: Polish & Documentation 🟨
+- [~] Documentation
+  - [x] Basic API documentation
+  - [x] Core examples
+  - [ ] Advanced usage guides
+  - [ ] Best practices
+- [~] Testing
+  - [x] Core functionality tests
+  - [x] Basic integration tests
+  - [ ] Performance benchmarks
+  - [ ] Security tests
+
+Legend:
+✅ Complete
+🟨 Partially Complete
+⭕ Not Started
+
+## 4. Future Work
+
+### 4.1 Open Questions
+* Circular Dependencies: How should we handle edge cases in circular dependency detection?
+* Dynamic Loading: What's the best API design for dynamic module loading?
+* Hot Reloading: How can we preserve state while reloading modules?
+* Package Management: What additional features are needed for large-scale package management?
+
+### 4.2 Planned Enhancements
+* Enhanced package support with namespace packages
+* Module hot reloading with state preservation
+* Dynamic import capabilities
+* Advanced caching and optimization strategies
+* Comprehensive development tools

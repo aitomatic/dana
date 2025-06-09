@@ -19,7 +19,7 @@ Discord: https://discord.gg/6jGD4PYk
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
@@ -30,27 +30,27 @@ class SandboxFunction(ABC):
     This class provides a common interface for all core functions.
     """
 
-    def __init__(self, context: Optional[SandboxContext] = None):
+    def __init__(self, context: SandboxContext | None = None):
         """Initialize a Dana function.
 
         Args:
             context: The sandbox context
         """
         self.context = context
-        self.parameters: List[str] = []  # Will be set by subclasses
+        self.parameters: list[str] = []  # Will be set by subclasses
 
     def __call__(
         self,
-        context: Optional[SandboxContext] = None,
-        local_context: Optional[Dict[str, Any]] = None,
+        context: SandboxContext | Any | None = None,
+        local_context: dict[str, Any] | Any | None = None,
         *the_args: Any,
         **the_kwargs: Any,
     ) -> Any:
         """Call the function with arguments.
 
         Args:
-            context: Optional context to use for execution
-            local_context: Optional local context to use for execution
+            context: Optional context to use for execution or first positional argument
+            local_context: Optional local context to use for execution or second positional argument
             *the_args: Positional arguments
             **the_kwargs: Keyword arguments
 
@@ -60,9 +60,14 @@ class SandboxFunction(ABC):
         Raises:
             SandboxError: If argument binding fails
         """
-        # Handle case where local_context is actually a positional argument (not a dict)
-        # This happens in tests like test_function_registry_deeply_nested_namespaces
+        # Handle case where context is not a SandboxContext
         positional_args = list(the_args)
+        if context is not None and not isinstance(context, SandboxContext):
+            # Insert context as the first positional argument
+            positional_args.insert(0, context)
+            context = None  # Clear context since it's now a positional arg
+
+        # Handle case where local_context is not a dict
         if local_context is not None and not isinstance(local_context, dict):
             # Insert local_context as the first positional argument
             positional_args.insert(0, local_context)
@@ -83,35 +88,15 @@ class SandboxFunction(ABC):
             merged_local = {**saved_local, **local_context}
             prepared_context.set_scope("local", merged_local)
 
-        # Sanitize any SandboxContext instances in the arguments for security
-        sanitized_context = actual_context.copy().sanitize()
-
-        sanitized_args = []
-        for arg in positional_args:
-            if isinstance(arg, SandboxContext):
-                sanitized_args.append(sanitized_context)
-            else:
-                sanitized_args.append(arg)
-
-        sanitized_kwargs = {}
-        for key, value in the_kwargs.items():
-            if isinstance(value, SandboxContext):
-                sanitized_kwargs[key] = sanitized_context
-            else:
-                sanitized_kwargs[key] = value
-
-        # Handle context injection if needed (for Python functions)
-        sanitized_kwargs = self.inject_context(prepared_context, sanitized_kwargs)
-
         # Execute the function with the prepared context
         try:
-            result = self.execute(prepared_context, *sanitized_args, **sanitized_kwargs)
+            result = self.execute(prepared_context, *positional_args, **the_kwargs)
             return result
         finally:
             # Restore the context after execution
             self.restore_context(prepared_context, actual_context)
 
-    def prepare_context(self, context: SandboxContext, args: List[Any], kwargs: Dict[str, Any]) -> SandboxContext:
+    def prepare_context(self, context: SandboxContext, args: list[Any], kwargs: dict[str, Any]) -> SandboxContext:
         """
         Prepare the context for function execution.
         Default implementation just returns a copy of the context.
@@ -137,7 +122,7 @@ class SandboxFunction(ABC):
         """
         pass
 
-    def inject_context(self, context: SandboxContext, kwargs: Dict[str, Any]) -> Dict[str, Any]:
+    def inject_context(self, context: SandboxContext, kwargs: dict[str, Any]) -> dict[str, Any]:
         """
         Handle context injection for functions that want it.
         Default implementation does nothing.

@@ -1,0 +1,77 @@
+"""
+OpenDXA Dana Module System - Core
+
+This module provides the core functionality for Dana's module system.
+
+Copyright © 2025 Aitomatic, Inc.
+MIT License
+"""
+
+import sys
+from pathlib import Path
+from typing import List, Optional
+
+from .errors import ModuleError
+from .loader import ModuleLoader
+from .registry import ModuleRegistry
+from .types import Module, ModuleSpec, ModuleType
+
+_module_registry: ModuleRegistry | None = None
+_module_loader: ModuleLoader | None = None
+
+
+def initialize_module_system(search_paths: list[str] | None = None) -> None:
+    """Initialize the Dana module system.
+
+    Args:
+        search_paths: Optional list of paths to search for modules. If not provided,
+                     defaults to current directory and DANA_PATH environment variable.
+    """
+    global _module_registry, _module_loader
+
+    # Set up default search paths
+    if search_paths is None:
+        search_paths = [
+            str(Path.cwd()),  # Current directory
+            str(Path.cwd() / "dana"),  # ./dana directory
+        ]
+
+        # Add paths from DANA_PATH environment variable
+        import os
+
+        if "DANA_PATH" in os.environ:
+            search_paths.extend(os.environ["DANA_PATH"].split(os.pathsep))
+
+    # Create registry and loader
+    _module_registry = ModuleRegistry()
+    _module_loader = ModuleLoader(search_paths, _module_registry)
+
+    # Install import hook
+    sys.meta_path.insert(0, _module_loader)
+
+
+def get_module_registry() -> ModuleRegistry:
+    """Get the global module registry instance."""
+    if _module_registry is None:
+        raise ModuleError("Module system not initialized. Call initialize_module_system() first.")
+    return _module_registry
+
+
+def get_module_loader() -> ModuleLoader:
+    """Get the global module loader instance."""
+    if _module_loader is None:
+        raise ModuleError("Module system not initialized. Call initialize_module_system() first.")
+    return _module_loader
+
+
+__all__ = [
+    # Core types
+    "Module",
+    "ModuleSpec",
+    "ModuleType",
+    "ModuleError",
+    # Core functions
+    "initialize_module_system",
+    "get_module_registry",
+    "get_module_loader",
+]

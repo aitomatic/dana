@@ -17,7 +17,7 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from typing import Any, Optional
+from typing import Any
 
 from opendxa.dana.common.exceptions import SandboxError
 from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
@@ -25,6 +25,7 @@ from opendxa.dana.sandbox.interpreter.functions.function_registry import Functio
 from opendxa.dana.sandbox.parser.ast import (
     AssertStatement,
     Assignment,
+    ExportStatement,
     ImportStatement,
     PassStatement,
     RaiseStatement,
@@ -44,7 +45,7 @@ class StatementExecutor(BaseExecutor):
     - Import statements
     """
 
-    def __init__(self, parent_executor: BaseExecutor, function_registry: Optional[FunctionRegistry] = None):
+    def __init__(self, parent_executor: BaseExecutor, function_registry: FunctionRegistry | None = None):
         """Initialize the statement executor.
 
         Args:
@@ -63,6 +64,7 @@ class StatementExecutor(BaseExecutor):
             PassStatement: self.execute_pass_statement,
             RaiseStatement: self.execute_raise_statement,
             UseStatement: self.execute_use_statement,
+            ExportStatement: self.execute_export_statement,
         }
 
     def execute_assignment(self, node: Assignment, context: SandboxContext) -> Any:
@@ -233,7 +235,6 @@ class StatementExecutor(BaseExecutor):
             target_name = target.split(".")[-1]
             kwargs["_name"] = target_name
 
-
         if self.function_registry is not None:
             result = self.function_registry.call("use", context, None, *args, **kwargs)
         else:
@@ -241,3 +242,31 @@ class StatementExecutor(BaseExecutor):
             result = None
 
         return result
+
+    def execute_export_statement(self, node: ExportStatement, context: SandboxContext) -> None:
+        """Execute an export statement.
+
+        Args:
+            node: The export statement node
+            context: The execution context
+
+        Returns:
+            None
+        """
+        # Get the name to export
+        name = node.name
+
+        # Get the value from the local scope
+        try:
+            value = context.get_from_scope(name, scope="local")
+        except Exception:
+            # If the value doesn't exist yet, that's okay - it might be defined later
+            pass
+
+        # Add to exports
+        if not hasattr(context, "_exports"):
+            context._exports = set()
+        context._exports.add(name)
+
+        # Return None since export statements don't produce a value
+        return None
