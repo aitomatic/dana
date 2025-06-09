@@ -1,0 +1,19 @@
+{
+  "name": "function_executor_phase2_resolver_1749484082",
+  "context": {
+    "name": "function_executor_phase2_resolver",
+    "description": "Extract ResolvedFunction and FunctionResolver to separate module",
+    "target_files": [
+      "opendxa/dana/sandbox/interpreter/executor/function_executor.py",
+      "opendxa/dana/sandbox/interpreter/executor/function_resolver.py"
+    ],
+    "test_modules": [
+      "tests/dana/sandbox/interpreter/"
+    ],
+    "backup_files": []
+  },
+  "files": [
+    "opendxa/dana/sandbox/interpreter/executor/function_executor.py"
+  ],
+  "timestamp": 1749484082
+}

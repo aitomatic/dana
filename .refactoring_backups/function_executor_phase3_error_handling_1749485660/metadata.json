@@ -1,0 +1,19 @@
+{
+  "name": "function_executor_phase3_error_handling_1749485660",
+  "context": {
+    "name": "function_executor_phase3_error_handling",
+    "description": "Extract FunctionExecutionErrorHandler and PositionalErrorRecoveryStrategy to separate module",
+    "target_files": [
+      "opendxa/dana/sandbox/interpreter/executor/function_executor.py",
+      "opendxa/dana/sandbox/interpreter/executor/function_error_handling.py"
+    ],
+    "test_modules": [
+      "tests/dana/sandbox/interpreter/"
+    ],
+    "backup_files": []
+  },
+  "files": [
+    "opendxa/dana/sandbox/interpreter/executor/function_executor.py"
+  ],
+  "timestamp": 1749485660
+}

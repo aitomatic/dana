@@ -57,6 +57,9 @@ from opendxa.dana.sandbox.parser.ast import (
     WithStatement,
 )
 from opendxa.dana.sandbox.parser.transformer.base_transformer import BaseTransformer
+from opendxa.dana.sandbox.parser.transformer.statement.statement_helpers import (
+    AssignmentHelper, ControlFlowHelper, SimpleStatementHelper, ImportHelper, ContextHelper
+)
 from opendxa.dana.sandbox.parser.transformer.expression_transformer import ExpressionTransformer
 from opendxa.dana.sandbox.parser.transformer.variable_transformer import VariableTransformer
 from opendxa.dana.sandbox.parser.utils.tree_utils import TreeTraverser
@@ -448,43 +451,27 @@ class StatementTransformer(BaseTransformer):
 
     def return_stmt(self, items):
         """Transform a return statement rule into a ReturnStatement node."""
-        value = self.expression_transformer.expression(items) if items else None
-        if isinstance(value, tuple):
-            raise TypeError(f"Return value cannot be a tuple: {value}")
-        return ReturnStatement(value=value)
+        return SimpleStatementHelper.create_return_statement(items, self.expression_transformer)
 
     def break_stmt(self, items):
         """Transform a break statement rule into a BreakStatement node."""
-        return BreakStatement()
+        return SimpleStatementHelper.create_break_statement()
 
     def continue_stmt(self, items):
         """Transform a continue statement rule into a ContinueStatement node."""
-        return ContinueStatement()
+        return SimpleStatementHelper.create_continue_statement()
 
     def pass_stmt(self, items):
         """Transform a pass statement rule into a PassStatement node."""
-        return PassStatement()
+        return SimpleStatementHelper.create_pass_statement()
 
     def raise_stmt(self, items):
         """Transform a raise statement rule into a RaiseStatement node."""
-        value = self.expression_transformer.expression([items[0]]) if items else None
-        from_value = self.expression_transformer.expression([items[1]]) if len(items) > 1 else None
-        if isinstance(value, tuple) or isinstance(from_value, tuple):
-            raise TypeError(f"Raise statement values cannot be tuples: {value}, {from_value}")
-        return RaiseStatement(value=value, from_value=from_value)
+        return SimpleStatementHelper.create_raise_statement(items, self.expression_transformer)
 
     def assert_stmt(self, items):
         """Transform an assert statement rule into an AssertStatement node."""
-        from opendxa.dana.sandbox.parser.ast import Expression
-
-        condition = self.expression_transformer.expression([items[0]])
-        message = self.expression_transformer.expression([items[1]]) if len(items) > 1 else None
-        if isinstance(condition, tuple) or isinstance(message, tuple):
-            raise TypeError(f"Assert statement values cannot be tuples: {condition}, {message}")
-        # Ensure condition and message are Expression or None
-        condition_expr = cast(Expression, condition)
-        message_expr = cast(Expression, message) if message is not None else None
-        return AssertStatement(condition=condition_expr, message=message_expr)
+        return SimpleStatementHelper.create_assert_statement(items, self.expression_transformer)
 
     def use_stmt(self, items):
         """Transform a use_stmt rule into a UseStatement node.
@@ -828,32 +815,19 @@ class StatementTransformer(BaseTransformer):
     # === Type Hint Support ===
     def basic_type(self, items):
         """Transform a basic_type rule into a TypeHint node."""
-        if not items:
-            raise ValueError("basic_type rule received empty items list")
-
-        type_name = items[0].value if hasattr(items[0], "value") else str(items[0])
-        return TypeHint(name=type_name)
+        return AssignmentHelper.create_type_hint(items)
 
     def typed_assignment(self, items):
         """Transform a typed assignment rule into an Assignment node with type hint."""
-
         # Grammar: typed_assignment: variable ":" basic_type "=" expr
         target_tree = items[0]
         type_hint = items[1]  # Should be a TypeHint from basic_type
         value_tree = items[2]
 
-        # Get target identifier
-        target = VariableTransformer().variable([target_tree])
-        if not isinstance(target, Identifier):
-            raise TypeError(f"Assignment target must be Identifier, got {type(target)}")
-
-        # Transform value
-        value = self.expression_transformer.expression([value_tree])
-        if isinstance(value, tuple):
-            raise TypeError(f"Assignment value cannot be a tuple: {value}")
-        value_expr = cast(AllowedAssignmentValue, value)
-
-        return Assignment(target=target, value=value_expr, type_hint=type_hint)
+        return AssignmentHelper.create_assignment(
+            target_tree, value_tree, type_hint, 
+            self.expression_transformer, VariableTransformer()
+        )
 
     def simple_assignment(self, items):
         """Transform a simple assignment rule into an Assignment node without type hint."""
@@ -861,18 +835,10 @@ class StatementTransformer(BaseTransformer):
         target_tree = items[0]
         value_tree = items[1]
 
-        # Get target identifier
-        target = VariableTransformer().variable([target_tree])
-        if not isinstance(target, Identifier):
-            raise TypeError(f"Assignment target must be Identifier, got {type(target)}")
-
-        # Transform value
-        value = self.expression_transformer.expression([value_tree])
-        if isinstance(value, tuple):
-            raise TypeError(f"Assignment value cannot be a tuple: {value}")
-        value_expr = cast(AllowedAssignmentValue, value)
-
-        return Assignment(target=target, value=value_expr)
+        return AssignmentHelper.create_assignment(
+            target_tree, value_tree, None,
+            self.expression_transformer, VariableTransformer()
+        )
 
     def function_call_assignment(self, items):
         """Transform a function_call_assignment rule into an Assignment node with object-returning statement."""
