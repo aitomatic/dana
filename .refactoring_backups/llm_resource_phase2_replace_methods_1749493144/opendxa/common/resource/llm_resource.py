@@ -213,21 +213,16 @@ class LLMResource(BaseResource):
     @property
     def model(self) -> Optional[str]:
         """The currently selected LLM model name."""
-        return self._config_manager.selected_model
+        return self._model
 
     @model.setter
     def model(self, value: str) -> None:
         """Sets the LLM model, validating its availability."""
-        try:
-            self._config_manager.selected_model = value
-            self._model = value  # Keep backward compatibility
-            self.config["model"] = value  # Keep config in sync
-            self.log_info(f"LLM model set to: {self._model}")
-        except Exception as e:
-            self.log_warning(f"Setting model to '{value}', but validation failed: {e}")
-            # Still set it for backward compatibility
-            self._model = value
-            self.config["model"] = value
+        if not self._validate_model(value):
+            self.log_warning(f"Setting model to '{value}', but it seems unavailable (missing API keys?).")
+        self._model = value
+        self.config["model"] = value  # Keep config in sync
+        self.log_info(f"LLM model set to: {self._model}")
 
     def query_sync(self, request: BaseRequest) -> BaseResponse:
         """Query the LLM synchronously.
@@ -760,7 +755,25 @@ class LLMResource(BaseResource):
         Returns:
             True if all required keys are found in environment variables, False otherwise.
         """
-        return self._config_manager._validate_model(model_name)
+        required_keys = []
+        for m in self.preferred_models:
+            if m.get("name") == model_name:
+                required_keys = m.get("required_api_keys", [])
+                break
+
+        if not required_keys:
+            # If model not in preferred_models list or has no keys listed, assume available
+            # Or should we be stricter? For now, allows models not explicitly listed.
+            self.log_debug(f"No API keys specified for model '{model_name}'. Assuming available.")
+            return True
+
+        missing_keys = [key for key in required_keys if not os.getenv(key)]
+        if missing_keys:
+            self.log_debug(f"Model '{model_name}' is missing required API keys: {missing_keys}")
+            return False
+
+        self.log_debug(f"All required API keys for model '{model_name}' are available.")
+        return True
 
     def _find_first_available_model(self) -> Optional[str]:
         """Finds the first available model from the preferred_models list.
@@ -771,7 +784,19 @@ class LLMResource(BaseResource):
         Returns:
             The name of the first available model, or None if none are available.
         """
-        return self._config_manager._find_first_available_model()
+        self.log_debug(f"Searching for available model in preferred list: {self.preferred_models}")
+        for model_config in self.preferred_models:
+            model_name = model_config.get("name")
+            if not model_name:
+                self.log_warning("Skipping entry in preferred_models with missing 'name'.")
+                continue
+
+            if self._validate_model(model_name):
+                self.log_debug(f"Found available model: {model_name}")
+                return model_name
+
+        self.log_warning("No available models found in the preferred_models list.")
+        return None
 
     def get_available_models(self) -> List[str]:
         """Gets a list of models from preferred_models that are currently available.
@@ -781,6 +806,10 @@ class LLMResource(BaseResource):
         Returns:
             A list of available model names.
         """
-        available = self._config_manager.get_available_models()
+        available = []
+        for model_config in self.preferred_models:
+            model_name = model_config.get("name")
+            if model_name and self._validate_model(model_name):
+                available.append(model_name)
         self.log_debug(f"Available models based on API keys: {available}")
         return available
