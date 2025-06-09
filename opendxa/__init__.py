@@ -33,7 +33,7 @@ from opendxa.agent import (
     MemoryCapability,
     ResourceFactory,
 )
-from opendxa.common import (
+from common.resource import (
     DXA_LOGGER,
     AgentError,
     # Capability
