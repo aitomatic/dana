@@ -1,6 +1,6 @@
 # OpenDXA - Domain-Expert Agent Framework
 
-Cursor AI Configuration and Guidelines
+Claude AI Configuration and Guidelines
 
 ## Quick Reference - Critical Rules
 🚨 **MUST FOLLOW IMMEDIATELY**
@@ -21,6 +21,9 @@ uv run python -m opendxa.dana.exec.repl        # Dana REPL for testing
 
 # Dana execution testing
 uv run python -m opendxa.dana.exec.dana examples/dana/na/basic_math_pipeline.na
+
+# Alternative test execution
+uv run python -m pytest tests/
 ```
 
 ## Project Context
@@ -29,8 +32,6 @@ uv run python -m opendxa.dana.exec.dana examples/dana/na/basic_math_pipeline.na
 - Core components: OpenDXA Framework, Dana Language, DANKE Engine
 - Primary language: Python 3.12+
 - Uses uv for dependency management
-@file pyproject.toml
-@file .python-version
 
 ## File Modification Priority
 1. **NEVER modify core grammar files without extensive testing**
@@ -424,15 +425,7 @@ def process_data(items: List[str], config: Optional[Dict[str, int]] = None) -> U
 - Line length limit: 140 characters (configured in pyproject.toml)
 - Auto-fix with: `uv run ruff check --fix .`
 
-## Best Practices and Patterns
-- Use dataclasses or Pydantic models for data structures
-- Prefer composition over inheritance
-- Use async/await for I/O operations
-- Follow SOLID principles
-- Use dependency injection where appropriate
-- Implement proper error handling with custom exceptions
-
-### Error Handling Standards
+## Error Handling Standards
 ```
 Every error message must follow this template:
 "[What failed]: [Why it failed]. [What user can do]. [Available alternatives]"
@@ -448,14 +441,6 @@ Requirements:
 - Provide actionable suggestions for resolution
 - Test error paths as thoroughly as success paths
 ```
-
-### Diagnostic Verification
-- For complex issues, verify diagnoses before making code changes
-- Add logging statements to confirm assumptions
-- Write temporary test cases to validate behavior
-- Run relevant test suites to ensure no regressions
-- Use debugger breakpoints when needed
-- Document verification steps taken
 
 ## Temporary Files & Project Structure
 - **ALL temporary files go in `tmp/` directory**
@@ -523,4 +508,4 @@ Requirements:
 @file .gitignore
 @file pyproject.toml
 @file Makefile
-@file README.md 
+@file README.md
