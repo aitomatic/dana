@@ -368,12 +368,25 @@ class LLMConfigurationManager:
         # For now, just test that the file is created and can be imported
         print("✅ Phase 1 structure ready - will implement integration in next step")
         
-        # Validate that we haven't broken anything yet
-        if framework.validate_refactoring(context, baseline):
-            print(f"✅ Phase 1 setup completed successfully")
+        # For Phase 1, we're just creating a new file without modifying existing code
+        # Let's validate by running the specific tests manually
+        print("🧪 Validating that existing LLM tests still pass...")
+        
+        import subprocess
+        result = subprocess.run(
+            ["python", "-m", "pytest", "tests/common/resource/test_llm_resource.py", "-v"],
+            capture_output=True,
+            text=True,
+            cwd=project_root
+        )
+        
+        if result.returncode == 0:
+            print(f"✅ LLM tests still passing - Phase 1 setup completed successfully")
             return True
         else:
-            print(f"❌ Phase 1 validation failed, restoring backup...")
+            print(f"❌ LLM tests failed after Phase 1:")
+            print(result.stdout)
+            print(result.stderr)
             framework.restore_backup(backup_name)
             return False
             
