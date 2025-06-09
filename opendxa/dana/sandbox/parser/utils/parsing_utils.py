@@ -8,8 +8,7 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from typing import Any, Dict, Optional
-from weakref import WeakValueDictionary
+from typing import Any
 
 from lark import Token
 
@@ -18,26 +17,27 @@ from opendxa.dana.sandbox.parser.ast import LiteralExpression
 
 class ParserCache:
     """Thread-safe cache for parser instances to avoid creating multiple parsers."""
-    
-    _instances: Dict[str, Any] = WeakValueDictionary()
-    
+
+    _instances: dict[str, Any] = {}
+
     @classmethod
     def get_parser(cls, parser_type: str = "dana") -> Any:
         """Get a cached parser instance or create a new one.
-        
+
         Args:
             parser_type: Type of parser to get (default: "dana")
-            
+
         Returns:
             Parser instance
         """
         if parser_type not in cls._instances:
             # Import here to avoid circular dependencies
             from opendxa.dana.sandbox.parser.dana_parser import DanaParser
+
             cls._instances[parser_type] = DanaParser()
-        
+
         return cls._instances[parser_type]
-    
+
     @classmethod
     def clear_cache(cls):
         """Clear the parser cache."""
@@ -46,10 +46,10 @@ class ParserCache:
 
 def parse_literal(text: Any) -> LiteralExpression:
     """Parse a simple literal value from text or Token.
-    
+
     Args:
         text: Text or Token to parse
-        
+
     Returns:
         LiteralExpression containing the parsed value
     """
@@ -87,10 +87,10 @@ def parse_literal(text: Any) -> LiteralExpression:
 
 def create_literal(token: Token) -> LiteralExpression:
     """Create a LiteralExpression node from a token.
-    
+
     Args:
         token: Token to convert to literal
-        
+
     Returns:
         LiteralExpression containing the token value
     """
@@ -117,33 +117,33 @@ def create_literal(token: Token) -> LiteralExpression:
     return LiteralExpression(value=value)
 
 
-def parse_expression_in_fstring(expr_text: str) -> Optional[Any]:
+def parse_expression_in_fstring(expr_text: str) -> Any | None:
     """Parse an expression within an f-string using a cached parser.
-    
+
     This function is extracted to avoid circular dependencies between
     FStringTransformer and DanaParser.
-    
+
     Args:
         expr_text: Expression text to parse
-        
+
     Returns:
         Parsed AST node or None if parsing fails
     """
     try:
         from lark import UnexpectedInput, UnexpectedToken
-        
+
         # Get cached parser instance
         parser = ParserCache.get_parser("dana")
-        
+
         # Create a temporary expression wrapper for the parser
         # We need to make this a valid complete expression and add a newline
         wrapped_expr = f"{expr_text}\n"
-        
+
         # Parse the expression directly
         try:
             # Try to parse as a complete expression
             parse_tree = parser.parse(wrapped_expr, do_transform=True)
-            
+
             # Extract the resulting expression from the parsed program
             if hasattr(parse_tree, "statements") and parse_tree.statements:
                 # If the parser returns a Program, extract the expression
@@ -153,14 +153,14 @@ def parse_expression_in_fstring(expr_text: str) -> Optional[Any]:
                     if hasattr(stmt, "value"):
                         return stmt.value
                     return stmt
-            
+
             # Fallback to None if extraction fails
             return None
-            
+
         except (UnexpectedInput, UnexpectedToken):
             # Return None for parsing errors
             return None
-            
+
     except Exception:
         # Return None for any other errors
         return None
