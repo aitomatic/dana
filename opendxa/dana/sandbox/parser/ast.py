@@ -49,6 +49,7 @@ Expression = Union[
     "ListLiteral",
     "SetLiteral",
     "TupleLiteral",
+    "UseStatement",
 ]
 
 # A Statement is any node that primarily performs an action, but still produces a value.

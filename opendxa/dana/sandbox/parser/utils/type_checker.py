@@ -17,7 +17,7 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from opendxa.dana.common.exceptions import TypeError
 from opendxa.dana.sandbox.parser.ast import (
@@ -49,7 +49,9 @@ from opendxa.dana.sandbox.parser.ast import (
     SubscriptExpression,
     TryBlock,
     TupleLiteral,
+    TypeHint,
     UnaryExpression,
+    UseStatement,
     WhileLoop,
 )
 
@@ -93,10 +95,10 @@ class TypeEnvironment:
     """Environment for type checking."""
 
     def __init__(self, parent: Optional["TypeEnvironment"] = None):
-        self.types: Dict[str, DanaType] = {}
+        self.types: dict[str, DanaType] = {}
         self.parent = parent
 
-    def get(self, name: str) -> Optional[DanaType]:
+    def get(self, name: str) -> DanaType | None:
         """Get a type from the environment."""
         if name in self.types:
             return self.types[name]
@@ -341,6 +343,8 @@ class TypeChecker:
             return self.check_tuple_literal(expression)
         elif isinstance(expression, ListLiteral):
             return self.check_list_literal(expression)
+        elif isinstance(expression, UseStatement):
+            return self.check_use_statement(expression)
         else:
             raise TypeError(f"Unsupported expression type: {type(expression).__name__}", expression)
 
@@ -526,6 +530,16 @@ class TypeChecker:
         if node.value is not None:
             # For now, any return type is allowed
             self.check_expression(node.value)
+
+    def check_use_statement(self, node: UseStatement) -> DanaType:
+        """Check a use statement for type errors."""
+        # Check arguments
+        for arg in node.args:
+            self.check_expression(arg)
+        for kwarg_value in node.kwargs.values():
+            self.check_expression(kwarg_value)
+        # Use statements return dynamic objects, so return 'any' type
+        return DanaType("any")
 
     @staticmethod
     def check_types(program: Program) -> None:

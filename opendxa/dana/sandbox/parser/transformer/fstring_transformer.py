@@ -143,46 +143,16 @@ class FStringTransformer(BaseTransformer):
             # If it's not a literal, continue with other parsing methods
             pass
 
-        # Handle complex expressions with parentheses by using the main parser
+        # Handle complex expressions with parentheses by using the shared parser utility
         if "(" in expr_text or ")" in expr_text:
-            try:
-                # Import here to avoid circular imports
-                from lark import UnexpectedInput, UnexpectedToken
-
-                from opendxa.dana.sandbox.parser.dana_parser import DanaParser
-
-                # Create a temporary expression wrapper for the parser
-                # We need to make this a valid complete expression and add a newline
-                wrapped_expr = f"{expr_text}\n"
-
-                # Create a parser instance just for this expression
-                parser = DanaParser()
-
-                # Parse the expression directly
-                try:
-                    # Try to parse as a complete expression
-                    parse_tree = parser.parse(wrapped_expr, do_transform=True)
-
-                    # Extract the resulting expression from the parsed program
-                    if hasattr(parse_tree, "statements") and parse_tree.statements:
-                        # If the parser returns a Program, extract the expression
-                        if len(parse_tree.statements) == 1:
-                            stmt = parse_tree.statements[0]
-                            # If it's a FunctionCall or an Identifier, return it directly
-                            if hasattr(stmt, "value"):
-                                return stmt.value
-                            return stmt
-
-                    # Fallback to direct approach if extraction fails
-                    self.debug("Failed to extract expression from parser result")
-
-                except (UnexpectedInput, UnexpectedToken) as e:
-                    self.debug(f"Parser error on complex expression: {e}")
-                    # Continue to other parsing methods
-
-            except Exception as e:
-                self.debug(f"Error using main parser for complex expression: {e}")
-                # Fall through to other parsing methods
+            from opendxa.dana.sandbox.parser.utils.parsing_utils import parse_expression_in_fstring
+            
+            result = parse_expression_in_fstring(expr_text)
+            if result is not None:
+                return result
+            
+            # If parsing failed, continue to other parsing methods
+            self.debug("Failed to parse complex expression using shared parser utility")
 
         # Handle comparison operators (<, >, <=, >=, ==, !=)
         for op_str in [">", "<", ">=", "<=", "==", "!="]:

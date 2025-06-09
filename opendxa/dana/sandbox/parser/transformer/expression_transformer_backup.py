@@ -41,9 +41,6 @@ from opendxa.dana.sandbox.parser.ast import (
     UnaryExpression,
 )
 from opendxa.dana.sandbox.parser.transformer.base_transformer import BaseTransformer
-from opendxa.dana.sandbox.parser.transformer.expression.expression_helpers import (
-    OperatorHelper, LiteralHelper, CallHelper
-)
 
 ValidExprType = Union[LiteralExpression, Identifier, BinaryExpression, FunctionCall]
 
@@ -151,8 +148,26 @@ class ExpressionTransformer(BaseTransformer):
         raise TypeError(f"Cannot transform expression: {item} ({type(item)})")
 
     def _extract_operator_string(self, op_token):
-        """Extract operator string from a token or tree."""
-        return OperatorHelper.extract_operator_string(op_token)
+        """
+        Extract the operator string from a parse tree node, token, or string.
+        Handles comp_op, *_op, ADD_OP, MUL_OP, direct tokens, and plain strings.
+        Also handles BinaryOperator enum values.
+        """
+        from lark import Token, Tree
+
+        if isinstance(op_token, Token):
+            return op_token.value
+        if isinstance(op_token, str):
+            return op_token
+        if isinstance(op_token, BinaryOperator):
+            return op_token.value  # Return the value of the enum
+        if isinstance(op_token, Tree):
+            if getattr(op_token, "data", None) == "comp_op":
+                op_str = " ".join(child.value for child in op_token.children if isinstance(child, Token))
+                return op_str
+            elif op_token.children and isinstance(op_token.children[0], Token):
+                return op_token.children[0].value
+        raise ValueError(f"Cannot extract operator string from: {op_token}")
 
     def _op_tree_to_str(self, tree):
         # For ADD_OP and MUL_OP, the child is the actual operator token
@@ -171,7 +186,23 @@ class ExpressionTransformer(BaseTransformer):
         Iterates over items, applying the operator from operator_getter to each pair.
         Used by or_expr, and_expr, comparison, sum_expr, and term.
         """
-        return OperatorHelper.left_associative_binop(items, operator_getter)
+        if not items:
+            raise ValueError("No items for binary operation")
+        result = items[0]
+        i = 1
+        while i < len(items):
+            op_token = items[i]
+            from lark import Tree
+
+            if isinstance(op_token, Tree) and hasattr(op_token, "data") and op_token.data.endswith("_op") and not op_token.children:
+                raise ValueError(f"Malformed parse tree: operator node '{op_token.data}' has no children at index {i} in items: {items}")
+            op_str = self._extract_operator_string(op_token)
+            op = operator_getter(op_str)
+            right = items[i + 1]
+            left = result
+            result = BinaryExpression(left, op, right)
+            i += 2
+        return result
 
     def _get_binary_operator(self, op_str):
         """

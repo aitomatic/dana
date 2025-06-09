@@ -9,7 +9,8 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from typing import Any, Dict, List, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 from opendxa.dana.sandbox.parser.ast import (
     Assignment,
@@ -18,6 +19,7 @@ from opendxa.dana.sandbox.parser.ast import (
     FunctionDefinition,
     Identifier,
     LiteralExpression,
+    Parameter,
     Program,
     ReturnStatement,
     Statement,
@@ -25,7 +27,7 @@ from opendxa.dana.sandbox.parser.ast import (
 )
 
 
-def _create_function_call(name: str, args: Dict[str, Any]) -> FunctionCall:
+def _create_function_call(name: str, args: dict[str, Any]) -> FunctionCall:
     """Create a function call node."""
     return FunctionCall(name=name, args=args, location=None)
 
@@ -35,12 +37,12 @@ def _create_assignment(name: str, value: Any) -> Assignment:
     return Assignment(target=Identifier(name=name), value=value, location=None)
 
 
-def _create_function_def(name: str, params: List[str], body: Sequence[Statement]) -> FunctionDefinition:
+def _create_function_def(name: str, params: list[str], body: Sequence[Statement]) -> FunctionDefinition:
     """Create a function definition node."""
-    return FunctionDefinition(name=Identifier(name=name), parameters=[Identifier(name=p) for p in params], body=list(body), location=None)
+    return FunctionDefinition(name=Identifier(name=name), parameters=[Parameter(name=p) for p in params], body=list(body), location=None)
 
 
-def _parse_dana_logger(statements: List[Statement]) -> None:
+def _parse_dana_logger(statements: list[Statement]) -> None:
     """Parse the dana_logger function from test_mixed_dana_and_python_functions."""
     body = [
         _create_assignment("result", _create_function_call("python_logger", {"message": Identifier(name="message")})),
@@ -50,7 +52,7 @@ def _parse_dana_logger(statements: List[Statement]) -> None:
     statements.append(func_def)
 
 
-def _parse_format_and_log(statements: List[Statement]) -> None:
+def _parse_format_and_log(statements: list[Statement]) -> None:
     """Parse the format_and_log function from test_mixed_dana_and_python_functions."""
     body = [
         _create_assignment("formatter", _create_function_call("create_formatter", {"format_type": Identifier(name="format_type")})),
@@ -63,10 +65,10 @@ def _parse_format_and_log(statements: List[Statement]) -> None:
 
 def _create_try_except_block() -> TryBlock:
     """Create a try/except block for the error handling test."""
-    try_body: List[Statement] = [
+    try_body: list[Statement] = [
         _create_assignment("result2", _create_function_call("divide", {"a": LiteralExpression(value=5), "b": LiteralExpression(value=0)}))
     ]
-    except_body: List[Statement] = [_create_assignment("result2", LiteralExpression(value="Error caught"))]
+    except_body: list[Statement] = [_create_assignment("result2", LiteralExpression(value="Error caught"))]
     except_block = ExceptBlock(body=except_body, location=None)
     return TryBlock(body=try_body, except_blocks=[except_block], location=None)
 
@@ -85,7 +87,7 @@ def parse_program(text: str, do_type_check: bool = False) -> Program:
     Returns:
         Program AST node
     """
-    statements: List[Statement] = []
+    statements: list[Statement] = []
 
     # Check which test case we're dealing with based on content
     if "dana_logger" in text and "format_and_log" in text:
