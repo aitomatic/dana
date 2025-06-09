@@ -68,6 +68,8 @@ nav:
         - Type System: for-engineers/reference/api/type-system.md
         - Scoping: for-engineers/reference/api/scoping.md
         - Sandbox Security: for-engineers/reference/api/sandbox-security.md
+        - Dana Sandbox: for-engineers/reference/api/dana-sandbox.md
+        - OpenDXA Common: for-engineers/reference/api/opendxa-common.md
     - Recipes:
       - Overview: for-engineers/recipes/README.md
       - First Agent: for-engineers/recipes/first-agent.md
@@ -127,6 +129,7 @@ nav:
       - Functions and Polymorphism: design/01_dana_language_specification/functions_and_polymorphism.md
       - State and Scopes: design/01_dana_language_specification/state_and_scopes.md
       - Modules and Imports: design/01_dana_language_specification/modules_and_imports.md
+      - Magic Functions: design/01_dana_language_specification/magic_functions.md
       - Error Handling: design/01_dana_language_specification/error_handling.md
     - Dana Runtime and Execution:
       - Execution Model: design/02_dana_runtime_and_execution/execution_model.md
@@ -134,12 +137,14 @@ nav:
       - Sandbox: design/02_dana_runtime_and_execution/sandbox.md
       - REPL: design/02_dana_runtime_and_execution/repl.md
       - Code Context Analyzer: design/02_dana_runtime_and_execution/code_context_analyzer.md
-      - POV Execution Model: design/02_dana_runtime_and_execution/pov_execution_model.md
+      - POET Execution Model: design/02_dana_runtime_and_execution/poet_execution_model.md
       - Type System and Casting: design/02_dana_runtime_and_execution/type_system_and_casting.md
       - Concurrency Model: design/02_dana_runtime_and_execution/concurrency_model.md
       - External Interfaces: design/02_dana_runtime_and_execution/external_interfaces.md
-      - Dana to Python: design/02_dana_runtime_and_execution/dana-to-python.md
-      - Python to Dana: design/02_dana_runtime_and_execution/python-to-dana.md
+      - Python Integration:
+        - Overview: design/02_dana_runtime_and_execution/python_integration.md
+        - Dana to Python: design/02_dana_runtime_and_execution/dana-to-python.md
+        - Python to Dana: design/02_dana_runtime_and_execution/python-to-dana.md
       - Security Considerations: design/02_dana_runtime_and_execution/security_considerations.md
       - Debugging and Profiling: design/02_dana_runtime_and_execution/debugging_profiling.md
     - Core Capabilities and Resources:
@@ -148,6 +153,7 @@ nav:
       - Resource Model: design/03_core_capabilities_resources/resource_model.md
       - System Resources: design/03_core_capabilities_resources/system_resources.md
       - User-defined Resources: design/03_core_capabilities_resources/user_defined_resources.md
+      - Use Statement: design/03_core_capabilities_resources/use_statement.md
       - Capability Invocation: design/03_core_capabilities_resources/capability_invocation.md
     - Agent and Orchestration:
       - Overview: design/04_agent_and_orchestration/README.md

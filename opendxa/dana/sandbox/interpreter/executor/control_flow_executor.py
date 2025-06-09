@@ -17,7 +17,7 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from typing import Any, List, Optional
+from typing import Any
 
 from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
 from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
@@ -68,7 +68,7 @@ class ControlFlowExecutor(BaseExecutor):
     - Flow control (break/continue/return)
     """
 
-    def __init__(self, parent_executor: BaseExecutor, function_registry: Optional[FunctionRegistry] = None):
+    def __init__(self, parent_executor: BaseExecutor, function_registry: FunctionRegistry | None = None):
         """Initialize the control flow executor.
 
         Args:
@@ -217,14 +217,14 @@ class ControlFlowExecutor(BaseExecutor):
         """
         # Check for variable name shadowing before executing
         self._check_with_variable_shadowing(node, context)
-        
+
         # Check if we have a function call or direct context manager object
         if isinstance(node.context_manager, str):
             # Function call pattern: with mcp(*args, **kwargs) as var:
             function_registry = self.function_registry
             if not function_registry:
                 raise RuntimeError("No function registry available for with statement")
-                
+
             context_manager_name = node.context_manager
 
             # Prepare arguments for the context manager
@@ -244,24 +244,49 @@ class ControlFlowExecutor(BaseExecutor):
             context_manager = function_registry.call(context_manager_name, context, None, *args, **kwargs)
         else:
             # Direct context manager pattern: with mcp_object as var:
-            context_manager = self.parent.execute(node.context_manager, context)
+            # Get the context manager from the context using the full scoped name
+            if hasattr(node.context_manager, "name"):
+                # Handle scoped variables (e.g., private:mcp_client)
+                if ":" in node.context_manager.name:
+                    scope, var_name = node.context_manager.name.split(":", 1)
+                    context_manager = context.get_from_scope(var_name, scope=scope)
+                elif "." in node.context_manager.name:
+                    scope, var_name = node.context_manager.name.split(".", 1)
+                    context_manager = context.get_from_scope(var_name, scope=scope)
+                else:
+                    context_manager = context.get_from_scope(node.context_manager.name, scope="local")
+            else:
+                context_manager = self.parent.execute(node.context_manager, context)
 
         # Check if the context manager has __enter__ and __exit__ methods
-        if not (hasattr(context_manager, '__enter__') and hasattr(context_manager, '__exit__')):
+        if not (hasattr(context_manager, "__enter__") and hasattr(context_manager, "__exit__")):
             context_manager_desc = node.context_manager if isinstance(node.context_manager, str) else str(node.context_manager)
-            raise TypeError(f"'{context_manager_desc}' does not return a context manager (missing __enter__ or __exit__)")
+            raise TypeError(f"Object '{context_manager_desc}' does not return a context manager (missing __enter__ or __exit__ methods)")
 
         # Execute the with statement using the context manager protocol
         try:
             # Enter the context
             context_value = context_manager.__enter__()
-            
-            # Bind the context value to the 'as' variable
-            context.set(node.as_var, context_value)
-            
+
+            # Bind the context value to the 'as' variable in the appropriate scope
+            # If the context manager was accessed with a scope (e.g., private:mcp_client),
+            # use the same scope for the 'as' variable
+            if hasattr(node.context_manager, "name"):
+                if ":" in node.context_manager.name:
+                    scope, _ = node.context_manager.name.split(":", 1)
+                    context.set_in_scope(node.as_var, context_value, scope=scope)
+                elif "." in node.context_manager.name:
+                    scope, _ = node.context_manager.name.split(".", 1)
+                    context.set_in_scope(node.as_var, context_value, scope=scope)
+                else:
+                    context.set_in_scope(node.as_var, context_value, scope="local")
+            else:
+                # Default to local scope if no scope specified
+                context.set_in_scope(node.as_var, context_value, scope="local")
+
             # Execute the body
             result = self._execute_statement_list(node.body, context)
-            
+
         except Exception as exc:
             # Exit with exception information
             if not context_manager.__exit__(type(exc), exc, exc.__traceback__):
@@ -271,29 +296,41 @@ class ControlFlowExecutor(BaseExecutor):
             result = None
         else:
             # Exit without exception
-            context.delete(node.as_var)
+            # Delete the variable from the appropriate scope
+            if hasattr(node.context_manager, "name"):
+                if ":" in node.context_manager.name:
+                    scope, _ = node.context_manager.name.split(":", 1)
+                    context.delete_from_scope(node.as_var, scope=scope)
+                elif "." in node.context_manager.name:
+                    scope, _ = node.context_manager.name.split(".", 1)
+                    context.delete_from_scope(node.as_var, scope=scope)
+                else:
+                    context.delete_from_scope(node.as_var, scope="local")
+            else:
+                context.delete_from_scope(node.as_var, scope="local")
             context_manager.__exit__(None, None, None)
-            
+
         return result
 
     def _check_with_variable_shadowing(self, node: WithStatement, context: SandboxContext) -> None:
         """Check for variable name shadowing in with statements and raise an error if detected.
-        
+
         Args:
             node: The with statement node
             context: The execution context
-            
+
         Raises:
             ValueError: If dangerous variable name shadowing is detected
         """
         as_var = node.as_var
-        
+
         # Check if the 'as' variable already exists in the current scope
         if context.has(f"local.{as_var}"):
             # For direct context manager pattern, check if it's the same variable being shadowed
             if not isinstance(node.context_manager, str):
                 # Get the variable name being used as context manager
                 from opendxa.dana.sandbox.parser.ast import Identifier
+
                 if isinstance(node.context_manager, Identifier):
                     context_manager_var = node.context_manager.name
                     # Remove scope prefix to compare just the variable name
@@ -301,7 +338,7 @@ class ControlFlowExecutor(BaseExecutor):
                         context_manager_var_name = context_manager_var.split(".")[-1]
                     else:
                         context_manager_var_name = context_manager_var
-                        
+
                     if context_manager_var_name == as_var:
                         raise ValueError(
                             f"Variable name shadowing detected: '{as_var}' is being used as both "
@@ -310,14 +347,15 @@ class ControlFlowExecutor(BaseExecutor):
                             f"Consider using a different name for the 'as' variable, "
                             f"such as 'with {as_var} as {as_var}_client:'"
                         )
-            
+
             # General warning for any existing variable being shadowed
             import warnings
+
             warnings.warn(
                 f"Variable '{as_var}' already exists and will be shadowed by the with statement. "
                 f"Consider using a different name for the 'as' variable to avoid confusion.",
                 category=UserWarning,
-                stacklevel=2
+                stacklevel=2,
             )
 
     def execute_break_statement(self, node: BreakStatement, context: SandboxContext) -> None:
@@ -359,7 +397,7 @@ class ControlFlowExecutor(BaseExecutor):
             value = self.parent.execute(node.value, context)
         raise ReturnException(value)
 
-    def _execute_statement_list(self, statements: List[Any], context: SandboxContext) -> Any:
+    def _execute_statement_list(self, statements: list[Any], context: SandboxContext) -> Any:
         """Execute a list of statements.
 
         Args:

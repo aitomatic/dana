@@ -17,7 +17,7 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from typing import Any, Optional
+from typing import Any
 
 from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
 from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
@@ -31,7 +31,7 @@ class ProgramExecutor(BaseExecutor):
     Handles the root nodes of Dana programs.
     """
 
-    def __init__(self, parent_executor: BaseExecutor, function_registry: Optional[FunctionRegistry] = None):
+    def __init__(self, parent_executor: BaseExecutor, function_registry: FunctionRegistry | None = None):
         """Initialize the program executor.
 
         Args:
@@ -59,8 +59,16 @@ class ProgramExecutor(BaseExecutor):
         """
         result = None
         for statement in node.statements:
-            result = self.parent.execute(statement, context)
-            # Store the result in the context
-            if result is not None:
-                context.set("system.__last_value", result)
+            # Handle lists of statements (e.g., from export_stmt)
+            if isinstance(statement, list):
+                for sub_statement in statement:
+                    result = self.parent.execute(sub_statement, context)
+                    # Store the result in the context
+                    if result is not None:
+                        context.set("system.__last_value", result)
+            else:
+                result = self.parent.execute(statement, context)
+                # Store the result in the context
+                if result is not None:
+                    context.set("system.__last_value", result)
         return result

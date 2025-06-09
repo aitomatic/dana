@@ -1,0 +1,18 @@
+# numbers.na - Number processing utilities submodule
+
+def factorial(n: int) -> int:
+    if n <= 1:
+        return 1
+    return n * factorial(n - 1)
+
+def is_even(n: int) -> bool:
+    return n % 2 == 0
+
+def is_odd(n: int) -> bool:
+    return n % 2 == 1
+
+def sum_range(start: int, end: int) -> int:
+    total = 0
+    for i in range(start, end + 1):
+        total = total + i
+    return total 

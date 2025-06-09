@@ -1,3 +1,6 @@
+| [← Python Integration Overview](./python_integration.md) | [Python-to-Dana →](./python-to-dana.md) |
+|---|---|
+
 # Design Document: Dana-to-Python Integration
 
 ```text
@@ -40,22 +43,44 @@ In order for Dana users to enjoy the full benefits of the Python ecosystem, Dana
 Dana↔Python integration is intentionally split into two separate designs:
 
 1. **Dana → Python** (this document)
+
    - Dana code calling Python functions
    - Managing Python objects from Dana
    - Future sandboxing of Python execution
 
 2. **Python → Dana** ([python-to-dana.md](python-to-dana.md))
+
    - Python code calling Dana functions
    - Dana runtime embedding in Python
    - Dana sandbox security model
 
 This separation exists because:
+
 - Different security models (Dana sandbox vs. Python process)
 - Different trust boundaries (Dana trusts Python runtime vs. Python isolated from Dana)
 - Different use cases (Dana using Python libraries vs. Python embedding Dana)
 - Different implementation needs (transport layer vs. sandbox protocol)
 
 ## Proposed Design
+
+### Example Code
+
+```dana
+from a.b.c.d.py import SomeClass
+
+some_object = SomeClass()     # some_object is a PythonObject, which is effectively of `Any` Python type
+x = some_object.some_property # x is a PythonObject
+y = some_object.some_method() # y is a PythonObject
+
+some_object.close()           # either evaluates to a PythonObject, or None
+```
+
+```dana
+import pandas as pd
+
+df = pd.read_csv("data.csv") # df is a PythonObject, which is effectively of `Any` Python type
+mean_values = df.groupby("column_name").mean()
+```
 
 ### Core Runtime Abstractions
 

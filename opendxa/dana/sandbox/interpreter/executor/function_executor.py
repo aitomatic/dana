@@ -18,7 +18,7 @@ Discord: https://discord.gg/6jGD4PYk
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from opendxa.dana.common.exceptions import FunctionRegistryError, SandboxError
 from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
@@ -83,7 +83,7 @@ class FunctionNameInfo:
 class ResolvedFunction:
     """Information about a resolved function."""
 
-    def __init__(self, func: Any, func_type: str, source: str, metadata: Optional[Dict[str, Any]] = None):
+    def __init__(self, func: Any, func_type: str, source: str, metadata: dict[str, Any] | None = None):
         """Initialize resolved function information.
 
         Args:
@@ -116,7 +116,7 @@ class FunctionResolver:
         """
         self.executor = executor
 
-    def resolve_function(self, name_info: FunctionNameInfo, context: SandboxContext, registry: Any) -> Optional[ResolvedFunction]:
+    def resolve_function(self, name_info: FunctionNameInfo, context: SandboxContext, registry: Any) -> ResolvedFunction | None:
         """Resolve a function from local context or registry.
 
         Args:
@@ -139,7 +139,7 @@ class FunctionResolver:
 
         return None
 
-    def _resolve_from_context(self, name_info: FunctionNameInfo, context: SandboxContext) -> Optional[ResolvedFunction]:
+    def _resolve_from_context(self, name_info: FunctionNameInfo, context: SandboxContext) -> ResolvedFunction | None:
         """Resolve function from all scoped context.
 
         Args:
@@ -158,9 +158,13 @@ class FunctionResolver:
             return None
 
         # Determine function type and create resolved function
+        from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
         from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
 
-        if isinstance(func_data, SandboxFunction):
+        if isinstance(func_data, DanaFunction):
+            # Dana functions are a type of sandbox function but need special handling
+            return ResolvedFunction(func_data, "sandbox", "scoped_context")
+        elif isinstance(func_data, SandboxFunction):
             return ResolvedFunction(func_data, "sandbox", "scoped_context")
         elif isinstance(func_data, dict) and func_data.get("type") == "function":
             return ResolvedFunction(func_data, "legacy", "scoped_context")
@@ -170,7 +174,7 @@ class FunctionResolver:
             # Found something but it's not callable
             return None
 
-    def _resolve_from_registry(self, name_info: FunctionNameInfo, registry: Any) -> Optional[ResolvedFunction]:
+    def _resolve_from_registry(self, name_info: FunctionNameInfo, registry: Any) -> ResolvedFunction | None:
         """Resolve function from registry. Special treatment: if the scope is "local",
         then we need to match the base function name *without* the scope.
 
@@ -205,8 +209,8 @@ class FunctionResolver:
         self,
         resolved_func: ResolvedFunction,
         context: SandboxContext,
-        evaluated_args: List[Any],
-        evaluated_kwargs: Dict[str, Any],
+        evaluated_args: list[Any],
+        evaluated_kwargs: dict[str, Any],
         func_name: str,
     ) -> Any:
         """Execute a resolved function using the appropriate strategy.
@@ -272,8 +276,8 @@ class FunctionExecutionErrorHandler:
         node: FunctionCall,
         registry: Any,
         context: SandboxContext,
-        evaluated_args: List[Any],
-        evaluated_kwargs: Dict[str, Any],
+        evaluated_args: list[Any],
+        evaluated_kwargs: dict[str, Any],
         func_name: str,
     ) -> Any:
         """Handle registry execution errors with recovery attempts.
@@ -363,7 +367,7 @@ class FunctionExecutionErrorHandler:
 
         return SandboxError(enhanced_message)
 
-    def _get_error_context(self, node: FunctionCall, func_name: str) -> Optional[str]:
+    def _get_error_context(self, node: FunctionCall, func_name: str) -> str | None:
         """Get additional context information for error messages.
 
         Args:
@@ -389,7 +393,7 @@ class FunctionExecutionErrorHandler:
 class PositionalErrorRecoveryStrategy:
     """Recovery strategy for __positional argument errors."""
 
-    def can_handle(self, error: Exception, evaluated_kwargs: Dict[str, Any]) -> bool:
+    def can_handle(self, error: Exception, evaluated_kwargs: dict[str, Any]) -> bool:
         """Check if this strategy can handle the error.
 
         Args:
@@ -407,8 +411,8 @@ class PositionalErrorRecoveryStrategy:
         node: FunctionCall,
         registry: Any,
         context: SandboxContext,
-        evaluated_args: List[Any],
-        evaluated_kwargs: Dict[str, Any],
+        evaluated_args: list[Any],
+        evaluated_kwargs: dict[str, Any],
         func_name: str,
         executor: "FunctionExecutor",
     ) -> Any:
@@ -456,7 +460,7 @@ class FunctionExecutor(BaseExecutor):
     - Built-in functions
     """
 
-    def __init__(self, parent_executor: BaseExecutor, function_registry: Optional[FunctionRegistry] = None):
+    def __init__(self, parent_executor: BaseExecutor, function_registry: FunctionRegistry | None = None):
         """Initialize the function executor.
 
         Args:
@@ -576,7 +580,7 @@ class FunctionExecutor(BaseExecutor):
             raise SandboxError(f"No function registry available to execute function '{node.name}'")
         return registry
 
-    def __process_arguments(self, node: FunctionCall, context: SandboxContext) -> tuple[List[Any], Dict[str, Any]]:
+    def __process_arguments(self, node: FunctionCall, context: SandboxContext) -> tuple[list[Any], dict[str, Any]]:
         """INTERNAL: Phase 2 helper for execute_function_call only.
 
         Process and evaluate function arguments.
@@ -594,7 +598,7 @@ class FunctionExecutor(BaseExecutor):
         else:
             return self.__process_regular_arguments(node, context)
 
-    def __process_positional_array_arguments(self, node: FunctionCall, context: SandboxContext) -> tuple[List[Any], Dict[str, Any]]:
+    def __process_positional_array_arguments(self, node: FunctionCall, context: SandboxContext) -> tuple[list[Any], dict[str, Any]]:
         """INTERNAL: Process special __positional array arguments.
 
         Args:
@@ -604,8 +608,8 @@ class FunctionExecutor(BaseExecutor):
         Returns:
             Tuple of (evaluated_args, evaluated_kwargs)
         """
-        evaluated_args: List[Any] = []
-        evaluated_kwargs: Dict[str, Any] = {}
+        evaluated_args: list[Any] = []
+        evaluated_kwargs: dict[str, Any] = {}
 
         positional_values = node.args["__positional"]
         if isinstance(positional_values, list):
@@ -619,7 +623,7 @@ class FunctionExecutor(BaseExecutor):
 
         return evaluated_args, evaluated_kwargs
 
-    def __process_regular_arguments(self, node: FunctionCall, context: SandboxContext) -> tuple[List[Any], Dict[str, Any]]:
+    def __process_regular_arguments(self, node: FunctionCall, context: SandboxContext) -> tuple[list[Any], dict[str, Any]]:
         """INTERNAL: Process regular positional and keyword arguments.
 
         Args:
@@ -629,8 +633,8 @@ class FunctionExecutor(BaseExecutor):
         Returns:
             Tuple of (evaluated_args, evaluated_kwargs)
         """
-        evaluated_args: List[Any] = []
-        evaluated_kwargs: Dict[str, Any] = {}
+        evaluated_args: list[Any] = []
+        evaluated_kwargs: dict[str, Any] = {}
 
         # Process regular arguments
         for key, value in node.args.items():
@@ -679,8 +683,8 @@ class FunctionExecutor(BaseExecutor):
         node: FunctionCall,
         registry: Any,
         context: SandboxContext,
-        evaluated_args: List[Any],
-        evaluated_kwargs: Dict[str, Any],
+        evaluated_args: list[Any],
+        evaluated_kwargs: dict[str, Any],
         func_name: str,
     ) -> Any:
         """INTERNAL: Phase 5 helper for execute_function_call only.
@@ -718,8 +722,8 @@ class FunctionExecutor(BaseExecutor):
         node: FunctionCall,
         registry: Any,
         context: SandboxContext,
-        evaluated_args: List[Any],
-        evaluated_kwargs: Dict[str, Any],
+        evaluated_args: list[Any],
+        evaluated_kwargs: dict[str, Any],
         func_name: str,
     ) -> Any:
         """INTERNAL: Execute function via registry using unified approach.
@@ -778,7 +782,7 @@ class FunctionExecutor(BaseExecutor):
         # If we get here, all attempts failed
         raise SandboxError(f"Function '{node.name}' not found in registry")
 
-    def _get_current_function_context(self, context: SandboxContext) -> Optional[str]:
+    def _get_current_function_context(self, context: SandboxContext) -> str | None:
         """Try to determine the current function being executed for better error messages.
 
         Args:
@@ -865,7 +869,7 @@ class FunctionExecutor(BaseExecutor):
 
         return result
 
-    def _execute_user_defined_function(self, func_data: Dict[str, Any], args: List[Any], context: SandboxContext) -> Any:
+    def _execute_user_defined_function(self, func_data: dict[str, Any], args: list[Any], context: SandboxContext) -> Any:
         """
         Execute a user-defined function from the context.
 

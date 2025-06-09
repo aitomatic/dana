@@ -5,7 +5,7 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.dana.sandbox.interpreter.executor.control_flow_executor import ReturnException
@@ -16,7 +16,7 @@ from opendxa.dana.sandbox.sandbox_context import SandboxContext
 class DanaFunction(SandboxFunction, Loggable):
     """A Dana function that can be called with arguments."""
 
-    def __init__(self, body: List[Any], parameters: List[str], context: Optional[SandboxContext] = None):
+    def __init__(self, body: list[Any], parameters: list[str], context: SandboxContext | None = None):
         """Initialize a Dana function.
 
         Args:
@@ -28,7 +28,7 @@ class DanaFunction(SandboxFunction, Loggable):
         self.body = body
         self.parameters = parameters  # Properly set the parameters property
 
-    def prepare_context(self, context: SandboxContext, args: List[Any], kwargs: Dict[str, Any]) -> SandboxContext:
+    def prepare_context(self, context: SandboxContext | Any, args: list[Any], kwargs: dict[str, Any]) -> SandboxContext:
         """
         Prepare context for a Dana function.
 
@@ -38,13 +38,18 @@ class DanaFunction(SandboxFunction, Loggable):
         - Maps arguments to the local scope
 
         Args:
-            context: The original context
+            context: The original context or a positional argument
             args: Positional arguments
             kwargs: Keyword arguments
 
         Returns:
             Prepared context
         """
+        # If context is not a SandboxContext, assume it's a positional argument
+        if not isinstance(context, SandboxContext):
+            args = [context] + args
+            context = self.context.copy() if self.context else SandboxContext()
+
         # Create a copy of the context to work with
         prepared_context = context.copy()
 
@@ -108,6 +113,19 @@ class DanaFunction(SandboxFunction, Loggable):
                 positional_args = arg_dict.get("__positional", [])
                 kwargs.update({k: v for k, v in arg_dict.items() if k != "__positional"})
                 args = positional_args + list(args)
+            elif not isinstance(context, SandboxContext):
+                # If context is not a SandboxContext, assume it's a positional argument
+                args = (context,) + args
+                context = self.context.copy() if self.context else SandboxContext()
+            else:
+                # We have a SandboxContext - merge with our stored context for variable access
+                if self.context is not None:
+                    # Create execution context that inherits from our stored module context
+                    execution_context = self.context.copy()
+                    # Set the interpreter from the current context
+                    if hasattr(context, "_interpreter") and context._interpreter is not None:
+                        execution_context._interpreter = context._interpreter
+                    context = execution_context
 
             # If the context doesn't have an interpreter, assign the one from self.context
             if not hasattr(context, "_interpreter") or context._interpreter is None:

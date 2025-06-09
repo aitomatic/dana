@@ -19,7 +19,7 @@ Discord: https://discord.gg/6jGD4PYk
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Protocol, Tuple, Union
+from typing import Any, Optional, Protocol, Union
 
 
 # Define a protocol instead of a base class to avoid dataclass inheritance issues
@@ -111,7 +111,7 @@ class TypeHint:
     """A type annotation (e.g., int, str, list, dict)."""
 
     name: str  # The type name (int, str, list, dict, etc.)
-    location: Optional[Location] = None
+    location: Location | None = None
 
 
 @dataclass
@@ -119,9 +119,9 @@ class Parameter:
     """A function parameter with optional type hint."""
 
     name: str
-    type_hint: Optional[TypeHint] = None
-    default_value: Optional[Expression] = None
-    location: Optional[Location] = None
+    type_hint: TypeHint | None = None
+    default_value: Expression | None = None
+    location: Location | None = None
 
 
 # === Literals and Identifiers ===
@@ -129,8 +129,8 @@ class Parameter:
 class LiteralExpression:
     """A literal value (int, float, string, bool, None, list, or f-string)."""
 
-    value: Union[int, float, str, bool, None, "FStringExpression", List[Any]]
-    location: Optional[Location] = None
+    value: Union[int, float, str, bool, None, "FStringExpression", list[Any]]
+    location: Location | None = None
 
     @property
     def type(self):
@@ -156,10 +156,10 @@ class LiteralExpression:
 class FStringExpression:
     """An f-string with embedded expressions."""
 
-    parts: List[Union[str, Expression]]  # Literal strings or expressions
-    location: Optional[Location] = None
+    parts: list[str | Expression]  # Literal strings or expressions
+    location: Location | None = None
     template: str = ""
-    expressions: Dict[str, Expression] = field(default_factory=dict)
+    expressions: dict[str, Expression] = field(default_factory=dict)
 
 
 @dataclass
@@ -167,7 +167,7 @@ class Identifier:
     """A variable, function, or module name."""
 
     name: str
-    location: Optional[Location] = None
+    location: Location | None = None
 
 
 # === Expressions ===
@@ -177,7 +177,7 @@ class UnaryExpression:
 
     operator: str  # e.g., '-', 'not'
     operand: Expression
-    location: Optional[Location] = None
+    location: Location | None = None
 
 
 @dataclass
@@ -187,7 +187,7 @@ class BinaryExpression:
     left: Expression
     operator: BinaryOperator
     right: Expression
-    location: Optional[Location] = None
+    location: Location | None = None
 
 
 @dataclass
@@ -195,32 +195,32 @@ class FunctionCall:
     """A function call (e.g., foo(1, 2)), can be used as either expression or statement."""
 
     name: str
-    args: Dict[str, Any]
-    location: Optional[Location] = None
+    args: dict[str, Any]
+    location: Location | None = None
 
 
 @dataclass
 class ObjectFunctionCall:
     """An object method call (e.g., obj.method(args)).
-    
+
     This AST node represents calling a method on an object, which is different from
     accessing an attribute or calling a standalone function. It handles expressions
     like `websearch.list_tools()`, `obj.method(arg1, arg2)`, etc.
-    
+
     The ObjectFunctionCall distinguishes between:
     - The target object (which can be any expression that evaluates to an object)
     - The method name (a string identifier)
     - The arguments passed to the method call
-    
+
     This enables Dana to support object-oriented programming patterns and method
     chaining while maintaining clear separation between attribute access and
     method invocation.
-    
+
     Examples:
         - `websearch.list_tools()` - call list_tools method on websearch object
         - `obj.add(10)` - call add method with argument 10
         - `api.get_data("users")` - call get_data method with string argument
-    
+
     Attributes:
         object: The target object expression to call the method on
         method_name: The name of the method to call (string)
@@ -229,9 +229,9 @@ class ObjectFunctionCall:
     """
 
     object: Expression  # The object on which to call the method
-    method_name: str    # The method name
-    args: Dict[str, Any]  # Arguments to the method
-    location: Optional[Location] = None
+    method_name: str  # The method name
+    args: dict[str, Any]  # Arguments to the method
+    location: Location | None = None
 
 
 @dataclass
@@ -240,7 +240,7 @@ class AttributeAccess:
 
     object: Expression
     attribute: str
-    location: Optional[Location] = None
+    location: Location | None = None
 
 
 @dataclass
@@ -249,39 +249,39 @@ class SubscriptExpression:
 
     object: Expression
     index: Expression
-    location: Optional[Location] = None
+    location: Location | None = None
 
 
 @dataclass
 class TupleLiteral:
     """A tuple literal (e.g., (1, 2))."""
 
-    items: List[Expression]
-    location: Optional[Location] = None
+    items: list[Expression]
+    location: Location | None = None
 
 
 @dataclass
 class DictLiteral:
     """A dictionary literal (e.g., {"k": v})."""
 
-    items: List[Tuple[Expression, Expression]]
-    location: Optional[Location] = None
+    items: list[tuple[Expression, Expression]]
+    location: Location | None = None
 
 
 @dataclass
 class SetLiteral:
     """A set literal (e.g., {1, 2, 3})."""
 
-    items: List[Expression]
-    location: Optional[Location] = None
+    items: list[Expression]
+    location: Location | None = None
 
 
 @dataclass
 class ListLiteral:
     """A list literal (e.g., [1, 2, 3])."""
 
-    items: List[Expression]
-    location: Optional[Location] = None
+    items: list[Expression]
+    location: Location | None = None
 
 
 # === Statements ===
@@ -306,8 +306,8 @@ class Assignment:
         FStringExpression,
         "UseStatement",  # Added to support function_call_assignment: target = use_stmt
     ]
-    type_hint: Optional[TypeHint] = None  # For typed assignments like x: int = 42
-    location: Optional[Location] = None
+    type_hint: TypeHint | None = None  # For typed assignments like x: int = 42
+    location: Location | None = None
 
 
 @dataclass
@@ -315,10 +315,10 @@ class Conditional:
     """If/elif/else conditional statement. Returns the value of the last executed statement."""
 
     condition: Expression
-    body: List[Union[Assignment, "Conditional", "WhileLoop", FunctionCall, "ObjectFunctionCall"]]
+    body: list[Union[Assignment, "Conditional", "WhileLoop", FunctionCall, "ObjectFunctionCall"]]
     line_num: int  # Line number where this conditional was defined
-    else_body: List[Union[Assignment, "Conditional", "WhileLoop", FunctionCall, "ObjectFunctionCall"]] = field(default_factory=list)
-    location: Optional[Location] = None
+    else_body: list[Union[Assignment, "Conditional", "WhileLoop", FunctionCall, "ObjectFunctionCall"]] = field(default_factory=list)
+    location: Location | None = None
 
 
 @dataclass
@@ -326,9 +326,9 @@ class WhileLoop:
     """While loop statement."""
 
     condition: Expression
-    body: List[Union[Assignment, "Conditional", "WhileLoop", FunctionCall, "ObjectFunctionCall"]]
+    body: list[Union[Assignment, "Conditional", "WhileLoop", FunctionCall, "ObjectFunctionCall"]]
     line_num: int
-    location: Optional[Location] = None
+    location: Location | None = None
 
 
 @dataclass
@@ -337,40 +337,40 @@ class ForLoop:
 
     target: Identifier
     iterable: Expression
-    body: List[Statement]
-    location: Optional[Location] = None
+    body: list[Statement]
+    location: Location | None = None
 
 
 @dataclass
 class TryBlock:
     """Try/except/finally block."""
 
-    body: List[Statement]
-    except_blocks: List["ExceptBlock"]
-    finally_block: Optional[List[Statement]] = None
-    location: Optional[Location] = None
+    body: list[Statement]
+    except_blocks: list["ExceptBlock"]
+    finally_block: list[Statement] | None = None
+    location: Location | None = None
 
 
 @dataclass
 class ExceptBlock:
     """Except block for try/except."""
 
-    body: List[Statement]
-    location: Optional[Location] = None
-    exception_type: Optional[Identifier] = None
-    exception_name: Optional[Identifier] = None
+    body: list[Statement]
+    location: Location | None = None
+    exception_type: Identifier | None = None
+    exception_name: Identifier | None = None
 
 
 @dataclass
 class WithStatement:
     """With statement (e.g., with mcp('hi') as foo: ... or with mcp_object as foo: ...)."""
 
-    context_manager: Union[str, Expression]  # Either function name (str) or context manager object (Expression)
-    args: List[Expression]  # Empty when using direct object
-    kwargs: Dict[str, Expression]  # Empty when using direct object
+    context_manager: str | Expression  # Either function name (str) or context manager object (Expression)
+    args: list[Expression]  # Empty when using direct object
+    kwargs: dict[str, Expression]  # Empty when using direct object
     as_var: str
-    body: List[Statement]
-    location: Optional[Location] = None
+    body: list[Statement]
+    location: Location | None = None
 
 
 @dataclass
@@ -378,10 +378,10 @@ class FunctionDefinition:
     """Function definition statement."""
 
     name: Identifier
-    parameters: List[Parameter]
-    body: List[Statement]
-    return_type: Optional[TypeHint] = None
-    location: Optional[Location] = None
+    parameters: list[Parameter]
+    body: list[Statement]
+    return_type: TypeHint | None = None
+    location: Location | None = None
 
 
 @dataclass
@@ -389,8 +389,8 @@ class ImportStatement:
     """Import statement (e.g., import math)."""
 
     module: str
-    alias: Optional[str] = None
-    location: Optional[Location] = None
+    alias: str | None = None
+    location: Location | None = None
 
 
 @dataclass
@@ -398,56 +398,56 @@ class ImportFromStatement:
     """From-import statement (e.g., from math import sqrt)."""
 
     module: str
-    names: List[Tuple[str, Optional[str]]]
-    location: Optional[Location] = None
+    names: list[tuple[str, str | None]]
+    location: Location | None = None
 
 
 @dataclass
 class UseStatement:
     """Use statement for external resources (e.g., use("mcp", url="..."))."""
-    
-    args: List[Expression]        # Positional arguments
-    kwargs: Dict[str, Expression] # Keyword arguments
-    target: Optional[Identifier] = None
-    location: Optional[Location] = None
+
+    args: list[Expression]  # Positional arguments
+    kwargs: dict[str, Expression]  # Keyword arguments
+    target: Identifier | None = None
+    location: Location | None = None
 
 
 @dataclass
 class BreakStatement:
     """Break statement."""
 
-    location: Optional[Location] = None
+    location: Location | None = None
 
 
 @dataclass
 class ContinueStatement:
     """Continue statement."""
 
-    location: Optional[Location] = None
+    location: Location | None = None
 
 
 @dataclass
 class PassStatement:
     """Pass statement."""
 
-    location: Optional[Location] = None
+    location: Location | None = None
 
 
 @dataclass
 class ReturnStatement:
     """Return statement."""
 
-    value: Optional[Expression] = None
-    location: Optional[Location] = None
+    value: Expression | None = None
+    location: Location | None = None
 
 
 @dataclass
 class RaiseStatement:
     """Raise statement."""
 
-    value: Optional[Expression] = None
-    from_value: Optional[Expression] = None
-    location: Optional[Location] = None
+    value: Expression | None = None
+    from_value: Expression | None = None
+    location: Location | None = None
 
 
 @dataclass
@@ -455,8 +455,18 @@ class AssertStatement:
     """Assert statement."""
 
     condition: Expression
-    message: Optional[Expression] = None
-    location: Optional[Location] = None
+    message: Expression | None = None
+    location: Location | None = None
+
+
+@dataclass
+class ExportStatement:
+    """AST node for export statements."""
+
+    name: str
+
+    def __str__(self) -> str:
+        return f"export {self.name}"
 
 
 # === Program Root ===
@@ -464,9 +474,9 @@ class AssertStatement:
 class Program:
     """The root node for a Dana program (list of statements)."""
 
-    statements: List[Union[Assignment, FunctionCall, "ObjectFunctionCall"]]
+    statements: list[Union[Assignment, FunctionCall, "ObjectFunctionCall"]]
     source_text: str = ""
-    location: Optional[Location] = None
+    location: Location | None = None
 
     def __init__(self, statements, source_text: str = ""):
         self.statements = statements

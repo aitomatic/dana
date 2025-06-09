@@ -18,7 +18,7 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from opendxa.dana.common.exceptions import StateError
 from opendxa.dana.common.runtime_scopes import RuntimeScopes
@@ -32,7 +32,7 @@ class ContextManager:
     It provides methods for getting and setting variables in different scopes.
     """
 
-    def __init__(self, context: Optional[SandboxContext] = None):
+    def __init__(self, context: SandboxContext | None = None):
         """Initialize the context manager.
 
         Args:
@@ -126,9 +126,7 @@ class ContextManager:
         Returns:
             A sanitized copy of the sandbox context
         """
-        sandboxed_copy = self.context.copy()
-        sandboxed_copy.sanitize()  # Remove private scope and sanitize remaining scopes
-        return sandboxed_copy
+        return self.context.sanitize()
 
     def has(self, key: str) -> bool:
         """Check if a key exists in the context.
@@ -149,7 +147,7 @@ class ContextManager:
         """
         self.context.delete(key)
 
-    def clear(self, scope: Optional[str] = None) -> None:
+    def clear(self, scope: str | None = None) -> None:
         """Clear all variables in a scope or all scopes.
 
         Args:
@@ -157,7 +155,7 @@ class ContextManager:
         """
         self.context.clear(scope)
 
-    def get_state(self) -> Dict[str, Dict[str, Any]]:
+    def get_state(self) -> dict[str, dict[str, Any]]:
         """Get a copy of the current state.
 
         Returns:
@@ -165,7 +163,7 @@ class ContextManager:
         """
         return self.context.get_state()
 
-    def set_state(self, state: Dict[str, Dict[str, Any]]) -> None:
+    def set_state(self, state: dict[str, dict[str, Any]]) -> None:
         """Set the state from a dictionary.
 
         Args:

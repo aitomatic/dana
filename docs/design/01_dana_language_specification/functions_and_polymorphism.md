@@ -196,7 +196,7 @@ local:sum_val = add(5,3)
 
 A key application of decorators in Dana is to enable and configure the **POET (Perceive → Operate → Encode → Train)** execution model for user-defined Dana functions. This allows Dana functions to benefit from robust, context-aware execution with built-in retry and encoding logic.
 
-Refer to the full [POET Execution Model documentation](../02_dana_runtime_and_execution/pov_execution_model.md) for details on POET.
+Refer to the full [POET Execution Model documentation](../02_dana_runtime_and_execution/poet_execution_model.md) for details on POET.
 
 Conceptual Usage:
 

@@ -1,0 +1,25 @@
+# A simple Dana module for testing the module system
+
+# Module-level constants
+DEFAULT_GREETING: str = "Hello from Dana!"
+MAX_VALUE: int = 100
+
+# A simple function that adds two numbers
+def add_numbers(a: int, b: int) -> int:
+    return a + b
+
+# A function that formats a greeting
+def get_greeting(name: str) -> str:
+    return f"Hello, {name}!"
+
+# A function that demonstrates type safety
+def safe_divide(a: float, b: float) -> float:
+    if b == 0:
+        raise ValueError("Cannot divide by zero")
+    return a / b
+
+# Export specific symbols
+export DEFAULT_GREETING
+export add_numbers
+export get_greeting
+export safe_divide 
