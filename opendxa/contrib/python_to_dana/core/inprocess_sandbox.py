@@ -8,6 +8,7 @@ This is the default implementation that runs Dana in the same Python process.
 from typing import Any
 
 from opendxa.contrib.python_to_dana.core.exceptions import DanaCallError
+from opendxa.contrib.python_to_dana.core.reasoning_cache import ReasoningCache
 from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
@@ -17,21 +18,40 @@ class InProcessSandboxInterface:
     
     This implementation runs Dana code in the same Python process as the caller,
     providing the best performance while maintaining sandbox security boundaries.
+    
+    Features intelligent caching of reasoning results for improved performance.
     """
     
-    def __init__(self, debug: bool = False, context: SandboxContext | None = None):
+    def __init__(self, 
+                 debug: bool = False, 
+                 context: SandboxContext | None = None,
+                 enable_cache: bool = True,
+                 cache_max_size: int = 1000,
+                 cache_ttl_seconds: float = 300.0):
         """Initialize the in-process sandbox interface.
         
         Args:
             debug: Enable debug mode for detailed logging
             context: Sandbox context for configuration and state
+            enable_cache: Enable reasoning result caching
+            cache_max_size: Maximum number of cached results
+            cache_ttl_seconds: Time-to-live for cached results in seconds
         """
         self._debug = debug
         self._context = context
         self._sandbox = DanaSandbox(debug=debug, context=context)
+        
+        # Initialize caching
+        self._enable_cache = enable_cache
+        if enable_cache:
+            self._cache = ReasoningCache(max_size=cache_max_size, ttl_seconds=cache_ttl_seconds)
+            if debug:
+                print(f"DEBUG: InProcessSandboxInterface initialized with cache: max_size={cache_max_size}, ttl={cache_ttl_seconds}s")
+        else:
+            self._cache = None
     
     def reason(self, prompt: str, options: dict | None = None) -> Any:
-        """Execute Dana reasoning function in-process.
+        """Execute Dana reasoning function in-process with caching.
         
         Args:
             prompt: The question or prompt to send to the LLM
@@ -49,6 +69,16 @@ class InProcessSandboxInterface:
         Raises:
             DanaCallError: If the Dana reasoning call fails or invalid options provided
         """
+        # Check cache first if enabled
+        if self._enable_cache and self._cache is not None:
+            cached_result = self._cache.get(prompt, options)
+            if cached_result is not None:
+                if self._debug:
+                    print(f"DEBUG: Cache HIT for prompt: {prompt[:50]}{'...' if len(prompt) > 50 else ''}")
+                return cached_result
+            elif self._debug:
+                print(f"DEBUG: Cache MISS for prompt: {prompt[:50]}{'...' if len(prompt) > 50 else ''}")
+        
         # Validate options parameter
         if options is not None:
             if not isinstance(options, dict):
@@ -87,13 +117,12 @@ class InProcessSandboxInterface:
         # Build Dana code to call the reason function
         # We need to format the options properly for Dana
         try:
-            prompt = repr(prompt)
             if options:
                 # Convert Python dict to Dana dict format
                 options_str = self._format_options_for_dana(options)
-                dana_code = f'reason("{prompt}", {options_str})'
+                dana_code = f'reason("""{prompt}""", {options_str})'
             else:
-                dana_code = f'reason("{prompt}")'
+                dana_code = f'reason("""{prompt}""")'
             
             if self._debug:
                 print(f"DEBUG: InProcessSandboxInterface executing Dana code: {dana_code[:100]}{'...' if len(dana_code) > 100 else ''}")
@@ -105,6 +134,12 @@ class InProcessSandboxInterface:
                     f"Dana reasoning failed: {result.error}",
                     original_error=result.error
                 )
+            
+            # Cache successful result if caching is enabled
+            if self._enable_cache and self._cache is not None and result.result is not None:
+                cached_successfully = self._cache.put(prompt, options, result.result)
+                if self._debug and cached_successfully:
+                    print(f"DEBUG: Cached result for prompt: {prompt[:50]}{'...' if len(prompt) > 50 else ''}")
             
             return result.result
             
@@ -146,17 +181,49 @@ class InProcessSandboxInterface:
         
         return "{" + ", ".join(items) + "}"
     
+    def get_cache_stats(self) -> dict[str, Any] | None:
+        """Get cache statistics if caching is enabled.
+        
+        Returns:
+            Cache statistics dictionary or None if caching is disabled
+        """
+        if self._enable_cache and self._cache is not None:
+            return self._cache.get_stats()
+        return None
+    
+    def clear_cache(self):
+        """Clear the reasoning cache if enabled."""
+        if self._enable_cache and self._cache is not None:
+            self._cache.clear()
+            if self._debug:
+                print("DEBUG: Reasoning cache cleared")
+    
+    def get_cache_info(self) -> str:
+        """Get formatted cache information for debugging."""
+        if self._enable_cache and self._cache is not None:
+            return self._cache.get_cache_info()
+        return "Caching disabled"
+    
     @property 
     def sandbox(self) -> DanaSandbox:
         """Access to underlying sandbox (for advanced usage)."""
         return self._sandbox
     
+    @property
+    def cache_enabled(self) -> bool:
+        """Check if caching is enabled."""
+        return self._enable_cache
+    
     def close(self):
         """Close the sandbox interface.
         
-        For in-process implementation, this is mostly a no-op as Python's
-        garbage collection will handle cleanup.
+        For in-process implementation, this clears the cache and performs cleanup.
         """
         if self._debug:
             print("DEBUG: InProcessSandboxInterface closing")
+        
+        # Clear cache on close
+        if self._enable_cache and self._cache is not None:
+            self._cache.clear()
+        
         # No specific cleanup needed for in-process sandbox 
