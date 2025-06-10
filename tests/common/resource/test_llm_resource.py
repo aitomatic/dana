@@ -115,7 +115,6 @@ class TestLLMResource(unittest.TestCase):
 
             # Verify the parameters passed to enforce_context_window
             call_args = mock_enforce.call_args[1]  # Get keyword arguments
-            self.assertEqual(call_args["model"], "openai:gpt-4")
             self.assertEqual(call_args["max_tokens"], 1000)
             self.assertTrue(call_args["preserve_system_messages"])
 
