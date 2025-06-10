@@ -18,5 +18,6 @@ Discord: https://discord.gg/6jGD4PYk
 """
 
 from opendxa.dana.common.runtime_scopes import RuntimeScopes
+from opendxa.dana.common.identifier_utils import is_valid_identifier
 
-__all__ = ["RuntimeScopes"]
+__all__ = ["RuntimeScopes", "is_valid_identifier"]

@@ -11,6 +11,7 @@ import pytest
 
 from opendxa.dana.sandbox.parser.transformer.fstring_transformer import FStringTransformer
 from opendxa.dana.sandbox.parser.ast import Identifier, LiteralExpression
+from opendxa.dana.common.identifier_utils import is_valid_identifier
 from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
@@ -103,6 +104,24 @@ result = f"Question : {question_2}. Answer : {answer}"
     assert "What is DANA" in result
     assert "question_2" not in result
     assert "DANA is a digital wallet" in result
+
+
+def test_common_identifier_utility():
+    """Test the common is_valid_identifier utility function."""
+    # Valid identifiers
+    assert is_valid_identifier("x") == True
+    assert is_valid_identifier("question_2") == True
+    assert is_valid_identifier("_private") == True
+    assert is_valid_identifier("obj.attr") == True
+    assert is_valid_identifier("local.var") == True
+    assert is_valid_identifier("item_123") == True
+    
+    # Invalid identifiers
+    assert is_valid_identifier("123invalid") == False
+    assert is_valid_identifier("with-dash") == False
+    assert is_valid_identifier("") == False
+    assert is_valid_identifier("obj..attr") == False  # consecutive dots
+    assert is_valid_identifier(".attr") == False      # leading dot
 
 
 if __name__ == "__main__":
