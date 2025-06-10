@@ -101,7 +101,7 @@ class FunctionExecutor(BaseExecutor):
             The fully evaluated value
         """
         # If it's already a primitive type, return it
-        if isinstance(value, (str, int, float, bool, list, dict, tuple)) or value is None:
+        if isinstance(value, str | int | float | bool | list | dict | tuple) or value is None:
             return value
 
         # Special handling for FStringExpressions - ensure they're evaluated to strings
@@ -122,11 +122,23 @@ class FunctionExecutor(BaseExecutor):
         Returns:
             The result of the function call
         """
+        self.debug(f"Executing function call: {node.name}")
+        
         # Phase 1: Setup and validation
         registry = self.__setup_and_validate(node)
 
         # Phase 2: Process arguments
         evaluated_args, evaluated_kwargs = self.__process_arguments(node, context)
+        self.debug(f"Processed arguments: args={evaluated_args}, kwargs={evaluated_kwargs}")
+
+        # Phase 2.5: Check for struct instantiation
+        self.debug("Checking for struct instantiation...")
+        struct_result = self.__check_struct_instantiation(node, context, evaluated_kwargs)
+        if struct_result is not None:
+            self.debug(f"Found struct instantiation, returning: {struct_result}")
+            return struct_result
+
+        self.debug("Not a struct instantiation, proceeding with function resolution...")
 
         # Phase 3: Parse function name and resolve function
         name_info = FunctionNameInfo.from_node(node)
@@ -194,6 +206,7 @@ class FunctionExecutor(BaseExecutor):
         evaluated_args: list[Any] = []
         evaluated_kwargs: dict[str, Any] = {}
 
+        # Process the __positional array
         positional_values = node.args["__positional"]
         if isinstance(positional_values, list):
             for value in positional_values:
@@ -203,6 +216,13 @@ class FunctionExecutor(BaseExecutor):
             # Single value, not in a list
             evaluated_value = self.__evaluate_and_ensure_fully_evaluated(positional_values, context)
             evaluated_args.append(evaluated_value)
+
+        # Also process any keyword arguments (keys that are not "__positional")
+        for key, value in node.args.items():
+            if key != "__positional":
+                # This is a keyword argument
+                evaluated_value = self.__evaluate_and_ensure_fully_evaluated(value, context)
+                evaluated_kwargs[key] = evaluated_value
 
         return evaluated_args, evaluated_kwargs
 
@@ -340,7 +360,7 @@ class FunctionExecutor(BaseExecutor):
                     from opendxa.dana.sandbox.interpreter.functions.python_function import PythonFunction
                     from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
 
-                    if isinstance(func, (PythonFunction, SandboxFunction)):
+                    if isinstance(func, PythonFunction | SandboxFunction):
                         # Use the function's execute method for proper context handling
                         raw_result = func.execute(context, *evaluated_args, **evaluated_kwargs)
                     else:
@@ -492,3 +512,50 @@ class FunctionExecutor(BaseExecutor):
             result = e.value
 
         return result
+
+    def __check_struct_instantiation(self, node: FunctionCall, context: SandboxContext, evaluated_kwargs: dict[str, Any]) -> Any | None:
+        """Check if this function call is actually a struct instantiation.
+        
+        Args:
+            node: The function call node
+            context: The execution context
+            evaluated_kwargs: Already evaluated keyword arguments
+            
+        Returns:
+            StructInstance if this is a struct instantiation, None otherwise
+        """
+        # Import here to avoid circular imports
+        from opendxa.dana.sandbox.interpreter.struct_system import StructTypeRegistry, create_struct_instance
+        
+        # Extract the base struct name (remove scope prefix if present)
+        func_name = node.name
+        if "." in func_name:
+            # Handle scoped names like "local.Point" -> "Point"
+            base_name = func_name.split(".")[-1]
+        else:
+            base_name = func_name
+        
+        # Debug logging
+        self.debug(f"Checking struct instantiation for func_name='{func_name}', base_name='{base_name}'")
+        self.debug(f"Registered structs: {StructTypeRegistry.list_types()}")
+        self.debug(f"Struct exists: {StructTypeRegistry.exists(base_name)}")
+        
+        # Check if this is a registered struct type
+        if StructTypeRegistry.exists(base_name):
+            try:
+                self.debug(f"Creating struct instance for {base_name} with kwargs: {evaluated_kwargs}")
+                # Create struct instance using our utility function
+                struct_instance = create_struct_instance(base_name, **evaluated_kwargs)
+                self.debug(f"Successfully created struct instance: {struct_instance}")
+                return struct_instance
+            except ValueError as e:
+                # Validation errors should be raised immediately, not fall through
+                self.debug(f"Struct validation failed for {base_name}: {e}")
+                from opendxa.dana.common.exceptions import SandboxError
+                raise SandboxError(f"Struct instantiation failed for '{base_name}': {e}")
+            except Exception as e:
+                # Other errors (e.g. import issues) can fall through to function resolution
+                self.debug(f"Struct instantiation error for {base_name}: {e}")
+                return None
+        
+        return None

@@ -281,7 +281,7 @@ processed_data = raw_data | validate | normalize | analyze | format_output
 
 Core principle: Think before you build, build with intention, ship with confidence.
 
-### **ALWAYS Create Design Document First**
+### **📋 ALWAYS Create Design Document First**
 For any feature/system implementation, create a design doc following this template:
 
 ```markdown
@@ -293,114 +293,219 @@ Date: [Date]
 Status: [Design Phase | Implementation Phase | Review Phase]
 
 ## Problem Statement
+**Brief Description**: [1-2 sentence summary of the problem]
 - Current situation and pain points
-- Impact of not solving this problem
+- Impact of not solving this problem  
 - Relevant context and background
 
 ## Goals
+**Brief Description**: [What we want to achieve]
 - Specific, measurable objectives (SMART goals)
 - Success criteria and metrics
 - Key requirements
 
 ## Non-Goals
+**Brief Description**: [What we explicitly won't do]
 - Explicitly state what's out of scope
 - Clarify potential misunderstandings
 
 ## Proposed Solution
+**Brief Description**: [High-level approach in 1-2 sentences]
 - High-level approach and key components
 - Why this approach was chosen
 - Main trade-offs and system fit
 
 ## Proposed Design
+**Brief Description**: [System architecture overview]
+
+### System Architecture Diagram
+```
+[Create ASCII or Mermaid diagram showing main components and their relationships]
+```
+
+### Component Details
 - System architecture and components
 - Data models, APIs, interfaces
 - Error handling and security considerations
-- Performance considerations and diagrams
+- Performance considerations
+
+### Data Flow Diagram (if applicable)
+```
+[Show how data moves through the system]
+```
 
 ## Proposed Implementation
+**Brief Description**: [Technical approach and key decisions]
 - Technical specifications and code organization
 - Key algorithms and testing strategy
 - Dependencies and monitoring requirements
 
 ## Design Review Checklist
-- [ ] Security review completed
-- [ ] Performance impact assessed
-- [ ] Error handling comprehensive
-- [ ] Testing strategy defined
-- [ ] Documentation planned
-- [ ] Backwards compatibility checked
+**Status**: [ ] Not Started | [ ] In Progress | [ ] Complete
+
+Before implementation, review design against:
+- [ ] **Problem Alignment**: Does solution address all stated problems?
+- [ ] **Goal Achievement**: Will implementation meet all success criteria?
+- [ ] **Non-Goal Compliance**: Are we staying within defined scope?
+- [ ] **Security review completed**
+- [ ] **Performance impact assessed**
+- [ ] **Error handling comprehensive**
+- [ ] **Testing strategy defined**
+- [ ] **Documentation planned**
+- [ ] **Backwards compatibility checked**
 
 ## Implementation Phases
-Phase 1: Foundation & Architecture
-- [ ] Define core components
-- [ ] Create basic infrastructure
-- [ ] Establish architectural patterns
+**Overall Progress**: [ ] 0% | [ ] 20% | [ ] 40% | [ ] 60% | [ ] 80% | [ ] 100%
 
-Phase 2: Core Functionality
-- [ ] Implement primary features
-- [ ] Focus on happy path scenarios
-- [ ] Create working examples
+### Phase 1: Foundation & Architecture (16.7% of total)
+**Description**: Establish core infrastructure and architectural patterns
+- [ ] Define core components and interfaces
+- [ ] Create basic infrastructure and scaffolding
+- [ ] Establish architectural patterns and conventions
+- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
+- [ ] **Phase Gate**: Update implementation progress checkboxes
 
-Phase 3: Error Handling & Edge Cases
-- [ ] Add comprehensive error detection
-- [ ] Test failure scenarios
-- [ ] Handle edge cases
+### Phase 2: Core Functionality (16.7% of total)
+**Description**: Implement primary features and happy path scenarios
+- [ ] Implement primary features and core logic
+- [ ] Focus on happy path scenarios and basic operations
+- [ ] Create working examples and demonstrations
+- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
+- [ ] **Phase Gate**: Update implementation progress checkboxes
 
-Phase 4: Advanced Features & Integration
-- [ ] Add sophisticated functionality
-- [ ] Test complex interactions
-- [ ] Ensure seamless integration
+### Phase 3: Error Handling & Edge Cases (16.7% of total)
+**Description**: Add comprehensive error detection and edge case handling
+- [ ] Add comprehensive error detection and validation
+- [ ] Test failure scenarios and error conditions
+- [ ] Handle edge cases and boundary conditions
+- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
+- [ ] **Phase Gate**: Update implementation progress checkboxes
 
-Phase 5: Integration & Performance Testing
-- [ ] Test real-world scenarios
-- [ ] Validate performance
-- [ ] Run regression tests
+### Phase 4: Advanced Features & Integration (16.7% of total)
+**Description**: Add sophisticated functionality and ensure seamless integration
+- [ ] Add sophisticated functionality and advanced features
+- [ ] Test complex interactions and integration scenarios
+- [ ] Ensure seamless integration with existing systems
+- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
+- [ ] **Phase Gate**: Update implementation progress checkboxes
 
-Phase 6: Polish & Documentation
-- [ ] Update documentation
-- [ ] Create migration guides
+### Phase 5: Integration & Performance Testing (16.7% of total)
+**Description**: Validate real-world performance and run comprehensive tests
+- [ ] Test real-world scenarios and production-like conditions
+- [ ] Validate performance benchmarks and requirements
+- [ ] Run regression tests and integration suites
+- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
+- [ ] **Phase Gate**: Update implementation progress checkboxes
+
+### Phase 6: Polish & Documentation (16.7% of total)
+**Description**: Finalize documentation, create migration guides, and perform final validation
+- [ ] Update documentation and API references
+- [ ] Create migration guides and upgrade instructions
 - [ ] Final validation and sign-off
+- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
+- [ ] **Phase Gate**: Update implementation progress checkboxes to 100%
 ```
 
-### **3D Process: Think → Build → Ship**
-```
-Phase 1: Design & Test → Phase 2: Implement & Validate → Phase 3: Polish & Integrate
+### **🔄 3D Process: Think → Build → Ship**
 
-DO NOT proceed to next phase until ALL criteria met:
-✅ 100% test pass rate
-✅ No regressions
-✅ Error handling complete
-✅ Documentation updated
-✅ Performance within bounds
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Phase 1:      │    │   Phase 2:      │    │   Phase 3:      │
+│ Design & Test   │ -> │ Implement &     │ -> │ Polish &        │
+│                 │    │ Validate        │    │ Integrate       │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+
+⚠️  DO NOT proceed to next phase until ALL criteria met:
+✅ 100% test pass rate (uv run pytest tests/ -v)
+✅ No regressions detected
+✅ Error handling complete and tested
+✅ Documentation updated and accurate
+✅ Performance within defined bounds
+✅ Implementation progress checkboxes updated
+✅ Design review completed (if in Phase 1)
 ```
 
-**Phase 1: Design & Test**
+**Phase 1: Design & Test (Think)**
 - Write design doc with Problem Statement/Goals/Non-Goals/Proposed Solution
+- **Include brief descriptions** for each section, not just bullet points
+- **Create system diagrams** (ASCII or Mermaid) showing component relationships
+- **Perform Design Review** against problem statement, goals, and non-goals
+- **Update Design Review Checklist** with findings and approvals
 - Create failing tests defining expected behavior
+- **Run full test suite**: `uv run pytest tests/ -v` - verify baseline
+- **Update Phase 1 checkboxes** before proceeding
 
-**Phase 2: Implement & Validate** 
-- Core implementation + error handling
-- Make tests pass, add edge cases
+**Phase 2: Implement & Validate (Build)** 
+- Core implementation with **brief code comments** explaining logic
+- Make tests pass, add edge case coverage
+- **Include explanatory comments** in complex algorithms
+- **Run full test suite** after each major change: `uv run pytest tests/ -v`
+- **Fix all test failures** before proceeding to next phase
+- **Update Phase 2-6 checkboxes** as work progresses
 
-**Phase 3: Polish & Integrate**
-- Documentation + integration testing
-- Performance validation
+**Phase 3: Polish & Integrate (Ship)**
+- Documentation with **descriptive explanations**, not just code examples
+- **Create integration diagrams** showing system interactions
+- Integration testing and performance validation
+- **Run comprehensive test suite**: `uv run pytest tests/ -v`
+- **Verify no regressions** introduced during implementation
+- **Update final checkboxes** and mark implementation complete
 
-### **Quality Gates**
+### **🚨 Quality Gates & Monitoring**
+
 ```
-🚨 RED FLAGS (stop development):
+🚨 RED FLAGS (stop development immediately):
 - Test failures in foundational components
-- Unclear error messages
-- Performance degradation >10%
-- Breaking changes without migration
-- Undocumented public APIs
+- Unclear error messages or poor error handling
+- Performance degradation >10% from baseline
+- Breaking changes without migration strategy
+- Undocumented public APIs or missing descriptions
+- Missing or incomplete system diagrams
+- Implementation proceeding without design review completion
 
-✅ PROCEED CRITERIA:
-- All phase tests pass (100% success)
-- Error messages clear and actionable
-- Documentation matches implementation
-- Performance benchmarks met
+✅ PROCEED CRITERIA (all must be met):
+- All phase tests pass (100% success rate)
+- Error messages clear, actionable, and well-tested  
+- Documentation matches implementation with explanatory text
+- Performance benchmarks met or exceeded
+- System diagrams accurately reflect implementation
+- Design review checklist fully completed
+- Implementation progress accurately tracked
 ```
+
+### **📊 AI Supervisor Monitoring Points**
+
+For AI supervisors tracking 3D compliance:
+
+1. **Design Phase Checkpoints**:
+   - [ ] Design document exists and follows template
+   - [ ] Brief descriptions provided for all major sections
+   - [ ] System architecture diagram created (ASCII/Mermaid)
+   - [ ] Design review checklist completed
+   
+2. **Implementation Phase Checkpoints**:
+   - [ ] Test suite passing at end of each phase
+   - [ ] Implementation progress checkboxes updated
+   - [ ] Code includes explanatory comments, not just fragments
+   - [ ] Error handling comprehensive and tested
+
+3. **Quality Assurance Checkpoints**:
+   - [ ] No regressions detected in test runs
+   - [ ] Performance benchmarks maintained
+   - [ ] Documentation complete with descriptive explanations
+   - [ ] Integration diagrams reflect actual system behavior
+
+### **🤖 AI Coder Execution Guidelines**
+
+For AI coders implementing 3D methodology:
+
+1. **Before Starting**: Always create design document first, never skip
+2. **During Design**: Include brief descriptions AND diagrams, not just code
+3. **During Implementation**: Run `uv run pytest tests/ -v` after each phase
+4. **Phase Transitions**: Update checkboxes and verify all criteria met
+5. **Problem Solving**: Create diagrams to visualize complex relationships
+6. **Documentation**: Write explanations, not just code examples
+7. **Testing**: Fix ALL test failures before moving to next phase
 
 ## Coding Standards & Type Hints
 
