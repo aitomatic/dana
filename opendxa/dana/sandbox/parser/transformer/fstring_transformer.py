@@ -25,6 +25,7 @@ import logging
 from typing import Any, List
 
 from opendxa.dana.common.runtime_scopes import RuntimeScopes
+from opendxa.dana.sandbox.parser.utils.identifier_utils import is_valid_identifier
 from opendxa.dana.sandbox.parser.ast import (
     BinaryExpression,
     BinaryOperator,
@@ -316,10 +317,13 @@ class FStringTransformer(BaseTransformer):
                     return Identifier(name=f"{scope}.{var_name}")
 
         # Handle regular variables and literals
-        if term.replace(".", "").isalnum():
+        # Check if it's a valid identifier (alphanumeric + underscores, not starting with digit)
+        if is_valid_identifier(term):
             parts = term.split(".")
             if parts[0] not in RuntimeScopes.ALL:
                 parts = self._insert_local_scope(parts)
             return Identifier(name=".".join(parts))
         else:
             return self._parse_literal(term)
+
+
