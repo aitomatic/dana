@@ -28,9 +28,18 @@ eval = DanaSandbox.quick_eval
 # from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
 # from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
+# Python-to-Dana Integration - Natural Python API with lazy loading
+def __getattr__(name: str):
+    """Lazy loading for dana module to avoid circular imports."""
+    if name == "dana":
+        from opendxa.contrib.python_to_dana import dana as _dana
+        return _dana
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+
 __all__ = [
     "DanaSandbox",
     "ExecutionResult",
     "run",
     "eval",
+    "dana",  # Available via lazy loading
 ]
