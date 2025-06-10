@@ -162,6 +162,7 @@ class TestLLMConfigurationManager(unittest.TestCase):
         self.assertEqual(model, "openai:gpt-4")
 
     @patch("opendxa.common.resource.llm_configuration_manager.ConfigLoader")
+    @patch.dict(os.environ, {"OPENDXA_MOCK_LLM": "false"})
     def test_determine_model_explicit_unavailable(self, mock_config_loader):
         """Test model determination with unavailable explicit model."""
         config_manager = LLMConfigurationManager(explicit_model="anthropic:claude-3")

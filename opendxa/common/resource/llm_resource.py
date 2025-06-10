@@ -23,7 +23,7 @@ from typing import Any
 import aisuite as ai
 from openai.types.chat import ChatCompletion
 
-from opendxa.common.config.config_loader import ConfigLoader
+from opendxa.common.config import ConfigLoader
 from opendxa.common.exceptions import (
     ConfigurationError,
     LLMError,
@@ -179,7 +179,12 @@ class LLMResource(BaseResource):
                     if not self._validate_model(self._model):
                         self.log_warning(f"Default model '{self._model}' from config seems unavailable (missing API keys?).")
                 else:
-                    self.log_error("Could not find an available model and no default_model specified in config.")
+                    # Only log error if not in mock mode
+                    is_mock_mode = os.environ.get("OPENDXA_MOCK_LLM", "").lower() == "true"
+                    if not is_mock_mode:
+                        self.log_error("Could not find an available model and no default_model specified in config.")
+                    else:
+                        self.log_debug("No model found, but mock mode is enabled - this is expected in test environments.")
                     # self._model remains None, potentially causing issues later
 
         # Initialize query executor (Phase 5A integration)

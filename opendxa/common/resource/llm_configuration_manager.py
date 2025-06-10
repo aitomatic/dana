@@ -46,11 +46,17 @@ class LLMConfigurationManager:
 
     def _determine_model(self) -> str:
         """Determine which model to use based on configuration and availability."""
+        # Check if we're in mock mode first to avoid unnecessary work and logging
+        is_mock_mode = os.environ.get("OPENDXA_MOCK_LLM", "").lower() == "true"
+
         # Priority: explicit model > auto-selection > default
         if self.explicit_model:
             if self._validate_model(self.explicit_model):
                 return self.explicit_model
             else:
+                if is_mock_mode:
+                    # In mock mode, just return a mock model instead of raising error
+                    return "mock:test-model"
                 raise LLMError(f"Explicitly requested model '{self.explicit_model}' is not available")
 
         # Try auto-selection
@@ -63,8 +69,8 @@ class LLMConfigurationManager:
         if self._validate_model(default):
             return default
 
-        # If no models are available and we're in mock mode, return a mock model
-        if os.environ.get("OPENDXA_MOCK_LLM", "").lower() == "true":
+        # If no models are available and we're in mock mode, return a mock model silently
+        if is_mock_mode:
             return "mock:test-model"
 
         raise LLMError("No available LLM models found. Please check your API keys and configuration.")
