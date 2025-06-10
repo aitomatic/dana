@@ -5,7 +5,7 @@ Status: Design Phase
 Module: opendxa.dana
 ```
 
-Also see: [Modules and Imports](modules_and_imports.md)
+Also see: [Modules and Imports](../../.implementation/modules_and_imports.md)
 
 # Comparison: Dana, Python, and Go
 

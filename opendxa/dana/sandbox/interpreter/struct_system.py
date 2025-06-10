@@ -30,7 +30,7 @@ class StructType:
     """Runtime representation of a struct type definition."""
     
     name: str
-    fields: dict[str, TypeHint]
+    fields: dict[str, str]  # Maps field name to type name string
     field_order: list[str]  # Maintain field declaration order
     
     def __post_init__(self):
@@ -63,14 +63,61 @@ class StructType:
                 f"Valid fields: {sorted(self.fields.keys())}"
             )
         
+        # Validate field types
+        type_errors = []
+        for field_name, value in args.items():
+            expected_type = self.fields[field_name]
+            if not self._validate_field_type(field_name, value, expected_type):
+                actual_type = type(value).__name__
+                type_errors.append(f"Field '{field_name}': expected {expected_type}, got {actual_type} ({repr(value)})")
+        
+        if type_errors:
+            raise ValueError(
+                f"Type validation failed for struct '{self.name}': {'; '.join(type_errors)}. "
+                f"Check field types match declaration."
+            )
+        
         return True
     
-    def get_field_type(self, field_name: str) -> TypeHint | None:
-        """Get the type hint for a specific field."""
+    def _validate_field_type(self, field_name: str, value: Any, expected_type: str) -> bool:
+        """Validate that a field value matches the expected type."""
+        # Handle None values - in Dana, 'null' maps to None
+        if value is None:
+            return expected_type in ["null", "None", "any"]
+        
+        # Dana boolean literals (true/false) map to Python bool
+        if expected_type == "bool":
+            return isinstance(value, bool)
+        
+        # Basic type validation
+        type_mapping = {
+            "str": str,
+            "int": int, 
+            "float": float,
+            "list": list,
+            "dict": dict,
+            "any": object,  # 'any' accepts anything
+        }
+        
+        expected_python_type = type_mapping.get(expected_type)
+        if expected_python_type:
+            return isinstance(value, expected_python_type)
+        
+        # Handle struct types (for nested structs)
+        # Check if the expected type is a registered struct
+        if StructTypeRegistry.exists(expected_type):
+            return isinstance(value, StructInstance) and value._type.name == expected_type
+        
+        # Unknown type - for now, accept it (could be a custom type we don't know about)
+        # In a more complete implementation, we'd have a type registry
+        return True
+    
+    def get_field_type(self, field_name: str) -> str | None:
+        """Get the type name for a specific field."""
         return self.fields.get(field_name)
     
     def __repr__(self) -> str:
-        field_strs = [f"{name}: {type_hint.name}" for name, type_hint in self.fields.items()]
+        field_strs = [f"{name}: {type_name}" for name, type_name in self.fields.items()]
         return f"StructType({self.name}, fields=[{', '.join(field_strs)}])"
 
 
@@ -105,8 +152,13 @@ class StructInstance:
             return self._values.get(name)
         
         available_fields = sorted(self._type.fields.keys())
+        
+        # Add "did you mean?" suggestion for similar field names
+        suggestion = self._find_similar_field(name, available_fields)
+        suggestion_text = f" Did you mean '{suggestion}'?" if suggestion else ""
+        
         raise AttributeError(
-            f"Struct '{self._type.name}' has no field '{name}'. "
+            f"Struct '{self._type.name}' has no field '{name}'.{suggestion_text} "
             f"Available fields: {available_fields}"
         )
     
@@ -118,18 +170,69 @@ class StructInstance:
             return
         
         if hasattr(self, '_type') and name in self._type.fields:
-            # TODO: Add type validation here if desired
+            # Validate type before assignment
+            expected_type = self._type.fields[name]
+            if not self._type._validate_field_type(name, value, expected_type):
+                actual_type = type(value).__name__
+                raise TypeError(
+                    f"Field assignment failed for '{self._type.name}.{name}': "
+                    f"expected {expected_type}, got {actual_type} ({repr(value)}). "
+                    f"Check that the value matches the declared field type."
+                )
             self._values[name] = value
         elif hasattr(self, '_type'):
             # Struct type is initialized, reject unknown fields
             available_fields = sorted(self._type.fields.keys())
+            
+            # Add "did you mean?" suggestion for similar field names
+            suggestion = self._find_similar_field(name, available_fields)
+            suggestion_text = f" Did you mean '{suggestion}'?" if suggestion else ""
+            
             raise AttributeError(
-                f"Struct '{self._type.name}' has no field '{name}'. "
+                f"Struct '{self._type.name}' has no field '{name}'.{suggestion_text} "
                 f"Available fields: {available_fields}"
             )
         else:
             # Struct type not yet initialized (during __init__)
             super().__setattr__(name, value)
+    
+    def _find_similar_field(self, name: str, available_fields: list[str]) -> str | None:
+        """Find the most similar field name using simple string similarity."""
+        if not available_fields:
+            return None
+        
+        # Simple similarity based on common characters and length
+        def similarity_score(field: str) -> float:
+            # Exact match (shouldn't happen, but just in case)
+            if field == name:
+                return 1.0
+            
+            # Case-insensitive similarity
+            field_lower = field.lower()
+            name_lower = name.lower()
+            
+            if field_lower == name_lower:
+                return 0.9
+            
+            # Count common characters
+            common_chars = len(set(field_lower) & set(name_lower))
+            max_len = max(len(field), len(name))
+            if max_len == 0:
+                return 0.0
+            
+            # Bonus for similar length
+            length_similarity = 1.0 - abs(len(field) - len(name)) / max_len
+            char_similarity = common_chars / max_len
+            
+            # Combined score with weights
+            return (char_similarity * 0.7) + (length_similarity * 0.3)
+        
+        # Find the field with the highest similarity score
+        best_field = max(available_fields, key=similarity_score)
+        best_score = similarity_score(best_field)
+        
+        # Only suggest if similarity is reasonably high
+        return best_field if best_score > 0.4 else None
     
     def __repr__(self) -> str:
         """String representation showing struct type and field values."""

@@ -11,6 +11,7 @@ Claude AI Configuration and Guidelines
 - **ALL temporary development files go in `tmp/` directory**
 - Run `uv run ruff check . && uv run ruff format .` before commits
 - Use type hints: `def func(x: int) -> str:` (required)
+- **Apply KISS/YAGNI**: Start simple, add complexity only when needed
 
 ## Essential Commands
 ```bash
@@ -315,6 +316,7 @@ Status: [Design Phase | Implementation Phase | Review Phase]
 - High-level approach and key components
 - Why this approach was chosen
 - Main trade-offs and system fit
+- **KISS/YAGNI Analysis**: Justify complexity vs. simplicity choices
 
 ## Proposed Design
 **Brief Description**: [System architecture overview]
@@ -348,6 +350,7 @@ Before implementation, review design against:
 - [ ] **Problem Alignment**: Does solution address all stated problems?
 - [ ] **Goal Achievement**: Will implementation meet all success criteria?
 - [ ] **Non-Goal Compliance**: Are we staying within defined scope?
+- [ ] **KISS/YAGNI Compliance**: Is complexity justified by immediate needs?
 - [ ] **Security review completed**
 - [ ] **Performance impact assessed**
 - [ ] **Error handling comprehensive**
@@ -417,13 +420,19 @@ Before implementation, review design against:
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 
 ⚠️  DO NOT proceed to next phase until ALL criteria met:
-✅ 100% test pass rate (uv run pytest tests/ -v)
-✅ No regressions detected
-✅ Error handling complete and tested
+✅ 100% test pass rate (uv run pytest tests/ -v) - ZERO failures allowed
+✅ No regressions detected in existing functionality
+✅ Error handling complete and tested with failure scenarios
 ✅ Documentation updated and accurate
 ✅ Performance within defined bounds
 ✅ Implementation progress checkboxes updated
 ✅ Design review completed (if in Phase 1)
+
+🧪 **CRITICAL: Every phase MUST end with full test validation**
+- Run `uv run pytest tests/ -v` before marking phase complete
+- ALL tests must pass - no exceptions, no "TODO: fix later"
+- Any test failure = phase incomplete, must fix before proceeding
+- Add new tests for new functionality within the same phase
 ```
 
 **Phase 1: Design & Test (Think)**
@@ -456,13 +465,15 @@ Before implementation, review design against:
 
 ```
 🚨 RED FLAGS (stop development immediately):
-- Test failures in foundational components
+- **ANY test failures** in foundational components or new features
+- **Proceeding to next phase** with failing tests
 - Unclear error messages or poor error handling
 - Performance degradation >10% from baseline
 - Breaking changes without migration strategy
 - Undocumented public APIs or missing descriptions
 - Missing or incomplete system diagrams
 - Implementation proceeding without design review completion
+- **Over-engineering**: Adding complexity not justified by current requirements
 
 ✅ PROCEED CRITERIA (all must be met):
 - All phase tests pass (100% success rate)
@@ -507,6 +518,7 @@ For AI coders implementing 3D methodology:
 5. **Problem Solving**: Create diagrams to visualize complex relationships
 6. **Documentation**: Write explanations, not just code examples
 7. **Testing**: Fix ALL test failures before moving to next phase
+8. **Design Decisions**: Apply KISS/YAGNI - start simple, present complex alternatives to humans
 
 ## Coding Standards & Type Hints
 
@@ -533,6 +545,90 @@ def process_data(items: List[str], config: Optional[Dict[str, int]] = None) -> U
 - **MUST RUN**: `uv run ruff check . && uv run ruff format .` before commits
 - Line length limit: 140 characters (configured in pyproject.toml)
 - Auto-fix with: `uv run ruff check --fix .`
+
+## KISS/YAGNI Design Principles
+
+**KISS (Keep It Simple, Stupid)** & **YAGNI (You Aren't Gonna Need It)**: Balance engineering rigor with practical simplicity.
+
+### **AI Decision-Making Guidelines**
+```
+🎯 **START SIMPLE, EVOLVE THOUGHTFULLY**
+
+For design decisions, AI coders should:
+1. **Default to simplest solution** that meets current requirements
+2. **Document complexity trade-offs** when proposing alternatives  
+3. **Present options** when multiple approaches have merit
+4. **Justify complexity** only when immediate needs require it
+
+🤖 **AI CAN DECIDE** (choose simplest):
+- Data structure choice (dict vs class vs dataclass)
+- Function organization (single file vs module split)
+- Error handling level (basic vs comprehensive)
+- Documentation depth (minimal vs extensive)
+
+👤 **PRESENT TO HUMAN** (let them choose):
+- Architecture patterns (monolith vs microservices)
+- Framework choices (custom vs third-party)
+- Performance optimizations (simple vs complex)
+- Extensibility mechanisms (hardcoded vs configurable)
+
+⚖️ **COMPLEXITY JUSTIFICATION TEMPLATE**:
+"Proposing [complex solution] over [simple solution] because:
+- Current requirement: [specific need]
+- Simple approach limitation: [concrete issue]
+- Complexity benefit: [measurable advantage]
+- Alternative: [let human decide vs simpler approach]"
+```
+
+### **Common Over-Engineering Patterns to Avoid**
+```
+❌ AVOID (unless specifically needed):
+- Abstract base classes for single implementations
+- Configuration systems for hardcoded values
+- Generic solutions for specific problems
+- Premature performance optimizations
+- Complex inheritance hierarchies
+- Over-flexible APIs with many parameters
+- Caching systems without proven performance needs
+- Event systems for simple function calls
+
+✅ PREFER (start here):
+- Concrete implementations that work
+- Hardcoded values that can be extracted later
+- Specific solutions for specific problems
+- Simple, readable code first
+- Composition over inheritance
+- Simple function signatures
+- Direct computation until performance matters
+- Direct function calls for simple interactions
+```
+
+### **Incremental Complexity Strategy**
+```
+📈 **EVOLUTION PATH** (add complexity only when needed):
+
+Phase 1: Hardcoded → Phase 2: Configurable → Phase 3: Extensible
+
+Example:
+Phase 1: `return "Hello, World!"`
+Phase 2: `return f"Hello, {name}!"`
+Phase 3: `return formatter.format(greeting_template, name)`
+
+🔄 **WHEN TO EVOLVE**:
+- Phase 1→2: When second use case appears
+- Phase 2→3: When third different pattern emerges
+- Never evolve: If usage remains stable
+```
+
+## Best Practices and Patterns
+- Use dataclasses or Pydantic models for data structures
+- Prefer composition over inheritance
+- Use async/await for I/O operations
+- Follow SOLID principles
+- Use dependency injection where appropriate
+- Implement proper error handling with custom exceptions
+- **Start with simplest solution that works**
+- **Add complexity only when requirements demand it**
 
 ## Error Handling Standards
 ```

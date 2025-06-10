@@ -663,15 +663,22 @@ class ExpressionTransformer(BaseTransformer):
                 return FunctionCall(name=name, args=args, location=getattr(base, "location", None))
             # Attribute access: .NAME
             elif hasattr(t, "type") and t.type == "NAME":
-                name = getattr(base, "name", None)
-                if not isinstance(name, str):
-                    name = str(base)
-                name = f"{name}.{t.value}"
-                base = Identifier(name=name, location=getattr(base, "location", None))
-            # Indexing: [ ... ]
-            elif hasattr(t, "data") and t.data == "expr":
+                # For simple identifiers, continue with dotted name approach
+                if isinstance(base, Identifier):
+                    name = base.name
+                    name = f"{name}.{t.value}"
+                    base = Identifier(name=name, location=getattr(base, "location", None))
+                else:
+                    # For complex expressions (like SubscriptExpression), create AttributeAccess
+                    base = AttributeAccess(
+                        object=base, attribute=t.value, location=getattr(base, "location", None)
+                    )
+            # Indexing: [ ... ] - trailer is the index expression itself
+            else:
+                # If it's not a function call or attribute access, it must be indexing
+                # The trailer is the index expression (already transformed to AST)
                 base = SubscriptExpression(
-                    object=base, index=t.children[0] if hasattr(t, "children") else t, location=getattr(base, "location", None)
+                    object=base, index=t, location=getattr(base, "location", None)
                 )
         return base
 
