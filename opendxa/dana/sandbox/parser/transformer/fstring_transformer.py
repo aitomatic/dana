@@ -316,10 +316,35 @@ class FStringTransformer(BaseTransformer):
                     return Identifier(name=f"{scope}.{var_name}")
 
         # Handle regular variables and literals
-        if term.replace(".", "").isalnum():
+        # Check if it's a valid identifier (alphanumeric + underscores, not starting with digit)
+        if self._is_valid_identifier(term):
             parts = term.split(".")
             if parts[0] not in RuntimeScopes.ALL:
                 parts = self._insert_local_scope(parts)
             return Identifier(name=".".join(parts))
         else:
             return self._parse_literal(term)
+
+    def _is_valid_identifier(self, term: str) -> bool:
+        """
+        Check if a term is a valid Python/Dana identifier.
+        
+        Args:
+            term: The term to check
+            
+        Returns:
+            True if the term is a valid identifier, False otherwise
+        """
+        if not term:
+            return False
+        
+        # Handle dotted identifiers (e.g., "local.var", "obj.attr")
+        parts = term.split(".")
+        for part in parts:
+            if not part:  # Empty part (consecutive dots)
+                return False
+            # Check if each part is a valid identifier
+            if not (part.replace("_", "").isalnum() and (part[0].isalpha() or part[0] == "_")):
+                return False
+        
+        return True
