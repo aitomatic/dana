@@ -276,7 +276,11 @@ def update_agent_state(new_data):
 processed_data = raw_data | validate | normalize | analyze | format_output
 ```
 
-## Design-Driven Development Methodology
+## 3D Methodology (Design-Driven Development)
+
+**3D = Design-Driven Development**: A rigorous methodology ensuring quality through comprehensive design documentation, iterative implementation phases, and strict quality gates.
+
+Core principle: Think before you build, build with intention, ship with confidence.
 
 ### **ALWAYS Create Design Document First**
 For any feature/system implementation, create a design doc following this template:
@@ -359,7 +363,7 @@ Phase 6: Polish & Documentation
 - [ ] Final validation and sign-off
 ```
 
-### **3-Phase Development Process**
+### **3D Process: Think → Build → Ship**
 ```
 Phase 1: Design & Test → Phase 2: Implement & Validate → Phase 3: Polish & Integrate
 

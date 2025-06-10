@@ -49,6 +49,27 @@ def scan(image: Image):
 
 This is similar to Go’s `interface` that allows for polymorphism. Dana takes duck-typing to the next level, and determines suitability at runtime via the existence of a `scan()` function matching the `struct` type in the signature.
 
+### Struct Method Signature Requirements
+
+**Critical Rule: For polymorphic struct methods, the struct type MUST be the first named parameter.**
+
+```dana
+# ✅ Valid struct method signatures
+def scan(doc: Document, pattern: str) -> list:                    # Basic struct method
+def process(user: UserProfile, *actions: str) -> bool:            # With variadic args  
+def update(config: SystemConfig, **options: any) -> None:         # With keyword args
+def transform(data: DataFrame, *filters: str, **params: any):     # With both variadic
+
+# ❌ Invalid struct method signatures  
+def scan(*args, doc: Document) -> list:          # Struct not first named parameter
+def process(**kwargs) -> bool:                   # No way to identify struct type
+def update(setting: str, config: SystemConfig): # Struct not first parameter
+```
+
+**Why this matters**: The first named parameter determines which struct type the function operates on, enabling Dana's runtime polymorphic dispatch. Variadic arguments (`*args`, `**kwargs`) don't count as "named" parameters for this rule.
+
+This follows Go's receiver-based method approach where the receiver type (first parameter) determines method dispatch.
+
 # Dana Data Types, Structs, and Type System
 
 This document details the Dana language's approach to data types, including its dynamic typing philosophy, built-in types, user-defined `struct`s, type hinting, and automatic type coercion mechanisms.
