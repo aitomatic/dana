@@ -25,7 +25,7 @@ import logging
 from typing import Any, List
 
 from opendxa.dana.common.runtime_scopes import RuntimeScopes
-from opendxa.dana.common.identifier_utils import is_valid_identifier
+from opendxa.dana.sandbox.parser.utils.identifier_utils import is_valid_identifier
 from opendxa.dana.sandbox.parser.ast import (
     BinaryExpression,
     BinaryOperator,
