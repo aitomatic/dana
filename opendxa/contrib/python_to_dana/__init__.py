@@ -18,7 +18,7 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from opendxa.contrib.python_to_dana.gateway.dana_module import Dana
+from opendxa.contrib.python_to_dana.dana_module import Dana
 
 # Create the main dana instance that will be imported
 dana = Dana()
