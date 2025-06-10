@@ -675,6 +675,11 @@ class ExpressionTransformer(BaseTransformer):
                 base = SubscriptExpression(
                     object=base, index=t.children[0] if hasattr(t, "children") else t, location=getattr(base, "location", None)
                 )
+            # Handle case where expr has already been unwrapped to an expression
+            elif isinstance(t, (LiteralExpression, Identifier, BinaryExpression, UnaryExpression, DictLiteral, ListLiteral, TupleLiteral, SetLiteral, FStringExpression, AttributeAccess, SubscriptExpression, ObjectFunctionCall)):
+                base = SubscriptExpression(
+                    object=base, index=t, location=getattr(base, "location", None)
+                )
         return base
 
     def _get_full_attribute_name(self, attr):
