@@ -1,4 +1,4 @@
-# POET: Perceive → Operate → Encode → Train Function Execution Model
+# POET: Perceive → Operate → Enforce → Train Function Execution Model
 
 ## Motivation: POET – A Robust, Learning-Enabled Function Execution Protocol for the GenAI Era
 
@@ -59,7 +59,7 @@ Let's see how POET addresses these challenges:
            'email': extracted_email
        }
        
-       # Encode: Ensures output matches CustomerRecord type
+       # Enforce: Ensures output matches CustomerRecord type
        #  - Validates email format
        #  - Normalizes name casing
        #  - Fills optional fields with safe defaults
@@ -81,7 +81,7 @@ Let's see how POET addresses these challenges:
    # How it works:
    # Perceive: Recognizes float extraction intent from type hint
    # Operate: Generates optimal prompt for numerical extraction
-   # Encode: Ensures valid float output, handles currency symbols
+   # Enforce: Ensures valid float output, handles currency symbols
    # Train: Improves extraction accuracy over time
    ```
 
@@ -101,7 +101,7 @@ Let's see how POET addresses these challenges:
            retry_strategy=learned_strategy
        )
        
-       # Encode: Ensures valid APIResponse
+       # Enforce: Ensures valid APIResponse
        #  - Validates response format
        #  - Handles partial responses
        #  - Normalizes error codes
@@ -163,7 +163,7 @@ The POET execution model provides a structured, learning-enabled approach to AI 
 graph LR
     A[Input Data] --> B[Perceive<br/>Fault-tolerant<br/>Context Processing]
     B --> C[Operate<br/>Business Logic<br/>Engineer-Written]
-    C --> D[Encode<br/>Error-free<br/>Deterministic Output]
+    C --> D[Enforce<br/>Error-free<br/>Deterministic Output]
     D --> E[Output Results]
     D --> F[Train<br/>Self-Learning<br/>Feedback Loop]
     F --> B
@@ -174,7 +174,7 @@ graph LR
     style F fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#000
 ```
 
-This flow ensures that engineers focus on writing business logic (Operate) while the runtime automatically handles fault-tolerant input processing (Perceive), reliable output generation (Encode), and continuous learning (Train).
+This flow ensures that engineers focus on writing business logic (Operate) while the runtime automatically handles fault-tolerant input processing (Perceive), reliable output generation (Enforce), and continuous learning (Train).
 
 ---
 
@@ -183,7 +183,7 @@ This flow ensures that engineers focus on writing business logic (Operate) while
 The promise of **neurosymbolic systems** is to **combine the flexibility of learning-based models with the rigor of symbolic computation**. The POET model extends this by explicitly incorporating a learning cycle.
 
 * Language models excel at **understanding messy, underspecified, human-centric input** (`Perceive`).
-* Symbolic components excel at **structured execution, error-checking, and guarantees** (`Operate`, `Encode` including validation).
+* Symbolic components excel at **structured execution, error-checking, and guarantees** (`Operate`, `Enforce` including validation).
 * A dedicated **learning mechanism** allows the system to improve over time based on feedback (`Train`).
 
 But today's tooling often lacks a unifying control structure to bridge these elements safely and enable continuous improvement.
@@ -192,9 +192,9 @@ What's missing is an **execution framework** that:
 
 * Tolerates fuzziness on the input side (`Perceive`).
 * Enables intelligent, adaptive operation at the core, including dynamic prompt optimization or context-sensitive adjustments to how tasks are performed (`Operate`, informed by `Train`).
-* Enforces structure and validation on the output side (`Encode`).
-* Retries, recovers, and learns from failure (`Encode` for retries, `Train` for learning).
-* Explicitly facilitates a feedback loop for continuous improvement (`Encode` providing identifiers, `Train` processing feedback).
+* Enforces structure and validation on the output side (`Enforce`).
+* Retries, recovers, and learns from failure (`Enforce` for retries, `Train` for learning).
+* Explicitly facilitates a feedback loop for continuous improvement (`Enforce` providing identifiers, `Train` processing feedback).
 
 ---
 
@@ -205,9 +205,9 @@ graph LR
     subgraph POET Unit
         direction LR
         Perceive[Perceive Stage] -- Perceived Input & Learnings --> Operate[Operate Stage]
-        Operate -- Raw Output --> Encode[Encode Stage (incl. Internal Validation)]
-        Encode -- Validated Output & Execution ID --> OutputToReceiver[(Output + Execution_ID)]
-        Encode -- Execution Context --> TrainContextStore((Execution Context Store))
+        Operate -- Raw Output --> Enforce[Enforce Stage (incl. Internal Validation)]
+        Enforce -- Validated Output & Execution ID --> OutputToReceiver[(Output + Execution_ID)]
+        Enforce -- Execution Context --> TrainContextStore((Execution Context Store))
         Perceive -- Retrieves Learnings --> LearningStore([Learning Store])
     end
 
@@ -217,17 +217,17 @@ graph LR
     Train -- Retrieves Context --> TrainContextStore
 ```
 
-The **Perceive → Operate → Encode → Train (POET)** protocol embodies this pattern:
+The **Perceive → Operate → Enforce → Train (POET)** protocol embodies this pattern:
 
 1.  **Perceive (P)**: Accept inputs with fault tolerance and context sensitivity. Retrieve relevant past learnings from a `LearningStore` to inform processing. For instance, in the email summarization example, this phase would normalize the user's request, identify the actual email content, potentially use a `CodeContextAnalyzer` to understand that a concise summary is expected, and **transform this into an optimized prompt** based on current input and past successful strategies. This optimized prompt and any retrieved learnings are then passed to the `Operate` phase.
 
 2.  **Operate (O)**: Execute the core function or plan using the (potentially optimized) input from the `Perceive` phase. This can be a tool call, LLM generation (with an enhanced prompt), symbolic program, or composite chain, utilizing the `perceived_input` and any guidance from retrieved learnings.
 
-3.  **Encode (E)**:
+3.  **Enforce (E)**:
     *   **Internal Validation**: Strictly check the `raw_output` from the `Operate` stage against `poet_status.expected_output_type` and other critical criteria. If validation fails, this stage can trigger a retry of the `Operate` stage (possibly with modified parameters based on the validation failure), up to `max_retries`.
     *   **Output Packaging**: If internal validation passes, package the validated output for the downstream receiver.
     *   **Execution ID Generation**: Generate a unique `execution_id` for this specific POET execution. This ID acts as a handle for future feedback.
-    *   **Contextual Data Encoding for Training**: Prepare a data packet containing the `execution_id`, `perceived_input`, validated `raw_output`, and relevant details from `poet_status` (like attempt count, active profile, etc.). This packet is stored or made available for the `Train` stage upon receiving feedback.
+    *   **Contextual Data Enforcement for Training**: Prepare a data packet containing the `execution_id`, `perceived_input`, validated `raw_output`, and relevant details from `poet_status` (like attempt count, active profile, etc.). This packet is stored or made available for the `Train` stage upon receiving feedback.
     *   **Output**: Provide the validated output and the `execution_id` to the downstream receiver.
 
 4.  **Train (T)**: This stage is typically activated asynchronously when a downstream receiver (or an external system) submits feedback using the `execution_id`.
@@ -258,12 +258,12 @@ POET becomes the **core abstraction** for runtime control in modern AI systems:
 
 | Use Case | POET Behavior |
 | ----------------------- | ----------------------------------------------------------------------------- |
-| LLM agent tool call | Perceive (NL → args), Operate (tool call), Encode (schema), Train (feedback) |
-| Natural language → code | Perceive (prompt parse), Operate (generate code), Encode (syntax/type check), Train (code improvement) |
-| Autonomous planner | Perceive (goal framing), Operate (plan/step), Encode (plan constraints met), Train (plan improvement) |
-| Semantic search | Perceive (query), Operate (retrieve), Encode (enough results, no contradiction), Train (semantic improvement) |
+| LLM agent tool call | Perceive (NL → args), Operate (tool call), Enforce (schema), Train (feedback) |
+| Natural language → code | Perceive (prompt parse), Operate (generate code), Enforce (syntax/type check), Train (code improvement) |
+| Autonomous planner | Perceive (goal framing), Operate (plan/step), Enforce (plan constraints met), Train (plan improvement) |
+| Semantic search | Perceive (query), Operate (retrieve), Enforce (enough results, no contradiction), Train (semantic improvement) |
 
-POET provides a **first-class retry loop**, **extensible Perceive and Encode logic**, and a runtime introspection context (`poet_status`)—all of which are critical for **safe AI deployment**, **tool chaining**, and **adaptive agent behavior**.
+POET provides a **first-class retry loop**, **extensible Perceive and Enforce logic**, and a runtime introspection context (`poet_status`)—all of which are critical for **safe AI deployment**, **tool chaining**, and **adaptive agent behavior**.
 
 ---
 
@@ -301,18 +301,18 @@ In the first call, with no specific type hint for `pi_description` (or if `-> an
 
 1. **Perceives** the request "what is pi?" and critically, the `expected_output_type` of `float` from the type hint.
 2. **Operates** by querying its underlying AI model, likely instructing it to provide a numerical value for Pi.
-3. **Encodes** that the AI's output can be (or is) a float, ensuring the assignment to `pi_float` is type-safe and that `pi_float` can be immediately used in numerical calculations like `area = pi_float * radius**2`.
+3. **Enforces** that the AI's output can be (or is) a float, ensuring the assignment to `pi_float` is type-safe and that `pi_float` can be immediately used in numerical calculations like `area = pi_float * radius**2`.
 
 This dynamic adaptation based on context, especially the desired output type, without changing the core textual prompt, is a hallmark of the POET model and a key to Dana's expressive power and developer convenience.
 
 ---
 
-This section outlines the POET (Perceive → Operate → Encode → Train) framework, designed for implementation in Python as part of the Dana runtime.
+This section outlines the POET (Perceive → Operate → Enforce → Train) framework, designed for implementation in Python as part of the Dana runtime.
 
-* The **POET control logic** and retry loop (within Encode) is implemented in Python.
+* The **POET control logic** and retry loop (within Enforce) is implemented in Python.
 * The **custom P, O, and E (specifically validation logic) functions** can be authored in **Dana**.
 * The **Operate function** is decorated in Python and becomes the execution anchor.
-* The framework retries execution based on internal validation outcomes within the Encode stage, with a default of **`max_retries = 3`**.
+* The framework retries execution based on internal validation outcomes within the Enforce stage, with a default of **`max_retries = 3`**.
 * The `poet_status` object is available to all stages (P, O, E) as part of the **sandbox context**, enabling adaptive behavior or introspection. The `Train` stage uses this context post-hoc.
 * A **LearningStore** (potentially using Dana state containers) is used by the `Train` stage to persist feedback and learnings, and by the `Perceive` stage to retrieve them.
 
@@ -325,7 +325,7 @@ Wraps a Python-defined **Operate** function with POET lifecycle logic. Accepts:
 | Parameter | Type | Description |
 | ------------- | ----------------------- | ---------------------------------------------------------------------------------------------------------- |
 | `perceive` | DanaFunction | Optional Dana function that maps raw input to perceived input for the `Operate` stage. Retrieves learnings. |
-| `validate` | DanaFunction | Optional Dana function used by the `Encode` stage for internal validation. Returns `true` if output is valid. |
+| `validate` | DanaFunction | Optional Dana function used by the `Enforce` stage for internal validation. Returns `true` if output is valid. |
 | `max_retries`
 
 ## Technical Implementation: The How and Why
@@ -438,7 +438,7 @@ def process_document(doc: Any) -> ProcessedDoc:
     The POET framework handles:
     1. Perceive: Format detection, OCR if needed, layout analysis
     2. Operate: Your core extraction logic here
-    3. Encode: Schema validation, format normalization
+    3. Enforce: Schema validation, format normalization
     4. Train: Learn from successful processing patterns
     """
     # Your core logic here - focused purely on business rules
@@ -480,7 +480,7 @@ def call_external_api(request: dict) -> APIResponse:
        - Load optimal timeout from learned patterns
        - Prepare request based on past successes
     
-    2. Encode (validation) phase might:
+    2. Enforce (validation) phase might:
        - Detect partial responses
        - Handle rate limiting
        - Normalize error formats

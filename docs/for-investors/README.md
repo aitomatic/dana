@@ -54,13 +54,13 @@ The AI coding ecosystem explosion validates our path forward:
 
 ## Technical Breakthrough: POET Self-Learning Functions
 
-**POET (Perceive-Operate-Encode-Train) represents the next evolution beyond static code generation:**
+**POET (Perceive-Operate-Enforce-Train) represents the next evolution beyond static code generation:**
 
 ```mermaid
 graph LR
     A[Input Data] --> B[Perceive<br/>Fault-tolerant<br/>Context Processing]
     B --> C[Operate<br/>Business Logic<br/>Engineer-Written]
-    C --> D[Encode<br/>Error-free<br/>Deterministic Output]
+    C --> D[Enforce<br/>Error-free<br/>Deterministic Output]
     D --> E[Output Results]
     D --> F[Train<br/>Self-Learning<br/>Feedback Loop]
     F --> B
@@ -97,7 +97,7 @@ graph LR
 
 **User Benefit**: Focus on business rules while optionally incorporating AI capabilities where needed
 
-### E - Encode: Guaranteed Output Reliability
+### E - Enforce: Guaranteed Output Reliability
 
 **Capability**: Runtime ensures outputs exactly match user expectations through intelligent type validation
 

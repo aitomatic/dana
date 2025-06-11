@@ -1,5 +1,0 @@
-# This is a comment
-
-
-def add_ten(x):
-    return x + 10

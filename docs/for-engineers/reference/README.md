@@ -7,8 +7,9 @@ This section contains comprehensive reference documentation for OpenDXA develope
 ## Contents
 
 - [API Reference](api/README.md) - Core APIs and function references
+  - [POET Decorators](api/poet-decorators.md) - `@poet()` decorator usage for Python and Dana
 - [Dana Syntax](dana-syntax.md) - Complete Dana language syntax guide
-- [POET Usage Guide](poet-usage-guide.md) - Perceive-Operate-Encode-Train usage patterns
+- [POET Usage Guide](poet-usage-guide.md) - Perceive-Operate-Enforce-Train usage patterns
 - [REPL Guide](repl-guide.md) - Working with the Dana REPL
 
 ## Coming Soon

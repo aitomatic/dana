@@ -2,7 +2,7 @@
 
 ## 1. Purpose and Goals
 
-The `CodeContextAnalyzer` is a critical component of the Dana runtime, specifically designed to support the **Perceive** phase of the POET (Perceive → Operate → Encode → Train) execution model. Its primary goal is to extract rich, actionable context from the Dana source code surrounding a function call, particularly for POET-enabled functions.
+The `CodeContextAnalyzer` is a critical component of the Dana runtime, specifically designed to support the **Perceive** phase of the POET (Perceive → Operate → Enforce → Train) execution model. Its primary goal is to extract rich, actionable context from the Dana source code surrounding a function call, particularly for POET-enabled functions.
 
 This contextual information allows the `Perceive` phase to:
 
@@ -106,7 +106,7 @@ The POET execution framework will invoke the `CodeContextAnalyzer` during its **
 Dana Code:
 ```dana
 # Function to get user details
-@poet(perceive="Perceive::UserDetails", encode="Encode::UserDetails")
+@poet(perceive="Perceive::UserDetails", enforce="Enforce::UserDetails")
 def get_user_data(user_id: string) -> dict:
  # Act: Python code to fetch from DB
  pass

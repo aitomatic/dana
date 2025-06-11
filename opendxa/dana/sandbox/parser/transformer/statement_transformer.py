@@ -55,6 +55,8 @@ from opendxa.dana.sandbox.parser.ast import (
     UseStatement,
     WhileLoop,
     WithStatement,
+    Decorator,
+    ExceptBlock,
 )
 from opendxa.dana.sandbox.parser.transformer.base_transformer import BaseTransformer
 from opendxa.dana.sandbox.parser.transformer.expression_transformer import ExpressionTransformer
@@ -225,91 +227,199 @@ class StatementTransformer(BaseTransformer):
             return self.expression_transformer.expression([item])
 
     def function_def(self, items):
-        """Transform a function definition rule into a FunctionDefinition node.
+        """
+        Transform a function definition rule into a FunctionDefinition node.
 
-        Grammar: function_def: "def" NAME "(" [parameters] ")" ["->" basic_type] ":" [COMMENT] block
-        After filtering None values, we typically have:
-        - relevant_items[0]: NAME (function name)
-        - relevant_items[1]: parameters (if present) OR return_type OR block
-        - relevant_items[2]: return_type OR block (depending on what's at [1])
-        - relevant_items[3]: block (if both parameters and return_type are present)
+        Grammar: function_def: [decorators] "def" NAME "(" [parameters] ")" ["->" basic_type] ":" [COMMENT] block
         """
         relevant_items = self._filter_relevant_items(items)
+        if not relevant_items:
+            raise ValueError("function_def rule received empty relevant items list")
 
-        name_item = relevant_items[0]
+        # Parse items based on the actual structure we receive
+        current_index = 0
+        decorators = []
 
-        # Handle different name formats to create an Identifier
-        if isinstance(name_item, Identifier):
-            name = name_item  # Already an Identifier
-        elif isinstance(name_item, Token):
-            name = Identifier(name=name_item.value)
-        elif hasattr(name_item, "name"):
-            name = Identifier(name=name_item.name)
+        # Check if first item is already a list of decorators (already transformed)
+        if (
+            current_index < len(relevant_items)
+            and isinstance(relevant_items[current_index], list)
+            and len(relevant_items[current_index]) > 0
+            and hasattr(relevant_items[current_index][0], "name")  # Decorator objects have 'name' attribute
+        ):
+            decorators = relevant_items[current_index]
+            current_index += 1
+        # Or check if it's a decorators tree (not yet transformed)
+        elif (
+            current_index < len(relevant_items)
+            and hasattr(relevant_items[current_index], "data")
+            and relevant_items[current_index].data == "decorators"
+        ):
+            decorators = self._transform_decorators(relevant_items[current_index])
+            current_index += 1
+
+        # Next item should be the function name (Token)
+        if current_index >= len(relevant_items):
+            raise ValueError("function_def missing function name")
+
+        func_name_token = relevant_items[current_index]
+        if hasattr(func_name_token, "value"):
+            func_name = func_name_token.value
+        elif hasattr(func_name_token, "type") and func_name_token.type == "NAME":
+            func_name = str(func_name_token)
         else:
-            name = Identifier(name=str(name_item))
+            func_name = str(func_name_token)
+        current_index += 1
 
-        # Parse the remaining items to find parameters, return_type, and body
-        params = []
+        # Skip None items for optional parameters
+        while current_index < len(relevant_items) and relevant_items[current_index] is None:
+            current_index += 1
+
+        # Parameters (optional) - could be a list of Parameter objects or a parameters tree
+        parameters = []
+        if current_index < len(relevant_items):
+            params_item = relevant_items[current_index]
+            if isinstance(params_item, list):
+                # Already transformed parameters
+                parameters = params_item
+                current_index += 1
+            elif hasattr(params_item, "data") and params_item.data == "parameters":
+                # Parameters tree - transform it
+                parameters = self._transform_parameters(params_item)
+                current_index += 1
+
+        # Skip None items
+        while current_index < len(relevant_items) and relevant_items[current_index] is None:
+            current_index += 1
+
+        # Return type (optional)
         return_type = None
-        body = []
+        if current_index < len(relevant_items) and hasattr(relevant_items[current_index], "name"):
+            return_type = relevant_items[current_index]  # Already transformed TypeHint
+            current_index += 1
 
-        # Start from index 1 (after function name)
-        i = 1
+        # Skip None items
+        while current_index < len(relevant_items) and relevant_items[current_index] is None:
+            current_index += 1
 
-        # Check if we have parameters (list of Parameter objects)
-        if i < len(relevant_items) and isinstance(relevant_items[i], list):
-            # This should be the parameters list
-            params = relevant_items[i]
-            i += 1
+        # Block (required)
+        if current_index >= len(relevant_items):
+            raise ValueError("function_def missing body block")
 
-        # Check if we have a return type (TypeHint object)
-        if i < len(relevant_items) and hasattr(relevant_items[i], "name"):
-            # This should be a TypeHint for return type
-            return_type = relevant_items[i]
-            i += 1
+        block = relevant_items[current_index]
+        body = self._transform_block(block)
 
-        # The remaining item should be the block
-        if i < len(relevant_items):
-            body = self._transform_block(relevant_items[i])
+        return FunctionDefinition(
+            name=Identifier(func_name),
+            parameters=parameters,
+            body=body,
+            return_type=return_type,
+            decorators=decorators,
+        )
 
-        # Convert parameters to Parameter objects if they aren't already
-        param_list = []
-        if isinstance(params, list):
-            for p in params:
-                if isinstance(p, Parameter):
-                    # Already a Parameter object from typed_parameter
-                    param_list.append(p)
-                elif isinstance(p, Identifier):
-                    # Convert Identifier to Parameter
-                    param_name = p.name if "." in p.name else f"local.{p.name}"
-                    param_list.append(Parameter(name=param_name))
-                elif hasattr(p, "value"):
-                    # For raw parameter names, add local scope
-                    param_name = f"local.{p.value}"
-                    param_list.append(Parameter(name=param_name))
+    def decorators(self, items):
+        """Transform decorators rule into a list of Decorator nodes."""
+        return [self._transform_decorator(item) for item in items if item is not None]
+
+    def decorator(self, items):
+        """Transform decorator rule into a Decorator node."""
+        return self._transform_decorator_from_items(items)
+
+    def _transform_decorators(self, decorators_tree):
+        """Transform decorators tree into list of Decorator nodes."""
+        if hasattr(decorators_tree, "children"):
+            return [self._transform_decorator(child) for child in decorators_tree.children if child is not None]
+        return []
+
+    def _transform_decorator(self, decorator_tree):
+        """Transform a single decorator tree into a Decorator node."""
+        # If it's already a Decorator object, return it as-is
+        if hasattr(decorator_tree, "name") and hasattr(decorator_tree, "args") and hasattr(decorator_tree, "kwargs"):
+            return decorator_tree
+
+        # Otherwise, transform it
+        if hasattr(decorator_tree, "children"):
+            return self._transform_decorator_from_items(decorator_tree.children)
+        elif hasattr(decorator_tree, "data") and decorator_tree.data == "decorator":
+            return self._transform_decorator_from_items(decorator_tree.children)
+        else:
+            # Handle direct items
+            return self._transform_decorator_from_items([decorator_tree])
+
+    def _transform_decorator_from_items(self, items):
+        """Transform decorator items into a Decorator node."""
+        relevant_items = self._filter_relevant_items(items)
+        if not relevant_items:
+            raise ValueError("decorator rule received empty relevant items list")
+
+        # Based on raw parse tree: decorator -> @ NAME [arguments]
+        # items[0] should be AT token (@)
+        # items[1] should be NAME token (decorator name)
+        # items[2] should be arguments (optional)
+
+        # Skip the AT token and get the NAME token
+        decorator_name = None
+        arguments_tree = None
+
+        for i, item in enumerate(relevant_items):
+            if hasattr(item, "value") and item.value != "@":
+                # This should be the decorator name
+                decorator_name = item.value
+            elif hasattr(item, "type") and item.type == "NAME":
+                # This should be the decorator name
+                decorator_name = str(item)
+            elif hasattr(item, "data") and item.data == "arguments":
+                # This should be the arguments
+                arguments_tree = item
+
+        if not decorator_name:
+            raise ValueError("Could not find decorator name in items")
+
+        # Check for arguments (optional)
+        args = []
+        kwargs = {}
+
+        if arguments_tree:
+            args, kwargs = self._parse_decorator_arguments(arguments_tree)
+
+        return Decorator(name=decorator_name, args=args, kwargs=kwargs)
+
+    def _parse_decorator_arguments(self, arguments_tree):
+        """Parse decorator arguments into args and kwargs lists."""
+        args = []
+        kwargs = {}
+
+        if hasattr(arguments_tree, "children"):
+            for child in arguments_tree.children:
+                if hasattr(child, "data") and child.data == "kw_arg":
+                    # Keyword argument: name = value
+                    if len(child.children) >= 2:
+                        key_name = child.children[0].value if hasattr(child.children[0], "value") else str(child.children[0])
+                        value_expr = self.expression_transformer.expression([child.children[1]])
+                        kwargs[key_name] = value_expr
                 else:
-                    raise TypeError(f"Unexpected parameter: {p} (type: {type(p)})")
-        elif isinstance(params, Token):
-            # Single parameter as Token
-            param_name = f"local.{params.value}"
-            param_list.append(Parameter(name=param_name))
+                    # Positional argument
+                    arg_expr = self.expression_transformer.expression([child])
+                    args.append(arg_expr)
 
-        # Transform unscoped variables in function body to use local scope
-        transformed_body = []
-        for stmt in body:
-            if isinstance(stmt, ReturnStatement) and isinstance(stmt.value, Identifier):
-                # Handle unscoped variables in return statements
-                if "." not in stmt.value.name:
-                    stmt.value.name = f"local.{stmt.value.name}"
-            elif isinstance(stmt, BinaryExpression):
-                # Handle unscoped variables in binary expressions
-                if isinstance(stmt.left, Identifier) and "." not in stmt.left.name:
-                    stmt.left.name = f"local.{stmt.left.name}"
-                if isinstance(stmt.right, Identifier) and "." not in stmt.right.name:
-                    stmt.right.name = f"local.{stmt.right.name}"
-            transformed_body.append(stmt)
+        return args, kwargs
 
-        return FunctionDefinition(name=name, parameters=param_list, body=transformed_body, return_type=return_type)
+    def _transform_parameters(self, parameters_tree):
+        """Transform parameters tree into list of Parameter objects."""
+        if hasattr(parameters_tree, "children"):
+            return [self._transform_parameter(child) for child in parameters_tree.children if child is not None]
+        return []
+
+    def _transform_parameter(self, param_tree):
+        """Transform a single parameter tree into a Parameter object."""
+        if isinstance(param_tree, Parameter):
+            return param_tree
+        elif hasattr(param_tree, "data") and param_tree.data == "typed_parameter":
+            return self.typed_parameter(param_tree.children)
+        else:
+            # Simple parameter name
+            param_name = param_tree.value if hasattr(param_tree, "value") else str(param_tree)
+            return Parameter(name=param_name)
 
     def try_stmt(self, items):
         """Transform a try statement rule into a TryBlock node.
@@ -488,31 +598,31 @@ class StatementTransformer(BaseTransformer):
 
     def use_stmt(self, items):
         """Transform a use_stmt rule into a UseStatement node.
-        
+
         Grammar: use_stmt: USE "(" [mixed_arguments] ")"
-        
+
         The grammar passes:
         - items[0] = USE token (ignored)
         - items[1] = result from mixed_arguments (None if no arguments, or list of arguments)
         """
         from lark import Tree
-        
+
         # Initialize collections for arguments
-        args = []        # List[Expression] for positional arguments
-        kwargs = {}      # Dict[str, Expression] for keyword arguments
-        
+        args = []  # List[Expression] for positional arguments
+        kwargs = {}  # Dict[str, Expression] for keyword arguments
+
         # Handle the case where mixed_arguments is present
         # items[0] is the USE token, items[1] is the mixed_arguments result
         if len(items) > 1 and items[1] is not None:
             mixed_args_result = items[1]
-            
+
             # Process mixed_arguments following with_stmt pattern
             seen_keyword_arg = False  # Track if we've seen any keyword arguments
-            
+
             if isinstance(mixed_args_result, list):
                 # Process each argument
                 for arg_item in mixed_args_result:
-                    if isinstance(arg_item, Tree) and arg_item.data == 'kw_arg':
+                    if isinstance(arg_item, Tree) and arg_item.data == "kw_arg":
                         # Keyword argument: NAME "=" expr
                         seen_keyword_arg = True
                         name = arg_item.children[0].value
@@ -526,7 +636,7 @@ class StatementTransformer(BaseTransformer):
                         args.append(cast(Expression, arg_item))
             else:
                 # Single argument
-                if isinstance(mixed_args_result, Tree) and mixed_args_result.data == 'kw_arg':
+                if isinstance(mixed_args_result, Tree) and mixed_args_result.data == "kw_arg":
                     # Keyword argument: NAME "=" expr
                     name = mixed_args_result.children[0].value
                     value = self.expression_transformer.expression([mixed_args_result.children[1]])
@@ -534,7 +644,7 @@ class StatementTransformer(BaseTransformer):
                 else:
                     # Positional argument: expr
                     args.append(cast(Expression, mixed_args_result))
-        
+
         return UseStatement(args=args, kwargs=kwargs)
 
     # === Import Statements ===
@@ -875,11 +985,11 @@ class StatementTransformer(BaseTransformer):
         """Transform a return_object_stmt rule into the appropriate object-returning statement."""
         # Grammar: return_object_stmt: use_stmt
         # items[0] should be the result of use_stmt transformation
-        
+
         # The use_stmt should already be transformed into a UseStatement by use_stmt method
         if len(items) > 0 and items[0] is not None:
             return items[0]
-        
+
         # Fallback - this shouldn't happen in normal cases
         raise ValueError("return_object_stmt received empty or None items")
 
@@ -909,7 +1019,7 @@ class StatementTransformer(BaseTransformer):
         """Transform mixed_arguments rule into a structured list."""
         # items is a list of with_arg items
         return items
-    
+
     def with_arg(self, items):
         """Transform with_arg rule - pass through the child (either kw_arg or expr)."""
         # items[0] is either a kw_arg Tree or an expression
@@ -923,7 +1033,6 @@ class StatementTransformer(BaseTransformer):
         """Transform a with statement rule into a WithStatement node."""
         # Filter out None items (like optional comments) and parse the structure
         filtered_items = [item for item in items if item is not None]
-        
 
         # Based on the parse tree: [foo, mixed_arguments, as, bar, None, block]
         # Find components in the structure
@@ -931,52 +1040,54 @@ class StatementTransformer(BaseTransformer):
         as_var = None
         block = None
         with_args = None
-        
+
         # Look for 'as' token to find variable name and block
         for i, item in enumerate(filtered_items):
-            if hasattr(item, 'value') and item.value == 'as':
+            if hasattr(item, "value") and item.value == "as":
                 # Next item should be the variable name
                 if i + 1 < len(filtered_items):
                     as_var_token = filtered_items[i + 1]
-                    as_var = as_var_token.value if hasattr(as_var_token, 'value') else str(as_var_token)
+                    as_var = as_var_token.value if hasattr(as_var_token, "value") else str(as_var_token)
                 # Block should be the last item in the list (after filtering)
                 for j in range(len(filtered_items) - 1, -1, -1):
-                    if hasattr(filtered_items[j], 'data') and filtered_items[j].data == 'block':
+                    if hasattr(filtered_items[j], "data") and filtered_items[j].data == "block":
                         block = self._transform_block(filtered_items[j])
                         break
                 break
-        
+
         if as_var is None:
             raise SyntaxError("Missing 'as' variable in with statement")
         if block is None:
             raise SyntaxError("Missing block in with statement")
-        
+
         # Check if this is a function call pattern by looking at the structure
         # Function call pattern: [NAME, mixed_arguments_or_none, 'as', NAME, None, block]
         # Direct object pattern: [expression, 'as', NAME, None, block]
-        
+
         # If the first item is a simple token (NAME/USE) and we have the right structure, it's a function call
-        if (hasattr(context_manager_part, 'value') and isinstance(context_manager_part.value, str) and
-            not hasattr(context_manager_part, 'data')):  # Simple token, not a tree
-            
+        if (
+            hasattr(context_manager_part, "value")
+            and isinstance(context_manager_part.value, str)
+            and not hasattr(context_manager_part, "data")
+        ):  # Simple token, not a tree
+
             # Function call pattern: NAME [mixed_arguments] as var block
             context_manager_name = context_manager_part.value
-            
+
             # Handle mixed_arguments - could be None (empty args) or a tree with arguments
             args: List[Expression] = []
             kwargs = {}
             seen_keyword_arg = False
-            
+
             # Look for mixed_arguments (second item if it exists and is not 'as')
-            if (len(filtered_items) >= 2 and 
-                isinstance(filtered_items[1], list)):
-                
+            if len(filtered_items) >= 2 and isinstance(filtered_items[1], list):
+
                 # mixed_arguments has already been transformed into a list of expressions/trees
                 args_list = filtered_items[1]
-                
+
                 # Process each item in the list
                 for item in args_list:
-                    if hasattr(item, 'data') and item.data == 'kw_arg':
+                    if hasattr(item, "data") and item.data == "kw_arg":
                         # Keyword argument: NAME "=" expr
                         seen_keyword_arg = True
                         name = item.children[0].value
@@ -987,19 +1098,17 @@ class StatementTransformer(BaseTransformer):
                         if seen_keyword_arg:
                             raise SyntaxError("Positional argument follows keyword argument in with statement")
                         args.append(cast(Expression, item))
-            elif (len(filtered_items) >= 2 and 
-                  hasattr(filtered_items[1], 'data') and 
-                  filtered_items[1].data == 'mixed_arguments'):
-                
+            elif len(filtered_items) >= 2 and hasattr(filtered_items[1], "data") and filtered_items[1].data == "mixed_arguments":
+
                 mixed_args_tree = filtered_items[1]
-                
+
                 # mixed_arguments contains with_arg children
                 for with_arg_tree in mixed_args_tree.children:
-                    if hasattr(with_arg_tree, 'data') and with_arg_tree.data == 'with_arg':
+                    if hasattr(with_arg_tree, "data") and with_arg_tree.data == "with_arg":
                         # with_arg contains either kw_arg or expr
                         if len(with_arg_tree.children) > 0:
                             arg_content = with_arg_tree.children[0]
-                            if hasattr(arg_content, 'data') and arg_content.data == 'kw_arg':
+                            if hasattr(arg_content, "data") and arg_content.data == "kw_arg":
                                 # Keyword argument: NAME "=" expr
                                 seen_keyword_arg = True
                                 name = arg_content.children[0].value

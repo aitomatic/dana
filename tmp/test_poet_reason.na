@@ -1,0 +1,16 @@
+# Test POET-enhanced reason function
+log("Testing POET-enhanced reason function...")
+
+# Test basic reasoning - POET will add optimization, retries, and validation automatically
+result1 = reason("What is 2 + 2?")
+log(f"Basic reasoning result: {result1}")
+
+# Test with context - POET's domain intelligence should optimize this
+result2 = reason("Recommend the best approach for optimizing database query performance")
+log(f"Technical reasoning result: {result2}")
+
+# Test error resilience - POET should handle retries automatically
+result3 = reason("Analyze the financial risk of a portfolio with 70% stocks, 20% bonds, 10% cash")
+log(f"Financial reasoning result: {result3}")
+
+log("✅ POET-enhanced reason function test completed!") 

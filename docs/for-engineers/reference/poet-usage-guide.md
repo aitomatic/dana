@@ -5,7 +5,7 @@
 
 ## Overview
 
-POET (Perceive-Operate-Encode-Train) is Dana's intelligent execution pattern that automatically enhances AI interactions with **fault-tolerant context processing**, **self-learning optimization**, and **enterprise-grade reliability**. This guide provides comprehensive usage examples and best practices.
+POET (Perceive-Operate-Enforce-Train) is Dana's intelligent execution pattern that automatically enhances AI interactions with **fault-tolerant context processing**, **self-learning optimization**, and **enterprise-grade reliability**. This guide provides comprehensive usage examples and best practices.
 
 ## Core Concepts
 
@@ -15,7 +15,7 @@ POET (Perceive-Operate-Encode-Train) is Dana's intelligent execution pattern tha
 graph LR
     A[Input Data] --> B[Perceive<br/>Fault-tolerant<br/>Context Processing]
     B --> C[Operate<br/>Business Logic<br/>Engineer-Written]
-    C --> D[Encode<br/>Error-free<br/>Deterministic Output]
+    C --> D[Enforce<br/>Error-free<br/>Deterministic Output]
     D --> E[Output Results]
     D --> F[Train<br/>Self-Learning<br/>Feedback Loop]
     F --> B
@@ -34,7 +34,7 @@ graph LR
 
 **Runtime Provides Automatically:**
 - **Perceive**: Fault-tolerant contextual input processing
-- **Encode**: Error-free deterministic output generation  
+- **Enforce**: Error-free deterministic output generation  
 - **Train**: Continuous adaptation based on feedback signals
 
 ### Comment-Aware Context Analysis
@@ -249,7 +249,7 @@ config = reason("Set timeout to 30 seconds, retries to 3, debug mode on") -> dic
 ## Integration Patterns (Dana-centric View)
 
 This section focuses on how Dana engineers interact with POV-enabled functions and contribute to the POV lifecycle, primarily through Dana code.
-For details on the POV architecture itself, see the [POV Execution Model documentation](../../design/02_dana_runtime_and_execution/pov_execution_model.md).
+For details on the POV architecture itself, see the [POV Execution Model documentation](../../design/02_dana_runtime_and_execution/poet_functions.md).
 
 ### 1. Using POV-enabled Functions (e.g., `reason()`)
 
@@ -304,7 +304,7 @@ local:final_result = process_complex_text("Some initial text.")
 
 Dana functions used in `Perceive` and `Validate` stages (and potentially `Operate` if structured to receive it) can access the `pov_status` dictionary. This allows for adaptive logic based on retry attempts, last failure reasons, perceived input, and the expected output type.
 
-See the `pov_status` structure in the [POV Execution Model documentation](../../design/02_dana_runtime_and_execution/pov_execution_model.md#pov_status-in-dana).
+See the `pov_status` structure in the [POV Execution Model documentation](../../design/02_dana_runtime_and_execution/poet_functions.md#pov_status-in-dana).
 
 ## 🎨 Best Practices for Dana Engineers with POV
 

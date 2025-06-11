@@ -1,5 +1,0 @@
-print("🔧 Dana Function Composition Demo")
-
-
-def add_ten(x):
-    return x + 10

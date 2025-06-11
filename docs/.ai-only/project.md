@@ -92,7 +92,7 @@ OpenDXA is a comprehensive framework for building intelligent multi-agent system
 
 1. **Dana (Domain-Aware NeuroSymbolic Architecture)**: An imperative programming language and execution runtime for agent reasoning. Key components include:
    - **Parser**: Converts Dana source code into an Abstract Syntax Tree (AST) using a formal grammar
-   - **Interpreter**: Executes Dana programs by processing the AST with IPV (Infer-Process-Validate) optimization for reasoning
+   - **Interpreter**: Executes Dana programs by processing the AST with optimized reasoning functions
    - **Sandbox**: Provides a safe execution environment with controlled state management
    - **Transcoder**: Translates between natural language and Dana code
    - **REPL**: Interactive environment for executing Dana code

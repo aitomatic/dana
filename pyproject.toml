@@ -30,37 +30,38 @@ dependencies = [
     "mcp",
     "fastmcp>=2.6.1",
     "llm-code-executor",
-    
     # Data Processing - Required for agent data handling
     "pandas",
-    "matplotlib", 
+    "matplotlib",
     "seaborn",
-    
     # Database & Storage
     "sqlalchemy",
-    
     # Networking & I/O
     "aiohttp",
-    "aioconsole", 
+    "aioconsole",
     "websockets",
-    
     # Configuration & Utilities
     "nest_asyncio",
     "python-dotenv",
     "pyyaml",
     "structlog",
-    
     # Language Processing - Dana language parser
     "lark",
-    
     # Interactive Features - REPL and user interface
     "prompt-toolkit",
     "pygments",
-    
     # Testing - Core testing framework (needed for Dana runtime)
     "pytest",
-    "pytest-asyncio", 
+    "pytest-asyncio",
     "pytest-mock",
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.6.14",
+    "mkdocs-mermaid2-plugin>=1.2.1",
+    "mkdocs-section-index>=0.3.10",
+    "mkdocstrings>=0.29.1",
+    "mkdocstrings-python>=1.16.12",
+    "mkdocs-git-revision-date-localized-plugin>=1.4.7",
+    "pymdown-extensions[extra]>=10.15",
 ]
 
 # Development-only dependencies

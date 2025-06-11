@@ -74,6 +74,7 @@ nav:
       - Chatbot: for-engineers/recipes/chatbot/README.md
       - Document Processor: for-engineers/recipes/document-processor/README.md
       - API Integration: for-engineers/recipes/api-integration/README.md
+      - MCP Integration: for-engineers/recipes/mcp-integration.md
       - Workflow Agent: for-engineers/recipes/workflow-agent/README.md
     - Troubleshooting: for-engineers/troubleshooting/README.md
   - For Evaluators:
@@ -133,7 +134,7 @@ nav:
       - Sandbox: design/02_dana_runtime_and_execution/sandbox.md
       - REPL: design/02_dana_runtime_and_execution/repl.md
       - Code Context Analyzer: design/02_dana_runtime_and_execution/code_context_analyzer.md
-      - POV Execution Model: design/02_dana_runtime_and_execution/pov_execution_model.md
+      - POET Functions: design/02_dana_runtime_and_execution/poet_functions.md
       - Type System and Casting: design/02_dana_runtime_and_execution/type_system_and_casting.md
       - Concurrency Model: design/02_dana_runtime_and_execution/concurrency_model.md
       - External Interfaces: design/02_dana_runtime_and_execution/external_interfaces.md
@@ -197,9 +198,7 @@ markdown_extensions:
       smart_enable: all
   - pymdownx.caret
   - pymdownx.details
-  - pymdownx.emoji:
-      emoji_index: !!python/name:material.extensions.emoji.twemoji
-      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.emoji
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span

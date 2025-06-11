@@ -134,7 +134,7 @@ Previously, a system-level variable `system:__dana_desired_type` was used as a g
 
 1. **Standard Type Hinting**: For regular Dana functions, the primary way to indicate expected return types is through the function's own return type annotation (e.g., `-> MyStruct`) and the type hint at the assignment site (e.g., `local:my_var: MyStruct = my_func()`). The Dana type system will enforce these where possible.
 
-2. **POET's `expected_output_type`**: For functions using the POET (Perceive → Operate → Encode → Train) execution model, the desired output type is a formal part of the POET configuration. It can be specified as a parameter to the `@poet` decorator (e.g., `@poet(expected_output_type=MyStruct, ...)`). This `expected_output_type` is then available in the `poet_status` context and is used by the `Encode` phase to ensure the function's output conforms to the expectation.
+2. **POET's `expected_output_type`**: For functions using the POET (Perceive → Operate → Enforce → Train) execution model, the desired output type is a formal part of the POET configuration. It can be specified as a parameter to the `@poet` decorator (e.g., `@poet(expected_output_type=MyStruct, ...)`). This `expected_output_type` is then available in the `poet_status` context and is used by the `Enforce` phase to ensure the function's output conforms to the expectation.
 
 This shift provides a clearer and more robust way to manage function return types, either through static type checking or through the explicit contract of the POET framework for functions requiring advanced, robust execution.
 
@@ -192,11 +192,11 @@ def add(a: int, b: int) -> int:
 local:sum_val = add(5,3)
 ```
 
-### 6.3. Decorators for POET (Perceive → Operate → Encode → Train)
+### 6.3. Decorators for POET (Perceive → Operate → Enforce → Train)
 
-A key application of decorators in Dana is to enable and configure the **POET (Perceive → Operate → Encode → Train)** execution model for user-defined Dana functions. This allows Dana functions to benefit from robust, context-aware execution with built-in retry and encoding logic.
+A key application of decorators in Dana is to enable and configure the **POET (Perceive → Operate → Enforce → Train)** execution model for user-defined Dana functions. This allows Dana functions to benefit from robust, context-aware execution with built-in retry and enforcement logic.
 
-Refer to the full [POET Execution Model documentation](../02_dana_runtime_and_execution/pov_execution_model.md) for details on POET.
+Refer to the full [POET Execution Model documentation](../02_dana_runtime_and_execution/poet_functions.md) for details on POET.
 
 Conceptual Usage:
 
@@ -209,14 +209,14 @@ Dana might provide a built-in `@poet` decorator or allow for custom POET-configu
 def my_perceiver(raw_input: str) -> dict:
  # ... normalize input, gather context ...
  local:perceived = {"text": raw_input.lower(), "length": len(raw_input)}
- # This 'perceived' dict becomes poet_status.perceived_input for Operate and Encode
+ # This 'perceived' dict becomes poet_status.perceived_input for Operate and Enforce
  return local:perceived
 
-# Dana function to be used for the 'Encode' phase
-def my_encoder(operate_output: any, poet_status: dict) -> bool:
+# Dana function to be used for the 'Enforce' phase
+def my_enforcer(operate_output: any, poet_status: dict) -> bool:
  # poet_status contains {attempt, last_failure, max_retries, successful, perceived_input, raw_output, expected_output_type}
  # Here, operate_output is the same as poet_status.raw_output
- log(f"Attempt {poet_status.attempt} to encode: {operate_output} against type {poet_status.expected_output_type}") # Assuming 'log' is a core/built-in function
+ log(f"Attempt {poet_status.attempt} to enforce: {operate_output} against type {poet_status.expected_output_type}") # Assuming 'log' is a core/built-in function
 
  # Example: Check against a specific type if provided in poet_status
  if poet_status.expected_output_type and typeof(operate_output) != poet_status.expected_output_type:
@@ -232,7 +232,7 @@ def my_encoder(operate_output: any, poet_status: dict) -> bool:
 
 @poet(
  perceive=my_perceiver, # Reference to a Dana function
- encode=my_encoder, # Reference to a Dana function
+ enforce=my_enforcer, # Reference to a Dana function
  max_retries=2,
  expected_output_type="str" # Example: explicitly requesting a string output
 )
@@ -248,15 +248,15 @@ def process_text_with_poet(data: str) -> str: # 'data' is the raw_input to my_pe
 # When process_text_with_poet("Hello World") is called:
 # 1. my_perceiver("Hello World") runs.
 # 2. The Operate phase (process_text_with_poet body) runs with perceived input.
-# 3. my_encoder(output_of_operate, poet_status) runs.
-# 4. Retries occur if my_encoder returns false, up to max_retries.
+# 3. my_enforcer(output_of_operate, poet_status) runs.
+# 4. Retries occur if my_enforcer returns false, up to max_retries.
 ```
 
 Key Aspects for POET Decorators in Dana:
 
-* Specifying P/O/E/T Functions: Decorators allow clear association of Dana functions for the Perceive, Operate (the decorated function itself), Encode, and Train stages.
+* Specifying P/O/E/T Functions: Decorators allow clear association of Dana functions for the Perceive, Operate (the decorated function itself), Enforce, and Train stages.
 * POET Profiles: Decorators might also select pre-configured POET profiles that define default P/O/E/T stages or behaviors (e.g., `@poet_profile("llm_reasoning")`).
-* `poet_status` Availability: As shown in `my_encoder`, the `poet_status` dictionary (containing `attempt`, `last_failure`, `perceived_input`, etc.) is made available to Dana functions participating in the POET lifecycle, enabling adaptive logic.
+* `poet_status` Availability: As shown in `my_enforcer`, the `poet_status` dictionary (containing `attempt`, `last_failure`, `perceived_input`, etc.) is made available to Dana functions participating in the POET lifecycle, enabling adaptive logic.
 * Integration with Python Runtime: The underlying POET execution loop (managing retries, calling P/O/E/T stages) is implemented in Python (as described in the POET execution model), but Dana decorators provide the language-level syntax to hook Dana functions into this system.
 
 The exact naming and parameters of the built-in POET-related decorators will be finalized as the POET runtime is implemented.

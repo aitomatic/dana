@@ -1,5 +1,0 @@
-print("=" * 50)
-
-
-def add_ten(x):
-    return x + 10

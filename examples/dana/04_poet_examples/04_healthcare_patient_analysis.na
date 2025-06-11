@@ -1,0 +1,429 @@
+# Healthcare Patient Analysis with POET
+# =====================================
+# INDUSTRY: Healthcare / Medical Diagnostics
+# USE CASE: Patient Data Analysis with Clinical Decision Support
+# POET FEATURES: HIPAA compliance, clinical validation, evidence-based reasoning
+# LEARNING: How POET adds healthcare domain intelligence and safety
+# =====================================
+
+log("🏥 Healthcare POET Example - Patient Analysis and Clinical Decision Support")
+
+# BASIC FUNCTION WITHOUT POET (for comparison)
+# ===========================================
+def basic_patient_assessment(temperature: float, heart_rate: int, symptoms: list) -> str:
+    """Basic patient assessment without POET enhancement"""
+    if temperature > 100.4 or heart_rate > 100:
+        return "elevated_concern"
+    else:
+        return "normal_status"
+
+# POET-ENHANCED PATIENT ANALYSIS WITH HEALTHCARE DOMAIN INTELLIGENCE
+# =================================================================
+@enhanced_poet(
+    domain="healthcare",
+    timeout=25.0,
+    retries=2,
+    enable_training=true,
+    collect_metrics=true,
+    hipaa_compliance=true,
+    clinical_validation=true,
+    evidence_based_reasoning=true
+)
+def analyze_patient_vitals(
+    patient_id: str,
+    age: int,
+    gender: str,
+    temperature_f: float,
+    heart_rate_bpm: int,
+    blood_pressure: dict,
+    respiratory_rate: int,
+    oxygen_saturation: float,
+    symptoms: list,
+    medical_history: list,
+    current_medications: list
+) -> dict:
+    """
+    POET-enhanced patient vital analysis with healthcare intelligence.
+    
+    POET automatically adds:
+    - HIPAA compliance and data anonymization
+    - Clinical guideline validation
+    - Evidence-based risk assessment
+    - Drug interaction checking
+    - Age and gender-specific normal ranges
+    - Clinical decision support recommendations
+    """
+    
+    log(f"Analyzing patient vitals for ID: {patient_id[:8]}***")  # HIPAA-safe logging
+    
+    # Initialize clinical assessment
+    severity_score = 0
+    clinical_alerts = []
+    recommendations = []
+    risk_factors = []
+    
+    # Age and gender-specific normal ranges (healthcare domain knowledge)
+    vital_ranges = {
+        "pediatric": {  # 0-17 years
+            "temperature": {"normal": (97.0, 100.4), "fever": 100.4},
+            "heart_rate": {"normal": (70, 120), "tachycardia": 120},
+            "respiratory_rate": {"normal": (12, 20)},
+            "oxygen_saturation": {"normal": 95}
+        },
+        "adult": {  # 18-64 years
+            "temperature": {"normal": (97.0, 100.4), "fever": 100.4},
+            "heart_rate": {"normal": (60, 100), "tachycardia": 100},
+            "respiratory_rate": {"normal": (12, 20)},
+            "oxygen_saturation": {"normal": 95}
+        },
+        "elderly": {  # 65+ years
+            "temperature": {"normal": (96.5, 100.0), "fever": 100.0},  # Lower baseline
+            "heart_rate": {"normal": (60, 90), "tachycardia": 90},
+            "respiratory_rate": {"normal": (12, 18)},
+            "oxygen_saturation": {"normal": 92}  # Lower threshold for elderly
+        }
+    }
+    
+    # Determine age category
+    if age < 18:
+        age_category = "pediatric"
+    elif age < 65:
+        age_category = "adult"
+    else:
+        age_category = "elderly"
+    
+    ranges = vital_ranges[age_category]
+    
+    # TEMPERATURE ASSESSMENT
+    # =====================
+    temp_status = "normal"
+    if temperature_f >= ranges["temperature"]["fever"]:
+        if temperature_f >= 102.0:
+            temp_status = "high_fever"
+            severity_score += 30
+            clinical_alerts.append("high_fever_requires_immediate_attention")
+            recommendations.append("administer_antipyretic_and_monitor_closely")
+        elif temperature_f >= 101.0:
+            temp_status = "moderate_fever"
+            severity_score += 20
+            clinical_alerts.append("moderate_fever_monitor_progression")
+            recommendations.append("consider_antipyretic_and_fluids")
+        else:
+            temp_status = "low_grade_fever"
+            severity_score += 10
+            recommendations.append("monitor_temperature_progression")
+    
+    # HEART RATE ASSESSMENT
+    # ====================
+    hr_status = "normal"
+    if heart_rate_bpm > ranges["heart_rate"]["tachycardia"]:
+        if heart_rate_bpm > 120:
+            hr_status = "severe_tachycardia"
+            severity_score += 25
+            clinical_alerts.append("severe_tachycardia_requires_evaluation")
+            recommendations.append("obtain_ecg_and_evaluate_cardiac_status")
+        else:
+            hr_status = "mild_tachycardia"
+            severity_score += 15
+            recommendations.append("monitor_heart_rate_and_assess_causes")
+    elif heart_rate_bpm < 50:
+        hr_status = "bradycardia"
+        severity_score += 20
+        clinical_alerts.append("bradycardia_requires_evaluation")
+        recommendations.append("assess_for_cardiac_conduction_issues")
+    
+    # BLOOD PRESSURE ASSESSMENT
+    # ========================
+    systolic = blood_pressure.get("systolic", 120)
+    diastolic = blood_pressure.get("diastolic", 80)
+    
+    bp_status = "normal"
+    if systolic >= 180 or diastolic >= 110:
+        bp_status = "hypertensive_crisis"
+        severity_score += 35
+        clinical_alerts.append("hypertensive_crisis_emergency")
+        recommendations.append("immediate_blood_pressure_management")
+    elif systolic >= 140 or diastolic >= 90:
+        bp_status = "hypertension"
+        severity_score += 15
+        recommendations.append("blood_pressure_management_needed")
+    elif systolic < 90:
+        bp_status = "hypotension"
+        severity_score += 20
+        clinical_alerts.append("hypotension_requires_evaluation")
+        recommendations.append("assess_volume_status_and_cardiac_function")
+    
+    # RESPIRATORY ASSESSMENT
+    # =====================
+    resp_status = "normal"
+    if respiratory_rate > 24:
+        resp_status = "tachypnea"
+        severity_score += 15
+        clinical_alerts.append("tachypnea_assess_respiratory_distress")
+        recommendations.append("evaluate_oxygenation_and_respiratory_status")
+    elif respiratory_rate < 10:
+        resp_status = "bradypnea"
+        severity_score += 25
+        clinical_alerts.append("bradypnea_respiratory_depression")
+        recommendations.append("assess_airway_and_ventilation")
+    
+    # OXYGEN SATURATION ASSESSMENT
+    # ===========================
+    o2_status = "normal"
+    if oxygen_saturation < ranges["oxygen_saturation"]["normal"]:
+        if oxygen_saturation < 90:
+            o2_status = "severe_hypoxemia"
+            severity_score += 30
+            clinical_alerts.append("severe_hypoxemia_requires_oxygen")
+            recommendations.append("provide_supplemental_oxygen_immediately")
+        else:
+            o2_status = "mild_hypoxemia"
+            severity_score += 15
+            recommendations.append("monitor_oxygen_saturation_closely")
+    
+    # SYMPTOM ANALYSIS
+    # ===============
+    symptom_severity = 0
+    high_risk_symptoms = ["chest_pain", "shortness_of_breath", "altered_mental_status", 
+                         "severe_headache", "seizure", "severe_abdominal_pain"]
+    
+    for symptom in symptoms:
+        if symptom.lower() in high_risk_symptoms:
+            symptom_severity += 20
+            clinical_alerts.append(f"high_risk_symptom_{symptom}")
+            recommendations.append(f"immediate_evaluation_for_{symptom}")
+    
+    severity_score += symptom_severity
+    
+    # MEDICAL HISTORY RISK ASSESSMENT
+    # ==============================
+    risk_conditions = ["diabetes", "hypertension", "heart_disease", "copd", 
+                      "kidney_disease", "immunocompromised"]
+    
+    for condition in medical_history:
+        if condition.lower() in risk_conditions:
+            risk_factors.append(condition)
+            severity_score += 5  # Modest increase for comorbidities
+    
+    # AI-POWERED CLINICAL REASONING
+    # ============================
+    clinical_context = f"Patient: {age}yo {gender}, Vitals: T={temperature_f}°F, HR={heart_rate_bpm}, BP={systolic}/{diastolic}, RR={respiratory_rate}, O2Sat={oxygen_saturation}%, Symptoms: {symptoms}, History: {medical_history}"
+    
+    ai_clinical_assessment = reason(
+        f"Provide clinical analysis for: {clinical_context}. "
+        f"Consider differential diagnosis, risk stratification, and evidence-based recommendations. "
+        f"Focus on immediate clinical priorities and safety considerations."
+    )
+    
+    # OVERALL CLINICAL ASSESSMENT
+    # ==========================
+    if severity_score >= 60:
+        clinical_priority = "critical"
+        disposition = "immediate_medical_attention"
+        triage_level = "level_1_resuscitation"
+    elif severity_score >= 40:
+        clinical_priority = "urgent"
+        disposition = "urgent_medical_evaluation"
+        triage_level = "level_2_emergent"
+    elif severity_score >= 20:
+        clinical_priority = "semi_urgent"
+        disposition = "medical_evaluation_needed"
+        triage_level = "level_3_urgent"
+    else:
+        clinical_priority = "stable"
+        disposition = "routine_care"
+        triage_level = "level_4_less_urgent"
+    
+    return {
+        "patient_assessment": {
+            "clinical_priority": clinical_priority,
+            "severity_score": severity_score,
+            "triage_level": triage_level,
+            "disposition": disposition
+        },
+        "vital_signs_analysis": {
+            "temperature_status": temp_status,
+            "heart_rate_status": hr_status,
+            "blood_pressure_status": bp_status,
+            "respiratory_status": resp_status,
+            "oxygen_saturation_status": o2_status
+        },
+        "clinical_alerts": clinical_alerts,
+        "recommendations": recommendations,
+        "risk_factors": risk_factors,
+        "ai_clinical_assessment": ai_clinical_assessment,
+        "compliance_status": "hipaa_compliant",  # POET ensures this
+        "timestamp": get_current_timestamp()
+    }
+
+# CLINICAL DECISION SUPPORT WITH DRUG INTERACTION CHECKING
+# ========================================================
+@enhanced_poet(
+    domain="healthcare",
+    timeout=30.0,
+    retries=3,
+    enable_training=true,
+    ai_reasoning=true,
+    drug_interaction_checking=true,
+    clinical_guidelines=true
+)
+def clinical_decision_support(
+    patient_data: dict,
+    proposed_treatment: dict,
+    clinical_guidelines: list
+) -> dict:
+    """
+    POET-enhanced clinical decision support with drug interaction checking.
+    
+    POET automatically adds:
+    - Drug interaction database checking
+    - Clinical guideline compliance
+    - Dosage adjustment recommendations
+    - Allergy and contraindication checking
+    - Evidence-based treatment alternatives
+    """
+    
+    log("Providing clinical decision support")
+    
+    decision_support = {
+        "treatment_safety": "safe",
+        "drug_interactions": [],
+        "contraindications": [],
+        "dosage_adjustments": [],
+        "alternative_treatments": [],
+        "guideline_compliance": "compliant"
+    }
+    
+    # Extract patient information
+    age = patient_data.get("age", 0)
+    weight = patient_data.get("weight_kg", 70)
+    allergies = patient_data.get("allergies", [])
+    current_medications = patient_data.get("current_medications", [])
+    kidney_function = patient_data.get("kidney_function", "normal")
+    liver_function = patient_data.get("liver_function", "normal")
+    
+    # Proposed medication analysis
+    proposed_med = proposed_treatment.get("medication", "")
+    proposed_dose = proposed_treatment.get("dose_mg", 0)
+    proposed_frequency = proposed_treatment.get("frequency", "")
+    
+    # Drug interaction checking
+    high_risk_combinations = {
+        "warfarin": ["aspirin", "ibuprofen", "phenytoin"],
+        "metformin": ["contrast_dye", "alcohol"],
+        "digoxin": ["furosemide", "quinidine", "verapamil"],
+        "lithium": ["furosemide", "ace_inhibitors", "nsaids"]
+    }
+    
+    for current_med in current_medications:
+        if proposed_med.lower() in high_risk_combinations:
+            if current_med.lower() in high_risk_combinations[proposed_med.lower()]:
+                decision_support["drug_interactions"].append({
+                    "medication_1": proposed_med,
+                    "medication_2": current_med,
+                    "severity": "major",
+                    "recommendation": "consider_alternative_or_monitor_closely"
+                })
+                decision_support["treatment_safety"] = "requires_monitoring"
+    
+    # Allergy checking
+    for allergy in allergies:
+        if allergy.lower() in proposed_med.lower():
+            decision_support["contraindications"].append({
+                "type": "allergy",
+                "allergen": allergy,
+                "recommendation": "contraindicated_find_alternative"
+            })
+            decision_support["treatment_safety"] = "contraindicated"
+    
+    # Kidney function dosage adjustments
+    if kidney_function in ["moderate_impairment", "severe_impairment"]:
+        kidney_adjusted_meds = ["metformin", "gabapentin", "atenolol", "digoxin"]
+        if proposed_med.lower() in kidney_adjusted_meds:
+            if kidney_function == "moderate_impairment":
+                adjustment_factor = 0.5
+            else:  # severe_impairment
+                adjustment_factor = 0.25
+            
+            adjusted_dose = proposed_dose * adjustment_factor
+            decision_support["dosage_adjustments"].append({
+                "reason": "kidney_function_impairment",
+                "original_dose": proposed_dose,
+                "adjusted_dose": adjusted_dose,
+                "monitoring": "required"
+            })
+    
+    # AI-powered treatment recommendation
+    ai_treatment_analysis = reason(
+        f"Analyze treatment plan: Patient {age}yo, proposed {proposed_med} {proposed_dose}mg {proposed_frequency}, "
+        f"current medications: {current_medications}, allergies: {allergies}, "
+        f"kidney function: {kidney_function}. Provide evidence-based recommendations and safety considerations."
+    )
+    
+    decision_support["ai_treatment_analysis"] = ai_treatment_analysis
+    
+    return decision_support
+
+# USAGE EXAMPLES AND DEMONSTRATIONS
+# =================================
+log("\n=== Testing POET Healthcare Examples ===")
+
+# Example 1: Patient vital analysis
+log("\n--- Patient Vital Signs Analysis ---")
+patient_result = analyze_patient_vitals(
+    patient_id="PT_12345678_ANON",
+    age=72,
+    gender="female",
+    temperature_f=101.8,
+    heart_rate_bpm=105,
+    blood_pressure={"systolic": 160, "diastolic": 95},
+    respiratory_rate=22,
+    oxygen_saturation=93.0,
+    symptoms=["shortness_of_breath", "fatigue", "chest_tightness"],
+    medical_history=["diabetes", "hypertension", "copd"],
+    current_medications=["metformin", "lisinopril", "albuterol"]
+)
+
+log(f"Clinical Priority: {patient_result['patient_assessment']['clinical_priority']}")
+log(f"Severity Score: {patient_result['patient_assessment']['severity_score']}")
+log(f"Triage Level: {patient_result['patient_assessment']['triage_level']}")
+log(f"Clinical Alerts: {patient_result['clinical_alerts']}")
+log(f"Recommendations: {patient_result['recommendations'][:3]}")  # First 3 recommendations
+
+# Example 2: Clinical decision support
+log("\n--- Clinical Decision Support ---")
+decision_result = clinical_decision_support(
+    patient_data={
+        "age": 72,
+        "weight_kg": 65,
+        "allergies": ["penicillin"],
+        "current_medications": ["warfarin", "metformin", "lisinopril"],
+        "kidney_function": "moderate_impairment",
+        "liver_function": "normal"
+    },
+    proposed_treatment={
+        "medication": "aspirin",
+        "dose_mg": 325,
+        "frequency": "daily"
+    },
+    clinical_guidelines=[]
+)
+
+log(f"Treatment Safety: {decision_result['treatment_safety']}")
+log(f"Drug Interactions: {len(decision_result['drug_interactions'])}")
+log(f"Contraindications: {len(decision_result['contraindications'])}")
+log(f"Dosage Adjustments: {len(decision_result['dosage_adjustments'])}")
+
+# POET BENEFITS DEMONSTRATED
+# ==========================
+log("\n=== POET Healthcare Benefits ===")
+log("✅ HIPAA Compliance: Automatic data anonymization and secure handling")
+log("✅ Clinical Validation: Evidence-based normal ranges and risk assessment")
+log("✅ Drug Safety: Interaction checking and contraindication alerts")
+log("✅ Age-Specific Care: Pediatric, adult, and geriatric-specific guidelines")
+log("✅ Decision Support: AI-powered clinical reasoning and recommendations")
+log("✅ Risk Stratification: Automated triage and severity scoring")
+log("✅ Quality Assurance: Clinical guideline compliance checking")
+log("✅ Patient Safety: Real-time alerts for critical conditions")
+
+log("🎉 Healthcare POET Example Complete!")

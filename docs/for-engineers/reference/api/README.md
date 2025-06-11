@@ -17,6 +17,7 @@ Complete reference documentation for the Dana programming language and runtime.
 
 | Document | Description | Key Topics |
 |----------|-------------|------------|
+| **[POET Decorators](poet-decorators.md)** | Function enhancement decorators | `@poet()` for Python, `@poet` for Dana, runtime `poet()` |
 | **[Function Calling](function-calling.md)** | Function calls and imports | Dana→Dana, Dana→Python, Python→Dana |
 | **[Sandbox Security](sandbox-security.md)** | Security model and restrictions | Sandboxing, context isolation, safety |
 
@@ -58,6 +59,11 @@ print("Analysis result:", result)
 - `log(message: str, level: str = "info") -> None` - Log messages
 - `log_level(level: str) -> None` - Set global log level
 
+### POET Decorators
+- **`@poet(domain="...", timeout=30.0, retries=3)`** - Python function enhancement
+- **`@poet(...)`** - Dana function enhancement
+- **`poet(func_name, args, **config)`** - Runtime function enhancement
+
 ### Built-in Functions
 - `len(obj: any) -> int` - Get length of collections
 - `sum(iterable: list) -> any` - Sum numeric values
@@ -78,6 +84,11 @@ print("Analysis result:", result)
 - `local:` - Local scope (default for function parameters)
 
 ## Search by Use Case
+
+### Function Enhancement and Reliability
+- [POET Decorators: Python enhancement](poet-decorators.md#python-poet-decorator) - `@poet()` for automatic optimization
+- [POET Decorators: Dana enhancement](poet-decorators.md#dana-poet-decorator) - `@poet` for domain intelligence
+- [POET Decorators: Runtime enhancement](poet-decorators.md#runtime-poet-function-dana) - `poet()` for dynamic enhancement
 
 ### AI and Reasoning
 - [Core Functions: `reason()`](core-functions.md#reason) - LLM integration
@@ -133,6 +144,7 @@ graph TD
 | Feature | Status | Documentation |
 |---------|--------|---------------|
 | Core Functions | ✅ Complete | [core-functions.md](core-functions.md) |
+| POET Decorators | ✅ Complete | [poet-decorators.md](poet-decorators.md) |
 | Built-in Functions | ✅ Complete | [built-in-functions.md](built-in-functions.md) |
 | Type System | ✅ Complete | [type-system.md](type-system.md) |
 | Scoping System | ✅ Complete | [scoping.md](scoping.md) |

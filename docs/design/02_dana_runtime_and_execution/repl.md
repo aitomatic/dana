@@ -1,4 +1,4 @@
-| [← Sandbox](./sandbox.md) | [POV Execution Model →](./pov_execution_model.md) |
+| [← Sandbox](./sandbox.md) | [POV Execution Model →](./poet_functions.md) |
 |---|---|
 
 # Dana REPL (Read-Eval-Print Loop)

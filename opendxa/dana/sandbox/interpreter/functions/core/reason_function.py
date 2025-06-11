@@ -6,8 +6,6 @@ This source code is licensed under the license found in the LICENSE file in the 
 Reason function implementation for the Dana interpreter.
 
 This module provides the reason function, which handles reasoning in the Dana interpreter.
-With Phase 4: IPVReason Integration, this function now automatically optimizes prompts
-using the IPV (Infer-Process-Validate) pattern for better results.
 """
 
 import json
@@ -20,7 +18,11 @@ from opendxa.common.utils.logging import DXA_LOGGER
 from opendxa.dana.common.exceptions import SandboxError
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
+# Import POET decorator
+from opendxa.dana.poet import poet
 
+
+@poet(domain="llm_optimization", timeout=30.0, retries=3, enable_training=True)
 def reason_function(
     prompt: str,
     context: SandboxContext,
@@ -28,9 +30,6 @@ def reason_function(
     use_mock: Optional[bool] = None,
 ) -> Any:
     """Execute the reason function to generate a response using an LLM.
-
-    This function now automatically uses IPVReason for intelligent optimization,
-    making 95% of users get better results without needing to know about IPV.
 
     Args:
         prompt: The prompt string to send to the LLM (can be a string or a list with LiteralExpression)
@@ -40,13 +39,11 @@ def reason_function(
             - temperature: Controls randomness (default: 0.7)
             - max_tokens: Limit on response length
             - format: Output format ("text" or "json")
-            - enable_ipv: Enable IPV optimization (default: True)
-            - use_original: Force use of original implementation (default: False)
         use_mock: Force use of mock responses (True) or real LLM calls (False).
                   If None, defaults to checking OPENDXA_MOCK_LLM environment variable.
 
     Returns:
-        The LLM's response to the prompt, optimized through IPV when enabled
+        The LLM's response to the prompt
 
     Raises:
         SandboxError: If the function execution fails or parameters are invalid
@@ -60,78 +57,6 @@ def reason_function(
     # Convert prompt to string if it's not already
     if not isinstance(prompt, str):
         prompt = str(prompt)
-
-    # Check if IPV optimization should be used
-    enable_ipv = options.get("enable_ipv", True)  # IPV enabled by default
-    use_original = options.get("use_original", False)  # Original implementation available
-
-    # Use IPV optimization unless explicitly disabled
-    if enable_ipv and not use_original:
-        try:
-            return _reason_with_ipv(prompt, context, options, use_mock)
-        except Exception as e:
-            # If IPV fails, fall back to original implementation
-            logger.warning(f"IPV optimization failed, falling back to original implementation: {e}")
-            return _reason_original_implementation(prompt, context, options, use_mock)
-    else:
-        # Use original implementation directly
-        return _reason_original_implementation(prompt, context, options, use_mock)
-
-
-def _reason_with_ipv(
-    prompt: str,
-    context: SandboxContext,
-    options: Dict[str, Any],
-    use_mock: Optional[bool] = None,
-) -> Any:
-    """Enhanced reason function using IPVReason for optimization."""
-    logger = DXA_LOGGER.getLogger("opendxa.dana.reason.ipv")
-
-    try:
-        # Import IPVReason and IPVConfig
-        from opendxa.dana.ipv import IPVConfig, IPVReason
-
-        # Create IPV configuration from options
-        ipv_config = IPVConfig(
-            debug_mode=options.get("debug_mode", False),
-            max_iterations=options.get("max_iterations", 3),
-        )
-
-        # Create IPVReason executor
-        ipv_reason = IPVReason()
-
-        # Prepare kwargs for IPV execution
-        ipv_kwargs = {
-            "config": ipv_config,
-            "llm_options": options,  # Pass through LLM options
-            "use_mock": use_mock,
-        }
-
-        # Execute with IPV optimization
-        logger.debug(f"Using IPV optimization for prompt: {prompt[:100]}{'...' if len(prompt) > 100 else ''}")
-        result = ipv_reason.execute(prompt, context, **ipv_kwargs)
-
-        logger.debug("IPV optimization completed successfully")
-        return result
-
-    except ImportError:
-        # IPV not available, fall back to original
-        logger.debug("IPV not available, using original implementation")
-        return _reason_original_implementation(prompt, context, options, use_mock)
-    except Exception as e:
-        # IPV failed, fall back to original
-        logger.warning(f"IPV optimization failed: {e}")
-        raise
-
-
-def _reason_original_implementation(
-    prompt: str,
-    context: SandboxContext,
-    options: Dict[str, Any],
-    use_mock: Optional[bool] = None,
-) -> Any:
-    """Original reason function implementation (pre-IPV)."""
-    logger = DXA_LOGGER.getLogger("opendxa.dana.reason.original")
 
     # Check if we should use mock responses
     # Priority: function parameter > environment variable

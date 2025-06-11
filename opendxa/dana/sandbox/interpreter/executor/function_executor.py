@@ -30,6 +30,10 @@ from opendxa.dana.sandbox.parser.ast import (
 )
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
+# POET imports for decorator handling
+from opendxa.dana.poet import POEConfig, POEExecutor
+from opendxa.common.utils.logging import DXA_LOGGER
+
 
 class FunctionNameInfo:
     """Information about a parsed function name."""
@@ -496,12 +500,135 @@ class FunctionExecutor(BaseExecutor):
             else:
                 param_names.append(str(param))
 
-        # Create the DanaFunction
+        # Create the base DanaFunction
         dana_func = DanaFunction(body=node.body, parameters=param_names, context=context)
 
-        # Store the function in context
-        context.set(node.name.name, dana_func)
-        return dana_func
+        # Check for POET decorators and apply them
+        poet_decorators = [d for d in node.decorators if d.name.lower() == "poet"]
+
+        if poet_decorators:
+            # Apply POET enhancement to the function
+            enhanced_func = self._apply_poet_decorators(dana_func, poet_decorators, context)
+            # Store the enhanced function in context
+            context.set(node.name.name, enhanced_func)
+            DXA_LOGGER.info(f"Created POET-enhanced Dana function: {node.name.name}")
+            return enhanced_func
+        else:
+            # Store the regular function in context
+            context.set(node.name.name, dana_func)
+            return dana_func
+
+    def _apply_poet_decorators(self, dana_func, poet_decorators, context: SandboxContext):
+        """
+        Apply POET decorators to a Dana function.
+
+        Args:
+            dana_func: The base Dana function
+            poet_decorators: List of POET decorator AST nodes
+            context: The execution context
+
+        Returns:
+            Enhanced function with POET capabilities
+        """
+        # Use the first POET decorator (typically there should only be one)
+        poet_decorator = poet_decorators[0]
+
+        # Extract POE configuration from decorator
+        poet_config = self._extract_poet_config_from_decorator(poet_decorator, context)
+
+        # Create POE executor with the configuration
+        poe_executor = POEExecutor(poet_config)
+
+        # Create a wrapper function that can be enhanced by POET
+        def wrapped_dana_function(*args, **kwargs):
+            # Convert positional args to match DanaFunction execute signature
+            return dana_func.execute(context, *args, **kwargs)
+
+        # Apply POET enhancement
+        enhanced_func = poe_executor(wrapped_dana_function)
+
+        return enhanced_func
+
+    def _extract_poet_config_from_decorator(self, poet_decorator, context: SandboxContext) -> POEConfig:
+        """
+        Extract POEConfig from a @poet decorator with comprehensive validation.
+
+        Args:
+            poet_decorator: The @poet decorator AST node
+            context: The sandbox context for evaluating expressions
+
+        Returns:
+            POEConfig object with settings from the decorator
+
+        Raises:
+            SandboxError: If decorator arguments are invalid
+        """
+        config_kwargs = {}
+
+        # Define valid POET configuration parameters
+        valid_params = {"domain", "timeout", "retries", "enable_training", "collect_metrics"}
+
+        # Define valid domain names (from POEConfig)
+        valid_domains = {
+            "llm_optimization",
+            "building_management",
+            "financial_services",
+            "semiconductor",
+            "healthcare",
+            "manufacturing",
+            "logistics",
+        }
+
+        # Process keyword arguments with validation
+        for key, value_expr in poet_decorator.kwargs.items():
+            # Validate parameter name
+            if key not in valid_params:
+                raise SandboxError(
+                    f"POET decorator error: Unknown parameter '{key}'. " f"Valid parameters: {', '.join(sorted(valid_params))}"
+                )
+
+            # Evaluate the expression to get the actual value
+            try:
+                evaluated_value = self.parent.execute(value_expr, context)
+            except Exception as e:
+                raise SandboxError(f"POET decorator error: Failed to evaluate parameter '{key}': {e}")
+
+            # Validate parameter values
+            if key == "domain":
+                if not isinstance(evaluated_value, str):
+                    raise SandboxError(f"POET decorator error: Domain must be a string, got {type(evaluated_value).__name__}")
+                if not evaluated_value.strip():
+                    raise SandboxError("POET decorator error: Domain cannot be empty")
+                if evaluated_value not in valid_domains:
+                    DXA_LOGGER.warning(f"Unknown domain: {evaluated_value}. Available domains: {sorted(valid_domains)}")
+
+            elif key == "timeout":
+                if not isinstance(evaluated_value, (int, float)):
+                    raise SandboxError(f"POET decorator error: Timeout must be a number, got {type(evaluated_value).__name__}")
+                if evaluated_value <= 0:
+                    raise SandboxError("POET decorator error: Timeout must be positive")
+
+            elif key == "retries":
+                if not isinstance(evaluated_value, int):
+                    raise SandboxError(f"POET decorator error: Retries must be an integer, got {type(evaluated_value).__name__}")
+                if evaluated_value < 0:
+                    raise SandboxError("POET decorator error: Retries cannot be negative")
+
+            elif key == "enable_training":
+                if not isinstance(evaluated_value, bool):
+                    raise SandboxError(f"POET decorator error: Enable training must be a boolean, got {type(evaluated_value).__name__}")
+
+            elif key == "collect_metrics":
+                if not isinstance(evaluated_value, bool):
+                    raise SandboxError(f"POET decorator error: Collect metrics must be a boolean, got {type(evaluated_value).__name__}")
+
+            config_kwargs[key] = evaluated_value
+
+        # Create POEConfig with validated values
+        try:
+            return POEConfig(**config_kwargs)
+        except Exception as e:
+            raise SandboxError(f"POET decorator error: Failed to create configuration: {e}")
 
     def _ensure_fully_evaluated(self, value: Any, context: SandboxContext) -> Any:
         """Ensure that the value is fully evaluated, particularly f-strings.

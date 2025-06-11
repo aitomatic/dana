@@ -1,4 +1,4 @@
-| [← POV Execution Model](./pov_execution_model.md) | [Concurrency Model →](./concurrency_model.md) |
+| [← POV Execution Model](./poet_functions.md) | [Concurrency Model →](./concurrency_model.md) |
 |---|---|
 
 # Type System and Casting

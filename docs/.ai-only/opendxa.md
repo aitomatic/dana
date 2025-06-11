@@ -28,7 +28,7 @@ Dana is an imperative programming language and execution runtime that forms the 
 
 Dana programs are executed by the Dana interpreter, which provides:
 - Deterministic execution of standard operations
-- Controlled LLM reasoning integration with IPV (Infer-Process-Validate) optimization
+- Controlled LLM reasoning integration with optimized execution
 - State management and scope enforcement
 - Tool and knowledge base integration
 - Execution monitoring and logging
@@ -64,7 +64,7 @@ Dana uses a clear, imperative programming model that developers find familiar an
 user_name = "Alice"  # Auto-scoped to local (preferred)
 public:weather_temperature = 72
 
-# Perform reasoning with IPV optimization
+# Perform reasoning
 analysis = reason("Should we recommend a jacket?",
                        {"context": [user_name, public:weather_temperature]})
 

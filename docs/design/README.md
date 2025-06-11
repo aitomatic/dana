@@ -8,7 +8,7 @@ The design documents are organized into the following main sections:
 
 1. **Dana Philosophy**: Core vision, goals, and guiding principles behind Dana.
 2. **Dana Language Specification**: Detailed definition of the Dana language itself – syntax, semantics, data types, functions, state management, etc.
-3. **Dana Runtime and Execution**: How Dana code is executed, including the interpreter, sandbox, REPL, and the core **POET (Perceive → Operate → Encode → Train) execution model**.
+3. **Dana Runtime and Execution**: How Dana code is executed, including the interpreter, sandbox, REPL, and the core **POET (Perceive → Operate → Enforce → Train) execution model**.
 4. **Core Capabilities and Resources**: Core capabilities and resources abstraction model for Dana programs to interact with internal and external functionalities.
 5. **Agent and Orchestration**: Higher-level constructs for building intelligent agents and orchestrating complex workflows using Dana.
 6. **Tooling and Developer Experience**: Developer tools, IDE integration, debugging, testing frameworks, and other developer experience improvements.

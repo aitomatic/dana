@@ -202,25 +202,25 @@ class FunctionCall:
 @dataclass
 class ObjectFunctionCall:
     """An object method call (e.g., obj.method(args)).
-    
+
     This AST node represents calling a method on an object, which is different from
     accessing an attribute or calling a standalone function. It handles expressions
     like `websearch.list_tools()`, `obj.method(arg1, arg2)`, etc.
-    
+
     The ObjectFunctionCall distinguishes between:
     - The target object (which can be any expression that evaluates to an object)
     - The method name (a string identifier)
     - The arguments passed to the method call
-    
+
     This enables Dana to support object-oriented programming patterns and method
     chaining while maintaining clear separation between attribute access and
     method invocation.
-    
+
     Examples:
         - `websearch.list_tools()` - call list_tools method on websearch object
         - `obj.add(10)` - call add method with argument 10
         - `api.get_data("users")` - call get_data method with string argument
-    
+
     Attributes:
         object: The target object expression to call the method on
         method_name: The name of the method to call (string)
@@ -229,7 +229,7 @@ class ObjectFunctionCall:
     """
 
     object: Expression  # The object on which to call the method
-    method_name: str    # The method name
+    method_name: str  # The method name
     args: Dict[str, Any]  # Arguments to the method
     location: Optional[Location] = None
 
@@ -381,6 +381,7 @@ class FunctionDefinition:
     parameters: List[Parameter]
     body: List[Statement]
     return_type: Optional[TypeHint] = None
+    decorators: List["Decorator"] = field(default_factory=list)  # Decorators applied to function
     location: Optional[Location] = None
 
 
@@ -405,10 +406,20 @@ class ImportFromStatement:
 @dataclass
 class UseStatement:
     """Use statement for external resources (e.g., use("mcp", url="..."))."""
-    
-    args: List[Expression]        # Positional arguments
-    kwargs: Dict[str, Expression] # Keyword arguments
+
+    args: List[Expression]  # Positional arguments
+    kwargs: Dict[str, Expression]  # Keyword arguments
     target: Optional[Identifier] = None
+    location: Optional[Location] = None
+
+
+@dataclass
+class Decorator:
+    """Decorator applied to a function (e.g., @poet(domain="building_management"))."""
+
+    name: str  # Decorator name (e.g., "poet")
+    args: List[Expression] = field(default_factory=list)  # Positional arguments
+    kwargs: Dict[str, Expression] = field(default_factory=dict)  # Keyword arguments
     location: Optional[Location] = None
 
 

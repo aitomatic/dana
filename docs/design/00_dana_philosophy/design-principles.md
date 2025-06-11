@@ -8,7 +8,7 @@ These principles guide the design and evolution of Dana as an agentic language a
 
 - Postel's Law:
  > "Be conservative in what you do, be liberal in what you accept from others."
- This principle is a cornerstone of Dana's design and is directly embodied in its **POET (Perceive → Operate → Encode → Train)** execution model, which structures robust function calls to be liberal in input processing and conservative in their output.
+ This principle is a cornerstone of Dana's design and is directly embodied in its **POET (Perceive → Operate → Enforce → Train)** execution model, which structures robust function calls to be liberal in input processing and conservative in their output.
 - Simple things should be easy. Complex things should be possible.
 - KISS: Keep It Simple, Stupid.
 - YAGNI: You Aren't Gonna Need It.
