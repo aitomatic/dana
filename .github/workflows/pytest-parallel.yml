@@ -156,15 +156,24 @@ jobs:
       run: |
         # Run tests that don't match any of the explicit subsystem filters
         # This includes any top-level test files and future additions
+        set +e  # Allow commands to fail without stopping the script
         uv run pytest tests/ -m "not live and not deep" --tb=short -v \
           --ignore=tests/dana/ \
           --ignore=tests/common/ \
           --ignore=tests/agent/ \
-          --ignore=tests/execution/ || {
-          echo "No miscellaneous tests found - all tests are covered by explicit subsystem jobs"
+          --ignore=tests/execution/
+        exit_code=$?
+        if [ $exit_code -eq 5 ]; then
+          echo "✅ No miscellaneous tests found - all tests are covered by explicit subsystem jobs"
           echo "This is expected and indicates good test organization"
           exit 0
-        }
+        elif [ $exit_code -ne 0 ]; then
+          echo "❌ Tests failed with exit code $exit_code"
+          exit $exit_code
+        else
+          echo "✅ Miscellaneous tests passed"
+          exit 0
+        fi
 
   # Summary job that depends on all test jobs
   test-summary:
