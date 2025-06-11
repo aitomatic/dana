@@ -6,6 +6,7 @@ Get from zero to working agent in 15 minutes.
 - [5-Minute Setup](setup/installation.md) - Install and verify OpenDXA
 - [Build Your First Agent](recipes/first-agent.md) - Working code in 10 minutes
 - [Dana Language Basics](reference/dana-syntax.md) - Essential syntax reference
+- [Structs and Methods Guide](reference/structs-and-methods.md) - Complete struct system guide
 
 ## 📋 Common Tasks
 Jump directly to solutions for typical engineering problems.
@@ -14,12 +15,14 @@ Jump directly to solutions for typical engineering problems.
 - 📄 [Process Documents](recipes/document-processor/README.md) - Extract, analyze, transform content
 - [Create Workflows](recipes/workflow-agent/README.md) - Multi-step automated processes
 - [Integrate APIs](recipes/api-integration/README.md) - Connect external services
+- [Struct Patterns Cookbook](recipes/structs-cookbook.md) - Real-world struct patterns and examples
 - [Debug Issues](troubleshooting/README.md) - Common problems and solutions
 
 ## Reference
 Quick lookup for syntax, functions, and commands.
 
 - [Dana Language Reference](reference/dana-syntax.md) - Complete syntax guide
+- [Structs and Methods Guide](reference/structs-and-methods.md) - Comprehensive struct system reference
 - [API Reference](reference/api/README.md) - All available functions with examples
 - [REPL Commands](reference/repl-guide.md) - Interactive development environment
 - [Troubleshooting](troubleshooting/README.md) - Common problems and solutions
@@ -43,11 +46,23 @@ OpenDXA transforms AI development from brittle, unpredictable systems to reliabl
 ### Dana Language
 Dana is the heart of OpenDXA - a simple, powerful language for AI automation:
 
-```python
+```dana
 # Load data and analyze
 documents = load_documents("contracts/*")
 key_points = reason("Extract key terms from {documents}")
 summary = reason("Summarize findings: {key_points}")
+
+# Structured data with AI integration
+struct Customer:
+    name: str
+    email: str
+    risk_level: str
+
+def assess_risk(customer: Customer) -> str:
+    return reason("Assess customer risk level", context=customer)
+
+customer = Customer(name="Alice", email="alice@example.com", risk_level="")
+risk = customer.assess_risk()  # Method syntax sugar
 ```
 
 ### Agent Architecture
@@ -108,9 +123,11 @@ for-engineers/
 │ ├── document-processor/README.md # Process and analyze documents
 │ ├── workflow-agent/README.md # Multi-step automation
 │ ├── api-integration/README.md # Connect external services
+│ ├── structs-cookbook.md # Real-world struct patterns and examples
 │ └── README.md # Recipe guides
 ├── reference/
 │ ├── dana-syntax.md # Complete Dana language reference
+│ ├── structs-and-methods.md # Comprehensive struct system guide
 │ ├── functions.md # All available functions
 │ ├── repl-guide.md # Interactive development
 │ ├── agent-api.md # Agent configuration API

@@ -943,8 +943,8 @@ Start with simple structs and functions, then gradually adopt more advanced patt
 ## Next Steps
 
 - Explore [Real-World Recipes](../recipes/README.md) for more complex examples
-- Learn about [AI Integration Patterns](../recipes/ai-integration/README.md)
-- Check out [Performance Best Practices](../reference/performance-guide.md)
+- Learn about [API Integration Patterns](../recipes/api-integration/README.md)
+- Explore more [Dana Reference Documentation](../reference/README.md)
 - See [Troubleshooting Guide](../troubleshooting/README.md) for common issues
 
 ---
