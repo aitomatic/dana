@@ -1,0 +1,128 @@
+# GitHub Action to comprehensively test Dana struct implementation
+# - Tests on multiple Python versions and operating systems
+# - Runs all struct-related tests with mock LLM to avoid API dependencies
+# - Ensures struct functionality works across different environments
+# - Validates performance benchmarks and integration tests
+
+name: Dana Struct Implementation Tests
+
+on:
+  push:
+    paths:
+      - 'opendxa/dana/sandbox/interpreter/**'
+      - 'opendxa/dana/sandbox/parser/**'
+      - 'tests/dana/sandbox/interpreter/test_struct_*'
+      - '.github/workflows/struct-tests.yml'
+  pull_request:
+    paths:
+      - 'opendxa/dana/sandbox/interpreter/**'
+      - 'opendxa/dana/sandbox/parser/**'
+      - 'tests/dana/sandbox/interpreter/test_struct_*'
+      - '.github/workflows/struct-tests.yml'
+
+jobs:
+  struct-tests:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.12", "3.13"]
+      fail-fast: false
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+    
+    - name: Install dependencies
+      run: uv sync --extra dev
+    
+    - name: Test Phase 1 - Foundation & Architecture
+      env:
+        OPENDXA_MOCK_LLM: "true"
+        OPENDXA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: uv run pytest tests/dana/sandbox/interpreter/test_struct_phase1.py -v --tb=short
+    
+    - name: Test Phase 2 - Core Functionality  
+      env:
+        OPENDXA_MOCK_LLM: "true"
+        OPENDXA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: uv run pytest tests/dana/sandbox/interpreter/test_struct_phase2.py -v --tb=short
+    
+    - name: Test Phase 3 - Error Handling & Edge Cases
+      env:
+        OPENDXA_MOCK_LLM: "true"
+        OPENDXA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: uv run pytest tests/dana/sandbox/interpreter/test_struct_phase3.py -v --tb=short
+    
+    - name: Test Phase 4 - Advanced Features & Integration
+      env:
+        OPENDXA_MOCK_LLM: "true"
+        OPENDXA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: uv run pytest tests/dana/sandbox/interpreter/test_struct_phase4.py -v --tb=short
+    
+    - name: Test Phase 5 - Integration & Performance Testing
+      env:
+        OPENDXA_MOCK_LLM: "true"
+        OPENDXA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: uv run pytest tests/dana/sandbox/interpreter/test_struct_phase5.py -v --tb=short
+    
+    - name: Test All Struct Functionality (Comprehensive)
+      env:
+        OPENDXA_MOCK_LLM: "true"
+        OPENDXA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: uv run pytest tests/dana/sandbox/interpreter/test_struct_* -v --tb=short
+    
+    - name: Validate Performance Benchmarks
+      env:
+        OPENDXA_MOCK_LLM: "true"
+        OPENDXA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: uv run pytest tests/dana/sandbox/interpreter/test_struct_phase5.py::TestPerformanceBenchmarks -v --tb=short
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    needs: struct-tests
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.12"
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+    
+    - name: Install dependencies
+      run: uv sync --extra dev
+    
+    - name: Test Struct Integration with Dana Features
+      env:
+        OPENDXA_MOCK_LLM: "true"
+        OPENDXA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: |
+        uv run pytest tests/dana/sandbox/interpreter/test_struct_phase2.py::TestStructIntegrationWithDanaFeatures -v
+        uv run pytest tests/dana/sandbox/interpreter/test_struct_phase4.py::TestStructMethodIntegration -v
+        uv run pytest tests/dana/sandbox/interpreter/test_struct_phase5.py::TestComprehensiveIntegration -v
+    
+    - name: Test Real-World Scenarios
+      env:
+        OPENDXA_MOCK_LLM: "true"
+        OPENDXA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: uv run pytest tests/dana/sandbox/interpreter/test_struct_phase5.py::TestRealWorldScenarios -v --tb=short 

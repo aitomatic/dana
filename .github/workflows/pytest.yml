@@ -1,6 +1,7 @@
 # GitHub Action to run pytest on pull requests
 # - Runs on Python 3.12
 # - Installs the package and its dependencies
+# - Tests struct implementation comprehensively with mock LLM
 # - Executes fast regression tests only (excludes deep/comprehensive tests)
 # - For full test coverage, run locally with: uv run pytest -m "not live" tests/
 # This helps catch regressions quickly while keeping CI times reasonable
@@ -25,8 +26,15 @@ jobs:
       uses: astral-sh/setup-uv@v6
     - name: Install dependencies
       run: uv sync --extra dev
+    - name: Test struct implementation (comprehensive)
+      env:
+        OPENDXA_MOCK_LLM: "true"
+        OPENDXA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: uv run pytest tests/dana/sandbox/interpreter/test_struct_* -v --tb=short
     - name: Test with pytest (fast tests only)
       env:
         OPENDXA_MOCK_LLM: "true"
         OPENDXA_USE_REAL_LLM: "false"
-      run: uv run pytest -m "not live and not deep" tests/
+        PYTHONPATH: ${{ github.workspace }}
+      run: uv run pytest -m "not live and not deep" tests/ --tb=short -v

@@ -150,8 +150,24 @@
     "declarations": {
       "patterns": [
         {
+          "name": "meta.struct.dana",
+          "match": "\\b(struct)\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*:",
+          "captures": {
+            "1": { "name": "storage.type.struct.dana" },
+            "2": { "name": "entity.name.type.struct.dana" }
+          }
+        },
+        {
+          "name": "meta.struct.field.dana",
+          "match": "^\\s*([A-Za-z_][A-Za-z0-9_]*)\\s*:\\s*([A-Za-z_][A-Za-z0-9_|\\[\\]]*)",
+          "captures": {
+            "1": { "name": "variable.other.field.dana" },
+            "2": { "name": "storage.type.dana" }
+          }
+        },
+        {
           "name": "meta.class.dana",
-          "match": "\\b(struct|interface|enum)\\s+([A-Za-z_][A-Za-z0-9_]*)\\b",
+          "match": "\\b(interface|enum)\\s+([A-Za-z_][A-Za-z0-9_]*)\\b",
           "captures": {
             "1": { "name": "storage.type.class.dana" },
             "2": { "name": "entity.name.type.class.dana" }
@@ -192,6 +208,10 @@
           "match": "\\b(abstract|static|final|override|async|await)\\b"
         },
         {
+          "name": "storage.type.struct.dana",
+          "match": "\\b(struct)\\b"
+        },
+        {
           "name": "keyword.operator.logical.dana",
           "match": "\\b(and|or|not|is|in)\\b"
         },
@@ -210,6 +230,10 @@
         {
           "name": "storage.type.dana",
           "match": "\\b(int|float|str|bool|list|dict|tuple|set|any|void|object)\\b"
+        },
+        {
+          "name": "storage.type.user.dana",
+          "match": "\\b[A-Z][A-Za-z0-9_]*\\b"
         },
         {
           "name": "storage.type.generic.dana",
@@ -404,8 +428,15 @@
     "functions": {
       "patterns": [
         {
+          "name": "meta.struct.instantiation.dana",
+          "match": "\\b([A-Z][A-Za-z0-9_]*)\\s*(?=\\()",
+          "captures": {
+            "1": { "name": "entity.name.type.struct.dana" }
+          }
+        },
+        {
           "name": "entity.name.function.dana",
-          "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\s*(?=\\()"
+          "match": "\\b([a-z_][a-zA-Z0-9_]*)\\s*(?=\\()"
         }
       ]
     },
