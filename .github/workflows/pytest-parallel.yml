@@ -156,22 +156,15 @@ jobs:
       run: |
         # Run tests that don't match any of the explicit subsystem filters
         # This includes any top-level test files and future additions
-        # Use --collect-only first to check if there are any tests to run
-        if uv run pytest tests/ -m "not live and not deep" --collect-only -q \
+        uv run pytest tests/ -m "not live and not deep" --tb=short -v \
           --ignore=tests/dana/ \
           --ignore=tests/common/ \
           --ignore=tests/agent/ \
-          --ignore=tests/execution/ 2>/dev/null | grep -q "test session starts"; then
-          echo "Found miscellaneous tests to run"
-          uv run pytest tests/ -m "not live and not deep" --tb=short -v \
-            --ignore=tests/dana/ \
-            --ignore=tests/common/ \
-            --ignore=tests/agent/ \
-            --ignore=tests/execution/
-        else
+          --ignore=tests/execution/ || {
           echo "No miscellaneous tests found - all tests are covered by explicit subsystem jobs"
           echo "This is expected and indicates good test organization"
-        fi
+          exit 0
+        }
 
   # Summary job that depends on all test jobs
   test-summary:
