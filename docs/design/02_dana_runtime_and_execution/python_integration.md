@@ -1,4 +1,4 @@
-| [Dana-to-Python →](./dana-to-python.md) | [Python-to-Dana →](./python-to-dana.md) |
+| [Dana-to-Python →](../../.implementation/dana-to-python.md) | [Python-to-Dana →](../../.implementation/python-to-dana.md) |
 |---|---|
 
 # Python Integration in Dana
@@ -18,17 +18,17 @@ Dana's Python integration is a critical feature that enables seamless interopera
 
 The Python integration system consists of three main components:
 
-1. **Module System Integration** ([modules_and_imports.md](../01_dana_language_specification/modules_and_imports.md))
+1. **Module System Integration** ([modules_and_imports.md](../../.implementation/modules_and_imports.md))
    - How Dana modules can import Python modules
    - How Python modules are represented in Dana
    - Module resolution and caching
 
-2. **Dana → Python** ([dana_to_python.md](./dana-to-python.md))
+2. **Dana → Python** ([dana_to_python.md](../../.implementation/dana-to-python.md))
    - Dana code calling Python functions
    - Managing Python objects from Dana
    - Future sandboxing of Python execution
 
-3. **Python → Dana** ([python_to_dana.md](./python-to-dana.md))
+3. **Python → Dana** ([python_to_dana.md](../../.implementation/python-to-dana.md))
    - Python code calling Dana functions
    - Dana runtime embedding in Python
    - Dana sandbox security model
@@ -135,9 +135,9 @@ with dana.get_llm() as llm:
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| Module System | In Progress | See modules_and_imports.md |
-| Dana → Python | In Progress | See dana_to_python.md |
-| Python → Dana | In Progress | See python_to_dana.md |
+| Module System | In Progress | See ../../.implementation/modules_and_imports.md |
+| Dana → Python | In Progress | See ../../.implementation/dana-to-python.md |
+| Python → Dana | In Progress | See ../../.implementation/python-to-dana.md |
 | PythonFunction | Complete | Core implementation done |
 | PythonClass | Planned | Design complete |
 | PythonObject | Planned | Design complete |
@@ -255,9 +255,9 @@ The implementation can proceed in parallel within each layer, but must complete 
 
 ## Related Documents
 
-- [Module System Design](../01_dana_language_specification/modules_and_imports.md)
-- [Dana to Python Integration](./dana-to-python.md)
-- [Python to Dana Integration](./python-to-dana.md)
+- [Module System Design](../../.implementation/modules_and_imports.md)
+- [Dana to Python Integration](../../.implementation/dana-to-python.md)
+- [Python to Dana Integration](../../.implementation/python-to-dana.md)
 - [External Interfaces](./external_interfaces.md)
 
 ## Open Questions

@@ -19,6 +19,7 @@ class TestContextIntegration:
         """Test that IPVReason uses LLM for analysis when no code context is available."""
         context = Mock()
         context.get_assignment_target_type.return_value = None
+        context.get_resources.return_value = {}
 
         # Mock the LLM call to return a simple response
         with patch.object(self.ipv_reason, "_execute_llm_call", return_value="Test response"):
@@ -30,6 +31,7 @@ class TestContextIntegration:
         """Test that the LLM receives proper type context information."""
         context = Mock()
         context.get_assignment_target_type.return_value = float
+        context.get_resources.return_value = {}
 
         # Capture the enhanced prompt that gets sent to the LLM
         captured_prompt = ""
@@ -52,6 +54,7 @@ class TestContextIntegration:
         # Create a context with code information
         context = Mock()
         context.get_assignment_target_type.return_value = str
+        context.get_resources.return_value = {}
         context._current_program = None
         context._state = {"local.customer_name": "John Doe"}
 
@@ -74,6 +77,7 @@ class TestContextIntegration:
         """Test that type hints provide optimization hints to the LLM."""
         context = Mock()
         context.get_assignment_target_type.return_value = float
+        context.get_resources.return_value = {}
         context._current_program = None
         context._state = {}
 
@@ -101,6 +105,7 @@ class TestContextIntegration:
         """Test that context analysis is properly logged."""
         context = Mock()
         context.get_assignment_target_type.return_value = None
+        context.get_resources.return_value = {}
         context._current_program = None
         context._state = {}
 
@@ -119,6 +124,7 @@ class TestContextIntegration:
         """Test that LLM prompt includes request for domain and task analysis."""
         context = Mock()
         context.get_assignment_target_type.return_value = None
+        context.get_resources.return_value = {}
         context._current_program = None
         context._state = {}
 
@@ -145,6 +151,7 @@ class TestContextIntegration:
         """Test that IPVReason works even if CodeContextAnalyzer is not available."""
         context = Mock()
         context.get_assignment_target_type.return_value = str
+        context.get_resources.return_value = {}
 
         # Mock ImportError to simulate CodeContextAnalyzer not being available
         with patch("opendxa.dana.ipv.context_analyzer.CodeContextAnalyzer", side_effect=ImportError("Module not found")):

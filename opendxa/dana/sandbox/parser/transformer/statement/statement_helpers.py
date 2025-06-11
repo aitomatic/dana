@@ -108,7 +108,16 @@ class AssignmentHelper:
         if not items:
             raise ValueError("basic_type rule received empty items list")
 
-        type_name = items[0].value if hasattr(items[0], "value") else str(items[0])
+        # Handle both built-in type tokens and NAME tokens (for struct types)
+        item = items[0]
+        if hasattr(item, "value"):
+            type_name = item.value
+        elif hasattr(item, "type") and item.type == "NAME":
+            # This is a NAME token representing a user-defined struct type
+            type_name = item.value
+        else:
+            type_name = str(item)
+            
         return TypeHint(name=type_name)
 
 

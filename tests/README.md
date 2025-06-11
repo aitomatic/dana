@@ -94,10 +94,13 @@ pytest -v
 
 ## CI/CD Integration
 
-The GitHub Actions workflow runs only fast tests to keep CI times reasonable:
-- **CI Runtime**: ~55 seconds (fast tests only)
-- **Full Suite**: ~78 seconds (all tests)
+OpenDXA uses a parallelized testing strategy to optimize CI/CD performance:
+- **Parallel CI Runtime**: ~6-8 minutes (all fast tests across 6 jobs)
+- **Sequential CI Runtime**: ~15-20 minutes (single job)
+- **Full Suite**: ~78 seconds (all tests including deep)
 - **Deep Tests**: ~23 seconds (comprehensive tests)
+
+For detailed information about the parallel testing strategy, see [CI/CD Testing Strategy](../docs/for-contributors/development/ci-cd-testing.md).
 
 ## Managing Test Categories
 
