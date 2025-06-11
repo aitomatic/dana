@@ -3,7 +3,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Any, ClassVar, Dict, Optional
+from typing import Any, ClassVar
 
 from pydantic import BaseModel, Field
 
@@ -15,16 +15,16 @@ class AgentConfig(BaseModel, Loggable):
     """Agent configuration with defaults and loading logic."""
 
     # Default configuration will be loaded from file
-    DEFAULT_CONFIG: ClassVar[Dict[str, Any]] = None
+    DEFAULT_CONFIG: ClassVar[dict[str, Any]] = None
 
     # Model fields
     max_tokens: int = Field(default=2000)
-    model: Optional[str] = Field(default=None)
+    model: str | None = Field(default=None)
     temperature: float = Field(default=0.7)
     preferred_models: list = Field(default_factory=list)
-    logging: Dict[str, Any] = Field(default_factory=dict)
+    logging: dict[str, Any] = Field(default_factory=dict)
 
-    def __init__(self, config_path: Optional[str] = None, **overrides):
+    def __init__(self, config_path: str | None = None, **overrides):
         """Initialize agent configuration.
 
         Args:
@@ -56,7 +56,7 @@ class AgentConfig(BaseModel, Loggable):
         # Update logging config from environment
         self._update_logging_from_env()
 
-    def _load_default_config(self) -> Dict[str, Any]:
+    def _load_default_config(self) -> dict[str, Any]:
         """Load default configuration from JSON file.
 
         Returns:
@@ -68,7 +68,7 @@ class AgentConfig(BaseModel, Loggable):
         """
         return ConfigLoader().get_default_config()
 
-    def _find_first_available_model(self) -> Optional[str]:
+    def _find_first_available_model(self) -> str | None:
         """Find the first available model based on API keys.
 
         Returns:
@@ -182,7 +182,7 @@ class AgentConfig(BaseModel, Loggable):
         """Get a configuration value."""
         return getattr(self, key, default)
 
-    def update(self, config: Dict[str, Any]) -> None:
+    def update(self, config: dict[str, Any]) -> None:
         """Update configuration with new values."""
         for key, value in config.items():
             setattr(self, key, value)

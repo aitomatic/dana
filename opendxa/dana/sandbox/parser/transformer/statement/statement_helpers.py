@@ -8,31 +8,27 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from typing import Any, cast
+from typing import cast
 
 from lark import Token, Tree
 
 from opendxa.dana.sandbox.parser.ast import (
-    Assignment,
     AssertStatement,
+    Assignment,
     BreakStatement,
     Conditional,
     ContinueStatement,
     Expression,
-    FunctionDefinition,
+    ForLoop,
     Identifier,
     ImportFromStatement,
     ImportStatement,
-    Parameter,
     PassStatement,
     RaiseStatement,
     ReturnStatement,
     TypeHint,
     UseStatement,
     WhileLoop,
-    ForLoop,
-    TryBlock,
-    ExceptBlock,
     WithStatement,
 )
 
@@ -41,7 +37,7 @@ class AssignmentHelper:
     """Helper class for assignment-related transformations."""
 
     @staticmethod
-    def create_assignment(target_tree, value_tree, type_hint=None, expression_transformer=None, variable_transformer=None):
+    def create_assignment(target_tree, value_tree, expression_transformer, variable_transformer, type_hint=None):
         """Create an Assignment node with proper validation."""
         # Get target identifier
         target = variable_transformer.variable([target_tree])
@@ -52,22 +48,57 @@ class AssignmentHelper:
         value = expression_transformer.expression([value_tree])
         if isinstance(value, tuple):
             raise TypeError(f"Assignment value cannot be a tuple: {value}")
-        
+
         # Type imports to match the original
         from opendxa.dana.sandbox.parser.ast import (
-            AttributeAccess, BinaryExpression, DictLiteral, FStringExpression,
-            FunctionCall, ListLiteral, LiteralExpression, ObjectFunctionCall,
-            SetLiteral, SubscriptExpression, TupleLiteral, UnaryExpression
+            AttributeAccess,
+            BinaryExpression,
+            DictLiteral,
+            FStringExpression,
+            FunctionCall,
+            ListLiteral,
+            LiteralExpression,
+            ObjectFunctionCall,
+            SetLiteral,
+            SubscriptExpression,
+            TupleLiteral,
+            UnaryExpression,
         )
-        
+
         AllowedAssignmentValue = (
-            LiteralExpression, Identifier, BinaryExpression, UnaryExpression,
-            FunctionCall, ObjectFunctionCall, TupleLiteral, DictLiteral,
-            ListLiteral, SetLiteral, SubscriptExpression, AttributeAccess,
-            FStringExpression, UseStatement
+            LiteralExpression,
+            Identifier,
+            BinaryExpression,
+            UnaryExpression,
+            FunctionCall,
+            ObjectFunctionCall,
+            TupleLiteral,
+            DictLiteral,
+            ListLiteral,
+            SetLiteral,
+            SubscriptExpression,
+            AttributeAccess,
+            FStringExpression,
+            UseStatement,
         )
-        
-        value_expr = cast(AllowedAssignmentValue, value)
+
+        value_expr = cast(
+            LiteralExpression
+            | Identifier
+            | BinaryExpression
+            | UnaryExpression
+            | FunctionCall
+            | ObjectFunctionCall
+            | TupleLiteral
+            | DictLiteral
+            | ListLiteral
+            | SetLiteral
+            | SubscriptExpression
+            | AttributeAccess
+            | FStringExpression
+            | UseStatement,
+            value,
+        )
 
         return Assignment(target=target, value=value_expr, type_hint=type_hint)
 
@@ -77,7 +108,16 @@ class AssignmentHelper:
         if not items:
             raise ValueError("basic_type rule received empty items list")
 
-        type_name = items[0].value if hasattr(items[0], "value") else str(items[0])
+        # Handle both built-in type tokens and NAME tokens (for struct types)
+        item = items[0]
+        if hasattr(item, "value"):
+            type_name = item.value
+        elif hasattr(item, "type") and item.type == "NAME":
+            # This is a NAME token representing a user-defined struct type
+            type_name = item.value
+        else:
+            type_name = str(item)
+            
         return TypeHint(name=type_name)
 
 
@@ -85,42 +125,42 @@ class ControlFlowHelper:
     """Helper class for control flow statement transformations."""
 
     @staticmethod
-    def create_conditional(condition_tree, body_tree, else_body_tree=None, expression_transformer=None, statement_transformer=None):
+    def create_conditional(condition_tree, body_tree, expression_transformer, statement_transformer, else_body_tree=None):
         """Create a Conditional node with proper validation."""
         condition = expression_transformer.expression([condition_tree])
-        
+
         # Transform body
         body = statement_transformer._transform_block(body_tree)
-        
+
         # Transform else body if present
         else_body = []
         if else_body_tree is not None:
             else_body = statement_transformer._transform_block(else_body_tree)
-        
+
         line_num = getattr(condition, "line", 0) or 0
         return Conditional(condition=cast(Expression, condition), body=body, else_body=else_body, line_num=line_num)
 
     @staticmethod
-    def create_while_loop(condition_tree, body_tree, expression_transformer=None, statement_transformer=None):
+    def create_while_loop(condition_tree, body_tree, expression_transformer, statement_transformer):
         """Create a WhileLoop node."""
         condition = expression_transformer.expression([condition_tree])
-        
+
         body = statement_transformer._transform_block(body_tree)
-        
+
         line_num = getattr(condition, "line", 0) or 0
         return WhileLoop(condition=cast(Expression, condition), body=body, line_num=line_num)
 
     @staticmethod
-    def create_for_loop(target_tree, iterable_tree, body_tree, expression_transformer=None, variable_transformer=None, statement_transformer=None):
+    def create_for_loop(target_tree, iterable_tree, body_tree, expression_transformer, variable_transformer, statement_transformer):
         """Create a ForLoop node."""
         target = variable_transformer.variable([target_tree])
         if not isinstance(target, Identifier):
             raise TypeError(f"For loop target must be Identifier, got {type(target)}")
-        
+
         iterable = expression_transformer.expression([iterable_tree])
-        
+
         body = statement_transformer._transform_block(body_tree)
-        
+
         return ForLoop(target=target, iterable=cast(Expression, iterable), body=body)
 
 
@@ -128,7 +168,7 @@ class SimpleStatementHelper:
     """Helper class for simple statement transformations."""
 
     @staticmethod
-    def create_return_statement(items, expression_transformer=None):
+    def create_return_statement(items, expression_transformer):
         """Create a ReturnStatement node."""
         value = expression_transformer.expression(items) if items else None
         if isinstance(value, tuple):
@@ -151,7 +191,7 @@ class SimpleStatementHelper:
         return PassStatement()
 
     @staticmethod
-    def create_raise_statement(items, expression_transformer=None):
+    def create_raise_statement(items, expression_transformer):
         """Create a RaiseStatement node."""
         value = expression_transformer.expression([items[0]]) if items else None
         from_value = expression_transformer.expression([items[1]]) if len(items) > 1 else None
@@ -160,7 +200,7 @@ class SimpleStatementHelper:
         return RaiseStatement(value=value, from_value=from_value)
 
     @staticmethod
-    def create_assert_statement(items, expression_transformer=None):
+    def create_assert_statement(items, expression_transformer):
         """Create an AssertStatement node."""
         condition = expression_transformer.expression([items[0]])
         message = expression_transformer.expression([items[1]]) if len(items) > 1 else None
@@ -180,7 +220,7 @@ class ImportHelper:
         """Create an ImportStatement node."""
         # Extract module path
         module = ImportHelper._extract_module_path(module_path_tree)
-        alias = alias_name.value if hasattr(alias_name, 'value') else alias_name if alias_name else None
+        alias = alias_name.value if hasattr(alias_name, "value") else alias_name if alias_name else None
         return ImportStatement(module=module, alias=alias)
 
     @staticmethod
@@ -188,15 +228,15 @@ class ImportHelper:
         """Create an ImportFromStatement node."""
         # Handle relative_module_path (starts with dots) or regular module_path
         module = ImportHelper._extract_module_path_or_relative(module_path_tree)
-        
+
         # Get the imported name
-        name = name_token.value if hasattr(name_token, 'value') else str(name_token)
-        
+        name = name_token.value if hasattr(name_token, "value") else str(name_token)
+
         # Check for alias
         alias = None
-        if alias_token is not None and hasattr(alias_token, 'value'):
+        if alias_token is not None and hasattr(alias_token, "value"):
             alias = alias_token.value
-        
+
         return ImportFromStatement(module=module, names=[(name, alias)])
 
     @staticmethod
@@ -259,23 +299,11 @@ class ContextHelper:
     def create_with_statement(context_manager, as_var, body_tree, statement_transformer=None):
         """Create a WithStatement node."""
         body = statement_transformer._transform_block(body_tree)
-        
+
         # Handle different types of context managers
         if isinstance(context_manager, str):
             # Function name
-            return WithStatement(
-                context_manager=context_manager,
-                args=[],
-                kwargs={},
-                as_var=as_var,
-                body=body
-            )
+            return WithStatement(context_manager=context_manager, args=[], kwargs={}, as_var=as_var, body=body)
         else:
             # Expression
-            return WithStatement(
-                context_manager=context_manager,
-                args=[],
-                kwargs={},
-                as_var=as_var,
-                body=body
-            )
+            return WithStatement(context_manager=context_manager, args=[], kwargs={}, as_var=as_var, body=body)

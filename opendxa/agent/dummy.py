@@ -31,8 +31,9 @@ Example:
     ```
 """
 
+from collections.abc import Callable
 from enum import Enum
-from typing import TYPE_CHECKING, Callable, Dict
+from typing import TYPE_CHECKING
 
 from opendxa.common.resource import LLMResource
 
@@ -103,7 +104,7 @@ class RuntimeContext:
         agent_state: AgentState,
         world_state: WorldState,
         execution_state: ExecutionState,
-        state_handlers: Dict[str, Dict[str, Callable]],
+        state_handlers: dict[str, dict[str, Callable]],
     ):
         """Initialize runtime context."""
         self.agent = agent

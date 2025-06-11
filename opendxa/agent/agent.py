@@ -17,7 +17,7 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from typing import Any, Dict, Optional, Union
+from typing import Any
 
 # Sorted first-party imports
 from opendxa.agent.agent_config import AgentConfig
@@ -49,7 +49,7 @@ class AgentResponse(BaseResponse):
     """Response from an agent operation."""
 
     @classmethod
-    def new_instance(cls, response: Union[BaseResponse, Dict[str, Any], Any]) -> "AgentResponse":
+    def new_instance(cls, response: BaseResponse | dict[str, Any] | Any) -> "AgentResponse":
         """Create a new AgentResponse instance from a BaseResponse or similar structure.
 
         Args:
@@ -75,7 +75,7 @@ class Agent(BaseResource, Capable):
     """Main agent interface with built-in execution management."""
 
     # pylint: disable=too-many-instance-attributes
-    def __init__(self, name: Optional[str] = None, description: Optional[str] = None):
+    def __init__(self, name: str | None = None, description: str | None = None):
         """Initialize agent with optional name and description."""
         super().__init__(name=name, description=description)
         self._llm = None
@@ -111,14 +111,14 @@ class Agent(BaseResource, Capable):
         return self._llm
 
     @property
-    def available_resources(self) -> Dict[str, BaseResource]:
+    def available_resources(self) -> dict[str, BaseResource]:
         """Property to get or initialize available resources."""
         if not self._resources:
             self._resources = {}
         return self._resources
 
     @property
-    def capabilities(self) -> Dict[str, BaseCapability]:
+    def capabilities(self) -> dict[str, BaseCapability]:
         """Property to get or initialize capabilities."""
         if not self._capabilities:
             self._capabilities = {}
@@ -137,24 +137,24 @@ class Agent(BaseResource, Capable):
         self._config.update({"model": model})
         return self
 
-    def with_llm(self, llm: Union[Dict, str, LLMResource]) -> "Agent":
+    def with_llm(self, llm: dict | str | LLMResource) -> "Agent":
         """Configure agent LLM."""
         if isinstance(llm, LLMResource):
             self._llm = llm
         elif isinstance(llm, str):
             self._llm = LLMResource(name=f"{self.name}_llm", config={"model": llm})
-        elif isinstance(llm, Dict):
+        elif isinstance(llm, dict):
             self._llm = LLMResource(name=f"{self.name}_llm", config=llm)
         return self
 
-    def with_resources(self, resources: Dict[str, BaseResource]) -> "Agent":
+    def with_resources(self, resources: dict[str, BaseResource]) -> "Agent":
         """Add resources to agent."""
         if not self._resources:
             self._resources = {}
         self._resources.update(resources)
         return self
 
-    def with_capabilities(self, capabilities: Dict[str, BaseCapability]) -> "Agent":
+    def with_capabilities(self, capabilities: dict[str, BaseCapability]) -> "Agent":
         """Add capabilities to agent."""
         if not self._capabilities:
             self._capabilities = {}
@@ -168,9 +168,9 @@ class Agent(BaseResource, Capable):
 
     def with_planning(
         self,
-        strategy: Optional[PlanStrategy] = None,
-        planner: Optional[Planner] = None,
-        llm: Optional[Union[Dict, str, LLMResource]] = None,
+        strategy: PlanStrategy | None = None,
+        planner: Planner | None = None,
+        llm: dict | str | LLMResource | None = None,
     ) -> "Agent":
         """Configure planning strategy and LLM.
 
@@ -184,9 +184,9 @@ class Agent(BaseResource, Capable):
 
     def with_reasoning(
         self,
-        strategy: Optional[ReasoningStrategy] = None,
-        reasoner: Optional[Reasoner] = None,
-        llm: Optional[Union[Dict, str, LLMResource]] = None,
+        strategy: ReasoningStrategy | None = None,
+        reasoner: Reasoner | None = None,
+        llm: dict | str | LLMResource | None = None,
     ) -> "Agent":
         """Configure reasoning strategy and executor.
 
@@ -203,13 +203,13 @@ class Agent(BaseResource, Capable):
         """Get default LLM resource."""
         return LLMResource(name=f"{self.name}_llm", config={"model": self._config.get("model")})
 
-    def _create_llm(self, llm: Union[Dict, str, LLMResource], name: str) -> LLMResource:
+    def _create_llm(self, llm: dict | str | LLMResource, name: str) -> LLMResource:
         """Create LLM from various input types."""
         if isinstance(llm, LLMResource):
             return llm
         if isinstance(llm, str):
             return LLMResource(name=f"{self.name}_{name}", config={"model": llm})
-        if isinstance(llm, Dict):
+        if isinstance(llm, dict):
             return LLMResource(name=f"{self.name}_{name}", config=llm)
         raise ValueError(f"Invalid LLM configuration: {llm}")
 
@@ -233,7 +233,7 @@ class Agent(BaseResource, Capable):
         """Cleanup agent and its components."""
         if self._runtime:
             await self._runtime.cleanup()
-            self._runtime: Optional[AgentRuntime] = None
+            self._runtime: AgentRuntime | None = None
 
     async def initialize(self) -> "Agent":
         """Public initialization method."""
@@ -249,7 +249,7 @@ class Agent(BaseResource, Capable):
         await self.cleanup()
 
     # ===== Execution Methods =====
-    async def async_run(self, plan: Plan, context: Optional[RuntimeContext] = None) -> AgentResponse:
+    async def async_run(self, plan: Plan, context: RuntimeContext | None = None) -> AgentResponse:
         """Execute an objective."""
         self._initialize()
         async with self:  # For cleanup

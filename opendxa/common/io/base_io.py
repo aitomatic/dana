@@ -6,7 +6,7 @@ input/output operations while extending BaseResource functionality.
 """
 
 from abc import abstractmethod
-from typing import Any, Optional
+from typing import Any
 
 from opendxa.common.mixins import ToolCallable
 from opendxa.common.resource import BaseResource
@@ -20,7 +20,7 @@ class BaseIO(BaseResource):
     in DXA while providing resource capabilities.
     """
 
-    def __init__(self, name: str, description: Optional[str] = None):
+    def __init__(self, name: str, description: str | None = None):
         """Initialize base I/O with logging and resource capabilities."""
         super().__init__(name, description)
 

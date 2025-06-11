@@ -60,6 +60,7 @@ Statement = Union[
     "ForLoop",
     "TryBlock",
     "FunctionDefinition",
+    "StructDefinition",
     "ImportStatement",
     "ImportFromStatement",
     "FunctionCall",  # Can be both an expression and a statement
@@ -382,6 +383,42 @@ class FunctionDefinition:
     parameters: list[Parameter]
     body: list[Statement]
     return_type: TypeHint | None = None
+    location: Location | None = None
+
+
+@dataclass
+class StructDefinition:
+    """Struct definition statement (e.g., struct Point: x: int, y: int)."""
+
+    name: str
+    fields: list["StructField"]
+    location: Location | None = None
+
+
+@dataclass
+class StructField:
+    """A field in a struct definition."""
+
+    name: str
+    type_hint: TypeHint
+    location: Location | None = None
+
+
+@dataclass
+class StructLiteral:
+    """Struct instantiation expression (e.g., Point(x=10, y=20))."""
+
+    struct_name: str
+    arguments: list["StructArgument"]
+    location: Location | None = None
+
+
+@dataclass
+class StructArgument:
+    """A named argument in struct instantiation."""
+
+    name: str
+    value: Expression
     location: Location | None = None
 
 

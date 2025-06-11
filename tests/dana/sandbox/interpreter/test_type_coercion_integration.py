@@ -18,8 +18,6 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-import pytest
-
 import unittest
 from unittest.mock import patch
 
@@ -27,6 +25,7 @@ import pytest
 
 from opendxa.dana.exec.repl.repl import REPL
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
+
 
 @pytest.mark.deep
 

@@ -4,14 +4,16 @@ import asyncio
 import base64
 import inspect
 import uuid
+from collections.abc import Callable
 from functools import lru_cache
 from importlib import import_module
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, Type, Union
+from typing import Any
 
 import nest_asyncio
 import yaml
 from pydantic import BaseModel
+
 
 class ParsedArgKwargsResults(BaseModel):
     matched_args: list[Any]
@@ -27,7 +29,7 @@ class Misc:
 
     @staticmethod
     @lru_cache(maxsize=128)
-    def load_yaml_config(path: Union[str, Path]) -> Dict[str, Any]:
+    def load_yaml_config(path: str | Path) -> dict[str, Any]:
         """Load YAML file with caching.
 
         Args:
@@ -66,7 +68,7 @@ class Misc:
         raise FileNotFoundError(f"YAML file not found: {path}")
 
     @staticmethod
-    def get_class_by_name(class_path: str) -> Type[Any]:
+    def get_class_by_name(class_path: str) -> type[Any]:
         """Get class by its fully qualified name.
 
         Example:
@@ -77,17 +79,17 @@ class Misc:
         return getattr(module, class_name)
 
     @staticmethod
-    def get_base_path(for_class: Type[Any]) -> Path:
+    def get_base_path(for_class: type[Any]) -> Path:
         """Get base path for the given class."""
         return Path(inspect.getfile(for_class)).parent
 
     @staticmethod
     def get_config_path(
-        for_class: Type[Any],
+        for_class: type[Any],
         config_dir: str = "config",
         file_extension: str = "cfg",
         default_config_file: str = "default",
-        path: Optional[str] = None,
+        path: str | None = None,
     ) -> Path:
         """Get path to a configuration file.
 
@@ -154,7 +156,7 @@ class Misc:
         return asyncio.run(func(*args, **kwargs))
 
     @staticmethod
-    def get_field(obj: Union[dict, object], field_name: str, default: Any = None) -> Any:
+    def get_field(obj: dict | object, field_name: str, default: Any = None) -> Any:
         """Get a field from either a dictionary or object.
 
         Args:
@@ -170,7 +172,7 @@ class Misc:
         return getattr(obj, field_name, default)
 
     @staticmethod
-    def generate_base64_uuid(length: Optional[int] = None) -> str:
+    def generate_base64_uuid(length: int | None = None) -> str:
         """Generate a base64-encoded UUID with optional length truncation.
 
         Args:

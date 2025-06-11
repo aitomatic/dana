@@ -11,9 +11,9 @@ MIT License
 import logging
 from typing import Any
 
-from opendxa.dana.common.exceptions import FunctionRegistryError, SandboxError
-from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
+from opendxa.dana.common.exceptions import SandboxError
 from opendxa.dana.sandbox.interpreter.executor.function_name_utils import FunctionNameInfo
+from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 

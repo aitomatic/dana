@@ -6,7 +6,6 @@ Diagnostic test for the get_sandboxed_context method.
 import sys
 
 from opendxa.dana.sandbox.context_manager import ContextManager
-
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 

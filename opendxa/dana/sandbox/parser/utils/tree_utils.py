@@ -17,7 +17,8 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from typing import Any, Callable, Dict, List, Optional, Set, TypeVar, Union
+from collections.abc import Callable
+from typing import Any, TypeVar, Union
 
 from lark import Token, Tree
 
@@ -25,7 +26,7 @@ from opendxa.common.mixins.loggable import Loggable
 
 # Type variable for generic AST node
 T = TypeVar("T")
-NodeType = Union[Tree, Token, List[Any], Dict[str, Any], Any]
+NodeType = Union[Tree, Token, list[Any], dict[str, Any], Any]
 
 
 class TreeTraverser(Loggable):
@@ -36,7 +37,7 @@ class TreeTraverser(Loggable):
     that would otherwise be duplicated across transformer classes.
     """
 
-    def __init__(self, transformer: Optional[object] = None):
+    def __init__(self, transformer: object | None = None):
         """
         Initialize the traverser with an optional transformer.
 
@@ -46,7 +47,7 @@ class TreeTraverser(Loggable):
         """
         super().__init__()
         self.transformer = transformer
-        self._visited_ids: Set[int] = set()
+        self._visited_ids: set[int] = set()
 
     def reset_visited(self):
         """Reset the set of visited node IDs."""
@@ -132,7 +133,7 @@ class TreeTraverser(Loggable):
 
         return node
 
-    def extract_from_tree(self, node: NodeType, rule_name: str) -> Optional[List[Any]]:
+    def extract_from_tree(self, node: NodeType, rule_name: str) -> list[Any] | None:
         """
         Extract children from a Tree if it matches a specific rule name.
 
@@ -154,9 +155,9 @@ class TreeTraverser(Loggable):
     def transform_tree(
         self,
         node: NodeType,
-        node_transformer: Optional[Callable[[NodeType], Any]] = None,
+        node_transformer: Callable[[NodeType], Any] | None = None,
         max_depth: int = 100,
-        exclude_rules: Optional[List[str]] = None,
+        exclude_rules: list[str] | None = None,
     ) -> Any:
         """
         Transform a Lark Tree node using a specific transformer function.
@@ -251,7 +252,7 @@ class TreeTraverser(Loggable):
             # Just return as is
             return node
 
-    def find_children_by_rule(self, node: NodeType, rule_name: str) -> List[Any]:
+    def find_children_by_rule(self, node: NodeType, rule_name: str) -> list[Any]:
         """
         Find all children matching a specific rule name.
 
@@ -272,7 +273,7 @@ class TreeTraverser(Loggable):
 
         return result
 
-    def get_rule_name(self, node: Any) -> Optional[str]:
+    def get_rule_name(self, node: Any) -> str | None:
         """
         Get the rule name of a Tree node.
 
@@ -286,7 +287,7 @@ class TreeTraverser(Loggable):
             return node.data
         return None
 
-    def get_token_type(self, node: Any) -> Optional[str]:
+    def get_token_type(self, node: Any) -> str | None:
         """
         Get the token type of a Token node.
 

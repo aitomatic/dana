@@ -6,7 +6,6 @@ and manages the input buffer.
 """
 
 from collections import deque
-from typing import List
 
 from opendxa.common.mixins.loggable import Loggable
 
@@ -17,7 +16,7 @@ class InputState(Loggable):
     def __init__(self):
         """Initialize the input state."""
         super().__init__()
-        self.buffer: List[str] = []
+        self.buffer: list[str] = []
         self.in_multiline = False
         # Track input history for IPV context analysis (current line + 4 previous)
         self.input_history: deque = deque(maxlen=5)
@@ -36,7 +35,7 @@ class InputState(Loggable):
         """Get the current buffer as a string."""
         return "\n".join(self.buffer)
 
-    def get_input_history(self) -> List[str]:
+    def get_input_history(self) -> list[str]:
         """Get the recent input history as a list (most recent first)."""
         return list(reversed(self.input_history))
 

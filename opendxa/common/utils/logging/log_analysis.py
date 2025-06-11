@@ -26,7 +26,7 @@ import logging
 from datetime import datetime
 from difflib import SequenceMatcher
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any
 
 import pandas as pd
 
@@ -104,7 +104,7 @@ class LLMInteractionAnalyzer:
 
         return pd.DataFrame(interactions)
 
-    def find_similar_prompts(self, prompt: str, threshold: float = 0.8) -> List[Dict]:
+    def find_similar_prompts(self, prompt: str, threshold: float = 0.8) -> list[dict]:
         """Find similar prompts in the logs using fuzzy matching.
 
         Uses sequence matching to find prompts that are similar to the input prompt.
@@ -158,6 +158,6 @@ class LLMInteractionAnalyzer:
 class LogAnalyzer:
     """Analyze log content."""
 
-    def analyze_logs(self, logs: List[str]) -> Dict[str, Any]:
+    def analyze_logs(self, logs: list[str]) -> dict[str, Any]:
         """Analyze log content."""
         return {"total_lines": len(logs), "error_count": sum(1 for log in logs if "ERROR" in log)}

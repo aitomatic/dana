@@ -33,7 +33,7 @@ from opendxa.agent import (
     MemoryCapability,
     ResourceFactory,
 )
-from opendxa.common import (
+from opendxa.common.resource import (
     DXA_LOGGER,
     AgentError,
     # Capability
@@ -41,8 +41,6 @@ from opendxa.common import (
     BaseDBModel,
     # DB
     BaseDBStorage,
-    # IO
-    BaseIO,
     BaseMcpService,
     BaseRequest,
     # Resource
@@ -55,7 +53,6 @@ from opendxa.common import (
     ConfigLoader,
     Configurable,
     ConfigurationError,
-    ConsoleIO,
     Cursor,
     DepthFirstTraversal,
     DirectedGraph,
@@ -69,7 +66,6 @@ from opendxa.common import (
     HttpTransportParams,
     HumanResource,
     Identifiable,
-    IOFactory,
     # Types
     JsonPrimitive,
     JsonType,
@@ -114,7 +110,6 @@ from opendxa.common import (
     TraversalStrategy,
     ValidationError,
     WebSocketError,
-    WebSocketIO,
     WoTResource,
 )
 
@@ -131,7 +126,6 @@ __all__ = [
     "BaseCapability",
     "BaseDBModel",
     "BaseDBStorage",
-    "BaseIO",
     "BaseMcpService",
     "BaseRequest",
     "BaseResponse",
@@ -143,7 +137,6 @@ __all__ = [
     "ConfigLoader",
     "Configurable",
     "ConfigurationError",
-    "ConsoleIO",
     "Cursor",
     "DXAContextError",
     "DXALogger",
@@ -160,7 +153,6 @@ __all__ = [
     "GraphVisualizer",
     "HttpTransportParams",
     "HumanResource",
-    "IOFactory",
     "Identifiable",
     "JsonPrimitive",
     "JsonType",
@@ -203,6 +195,5 @@ __all__ = [
     "TraversalStrategy",
     "ValidationError",
     "WebSocketError",
-    "WebSocketIO",
     "WoTResource",
 ]

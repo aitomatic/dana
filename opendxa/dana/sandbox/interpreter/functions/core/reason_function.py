@@ -12,7 +12,7 @@ using the IPV (Infer-Process-Validate) pattern for better results.
 
 import json
 import os
-from typing import Any, Dict, Optional
+from typing import Any
 
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.common.types import BaseRequest
@@ -24,8 +24,8 @@ from opendxa.dana.sandbox.sandbox_context import SandboxContext
 def reason_function(
     prompt: str,
     context: SandboxContext,
-    options: Optional[Dict[str, Any]] = None,
-    use_mock: Optional[bool] = None,
+    options: dict[str, Any] | None = None,
+    use_mock: bool | None = None,
 ) -> Any:
     """Execute the reason function to generate a response using an LLM.
 
@@ -81,8 +81,8 @@ def reason_function(
 def _reason_with_ipv(
     prompt: str,
     context: SandboxContext,
-    options: Dict[str, Any],
-    use_mock: Optional[bool] = None,
+    options: dict[str, Any],
+    use_mock: bool | None = None,
 ) -> Any:
     """Enhanced reason function using IPVReason for optimization."""
     logger = DXA_LOGGER.getLogger("opendxa.dana.reason.ipv")
@@ -127,8 +127,8 @@ def _reason_with_ipv(
 def _reason_original_implementation(
     prompt: str,
     context: SandboxContext,
-    options: Dict[str, Any],
-    use_mock: Optional[bool] = None,
+    options: dict[str, Any],
+    use_mock: bool | None = None,
 ) -> Any:
     """Original reason function implementation (pre-IPV)."""
     logger = DXA_LOGGER.getLogger("opendxa.dana.reason.original")

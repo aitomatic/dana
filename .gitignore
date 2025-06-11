@@ -11,6 +11,7 @@ __pycache__/
 .ruff_cache/
 
 # Environment
+tmp/
 .venv/
 venv/
 .env
@@ -52,3 +53,4 @@ proposal/
 uv.lock
 flake8_issues.txt
 node_modules/
+.refactoring_*/

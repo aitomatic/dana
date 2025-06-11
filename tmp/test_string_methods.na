@@ -1,7 +1,0 @@
-text = "hello world"
-words = text.split()
-capitalized = []
-for word in words:
-    cap_word = word.capitalize()
-    capitalized.append(cap_word)
-result = " ".join(capitalized) 

@@ -17,7 +17,6 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from typing import Optional
 
 from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
 from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
@@ -42,7 +41,7 @@ class CollectionExecutor(BaseExecutor):
     - FString expressions
     """
 
-    def __init__(self, parent_executor: BaseExecutor, function_registry: Optional[FunctionRegistry] = None):
+    def __init__(self, parent_executor: BaseExecutor, function_registry: FunctionRegistry | None = None):
         """Initialize the collection executor.
 
         Args:

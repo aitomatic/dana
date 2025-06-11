@@ -1,6 +1,6 @@
 """Factory for creating I/O resources."""
 
-from typing import Any, Dict, Optional, Union
+from typing import Any
 
 from .base_io import BaseIO
 from .console_io import ConsoleIO
@@ -11,7 +11,7 @@ class IOFactory:
     """Creates and configures I/O resources."""
 
     @classmethod
-    def create_io(cls, io_type: Union[str, BaseIO] = "console", config: Optional[Dict[str, Any]] = None) -> BaseIO:
+    def create_io(cls, io_type: str | BaseIO = "console", config: dict[str, Any] | None = None) -> BaseIO:
         """Create IO resource instance.
 
         Args:

@@ -1,7 +1,6 @@
 """Utility for managing and formatting prompts."""
 
 from pathlib import Path
-from typing import Dict, Union
 
 from opendxa.common.utils.misc import Misc
 
@@ -10,7 +9,7 @@ class Prompts:
     """Generic prompt management utility."""
 
     @classmethod
-    def load_from_yaml(cls, yaml_data: Union[str, Dict, Path]) -> Dict[str, str]:
+    def load_from_yaml(cls, yaml_data: str | dict | Path) -> dict[str, str]:
         """Load prompts from YAML configuration."""
         # Handle different input types
         if isinstance(yaml_data, (str, Path)):
@@ -35,7 +34,7 @@ class Prompts:
         return formatted
 
     @classmethod
-    def get_prompt(cls, prompt_type: str, prompt_templates: Dict[str, str], **kwargs) -> str:
+    def get_prompt(cls, prompt_type: str, prompt_templates: dict[str, str], **kwargs) -> str:
         """Get and format a prompt by type."""
         if prompt_type not in prompt_templates:
             raise ValueError(f"Unknown prompt type: {prompt_type}")

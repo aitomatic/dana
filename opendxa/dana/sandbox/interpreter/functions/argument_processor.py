@@ -7,7 +7,8 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from collections.abc import Callable
+from typing import Any
 
 from opendxa.dana.common.exceptions import SandboxError
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
@@ -34,7 +35,7 @@ class ArgumentProcessor:
         """
         self.evaluator = evaluator
 
-    def evaluate_args(self, args: List[Any], kwargs: Dict[str, Any], context: Optional[SandboxContext]) -> Tuple[List[Any], Dict[str, Any]]:
+    def evaluate_args(self, args: list[Any], kwargs: dict[str, Any], context: SandboxContext | None) -> tuple[list[Any], dict[str, Any]]:
         """
         Evaluate function arguments to concrete values.
 
@@ -78,7 +79,7 @@ class ArgumentProcessor:
 
         return evaluated_args, evaluated_kwargs
 
-    def _safe_evaluate(self, value: Any, context: Optional[SandboxContext]) -> Any:
+    def _safe_evaluate(self, value: Any, context: SandboxContext | None) -> Any:
         """Safely evaluate a value, handling Python primitives directly."""
         # If it's already a Python primitive, return it directly
         if isinstance(value, (int, float, str, bool, list, dict, tuple, set)) or value is None:
@@ -94,12 +95,12 @@ class ArgumentProcessor:
 
     def bind_parameters(
         self,
-        args: List[Any],
-        kwargs: Dict[str, Any],
-        parameters: List[str],
-        defaults: Optional[Dict[str, Any]] = None,
-        context: Optional[SandboxContext] = None,
-    ) -> Dict[str, Any]:
+        args: list[Any],
+        kwargs: dict[str, Any],
+        parameters: list[str],
+        defaults: dict[str, Any] | None = None,
+        context: SandboxContext | None = None,
+    ) -> dict[str, Any]:
         """
         Bind arguments to function parameters.
 
@@ -117,7 +118,7 @@ class ArgumentProcessor:
             SandboxError: If argument binding fails
         """
         # Create a dict for the bound parameters
-        bound_params: Dict[str, Any] = {}
+        bound_params: dict[str, Any] = {}
 
         # Apply defaults if provided
         if defaults:
@@ -163,8 +164,8 @@ class ArgumentProcessor:
         return bound_params
 
     def process_arguments(
-        self, func: Callable, args: List[Any], kwargs: Dict[str, Any], context: Optional[SandboxContext] = None
-    ) -> Dict[str, Any]:
+        self, func: Callable, args: list[Any], kwargs: dict[str, Any], context: SandboxContext | None = None
+    ) -> dict[str, Any]:
         """
         Complete argument processing pipeline: evaluate arguments and bind to parameters.
 

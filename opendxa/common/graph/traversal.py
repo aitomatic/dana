@@ -1,7 +1,7 @@
 """Graph traversal implementations."""
 
 from abc import ABC, abstractmethod
-from typing import Iterator, List, Optional, Set
+from collections.abc import Iterator
 
 from .directed_graph import DirectedGraph, Node, NodeType
 
@@ -86,7 +86,7 @@ class TopologicalTraversal(TraversalStrategy):
 class Cursor:
     """Cursor for traversing a graph."""
 
-    def __init__(self, graph: DirectedGraph, start_node: Node, strategy: Optional[TraversalStrategy] = None):
+    def __init__(self, graph: DirectedGraph, start_node: Node, strategy: TraversalStrategy | None = None):
         self.graph = graph
         self.current = start_node
         self.strategy = strategy or TopologicalTraversal()
@@ -95,7 +95,7 @@ class Cursor:
     def __iter__(self) -> Iterator[Node]:
         return self._iterator
 
-    def next(self) -> Optional[Node]:
+    def next(self) -> Node | None:
         """Get next node in traversal."""
         try:
             self.current = next(self._iterator)  # Store the next node
@@ -108,7 +108,7 @@ class ContinuousTraversal(TraversalStrategy):
     """Traversal strategy for continuous monitoring loops."""
 
     def __init__(self):
-        self._visited: Set[str] = set()
+        self._visited: set[str] = set()
         self._cycle_count = 0
         self._in_cycle = False
 
@@ -142,7 +142,7 @@ class ContinuousTraversal(TraversalStrategy):
                     self._cycle_count += 1
                     break
 
-    def _select_next_node(self, graph: DirectedGraph, current: Node, next_nodes: List[Node]) -> Optional[Node]:
+    def _select_next_node(self, graph: DirectedGraph, current: Node, next_nodes: list[Node]) -> Node | None:
         """Select next node based on conditions in edge metadata."""
         for node in next_nodes:
             # Find edge between current and next node

@@ -21,13 +21,14 @@ Example:
             pass
 """
 
-from typing import Any, Dict, Optional, TypeVar
+from typing import Any, TypeVar
 
 from opendxa.common.mixins import ToolCallable
 from opendxa.common.mixins.configurable import Configurable
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.mixins.queryable import Queryable
 from opendxa.common.types import BaseRequest, BaseResponse
+
 from ..utils.misc import Misc
 
 T = TypeVar("T", bound="BaseResource")
@@ -36,7 +37,7 @@ T = TypeVar("T", bound="BaseResource")
 class ResourceError(Exception):
     """Base class for resource errors."""
 
-    def __init__(self, message: str, original_error: Optional[Exception] = None):
+    def __init__(self, message: str, original_error: Exception | None = None):
         super().__init__(message)
         self.original_error = original_error
         # Use class logger for error logging
@@ -59,7 +60,7 @@ class ResourceAccessError(ResourceError):
 class BaseResource(Configurable, Queryable, ToolCallable):
     """Abstract base resource."""
 
-    def __init__(self, name: str, description: Optional[str] = None, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, name: str, description: str | None = None, config: dict[str, Any] | None = None):
         """Initialize base resource.
 
         Args:
@@ -109,7 +110,7 @@ class BaseResource(Configurable, Queryable, ToolCallable):
         self.debug(f"Checking if [{self.name}] can handle {self._sanitize_log_data(request.arguments)}")
         return False
 
-    def _sanitize_log_data(self, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _sanitize_log_data(self, data: dict[str, Any]) -> dict[str, Any]:
         """Sanitize sensitive data before logging"""
         sanitized = data.copy()
         # Example sanitization - extend based on your needs

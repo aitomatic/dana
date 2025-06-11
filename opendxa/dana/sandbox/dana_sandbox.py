@@ -10,7 +10,7 @@ MIT License
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any
 
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
@@ -24,9 +24,9 @@ class ExecutionResult:
 
     success: bool
     result: Any = None
-    final_context: Optional[SandboxContext] = None
+    final_context: SandboxContext | None = None
     execution_time: float = 0.0
-    error: Optional[Exception] = None
+    error: Exception | None = None
     output: str = ""
 
     def __str__(self) -> str:
@@ -45,7 +45,7 @@ class DanaSandbox:
     It provides a clean, safe interface for running Dana files and evaluating code.
     """
 
-    def __init__(self, debug: bool = False, context: Optional[SandboxContext] = None):
+    def __init__(self, debug: bool = False, context: SandboxContext | None = None):
         """
         Initialize a Dana sandbox.
 
@@ -65,7 +65,7 @@ class DanaSandbox:
         context.set("system.llm_resource", llm_resource)
         return context
 
-    def run(self, file_path: Union[str, Path]) -> ExecutionResult:
+    def run(self, file_path: str | Path) -> ExecutionResult:
         """
         Run a Dana file.
 
@@ -95,7 +95,7 @@ class DanaSandbox:
         except Exception as e:
             return ExecutionResult(success=False, error=e, final_context=self._context)
 
-    def eval(self, source_code: str, filename: Optional[str] = None) -> ExecutionResult:
+    def eval(self, source_code: str, filename: str | None = None) -> ExecutionResult:
         """
         Evaluate Dana source code.
 
@@ -117,7 +117,7 @@ class DanaSandbox:
             return ExecutionResult(success=False, error=e, final_context=self._context)
 
     @classmethod
-    def quick_run(cls, file_path: Union[str, Path], debug: bool = False, context: Optional[SandboxContext] = None) -> ExecutionResult:
+    def quick_run(cls, file_path: str | Path, debug: bool = False, context: SandboxContext | None = None) -> ExecutionResult:
         """
         Quick file execution (class method).
 
@@ -134,7 +134,7 @@ class DanaSandbox:
 
     @classmethod
     def quick_eval(
-        cls, source_code: str, filename: Optional[str] = None, debug: bool = False, context: Optional[SandboxContext] = None
+        cls, source_code: str, filename: str | None = None, debug: bool = False, context: SandboxContext | None = None
     ) -> ExecutionResult:
         """
         Quick code evaluation (class method).

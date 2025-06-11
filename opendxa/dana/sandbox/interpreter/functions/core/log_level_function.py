@@ -8,7 +8,7 @@ Log level function implementation for the Dana interpreter.
 This module provides the log_level function, which handles setting log levels in the Dana interpreter.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from opendxa.dana.sandbox.log_manager import LogLevel, SandboxLogger
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
@@ -17,7 +17,7 @@ from opendxa.dana.sandbox.sandbox_context import SandboxContext
 def log_level_function(
     context: SandboxContext,
     level: str,
-    options: Optional[Dict[str, Any]] = None,
+    options: dict[str, Any] | None = None,
 ) -> None:
     """Execute the log_level function to set the logging level.
 

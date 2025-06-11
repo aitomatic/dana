@@ -25,7 +25,7 @@ This module is part of the base resource layer and provides the foundation for
 knowledge management features in the DXA system.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from opendxa.common.db.storage import KnowledgeDBStorage
 from opendxa.common.resource.base_resource import BaseResource
@@ -74,7 +74,7 @@ class KBResource(BaseResource):
         >>> await kb_resource.cleanup()
     """
 
-    def __init__(self, name: str, description: Optional[str] = None, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, name: str, description: str | None = None, config: dict[str, Any] | None = None):
         """Initialize the knowledge base resource.
 
         Args:
@@ -84,7 +84,7 @@ class KBResource(BaseResource):
         """
         super().__init__(name, description, config)
         self._storage = KnowledgeDBStorage(connection_string=config.get("connection_string"))
-        self._knowledge_base: Dict[str, Dict[str, Any]] = {}
+        self._knowledge_base: dict[str, dict[str, Any]] = {}
 
     async def initialize(self) -> None:
         """Initialize the knowledge base resource."""
@@ -98,7 +98,7 @@ class KBResource(BaseResource):
         self._storage.cleanup()
         self.info(f"Knowledge base resource [{self.name}] cleaned up")
 
-    async def store(self, key: str, value: Any, metadata: Optional[Dict] = None) -> BaseResponse:
+    async def store(self, key: str, value: Any, metadata: dict | None = None) -> BaseResponse:
         """Store knowledge in the knowledge base.
 
         Args:
@@ -115,7 +115,7 @@ class KBResource(BaseResource):
         except Exception as e:
             return BaseResponse(success=False, error=f"Failed to store knowledge: {str(e)}")
 
-    async def retrieve(self, key: Optional[str] = None, query: Optional[str] = None) -> BaseResponse:
+    async def retrieve(self, key: str | None = None, query: str | None = None) -> BaseResponse:
         """Retrieve knowledge from the knowledge base.
 
         Args:
@@ -151,7 +151,7 @@ class KBResource(BaseResource):
         except Exception as e:
             return BaseResponse(success=False, error=f"Failed to delete knowledge: {str(e)}")
 
-    def can_handle(self, request: Dict[str, Any]) -> bool:
+    def can_handle(self, request: dict[str, Any]) -> bool:
         """Check if the resource can handle the request.
 
         Args:

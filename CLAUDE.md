@@ -1,0 +1,716 @@
+# OpenDXA - Domain-Expert Agent Framework
+
+Claude AI Configuration and Guidelines
+
+## Quick Reference - Critical Rules
+🚨 **MUST FOLLOW IMMEDIATELY**
+- Use `DXA_LOGGER` for Python logging: `from opendxa.common.utils.logging import DXA_LOGGER`
+- Use `log()` instead of `print()` for debugging Dana code
+- Always use f-strings: `f"Value: {var}"` not `"Value: " + str(var)`
+- Dana modules: `import math_utils` (no .na), Python modules: `import math.py`
+- **ALL temporary development files go in `tmp/` directory**
+- Run `uv run ruff check . && uv run ruff format .` before commits
+- Use type hints: `def func(x: int) -> str:` (required)
+- **Apply KISS/YAGNI**: Start simple, add complexity only when needed
+
+## Essential Commands
+```bash
+# Core development workflow
+uv run ruff check . && uv run ruff format .    # Lint and format
+uv run pytest tests/ -v                        # Run tests with verbose output
+uv run python -m opendxa.dana.exec.repl        # Dana REPL for testing
+
+# Dana execution testing
+uv run python -m opendxa.dana.exec.dana examples/dana/na/basic_math_pipeline.na
+
+# Alternative test execution
+uv run python -m pytest tests/
+```
+
+## Project Context
+- OpenDXA is a framework for building domain-expert multi-agent systems
+- Built on Dana (Domain-Aware NeuroSymbolic Architecture) language
+- Core components: OpenDXA Framework, Dana Language, DANKE Engine
+- Primary language: Python 3.12+
+- Uses uv for dependency management
+
+## File Modification Priority
+1. **NEVER modify core grammar files without extensive testing**
+2. **Always check existing examples before creating new ones**
+3. **ALL temporary development files go in `tmp/` directory**
+4. **Prefer editing existing files over creating new ones**
+
+## Dana Language Syntax Reference
+
+Dana is a Domain-Aware NeuroSymbolic Architecture language for AI-driven automation and agent systems. It's Python-like with key AI-first features.
+
+### **Core Syntax Rules**
+```dana
+# Comments: Single-line only
+# This is a comment
+
+# Variables: Explicit scoping with colon notation (REQUIRED)
+private:agent_state = "internal data"     # Agent-specific state
+public:world_data = "shared information"  # World state (time, weather, etc.)
+system:config = "system settings"        # System mechanical state
+local:temp = "function scope"            # Local scope (default)
+
+# Unscoped variables auto-get local: scope (PREFERRED)
+temperature = 98.6  # Equivalent to local:temperature = 98.6
+result = "done"     # Equivalent to local:result = "done"
+```
+
+### **Data Types & Literals**
+```dana
+# Basic types
+name: str = "Alice"           # Strings (single or double quotes)
+age: int = 25                 # Integers
+height: float = 5.8           # Floats
+active: bool = true           # Booleans (true/false, not True/False)
+data: list = [1, 2, 3]        # Lists
+info: dict = {"key": "value"} # Dictionaries
+empty: None = null            # Null values
+
+# F-strings for interpolation (REQUIRED for variable embedding)
+message = f"Hello {name}, you are {age} years old"
+log(f"Temperature: {temperature}°F")
+```
+
+### **Function Definitions**
+```dana
+# Basic function with type hints
+def greet(name: str) -> str:
+    return "Hello, " + name
+
+# Function with default parameters
+def log_message(message: str, level: str = "info") -> None:
+    log(f"[{level.upper()}] {message}")
+
+# Polymorphic functions (same name, different parameter types)
+def describe(item: str) -> str:
+    return f"String: '{item}'"
+
+def describe(item: int) -> str:
+    return f"Integer: {item}"
+
+def describe(point: Point) -> str:
+    return f"Point at ({point.x}, {point.y})"
+```
+
+### **Structs (Custom Data Types)**
+```dana
+# Define custom data structures
+struct Point:
+    x: int
+    y: int
+
+struct UserProfile:
+    user_id: str
+    display_name: str
+    email: str
+    is_active: bool
+    tags: list
+    metadata: dict
+
+# Instantiation with named arguments (REQUIRED)
+p1: Point = Point(x=10, y=20)
+user: UserProfile = UserProfile(
+    user_id="usr_123",
+    display_name="Alice Example",
+    email="alice@example.com",
+    is_active=true,
+    tags=["beta_tester"],
+    metadata={"role": "admin"}
+)
+
+# Field access with dot notation
+print(f"Point coordinates: ({p1.x}, {p1.y})")
+user.email = "new_email@example.com"  # Structs are mutable
+```
+
+### **Function Composition & Pipelines**
+```dana
+# Define pipeline functions
+def add_ten(x):
+    return x + 10
+
+def double(x):
+    return x * 2
+
+def stringify(x):
+    return f"Result: {x}"
+
+# Function composition (creates reusable pipeline)
+math_pipeline = add_ten | double | stringify
+result = math_pipeline(5)  # "Result: 30"
+
+# Data pipeline (immediate execution)
+result = 5 | add_ten | double | stringify  # "Result: 30"
+result = 7 | add_ten | double              # 34
+
+# Complex data processing
+person_builder = create_person | set_age_25 | add_skills
+alice = "Alice" | person_builder
+```
+
+### **Module System**
+```dana
+# Dana module imports (NO .na extension)
+import simple_math
+import string_utils as str_util
+from data_types import Point, UserProfile
+from utils.text import title_case
+
+# Python module imports (REQUIRES .py extension)
+import math.py
+import json.py as j
+from os.py import getcwd
+
+# Usage
+dana_result = simple_math.add(10, 5)      # Dana function
+python_result = math.sin(math.pi/2)       # Python function
+json_str = j.dumps({"key": "value"})      # Python with alias
+```
+
+### **Control Flow**
+```dana
+# Conditionals
+if temperature > 100:
+    log(f"Overheating: {temperature}°F", "warn")
+    status = "critical"
+elif temperature > 80:
+    log(f"Running hot: {temperature}°F", "info")
+    status = "warm"
+else:
+    status = "normal"
+
+# Loops
+count = 0
+while count < 5:
+    print(f"Count: {count}")
+    count = count + 1
+
+for item in data_list:
+    process_item(item)
+```
+
+### **Built-in Functions**
+```dana
+# Collection functions
+grades = [85, 92, 78, 96, 88]
+student_count = len(grades)      # Length
+total_points = sum(grades)       # Sum
+highest = max(grades)            # Maximum
+lowest = min(grades)             # Minimum
+average = total_points / len(grades)
+
+# Type conversions
+score = int("95")                # String to int
+price = float("29.99")           # String to float
+rounded = round(3.14159, 2)      # Round to 2 decimals
+absolute = abs(-42)              # Absolute value
+
+# Collection processing
+sorted_grades = sorted(grades)
+all_passing = all(grade >= 60 for grade in grades)
+any_perfect = any(grade == 100 for grade in grades)
+```
+
+### **AI Integration**
+```dana
+# Built-in reasoning with LLMs
+analysis = reason("Should we recommend a jacket?", 
+                 {"context": [temperature, public:weather]})
+
+decision = reason("Is this data pattern anomalous?",
+                 {"data": sensor_readings, "threshold": 95})
+
+# Logging with different levels
+log("System started", "info")
+log(f"High temperature: {temperature}", "warn")
+log("Critical error occurred", "error")
+```
+
+### **Dana vs Python Key Differences**
+```dana
+# ✅ CORRECT Dana syntax:
+private:state = "agent data"     # Explicit scoping
+result = f"Value: {count}"       # F-strings for interpolation
+import math.py                   # Python modules need .py
+import dana_module               # Dana modules no extension
+def func(x: int) -> str:         # Type hints required
+    return f"Result: {x}"
+point = Point(x=5, y=10)         # Named arguments for structs
+
+# ❌ INCORRECT (Python-style):
+state = "agent data"             # Missing scope (auto-scoped to local:)
+result = "Value: " + str(count)  # String concatenation instead of f-strings
+import math                      # Missing .py for Python modules
+def func(x):                     # Missing type hints
+    return "Result: " + str(x)
+point = Point(5, 10)             # Positional arguments not supported
+```
+
+### **Common Patterns**
+```dana
+# Error handling
+try:
+    result = risky_operation()
+except ValueError as e:
+    log(f"Error: {e}", "error")
+    result = default_value
+
+# Data validation
+if isinstance(data, dict) and "key" in data:
+    value = data["key"]
+else:
+    log("Invalid data format", "warn")
+    value = None
+
+# Agent state management
+def update_agent_state(new_data):
+    private:last_update = get_timestamp()
+    private:agent_memory.append(new_data)
+    return private:agent_memory
+
+# Multi-step data processing
+processed_data = raw_data | validate | normalize | analyze | format_output
+```
+
+## 3D Methodology (Design-Driven Development)
+
+**3D = Design-Driven Development**: A rigorous methodology ensuring quality through comprehensive design documentation, iterative implementation phases, and strict quality gates.
+
+Core principle: Think before you build, build with intention, ship with confidence.
+
+### **📋 ALWAYS Create Design Document First**
+For any feature/system implementation, create a design doc following this template:
+
+```markdown
+# Design Document: [Feature Name]
+
+Author: [Name]
+Version: 1.0
+Date: [Date]
+Status: [Design Phase | Implementation Phase | Review Phase]
+
+## Problem Statement
+**Brief Description**: [1-2 sentence summary of the problem]
+- Current situation and pain points
+- Impact of not solving this problem  
+- Relevant context and background
+
+## Goals
+**Brief Description**: [What we want to achieve]
+- Specific, measurable objectives (SMART goals)
+- Success criteria and metrics
+- Key requirements
+
+## Non-Goals
+**Brief Description**: [What we explicitly won't do]
+- Explicitly state what's out of scope
+- Clarify potential misunderstandings
+
+## Proposed Solution
+**Brief Description**: [High-level approach in 1-2 sentences]
+- High-level approach and key components
+- Why this approach was chosen
+- Main trade-offs and system fit
+- **KISS/YAGNI Analysis**: Justify complexity vs. simplicity choices
+
+## Proposed Design
+**Brief Description**: [System architecture overview]
+
+### System Architecture Diagram
+```
+[Create ASCII or Mermaid diagram showing main components and their relationships]
+```
+
+### Component Details
+- System architecture and components
+- Data models, APIs, interfaces
+- Error handling and security considerations
+- Performance considerations
+
+### Data Flow Diagram (if applicable)
+```
+[Show how data moves through the system]
+```
+
+## Proposed Implementation
+**Brief Description**: [Technical approach and key decisions]
+- Technical specifications and code organization
+- Key algorithms and testing strategy
+- Dependencies and monitoring requirements
+
+## Design Review Checklist
+**Status**: [ ] Not Started | [ ] In Progress | [ ] Complete
+
+Before implementation, review design against:
+- [ ] **Problem Alignment**: Does solution address all stated problems?
+- [ ] **Goal Achievement**: Will implementation meet all success criteria?
+- [ ] **Non-Goal Compliance**: Are we staying within defined scope?
+- [ ] **KISS/YAGNI Compliance**: Is complexity justified by immediate needs?
+- [ ] **Security review completed**
+- [ ] **Performance impact assessed**
+- [ ] **Error handling comprehensive**
+- [ ] **Testing strategy defined**
+- [ ] **Documentation planned**
+- [ ] **Backwards compatibility checked**
+
+## Implementation Phases
+**Overall Progress**: [ ] 0% | [ ] 20% | [ ] 40% | [ ] 60% | [ ] 80% | [ ] 100%
+
+### Phase 1: Foundation & Architecture (16.7% of total)
+**Description**: Establish core infrastructure and architectural patterns
+- [ ] Define core components and interfaces
+- [ ] Create basic infrastructure and scaffolding
+- [ ] Establish architectural patterns and conventions
+- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
+- [ ] **Phase Gate**: Update implementation progress checkboxes
+
+### Phase 2: Core Functionality (16.7% of total)
+**Description**: Implement primary features and happy path scenarios
+- [ ] Implement primary features and core logic
+- [ ] Focus on happy path scenarios and basic operations
+- [ ] Create working examples and demonstrations
+- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
+- [ ] **Phase Gate**: Update implementation progress checkboxes
+
+### Phase 3: Error Handling & Edge Cases (16.7% of total)
+**Description**: Add comprehensive error detection and edge case handling
+- [ ] Add comprehensive error detection and validation
+- [ ] Test failure scenarios and error conditions
+- [ ] Handle edge cases and boundary conditions
+- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
+- [ ] **Phase Gate**: Update implementation progress checkboxes
+
+### Phase 4: Advanced Features & Integration (16.7% of total)
+**Description**: Add sophisticated functionality and ensure seamless integration
+- [ ] Add sophisticated functionality and advanced features
+- [ ] Test complex interactions and integration scenarios
+- [ ] Ensure seamless integration with existing systems
+- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
+- [ ] **Phase Gate**: Update implementation progress checkboxes
+
+### Phase 5: Integration & Performance Testing (16.7% of total)
+**Description**: Validate real-world performance and run comprehensive tests
+- [ ] Test real-world scenarios and production-like conditions
+- [ ] Validate performance benchmarks and requirements
+- [ ] Run regression tests and integration suites
+- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
+- [ ] **Phase Gate**: Update implementation progress checkboxes
+
+### Phase 6: Polish & Documentation (16.7% of total)
+**Description**: Finalize documentation, create migration guides, and perform final validation
+- [ ] Update documentation and API references
+- [ ] Create migration guides and upgrade instructions
+- [ ] Final validation and sign-off
+- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
+- [ ] **Phase Gate**: Update implementation progress checkboxes to 100%
+```
+
+### **🔄 3D Process: Think → Build → Ship**
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Phase 1:      │    │   Phase 2:      │    │   Phase 3:      │
+│ Design & Test   │ -> │ Implement &     │ -> │ Polish &        │
+│                 │    │ Validate        │    │ Integrate       │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+
+⚠️  DO NOT proceed to next phase until ALL criteria met:
+✅ 100% test pass rate (uv run pytest tests/ -v) - ZERO failures allowed
+✅ No regressions detected in existing functionality
+✅ Error handling complete and tested with failure scenarios
+✅ Documentation updated and accurate
+✅ Performance within defined bounds
+✅ Implementation progress checkboxes updated
+✅ Design review completed (if in Phase 1)
+
+🧪 **CRITICAL: Every phase MUST end with full test validation**
+- Run `uv run pytest tests/ -v` before marking phase complete
+- ALL tests must pass - no exceptions, no "TODO: fix later"
+- Any test failure = phase incomplete, must fix before proceeding
+- Add new tests for new functionality within the same phase
+```
+
+**Phase 1: Design & Test (Think)**
+- Write design doc with Problem Statement/Goals/Non-Goals/Proposed Solution
+- **Include brief descriptions** for each section, not just bullet points
+- **Create system diagrams** (ASCII or Mermaid) showing component relationships
+- **Perform Design Review** against problem statement, goals, and non-goals
+- **Update Design Review Checklist** with findings and approvals
+- Create failing tests defining expected behavior
+- **Run full test suite**: `uv run pytest tests/ -v` - verify baseline
+- **Update Phase 1 checkboxes** before proceeding
+
+**Phase 2: Implement & Validate (Build)** 
+- Core implementation with **brief code comments** explaining logic
+- Make tests pass, add edge case coverage
+- **Include explanatory comments** in complex algorithms
+- **Run full test suite** after each major change: `uv run pytest tests/ -v`
+- **Fix all test failures** before proceeding to next phase
+- **Update Phase 2-6 checkboxes** as work progresses
+
+**Phase 3: Polish & Integrate (Ship)**
+- Documentation with **descriptive explanations**, not just code examples
+- **Create integration diagrams** showing system interactions
+- Integration testing and performance validation
+- **Run comprehensive test suite**: `uv run pytest tests/ -v`
+- **Verify no regressions** introduced during implementation
+- **Update final checkboxes** and mark implementation complete
+
+### **🚨 Quality Gates & Monitoring**
+
+```
+🚨 RED FLAGS (stop development immediately):
+- **ANY test failures** in foundational components or new features
+- **Proceeding to next phase** with failing tests
+- Unclear error messages or poor error handling
+- Performance degradation >10% from baseline
+- Breaking changes without migration strategy
+- Undocumented public APIs or missing descriptions
+- Missing or incomplete system diagrams
+- Implementation proceeding without design review completion
+- **Over-engineering**: Adding complexity not justified by current requirements
+
+✅ PROCEED CRITERIA (all must be met):
+- All phase tests pass (100% success rate)
+- Error messages clear, actionable, and well-tested  
+- Documentation matches implementation with explanatory text
+- Performance benchmarks met or exceeded
+- System diagrams accurately reflect implementation
+- Design review checklist fully completed
+- Implementation progress accurately tracked
+```
+
+### **📊 AI Supervisor Monitoring Points**
+
+For AI supervisors tracking 3D compliance:
+
+1. **Design Phase Checkpoints**:
+   - [ ] Design document exists and follows template
+   - [ ] Brief descriptions provided for all major sections
+   - [ ] System architecture diagram created (ASCII/Mermaid)
+   - [ ] Design review checklist completed
+   
+2. **Implementation Phase Checkpoints**:
+   - [ ] Test suite passing at end of each phase
+   - [ ] Implementation progress checkboxes updated
+   - [ ] Code includes explanatory comments, not just fragments
+   - [ ] Error handling comprehensive and tested
+
+3. **Quality Assurance Checkpoints**:
+   - [ ] No regressions detected in test runs
+   - [ ] Performance benchmarks maintained
+   - [ ] Documentation complete with descriptive explanations
+   - [ ] Integration diagrams reflect actual system behavior
+
+### **🤖 AI Coder Execution Guidelines**
+
+For AI coders implementing 3D methodology:
+
+1. **Before Starting**: Always create design document first, never skip
+2. **During Design**: Include brief descriptions AND diagrams, not just code
+3. **During Implementation**: Run `uv run pytest tests/ -v` after each phase
+4. **Phase Transitions**: Update checkboxes and verify all criteria met
+5. **Problem Solving**: Create diagrams to visualize complex relationships
+6. **Documentation**: Write explanations, not just code examples
+7. **Testing**: Fix ALL test failures before moving to next phase
+8. **Design Decisions**: Apply KISS/YAGNI - start simple, present complex alternatives to humans
+
+## Coding Standards & Type Hints
+
+### Core Standards
+- Follow PEP 8 style guide for Python code
+- Use 4-space indentation (no tabs)
+- **Type hints required**: `def func(x: int) -> str:` 
+- Use docstrings for all public modules, classes, and functions
+- **Always use f-strings**: `f"Value: {var}"` not `"Value: " + str(var)`
+
+### Modern Type Hints (PEP 604)
+```python
+# ✅ CORRECT - Modern syntax
+def process_data(items: list[str], config: dict[str, int] | None = None) -> str | None:
+    return f"Processed {len(items)} items"
+
+# ❌ AVOID - Old syntax
+from typing import Dict, List, Optional, Union
+def process_data(items: List[str], config: Optional[Dict[str, int]] = None) -> Union[str, None]:
+    return "Processed " + str(len(items)) + " items"
+```
+
+### Linting & Formatting
+- **MUST RUN**: `uv run ruff check . && uv run ruff format .` before commits
+- Line length limit: 140 characters (configured in pyproject.toml)
+- Auto-fix with: `uv run ruff check --fix .`
+
+## KISS/YAGNI Design Principles
+
+**KISS (Keep It Simple, Stupid)** & **YAGNI (You Aren't Gonna Need It)**: Balance engineering rigor with practical simplicity.
+
+### **AI Decision-Making Guidelines**
+```
+🎯 **START SIMPLE, EVOLVE THOUGHTFULLY**
+
+For design decisions, AI coders should:
+1. **Default to simplest solution** that meets current requirements
+2. **Document complexity trade-offs** when proposing alternatives  
+3. **Present options** when multiple approaches have merit
+4. **Justify complexity** only when immediate needs require it
+
+🤖 **AI CAN DECIDE** (choose simplest):
+- Data structure choice (dict vs class vs dataclass)
+- Function organization (single file vs module split)
+- Error handling level (basic vs comprehensive)
+- Documentation depth (minimal vs extensive)
+
+👤 **PRESENT TO HUMAN** (let them choose):
+- Architecture patterns (monolith vs microservices)
+- Framework choices (custom vs third-party)
+- Performance optimizations (simple vs complex)
+- Extensibility mechanisms (hardcoded vs configurable)
+
+⚖️ **COMPLEXITY JUSTIFICATION TEMPLATE**:
+"Proposing [complex solution] over [simple solution] because:
+- Current requirement: [specific need]
+- Simple approach limitation: [concrete issue]
+- Complexity benefit: [measurable advantage]
+- Alternative: [let human decide vs simpler approach]"
+```
+
+### **Common Over-Engineering Patterns to Avoid**
+```
+❌ AVOID (unless specifically needed):
+- Abstract base classes for single implementations
+- Configuration systems for hardcoded values
+- Generic solutions for specific problems
+- Premature performance optimizations
+- Complex inheritance hierarchies
+- Over-flexible APIs with many parameters
+- Caching systems without proven performance needs
+- Event systems for simple function calls
+
+✅ PREFER (start here):
+- Concrete implementations that work
+- Hardcoded values that can be extracted later
+- Specific solutions for specific problems
+- Simple, readable code first
+- Composition over inheritance
+- Simple function signatures
+- Direct computation until performance matters
+- Direct function calls for simple interactions
+```
+
+### **Incremental Complexity Strategy**
+```
+📈 **EVOLUTION PATH** (add complexity only when needed):
+
+Phase 1: Hardcoded → Phase 2: Configurable → Phase 3: Extensible
+
+Example:
+Phase 1: `return "Hello, World!"`
+Phase 2: `return f"Hello, {name}!"`
+Phase 3: `return formatter.format(greeting_template, name)`
+
+🔄 **WHEN TO EVOLVE**:
+- Phase 1→2: When second use case appears
+- Phase 2→3: When third different pattern emerges
+- Never evolve: If usage remains stable
+```
+
+## Best Practices and Patterns
+- Use dataclasses or Pydantic models for data structures
+- Prefer composition over inheritance
+- Use async/await for I/O operations
+- Follow SOLID principles
+- Use dependency injection where appropriate
+- Implement proper error handling with custom exceptions
+- **Start with simplest solution that works**
+- **Add complexity only when requirements demand it**
+
+## Error Handling Standards
+```
+Every error message must follow this template:
+"[What failed]: [Why it failed]. [What user can do]. [Available alternatives]"
+
+Example:
+"Dana module 'math_utils' not found: File does not exist in search paths. 
+Check module name spelling or verify file exists. 
+Available modules: simple_math, string_utils"
+
+Requirements:
+- Handle all invalid inputs gracefully
+- Include context about what was attempted
+- Provide actionable suggestions for resolution
+- Test error paths as thoroughly as success paths
+```
+
+## Temporary Files & Project Structure
+- **ALL temporary files go in `tmp/` directory**
+- Never create test files in project root
+- Use meaningful prefixes: `tmp_test_`, `tmp_debug_`
+- Core framework code: `opendxa/`
+- Tests: `tests/` (matching source structure)
+- Examples: `examples/`
+- Documentation: `docs/`
+
+## Context-Aware Development Guide
+
+### When Working on Dana Code
+- Always test with `.na` files in `examples/dana/na/`
+- Use DanaSandbox for execution testing
+- Validate against grammar in `opendxa/dana/sandbox/parser/dana_grammar.lark`
+- Use `log()` function instead of `print()` for debugging
+- Test Dana code in REPL: `uv run python -m opendxa.dana.exec.repl`
+- Check AST output: Enable debug logging in transformer
+
+### When Working on Agent Framework
+- Test with agent examples in `examples/02_core_concepts/`
+- Use capability mixins from `opendxa/common/mixins/`
+- Follow resource patterns in `opendxa/common/resource/`
+
+### When Working on Common Utilities
+- Keep utilities generic and reusable
+- Document performance implications
+- Use appropriate design patterns
+- Implement proper error handling
+
+## Common Tasks Quick Guide
+- **Adding new Dana function**: See `opendxa/dana/sandbox/interpreter/functions/core/`
+- **Creating agent capability**: Inherit from `opendxa/common/capability/base_capability.py`
+- **Adding LLM integration**: Use `opendxa/common/resource/llm_resource.py`
+
+## Common Methods and Utilities
+- **Use DXA_LOGGER for Python logging**: `from opendxa.common.utils.logging import DXA_LOGGER`
+- Use configuration from `opendxa.common.config`
+- Use graph operations from `opendxa.common.graph`
+- Use IO utilities from `opendxa.common.io`
+
+## Testing & Security Essentials
+- Write unit tests for all new code (pytest)
+- Test coverage above 80%
+- **Never commit API keys or secrets**
+- Use environment variables for configuration
+- Validate all inputs
+
+## Dana-Specific Debugging & Validation
+- **Use `log()` function instead of `print()` for debugging**
+- Test Dana code in REPL: `uv run python -m opendxa.dana.exec.repl`
+- Check AST output: Enable debug logging in transformer
+- Validate against grammar: `opendxa/dana/sandbox/parser/dana_grammar.lark`
+- Test with existing `.na` files in `examples/dana/na/`
+
+## Security & Performance
+- **DanaSandbox Security**: Never expose DanaSandbox instances to untrusted code
+- **LLM Resource Management**: Always use LLMConfigurationManager for model configuration
+- Profile code for performance bottlenecks
+- Cache expensive operations
+- Handle memory management properly
+
+## References
+@file .gitignore
+@file pyproject.toml
+@file Makefile
+@file README.md

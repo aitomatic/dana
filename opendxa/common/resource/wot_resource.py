@@ -1,6 +1,6 @@
 """Web of Things (WoT) resource implementation."""
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 import aiohttp
 
@@ -12,12 +12,12 @@ from opendxa.common.types import BaseRequest, BaseResponse
 class WoTResource(BaseResource):
     """WoT resource handling Thing interactions."""
 
-    def __init__(self, name: str, directory_endpoint: str, thing_description: Optional[Dict[str, Any]] = None):
+    def __init__(self, name: str, directory_endpoint: str, thing_description: dict[str, Any] | None = None):
         super().__init__(name)
         self.directory_endpoint = directory_endpoint
         self.thing_description = thing_description
-        self.session: Optional[aiohttp.ClientSession] = None
-        self.things: Dict[str, Dict[str, Any]] = {}
+        self.session: aiohttp.ClientSession | None = None
+        self.things: dict[str, dict[str, Any]] = {}
 
     async def initialize(self) -> None:
         """Discover and register Things."""
@@ -37,7 +37,7 @@ class WoTResource(BaseResource):
         response = await self._io.query({"prompt": prompt})
         return response
 
-    async def _handle_interaction(self, thing: Dict[str, Any], request: BaseRequest) -> BaseResponse:
+    async def _handle_interaction(self, thing: dict[str, Any], request: BaseRequest) -> BaseResponse:
         """Handle WoT interaction based on type."""
         interaction_type = request.get("interaction_type")
         if interaction_type == "read_property":
@@ -49,7 +49,7 @@ class WoTResource(BaseResource):
         else:
             return BaseResponse.error_response(f"Unsupported interaction type: {interaction_type}")
 
-    async def _read_property(self, thing: Dict[str, Any], request: BaseRequest) -> BaseResponse:
+    async def _read_property(self, thing: dict[str, Any], request: BaseRequest) -> BaseResponse:
         """Read a property from a WoT thing."""
         property_name = request.get("property_name")
         if not property_name:
@@ -61,7 +61,7 @@ class WoTResource(BaseResource):
         except KeyError:
             return BaseResponse.error_response(f"Property not found: {property_name}")
 
-    async def _write_property(self, thing: Dict[str, Any], request: BaseRequest) -> BaseResponse:
+    async def _write_property(self, thing: dict[str, Any], request: BaseRequest) -> BaseResponse:
         """Write a property to a WoT thing."""
         property_name = request.get("property_name")
         value = request.get("value")
@@ -74,7 +74,7 @@ class WoTResource(BaseResource):
         except KeyError:
             return BaseResponse.error_response(f"Property not found: {property_name}")
 
-    async def _invoke_action(self, thing: Dict[str, Any], request: BaseRequest) -> BaseResponse:
+    async def _invoke_action(self, thing: dict[str, Any], request: BaseRequest) -> BaseResponse:
         """Invoke an action on a WoT thing."""
         action_name = request.get("action_name")
         if not action_name:
@@ -94,6 +94,6 @@ class WoTResource(BaseResource):
             await self.session.close()
             self.session = None
 
-    def can_handle(self, request: Dict[str, Any]) -> bool:
+    def can_handle(self, request: dict[str, Any]) -> bool:
         """Check for WoT interaction patterns."""
         return "thing_id" in request and "interaction_type" in request

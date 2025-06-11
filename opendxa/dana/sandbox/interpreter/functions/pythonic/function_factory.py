@@ -9,7 +9,7 @@ MIT License
 """
 
 from enum import Enum
-from typing import Any, Dict, List
+from typing import Any
 
 from opendxa.dana.common.exceptions import SandboxError
 from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionMetadata, FunctionRegistry
@@ -470,13 +470,13 @@ If this is a custom function, make sure it's:
         raise SandboxError(error_msg)
 
     @classmethod
-    def _validate_args(cls, name: str, args: tuple, expected_signatures: List[tuple]):
+    def _validate_args(cls, name: str, args: tuple, expected_signatures: list[tuple]):
         """Validate arguments against expected type signatures."""
         valid_signature = False
 
         for signature in expected_signatures:
             if len(args) == len(signature):
-                if all(isinstance(arg, sig_type) for arg, sig_type in zip(args, signature)):
+                if all(isinstance(arg, sig_type) for arg, sig_type in zip(args, signature, strict=False)):
                     valid_signature = True
                     break
 
@@ -495,24 +495,24 @@ If this is a custom function, make sure it's:
         return func(*args)
 
     @classmethod
-    def get_available_functions(cls) -> List[str]:
+    def get_available_functions(cls) -> list[str]:
         """Get list of available function names."""
         return list(cls.FUNCTION_CONFIGS.keys())
 
     @classmethod
-    def get_function_info(cls, name: str) -> Dict[str, Any]:
+    def get_function_info(cls, name: str) -> dict[str, Any]:
         """Get information about a specific function."""
         if name not in cls.FUNCTION_CONFIGS:
             raise ValueError(f"Unknown function: {name}")
         return cls.FUNCTION_CONFIGS[name].copy()
 
     @classmethod
-    def get_unsupported_functions(cls) -> List[str]:
+    def get_unsupported_functions(cls) -> list[str]:
         """Get list of explicitly unsupported function names."""
         return list(cls.UNSUPPORTED_FUNCTIONS.keys())
 
     @classmethod
-    def get_unsupported_info(cls, name: str) -> Dict[str, Any]:
+    def get_unsupported_info(cls, name: str) -> dict[str, Any]:
         """Get information about why a function is unsupported."""
         if name not in cls.UNSUPPORTED_FUNCTIONS:
             raise ValueError(f"Function '{name}' is not in the unsupported list")
@@ -529,12 +529,12 @@ If this is a custom function, make sure it's:
         return name in cls.UNSUPPORTED_FUNCTIONS
 
     @classmethod
-    def get_functions_by_reason(cls, reason: UnsupportedReason) -> List[str]:
+    def get_functions_by_reason(cls, reason: UnsupportedReason) -> list[str]:
         """Get all functions unsupported for a specific reason."""
         return [name for name, config in cls.UNSUPPORTED_FUNCTIONS.items() if config["reason"] == reason]
 
     @classmethod
-    def get_security_report(cls) -> Dict[str, Any]:
+    def get_security_report(cls) -> dict[str, Any]:
         """Generate a security report of function restrictions."""
         report = {
             "supported_functions": len(cls.FUNCTION_CONFIGS),

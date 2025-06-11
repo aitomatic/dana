@@ -7,7 +7,6 @@ to be used across the Dana command-line tools.
 
 import os
 import sys
-from typing import Optional
 
 from prompt_toolkit.lexers import PygmentsLexer, SimpleLexer
 from pygments.lexer import RegexLexer
@@ -142,7 +141,7 @@ def supports_color() -> bool:
     return True
 
 
-def print_header(text: str, width: int = DEFAULT_TERMINAL_WIDTH, colors: Optional[ColorScheme] = None) -> None:
+def print_header(text: str, width: int = DEFAULT_TERMINAL_WIDTH, colors: ColorScheme | None = None) -> None:
     """Print a formatted header with a border.
 
     Args:

@@ -30,7 +30,7 @@ class TestDanaModuleImports:
             os.environ["DANAPATH"] = f"{self.test_modules_path}{os.pathsep}{os.environ['DANAPATH']}"
 
         # Reset and reinitialize the module system to pick up the updated DANAPATH
-        from opendxa.dana.module.core import reset_module_system, initialize_module_system
+        from opendxa.dana.module.core import initialize_module_system, reset_module_system
         reset_module_system()
         initialize_module_system()
 

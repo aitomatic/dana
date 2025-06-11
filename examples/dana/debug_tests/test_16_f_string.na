@@ -1,0 +1,5 @@
+question_2 = "What is DANA"
+
+answer = reason(question_2)
+
+print(f"Question : {question_2}. Answer : {answer}")

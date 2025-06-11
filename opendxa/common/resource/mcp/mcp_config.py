@@ -5,7 +5,8 @@ from JSON files or dictionaries. It supports both STDIO and HTTP transport confi
 """
 
 import json
-from typing import Any, Dict, List, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -37,11 +38,11 @@ class StdioTransportParams(BaseModel):
 
     server_script: str = Field(..., description="Path to the Python script that will be executed as the MCP server")
     command: str = Field(default="python3", description="Command to execute the server script")
-    args: Optional[Sequence[str]] = Field(default=None, description="Optional list of additional arguments to pass to the command")
-    env: Optional[Dict[str, str]] = Field(
+    args: Sequence[str] | None = Field(default=None, description="Optional list of additional arguments to pass to the command")
+    env: dict[str, str] | None = Field(
         default=None, description="Optional dictionary of environment variables to set for the server process"
     )
-    stdio_config: Optional[Dict[str, Any]] = Field(default=None, description="Optional additional configuration for STDIO transport")
+    stdio_config: dict[str, Any] | None = Field(default=None, description="Optional additional configuration for STDIO transport")
 
 
 class HttpTransportParams(BaseModel):
@@ -73,10 +74,10 @@ class HttpTransportParams(BaseModel):
     """
 
     url: str = Field(..., description="URL for the HTTP endpoint")
-    headers: Optional[Dict[str, Any]] = Field(default=None, description="Optional dictionary of HTTP headers")
+    headers: dict[str, Any] | None = Field(default=None, description="Optional dictionary of HTTP headers")
     timeout: float = Field(default=5.0, description="HTTP request timeout in seconds")
     sse_read_timeout: float = Field(default=60 * 5, description="Server-Sent Events (SSE) read timeout in seconds")
-    sse_config: Optional[Dict[str, Any]] = Field(default=None, description="Optional additional configuration for SSE transport")
+    sse_config: dict[str, Any] | None = Field(default=None, description="Optional additional configuration for SSE transport")
 
 
 class McpConfigError(Exception):
@@ -113,7 +114,7 @@ class McpConfig:
     ```
     """
 
-    def __init__(self, config: Union[str, Dict[str, Any]]):
+    def __init__(self, config: str | dict[str, Any]):
         """Initialize MCP configuration manager.
 
         Args:
@@ -127,7 +128,7 @@ class McpConfig:
         else:
             self.config = self._load_config_from_dict(config)
 
-    def _load_config_from_file(self, config_path: str) -> Dict[str, Any]:
+    def _load_config_from_file(self, config_path: str) -> dict[str, Any]:
         """Load configuration from JSON file.
 
         Args:
@@ -149,7 +150,7 @@ class McpConfig:
 
         return self._validate_config(config)
 
-    def _load_config_from_dict(self, config: Dict[str, Any]) -> Dict[str, Any]:
+    def _load_config_from_dict(self, config: dict[str, Any]) -> dict[str, Any]:
         """Load configuration from dictionary.
 
         Args:
@@ -163,7 +164,7 @@ class McpConfig:
         """
         return self._validate_config(config)
 
-    def _validate_config(self, config: Dict[str, Any]) -> Dict[str, Any]:
+    def _validate_config(self, config: dict[str, Any]) -> dict[str, Any]:
         """Validate configuration structure.
 
         Args:
@@ -186,7 +187,7 @@ class McpConfig:
 
         return config
 
-    def get_server_config(self, name: str) -> Dict[str, Any]:
+    def get_server_config(self, name: str) -> dict[str, Any]:
         """Get configuration for a specific server.
 
         Args:
@@ -203,7 +204,7 @@ class McpConfig:
 
         return self.config["mcpServers"][name]
 
-    def get_transport_params(self, name: str) -> Union[StdioTransportParams, HttpTransportParams]:
+    def get_transport_params(self, name: str) -> StdioTransportParams | HttpTransportParams:
         """Get transport parameters for a specific server.
 
         Args:
@@ -237,7 +238,7 @@ class McpConfig:
                 stdio_config=server_config.get("stdio_config"),
             )
 
-    def list_servers(self) -> List[str]:
+    def list_servers(self) -> list[str]:
         """List all configured servers.
 
         Returns:

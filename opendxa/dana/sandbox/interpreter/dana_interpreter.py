@@ -22,7 +22,7 @@ Discord: https://discord.gg/6jGD4PYk
 
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.dana.common.error_utils import ErrorUtils
@@ -111,7 +111,7 @@ class DanaInterpreter(Loggable):
     # Internal API Methods (used by DanaSandbox and advanced tools)
     # ============================================================================
 
-    def _run(self, file_path: Union[str, Path], source_code: str, context: SandboxContext) -> Any:
+    def _run(self, file_path: str | Path, source_code: str, context: SandboxContext) -> Any:
         """
         Internal: Run Dana file with pre-read source code.
 
@@ -125,7 +125,7 @@ class DanaInterpreter(Loggable):
         """
         return self._eval(source_code, context=context, filename=str(file_path))
 
-    def _eval(self, source_code: str, context: SandboxContext, filename: Optional[str] = None) -> Any:
+    def _eval(self, source_code: str, context: SandboxContext, filename: str | None = None) -> Any:
         """
         Internal: Evaluate Dana source code.
 
@@ -240,9 +240,9 @@ class DanaInterpreter(Loggable):
     def call_function(
         self,
         function_name: str,
-        args: Optional[List[Any]] = None,
-        kwargs: Optional[Dict[str, Any]] = None,
-        context: Optional[SandboxContext] = None,
+        args: list[Any] | None = None,
+        kwargs: dict[str, Any] | None = None,
+        context: SandboxContext | None = None,
     ) -> Any:
         """Call a function by name with the given arguments.
 

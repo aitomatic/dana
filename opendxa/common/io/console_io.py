@@ -4,7 +4,7 @@ This module provides a console-based implementation of the BaseIOResource interf
 allowing interaction through standard input/output streams.
 """
 
-from typing import Any, Optional
+from typing import Any
 
 from .base_io import BaseIO
 
@@ -16,7 +16,7 @@ class ConsoleIO(BaseIO):
     using standard input/output streams.
     """
 
-    def __init__(self, name: str = "console", description: Optional[str] = None):
+    def __init__(self, name: str = "console", description: str | None = None):
         """Initialize console I/O resource."""
         super().__init__(name, description or "Console-based I/O resource")
         self._buffer: list[str] = []  # For testing purposes

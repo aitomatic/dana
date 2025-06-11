@@ -7,7 +7,7 @@ and access methods.
 
 import inspect
 from pathlib import Path
-from typing import Any, ClassVar, Dict, List, Optional, Type, TypeVar, Union
+from typing import Any, ClassVar, TypeVar
 
 import yaml
 from dotenv import load_dotenv
@@ -79,7 +79,7 @@ class Configurable(Loggable):
     """
 
     # Class-level configuration
-    default_config: ClassVar[Dict[str, Any]] = {}
+    default_config: ClassVar[dict[str, Any]] = {}
 
     @classmethod
     def get_base_path(cls) -> Path:
@@ -93,9 +93,9 @@ class Configurable(Loggable):
     @classmethod
     def get_config_path(
         cls,
-        path: Optional[Union[str, Path]] = None,
+        path: str | Path | None = None,
         config_dir: str = "yaml",
-        default_config_file: Optional[str] = None,
+        default_config_file: str | None = None,
         file_extension: str = "yaml",
     ) -> Path:
         """Get path to a configuration file.
@@ -163,11 +163,11 @@ class Configurable(Loggable):
             raise ConfigurationError(f"Invalid config path: {path}") from e
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "Configurable":
+    def from_dict(cls, data: dict[str, Any]) -> "Configurable":
         """Create a Configurable instance from a dictionary."""
         return cls(**data)
 
-    def __init__(self, config_path: Optional[Union[str, Path]] = None, **overrides):
+    def __init__(self, config_path: str | Path | None = None, **overrides):
         """Initialize configurable component.
 
         Args:
@@ -183,7 +183,7 @@ class Configurable(Loggable):
         self._apply_overrides(overrides)
         self._validate_config()
 
-    def _load_config(self, config_path: Optional[Union[str, Path]] = None) -> Dict[str, Any]:
+    def _load_config(self, config_path: str | Path | None = None) -> dict[str, Any]:
         """Load configuration from YAML file or use defaults.
 
         Args:
@@ -218,7 +218,7 @@ class Configurable(Loggable):
             self.warning(f"Failed to load config: {e}. Using default configuration.")
             return self.default_config.copy()
 
-    def _apply_overrides(self, overrides: Dict[str, Any]) -> None:
+    def _apply_overrides(self, overrides: dict[str, Any]) -> None:
         """Apply configuration overrides.
 
         Args:
@@ -232,7 +232,7 @@ class Configurable(Loggable):
         except Exception as e:
             raise ConfigurationError(f"Failed to apply configuration overrides: {e}") from e
 
-    def _validate_required(self, key: str, error_msg: Optional[str] = None) -> None:
+    def _validate_required(self, key: str, error_msg: str | None = None) -> None:
         """Validate that a required configuration key exists.
 
         Args:
@@ -246,7 +246,7 @@ class Configurable(Loggable):
             msg = error_msg or f"Required configuration '{key}' is missing"
             raise ConfigurationError(msg)
 
-    def _validate_type(self, key: str, expected_type: Type[T], error_msg: Optional[str] = None) -> None:
+    def _validate_type(self, key: str, expected_type: type[T], error_msg: str | None = None) -> None:
         """Validate that a configuration value has the expected type.
 
         Args:
@@ -262,7 +262,7 @@ class Configurable(Loggable):
             msg = error_msg or f"Configuration '{key}' must be of type {expected_type.__name__}"
             raise ConfigurationError(msg)
 
-    def _validate_enum(self, key: str, valid_values: List[Any], error_msg: Optional[str] = None) -> None:
+    def _validate_enum(self, key: str, valid_values: list[Any], error_msg: str | None = None) -> None:
         """Validate that a configuration value is in a list of valid values.
 
         Args:
@@ -278,7 +278,7 @@ class Configurable(Loggable):
             msg = error_msg or f"Configuration '{key}' must be one of {valid_values}"
             raise ConfigurationError(msg)
 
-    def _validate_path(self, key: str, must_exist: bool = True, error_msg: Optional[str] = None) -> None:
+    def _validate_path(self, key: str, must_exist: bool = True, error_msg: str | None = None) -> None:
         """Validate that a configuration value is a valid path.
 
         Args:
@@ -341,7 +341,7 @@ class Configurable(Loggable):
         self.config[key] = value
         self._validate_config()
 
-    def update(self, config: Dict[str, Any]) -> None:
+    def update(self, config: dict[str, Any]) -> None:
         """Update configuration with new values.
 
         Args:
@@ -353,7 +353,7 @@ class Configurable(Loggable):
         self.config.update(config)
         self._validate_config()
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Get the current configuration as a dictionary.
 
         Returns:
@@ -361,7 +361,7 @@ class Configurable(Loggable):
         """
         return self.config.copy()
 
-    def save(self, path: Union[str, Path]) -> None:
+    def save(self, path: str | Path) -> None:
         """Save current configuration to YAML file.
 
         Args:
@@ -384,7 +384,7 @@ class Configurable(Loggable):
             raise ConfigurationError(f"Failed to save configuration to {path}: {e}") from e
 
     @classmethod
-    def get_yaml_path(cls, path: Optional[str] = None) -> Path:
+    def get_yaml_path(cls, path: str | None = None) -> Path:
         """Get path to a configuration file.
 
         Args:
@@ -441,7 +441,7 @@ class Configurable(Loggable):
 
     @classmethod
     def get_prompt(
-        cls, config_path: Optional[str] = None, prompt_ref: Optional[str] = None, custom_prompts: Optional[Dict[str, str]] = None
+        cls, config_path: str | None = None, prompt_ref: str | None = None, custom_prompts: dict[str, str] | None = None
     ) -> str:
         """Get prompt by reference.
 
@@ -489,7 +489,7 @@ class Configurable(Loggable):
         return ""
 
     @classmethod
-    def load_config(cls, path: Optional[str] = None) -> Dict[str, Any]:
+    def load_config(cls, path: str | None = None) -> dict[str, Any]:
         """Load configuration from YAML file.
 
         Args:

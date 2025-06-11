@@ -1,17 +1,17 @@
 import asyncio
 import time
-from typing import Any, Dict
+from typing import Any
 
 from opendxa.dana.exec.repl.dana_repl_app import DanaREPLApp
 from opendxa.dana.sandbox.log_manager import LogLevel
 from opendxa.dana.sandbox.parser.python_registry import PythonRegistry
 
 
-def get_product_details(context: Dict[str, Any], product_id: str):
+def get_product_details(context: dict[str, Any], product_id: str):
     return "{'id': 'CM-2501', 'product_name': 'ProStrength Portland Cement', 'product_description': 'High-strength Portland cement Type I/II, 94lb bag', 'use_cases': 'Foundation pouring, concrete slabs, sidewalk construction, general construction', 'cost_per_unit': 12.50, 'availability': 'Out of Stock'}"
 
 
-def vector_search_descriptions(context: Dict[str, Any], product_description: str, top_k: int = 5) -> list[dict]:
+def vector_search_descriptions(context: dict[str, Any], product_description: str, top_k: int = 5) -> list[dict]:
     print("Searching database...")
     time.sleep(5)  # El fako!
     return [

@@ -20,7 +20,7 @@ Discord: https://discord.gg/6jGD4PYk
 import inspect
 from typing import Any
 
-from opendxa.common import Misc
+from opendxa.common.utils.misc import Misc
 from opendxa.dana.common.exceptions import SandboxError, StateError
 from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
 from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
@@ -111,8 +111,18 @@ class ExpressionExecutor(BaseExecutor):
             The value of the identifier in the context
         """
         name = node.name
+        
+        # DEBUG: Add logging to understand the issue
+        from opendxa.common.utils.logging import DXA_LOGGER
+        DXA_LOGGER.debug(f"DEBUG: Executing identifier '{name}'")
+        DXA_LOGGER.debug(f"DEBUG: Context state keys: {list(context._state.keys())}")
+        for scope, state in context._state.items():
+            DXA_LOGGER.debug(f"DEBUG: Scope '{scope}' variables: {list(state.keys())}")
+        
         try:
-            return context.get(name)
+            result = context.get(name)
+            DXA_LOGGER.debug(f"DEBUG: Successfully found '{name}' via context.get(): {result}")
+            return result
         except StateError:
             # If not found in context with the default scoping, try searching across all scopes
             # This is needed for cases like with statements where variables may be in non-local scopes
@@ -176,16 +186,39 @@ class ExpressionExecutor(BaseExecutor):
                     pass
 
             try:
+                DXA_LOGGER.debug(f"DEBUG: Trying direct _state access for dotted variable '{name}'")
                 parts = name.split(".")
+                DXA_LOGGER.debug(f"DEBUG: Parts: {parts}")
                 result = None
-                for part in parts:
+                for i, part in enumerate(parts):
+                    DXA_LOGGER.debug(f"DEBUG: Processing part {i}: '{part}'")
                     if result is None:
-                        result = context._state[part]
+                        DXA_LOGGER.debug(f"DEBUG: Looking for base variable '{part}' in context._state keys: {list(context._state.keys())}")
+                        if part in context._state:
+                            result = context._state[part]
+                            DXA_LOGGER.debug(f"DEBUG: Found '{part}' directly in _state: {result}")
+                        else:
+                            DXA_LOGGER.debug(f"DEBUG: '{part}' not found directly, trying scoped access")
+                            # Try to find the variable in any scope
+                            for scope in ["local", "private", "public", "system"]:
+                                try:
+                                    result = context.get_from_scope(part, scope=scope)
+                                    if result is not None:
+                                        DXA_LOGGER.debug(f"DEBUG: Found '{part}' in scope '{scope}': {result}")
+                                        break
+                                except:
+                                    continue
+                            if result is None:
+                                DXA_LOGGER.debug(f"DEBUG: Could not find base variable '{part}' anywhere")
+                                raise Exception(f"Base variable '{part}' not found")
                     else:
+                        DXA_LOGGER.debug(f"DEBUG: Getting field '{part}' from result: {result}")
                         result = Misc.get_field(result, part)
+                        DXA_LOGGER.debug(f"DEBUG: Field access result: {result}")
                 if result is not None:
                     return result
             except Exception as e:
+                DXA_LOGGER.debug(f"DEBUG: Direct _state access failed: {e}")
                 raise SandboxError(f"Error accessing variable '{name}': Variable '{name}' not found in context") from e
             # If still not found, raise the original error
             raise SandboxError(f"Error accessing variable '{name}': Variable '{name}' not found in context")
@@ -539,7 +572,125 @@ class ExpressionExecutor(BaseExecutor):
             else:
                 return method
 
-        raise AttributeError(f"'{type(target).__name__}' object has no method '{node.method_name}'")
+        # Try struct method transformation: obj.method(args) -> method(obj, args)
+        from opendxa.dana.sandbox.interpreter.struct_system import StructInstance
+        
+        if isinstance(target, StructInstance):
+            # For struct instances, always try the transformation
+            return self._transform_to_function_call(target, node, context)
+        else:
+            # For other objects, try transformation as fallback
+            try:
+                return self._transform_to_function_call(target, node, context)
+            except Exception:
+                # If transformation fails, raise the original AttributeError
+                raise AttributeError(f"'{type(target).__name__}' object has no method '{node.method_name}'")
+
+    def _transform_to_function_call(self, target: Any, node: ObjectFunctionCall, context: SandboxContext) -> Any:
+        """Transform obj.method(args) to method(obj, args) and execute via function dispatch.
+        
+        Args:
+            target: The object on which the method is being called
+            node: The ObjectFunctionCall node containing method name and arguments
+            context: The execution context
+            
+        Returns:
+            The result of the transformed function call
+            
+        Raises:
+            SandboxError: If function dispatch fails or function not found
+        """
+        from opendxa.dana.sandbox.parser.ast import FunctionCall
+        
+        # Create new arguments with target as first positional argument
+        new_args = {}
+        
+        # Process existing arguments
+        existing_positional = []
+        existing_kwargs = {}
+        
+        for key, value in node.args.items():
+            if key == "__positional":
+                # Handle existing positional arguments
+                if isinstance(value, list):
+                    existing_positional = value
+                else:
+                    existing_positional = [value] if value is not None else []
+            else:
+                # Handle existing keyword arguments
+                existing_kwargs[key] = value
+        
+        # Create new positional arguments with target first
+        # Note: target is already evaluated, so we don't store it as an AST node
+        new_args["__positional"] = existing_positional  # We'll prepend target during execution
+        new_args.update(existing_kwargs)
+        
+        # Create a FunctionCall node for the method name
+        function_call = FunctionCall(name=node.method_name, args=new_args)
+        
+        # Get the function executor from parent
+        function_executor = self.parent._function_executor
+        
+        # Process arguments with target prepended
+        evaluated_args = [target]  # Start with target as first argument
+        evaluated_kwargs = {}
+        
+        # Process existing arguments
+        for key, value in node.args.items():
+            if key == "__positional":
+                # Handle positional arguments
+                if isinstance(value, list):
+                    for arg in value:
+                        evaluated_args.append(self.parent.execute(arg, context))
+                elif value is not None:
+                    evaluated_args.append(self.parent.execute(value, context))
+            else:
+                # Handle keyword arguments
+                evaluated_kwargs[key] = self.parent.execute(value, context)
+        
+        # Execute via function registry using the resolved arguments
+        registry = function_executor.function_registry
+        if not registry:
+            raise SandboxError(f"No function registry available for method '{node.method_name}'")
+        
+        # Try to find function in context first (for user-defined functions)
+        try:
+            # Check if function exists in local scope
+            func = context.get(f"local.{node.method_name}")
+            if func is not None:
+                from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
+                if isinstance(func, DanaFunction):
+                    # Execute the DanaFunction directly with the transformed arguments
+                    return func.execute(context, *evaluated_args, **evaluated_kwargs)
+        except Exception as e:
+            pass  # Continue to registry lookup
+        
+        # Also try alternative context access methods
+        try:
+            # Try direct scope access
+            func = context.get_from_scope(node.method_name, scope="local")
+            if func is not None:
+                from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
+                if isinstance(func, DanaFunction):
+                    # Execute the DanaFunction directly with the transformed arguments
+                    return func.execute(context, *evaluated_args, **evaluated_kwargs)
+        except Exception as e:
+            pass  # Continue to registry lookup
+        
+        # Debug: Check what's actually in the context
+        local_state = getattr(context, '_state', {}).get('local', {})
+        if node.method_name in local_state:
+            func = local_state[node.method_name]
+            from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
+            if isinstance(func, DanaFunction):
+                # Execute the DanaFunction directly with the transformed arguments
+                return func.execute(context, *evaluated_args, **evaluated_kwargs)
+        
+        # Fallback to registry (for built-in functions)
+        try:
+            return registry.call(node.method_name, context, None, *evaluated_args, **evaluated_kwargs)
+        except Exception as e:
+            raise SandboxError(f"Method call transformation failed for '{node.method_name}': {e}")
 
     def execute_subscript_expression(self, node: SubscriptExpression, context: SandboxContext) -> Any:
         """Execute a subscript expression (indexing).

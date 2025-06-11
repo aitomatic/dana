@@ -8,7 +8,7 @@ Log function implementation for the Dana interpreter.
 This module provides the log function, which handles logging in the Dana interpreter.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from opendxa.dana.sandbox.log_manager import SandboxLogger
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
@@ -17,8 +17,8 @@ from opendxa.dana.sandbox.sandbox_context import SandboxContext
 def log_function(
     context: SandboxContext,
     message: str,
-    level: Optional[str] = "INFO",
-    options: Optional[Dict[str, Any]] = None,
+    level: str | None = "INFO",
+    options: dict[str, Any] | None = None,
 ) -> None:
     """Execute the log function.
 

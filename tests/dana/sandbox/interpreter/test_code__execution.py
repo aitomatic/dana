@@ -36,8 +36,6 @@ Discord: https://discord.gg/6jGD4PYk
 
 import pytest
 
-import pytest
-
 from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
 from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 from opendxa.dana.sandbox.sandbox_context import SandboxContext

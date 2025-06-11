@@ -17,7 +17,7 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from typing import Any, Dict
+from typing import Any
 
 from opendxa.agent.agent import Agent
 from opendxa.agent.agent_config import AgentConfig
@@ -27,7 +27,7 @@ class AgentFactory:
     """Creates and configures DXA agents."""
 
     @classmethod
-    def create_agent(cls, config: Dict[str, Any]) -> Agent:
+    def create_agent(cls, config: dict[str, Any]) -> Agent:
         """Create an agent with the given configuration."""
         # Create agent with name
         agent = Agent(name=config.get("name"))

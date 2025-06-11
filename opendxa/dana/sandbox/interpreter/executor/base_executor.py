@@ -17,7 +17,7 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from typing import Any, Dict, Optional, Type
+from typing import Any
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.dana.common.exceptions import SandboxError
@@ -32,7 +32,7 @@ class BaseExecutor(Loggable):
     such as access to a function registry and parent executor reference.
     """
 
-    def __init__(self, parent: "BaseExecutor", function_registry: Optional[FunctionRegistry] = None):
+    def __init__(self, parent: "BaseExecutor", function_registry: FunctionRegistry | None = None):
         """Initialize the executor.
 
         Args:
@@ -42,10 +42,10 @@ class BaseExecutor(Loggable):
         super().__init__()
         self._function_registry = function_registry
         self._parent = parent
-        self._handlers: Dict[Type, Any] = {}
+        self._handlers: dict[type, Any] = {}
 
     @property
-    def function_registry(self) -> Optional[FunctionRegistry]:
+    def function_registry(self) -> FunctionRegistry | None:
         """Get the function registry.
 
         Returns:
@@ -105,7 +105,7 @@ class BaseExecutor(Loggable):
         """
         pass
 
-    def get_handlers(self) -> Dict[type, Any]:
+    def get_handlers(self) -> dict[type, Any]:
         """Get the handlers dictionary for this executor.
 
         Returns:

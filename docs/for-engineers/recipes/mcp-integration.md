@@ -2,7 +2,7 @@
 
 This guide demonstrates how to integrate with MCP (Model Context Protocol) services using Dana's new object method call syntax.
 
-> **Design Reference**: For detailed implementation of resource acquisition patterns, see the [Use Statement Design Document](../../design/03_core_capabilities_resources/use_statement.md).
+> **Design Reference**: For detailed implementation of resource acquisition patterns, see the [Use Statement Design Document](../../.implementation/use_statement.md).
 
 ## Overview
 

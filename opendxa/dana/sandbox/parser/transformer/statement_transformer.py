@@ -24,13 +24,10 @@ from typing import Union, cast
 from lark import Token, Tree
 
 from opendxa.dana.sandbox.parser.ast import (
-    AssertStatement,
     Assignment,
     AttributeAccess,
     BinaryExpression,
-    BreakStatement,
     Conditional,
-    ContinueStatement,
     DictLiteral,
     Expression,
     ForLoop,
@@ -43,24 +40,24 @@ from opendxa.dana.sandbox.parser.ast import (
     ListLiteral,
     LiteralExpression,
     Parameter,
-    PassStatement,
     Program,
-    RaiseStatement,
     ReturnStatement,
     SetLiteral,
+    StructDefinition,
+    StructField,
     SubscriptExpression,
     TryBlock,
     TupleLiteral,
-    TypeHint,
     UseStatement,
     WhileLoop,
     WithStatement,
 )
 from opendxa.dana.sandbox.parser.transformer.base_transformer import BaseTransformer
-from opendxa.dana.sandbox.parser.transformer.statement.statement_helpers import (
-    AssignmentHelper, ControlFlowHelper, SimpleStatementHelper, ImportHelper, ContextHelper
-)
 from opendxa.dana.sandbox.parser.transformer.expression_transformer import ExpressionTransformer
+from opendxa.dana.sandbox.parser.transformer.statement.statement_helpers import (
+    AssignmentHelper,
+    SimpleStatementHelper,
+)
 from opendxa.dana.sandbox.parser.transformer.variable_transformer import VariableTransformer
 from opendxa.dana.sandbox.parser.utils.tree_utils import TreeTraverser
 
@@ -313,6 +310,66 @@ class StatementTransformer(BaseTransformer):
             transformed_body.append(stmt)
 
         return FunctionDefinition(name=name, parameters=param_list, body=transformed_body, return_type=return_type)
+
+    def struct_def(self, items):
+        """Transform a struct definition rule into a StructDefinition node.
+        
+        Grammar: struct_def: "struct" NAME ":" [COMMENT] struct_block
+        """
+        relevant_items = self._filter_relevant_items(items)
+        
+        # First item should be the struct name
+        name_token = relevant_items[0]
+        if isinstance(name_token, Token):
+            struct_name = name_token.value
+        else:
+            struct_name = str(name_token)
+        
+        # Second item should be the struct_block containing fields
+        struct_block = relevant_items[1] if len(relevant_items) > 1 else []
+        
+        # struct_block should contain a list of StructField objects
+        fields = struct_block if isinstance(struct_block, list) else []
+        
+        return StructDefinition(name=struct_name, fields=fields, location=None)
+
+    def struct_block(self, items):
+        """Transform struct_block rule.
+        
+        Grammar: struct_block: _NL _INDENT struct_fields _DEDENT*
+        """
+        # Filter to get struct_fields
+        relevant_items = self._filter_relevant_items(items)
+        return relevant_items[0] if relevant_items else []
+
+    def struct_fields(self, items):
+        """Transform struct_fields rule.
+        
+        Grammar: struct_fields: struct_field+
+        """
+        return [item for item in items if item is not None]
+
+    def struct_field(self, items):
+        """Transform struct_field rule.
+        
+        Grammar: struct_field: NAME ":" basic_type [COMMENT] _NL
+        """
+        relevant_items = self._filter_relevant_items(items)
+        
+        if len(relevant_items) < 2:
+            raise ValueError(f"Invalid struct field: expected NAME and type, got {relevant_items}")
+        
+        # First item is field name
+        name_token = relevant_items[0]
+        if isinstance(name_token, Token):
+            field_name = name_token.value
+        else:
+            field_name = str(name_token)
+        
+        # Second item is type hint
+        type_hint = relevant_items[1]
+        
+        return StructField(name=field_name, type_hint=type_hint, location=None)
 
     def try_stmt(self, items):
         """Transform a try statement rule into a TryBlock node.
@@ -824,10 +881,7 @@ class StatementTransformer(BaseTransformer):
         type_hint = items[1]  # Should be a TypeHint from basic_type
         value_tree = items[2]
 
-        return AssignmentHelper.create_assignment(
-            target_tree, value_tree, type_hint, 
-            self.expression_transformer, VariableTransformer()
-        )
+        return AssignmentHelper.create_assignment(target_tree, value_tree, self.expression_transformer, VariableTransformer(), type_hint)
 
     def simple_assignment(self, items):
         """Transform a simple assignment rule into an Assignment node without type hint."""
@@ -835,10 +889,7 @@ class StatementTransformer(BaseTransformer):
         target_tree = items[0]
         value_tree = items[1]
 
-        return AssignmentHelper.create_assignment(
-            target_tree, value_tree, None,
-            self.expression_transformer, VariableTransformer()
-        )
+        return AssignmentHelper.create_assignment(target_tree, value_tree, self.expression_transformer, VariableTransformer())
 
     def function_call_assignment(self, items):
         """Transform a function_call_assignment rule into an Assignment node with object-returning statement."""
