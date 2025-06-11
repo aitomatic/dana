@@ -9,7 +9,9 @@
 
 name: PyTest Sequential
 
-on: [push]
+on: 
+  push:
+    branches: [main, master]  # Only run on main branch pushes
 
 jobs:
   test:
