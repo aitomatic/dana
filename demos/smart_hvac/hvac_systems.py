@@ -29,15 +29,15 @@ def poet(*args, **kwargs):
         # Attach mock learning methods for demo
         execution_count = 0
 
-        def get_learning_status():
+        def get_learning_status(*args, **kwargs):
             nonlocal execution_count
             execution_count += 1
             return {"learning_enabled": True, "learning_algorithm": "statistical", "executions": execution_count, "success_rate": 0.95}
 
-        def get_learning_recommendations():
+        def get_learning_recommendations(*args, **kwargs):
             return ["System learning normally", "Energy optimization active", "Comfort feedback incorporated"]
 
-        def get_metrics():
+        def get_metrics(*args, **kwargs):
             nonlocal execution_count
             return {"total_executions": execution_count, "success_rate": 0.95, "avg_execution_time": 0.001, "learning_progress": "active"}
 
