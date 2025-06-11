@@ -11,6 +11,7 @@ Claude AI Configuration and Guidelines
 - **ALL temporary development files go in `tmp/` directory**
 - Run `uv run ruff check . && uv run ruff format .` before commits
 - Use type hints: `def func(x: int) -> str:` (required)
+- **Apply KISS/YAGNI**: Start simple, add complexity only when needed
 
 ## Essential Commands
 ```bash
@@ -276,9 +277,13 @@ def update_agent_state(new_data):
 processed_data = raw_data | validate | normalize | analyze | format_output
 ```
 
-## Design-Driven Development Methodology
+## 3D Methodology (Design-Driven Development)
 
-### **ALWAYS Create Design Document First**
+**3D = Design-Driven Development**: A rigorous methodology ensuring quality through comprehensive design documentation, iterative implementation phases, and strict quality gates.
+
+Core principle: Think before you build, build with intention, ship with confidence.
+
+### **📋 ALWAYS Create Design Document First**
 For any feature/system implementation, create a design doc following this template:
 
 ```markdown
@@ -290,114 +295,230 @@ Date: [Date]
 Status: [Design Phase | Implementation Phase | Review Phase]
 
 ## Problem Statement
+**Brief Description**: [1-2 sentence summary of the problem]
 - Current situation and pain points
-- Impact of not solving this problem
+- Impact of not solving this problem  
 - Relevant context and background
 
 ## Goals
+**Brief Description**: [What we want to achieve]
 - Specific, measurable objectives (SMART goals)
 - Success criteria and metrics
 - Key requirements
 
 ## Non-Goals
+**Brief Description**: [What we explicitly won't do]
 - Explicitly state what's out of scope
 - Clarify potential misunderstandings
 
 ## Proposed Solution
+**Brief Description**: [High-level approach in 1-2 sentences]
 - High-level approach and key components
 - Why this approach was chosen
 - Main trade-offs and system fit
+- **KISS/YAGNI Analysis**: Justify complexity vs. simplicity choices
 
 ## Proposed Design
+**Brief Description**: [System architecture overview]
+
+### System Architecture Diagram
+```
+[Create ASCII or Mermaid diagram showing main components and their relationships]
+```
+
+### Component Details
 - System architecture and components
 - Data models, APIs, interfaces
 - Error handling and security considerations
-- Performance considerations and diagrams
+- Performance considerations
+
+### Data Flow Diagram (if applicable)
+```
+[Show how data moves through the system]
+```
 
 ## Proposed Implementation
+**Brief Description**: [Technical approach and key decisions]
 - Technical specifications and code organization
 - Key algorithms and testing strategy
 - Dependencies and monitoring requirements
 
 ## Design Review Checklist
-- [ ] Security review completed
-- [ ] Performance impact assessed
-- [ ] Error handling comprehensive
-- [ ] Testing strategy defined
-- [ ] Documentation planned
-- [ ] Backwards compatibility checked
+**Status**: [ ] Not Started | [ ] In Progress | [ ] Complete
+
+Before implementation, review design against:
+- [ ] **Problem Alignment**: Does solution address all stated problems?
+- [ ] **Goal Achievement**: Will implementation meet all success criteria?
+- [ ] **Non-Goal Compliance**: Are we staying within defined scope?
+- [ ] **KISS/YAGNI Compliance**: Is complexity justified by immediate needs?
+- [ ] **Security review completed**
+- [ ] **Performance impact assessed**
+- [ ] **Error handling comprehensive**
+- [ ] **Testing strategy defined**
+- [ ] **Documentation planned**
+- [ ] **Backwards compatibility checked**
 
 ## Implementation Phases
-Phase 1: Foundation & Architecture
-- [ ] Define core components
-- [ ] Create basic infrastructure
-- [ ] Establish architectural patterns
+**Overall Progress**: [ ] 0% | [ ] 20% | [ ] 40% | [ ] 60% | [ ] 80% | [ ] 100%
 
-Phase 2: Core Functionality
-- [ ] Implement primary features
-- [ ] Focus on happy path scenarios
-- [ ] Create working examples
+### Phase 1: Foundation & Architecture (16.7% of total)
+**Description**: Establish core infrastructure and architectural patterns
+- [ ] Define core components and interfaces
+- [ ] Create basic infrastructure and scaffolding
+- [ ] Establish architectural patterns and conventions
+- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
+- [ ] **Phase Gate**: Update implementation progress checkboxes
 
-Phase 3: Error Handling & Edge Cases
-- [ ] Add comprehensive error detection
-- [ ] Test failure scenarios
-- [ ] Handle edge cases
+### Phase 2: Core Functionality (16.7% of total)
+**Description**: Implement primary features and happy path scenarios
+- [ ] Implement primary features and core logic
+- [ ] Focus on happy path scenarios and basic operations
+- [ ] Create working examples and demonstrations
+- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
+- [ ] **Phase Gate**: Update implementation progress checkboxes
 
-Phase 4: Advanced Features & Integration
-- [ ] Add sophisticated functionality
-- [ ] Test complex interactions
-- [ ] Ensure seamless integration
+### Phase 3: Error Handling & Edge Cases (16.7% of total)
+**Description**: Add comprehensive error detection and edge case handling
+- [ ] Add comprehensive error detection and validation
+- [ ] Test failure scenarios and error conditions
+- [ ] Handle edge cases and boundary conditions
+- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
+- [ ] **Phase Gate**: Update implementation progress checkboxes
 
-Phase 5: Integration & Performance Testing
-- [ ] Test real-world scenarios
-- [ ] Validate performance
-- [ ] Run regression tests
+### Phase 4: Advanced Features & Integration (16.7% of total)
+**Description**: Add sophisticated functionality and ensure seamless integration
+- [ ] Add sophisticated functionality and advanced features
+- [ ] Test complex interactions and integration scenarios
+- [ ] Ensure seamless integration with existing systems
+- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
+- [ ] **Phase Gate**: Update implementation progress checkboxes
 
-Phase 6: Polish & Documentation
-- [ ] Update documentation
-- [ ] Create migration guides
+### Phase 5: Integration & Performance Testing (16.7% of total)
+**Description**: Validate real-world performance and run comprehensive tests
+- [ ] Test real-world scenarios and production-like conditions
+- [ ] Validate performance benchmarks and requirements
+- [ ] Run regression tests and integration suites
+- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
+- [ ] **Phase Gate**: Update implementation progress checkboxes
+
+### Phase 6: Polish & Documentation (16.7% of total)
+**Description**: Finalize documentation, create migration guides, and perform final validation
+- [ ] Update documentation and API references
+- [ ] Create migration guides and upgrade instructions
 - [ ] Final validation and sign-off
+- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
+- [ ] **Phase Gate**: Update implementation progress checkboxes to 100%
 ```
 
-### **3-Phase Development Process**
-```
-Phase 1: Design & Test → Phase 2: Implement & Validate → Phase 3: Polish & Integrate
+### **🔄 3D Process: Think → Build → Ship**
 
-DO NOT proceed to next phase until ALL criteria met:
-✅ 100% test pass rate
-✅ No regressions
-✅ Error handling complete
-✅ Documentation updated
-✅ Performance within bounds
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Phase 1:      │    │   Phase 2:      │    │   Phase 3:      │
+│ Design & Test   │ -> │ Implement &     │ -> │ Polish &        │
+│                 │    │ Validate        │    │ Integrate       │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+
+⚠️  DO NOT proceed to next phase until ALL criteria met:
+✅ 100% test pass rate (uv run pytest tests/ -v) - ZERO failures allowed
+✅ No regressions detected in existing functionality
+✅ Error handling complete and tested with failure scenarios
+✅ Documentation updated and accurate
+✅ Performance within defined bounds
+✅ Implementation progress checkboxes updated
+✅ Design review completed (if in Phase 1)
+
+🧪 **CRITICAL: Every phase MUST end with full test validation**
+- Run `uv run pytest tests/ -v` before marking phase complete
+- ALL tests must pass - no exceptions, no "TODO: fix later"
+- Any test failure = phase incomplete, must fix before proceeding
+- Add new tests for new functionality within the same phase
 ```
 
-**Phase 1: Design & Test**
+**Phase 1: Design & Test (Think)**
 - Write design doc with Problem Statement/Goals/Non-Goals/Proposed Solution
+- **Include brief descriptions** for each section, not just bullet points
+- **Create system diagrams** (ASCII or Mermaid) showing component relationships
+- **Perform Design Review** against problem statement, goals, and non-goals
+- **Update Design Review Checklist** with findings and approvals
 - Create failing tests defining expected behavior
+- **Run full test suite**: `uv run pytest tests/ -v` - verify baseline
+- **Update Phase 1 checkboxes** before proceeding
 
-**Phase 2: Implement & Validate** 
-- Core implementation + error handling
-- Make tests pass, add edge cases
+**Phase 2: Implement & Validate (Build)** 
+- Core implementation with **brief code comments** explaining logic
+- Make tests pass, add edge case coverage
+- **Include explanatory comments** in complex algorithms
+- **Run full test suite** after each major change: `uv run pytest tests/ -v`
+- **Fix all test failures** before proceeding to next phase
+- **Update Phase 2-6 checkboxes** as work progresses
 
-**Phase 3: Polish & Integrate**
-- Documentation + integration testing
-- Performance validation
+**Phase 3: Polish & Integrate (Ship)**
+- Documentation with **descriptive explanations**, not just code examples
+- **Create integration diagrams** showing system interactions
+- Integration testing and performance validation
+- **Run comprehensive test suite**: `uv run pytest tests/ -v`
+- **Verify no regressions** introduced during implementation
+- **Update final checkboxes** and mark implementation complete
 
-### **Quality Gates**
+### **🚨 Quality Gates & Monitoring**
+
 ```
-🚨 RED FLAGS (stop development):
-- Test failures in foundational components
-- Unclear error messages
-- Performance degradation >10%
-- Breaking changes without migration
-- Undocumented public APIs
+🚨 RED FLAGS (stop development immediately):
+- **ANY test failures** in foundational components or new features
+- **Proceeding to next phase** with failing tests
+- Unclear error messages or poor error handling
+- Performance degradation >10% from baseline
+- Breaking changes without migration strategy
+- Undocumented public APIs or missing descriptions
+- Missing or incomplete system diagrams
+- Implementation proceeding without design review completion
+- **Over-engineering**: Adding complexity not justified by current requirements
 
-✅ PROCEED CRITERIA:
-- All phase tests pass (100% success)
-- Error messages clear and actionable
-- Documentation matches implementation
-- Performance benchmarks met
+✅ PROCEED CRITERIA (all must be met):
+- All phase tests pass (100% success rate)
+- Error messages clear, actionable, and well-tested  
+- Documentation matches implementation with explanatory text
+- Performance benchmarks met or exceeded
+- System diagrams accurately reflect implementation
+- Design review checklist fully completed
+- Implementation progress accurately tracked
 ```
+
+### **📊 AI Supervisor Monitoring Points**
+
+For AI supervisors tracking 3D compliance:
+
+1. **Design Phase Checkpoints**:
+   - [ ] Design document exists and follows template
+   - [ ] Brief descriptions provided for all major sections
+   - [ ] System architecture diagram created (ASCII/Mermaid)
+   - [ ] Design review checklist completed
+   
+2. **Implementation Phase Checkpoints**:
+   - [ ] Test suite passing at end of each phase
+   - [ ] Implementation progress checkboxes updated
+   - [ ] Code includes explanatory comments, not just fragments
+   - [ ] Error handling comprehensive and tested
+
+3. **Quality Assurance Checkpoints**:
+   - [ ] No regressions detected in test runs
+   - [ ] Performance benchmarks maintained
+   - [ ] Documentation complete with descriptive explanations
+   - [ ] Integration diagrams reflect actual system behavior
+
+### **🤖 AI Coder Execution Guidelines**
+
+For AI coders implementing 3D methodology:
+
+1. **Before Starting**: Always create design document first, never skip
+2. **During Design**: Include brief descriptions AND diagrams, not just code
+3. **During Implementation**: Run `uv run pytest tests/ -v` after each phase
+4. **Phase Transitions**: Update checkboxes and verify all criteria met
+5. **Problem Solving**: Create diagrams to visualize complex relationships
+6. **Documentation**: Write explanations, not just code examples
+7. **Testing**: Fix ALL test failures before moving to next phase
+8. **Design Decisions**: Apply KISS/YAGNI - start simple, present complex alternatives to humans
 
 ## Coding Standards & Type Hints
 
@@ -424,6 +545,90 @@ def process_data(items: List[str], config: Optional[Dict[str, int]] = None) -> U
 - **MUST RUN**: `uv run ruff check . && uv run ruff format .` before commits
 - Line length limit: 140 characters (configured in pyproject.toml)
 - Auto-fix with: `uv run ruff check --fix .`
+
+## KISS/YAGNI Design Principles
+
+**KISS (Keep It Simple, Stupid)** & **YAGNI (You Aren't Gonna Need It)**: Balance engineering rigor with practical simplicity.
+
+### **AI Decision-Making Guidelines**
+```
+🎯 **START SIMPLE, EVOLVE THOUGHTFULLY**
+
+For design decisions, AI coders should:
+1. **Default to simplest solution** that meets current requirements
+2. **Document complexity trade-offs** when proposing alternatives  
+3. **Present options** when multiple approaches have merit
+4. **Justify complexity** only when immediate needs require it
+
+🤖 **AI CAN DECIDE** (choose simplest):
+- Data structure choice (dict vs class vs dataclass)
+- Function organization (single file vs module split)
+- Error handling level (basic vs comprehensive)
+- Documentation depth (minimal vs extensive)
+
+👤 **PRESENT TO HUMAN** (let them choose):
+- Architecture patterns (monolith vs microservices)
+- Framework choices (custom vs third-party)
+- Performance optimizations (simple vs complex)
+- Extensibility mechanisms (hardcoded vs configurable)
+
+⚖️ **COMPLEXITY JUSTIFICATION TEMPLATE**:
+"Proposing [complex solution] over [simple solution] because:
+- Current requirement: [specific need]
+- Simple approach limitation: [concrete issue]
+- Complexity benefit: [measurable advantage]
+- Alternative: [let human decide vs simpler approach]"
+```
+
+### **Common Over-Engineering Patterns to Avoid**
+```
+❌ AVOID (unless specifically needed):
+- Abstract base classes for single implementations
+- Configuration systems for hardcoded values
+- Generic solutions for specific problems
+- Premature performance optimizations
+- Complex inheritance hierarchies
+- Over-flexible APIs with many parameters
+- Caching systems without proven performance needs
+- Event systems for simple function calls
+
+✅ PREFER (start here):
+- Concrete implementations that work
+- Hardcoded values that can be extracted later
+- Specific solutions for specific problems
+- Simple, readable code first
+- Composition over inheritance
+- Simple function signatures
+- Direct computation until performance matters
+- Direct function calls for simple interactions
+```
+
+### **Incremental Complexity Strategy**
+```
+📈 **EVOLUTION PATH** (add complexity only when needed):
+
+Phase 1: Hardcoded → Phase 2: Configurable → Phase 3: Extensible
+
+Example:
+Phase 1: `return "Hello, World!"`
+Phase 2: `return f"Hello, {name}!"`
+Phase 3: `return formatter.format(greeting_template, name)`
+
+🔄 **WHEN TO EVOLVE**:
+- Phase 1→2: When second use case appears
+- Phase 2→3: When third different pattern emerges
+- Never evolve: If usage remains stable
+```
+
+## Best Practices and Patterns
+- Use dataclasses or Pydantic models for data structures
+- Prefer composition over inheritance
+- Use async/await for I/O operations
+- Follow SOLID principles
+- Use dependency injection where appropriate
+- Implement proper error handling with custom exceptions
+- **Start with simplest solution that works**
+- **Add complexity only when requirements demand it**
 
 ## Error Handling Standards
 ```
