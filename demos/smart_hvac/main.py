@@ -24,7 +24,8 @@ from hvac_systems import (
     smart_hvac_control,
     ComfortBasedController,
     calculate_energy_usage,
-    calculate_comfort_score
+    calculate_comfort_score,
+    POET_AVAILABLE,
 )
 from room_simulator import RoomSimulator
 
@@ -33,8 +34,10 @@ from room_simulator import RoomSimulator
 # DATA MODELS
 # ============================================================
 
+
 class SystemState(BaseModel):
     """Current state of an HVAC system."""
+
     system_id: str
     current_temp: float
     target_temp: float
@@ -51,6 +54,7 @@ class SystemState(BaseModel):
 
 class UserInput(BaseModel):
     """User input for system control."""
+
     system_id: str
     action: str  # "set_temp", "too_hot", "too_cold", "comfortable"
     value: float = None  # For set_temp
@@ -58,6 +62,7 @@ class UserInput(BaseModel):
 
 class SystemMetrics(BaseModel):
     """Historical metrics for visualization."""
+
     timestamps: List[str]
     temperatures: List[float]
     energy_usage: List[float]
@@ -72,144 +77,145 @@ class SystemMetrics(BaseModel):
 app = FastAPI(title="Smart HVAC Demo", version="1.0.0")
 
 # Serve static files
-app.mount("/static", StaticFiles(directory="demos/smart_hvac/static"), name="static")
+import os
+
+static_dir = os.path.join(os.path.dirname(__file__), "static")
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 
 # ============================================================
 # GLOBAL STATE
 # ============================================================
 
+
+def extract_hvac_command(result):
+    """Extract HVAC command from POET result wrapper."""
+    if isinstance(result, dict) and "result" in result:
+        return result["result"]
+    else:
+        return result
+
+
 class HVACDemoManager:
     """Manages both HVAC systems and their simulations."""
-    
+
     def __init__(self):
         # Room simulators
         self.basic_room = RoomSimulator(initial_temp=72.0)
         self.smart_room = RoomSimulator(initial_temp=72.0)
-        
+
         # Control systems
         self.comfort_controller = ComfortBasedController()
-        
+
         # System states
         self.basic_target = 72.0
         self.smart_target = 72.0
-        
+
         # Metrics storage
         self.metrics = {
-            'basic': {
-                'timestamps': [],
-                'temperatures': [],
-                'energy_usage': [],
-                'comfort_scores': [],
-                'target_temps': []
-            },
-            'smart': {
-                'timestamps': [],
-                'energy_usage': [],
-                'temperatures': [],
-                'comfort_scores': [],
-                'target_temps': []
-            }
+            "basic": {"timestamps": [], "temperatures": [], "energy_usage": [], "comfort_scores": [], "target_temps": []},
+            "smart": {"timestamps": [], "energy_usage": [], "temperatures": [], "comfort_scores": [], "target_temps": []},
         }
-        
+
         # Simulation control
         self.running = False
         self.update_interval = 2.0  # seconds
-        
+
         # Connected WebSocket clients
         self.clients = []
-    
+
     async def start_simulation(self):
         """Start the simulation loop."""
         self.running = True
         while self.running:
             await self.update_systems()
             await asyncio.sleep(self.update_interval)
-    
+
     async def update_systems(self):
         """Update both HVAC systems and broadcast state."""
         timestamp = datetime.now().isoformat()
-        
+
         # Update basic HVAC system
         basic_command = basic_hvac_control(
             current_temp=self.basic_room.state.temperature,
             target_temp=self.basic_target,
             outdoor_temp=self.basic_room.state.outside_temp,
-            occupancy=self.basic_room.state.occupancy
+            occupancy=self.basic_room.state.occupancy,
         )
-        
+
         basic_state = self.basic_room.step(basic_command)
         basic_comfort = calculate_comfort_score(
-            current_temp=basic_state['temperature'],
-            target_temp=self.basic_target,
-            temp_history=self.basic_room.get_recent_temps()
+            current_temp=basic_state["temperature"], target_temp=self.basic_target, temp_history=self.basic_room.get_recent_temps()
         )
-        
+
         # Update smart HVAC system
-        smart_command = smart_hvac_control(
+        smart_result = smart_hvac_control(
             current_temp=self.smart_room.state.temperature,
             target_temp=self.smart_target,
             outdoor_temp=self.smart_room.state.outside_temp,
-            occupancy=self.smart_room.state.occupancy
+            occupancy=self.smart_room.state.occupancy,
         )
-        
+        smart_command = extract_hvac_command(smart_result)
+
         smart_state = self.smart_room.step(smart_command)
         smart_comfort = calculate_comfort_score(
-            current_temp=smart_state['temperature'],
-            target_temp=self.smart_target,
-            temp_history=self.smart_room.get_recent_temps()
+            current_temp=smart_state["temperature"], target_temp=self.smart_target, temp_history=self.smart_room.get_recent_temps()
         )
-        
+
         # Store metrics
-        self._store_metrics('basic', timestamp, basic_state, basic_comfort, self.basic_target)
-        self._store_metrics('smart', timestamp, smart_state, smart_comfort, self.smart_target)
-        
+        self._store_metrics("basic", timestamp, basic_state, basic_comfort, self.basic_target)
+        self._store_metrics("smart", timestamp, smart_state, smart_comfort, self.smart_target)
+
         # Broadcast to WebSocket clients
         await self._broadcast_state()
-    
+
     def _store_metrics(self, system: str, timestamp: str, state: Dict, comfort: float, target: float):
         """Store metrics for a system."""
         metrics = self.metrics[system]
-        
-        metrics['timestamps'].append(timestamp)
-        metrics['temperatures'].append(state['temperature'])
-        metrics['energy_usage'].append(state['energy_usage'])
-        metrics['comfort_scores'].append(comfort)
-        metrics['target_temps'].append(target)
-        
+
+        metrics["timestamps"].append(timestamp)
+        metrics["temperatures"].append(state["temperature"])
+        metrics["energy_usage"].append(state["energy_usage"])
+        metrics["comfort_scores"].append(comfort)
+        metrics["target_temps"].append(target)
+
         # Keep only recent data (last 100 points)
         max_points = 100
         for key in metrics:
             if len(metrics[key]) > max_points:
                 metrics[key] = metrics[key][-max_points:]
-    
+
     async def _broadcast_state(self):
         """Broadcast current state to all WebSocket clients."""
         if not self.clients:
             return
-        
+
         # Get POET learning status
         poet_status = {}
         try:
-            if hasattr(smart_hvac_control, '_poet_executor'):
-                poet_status = smart_hvac_control._poet_executor.get_learning_status()
-        except:
+            if hasattr(smart_hvac_control, "_poet_executor"):
+                executor = smart_hvac_control._poet_executor
+                learning_status = executor.get_learning_status()
+                recommendations = executor.get_learning_recommendations()
+                metrics = executor.get_metrics()
+
+                poet_status = {
+                    "learning_algorithm": learning_status.get("learning_algorithm", "statistical"),
+                    "recommendations": recommendations,
+                    "poe_metrics": metrics,
+                }
+        except Exception as e:
+            print(f"Error getting POET status for WebSocket: {e}")
             pass
-        
+
         message = {
-            'type': 'state_update',
-            'timestamp': datetime.now().isoformat(),
-            'systems': {
-                'basic': self._get_system_state('basic'),
-                'smart': self._get_system_state('smart')
-            },
-            'poet_status': poet_status,
-            'metrics': {
-                'basic': self._get_recent_metrics('basic'),
-                'smart': self._get_recent_metrics('smart')
-            }
+            "type": "state_update",
+            "timestamp": datetime.now().isoformat(),
+            "systems": {"basic": self._get_system_state("basic"), "smart": self._get_system_state("smart")},
+            "poet_status": poet_status,
+            "metrics": {"basic": self._get_recent_metrics("basic"), "smart": self._get_recent_metrics("smart")},
         }
-        
+
         # Send to all clients
         disconnected = []
         for client in self.clients:
@@ -217,76 +223,65 @@ class HVACDemoManager:
                 await client.send_text(json.dumps(message))
             except:
                 disconnected.append(client)
-        
+
         # Remove disconnected clients
         for client in disconnected:
             self.clients.remove(client)
-    
+
     def _get_system_state(self, system: str) -> Dict[str, Any]:
         """Get current state for a system."""
-        room = self.basic_room if system == 'basic' else self.smart_room
-        target = self.basic_target if system == 'basic' else self.smart_target
-        
+        room = self.basic_room if system == "basic" else self.smart_room
+        target = self.basic_target if system == "basic" else self.smart_target
+
         # Get most recent HVAC command
         recent_command = room.metrics.hvac_commands[-1] if room.metrics.hvac_commands else None
-        
-        comfort = calculate_comfort_score(
-            current_temp=room.state.temperature,
-            target_temp=target,
-            temp_history=room.get_recent_temps()
-        )
-        
+
+        comfort = calculate_comfort_score(current_temp=room.state.temperature, target_temp=target, temp_history=room.get_recent_temps())
+
         return {
-            'system_id': system,
-            'current_temp': round(room.state.temperature, 1),
-            'target_temp': round(target, 1),
-            'outside_temp': round(room.state.outside_temp, 1),
-            'occupancy': room.state.occupancy,
-            'mode': recent_command.mode if recent_command else 'idle',
-            'heating_output': recent_command.heating_output if recent_command else 0,
-            'cooling_output': recent_command.cooling_output if recent_command else 0,
-            'fan_speed': recent_command.fan_speed if recent_command else 0,
-            'energy_usage': room.get_avg_energy_rate(),
-            'comfort_score': round(comfort, 1),
-            'total_energy': round(room.get_total_energy(), 3)
+            "system_id": system,
+            "current_temp": round(room.state.temperature, 1),
+            "target_temp": round(target, 1),
+            "outside_temp": round(room.state.outside_temp, 1),
+            "occupancy": room.state.occupancy,
+            "mode": recent_command.mode if recent_command else "idle",
+            "heating_output": recent_command.heating_output if recent_command else 0,
+            "cooling_output": recent_command.cooling_output if recent_command else 0,
+            "fan_speed": recent_command.fan_speed if recent_command else 0,
+            "energy_usage": room.get_avg_energy_rate(),
+            "comfort_score": round(comfort, 1),
+            "total_energy": round(room.get_total_energy(), 3),
         }
-    
+
     def _get_recent_metrics(self, system: str, count: int = 20) -> Dict:
         """Get recent metrics for visualization."""
         metrics = self.metrics[system]
-        
+
         return {
-            'timestamps': metrics['timestamps'][-count:],
-            'temperatures': metrics['temperatures'][-count:],
-            'energy_usage': metrics['energy_usage'][-count:],
-            'comfort_scores': metrics['comfort_scores'][-count:],
-            'target_temps': metrics['target_temps'][-count:]
+            "timestamps": metrics["timestamps"][-count:],
+            "temperatures": metrics["temperatures"][-count:],
+            "energy_usage": metrics["energy_usage"][-count:],
+            "comfort_scores": metrics["comfort_scores"][-count:],
+            "target_temps": metrics["target_temps"][-count:],
         }
-    
+
     def handle_user_input(self, user_input: UserInput):
         """Handle user input for system control."""
-        if user_input.system_id == 'basic':
-            if user_input.action == 'set_temp' and user_input.value:
+        if user_input.system_id == "basic":
+            if user_input.action == "set_temp" and user_input.value:
                 self.basic_target = max(60, min(85, user_input.value))
-        
-        elif user_input.system_id == 'smart':
-            if user_input.action in ['too_hot', 'too_cold', 'comfortable']:
+
+        elif user_input.system_id == "smart":
+            if user_input.action in ["too_hot", "too_cold", "comfortable"]:
                 # Use comfort-based controller
                 current_temp = self.smart_room.state.temperature
-                self.smart_target = self.comfort_controller.process_feedback(
-                    feedback=user_input.action,
-                    current_temp=current_temp
-                )
-                
+                self.smart_target = self.comfort_controller.process_feedback(feedback=user_input.action, current_temp=current_temp)
+
                 # Provide feedback to POET for learning
                 try:
-                    if hasattr(smart_hvac_control, '_poet_executor'):
-                        feedback_score = {
-                            'too_hot': 0.3,
-                            'too_cold': 0.3,
-                            'comfortable': 1.0
-                        }.get(user_input.action, 0.5)
-                        
+                    if hasattr(smart_hvac_control, "_poet_executor"):
+                        feedback_score = {"too_hot": 0.3, "too_cold": 0.3, "comfortable": 1.0}.get(user_input.action, 0.5)
+
                         # Future: implement feedback mechanism
                         pass
                 except:
@@ -301,11 +296,16 @@ demo_manager = HVACDemoManager()
 # API ENDPOINTS
 # ============================================================
 
+
 @app.get("/", response_class=HTMLResponse)
 async def get_index():
     """Serve the main demo page."""
-    with open("demos/smart_hvac/static/index.html", "r") as f:
-        return HTMLResponse(f.read())
+    html_path = os.path.join(os.path.dirname(__file__), "static", "index.html")
+    try:
+        with open(html_path, "r") as f:
+            return HTMLResponse(f.read())
+    except FileNotFoundError:
+        return HTMLResponse("<h1>Demo files not found</h1><p>Please run from the demos/smart_hvac directory</p>")
 
 
 @app.websocket("/ws")
@@ -313,16 +313,16 @@ async def websocket_endpoint(websocket: WebSocket):
     """WebSocket endpoint for real-time updates."""
     await websocket.accept()
     demo_manager.clients.append(websocket)
-    
+
     try:
         while True:
             data = await websocket.receive_text()
             message = json.loads(data)
-            
-            if message['type'] == 'user_input':
-                user_input = UserInput(**message['data'])
+
+            if message["type"] == "user_input":
+                user_input = UserInput(**message["data"])
                 demo_manager.handle_user_input(user_input)
-            
+
     except WebSocketDisconnect:
         demo_manager.clients.remove(websocket)
 
@@ -350,21 +350,21 @@ async def reset_demo():
     demo_manager.comfort_controller = ComfortBasedController()
     demo_manager.basic_target = 72.0
     demo_manager.smart_target = 72.0
-    
+
     # Clear metrics
-    for system in ['basic', 'smart']:
+    for system in ["basic", "smart"]:
         for key in demo_manager.metrics[system]:
             demo_manager.metrics[system][key].clear()
-    
+
     return {"status": "reset"}
 
 
 @app.get("/api/metrics/{system_id}")
 async def get_metrics(system_id: str):
     """Get historical metrics for a system."""
-    if system_id not in ['basic', 'smart']:
+    if system_id not in ["basic", "smart"]:
         return {"error": "Invalid system_id"}
-    
+
     return demo_manager.metrics[system_id]
 
 
@@ -372,16 +372,21 @@ async def get_metrics(system_id: str):
 async def get_poet_status():
     """Get POET learning status and recommendations."""
     try:
-        if hasattr(smart_hvac_control, '_poet_executor'):
+        if hasattr(smart_hvac_control, "_poet_executor"):
             executor = smart_hvac_control._poet_executor
+            learning_status = executor.get_learning_status()
+            recommendations = executor.get_learning_recommendations()
+            metrics = executor.get_metrics()
+
             return {
-                'learning_status': executor.get_learning_status(),
-                'recommendations': executor.get_learning_recommendations(),
-                'metrics': executor.get_metrics()
+                "learning_algorithm": learning_status.get("learning_algorithm", "statistical"),
+                "recommendations": recommendations,
+                "poe_metrics": metrics,  # Note: frontend expects 'poe_metrics' not 'metrics'
             }
     except Exception as e:
+        print(f"Error getting POET status: {e}")
         return {"error": str(e)}
-    
+
     return {"status": "POET not available"}
 
 
@@ -389,16 +394,30 @@ async def get_poet_status():
 # STARTUP
 # ============================================================
 
+
 @app.on_event("startup")
 async def startup_event():
     """Initialize the demo on startup."""
     print("🏠 Smart HVAC Demo starting...")
     print("🌐 Visit http://localhost:8000 to see the demo")
-    
+
     # Auto-start simulation
     asyncio.create_task(demo_manager.start_simulation())
 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+
+    print("🚀 Starting Smart HVAC Demo Server...")
+    print("🌐 Open http://localhost:8000 in your browser")
+    print("⏹️ Press Ctrl+C to stop")
+
+    try:
+        uvicorn.run(app, host="0.0.0.0", port=8000, reload=False)
+    except KeyboardInterrupt:
+        print("\n👋 Demo stopped. Thanks for trying POET!")
+    except Exception as e:
+        print(f"❌ Error starting server: {e}")
+        import traceback
+
+        traceback.print_exc()

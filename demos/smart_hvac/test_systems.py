@@ -44,10 +44,19 @@ def test_basic_functionality():
         occupancy=True
     )
     
-    print(f"✅ POET HVAC Control:")
-    print(f"   Input: 70°F → 72°F target")
-    print(f"   Output: {result.mode}, heating: {result.heating_output}%")
-    print(f"   POET Available: {POET_AVAILABLE}")
+    # Handle POET wrapper result
+    if POET_AVAILABLE and isinstance(result, dict) and 'result' in result:
+        hvac_result = result['result']
+        execution_time = result.get('execution_time', 0)
+        print(f"✅ POET HVAC Control:")
+        print(f"   Input: 70°F → 72°F target")
+        print(f"   Output: {hvac_result.mode}, heating: {hvac_result.heating_output}%")
+        print(f"   POET Available: {POET_AVAILABLE}, Execution time: {execution_time*1000:.2f}ms")
+    else:
+        print(f"✅ POET HVAC Control:")
+        print(f"   Input: 70°F → 72°F target")
+        print(f"   Output: {result.mode}, heating: {result.heating_output}%")
+        print(f"   POET Available: {POET_AVAILABLE}")
     
     return True
 

@@ -72,6 +72,7 @@ dev = [
     "pylint",      # Additional code analysis
     "pre-commit",  # Git hooks for code quality
     "pytest-cov", # Test coverage reporting
+    "fastapi",
 ]
 
 # Documentation tooling - focused on auto-sync and validation
