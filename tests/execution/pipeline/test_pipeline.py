@@ -1,6 +1,8 @@
+import unittest
+
 import pytest
 
-import unittest
+
 @pytest.mark.deep
 
 

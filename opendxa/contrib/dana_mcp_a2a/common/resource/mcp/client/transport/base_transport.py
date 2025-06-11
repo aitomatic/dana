@@ -1,7 +1,7 @@
-from abc import ABC, abstractmethod
-import inspect
-from opendxa.common import Misc
-from opendxa.common.utils.misc import ParsedArgKwargsResults
+from abc import ABC
+
+from opendxa.common.utils.misc import Misc, ParsedArgKwargsResults
+
 
 class BaseTransport(ABC):
     @classmethod

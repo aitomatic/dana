@@ -20,7 +20,6 @@ Note: Install visualization dependencies with:
 """
 
 from pathlib import Path
-from typing import Optional
 
 from .logging import LLMInteractionAnalyzer
 
@@ -61,7 +60,7 @@ class LLMInteractionVisualizer:
         self.analyzer = LLMInteractionAnalyzer(log_dir)
 
     @require_viz
-    def plot_token_usage(self, save_path: Optional[str] = None):
+    def plot_token_usage(self, save_path: str | None = None):
         """Plot token usage over time."""
         token_usage = self.analyzer.get_token_usage_over_time()
         if token_usage.empty:
@@ -79,7 +78,7 @@ class LLMInteractionVisualizer:
             plt.savefig(save_path, bbox_inches="tight")
         plt.close()
 
-    def plot_response_times(self, save_path: Optional[str] = None):
+    def plot_response_times(self, save_path: str | None = None):
         """Plot distribution of response times."""
         df = self.analyzer.load_interactions()
         if df.empty:
@@ -98,7 +97,7 @@ class LLMInteractionVisualizer:
             plt.savefig(save_path, bbox_inches="tight")
         plt.close()
 
-    def plot_success_rate_by_phase(self, save_path: Optional[str] = None):
+    def plot_success_rate_by_phase(self, save_path: str | None = None):
         """Plot success rates across different phases."""
         df = self.analyzer.load_interactions()
         if df.empty:
@@ -126,7 +125,7 @@ class LLMInteractionVisualizer:
             plt.savefig(save_path, bbox_inches="tight")
         plt.close()
 
-    def plot_error_types(self, save_path: Optional[str] = None):
+    def plot_error_types(self, save_path: str | None = None):
         """Plot distribution of error types."""
         df = self.analyzer.load_interactions()
         if df.empty:
@@ -149,7 +148,7 @@ class LLMInteractionVisualizer:
             plt.savefig(save_path, bbox_inches="tight")
         plt.close()
 
-    def create_dashboard(self, save_dir: Optional[str] = None):
+    def create_dashboard(self, save_dir: str | None = None):
         """Create a comprehensive dashboard of visualizations."""
         df = self.analyzer.load_interactions()
         if df.empty:

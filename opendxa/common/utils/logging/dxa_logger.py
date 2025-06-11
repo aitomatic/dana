@@ -4,7 +4,7 @@ Simplified DXALogger with core logging functionality.
 
 import logging
 from functools import lru_cache
-from typing import Any, Optional, Union, cast
+from typing import Any, cast
 
 
 class ColoredFormatter(logging.Formatter):
@@ -44,7 +44,7 @@ class DXALogger:
     WARNING = logging.WARNING
     ERROR = logging.ERROR
 
-    def __init__(self, name: str = "opendxa", prefix: Optional[str] = None):
+    def __init__(self, name: str = "opendxa", prefix: str | None = None):
         """Initialize the logger.
 
         Args:
@@ -99,7 +99,7 @@ class DXALogger:
         """Configure the logging system with basic settings."""
         logging.basicConfig(*args, **kwargs)
 
-    def setLevel(self, level: int, scope: Optional[str] = "*"):
+    def setLevel(self, level: int, scope: str | None = "*"):
         """Set the logging level with configurable scope.
 
         Args:
@@ -137,7 +137,7 @@ class DXALogger:
             return f"[{self.prefix}] {message}"
         return message
 
-    def log(self, level: Union[int, str], message: str, *args, **context):
+    def log(self, level: int | str, message: str, *args, **context):
         """Log message with specified level."""
         formatted = self._format_message(message)
 
@@ -181,7 +181,7 @@ class DXALogger:
         else:
             self.logger.error(formatted, *args)
 
-    def getLogger(self, name_or_obj: Union[str, Any], prefix: Optional[str] = None) -> "DXALogger":
+    def getLogger(self, name_or_obj: str | Any, prefix: str | None = None) -> "DXALogger":
         """Create a new logger instance.
 
         Args:
@@ -199,7 +199,7 @@ class DXALogger:
 
     @classmethod
     @lru_cache(maxsize=32)
-    def getLoggerForClass(cls, for_class: Any, prefix: Optional[str] = None) -> "DXALogger":
+    def getLoggerForClass(cls, for_class: Any, prefix: str | None = None) -> "DXALogger":
         """Get a logger for a class.
 
         Args:

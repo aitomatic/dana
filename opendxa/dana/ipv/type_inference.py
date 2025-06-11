@@ -8,7 +8,7 @@ from various sources including AST analysis, runtime context, and assignment pat
 import ast
 import inspect
 import re
-from typing import Any, Dict, List, Optional, Type, Union, get_args, get_origin
+from typing import Any, Union, get_args, get_origin
 
 
 class TypeInferenceEngine:
@@ -23,10 +23,10 @@ class TypeInferenceEngine:
     """
 
     def __init__(self):
-        self._type_cache: Dict[str, Type] = {}
-        self._generic_cache: Dict[str, Dict[str, Any]] = {}
+        self._type_cache: dict[str, type] = {}
+        self._generic_cache: dict[str, dict[str, Any]] = {}
 
-    def infer_type_from_context(self, context: Any, variable_name: Optional[str] = None) -> Optional[Type]:
+    def infer_type_from_context(self, context: Any, variable_name: str | None = None) -> type | None:
         """
         Infer the expected type from execution context.
 
@@ -60,7 +60,7 @@ class TypeInferenceEngine:
 
         return None
 
-    def infer_type_from_assignment(self, assignment_code: str) -> Optional[Type]:
+    def infer_type_from_assignment(self, assignment_code: str) -> type | None:
         """
         Infer type from assignment statement code.
 
@@ -88,7 +88,7 @@ class TypeInferenceEngine:
         except (SyntaxError, ValueError):
             return None
 
-    def infer_type_from_string(self, type_string: str) -> Optional[Type]:
+    def infer_type_from_string(self, type_string: str) -> type | None:
         """
         Infer type from string representation.
 
@@ -127,7 +127,7 @@ class TypeInferenceEngine:
         except Exception:
             return None
 
-    def get_type_defaults(self, inferred_type: Type) -> Dict[str, Any]:
+    def get_type_defaults(self, inferred_type: type) -> dict[str, Any]:
         """
         Get default IPV configuration for a specific type.
 
@@ -220,11 +220,11 @@ class TypeInferenceEngine:
             "validation_rules": [],
         }
 
-    def is_generic_type(self, type_obj: Type) -> bool:
+    def is_generic_type(self, type_obj: type) -> bool:
         """Check if a type is a generic type (e.g., List[str], Dict[str, int])."""
         return get_origin(type_obj) is not None
 
-    def get_generic_info(self, type_obj: Type) -> Dict[str, Any]:
+    def get_generic_info(self, type_obj: type) -> dict[str, Any]:
         """
         Get information about a generic type.
 
@@ -239,7 +239,7 @@ class TypeInferenceEngine:
 
         return {"origin": get_origin(type_obj), "args": get_args(type_obj)}
 
-    def _infer_from_frame_annotations(self, variable_name: str) -> Optional[Type]:
+    def _infer_from_frame_annotations(self, variable_name: str) -> type | None:
         """Infer type from frame annotations by inspecting the call stack."""
         try:
             # Get the calling frame (skip this function and the caller)
@@ -269,7 +269,7 @@ class TypeInferenceEngine:
         except Exception:
             return None
 
-    def _infer_from_assignment_pattern(self, variable_name: str) -> Optional[Type]:
+    def _infer_from_assignment_pattern(self, variable_name: str) -> type | None:
         """Infer type from assignment patterns in source code."""
         try:
             # Get the calling frame to access source code
@@ -307,7 +307,7 @@ class TypeInferenceEngine:
         except Exception:
             return None
 
-    def _ast_annotation_to_type(self, annotation_node: ast.AST) -> Optional[Type]:
+    def _ast_annotation_to_type(self, annotation_node: ast.AST) -> type | None:
         """Convert AST annotation node to actual type."""
         try:
             if isinstance(annotation_node, ast.Name):
@@ -325,11 +325,11 @@ class TypeInferenceEngine:
         except Exception:
             return None
 
-    def _parse_type_comment(self, type_comment: str) -> Optional[Type]:
+    def _parse_type_comment(self, type_comment: str) -> type | None:
         """Parse type from type comment."""
         return self.infer_type_from_string(type_comment.strip())
 
-    def _parse_generic_type(self, type_string: str) -> Optional[Type]:
+    def _parse_generic_type(self, type_string: str) -> type | None:
         """Parse generic type from string like 'List[str]' or 'Dict[str, int]'."""
         try:
             # Handle common generic patterns
@@ -337,7 +337,7 @@ class TypeInferenceEngine:
                 inner_type_str = type_string[5:-1].strip()
                 inner_type = self.infer_type_from_string(inner_type_str)
                 if inner_type:
-                    return List[inner_type]  # type: ignore
+                    return list[inner_type]  # type: ignore
 
             elif type_string.startswith("Dict[") and type_string.endswith("]"):
                 inner_str = type_string[5:-1].strip()
@@ -346,7 +346,7 @@ class TypeInferenceEngine:
                     key_type = self.infer_type_from_string(key_str.strip())
                     value_type = self.infer_type_from_string(value_str.strip())
                     if key_type and value_type:
-                        return Dict[key_type, value_type]  # type: ignore
+                        return dict[key_type, value_type]  # type: ignore
 
             elif type_string.startswith("Union[") and type_string.endswith("]"):
                 inner_str = type_string[6:-1].strip()
@@ -366,7 +366,7 @@ class TypeInferenceEngine:
         except Exception:
             return None
 
-    def _parse_generic_from_ast(self, subscript_node: ast.Subscript) -> Optional[Type]:
+    def _parse_generic_from_ast(self, subscript_node: ast.Subscript) -> type | None:
         """Parse generic type from AST subscript node."""
         try:
             # This is a simplified version - a full implementation would handle
@@ -378,7 +378,7 @@ class TypeInferenceEngine:
                     if isinstance(subscript_node.slice, ast.Name):
                         inner_type = self.infer_type_from_string(subscript_node.slice.id)
                         if inner_type:
-                            return List[inner_type]  # type: ignore
+                            return list[inner_type]  # type: ignore
 
                 elif base_type_name == "Dict":
                     # Handle Dict[key_type, value_type]
@@ -389,7 +389,7 @@ class TypeInferenceEngine:
                                 key_type = self.infer_type_from_string(key_node.id)
                                 value_type = self.infer_type_from_string(value_node.id)
                                 if key_type and value_type:
-                                    return Dict[key_type, value_type]  # type: ignore
+                                    return dict[key_type, value_type]  # type: ignore
 
             return None
 

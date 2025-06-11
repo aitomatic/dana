@@ -22,6 +22,9 @@ from typing import Any
 
 from opendxa.dana.common.exceptions import FunctionRegistryError, SandboxError
 from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
+from opendxa.dana.sandbox.interpreter.executor.function_error_handling import FunctionExecutionErrorHandler
+from opendxa.dana.sandbox.interpreter.executor.function_name_utils import FunctionNameInfo
+from opendxa.dana.sandbox.interpreter.executor.function_resolver import FunctionResolver
 from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
 from opendxa.dana.sandbox.parser.ast import (
     FStringExpression,
@@ -29,9 +32,6 @@ from opendxa.dana.sandbox.parser.ast import (
     FunctionDefinition,
 )
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
-from opendxa.dana.sandbox.interpreter.executor.function_name_utils import FunctionNameInfo
-from opendxa.dana.sandbox.interpreter.executor.function_resolver import ResolvedFunction, FunctionResolver
-from opendxa.dana.sandbox.interpreter.executor.function_error_handling import FunctionExecutionErrorHandler, PositionalErrorRecoveryStrategy
 
 
 class FunctionExecutor(BaseExecutor):

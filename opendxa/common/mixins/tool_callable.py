@@ -42,21 +42,22 @@ Example:
 """
 
 import inspect
-from typing import Any, Callable, Dict, List, Optional, Set, Type, TypeVar
+from collections.abc import Callable
+from typing import Any, TypeVar
 
 from mcp import Tool as McpTool
 from pydantic import BaseModel, ValidationError, create_model
 
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.mixins.registerable import Registerable
-from opendxa.common.mixins.tool_formats import McpToolFormat, OpenAIToolFormat, ToolFormat, RawToolFormat
+from opendxa.common.mixins.tool_formats import McpToolFormat, OpenAIToolFormat, RawToolFormat, ToolFormat
 
 # Type variable for the decorated function
 F = TypeVar("F", bound=Callable[..., Any])
 
 
 # OpenAIFunctionCall = TypeVar("OpenAIFunctionCall", bound=Dict[str, Any])
-class OpenAIFunctionCall(Dict[str, Any]):
+class OpenAIFunctionCall(dict[str, Any]):
     """A class that represents an OpenAI function call."""
 
     pass
@@ -76,7 +77,7 @@ class ToolCallable(Registerable, Loggable):
     """
 
     # Class-level set of all tool function names
-    _all_tool_callable_function_names: Set[str] = set()
+    _all_tool_callable_function_names: set[str] = set()
 
     def __init__(self):
         """Initialize the ToolCallable mixin.
@@ -84,10 +85,10 @@ class ToolCallable(Registerable, Loggable):
         This constructor initializes the MCP tool list cache,
         and OpenAI function list cache.
         """
-        self._tool_callable_function_cache: Set[str] = set()  # computed in __post_init__
-        self._func_model_cache: Dict[str, Type[BaseModel]] = {}  # cache for function models
-        self.__mcp_tool_list_cache: Optional[List[McpTool]] = None  # computed lazily in list_mcp_tools
-        self.__openai_function_list_cache: Optional[List[OpenAIFunctionCall]] = None  # computed lazily in list_openai_functions
+        self._tool_callable_function_cache: set[str] = set()  # computed in __post_init__
+        self._func_model_cache: dict[str, type[BaseModel]] = {}  # cache for function models
+        self.__mcp_tool_list_cache: list[McpTool] | None = None  # computed lazily in list_mcp_tools
+        self.__openai_function_list_cache: list[OpenAIFunctionCall] | None = None  # computed lazily in list_openai_functions
         super().__init__()
         self.__post_init__()
 
@@ -116,7 +117,7 @@ class ToolCallable(Registerable, Loggable):
     tool = tool_callable_decorator
 
     @classmethod
-    def _create_func_model(cls, func: Callable) -> Type[BaseModel]:
+    def _create_func_model(cls, func: Callable) -> type[BaseModel]:
         """Create a Pydantic model from a function's signature.
 
         The fields dictionary maps parameter names to tuples of (type, default):
@@ -161,7 +162,7 @@ class ToolCallable(Registerable, Loggable):
 
         return model
 
-    def _resolve_schema_refs(self, schema: Dict[str, Any]) -> Dict[str, Any]:
+    def _resolve_schema_refs(self, schema: dict[str, Any]) -> dict[str, Any]:
         """Recursively resolve $ref references in a JSON schema dictionary."""
         # Find definitions, preferring '$defs' over 'definitions'
         defs_key = "$defs" if "$defs" in schema else "definitions"
@@ -209,7 +210,7 @@ class ToolCallable(Registerable, Loggable):
         resolved_schema.pop(defs_key, None)
         return resolved_schema
 
-    def _list_tools(self, format_converter: ToolFormat) -> List[Any]:
+    def _list_tools(self, format_converter: ToolFormat) -> list[Any]:
         """Common base method for listing tools in any format.
 
         Args:
@@ -279,7 +280,7 @@ class ToolCallable(Registerable, Loggable):
 
         return formatted_tools
     
-    def list_tools(self) -> List[Any]:
+    def list_tools(self) -> list[Any]:
         """List all tools available to the agent in raw format."""
         if self.__openai_function_list_cache is not None:
             return self.__openai_function_list_cache
@@ -287,7 +288,7 @@ class ToolCallable(Registerable, Loggable):
         self.__openai_function_list_cache = self._list_tools(RawToolFormat(self.name, self.id))
         return self.__openai_function_list_cache
 
-    def list_mcp_tools(self) -> List[McpTool]:
+    def list_mcp_tools(self) -> list[McpTool]:
         """List all tools available to the agent in MCP format."""
         if self.__mcp_tool_list_cache is not None:
             return self.__mcp_tool_list_cache
@@ -295,7 +296,7 @@ class ToolCallable(Registerable, Loggable):
         self.__mcp_tool_list_cache = self._list_tools(McpToolFormat())
         return self.__mcp_tool_list_cache
 
-    def list_openai_functions(self) -> List[OpenAIFunctionCall]:
+    def list_openai_functions(self) -> list[OpenAIFunctionCall]:
         """List all tools available to the agent in OpenAI format."""
         if self.__openai_function_list_cache is not None:
             return self.__openai_function_list_cache
@@ -303,7 +304,7 @@ class ToolCallable(Registerable, Loggable):
         self.__openai_function_list_cache = self._list_tools(OpenAIToolFormat(self.name, self.id))
         return self.__openai_function_list_cache
 
-    def call_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Any:
+    def call_tool(self, tool_name: str, arguments: dict[str, Any]) -> Any:
         """Call a tool with the given name and arguments, validating arguments first."""
         if not hasattr(self, tool_name):
             raise ValueError(f"Tool {tool_name} not found in {self.__class__.__name__}")

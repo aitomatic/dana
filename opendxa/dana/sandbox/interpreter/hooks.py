@@ -24,8 +24,9 @@ This module provides hooks for extending the Dana interpreter with custom behavi
 without modifying the core interpreter code.
 """
 
+from collections.abc import Callable
 from enum import Enum
-from typing import Any, Callable, Dict, List
+from typing import Any
 
 
 class HookType(Enum):
@@ -60,7 +61,7 @@ class HookType(Enum):
 
 
 # Type aliases for hook callbacks
-HookCallback = Callable[[Dict[str, Any]], None]
+HookCallback = Callable[[dict[str, Any]], None]
 
 
 class HookRegistry:
@@ -71,7 +72,7 @@ class HookRegistry:
     """
 
     # Class-level registry
-    _hooks: Dict[HookType, List[HookCallback]] = {hook_type: [] for hook_type in HookType}
+    _hooks: dict[HookType, list[HookCallback]] = {hook_type: [] for hook_type in HookType}
 
     @classmethod
     def register(cls, hook_type: HookType, callback: HookCallback) -> None:
@@ -100,7 +101,7 @@ class HookRegistry:
             raise KeyError(f"Callback {callback} not registered for hook type {hook_type}")
 
     @classmethod
-    def execute(cls, hook_type: HookType, context: Dict[str, Any]) -> None:
+    def execute(cls, hook_type: HookType, context: dict[str, Any]) -> None:
         """Execute all callbacks registered for the given hook type.
 
         Args:

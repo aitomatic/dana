@@ -6,7 +6,7 @@ This source code is licensed under the license found in the LICENSE file in the 
 String conversion function for Dana.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
@@ -14,7 +14,7 @@ from opendxa.dana.sandbox.sandbox_context import SandboxContext
 def str_function(
     context: SandboxContext,
     value: Any,
-    options: Optional[Dict[str, Any]] = None,
+    options: dict[str, Any] | None = None,
 ) -> str:
     """Convert a value to its string representation.
 

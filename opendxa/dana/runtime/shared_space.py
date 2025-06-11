@@ -5,14 +5,14 @@ Simple object sharing mechanism for Dana-Python integration.
 """
 
 import weakref
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class SharedObjectSpace:
     """Basic shared object space for Phase 1."""
     
     def __init__(self):
-        self._objects: Dict[int, Any] = {}
+        self._objects: dict[int, Any] = {}
         self._object_ids: weakref.WeakKeyDictionary = weakref.WeakKeyDictionary()
         self._next_id = 0
     
@@ -29,7 +29,7 @@ class SharedObjectSpace:
         
         return obj_id
     
-    def get_object(self, obj_id: int) -> Optional[Any]:
+    def get_object(self, obj_id: int) -> Any | None:
         """Get object by ID."""
         return self._objects.get(obj_id)
     
@@ -41,7 +41,7 @@ class SharedObjectSpace:
             if obj in self._object_ids
         }
     
-    def get_stats(self) -> Dict[str, int]:
+    def get_stats(self) -> dict[str, int]:
         """Get statistics about the shared space."""
         return {
             'total_objects': len(self._objects),

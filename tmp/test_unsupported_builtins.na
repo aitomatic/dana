@@ -1,5 +1,0 @@
-# Test unsupported built-in functions
-log("Testing unsupported built-ins...")
-
-# This should raise a security error
-result = eval("1 + 1") 

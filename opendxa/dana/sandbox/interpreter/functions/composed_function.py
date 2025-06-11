@@ -8,7 +8,7 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 from opendxa.dana.common.exceptions import SandboxError
 from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
@@ -26,7 +26,7 @@ class ComposedFunction(SandboxFunction):
     """
 
     def __init__(
-        self, left_func: Union[SandboxFunction, str], right_func: Union[SandboxFunction, str], context: Optional[SandboxContext] = None
+        self, left_func: SandboxFunction | str, right_func: SandboxFunction | str, context: SandboxContext | None = None
     ):
         """Initialize a composed function.
 
@@ -42,7 +42,7 @@ class ComposedFunction(SandboxFunction):
         # Mark this as a Dana composed function for identification
         self._is_dana_composed_function = True
 
-    def prepare_context(self, context: SandboxContext, args: List[Any], kwargs: Dict[str, Any]) -> SandboxContext:
+    def prepare_context(self, context: SandboxContext, args: list[Any], kwargs: dict[str, Any]) -> SandboxContext:
         """
         Prepare context for composed function execution.
 
@@ -94,7 +94,7 @@ class ComposedFunction(SandboxFunction):
         # The intermediate result becomes the argument to the right function
         return right_resolved.execute(context, intermediate_result)
 
-    def _resolve_function(self, func: Union[SandboxFunction, str], context: SandboxContext) -> SandboxFunction:
+    def _resolve_function(self, func: SandboxFunction | str, context: SandboxContext) -> SandboxFunction:
         """Resolve a function reference to a SandboxFunction object.
 
         Args:

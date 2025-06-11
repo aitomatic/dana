@@ -5,15 +5,13 @@ This module provides the IPVExecutor inheritance hierarchy that implements
 the Infer-Process-Validate pattern for different types of intelligent operations.
 """
 
-from importlib import resources
 import time
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from opendxa.common.mixins.loggable import Loggable
-from opendxa.common.utils.logging import DXA_LOGGER
-from opendxa.common.resource.base_resource import BaseResource
 from opendxa.common.mixins.queryable import QueryStrategy
+from opendxa.common.utils.logging import DXA_LOGGER
 
 from .base import IPVConfig, IPVExecutionError
 
@@ -34,7 +32,7 @@ class IPVExecutor(ABC, Loggable):
         """Initialize the IPV executor."""
         super().__init__()
         self._debug_mode = False
-        self._execution_history: List[Dict[str, Any]] = []
+        self._execution_history: list[dict[str, Any]] = []
 
     def execute(self, intent: str, context: Any = None, **kwargs) -> Any:
         """
@@ -105,7 +103,7 @@ class IPVExecutor(ABC, Loggable):
 
             raise IPVExecutionError(f"IPV execution failed: {e}", original_error=e)
 
-    def _execute_with_iterations(self, intent: str, context: Any, config: IPVConfig, execution_record: Dict[str, Any], **kwargs) -> Any:
+    def _execute_with_iterations(self, intent: str, context: Any, config: IPVConfig, execution_record: dict[str, Any], **kwargs) -> Any:
         """Execute IPV pipeline with iteration support."""
         max_iterations = config.max_iterations
         last_error = None
@@ -138,7 +136,7 @@ class IPVExecutor(ABC, Loggable):
         raise IPVExecutionError(error_msg, original_error=last_error)
 
     def _execute_single_iteration(
-        self, intent: str, context: Any, config: IPVConfig, iteration: int, execution_record: Dict[str, Any], **kwargs
+        self, intent: str, context: Any, config: IPVConfig, iteration: int, execution_record: dict[str, Any], **kwargs
     ) -> Any:
         """Execute a single iteration of the IPV pipeline."""
         iteration_record = {"iteration": iteration, "phases": {}, "success": False, "error": None}
@@ -195,7 +193,7 @@ class IPVExecutor(ABC, Loggable):
             raise
 
     @abstractmethod
-    def infer_phase(self, intent: str, context: Any, **kwargs) -> Dict[str, Any]:
+    def infer_phase(self, intent: str, context: Any, **kwargs) -> dict[str, Any]:
         """
         INFER phase: Understand what the operation needs.
 
@@ -210,7 +208,7 @@ class IPVExecutor(ABC, Loggable):
         pass
 
     @abstractmethod
-    def process_phase(self, intent: str, enhanced_context: Dict[str, Any], **kwargs) -> Any:
+    def process_phase(self, intent: str, enhanced_context: dict[str, Any], **kwargs) -> Any:
         """
         PROCESS phase: Execute the operation with strategy.
 
@@ -225,7 +223,7 @@ class IPVExecutor(ABC, Loggable):
         pass
 
     @abstractmethod
-    def validate_phase(self, result: Any, enhanced_context: Dict[str, Any], **kwargs) -> Any:
+    def validate_phase(self, result: Any, enhanced_context: dict[str, Any], **kwargs) -> Any:
         """
         VALIDATE phase: Ensure output meets requirements.
 
@@ -243,7 +241,7 @@ class IPVExecutor(ABC, Loggable):
         """Enable or disable debug mode."""
         self._debug_mode = enabled
 
-    def get_execution_history(self) -> List[Dict[str, Any]]:
+    def get_execution_history(self) -> list[dict[str, Any]]:
         """Get the execution history for debugging and analysis."""
         return self._execution_history.copy()
 
@@ -251,7 +249,7 @@ class IPVExecutor(ABC, Loggable):
         """Clear the execution history."""
         self._execution_history.clear()
 
-    def get_performance_stats(self) -> Dict[str, Any]:
+    def get_performance_stats(self) -> dict[str, Any]:
         """Get performance statistics from execution history."""
         if not self._execution_history:
             return {"total_executions": 0}
@@ -283,7 +281,7 @@ class IPVReason(IPVExecutor):
         """Initialize the IPVReason executor."""
         super().__init__()
 
-    def infer_phase(self, intent: str, context: Any, **kwargs) -> Dict[str, Any]:
+    def infer_phase(self, intent: str, context: Any, **kwargs) -> dict[str, Any]:
         """
         INFER phase for prompt optimization.
 
@@ -354,7 +352,7 @@ class IPVReason(IPVExecutor):
         self.debug(f"INFER phase completed: basic context with {len(optimization_hints)} type hints")
         return enhanced_context
 
-    def process_phase(self, intent: str, enhanced_context: Dict[str, Any], **kwargs) -> Any:
+    def process_phase(self, intent: str, enhanced_context: dict[str, Any], **kwargs) -> Any:
         """
         PROCESS phase for prompt optimization using meta-prompting:
         1. Provide a simple initial example prompt (no CoT/confidence loop) as a starting point.
@@ -407,7 +405,7 @@ class IPVReason(IPVExecutor):
             if hasattr(code_context, "surrounding_code") and code_context.surrounding_code:
                 if hasattr(code_context, "surrounding_code_line_numbers") and code_context.surrounding_code_line_numbers:
                     context_lines = "\n".join(
-                        f"{ln}: {line}" for ln, line in zip(code_context.surrounding_code_line_numbers, code_context.surrounding_code)
+                        f"{ln}: {line}" for ln, line in zip(code_context.surrounding_code_line_numbers, code_context.surrounding_code, strict=False)
                     )
                 else:
                     context_lines = "\n".join(code_context.surrounding_code)
@@ -503,7 +501,7 @@ Format your output as JSON:
         self.debug(f"PROCESS phase completed with final_confidence: {parsed.get('final_confidence')}")
         return parsed
 
-    def validate_phase(self, result: Any, enhanced_context: Dict[str, Any], **kwargs) -> Any:
+    def validate_phase(self, result: Any, enhanced_context: dict[str, Any], **kwargs) -> Any:
         """
         VALIDATE phase for prompt optimization.
 
@@ -526,7 +524,7 @@ Format your output as JSON:
         self.debug(f"VALIDATE phase completed with validated type: {type(validated_result)}")
         return validated_result
 
-    def _validate_and_clean_result(self, result: Any, expected_type: Any, enhanced_context: Dict[str, Any]) -> Any:
+    def _validate_and_clean_result(self, result: Any, expected_type: Any, enhanced_context: dict[str, Any]) -> Any:
         """Validate and clean the result based on expected type."""
         # This is a simplified validation - real implementation would use the validation.py module
 
@@ -684,7 +682,7 @@ Format your output as JSON:
         # For other types or no expected type, return as-is
         return result
 
-    def _execute_llm_call(self, prompt: str, context: Any, options: Dict[str, Any], use_mock: Optional[bool] = None) -> Any:
+    def _execute_llm_call(self, prompt: str, context: Any, options: dict[str, Any], use_mock: bool | None = None) -> Any:
         """Execute LLM call using the same infrastructure as original reason_function."""
         import json
         import os
@@ -830,7 +828,7 @@ class IPVDataProcessor(IPVExecutor):
     processing, analysis, and transformation tasks.
     """
 
-    def infer_phase(self, intent: str, context: Any, **kwargs) -> Dict[str, Any]:
+    def infer_phase(self, intent: str, context: Any, **kwargs) -> dict[str, Any]:
         """INFER phase for data processing."""
         data = kwargs.get("data")
 
@@ -842,7 +840,7 @@ class IPVDataProcessor(IPVExecutor):
             "quality_requirements": self._infer_quality_needs(intent),
         }
 
-    def process_phase(self, intent: str, enhanced_context: Dict[str, Any], **kwargs) -> Any:
+    def process_phase(self, intent: str, enhanced_context: dict[str, Any], **kwargs) -> Any:
         """PROCESS phase for data processing."""
         # Placeholder for data processing logic
         data = kwargs.get("data")
@@ -851,7 +849,7 @@ class IPVDataProcessor(IPVExecutor):
         # Simulate data processing
         return f"Processed data analysis ({analysis_type}): {data}"
 
-    def validate_phase(self, result: Any, enhanced_context: Dict[str, Any], **kwargs) -> Any:
+    def validate_phase(self, result: Any, enhanced_context: dict[str, Any], **kwargs) -> Any:
         """VALIDATE phase for data processing."""
         # Placeholder for data validation logic
         return result
@@ -879,7 +877,7 @@ class IPVDataProcessor(IPVExecutor):
         else:
             return "general_analysis"
 
-    def _infer_quality_needs(self, intent: str) -> Dict[str, Any]:
+    def _infer_quality_needs(self, intent: str) -> dict[str, Any]:
         """Infer quality requirements from the intent."""
         return {"accuracy": "high", "completeness": "required", "consistency": "enforced"}
 
@@ -893,7 +891,7 @@ class IPVAPIIntegrator(IPVExecutor):
     and response processing.
     """
 
-    def infer_phase(self, intent: str, context: Any, **kwargs) -> Dict[str, Any]:
+    def infer_phase(self, intent: str, context: Any, **kwargs) -> dict[str, Any]:
         """INFER phase for API integration."""
         return {
             "operation_type": "api_integration",
@@ -903,7 +901,7 @@ class IPVAPIIntegrator(IPVExecutor):
             "response_format": "json",
         }
 
-    def process_phase(self, intent: str, enhanced_context: Dict[str, Any], **kwargs) -> Any:
+    def process_phase(self, intent: str, enhanced_context: dict[str, Any], **kwargs) -> Any:
         """PROCESS phase for API integration."""
         # Placeholder for API call logic
         endpoint = enhanced_context.get("endpoint")
@@ -911,7 +909,7 @@ class IPVAPIIntegrator(IPVExecutor):
         # Simulate API call
         return f'API response from {endpoint}: {{"status": "success", "data": "..."}}'
 
-    def validate_phase(self, result: Any, enhanced_context: Dict[str, Any], **kwargs) -> Any:
+    def validate_phase(self, result: Any, enhanced_context: dict[str, Any], **kwargs) -> Any:
         """VALIDATE phase for API integration."""
         # Placeholder for API response validation
         return result
@@ -929,6 +927,6 @@ class IPVAPIIntegrator(IPVExecutor):
         """Detect authentication requirements."""
         return "bearer_token"  # Placeholder
 
-    def _determine_retry_needs(self, intent: str) -> Dict[str, Any]:
+    def _determine_retry_needs(self, intent: str) -> dict[str, Any]:
         """Determine retry strategy needs."""
         return {"max_retries": 3, "backoff_strategy": "exponential", "retry_on": ["timeout", "5xx_errors"]}

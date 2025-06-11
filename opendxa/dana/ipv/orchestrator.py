@@ -7,7 +7,7 @@ errors, retries, and configuration.
 """
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .base import IPVConfig, IPVError, IPVExecutionError, IPVPhase, IPVResult
 from .phases import InferPhase, ProcessPhase, ValidatePhase
@@ -24,7 +24,7 @@ class IPVOrchestrator:
     """
 
     def __init__(
-        self, infer_phase: Optional[IPVPhase] = None, process_phase: Optional[IPVPhase] = None, validate_phase: Optional[IPVPhase] = None
+        self, infer_phase: IPVPhase | None = None, process_phase: IPVPhase | None = None, validate_phase: IPVPhase | None = None
     ):
         """
         Initialize the orchestrator with IPV phases.
@@ -39,7 +39,7 @@ class IPVOrchestrator:
         self.validate_phase = validate_phase or ValidatePhase()
 
         self._debug_mode = False
-        self._execution_history: List[Dict[str, Any]] = []
+        self._execution_history: list[dict[str, Any]] = []
 
     def set_debug_mode(self, enabled: bool) -> None:
         """Enable or disable debug mode for all phases."""
@@ -48,7 +48,7 @@ class IPVOrchestrator:
         self.process_phase.set_debug_mode(enabled)
         self.validate_phase.set_debug_mode(enabled)
 
-    def execute_ipv_pipeline(self, input_data: Any, context: Any = None, config: Optional[IPVConfig] = None) -> IPVResult:
+    def execute_ipv_pipeline(self, input_data: Any, context: Any = None, config: IPVConfig | None = None) -> IPVResult:
         """
         Execute the complete IPV pipeline.
 
@@ -116,7 +116,7 @@ class IPVOrchestrator:
                 metadata={"execution_id": execution_id, "execution_record": execution_record},
             )
 
-    def _execute_with_iterations(self, input_data: Any, context: Any, config: IPVConfig, execution_record: Dict[str, Any]) -> IPVResult:
+    def _execute_with_iterations(self, input_data: Any, context: Any, config: IPVConfig, execution_record: dict[str, Any]) -> IPVResult:
         """Execute IPV pipeline with iteration support."""
 
         max_iterations = config.max_iterations
@@ -154,7 +154,7 @@ class IPVOrchestrator:
         raise IPVExecutionError(f"IPV pipeline failed after {execution_record['iterations']} iterations", original_error=last_error)
 
     def _execute_single_iteration(
-        self, input_data: Any, context: Any, config: IPVConfig, iteration: int, execution_record: Dict[str, Any]
+        self, input_data: Any, context: Any, config: IPVConfig, iteration: int, execution_record: dict[str, Any]
     ) -> IPVResult:
         """Execute a single iteration of the IPV pipeline."""
 
@@ -246,7 +246,7 @@ class IPVOrchestrator:
         if self._debug_mode:
             print(f"[IPV-ORCHESTRATOR] {message}", **kwargs)
 
-    def get_execution_history(self) -> List[Dict[str, Any]]:
+    def get_execution_history(self) -> list[dict[str, Any]]:
         """Get the history of IPV pipeline executions."""
         return self._execution_history.copy()
 
@@ -254,7 +254,7 @@ class IPVOrchestrator:
         """Clear the execution history."""
         self._execution_history.clear()
 
-    def get_performance_stats(self) -> Dict[str, Any]:
+    def get_performance_stats(self) -> dict[str, Any]:
         """Get performance statistics from execution history."""
         if not self._execution_history:
             return {"total_executions": 0}

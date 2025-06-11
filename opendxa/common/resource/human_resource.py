@@ -8,7 +8,6 @@ Classes:
     HumanResponse: Response type for human resource
 """
 
-from typing import Optional
 
 from opendxa.common.resource.base_resource import BaseResource
 from opendxa.common.types import BaseRequest, BaseResponse
@@ -17,7 +16,7 @@ from opendxa.common.types import BaseRequest, BaseResponse
 class HumanResource(BaseResource):
     """Resource for getting human input."""
 
-    def __init__(self, name: str, description: Optional[str] = None):
+    def __init__(self, name: str, description: str | None = None):
         """Initialize human resource.
 
         Args:

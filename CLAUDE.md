@@ -1,0 +1,511 @@
+# OpenDXA - Domain-Expert Agent Framework
+
+Claude AI Configuration and Guidelines
+
+## Quick Reference - Critical Rules
+🚨 **MUST FOLLOW IMMEDIATELY**
+- Use `DXA_LOGGER` for Python logging: `from opendxa.common.utils.logging import DXA_LOGGER`
+- Use `log()` instead of `print()` for debugging Dana code
+- Always use f-strings: `f"Value: {var}"` not `"Value: " + str(var)`
+- Dana modules: `import math_utils` (no .na), Python modules: `import math.py`
+- **ALL temporary development files go in `tmp/` directory**
+- Run `uv run ruff check . && uv run ruff format .` before commits
+- Use type hints: `def func(x: int) -> str:` (required)
+
+## Essential Commands
+```bash
+# Core development workflow
+uv run ruff check . && uv run ruff format .    # Lint and format
+uv run pytest tests/ -v                        # Run tests with verbose output
+uv run python -m opendxa.dana.exec.repl        # Dana REPL for testing
+
+# Dana execution testing
+uv run python -m opendxa.dana.exec.dana examples/dana/na/basic_math_pipeline.na
+
+# Alternative test execution
+uv run python -m pytest tests/
+```
+
+## Project Context
+- OpenDXA is a framework for building domain-expert multi-agent systems
+- Built on Dana (Domain-Aware NeuroSymbolic Architecture) language
+- Core components: OpenDXA Framework, Dana Language, DANKE Engine
+- Primary language: Python 3.12+
+- Uses uv for dependency management
+
+## File Modification Priority
+1. **NEVER modify core grammar files without extensive testing**
+2. **Always check existing examples before creating new ones**
+3. **ALL temporary development files go in `tmp/` directory**
+4. **Prefer editing existing files over creating new ones**
+
+## Dana Language Syntax Reference
+
+Dana is a Domain-Aware NeuroSymbolic Architecture language for AI-driven automation and agent systems. It's Python-like with key AI-first features.
+
+### **Core Syntax Rules**
+```dana
+# Comments: Single-line only
+# This is a comment
+
+# Variables: Explicit scoping with colon notation (REQUIRED)
+private:agent_state = "internal data"     # Agent-specific state
+public:world_data = "shared information"  # World state (time, weather, etc.)
+system:config = "system settings"        # System mechanical state
+local:temp = "function scope"            # Local scope (default)
+
+# Unscoped variables auto-get local: scope (PREFERRED)
+temperature = 98.6  # Equivalent to local:temperature = 98.6
+result = "done"     # Equivalent to local:result = "done"
+```
+
+### **Data Types & Literals**
+```dana
+# Basic types
+name: str = "Alice"           # Strings (single or double quotes)
+age: int = 25                 # Integers
+height: float = 5.8           # Floats
+active: bool = true           # Booleans (true/false, not True/False)
+data: list = [1, 2, 3]        # Lists
+info: dict = {"key": "value"} # Dictionaries
+empty: None = null            # Null values
+
+# F-strings for interpolation (REQUIRED for variable embedding)
+message = f"Hello {name}, you are {age} years old"
+log(f"Temperature: {temperature}°F")
+```
+
+### **Function Definitions**
+```dana
+# Basic function with type hints
+def greet(name: str) -> str:
+    return "Hello, " + name
+
+# Function with default parameters
+def log_message(message: str, level: str = "info") -> None:
+    log(f"[{level.upper()}] {message}")
+
+# Polymorphic functions (same name, different parameter types)
+def describe(item: str) -> str:
+    return f"String: '{item}'"
+
+def describe(item: int) -> str:
+    return f"Integer: {item}"
+
+def describe(point: Point) -> str:
+    return f"Point at ({point.x}, {point.y})"
+```
+
+### **Structs (Custom Data Types)**
+```dana
+# Define custom data structures
+struct Point:
+    x: int
+    y: int
+
+struct UserProfile:
+    user_id: str
+    display_name: str
+    email: str
+    is_active: bool
+    tags: list
+    metadata: dict
+
+# Instantiation with named arguments (REQUIRED)
+p1: Point = Point(x=10, y=20)
+user: UserProfile = UserProfile(
+    user_id="usr_123",
+    display_name="Alice Example",
+    email="alice@example.com",
+    is_active=true,
+    tags=["beta_tester"],
+    metadata={"role": "admin"}
+)
+
+# Field access with dot notation
+print(f"Point coordinates: ({p1.x}, {p1.y})")
+user.email = "new_email@example.com"  # Structs are mutable
+```
+
+### **Function Composition & Pipelines**
+```dana
+# Define pipeline functions
+def add_ten(x):
+    return x + 10
+
+def double(x):
+    return x * 2
+
+def stringify(x):
+    return f"Result: {x}"
+
+# Function composition (creates reusable pipeline)
+math_pipeline = add_ten | double | stringify
+result = math_pipeline(5)  # "Result: 30"
+
+# Data pipeline (immediate execution)
+result = 5 | add_ten | double | stringify  # "Result: 30"
+result = 7 | add_ten | double              # 34
+
+# Complex data processing
+person_builder = create_person | set_age_25 | add_skills
+alice = "Alice" | person_builder
+```
+
+### **Module System**
+```dana
+# Dana module imports (NO .na extension)
+import simple_math
+import string_utils as str_util
+from data_types import Point, UserProfile
+from utils.text import title_case
+
+# Python module imports (REQUIRES .py extension)
+import math.py
+import json.py as j
+from os.py import getcwd
+
+# Usage
+dana_result = simple_math.add(10, 5)      # Dana function
+python_result = math.sin(math.pi/2)       # Python function
+json_str = j.dumps({"key": "value"})      # Python with alias
+```
+
+### **Control Flow**
+```dana
+# Conditionals
+if temperature > 100:
+    log(f"Overheating: {temperature}°F", "warn")
+    status = "critical"
+elif temperature > 80:
+    log(f"Running hot: {temperature}°F", "info")
+    status = "warm"
+else:
+    status = "normal"
+
+# Loops
+count = 0
+while count < 5:
+    print(f"Count: {count}")
+    count = count + 1
+
+for item in data_list:
+    process_item(item)
+```
+
+### **Built-in Functions**
+```dana
+# Collection functions
+grades = [85, 92, 78, 96, 88]
+student_count = len(grades)      # Length
+total_points = sum(grades)       # Sum
+highest = max(grades)            # Maximum
+lowest = min(grades)             # Minimum
+average = total_points / len(grades)
+
+# Type conversions
+score = int("95")                # String to int
+price = float("29.99")           # String to float
+rounded = round(3.14159, 2)      # Round to 2 decimals
+absolute = abs(-42)              # Absolute value
+
+# Collection processing
+sorted_grades = sorted(grades)
+all_passing = all(grade >= 60 for grade in grades)
+any_perfect = any(grade == 100 for grade in grades)
+```
+
+### **AI Integration**
+```dana
+# Built-in reasoning with LLMs
+analysis = reason("Should we recommend a jacket?", 
+                 {"context": [temperature, public:weather]})
+
+decision = reason("Is this data pattern anomalous?",
+                 {"data": sensor_readings, "threshold": 95})
+
+# Logging with different levels
+log("System started", "info")
+log(f"High temperature: {temperature}", "warn")
+log("Critical error occurred", "error")
+```
+
+### **Dana vs Python Key Differences**
+```dana
+# ✅ CORRECT Dana syntax:
+private:state = "agent data"     # Explicit scoping
+result = f"Value: {count}"       # F-strings for interpolation
+import math.py                   # Python modules need .py
+import dana_module               # Dana modules no extension
+def func(x: int) -> str:         # Type hints required
+    return f"Result: {x}"
+point = Point(x=5, y=10)         # Named arguments for structs
+
+# ❌ INCORRECT (Python-style):
+state = "agent data"             # Missing scope (auto-scoped to local:)
+result = "Value: " + str(count)  # String concatenation instead of f-strings
+import math                      # Missing .py for Python modules
+def func(x):                     # Missing type hints
+    return "Result: " + str(x)
+point = Point(5, 10)             # Positional arguments not supported
+```
+
+### **Common Patterns**
+```dana
+# Error handling
+try:
+    result = risky_operation()
+except ValueError as e:
+    log(f"Error: {e}", "error")
+    result = default_value
+
+# Data validation
+if isinstance(data, dict) and "key" in data:
+    value = data["key"]
+else:
+    log("Invalid data format", "warn")
+    value = None
+
+# Agent state management
+def update_agent_state(new_data):
+    private:last_update = get_timestamp()
+    private:agent_memory.append(new_data)
+    return private:agent_memory
+
+# Multi-step data processing
+processed_data = raw_data | validate | normalize | analyze | format_output
+```
+
+## Design-Driven Development Methodology
+
+### **ALWAYS Create Design Document First**
+For any feature/system implementation, create a design doc following this template:
+
+```markdown
+# Design Document: [Feature Name]
+
+Author: [Name]
+Version: 1.0
+Date: [Date]
+Status: [Design Phase | Implementation Phase | Review Phase]
+
+## Problem Statement
+- Current situation and pain points
+- Impact of not solving this problem
+- Relevant context and background
+
+## Goals
+- Specific, measurable objectives (SMART goals)
+- Success criteria and metrics
+- Key requirements
+
+## Non-Goals
+- Explicitly state what's out of scope
+- Clarify potential misunderstandings
+
+## Proposed Solution
+- High-level approach and key components
+- Why this approach was chosen
+- Main trade-offs and system fit
+
+## Proposed Design
+- System architecture and components
+- Data models, APIs, interfaces
+- Error handling and security considerations
+- Performance considerations and diagrams
+
+## Proposed Implementation
+- Technical specifications and code organization
+- Key algorithms and testing strategy
+- Dependencies and monitoring requirements
+
+## Design Review Checklist
+- [ ] Security review completed
+- [ ] Performance impact assessed
+- [ ] Error handling comprehensive
+- [ ] Testing strategy defined
+- [ ] Documentation planned
+- [ ] Backwards compatibility checked
+
+## Implementation Phases
+Phase 1: Foundation & Architecture
+- [ ] Define core components
+- [ ] Create basic infrastructure
+- [ ] Establish architectural patterns
+
+Phase 2: Core Functionality
+- [ ] Implement primary features
+- [ ] Focus on happy path scenarios
+- [ ] Create working examples
+
+Phase 3: Error Handling & Edge Cases
+- [ ] Add comprehensive error detection
+- [ ] Test failure scenarios
+- [ ] Handle edge cases
+
+Phase 4: Advanced Features & Integration
+- [ ] Add sophisticated functionality
+- [ ] Test complex interactions
+- [ ] Ensure seamless integration
+
+Phase 5: Integration & Performance Testing
+- [ ] Test real-world scenarios
+- [ ] Validate performance
+- [ ] Run regression tests
+
+Phase 6: Polish & Documentation
+- [ ] Update documentation
+- [ ] Create migration guides
+- [ ] Final validation and sign-off
+```
+
+### **3-Phase Development Process**
+```
+Phase 1: Design & Test → Phase 2: Implement & Validate → Phase 3: Polish & Integrate
+
+DO NOT proceed to next phase until ALL criteria met:
+✅ 100% test pass rate
+✅ No regressions
+✅ Error handling complete
+✅ Documentation updated
+✅ Performance within bounds
+```
+
+**Phase 1: Design & Test**
+- Write design doc with Problem Statement/Goals/Non-Goals/Proposed Solution
+- Create failing tests defining expected behavior
+
+**Phase 2: Implement & Validate** 
+- Core implementation + error handling
+- Make tests pass, add edge cases
+
+**Phase 3: Polish & Integrate**
+- Documentation + integration testing
+- Performance validation
+
+### **Quality Gates**
+```
+🚨 RED FLAGS (stop development):
+- Test failures in foundational components
+- Unclear error messages
+- Performance degradation >10%
+- Breaking changes without migration
+- Undocumented public APIs
+
+✅ PROCEED CRITERIA:
+- All phase tests pass (100% success)
+- Error messages clear and actionable
+- Documentation matches implementation
+- Performance benchmarks met
+```
+
+## Coding Standards & Type Hints
+
+### Core Standards
+- Follow PEP 8 style guide for Python code
+- Use 4-space indentation (no tabs)
+- **Type hints required**: `def func(x: int) -> str:` 
+- Use docstrings for all public modules, classes, and functions
+- **Always use f-strings**: `f"Value: {var}"` not `"Value: " + str(var)`
+
+### Modern Type Hints (PEP 604)
+```python
+# ✅ CORRECT - Modern syntax
+def process_data(items: list[str], config: dict[str, int] | None = None) -> str | None:
+    return f"Processed {len(items)} items"
+
+# ❌ AVOID - Old syntax
+from typing import Dict, List, Optional, Union
+def process_data(items: List[str], config: Optional[Dict[str, int]] = None) -> Union[str, None]:
+    return "Processed " + str(len(items)) + " items"
+```
+
+### Linting & Formatting
+- **MUST RUN**: `uv run ruff check . && uv run ruff format .` before commits
+- Line length limit: 140 characters (configured in pyproject.toml)
+- Auto-fix with: `uv run ruff check --fix .`
+
+## Error Handling Standards
+```
+Every error message must follow this template:
+"[What failed]: [Why it failed]. [What user can do]. [Available alternatives]"
+
+Example:
+"Dana module 'math_utils' not found: File does not exist in search paths. 
+Check module name spelling or verify file exists. 
+Available modules: simple_math, string_utils"
+
+Requirements:
+- Handle all invalid inputs gracefully
+- Include context about what was attempted
+- Provide actionable suggestions for resolution
+- Test error paths as thoroughly as success paths
+```
+
+## Temporary Files & Project Structure
+- **ALL temporary files go in `tmp/` directory**
+- Never create test files in project root
+- Use meaningful prefixes: `tmp_test_`, `tmp_debug_`
+- Core framework code: `opendxa/`
+- Tests: `tests/` (matching source structure)
+- Examples: `examples/`
+- Documentation: `docs/`
+
+## Context-Aware Development Guide
+
+### When Working on Dana Code
+- Always test with `.na` files in `examples/dana/na/`
+- Use DanaSandbox for execution testing
+- Validate against grammar in `opendxa/dana/sandbox/parser/dana_grammar.lark`
+- Use `log()` function instead of `print()` for debugging
+- Test Dana code in REPL: `uv run python -m opendxa.dana.exec.repl`
+- Check AST output: Enable debug logging in transformer
+
+### When Working on Agent Framework
+- Test with agent examples in `examples/02_core_concepts/`
+- Use capability mixins from `opendxa/common/mixins/`
+- Follow resource patterns in `opendxa/common/resource/`
+
+### When Working on Common Utilities
+- Keep utilities generic and reusable
+- Document performance implications
+- Use appropriate design patterns
+- Implement proper error handling
+
+## Common Tasks Quick Guide
+- **Adding new Dana function**: See `opendxa/dana/sandbox/interpreter/functions/core/`
+- **Creating agent capability**: Inherit from `opendxa/common/capability/base_capability.py`
+- **Adding LLM integration**: Use `opendxa/common/resource/llm_resource.py`
+
+## Common Methods and Utilities
+- **Use DXA_LOGGER for Python logging**: `from opendxa.common.utils.logging import DXA_LOGGER`
+- Use configuration from `opendxa.common.config`
+- Use graph operations from `opendxa.common.graph`
+- Use IO utilities from `opendxa.common.io`
+
+## Testing & Security Essentials
+- Write unit tests for all new code (pytest)
+- Test coverage above 80%
+- **Never commit API keys or secrets**
+- Use environment variables for configuration
+- Validate all inputs
+
+## Dana-Specific Debugging & Validation
+- **Use `log()` function instead of `print()` for debugging**
+- Test Dana code in REPL: `uv run python -m opendxa.dana.exec.repl`
+- Check AST output: Enable debug logging in transformer
+- Validate against grammar: `opendxa/dana/sandbox/parser/dana_grammar.lark`
+- Test with existing `.na` files in `examples/dana/na/`
+
+## Security & Performance
+- **DanaSandbox Security**: Never expose DanaSandbox instances to untrusted code
+- **LLM Resource Management**: Always use LLMConfigurationManager for model configuration
+- Profile code for performance bottlenecks
+- Cache expensive operations
+- Handle memory management properly
+
+## References
+@file .gitignore
+@file pyproject.toml
+@file Makefile
+@file README.md

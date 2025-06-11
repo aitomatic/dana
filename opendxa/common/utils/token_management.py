@@ -5,7 +5,7 @@ windows, and preventing token limit overflows.
 """
 
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 # Default token limits for different models (conservative estimates)
 DEFAULT_MODEL_TOKENS = {
@@ -67,7 +67,7 @@ class TokenManagement:
         return max(len(words), char_count // 4)
 
     @staticmethod
-    def estimate_message_tokens(message: Dict[str, Any]) -> int:
+    def estimate_message_tokens(message: dict[str, Any]) -> int:
         """Estimate tokens in a message.
 
         Args:
@@ -99,7 +99,7 @@ class TokenManagement:
         return base_tokens
 
     @staticmethod
-    def get_model_token_limit(model: Optional[str] = None) -> int:
+    def get_model_token_limit(model: str | None = None) -> int:
         """Get the token limit for a specific model.
 
         Args:
@@ -125,13 +125,13 @@ class TokenManagement:
 
     @staticmethod
     def enforce_context_window(
-        messages: List[Dict[str, Any]],
-        model: Optional[str] = None,
-        max_tokens: Optional[int] = None,
+        messages: list[dict[str, Any]],
+        model: str | None = None,
+        max_tokens: int | None = None,
         preserve_system_messages: bool = True,
         preserve_latest_messages: int = 4,
         safety_margin: int = 200,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Ensure messages fit within a model's context window.
 
         This method will:

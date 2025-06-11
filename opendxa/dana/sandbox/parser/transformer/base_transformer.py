@@ -1,20 +1,18 @@
 """Base transformer class for Dana language parsing."""
 
-from typing import Any, Union
+from typing import Any
 
 from lark import Token, Tree
 
 from opendxa.common.mixins.loggable import Loggable
-from opendxa.dana.sandbox.parser.ast import ASTNode, LiteralExpression
+from opendxa.dana.sandbox.parser.ast import ASTNode
+from opendxa.dana.sandbox.parser.utils.parsing_utils import create_literal, parse_literal
+from opendxa.dana.sandbox.parser.utils.scope_utils import insert_local_scope
+from opendxa.dana.sandbox.parser.utils.transformer_utils import flatten_items as utils_flatten_items
+from opendxa.dana.sandbox.parser.utils.transformer_utils import get_leaf_node as utils_get_leaf_node
+from opendxa.dana.sandbox.parser.utils.transformer_utils import unwrap_single_child_tree as utils_unwrap_single
 from opendxa.dana.sandbox.parser.utils.tree_utils import TreeTraverser
 from opendxa.dana.sandbox.parser.utils.tree_utils import unwrap_single_child_tree as utils_unwrap
-from opendxa.dana.sandbox.parser.utils.scope_utils import insert_local_scope
-from opendxa.dana.sandbox.parser.utils.parsing_utils import parse_literal, create_literal
-from opendxa.dana.sandbox.parser.utils.transformer_utils import (
-    get_leaf_node as utils_get_leaf_node, 
-    flatten_items as utils_flatten_items, 
-    unwrap_single_child_tree as utils_unwrap_single
-)
 
 
 class BaseTransformer(Loggable):
@@ -37,12 +35,12 @@ class BaseTransformer(Loggable):
         """Create a LiteralExpression node from a token."""
         return create_literal(token)
 
-    def _insert_local_scope(self, parts: Union[list[str], str]) -> Any:
+    def _insert_local_scope(self, parts: list[str] | str) -> Any:
         """Insert local scope prefix to parts if not already present."""
         return insert_local_scope(parts)
 
     @staticmethod
-    def get_leaf_node(item: Union[Tree, Token, ASTNode]) -> Union[Token, ASTNode]:
+    def get_leaf_node(item: Tree | Token | ASTNode) -> Token | ASTNode:
         """Recursively unwrap a Tree until an AST node or token is reached."""
         return utils_get_leaf_node(item)
 

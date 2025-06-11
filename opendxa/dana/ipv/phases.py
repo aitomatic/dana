@@ -8,7 +8,7 @@ This module provides the standard implementations of the three IPV phases:
 """
 
 import time
-from typing import Any, Dict
+from typing import Any
 
 from .base import IPVConfig, IPVExecutionError, IPVPhase, IPVPhaseType, IPVResult, IPVValidationError
 
@@ -87,7 +87,7 @@ class InferPhase(IPVPhase):
                 execution_time=execution_time,
             )
 
-    def _infer_strategy(self, input_data: Any, context: Any, config: IPVConfig) -> Dict[str, Any]:
+    def _infer_strategy(self, input_data: Any, context: Any, config: IPVConfig) -> dict[str, Any]:
         """Infer the optimal strategy based on input and context."""
         strategy = {
             "domain": "general",
@@ -125,7 +125,7 @@ class InferPhase(IPVPhase):
 
         return strategy
 
-    def _collect_context(self, input_data: Any, context: Any, config: IPVConfig) -> Dict[str, Any]:
+    def _collect_context(self, input_data: Any, context: Any, config: IPVConfig) -> dict[str, Any]:
         """Collect relevant context for optimization."""
         collected = {"execution_context": {}, "user_context": {}, "code_context": {}, "domain_context": {}}
 
@@ -142,8 +142,8 @@ class InferPhase(IPVPhase):
         return collected
 
     def _determine_processing_approach(
-        self, input_data: Any, context: Any, config: IPVConfig, enhanced_context: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, input_data: Any, context: Any, config: IPVConfig, enhanced_context: dict[str, Any]
+    ) -> dict[str, Any]:
         """Determine the best processing approach based on inferred strategy."""
         strategy = enhanced_context["inferred_strategy"]
 
@@ -236,7 +236,7 @@ class ProcessPhase(IPVPhase):
             )
 
     def _execute_processing(
-        self, original_input: Any, enhanced_context: Dict[str, Any], context: Any, config: IPVConfig, approach: Dict[str, Any]
+        self, original_input: Any, enhanced_context: dict[str, Any], context: Any, config: IPVConfig, approach: dict[str, Any]
     ) -> Any:
         """Execute the actual processing logic."""
 

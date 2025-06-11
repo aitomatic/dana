@@ -4,7 +4,7 @@ This module provides a variant of the DanaParser that enforces strict AST valida
 It is a drop-in replacement for DanaParser with additional options for validation.
 """
 
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 from lark import Tree
 
@@ -70,7 +70,7 @@ class StrictDanaParser(DanaParser, AstValidator):
 
         return ast
 
-    def parse(self, program_text: str, do_transform: bool = True, do_type_check: bool = False, strict: Optional[bool] = None) -> Any:
+    def parse(self, program_text: str, do_transform: bool = True, do_type_check: bool = False, strict: bool | None = None) -> Any:
         """
         Parse a Dana program string into an AST with enhanced validation.
 

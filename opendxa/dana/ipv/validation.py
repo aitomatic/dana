@@ -8,7 +8,7 @@ automatic type conversion, and format-specific validation.
 import email.utils
 import json
 import re
-from typing import Any, Dict, List, Optional, Type
+from typing import Any
 from urllib.parse import urlparse
 
 
@@ -16,7 +16,7 @@ class ValidationResult:
     """Result of a type validation operation."""
 
     def __init__(
-        self, is_valid: bool, converted_value: Any = None, errors: Optional[List[str]] = None, warnings: Optional[List[str]] = None
+        self, is_valid: bool, converted_value: Any = None, errors: list[str] | None = None, warnings: list[str] | None = None
     ):
         """
         Initialize validation result.
@@ -48,13 +48,13 @@ class TypeValidator:
     """
 
     def __init__(self):
-        self._custom_validators: Dict[Type, callable] = {}
-        self._format_validators: Dict[str, callable] = {}
+        self._custom_validators: dict[type, callable] = {}
+        self._format_validators: dict[str, callable] = {}
 
         # Register built-in format validators
         self._register_format_validators()
 
-    def validate_and_convert(self, value: Any, target_type: Type, validation_config: Optional[Dict[str, Any]] = None) -> ValidationResult:
+    def validate_and_convert(self, value: Any, target_type: type, validation_config: dict[str, Any] | None = None) -> ValidationResult:
         """
         Validate and convert a value to the target type.
 
@@ -93,7 +93,7 @@ class TypeValidator:
             # Generic validation
             return self._validate_generic(value, target_type, config)
 
-    def register_custom_validator(self, target_type: Type, validator_func: callable) -> None:
+    def register_custom_validator(self, target_type: type, validator_func: callable) -> None:
         """Register a custom validator for a specific type."""
         self._custom_validators[target_type] = validator_func
 
@@ -108,7 +108,7 @@ class TypeValidator:
 
         return self._format_validators[format_name](value)
 
-    def _handle_none_value(self, target_type: Type, config: Dict[str, Any]) -> ValidationResult:
+    def _handle_none_value(self, target_type: type, config: dict[str, Any]) -> ValidationResult:
         """Handle None values based on type and configuration."""
         allow_none = config.get("allow_none", False)
 
@@ -133,7 +133,7 @@ class TypeValidator:
 
         return ValidationResult(False, None, [f"None value not allowed for type {target_type.__name__}"])
 
-    def _validate_float(self, value: Any, config: Dict[str, Any]) -> ValidationResult:
+    def _validate_float(self, value: Any, config: dict[str, Any]) -> ValidationResult:
         """Validate and convert to float."""
         result = ValidationResult(True, value)
 
@@ -157,7 +157,7 @@ class TypeValidator:
 
         return result
 
-    def _validate_int(self, value: Any, config: Dict[str, Any]) -> ValidationResult:
+    def _validate_int(self, value: Any, config: dict[str, Any]) -> ValidationResult:
         """Validate and convert to int."""
         result = ValidationResult(True, value)
 
@@ -198,7 +198,7 @@ class TypeValidator:
 
         return result
 
-    def _validate_bool(self, value: Any, config: Dict[str, Any]) -> ValidationResult:
+    def _validate_bool(self, value: Any, config: dict[str, Any]) -> ValidationResult:
         """Validate and convert to bool."""
         result = ValidationResult(True, value)
 
@@ -218,7 +218,7 @@ class TypeValidator:
 
         return result
 
-    def _validate_str(self, value: Any, config: Dict[str, Any]) -> ValidationResult:
+    def _validate_str(self, value: Any, config: dict[str, Any]) -> ValidationResult:
         """Validate and convert to str."""
         result = ValidationResult(True, value)
 
@@ -255,7 +255,7 @@ class TypeValidator:
 
         return result
 
-    def _validate_dict(self, value: Any, config: Dict[str, Any]) -> ValidationResult:
+    def _validate_dict(self, value: Any, config: dict[str, Any]) -> ValidationResult:
         """Validate and convert to dict."""
         result = ValidationResult(True, value)
 
@@ -296,7 +296,7 @@ class TypeValidator:
 
         return result
 
-    def _validate_list(self, value: Any, config: Dict[str, Any]) -> ValidationResult:
+    def _validate_list(self, value: Any, config: dict[str, Any]) -> ValidationResult:
         """Validate and convert to list."""
         result = ValidationResult(True, value)
 
@@ -346,7 +346,7 @@ class TypeValidator:
 
         return result
 
-    def _validate_generic(self, value: Any, target_type: Type, config: Dict[str, Any]) -> ValidationResult:
+    def _validate_generic(self, value: Any, target_type: type, config: dict[str, Any]) -> ValidationResult:
         """Generic validation for unknown types."""
         result = ValidationResult(True, value)
 
@@ -361,7 +361,7 @@ class TypeValidator:
 
         return result
 
-    def _extract_float_from_string(self, text: str, config: Dict[str, Any]) -> Optional[float]:
+    def _extract_float_from_string(self, text: str, config: dict[str, Any]) -> float | None:
         """Extract float value from string, handling currency symbols and text."""
         # Remove currency symbols and common text
         cleaned = re.sub(r"[^\d\.\-\+]", "", text.strip())
@@ -383,7 +383,7 @@ class TypeValidator:
 
             return None
 
-    def _extract_int_from_string(self, text: str, config: Dict[str, Any]) -> Optional[int]:
+    def _extract_int_from_string(self, text: str, config: dict[str, Any]) -> int | None:
         """Extract integer value from string, handling text numbers."""
         # First try direct conversion
         cleaned = re.sub(r"[^\d\-\+]", "", text.strip())
@@ -433,7 +433,7 @@ class TypeValidator:
 
         return None
 
-    def _parse_bool_from_string(self, text: str, config: Dict[str, Any]) -> Optional[bool]:
+    def _parse_bool_from_string(self, text: str, config: dict[str, Any]) -> bool | None:
         """Parse boolean value from string."""
         text_lower = text.lower().strip()
 
@@ -454,7 +454,7 @@ class TypeValidator:
 
         return None  # Ambiguous
 
-    def _apply_numeric_constraints(self, result: ValidationResult, config: Dict[str, Any]) -> None:
+    def _apply_numeric_constraints(self, result: ValidationResult, config: dict[str, Any]) -> None:
         """Apply numeric constraints (min, max, range checking)."""
         if not result.is_valid:
             return
@@ -516,7 +516,7 @@ class TypeValidator:
 
         return json_str
 
-    def _validate_dict_schema(self, data: dict, schema: Dict[str, Any]) -> ValidationResult:
+    def _validate_dict_schema(self, data: dict, schema: dict[str, Any]) -> ValidationResult:
         """Validate dictionary against a schema."""
         result = ValidationResult(True, data)
 
@@ -538,7 +538,7 @@ class TypeValidator:
 
         return result
 
-    def _parse_bullet_points(self, text: str) -> List[str]:
+    def _parse_bullet_points(self, text: str) -> list[str]:
         """Parse bullet points from text into a list."""
         lines = text.split("\n")
         items = []

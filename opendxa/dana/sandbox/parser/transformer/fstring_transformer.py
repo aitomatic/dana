@@ -22,7 +22,7 @@ Discord: https://discord.gg/6jGD4PYk
 """
 
 import logging
-from typing import Any, List
+from typing import Any
 
 from opendxa.dana.common.runtime_scopes import RuntimeScopes
 from opendxa.dana.sandbox.parser.utils.identifier_utils import is_valid_identifier
@@ -75,7 +75,7 @@ class FStringTransformer(BaseTransformer):
         return LiteralExpression(value=fstring_expr)
 
     # === Parsing Helpers ===
-    def _parse_fstring_parts(self, s: str) -> List:
+    def _parse_fstring_parts(self, s: str) -> list:
         """
         Parse an f-string into its component parts (literals and expressions).
         Returns a list of strings and AST nodes.

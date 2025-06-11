@@ -1,6 +1,6 @@
 # product_ranking_langgraph.py
 import os
-from typing import Any, List, TypedDict
+from typing import Any, TypedDict
 
 from dotenv import load_dotenv
 from langchain_core.messages import AIMessage
@@ -17,8 +17,8 @@ openai_api_key = os.getenv("OPENAI_API_KEY")
 class State(TypedDict):
     product_id: str
     similar_products: str
-    ranked_products: List[str]
-    messages: List[Any]
+    ranked_products: list[str]
+    messages: list[Any]
 
 
 # Define ranking function using LLM
@@ -94,7 +94,7 @@ def build_graph():
     return workflow.compile()
 
 # Main function to run the product ranker
-def rank_similar_products(product_id: str) -> List[str]:
+def rank_similar_products(product_id: str) -> list[str]:
     graph = build_graph()
     
     # Initialize the state

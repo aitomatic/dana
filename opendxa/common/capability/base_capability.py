@@ -1,7 +1,7 @@
 """Base capability for DXA."""
 
 from abc import ABC
-from typing import Any, Dict, Optional
+from typing import Any
 
 from opendxa.common.mixins.configurable import Configurable
 from opendxa.common.mixins.tool_callable import ToolCallable
@@ -17,7 +17,7 @@ class CapabilityApplicationResult(BaseResponse):
 class BaseCapability(ABC, ToolCallable, Configurable):
     """Base class for agent capabilities."""
 
-    def __init__(self, name: str, description: Optional[str] = None):
+    def __init__(self, name: str, description: str | None = None):
         """Initialize capability.
 
         Args:
@@ -50,6 +50,6 @@ class BaseCapability(ABC, ToolCallable, Configurable):
             return CapabilityApplicationResult(success=False, content=request, error=f"Capability {self.name} is not enabled")
         return CapabilityApplicationResult(success=True, content=request, error=None)
 
-    def can_handle(self, request: Dict[str, Any]) -> bool:
+    def can_handle(self, request: dict[str, Any]) -> bool:
         """Check if capability can handle request."""
         raise NotImplementedError

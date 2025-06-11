@@ -20,7 +20,7 @@ Discord: https://discord.gg/6jGD4PYk
 import inspect
 from typing import Any
 
-from opendxa.common import Misc
+from opendxa.common.utils.misc import Misc
 from opendxa.dana.common.exceptions import SandboxError, StateError
 from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
 from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry

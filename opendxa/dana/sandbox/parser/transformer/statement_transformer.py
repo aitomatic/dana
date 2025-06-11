@@ -24,13 +24,10 @@ from typing import Union, cast
 from lark import Token, Tree
 
 from opendxa.dana.sandbox.parser.ast import (
-    AssertStatement,
     Assignment,
     AttributeAccess,
     BinaryExpression,
-    BreakStatement,
     Conditional,
-    ContinueStatement,
     DictLiteral,
     Expression,
     ForLoop,
@@ -43,24 +40,22 @@ from opendxa.dana.sandbox.parser.ast import (
     ListLiteral,
     LiteralExpression,
     Parameter,
-    PassStatement,
     Program,
-    RaiseStatement,
     ReturnStatement,
     SetLiteral,
     SubscriptExpression,
     TryBlock,
     TupleLiteral,
-    TypeHint,
     UseStatement,
     WhileLoop,
     WithStatement,
 )
 from opendxa.dana.sandbox.parser.transformer.base_transformer import BaseTransformer
-from opendxa.dana.sandbox.parser.transformer.statement.statement_helpers import (
-    AssignmentHelper, ControlFlowHelper, SimpleStatementHelper, ImportHelper, ContextHelper
-)
 from opendxa.dana.sandbox.parser.transformer.expression_transformer import ExpressionTransformer
+from opendxa.dana.sandbox.parser.transformer.statement.statement_helpers import (
+    AssignmentHelper,
+    SimpleStatementHelper,
+)
 from opendxa.dana.sandbox.parser.transformer.variable_transformer import VariableTransformer
 from opendxa.dana.sandbox.parser.utils.tree_utils import TreeTraverser
 
@@ -824,10 +819,7 @@ class StatementTransformer(BaseTransformer):
         type_hint = items[1]  # Should be a TypeHint from basic_type
         value_tree = items[2]
 
-        return AssignmentHelper.create_assignment(
-            target_tree, value_tree, type_hint, 
-            self.expression_transformer, VariableTransformer()
-        )
+        return AssignmentHelper.create_assignment(target_tree, value_tree, self.expression_transformer, VariableTransformer(), type_hint)
 
     def simple_assignment(self, items):
         """Transform a simple assignment rule into an Assignment node without type hint."""
@@ -835,10 +827,7 @@ class StatementTransformer(BaseTransformer):
         target_tree = items[0]
         value_tree = items[1]
 
-        return AssignmentHelper.create_assignment(
-            target_tree, value_tree, None,
-            self.expression_transformer, VariableTransformer()
-        )
+        return AssignmentHelper.create_assignment(target_tree, value_tree, self.expression_transformer, VariableTransformer())
 
     def function_call_assignment(self, items):
         """Transform a function_call_assignment rule into an Assignment node with object-returning statement."""

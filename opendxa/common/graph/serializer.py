@@ -1,7 +1,7 @@
 """Graph serialization strategies."""
 
 from pathlib import Path
-from typing import Any, Dict, TextIO, Type, Union
+from typing import Any, TextIO
 
 import yaml
 
@@ -12,7 +12,7 @@ from opendxa.common.utils.misc import Misc
 class GraphSerializer:
     """Base graph serialization."""
 
-    def to_dict(self, graph: DirectedGraph) -> Dict[str, Any]:
+    def to_dict(self, graph: DirectedGraph) -> dict[str, Any]:
         """Convert graph to dictionary."""
         return {
             "nodes": {
@@ -22,7 +22,7 @@ class GraphSerializer:
             "edges": [{"source": edge.source, "target": edge.target, "metadata": edge.metadata} for edge in graph.edges],
         }
 
-    def from_dict(self, data: Dict[str, Any], graph_cls: Type[DirectedGraph]) -> DirectedGraph:
+    def from_dict(self, data: dict[str, Any], graph_cls: type[DirectedGraph]) -> DirectedGraph:
         """Create graph from dictionary."""
         graph = graph_cls()
 
@@ -43,7 +43,7 @@ class GraphSerializer:
 
         return graph
 
-    def to_yaml(self, graph: DirectedGraph, stream: Union[str, TextIO, Path]) -> None:
+    def to_yaml(self, graph: DirectedGraph, stream: str | TextIO | Path) -> None:
         """Save graph to YAML."""
         data = self.to_dict(graph)
         if isinstance(stream, (str, Path)):
@@ -52,7 +52,7 @@ class GraphSerializer:
         else:
             yaml.dump(data, stream)
 
-    def from_yaml(self, stream: Union[str, TextIO, Path], graph_cls: Type[DirectedGraph]) -> DirectedGraph:
+    def from_yaml(self, stream: str | TextIO | Path, graph_cls: type[DirectedGraph]) -> DirectedGraph:
         """Load graph from YAML."""
         if isinstance(stream, (str, Path)):
             data = Misc.load_yaml_config(stream)

@@ -75,7 +75,7 @@ Memory Decay Mechanism:
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
-from typing import Any, Dict, Generic, Optional, Type, TypeVar
+from typing import Any, Generic, TypeVar
 
 from opendxa.common.db.models import LTMemoryDBModel, MemoryDBModel, PermanentMemoryDBModel, STMemoryDBModel
 from opendxa.common.db.storage import MemoryDBStorage
@@ -96,10 +96,10 @@ class MemoryResource(BaseResource, Generic[ModelType, StorageType]):
     def __init__(
         self,
         name: str,
-        description: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
-        storage: Optional[StorageType] = None,
-        model_class: Optional[Type[ModelType]] = None,
+        description: str | None = None,
+        config: dict[str, Any] | None = None,
+        storage: StorageType | None = None,
+        model_class: type[ModelType] | None = None,
         default_importance: float = 1.0,
         default_decay_rate: float = 0.1,
         default_retrieve_limit: int = 10,
@@ -124,9 +124,9 @@ class MemoryResource(BaseResource, Generic[ModelType, StorageType]):
         self._default_decay_rate = default_decay_rate
         self._default_retrieve_limit = default_retrieve_limit
         self._decay_interval = decay_interval
-        self._last_decay_time: Optional[datetime] = None
+        self._last_decay_time: datetime | None = None
         self._decay_lock = asyncio.Lock()
-        self._half_life: Optional[float] = None
+        self._half_life: float | None = None
         self._executor = ThreadPoolExecutor(max_workers=1)
 
         # Validate decay parameters
@@ -304,7 +304,7 @@ class MemoryResource(BaseResource, Generic[ModelType, StorageType]):
         self.info(f"Memory resource [{self.name}] cleaned up")
 
     async def store(
-        self, content: Any, context: Optional[Dict] = None, importance: Optional[float] = None, decay_rate: Optional[float] = None
+        self, content: Any, context: dict | None = None, importance: float | None = None, decay_rate: float | None = None
     ) -> BaseResponse:
         """Store a memory.
 
@@ -334,7 +334,7 @@ class MemoryResource(BaseResource, Generic[ModelType, StorageType]):
         except Exception as e:
             return BaseResponse.error_response(f"Failed to store memory: {str(e)}")
 
-    async def retrieve(self, query: Optional[str] = None, limit: Optional[int] = None) -> BaseResponse:
+    async def retrieve(self, query: str | None = None, limit: int | None = None) -> BaseResponse:
         """Retrieve memories.
 
         Args:
@@ -368,7 +368,7 @@ class MemoryResource(BaseResource, Generic[ModelType, StorageType]):
         except Exception as e:
             return BaseResponse.error_response(f"Failed to update memory importance: {str(e)}")
 
-    def get_decay_stats(self) -> Dict[str, Any]:
+    def get_decay_stats(self) -> dict[str, Any]:
         """Get statistics about the decay process.
 
         Returns:
@@ -387,7 +387,7 @@ class MemoryResource(BaseResource, Generic[ModelType, StorageType]):
             "half_life_seconds": intervals_to_half_life * self._decay_interval,
         }
 
-    def can_handle(self, request: Dict[str, Any]) -> bool:
+    def can_handle(self, request: dict[str, Any]) -> bool:
         """Check if the resource can handle the request.
 
         Args:
@@ -407,7 +407,7 @@ class LTMemoryResource(MemoryResource[LTMemoryDBModel, MemoryDBStorage[LTMemoryD
     and higher importance values by default.
     """
 
-    def __init__(self, name: str, description: Optional[str] = None, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, name: str, description: str | None = None, config: dict[str, Any] | None = None):
         """Initialize the long-term memory resource.
 
         Args:
@@ -432,7 +432,7 @@ class LTMemoryResource(MemoryResource[LTMemoryDBModel, MemoryDBStorage[LTMemoryD
             decay_interval=86400,  # 24 hours
         )
 
-    def can_handle(self, request: Dict[str, Any]) -> bool:
+    def can_handle(self, request: dict[str, Any]) -> bool:
         """Check if the resource can handle the request.
 
         Args:
@@ -452,7 +452,7 @@ class STMemoryResource(MemoryResource[STMemoryDBModel, MemoryDBStorage[STMemoryD
     and lower importance values by default.
     """
 
-    def __init__(self, name: str, description: Optional[str] = None, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, name: str, description: str | None = None, config: dict[str, Any] | None = None):
         """Initialize the short-term memory resource.
 
         Args:
@@ -477,7 +477,7 @@ class STMemoryResource(MemoryResource[STMemoryDBModel, MemoryDBStorage[STMemoryD
             decay_interval=3600,  # 1 hour
         )
 
-    def can_handle(self, request: Dict[str, Any]) -> bool:
+    def can_handle(self, request: dict[str, Any]) -> bool:
         """Check if the resource can handle the request.
 
         Args:
@@ -497,7 +497,7 @@ class PermMemoryResource(MemoryResource[PermanentMemoryDBModel, MemoryDBStorage[
     and higher importance values by default.
     """
 
-    def __init__(self, name: str, description: Optional[str] = None, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, name: str, description: str | None = None, config: dict[str, Any] | None = None):
         """Initialize the permanent memory resource.
 
         Args:
@@ -530,7 +530,7 @@ class PermMemoryResource(MemoryResource[PermanentMemoryDBModel, MemoryDBStorage[
         """Override to disable decay mechanism."""
         pass
 
-    def get_decay_stats(self) -> Dict[str, Any]:
+    def get_decay_stats(self) -> dict[str, Any]:
         """Override to return permanent memory stats."""
         return {
             "decay_interval": 0,
@@ -540,7 +540,7 @@ class PermMemoryResource(MemoryResource[PermanentMemoryDBModel, MemoryDBStorage[
             "half_life_seconds": float("inf"),
         }
 
-    def can_handle(self, request: Dict[str, Any]) -> bool:
+    def can_handle(self, request: dict[str, Any]) -> bool:
         """Check if the resource can handle the request.
 
         Args:

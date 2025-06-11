@@ -7,7 +7,7 @@ intelligent analysis of this raw context.
 """
 
 import inspect
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from lark import Token
 
@@ -18,19 +18,19 @@ class CodeContext:
     """Container for extracted code context information."""
 
     def __init__(self):
-        self.comments: List[str] = []
-        self.inline_comments: List[str] = []
-        self.variable_context: Dict[str, Any] = {}
-        self.function_context: Optional[str] = None
-        self.type_hints: Dict[str, str] = {}
-        self.surrounding_code: List[str] = []
-        self.error_context: List[str] = []
+        self.comments: list[str] = []
+        self.inline_comments: list[str] = []
+        self.variable_context: dict[str, Any] = {}
+        self.function_context: str | None = None
+        self.type_hints: dict[str, str] = {}
+        self.surrounding_code: list[str] = []
+        self.error_context: list[str] = []
         # Track the current line being executed and its line number
-        self.current_line: Optional[str] = None
-        self.current_line_number: Optional[int] = None
-        self.surrounding_code_line_numbers: List[int] = []
+        self.current_line: str | None = None
+        self.current_line_number: int | None = None
+        self.surrounding_code_line_numbers: list[int] = []
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
         return {
             "comments": self.comments,
@@ -92,7 +92,7 @@ class CodeContextAnalyzer(Loggable):
     def __init__(self):
         super().__init__()
 
-    def analyze_context(self, context: Any, variable_name: Optional[str] = None) -> CodeContext:
+    def analyze_context(self, context: Any, variable_name: str | None = None) -> CodeContext:
         """
         Analyze the execution context to extract code context information.
 
@@ -115,7 +115,7 @@ class CodeContextAnalyzer(Loggable):
 
         return code_context
 
-    def _extract_ast_context(self, context: Any, code_context: CodeContext, variable_name: Optional[str]) -> None:
+    def _extract_ast_context(self, context: Any, code_context: CodeContext, variable_name: str | None) -> None:
         """Extract context from AST if available."""
         try:
             # Check if context has access to the current AST or program
@@ -129,7 +129,7 @@ class CodeContextAnalyzer(Loggable):
         except Exception as e:
             self.debug(f"Could not extract AST context: {e}")
 
-    def _analyze_program_ast(self, program: Any, code_context: CodeContext, variable_name: Optional[str]) -> None:
+    def _analyze_program_ast(self, program: Any, code_context: CodeContext, variable_name: str | None) -> None:
         """Analyze AST program for comments and context."""
         if not hasattr(program, "statements"):
             return
@@ -150,7 +150,7 @@ class CodeContextAnalyzer(Loggable):
                     if hasattr(stmt, "type_hint") and stmt.type_hint and hasattr(stmt.type_hint, "name"):
                         code_context.type_hints[var_name] = stmt.type_hint.name
 
-    def _extract_frame_context(self, code_context: CodeContext, variable_name: Optional[str]) -> None:
+    def _extract_frame_context(self, code_context: CodeContext, variable_name: str | None) -> None:
         """Extract context from the call stack and source code."""
         try:
             # First, check if we have REPL input context available
@@ -257,7 +257,7 @@ class CodeContextAnalyzer(Loggable):
         except Exception as e:
             self.debug(f"Error analyzing REPL input context: {e}")
 
-    def _extract_variable_context(self, context: Any, code_context: CodeContext, variable_name: Optional[str]) -> None:
+    def _extract_variable_context(self, context: Any, code_context: CodeContext, variable_name: str | None) -> None:
         """Extract context about variables from the execution context."""
         try:
             if not hasattr(context, "_state") or not context._state:
@@ -336,7 +336,7 @@ Based on this context, please:
 
         return original_prompt
 
-    def get_optimization_hints_from_types(self, expected_type: Any, code_context: CodeContext) -> List[str]:
+    def get_optimization_hints_from_types(self, expected_type: Any, code_context: CodeContext) -> list[str]:
         """
         Get optimization hints based on type information (high confidence signals).
 
