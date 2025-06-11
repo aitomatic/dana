@@ -17,10 +17,24 @@ TEST_GROUPS = {
         "description": "Dana Parser - Language parsing and AST generation",
         "paths": ["tests/dana/sandbox/parser/", "tests/dana/ipv/"],
     },
-    "dana-interpreter": {
-        "description": "Dana Interpreter - Language execution and runtime",
-        "paths": ["tests/dana/sandbox/interpreter/"],
+    "dana-structs": {
+        "description": "Dana Structs - Critical struct implementation tests",
+        "paths": ["tests/dana/sandbox/interpreter/test_struct_*"],
         "extra_cmd": ["tests/dana/sandbox/interpreter/test_struct_*"],
+    },
+    "dana-functions": {
+        "description": "Dana Functions - Built-in functions and function handling",
+        "paths": ["tests/dana/sandbox/interpreter/functions/"],
+    },
+    "dana-imports": {
+        "description": "Dana Imports - Module system and import handling",
+        "paths": ["tests/dana/sandbox/interpreter/test_*import*", "tests/dana/sandbox/interpreter/test_dana_module*"],
+    },
+    "dana-execution": {
+        "description": "Dana Execution - Core execution and runtime features",
+        "paths": ["tests/dana/sandbox/interpreter/"],
+        "ignore_paths": ["tests/dana/sandbox/interpreter/functions/"],
+        "extra_filters": ["-k", "not struct and not import and not dana_module"],
     },
     "dana-sandbox": {
         "description": "Dana Sandbox Core - Sandbox utilities and context management",
@@ -71,6 +85,10 @@ def run_test_group(group_name: str, group_config: dict) -> tuple[str, bool, str,
 
     # Add common options
     cmd.extend(["-m", "not live and not deep", "--tb=short", "-v"])
+
+    # Add extra filters if specified (e.g., -k for keyword filtering)
+    if "extra_filters" in group_config:
+        cmd.extend(group_config["extra_filters"])
 
     # Set environment variables
     env = {
