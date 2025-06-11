@@ -134,11 +134,11 @@ Specialized for each industry:
 
 ## 📊 Current Implementation Status
 
-### ✅ **Production Ready (POE Core)**
+### ✅ **Production Ready (POET Core)**
 - **POEExecutor**: Complete P→O→E pipeline with domain plugin system
 - **Domain Plugins**: 4 production-ready plugins (financial, building, semiconductor, LLM)
 - **Reliability**: Automatic retries, timeout handling, error recovery
-- **Test Coverage**: 534 tests passing across POE functionality
+- **Test Coverage**: 534 tests passing across POET functionality
 
 ### 🔄 **Optional Training (T-Stage)**
 - **Basic Learning**: Parameter optimization (retry counts, timeouts)
@@ -165,7 +165,7 @@ Specialized for each industry:
 
 ### **Advanced: Custom Domain Development**
 1. **[Plugin Architecture](../../.implementation/poet/04_poet_plugin_architecture.md)** - Create custom domain plugins
-2. **[Runtime Implementation](poet-runtime-architecture.md)** - Understanding POEExecutor internals
+2. **[Runtime Implementation](poet-runtime-architecture.md)** - Understanding POETExecutor internals
 3. **[Extension Patterns](custom-domain-development.md)** - Best practices for domain-specific intelligence
 
 ## 🔗 Related Resources

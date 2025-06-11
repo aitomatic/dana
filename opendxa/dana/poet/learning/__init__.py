@@ -1,23 +1,61 @@
 """
-Advanced T-Stage Learning Components for POET
+POET Learning System
 
-This module implements sophisticated learning algorithms that enhance
-the basic T-stage heuristics with statistical methods, pattern recognition,
-and cross-function intelligence sharing.
-
-Components:
-- OnlineLearner: Real-time statistical parameter optimization
-- BatchLearner: Periodic pattern analysis and deep insights
-- CrossFunctionLearner: Knowledge sharing between similar functions
-- AdaptiveLearner: Self-optimizing learning strategy selection
+Comprehensive learning framework for POET functions including:
+- Formal objective functions and multi-objective optimization
+- Online and batch learning algorithms
+- Performance metrics and tracking
+- Feedback processing and integration
 """
 
+# Core learning components
 from .online_learner import OnlineLearner, ExecutionFeedback
-from .metrics import LearningMetrics, PerformanceTracker
+from .metrics import PerformanceTracker, LearningMetrics
+
+# Objective framework
+from .objective import (
+    ObjectiveType,
+    ObjectivePriority,
+    ObjectiveFunction,
+    MultiObjective,
+    ObjectiveEvaluationResult,
+    POETObjectiveRegistry,
+    ObjectiveEvaluator,
+    EvaluationContext,
+    get_global_registry,
+    get_domain_objectives,
+)
+
+# Feedback system
+from .feedback import (
+    FeedbackProvider,
+    SimulationFeedback,
+    FeedbackMode,
+    RealWorldFeedbackProvider,
+    HybridFeedbackProvider,
+)
 
 __all__ = [
+    # Core learning
     "OnlineLearner",
     "ExecutionFeedback",
-    "LearningMetrics",
     "PerformanceTracker",
+    "LearningMetrics",
+    # Objective framework
+    "ObjectiveType",
+    "ObjectivePriority",
+    "ObjectiveFunction",
+    "MultiObjective",
+    "ObjectiveEvaluationResult",
+    "POETObjectiveRegistry",
+    "ObjectiveEvaluator",
+    "EvaluationContext",
+    "get_global_registry",
+    "get_domain_objectives",
+    # Feedback system
+    "FeedbackProvider",
+    "SimulationFeedback",
+    "FeedbackMode",
+    "RealWorldFeedbackProvider",
+    "HybridFeedbackProvider",
 ]

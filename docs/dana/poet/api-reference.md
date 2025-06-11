@@ -225,7 +225,7 @@ class POEExecutor(Loggable):
         self.parameters = self._load_parameters() if config.enable_training else None
     
     def __call__(self, func: Callable) -> Callable:
-        # Wraps function with POE pipeline
+        # Wraps function with POET pipeline
         pass
     
     def _perceive(self, args, kwargs) -> Dict[str, Any]:
@@ -284,10 +284,10 @@ def monitored_function(input: str) -> str:
 
 ## Error Handling
 
-### POE Error Types
+### POET Error Types
 ```python
 from opendxa.dana.poet.errors import (
-    POEError,           # Base POE error
+    POETError,           # Base POET error
     PerceiveError,      # P-stage errors
     OperateError,       # O-stage errors (includes retries exhausted)
     EnforceError,       # E-stage validation errors
@@ -347,7 +347,7 @@ def simple_credit_check(score: int) -> str:
 ### From Enhanced POET
 ```dana
 # Old (complex decorator)
-@enhanced_poet(
+@poet(
     domain="financial_services",
     enable_training=true,
     learning_algorithm="statistical",

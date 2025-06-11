@@ -768,13 +768,327 @@ class TrainStage:
         )
 ```
 
+## Plugin-Learning Integration
+
+### Overview
+
+The plugin-learning integration extends the POET learning system to enable domain-specific learning within plugins. This creates a bi-directional learning loop where:
+1. Plugins provide domain intelligence to the POET pipeline
+2. Plugins receive feedback about their performance
+3. Plugins adapt their domain-specific parameters based on learning insights
+4. Plugins share domain knowledge across similar functions
+
+### Extended Plugin Learning Interface
+
+```python
+class POETPlugin(ABC):
+    # ... existing methods ...
+    
+    # New learning integration methods
+    def receive_feedback(self, feedback: ExecutionFeedback) -> None:
+        """Receive feedback about plugin performance for domain learning"""
+        pass
+    
+    def update_from_learning(self, learning_insights: Dict[str, Any]) -> None:
+        """Update plugin behavior based on learning insights"""
+        pass
+    
+    def get_domain_metrics(self, execution_result: Dict[str, Any]) -> Dict[str, float]:
+        """Extract domain-specific metrics for learning"""
+        return {}
+    
+    def adapt_parameters(self, current_params: Dict[str, Any], performance_history: List[float]) -> Dict[str, Any]:
+        """Adapt domain-specific parameters based on performance"""
+        return current_params
+    
+    def get_learnable_parameters(self) -> Dict[str, Dict[str, Any]]:
+        """Get plugin parameters that can be learned/optimized"""
+        return {}
+    
+    def apply_learned_parameters(self, learned_params: Dict[str, Any]) -> None:
+        """Apply learned parameters to plugin behavior"""
+        pass
+```
+
+### Domain-Specific Learning Examples
+
+#### Building Management Plugin Learning
+```python
+class BuildingManagementPlugin(POETPlugin):
+    def __init__(self):
+        super().__init__()
+        # Learnable domain parameters
+        self.learned_deadband = 2.0
+        self.learned_efficiency_threshold = 0.8
+        self.learned_comfort_weight = 0.7
+        self.learned_equipment_stress_limit = 0.9
+        
+        # Learning history
+        self.performance_history = deque(maxlen=100)
+        self.parameter_adjustments = {}
+    
+    def receive_feedback(self, feedback: ExecutionFeedback) -> None:
+        """Learn from HVAC system performance feedback"""
+        # Extract domain-specific metrics
+        efficiency = feedback.performance_metrics.get('energy_efficiency', 0.8)
+        comfort = feedback.performance_metrics.get('comfort_score', 0.8)
+        equipment_stress = feedback.performance_metrics.get('equipment_stress', 0.5)
+        
+        # Store performance for trend analysis
+        self.performance_history.append({
+            'efficiency': efficiency,
+            'comfort': comfort,
+            'equipment_stress': equipment_stress,
+            'timestamp': feedback.timestamp,
+            'deadband_used': self.learned_deadband
+        })
+        
+        # Adaptive learning based on performance
+        self._adapt_hvac_parameters(efficiency, comfort, equipment_stress)
+    
+    def _adapt_hvac_parameters(self, efficiency: float, comfort: float, stress: float):
+        """Adapt HVAC parameters based on performance feedback"""
+        
+        # Learn optimal deadband
+        if efficiency < self.learned_efficiency_threshold and comfort > 0.8:
+            # Can widen deadband for efficiency without hurting comfort
+            self.learned_deadband = min(4.0, self.learned_deadband * 1.05)
+        elif comfort < 0.7:
+            # Tighten deadband for better comfort
+            self.learned_deadband = max(0.5, self.learned_deadband * 0.95)
+        
+        # Learn equipment stress limits
+        if stress > self.learned_equipment_stress_limit:
+            self.learned_equipment_stress_limit = max(0.7, stress - 0.1)
+        
+        # Learn efficiency vs comfort tradeoff
+        if len(self.performance_history) > 20:
+            recent_performance = list(self.performance_history)[-20:]
+            avg_efficiency = sum(p['efficiency'] for p in recent_performance) / 20
+            avg_comfort = sum(p['comfort'] for p in recent_performance) / 20
+            
+            # Adjust comfort weight based on recent performance
+            if avg_efficiency > 0.85 and avg_comfort > 0.8:
+                self.learned_comfort_weight = min(1.0, self.learned_comfort_weight + 0.02)
+            elif avg_comfort < 0.7:
+                self.learned_comfort_weight = max(0.5, self.learned_comfort_weight - 0.02)
+    
+    def get_domain_metrics(self, execution_result: Dict[str, Any]) -> Dict[str, float]:
+        """Extract HVAC-specific learning metrics"""
+        hvac_output = execution_result.get('result', {})
+        
+        return {
+            'energy_efficiency': self._calculate_energy_efficiency(hvac_output),
+            'comfort_score': self._calculate_comfort_score(hvac_output),
+            'equipment_stress': self._calculate_equipment_stress(hvac_output),
+            'temperature_stability': self._calculate_temperature_stability(hvac_output),
+            'learned_deadband_effectiveness': self._evaluate_deadband_effectiveness(),
+        }
+    
+    def get_learnable_parameters(self) -> Dict[str, Dict[str, Any]]:
+        """Get HVAC parameters that can be learned"""
+        return {
+            'learned_deadband': {
+                'current_value': self.learned_deadband,
+                'range': (0.5, 4.0),
+                'type': 'continuous',
+                'impact': 'comfort_vs_efficiency_tradeoff'
+            },
+            'learned_efficiency_threshold': {
+                'current_value': self.learned_efficiency_threshold,
+                'range': (0.6, 0.95),
+                'type': 'continuous',
+                'impact': 'energy_optimization_aggressiveness'
+            },
+            'learned_comfort_weight': {
+                'current_value': self.learned_comfort_weight,
+                'range': (0.3, 1.0),
+                'type': 'continuous',
+                'impact': 'comfort_prioritization'
+            }
+        }
+```
+
+#### Financial Services Plugin Learning
+```python
+class FinancialServicesPlugin(POETPlugin):
+    def __init__(self):
+        super().__init__()
+        # Learnable risk assessment parameters
+        self.learned_risk_threshold = 0.7
+        self.learned_income_weight = 0.4
+        self.learned_credit_score_weight = 0.6
+        self.learned_debt_ratio_penalty = 1.5
+        
+        # Learning analytics
+        self.approval_accuracy_history = deque(maxlen=200)
+        self.false_positive_rate = deque(maxlen=50)
+        
+    def receive_feedback(self, feedback: ExecutionFeedback) -> None:
+        """Learn from credit assessment outcomes"""
+        # Track approval accuracy
+        actual_outcome = feedback.user_feedback.get('actual_outcome', 'unknown')
+        predicted_approval = feedback.performance_metrics.get('approved', False)
+        
+        if actual_outcome != 'unknown':
+            accuracy = 1.0 if (actual_outcome == 'approved') == predicted_approval else 0.0
+            self.approval_accuracy_history.append(accuracy)
+            
+            # Learn from misclassifications
+            if accuracy == 0.0:
+                self._adapt_risk_parameters(feedback, actual_outcome, predicted_approval)
+    
+    def _adapt_risk_parameters(self, feedback: ExecutionFeedback, actual: str, predicted: bool):
+        """Adapt risk assessment parameters based on prediction errors"""
+        
+        credit_score = feedback.performance_metrics.get('credit_score', 650)
+        debt_ratio = feedback.performance_metrics.get('debt_ratio', 0.3)
+        
+        if actual == 'approved' and not predicted:
+            # False negative - model too strict
+            if credit_score > 700:
+                self.learned_credit_score_weight = min(0.8, self.learned_credit_score_weight + 0.02)
+            if debt_ratio < 0.2:
+                self.learned_debt_ratio_penalty = max(1.0, self.learned_debt_ratio_penalty - 0.05)
+                
+        elif actual == 'denied' and predicted:
+            # False positive - model too lenient
+            if credit_score < 650:
+                self.learned_credit_score_weight = max(0.4, self.learned_credit_score_weight - 0.02)
+            if debt_ratio > 0.4:
+                self.learned_debt_ratio_penalty = min(2.0, self.learned_debt_ratio_penalty + 0.05)
+    
+    def get_domain_metrics(self, execution_result: Dict[str, Any]) -> Dict[str, float]:
+        """Extract financial assessment learning metrics"""
+        return {
+            'risk_score_confidence': self._calculate_risk_confidence(execution_result),
+            'approval_consistency': self._calculate_approval_consistency(),
+            'parameter_stability': self._calculate_parameter_stability(),
+            'historical_accuracy': self._calculate_historical_accuracy(),
+        }
+```
+
+### Plugin Learning Coordination
+
+#### Cross-Plugin Learning Manager
+```python
+class PluginLearningCoordinator:
+    """Coordinates learning across multiple plugins and domains"""
+    
+    def __init__(self, plugin_registry: PluginRegistry, learning_store: LearningStore):
+        self.plugin_registry = plugin_registry
+        self.learning_store = learning_store
+        self.domain_knowledge_base = {}
+        self.cross_plugin_patterns = defaultdict(list)
+    
+    def coordinate_plugin_learning(self, execution_results: List[Dict[str, Any]]):
+        """Coordinate learning across all active plugins"""
+        
+        # Collect domain metrics from all plugins
+        domain_metrics = {}
+        for plugin_name in self.plugin_registry.list_plugins():
+            plugin = self.plugin_registry.get_plugin(plugin_name)
+            if plugin:
+                for result in execution_results:
+                    metrics = plugin.get_domain_metrics(result)
+                    domain_metrics[plugin_name] = metrics
+        
+        # Identify cross-domain learning opportunities
+        learning_insights = self._identify_cross_domain_patterns(domain_metrics)
+        
+        # Distribute learning insights to relevant plugins
+        self._distribute_learning_insights(learning_insights)
+    
+    def _identify_cross_domain_patterns(self, domain_metrics: Dict[str, Dict[str, float]]) -> Dict[str, Any]:
+        """Identify patterns that could benefit multiple domains"""
+        
+        insights = {}
+        
+        # Pattern: Performance degradation correlation
+        performance_metrics = {}
+        for domain, metrics in domain_metrics.items():
+            performance_score = metrics.get('performance_score', 0.8)
+            performance_metrics[domain] = performance_score
+        
+        # If multiple domains show performance degradation, might be system-wide issue
+        low_performers = [d for d, score in performance_metrics.items() if score < 0.6]
+        if len(low_performers) > 1:
+            insights['system_wide_degradation'] = {
+                'affected_domains': low_performers,
+                'recommended_action': 'conservative_parameter_adjustment',
+                'confidence': 0.8
+            }
+        
+        # Pattern: Resource utilization optimization
+        resource_patterns = self._analyze_resource_usage_patterns(domain_metrics)
+        if resource_patterns:
+            insights['resource_optimization'] = resource_patterns
+        
+        return insights
+    
+    def _distribute_learning_insights(self, insights: Dict[str, Any]):
+        """Distribute learning insights to relevant plugins"""
+        
+        for insight_type, insight_data in insights.items():
+            relevant_plugins = self._get_relevant_plugins(insight_type, insight_data)
+            
+            for plugin_name in relevant_plugins:
+                plugin = self.plugin_registry.get_plugin(plugin_name)
+                if plugin:
+                    plugin.update_from_learning(insight_data)
+```
+
+### Integration with Existing Learning System
+
+#### Enhanced ExecutionFeedback with Plugin Metrics
+```python
+@dataclass
+class ExecutionFeedback:
+    # ... existing fields ...
+    
+    # New plugin-specific fields
+    plugin_metrics: Dict[str, Dict[str, float]] = field(default_factory=dict)
+    plugin_performance: Dict[str, float] = field(default_factory=dict)
+    domain_specific_feedback: Dict[str, Any] = field(default_factory=dict)
+    plugin_learning_opportunities: List[str] = field(default_factory=list)
+```
+
+#### Plugin-Aware Learning Store
+```python
+class PluginLearningStore(LearningStore):
+    """Extended learning store with plugin-specific capabilities"""
+    
+    def store_plugin_parameters(self, plugin_name: str, parameters: Dict[str, Any], 
+                               confidence: float = 0.8):
+        """Store learned parameters for specific plugin"""
+        key = f"plugin:{plugin_name}:parameters"
+        self.store_parameters(key, parameters, confidence)
+    
+    def get_plugin_parameters(self, plugin_name: str) -> Dict[str, Any]:
+        """Retrieve learned parameters for specific plugin"""
+        key = f"plugin:{plugin_name}:parameters"
+        return self.get_parameters(key)
+    
+    def store_cross_plugin_insights(self, insight_type: str, insights: Dict[str, Any]):
+        """Store learning insights that span multiple plugins"""
+        key = f"cross_plugin:{insight_type}"
+        self.store_parameters(key, insights)
+    
+    def get_domain_performance_history(self, domain: str, days: int = 30) -> List[Dict[str, Any]]:
+        """Get performance history for specific domain"""
+        # Implementation would query stored performance data
+        return []
+```
+
 ## Next Steps
 
-1. **Integration Patterns Document** - How POET learning integrates with existing opendxa components
-2. **Example Implementations** - Concrete examples for HVAC, prompt optimization, and MCP integration
-3. **Testing Framework** - Validation strategies for learning effectiveness
-4. **Performance Monitoring** - Metrics and observability for learning systems
-5. **Safety and Bounds** - Ensuring learned parameters stay within safe operational limits
+1. **Plugin Learning Interface Implementation** - Extend POETPlugin base class with learning methods
+2. **Domain-Specific Learning Algorithms** - Implement learning for each of the 4 existing plugins
+3. **Integration Patterns Document** - How POET learning integrates with existing opendxa components
+4. **Example Implementations** - Concrete examples for HVAC, prompt optimization, and MCP integration
+5. **Testing Framework** - Validation strategies for learning effectiveness
+6. **Performance Monitoring** - Metrics and observability for learning systems
+7. **Safety and Bounds** - Ensuring learned parameters stay within safe operational limits
 
 ## Related Components
 

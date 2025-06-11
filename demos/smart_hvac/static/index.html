@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart HVAC Demo - POET vs Basic Control</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <h1>🏠 Smart HVAC Demo</h1>
+            <p class="subtitle">SENSE + ACT vs SENSE + THINK + ACT</p>
+            <div class="controls">
+                <button id="startBtn" class="btn btn-primary">Start Demo</button>
+                <button id="resetBtn" class="btn btn-secondary">Reset</button>
+                <div class="weather-controls">
+                    <label>Weather:</label>
+                    <select id="weatherSelect">
+                        <option value="mild">Mild Day</option>
+                        <option value="hot">Hot Day</option>
+                        <option value="cold">Cold Day</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Comparison -->
+    <div class="container">
+        <div class="systems-grid">
+            
+            <!-- Basic HVAC System (Left Side) -->
+            <div class="system-panel basic-system">
+                <div class="system-header">
+                    <h2>🌡️ Basic HVAC</h2>
+                    <p class="system-type">SENSE + ACT</p>
+                    <div class="connection-status" id="basicStatus">●</div>
+                </div>
+                
+                <div class="system-content">
+                    <!-- Current State -->
+                    <div class="state-display">
+                        <div class="temperature-display">
+                            <span class="temp-label">Room</span>
+                            <span class="temp-value" id="basicCurrentTemp">72.0°F</span>
+                        </div>
+                        <div class="temperature-display">
+                            <span class="temp-label">Target</span>
+                            <span class="temp-value" id="basicTargetTemp">72.0°F</span>
+                        </div>
+                        <div class="temperature-display">
+                            <span class="temp-label">Outside</span>
+                            <span class="temp-value" id="basicOutsideTemp">65.0°F</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Manual Thermostat Control -->
+                    <div class="control-panel">
+                        <h3>Manual Thermostat</h3>
+                        <div class="thermostat-control">
+                            <button class="temp-btn" id="basicTempDown">-</button>
+                            <input type="number" id="basicTempInput" value="72" min="60" max="85" step="0.5">
+                            <button class="temp-btn" id="basicTempUp">+</button>
+                        </div>
+                        <button id="basicSetTemp" class="btn btn-action">Set Temperature</button>
+                    </div>
+                    
+                    <!-- HVAC Status -->
+                    <div class="hvac-status">
+                        <div class="status-item">
+                            <span class="label">Mode:</span>
+                            <span class="value" id="basicMode">idle</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="label">Heating:</span>
+                            <span class="value" id="basicHeating">0%</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="label">Cooling:</span>
+                            <span class="value" id="basicCooling">0%</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="label">Fan:</span>
+                            <span class="value" id="basicFan">20%</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Performance Metrics -->
+                    <div class="metrics">
+                        <div class="metric">
+                            <span class="metric-label">Energy Rate</span>
+                            <span class="metric-value" id="basicEnergyRate">0.0 kW</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Total Energy</span>
+                            <span class="metric-value" id="basicTotalEnergy">0.0 kWh</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Comfort Score</span>
+                            <span class="metric-value" id="basicComfort">100</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- POET-Enhanced HVAC System (Right Side) -->
+            <div class="system-panel smart-system">
+                <div class="system-header">
+                    <h2>🧠 POET HVAC</h2>
+                    <p class="system-type">SENSE + THINK + ACT</p>
+                    <div class="connection-status" id="smartStatus">●</div>
+                </div>
+                
+                <div class="system-content">
+                    <!-- Current State -->
+                    <div class="state-display">
+                        <div class="temperature-display">
+                            <span class="temp-label">Room</span>
+                            <span class="temp-value" id="smartCurrentTemp">72.0°F</span>
+                        </div>
+                        <div class="temperature-display">
+                            <span class="temp-label">Target</span>
+                            <span class="temp-value" id="smartTargetTemp">72.0°F</span>
+                        </div>
+                        <div class="temperature-display">
+                            <span class="temp-label">Outside</span>
+                            <span class="temp-value" id="smartOutsideTemp">65.0°F</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Comfort-Based Control -->
+                    <div class="control-panel">
+                        <h3>Comfort Feedback</h3>
+                        <div class="comfort-controls">
+                            <button class="comfort-btn cold" id="smartTooCold">❄️ Too Cold</button>
+                            <button class="comfort-btn comfortable" id="smartComfortable">😊 Comfortable</button>
+                            <button class="comfort-btn hot" id="smartTooHot">🔥 Too Hot</button>
+                        </div>
+                        <p class="help-text">POET learns from your feedback!</p>
+                    </div>
+                    
+                    <!-- HVAC Status -->
+                    <div class="hvac-status">
+                        <div class="status-item">
+                            <span class="label">Mode:</span>
+                            <span class="value" id="smartMode">idle</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="label">Heating:</span>
+                            <span class="value" id="smartHeating">0%</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="label">Cooling:</span>
+                            <span class="value" id="smartCooling">0%</span>
+                        </div>
+                        <div class="status-item">
+                            <span class="label">Fan:</span>
+                            <span class="value" id="smartFan">20%</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Performance Metrics -->
+                    <div class="metrics">
+                        <div class="metric">
+                            <span class="metric-label">Energy Rate</span>
+                            <span class="metric-value" id="smartEnergyRate">0.0 kW</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Total Energy</span>
+                            <span class="metric-value" id="smartTotalEnergy">0.0 kWh</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Comfort Score</span>
+                            <span class="metric-value" id="smartComfort">100</span>
+                        </div>
+                    </div>
+                    
+                    <!-- POET Learning Status -->
+                    <div class="poet-status">
+                        <h4>🤖 POET Learning</h4>
+                        <div class="learning-item">
+                            <span class="label">Algorithm:</span>
+                            <span class="value" id="poetAlgorithm">statistical</span>
+                        </div>
+                        <div class="learning-item">
+                            <span class="label">Executions:</span>
+                            <span class="value" id="poetExecutions">0</span>
+                        </div>
+                        <div class="learning-item">
+                            <span class="label">Success Rate:</span>
+                            <span class="value" id="poetSuccessRate">100%</span>
+                        </div>
+                        <div class="learning-recommendations" id="poetRecommendations">
+                            <small>Learning system initializing...</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Charts Section -->
+        <div class="charts-section">
+            <div class="chart-container">
+                <h3>📊 Real-Time Comparison</h3>
+                <div class="charts-grid">
+                    <div class="chart-panel">
+                        <h4>Temperature (°F)</h4>
+                        <canvas id="temperatureChart"></canvas>
+                    </div>
+                    <div class="chart-panel">
+                        <h4>Energy Usage (kW)</h4>
+                        <canvas id="energyChart"></canvas>
+                    </div>
+                    <div class="chart-panel">
+                        <h4>Comfort Score</h4>
+                        <canvas id="comfortChart"></canvas>
+                    </div>
+                    <div class="chart-panel">
+                        <h4>Cumulative Energy (kWh)</h4>
+                        <canvas id="cumulativeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Summary Statistics -->
+        <div class="summary-section">
+            <div class="summary-grid">
+                <div class="summary-card basic">
+                    <h3>Basic HVAC Summary</h3>
+                    <div class="summary-stats">
+                        <div class="stat">
+                            <span class="stat-label">Avg Comfort:</span>
+                            <span class="stat-value" id="basicAvgComfort">--</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Total Energy:</span>
+                            <span class="stat-value" id="basicSummaryEnergy">--</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Manual Adjustments:</span>
+                            <span class="stat-value" id="basicAdjustments">0</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="summary-card smart">
+                    <h3>POET HVAC Summary</h3>
+                    <div class="summary-stats">
+                        <div class="stat">
+                            <span class="stat-label">Avg Comfort:</span>
+                            <span class="stat-value" id="smartAvgComfort">--</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Total Energy:</span>
+                            <span class="stat-value" id="smartSummaryEnergy">--</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-label">Energy Savings:</span>
+                            <span class="stat-value" id="energySavings">--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>🚀 POET Demo - Showing the power of SENSE + THINK + ACT</p>
+            <p><small>Basic HVAC requires manual thermostat adjustments. POET HVAC learns from comfort feedback.</small></p>
+        </div>
+    </footer>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

@@ -5,9 +5,9 @@ POE-focused implementation providing immediate value through the core
 Perceive → Operate → Enforce pipeline, with optional T-stage learning.
 """
 
-from .mvp_poet import (
-    POEConfig,
-    POEExecutor,
+from .poet import (
+    POETConfig,
+    POETExecutor,
     POEMetrics,
     poet,
     # Legacy compatibility
@@ -17,7 +17,7 @@ from .mvp_poet import (
 
 from .errors import (
     # Base error classes
-    POEError,
+    POETError,
     PerceiveError,
     OperateError,
     EnforceError,
@@ -37,7 +37,7 @@ from .errors import (
 
 from .config import (
     # Profile classes
-    POEProfiles,
+    POETProfiles,
     DomainProfiles,
     # Utility functions
     create_custom_profile,
@@ -56,26 +56,32 @@ from .config import (
     semiconductor,
 )
 
+from .plugins import (
+    # Plugin system
+    POETPlugin,
+    PLUGIN_REGISTRY,
+)
+
 from .metrics import (
     # Metrics classes
-    POEExecutionMetrics,
-    POEMetricsCollector,
+    POETExecutionMetrics,
+    POETMetricsCollector,
     # Utility functions
     get_global_collector,
     record_execution_metrics,
 )
 
 __all__ = [
-    # Core POE classes
-    "POEConfig",
-    "POEExecutor",
+    # Core POET classes
+    "POETConfig",
+    "POETExecutor",
     "POEMetrics",
     "poet",
     # Legacy compatibility
     "SimplePOETConfig",
     "SimplePOETExecutor",
     # Error types
-    "POEError",
+    "POETError",
     "PerceiveError",
     "OperateError",
     "EnforceError",
@@ -90,7 +96,7 @@ __all__ = [
     "wrap_poe_error",
     "create_context",
     # Configuration profiles
-    "POEProfiles",
+    "POETProfiles",
     "DomainProfiles",
     "create_custom_profile",
     "get_profile_recommendations",
@@ -107,11 +113,14 @@ __all__ = [
     "finance",
     "semiconductor",
     # Metrics classes
-    "POEExecutionMetrics",
-    "POEMetricsCollector",
+    "POETExecutionMetrics",
+    "POETMetricsCollector",
     # Utility functions
     "get_global_collector",
     "record_execution_metrics",
+    # Plugin system
+    "POETPlugin",
+    "PLUGIN_REGISTRY",
 ]
 
-__version__ = "0.2.0"  # Bumped for POE-focused refactoring
+__version__ = "0.3.0"  # Unified poet decorator with advanced learning support

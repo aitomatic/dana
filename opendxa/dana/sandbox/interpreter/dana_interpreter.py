@@ -31,7 +31,7 @@ from opendxa.dana.sandbox.interpreter.functions.function_registry import Functio
 from opendxa.dana.sandbox.parser.ast import Program, Decorator, FunctionDefinition
 from opendxa.dana.sandbox.sandbox_context import ExecutionStatus, SandboxContext
 from opendxa.common.utils.logging import DXA_LOGGER
-from opendxa.dana.poet import POEConfig, POEExecutor
+from opendxa.dana.poet import POETConfig, POETExecutor
 
 # Map Dana LogLevel to Python logging levels
 Dana_TO_PYTHON_LOG_LEVELS = {
@@ -319,8 +319,8 @@ class DanaInterpreter(Loggable):
         # Extract POET configuration from decorator
         poet_config = self._extract_poet_config_from_decorator(poet_decorator, context)
 
-        # Create POE executor with the configuration
-        poe_executor = POEExecutor(poet_config)
+        # Create POET executor with the configuration
+        poe_executor = POETExecutor(poet_config)
 
         # Create the original function
         original_func = self._create_dana_function(func_def, context)
@@ -330,16 +330,16 @@ class DanaInterpreter(Loggable):
 
         return enhanced_func
 
-    def _extract_poet_config_from_decorator(self, poet_decorator: Decorator, context: SandboxContext) -> POEConfig:
+    def _extract_poet_config_from_decorator(self, poet_decorator: Decorator, context: SandboxContext) -> POETConfig:
         """
-        Extract POEConfig from a @poet decorator.
+        Extract POETConfig from a @poet decorator.
 
         Args:
             poet_decorator: The @poet decorator AST node
             context: The sandbox context for evaluating expressions
 
         Returns:
-            POEConfig object with settings from the decorator
+            POETConfig object with settings from the decorator
         """
         config_kwargs = {}
 
@@ -352,8 +352,8 @@ class DanaInterpreter(Loggable):
             except Exception as e:
                 DXA_LOGGER.warning(f"Failed to evaluate POET decorator argument '{key}': {e}")
 
-        # Create POEConfig with evaluated values
-        return POEConfig(**config_kwargs)
+        # Create POETConfig with evaluated values
+        return POETConfig(**config_kwargs)
 
     def _create_dana_function(self, func_def: FunctionDefinition, context: SandboxContext):
         """

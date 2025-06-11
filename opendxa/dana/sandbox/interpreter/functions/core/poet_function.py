@@ -7,7 +7,7 @@ to any function call directly from Dana code.
 
 from typing import Any, Dict, Optional
 
-from opendxa.dana.poet import POEConfig, POEExecutor
+from opendxa.dana.poet import POETConfig, POETExecutor
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
@@ -55,8 +55,8 @@ def poet_function(
     if kwargs is None:
         kwargs = {}
 
-    # Create POE configuration
-    config = POEConfig(
+    # Create POET configuration
+    config = POETConfig(
         domain=domain,
         timeout=timeout or 30.0,
         retries=retries or 2,
@@ -73,14 +73,14 @@ def poet_function(
     # Resolve the original function
     original_func, func_type, metadata = registry.resolve(func_name)
 
-    # Create POE executor and wrap the function
-    poe_executor = POEExecutor(config)
+    # Create POET executor and wrap the function
+    poe_executor = POETExecutor(config)
 
     # Create a wrapper function that will be enhanced by POE
     def target_function(*call_args, **call_kwargs):
         return registry.call(func_name, context, None, *call_args, **call_kwargs)
 
-    # Apply POE enhancement to the wrapper
+    # Apply POET enhancement to the wrapper
     enhanced_function = poe_executor(target_function)
 
     # Call the enhanced function with the provided arguments
@@ -109,16 +109,16 @@ def apply_poet_function(
     if config is None:
         config = {}
 
-    # Create POE configuration from provided options
-    poe_config = POEConfig(
+    # Create POET configuration from provided options
+    poe_config = POETConfig(
         domain=config.get("domain"),
         timeout=config.get("timeout", 30.0),
         retries=config.get("retries", 2),
         enable_training=config.get("enable_training", True),
     )
 
-    # Create POE executor and apply enhancement
-    poe_executor = POEExecutor(poe_config)
+    # Create POET executor and apply enhancement
+    poe_executor = POETExecutor(poe_config)
     enhanced_operation = poe_executor(operation)
 
     # Call the enhanced operation

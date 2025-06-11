@@ -107,8 +107,8 @@ def simple_credit_assessment(score: int, income: float, debt_ratio: float) -> st
 
 ## ✅ Current Implementation Status
 
-### Production Ready (POE Core)
-- ✅ **POEExecutor**: Complete P→O→E pipeline (`opendxa/dana/poet/mvp_poet.py`)
+### Production Ready (POET Core)
+- ✅ **POETExecutor**: Complete P→O→E pipeline (`opendxa/dana/poet/mvp_poet.py`)
 - ✅ **Domain Plugins**: 4 production plugins with input/output processing
 - ✅ **Reliability**: Automatic retries, timeout handling, error recovery
 - ✅ **Examples**: Industry demonstrations in `examples/dana/04_poet_examples/`

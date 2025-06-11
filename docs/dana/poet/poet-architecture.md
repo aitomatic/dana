@@ -24,7 +24,7 @@ def assess_credit_risk(credit_score: int, income: float, debt_ratio: float) -> s
 # T: Optional parameter learning (retry/timeout optimization)
 ```
 
-## 🔄 POE Pipeline Implementation
+## 🔄 POET Pipeline Implementation
 
 ### Current Implementation: POEExecutor
 Located in `opendxa/dana/poet/mvp_poet.py`

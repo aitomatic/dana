@@ -1,8 +1,8 @@
 """
-POE Metrics Collection Framework
+POET Metrics Collection Framework
 
 This module provides comprehensive metrics collection, analysis, and reporting
-for the POE (Perceive → Operate → Enforce) pipeline performance monitoring.
+for the POET (Perceive → Operate → Enforce) pipeline performance monitoring.
 """
 
 import json
@@ -17,8 +17,8 @@ from opendxa.common.mixins.loggable import Loggable
 
 
 @dataclass
-class POEExecutionMetrics:
-    """Detailed metrics for a single POE execution."""
+class POETExecutionMetrics:
+    """Detailed metrics for a single POET execution."""
 
     # Execution identification
     function_name: str
@@ -51,13 +51,13 @@ class POEExecutionMetrics:
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "POEExecutionMetrics":
+    def from_dict(cls, data: Dict[str, Any]) -> "POETExecutionMetrics":
         """Create metrics from dictionary format."""
         return cls(**data)
 
 
-class POEAggregateMetrics:
-    """Aggregate metrics for POE pipeline performance analysis."""
+class POETAggregateMetrics:
+    """Aggregate metrics for POET pipeline performance analysis."""
 
     def __init__(self):
         self.total_executions = 0
@@ -95,7 +95,7 @@ class POEAggregateMetrics:
             lambda: {"executions": 0, "successes": 0, "failures": 0, "total_time": 0.0}
         )
 
-    def add_execution(self, metrics: POEExecutionMetrics):
+    def add_execution(self, metrics: POETExecutionMetrics):
         """Add execution metrics to aggregates."""
         self.total_executions += 1
 
@@ -242,8 +242,8 @@ class POEAggregateMetrics:
         return insights
 
 
-class POEMetricsCollector(Loggable):
-    """Advanced metrics collector for POE pipeline monitoring and analysis."""
+class POETMetricsCollector(Loggable):
+    """Advanced metrics collector for POET pipeline monitoring and analysis."""
 
     def __init__(self, storage_path: Optional[Path] = None, max_memory_entries: int = 1000, enable_persistence: bool = True):
         """
@@ -296,9 +296,9 @@ class POEMetricsCollector(Loggable):
         stage_timings: Optional[Dict[str, float]] = None,
         error_info: Optional[Dict[str, str]] = None,
         config_info: Optional[Dict[str, Any]] = None,
-    ) -> POEExecutionMetrics:
+    ) -> POETExecutionMetrics:
         """
-        Record a POE execution with detailed metrics.
+        Record a POET execution with detailed metrics.
 
         Args:
             function_name: Name of the executed function
@@ -306,7 +306,7 @@ class POEMetricsCollector(Loggable):
             total_time: Total execution time in seconds
             attempts: Number of attempts made
             domain: Domain plugin used (if any)
-            stage_timings: Timing for each POE stage
+            stage_timings: Timing for each POET stage
             error_info: Error details (type, message, stage)
             config_info: Configuration used (retries, timeout, etc.)
 
@@ -314,7 +314,7 @@ class POEMetricsCollector(Loggable):
             POEExecutionMetrics object
         """
         # Create metrics object
-        metrics = POEExecutionMetrics(
+        metrics = POETExecutionMetrics(
             function_name=function_name, domain=domain, timestamp=time.time(), success=success, total_time=total_time, attempts=attempts
         )
 
@@ -345,7 +345,7 @@ class POEMetricsCollector(Loggable):
 
         return metrics
 
-    def _update_aggregates(self, metrics: POEExecutionMetrics):
+    def _update_aggregates(self, metrics: POETExecutionMetrics):
         """Update aggregate statistics."""
         self.total_executions += 1
         self.total_execution_time += metrics.total_time
@@ -379,7 +379,7 @@ class POEMetricsCollector(Loggable):
             else:
                 domain_stats["failures"] += 1
 
-    def _store_metrics(self, metrics: POEExecutionMetrics):
+    def _store_metrics(self, metrics: POETExecutionMetrics):
         """Store metrics in memory and optionally persist to disk."""
         # Add to memory
         self.recent_metrics.append(metrics)
@@ -391,7 +391,7 @@ class POEMetricsCollector(Loggable):
             except Exception as e:
                 self.warning(f"Failed to persist metrics: {e}")
 
-    def _persist_metrics(self, metrics: POEExecutionMetrics):
+    def _persist_metrics(self, metrics: POETExecutionMetrics):
         """Persist metrics to disk storage."""
         # Create date-based filename
         date_str = datetime.fromtimestamp(metrics.timestamp).strftime("%Y-%m-%d")
@@ -463,18 +463,18 @@ class POEMetricsCollector(Loggable):
 
 
 # Global metrics collector instance
-_global_collector: Optional[POEMetricsCollector] = None
+_global_collector: Optional[POETMetricsCollector] = None
 
 
-def get_global_collector() -> POEMetricsCollector:
+def get_global_collector() -> POETMetricsCollector:
     """Get or create the global metrics collector."""
     global _global_collector
     if _global_collector is None:
-        _global_collector = POEMetricsCollector()
+        _global_collector = POETMetricsCollector()
     return _global_collector
 
 
-def record_execution_metrics(function_name: str, success: bool, total_time: float, attempts: int, **kwargs) -> POEExecutionMetrics:
+def record_execution_metrics(function_name: str, success: bool, total_time: float, attempts: int, **kwargs) -> POETExecutionMetrics:
     """Convenience function to record execution metrics using the global collector."""
     return get_global_collector().record_execution(
         function_name=function_name, success=success, total_time=total_time, attempts=attempts, **kwargs

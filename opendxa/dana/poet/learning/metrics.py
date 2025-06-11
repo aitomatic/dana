@@ -93,7 +93,7 @@ class PerformanceTracker(Loggable):
         super().__init__()
 
         # Storage configuration
-        self.storage_path = Path(storage_path or "~/.opendxa/poet/metrics").expanduser()
+        self.storage_path = Path(storage_path or ".poet/metrics").resolve()
         self.storage_path.mkdir(parents=True, exist_ok=True)
 
         # Tracking configuration

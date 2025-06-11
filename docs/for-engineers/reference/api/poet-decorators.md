@@ -8,8 +8,8 @@ POET decorators provide automatic enhancement for functions with **Perceive-Oper
 
 | Decorator | Language | Purpose | Example |
 |-----------|----------|---------|---------|
-| `@poet()` | Python | Enhance Python functions with POE pipeline | `@poet(domain="llm_optimization")` |
-| `@poet` | Dana | Enhance Dana functions with POE pipeline | `@poet(domain="financial_services")` |
+| `@poet()` | Python | Enhance Python functions with POET pipeline | `@poet(domain="llm_optimization")` |
+| `@poet` | Dana | Enhance Dana functions with POET pipeline | `@poet(domain="financial_services")` |
 | `poet()` | Dana | Runtime enhancement function | `poet("reason", ["prompt"])` |
 
 ## Python `@poet()` Decorator
@@ -21,7 +21,7 @@ from opendxa.dana.poet import poet
 
 @poet(domain="llm_optimization", timeout=30.0, retries=3, enable_training=True)
 def my_enhanced_function(prompt: str, context: SandboxContext) -> str:
-    """Your function gets automatic POE enhancement."""
+    """Your function gets automatic POET enhancement."""
     # Your business logic here
     return process_prompt(prompt)
 ```

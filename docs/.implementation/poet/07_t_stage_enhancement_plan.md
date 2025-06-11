@@ -4,7 +4,7 @@
 
 ### ✅ **Basic T-Stage Already Implemented**
 - **Simple Heuristic Learning**: Timeout/retry parameter adjustments
-- **Parameter Persistence**: JSON storage in `~/.opendxa/poet/`
+- **Parameter Persistence**: JSON storage in `.poet/` (project-relative)
 - **Metrics Collection**: Comprehensive execution tracking
 - **Learning Infrastructure**: POEExecutor with enable_training flag
 
@@ -48,7 +48,7 @@ class OnlineLearner:
 - **✅ Convergence Detection**: Automatic detection of parameter stability
 - **✅ Performance Tracking**: Comprehensive metrics collection implemented
 - **✅ Learning Statistics**: Real-time learning effectiveness monitoring
-- **✅ Backwards Compatibility**: Zero impact on existing POE functionality
+- **✅ Backwards Compatibility**: Zero impact on existing POET functionality
 
 ### **Phase T2: Batch Learning & Pattern Recognition** (Week 2)
 **Description**: Implement sophisticated pattern analysis for deep insights
@@ -204,10 +204,10 @@ class CrossFunctionLearning:
 ## Implementation Strategy
 
 ### **Development Approach**
-1. **Backwards Compatible**: Existing POE functions work unchanged
+1. **Backwards Compatible**: Existing POET functions work unchanged
 2. **Incremental Enhancement**: Phases build on each other progressively
 3. **Optional Learning**: Advanced features enabled via configuration
-4. **Performance First**: No degradation of existing POE performance
+4. **Performance First**: No degradation of existing POET performance
 
 ### **Testing Strategy**
 - **Learning Validation**: Verify parameter improvements lead to performance gains

@@ -5,7 +5,7 @@ Cursor AI Configuration and Guidelines
 ## Quick Reference - Critical Rules
 🚨 **MUST FOLLOW IMMEDIATELY**
 - Use `DXA_LOGGER` for Python logging: `from opendxa.common.utils.logging import DXA_LOGGER`
-- Use `log()` instead of `print()` for debugging Dana code
+- Apply the Loggable mixin to Python classes needing easy OpenDXA logging
 - Always use f-strings: `f"Value: {var}"` not `"Value: " + str(var)`
 - Dana modules: `import math_utils` (no .na), Python modules: `import math.py`
 - **ALL temporary development files go in `tmp/` directory**

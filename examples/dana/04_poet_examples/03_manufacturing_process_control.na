@@ -19,7 +19,7 @@ def basic_etch_control(temperature: float, pressure: float, flow_rate: float) ->
 
 # POET-ENHANCED PROCESS CONTROL WITH MANUFACTURING DOMAIN INTELLIGENCE
 # ====================================================================
-@enhanced_poet(
+@poet(
     domain="manufacturing",
     timeout=25.0,
     retries=3,
@@ -305,7 +305,7 @@ def control_rie_etching_process(
 
 # BATCH YIELD OPTIMIZATION WITH LEARNING
 # ======================================
-@enhanced_poet(
+@poet(
     domain="manufacturing",
     timeout=45.0,
     retries=2,
@@ -437,7 +437,7 @@ def optimize_batch_yield(
 
 # PREDICTIVE MAINTENANCE WITH EQUIPMENT MONITORING
 # ===============================================
-@enhanced_poet(
+@poet(
     domain="manufacturing",
     timeout=30.0,
     retries=3,

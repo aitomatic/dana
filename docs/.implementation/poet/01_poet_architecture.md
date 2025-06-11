@@ -20,10 +20,10 @@ This architecture allows engineers to write minimal business logic while POET pr
 
 ```mermaid
 graph LR
-    subgraph "POE Implementation (Phase 1-6)"
+    subgraph "POET Implementation (Phase 1-6)"
         A[Raw Input] --> P[Perceive Stage]
 
-        subgraph "POE Execution Pipeline"
+        subgraph "POET Execution Pipeline"
             direction LR
             P --> O[Operate Stage]
             O --> E[Enforce Stage]
@@ -39,7 +39,7 @@ graph LR
         end
 
         subgraph "Context Management"
-            P --> PS[POE Status]
+            P --> PS[POET Status]
             O --> PS
             E --> PS
         end
@@ -57,18 +57,18 @@ graph LR
     style T fill:#fce4ec,stroke:#c2185b,stroke-width:2px,stroke-dasharray: 5 5
 ```
 
-## POE-First Implementation Strategy
+## POET-First Implementation Strategy
 
-**Divide & Conquer Approach**: Implement POE (Perceive-Operate-Enforce) as a complete, production-ready system first, then add T (Train) as an enhancement.
+**Divide & Conquer Approach**: Implement POET (Perceive-Operate-Enforce) as a complete, production-ready system first, then add T (Train) as an enhancement.
 
 ### Why POE First?
 
-1. **Immediate Value**: POE provides 80% of POET benefits with 50% of complexity
+1. **Immediate Value**: POET provides 80% of POET benefits with 50% of complexity
 2. **KISS/YAGNI Compliance**: Simpler 3-stage pipeline vs 4-stage
 3. **Production Focus**: Rule-based intelligence is more predictable than learning
-4. **Foundation Building**: POE provides solid foundation for future T-stage addition
+4. **Foundation Building**: POET provides solid foundation for future T-stage addition
 
-### POE Value Proposition
+### POET Value Proposition
 
 - **Reliability**: Automatic retry logic, error handling, timeout management
 - **Intelligence**: Domain-specific input optimization and output validation  

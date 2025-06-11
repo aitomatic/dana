@@ -95,7 +95,7 @@ class ExecutionFeedback:
 ### **System Performance**
 - **Zero Overhead**: Learning adds <2% to total execution time
 - **Memory Efficient**: <10MB memory usage for learning data structures
-- **Backwards Compatible**: Existing POE functions work unchanged
+- **Backwards Compatible**: Existing POET functions work unchanged
 - **Optional Enhancement**: Learning can be enabled/disabled per function
 
 ## 🧪 **Comprehensive Testing**
@@ -175,7 +175,7 @@ def enhanced_reasoning(prompt: str) -> str:
 
 ### **Advanced Configuration**
 ```python
-@enhanced_poet(
+@poet(
     domain="financial_services",
     enable_training=True,
     learning_algorithm="statistical",

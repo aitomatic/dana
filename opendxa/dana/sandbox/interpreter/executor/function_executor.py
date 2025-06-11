@@ -31,7 +31,7 @@ from opendxa.dana.sandbox.parser.ast import (
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 # POET imports for decorator handling
-from opendxa.dana.poet import POEConfig, POEExecutor
+from opendxa.dana.poet import POETConfig, POETExecutor
 from opendxa.common.utils.logging import DXA_LOGGER
 
 
@@ -533,11 +533,11 @@ class FunctionExecutor(BaseExecutor):
         # Use the first POET decorator (typically there should only be one)
         poet_decorator = poet_decorators[0]
 
-        # Extract POE configuration from decorator
+        # Extract POET configuration from decorator
         poet_config = self._extract_poet_config_from_decorator(poet_decorator, context)
 
-        # Create POE executor with the configuration
-        poe_executor = POEExecutor(poet_config)
+        # Create POET executor with the configuration
+        poe_executor = POETExecutor(poet_config)
 
         # Create a wrapper function that can be enhanced by POET
         def wrapped_dana_function(*args, **kwargs):
@@ -549,16 +549,16 @@ class FunctionExecutor(BaseExecutor):
 
         return enhanced_func
 
-    def _extract_poet_config_from_decorator(self, poet_decorator, context: SandboxContext) -> POEConfig:
+    def _extract_poet_config_from_decorator(self, poet_decorator, context: SandboxContext) -> POETConfig:
         """
-        Extract POEConfig from a @poet decorator with comprehensive validation.
+        Extract POETConfig from a @poet decorator with comprehensive validation.
 
         Args:
             poet_decorator: The @poet decorator AST node
             context: The sandbox context for evaluating expressions
 
         Returns:
-            POEConfig object with settings from the decorator
+            POETConfig object with settings from the decorator
 
         Raises:
             SandboxError: If decorator arguments are invalid
@@ -568,7 +568,7 @@ class FunctionExecutor(BaseExecutor):
         # Define valid POET configuration parameters
         valid_params = {"domain", "timeout", "retries", "enable_training", "collect_metrics"}
 
-        # Define valid domain names (from POEConfig)
+        # Define valid domain names (from POETConfig)
         valid_domains = {
             "llm_optimization",
             "building_management",
@@ -624,9 +624,9 @@ class FunctionExecutor(BaseExecutor):
 
             config_kwargs[key] = evaluated_value
 
-        # Create POEConfig with validated values
+        # Create POETConfig with validated values
         try:
-            return POEConfig(**config_kwargs)
+            return POETConfig(**config_kwargs)
         except Exception as e:
             raise SandboxError(f"POET decorator error: Failed to create configuration: {e}")
 

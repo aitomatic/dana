@@ -58,7 +58,7 @@ POET (Parameter Optimization Engine + Training) examples for functions that get 
 **4 Focused Examples:**
 - `poet_basic_demo.na` - Simple POET usage
 - `poet_decorator_demo.na` - Configuration patterns
-- `enhanced_poet_learning_demo.na` - Advanced learning features  
+- `poet_learning_demo.na` - Advanced learning features  
 - `poet_pipeline_demo.na` - POET in data pipelines
 
 **Value:** Learn to build functions that optimize themselves automatically
@@ -128,7 +128,7 @@ uv run python -m opendxa.dana.exec.dana examples/dana/03_advanced_features/hybri
 uv run python -m opendxa.dana.exec.dana examples/dana/04_poet_examples/poet_basic_demo.na
 
 # Advanced POET features
-uv run python -m opendxa.dana.exec.dana examples/dana/04_poet_examples/enhanced_poet_learning_demo.na
+uv run python -m opendxa.dana.exec.dana examples/dana/04_poet_examples/poet_learning_demo.na
 ```
 
 ## 🎯 **Quality-Focused Approach**
@@ -161,7 +161,7 @@ uv run python -m opendxa.dana.exec.dana examples/dana/04_poet_examples/enhanced_
 ### **Building AI Applications**  
 1. `03_advanced_features/reason_demo.na` - AI reasoning introduction
 2. `03_advanced_features/hybrid_math_agent.na` - Complete AI agent
-3. `04_poet_examples/enhanced_poet_learning_demo.na` - Self-improving AI
+3. `04_poet_examples/poet_learning_demo.na` - Self-improving AI
 
 ### **Production Applications**
 1. `03_advanced_features/temperature_monitor.na` - Real-world monitoring

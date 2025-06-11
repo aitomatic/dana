@@ -19,7 +19,7 @@ def basic_patient_assessment(temperature: float, heart_rate: int, symptoms: list
 
 # POET-ENHANCED PATIENT ANALYSIS WITH HEALTHCARE DOMAIN INTELLIGENCE
 # =================================================================
-@enhanced_poet(
+@poet(
     domain="healthcare",
     timeout=25.0,
     retries=2,
@@ -258,7 +258,7 @@ def analyze_patient_vitals(
 
 # CLINICAL DECISION SUPPORT WITH DRUG INTERACTION CHECKING
 # ========================================================
-@enhanced_poet(
+@poet(
     domain="healthcare",
     timeout=30.0,
     retries=3,

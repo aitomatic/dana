@@ -12,6 +12,7 @@ This tracker references the complete POET design documentation:
 - **[04_poet_plugin_architecture.md](04_poet_plugin_architecture.md)** - Domain plugin system and extensibility
 - **[05_poet_parameter_storage_and_sharing.md](05_poet_parameter_storage_and_sharing.md)** - Parameter persistence and sharing mechanisms
 - **[06_poet_mvp_implementation_plan.md](06_poet_mvp_implementation_plan.md)** - Practical 8-week implementation roadmap
+- **🆕 [09_poets_simulation_feedback_architecture.md](09_poets_simulation_feedback_architecture.md)** - Enhanced Training with simulation and multi-modal feedback
 
 ### Implementation Examples
 - **[examples/enhanced_reason_function_example.md](examples/enhanced_reason_function_example.md)** - Enhanced reason() function with domain intelligence
@@ -39,42 +40,43 @@ Before implementation, review design against:
 
 ---
 
-## Implementation Strategy: POE First, Then T
+## Implementation Strategy: POET First, Then T
 
-**Divide & Conquer Approach**: Implement POE (Perceive-Operate-Enforce) as complete, production-ready system first, then add T (Train) as enhancement.
+**Divide & Conquer Approach**: Implement POET (Perceive-Operate-Enforce) as complete, production-ready system first, then add T (Train) as enhancement.
 
-### **Phase 1-6: POE Implementation (Production Ready)**
+### **Phase 1-6: POET Implementation (Production Ready)**
 - **Immediate Value**: Reliability, domain intelligence, validation
 - **Simpler Architecture**: 3-stage pipeline vs 4-stage  
-- **Production Ready**: Full POE system with comprehensive testing
+- **Production Ready**: Full POET system with comprehensive testing
 - **Learning Preparation**: Architecture ready for T stage addition
 
 ### **Future Phases: T (Train) Enhancement**
-- **Learning Addition**: Add T stage to existing POE foundation
-- **Backwards Compatible**: Existing POE functions gain learning automatically
+- **Learning Addition**: Add T stage to existing POET foundation
+- **Backwards Compatible**: Existing POET functions gain learning automatically
 - **Incremental**: Optional learning enables gradual adoption
 
 ---
 
 ## Implementation Phases Status
 
-### **POE Implementation**: ✅ **COMPLETE** - Production Ready
+### **POET Implementation**: ✅ **COMPLETE** - Production Ready
 **Overall Progress**: [x] 16.7% | [x] 33.4% | [x] 50.1% | [x] 66.8% | [x] 83.5% | [x] 100%
 
-**🎉 ALL POE PHASES COMPLETE - PRODUCTION READY** ✅
+**🎉 ALL POET PHASES COMPLETE - PRODUCTION READY** ✅
 
-### **T-Stage Enhancement**: ✅ **PHASE T1 COMPLETE** - Advanced Learning Active
+### **T-Stage Enhancement**: ✅ **PHASES T1 & T2 COMPLETE** - Advanced Learning + Simulation Active
 **Phase T1 Progress**: [x] 100% - Online Learning Algorithms Implemented
+**Phase T2 Progress**: [x] 100% - Enhanced Training with Simulation & Multi-Modal Feedback
 
-**🚀 ENHANCED POET (POE+T) NOW AVAILABLE** ✅
+**🚀 ENHANCED POET (POE+T) WITH SIMULATION FEEDBACK NOW AVAILABLE** ✅
 
 ### Phase 1: Foundation & Architecture (16.7% of total) ✅ COMPLETE
 **Description**: Establish core infrastructure and architectural patterns
 - [x] IPV-free codebase (legacy removal complete)
 - [x] Enhanced POEExecutor (POE-only) (POE-focused architecture complete)
 - [x] POE-specific error types (comprehensive error system)
-- [x] Configuration profiles for POE (predefined profiles and utilities)
-- [x] POE metrics collection framework (advanced monitoring system)
+- [x] Configuration profiles for POET (predefined profiles and utilities)
+- [x] POET metrics collection framework (advanced monitoring system)
 - [x] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass (534 tests passing)
 - [x] **Phase Gate**: Update implementation progress checkboxes
 
@@ -127,10 +129,10 @@ Documentation References to Update:
 - examples/na/with_use_statement.na (IPV enable_ipv flags)
 -->
 
-**POE Core Components:**
-- [x] Define POE components and interfaces *(POE pipeline architecture established)*
-- [x] Create POE infrastructure and scaffolding *(POEExecutor, POEConfig, POEMetrics)*
-- [x] Establish POE architectural patterns *(P-O-E pipeline with optional T-stage)*
+**POET Core Components:**
+- [x] Define POET components and interfaces *(POET pipeline architecture established)*
+- [x] Create POET infrastructure and scaffolding *(POEExecutor, POEConfig, POEMetrics)*
+- [x] Establish POET architectural patterns *(P-O-E pipeline with optional T-stage)*
 - [x] Remove T-stage dependencies from core architecture *(Training now optional)*
 - [x] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass *(Current: 534 passed)*
 - [x] **Phase Gate**: Update implementation progress checkboxes
@@ -138,9 +140,9 @@ Documentation References to Update:
 **Deliverables:**
 - [x] **IPV-free codebase** (legacy removal complete)
 - [x] **Enhanced POEExecutor (POE-only)** (POE-focused architecture complete)
-- [x] **POE-specific error types (POEError hierarchy)** (comprehensive error system)
+- [x] **POE-specific error types (POETError hierarchy)** (comprehensive error system)
 - [x] **Configuration profiles for POE** (predefined profiles and utilities)
-- [x] POE metrics collection framework (advanced monitoring system)
+- [x] POET metrics collection framework (advanced monitoring system)
 
 ### Phase 2: Core Functionality (16.7% of total) ✅ COMPLETE
 **Description**: Implement primary features and happy path scenarios
@@ -151,115 +153,116 @@ Documentation References to Update:
 - [x] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass (534 tests passing)
 - [x] **Phase Gate**: Update implementation progress checkboxes
 
-### Phase 3: POE Error Handling & Edge Cases (16.7% of total) ✅ COMPLETE
-**Description**: Add comprehensive POE error detection and edge case handling
+### Phase 3: POET Error Handling & Edge Cases (16.7% of total) ✅ COMPLETE
+**Description**: Add comprehensive POET error detection and edge case handling
 **Status**: ✅ COMPLETE
 
-**POE Reliability:**
-- [x] Add comprehensive POE error detection and validation
-- [x] Test POE failure scenarios and error conditions
-- [x] Handle POE edge cases and boundary conditions
-- [x] Implement POE circuit breakers and degradation strategies
+**POET Reliability:**
+- [x] Add comprehensive POET error detection and validation
+- [x] Test POET failure scenarios and error conditions
+- [x] Handle POET edge cases and boundary conditions
+- [x] Implement POET circuit breakers and degradation strategies
 - [x] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass (534 tests passing)
 - [x] **Phase Gate**: Update implementation progress checkboxes
 
 **Deliverables:**
-- [x] POE error recovery strategies
-- [x] Comprehensive POE test coverage
-- [x] POE monitoring and alerting
-- [x] POE security hardening
+- [x] POET error recovery strategies
+- [x] Comprehensive POET test coverage
+- [x] POET monitoring and alerting
+- [x] POET security hardening
 
-### Phase 4: Advanced POE Features & Integration (16.7% of total) ✅ COMPLETE
-**Description**: Add sophisticated POE functionality and ensure seamless integration
+### Phase 4: Advanced POET Features & Integration (16.7% of total) ✅ COMPLETE
+**Description**: Add sophisticated POET functionality and ensure seamless integration
 **Status**: ✅ COMPLETE
 
 **Advanced POE:**
-- [x] Add sophisticated POE functionality (advanced domain intelligence)
-- [x] Test complex POE interactions and integration scenarios
-- [x] Ensure seamless POE integration with existing opendxa systems
-- [x] Implement POE capability mixin integration
+- [x] Add sophisticated POET functionality (advanced domain intelligence)
+- [x] Test complex POET interactions and integration scenarios
+- [x] Ensure seamless POET integration with existing opendxa systems
+- [x] Implement POET capability mixin integration
 - [x] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass (534 tests passing)
 - [x] **Phase Gate**: Update implementation progress checkboxes
 
 **Deliverables:**
 - [x] Advanced domain plugins (4 complete domains)
-- [x] POE capability mixin
-- [x] Resource-aware POE optimization
-- [x] POE plugin marketplace preparation
+- [x] POET capability mixin
+- [x] Resource-aware POET optimization
+- [x] POET plugin marketplace preparation
 
-### Phase 5: POE Performance & Production Testing (16.7% of total) ✅ COMPLETE
-**Description**: Validate real-world POE performance and run comprehensive tests
+### Phase 5: POET Performance & Production Testing (16.7% of total) ✅ COMPLETE
+**Description**: Validate real-world POET performance and run comprehensive tests
 **Status**: ✅ COMPLETE
 
-**POE Production Readiness:**
-- [x] Test real-world POE scenarios and production-like conditions
-- [x] Validate POE performance benchmarks and requirements
-- [x] Run POE regression tests and integration suites
-- [x] Conduct POE load testing and stress testing
+**POET Production Readiness:**
+- [x] Test real-world POET scenarios and production-like conditions
+- [x] Validate POET performance benchmarks and requirements
+- [x] Run POET regression tests and integration suites
+- [x] Conduct POET load testing and stress testing
 - [x] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass (534 tests passing)
 - [x] **Phase Gate**: Update implementation progress checkboxes
 
 **Deliverables:**
-- [x] POE performance validation
+- [x] POET performance validation
 - [x] Production deployment guides
-- [x] POE monitoring dashboards
-- [x] POE scaling documentation
+- [x] POET monitoring dashboards
+- [x] POET scaling documentation
 
-### Phase 6: POE Polish & Documentation (16.7% of total) ✅ COMPLETE
-**Description**: Finalize POE documentation, create migration guides, and perform final validation
+### Phase 6: POET Polish & Documentation (16.7% of total) ✅ COMPLETE
+**Description**: Finalize POET documentation, create migration guides, and perform final validation
 **Status**: ✅ COMPLETE
 
-**POE Production Release:**
-- [x] Update POE documentation and API references
-- [x] Create POE migration guides and upgrade instructions
-- [x] POE final validation and production sign-off
+**POET Production Release:**
+- [x] Update POET documentation and API references
+- [x] Create POET migration guides and upgrade instructions
+- [x] POET final validation and production sign-off
 - [x] Prepare T-stage addition architecture
 - [x] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass (534 tests passing)
 - [x] **Phase Gate**: Update implementation progress checkboxes to 100%
 
 **Deliverables:**
-- [x] Complete POE documentation
-- [x] POE best practices guides
+- [x] Complete POET documentation
+- [x] POET best practices guides
 - [x] T-stage integration specifications
-- [x] POE production release
+- [x] POET production release
 
 ---
 
 ## T-Stage Enhancement Implementation
 
 ### **T-Stage Enhancement Progress - PHASE T1 COMPLETE** ✅
-**Goal**: Add sophisticated learning capabilities to proven POE foundation
+**Goal**: Add sophisticated learning capabilities to proven POET foundation
 
 **T-Stage Phases Progress:**
 - **Phase T1**: ✅ **COMPLETE** - Online Learning Algorithms (statistical parameter optimization)
-- **Phase T2**: 🔮 **PLANNED** - Batch Learning & Pattern Recognition  
+- **Phase T2**: ✅ **COMPLETE** - Enhanced Training with Simulation & Multi-Modal Feedback
+- **Phase T2.1**: ✅ **COMPLETE** - Project-Relative Parameter Storage
 - **Phase T3**: 🔮 **PLANNED** - Cross-Function Intelligence Sharing
 - **Phase T4**: 🔮 **PLANNED** - Adaptive Learning Strategies
 - **Phase T5**: 🔮 **PLANNED** - Learning Analytics & Optimization
 - **Phase T6**: 🔮 **PLANNED** - Advanced POET Production Features
 
 **T-Stage Integration Strategy - IMPLEMENTED:**
-- [x] **Backwards Compatible**: ✅ **VERIFIED** - Existing POE functions work unchanged (534 tests passing)
+- [x] **Backwards Compatible**: ✅ **VERIFIED** - Existing POET functions work unchanged (534 tests passing)
 - [x] **Optional Learning**: ✅ **IMPLEMENTED** - T-stage enabled via `enable_training=True` flag
-- [x] **Gradual Rollout**: ✅ **ACTIVE** - Enhanced learning available via `@enhanced_poet` decorator
-- [x] **Data-Driven**: ✅ **IMPLEMENTED** - T-stage uses POE execution feedback for optimization
+- [x] **Gradual Rollout**: ✅ **ACTIVE** - Enhanced learning available via `@poet` decorator
+- [x] **Data-Driven**: ✅ **IMPLEMENTED** - T-stage uses POET execution feedback for optimization
 
 ---
 
-## Current Implementation Status - POE Focus
+## Current Implementation Status - POET Focus
 
-### POE Components Status ✅ ALL COMPLETE
-- [x] Core POE decorator and executor base (`POEExecutor`)
+### POET Components Status ✅ ALL COMPLETE
+- [x] Core POET decorator and executor base (`POEExecutor`)
 - [x] Basic retry logic with exponential backoff (Operate stage)
 - [x] Domain plugin system with 4 working plugins (Perceive stage)
 - [x] Basic output validation (Enforce stage)
 - [x] Integration with Dana's reason function
 - [x] Plugin registry system
-- [x] **Enhanced POE architecture** (T-stage dependencies removed)
+- [x] **Enhanced POET architecture** (T-stage dependencies removed)
 - [x] **POE-specific metrics and observability** (comprehensive monitoring)
-- [x] **POE configuration profiles** (domain-specific configs)
-- [x] **Enhanced POE error types** (POEError hierarchy complete)
-- [x] **Production-ready POE monitoring** (metrics collection active)
+- [x] **POET configuration profiles** (domain-specific configs)
+- [x] **Enhanced POET error types** (POETError hierarchy complete)
+- [x] **Production-ready POET monitoring** (metrics collection active)
 - [x] **Security and compliance features** (domain validation complete)
 
 ### Domain Plugins Status ✅ ALL PRODUCTION READY
@@ -267,39 +270,39 @@ Documentation References to Update:
 - [x] `building_management` - HVAC optimization and equipment protection (P+O+E stages)
 - [x] `financial_services` - Credit assessment and compliance (P+O+E stages)
 - [x] `semiconductor` - Process optimization and root-cause analysis (P+O+E stages)
-- [x] **Enhanced for POE focus** (T-stage assumptions removed, pure POE)
+- [x] **Enhanced for POET focus** (T-stage assumptions removed, pure POE)
 
 ### Test Coverage Status ✅ COMPREHENSIVE COVERAGE
-- [x] Basic POE functionality tests (534 tests passing)
-- [x] Domain plugin integration tests (POE stages)
-- [x] Error handling and retry tests (POE resilience)
+- [x] Basic POET functionality tests (534 tests passing)
+- [x] Domain plugin integration tests (POET stages)
+- [x] Error handling and retry tests (POET resilience)
 - [x] **POE-specific performance benchmark tests** (all domains tested)
-- [x] **POE integration tests with Dana/opendxa** (reason function enhanced)
-- [x] **POE security and compliance tests** (domain validation)
-- [x] **POE load and stress tests** (production readiness validated)
+- [x] **POET integration tests with Dana/opendxa** (reason function enhanced)
+- [x] **POET security and compliance tests** (domain validation)
+- [x] **POET load and stress tests** (production readiness validated)
 - [x] **T-stage preparation tests** (architecture ready for future enhancement)
 
 ---
 
-## ✅ POE IMPLEMENTATION COMPLETE - ALL PHASES FINISHED
+## ✅ POET IMPLEMENTATION COMPLETE - ALL PHASES FINISHED
 
 ### ✅ Completed (Weeks 1-8) - All Phases Complete
 - [x] **Complete IPV legacy removal** (clean slate achieved)
 - [x] **POE-focused architecture** (T-stage dependencies removed)
-- [x] **POE-specific error types** (POEError hierarchy complete)
-- [x] **POE configuration profiles** (domain-specific configs implemented)
-- [x] **POE metrics collection framework** (comprehensive monitoring active)
+- [x] **POE-specific error types** (POETError hierarchy complete)
+- [x] **POET configuration profiles** (domain-specific configs implemented)
+- [x] **POET metrics collection framework** (comprehensive monitoring active)
 - [x] **Enhanced Perceive stage** (domain intelligence working)
 - [x] **Robust Operate stage** (advanced retry logic implemented)
 - [x] **Comprehensive Enforce stage** (domain validation complete)
-- [x] **POE error handling** (edge case coverage complete)
-- [x] **Advanced POE features** (4 domain plugins production-ready)
-- [x] **POE performance optimization** (534 tests passing)
+- [x] **POET error handling** (edge case coverage complete)
+- [x] **Advanced POET features** (4 domain plugins production-ready)
+- [x] **POET performance optimization** (534 tests passing)
 - [x] **Production deployment** (documentation complete)
 - [x] **T-stage preparation** (architecture ready for future enhancement)
 
 ### 🚀 Production Status: READY FOR USERS
-- **✅ Auto-Enhancement Active**: Every Dana `reason()` call gets POE pipeline
+- **✅ Auto-Enhancement Active**: Every Dana `reason()` call gets POET pipeline
 - **✅ Zero-Configuration**: Users get benefits without code changes
 - **✅ Domain Intelligence**: 4 production domains (LLM, Building, Financial, Semiconductor)
 - **✅ Robust Operation**: Comprehensive error handling and recovery
@@ -310,19 +313,38 @@ Documentation References to Update:
 #### ✅ **COMPLETED - Phase T1: Online Learning Algorithms** 
 - [x] **T-stage architecture design** ✅ **COMPLETE** (learning system implemented)
 - [x] **Learning system implementation** ✅ **COMPLETE** (statistical online parameter optimization) 
-- [x] **Full POET (POE+T) integration** ✅ **COMPLETE** (seamless learning addition via enhanced_poet decorator)
+- [x] **Full POET (POE+T) integration** ✅ **COMPLETE** (seamless learning addition via poet decorator)
 - [x] **Advanced learning algorithms** ✅ **COMPLETE** (gradient estimation, Thompson sampling, adaptive rates)
 - [x] **16/16 Enhanced Learning Tests Passing** ✅ **COMPLETE** (comprehensive test coverage)
 
-#### 🔮 **Future Enhancement Opportunities - Phase T2+**
-- [ ] **Batch Learning & Pattern Recognition** (Phase T2 - deep pattern analysis)
-- [ ] **Cross-Function Intelligence Sharing** (Phase T3 - parameter collaboration)
-- [ ] **Adaptive Learning Strategies** (Phase T4 - self-optimizing algorithms)
-- [ ] **Learning Analytics Dashboard** (Phase T5 - real-time learning visualization)
+#### ✅ **COMPLETED - Phase T2: Enhanced Training with Simulation & Multi-Modal Feedback**
+- [x] **Multi-modal feedback architecture** ✅ **COMPLETE** (FeedbackProvider interface with unified protocol)
+- [x] **Simulation feedback system** ✅ **COMPLETE** (thermal, energy, comfort, equipment domain models)
+- [x] **Feedback mode switching** ✅ **COMPLETE** (REAL_WORLD, SIMULATION, HYBRID, SAFE_TESTING modes)
+- [x] **Unified feedback protocol** ✅ **COMPLETE** (seamless development-to-production transitions)
+- [x] **Domain-specific simulation models** ✅ **COMPLETE** (HVAC thermal dynamics, energy efficiency modeling)
+- [x] **Enhanced Training stage design** ✅ **COMPLETE** (simulation capabilities integrated into T stage)
+- [x] **Comprehensive documentation** ✅ **COMPLETE** (09_poets_simulation_feedback_architecture.md)
+- [x] **Master design integration** ✅ **COMPLETE** (enhanced T stage diagram in master plan)
+
+#### ✅ **COMPLETED - Phase T2.1: Project-Relative Parameter Storage**
+- [x] **Parameter storage location fixed** ✅ **COMPLETE** (now uses `.poet/` in project directory instead of home directory)
+- [x] **Project isolation implemented** ✅ **COMPLETE** (each Dana project has independent parameter learning)  
+- [x] **Documentation updated** ✅ **COMPLETE** (design docs reflect new project-relative approach)
+- [x] **Portability enhanced** ✅ **COMPLETE** (parameters travel with project code)
+- [x] **Multi-project support** ✅ **COMPLETE** (no global parameter pollution)
+- [x] **Gitignore recommendations** ✅ **COMPLETE** (teams can choose to commit learned parameters)
+
+#### 🔮 **Future Enhancement Opportunities - Phase T3+**
+- [ ] **Plugin-Learning Integration** (Phase T3a - domain-specific learning within plugins)
+- [ ] **Cross-Function Intelligence Sharing** (Phase T3 - parameter collaboration across functions)
+- [ ] **Adaptive Learning Strategies** (Phase T4 - self-optimizing algorithms and meta-learning)
+- [ ] **Learning Analytics Dashboard** (Phase T5 - real-time learning visualization and insights)
+- [ ] **Production Simulation Integration** (Phase T6 - real-time digital twin capabilities)
 
 ---
 
-## POE Success Criteria
+## POET Success Criteria
 
 ### **POE-Only Value Targets**
 1. **Enhanced reason() function**: 20% faster, 15% cost reduction, 95% reliability (without learning)
@@ -330,41 +352,230 @@ Documentation References to Update:
 3. **Financial services**: 90% success with messy data, full audit compliance (validation-focused)
 4. **Semiconductor**: 70% diagnosis accuracy, 40% faster troubleshooting (domain rules)
 
-### **POE Performance Targets**
-- **<8ms overhead**: POE stages simpler than full POET
+### **POET Performance Targets**
+- **<8ms overhead**: POET stages simpler than full POET
 - **<30MB memory**: No learning data structures
-- **>99% reliability**: Focus on bulletproof POE execution
+- **>99% reliability**: Focus on bulletproof POET execution
 - **Zero learning dependencies**: Pure rule-based intelligence
 
-**🎯 POE provides 80% of POET value with 50% of complexity**
+**🎯 POET provides 80% of POET value with 50% of complexity**
 
 ---
 
-## Critical Testing Requirements - POE Focus
+## Critical Testing Requirements - POET Focus
 
-**🧪 EVERY POE PHASE MUST END WITH FULL TEST VALIDATION**
+**🧪 EVERY POET PHASE MUST END WITH FULL TEST VALIDATION**
 - Run `uv run pytest tests/ -v` before marking phase complete
 - ALL tests must pass - no exceptions, no "TODO: fix later"
 - Any test failure = phase incomplete, must fix before proceeding
-- Add new POE tests for new functionality within the same phase
-- **POE-specific**: Ensure no T-stage dependencies in core POE tests 
+- Add new POET tests for new functionality within the same phase
+- **POE-specific**: Ensure no T-stage dependencies in core POET tests 
 
-## 🎯 POE IMPLEMENTATION SUCCESS - PRODUCTION READY
+## 🎯 POET IMPLEMENTATION SUCCESS - PRODUCTION READY
 
-### **POE MVP COMPLETED**: All 6 phases delivered successfully
+### **POET MVP COMPLETED**: All 6 phases delivered successfully
 - **✅ Zero Regressions**: 534 tests passing, comprehensive coverage
 - **✅ Domain Intelligence**: 4 complete plugins (LLM, Building, Financial, Semiconductor)
 - **✅ Production Ready**: Robust error handling, metrics, monitoring
-- **✅ Auto-Enhancement**: Every Dana `reason()` call gets automatic POE pipeline
+- **✅ Auto-Enhancement**: Every Dana `reason()` call gets automatic POET pipeline
 - **✅ Documentation Complete**: Full API reference, examples, migration guides
 
-### **POE Value Delivered**:
+### **POET Value Delivered**:
 1. **Enhanced reason() function**: Automatic P→O→E pipeline with domain optimization
 2. **Building management**: HVAC optimization with equipment protection
 3. **Financial services**: Data normalization with compliance validation
 4. **Semiconductor**: Process analysis with safety monitoring
 
-### **POE Architecture Ready for T-Stage**:
+### **POET Architecture Ready for T-Stage**:
 - Training infrastructure prepared but not blocking production
-- Optional T-stage can be enabled without changing existing POE code
-- Backwards compatible enhancement path defined 
+- Optional T-stage can be enabled without changing existing POET code
+- Backwards compatible enhancement path defined
+
+---
+
+## Phase T3a: Plugin-Learning Integration Plan
+
+### **Goal**: Enable domain-specific learning within POET plugins for adaptive domain intelligence
+
+**Status**: 🔮 **PLANNED** - Ready for implementation
+
+### **Problem Statement**
+Current plugins provide static domain intelligence without learning capabilities:
+- ❌ No feedback about plugin performance
+- ❌ No adaptation of domain-specific parameters
+- ❌ No domain learning from execution results
+- ❌ Missing connection between plugin intelligence and learning outcomes
+
+### **Solution Architecture**
+
+#### **1. Extended Plugin Learning Interface**
+```python
+class POETPlugin(ABC):
+    # ... existing methods ...
+    
+    # New learning integration methods
+    def receive_feedback(self, feedback: ExecutionFeedback) -> None:
+        """Receive feedback about plugin performance"""
+        pass
+    
+    def update_from_learning(self, learning_insights: Dict[str, Any]) -> None:
+        """Update plugin behavior based on learning insights"""
+        pass
+    
+    def get_domain_metrics(self, execution_result: Dict[str, Any]) -> Dict[str, float]:
+        """Extract domain-specific metrics for learning"""
+        return {}
+    
+    def adapt_parameters(self, current_params: Dict[str, Any], performance_history: List[float]) -> Dict[str, Any]:
+        """Adapt domain-specific parameters based on performance"""
+        return current_params
+```
+
+#### **2. Plugin Learning Capabilities**
+- **Domain-Aware Learning**: Optimize domain-specific parameter ranges
+- **Adaptive Validation**: Adjust validation thresholds based on success rates
+- **Performance Optimization**: Learn optimal domain-specific performance metrics
+- **Knowledge Sharing**: Share domain knowledge across similar functions
+
+#### **3. Integration with Existing Learning System**
+- **Enhanced ExecutionFeedback**: Include plugin-specific metrics
+- **Plugin Feedback Providers**: Domain-specialized feedback generation
+- **Learning Loop Integration**: Plugin learning within POET training stage
+- **Cross-Plugin Learning**: Domain knowledge sharing across plugin instances
+
+### **Implementation Phases**
+
+#### **Phase T3a.1: Basic Plugin Learning (Week 1-2)**
+- [ ] Extend `POETPlugin` base class with learning methods
+- [ ] Modify existing plugins to track domain-specific metrics
+- [ ] Connect plugin feedback to existing `OnlineLearner`
+- [ ] Add plugin performance tracking to execution pipeline
+
+**Deliverables:**
+- [ ] Updated `POETPlugin` interface with learning methods
+- [ ] Building Management plugin with HVAC parameter learning
+- [ ] Plugin learning integration tests
+- [ ] Documentation updates
+
+#### **Phase T3a.2: Advanced Plugin Adaptation (Week 3-4)**
+- [ ] Implement plugin parameter learning algorithms
+- [ ] Create domain-specific feedback providers
+- [ ] Add plugin performance analytics
+- [ ] Implement adaptive domain validation
+
+**Deliverables:**
+- [ ] Plugin-specific learning algorithms
+- [ ] Domain feedback providers for all 4 plugins
+- [ ] Plugin learning analytics dashboard
+- [ ] Advanced plugin adaptation examples
+
+#### **Phase T3a.3: Cross-Function Domain Learning (Week 5-6)**
+- [ ] Implement domain knowledge sharing
+- [ ] Build domain-specific learning algorithms
+- [ ] Create plugin learning analytics
+- [ ] Add cross-plugin learning coordination
+
+**Deliverables:**
+- [ ] Cross-function domain learning system
+- [ ] Domain-specific learning algorithms
+- [ ] Plugin learning analytics and insights
+- [ ] Comprehensive plugin learning documentation
+
+### **Success Criteria**
+
+#### **Domain Learning Effectiveness**
+- **Building Management**: 15% improvement in energy efficiency through learned HVAC parameters
+- **Financial Services**: 20% reduction in false positives through adaptive risk thresholds
+- **Semiconductor**: 25% improvement in diagnosis accuracy through learned process correlations
+- **LLM Optimization**: 30% reduction in token usage through learned prompt optimization
+
+#### **Learning Integration Performance**
+- **Plugin Learning Overhead**: <2ms additional latency per execution
+- **Memory Usage**: <50MB additional memory per plugin with learning
+- **Learning Convergence**: Domain parameters converge within 100 executions
+- **Knowledge Retention**: 100% parameter persistence across system restarts
+
+#### **System Integration**
+- **Backwards Compatibility**: Existing plugins work unchanged without learning
+- **Optional Learning**: Plugin learning enabled via configuration flag
+- **Zero Regression**: All existing tests continue to pass
+- **Seamless Integration**: Plugin learning integrates with existing T-stage system
+
+### **Architecture Integration Points**
+
+#### **With Existing Learning System**
+- **OnlineLearner**: Extended to handle plugin-specific parameters
+- **ExecutionFeedback**: Enhanced with domain-specific metrics
+- **PerformanceTracker**: Plugin performance tracking integration
+- **Learning Storage**: Domain-specific parameter persistence
+
+#### **With Plugin System**
+- **Plugin Registry**: Learning-enabled plugin discovery
+- **Plugin Lifecycle**: Learning integration in plugin loading/unloading
+- **Plugin Configuration**: Learning parameters in plugin configuration
+- **Plugin Validation**: Learning-aware plugin validation
+
+#### **With POET Pipeline**
+- **Perceive Stage**: Plugin learning insights integration
+- **Operate Stage**: Plugin parameter optimization
+- **Enforce Stage**: Adaptive domain validation
+- **Train Stage**: Plugin learning feedback collection
+
+### **Example: Building Management Plugin Learning**
+
+```python
+class BuildingManagementPlugin(POETPlugin):
+    def __init__(self):
+        super().__init__()
+        # Learnable parameters
+        self.learned_deadband = 2.0
+        self.learned_efficiency_threshold = 0.8
+        self.learned_comfort_weight = 0.7
+    
+    def receive_feedback(self, feedback: ExecutionFeedback) -> None:
+        """Learn from HVAC system performance"""
+        # Analyze energy efficiency vs comfort metrics
+        efficiency = feedback.performance_metrics.get('energy_efficiency', 0.8)
+        comfort = feedback.performance_metrics.get('comfort_score', 0.8)
+        
+        # Adapt deadband based on performance
+        if efficiency < self.learned_efficiency_threshold:
+            self.learned_deadband *= 1.1  # Wider deadband for efficiency
+        elif comfort < 0.7:
+            self.learned_deadband *= 0.9  # Tighter deadband for comfort
+    
+    def get_domain_metrics(self, execution_result: Dict[str, Any]) -> Dict[str, float]:
+        """Extract HVAC-specific learning metrics"""
+        return {
+            'energy_efficiency': self._calculate_energy_efficiency(execution_result),
+            'comfort_score': self._calculate_comfort_score(execution_result),
+            'equipment_stress': self._calculate_equipment_stress(execution_result),
+            'temperature_stability': self._calculate_temperature_stability(execution_result)
+        }
+```
+
+### **Testing Strategy**
+
+#### **Unit Tests**
+- [ ] Plugin learning interface tests
+- [ ] Domain-specific learning algorithm tests
+- [ ] Plugin feedback integration tests
+- [ ] Cross-plugin learning coordination tests
+
+#### **Integration Tests**
+- [ ] Plugin learning with POET pipeline tests
+- [ ] Domain knowledge sharing tests
+- [ ] Learning persistence and recovery tests
+- [ ] Performance impact validation tests
+
+#### **Performance Tests**
+- [ ] Plugin learning overhead benchmarks
+- [ ] Memory usage validation tests
+- [ ] Learning convergence time tests
+- [ ] Cross-plugin learning scalability tests
+
+### **Documentation Plan**
+- [ ] Plugin learning interface specification
+- [ ] Domain-specific learning examples
+- [ ] Plugin learning best practices guide
+- [ ] Cross-plugin learning architecture documentation 

@@ -1,23 +1,23 @@
 """
 POE-Specific Error Types
 
-This module defines error types for the POE (Perceive → Operate → Enforce) pipeline,
+This module defines error types for the POET (Perceive → Operate → Enforce) pipeline,
 providing clear error categorization and better debugging capabilities.
 """
 
 from typing import Any, Dict, Optional
 
 
-class POEError(Exception):
-    """Base class for all POE pipeline errors."""
+class POETError(Exception):
+    """Base class for all POET pipeline errors."""
 
     def __init__(self, message: str, stage: str, context: Optional[Dict[str, Any]] = None):
         """
-        Initialize POE error.
+        Initialize POET error.
 
         Args:
             message: Human-readable error description
-            stage: POE stage where error occurred ('perceive', 'operate', 'enforce', 'train')
+            stage: POET stage where error occurred ('perceive', 'operate', 'enforce', 'train')
             context: Additional context information about the error
         """
         super().__init__(message)
@@ -29,28 +29,28 @@ class POEError(Exception):
         return f"[{self.stage.upper()} Stage] {super().__str__()}{context_str}"
 
 
-class PerceiveError(POEError):
+class PerceiveError(POETError):
     """Error during the Perceive stage (input processing)."""
 
     def __init__(self, message: str, context: Optional[Dict[str, Any]] = None):
         super().__init__(message, "perceive", context)
 
 
-class OperateError(POEError):
+class OperateError(POETError):
     """Error during the Operate stage (function execution)."""
 
     def __init__(self, message: str, context: Optional[Dict[str, Any]] = None):
         super().__init__(message, "operate", context)
 
 
-class EnforceError(POEError):
+class EnforceError(POETError):
     """Error during the Enforce stage (output validation)."""
 
     def __init__(self, message: str, context: Optional[Dict[str, Any]] = None):
         super().__init__(message, "enforce", context)
 
 
-class TrainError(POEError):
+class TrainError(POETError):
     """Error during the optional Train stage (learning/optimization)."""
 
     def __init__(self, message: str, context: Optional[Dict[str, Any]] = None):
@@ -121,8 +121,8 @@ class ParameterLearningError(TrainError):
         self.reason = reason
 
 
-class ConfigurationError(POEError):
-    """Error in POE configuration or setup."""
+class ConfigurationError(POETError):
+    """Error in POET configuration or setup."""
 
     def __init__(self, config_item: str, reason: str, context: Optional[Dict[str, Any]] = None):
         message = f"Configuration error for '{config_item}': {reason}"
@@ -134,13 +134,13 @@ class ConfigurationError(POEError):
 # Utility functions for error handling
 
 
-def wrap_poe_error(func_name: str, stage: str, original_error: Exception, context: Optional[Dict[str, Any]] = None) -> POEError:
+def wrap_poe_error(func_name: str, stage: str, original_error: Exception, context: Optional[Dict[str, Any]] = None) -> POETError:
     """
     Wrap a generic exception as a POE-specific error.
 
     Args:
         func_name: Name of the function where error occurred
-        stage: POE stage ('perceive', 'operate', 'enforce', 'train')
+        stage: POET stage ('perceive', 'operate', 'enforce', 'train')
         original_error: Original exception that was caught
         context: Additional context information
 
@@ -154,10 +154,10 @@ def wrap_poe_error(func_name: str, stage: str, original_error: Exception, contex
 
     message = f"Error in function '{func_name}': {original_error}"
 
-    # Map to appropriate POE error type
+    # Map to appropriate POET error type
     error_map = {"perceive": PerceiveError, "operate": OperateError, "enforce": EnforceError, "train": TrainError}
 
-    error_class = error_map.get(stage, POEError)
+    error_class = error_map.get(stage, POETError)
     return error_class(message, error_context)
 
 
@@ -169,7 +169,7 @@ def create_context(
     **kwargs,
 ) -> Dict[str, Any]:
     """
-    Create standardized context dictionary for POE errors.
+    Create standardized context dictionary for POET errors.
 
     Args:
         function_name: Name of the function being executed

@@ -4,9 +4,9 @@
 
 POET's learning capabilities depend on storing, retrieving, and evolving parameters over time. We need to solve several critical challenges:
 
-1. **Local Learning Storage**: Where and how to persist learned parameters for a single installation
-2. **Parameter Evolution**: How to handle parameters that change over time while maintaining version compatibility
-3. **Cross-Installation Sharing**: How to export learned intelligence so others can benefit from optimized parameters
+1. **Project-Local Storage**: Where and how to persist learned parameters relative to the Dana project directory
+2. **Parameter Evolution**: How to handle parameters that change over time while maintaining version compatibility  
+3. **Cross-Project Sharing**: How to export learned intelligence so others can benefit from optimized parameters
 4. **Performance Requirements**: Fast parameter retrieval during function execution
 5. **Security and Privacy**: Ensuring shared parameters don't leak sensitive information
 6. **Compatibility Management**: Handling parameter format evolution across POET versions
@@ -47,14 +47,14 @@ POET's learning capabilities depend on storing, retrieving, and evolving paramet
 
 POET parameter management follows a **three-tier architecture**:
 
-1. **Local Tier**: High-performance local storage for active learning
-2. **Export Tier**: Standardized format for sharing learned intelligence
+1. **Project Tier**: High-performance project-local storage for active learning (`.poet/` directory)
+2. **Export Tier**: Standardized format for sharing learned intelligence  
 3. **Import Tier**: Validation and integration of external parameters
 
 ```mermaid
 graph TB
-    subgraph "Local Installation"
-        LE[Local Execution] --> LPS[Local Parameter Store]
+    subgraph "Project Directory"
+        LE[Local Execution] --> LPS[Project Parameter Store<br/>(.poet/ directory)]
         LPS --> LL[Local Learning]
         LL --> LPS
     end
@@ -85,9 +85,48 @@ graph TB
     style CR fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
 ```
 
-## Local Parameter Storage Design
+## Project-Local Parameter Storage Design
 
 ### Storage Architecture
+
+#### Project-Relative Storage Benefits
+**POET parameters are stored in a `.poet/` subdirectory relative to the Dana project**, providing:
+
+- **Project Isolation**: Each Dana project has its own parameter learning 
+- **Portability**: Parameters travel with the project code
+- **Version Control**: Optional - teams can choose to commit learned parameters
+- **Workspace Organization**: No global parameter pollution
+- **Multi-Project Support**: Work on multiple Dana projects without parameter conflicts
+
+```
+my-dana-project/
+├── main.na                    # Dana script
+├── utils.na                   # Dana modules  
+├── .poet/                     # POET learned parameters (auto-created)
+│   ├── parameters.db          # SQLite metadata (future)
+│   ├── parameter_data/        # Large parameter files (future)
+│   ├── metrics/               # Performance tracking
+│   └── function_name_domain_params.json  # Current simple format
+└── .gitignore                 # Optionally exclude .poet/ from version control
+```
+
+#### .gitignore Recommendations
+
+Teams can choose whether to commit learned parameters:
+
+```gitignore
+# Option 1: Exclude all learned parameters (recommended for most projects)
+.poet/
+
+# Option 2: Include parameters but exclude large files and metrics
+.poet/metrics/
+.poet/parameter_data/
+.poet/*.db
+
+# Option 3: Include all parameters (for parameter sharing projects)
+# (no .poet entries in .gitignore)
+```
+```
 
 #### Hybrid Storage Approach
 ```python
@@ -105,8 +144,8 @@ class POETParameterStore:
     for high-performance parameter retrieval
     """
     
-    def __init__(self, storage_path: str = "~/.opendxa/poet/parameters"):
-        self.storage_path = Path(storage_path).expanduser()
+    def __init__(self, storage_path: str = ".poet/parameters"):
+        self.storage_path = Path(storage_path).resolve()
         self.storage_path.mkdir(parents=True, exist_ok=True)
         
         # SQLite for metadata and indexing

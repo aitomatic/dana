@@ -2,16 +2,20 @@
 
 ```text
 Author: Christopher Nguyen
-Version: 1.0  
-Date: 2025-01-10  
-Status: Design Phase
+Version: 2.0  
+Date: 2025-01-11  
+Status: Design Phase - POETS Evolution
 ```
 
-**POET (Perceive → Operate → Enforce → Train) Framework**  
+**POET (Perceive → Operate → Enforce → Train) Framework - Enhanced Training Evolution**  
+
+## Architecture Enhancement Notice
+
+🚀 **Enhanced POET** - The evolution of POET with transformative simulation and feedback capabilities **integrated into the Training stage**. The framework remains the familiar 4-stage POET architecture with dramatically enhanced learning capabilities. See **[09_poets_simulation_feedback_architecture.md](09_poets_simulation_feedback_architecture.md)** for complete implementation details.
 
 ## Document Navigation
 
-This master document provides the complete 3D methodology design for POET. For detailed implementation specifics, see:
+This master document provides the complete 3D methodology design for POET/POETS. For detailed implementation specifics, see:
 
 - **[01_poet_architecture.md](01_poet_architecture.md)** - Detailed architecture components and class designs
 - **[02_poet_learning_systems.md](02_poet_learning_systems.md)** - Learning algorithms and parameter management
@@ -19,6 +23,7 @@ This master document provides the complete 3D methodology design for POET. For d
 - **[04_poet_plugin_architecture.md](04_poet_plugin_architecture.md)** - Domain plugin system and extensibility
 - **[05_poet_parameter_storage_and_sharing.md](05_poet_parameter_storage_and_sharing.md)** - Parameter persistence and sharing mechanisms
 - **[06_poet_mvp_implementation_plan.md](06_poet_mvp_implementation_plan.md)** - Practical 8-week implementation roadmap
+- **🆕 [09_poets_simulation_feedback_architecture.md](09_poets_simulation_feedback_architecture.md)** - **POETS simulation/feedback evolution**
 
 ---
 
@@ -26,17 +31,20 @@ This master document provides the complete 3D methodology design for POET. For d
 
 ### 1.1 Problem Statement
 
-Current AI-driven systems in enterprise environments suffer from three critical gaps:
+Current AI-driven systems in enterprise environments suffer from four critical gaps:
 
 1. **Reliability Gap**: AI functions fail unpredictably without proper error handling, retry mechanisms, or validation
 2. **Intelligence Gap**: Engineers must manually implement domain-specific optimizations, compliance rules, and performance enhancements for each function
 3. **Learning Gap**: Systems cannot automatically improve based on execution patterns, user feedback, or changing conditions
+4. **🆕 Feedback Gap**: Learning is constrained by sparse real-world feedback, preventing safe testing and continuous improvement
 
 This results in:
 - **85% of AI functions** lacking proper error handling and reliability mechanisms
 - **Hours of manual work** to add enterprise-grade capabilities to simple business logic
 - **Inconsistent quality** across different teams and implementations
 - **No systematic learning** from operational experience
+- **🆕 60% slower time-to-production** due to limited development-phase learning
+- **🆕 High deployment risk** from inability to safely test strategies before production
 
 ### 1.2 Business Goals
 
@@ -65,6 +73,12 @@ This results in:
 - **Quality**: 95% user satisfaction with POET-enhanced functions
 - **Performance**: <10ms overhead per function call, <50MB memory footprint
 - **Learning**: Measurable improvements in function performance over time
+
+#### 🆕 POETS Enhancement Targets
+- **Development Acceleration**: 60% faster time-to-production through simulation-based learning
+- **Risk Mitigation**: 90% reduction in deployment risk through safe testing
+- **Learning Velocity**: 3x faster parameter convergence with hybrid feedback
+- **Feedback Coverage**: 95% feedback availability vs. 30% real-world only
 
 ### 1.4 Non-Goals
 
@@ -112,33 +126,38 @@ POET's revolutionary approach distributes intelligence across three layers:
 
 > **📋 Detailed Architecture**: See [01_poet_architecture.md](01_poet_architecture.md) for complete technical architecture, class hierarchies, and detailed implementation specifications.
 
-#### Four-Stage Pipeline
+#### POET Four-Stage Pipeline with Enhanced Training
 ```mermaid
-graph LR
-    subgraph "POET Pipeline"
-        A[Raw Input] --> P[Perceive]
-        P --> O[Operate] 
-        O --> E[Enforce]
-        E --> T[Train]
-        T --> B[Enhanced Output]
+graph TD
+    A["P: Perceive<br/>Input Processing"] --> B["O: Operate<br/>Function Execution"]
+    B --> C["E: Enforce<br/>Output Validation"] 
+    C --> D["T: Train (Enhanced)<br/>Adaptive Learning"]
+    
+    subgraph "Enhanced Training Stage"
+        D --> E["FeedbackMode<br/>REAL_WORLD | SIMULATION<br/>HYBRID | SAFE_TESTING"]
+        E --> F["Simulation Models<br/>Thermal • Energy<br/>Comfort • Equipment"]
+        E --> G["Real World Feedback<br/>Sensors • User Satisfaction<br/>Performance Metrics"]
+        F --> H["Statistical Learning<br/>Online Learning • EWMA<br/>Gradient Estimation"]
+        G --> H
+        H --> I["Performance Tracking<br/>Confidence Intervals<br/>Thompson Sampling"]
+        I --> J["Unified Feedback Protocol<br/>Seamless Dev → Test → Production"]
     end
     
-    subgraph "Interrupt System"
-        I1[User Feedback] --> P
-        I2[Runtime Events] --> O
-        I3[Validation Errors] --> E
-    end
+    J --> A
     
-    subgraph "Learning Store"
-        T --> LS[(Parameters)]
-        LS --> P
-    end
-    
-    style P fill:#e8f5e8
-    style O fill:#fff3e0  
-    style E fill:#e3f2fd
-    style T fill:#fce4ec
+    style A fill:#e8f5e8
+    style B fill:#fff3e0  
+    style C fill:#e3f2fd
+    style D fill:#f3e5f5
+    style E fill:#e1f5fe
+    style F fill:#fff3e0
+    style G fill:#e8f5e8
+    style H fill:#f3e5f5
+    style I fill:#e3f2fd
+    style J fill:#fce4ec
 ```
+
+> **🎯 Enhanced Training**: The T (Training) stage now includes sophisticated feedback capabilities with simulation models, multi-modal feedback sources, and unified protocol for seamless development-to-production transitions. See [09_poets_simulation_feedback_architecture.md](09_poets_simulation_feedback_architecture.md) for complete implementation details.
 
 #### Stage Definitions
 
@@ -160,11 +179,15 @@ graph LR
 - Quality assurance and formatting
 - Safety interlocks and constraints
 
-**Train (T)**: Learning and parameter optimization
-- Online parameter adjustment
-- Success/failure pattern analysis
-- Performance metric tracking
-- Historical data aggregation
+**Train (T) - Enhanced**: Adaptive learning with multi-modal feedback
+- Online parameter adjustment and statistical learning
+- Success/failure pattern analysis with confidence intervals
+- Performance metric tracking with domain-specific measurements
+- Historical data aggregation and trend analysis
+- **Multi-modal feedback**: Real-world sensors, simulation models, user satisfaction
+- **Feedback modes**: REAL_WORLD, SIMULATION, HYBRID, SAFE_TESTING
+- **Domain models**: Thermal dynamics, energy efficiency, comfort optimization
+- **Unified protocol**: Seamless development-to-production feedback transitions
 
 ### 2.3 Intelligence Architecture
 
@@ -406,90 +429,9 @@ Before implementation, review design against:
 
 ---
 
-## Implementation Phases
-**Overall Progress**: [ ] 0% | [ ] 12.5% | [ ] 25% | [ ] 37.5% | [ ] 50% | [ ] 62.5% | [ ] 75% | [ ] 87.5% | [ ] 100%
+## Implementation Progress
 
-### Phase 1: POET Core Framework (12.5% of total)
-**Description**: Establish foundational POET infrastructure and basic P-O-E-T pipeline
-- [ ] Define core POET executor and configuration classes (`opendxa/dana/poet/executor.py`)
-- [ ] Create basic P-O-E-T pipeline infrastructure with retry logic
-- [ ] Establish domain plugin architecture patterns and base classes
-- [ ] Implement basic JSON-based parameter storage system
-- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
-- [ ] **Phase Gate**: Update implementation progress checkboxes
-
-### Phase 2: Enhanced reason() Function (12.5% of total)
-**Description**: Implement POET-enhanced reason function as core Dana capability
-- [ ] Create LLM optimization domain plugin (`opendxa/dana/poet/domains/llm_optimization.py`)
-- [ ] Implement enhanced reason function with POET integration
-- [ ] Add prompt optimization and response validation
-- [ ] Test IPV system compatibility and fallback mechanisms
-- [ ] Demonstrate measurable improvements (25% faster, 20% cost reduction, 95% reliability)
-- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
-- [ ] **Phase Gate**: Update implementation progress checkboxes
-
-### Phase 3: Legacy System Removal (12.5% of total)
-**Description**: Clean removal of old IPV methodology and reason_function implementation
-- [ ] Remove old IPV system from `opendxa/dana/ipv/` (entire directory)
-- [ ] Replace old reason_function implementation with POET-enhanced version
-- [ ] Update all imports and references from IPV to POET
-- [ ] Remove IPV-related tests and replace with POET tests
-- [ ] Clean up any IPV configuration or documentation references
-- [ ] Verify no IPV dependencies remain in codebase
-- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass (no IPV tests should exist)
-- [ ] **Phase Gate**: Update implementation progress checkboxes
-
-### Phase 4: Building Management System (12.5% of total)
-**Description**: Complete building management domain for Honeywell HVAC use cases
-- [ ] Implement building management domain plugin (`opendxa/dana/poet/domains/building_management.py`)
-- [ ] Create HVAC control function with thermal optimization
-- [ ] Add equipment protection and safety interlocks
-- [ ] Implement energy efficiency optimizations (unoccupied space handling)
-- [ ] Validate 15% energy efficiency improvement and zero equipment damage
-- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
-- [ ] **Phase Gate**: Update implementation progress checkboxes
-
-### Phase 5: Learning & Parameter Management System (12.5% of total)
-**Description**: Complete POET learning subsystem and parameter management (the "T" in POET)
-- [ ] Implement comprehensive learning algorithms (`opendxa/dana/poet/learning.py`)
-- [ ] Create parameter storage system with SQLite backend for production
-- [ ] Implement online, batch, and hybrid learning modes
-- [ ] Create parameter package export/import system for sharing learned intelligence
-- [ ] Add learning store for cross-function parameter optimization
-- [ ] Implement security framework for sensitive parameter data
-- [ ] Validate learning effectiveness through measurable parameter improvements
-- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
-- [ ] **Phase Gate**: Update implementation progress checkboxes
-
-### Phase 6: Financial Services & Semiconductor Domains (12.5% of total)
-**Description**: Complete remaining target domain implementations
-- [ ] Implement financial services domain plugin with data normalization
-- [ ] Create credit assessment function with compliance validation
-- [ ] Implement semiconductor domain plugin with process validation
-- [ ] Create RIE etching root cause analysis with expert recommendations
-- [ ] Validate domain-specific improvements (95% messy data success, 80% diagnosis accuracy)
-- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
-- [ ] **Phase Gate**: Update implementation progress checkboxes
-
-### Phase 7: Integration & Performance Validation (12.5% of total)
-**Description**: Comprehensive integration testing and performance optimization
-- [ ] Complete integration with existing Dana/opendxa systems
-- [ ] Validate performance benchmarks (<10ms overhead per function call)
-- [ ] Test all target use cases in realistic scenarios
-- [ ] Run comprehensive regression and integration test suites
-- [ ] Verify no breaking changes to existing functionality
-- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
-- [ ] **Phase Gate**: Update implementation progress checkboxes
-
-### Phase 8: Documentation & Production Readiness (12.5% of total)
-**Description**: Complete documentation, examples, and production deployment preparation
-- [ ] Create comprehensive usage guides and API documentation
-- [ ] Develop real-world examples for all four target domains
-- [ ] Create migration guides for existing functions
-- [ ] Final performance optimization and monitoring setup
-- [ ] Production deployment preparation and validation
-- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
-- [ ] **Phase Gate**: Update implementation progress checkboxes to 100%
+**Implementation Tracking**: See **[IMPLEMENTATION_TRACKER.md](IMPLEMENTATION_TRACKER.md)** for detailed phase tracking, current status, and completion checkboxes.
 
 ---
 
@@ -675,8 +617,8 @@ from typing import Dict, Any
 class ParameterStorage:
     """JSON-based parameter storage for MVP"""
     
-    def __init__(self, base_path: str = "~/.opendxa/poet"):
-        self.base_path = Path(base_path).expanduser()
+    def __init__(self, base_path: str = ".poet"):
+        self.base_path = Path(base_path).resolve()
         self.base_path.mkdir(parents=True, exist_ok=True)
     
     def save_parameters(self, function_id: str, domain: str, params: Dict):
