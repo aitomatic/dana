@@ -1,14 +1,15 @@
-# GitHub Action to run pytest on pull requests
+# GitHub Action to run pytest sequentially (for comprehensive testing)
 # - Runs on Python 3.12
 # - Installs the package and its dependencies
 # - Tests struct implementation comprehensively with mock LLM
 # - Executes fast regression tests only (excludes deep/comprehensive tests)
+# - For parallel testing (faster CI), use pytest-parallel.yml instead
 # - For full test coverage, run locally with: uv run pytest -m "not live" tests/
 # This helps catch regressions quickly while keeping CI times reasonable
 
-name: PyTest
+name: PyTest Sequential
 
-on: [pull_request]
+on: [push]
 
 jobs:
   test:

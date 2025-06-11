@@ -1,0 +1,183 @@
+# GitHub Action to run pytest in parallel across logical subsystems
+# - Runs on Python 3.12
+# - Parallelizes tests into logical subsystem groups for faster CI/CD
+# - Includes a catch-all job for tests that don't match explicit filters
+# - Each job runs independently to maximize parallelization
+# - For full test coverage, run locally with: uv run pytest -m "not live" tests/
+
+name: PyTest Parallel
+
+on: [pull_request]
+
+jobs:
+  # Dana Language Core - Parser, AST, interpreter, sandbox
+  test-dana-core:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+    - name: Install dependencies
+      run: uv sync --extra dev
+    - name: Test Dana Core (sandbox, parser, interpreter)
+      env:
+        OPENDXA_MOCK_LLM: "true"
+        OPENDXA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: |
+        uv run pytest tests/dana/sandbox/ tests/dana/ipv/ -m "not live and not deep" --tb=short -v
+        # Also run struct tests comprehensively as they're critical
+        uv run pytest tests/dana/sandbox/interpreter/test_struct_* -v --tb=short
+
+  # Dana Integration - REPL, transcoder, module system, .na files
+  test-dana-integration:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+    - name: Install dependencies
+      run: uv sync --extra dev
+    - name: Test Dana Integration (REPL, modules, na files)
+      env:
+        OPENDXA_MOCK_LLM: "true"
+        OPENDXA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: |
+        uv run pytest tests/dana/repl/ tests/dana/integration/ tests/dana/module/ tests/dana/na/ tests/dana/ux/ -m "not live and not deep" --tb=short -v
+
+  # Common Utilities - Graph, I/O, mixins, resources, logging
+  test-common-utilities:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+    - name: Install dependencies
+      run: uv sync --extra dev
+    - name: Test Common Utilities
+      env:
+        OPENDXA_MOCK_LLM: "true"
+        OPENDXA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: |
+        uv run pytest tests/common/ -m "not live and not deep" --tb=short -v
+
+  # Agent Framework - Capabilities and resources
+  test-agent-framework:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+    - name: Install dependencies
+      run: uv sync --extra dev
+    - name: Test Agent Framework
+      env:
+        OPENDXA_MOCK_LLM: "true"
+        OPENDXA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: |
+        uv run pytest tests/agent/ -m "not live and not deep" --tb=short -v
+
+  # Execution Engine - Pipeline and reasoning
+  test-execution-engine:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+    - name: Install dependencies
+      run: uv sync --extra dev
+    - name: Test Execution Engine
+      env:
+        OPENDXA_MOCK_LLM: "true"
+        OPENDXA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: |
+        uv run pytest tests/execution/ -m "not live and not deep" --tb=short -v
+
+  # Catch-all for any tests not covered by the above groups
+  test-miscellaneous:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+    - name: Install dependencies
+      run: uv sync --extra dev
+    - name: Test Miscellaneous (catch-all)
+      env:
+        OPENDXA_MOCK_LLM: "true"
+        OPENDXA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: |
+        # Run tests that don't match any of the explicit subsystem filters
+        # This includes any top-level test files and future additions
+        uv run pytest tests/ -m "not live and not deep" --tb=short -v \
+          --ignore=tests/dana/ \
+          --ignore=tests/common/ \
+          --ignore=tests/agent/ \
+          --ignore=tests/execution/
+
+  # Summary job that depends on all test jobs
+  test-summary:
+    needs: [test-dana-core, test-dana-integration, test-common-utilities, test-agent-framework, test-execution-engine, test-miscellaneous]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+    - name: Check test results
+      run: |
+        if [[ "${{ needs.test-dana-core.result }}" == "failure" || 
+              "${{ needs.test-dana-integration.result }}" == "failure" || 
+              "${{ needs.test-common-utilities.result }}" == "failure" || 
+              "${{ needs.test-agent-framework.result }}" == "failure" || 
+              "${{ needs.test-execution-engine.result }}" == "failure" || 
+              "${{ needs.test-miscellaneous.result }}" == "failure" ]]; then
+          echo "One or more test jobs failed"
+          exit 1
+        else
+          echo "All test jobs passed"
+        fi 
