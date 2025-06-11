@@ -1,4 +1,12 @@
 """
+Expression transformer for the Dana language.
+
+This module handles the transformation of parsed expressions into the appropriate
+AST nodes for the Dana language interpreter.
+
+# Version: 1.0.1 - GitHub CI Fix Applied - 2025-01-09
+# This comment forces GitHub CI to refresh file content
+
 Expression transformers for Dana language parsing.
 
 This module provides expression transformers for the Dana language.
