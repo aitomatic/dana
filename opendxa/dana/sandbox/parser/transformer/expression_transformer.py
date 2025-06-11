@@ -670,16 +670,12 @@ class ExpressionTransformer(BaseTransformer):
                     base = Identifier(name=name, location=getattr(base, "location", None))
                 else:
                     # For complex expressions (like SubscriptExpression), create AttributeAccess
-                    base = AttributeAccess(
-                        object=base, attribute=t.value, location=getattr(base, "location", None)
-                    )
+                    base = AttributeAccess(object=base, attribute=t.value, location=getattr(base, "location", None))
             # Indexing: [ ... ] - trailer is the index expression itself
             else:
                 # If it's not a function call or attribute access, it must be indexing
                 # The trailer is the index expression (already transformed to AST)
-                base = SubscriptExpression(
-                    object=base, index=t, location=getattr(base, "location", None)
-                )
+                base = SubscriptExpression(object=base, index=t, location=getattr(base, "location", None))
         return base
 
     def _get_full_attribute_name(self, attr):
@@ -865,3 +861,6 @@ class ExpressionTransformer(BaseTransformer):
         # If we reach here, it's an unexpected string type
         self.error(f"Unexpected string literal type: {type(item)}")
         return LiteralExpression("")
+
+
+# File updated to resolve GitHub CI syntax error - 2025-06-09
