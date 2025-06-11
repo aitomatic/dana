@@ -10,8 +10,8 @@ name: PyTest Parallel
 on: [pull_request]
 
 jobs:
-  # Dana Language Core - Parser, AST, interpreter, sandbox
-  test-dana-core:
+  # Dana Parser - Language parsing and AST generation
+  test-dana-parser:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -26,15 +26,65 @@ jobs:
       uses: astral-sh/setup-uv@v6
     - name: Install dependencies
       run: uv sync --extra dev
-    - name: Test Dana Core (sandbox, parser, interpreter)
+    - name: Test Dana Parser
       env:
         OPENDXA_MOCK_LLM: "true"
         OPENDXA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        uv run pytest tests/dana/sandbox/ tests/dana/ipv/ -m "not live and not deep" --tb=short -v
+        uv run pytest tests/dana/sandbox/parser/ tests/dana/ipv/ -m "not live and not deep" --tb=short -v
+
+  # Dana Interpreter - Language execution and runtime
+  test-dana-interpreter:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+    - name: Install dependencies
+      run: uv sync --extra dev
+    - name: Test Dana Interpreter
+      env:
+        OPENDXA_MOCK_LLM: "true"
+        OPENDXA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: |
+        uv run pytest tests/dana/sandbox/interpreter/ -m "not live and not deep" --tb=short -v
         # Also run struct tests comprehensively as they're critical
         uv run pytest tests/dana/sandbox/interpreter/test_struct_* -v --tb=short
+
+  # Dana Sandbox Core - Sandbox utilities and context management
+  test-dana-sandbox:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+    - name: Install dependencies
+      run: uv sync --extra dev
+    - name: Test Dana Sandbox Core
+      env:
+        OPENDXA_MOCK_LLM: "true"
+        OPENDXA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: |
+        uv run pytest tests/dana/sandbox/ -m "not live and not deep" --tb=short -v \
+          --ignore=tests/dana/sandbox/parser/ \
+          --ignore=tests/dana/sandbox/interpreter/
 
   # Dana Integration - REPL, transcoder, module system, .na files
   test-dana-integration:
@@ -177,13 +227,15 @@ jobs:
 
   # Summary job that depends on all test jobs
   test-summary:
-    needs: [test-dana-core, test-dana-integration, test-common-utilities, test-agent-framework, test-execution-engine, test-miscellaneous]
+    needs: [test-dana-parser, test-dana-interpreter, test-dana-sandbox, test-dana-integration, test-common-utilities, test-agent-framework, test-execution-engine, test-miscellaneous]
     runs-on: ubuntu-latest
     if: always()
     steps:
     - name: Check test results
       run: |
-        if [[ "${{ needs.test-dana-core.result }}" == "failure" || 
+        if [[ "${{ needs.test-dana-parser.result }}" == "failure" || 
+              "${{ needs.test-dana-interpreter.result }}" == "failure" || 
+              "${{ needs.test-dana-sandbox.result }}" == "failure" || 
               "${{ needs.test-dana-integration.result }}" == "failure" || 
               "${{ needs.test-common-utilities.result }}" == "failure" || 
               "${{ needs.test-agent-framework.result }}" == "failure" || 

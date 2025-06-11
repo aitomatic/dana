@@ -13,10 +13,19 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Test groups matching the CI workflow
 TEST_GROUPS = {
-    "dana-core": {
-        "description": "Dana Language Core - Parser, AST, interpreter, sandbox",
-        "paths": ["tests/dana/sandbox/", "tests/dana/ipv/"],
+    "dana-parser": {
+        "description": "Dana Parser - Language parsing and AST generation",
+        "paths": ["tests/dana/sandbox/parser/", "tests/dana/ipv/"],
+    },
+    "dana-interpreter": {
+        "description": "Dana Interpreter - Language execution and runtime",
+        "paths": ["tests/dana/sandbox/interpreter/"],
         "extra_cmd": ["tests/dana/sandbox/interpreter/test_struct_*"],
+    },
+    "dana-sandbox": {
+        "description": "Dana Sandbox Core - Sandbox utilities and context management",
+        "paths": ["tests/dana/sandbox/"],
+        "ignore_paths": ["tests/dana/sandbox/parser/", "tests/dana/sandbox/interpreter/"],
     },
     "dana-integration": {
         "description": "Dana Integration - REPL, transcoder, module system, .na files",
