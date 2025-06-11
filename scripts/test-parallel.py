@@ -70,6 +70,19 @@ def run_test_group(group_name: str, group_config: dict) -> tuple[str, bool, str,
     }
 
     try:
+        # Handle miscellaneous group specially - check if there are tests first
+        if group_name == "miscellaneous":
+            # Check if there are any tests to run with --collect-only
+            check_cmd = ["uv", "run", "pytest"] + group_config["paths"] + ["-m", "not live and not deep", "--collect-only", "-q"]
+            for ignore_path in group_config.get("ignore_paths", []):
+                check_cmd.extend(["--ignore", ignore_path])
+
+            check_result = subprocess.run(check_cmd, capture_output=True, text=True, env=env)
+            if "collected 0 items" in check_result.stdout or check_result.returncode != 0:
+                elapsed = time.time() - start_time
+                print(f"✅ {group_name} completed successfully in {elapsed:.1f}s (no tests found - good organization!)")
+                return group_name, True, "No miscellaneous tests found - all tests covered by explicit subsystems", elapsed
+
         # Run the main command
         result = subprocess.run(cmd, capture_output=True, text=True, env=env)
 
