@@ -707,8 +707,8 @@ class StatementTransformer(BaseTransformer):
             simple_import: IMPORT module_path ["as" NAME]
             module_path: NAME ("." NAME)*
         """
-        # Skip the IMPORT token and get the module_path
-        module_path = items[1]
+        # Get the module_path (first item, IMPORT token is already consumed by grammar)
+        module_path = items[0]
 
         # Extract the module path from the Tree
         if isinstance(module_path, Tree) and getattr(module_path, "data", None) == "module_path":
@@ -727,20 +727,20 @@ class StatementTransformer(BaseTransformer):
 
         # Handle alias: if we have AS token, the alias is the next item
         alias = None
-        if len(items) > 2:
-            # Check if items[2] is the AS token
-            if isinstance(items[2], Token) and items[2].type == "AS":
-                # The alias name should be in items[3]
-                if len(items) > 3 and hasattr(items[3], "value"):
-                    alias = items[3].value
-                elif len(items) > 3:
-                    alias = str(items[3])
-            else:
-                # Fallback: treat items[2] as the alias directly
-                if hasattr(items[2], "value"):
+        if len(items) > 1:
+            # Check if items[1] is the AS token
+            if isinstance(items[1], Token) and items[1].type == "AS":
+                # The alias name should be in items[2]
+                if len(items) > 2 and hasattr(items[2], "value"):
                     alias = items[2].value
-                elif items[2] is not None:
+                elif len(items) > 2:
                     alias = str(items[2])
+            else:
+                # Fallback: treat items[1] as the alias directly
+                if hasattr(items[1], "value"):
+                    alias = items[1].value
+                elif items[1] is not None:
+                    alias = str(items[1])
 
         return ImportStatement(module=module, alias=alias)
 
@@ -754,8 +754,8 @@ class StatementTransformer(BaseTransformer):
 
         Parse tree structure: [FROM, module_path_or_relative, IMPORT, NAME, [alias_name | None]]
         """
-        # Skip the FROM token and get the module_path or relative_module_path
-        module_path_item = items[1]
+        # Get the module_path or relative_module_path (first item, FROM token already consumed)
+        module_path_item = items[0]
 
         # Handle relative_module_path (starts with dots)
         if isinstance(module_path_item, Tree) and getattr(module_path_item, "data", None) == "relative_module_path":
@@ -796,17 +796,17 @@ class StatementTransformer(BaseTransformer):
                 # Fallback to string representation
                 module = str(module_path_item)
 
-        # Get the imported name (after IMPORT token)
-        # Structure: [FROM, module_path_or_relative, IMPORT, name_token, alias_token_or_none]
+        # Get the imported name (second item)
+        # Structure: [module_path_or_relative, name_token, alias_token_or_none, ...]
         name = ""
         alias = None
 
-        if len(items) >= 4 and isinstance(items[3], Token) and items[3].type == "NAME":
-            name = items[3].value
+        if len(items) >= 2 and isinstance(items[1], Token) and items[1].type == "NAME":
+            name = items[1].value
 
-        # Check for alias (5th element)
-        if len(items) >= 5 and items[4] is not None and isinstance(items[4], Token) and items[4].type == "NAME":
-            alias = items[4].value
+        # Check for alias (third element)
+        if len(items) >= 3 and items[2] is not None and isinstance(items[2], Token) and items[2].type == "NAME":
+            alias = items[2].value
 
         return ImportFromStatement(module=module, names=[(name, alias)])
 
