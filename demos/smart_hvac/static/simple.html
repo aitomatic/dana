@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart HVAC Demo - POET vs Basic</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .header {
+            text-align: center;
+            background: #2563eb;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .systems {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .system {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .basic { border-left: 4px solid #7c3aed; }
+        .smart { border-left: 4px solid #059669; }
+        .temperature {
+            font-size: 2em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .controls {
+            margin: 15px 0;
+        }
+        .btn {
+            padding: 8px 16px;
+            margin: 5px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-success { background: #059669; color: white; }
+        .btn-warning { background: #d97706; color: white; }
+        .btn-danger { background: #dc2626; color: white; }
+        .status {
+            font-size: 12px;
+            color: #666;
+        }
+        .metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .metric {
+            text-align: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        .metric-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2563eb;
+        }
+        .metric-label {
+            font-size: 0.8em;
+            color: #666;
+        }
+        .global-controls {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .connection-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .connected { background: #059669; color: white; }
+        .disconnected { background: #dc2626; color: white; }
+    </style>
+</head>
+<body>
+    <div class="connection-status" id="connectionStatus">Connecting...</div>
+    
+    <div class="header">
+        <h1>🏠 Smart HVAC Demo</h1>
+        <p>SENSE + ACT vs SENSE + THINK + ACT</p>
+    </div>
+
+    <div class="global-controls">
+        <button class="btn btn-primary" onclick="startDemo()">Start Demo</button>
+        <button class="btn" onclick="resetDemo()">Reset</button>
+    </div>
+
+    <div class="systems">
+        <!-- Basic HVAC System -->
+        <div class="system basic">
+            <h2>🌡️ Basic HVAC (SENSE + ACT)</h2>
+            <div class="temperature" id="basicTemp">72.0°F</div>
+            <div class="status" id="basicStatus">Manual thermostat control</div>
+            
+            <div class="controls">
+                <label>Target Temperature:</label>
+                <button class="btn" onclick="adjustBasicTemp(-1)">-</button>
+                <span id="basicTarget">72</span>°F
+                <button class="btn" onclick="adjustBasicTemp(1)">+</button>
+                <button class="btn btn-primary" onclick="setBasicTemp()">Set</button>
+            </div>
+            
+            <div class="metrics">
+                <div class="metric">
+                    <div class="metric-value" id="basicEnergy">0.0</div>
+                    <div class="metric-label">Energy (kWh)</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value" id="basicComfort">75</div>
+                    <div class="metric-label">Comfort Score</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value" id="basicMode">idle</div>
+                    <div class="metric-label">Mode</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- POET HVAC System -->
+        <div class="system smart">
+            <h2>🤖 POET HVAC (SENSE + THINK + ACT)</h2>
+            <div class="temperature" id="smartTemp">72.0°F</div>
+            <div class="status" id="smartStatus">Comfort-based control</div>
+            
+            <div class="controls">
+                <label>How comfortable are you?</label><br>
+                <button class="btn btn-warning" onclick="provideFeedback('too_cold')">Too Cold</button>
+                <button class="btn btn-success" onclick="provideFeedback('comfortable')">Comfortable</button>
+                <button class="btn btn-danger" onclick="provideFeedback('too_hot')">Too Hot</button>
+            </div>
+            
+            <div class="metrics">
+                <div class="metric">
+                    <div class="metric-value" id="smartEnergy">0.0</div>
+                    <div class="metric-label">Energy (kWh)</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value" id="smartComfort">75</div>
+                    <div class="metric-label">Comfort Score</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value" id="smartMode">idle</div>
+                    <div class="metric-label">Mode</div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 15px; padding: 10px; background: #f0fdf4; border-radius: 4px;">
+                <strong>POET Learning:</strong>
+                <div id="poetStatus" style="font-size: 12px; color: #666;">Initializing...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let basicTargetTemp = 72;
+        
+        function connectWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+            
+            ws.onopen = function() {
+                document.getElementById('connectionStatus').textContent = 'Connected';
+                document.getElementById('connectionStatus').className = 'connection-status connected';
+            };
+            
+            ws.onclose = function() {
+                document.getElementById('connectionStatus').textContent = 'Disconnected';
+                document.getElementById('connectionStatus').className = 'connection-status disconnected';
+                setTimeout(connectWebSocket, 3000);
+            };
+            
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                if (data.type === 'state_update') {
+                    updateDisplay(data);
+                }
+            };
+        }
+        
+        function updateDisplay(data) {
+            const basic = data.systems.basic;
+            const smart = data.systems.smart;
+            
+            // Update basic system
+            document.getElementById('basicTemp').textContent = basic.current_temp + '°F';
+            document.getElementById('basicEnergy').textContent = basic.total_energy.toFixed(3);
+            document.getElementById('basicComfort').textContent = basic.comfort_score;
+            document.getElementById('basicMode').textContent = basic.mode;
+            
+            // Update smart system
+            document.getElementById('smartTemp').textContent = smart.current_temp + '°F';
+            document.getElementById('smartEnergy').textContent = smart.total_energy.toFixed(3);
+            document.getElementById('smartComfort').textContent = smart.comfort_score;
+            document.getElementById('smartMode').textContent = smart.mode;
+            
+            // Update POET status
+            if (data.poet_status && data.poet_status.recommendations) {
+                document.getElementById('poetStatus').textContent = data.poet_status.recommendations.join(', ');
+            }
+        }
+        
+        function startDemo() {
+            fetch('/api/start', {method: 'POST'});
+        }
+        
+        function resetDemo() {
+            fetch('/api/reset', {method: 'POST'});
+        }
+        
+        function adjustBasicTemp(delta) {
+            basicTargetTemp = Math.max(60, Math.min(85, basicTargetTemp + delta));
+            document.getElementById('basicTarget').textContent = basicTargetTemp;
+        }
+        
+        function setBasicTemp() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'user_input',
+                    data: {
+                        system_id: 'basic',
+                        action: 'set_temp',
+                        value: basicTargetTemp
+                    }
+                }));
+            }
+        }
+        
+        function provideFeedback(feedback) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({
+                    type: 'user_input',
+                    data: {
+                        system_id: 'smart',
+                        action: feedback
+                    }
+                }));
+            }
+        }
+        
+        // Initialize
+        connectWebSocket();
+    </script>
+</body>
+</html>

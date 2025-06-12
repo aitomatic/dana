@@ -1,0 +1,17 @@
+{
+  "mock_reason": {
+    "original_prompt": "Analyze financial risk",
+    "optimized_prompts": [],
+    "performance_scores": [
+      0.7999999999999999
+    ],
+    "execution_times": [
+      4.0531158447265625e-06
+    ],
+    "success_rates": [
+      1.0
+    ],
+    "best_variant": null,
+    "convergence_score": 0.0
+  }
+}

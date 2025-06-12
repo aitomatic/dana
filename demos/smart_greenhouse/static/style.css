@@ -1,0 +1,552 @@
+/* Smart Greenhouse Demo Styles */
+
+:root {
+    --primary-green: #2d5016;
+    --secondary-green: #4a7c59;
+    --accent-green: #6ba368;
+    --light-green: #a3d977;
+    --background: #f8fffe;
+    --surface: #ffffff;
+    --text-primary: #1f2937;
+    --text-secondary: #6b7280;
+    --border: #e5e7eb;
+    --success: #059669;
+    --warning: #d97706;
+    --error: #dc2626;
+    --basic-color: #8b5cf6;
+    --smart-color: #059669;
+}
+
+/* Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #f8fffe 0%, #e8f5e8 100%);
+    color: var(--text-primary);
+    line-height: 1.6;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+/* Header */
+.header {
+    background: linear-gradient(135deg, var(--primary-green) 0%, var(--secondary-green) 100%);
+    color: white;
+    padding: 1.5rem 0;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.header h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    margin-bottom: 1rem;
+}
+
+.demo-controls {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+}
+
+.btn-primary {
+    background: var(--light-green);
+    color: var(--primary-green);
+}
+
+.btn-primary:hover {
+    background: var(--accent-green);
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background: rgba(255,255,255,0.2);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.3);
+}
+
+.btn-secondary:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+/* Systems Grid */
+.systems-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin: 2rem 0;
+}
+
+.system-panel {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    border: 2px solid transparent;
+    transition: all 0.3s;
+}
+
+.basic-system {
+    border-color: var(--basic-color);
+}
+
+.smart-system {
+    border-color: var(--smart-color);
+}
+
+.system-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--border);
+}
+
+.system-header h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.basic-system h2 {
+    color: var(--basic-color);
+}
+
+.smart-system h2 {
+    color: var(--smart-color);
+}
+
+.system-type {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    opacity: 0.8;
+}
+
+.connection-status {
+    font-size: 1.2rem;
+    color: var(--success);
+}
+
+/* Plant Display */
+.plant-display {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    border: 1px solid #bbf7d0;
+}
+
+.plant-visual {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    display: block;
+    transition: all 0.5s ease;
+}
+
+.plant-info {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+
+.info-item {
+    text-align: center;
+}
+
+.info-item .label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.info-item .value {
+    display: block;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--primary-green);
+}
+
+/* Environment Display */
+.environment-display {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 8px;
+}
+
+.env-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem;
+    background: white;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+}
+
+.env-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.env-value {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--secondary-green);
+}
+
+/* Control Info */
+.control-info {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: #f1f5f9;
+    border-radius: 8px;
+}
+
+.control-info h4 {
+    color: var(--primary-green);
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+}
+
+.schedule-list {
+    list-style: none;
+    font-size: 0.85rem;
+}
+
+.schedule-list li {
+    padding: 0.25rem 0;
+    color: var(--text-secondary);
+}
+
+/* Control Panel */
+.control-panel {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: #f0fdf4;
+    border-radius: 8px;
+    border: 1px solid #bbf7d0;
+}
+
+.control-panel h4 {
+    color: var(--primary-green);
+    margin-bottom: 1rem;
+    font-size: 1rem;
+}
+
+.feedback-controls {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.feedback-btn {
+    padding: 0.75rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.85rem;
+}
+
+.feedback-btn.thriving {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.feedback-btn.healthy {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.feedback-btn.stressed {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.feedback-btn.wilting {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.feedback-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.feedback-btn.highlight {
+    animation: pulse 0.5s ease-in-out;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+}
+
+.help-text {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    text-align: center;
+    font-style: italic;
+}
+
+/* Metrics */
+.metrics {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+.metric {
+    background: white;
+    padding: 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    text-align: center;
+}
+
+.metric-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.metric-value {
+    display: block;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--primary-green);
+}
+
+/* POET Status */
+.poet-status {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border: 1px solid #7dd3fc;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.poet-status h4 {
+    color: var(--smart-color);
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+}
+
+.learning-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+}
+
+.learning-item .label {
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.learning-item .value {
+    font-weight: 700;
+    color: var(--smart-color);
+}
+
+.learning-recommendations {
+    margin-top: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #bae6fd;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+/* Charts Section */
+.charts-section {
+    margin: 3rem 0;
+}
+
+.chart-container {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.chart-container h3 {
+    color: var(--primary-green);
+    margin-bottom: 2rem;
+    text-align: center;
+    font-size: 1.5rem;
+}
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+}
+
+.chart-panel {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 1rem;
+    height: 300px;
+    position: relative;
+}
+
+.chart-panel h4 {
+    color: var(--secondary-green);
+    margin-bottom: 1rem;
+    text-align: center;
+    font-size: 1rem;
+}
+
+.chart-panel canvas {
+    height: 220px !important;
+    max-height: 220px !important;
+}
+
+/* Summary Section */
+.summary-section {
+    margin: 3rem 0;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2rem;
+}
+
+.summary-card {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.summary-card.basic {
+    border-top: 4px solid var(--basic-color);
+}
+
+.summary-card.smart {
+    border-top: 4px solid var(--smart-color);
+}
+
+.summary-card h3 {
+    margin-bottom: 1.5rem;
+    font-size: 1.2rem;
+}
+
+.summary-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.stat {
+    text-align: center;
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 8px;
+}
+
+.stat-label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.stat-value {
+    display: block;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--primary-green);
+}
+
+/* Footer */
+.footer {
+    background: var(--primary-green);
+    color: white;
+    padding: 2rem 0;
+    text-align: center;
+    margin-top: 3rem;
+}
+
+.footer p {
+    margin-bottom: 0.5rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .systems-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .summary-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .plant-info {
+        grid-template-columns: 1fr;
+    }
+    
+    .environment-display {
+        grid-template-columns: 1fr;
+    }
+    
+    .feedback-controls {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Plant Visual States */
+.plant-visual.seedling { color: #84cc16; }
+.plant-visual.vegetative { color: #22c55e; }
+.plant-visual.flowering { color: #f59e0b; }
+.plant-visual.fruiting { color: #ef4444; }
+
+/* Health-based styling */
+.low-health { color: var(--error); }
+.medium-health { color: var(--warning); }
+.high-health { color: var(--success); } 

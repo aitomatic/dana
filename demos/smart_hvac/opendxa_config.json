@@ -1,0 +1,25 @@
+{
+  "preferred_models": [
+    {
+      "name": "openai:gpt-4o-mini",
+      "required_api_keys": ["OPENAI_API_KEY"]
+    },
+    {
+      "name": "openai:gpt-3.5-turbo",
+      "required_api_keys": ["OPENAI_API_KEY"]
+    },
+    {
+      "name": "anthropic:claude-3-haiku-20240307",
+      "required_api_keys": ["ANTHROPIC_API_KEY"]
+    },
+    {
+      "name": "groq:llama3-8b-8192",
+      "required_api_keys": ["GROQ_API_KEY"]
+    }
+  ],
+  "default_model": "openai:gpt-4o-mini",
+  "temperature": 0.7,
+  "max_tokens": 500,
+  "timeout": 30.0,
+  "retries": 3
+}

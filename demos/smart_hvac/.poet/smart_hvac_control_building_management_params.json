@@ -1,4 +1,4 @@
 {
-  "retries": 3,
-  "timeout": 19.683
+  "retries": 1,
+  "timeout": 1.0
 }

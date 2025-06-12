@@ -12,75 +12,86 @@ from dataclasses import dataclass
 from typing import Dict, Any, Optional
 import math
 
-# For this demo, we'll use a mock POET decorator to show the concept
-print("🎭 Running demo with mock POET decorator to showcase the concept")
+# Import the real POET framework
+try:
+    from opendxa.dana.poet.poet import poet
+    from opendxa.dana.poet.plugins import PLUGIN_REGISTRY
+    from opendxa.common.resource.llm_resource import LLMResource
+    
+    # Initialize the plugin registry to discover building management plugin
+    PLUGIN_REGISTRY.discover_plugins()
+    
+    print("✅ Running demo with REAL POET framework and LLM integration")
+    POET_AVAILABLE = "real"
+    
+except ImportError as e:
+    print(f"⚠️ Could not import POET framework: {e}")
+    print("🎭 Falling back to mock POET decorator")
+    
+    def poet(*args, **kwargs):
+        """Mock POET decorator that simulates POET enhancements for demo purposes."""
 
+        def decorator(func):
+            # Add a simple wrapper to simulate POET behavior
+            def wrapper(*func_args, **func_kwargs):
+                result = func(*func_args, **func_kwargs)
+                # Mock POET wrapper to simulate the enhanced result format
+                return {"result": result, "execution_time": 0.001, "success": True, "attempts": 1, "poet_enhanced": True}
 
-def poet(*args, **kwargs):
-    """Mock POET decorator that simulates POET enhancements for demo purposes."""
+            # Attach mock learning methods for demo
+            execution_count = 0
 
-    def decorator(func):
-        # Add a simple wrapper to simulate POET behavior
-        def wrapper(*func_args, **func_kwargs):
-            result = func(*func_args, **func_kwargs)
-            # Mock POET wrapper to simulate the enhanced result format
-            return {"result": result, "execution_time": 0.001, "success": True, "attempts": 1, "poet_enhanced": True}
-
-        # Attach mock learning methods for demo
-        execution_count = 0
-
-        def get_learning_status(*args, **kwargs):
-            nonlocal execution_count
-            execution_count += 1
-            
-            # Progressive learning status based on execution count
-            if execution_count < 5:
-                status = "Learning system initializing..."
-            elif execution_count < 20:
-                status = "Collecting baseline data..."
-            elif execution_count < 50:
-                status = "Learning patterns..."
-            else:
-                status = "Optimization active"
+            def get_learning_status(*args, **kwargs):
+                nonlocal execution_count
+                execution_count += 1
                 
-            return {
-                "learning_enabled": True, 
-                "learning_algorithm": "statistical", 
-                "executions": execution_count, 
-                "success_rate": min(0.95, 0.5 + (execution_count * 0.01)),
-                "status": status
-            }
+                # Progressive learning status based on execution count
+                if execution_count < 5:
+                    status = "Learning system initializing..."
+                elif execution_count < 20:
+                    status = "Collecting baseline data..."
+                elif execution_count < 50:
+                    status = "Learning patterns..."
+                else:
+                    status = "Optimization active"
+                    
+                return {
+                    "learning_enabled": True, 
+                    "learning_algorithm": "statistical", 
+                    "executions": execution_count, 
+                    "success_rate": min(0.95, 0.5 + (execution_count * 0.01)),
+                    "status": status
+                }
 
-        def get_learning_recommendations(*args, **kwargs):
-            if execution_count < 5:
-                return ["Initializing POET framework...", "Preparing domain plugins", "Setting up learning algorithms"]
-            elif execution_count < 20:
-                return ["Collecting temperature patterns", "Analyzing user comfort preferences", "Monitoring energy usage"]
-            elif execution_count < 50:
-                return ["Learning optimal setpoints", "Energy optimization active", "Comfort patterns detected"]
-            else:
-                return ["Optimization active", "Predictive control enabled", "25% energy savings achieved"]
+            def get_learning_recommendations(*args, **kwargs):
+                if execution_count < 5:
+                    return ["Initializing POET framework...", "Preparing domain plugins", "Setting up learning algorithms"]
+                elif execution_count < 20:
+                    return ["Collecting temperature patterns", "Analyzing user comfort preferences", "Monitoring energy usage"]
+                elif execution_count < 50:
+                    return ["Learning optimal setpoints", "Energy optimization active", "Comfort patterns detected"]
+                else:
+                    return ["Optimization active", "Predictive control enabled", "25% energy savings achieved"]
 
-        def get_metrics(*args, **kwargs):
-            nonlocal execution_count
-            return {"total_executions": execution_count, "success_rate": 0.95, "avg_execution_time": 0.001, "learning_progress": "active"}
+            def get_metrics(*args, **kwargs):
+                nonlocal execution_count
+                return {"total_executions": execution_count, "success_rate": 0.95, "avg_execution_time": 0.001, "learning_progress": "active"}
 
-        wrapper.get_learning_status = get_learning_status
-        wrapper._poet_executor = type(
-            "MockPOETExecutor",
-            (),
-            {
-                "get_learning_status": get_learning_status,
-                "get_learning_recommendations": get_learning_recommendations,
-                "get_metrics": get_metrics,
-            },
-        )()
-        return wrapper
+            wrapper.get_learning_status = get_learning_status
+            wrapper._poet_executor = type(
+                "MockPOETExecutor",
+                (),
+                {
+                    "get_learning_status": get_learning_status,
+                    "get_learning_recommendations": get_learning_recommendations,
+                    "get_metrics": get_metrics,
+                },
+            )()
+            return wrapper
 
-    return decorator
+        return decorator
 
-
-POET_AVAILABLE = "mock"  # Indicate we're using mock POET
+    POET_AVAILABLE = "mock"
 
 
 @dataclass

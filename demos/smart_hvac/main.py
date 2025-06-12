@@ -28,6 +28,7 @@ from hvac_systems import (
     POET_AVAILABLE,
 )
 from room_simulator import RoomSimulator
+from llm_integration import initialize_llm_for_demo, get_llm_manager
 
 
 # ============================================================
@@ -134,6 +135,11 @@ class HVACDemoManager:
     async def update_systems(self):
         """Update both HVAC systems and broadcast state."""
         timestamp = datetime.now().isoformat()
+
+        # Update weather ONCE for both systems
+        from room_simulator import _weather_service
+
+        _weather_service.update_weather()
 
         # Update basic HVAC system
         basic_command = basic_hvac_control(
@@ -277,6 +283,9 @@ class HVACDemoManager:
                 current_temp = self.smart_room.state.temperature
                 self.smart_target = self.comfort_controller.process_feedback(feedback=user_input.action, current_temp=current_temp)
 
+                # Use LLM for intelligent comfort reasoning if available
+                asyncio.create_task(self._handle_smart_feedback(user_input.action, current_temp))
+
                 # Provide feedback to POET for learning
                 try:
                     if hasattr(smart_hvac_control, "_poet_executor"):
@@ -286,6 +295,31 @@ class HVACDemoManager:
                         pass
                 except:
                     pass
+    
+    async def _handle_smart_feedback(self, feedback: str, current_temp: float):
+        """Handle intelligent feedback processing with LLM."""
+        try:
+            llm_manager = get_llm_manager()
+            if llm_manager.initialized:
+                # Get LLM reasoning about comfort
+                comfort_analysis = await llm_manager.reason_about_comfort(
+                    current_temp=current_temp,
+                    target_temp=self.smart_target,
+                    user_feedback=feedback,
+                    comfort_history=self.comfort_controller.comfort_history
+                )
+                
+                # Apply LLM suggestions if confidence is high enough
+                if comfort_analysis.get("confidence", 0) > 0.7:
+                    suggested_adjustment = comfort_analysis.get("suggested_adjustment", 0)
+                    if abs(suggested_adjustment) > 0.5:  # Only apply significant adjustments
+                        new_target = self.smart_target + suggested_adjustment
+                        self.smart_target = max(65, min(80, new_target))
+                        print(f"🤖 LLM suggested target adjustment: {suggested_adjustment:.1f}°F -> {self.smart_target:.1f}°F")
+                        print(f"   Reasoning: {comfort_analysis.get('reasoning', 'No reasoning provided')}")
+                    
+        except Exception as e:
+            print(f"Error in smart feedback handling: {e}")
 
 
 # Global demo manager
@@ -306,6 +340,16 @@ async def get_index():
             return HTMLResponse(f.read())
     except FileNotFoundError:
         return HTMLResponse("<h1>Demo files not found</h1><p>Please run from the demos/smart_hvac directory</p>")
+
+@app.get("/simple", response_class=HTMLResponse)
+async def get_simple():
+    """Serve the simplified demo page."""
+    html_path = os.path.join(os.path.dirname(__file__), "static", "simple.html")
+    try:
+        with open(html_path, "r") as f:
+            return HTMLResponse(f.read())
+    except FileNotFoundError:
+        return HTMLResponse("<h1>Simple demo not found</h1>")
 
 
 @app.websocket("/ws")
@@ -400,6 +444,14 @@ async def startup_event():
     """Initialize the demo on startup."""
     print("🏠 Smart HVAC Demo starting...")
     print("🌐 Visit http://localhost:8000 to see the demo")
+
+    # Initialize LLM for enhanced POET functionality
+    print("🤖 Initializing LLM integration...")
+    llm_success = await initialize_llm_for_demo()
+    if llm_success:
+        print("✅ LLM integration ready - POET will use real AI reasoning")
+    else:
+        print("⚠️ Running without LLM - POET features will be limited")
 
     # Auto-start simulation
     asyncio.create_task(demo_manager.start_simulation())

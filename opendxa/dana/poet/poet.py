@@ -270,6 +270,14 @@ class POETExecutor(Loggable):
         try:
             if self.domain_plugin:
                 self.debug("Applying domain-specific input processing")
+                
+                # Set context for learning-enabled plugins
+                if hasattr(self.domain_plugin, 'set_current_context'):
+                    self.domain_plugin.set_current_context(
+                        self.function_name or 'unknown',
+                        self.config.domain or 'generic'
+                    )
+                
                 return self.domain_plugin.process_inputs(args, kwargs)
 
             # Default input structure
@@ -329,7 +337,16 @@ class POETExecutor(Loggable):
         try:
             if self.domain_plugin:
                 self.debug("Applying domain-specific output validation")
-                return self.domain_plugin.validate_output(operation_result, perceived_input)
+                
+                # Provide execution context for learning-enabled plugins
+                context = {
+                    "perceived_input": perceived_input,
+                    "execution_time": operation_result.get("execution_time", 0.0),
+                    "attempts": operation_result.get("attempt", 1),
+                    "success": operation_result.get("success", False)
+                }
+                
+                return self.domain_plugin.validate_output(operation_result.get("result"), context)
 
             # Basic validation - ensure we have a successful result
             if operation_result.get("success", False):
@@ -466,6 +483,20 @@ class POETExecutor(Loggable):
                     success=feedback.success,
                     error_type=feedback.error_type,
                 )
+
+            # Send feedback to domain plugin for plugin-specific learning
+            if self.domain_plugin and hasattr(self.domain_plugin, 'receive_feedback'):
+                plugin_feedback = {
+                    "function_name": feedback.function_name,
+                    "success": feedback.success,
+                    "execution_time": feedback.execution_time,
+                    "output_quality": feedback.output_quality,
+                    "error_type": feedback.error_type,
+                    "parameters_used": feedback.parameters_used,
+                    "perceived_input": perceived_input,
+                    "execution_result": execution_result
+                }
+                self.domain_plugin.receive_feedback(plugin_feedback)
 
         except Exception as e:
             self.warning(f"Statistical learning failed, falling back to basic: {e}")

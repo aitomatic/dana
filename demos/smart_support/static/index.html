@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Customer Support Demo - POET Enhanced</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="demo-header">
+            <div class="header-content">
+                <h1><i class="fas fa-headset"></i> Smart Customer Support Demo</h1>
+                <p class="subtitle">POET-Enhanced Prompt Learning for Intelligent Customer Support</p>
+                <div class="demo-status">
+                    <span class="status-badge" id="poetStatus">POET Learning Active</span>
+                    <span class="status-indicator" id="connectionStatus">🟢 Connected</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="demo-controls">
+            <div class="ticket-selection">
+                <h3><i class="fas fa-ticket-alt"></i> Support Tickets</h3>
+                <div class="ticket-options">
+                    <div class="demo-tickets">
+                        <h4>Demo Scenarios</h4>
+                        <select id="demoTicketSelect">
+                            <option value="">Select a demo ticket...</option>
+                        </select>
+                        <button id="processDemoTicket" class="btn btn-primary">
+                            <i class="fas fa-play"></i> Process Ticket
+                        </button>
+                    </div>
+                    <div class="custom-ticket">
+                        <h4>Create Custom Ticket</h4>
+                        <button id="showCustomForm" class="btn btn-secondary">
+                            <i class="fas fa-plus"></i> Create Custom Ticket
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="demo-actions">
+                <button id="resetDemo" class="btn btn-outline">
+                    <i class="fas fa-refresh"></i> Reset Demo
+                </button>
+            </div>
+        </div>
+
+        <!-- Custom Ticket Form (Hidden by default) -->
+        <div id="customTicketForm" class="custom-form" style="display: none;">
+            <h3><i class="fas fa-edit"></i> Create Custom Support Ticket</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="customerName">Customer Name</label>
+                    <input type="text" id="customerName" value="Alex Thompson">
+                </div>
+                <div class="form-group">
+                    <label for="customerTier">Customer Tier</label>
+                    <select id="customerTier">
+                        <option value="basic">Basic</option>
+                        <option value="premium" selected>Premium</option>
+                        <option value="enterprise">Enterprise</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="issueType">Issue Type</label>
+                    <select id="issueType">
+                        <option value="billing">Billing</option>
+                        <option value="technical" selected>Technical</option>
+                        <option value="account">Account</option>
+                        <option value="feature_request">Feature Request</option>
+                        <option value="complaint">Complaint</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="sentiment">Customer Sentiment</label>
+                    <select id="sentiment">
+                        <option value="very_angry">Very Angry</option>
+                        <option value="frustrated" selected>Frustrated</option>
+                        <option value="neutral">Neutral</option>
+                        <option value="satisfied">Satisfied</option>
+                        <option value="happy">Happy</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="urgency">Urgency</label>
+                    <select id="urgency">
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high" selected>High</option>
+                        <option value="critical">Critical</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="previousContacts">Previous Contacts</label>
+                    <input type="number" id="previousContacts" value="2" min="0" max="10">
+                </div>
+                <div class="form-group">
+                    <label for="technicalSkill">Technical Skill Level</label>
+                    <select id="technicalSkill">
+                        <option value="beginner">Beginner</option>
+                        <option value="intermediate" selected>Intermediate</option>
+                        <option value="advanced">Advanced</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group full-width">
+                <label for="subject">Subject</label>
+                <input type="text" id="subject" value="Payment processing keeps failing">
+            </div>
+            <div class="form-group full-width">
+                <label for="description">Description</label>
+                <textarea id="description" rows="3">I've tried to process my payment 3 times today and it keeps failing with an error message saying "transaction declined". My card works fine everywhere else and I really need to renew my subscription today.</textarea>
+            </div>
+            <div class="form-actions">
+                <button id="processCustomTicket" class="btn btn-primary">
+                    <i class="fas fa-paper-plane"></i> Process Custom Ticket
+                </button>
+                <button id="hideCustomForm" class="btn btn-outline">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+            </div>
+        </div>
+
+        <div class="comparison-container">
+            <!-- Basic Support System -->
+            <div class="support-system basic-system">
+                <div class="system-header">
+                    <h2><i class="fas fa-robot"></i> Basic AI Support</h2>
+                    <p class="system-description">Generic responses, no learning</p>
+                </div>
+                
+                <div class="ticket-display" id="basicTicketDisplay">
+                    <div class="placeholder-content">
+                        <i class="fas fa-ticket-alt"></i>
+                        <p>Select a ticket to see how basic AI support handles it</p>
+                    </div>
+                </div>
+                
+                <div class="response-container" id="basicResponse">
+                    <div class="placeholder-content">
+                        <i class="fas fa-comment-dots"></i>
+                        <p>Response will appear here</p>
+                    </div>
+                </div>
+                
+                <div class="conversation-area" id="basicConversation" style="display: none;">
+                    <h4><i class="fas fa-comments"></i> Conversation History</h4>
+                    <div class="conversation-messages" id="basicMessages"></div>
+                    <div class="follow-up-area">
+                        <textarea id="basicFollowUp" placeholder="Type customer follow-up message..." rows="2"></textarea>
+                        <button id="sendBasicFollowUp" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i> Send Follow-up
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="metrics-panel" id="basicMetrics">
+                    <div class="metric">
+                        <span class="metric-label">Satisfaction</span>
+                        <span class="metric-value" id="basicSatisfaction">-</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Escalation Rate</span>
+                        <span class="metric-value" id="basicEscalation">-</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Avg Resolution</span>
+                        <span class="metric-value" id="basicResolution">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- POET-Enhanced Support System -->
+            <div class="support-system smart-system">
+                <div class="system-header">
+                    <h2><i class="fas fa-brain"></i> POET-Enhanced Support</h2>
+                    <p class="system-description">Intelligent, context-aware responses with learning</p>
+                </div>
+                
+                <div class="ticket-display" id="smartTicketDisplay">
+                    <div class="placeholder-content">
+                        <i class="fas fa-ticket-alt"></i>
+                        <p>Select a ticket to see how POET-enhanced support handles it</p>
+                    </div>
+                </div>
+                
+                <div class="response-container" id="smartResponse">
+                    <div class="placeholder-content">
+                        <i class="fas fa-lightbulb"></i>
+                        <p>Intelligent response will appear here</p>
+                    </div>
+                </div>
+                
+                <div class="conversation-area" id="smartConversation" style="display: none;">
+                    <h4><i class="fas fa-comments"></i> Conversation History</h4>
+                    <div class="conversation-messages" id="smartMessages"></div>
+                    <div class="follow-up-area">
+                        <textarea id="smartFollowUp" placeholder="Type customer follow-up message..." rows="2"></textarea>
+                        <button id="sendSmartFollowUp" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i> Send Follow-up
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="metrics-panel" id="smartMetrics">
+                    <div class="metric">
+                        <span class="metric-label">Satisfaction</span>
+                        <span class="metric-value" id="smartSatisfaction">-</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Escalation Rate</span>
+                        <span class="metric-value" id="smartEscalation">-</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Avg Resolution</span>
+                        <span class="metric-value" id="smartResolution">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Learning Dashboard -->
+        <div class="learning-dashboard">
+            <h3><i class="fas fa-chart-line"></i> POET Learning Progress</h3>
+            
+            <div class="learning-panels">
+                <div class="learning-panel">
+                    <h4><i class="fas fa-graduation-cap"></i> Learning Status</h4>
+                    <div id="learningStatus" class="learning-content">
+                        <p id="learningStatusText">Initializing learning system...</p>
+                        <div class="learning-metrics">
+                            <div class="learning-metric">
+                                <span class="metric-name">Executions:</span>
+                                <span id="learningExecutions">0</span>
+                            </div>
+                            <div class="learning-metric">
+                                <span class="metric-name">Context Accuracy:</span>
+                                <span id="learningAccuracy">60%</span>
+                            </div>
+                            <div class="learning-metric">
+                                <span class="metric-name">Tone Matching:</span>
+                                <span id="learningTone">50%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="learning-panel">
+                    <h4><i class="fas fa-lightbulb"></i> Learning Insights</h4>
+                    <div id="learningRecommendations" class="learning-content">
+                        <ul id="recommendationsList">
+                            <li>Collecting initial performance data...</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="learning-panel">
+                    <h4><i class="fas fa-trophy"></i> Performance Improvements</h4>
+                    <div id="performanceImprovements" class="learning-content">
+                        <div class="improvement-comparison">
+                            <div class="improvement-item">
+                                <span class="improvement-label">Escalation Rate:</span>
+                                <span class="improvement-before">25%</span>
+                                <i class="fas fa-arrow-right"></i>
+                                <span class="improvement-after" id="currentEscalationRate">25%</span>
+                            </div>
+                            <div class="improvement-item">
+                                <span class="improvement-label">Satisfaction:</span>
+                                <span class="improvement-before">3.0/5</span>
+                                <i class="fas fa-arrow-right"></i>
+                                <span class="improvement-after" id="currentSatisfaction">3.0/5</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="demo-footer">
+            <div class="footer-content">
+                <div class="demo-info">
+                    <h4>🎯 What This Demo Shows</h4>
+                    <ul>
+                        <li><strong>Tone Adaptation:</strong> POET learns to match customer sentiment and tier</li>
+                        <li><strong>Context Synthesis:</strong> Uses customer history for personalized responses</li>
+                        <li><strong>Escalation Intelligence:</strong> Smart routing based on multiple factors</li>
+                        <li><strong>Solution Optimization:</strong> Orders solutions by success probability</li>
+                    </ul>
+                </div>
+                <div class="tech-info">
+                    <h4>🧠 POET Learning Features</h4>
+                    <ul>
+                        <li><strong>Prompt Optimization:</strong> Learns optimal prompts for different scenarios</li>
+                        <li><strong>Performance Tracking:</strong> Monitors satisfaction and resolution rates</li>
+                        <li><strong>Adaptive Intelligence:</strong> Improves over time based on outcomes</li>
+                        <li><strong>Domain Expertise:</strong> Customer support-specific optimizations</li>
+                    </ul>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>
