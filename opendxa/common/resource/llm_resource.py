@@ -152,9 +152,13 @@ class LLMResource(BaseResource):
         if preferred_models is not None:
             self.preferred_models = preferred_models
             self.log_debug("Using preferred_models from constructor argument.")
+        elif "llm" in base_config and "preferred_models" in base_config["llm"]:
+            self.preferred_models = base_config["llm"]["preferred_models"]
+            self.log_debug("Using preferred_models from config file (llm section).")
         elif "preferred_models" in base_config:
+            # Fallback for backward compatibility
             self.preferred_models = base_config["preferred_models"]
-            self.log_debug("Using preferred_models from config file.")
+            self.log_debug("Using preferred_models from config file (root level - legacy).")
         else:
             self.preferred_models = []
             self.log_warning("No preferred_models list found in config or arguments.")
@@ -172,7 +176,7 @@ class LLMResource(BaseResource):
             self._model = self._find_first_available_model()
             if not self._model:
                 # Fallback to default model from config if auto-selection fails
-                config_default_model = base_config.get("default_model")
+                config_default_model = base_config.get("llm", {}).get("default_model") or base_config.get("default_model")
                 if config_default_model:
                     self._model = config_default_model
                     self.log_debug(f"Using default_model from config: {self._model}")

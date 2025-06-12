@@ -78,7 +78,7 @@ class LLMConfigurationManager:
     def _get_default_model(self) -> str:
         """Get the default model from configuration."""
         try:
-            return self.config_loader.get_config().get("llm", {}).get("default_model", "openai:gpt-4o-mini")
+            return self.config_loader.get_default_config().get("llm", {}).get("default_model", "openai:gpt-4o-mini")
         except Exception:
             return "openai:gpt-4o-mini"
 
@@ -92,9 +92,20 @@ class LLMConfigurationManager:
             return True
 
         try:
+            # First try to find model in preferred_models config for required_api_keys
+            config = self.config_loader.get_default_config()
+            preferred_models = config.get("llm", {}).get("preferred_models", [])
+
+            # Check if preferred_models is the new format with required_api_keys
+            for model_config in preferred_models:
+                if isinstance(model_config, dict) and model_config.get("name") == model_name:
+                    required_keys = model_config.get("required_api_keys", [])
+                    return all(os.getenv(key) for key in required_keys)
+
+            # Fallback to legacy hardcoded validation for models not in config
             provider = model_name.split(":")[0] if ":" in model_name else "openai"
 
-            # Check for required API keys/configuration
+            # Check for required API keys/configuration (legacy fallback)
             required_keys = {
                 "openai": ["OPENAI_API_KEY"],
                 "anthropic": ["ANTHROPIC_API_KEY"],
@@ -115,7 +126,7 @@ class LLMConfigurationManager:
     def _find_first_available_model(self) -> str | None:
         """Find the first available model from preferred list."""
         try:
-            config = self.config_loader.get_config()
+            config = self.config_loader.get_default_config()
             preferred_models = config.get("llm", {}).get(
                 "preferred_models",
                 [
@@ -127,8 +138,10 @@ class LLMConfigurationManager:
             )
 
             for model in preferred_models:
-                if self._validate_model(model):
-                    return model
+                # Handle both string format and dict format
+                model_name = model if isinstance(model, str) else model.get("name")
+                if model_name and self._validate_model(model_name):
+                    return model_name
 
             return None
 
@@ -138,7 +151,7 @@ class LLMConfigurationManager:
     def get_available_models(self) -> list[str]:
         """Get list of all available models."""
         try:
-            config = self.config_loader.get_config()
+            config = self.config_loader.get_default_config()
             all_models = config.get("llm", {}).get(
                 "all_models",
                 [
@@ -165,7 +178,7 @@ class LLMConfigurationManager:
         target_model = model or self.selected_model
 
         try:
-            config = self.config_loader.get_config()
+            config = self.config_loader.get_default_config()
             model_configs = config.get("llm", {}).get("model_configs", {})
 
             # Get model-specific config or defaults
