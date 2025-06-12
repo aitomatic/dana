@@ -18,7 +18,7 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from typing import Any, Tuple
+from typing import Any
 
 
 class TypeCoercion:
@@ -93,7 +93,7 @@ class TypeCoercion:
         raise TypeError(f"No coercion rule for {type(value).__name__} to {target_type.__name__}")
 
     @staticmethod
-    def coerce_binary_operands(left: Any, right: Any, operator: str) -> Tuple[Any, Any]:
+    def coerce_binary_operands(left: Any, right: Any, operator: str) -> tuple[Any, Any]:
         """Coerce operands for binary operations using smart rules.
 
         Args:

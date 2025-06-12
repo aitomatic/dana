@@ -5,7 +5,7 @@ enabling real-time bidirectional communication over WebSocket connections.
 """
 
 import asyncio
-from typing import Any, Optional
+from typing import Any
 from urllib.parse import urlparse
 
 from websockets import serve
@@ -21,7 +21,7 @@ class WebSocketIO(BaseIO):
         self,
         url: str = "ws://localhost:8765",
         name: str = "websocket",
-        description: Optional[str] = None,
+        description: str | None = None,
         max_retries: int = 3,
         retry_delay: float = 1.0,
     ):
@@ -32,8 +32,8 @@ class WebSocketIO(BaseIO):
         self.port = parsed.port or 8765
         self.max_retries = max_retries
         self.retry_delay = retry_delay
-        self._server: Optional[WebSocketServerProtocol] = None
-        self._current_connection: Optional[WebSocketServerProtocol] = None
+        self._server: WebSocketServerProtocol | None = None
+        self._current_connection: WebSocketServerProtocol | None = None
         self._message_queue: asyncio.Queue[str] = asyncio.Queue()
 
     async def _handle_connection(self, websocket: WebSocketServerProtocol) -> None:

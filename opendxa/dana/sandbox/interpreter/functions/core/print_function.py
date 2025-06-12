@@ -8,7 +8,7 @@ Print function implementation for the Dana interpreter.
 This module provides the print function, which handles printing in the Dana interpreter.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from opendxa.common.utils.logging import DXA_LOGGER
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
@@ -17,12 +17,12 @@ from opendxa.dana.sandbox.sandbox_context import SandboxContext
 def print_function(
     context: SandboxContext,
     *args: Any,
-    options: Optional[Dict[str, Any]] = None,
+    options: dict[str, Any] | None = None,
 ) -> None:
     """Execute the print function.
 
     Args:
-        context: The sandbox context 
+        context: The sandbox context
         *args: Values to print
         options: Optional parameters for the function
 
@@ -64,5 +64,15 @@ def print_function(
     # Join the processed arguments with a space separator
     message = " ".join(processed_args)
 
-    # Print the message
+    # Try to write to the executor's output buffer if available
+    # Get the interpreter from context
+    interpreter = getattr(context, "_interpreter", None)
+    if interpreter is not None and hasattr(interpreter, "_executor"):
+        executor = interpreter._executor
+        if hasattr(executor, "_output_buffer"):
+            # Write to the executor's output buffer for proper capture
+            executor._output_buffer.append(message)
+            return
+
+    # Fallback to standard print if no executor available
     print(message)

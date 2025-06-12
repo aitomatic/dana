@@ -18,7 +18,7 @@ Comprehensive technical comparison of OpenDXA with other agent frameworks and AI
 OpenDXA offers unique advantages in:
 - Declarative agent configuration
 - Dana language for AI workflows
-- Interactive Processing Vault (IPV)
+- POET Execution Framework (Perceive-Operate-Encode-Train)
 - Neurosymbolic reasoning capabilities
 - Multi-modal processing
 

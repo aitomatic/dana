@@ -2,7 +2,8 @@
 
 import inspect
 import logging
-from typing import Any, Callable, Dict, List, Optional, Set
+from collections.abc import Callable
+from typing import Any
 
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
@@ -12,7 +13,7 @@ from .sandbox_function import SandboxFunction
 class PythonFunction(SandboxFunction):
     """Wrapper for Python functions that makes them compatible with BaseFunction interface."""
 
-    def __init__(self, func: Callable, context: Optional[SandboxContext] = None):
+    def __init__(self, func: Callable, context: SandboxContext | None = None):
         """Initialize a Python function wrapper.
 
         Args:
@@ -25,12 +26,12 @@ class PythonFunction(SandboxFunction):
         self.context_param_name = None
 
         # Extract parameters from function signature
-        self.parameters: List[str] = []  # All parameters
-        self.required_parameters: Set[str] = set()  # Required parameters (no default)
-        self.defaults: Dict[str, Any] = {}  # Default values for parameters
+        self.parameters: list[str] = []  # All parameters
+        self.required_parameters: set[str] = set()  # Required parameters (no default)
+        self.defaults: dict[str, Any] = {}  # Default values for parameters
 
         # Special parameters that are not exposed to argument binding
-        self.special_params: Set[str] = set()
+        self.special_params: set[str] = set()
 
         try:
             sig = inspect.signature(func)
@@ -104,7 +105,7 @@ class PythonFunction(SandboxFunction):
 
         return False
 
-    def prepare_context(self, context: SandboxContext, args: List[Any], kwargs: Dict[str, Any]) -> SandboxContext:
+    def prepare_context(self, context: SandboxContext, args: list[Any], kwargs: dict[str, Any]) -> SandboxContext:
         """
         Prepare context for a Python function.
 
@@ -137,7 +138,7 @@ class PythonFunction(SandboxFunction):
         # No restoration needed for Python functions
         pass
 
-    def inject_context(self, context: SandboxContext, kwargs: Dict[str, Any]) -> Dict[str, Any]:
+    def inject_context(self, context: SandboxContext, kwargs: dict[str, Any]) -> dict[str, Any]:
         """
         Handle context injection for Python functions that want it.
 

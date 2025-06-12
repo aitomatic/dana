@@ -17,7 +17,7 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class OpenDXAError(Exception):
@@ -41,7 +41,7 @@ class LLMError(OpenDXAError):
 class LLMProviderError(LLMError):
     """Error from an LLM provider API."""
 
-    def __init__(self, provider: str, status_code: Optional[int], message: str):
+    def __init__(self, provider: str, status_code: int | None, message: str):
         """Initialize LLMProviderError.
 
         Args:
@@ -76,7 +76,7 @@ class LLMContextLengthError(LLMProviderError):
 class LLMResponseError(LLMError):
     """Error due to problems with an LLM response."""
 
-    def __init__(self, message: str, response: Optional[Dict[str, Any]] = None):
+    def __init__(self, message: str, response: dict[str, Any] | None = None):
         """Initialize LLMResponseError.
 
         Args:

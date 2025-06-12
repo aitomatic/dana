@@ -19,18 +19,15 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from typing import Union, cast, List
+from typing import Union, cast
 
 from lark import Token, Tree
 
 from opendxa.dana.sandbox.parser.ast import (
-    AssertStatement,
     Assignment,
     AttributeAccess,
     BinaryExpression,
-    BreakStatement,
     Conditional,
-    ContinueStatement,
     DictLiteral,
     Expression,
     ForLoop,
@@ -43,15 +40,14 @@ from opendxa.dana.sandbox.parser.ast import (
     ListLiteral,
     LiteralExpression,
     Parameter,
-    PassStatement,
     Program,
-    RaiseStatement,
     ReturnStatement,
     SetLiteral,
+    StructDefinition,
+    StructField,
     SubscriptExpression,
     TryBlock,
     TupleLiteral,
-    TypeHint,
     UseStatement,
     WhileLoop,
     WithStatement,
@@ -60,6 +56,10 @@ from opendxa.dana.sandbox.parser.ast import (
 )
 from opendxa.dana.sandbox.parser.transformer.base_transformer import BaseTransformer
 from opendxa.dana.sandbox.parser.transformer.expression_transformer import ExpressionTransformer
+from opendxa.dana.sandbox.parser.transformer.statement.statement_helpers import (
+    AssignmentHelper,
+    SimpleStatementHelper,
+)
 from opendxa.dana.sandbox.parser.transformer.variable_transformer import VariableTransformer
 from opendxa.dana.sandbox.parser.utils.tree_utils import TreeTraverser
 
@@ -421,6 +421,66 @@ class StatementTransformer(BaseTransformer):
             param_name = param_tree.value if hasattr(param_tree, "value") else str(param_tree)
             return Parameter(name=param_name)
 
+    def struct_def(self, items):
+        """Transform a struct definition rule into a StructDefinition node.
+        
+        Grammar: struct_def: "struct" NAME ":" [COMMENT] struct_block
+        """
+        relevant_items = self._filter_relevant_items(items)
+        
+        # First item should be the struct name
+        name_token = relevant_items[0]
+        if isinstance(name_token, Token):
+            struct_name = name_token.value
+        else:
+            struct_name = str(name_token)
+        
+        # Second item should be the struct_block containing fields
+        struct_block = relevant_items[1] if len(relevant_items) > 1 else []
+        
+        # struct_block should contain a list of StructField objects
+        fields = struct_block if isinstance(struct_block, list) else []
+        
+        return StructDefinition(name=struct_name, fields=fields, location=None)
+
+    def struct_block(self, items):
+        """Transform struct_block rule.
+        
+        Grammar: struct_block: _NL _INDENT struct_fields _DEDENT*
+        """
+        # Filter to get struct_fields
+        relevant_items = self._filter_relevant_items(items)
+        return relevant_items[0] if relevant_items else []
+
+    def struct_fields(self, items):
+        """Transform struct_fields rule.
+        
+        Grammar: struct_fields: struct_field+
+        """
+        return [item for item in items if item is not None]
+
+    def struct_field(self, items):
+        """Transform struct_field rule.
+        
+        Grammar: struct_field: NAME ":" basic_type [COMMENT] _NL
+        """
+        relevant_items = self._filter_relevant_items(items)
+        
+        if len(relevant_items) < 2:
+            raise ValueError(f"Invalid struct field: expected NAME and type, got {relevant_items}")
+        
+        # First item is field name
+        name_token = relevant_items[0]
+        if isinstance(name_token, Token):
+            field_name = name_token.value
+        else:
+            field_name = str(name_token)
+        
+        # Second item is type hint
+        type_hint = relevant_items[1]
+        
+        return StructField(name=field_name, type_hint=type_hint, location=None)
+
     def try_stmt(self, items):
         """Transform a try statement rule into a TryBlock node.
 
@@ -558,48 +618,34 @@ class StatementTransformer(BaseTransformer):
 
     def return_stmt(self, items):
         """Transform a return statement rule into a ReturnStatement node."""
-        value = self.expression_transformer.expression(items) if items else None
-        if isinstance(value, tuple):
-            raise TypeError(f"Return value cannot be a tuple: {value}")
-        return ReturnStatement(value=value)
+        return SimpleStatementHelper.create_return_statement(items, self.expression_transformer)
 
     def break_stmt(self, items):
         """Transform a break statement rule into a BreakStatement node."""
-        return BreakStatement()
+        return SimpleStatementHelper.create_break_statement()
 
     def continue_stmt(self, items):
         """Transform a continue statement rule into a ContinueStatement node."""
-        return ContinueStatement()
+        return SimpleStatementHelper.create_continue_statement()
 
     def pass_stmt(self, items):
         """Transform a pass statement rule into a PassStatement node."""
-        return PassStatement()
+        return SimpleStatementHelper.create_pass_statement()
 
     def raise_stmt(self, items):
         """Transform a raise statement rule into a RaiseStatement node."""
-        value = self.expression_transformer.expression([items[0]]) if items else None
-        from_value = self.expression_transformer.expression([items[1]]) if len(items) > 1 else None
-        if isinstance(value, tuple) or isinstance(from_value, tuple):
-            raise TypeError(f"Raise statement values cannot be tuples: {value}, {from_value}")
-        return RaiseStatement(value=value, from_value=from_value)
+        return SimpleStatementHelper.create_raise_statement(items, self.expression_transformer)
 
     def assert_stmt(self, items):
         """Transform an assert statement rule into an AssertStatement node."""
-        from opendxa.dana.sandbox.parser.ast import Expression
-
-        condition = self.expression_transformer.expression([items[0]])
-        message = self.expression_transformer.expression([items[1]]) if len(items) > 1 else None
-        if isinstance(condition, tuple) or isinstance(message, tuple):
-            raise TypeError(f"Assert statement values cannot be tuples: {condition}, {message}")
-        # Ensure condition and message are Expression or None
-        condition_expr = cast(Expression, condition)
-        message_expr = cast(Expression, message) if message is not None else None
-        return AssertStatement(condition=condition_expr, message=message_expr)
+        return SimpleStatementHelper.create_assert_statement(items, self.expression_transformer)
 
     def use_stmt(self, items):
         """Transform a use_stmt rule into a UseStatement node.
 
+
         Grammar: use_stmt: USE "(" [mixed_arguments] ")"
+
 
         The grammar passes:
         - items[0] = USE token (ignored)
@@ -607,7 +653,11 @@ class StatementTransformer(BaseTransformer):
         """
         from lark import Tree
 
+
         # Initialize collections for arguments
+        args = []  # List[Expression] for positional arguments
+        kwargs = {}  # Dict[str, Expression] for keyword arguments
+
         args = []  # List[Expression] for positional arguments
         kwargs = {}  # Dict[str, Expression] for keyword arguments
 
@@ -616,12 +666,15 @@ class StatementTransformer(BaseTransformer):
         if len(items) > 1 and items[1] is not None:
             mixed_args_result = items[1]
 
+
             # Process mixed_arguments following with_stmt pattern
             seen_keyword_arg = False  # Track if we've seen any keyword arguments
+
 
             if isinstance(mixed_args_result, list):
                 # Process each argument
                 for arg_item in mixed_args_result:
+                    if isinstance(arg_item, Tree) and arg_item.data == "kw_arg":
                     if isinstance(arg_item, Tree) and arg_item.data == "kw_arg":
                         # Keyword argument: NAME "=" expr
                         seen_keyword_arg = True
@@ -637,6 +690,7 @@ class StatementTransformer(BaseTransformer):
             else:
                 # Single argument
                 if isinstance(mixed_args_result, Tree) and mixed_args_result.data == "kw_arg":
+                if isinstance(mixed_args_result, Tree) and mixed_args_result.data == "kw_arg":
                     # Keyword argument: NAME "=" expr
                     name = mixed_args_result.children[0].value
                     value = self.expression_transformer.expression([mixed_args_result.children[1]])
@@ -644,6 +698,7 @@ class StatementTransformer(BaseTransformer):
                 else:
                     # Positional argument: expr
                     args.append(cast(Expression, mixed_args_result))
+
 
         return UseStatement(args=args, kwargs=kwargs)
 
@@ -654,68 +709,29 @@ class StatementTransformer(BaseTransformer):
         return items[0]
 
     def simple_import(self, items):
-        """Transform a simple_import rule into an ImportStatement node."""
-        from lark import Token, Tree
+        """Transform a simple_import rule into an ImportStatement node.
 
-        # In simple_import rule, the import keyword is not included in items.
-        # items[0] should be the module_path
-        module_item = items[0]
-
-        # Extract the module path from the Tree
-        if isinstance(module_item, Tree) and getattr(module_item, "data", None) == "module_path":
-            parts = []
-            for child in module_item.children:
-                if hasattr(child, "value"):
-                    parts.append(child.value)
-            module = ".".join(parts)
-        else:
-            # Fallback to string conversion if not a module_path Tree
-            module = str(module_item)
-
-        # Handle alias: if we have AS token, the alias is the next item
-        alias = None
-        if len(items) > 1:
-            # Check if items[1] is the AS token
-            if isinstance(items[1], Token) and items[1].type == "AS":
-                # The alias name should be in items[2]
-                if len(items) > 2 and hasattr(items[2], "value"):
-                    alias = items[2].value
-                elif len(items) > 2:
-                    alias = str(items[2])
-            else:
-                # Fallback: treat items[1] as the alias directly
-                if hasattr(items[1], "value"):
-                    alias = items[1].value
-                elif items[1] is not None:
-                    alias = str(items[1])
-
-        return ImportStatement(module=module, alias=alias)
-
-    def from_import(self, items):
-        """Transform a from_import rule into an ImportFromStatement node."""
-        from lark import Token, Tree
-
-        # In from_import rule, the from and import keywords are not included in items.
-        # items[0] should be the module_path
-        module_item = items[0]
+        Grammar:
+            simple_import: IMPORT module_path ["as" NAME]
+            module_path: NAME ("." NAME)*
+        """
+        # Skip the IMPORT token and get the module_path
+        module_path = items[1]
 
         # Extract the module path from the Tree
-        if isinstance(module_item, Tree) and getattr(module_item, "data", None) == "module_path":
+        if isinstance(module_path, Tree) and getattr(module_path, "data", None) == "module_path":
             parts = []
-            for child in module_item.children:
-                if hasattr(child, "value"):
+            for child in module_path.children:
+                if isinstance(child, Token):
+                    parts.append(child.value)
+                elif hasattr(child, "value"):
                     parts.append(child.value)
             module = ".".join(parts)
+        elif isinstance(module_path, Token):
+            module = module_path.value
         else:
-            # Fallback to string conversion if not a module_path Tree
-            module = str(module_item)
-
-        # items[1] should be the name to import
-        name_item = items[1]
-        if hasattr(name_item, "value"):
-            name = name_item.value
-        else:
-            name = str(name_item)
+            # Fallback to string representation
+            module = str(module_path)
 
         # Handle alias: if we have AS token, the alias is the next item
         alias = None
@@ -733,6 +749,72 @@ class StatementTransformer(BaseTransformer):
                     alias = items[2].value
                 elif items[2] is not None:
                     alias = str(items[2])
+
+        return ImportStatement(module=module, alias=alias)
+
+    def from_import(self, items):
+        """Transform a from_import rule into an ImportFromStatement node.
+
+        Grammar:
+            from_import: FROM (relative_module_path | module_path) IMPORT NAME ["as" NAME]
+            module_path: NAME ("." NAME)*
+            relative_module_path: DOT+ [module_path]
+
+        Parse tree structure: [FROM, module_path_or_relative, IMPORT, NAME, [alias_name | None]]
+        """
+        # Skip the FROM token and get the module_path or relative_module_path
+        module_path_item = items[1]
+
+        # Handle relative_module_path (starts with dots)
+        if isinstance(module_path_item, Tree) and getattr(module_path_item, "data", None) == "relative_module_path":
+            # Extract dots and optional module path
+            dots = []
+            module_parts = []
+
+            for child in module_path_item.children:
+                if isinstance(child, Token) and child.type == "DOT":
+                    dots.append(".")
+                elif isinstance(child, Tree) and getattr(child, "data", None) == "module_path":
+                    # Extract module path parts
+                    for subchild in child.children:
+                        if isinstance(subchild, Token):
+                            module_parts.append(subchild.value)
+                        elif hasattr(subchild, "value"):
+                            module_parts.append(subchild.value)
+                elif isinstance(child, Token):
+                    module_parts.append(child.value)
+
+            # Build relative module name
+            module = "".join(dots)
+            if module_parts:
+                module += ".".join(module_parts)
+        else:
+            # Handle absolute module_path (existing logic)
+            if isinstance(module_path_item, Tree) and getattr(module_path_item, "data", None) == "module_path":
+                parts = []
+                for child in module_path_item.children:
+                    if isinstance(child, Token):
+                        parts.append(child.value)
+                    elif hasattr(child, "value"):
+                        parts.append(child.value)
+                module = ".".join(parts)
+            elif isinstance(module_path_item, Token):
+                module = module_path_item.value
+            else:
+                # Fallback to string representation
+                module = str(module_path_item)
+
+        # Get the imported name (after IMPORT token)
+        # Structure: [FROM, module_path_or_relative, IMPORT, name_token, alias_token_or_none]
+        name = ""
+        alias = None
+
+        if len(items) >= 4 and isinstance(items[3], Token) and items[3].type == "NAME":
+            name = items[3].value
+
+        # Check for alias (5th element)
+        if len(items) >= 5 and items[4] is not None and isinstance(items[4], Token) and items[4].type == "NAME":
+            alias = items[4].value
 
         return ImportFromStatement(module=module, names=[(name, alias)])
 
@@ -911,32 +993,16 @@ class StatementTransformer(BaseTransformer):
     # === Type Hint Support ===
     def basic_type(self, items):
         """Transform a basic_type rule into a TypeHint node."""
-        if not items:
-            raise ValueError("basic_type rule received empty items list")
-
-        type_name = items[0].value if hasattr(items[0], "value") else str(items[0])
-        return TypeHint(name=type_name)
+        return AssignmentHelper.create_type_hint(items)
 
     def typed_assignment(self, items):
         """Transform a typed assignment rule into an Assignment node with type hint."""
-
         # Grammar: typed_assignment: variable ":" basic_type "=" expr
         target_tree = items[0]
         type_hint = items[1]  # Should be a TypeHint from basic_type
         value_tree = items[2]
 
-        # Get target identifier
-        target = VariableTransformer().variable([target_tree])
-        if not isinstance(target, Identifier):
-            raise TypeError(f"Assignment target must be Identifier, got {type(target)}")
-
-        # Transform value
-        value = self.expression_transformer.expression([value_tree])
-        if isinstance(value, tuple):
-            raise TypeError(f"Assignment value cannot be a tuple: {value}")
-        value_expr = cast(AllowedAssignmentValue, value)
-
-        return Assignment(target=target, value=value_expr, type_hint=type_hint)
+        return AssignmentHelper.create_assignment(target_tree, value_tree, self.expression_transformer, VariableTransformer(), type_hint)
 
     def simple_assignment(self, items):
         """Transform a simple assignment rule into an Assignment node without type hint."""
@@ -944,18 +1010,7 @@ class StatementTransformer(BaseTransformer):
         target_tree = items[0]
         value_tree = items[1]
 
-        # Get target identifier
-        target = VariableTransformer().variable([target_tree])
-        if not isinstance(target, Identifier):
-            raise TypeError(f"Assignment target must be Identifier, got {type(target)}")
-
-        # Transform value
-        value = self.expression_transformer.expression([value_tree])
-        if isinstance(value, tuple):
-            raise TypeError(f"Assignment value cannot be a tuple: {value}")
-        value_expr = cast(AllowedAssignmentValue, value)
-
-        return Assignment(target=target, value=value_expr)
+        return AssignmentHelper.create_assignment(target_tree, value_tree, self.expression_transformer, VariableTransformer())
 
     def function_call_assignment(self, items):
         """Transform a function_call_assignment rule into an Assignment node with object-returning statement."""
@@ -986,9 +1041,11 @@ class StatementTransformer(BaseTransformer):
         # Grammar: return_object_stmt: use_stmt
         # items[0] should be the result of use_stmt transformation
 
+
         # The use_stmt should already be transformed into a UseStatement by use_stmt method
         if len(items) > 0 and items[0] is not None:
             return items[0]
+
 
         # Fallback - this shouldn't happen in normal cases
         raise ValueError("return_object_stmt received empty or None items")
@@ -1020,6 +1077,7 @@ class StatementTransformer(BaseTransformer):
         # items is a list of with_arg items
         return items
 
+
     def with_arg(self, items):
         """Transform with_arg rule - pass through the child (either kw_arg or expr)."""
         # items[0] is either a kw_arg Tree or an expression
@@ -1030,9 +1088,84 @@ class StatementTransformer(BaseTransformer):
         return self.expression_transformer.expression(items)
 
     def with_stmt(self, items):
-        """Transform a with statement rule into a WithStatement node."""
-        # Filter out None items (like optional comments) and parse the structure
+        """Transform a with statement rule into a WithStatement node.
+
+        Grammar:
+            with_stmt: "with" (with_context_manager | (NAME | USE) "(" [mixed_arguments] ")") AS NAME ":" [COMMENT] block
+            with_context_manager: expr
+            mixed_arguments: with_arg ("," with_arg)*
+            with_arg: kw_arg | expr
+            kw_arg: NAME "=" expr
+        """
+        from opendxa.dana.sandbox.parser.ast import Expression
+
+        # Filter out None items
         filtered_items = [item for item in items if item is not None]
+
+        # Initialize variables
+        context_manager: str | Expression | None = None
+        args = []
+        kwargs = {}
+
+        # First item is either a Token (NAME/USE), an Expression, or an Identifier
+        first_item = filtered_items[0]
+
+        # Handle direct expression case
+        if isinstance(first_item, Tree) and first_item.data == "with_context_manager":
+            expr = self.expression_transformer.expression([first_item.children[0]])
+            if expr is not None:
+                context_manager = cast(Expression, expr)
+        # Handle direct object reference
+        elif isinstance(first_item, Identifier):
+            context_manager = cast(Expression, first_item)
+            # Don't add local prefix if the identifier is already scoped (contains ":" or starts with a scope)
+            if not (
+                context_manager.name.startswith("local.")
+                or ":" in context_manager.name
+                or context_manager.name.startswith("private.")
+                or context_manager.name.startswith("public.")
+                or context_manager.name.startswith("system.")
+            ):
+                context_manager = cast(Expression, Identifier(name=f"local.{context_manager.name}"))
+        # Handle function call case
+        elif isinstance(first_item, Token):
+            # Keep the name as a string for function calls
+            context_manager = first_item.value
+
+            # Check if we have arguments
+            if len(filtered_items) > 1 and filtered_items[1] is not None:
+                # Process arguments
+                arg_items = []
+                for item in filtered_items[1:]:
+                    # Handle both Tree form and already-transformed list form
+                    if isinstance(item, Tree) and item.data == "mixed_arguments":
+                        arg_items = item.children
+                        break
+                    elif isinstance(item, list):
+                        # mixed_arguments was already transformed to a list
+                        arg_items = item
+                        break
+
+                # Process each argument
+                seen_kwarg = False
+                for arg in arg_items:
+                    if isinstance(arg, Tree) and arg.data == "kw_arg":
+                        # Keyword argument
+                        seen_kwarg = True
+                        key = arg.children[0].value
+                        value = self.expression_transformer.expression([arg.children[1]])
+                        if value is not None:
+                            kwargs[key] = value
+                    else:
+                        # Positional argument
+                        if seen_kwarg:
+                            raise SyntaxError("Positional argument follows keyword argument")
+                        value = self.expression_transformer.expression([arg])
+                        if value is not None:
+                            args.append(value)
+
+        # Find the 'as' variable name
+        as_var = None
 
         # Based on the parse tree: [foo, mixed_arguments, as, bar, None, block]
         # Find components in the structure
@@ -1054,6 +1187,7 @@ class StatementTransformer(BaseTransformer):
                         block = self._transform_block(filtered_items[j])
                         break
                 break
+
 
         if as_var is None:
             raise SyntaxError("Missing 'as' variable in with statement")

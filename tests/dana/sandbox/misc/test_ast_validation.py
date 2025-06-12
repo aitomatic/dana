@@ -4,7 +4,7 @@ This module demonstrates a more principled approach to AST validation,
 ensuring that no Lark Tree nodes remain in the transformed AST.
 """
 
-from typing import Any, List
+from typing import Any
 
 import pytest
 from lark import Tree
@@ -62,7 +62,7 @@ class TestASTFactory:
     """Factory for creating AST structures with embedded Lark Tree nodes for testing."""
 
     @staticmethod
-    def create_tree_node(data: str, children: List[Any]) -> Tree:
+    def create_tree_node(data: str, children: list[Any]) -> Tree:
         """Create a Lark Tree node for testing."""
         return Tree(data, children)
 

@@ -10,7 +10,7 @@ This module provides the reason function, which handles reasoning in the Dana in
 
 import json
 import os
-from typing import Any, Dict, Optional
+from typing import Any
 
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.common.types import BaseRequest
@@ -26,8 +26,8 @@ from opendxa.dana.poet import poet
 def reason_function(
     prompt: str,
     context: SandboxContext,
-    options: Optional[Dict[str, Any]] = None,
-    use_mock: Optional[bool] = None,
+    options: dict[str, Any] | None = None,
+    use_mock: bool | None = None,
 ) -> Any:
     """Execute the reason function to generate a response using an LLM.
 

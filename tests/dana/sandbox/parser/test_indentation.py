@@ -1,7 +1,7 @@
 """Test indentation handling in DANA parser."""
 
-import pytest
 from opendxa.dana.sandbox.parser.dana_parser import DanaParser
+
 
 def test_basic_indentation():
     """Test basic indentation handling."""

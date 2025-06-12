@@ -25,7 +25,7 @@ Example:
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any
 
 from opendxa.common.exceptions import ConfigurationError
 
@@ -79,7 +79,7 @@ class ConfigLoader:
         # Assumes this file is in opendxa/common/config/
         return Path(__file__).parent.parent.parent
 
-    def _load_config_from_path(self, path: Path) -> Dict[str, Any]:
+    def _load_config_from_path(self, path: Path) -> dict[str, Any]:
         """Loads and parses a JSON configuration file from a specific path.
 
         Args:
@@ -104,7 +104,7 @@ class ConfigLoader:
             # Catch other potential issues like permission errors
             raise ConfigurationError(f"Failed to load config from {path}: {e}") from e
 
-    def get_default_config(self) -> Dict[str, Any]:
+    def get_default_config(self) -> dict[str, Any]:
         """Gets the default configuration following the search hierarchy.
 
         Searches for and loads 'opendxa_config.json' based on the following order:
@@ -156,7 +156,7 @@ class ConfigLoader:
             f"- Project Root: {root_path}"
         )
 
-    def load_config(self, config_name: str) -> Dict[str, Any]:
+    def load_config(self, config_name: str) -> dict[str, Any]:
         """Loads a specific configuration file relative to the project root.
 
         This method is intended for loading secondary configuration files,

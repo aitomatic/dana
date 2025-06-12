@@ -2,16 +2,17 @@
 MCP Resource implementation for OpenDXA integration.
 """
 
-from typing import Any, Dict, List, Optional, Union
+import inspect
+from typing import Any
 
 from mcp.types import Tool as McpTool
 
-from opendxa.contrib.dana_mcp_a2a.common.resource.mcp.client.mcp_client import MCPClient
+from opendxa.common.mixins.tool_formats import OpenAIToolFormat
 from opendxa.common.resource.base_resource import BaseResource
 from opendxa.common.types import BaseRequest, BaseResponse
-from opendxa.common.mixins.tool_formats import ToolFormat, OpenAIToolFormat
-from opendxa.common import Misc
-import inspect
+from opendxa.common.utils.misc import Misc
+from opendxa.contrib.dana_mcp_a2a.common.resource.mcp.client.mcp_client import MCPClient
+
 
 class MCPResource(BaseResource):
     """MCP Resource for OpenDXA integration.
@@ -26,8 +27,8 @@ class MCPResource(BaseResource):
     def __init__(
         self,
         name: str,
-        description: Optional[str] = None,
-        config: Optional[Dict[str, Any]] = None,
+        description: str | None = None,
+        config: dict[str, Any] | None = None,
         *client_args,
         **client_kwargs
     ):
@@ -43,7 +44,7 @@ class MCPResource(BaseResource):
         super().__init__(name, description, config)
         
         self.client = MCPClient(*client_args, **client_kwargs)
-        self._mcp_tools_cache: Optional[List[McpTool]] = None
+        self._mcp_tools_cache: list[McpTool] | None = None
         self.list_tools() # Pre-fetch the MCP tools first
 
     def mcp_tool_decorator(self, func_name:str) -> Any:
@@ -75,11 +76,11 @@ class MCPResource(BaseResource):
         try:
             async with self.client as _client:
                 self._mcp_tools_cache = await _client.list_tools()
-        except Exception as e:
+        except Exception:
             self._is_available = False
             raise
             
-    def _list_tools(self, format_converter: OpenAIToolFormat) -> List[Any]:
+    def _list_tools(self, format_converter: OpenAIToolFormat) -> list[Any]:
         """Return cached tools in OpenAI format."""
         if not self._mcp_tools_cache:
             Misc.safe_asyncio_run(self._discover_tools)
@@ -91,7 +92,7 @@ class MCPResource(BaseResource):
         return tools
     
         
-    async def call_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Any:
+    async def call_tool(self, tool_name: str, arguments: dict[str, Any]) -> Any:
         """Execute MCP tool."""
         self.debug(f"Calling tool {tool_name} with arguments {arguments}")
         print(f"Calling tool {tool_name} with arguments {arguments}")

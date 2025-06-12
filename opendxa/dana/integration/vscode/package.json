@@ -23,7 +23,8 @@
   "main": "./out/extension.js",
   "activationEvents": [
     "onLanguage:dana",
-    "onCommand:dana.runFile"
+    "onCommand:dana.runFile",
+    "workspaceContains:**/*.na"
   ],
   "contributes": {
     "languages": [
@@ -36,7 +37,11 @@
         "extensions": [
           ".na"
         ],
-        "configuration": "./language-configuration.json"
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./images/dana-logo.jpg",
+          "dark": "./images/dana-logo.jpg"
+        }
       }
     ],
     "grammars": [
@@ -44,6 +49,14 @@
         "language": "dana",
         "scopeName": "source.dana",
         "path": "./syntaxes/dana.tmLanguage.json"
+      },
+      {
+        "scopeName": "markdown.dana.codeblock",
+        "path": "./syntaxes/dana.markdown.json",
+        "injectTo": ["text.html.markdown"],
+        "embeddedLanguages": {
+          "meta.embedded.block.dana": "dana"
+        }
       }
     ],
     "commands": [
@@ -68,7 +81,11 @@
           "group": "navigation"
         }
       ]
-    }
+    },
+    "markdown.previewScripts": [
+      "./preview/dana-highlight.js"
+    ],
+    "markdown.markdownItPlugins": true
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

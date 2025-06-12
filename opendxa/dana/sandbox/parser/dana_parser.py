@@ -24,8 +24,9 @@ Discord: https://discord.gg/6jGD4PYk
 """
 
 import os
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, NamedTuple, Sequence, cast
+from typing import Any, NamedTuple, cast
 
 from lark import Lark, Tree
 from lark.indenter import PythonIndenter
@@ -238,6 +239,30 @@ class DanaParser(Lark, Loggable):
             TypeChecker.check_types(ast)
 
         return ast
+
+    def parse_expression(self, expr_text: str):
+        """Parse a single expression and return its AST representation.
+        
+        Args:
+            expr_text: The expression text to parse
+            
+        Returns:
+            The parsed expression AST node
+        """
+        # Wrap the expression in a simple statement to make it parseable
+        program_text = f"{expr_text}\n"
+        
+        # Parse as a complete program
+        parse_tree = super().parse(program_text)
+        
+        # Transform to AST and extract the first statement which should be an expression
+        ast = cast(Program, self.transformer.transform(parse_tree))
+        
+        # The first statement should be our expression
+        if ast.statements and len(ast.statements) > 0:
+            return ast.statements[0]
+        else:
+            raise ValueError(f"Failed to parse expression: {expr_text}")
 
     def _deprecated_transform_identifier(self, node: Tree) -> Identifier:
         """Transform an identifier node.

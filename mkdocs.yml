@@ -68,12 +68,15 @@ nav:
         - Type System: for-engineers/reference/api/type-system.md
         - Scoping: for-engineers/reference/api/scoping.md
         - Sandbox Security: for-engineers/reference/api/sandbox-security.md
+        - Dana Sandbox: for-engineers/reference/api/dana-sandbox.md
+        - OpenDXA Common: for-engineers/reference/api/opendxa-common.md
     - Recipes:
       - Overview: for-engineers/recipes/README.md
       - First Agent: for-engineers/recipes/first-agent.md
       - Chatbot: for-engineers/recipes/chatbot/README.md
       - Document Processor: for-engineers/recipes/document-processor/README.md
       - API Integration: for-engineers/recipes/api-integration/README.md
+      - MCP Integration: for-engineers/recipes/mcp-integration.md
       - MCP Integration: for-engineers/recipes/mcp-integration.md
       - Workflow Agent: for-engineers/recipes/workflow-agent/README.md
     - Troubleshooting: for-engineers/troubleshooting/README.md
@@ -126,7 +129,6 @@ nav:
       - Data Types and Structs: design/01_dana_language_specification/data_types_and_structs.md
       - Functions and Polymorphism: design/01_dana_language_specification/functions_and_polymorphism.md
       - State and Scopes: design/01_dana_language_specification/state_and_scopes.md
-      - Modules and Imports: design/01_dana_language_specification/modules_and_imports.md
       - Error Handling: design/01_dana_language_specification/error_handling.md
     - Dana Runtime and Execution:
       - Execution Model: design/02_dana_runtime_and_execution/execution_model.md
@@ -138,6 +140,7 @@ nav:
       - Type System and Casting: design/02_dana_runtime_and_execution/type_system_and_casting.md
       - Concurrency Model: design/02_dana_runtime_and_execution/concurrency_model.md
       - External Interfaces: design/02_dana_runtime_and_execution/external_interfaces.md
+      - Python Integration: design/02_dana_runtime_and_execution/python_integration.md
       - Security Considerations: design/02_dana_runtime_and_execution/security_considerations.md
       - Debugging and Profiling: design/02_dana_runtime_and_execution/debugging_profiling.md
     - Core Capabilities and Resources:

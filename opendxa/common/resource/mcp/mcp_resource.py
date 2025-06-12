@@ -2,7 +2,8 @@
 
 import asyncio
 import functools
-from typing import Any, Callable, Dict, List, Literal, Optional, TypeVar, Union, cast
+from collections.abc import Callable
+from typing import Any, Literal, TypeVar, cast
 
 from mcp import ClientSession, StdioServerParameters
 from mcp import Tool as McpTool
@@ -73,7 +74,7 @@ class McpResource(BaseResource):
     """
 
     @classmethod
-    def from_config(cls, name: str, config: Union[str, Dict[str, Any]]) -> "McpResource":
+    def from_config(cls, name: str, config: str | dict[str, Any]) -> "McpResource":
         """Create McpResource instance from configuration.
 
         This is a convenience method to create an MCP resource from a JSON configuration file
@@ -123,7 +124,7 @@ class McpResource(BaseResource):
     def __init__(
         self,
         name: str,
-        transport_params: Optional[Union[StdioTransportParams, HttpTransportParams]] = None,
+        transport_params: StdioTransportParams | HttpTransportParams | None = None,
     ):
         """Initialize MCP resource.
 
@@ -176,12 +177,12 @@ class McpResource(BaseResource):
             if not all(isinstance(arg, str) for arg in args):
                 raise ValueError("All args must be strings")
 
-            self.server_params: Union[StdioServerParameters, Dict[str, Any]] = StdioServerParameters(
+            self.server_params: StdioServerParameters | dict[str, Any] = StdioServerParameters(
                 command=stdio_params.command, args=list(args), env=env, **(stdio_params.stdio_config or {})
             )
         else:  # HTTP
             http_params = cast(HttpTransportParams, self.transport_params)
-            self.server_params: Union[StdioServerParameters, Dict[str, Any]] = {
+            self.server_params: StdioServerParameters | dict[str, Any] = {
                 "url": http_params.url,
                 "headers": http_params.headers,
                 "timeout": http_params.timeout,
@@ -314,7 +315,7 @@ class McpResource(BaseResource):
             return BaseResponse.error_response(str(e))
 
     @with_retries(retries=3, delay=1.0)
-    async def _execute_query(self, session: ClientSession, request: Dict[str, Any]) -> BaseResponse:
+    async def _execute_query(self, session: ClientSession, request: dict[str, Any]) -> BaseResponse:
         """Execute query through MCP session with automatic retries.
 
         Args:
@@ -366,7 +367,7 @@ class McpResource(BaseResource):
         except Exception as e:
             raise ResourceError("Tool execution failed") from e
 
-    def can_handle(self, request: Dict[str, Any]) -> bool:
+    def can_handle(self, request: dict[str, Any]) -> bool:
         """Check if request can be handled by this resource.
 
         Args:
@@ -377,13 +378,13 @@ class McpResource(BaseResource):
         """
         return "tool" in request
 
-    def list_mcp_tools(self) -> List[McpTool]:
+    def list_mcp_tools(self) -> list[McpTool]:
         """Override to get all tools from the MCP server instead of my functions."""
         return asyncio.run(self.list_tools())
 
-    __mcp_tool_list_cache: Optional[List[McpTool]] = None
+    __mcp_tool_list_cache: list[McpTool] | None = None
 
-    async def list_tools(self) -> List[McpTool]:
+    async def list_tools(self) -> list[McpTool]:
         """List all available tools from the MCP server.
 
         This method discovers all tools exposed by the MCP server. Each tool has:
@@ -445,7 +446,7 @@ class McpResource(BaseResource):
             self.error(f"Tool listing failed: {e}", exc_info=True)
             return []
 
-    def get_transport_params(self) -> Union[StdioTransportParams, HttpTransportParams]:
+    def get_transport_params(self) -> StdioTransportParams | HttpTransportParams:
         """Get transport parameters for this resource.
 
         This method is used to expose the transport parameters to other resources,

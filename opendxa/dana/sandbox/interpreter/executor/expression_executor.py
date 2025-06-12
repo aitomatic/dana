@@ -17,10 +17,10 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-import asyncio
 import inspect
-from typing import Any, Optional
+from typing import Any
 
+from opendxa.common.utils.misc import Misc
 from opendxa.dana.common.exceptions import SandboxError, StateError
 from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
 from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
@@ -39,7 +39,6 @@ from opendxa.dana.sandbox.parser.ast import (
     TupleLiteral,
     UnaryExpression,
 )
-from opendxa.common import Misc
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
@@ -58,7 +57,7 @@ class ExpressionExecutor(BaseExecutor):
     - Subscript access (indexing)
     """
 
-    def __init__(self, parent_executor: BaseExecutor, function_registry: Optional[FunctionRegistry] = None):
+    def __init__(self, parent_executor: BaseExecutor, function_registry: FunctionRegistry | None = None):
         """Initialize the expression executor.
 
         Args:
@@ -112,9 +111,71 @@ class ExpressionExecutor(BaseExecutor):
             The value of the identifier in the context
         """
         name = node.name
+        
+        # DEBUG: Add logging to understand the issue
+        from opendxa.common.utils.logging import DXA_LOGGER
+        DXA_LOGGER.debug(f"DEBUG: Executing identifier '{name}'")
+        DXA_LOGGER.debug(f"DEBUG: Context state keys: {list(context._state.keys())}")
+        for scope, state in context._state.items():
+            DXA_LOGGER.debug(f"DEBUG: Scope '{scope}' variables: {list(state.keys())}")
+        
         try:
-            return context.get(name)
+            result = context.get(name)
+            DXA_LOGGER.debug(f"DEBUG: Successfully found '{name}' via context.get(): {result}")
+            return result
         except StateError:
+            # If not found in context with the default scoping, try searching across all scopes
+            # This is needed for cases like with statements where variables may be in non-local scopes
+
+            # For simple variable names (no dots or colons), search across all scopes
+            if "." not in name and ":" not in name:
+                for scope in ["local", "private", "public", "system"]:
+                    try:
+                        value = context.get_from_scope(name, scope=scope)
+                        if value is not None:
+                            return value
+                    except StateError:
+                        continue
+
+            # For variables with scope prefix (e.g., 'local.var_name'), extract the variable name
+            # and search for it in other scopes if not found in the specified scope
+            elif "." in name:
+                parts = name.split(".", 1)
+                if len(parts) == 2 and parts[0] in ["local", "private", "public", "system"]:
+                    specified_scope = parts[0]
+                    var_name = parts[1]
+
+                    # If the variable contains more dots (e.g., 'local.client.attribute'),
+                    # we might need to search for the base variable across scopes
+                    if "." in var_name:
+                        base_var = var_name.split(".", 1)[0]
+                        for scope in ["local", "private", "public", "system"]:
+                            if scope != specified_scope:  # Don't re-search the same scope
+                                try:
+                                    base_value = context.get_from_scope(base_var, scope=scope)
+                                    if base_value is not None:
+                                        # Found the base variable in a different scope
+                                        # Now try to access the attribute(s) on it
+                                        try:
+                                            result = base_value
+                                            for attr in var_name.split(".")[1:]:
+                                                result = getattr(result, attr)
+                                            return result
+                                        except AttributeError:
+                                            continue
+                                except StateError:
+                                    continue
+                    else:
+                        # Simple scoped variable, search for it in other scopes
+                        for scope in ["local", "private", "public", "system"]:
+                            if scope != specified_scope:  # Don't re-search the same scope
+                                try:
+                                    value = context.get_from_scope(var_name, scope=scope)
+                                    if value is not None:
+                                        return value
+                                except StateError:
+                                    continue
+
             # If not found in context, try the function registry
             if self.function_registry:
                 try:
@@ -125,16 +186,39 @@ class ExpressionExecutor(BaseExecutor):
                     pass
 
             try:
+                DXA_LOGGER.debug(f"DEBUG: Trying direct _state access for dotted variable '{name}'")
                 parts = name.split(".")
+                DXA_LOGGER.debug(f"DEBUG: Parts: {parts}")
                 result = None
-                for part in parts:
+                for i, part in enumerate(parts):
+                    DXA_LOGGER.debug(f"DEBUG: Processing part {i}: '{part}'")
                     if result is None:
-                        result = context._state[part]
+                        DXA_LOGGER.debug(f"DEBUG: Looking for base variable '{part}' in context._state keys: {list(context._state.keys())}")
+                        if part in context._state:
+                            result = context._state[part]
+                            DXA_LOGGER.debug(f"DEBUG: Found '{part}' directly in _state: {result}")
+                        else:
+                            DXA_LOGGER.debug(f"DEBUG: '{part}' not found directly, trying scoped access")
+                            # Try to find the variable in any scope
+                            for scope in ["local", "private", "public", "system"]:
+                                try:
+                                    result = context.get_from_scope(part, scope=scope)
+                                    if result is not None:
+                                        DXA_LOGGER.debug(f"DEBUG: Found '{part}' in scope '{scope}': {result}")
+                                        break
+                                except:
+                                    continue
+                            if result is None:
+                                DXA_LOGGER.debug(f"DEBUG: Could not find base variable '{part}' anywhere")
+                                raise Exception(f"Base variable '{part}' not found")
                     else:
+                        DXA_LOGGER.debug(f"DEBUG: Getting field '{part}' from result: {result}")
                         result = Misc.get_field(result, part)
+                        DXA_LOGGER.debug(f"DEBUG: Field access result: {result}")
                 if result is not None:
                     return result
             except Exception as e:
+                DXA_LOGGER.debug(f"DEBUG: Direct _state access failed: {e}")
                 raise SandboxError(f"Error accessing variable '{name}': Variable '{name}' not found in context") from e
             # If still not found, raise the original error
             raise SandboxError(f"Error accessing variable '{name}': Variable '{name}' not found in context")
@@ -352,11 +436,11 @@ class ExpressionExecutor(BaseExecutor):
 
     def execute_object_function_call(self, node: ObjectFunctionCall, context: SandboxContext) -> Any:
         """Execute an object method call expression.
-        
+
         This method handles the execution of object method calls (e.g., obj.method(args))
         by evaluating the target object, retrieving the method, and calling it with the
         provided arguments. It supports both synchronous and asynchronous methods.
-        
+
         The execution process:
         1. Evaluate the target object expression to get the actual object
         2. Get the method from the object using getattr() or dict access
@@ -365,7 +449,7 @@ class ExpressionExecutor(BaseExecutor):
         5. Check if the method is async (coroutine function)
         6. Call the method with proper async/sync handling and error handling
         7. Return the method's result
-        
+
         Async Method Support:
         --------------------
         The method automatically detects async methods using inspect.iscoroutinefunction()
@@ -373,16 +457,16 @@ class ExpressionExecutor(BaseExecutor):
         - Running async methods in the appropriate event loop
         - Proper exception propagation from async contexts
         - Thread-safe execution in sync contexts
-        
+
         Argument Processing:
         -------------------
         Arguments are stored in the AST as a dictionary with special keys:
         - "__positional": List of positional arguments (if any)
         - Other keys: Keyword arguments with their names as keys
-        
+
         The method converts these to standard Python *args and **kwargs format
         for the method call.
-        
+
         Object Support:
         --------------
         Supports method calls on:
@@ -390,14 +474,14 @@ class ExpressionExecutor(BaseExecutor):
         - Dictionary objects (using dict key access for callable values)
         - Any object that implements the method as an attribute
         - Both sync and async methods on any of the above
-        
+
         Error Handling:
         --------------
         - AttributeError: If the method doesn't exist on the object
         - SandboxError: If method call fails or arguments are invalid
         - TypeError: If the found attribute is not callable
         - Async exceptions are properly propagated through Misc.safe_asyncio_run
-        
+
         Examples:
         --------
         - `websearch.list_tools()` -> calls list_tools() on websearch object (sync)
@@ -411,7 +495,7 @@ class ExpressionExecutor(BaseExecutor):
 
         Returns:
             The result of calling the method on the object
-            
+
         Raises:
             AttributeError: If the object doesn't have the specified method
             SandboxError: If the method call fails or arguments are invalid
@@ -422,13 +506,13 @@ class ExpressionExecutor(BaseExecutor):
         # Get the method from the object
         if hasattr(target, node.method_name):
             method = getattr(target, node.method_name)
-            
+
             # Check if the method is callable
             if callable(method):
                 # Convert arguments to the format expected by the method
                 args = []
                 kwargs = {}
-                
+
                 # Process the arguments from the node
                 for key, value in node.args.items():
                     if key == "__positional":
@@ -441,7 +525,7 @@ class ExpressionExecutor(BaseExecutor):
                     else:
                         # Handle keyword arguments
                         kwargs[key] = self.parent.execute(value, context)
-                
+
                 # Call the method
                 try:
                     # Check if the method is an async function (coroutine function)
@@ -456,7 +540,7 @@ class ExpressionExecutor(BaseExecutor):
             else:
                 # Method exists but is not callable - return it
                 return method
-        
+
         # Support dictionary access with method-like syntax
         if isinstance(target, dict) and node.method_name in target:
             method = target[node.method_name]
@@ -464,7 +548,7 @@ class ExpressionExecutor(BaseExecutor):
                 # Convert arguments as above
                 args = []
                 kwargs = {}
-                
+
                 for key, value in node.args.items():
                     if key == "__positional":
                         if isinstance(value, list):
@@ -474,7 +558,7 @@ class ExpressionExecutor(BaseExecutor):
                             args.append(self.parent.execute(value, context))
                     else:
                         kwargs[key] = self.parent.execute(value, context)
-                
+
                 try:
                     # Check if the method is an async function (coroutine function)
                     if inspect.iscoroutinefunction(method):
@@ -488,7 +572,125 @@ class ExpressionExecutor(BaseExecutor):
             else:
                 return method
 
-        raise AttributeError(f"'{type(target).__name__}' object has no method '{node.method_name}'")
+        # Try struct method transformation: obj.method(args) -> method(obj, args)
+        from opendxa.dana.sandbox.interpreter.struct_system import StructInstance
+        
+        if isinstance(target, StructInstance):
+            # For struct instances, always try the transformation
+            return self._transform_to_function_call(target, node, context)
+        else:
+            # For other objects, try transformation as fallback
+            try:
+                return self._transform_to_function_call(target, node, context)
+            except Exception:
+                # If transformation fails, raise the original AttributeError
+                raise AttributeError(f"'{type(target).__name__}' object has no method '{node.method_name}'")
+
+    def _transform_to_function_call(self, target: Any, node: ObjectFunctionCall, context: SandboxContext) -> Any:
+        """Transform obj.method(args) to method(obj, args) and execute via function dispatch.
+        
+        Args:
+            target: The object on which the method is being called
+            node: The ObjectFunctionCall node containing method name and arguments
+            context: The execution context
+            
+        Returns:
+            The result of the transformed function call
+            
+        Raises:
+            SandboxError: If function dispatch fails or function not found
+        """
+        from opendxa.dana.sandbox.parser.ast import FunctionCall
+        
+        # Create new arguments with target as first positional argument
+        new_args = {}
+        
+        # Process existing arguments
+        existing_positional = []
+        existing_kwargs = {}
+        
+        for key, value in node.args.items():
+            if key == "__positional":
+                # Handle existing positional arguments
+                if isinstance(value, list):
+                    existing_positional = value
+                else:
+                    existing_positional = [value] if value is not None else []
+            else:
+                # Handle existing keyword arguments
+                existing_kwargs[key] = value
+        
+        # Create new positional arguments with target first
+        # Note: target is already evaluated, so we don't store it as an AST node
+        new_args["__positional"] = existing_positional  # We'll prepend target during execution
+        new_args.update(existing_kwargs)
+        
+        # Create a FunctionCall node for the method name
+        function_call = FunctionCall(name=node.method_name, args=new_args)
+        
+        # Get the function executor from parent
+        function_executor = self.parent._function_executor
+        
+        # Process arguments with target prepended
+        evaluated_args = [target]  # Start with target as first argument
+        evaluated_kwargs = {}
+        
+        # Process existing arguments
+        for key, value in node.args.items():
+            if key == "__positional":
+                # Handle positional arguments
+                if isinstance(value, list):
+                    for arg in value:
+                        evaluated_args.append(self.parent.execute(arg, context))
+                elif value is not None:
+                    evaluated_args.append(self.parent.execute(value, context))
+            else:
+                # Handle keyword arguments
+                evaluated_kwargs[key] = self.parent.execute(value, context)
+        
+        # Execute via function registry using the resolved arguments
+        registry = function_executor.function_registry
+        if not registry:
+            raise SandboxError(f"No function registry available for method '{node.method_name}'")
+        
+        # Try to find function in context first (for user-defined functions)
+        try:
+            # Check if function exists in local scope
+            func = context.get(f"local.{node.method_name}")
+            if func is not None:
+                from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
+                if isinstance(func, DanaFunction):
+                    # Execute the DanaFunction directly with the transformed arguments
+                    return func.execute(context, *evaluated_args, **evaluated_kwargs)
+        except Exception as e:
+            pass  # Continue to registry lookup
+        
+        # Also try alternative context access methods
+        try:
+            # Try direct scope access
+            func = context.get_from_scope(node.method_name, scope="local")
+            if func is not None:
+                from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
+                if isinstance(func, DanaFunction):
+                    # Execute the DanaFunction directly with the transformed arguments
+                    return func.execute(context, *evaluated_args, **evaluated_kwargs)
+        except Exception as e:
+            pass  # Continue to registry lookup
+        
+        # Debug: Check what's actually in the context
+        local_state = getattr(context, '_state', {}).get('local', {})
+        if node.method_name in local_state:
+            func = local_state[node.method_name]
+            from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
+            if isinstance(func, DanaFunction):
+                # Execute the DanaFunction directly with the transformed arguments
+                return func.execute(context, *evaluated_args, **evaluated_kwargs)
+        
+        # Fallback to registry (for built-in functions)
+        try:
+            return registry.call(node.method_name, context, None, *evaluated_args, **evaluated_kwargs)
+        except Exception as e:
+            raise SandboxError(f"Method call transformation failed for '{node.method_name}': {e}")
 
     def execute_subscript_expression(self, node: SubscriptExpression, context: SandboxContext) -> Any:
         """Execute a subscript expression (indexing).

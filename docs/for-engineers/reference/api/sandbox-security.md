@@ -373,6 +373,8 @@ graph TD
 
 ## AI Code Generation Security
 
+> **Design Reference**: For detailed implementation of AI code generation and magic functions, see the [Magic Functions Design Document](../../../.implementation/magic_functions.md).
+
 ### Security Guidelines for AI
 
 When generating Dana code, AI systems should:

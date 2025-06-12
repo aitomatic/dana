@@ -9,7 +9,7 @@ to integrate with LLM capabilities.
 
 import asyncio
 import os
-from typing import Any, Dict, Optional
+from typing import Any
 
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
@@ -17,7 +17,7 @@ from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
-async def run_dana_reasoning_example(model: Optional[str] = None, provider: Optional[str] = None) -> None:
+async def run_dana_reasoning_example(model: str | None = None, provider: str | None = None) -> None:
     """Run the DANA reasoning example.
 
     Args:
@@ -47,7 +47,7 @@ async def run_dana_reasoning_example(model: Optional[str] = None, provider: Opti
     context = SandboxContext()
 
     # Configure and register an LLM resource
-    llm_config: Dict[str, Any] = {"name": "example_llm"}
+    llm_config: dict[str, Any] = {"name": "example_llm"}
     if model:
         llm_config["model"] = model
     if provider:

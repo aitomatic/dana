@@ -1,7 +1,7 @@
 """Factory for creating graphs from different sources."""
 
 from pathlib import Path
-from typing import Any, Dict, TextIO, Type, Union
+from typing import Any, TextIO
 
 from .directed_graph import DirectedGraph, Edge, Node
 from .serializer import GraphSerializer
@@ -13,22 +13,22 @@ class GraphFactory:
     _serializer = GraphSerializer()
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any], graph_cls: Type[DirectedGraph] = DirectedGraph) -> DirectedGraph:
+    def from_dict(cls, data: dict[str, Any], graph_cls: type[DirectedGraph] = DirectedGraph) -> DirectedGraph:
         """Create graph from dictionary data."""
         return cls._serializer.from_dict(data, graph_cls)
 
     @classmethod
-    def from_yaml(cls, stream: Union[str, TextIO, Path], graph_cls: Type[DirectedGraph] = DirectedGraph) -> DirectedGraph:
+    def from_yaml(cls, stream: str | TextIO | Path, graph_cls: type[DirectedGraph] = DirectedGraph) -> DirectedGraph:
         """Create graph from YAML file or stream."""
         return cls._serializer.from_yaml(stream, graph_cls)
 
     @classmethod
-    def create_empty(cls, graph_cls: Type[DirectedGraph] = DirectedGraph) -> DirectedGraph:
+    def create_empty(cls, graph_cls: type[DirectedGraph] = DirectedGraph) -> DirectedGraph:
         """Create empty graph."""
         return graph_cls()
 
     @classmethod
-    def create_linear(cls, nodes: list[str], graph_cls: Type[DirectedGraph] = DirectedGraph) -> DirectedGraph:
+    def create_linear(cls, nodes: list[str], graph_cls: type[DirectedGraph] = DirectedGraph) -> DirectedGraph:
         """Create linear graph from list of node IDs."""
         graph = graph_cls()
 

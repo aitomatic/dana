@@ -6,6 +6,8 @@ This script tests that the SandboxFunction.__call__ method properly sanitizes
 SandboxContext arguments passed to functions.
 """
 
+from typing import Any
+
 from opendxa.dana.sandbox.context_manager import ContextManager
 from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
@@ -19,16 +21,21 @@ class MockSandboxFunction(SandboxFunction):
         super().__init__(context)
         self.parameters = ["test_context", "other_arg"]
 
+    def prepare_context(self, context: SandboxContext, args: list[Any], kwargs: dict[str, Any]) -> SandboxContext:
+        """Prepare context for function execution."""
+        # Create a sanitized copy of the context
+        return context.sanitize()
+
     def execute(self, context, *args, **kwargs):
         """Test implementation that returns the sanitized context."""
         # Return the first arg or kwarg that is a SandboxContext
         for arg in args:
             if isinstance(arg, SandboxContext):
-                return arg
+                return arg.sanitize()
 
         for key, value in kwargs.items():
             if isinstance(value, SandboxContext):
-                return value
+                return value.sanitize()
 
         return None
 

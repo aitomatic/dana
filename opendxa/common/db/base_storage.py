@@ -6,7 +6,7 @@ and semantic memories.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, List, Optional, Type, TypeVar
+from typing import Any, Generic, TypeVar
 
 import numpy as np
 from sqlalchemy import create_engine
@@ -20,7 +20,7 @@ M = TypeVar("M", bound=BaseDBModel)  # Model type
 class BaseDBStorage(Generic[M], ABC):
     """Base interface for storage operations."""
 
-    def __init__(self, db_model_class: Type[M]):
+    def __init__(self, db_model_class: type[M]):
         """Initialize storage with model class.
 
         Args:
@@ -39,12 +39,12 @@ class BaseDBStorage(Generic[M], ABC):
         pass
 
     @abstractmethod
-    def store(self, key: str, content: Any, metadata: Optional[Dict] = None) -> None:
+    def store(self, key: str, content: Any, metadata: dict | None = None) -> None:
         """Store content with metadata."""
         pass
 
     @abstractmethod
-    def retrieve(self, query: Optional[str] = None) -> List[Dict]:
+    def retrieve(self, query: str | None = None) -> list[dict]:
         """Retrieve content."""
         pass
 
@@ -57,7 +57,7 @@ class BaseDBStorage(Generic[M], ABC):
 class SqlDBStorage(BaseDBStorage[M], ABC):
     """SQL-based storage implementation for structured knowledge."""
 
-    def __init__(self, connection_string: str, db_model_class: Type[M]):
+    def __init__(self, connection_string: str, db_model_class: type[M]):
         """Initialize SQL storage.
 
         Args:
@@ -67,7 +67,7 @@ class SqlDBStorage(BaseDBStorage[M], ABC):
         super().__init__(db_model_class)
         self.engine = create_engine(connection_string)
         self.Session = sessionmaker(bind=self.engine)
-        self._session: Optional[Session] = None
+        self._session: Session | None = None
 
     def initialize(self) -> None:
         """Initialize the database tables."""
@@ -79,7 +79,7 @@ class SqlDBStorage(BaseDBStorage[M], ABC):
         if self._session:
             self._session.close()
 
-    def store(self, key: str, content: Any, metadata: Optional[Dict] = None) -> None:
+    def store(self, key: str, content: Any, metadata: dict | None = None) -> None:
         """Store a knowledge entry in the database."""
         if not self._session:
             raise RuntimeError("Storage not initialized")
@@ -88,7 +88,7 @@ class SqlDBStorage(BaseDBStorage[M], ABC):
         self._session.add(entry)
         self._session.commit()
 
-    def retrieve(self, query: Optional[str] = None) -> List[Dict]:
+    def retrieve(self, query: str | None = None) -> list[dict]:
         """Retrieve a knowledge entry from the database."""
         if not self._session:
             raise RuntimeError("Storage not initialized")
@@ -113,7 +113,7 @@ class SqlDBStorage(BaseDBStorage[M], ABC):
 class VectorDBStorage(BaseDBStorage[M], ABC):
     """Vector-based storage implementation for semantic memory."""
 
-    def __init__(self, vector_db_url: str, embedding_model: Any, db_model_class: Type[M]):
+    def __init__(self, vector_db_url: str, embedding_model: Any, db_model_class: type[M]):
         """Initialize vector storage.
 
         Args:
@@ -124,7 +124,7 @@ class VectorDBStorage(BaseDBStorage[M], ABC):
         super().__init__(db_model_class)
         self.vector_db_url = vector_db_url
         self.embedding_model = embedding_model
-        self._session: Optional[Session] = None
+        self._session: Session | None = None
         self.initialize()
 
     def initialize(self) -> None:
@@ -145,7 +145,7 @@ class VectorDBStorage(BaseDBStorage[M], ABC):
         # TODO: Implement embedding generation
         return np.zeros(768)  # Placeholder
 
-    def store(self, key: str, content: Any, metadata: Optional[Dict] = None) -> None:
+    def store(self, key: str, content: Any, metadata: dict | None = None) -> None:
         """Store a memory with metadata."""
         if not self._session:
             raise RuntimeError("Storage not initialized")
@@ -170,7 +170,7 @@ class VectorDBStorage(BaseDBStorage[M], ABC):
         # This is where we would store the embedding in a vector database
         # For now, we're just storing the metadata in SQL
 
-    def retrieve(self, query: Optional[str] = None) -> List[Dict]:
+    def retrieve(self, query: str | None = None) -> list[dict]:
         """Retrieve memories using vector similarity search."""
         if not self._session:
             raise RuntimeError("Storage not initialized")
@@ -193,7 +193,7 @@ class VectorDBStorage(BaseDBStorage[M], ABC):
 
         return [entry.__dict__ for entry in entries]
 
-    def _retrieve_by_importance(self) -> List[Dict]:
+    def _retrieve_by_importance(self) -> list[dict]:
         """Retrieve memories ordered by importance."""
         if not self._session:
             raise RuntimeError("Storage not initialized")

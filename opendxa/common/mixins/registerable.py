@@ -1,6 +1,5 @@
 """Objects that have a registry for other objects"""
 
-from typing import Dict
 
 from opendxa.common.mixins.identifiable import Identifiable
 
@@ -9,7 +8,7 @@ class Registerable(Identifiable):
     """Objects that have a global registry for all registerable objects."""
 
     # Single global registry for all registerable objects
-    _registry: Dict[str, "Registerable"] = {}
+    _registry: dict[str, "Registerable"] = {}
 
     @classmethod
     def get_from_registry(cls, object_id: str) -> "Registerable":

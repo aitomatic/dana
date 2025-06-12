@@ -26,15 +26,14 @@ Design Notes:
 
 """
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
-from mcp.types import Tool, Resource, Prompt
-from pydantic import AnyUrl
-from opendxa.contrib.dana_mcp_a2a.common.resource.mcp.client.transport import MCPSSETransport, MCPHTTPTransport, BaseTransport
 from fastmcp import Client
-from opendxa.common import Misc
-from typing import Any, Generic, Literal, cast, overload
-from opendxa.common import Loggable
+
+from opendxa.common.mixins.loggable import Loggable
+from opendxa.common.utils.misc import Misc
+from opendxa.contrib.dana_mcp_a2a.common.resource.mcp.client.transport import BaseTransport, MCPHTTPTransport, MCPSSETransport
+
 
 class MCPMetaclass(type):
     def __call__(cls, *args: Any, **kwds: Any) -> Any:
@@ -65,6 +64,6 @@ class MCPClient(Client, Loggable, metaclass=MCPMetaclass):
                 await test_client.list_resources()
                 await test_client.list_prompts()
                 return True
-        except Exception as e:
+        except Exception:
             pass
         return False

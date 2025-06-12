@@ -1,4 +1,12 @@
 """
+Expression transformer for the Dana language.
+
+This module handles the transformation of parsed expressions into the appropriate
+AST nodes for the Dana language interpreter.
+
+# Version: 1.0.1 - GitHub CI Fix Applied - 2025-01-09
+# This comment forces GitHub CI to refresh file content
+
 Expression transformers for Dana language parsing.
 
 This module provides expression transformers for the Dana language.
@@ -19,7 +27,7 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from typing import Any, List, Union, cast
+from typing import Any, Union, cast
 
 from lark import Token, Tree
 
@@ -34,13 +42,14 @@ from opendxa.dana.sandbox.parser.ast import (
     Identifier,
     ListLiteral,
     LiteralExpression,
+    ObjectFunctionCall,
     SetLiteral,
     SubscriptExpression,
     TupleLiteral,
     UnaryExpression,
-    ObjectFunctionCall,
 )
 from opendxa.dana.sandbox.parser.transformer.base_transformer import BaseTransformer
+from opendxa.dana.sandbox.parser.transformer.expression.expression_helpers import OperatorHelper
 
 ValidExprType = Union[LiteralExpression, Identifier, BinaryExpression, FunctionCall]
 
@@ -148,26 +157,8 @@ class ExpressionTransformer(BaseTransformer):
         raise TypeError(f"Cannot transform expression: {item} ({type(item)})")
 
     def _extract_operator_string(self, op_token):
-        """
-        Extract the operator string from a parse tree node, token, or string.
-        Handles comp_op, *_op, ADD_OP, MUL_OP, direct tokens, and plain strings.
-        Also handles BinaryOperator enum values.
-        """
-        from lark import Token, Tree
-
-        if isinstance(op_token, Token):
-            return op_token.value
-        if isinstance(op_token, str):
-            return op_token
-        if isinstance(op_token, BinaryOperator):
-            return op_token.value  # Return the value of the enum
-        if isinstance(op_token, Tree):
-            if getattr(op_token, "data", None) == "comp_op":
-                op_str = " ".join(child.value for child in op_token.children if isinstance(child, Token))
-                return op_str
-            elif op_token.children and isinstance(op_token.children[0], Token):
-                return op_token.children[0].value
-        raise ValueError(f"Cannot extract operator string from: {op_token}")
+        """Extract operator string from a token or tree."""
+        return OperatorHelper.extract_operator_string(op_token)
 
     def _op_tree_to_str(self, tree):
         # For ADD_OP and MUL_OP, the child is the actual operator token
@@ -186,23 +177,7 @@ class ExpressionTransformer(BaseTransformer):
         Iterates over items, applying the operator from operator_getter to each pair.
         Used by or_expr, and_expr, comparison, sum_expr, and term.
         """
-        if not items:
-            raise ValueError("No items for binary operation")
-        result = items[0]
-        i = 1
-        while i < len(items):
-            op_token = items[i]
-            from lark import Tree
-
-            if isinstance(op_token, Tree) and hasattr(op_token, "data") and op_token.data.endswith("_op") and not op_token.children:
-                raise ValueError(f"Malformed parse tree: operator node '{op_token.data}' has no children at index {i} in items: {items}")
-            op_str = self._extract_operator_string(op_token)
-            op = operator_getter(op_str)
-            right = items[i + 1]
-            left = result
-            result = BinaryExpression(left, op, right)
-            i += 2
-        return result
+        return OperatorHelper.left_associative_binop(items, operator_getter)
 
     def _get_binary_operator(self, op_str):
         """
@@ -382,8 +357,8 @@ class ExpressionTransformer(BaseTransformer):
             right = self.expression([items[2]])
 
             # Cast operands to appropriate types to satisfy type checking
-            left_expr = cast(Union[LiteralExpression, Identifier, BinaryExpression, FunctionCall], base)
-            right_expr = cast(Union[LiteralExpression, Identifier, BinaryExpression, FunctionCall], right)
+            left_expr = cast(LiteralExpression | Identifier | BinaryExpression | FunctionCall, base)
+            right_expr = cast(LiteralExpression | Identifier | BinaryExpression | FunctionCall, right)
 
             return BinaryExpression(left=left_expr, operator=BinaryOperator.POWER, right=right_expr)
 
@@ -393,16 +368,16 @@ class ExpressionTransformer(BaseTransformer):
     def atom(self, items):
         if not items:
             return None
-        
+
         # Get the base atom (first item)
         base = self.unwrap_single_child_tree(items[0])
-        
+
         # If there are trailers, process them using the trailer method
         if len(items) > 1:
             # Create a list with base + trailers and delegate to trailer method
             trailer_items = [base] + items[1:]
             return self.trailer(trailer_items)
-        
+
         # No trailers, just process the base atom
         item = base
         from lark import Token, Tree
@@ -488,12 +463,12 @@ class ExpressionTransformer(BaseTransformer):
         """Transform an argument rule into an expression or keyword argument pair."""
         # items[0] is either a kw_arg tree or an expression
         arg_item = items[0]
-        
+
         # If it's a kw_arg tree, return it as-is for now
         # The function call handler will process it properly
-        if hasattr(arg_item, 'data') and arg_item.data == 'kw_arg':
+        if hasattr(arg_item, "data") and arg_item.data == "kw_arg":
             return arg_item
-        
+
         # Otherwise, transform it as a regular expression
         return self.expression([arg_item])
 
@@ -501,10 +476,10 @@ class ExpressionTransformer(BaseTransformer):
         """Process function call arguments, handling both positional and keyword arguments."""
         args = []  # List of positional arguments
         kwargs = {}  # Dict of keyword arguments
-        
+
         for arg_child in arg_children:
             # Check if this is a kw_arg tree
-            if hasattr(arg_child, 'data') and arg_child.data == 'kw_arg':
+            if hasattr(arg_child, "data") and arg_child.data == "kw_arg":
                 # Extract keyword argument name and value
                 name = arg_child.children[0].value
                 value = self.expression([arg_child.children[1]])
@@ -513,7 +488,7 @@ class ExpressionTransformer(BaseTransformer):
                 # Regular positional argument
                 expr = self.expression([arg_child])
                 args.append(expr)
-        
+
         # Build the final args dict
         result = {"__positional": args}
         result.update(kwargs)
@@ -524,7 +499,7 @@ class ExpressionTransformer(BaseTransformer):
 
         flat_items = self.flatten_items(items)
         # Ensure each item is properly cast to Expression type
-        tuple_items: List[Expression] = []
+        tuple_items: list[Expression] = []
         for item in flat_items:
             expr = self.expression([item])
             tuple_items.append(cast(Expression, expr))
@@ -539,7 +514,7 @@ class ExpressionTransformer(BaseTransformer):
 
         flat_items = self.flatten_items(items)
         # Ensure each item is properly cast to Expression type
-        list_items: List[Expression] = []
+        list_items: list[Expression] = []
         for item in flat_items:
             expr = self.expression([item])
             list_items.append(cast(Expression, expr))
@@ -564,7 +539,7 @@ class ExpressionTransformer(BaseTransformer):
         from opendxa.dana.sandbox.parser.ast import Expression, SetLiteral
 
         # Ensure each item is properly cast to Expression type
-        set_items: List[Expression] = []
+        set_items: list[Expression] = []
         for item in flat_items:
             expr = self.expression([item])
             set_items.append(cast(Expression, expr))
@@ -583,60 +558,58 @@ class ExpressionTransformer(BaseTransformer):
     def trailer(self, items):
         """
         Handles function calls, attribute access, and indexing after an atom.
-        
+
         This method is responsible for detecting object method calls and creating the
         appropriate AST nodes. It distinguishes between:
-        
+
         1. Object method calls (obj.method()) -> ObjectFunctionCall
-        2. Regular function calls (func()) -> FunctionCall  
+        2. Regular function calls (func()) -> FunctionCall
         3. Attribute access (obj.attr) -> Identifier with dotted name
         4. Indexing operations (obj[key]) -> SubscriptExpression
-        
+
         Object Method Call Detection:
         ----------------------------
         The method uses two strategies to detect object method calls:
-        
+
         Strategy 1: Dotted identifier analysis
         - If base is an Identifier with dots (e.g., "local.obj.method")
         - And trailer is function call arguments
         - Split the dotted name into object parts and method name
         - Create ObjectFunctionCall with proper object and method separation
-        
-        Strategy 2: Sequential trailer analysis  
+
+        Strategy 2: Sequential trailer analysis
         - Process trailers in sequence (e.g., obj -> .method -> ())
         - When a function call follows attribute access
         - Create ObjectFunctionCall with the base as object and previous trailer as method
-        
+
         Examples:
         ---------
         - `websearch.list_tools()` -> ObjectFunctionCall(object=Identifier("local.websearch"), method_name="list_tools")
         - `obj.add(10)` -> ObjectFunctionCall(object=Identifier("local.obj"), method_name="add", args={"__positional": [10]})
         - `func()` -> FunctionCall(name="func")
         - `obj.attr` -> Identifier(name="local.obj.attr")
-        
+
         Args:
             items: List containing base expression and trailer elements from parse tree
-            
+
         Returns:
             AST node (ObjectFunctionCall, FunctionCall, Identifier, or SubscriptExpression)
         """
-        from opendxa.dana.sandbox.parser.ast import Identifier, ObjectFunctionCall, FunctionCall, SubscriptExpression
-        
+        from opendxa.dana.sandbox.parser.ast import FunctionCall, Identifier, ObjectFunctionCall, SubscriptExpression
+
         base = items[0]
         trailers = items[1:]
-        
+
         # Special case: if we have a dotted identifier followed by function call arguments,
         # this might be an object method call that was parsed as a dotted variable
-        if (len(trailers) == 1 and 
-            isinstance(base, Identifier) and "." in base.name):
-            
+        if len(trailers) == 1 and isinstance(base, Identifier) and "." in base.name:
+
             # Check if the trailer is either arguments or None (empty arguments)
             trailer = trailers[0]
             is_function_call = (
-                (hasattr(trailer, "data") and trailer.data == "arguments") or
-                trailer is None  # Empty arguments case: obj.method()
-            )
-            
+                hasattr(trailer, "data") and trailer.data == "arguments"
+            ) or trailer is None  # Empty arguments case: obj.method()
+
             if is_function_call:
                 # Check if this looks like an object method call
                 # Split the dotted name to see if we can separate object from method
@@ -646,66 +619,71 @@ class ExpressionTransformer(BaseTransformer):
                     scope = name_parts[0]  # "local"
                     method_name = name_parts[-1]  # "method"
                     object_parts = name_parts[1:-1]  # ["obj"] or ["obj", "subobj"]
-                    
+
                     # Create object identifier
                     object_name = f"{scope}.{'.'.join(object_parts)}"
                     object_expr = Identifier(name=object_name, location=getattr(base, "location", None))
-                    
+
                     # Create ObjectFunctionCall
                     if trailer is not None and hasattr(trailer, "children"):
                         args = self._process_function_arguments(trailer.children)
                     else:
                         args = {"__positional": []}  # Empty arguments
-                    
+
                     return ObjectFunctionCall(
-                        object=object_expr,
-                        method_name=method_name,
-                        args=args,
-                        location=getattr(base, "location", None)
+                        object=object_expr, method_name=method_name, args=args, location=getattr(base, "location", None)
                     )
-        
+
         # Original logic for other cases
         for i, t in enumerate(trailers):
-            # Function call: ( ... )
-            if hasattr(t, "data") and t.data == "arguments":
+            # Function call: ( ... ) or empty arguments (None)
+            if (hasattr(t, "data") and t.data == "arguments") or t is None:
                 # Check if this function call follows an attribute access
                 if i > 0:
                     # Look at the previous trailer to see if it was attribute access
                     prev_trailer = trailers[i - 1]
                     if hasattr(prev_trailer, "type") and prev_trailer.type == "NAME":
                         # We have obj.method() - create ObjectFunctionCall
-                        
+
                         # The base object is everything except the last attribute
                         object_expr = base
                         method_name = prev_trailer.value
-                        
-                        args = self._process_function_arguments(t.children) if hasattr(t, "children") else {"__positional": []}
-                        
+
+                        if t is not None and hasattr(t, "children"):
+                            args = self._process_function_arguments(t.children)
+                        else:
+                            args = {"__positional": []}  # Empty arguments
+
                         return ObjectFunctionCall(
-                            object=object_expr, 
-                            method_name=method_name, 
-                            args=args, 
-                            location=getattr(base, "location", None)
+                            object=object_expr, method_name=method_name, args=args, location=getattr(base, "location", None)
                         )
-                
+
                 # Regular function call on base
                 name = getattr(base, "name", None)
                 if not isinstance(name, str):
                     name = str(base)
-                args = self._process_function_arguments(t.children) if hasattr(t, "children") else {"__positional": []}
+
+                if t is not None and hasattr(t, "children"):
+                    args = self._process_function_arguments(t.children)
+                else:
+                    args = {"__positional": []}  # Empty arguments
+
                 return FunctionCall(name=name, args=args, location=getattr(base, "location", None))
             # Attribute access: .NAME
             elif hasattr(t, "type") and t.type == "NAME":
-                name = getattr(base, "name", None)
-                if not isinstance(name, str):
-                    name = str(base)
-                name = f"{name}.{t.value}"
-                base = Identifier(name=name, location=getattr(base, "location", None))
-            # Indexing: [ ... ]
-            elif hasattr(t, "data") and t.data == "expr":
-                base = SubscriptExpression(
-                    object=base, index=t.children[0] if hasattr(t, "children") else t, location=getattr(base, "location", None)
-                )
+                # For simple identifiers, continue with dotted name approach
+                if isinstance(base, Identifier):
+                    name = base.name
+                    name = f"{name}.{t.value}"
+                    base = Identifier(name=name, location=getattr(base, "location", None))
+                else:
+                    # For complex expressions (like SubscriptExpression), create AttributeAccess
+                    base = AttributeAccess(object=base, attribute=t.value, location=getattr(base, "location", None))
+            # Indexing: [ ... ] - trailer is the index expression itself
+            else:
+                # If it's not a function call or attribute access, it must be indexing
+                # The trailer is the index expression (already transformed to AST)
+                base = SubscriptExpression(object=base, index=t, location=getattr(base, "location", None))
         return base
 
     def _get_full_attribute_name(self, attr):
@@ -864,6 +842,10 @@ class ExpressionTransformer(BaseTransformer):
             elif item.type == "REGULAR_STRING":
                 value = item.value[1:-1]  # Strip quotes
                 return LiteralExpression(value)
+            # Single-quoted string
+            elif item.type == "SINGLE_QUOTED_STRING":
+                value = item.value[1:-1]  # Strip single quotes
+                return LiteralExpression(value)
             # Raw string
             elif item.type == "RAW_STRING":
                 # Extract the raw string content (removing r" prefix and " suffix)
@@ -887,3 +869,6 @@ class ExpressionTransformer(BaseTransformer):
         # If we reach here, it's an unexpected string type
         self.error(f"Unexpected string literal type: {type(item)}")
         return LiteralExpression("")
+
+
+# File updated to resolve GitHub CI syntax error - 2025-06-09

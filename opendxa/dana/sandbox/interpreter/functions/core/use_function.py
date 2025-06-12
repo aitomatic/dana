@@ -1,9 +1,9 @@
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
-from opendxa.common import Misc
 from opendxa.common.resource.base_resource import BaseResource
+from opendxa.common.utils.misc import Misc
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
-def use_function(context: SandboxContext, function_name: str, *args, _name:str|None=None, **kwargs) -> BaseResource:
+def use_function(context: SandboxContext, function_name: str, *args, _name: str | None = None, **kwargs) -> BaseResource:
     """Use a function in the context.
     This function is used to call a function in the context.
     It is used to call a function in the context.
@@ -19,6 +19,7 @@ def use_function(context: SandboxContext, function_name: str, *args, _name:str|N
         _name = Misc.generate_base64_uuid(length=6)
     if function_name.lower() == "mcp":
         from opendxa.contrib.dana_mcp_a2a.common.resource.mcp.client.mcp_resource import MCPResource
+
         resource = MCPResource(name=_name, *args, **kwargs)
         context.set_resource(_name, resource)
         return resource

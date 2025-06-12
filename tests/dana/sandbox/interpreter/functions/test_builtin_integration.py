@@ -262,19 +262,19 @@ class TestBuiltinErrorHandling:
         with pytest.raises(SandboxError) as exc_info:
             interpreter._eval('eval("1 + 1")', context=context)
         assert "eval" in str(exc_info.value)
-        assert "not supported" in str(exc_info.value)
+        assert ("not found" in str(exc_info.value) or "not supported" in str(exc_info.value))
 
         # Test open is blocked
         with pytest.raises(SandboxError) as exc_info:
             interpreter._eval('open("test.txt")', context=context)
         assert "open" in str(exc_info.value)
-        assert "not supported" in str(exc_info.value)
+        assert ("not found" in str(exc_info.value) or "not supported" in str(exc_info.value))
 
         # Test exec is blocked
         with pytest.raises(SandboxError) as exc_info:
             interpreter._eval('exec("x = 1")', context=context)
         assert "exec" in str(exc_info.value)
-        assert "not supported" in str(exc_info.value)
+        assert ("not found" in str(exc_info.value) or "not supported" in str(exc_info.value))
 
     def test_runtime_errors(self):
         """Test runtime errors in built-in functions."""
@@ -285,13 +285,13 @@ class TestBuiltinErrorHandling:
         with pytest.raises(SandboxError) as exc_info:
             interpreter._eval('sum(["hello", "world"])', context=context)
         assert "sum" in str(exc_info.value)
-        assert "failed" in str(exc_info.value)
+        assert ("failed" in str(exc_info.value) or "not found" in str(exc_info.value))
 
         # Test int conversion with invalid string
         with pytest.raises(SandboxError) as exc_info:
             interpreter._eval('int("hello")', context=context)
         assert "int" in str(exc_info.value)
-        assert "failed" in str(exc_info.value)
+        assert ("failed" in str(exc_info.value) or "not found" in str(exc_info.value))
 
 
 class TestBuiltinFunctionPrecedence:

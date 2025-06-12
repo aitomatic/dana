@@ -19,12 +19,11 @@ Discord: https://discord.gg/6jGD4PYk
 
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple
+from typing import TYPE_CHECKING, Any, Optional
 
 from opendxa.common.resource.base_resource import BaseResource
 from opendxa.dana.common.exceptions import StateError
 from opendxa.dana.common.runtime_scopes import RuntimeScopes
-from typing import List
 
 if TYPE_CHECKING:
     from opendxa.dana.sandbox.context_manager import ContextManager
@@ -52,8 +51,8 @@ class SandboxContext:
         """
         self._parent = parent
         self._manager = manager
-        self._interpreter: Optional[DanaInterpreter] = None
-        self._state: Dict[str, Dict[str, Any]] = {
+        self._interpreter: DanaInterpreter | None = None
+        self._state: dict[str, dict[str, Any]] = {
             "local": {},  # Always fresh local scope
             "private": {},  # Shared global scope
             "public": {},  # Shared global scope
@@ -62,7 +61,7 @@ class SandboxContext:
                 "history": [],
             },
         }
-        self.__resources: Dict[str, BaseResource] = {}
+        self.__resources: dict[str, BaseResource] = {}
         # If parent exists, share global scopes instead of copying
         if parent:
             for scope in RuntimeScopes.GLOBAL:
@@ -107,7 +106,7 @@ class SandboxContext:
         """
         return self._interpreter
 
-    def _validate_key(self, key: str) -> Tuple[str, str]:
+    def _validate_key(self, key: str) -> tuple[str, str]:
         """Validate a key and extract scope and variable name.
 
         Args:
@@ -229,7 +228,7 @@ class SandboxContext:
         """
         self.set("system.execution_status", status)
 
-    def add_execution_history(self, entry: Dict[str, Any]) -> None:
+    def add_execution_history(self, entry: dict[str, Any]) -> None:
         """Add an entry to the execution history.
 
         Args:
@@ -246,7 +245,7 @@ class SandboxContext:
         self.set("system.history", [])
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any], base_context: Optional["SandboxContext"] = None) -> "SandboxContext":
+    def from_dict(cls, data: dict[str, Any], base_context: Optional["SandboxContext"] = None) -> "SandboxContext":
         """Create a new RuntimeContext from a dictionary and base context, with `data` taking precedence.
 
         The data dictionary values will override any values already in the base context.
@@ -354,7 +353,7 @@ class SandboxContext:
         elif self._parent is not None:
             self._parent.delete(key)
 
-    def clear(self, scope: Optional[str] = None) -> None:
+    def clear(self, scope: str | None = None) -> None:
         """Clear all variables in a scope or all scopes.
 
         Args:
@@ -371,7 +370,7 @@ class SandboxContext:
             for s in RuntimeScopes.ALL:
                 self._state[s].clear()
 
-    def get_state(self) -> Dict[str, Dict[str, Any]]:
+    def get_state(self) -> dict[str, dict[str, Any]]:
         """Get a copy of the current state.
 
         Returns:
@@ -379,7 +378,7 @@ class SandboxContext:
         """
         return {scope: dict(values) for scope, values in self._state.items()}
 
-    def set_state(self, state: Dict[str, Dict[str, Any]]) -> None:
+    def set_state(self, state: dict[str, dict[str, Any]]) -> None:
         """Set the state from a dictionary.
 
         Args:
@@ -417,119 +416,82 @@ class SandboxContext:
         return new_context
 
     def sanitize(self) -> "SandboxContext":
-        """Remove or mask sensitive properties from the context.
+        """Create a sanitized copy of this context.
 
-        This method removes or masks properties that are considered sensitive,
-        such as API keys, credentials, and private data. It operates on the
-        current context instance in-place.
+        This method creates a copy of the context with sensitive information removed:
+        - Removes private and system scopes entirely
+        - Masks sensitive values in local and public scopes
+        - Preserves non-sensitive data in local and public scopes
 
-        Sensitive data includes:
-        - Credentials and API keys in any scope
-        - Authentication tokens
-        - User-specific information
-        - Internal system properties
+        Returns:
+            A sanitized copy of the context
         """
-        # Define sensitive property patterns to identify and remove
-        sensitive_patterns = [
-            "api_key",
-            "apikey",
-            "key",
-            "token",
-            "secret",
-            "password",
-            "credential",
-            "auth",
-            "access",
-            "private_key",
-            "cert",
-            "certificate",
-            "signature",
-        ]
+        # Create a fresh context with only local and public scopes
+        sanitized = SandboxContext()
+        sanitized._state = {}  # Clear all scopes
 
-        # Additional sensitive key names (exact matches)
-        sensitive_keys = ["config", "credentials", "settings", "llm_resource"]
-
-        # User identifiable information patterns
-        user_info_patterns = ["user_id", "username", "email", "account", "address", "phone"]
-
-        # Completely remove private and system scopes
-        for scope in RuntimeScopes.SENSITIVE:
+        # Only copy and sanitize local and public scopes
+        for scope in ["local", "public"]:
             if scope in self._state:
-                del self._state[scope]
+                sanitized._state[scope] = {}
+                for key, value in self._state[scope].items():
+                    # Known sensitive key patterns
+                    sensitive_keys = {
+                        "api_key",
+                        "secret",
+                        "password",
+                        "token",
+                        "auth",
+                        "credential",
+                        "private_key",
+                        "private_var",
+                    }
 
-        # Mask sensitive values in remaining scopes (local, public)
-        for scope in RuntimeScopes.NOT_SENSITIVE:
-            if scope not in self._state:
-                continue
+                    # Sensitive patterns to look for in keys
+                    sensitive_patterns = [
+                        "key",
+                        "secret",
+                        "pass",
+                        "token",
+                        "auth",
+                        "cred",
+                        "priv",
+                    ]
 
-            keys_to_mask = []
+                    # User identifiable information patterns
+                    user_info_patterns = [
+                        "user",
+                        "email",
+                        "phone",
+                        "address",
+                        "name",
+                        "ssn",
+                        "dob",
+                    ]
 
-            # Identify sensitive keys
-            for key, value in list(self._state[scope].items()):
-                # Direct match with known sensitive keys
-                if key in sensitive_keys:
-                    keys_to_mask.append(key)
-                    continue
+                    # Check if key is sensitive
+                    is_sensitive = (
+                        key in sensitive_keys
+                        or any(pattern in key.lower() for pattern in sensitive_patterns)
+                        or any(pattern in key.lower() for pattern in user_info_patterns)
+                    )
 
-                # Check if key contains sensitive patterns
-                if any(pattern in key.lower() for pattern in sensitive_patterns):
-                    keys_to_mask.append(key)
-                    continue
-
-                # Check for user identifiable information
-                if any(pattern in key.lower() for pattern in user_info_patterns):
-                    keys_to_mask.append(key)
-                    continue
-
-                # Check for values that look like credentials or sensitive IDs
-                if isinstance(value, str):
-                    # Identify values that look like credentials
-                    potential_credential = False
-
-                    # Longer strings need more scrutiny
-                    if len(value) > 20:
-                        # Check for JWT-like patterns
-                        if "." in value and value.count(".") >= 2 and all(len(part) > 5 for part in value.split(".")):
-                            potential_credential = True
-
-                        # Check for patterns like sk_live_, Bearer token, or OAuth formats
-                        elif any(prefix in value for prefix in ["sk_", "Bearer ", "OAuth ", "api_", "pk_"]):
-                            potential_credential = True
-
-                        # Check for alphanumeric strings with hyphens, underscores, or mixed case that look like UUIDs or tokens
-                        elif any(c.isalnum() for c in value) and (
-                            sum(1 for c in value if c in "-_") > 0 or sum(1 for c in value if c.isupper()) > 5
-                        ):
-                            potential_credential = True
-
-                    # Look for user ID patterns (shorter strings with prefixes)
-                    elif len(value) >= 10 and any(prefix in value for prefix in ["usr_", "user_", "acct_", "id_"]):
-                        potential_credential = True
-
-                    if potential_credential:
-                        keys_to_mask.append(key)
-                        continue
-
-                # Check dictionaries for sensitive keys
-                if isinstance(value, dict) and any(k.lower() in sensitive_patterns for k in value):
-                    keys_to_mask.append(key)
-                    continue
-
-            # Mask sensitive values
-            for key in keys_to_mask:
-                if key in self._state[scope]:
-                    if isinstance(self._state[scope][key], str):
-                        # Replace with masked version
-                        value = self._state[scope][key]
-                        if len(value) > 8:
-                            masked = value[:4] + "****" + value[-4:]
+                    if is_sensitive:
+                        if isinstance(value, str):
+                            # Replace with masked version
+                            if len(value) > 8:
+                                masked = value[:4] + "****" + value[-4:]
+                            else:
+                                masked = "********"
+                            sanitized._state[scope][key] = masked
                         else:
-                            masked = "********"
-                        self._state[scope][key] = masked
+                            # For non-string values, replace with masked indicator
+                            sanitized._state[scope][key] = "[MASKED]"
                     else:
-                        # For non-string values, replace with masked indicator
-                        self._state[scope][key] = "[MASKED]"
-        return self
+                        # Copy non-sensitive value
+                        sanitized._state[scope][key] = value
+
+        return sanitized
 
     def __str__(self) -> str:
         """Get a string representation of the context.
@@ -547,7 +509,7 @@ class SandboxContext:
         """
         return f"SandboxContext(state={self._state}, parent={self._parent})"
 
-    def get_scope(self, scope: str) -> Dict[str, Any]:
+    def get_scope(self, scope: str) -> dict[str, Any]:
         """Get a copy of a specific scope.
 
         Args:
@@ -558,7 +520,7 @@ class SandboxContext:
         """
         return self._state[scope].copy()
 
-    def set_scope(self, scope: str, context: Optional[Dict[str, Any]] = None) -> None:
+    def set_scope(self, scope: str, context: dict[str, Any] | None = None) -> None:
         """Set a value in a specific scope.
 
         Args:
@@ -602,7 +564,7 @@ class SandboxContext:
 
         return None
 
-    def get_assignment_target_type(self) -> Optional[Any]:
+    def get_assignment_target_type(self) -> Any | None:
         """Get the expected type for the current assignment target.
 
         This method is used by IPV to determine the expected output type
@@ -625,14 +587,20 @@ class SandboxContext:
         return None
 
     def set_resource(self, name: str, resource: BaseResource) -> None:
-        # If another resource with the same name is set, the old resource will be replaced
+        """Set a resource in the context.
+
+        Args:
+            name: The name of the resource
+            resource: The resource to set
+        """
+        # Store the resource in the private scope
+        self.set_in_scope(name, resource, scope="private")
         self.__resources[name] = resource
-        self.set_in_scope(name, resource, scope="local")
 
     def get_resource(self, name: str) -> BaseResource:
         return self._state["local"][name]
-    
-    def get_resources(self, included : Optional[List[str|BaseResource]] = None) -> Dict[str, BaseResource]:
+
+    def get_resources(self, included: list[str | BaseResource] | None = None) -> dict[str, BaseResource]:
         """Get a dictionary of resources from the context.
 
         Args:
@@ -646,12 +614,40 @@ class SandboxContext:
             # Convert to list of strings
             included = [resource.name if isinstance(resource, BaseResource) else resource for resource in included]
         resource_names = filter(lambda name: (included is None or name in included), resource_names)
-        return {name : self.get_resource(name) for name in resource_names}
+        return {name: self.get_resource(name) for name in resource_names}
 
     def soft_delete_resource(self, name: str) -> None:
         # resource will remain in private variable self.__resources but will be removed from the local scope
         self.delete(name)
 
-    def list_resources(self) -> List[str]:
+    def list_resources(self) -> list[str]:
         # list all resources that are in the local scope (not soft deleted)
         return [name for name in self.__resources.keys() if name in self._state["local"]]
+
+    def delete_from_scope(self, var_name: str, scope: str = "local") -> None:
+        """Delete a variable from a specific scope.
+
+        Args:
+            var_name: The variable name to delete
+            scope: The scope to delete from (defaults to local)
+
+        Raises:
+            StateError: If the scope is unknown
+        """
+        if scope not in RuntimeScopes.ALL:
+            raise StateError(f"Unknown scope: {scope}")
+
+        # For global scopes, delete from root context
+        if scope in RuntimeScopes.GLOBAL:
+            root = self
+            while root._parent is not None:
+                root = root._parent
+            if var_name in root._state[scope]:
+                del root._state[scope][var_name]
+            return
+
+        # For local scope, delete from current context
+        if var_name in self._state[scope]:
+            del self._state[scope][var_name]
+        elif self._parent is not None:
+            self._parent.delete_from_scope(var_name, scope)

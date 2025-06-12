@@ -36,7 +36,7 @@ Example:
     })
 """
 
-from typing import Any, ClassVar, Dict, Optional
+from typing import Any, ClassVar
 
 # Local imports
 from opendxa.agent.capability.domain_expertise import DomainExpertise
@@ -51,7 +51,7 @@ from opendxa.common.types import BaseRequest, BaseResponse
 class ExpertResponse(BaseResponse):
     """Expert-specific response extending base response."""
 
-    def __init__(self, content: Any = None, usage: Optional[Dict[str, int]] = None, model: Optional[str] = None):
+    def __init__(self, content: Any = None, usage: dict[str, int] | None = None, model: str | None = None):
         super().__init__(content)
         self.usage = usage
         self.model = model
@@ -61,16 +61,16 @@ class ExpertResource(BaseResource):
     """Resource for interacting with human experts."""
 
     # Class-level default configuration
-    default_config: ClassVar[Dict[str, Any]] = {"expertise": None, "confidence_threshold": 0.7, "system_prompt": None, "llm_config": {}}
+    default_config: ClassVar[dict[str, Any]] = {"expertise": None, "confidence_threshold": 0.7, "system_prompt": None, "llm_config": {}}
 
     def __init__(
         self,
         name: str,
-        expertise: Optional[DomainExpertise] = None,
-        system_prompt: Optional[str] = None,
+        expertise: DomainExpertise | None = None,
+        system_prompt: str | None = None,
         confidence_threshold: float = 0.7,
-        llm_config: Optional[Dict[str, Any]] = None,
-        config: Optional[Dict[str, Any]] = None,
+        llm_config: dict[str, Any] | None = None,
+        config: dict[str, Any] | None = None,
     ):
         """Initialize expert resource.
 
@@ -97,7 +97,7 @@ class ExpertResource(BaseResource):
         self._io = IOFactory.create_io("console")
 
     @property
-    def expertise(self) -> Optional[DomainExpertise]:
+    def expertise(self) -> DomainExpertise | None:
         """Get the domain expertise."""
         return self.config.get("expertise")
 
@@ -107,12 +107,12 @@ class ExpertResource(BaseResource):
         return float(self.config.get("confidence_threshold", 0.7))
 
     @property
-    def system_prompt(self) -> Optional[str]:
+    def system_prompt(self) -> str | None:
         """Get the system prompt."""
         return self.config.get("system_prompt")
 
     @property
-    def llm_config(self) -> Dict[str, Any]:
+    def llm_config(self) -> dict[str, Any]:
         """Get the LLM configuration."""
         return self.config.get("llm_config", {})
 
@@ -137,6 +137,6 @@ class ExpertResource(BaseResource):
         if self._io:
             await self._io.cleanup()
 
-    def can_handle(self, request: Dict[str, Any]) -> bool:
+    def can_handle(self, request: dict[str, Any]) -> bool:
         """Check if request needs expert input."""
         return "prompt" in request
