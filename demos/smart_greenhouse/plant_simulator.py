@@ -10,9 +10,9 @@ Simulates realistic plant growth and health based on:
 """
 
 import math
-import random
-from typing import Dict, Any, List
 from dataclasses import dataclass, field
+from typing import Any
+
 from greenhouse_systems import GreenhouseCommand
 
 
@@ -45,12 +45,12 @@ class EnvironmentState:
 class PlantMetrics:
     """Historical metrics for plants."""
 
-    health_scores: List[float] = field(default_factory=list)
-    growth_rates: List[float] = field(default_factory=list)
-    water_usage: List[float] = field(default_factory=list)
-    energy_usage: List[float] = field(default_factory=list)
-    yields: List[float] = field(default_factory=list)
-    timestamps: List[str] = field(default_factory=list)
+    health_scores: list[float] = field(default_factory=list)
+    growth_rates: list[float] = field(default_factory=list)
+    water_usage: list[float] = field(default_factory=list)
+    energy_usage: list[float] = field(default_factory=list)
+    yields: list[float] = field(default_factory=list)
+    timestamps: list[str] = field(default_factory=list)
 
 
 class GreenhouseSimulator:
@@ -90,7 +90,7 @@ class GreenhouseSimulator:
         self.total_energy_used = 0.0
         self.simulation_hours = 0
 
-    def step(self, command: GreenhouseCommand, duration: float = 1.0) -> Dict[str, Any]:
+    def step(self, command: GreenhouseCommand, duration: float = 1.0) -> dict[str, Any]:
         """
         Advance plant growth simulation by one time step.
 
@@ -286,7 +286,7 @@ class GreenhouseSimulator:
         current_duration = self.stage_durations[self.plant_state.growth_stage]
         return min(100, (self.plant_state.days_in_stage / current_duration) * 100)
 
-    def get_efficiency_metrics(self) -> Dict[str, float]:
+    def get_efficiency_metrics(self) -> dict[str, float]:
         """Calculate resource efficiency metrics."""
         if self.simulation_hours <= 0:
             return {"water_efficiency": 0, "energy_efficiency": 0, "yield_per_day": 0}

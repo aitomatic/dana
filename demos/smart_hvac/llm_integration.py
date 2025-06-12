@@ -6,8 +6,8 @@ enabling real POET functionality with LLM-based reasoning and learning.
 """
 
 import os
-import asyncio
-from typing import Optional, Dict, Any
+from typing import Any
+
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.common.types import BaseRequest
 
@@ -21,7 +21,7 @@ class HVACLLMManager:
     """
     
     def __init__(self):
-        self.llm: Optional[LLMResource] = None
+        self.llm: LLMResource | None = None
         self.initialized = False
         self._preferred_models = [
             {"name": "openai:gpt-4o-mini", "required_api_keys": ["OPENAI_API_KEY"]},
@@ -79,7 +79,7 @@ class HVACLLMManager:
                                  current_temp: float, 
                                  target_temp: float, 
                                  user_feedback: str = None,
-                                 comfort_history: list = None) -> Dict[str, Any]:
+                                 comfort_history: list = None) -> dict[str, Any]:
         """
         Use LLM to reason about user comfort and suggest adjustments.
         
@@ -167,7 +167,7 @@ class HVACLLMManager:
                                              target_temp: float, 
                                              outdoor_temp: float,
                                              occupancy: bool,
-                                             time_of_day: str = "afternoon") -> Dict[str, Any]:
+                                             time_of_day: str = "afternoon") -> dict[str, Any]:
         """
         Use LLM to reason about energy optimization strategies.
         
@@ -232,7 +232,7 @@ class HVACLLMManager:
         except Exception as e:
             return {"error": str(e), "energy_strategy": "standard"}
     
-    async def analyze_feedback_patterns(self, feedback_history: list) -> Dict[str, Any]:
+    async def analyze_feedback_patterns(self, feedback_history: list) -> dict[str, Any]:
         """
         Use LLM to analyze patterns in user comfort feedback.
         
@@ -292,7 +292,7 @@ class HVACLLMManager:
             else:
                 return {"patterns": [], "recommendations": []}
                 
-        except Exception as e:
+        except Exception:
             return {"patterns": [], "recommendations": []}
 
 

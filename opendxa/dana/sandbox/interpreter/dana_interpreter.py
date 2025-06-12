@@ -22,16 +22,16 @@ Discord: https://discord.gg/6jGD4PYk
 
 import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, Tuple
+from typing import Any
 
 from opendxa.common.mixins.loggable import Loggable
+from opendxa.common.utils.logging import DXA_LOGGER
 from opendxa.dana.common.error_utils import ErrorUtils
+from opendxa.dana.poet import POETConfig, POETExecutor
 from opendxa.dana.sandbox.interpreter.executor.dana_executor import DanaExecutor
 from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
-from opendxa.dana.sandbox.parser.ast import Program, Decorator, FunctionDefinition
+from opendxa.dana.sandbox.parser.ast import Decorator, FunctionDefinition, Program
 from opendxa.dana.sandbox.sandbox_context import ExecutionStatus, SandboxContext
-from opendxa.common.utils.logging import DXA_LOGGER
-from opendxa.dana.poet import POETConfig, POETExecutor
 
 # Map Dana LogLevel to Python logging levels
 Dana_TO_PYTHON_LOG_LEVELS = {
@@ -383,7 +383,7 @@ class DanaInterpreter(Loggable):
 
         return dana_function
 
-    def _bind_function_parameters(self, parameters: List, args: tuple, kwargs: dict, context: SandboxContext) -> None:
+    def _bind_function_parameters(self, parameters: list, args: tuple, kwargs: dict, context: SandboxContext) -> None:
         """
         Bind function arguments to parameters in the function context.
 

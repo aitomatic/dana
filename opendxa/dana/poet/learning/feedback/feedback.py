@@ -8,7 +8,7 @@ including simulation feedback, feedback modes, and performance metrics.
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class FeedbackMode(Enum):
@@ -31,7 +31,7 @@ class SimulationFeedback:
     safety_score: float            # Safety and compliance score (0.0-1.0)
     
     # Domain-specific metrics (extensible)
-    domain_metrics: Dict[str, float] = field(default_factory=dict)
+    domain_metrics: dict[str, float] = field(default_factory=dict)
     
     # Simulation metadata
     feedback_mode: FeedbackMode = FeedbackMode.REAL_WORLD
@@ -40,7 +40,7 @@ class SimulationFeedback:
     model_accuracy: float = 1.0           # Estimated model accuracy
     
     # Contextual information
-    scenario_context: Dict[str, Any] = field(default_factory=dict)
+    scenario_context: dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.now)
     
     # Error and diagnostic information
@@ -82,13 +82,13 @@ class FeedbackRequest:
     
     # Function execution context
     function_name: str
-    function_input: Dict[str, Any]
+    function_input: dict[str, Any]
     function_output: Any
-    execution_context: Dict[str, Any]
+    execution_context: dict[str, Any]
     
     # Feedback requirements
     requested_mode: FeedbackMode
-    domain: Optional[str] = None
+    domain: str | None = None
     required_metrics: list[str] = field(default_factory=list)
     
     # Timing and constraints
@@ -96,7 +96,7 @@ class FeedbackRequest:
     min_confidence: float = 0.5
     
     # Additional context
-    user_context: Dict[str, Any] = field(default_factory=dict)
+    user_context: dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.now)
 
 

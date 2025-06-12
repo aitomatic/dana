@@ -10,26 +10,21 @@ Demonstrates POET's learning and optimization capabilities.
 
 import asyncio
 import json
-import time
-from typing import Dict, Any, List
 from datetime import datetime
+from typing import Any
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
-from pydantic import BaseModel
-
+from fastapi.staticfiles import StaticFiles
 from hvac_systems import (
-    basic_hvac_control,
-    smart_hvac_control,
     ComfortBasedController,
-    calculate_energy_usage,
+    basic_hvac_control,
     calculate_comfort_score,
-    POET_AVAILABLE,
+    smart_hvac_control,
 )
+from llm_integration import get_llm_manager, initialize_llm_for_demo
+from pydantic import BaseModel
 from room_simulator import RoomSimulator
-from llm_integration import initialize_llm_for_demo, get_llm_manager
-
 
 # ============================================================
 # DATA MODELS
@@ -64,11 +59,11 @@ class UserInput(BaseModel):
 class SystemMetrics(BaseModel):
     """Historical metrics for visualization."""
 
-    timestamps: List[str]
-    temperatures: List[float]
-    energy_usage: List[float]
-    comfort_scores: List[float]
-    target_temps: List[float]
+    timestamps: list[str]
+    temperatures: list[float]
+    energy_usage: list[float]
+    comfort_scores: list[float]
+    target_temps: list[float]
 
 
 # ============================================================
@@ -175,7 +170,7 @@ class HVACDemoManager:
         # Broadcast to WebSocket clients
         await self._broadcast_state()
 
-    def _store_metrics(self, system: str, timestamp: str, state: Dict, comfort: float, target: float):
+    def _store_metrics(self, system: str, timestamp: str, state: dict, comfort: float, target: float):
         """Store metrics for a system."""
         metrics = self.metrics[system]
 
@@ -234,7 +229,7 @@ class HVACDemoManager:
         for client in disconnected:
             self.clients.remove(client)
 
-    def _get_system_state(self, system: str) -> Dict[str, Any]:
+    def _get_system_state(self, system: str) -> dict[str, Any]:
         """Get current state for a system."""
         room = self.basic_room if system == "basic" else self.smart_room
         target = self.basic_target if system == "basic" else self.smart_target
@@ -259,7 +254,7 @@ class HVACDemoManager:
             "total_energy": round(room.get_total_energy(), 3),
         }
 
-    def _get_recent_metrics(self, system: str, count: int = 20) -> Dict:
+    def _get_recent_metrics(self, system: str, count: int = 20) -> dict:
         """Get recent metrics for visualization."""
         metrics = self.metrics[system]
 
@@ -336,7 +331,7 @@ async def get_index():
     """Serve the main demo page."""
     html_path = os.path.join(os.path.dirname(__file__), "static", "index.html")
     try:
-        with open(html_path, "r") as f:
+        with open(html_path) as f:
             return HTMLResponse(f.read())
     except FileNotFoundError:
         return HTMLResponse("<h1>Demo files not found</h1><p>Please run from the demos/smart_hvac directory</p>")
@@ -346,7 +341,7 @@ async def get_simple():
     """Serve the simplified demo page."""
     html_path = os.path.join(os.path.dirname(__file__), "static", "simple.html")
     try:
-        with open(html_path, "r") as f:
+        with open(html_path) as f:
             return HTMLResponse(f.read())
     except FileNotFoundError:
         return HTMLResponse("<h1>Simple demo not found</h1>")

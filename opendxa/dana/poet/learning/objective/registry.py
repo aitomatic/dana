@@ -5,10 +5,12 @@ Central registry for managing objective functions across domains and providing
 runtime objective configuration and lookup services.
 """
 
-from typing import Dict, List, Any, Optional, Set
-from .base import ObjectiveFunction, MultiObjective
-from .domain_objectives import get_domain_objectives
+from typing import Any
+
 from opendxa.common.utils.logging import DXA_LOGGER
+
+from .base import MultiObjective, ObjectiveFunction
+from .domain_objectives import get_domain_objectives
 
 
 class POETObjectiveRegistry:
@@ -20,10 +22,10 @@ class POETObjectiveRegistry:
     """
 
     def __init__(self):
-        self._domain_objectives: Dict[str, MultiObjective] = {}
-        self._custom_objectives: Dict[str, ObjectiveFunction] = {}
-        self._objective_cache: Dict[str, MultiObjective] = {}
-        self._initialized_domains: Set[str] = set()
+        self._domain_objectives: dict[str, MultiObjective] = {}
+        self._custom_objectives: dict[str, ObjectiveFunction] = {}
+        self._objective_cache: dict[str, MultiObjective] = {}
+        self._initialized_domains: set[str] = set()
 
         # Load default domain objectives
         self._load_default_domains()
@@ -121,7 +123,7 @@ class POETObjectiveRegistry:
         except Exception as e:
             raise ValueError(f"Unknown domain '{domain}' and failed to auto-load: {e}")
 
-    def _customize_objectives(self, base_multi_obj: MultiObjective, config_kwargs: Dict[str, Any]) -> MultiObjective:
+    def _customize_objectives(self, base_multi_obj: MultiObjective, config_kwargs: dict[str, Any]) -> MultiObjective:
         """
         Create customized version of multi-objective based on configuration.
 
@@ -144,7 +146,7 @@ class POETObjectiveRegistry:
 
         return customized
 
-    def get_custom_objective(self, name: str) -> Optional[ObjectiveFunction]:
+    def get_custom_objective(self, name: str) -> ObjectiveFunction | None:
         """
         Get a custom objective by name.
 
@@ -156,15 +158,15 @@ class POETObjectiveRegistry:
         """
         return self._custom_objectives.get(name)
 
-    def list_domains(self) -> List[str]:
+    def list_domains(self) -> list[str]:
         """List all registered domains."""
         return list(self._initialized_domains)
 
-    def list_custom_objectives(self) -> List[str]:
+    def list_custom_objectives(self) -> list[str]:
         """List all registered custom objectives."""
         return list(self._custom_objectives.keys())
 
-    def get_domain_summary(self, domain: str) -> Dict[str, Any]:
+    def get_domain_summary(self, domain: str) -> dict[str, Any]:
         """
         Get summary information for a domain's objectives.
 
@@ -180,7 +182,7 @@ class POETObjectiveRegistry:
         except ValueError:
             return {"error": f"Domain '{domain}' not found"}
 
-    def validate_metrics_for_domain(self, domain: str, metrics: Dict[str, float]) -> Dict[str, Any]:
+    def validate_metrics_for_domain(self, domain: str, metrics: dict[str, float]) -> dict[str, Any]:
         """
         Validate that provided metrics are sufficient for domain objectives.
 
@@ -214,7 +216,7 @@ class POETObjectiveRegistry:
             return {"valid": False, "error": str(e), "missing_metrics": [], "extra_metrics": [], "required_metrics": [], "coverage": 0.0}
 
     def create_custom_multi_objective(
-        self, name: str, objective_names: List[str], method: str = "constraint_satisfaction"
+        self, name: str, objective_names: list[str], method: str = "constraint_satisfaction"
     ) -> MultiObjective:
         """
         Create custom multi-objective from registered objectives.
@@ -259,7 +261,7 @@ class POETObjectiveRegistry:
         self._objective_cache.clear()
         DXA_LOGGER.debug("Cleared objective cache")
 
-    def get_registry_stats(self) -> Dict[str, Any]:
+    def get_registry_stats(self) -> dict[str, Any]:
         """Get statistics about the registry."""
         total_objectives = sum(len(multi_obj.objectives) for multi_obj in self._domain_objectives.values())
         total_objectives += len(self._custom_objectives)

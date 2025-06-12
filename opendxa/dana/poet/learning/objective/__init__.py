@@ -13,24 +13,21 @@ Key Components:
 """
 
 from .base import (
-    ObjectiveType,
-    ObjectivePriority,
-    ObjectiveFunction,
     MultiObjective,
     ObjectiveEvaluationResult,
+    ObjectiveFunction,
+    ObjectivePriority,
+    ObjectiveType,
 )
-
-from .registry import POETObjectiveRegistry, get_global_registry
-
-from .evaluator import ObjectiveEvaluator, EvaluationContext
-
 from .domain_objectives import (
     BuildingManagementObjectives,
-    LLMOptimizationObjectives,
-    FinancialServicesObjectives,
     CommonObjectives,
+    FinancialServicesObjectives,
+    LLMOptimizationObjectives,
     get_domain_objectives,
 )
+from .evaluator import EvaluationContext, ObjectiveEvaluator
+from .registry import POETObjectiveRegistry, get_global_registry
 
 __all__ = [
     # Core objective framework

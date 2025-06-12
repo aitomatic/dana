@@ -5,7 +5,7 @@ This module provides a Dana function that allows users to apply POET enhancement
 to any function call directly from Dana code.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from opendxa.dana.poet import POETConfig, POETExecutor
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
@@ -14,11 +14,11 @@ from opendxa.dana.sandbox.sandbox_context import SandboxContext
 def poet_function(
     context: SandboxContext,
     func_name: str,
-    args: Optional[list] = None,
-    kwargs: Optional[Dict[str, Any]] = None,
-    domain: Optional[str] = None,
-    timeout: Optional[float] = None,
-    retries: Optional[int] = None,
+    args: list | None = None,
+    kwargs: dict[str, Any] | None = None,
+    domain: str | None = None,
+    timeout: float | None = None,
+    retries: int | None = None,
     enable_training: bool = True,
 ) -> Any:
     """
@@ -90,7 +90,7 @@ def poet_function(
 def apply_poet_function(
     context: SandboxContext,
     operation: Any,
-    config: Optional[Dict[str, Any]] = None,
+    config: dict[str, Any] | None = None,
 ) -> Any:
     """
     Apply POET enhancements to a callable operation.

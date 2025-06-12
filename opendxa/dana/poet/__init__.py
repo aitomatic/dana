@@ -5,63 +5,45 @@ POE-focused implementation providing immediate value through the core
 Perceive → Operate → Enforce pipeline, with optional T-stage learning.
 """
 
-from .poet import (
-    POETConfig,
-    POETExecutor,
-    POEMetrics,
-    poet,
-    # Legacy compatibility
-    SimplePOETConfig,
-    SimplePOETExecutor,
-)
-
-from .errors import (
-    # Base error classes
-    POETError,
-    PerceiveError,
-    OperateError,
-    EnforceError,
-    TrainError,
-    # Specific error types
-    DomainPluginError,
-    InputValidationError,
-    RetryExhaustedError,
-    TimeoutError,
-    OutputValidationError,
-    ParameterLearningError,
-    ConfigurationError,
-    # Utility functions
-    wrap_poe_error,
-    create_context,
-)
-
 from .config import (
+    DomainProfiles,
     # Profile classes
     POETProfiles,
-    DomainProfiles,
+    building,
     # Utility functions
     create_custom_profile,
-    get_profile_recommendations,
-    poet_with_config,
     # Convenience aliases
     dev,
+    fast,
+    finance,
+    get_profile_recommendations,
+    learning,
+    llm,
+    minimal,
+    poet_with_config,
     prod,
     reliable,
-    fast,
-    learning,
-    minimal,
-    llm,
-    building,
-    finance,
     semiconductor,
 )
-
-from .plugins import (
-    # Plugin system
-    POETPlugin,
-    PLUGIN_REGISTRY,
+from .errors import (
+    ConfigurationError,
+    # Specific error types
+    DomainPluginError,
+    EnforceError,
+    InputValidationError,
+    OperateError,
+    OutputValidationError,
+    ParameterLearningError,
+    PerceiveError,
+    # Base error classes
+    POETError,
+    RetryExhaustedError,
+    TimeoutError,
+    TrainError,
+    create_context,
+    # Utility functions
+    wrap_poe_error,
 )
-
 from .metrics import (
     # Metrics classes
     POETExecutionMetrics,
@@ -69,6 +51,20 @@ from .metrics import (
     # Utility functions
     get_global_collector,
     record_execution_metrics,
+)
+from .plugins import (
+    PLUGIN_REGISTRY,
+    # Plugin system
+    POETPlugin,
+)
+from .poet import (
+    POEMetrics,
+    POETConfig,
+    POETExecutor,
+    # Legacy compatibility
+    SimplePOETConfig,
+    SimplePOETExecutor,
+    poet,
 )
 
 __all__ = [

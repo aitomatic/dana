@@ -5,7 +5,8 @@ This module provides predefined configuration profiles for common POET use cases
 making it easy to get started with appropriate settings for different scenarios.
 """
 
-from typing import Dict, Any, Optional
+from typing import Any
+
 from .poet import POETConfig
 
 
@@ -151,7 +152,7 @@ def create_custom_profile(
     profile_name: str,
     retries: int = 3,
     timeout: float = 30.0,
-    domain: Optional[str] = None,
+    domain: str | None = None,
     enable_training: bool = False,
     collect_metrics: bool = True,
     **kwargs,
@@ -195,7 +196,7 @@ def create_custom_profile(
     return config
 
 
-def get_profile_recommendations(use_case: str) -> Dict[str, Any]:
+def get_profile_recommendations(use_case: str) -> dict[str, Any]:
     """
     Get configuration profile recommendations for a specific use case.
 

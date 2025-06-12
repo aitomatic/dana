@@ -10,25 +10,19 @@ Demonstrates POET's learning and optimization capabilities for agriculture.
 
 import asyncio
 import json
-import time
-from typing import Dict, Any, List
 from datetime import datetime
+from typing import Any
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
-from pydantic import BaseModel
-
+from fastapi.staticfiles import StaticFiles
 from greenhouse_systems import (
+    PlantGrowthController,
     basic_greenhouse_control,
     smart_greenhouse_control,
-    PlantGrowthController,
-    calculate_plant_health,
-    calculate_resource_efficiency,
-    POET_AVAILABLE,
 )
 from plant_simulator import GreenhouseSimulator
-
+from pydantic import BaseModel
 
 # ============================================================
 # DATA MODELS
@@ -63,12 +57,12 @@ class UserInput(BaseModel):
 class SystemMetrics(BaseModel):
     """Historical metrics for visualization."""
 
-    timestamps: List[str]
-    health_scores: List[float]
-    growth_rates: List[float]
-    water_usage: List[float]
-    energy_usage: List[float]
-    yields: List[float]
+    timestamps: list[str]
+    health_scores: list[float]
+    growth_rates: list[float]
+    water_usage: list[float]
+    energy_usage: list[float]
+    yields: list[float]
 
 
 # ============================================================
@@ -180,7 +174,7 @@ class GreenhouseDemoManager:
         # Broadcast to WebSocket clients
         await self._broadcast_state()
 
-    def _store_metrics(self, system: str, timestamp: str, state: Dict):
+    def _store_metrics(self, system: str, timestamp: str, state: dict):
         """Store metrics for a system."""
         metrics = self.metrics[system]
 
@@ -240,7 +234,7 @@ class GreenhouseDemoManager:
         for client in disconnected:
             self.clients.remove(client)
 
-    def _get_system_state(self, system: str) -> Dict[str, Any]:
+    def _get_system_state(self, system: str) -> dict[str, Any]:
         """Get current state for a system."""
         greenhouse = self.basic_greenhouse if system == "basic" else self.smart_greenhouse
 
@@ -259,7 +253,7 @@ class GreenhouseDemoManager:
             "stage_progress": round(greenhouse.get_growth_stage_progress(), 1),
         }
 
-    def _get_recent_metrics(self, system: str, count: int = 20) -> Dict:
+    def _get_recent_metrics(self, system: str, count: int = 20) -> dict:
         """Get recent metrics for visualization."""
         metrics = self.metrics[system]
 
@@ -311,7 +305,7 @@ async def get_index():
     """Serve the main demo page."""
     html_path = os.path.join(os.path.dirname(__file__), "static", "index.html")
     try:
-        with open(html_path, "r") as f:
+        with open(html_path) as f:
             return HTMLResponse(f.read())
     except FileNotFoundError:
         return HTMLResponse("<h1>Demo files not found</h1><p>Please run from the demos/smart_greenhouse directory</p>")

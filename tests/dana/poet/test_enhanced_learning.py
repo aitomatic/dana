@@ -8,16 +8,14 @@ This module tests the advanced learning capabilities including:
 - Cross-function learning preparation
 """
 
-import json
-import pytest
 import tempfile
-import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
-from unittest.mock import Mock, patch
 
-from opendxa.dana.poet.learning.online_learner import OnlineLearner, ExecutionFeedback, ParameterHistory
-from opendxa.dana.poet.learning.metrics import PerformanceTracker, LearningMetrics, PerformanceSnapshot
+import pytest
+
+from opendxa.dana.poet.learning.metrics import LearningMetrics, PerformanceSnapshot, PerformanceTracker
+from opendxa.dana.poet.learning.online_learner import ExecutionFeedback, OnlineLearner, ParameterHistory
 
 
 class TestOnlineLearner:

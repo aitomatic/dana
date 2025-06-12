@@ -20,7 +20,11 @@ Discord: https://discord.gg/6jGD4PYk
 import logging
 from typing import Any
 
+from opendxa.common.utils.logging import DXA_LOGGER
 from opendxa.dana.common.exceptions import FunctionRegistryError, SandboxError
+
+# POET imports for decorator handling
+from opendxa.dana.poet import POETConfig, POETExecutor
 from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
 from opendxa.dana.sandbox.interpreter.executor.function_error_handling import FunctionExecutionErrorHandler
 from opendxa.dana.sandbox.interpreter.executor.function_name_utils import FunctionNameInfo
@@ -32,10 +36,6 @@ from opendxa.dana.sandbox.parser.ast import (
     FunctionDefinition,
 )
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
-
-# POET imports for decorator handling
-from opendxa.dana.poet import POETConfig, POETExecutor
-from opendxa.common.utils.logging import DXA_LOGGER
 
 
 class FunctionExecutor(BaseExecutor):

@@ -25,7 +25,6 @@ import logging
 from typing import Any
 
 from opendxa.dana.common.runtime_scopes import RuntimeScopes
-from opendxa.dana.sandbox.parser.utils.identifier_utils import is_valid_identifier
 from opendxa.dana.sandbox.parser.ast import (
     BinaryExpression,
     BinaryOperator,
@@ -34,6 +33,7 @@ from opendxa.dana.sandbox.parser.ast import (
     LiteralExpression,
 )
 from opendxa.dana.sandbox.parser.transformer.base_transformer import BaseTransformer
+from opendxa.dana.sandbox.parser.utils.identifier_utils import is_valid_identifier
 
 
 class FStringTransformer(BaseTransformer):

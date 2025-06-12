@@ -5,7 +5,7 @@ Defines the abstract base classes and interfaces for POET plugins.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 
 class POETPlugin(ABC):
@@ -28,7 +28,7 @@ class POETPlugin(ABC):
         pass
 
     @abstractmethod
-    def process_inputs(self, args: Tuple, kwargs: Dict) -> Dict[str, Any]:
+    def process_inputs(self, args: tuple, kwargs: dict) -> dict[str, Any]:
         """
         Process and enhance function inputs with domain intelligence.
 
@@ -42,7 +42,7 @@ class POETPlugin(ABC):
         pass
 
     @abstractmethod
-    def validate_output(self, result: Any, context: Dict[str, Any]) -> Any:
+    def validate_output(self, result: Any, context: dict[str, Any]) -> Any:
         """
         Validate and potentially modify function output.
 
@@ -55,7 +55,7 @@ class POETPlugin(ABC):
         """
         pass
 
-    def get_performance_optimizations(self) -> Dict[str, Any]:
+    def get_performance_optimizations(self) -> dict[str, Any]:
         """
         Get domain-specific performance optimizations.
 
@@ -65,7 +65,7 @@ class POETPlugin(ABC):
         """
         return {}
 
-    def get_learning_hints(self, execution_context: Dict[str, Any]) -> Dict[str, Any]:
+    def get_learning_hints(self, execution_context: dict[str, Any]) -> dict[str, Any]:
         """
         Provide domain-specific learning guidance for POET training.
 
@@ -86,7 +86,7 @@ class POETPlugin(ABC):
         """
         pass
 
-    def get_plugin_info(self) -> Dict[str, Any]:
+    def get_plugin_info(self) -> dict[str, Any]:
         """
         Get comprehensive plugin information.
 
@@ -103,7 +103,7 @@ class POETPlugin(ABC):
 
     # Learning Integration Methods (Optional - for backwards compatibility)
 
-    def receive_feedback(self, feedback: Dict[str, Any]) -> None:
+    def receive_feedback(self, feedback: dict[str, Any]) -> None:
         """
         Receive feedback about plugin performance for domain learning.
 
@@ -117,7 +117,7 @@ class POETPlugin(ABC):
         """
         pass
 
-    def update_from_learning(self, learning_insights: Dict[str, Any]) -> None:
+    def update_from_learning(self, learning_insights: dict[str, Any]) -> None:
         """
         Update plugin behavior based on learning insights.
 
@@ -131,7 +131,7 @@ class POETPlugin(ABC):
         """
         pass
 
-    def get_domain_metrics(self, execution_result: Dict[str, Any]) -> Dict[str, float]:
+    def get_domain_metrics(self, execution_result: dict[str, Any]) -> dict[str, float]:
         """
         Extract domain-specific metrics for learning from execution results.
 
@@ -148,7 +148,7 @@ class POETPlugin(ABC):
         """
         return {}
 
-    def adapt_parameters(self, current_params: Dict[str, Any], performance_history: List[float]) -> Dict[str, Any]:
+    def adapt_parameters(self, current_params: dict[str, Any], performance_history: list[float]) -> dict[str, Any]:
         """
         Adapt domain-specific parameters based on performance history.
 
@@ -165,7 +165,7 @@ class POETPlugin(ABC):
         """
         return current_params
 
-    def get_learnable_parameters(self) -> Dict[str, Dict[str, Any]]:
+    def get_learnable_parameters(self) -> dict[str, dict[str, Any]]:
         """
         Get plugin parameters that can be learned/optimized.
 
@@ -182,7 +182,7 @@ class POETPlugin(ABC):
         """
         return {}
 
-    def apply_learned_parameters(self, learned_params: Dict[str, Any]) -> None:
+    def apply_learned_parameters(self, learned_params: dict[str, Any]) -> None:
         """
         Apply learned parameters to plugin behavior.
 
@@ -195,7 +195,7 @@ class POETPlugin(ABC):
         """
         pass
 
-    def get_learning_status(self) -> Dict[str, Any]:
+    def get_learning_status(self) -> dict[str, Any]:
         """
         Get current learning status and statistics for this plugin.
 

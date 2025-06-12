@@ -15,7 +15,6 @@ from opendxa.dana.sandbox.interpreter.struct_system import (
     StructInstance,
     StructTypeRegistry,
     create_struct_instance,
-    create_struct_type_from_ast,
     register_struct_from_ast,
 )
 from opendxa.dana.sandbox.parser.ast import (

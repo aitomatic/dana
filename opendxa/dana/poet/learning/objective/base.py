@@ -7,11 +7,12 @@ Implements formal learning theory foundations:
 - Constrained optimization: optimize f(θ) subject to g(θ) ≤ 0, h(θ) = 0
 """
 
-from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
-from typing import Dict, List, Any, Optional, Callable, Union
-from enum import Enum
 import time
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from enum import Enum
+from typing import Any
+
 from opendxa.common.utils.logging import DXA_LOGGER
 
 
@@ -54,16 +55,16 @@ class ObjectiveFunction:
     weight: float = 1.0  # Relative importance (0.0-1.0)
 
     # Target objectives
-    target_value: Optional[float] = None  # For TARGET objectives
-    tolerance: Optional[float] = None  # Acceptable deviation from target
+    target_value: float | None = None  # For TARGET objectives
+    tolerance: float | None = None  # Acceptable deviation from target
 
     # Constraint bounds
-    min_value: Optional[float] = None  # Lower bound constraint
-    max_value: Optional[float] = None  # Upper bound constraint
+    min_value: float | None = None  # Lower bound constraint
+    max_value: float | None = None  # Upper bound constraint
 
     # Advanced objective functions
-    objective_func: Optional[Callable[[Dict[str, float]], float]] = None
-    constraint_func: Optional[Callable[[Dict[str, float]], bool]] = None
+    objective_func: Callable[[dict[str, float]], float] | None = None
+    constraint_func: Callable[[dict[str, float]], bool] | None = None
 
     # Metadata
     description: str = ""
@@ -80,7 +81,7 @@ class ObjectiveFunction:
         if not (0.0 <= self.weight <= 1.0):
             raise ValueError(f"Weight must be between 0.0 and 1.0, got {self.weight}")
 
-    def evaluate(self, metrics: Dict[str, float]) -> float:
+    def evaluate(self, metrics: dict[str, float]) -> float:
         """
         Evaluate objective function given current metrics.
 
@@ -146,7 +147,7 @@ class ObjectiveFunction:
 
         return 0.0  # Constraint satisfied
 
-    def is_constraint_satisfied(self, metrics: Dict[str, float]) -> bool:
+    def is_constraint_satisfied(self, metrics: dict[str, float]) -> bool:
         """Check if constraint is satisfied without evaluating objective."""
         if self.type != ObjectiveType.CONSTRAINT:
             return True
@@ -154,7 +155,7 @@ class ObjectiveFunction:
         value = metrics.get(self.metric_name, 0.0)
         return self._evaluate_constraint(value) != -float("inf")
 
-    def get_violation_message(self, metrics: Dict[str, float]) -> Optional[str]:
+    def get_violation_message(self, metrics: dict[str, float]) -> str | None:
         """Get human-readable constraint violation message."""
         if self.type != ObjectiveType.CONSTRAINT:
             return None
@@ -179,11 +180,11 @@ class ObjectiveEvaluationResult:
 
     feasible: bool  # All constraints satisfied
     total_score: float  # Overall optimization score
-    individual_scores: Dict[str, float]  # Score for each objective
-    constraint_violations: List[str] = field(default_factory=list)  # Violated constraints
+    individual_scores: dict[str, float]  # Score for each objective
+    constraint_violations: list[str] = field(default_factory=list)  # Violated constraints
     optimization_method: str = "weighted_sum"  # Method used
     evaluation_time: float = 0.0  # Time taken to evaluate
-    metadata: Dict[str, Any] = field(default_factory=dict)  # Additional info
+    metadata: dict[str, Any] = field(default_factory=dict)  # Additional info
 
 
 @dataclass
@@ -199,7 +200,7 @@ class MultiObjective:
     """
 
     name: str
-    objectives: List[ObjectiveFunction]
+    objectives: list[ObjectiveFunction]
     method: str = "constraint_satisfaction"  # Default to constraint satisfaction
 
     # Method-specific parameters
@@ -221,7 +222,7 @@ class MultiObjective:
             if abs(total_weight - 1.0) > 0.01:  # Allow small floating point errors
                 DXA_LOGGER.warning(f"Objective weights sum to {total_weight:.3f}, not 1.0. Consider normalizing.")
 
-    def evaluate(self, metrics: Dict[str, float]) -> ObjectiveEvaluationResult:
+    def evaluate(self, metrics: dict[str, float]) -> ObjectiveEvaluationResult:
         """Evaluate multi-objective function."""
         start_time = time.time()
 
@@ -251,7 +252,7 @@ class MultiObjective:
                 evaluation_time=time.time() - start_time,
             )
 
-    def _weighted_sum(self, metrics: Dict[str, float]) -> ObjectiveEvaluationResult:
+    def _weighted_sum(self, metrics: dict[str, float]) -> ObjectiveEvaluationResult:
         """Weighted sum approach - simple but can miss trade-offs."""
         total_score = 0.0
         individual_scores = {}
@@ -305,7 +306,7 @@ class MultiObjective:
             optimization_method="weighted_sum",
         )
 
-    def _lexicographic(self, metrics: Dict[str, float]) -> ObjectiveEvaluationResult:
+    def _lexicographic(self, metrics: dict[str, float]) -> ObjectiveEvaluationResult:
         """Lexicographic approach - optimize by priority order."""
         # Sort objectives by priority (CRITICAL first)
         sorted_objectives = sorted(self.objectives, key=lambda x: x.priority.value)
@@ -346,7 +347,7 @@ class MultiObjective:
             metadata={"priority_order": [obj.name for obj in sorted_objectives]},
         )
 
-    def _constraint_satisfaction(self, metrics: Dict[str, float]) -> ObjectiveEvaluationResult:
+    def _constraint_satisfaction(self, metrics: dict[str, float]) -> ObjectiveEvaluationResult:
         """Constraint satisfaction - feasibility first, then optimization."""
         constraints = [obj for obj in self.objectives if obj.type == ObjectiveType.CONSTRAINT]
         optimization_objectives = [obj for obj in self.objectives if obj.type != ObjectiveType.CONSTRAINT]
@@ -390,12 +391,12 @@ class MultiObjective:
                 optimization_method="constraint_satisfaction",
             )
 
-    def _pareto_optimization(self, metrics: Dict[str, float]) -> ObjectiveEvaluationResult:
+    def _pareto_optimization(self, metrics: dict[str, float]) -> ObjectiveEvaluationResult:
         """Pareto optimization - find trade-off solutions (placeholder for future implementation)."""
         DXA_LOGGER.warning("Pareto optimization not yet implemented, falling back to constraint satisfaction")
         return self._constraint_satisfaction(metrics)
 
-    def get_objective_summary(self) -> Dict[str, Any]:
+    def get_objective_summary(self) -> dict[str, Any]:
         """Get summary of objective configuration."""
         return {
             "name": self.name,

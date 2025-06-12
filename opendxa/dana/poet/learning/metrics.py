@@ -7,14 +7,14 @@ for monitoring the effectiveness of advanced learning algorithms.
 
 import json
 import math
-import time
 from collections import defaultdict, deque
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
+
 from opendxa.common.mixins.loggable import Loggable
 
 
@@ -29,25 +29,25 @@ class LearningMetrics:
     average_improvement: float = 0.0
 
     # Performance metrics
-    parameter_stability: Dict[str, float] = field(default_factory=dict)
+    parameter_stability: dict[str, float] = field(default_factory=dict)
     learning_efficiency: float = 0.0
     prediction_accuracy: float = 0.0
 
     # Temporal metrics
-    convergence_time: Optional[float] = None
+    convergence_time: float | None = None
     learning_velocity: float = 0.0
     performance_trend: float = 0.0
 
     # Advanced metrics
     exploration_exploitation_ratio: float = 0.5
-    confidence_intervals: Dict[str, Tuple[float, float]] = field(default_factory=dict)
+    confidence_intervals: dict[str, tuple[float, float]] = field(default_factory=dict)
     cross_function_benefits: float = 0.0
 
     # Metadata
     measurement_window: timedelta = field(default_factory=lambda: timedelta(hours=24))
     last_updated: datetime = field(default_factory=datetime.now)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization"""
         data = asdict(self)
         data["measurement_window"] = self.measurement_window.total_seconds()
@@ -55,7 +55,7 @@ class LearningMetrics:
         return data
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "LearningMetrics":
+    def from_dict(cls, data: dict[str, Any]) -> "LearningMetrics":
         """Create from dictionary"""
         data["measurement_window"] = timedelta(seconds=data.get("measurement_window", 86400))
         data["last_updated"] = datetime.fromisoformat(data.get("last_updated", datetime.now().isoformat()))
@@ -68,14 +68,14 @@ class PerformanceSnapshot:
 
     timestamp: datetime
     function_name: str
-    parameter_values: Dict[str, Any]
+    parameter_values: dict[str, Any]
     performance_score: float
     execution_time: float
     success: bool
-    error_type: Optional[str] = None
+    error_type: str | None = None
     context_signature: str = ""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         data = asdict(self)
         data["timestamp"] = self.timestamp.isoformat()
         return data
@@ -89,7 +89,7 @@ class PerformanceTracker(Loggable):
     parameter evolution, and performance trends.
     """
 
-    def __init__(self, storage_path: Optional[str] = None, window_hours: int = 168):  # 1 week default
+    def __init__(self, storage_path: str | None = None, window_hours: int = 168):  # 1 week default
         super().__init__()
 
         # Storage configuration
@@ -102,17 +102,17 @@ class PerformanceTracker(Loggable):
 
         # Performance data
         self.performance_history: deque = deque(maxlen=10000)
-        self.parameter_evolution: Dict[str, List[PerformanceSnapshot]] = defaultdict(list)
-        self.baseline_performance: Dict[str, float] = {}
+        self.parameter_evolution: dict[str, list[PerformanceSnapshot]] = defaultdict(list)
+        self.baseline_performance: dict[str, float] = {}
 
         # Learning effectiveness tracking
-        self.improvement_tracking: Dict[str, List[float]] = defaultdict(list)
-        self.convergence_tracking: Dict[str, List[datetime]] = defaultdict(list)
+        self.improvement_tracking: dict[str, list[float]] = defaultdict(list)
+        self.convergence_tracking: dict[str, list[datetime]] = defaultdict(list)
         self.prediction_accuracy_history: deque = deque(maxlen=1000)
 
         # Statistical aggregates
-        self.performance_statistics: Dict[str, Dict[str, float]] = defaultdict(dict)
-        self.learning_velocity_cache: Dict[str, float] = {}
+        self.performance_statistics: dict[str, dict[str, float]] = defaultdict(dict)
+        self.learning_velocity_cache: dict[str, float] = {}
 
         # Load existing data
         self._load_historical_data()
@@ -120,11 +120,11 @@ class PerformanceTracker(Loggable):
     def record_performance(
         self,
         function_name: str,
-        parameter_values: Dict[str, Any],
+        parameter_values: dict[str, Any],
         performance_score: float,
         execution_time: float,
         success: bool,
-        error_type: Optional[str] = None,
+        error_type: str | None = None,
         context_signature: str = "",
     ) -> None:
         """Record a performance measurement"""
@@ -161,8 +161,8 @@ class PerformanceTracker(Loggable):
     def record_parameter_update(
         self,
         function_name: str,
-        old_params: Dict[str, Any],
-        new_params: Dict[str, Any],
+        old_params: dict[str, Any],
+        new_params: dict[str, Any],
         predicted_improvement: float,
         actual_improvement: float,
     ) -> None:
@@ -179,7 +179,7 @@ class PerformanceTracker(Loggable):
 
         self.debug(f"Parameter update for {function_name}: " f"predicted={predicted_improvement:.3f}, actual={actual_improvement:.3f}")
 
-    def calculate_learning_metrics(self, function_name: Optional[str] = None) -> LearningMetrics:
+    def calculate_learning_metrics(self, function_name: str | None = None) -> LearningMetrics:
         """Calculate comprehensive learning metrics"""
 
         # Filter data by function if specified
@@ -287,7 +287,7 @@ class PerformanceTracker(Loggable):
         else:
             stats["std_performance"] = 0.0
 
-    def _calculate_parameter_stability(self, snapshots: List[PerformanceSnapshot]) -> Dict[str, float]:
+    def _calculate_parameter_stability(self, snapshots: list[PerformanceSnapshot]) -> dict[str, float]:
         """Calculate stability scores for parameters"""
 
         stability_scores = {}
@@ -314,7 +314,7 @@ class PerformanceTracker(Loggable):
 
         return stability_scores
 
-    def _calculate_learning_velocity(self, snapshots: List[PerformanceSnapshot]) -> float:
+    def _calculate_learning_velocity(self, snapshots: list[PerformanceSnapshot]) -> float:
         """Calculate rate of learning (performance improvement over time)"""
 
         if len(snapshots) < 2:
@@ -337,7 +337,7 @@ class PerformanceTracker(Loggable):
         except:
             return 0.0
 
-    def _calculate_confidence_intervals(self, snapshots: List[PerformanceSnapshot]) -> Dict[str, Tuple[float, float]]:
+    def _calculate_confidence_intervals(self, snapshots: list[PerformanceSnapshot]) -> dict[str, tuple[float, float]]:
         """Calculate confidence intervals for parameter values"""
 
         confidence_intervals = {}
@@ -359,7 +359,7 @@ class PerformanceTracker(Loggable):
 
         return confidence_intervals
 
-    def _calculate_trend(self, values: List[float]) -> float:
+    def _calculate_trend(self, values: list[float]) -> float:
         """Calculate linear trend of values"""
 
         if len(values) < 2:
@@ -372,7 +372,7 @@ class PerformanceTracker(Loggable):
         except:
             return 0.0
 
-    def _detect_convergence_event(self, function_name: str, old_params: Dict[str, Any], new_params: Dict[str, Any]) -> bool:
+    def _detect_convergence_event(self, function_name: str, old_params: dict[str, Any], new_params: dict[str, Any]) -> bool:
         """Detect if parameters have converged (small changes)"""
 
         # Calculate parameter change magnitude
@@ -396,7 +396,7 @@ class PerformanceTracker(Loggable):
 
         return False
 
-    def get_performance_summary(self, function_name: Optional[str] = None) -> Dict[str, Any]:
+    def get_performance_summary(self, function_name: str | None = None) -> dict[str, Any]:
         """Get comprehensive performance summary"""
 
         metrics = self.calculate_learning_metrics(function_name)
@@ -422,7 +422,7 @@ class PerformanceTracker(Loggable):
 
         return summary
 
-    def _generate_insights(self, metrics: LearningMetrics) -> List[str]:
+    def _generate_insights(self, metrics: LearningMetrics) -> list[str]:
         """Generate actionable insights from metrics"""
 
         insights = []
@@ -460,7 +460,7 @@ class PerformanceTracker(Loggable):
         try:
             history_file = self.storage_path / "performance_history.jsonl"
             if history_file.exists():
-                with open(history_file, "r") as f:
+                with open(history_file) as f:
                     for line in f:
                         data = json.loads(line.strip())
                         snapshot = PerformanceSnapshot(

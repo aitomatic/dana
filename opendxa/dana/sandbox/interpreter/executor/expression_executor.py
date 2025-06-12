@@ -662,7 +662,7 @@ class ExpressionExecutor(BaseExecutor):
                 if isinstance(func, DanaFunction):
                     # Execute the DanaFunction directly with the transformed arguments
                     return func.execute(context, *evaluated_args, **evaluated_kwargs)
-        except Exception as e:
+        except Exception:
             pass  # Continue to registry lookup
         
         # Also try alternative context access methods
@@ -674,7 +674,7 @@ class ExpressionExecutor(BaseExecutor):
                 if isinstance(func, DanaFunction):
                     # Execute the DanaFunction directly with the transformed arguments
                     return func.execute(context, *evaluated_args, **evaluated_kwargs)
-        except Exception as e:
+        except Exception:
             pass  # Continue to registry lookup
         
         # Debug: Check what's actually in the context

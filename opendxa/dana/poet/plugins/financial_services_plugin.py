@@ -9,8 +9,8 @@ Version: 1.0.0
 """
 
 import re
-from typing import Any, Dict, Tuple
 from dataclasses import dataclass
+from typing import Any
 
 from opendxa.dana.poet.plugins.base import POETPlugin
 
@@ -44,7 +44,7 @@ class FinancialServicesPlugin(POETPlugin):
         """Get unique plugin identifier."""
         return "financial_services"
 
-    def process_inputs(self, args: Tuple, kwargs: Dict) -> Dict[str, Any]:
+    def process_inputs(self, args: tuple, kwargs: dict) -> dict[str, Any]:
         """Process financial data with normalization and validation."""
 
         # Map positional args to named parameters for credit assessment
@@ -77,7 +77,7 @@ class FinancialServicesPlugin(POETPlugin):
             "kwargs": {},
         }
 
-    def validate_output(self, result: Any, context: Dict[str, Any]) -> Any:
+    def validate_output(self, result: Any, context: dict[str, Any]) -> Any:
         """Validate financial decision output with compliance checks."""
 
         # Basic compliance validation
@@ -94,7 +94,7 @@ class FinancialServicesPlugin(POETPlugin):
 
         return result
 
-    def get_performance_optimizations(self) -> Dict[str, Any]:
+    def get_performance_optimizations(self) -> dict[str, Any]:
         """Get financial-specific performance optimizations."""
         return {
             "timeout_multiplier": 1.5,  # Financial operations may need more time for compliance
@@ -103,7 +103,7 @@ class FinancialServicesPlugin(POETPlugin):
             "batch_size": 10,  # Process multiple financial records efficiently
         }
 
-    def get_learning_hints(self, execution_context: Dict[str, Any]) -> Dict[str, Any]:
+    def get_learning_hints(self, execution_context: dict[str, Any]) -> dict[str, Any]:
         """Provide financial-specific learning guidance."""
         return {
             "parameter_bounds": {
@@ -115,7 +115,7 @@ class FinancialServicesPlugin(POETPlugin):
             "performance_weight": 0.9,  # Prioritize accuracy over speed
         }
 
-    def get_plugin_info(self) -> Dict[str, Any]:
+    def get_plugin_info(self) -> dict[str, Any]:
         """Get enhanced plugin information."""
         base_info = super().get_plugin_info()
         base_info.update(
@@ -231,7 +231,7 @@ class FinancialServicesPlugin(POETPlugin):
 
         return max(0.0, min(50.0, float(years)))
 
-    def _validate_financial_data(self, data: Dict):
+    def _validate_financial_data(self, data: dict):
         """Validate normalized financial data against rules."""
         for field, value in data.items():
             if field in self.validation_rules:
@@ -239,7 +239,7 @@ class FinancialServicesPlugin(POETPlugin):
                 if not (rules["min"] <= value <= rules["max"]):
                     raise ValueError(f"{field} value {value} outside valid range " f"({rules['min']} - {rules['max']})")
 
-    def _log_decision(self, result: Any, context: Dict[str, Any]):
+    def _log_decision(self, result: Any, context: dict[str, Any]):
         """Log financial decision for audit trail."""
         log_entry = {
             "timestamp": context.get("timestamp"),

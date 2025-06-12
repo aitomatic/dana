@@ -8,7 +8,7 @@ Author: OpenDXA Team
 Version: 1.0.0
 """
 
-from typing import Any, Dict, Tuple, List
+from typing import Any
 
 from opendxa.dana.poet.plugins.base import POETPlugin
 
@@ -46,7 +46,7 @@ class SemiconductorPlugin(POETPlugin):
         """Get unique plugin identifier."""
         return "semiconductor"
 
-    def process_inputs(self, args: Tuple, kwargs: Dict) -> Dict[str, Any]:
+    def process_inputs(self, args: tuple, kwargs: dict) -> dict[str, Any]:
         """Process semiconductor process parameters with validation."""
 
         # Map to standard process parameters
@@ -82,7 +82,7 @@ class SemiconductorPlugin(POETPlugin):
             "kwargs": {},
         }
 
-    def validate_output(self, result: Any, context: Dict[str, Any]) -> Any:
+    def validate_output(self, result: Any, context: dict[str, Any]) -> Any:
         """Validate process analysis output for completeness and accuracy."""
 
         # Ensure output contains required analysis fields
@@ -103,14 +103,14 @@ class SemiconductorPlugin(POETPlugin):
 
             # Ensure recommendations are provided
             if "recommendations" in result and (
-                not result["recommendations"] or result["recommendations"] == f"Analysis incomplete: recommendations not determined"
+                not result["recommendations"] or result["recommendations"] == "Analysis incomplete: recommendations not determined"
             ):
                 input_args = context.get("processed_inputs", {}).get("args", [])
                 result["recommendations"] = self._generate_default_recommendations(input_args)
 
         return result
 
-    def get_performance_optimizations(self) -> Dict[str, Any]:
+    def get_performance_optimizations(self) -> dict[str, Any]:
         """Get semiconductor-specific performance optimizations."""
         return {
             "timeout_multiplier": 2.0,  # Manufacturing processes may need more time
@@ -119,7 +119,7 @@ class SemiconductorPlugin(POETPlugin):
             "batch_size": 5,  # Process smaller batches for semiconductor precision
         }
 
-    def get_learning_hints(self, execution_context: Dict[str, Any]) -> Dict[str, Any]:
+    def get_learning_hints(self, execution_context: dict[str, Any]) -> dict[str, Any]:
         """Provide semiconductor-specific learning guidance."""
         return {
             "parameter_bounds": {
@@ -131,7 +131,7 @@ class SemiconductorPlugin(POETPlugin):
             "performance_weight": 0.95,  # Prioritize precision and safety over speed
         }
 
-    def get_plugin_info(self) -> Dict[str, Any]:
+    def get_plugin_info(self) -> dict[str, Any]:
         """Get enhanced plugin information."""
         base_info = super().get_plugin_info()
         base_info.update(
@@ -175,7 +175,7 @@ class SemiconductorPlugin(POETPlugin):
             DXA_LOGGER.warning(f"Invalid {param_name} value: {value}, using default 0.0")
             return 0.0
 
-    def _safety_interlock_check(self, params: Dict):
+    def _safety_interlock_check(self, params: dict):
         """Perform safety interlock checks on process parameters."""
 
         # Check for dangerous parameter combinations
@@ -198,7 +198,7 @@ class SemiconductorPlugin(POETPlugin):
         if gas_flow_rate < 10 and power > 1000:
             raise ValueError(f"Safety interlock: Low gas flow ({gas_flow_rate} sccm) with high power " f"({power}W) may damage chamber")
 
-    def _generate_default_recommendations(self, process_params: List) -> List[str]:
+    def _generate_default_recommendations(self, process_params: list) -> list[str]:
         """Generate default recommendations based on process parameters."""
         recommendations = []
 

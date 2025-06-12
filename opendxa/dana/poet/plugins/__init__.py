@@ -26,10 +26,10 @@ class PluginRegistry:
     """
 
     def __init__(self):
-        self._plugins: Dict[str, POETPlugin] = {}
-        self._plugin_classes: Dict[str, Type[POETPlugin]] = {}
-        self._plugin_paths: Dict[str, str] = {}
-        self._search_paths: List[Path] = []
+        self._plugins: dict[str, POETPlugin] = {}
+        self._plugin_classes: dict[str, type[POETPlugin]] = {}
+        self._plugin_paths: dict[str, str] = {}
+        self._search_paths: list[Path] = []
         self._discovered = False
 
     def add_search_path(self, path: str | Path) -> None:
@@ -71,7 +71,7 @@ class PluginRegistry:
         DXA_LOGGER.info(f"Discovered {discovered_count} plugins")
         return discovered_count
 
-    def get_plugin(self, name: str) -> Optional[POETPlugin]:
+    def get_plugin(self, name: str) -> POETPlugin | None:
         """
         Get a plugin instance by name (lazy loading).
 
@@ -101,13 +101,13 @@ class PluginRegistry:
 
         return None
 
-    def list_plugins(self) -> List[str]:
+    def list_plugins(self) -> list[str]:
         """Get list of available plugin names."""
         if not self._discovered:
             self.discover_plugins()
         return list(self._plugin_classes.keys())
 
-    def get_plugin_info(self, name: str) -> Optional[Dict[str, Any]]:
+    def get_plugin_info(self, name: str) -> dict[str, Any] | None:
         """Get information about a specific plugin."""
         plugin = self.get_plugin(name)
         if plugin:

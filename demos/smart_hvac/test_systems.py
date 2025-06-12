@@ -10,14 +10,15 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from hvac_systems import (
-    basic_hvac_control, 
-    smart_hvac_control, 
+    POET_AVAILABLE,
     ComfortBasedController,
-    calculate_energy_usage,
+    basic_hvac_control,
     calculate_comfort_score,
-    POET_AVAILABLE
+    calculate_energy_usage,
+    smart_hvac_control,
 )
 from room_simulator import RoomSimulator
+
 
 def test_basic_functionality():
     """Test basic HVAC functionality."""
@@ -32,8 +33,8 @@ def test_basic_functionality():
         occupancy=True
     )
     
-    print(f"✅ Basic HVAC Control:")
-    print(f"   Input: 70°F → 72°F target")
+    print("✅ Basic HVAC Control:")
+    print("   Input: 70°F → 72°F target")
     print(f"   Output: {result.mode}, heating: {result.heating_output}%")
     
     # Test POET HVAC control  
@@ -48,13 +49,13 @@ def test_basic_functionality():
     if POET_AVAILABLE and isinstance(result, dict) and 'result' in result:
         hvac_result = result['result']
         execution_time = result.get('execution_time', 0)
-        print(f"✅ POET HVAC Control:")
-        print(f"   Input: 70°F → 72°F target")
+        print("✅ POET HVAC Control:")
+        print("   Input: 70°F → 72°F target")
         print(f"   Output: {hvac_result.mode}, heating: {hvac_result.heating_output}%")
         print(f"   POET Available: {POET_AVAILABLE}, Execution time: {execution_time*1000:.2f}ms")
     else:
-        print(f"✅ POET HVAC Control:")
-        print(f"   Input: 70°F → 72°F target")
+        print("✅ POET HVAC Control:")
+        print("   Input: 70°F → 72°F target")
         print(f"   Output: {result.mode}, heating: {result.heating_output}%")
         print(f"   POET Available: {POET_AVAILABLE}")
     
@@ -80,8 +81,8 @@ def test_room_simulation():
     # Run simulation step
     state = room.step(heating_command)
     
-    print(f"✅ Room Simulation:")
-    print(f"   Initial: 72.0°F")
+    print("✅ Room Simulation:")
+    print("   Initial: 72.0°F")
     print(f"   After heating: {state['temperature']:.1f}°F")
     print(f"   Energy usage: {state['energy_usage']:.3f} kWh")
     print(f"   Outside temp: {state['outside_temp']:.1f}°F")

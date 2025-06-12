@@ -8,7 +8,7 @@ Author: OpenDXA Team
 Version: 1.0.0
 """
 
-from typing import Any, Dict, Tuple
+from typing import Any
 
 from opendxa.dana.poet.plugins.base import POETPlugin
 
@@ -26,7 +26,7 @@ class LLMOptimizationPlugin(POETPlugin):
         """Get unique plugin identifier."""
         return "llm_optimization"
 
-    def process_inputs(self, args: Tuple, kwargs: Dict) -> Dict[str, Any]:
+    def process_inputs(self, args: tuple, kwargs: dict) -> dict[str, Any]:
         """Process inputs for LLM reasoning with optimization."""
 
         # For functions that only take a prompt, just optimize the prompt
@@ -49,7 +49,7 @@ class LLMOptimizationPlugin(POETPlugin):
             new_args = (optimized_prompt,) + args[1:]
             return {"args": new_args, "kwargs": kwargs}
 
-    def validate_output(self, result: Any, context: Dict[str, Any]) -> Any:
+    def validate_output(self, result: Any, context: dict[str, Any]) -> Any:
         """Validate LLM output and ensure quality."""
 
         # Basic validation
@@ -74,7 +74,7 @@ class LLMOptimizationPlugin(POETPlugin):
 
         return result
 
-    def get_performance_optimizations(self) -> Dict[str, Any]:
+    def get_performance_optimizations(self) -> dict[str, Any]:
         """Get LLM-specific performance optimizations."""
         return {
             "timeout_multiplier": 2.0,  # LLM operations can take longer
@@ -83,7 +83,7 @@ class LLMOptimizationPlugin(POETPlugin):
             "batch_size": 1,  # Process prompts individually
         }
 
-    def get_learning_hints(self, execution_context: Dict[str, Any]) -> Dict[str, Any]:
+    def get_learning_hints(self, execution_context: dict[str, Any]) -> dict[str, Any]:
         """Provide LLM-specific learning guidance."""
         return {
             "parameter_bounds": {
@@ -95,7 +95,7 @@ class LLMOptimizationPlugin(POETPlugin):
             "performance_weight": 0.9,  # Prioritize quality over speed
         }
 
-    def get_plugin_info(self) -> Dict[str, Any]:
+    def get_plugin_info(self) -> dict[str, Any]:
         """Get enhanced plugin information."""
         base_info = super().get_plugin_info()
         base_info.update(

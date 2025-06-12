@@ -323,8 +323,7 @@ NONE.2: "None" | "none" | "NONE" | "null" | "NULL"
 
 NOT_OP.2: "not"
 
-// AS token for import statements - defined as a separate token to avoid conflicts with variable names
-AS: "as"
+// AS token for import statements - already defined above with priority 2
 
 // AT token for decorators
 AT: "@"

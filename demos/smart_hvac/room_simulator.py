@@ -10,8 +10,9 @@ Simulates realistic room thermal dynamics including:
 
 import math
 import random
-from typing import Dict, Any
 from dataclasses import dataclass, field
+from typing import Any
+
 from hvac_systems import HVACCommand
 
 
@@ -131,7 +132,7 @@ class RoomSimulator:
         self.weather_pattern = "mild"  # "hot", "cold", "mild"
         self.time_of_day = 12.0  # 0-24 hours
 
-    def step(self, hvac_command: HVACCommand, duration: float = 1.0) -> Dict[str, Any]:
+    def step(self, hvac_command: HVACCommand, duration: float = 1.0) -> dict[str, Any]:
         """
         Advance simulation by one time step.
 

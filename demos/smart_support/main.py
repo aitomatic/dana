@@ -18,7 +18,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from smart_support_agent import SmartSupportAgent, POET_AVAILABLE
+from smart_support_agent import POET_AVAILABLE, SmartSupportAgent
 from support_systems import (
     ConversationContext,
     CustomerProfile,

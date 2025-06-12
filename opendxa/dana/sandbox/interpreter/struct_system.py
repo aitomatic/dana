@@ -22,8 +22,6 @@ Discord: https://discord.gg/6jGD4PYk
 from dataclasses import dataclass
 from typing import Any, Optional
 
-from opendxa.dana.sandbox.parser.ast import TypeHint
-
 
 @dataclass
 class StructType:

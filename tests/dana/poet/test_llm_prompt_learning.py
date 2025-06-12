@@ -8,20 +8,14 @@ This module tests the prompt learning capabilities including:
 - Plugin learning interface
 """
 
-import json
-import pytest
 import tempfile
-import time
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
-from opendxa.dana.poet.plugins.enhanced_llm_optimization_plugin import (
-    EnhancedLLMOptimizationPlugin,
-    PromptLearner,
-    PromptAnalysis,
-    PromptHistory
-)
-from opendxa.dana.poet.poet import POETExecutor, POETConfig
+import pytest
+
+from opendxa.dana.poet.plugins.enhanced_llm_optimization_plugin import EnhancedLLMOptimizationPlugin, PromptAnalysis, PromptLearner
+from opendxa.dana.poet.poet import POETConfig, POETExecutor
 
 
 class TestPromptLearner:

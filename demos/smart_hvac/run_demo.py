@@ -6,9 +6,10 @@ Simple script to launch the HVAC demo with proper Python path setup.
 """
 
 import os
-import sys
 import subprocess
+import sys
 from pathlib import Path
+
 
 def setup_python_path():
     """Add the opendxa project to Python path."""
@@ -47,7 +48,7 @@ def check_dependencies():
             print(f"❌ {module} is missing")
     
     if missing:
-        print(f"\n🔧 Install missing dependencies:")
+        print("\n🔧 Install missing dependencies:")
         print(f"pip install {' '.join(missing)}")
         return False
     

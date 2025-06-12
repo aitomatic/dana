@@ -9,14 +9,12 @@ The key insight: The user code is identical, POET adds the intelligence.
 """
 
 from dataclasses import dataclass
-from typing import Dict, Any, Optional
-import math
 
 # Import the real POET framework
 try:
-    from opendxa.dana.poet.poet import poet
-    from opendxa.dana.poet.plugins import PLUGIN_REGISTRY
     from opendxa.common.resource.llm_resource import LLMResource
+    from opendxa.dana.poet.plugins import PLUGIN_REGISTRY
+    from opendxa.dana.poet.poet import poet
     
     # Initialize the plugin registry to discover building management plugin
     PLUGIN_REGISTRY.discover_plugins()

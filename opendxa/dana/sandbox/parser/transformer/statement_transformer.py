@@ -28,7 +28,9 @@ from opendxa.dana.sandbox.parser.ast import (
     AttributeAccess,
     BinaryExpression,
     Conditional,
+    Decorator,
     DictLiteral,
+    ExceptBlock,
     Expression,
     ForLoop,
     FStringExpression,
@@ -41,7 +43,6 @@ from opendxa.dana.sandbox.parser.ast import (
     LiteralExpression,
     Parameter,
     Program,
-    ReturnStatement,
     SetLiteral,
     StructDefinition,
     StructField,
@@ -51,8 +52,6 @@ from opendxa.dana.sandbox.parser.ast import (
     UseStatement,
     WhileLoop,
     WithStatement,
-    Decorator,
-    ExceptBlock,
 )
 from opendxa.dana.sandbox.parser.transformer.base_transformer import BaseTransformer
 from opendxa.dana.sandbox.parser.transformer.expression_transformer import ExpressionTransformer
@@ -423,29 +422,29 @@ class StatementTransformer(BaseTransformer):
 
     def struct_def(self, items):
         """Transform a struct definition rule into a StructDefinition node.
-        
+
         Grammar: struct_def: "struct" NAME ":" [COMMENT] struct_block
         """
         relevant_items = self._filter_relevant_items(items)
-        
+
         # First item should be the struct name
         name_token = relevant_items[0]
         if isinstance(name_token, Token):
             struct_name = name_token.value
         else:
             struct_name = str(name_token)
-        
+
         # Second item should be the struct_block containing fields
         struct_block = relevant_items[1] if len(relevant_items) > 1 else []
-        
+
         # struct_block should contain a list of StructField objects
         fields = struct_block if isinstance(struct_block, list) else []
-        
+
         return StructDefinition(name=struct_name, fields=fields, location=None)
 
     def struct_block(self, items):
         """Transform struct_block rule.
-        
+
         Grammar: struct_block: _NL _INDENT struct_fields _DEDENT*
         """
         # Filter to get struct_fields
@@ -454,31 +453,31 @@ class StatementTransformer(BaseTransformer):
 
     def struct_fields(self, items):
         """Transform struct_fields rule.
-        
+
         Grammar: struct_fields: struct_field+
         """
         return [item for item in items if item is not None]
 
     def struct_field(self, items):
         """Transform struct_field rule.
-        
+
         Grammar: struct_field: NAME ":" basic_type [COMMENT] _NL
         """
         relevant_items = self._filter_relevant_items(items)
-        
+
         if len(relevant_items) < 2:
             raise ValueError(f"Invalid struct field: expected NAME and type, got {relevant_items}")
-        
+
         # First item is field name
         name_token = relevant_items[0]
         if isinstance(name_token, Token):
             field_name = name_token.value
         else:
             field_name = str(name_token)
-        
+
         # Second item is type hint
         type_hint = relevant_items[1]
-        
+
         return StructField(name=field_name, type_hint=type_hint, location=None)
 
     def try_stmt(self, items):
@@ -491,7 +490,6 @@ class StatementTransformer(BaseTransformer):
         - items[2]: except block (or items[1] if no exception type)
         - items[3]: optional finally block (or items[2] if no exception type)
         """
-        from opendxa.dana.sandbox.parser.ast import ExceptBlock
 
         # Filter out None items and comments
         relevant_items = [item for item in items if item is not None]
@@ -653,7 +651,6 @@ class StatementTransformer(BaseTransformer):
         """
         from lark import Tree
 
-
         # Initialize collections for arguments
         args = []  # List[Expression] for positional arguments
         kwargs = {}  # Dict[str, Expression] for keyword arguments
@@ -666,15 +663,12 @@ class StatementTransformer(BaseTransformer):
         if len(items) > 1 and items[1] is not None:
             mixed_args_result = items[1]
 
-
             # Process mixed_arguments following with_stmt pattern
             seen_keyword_arg = False  # Track if we've seen any keyword arguments
-
 
             if isinstance(mixed_args_result, list):
                 # Process each argument
                 for arg_item in mixed_args_result:
-                    if isinstance(arg_item, Tree) and arg_item.data == "kw_arg":
                     if isinstance(arg_item, Tree) and arg_item.data == "kw_arg":
                         # Keyword argument: NAME "=" expr
                         seen_keyword_arg = True
@@ -690,7 +684,6 @@ class StatementTransformer(BaseTransformer):
             else:
                 # Single argument
                 if isinstance(mixed_args_result, Tree) and mixed_args_result.data == "kw_arg":
-                if isinstance(mixed_args_result, Tree) and mixed_args_result.data == "kw_arg":
                     # Keyword argument: NAME "=" expr
                     name = mixed_args_result.children[0].value
                     value = self.expression_transformer.expression([mixed_args_result.children[1]])
@@ -698,7 +691,6 @@ class StatementTransformer(BaseTransformer):
                 else:
                     # Positional argument: expr
                     args.append(cast(Expression, mixed_args_result))
-
 
         return UseStatement(args=args, kwargs=kwargs)
 
@@ -1041,11 +1033,9 @@ class StatementTransformer(BaseTransformer):
         # Grammar: return_object_stmt: use_stmt
         # items[0] should be the result of use_stmt transformation
 
-
         # The use_stmt should already be transformed into a UseStatement by use_stmt method
         if len(items) > 0 and items[0] is not None:
             return items[0]
-
 
         # Fallback - this shouldn't happen in normal cases
         raise ValueError("return_object_stmt received empty or None items")
@@ -1076,7 +1066,6 @@ class StatementTransformer(BaseTransformer):
         """Transform mixed_arguments rule into a structured list."""
         # items is a list of with_arg items
         return items
-
 
     def with_arg(self, items):
         """Transform with_arg rule - pass through the child (either kw_arg or expr)."""
@@ -1187,7 +1176,6 @@ class StatementTransformer(BaseTransformer):
                         block = self._transform_block(filtered_items[j])
                         break
                 break
-
 
         if as_var is None:
             raise SyntaxError("Missing 'as' variable in with statement")

@@ -7,8 +7,8 @@ with the building management plugin and LLM integration.
 """
 
 import asyncio
-import sys
 import os
+import sys
 from pathlib import Path
 
 # Add the project root to Python path
@@ -21,7 +21,7 @@ async def test_poet_imports():
     print("🧪 Testing POET framework imports...")
     
     try:
-        from opendxa.dana.poet.poet import poet, POETExecutor, POETConfig
+        from opendxa.dana.poet.poet import POETConfig, POETExecutor, poet
         print("✅ POET core framework imported successfully")
     except ImportError as e:
         print(f"❌ Failed to import POET framework: {e}")
@@ -126,8 +126,9 @@ async def test_poet_decorator():
     print("\n🎭 Testing POET decorator...")
     
     try:
-        from opendxa.dana.poet.poet import poet
         from hvac_systems import HVACCommand
+
+        from opendxa.dana.poet.poet import poet
         
         # Create a simple test function with POET decorator
         @poet(domain="building_management", enable_training=True)
@@ -184,7 +185,7 @@ async def test_hvac_integration():
     print("\n🏠 Testing HVAC systems integration...")
     
     try:
-        from hvac_systems import basic_hvac_control, smart_hvac_control, POET_AVAILABLE
+        from hvac_systems import POET_AVAILABLE, basic_hvac_control, smart_hvac_control
         
         print(f"📋 POET availability: {POET_AVAILABLE}")
         

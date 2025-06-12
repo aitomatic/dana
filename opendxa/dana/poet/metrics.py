@@ -7,11 +7,11 @@ for the POET (Perceive → Operate → Enforce) pipeline performance monitoring.
 
 import json
 import time
-from datetime import datetime, timedelta
-from dataclasses import dataclass, asdict
-from pathlib import Path
-from typing import Dict, List, Any, Optional, Tuple, Union
 from collections import defaultdict, deque
+from dataclasses import asdict, dataclass
+from datetime import datetime
+from pathlib import Path
+from typing import Any
 
 from opendxa.common.mixins.loggable import Loggable
 
@@ -22,7 +22,7 @@ class POETExecutionMetrics:
 
     # Execution identification
     function_name: str
-    domain: Optional[str]
+    domain: str | None
     timestamp: float
 
     # Execution results
@@ -34,24 +34,24 @@ class POETExecutionMetrics:
     perceive_time: float = 0.0
     operate_time: float = 0.0
     enforce_time: float = 0.0
-    train_time: Optional[float] = None
+    train_time: float | None = None
 
     # Error information
-    error_type: Optional[str] = None
-    error_message: Optional[str] = None
-    error_stage: Optional[str] = None
+    error_type: str | None = None
+    error_message: str | None = None
+    error_stage: str | None = None
 
     # Configuration used
     retries_configured: int = 3
     timeout_configured: float = 30.0
     training_enabled: bool = False
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert metrics to dictionary format."""
         return asdict(self)
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "POETExecutionMetrics":
+    def from_dict(cls, data: dict[str, Any]) -> "POETExecutionMetrics":
         """Create metrics from dictionary format."""
         return cls(**data)
 
@@ -81,17 +81,17 @@ class POETAggregateMetrics:
         self.max_retries_used = 0
 
         # Error tracking
-        self.errors_by_type: Dict[str, int] = defaultdict(int)
-        self.errors_by_stage: Dict[str, int] = defaultdict(int)
-        self.errors_by_function: Dict[str, int] = defaultdict(int)
+        self.errors_by_type: dict[str, int] = defaultdict(int)
+        self.errors_by_stage: dict[str, int] = defaultdict(int)
+        self.errors_by_function: dict[str, int] = defaultdict(int)
 
         # Function-specific metrics
-        self.function_stats: Dict[str, Dict[str, Any]] = defaultdict(
+        self.function_stats: dict[str, dict[str, Any]] = defaultdict(
             lambda: {"executions": 0, "successes": 0, "failures": 0, "total_time": 0.0, "avg_time": 0.0}
         )
 
         # Domain-specific metrics
-        self.domain_stats: Dict[str, Dict[str, Any]] = defaultdict(
+        self.domain_stats: dict[str, dict[str, Any]] = defaultdict(
             lambda: {"executions": 0, "successes": 0, "failures": 0, "total_time": 0.0}
         )
 
@@ -153,7 +153,7 @@ class POETAggregateMetrics:
             else:
                 domain_stats["failures"] += 1
 
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         """Get summary statistics."""
         if self.total_executions == 0:
             return {"message": "No executions recorded"}
@@ -185,7 +185,7 @@ class POETAggregateMetrics:
             },
         }
 
-    def get_error_analysis(self) -> Dict[str, Any]:
+    def get_error_analysis(self) -> dict[str, Any]:
         """Get detailed error analysis."""
         return {
             "errors_by_type": dict(self.errors_by_type),
@@ -196,7 +196,7 @@ class POETAggregateMetrics:
             "most_problematic_function": max(self.errors_by_function.items(), key=lambda x: x[1]) if self.errors_by_function else None,
         }
 
-    def get_performance_insights(self) -> List[str]:
+    def get_performance_insights(self) -> list[str]:
         """Get performance insights and recommendations."""
         insights = []
 
@@ -245,7 +245,7 @@ class POETAggregateMetrics:
 class POETMetricsCollector(Loggable):
     """Advanced metrics collector for POET pipeline monitoring and analysis."""
 
-    def __init__(self, storage_path: Optional[Path] = None, max_memory_entries: int = 1000, enable_persistence: bool = True):
+    def __init__(self, storage_path: Path | None = None, max_memory_entries: int = 1000, enable_persistence: bool = True):
         """
         Initialize metrics collector.
 
@@ -275,10 +275,10 @@ class POETMetricsCollector(Loggable):
         self.total_retries = 0
 
         # Function and domain tracking
-        self.function_stats: Dict[str, Dict[str, Any]] = defaultdict(
+        self.function_stats: dict[str, dict[str, Any]] = defaultdict(
             lambda: {"executions": 0, "successes": 0, "failures": 0, "total_time": 0.0}
         )
-        self.domain_stats: Dict[str, Dict[str, Any]] = defaultdict(
+        self.domain_stats: dict[str, dict[str, Any]] = defaultdict(
             lambda: {"executions": 0, "successes": 0, "failures": 0, "total_time": 0.0}
         )
 
@@ -292,10 +292,10 @@ class POETMetricsCollector(Loggable):
         success: bool,
         total_time: float,
         attempts: int,
-        domain: Optional[str] = None,
-        stage_timings: Optional[Dict[str, float]] = None,
-        error_info: Optional[Dict[str, str]] = None,
-        config_info: Optional[Dict[str, Any]] = None,
+        domain: str | None = None,
+        stage_timings: dict[str, float] | None = None,
+        error_info: dict[str, str] | None = None,
+        config_info: dict[str, Any] | None = None,
     ) -> POETExecutionMetrics:
         """
         Record a POET execution with detailed metrics.
@@ -401,7 +401,7 @@ class POETMetricsCollector(Loggable):
         with open(metrics_file, "a") as f:
             f.write(json.dumps(metrics.to_dict()) + "\n")
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get current aggregate statistics."""
         return {
             "total_executions": self.total_executions,
@@ -412,7 +412,7 @@ class POETMetricsCollector(Loggable):
             "avg_retries": self.total_retries / max(self.total_executions, 1),
         }
 
-    def get_function_performance(self, function_name: str) -> Dict[str, Any]:
+    def get_function_performance(self, function_name: str) -> dict[str, Any]:
         """Get performance metrics for a specific function."""
         if function_name not in self.function_stats:
             return {"error": f"No metrics found for function '{function_name}'"}
@@ -426,7 +426,7 @@ class POETMetricsCollector(Loggable):
             "total_time": stats["total_time"],
         }
 
-    def get_domain_performance(self, domain: str) -> Dict[str, Any]:
+    def get_domain_performance(self, domain: str) -> dict[str, Any]:
         """Get performance metrics for a specific domain."""
         if domain not in self.domain_stats:
             return {"error": f"No metrics found for domain '{domain}'"}
@@ -440,7 +440,7 @@ class POETMetricsCollector(Loggable):
             "total_time": stats["total_time"],
         }
 
-    def generate_report(self) -> Dict[str, Any]:
+    def generate_report(self) -> dict[str, Any]:
         """Generate comprehensive metrics report."""
         return {
             "timestamp": datetime.now().isoformat(),
@@ -463,7 +463,7 @@ class POETMetricsCollector(Loggable):
 
 
 # Global metrics collector instance
-_global_collector: Optional[POETMetricsCollector] = None
+_global_collector: POETMetricsCollector | None = None
 
 
 def get_global_collector() -> POETMetricsCollector:

@@ -49,6 +49,7 @@ Expression = Union[
     "ListLiteral",
     "SetLiteral",
     "TupleLiteral",
+    "StructLiteral",
     "UseStatement",
 ]
 
@@ -237,8 +238,8 @@ class ObjectFunctionCall:
 
     object: Expression  # The object on which to call the method
     method_name: str  # The method name
-    args: Dict[str, Any]  # Arguments to the method
-    location: Optional[Location] = None
+    args: dict[str, Any]  # Arguments to the method
+    location: Location | None = None
 
 
 @dataclass
@@ -385,11 +386,47 @@ class FunctionDefinition:
     """Function definition statement."""
 
     name: Identifier
-    parameters: List[Parameter]
-    body: List[Statement]
-    return_type: Optional[TypeHint] = None
-    decorators: List["Decorator"] = field(default_factory=list)  # Decorators applied to function
-    location: Optional[Location] = None
+    parameters: list[Parameter]
+    body: list[Statement]
+    return_type: TypeHint | None = None
+    decorators: list["Decorator"] = field(default_factory=list)  # Decorators applied to function
+    location: Location | None = None
+
+
+@dataclass
+class StructDefinition:
+    """Struct definition statement (e.g., struct Point: x: int, y: int)."""
+
+    name: str
+    fields: list["StructField"]
+    location: Location | None = None
+
+
+@dataclass
+class StructField:
+    """A field in a struct definition."""
+
+    name: str
+    type_hint: TypeHint
+    location: Location | None = None
+
+
+@dataclass
+class StructLiteral:
+    """Struct instantiation expression (e.g., Point(x=10, y=20))."""
+
+    struct_name: str
+    arguments: list["StructArgument"]
+    location: Location | None = None
+
+
+@dataclass
+class StructArgument:
+    """A named argument in struct instantiation."""
+
+    name: str
+    value: Expression
+    location: Location | None = None
 
 
 @dataclass
@@ -414,10 +451,10 @@ class ImportFromStatement:
 class UseStatement:
     """Use statement for external resources (e.g., use("mcp", url="..."))."""
 
-    args: List[Expression]  # Positional arguments
-    kwargs: Dict[str, Expression]  # Keyword arguments
-    target: Optional[Identifier] = None
-    location: Optional[Location] = None
+    args: list[Expression]  # Positional arguments
+    kwargs: dict[str, Expression]  # Keyword arguments
+    target: Identifier | None = None
+    location: Location | None = None
 
 
 @dataclass
@@ -425,9 +462,9 @@ class Decorator:
     """Decorator applied to a function (e.g., @poet(domain="building_management"))."""
 
     name: str  # Decorator name (e.g., "poet")
-    args: List[Expression] = field(default_factory=list)  # Positional arguments
-    kwargs: Dict[str, Expression] = field(default_factory=dict)  # Keyword arguments
-    location: Optional[Location] = None
+    args: list[Expression] = field(default_factory=list)  # Positional arguments
+    kwargs: dict[str, Expression] = field(default_factory=dict)  # Keyword arguments
+    location: Location | None = None
 
 
 @dataclass

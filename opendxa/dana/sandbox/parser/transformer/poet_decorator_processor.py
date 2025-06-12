@@ -7,10 +7,10 @@ Uses comments that look like decorators: # @poet(domain="building_management")
 Author: OpenDXA Framework
 """
 
-import re
 import ast
-from typing import Dict, Any, Optional, List
+import re
 from dataclasses import dataclass
+from typing import Any
 
 from opendxa.common.utils.logging import DXA_LOGGER
 
@@ -19,13 +19,13 @@ from opendxa.common.utils.logging import DXA_LOGGER
 class POETDecoratorConfig:
     """Configuration extracted from a POET decorator comment."""
 
-    domain: Optional[str] = None
-    timeout: Optional[float] = None
-    retries: Optional[int] = None
+    domain: str | None = None
+    timeout: float | None = None
+    retries: int | None = None
     enable_training: bool = True
     collect_metrics: bool = True
-    profile: Optional[str] = None
-    interrupts: Optional[str] = None
+    profile: str | None = None
+    interrupts: str | None = None
 
 
 class POETDecoratorProcessor:
@@ -38,7 +38,7 @@ class POETDecoratorProcessor:
         """Initialize the POET decorator processor."""
         self.logger = DXA_LOGGER.getChild(__name__)
 
-    def extract_poet_config(self, comment: str) -> Optional[POETDecoratorConfig]:
+    def extract_poet_config(self, comment: str) -> POETDecoratorConfig | None:
         """
         Extract POET configuration from a decorator comment.
 
@@ -67,7 +67,7 @@ class POETDecoratorProcessor:
 
         return self._parse_decorator_args(args_str)
 
-    def _parse_decorator_args(self, args_str: str) -> Optional[POETDecoratorConfig]:
+    def _parse_decorator_args(self, args_str: str) -> POETDecoratorConfig | None:
         """
         Parse decorator arguments string into POETDecoratorConfig.
 
@@ -177,7 +177,7 @@ class POETDecoratorProcessor:
             self.logger.warning(f"Unsupported AST node type in POET decorator: {type(node)}")
             return None
 
-    def find_poet_decorators_in_code(self, code: str) -> List[tuple[int, POETDecoratorConfig]]:
+    def find_poet_decorators_in_code(self, code: str) -> list[tuple[int, POETDecoratorConfig]]:
         """
         Find all POET decorator comments in code and return their line numbers and configs.
 
@@ -197,7 +197,7 @@ class POETDecoratorProcessor:
 
         return decorators
 
-    def apply_poet_to_function(self, function_name: str, config: POETDecoratorConfig) -> Dict[str, Any]:
+    def apply_poet_to_function(self, function_name: str, config: POETDecoratorConfig) -> dict[str, Any]:
         """
         Convert POETDecoratorConfig to POET function parameters.
 
@@ -232,7 +232,7 @@ class POETDecoratorProcessor:
 _poet_processor = POETDecoratorProcessor()
 
 
-def extract_poet_config(comment: str) -> Optional[POETDecoratorConfig]:
+def extract_poet_config(comment: str) -> POETDecoratorConfig | None:
     """
     Extract POET configuration from a decorator comment.
 
@@ -245,7 +245,7 @@ def extract_poet_config(comment: str) -> Optional[POETDecoratorConfig]:
     return _poet_processor.extract_poet_config(comment)
 
 
-def find_poet_decorators_in_code(code: str) -> List[tuple[int, POETDecoratorConfig]]:
+def find_poet_decorators_in_code(code: str) -> list[tuple[int, POETDecoratorConfig]]:
     """
     Find all POET decorator comments in code.
 

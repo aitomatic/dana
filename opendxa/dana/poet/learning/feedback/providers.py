@@ -5,25 +5,26 @@ This module provides the base FeedbackProvider interface and common
 implementations for different feedback modes.
 """
 
-from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, List
 import time
+from abc import ABC, abstractmethod
 from datetime import datetime
+from typing import Any
 
 from opendxa.common.mixins.loggable import Loggable
-from .feedback import SimulationFeedback, FeedbackMode, FeedbackRequest, FeedbackCapabilities
+
+from .feedback import FeedbackCapabilities, FeedbackMode, FeedbackRequest, SimulationFeedback
 
 
 class FeedbackProvider(ABC, Loggable):
     """Base interface for all feedback providers"""
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         super().__init__()
         self.config = config or {}
 
     @abstractmethod
     def generate_feedback(
-        self, function_input: Dict[str, Any], function_output: Any, execution_context: Dict[str, Any]
+        self, function_input: dict[str, Any], function_output: Any, execution_context: dict[str, Any]
     ) -> SimulationFeedback:
         """Generate feedback for function execution"""
         pass
@@ -80,14 +81,14 @@ class FeedbackProvider(ABC, Loggable):
 class RealWorldFeedbackProvider(FeedbackProvider):
     """Feedback provider using real-world data sources"""
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         super().__init__(config)
         self.data_sources = config.get("data_sources", {}) if config else {}
         self.sensor_config = config.get("sensors", {}) if config else {}
         self.api_endpoints = config.get("api_endpoints", {}) if config else {}
 
     def generate_feedback(
-        self, function_input: Dict[str, Any], function_output: Any, execution_context: Dict[str, Any]
+        self, function_input: dict[str, Any], function_output: Any, execution_context: dict[str, Any]
     ) -> SimulationFeedback:
         """Generate feedback from real-world data sources"""
 
@@ -114,8 +115,8 @@ class RealWorldFeedbackProvider(FeedbackProvider):
         )
 
     def _collect_real_world_metrics(
-        self, function_input: Dict[str, Any], function_output: Any, execution_context: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, function_input: dict[str, Any], function_output: Any, execution_context: dict[str, Any]
+    ) -> dict[str, Any]:
         """Collect metrics from real-world sources"""
         metrics = {}
 
@@ -130,8 +131,8 @@ class RealWorldFeedbackProvider(FeedbackProvider):
         return metrics
 
     def _query_data_source(
-        self, source_name: str, source_config: Dict[str, Any], function_input: Dict[str, Any], function_output: Any
-    ) -> Dict[str, Any]:
+        self, source_name: str, source_config: dict[str, Any], function_input: dict[str, Any], function_output: Any
+    ) -> dict[str, Any]:
         """Query individual data source"""
         # Placeholder implementation - would integrate with actual data sources
         # like databases, APIs, sensors, user feedback systems, etc.
@@ -145,22 +146,22 @@ class RealWorldFeedbackProvider(FeedbackProvider):
         else:
             return {}
 
-    def _collect_sensor_data(self, sensor_config: Dict[str, Any]) -> Dict[str, Any]:
+    def _collect_sensor_data(self, sensor_config: dict[str, Any]) -> dict[str, Any]:
         """Collect data from sensors"""
         # Placeholder for sensor integration
         return {"sensor_readings": 0.8}
 
-    def _collect_api_data(self, api_config: Dict[str, Any], function_input: Dict[str, Any], function_output: Any) -> Dict[str, Any]:
+    def _collect_api_data(self, api_config: dict[str, Any], function_input: dict[str, Any], function_output: Any) -> dict[str, Any]:
         """Collect data from APIs"""
         # Placeholder for API integration
         return {"api_metrics": 0.9}
 
-    def _collect_database_metrics(self, db_config: Dict[str, Any], function_input: Dict[str, Any]) -> Dict[str, Any]:
+    def _collect_database_metrics(self, db_config: dict[str, Any], function_input: dict[str, Any]) -> dict[str, Any]:
         """Collect metrics from database"""
         # Placeholder for database integration
         return {"historical_performance": 0.85}
 
-    def _extract_scenario_context(self, function_input: Dict[str, Any], execution_context: Dict[str, Any]) -> Dict[str, Any]:
+    def _extract_scenario_context(self, function_input: dict[str, Any], execution_context: dict[str, Any]) -> dict[str, Any]:
         """Extract relevant scenario context"""
         return {
             "environment": execution_context.get("environment", "production"),
@@ -188,13 +189,13 @@ class RealWorldFeedbackProvider(FeedbackProvider):
 class SimulationFeedbackProvider(FeedbackProvider):
     """Feedback provider using domain simulation models"""
 
-    def __init__(self, simulation_models: Dict[str, Any], config: Optional[Dict[str, Any]] = None):
+    def __init__(self, simulation_models: dict[str, Any], config: dict[str, Any] | None = None):
         super().__init__(config)
         self.simulation_models = simulation_models
         self.model_accuracy = config.get("model_accuracy", 0.85) if config else 0.85
 
     def generate_feedback(
-        self, function_input: Dict[str, Any], function_output: Any, execution_context: Dict[str, Any]
+        self, function_input: dict[str, Any], function_output: Any, execution_context: dict[str, Any]
     ) -> SimulationFeedback:
         """Generate feedback using simulation models"""
 
@@ -220,7 +221,7 @@ class SimulationFeedbackProvider(FeedbackProvider):
             scenario_context=simulation_results.get("scenario_context", {}),
         )
 
-    def _run_simulations(self, function_input: Dict[str, Any], function_output: Any, execution_context: Dict[str, Any]) -> Dict[str, Any]:
+    def _run_simulations(self, function_input: dict[str, Any], function_output: Any, execution_context: dict[str, Any]) -> dict[str, Any]:
         """Run all available simulation models"""
         results = {}
 
@@ -237,7 +238,7 @@ class SimulationFeedbackProvider(FeedbackProvider):
         # Aggregate results from multiple models
         return self._aggregate_simulation_results(results)
 
-    def _aggregate_simulation_results(self, model_results: Dict[str, Any]) -> Dict[str, Any]:
+    def _aggregate_simulation_results(self, model_results: dict[str, Any]) -> dict[str, Any]:
         """Aggregate results from multiple simulation models"""
         if not model_results:
             return {"performance": 0.5, "user_satisfaction": 0.5, "efficiency": 0.5, "safety": 0.5, "domain_metrics": {}}
@@ -308,7 +309,7 @@ class HybridFeedbackProvider(FeedbackProvider):
         self,
         real_provider: FeedbackProvider,
         simulation_provider: FeedbackProvider,
-        config: Optional[Dict[str, Any]] = None,
+        config: dict[str, Any] | None = None,
     ):
         super().__init__(config)
         self.real_provider = real_provider
@@ -317,7 +318,7 @@ class HybridFeedbackProvider(FeedbackProvider):
         self.simulation_weight = 1.0 - self.real_weight
 
     def generate_feedback(
-        self, function_input: Dict[str, Any], function_output: Any, execution_context: Dict[str, Any]
+        self, function_input: dict[str, Any], function_output: Any, execution_context: dict[str, Any]
     ) -> SimulationFeedback:
         """Generate hybrid feedback combining real and simulated data"""
 
@@ -386,12 +387,12 @@ class HybridFeedbackProvider(FeedbackProvider):
 class SafeTestingFeedbackProvider(SimulationFeedbackProvider):
     """Feedback provider for safe development/testing with constraints"""
 
-    def __init__(self, simulation_models: Dict[str, Any], safety_constraints: Dict[str, Any], config: Optional[Dict[str, Any]] = None):
+    def __init__(self, simulation_models: dict[str, Any], safety_constraints: dict[str, Any], config: dict[str, Any] | None = None):
         super().__init__(simulation_models, config)
         self.safety_constraints = safety_constraints
 
     def generate_feedback(
-        self, function_input: Dict[str, Any], function_output: Any, execution_context: Dict[str, Any]
+        self, function_input: dict[str, Any], function_output: Any, execution_context: dict[str, Any]
     ) -> SimulationFeedback:
         """Generate safe testing feedback with constraints"""
 
@@ -420,7 +421,7 @@ class SafeTestingFeedbackProvider(SimulationFeedbackProvider):
 
         return feedback
 
-    def _check_safety_constraints(self, function_input: Dict[str, Any], function_output: Any) -> List[str]:
+    def _check_safety_constraints(self, function_input: dict[str, Any], function_output: Any) -> list[str]:
         """Check function parameters against safety constraints"""
         violations = []
 

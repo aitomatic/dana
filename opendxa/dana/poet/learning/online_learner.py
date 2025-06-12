@@ -6,14 +6,13 @@ basic heuristic parameter adjustments with sophisticated statistical methods
 for real-time parameter optimization.
 """
 
-import math
-import time
+from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
-from collections import defaultdict, deque
+from typing import Any
 
 import numpy as np
+
 from opendxa.common.mixins.loggable import Loggable
 
 
@@ -28,19 +27,19 @@ class ExecutionFeedback:
     success: bool
     execution_time: float
     output_quality: float = 0.8  # 0.0 to 1.0 quality score
-    error_type: Optional[str] = None
+    error_type: str | None = None
 
     # Context information
     input_signature: str = ""
-    domain: Optional[str] = None
+    domain: str | None = None
     timestamp: datetime = field(default_factory=datetime.now)
 
     # Parameter state
-    parameters_used: Dict[str, Any] = field(default_factory=dict)
-    performance_metrics: Dict[str, float] = field(default_factory=dict)
+    parameters_used: dict[str, Any] = field(default_factory=dict)
+    performance_metrics: dict[str, float] = field(default_factory=dict)
 
     # User feedback (optional)
-    user_satisfaction: Optional[float] = None
+    user_satisfaction: float | None = None
     validation_passed: bool = True
 
 
@@ -117,21 +116,21 @@ class OnlineLearner(Loggable):
         self.exploration_rate = exploration_rate
 
         # Parameter tracking
-        self.parameter_histories: Dict[str, ParameterHistory] = defaultdict(ParameterHistory)
-        self.learning_rates: Dict[str, float] = defaultdict(lambda: base_learning_rate)
-        self.momentum_terms: Dict[str, float] = defaultdict(float)
-        self.confidence_scores: Dict[str, float] = defaultdict(lambda: 0.5)
+        self.parameter_histories: dict[str, ParameterHistory] = defaultdict(ParameterHistory)
+        self.learning_rates: dict[str, float] = defaultdict(lambda: base_learning_rate)
+        self.momentum_terms: dict[str, float] = defaultdict(float)
+        self.confidence_scores: dict[str, float] = defaultdict(lambda: 0.5)
 
         # Performance tracking
         self.global_performance_history = deque(maxlen=1000)
-        self.convergence_status: Dict[str, bool] = defaultdict(bool)
+        self.convergence_status: dict[str, bool] = defaultdict(bool)
 
         # Learning statistics
         self.update_count = 0
         self.successful_updates = 0
         self.last_update_time = datetime.now()
 
-    def update_parameters(self, feedback: ExecutionFeedback, current_params: Dict[str, Any]) -> Dict[str, Any]:
+    def update_parameters(self, feedback: ExecutionFeedback, current_params: dict[str, Any]) -> dict[str, Any]:
         """
         Update parameters using advanced statistical online learning.
 
@@ -356,7 +355,7 @@ class OnlineLearner(Loggable):
 
         return self.learning_rates[param_name]
 
-    def _get_parameter_bounds(self, param_name: str, current_value: float) -> Tuple[float, float]:
+    def _get_parameter_bounds(self, param_name: str, current_value: float) -> tuple[float, float]:
         """Get reasonable bounds for parameter values"""
 
         if "timeout" in param_name.lower():
@@ -372,7 +371,7 @@ class OnlineLearner(Loggable):
             range_size = abs(current_value) * 0.5
             return (max(0.1, current_value - range_size), current_value + range_size)
 
-    def get_learning_stats(self) -> Dict[str, Any]:
+    def get_learning_stats(self) -> dict[str, Any]:
         """Get comprehensive learning statistics"""
 
         return {

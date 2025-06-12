@@ -8,13 +8,13 @@ Author: OpenDXA Team
 Version: 1.0.0
 """
 
-from typing import Any, Dict, List, Tuple, Optional
-from dataclasses import dataclass
 from collections import deque
+from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
+from opendxa.dana.poet.learning.objective import EvaluationContext, ObjectiveEvaluator
 from opendxa.dana.poet.plugins.base import POETPlugin
-from opendxa.dana.poet.learning.objective import ObjectiveEvaluator, EvaluationContext
 
 
 @dataclass
@@ -74,7 +74,7 @@ class BuildingManagementPlugin(POETPlugin):
         """Get unique plugin identifier."""
         return "building_management"
 
-    def process_inputs(self, args: Tuple, kwargs: Dict) -> Dict[str, Any]:
+    def process_inputs(self, args: tuple, kwargs: dict) -> dict[str, Any]:
         """Process HVAC control inputs with building intelligence."""
 
         # Extract common HVAC parameters
@@ -109,7 +109,7 @@ class BuildingManagementPlugin(POETPlugin):
             "kwargs": {},
         }
 
-    def validate_output(self, result: Any, context: Dict[str, Any]) -> Any:
+    def validate_output(self, result: Any, context: dict[str, Any]) -> Any:
         """Validate HVAC control output for safety and efficiency."""
 
         # Validate output is reasonable control command
@@ -140,7 +140,7 @@ class BuildingManagementPlugin(POETPlugin):
 
         return result
 
-    def get_performance_optimizations(self) -> Dict[str, Any]:
+    def get_performance_optimizations(self) -> dict[str, Any]:
         """Get HVAC-specific performance optimizations."""
         return {
             "timeout_multiplier": 1.2,  # HVAC operations may take slightly longer
@@ -149,7 +149,7 @@ class BuildingManagementPlugin(POETPlugin):
             "batch_size": 1,  # Process each HVAC command individually
         }
 
-    def get_learning_hints(self, execution_context: Dict[str, Any]) -> Dict[str, Any]:
+    def get_learning_hints(self, execution_context: dict[str, Any]) -> dict[str, Any]:
         """Provide HVAC-specific learning guidance."""
         return {
             "parameter_bounds": {
@@ -161,7 +161,7 @@ class BuildingManagementPlugin(POETPlugin):
             "performance_weight": 0.8,  # Prioritize performance over speed
         }
 
-    def get_plugin_info(self) -> Dict[str, Any]:
+    def get_plugin_info(self) -> dict[str, Any]:
         """Get enhanced plugin information."""
         base_info = super().get_plugin_info()
         base_info.update(
@@ -208,7 +208,7 @@ class BuildingManagementPlugin(POETPlugin):
 
         return setpoint
 
-    def _get_thermal_context(self, inputs: Dict) -> Dict[str, Any]:
+    def _get_thermal_context(self, inputs: dict) -> dict[str, Any]:
         """Generate thermal context for enhanced control decisions."""
         current_temp = inputs.get("current_temp", 72)
         setpoint = inputs.get("setpoint", 72)
@@ -227,7 +227,7 @@ class BuildingManagementPlugin(POETPlugin):
             "recommended_deadband": (2.0 if not occupancy else 1.0) * self.learnable_params["deadband_multiplier"],
         }
 
-    def _apply_energy_optimization(self, result: Any, context: Dict[str, Any]) -> Any:
+    def _apply_energy_optimization(self, result: Any, context: dict[str, Any]) -> Any:
         """Apply energy optimization to HVAC commands."""
 
         if not hasattr(result, "heating_output") and not hasattr(result, "cooling_output"):
@@ -266,7 +266,7 @@ class BuildingManagementPlugin(POETPlugin):
 
     # Learning Methods Implementation
 
-    def receive_feedback(self, feedback: Dict[str, Any]) -> None:
+    def receive_feedback(self, feedback: dict[str, Any]) -> None:
         """Receive feedback about HVAC performance for domain learning."""
         if not self.learning_enabled:
             return
@@ -306,7 +306,7 @@ class BuildingManagementPlugin(POETPlugin):
             else:
                 self.learning_stats["performance_trend"] = "stable"
 
-    def update_from_learning(self, learning_insights: Dict[str, Any]) -> None:
+    def update_from_learning(self, learning_insights: dict[str, Any]) -> None:
         """Update plugin behavior based on learning insights."""
         if not self.learning_enabled:
             return
@@ -329,7 +329,7 @@ class BuildingManagementPlugin(POETPlugin):
 
         self.learning_stats["last_update"] = datetime.now().isoformat()
 
-    def get_domain_metrics(self, execution_result: Dict[str, Any]) -> Dict[str, float]:
+    def get_domain_metrics(self, execution_result: dict[str, Any]) -> dict[str, float]:
         """Extract HVAC-specific metrics for learning from execution results."""
         metrics = {}
 
@@ -370,7 +370,7 @@ class BuildingManagementPlugin(POETPlugin):
 
         return metrics
 
-    def adapt_parameters(self, current_params: Dict[str, Any], performance_history: List[float]) -> Dict[str, Any]:
+    def adapt_parameters(self, current_params: dict[str, Any], performance_history: list[float]) -> dict[str, Any]:
         """Adapt HVAC parameters based on performance history."""
         if not self.learning_enabled or len(performance_history) < 3:
             return current_params
@@ -395,7 +395,7 @@ class BuildingManagementPlugin(POETPlugin):
 
         return adapted_params
 
-    def get_learnable_parameters(self) -> Dict[str, Dict[str, Any]]:
+    def get_learnable_parameters(self) -> dict[str, dict[str, Any]]:
         """Get HVAC plugin parameters that can be learned/optimized."""
         return {
             "energy_setback_degrees": {
@@ -436,7 +436,7 @@ class BuildingManagementPlugin(POETPlugin):
             },
         }
 
-    def apply_learned_parameters(self, learned_params: Dict[str, Any]) -> None:
+    def apply_learned_parameters(self, learned_params: dict[str, Any]) -> None:
         """Apply learned parameters to HVAC plugin behavior."""
         if not self.learning_enabled:
             return
@@ -449,7 +449,7 @@ class BuildingManagementPlugin(POETPlugin):
         self.learning_stats["parameter_updates"] += 1
         self.learning_stats["last_update"] = datetime.now().isoformat()
 
-    def get_learning_status(self) -> Dict[str, Any]:
+    def get_learning_status(self) -> dict[str, Any]:
         """Get current learning status and statistics for HVAC plugin."""
         base_status = super().get_learning_status()
 
@@ -484,7 +484,7 @@ class BuildingManagementPlugin(POETPlugin):
         bounded_value = max(min_val, min(max_val, float(value)))
         self.learnable_params[param_name] = bounded_value
 
-    def evaluate_objectives(self, execution_result: Dict[str, Any], execution_context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def evaluate_objectives(self, execution_result: dict[str, Any], execution_context: dict[str, Any] | None = None) -> dict[str, Any]:
         """
         Evaluate HVAC objectives using formal multi-objective optimization.
 

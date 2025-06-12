@@ -5,8 +5,7 @@ This module contains pre-defined objective functions for different POET domains,
 implementing common industry patterns and best practices.
 """
 
-from typing import Dict, List
-from .base import ObjectiveFunction, ObjectiveType, ObjectivePriority, MultiObjective
+from .base import MultiObjective, ObjectiveFunction, ObjectivePriority, ObjectiveType
 
 
 class CommonObjectives:

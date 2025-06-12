@@ -9,31 +9,30 @@ Comprehensive learning framework for POET functions including:
 """
 
 # Core learning components
-from .online_learner import OnlineLearner, ExecutionFeedback
-from .metrics import PerformanceTracker, LearningMetrics
+# Feedback system
+from .feedback import (
+    FeedbackMode,
+    FeedbackProvider,
+    HybridFeedbackProvider,
+    RealWorldFeedbackProvider,
+    SimulationFeedback,
+)
+from .metrics import LearningMetrics, PerformanceTracker
 
 # Objective framework
 from .objective import (
-    ObjectiveType,
-    ObjectivePriority,
-    ObjectiveFunction,
+    EvaluationContext,
     MultiObjective,
     ObjectiveEvaluationResult,
-    POETObjectiveRegistry,
     ObjectiveEvaluator,
-    EvaluationContext,
-    get_global_registry,
+    ObjectiveFunction,
+    ObjectivePriority,
+    ObjectiveType,
+    POETObjectiveRegistry,
     get_domain_objectives,
+    get_global_registry,
 )
-
-# Feedback system
-from .feedback import (
-    FeedbackProvider,
-    SimulationFeedback,
-    FeedbackMode,
-    RealWorldFeedbackProvider,
-    HybridFeedbackProvider,
-)
+from .online_learner import ExecutionFeedback, OnlineLearner
 
 __all__ = [
     # Core learning

@@ -5,13 +5,13 @@ This module defines error types for the POET (Perceive → Operate → Enforce) 
 providing clear error categorization and better debugging capabilities.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 
 class POETError(Exception):
     """Base class for all POET pipeline errors."""
 
-    def __init__(self, message: str, stage: str, context: Optional[Dict[str, Any]] = None):
+    def __init__(self, message: str, stage: str, context: dict[str, Any] | None = None):
         """
         Initialize POET error.
 
@@ -32,28 +32,28 @@ class POETError(Exception):
 class PerceiveError(POETError):
     """Error during the Perceive stage (input processing)."""
 
-    def __init__(self, message: str, context: Optional[Dict[str, Any]] = None):
+    def __init__(self, message: str, context: dict[str, Any] | None = None):
         super().__init__(message, "perceive", context)
 
 
 class OperateError(POETError):
     """Error during the Operate stage (function execution)."""
 
-    def __init__(self, message: str, context: Optional[Dict[str, Any]] = None):
+    def __init__(self, message: str, context: dict[str, Any] | None = None):
         super().__init__(message, "operate", context)
 
 
 class EnforceError(POETError):
     """Error during the Enforce stage (output validation)."""
 
-    def __init__(self, message: str, context: Optional[Dict[str, Any]] = None):
+    def __init__(self, message: str, context: dict[str, Any] | None = None):
         super().__init__(message, "enforce", context)
 
 
 class TrainError(POETError):
     """Error during the optional Train stage (learning/optimization)."""
 
-    def __init__(self, message: str, context: Optional[Dict[str, Any]] = None):
+    def __init__(self, message: str, context: dict[str, Any] | None = None):
         super().__init__(message, "train", context)
 
 
@@ -63,7 +63,7 @@ class TrainError(POETError):
 class DomainPluginError(PerceiveError):
     """Error loading or executing domain plugin."""
 
-    def __init__(self, domain: str, reason: str, context: Optional[Dict[str, Any]] = None):
+    def __init__(self, domain: str, reason: str, context: dict[str, Any] | None = None):
         message = f"Domain plugin '{domain}' failed: {reason}"
         super().__init__(message, context)
         self.domain = domain
@@ -73,7 +73,7 @@ class DomainPluginError(PerceiveError):
 class InputValidationError(PerceiveError):
     """Error validating or processing inputs."""
 
-    def __init__(self, input_type: str, reason: str, context: Optional[Dict[str, Any]] = None):
+    def __init__(self, input_type: str, reason: str, context: dict[str, Any] | None = None):
         message = f"Input validation failed for {input_type}: {reason}"
         super().__init__(message, context)
         self.input_type = input_type
@@ -83,7 +83,7 @@ class InputValidationError(PerceiveError):
 class RetryExhaustedError(OperateError):
     """Error when all retry attempts are exhausted."""
 
-    def __init__(self, attempts: int, last_error: Exception, context: Optional[Dict[str, Any]] = None):
+    def __init__(self, attempts: int, last_error: Exception, context: dict[str, Any] | None = None):
         message = f"All {attempts} retry attempts failed. Last error: {last_error}"
         super().__init__(message, context)
         self.attempts = attempts
@@ -93,7 +93,7 @@ class RetryExhaustedError(OperateError):
 class TimeoutError(OperateError):
     """Error when function execution exceeds timeout."""
 
-    def __init__(self, timeout: float, actual_time: float, context: Optional[Dict[str, Any]] = None):
+    def __init__(self, timeout: float, actual_time: float, context: dict[str, Any] | None = None):
         message = f"Function execution timeout: {actual_time:.2f}s > {timeout:.2f}s"
         super().__init__(message, context)
         self.timeout = timeout
@@ -103,7 +103,7 @@ class TimeoutError(OperateError):
 class OutputValidationError(EnforceError):
     """Error validating function output."""
 
-    def __init__(self, expected_type: str, actual_type: str, reason: str, context: Optional[Dict[str, Any]] = None):
+    def __init__(self, expected_type: str, actual_type: str, reason: str, context: dict[str, Any] | None = None):
         message = f"Output validation failed: expected {expected_type}, got {actual_type}. {reason}"
         super().__init__(message, context)
         self.expected_type = expected_type
@@ -114,7 +114,7 @@ class OutputValidationError(EnforceError):
 class ParameterLearningError(TrainError):
     """Error during parameter learning and optimization."""
 
-    def __init__(self, parameter: str, reason: str, context: Optional[Dict[str, Any]] = None):
+    def __init__(self, parameter: str, reason: str, context: dict[str, Any] | None = None):
         message = f"Parameter learning failed for '{parameter}': {reason}"
         super().__init__(message, context)
         self.parameter = parameter
@@ -124,7 +124,7 @@ class ParameterLearningError(TrainError):
 class ConfigurationError(POETError):
     """Error in POET configuration or setup."""
 
-    def __init__(self, config_item: str, reason: str, context: Optional[Dict[str, Any]] = None):
+    def __init__(self, config_item: str, reason: str, context: dict[str, Any] | None = None):
         message = f"Configuration error for '{config_item}': {reason}"
         super().__init__(message, "configuration", context)
         self.config_item = config_item
@@ -134,7 +134,7 @@ class ConfigurationError(POETError):
 # Utility functions for error handling
 
 
-def wrap_poe_error(func_name: str, stage: str, original_error: Exception, context: Optional[Dict[str, Any]] = None) -> POETError:
+def wrap_poe_error(func_name: str, stage: str, original_error: Exception, context: dict[str, Any] | None = None) -> POETError:
     """
     Wrap a generic exception as a POE-specific error.
 
@@ -162,12 +162,12 @@ def wrap_poe_error(func_name: str, stage: str, original_error: Exception, contex
 
 
 def create_context(
-    function_name: Optional[str] = None,
-    domain: Optional[str] = None,
-    attempt: Optional[int] = None,
-    execution_time: Optional[float] = None,
+    function_name: str | None = None,
+    domain: str | None = None,
+    attempt: int | None = None,
+    execution_time: float | None = None,
     **kwargs,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Create standardized context dictionary for POET errors.
 

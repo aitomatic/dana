@@ -5,10 +5,10 @@ This module provides the foundation for domain-specific simulation models
 that generate realistic feedback for the enhanced Training stage.
 """
 
-from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
-from dataclasses import dataclass, field
 import time
+from abc import ABC, abstractmethod
+from dataclasses import dataclass, field
+from typing import Any
 
 from opendxa.common.mixins.loggable import Loggable
 
@@ -18,8 +18,8 @@ class SimulationResult:
     """Result from a simulation model execution"""
 
     # Core performance metrics
-    performance_metrics: Dict[str, float] = field(default_factory=dict)
-    domain_metrics: Dict[str, float] = field(default_factory=dict)
+    performance_metrics: dict[str, float] = field(default_factory=dict)
+    domain_metrics: dict[str, float] = field(default_factory=dict)
 
     # Simulation metadata
     model_name: str = ""
@@ -27,9 +27,9 @@ class SimulationResult:
     confidence_score: float = 1.0
 
     # Additional context
-    scenario_context: Dict[str, Any] = field(default_factory=dict)
-    warnings: List[str] = field(default_factory=list)
-    errors: List[str] = field(default_factory=list)
+    scenario_context: dict[str, Any] = field(default_factory=dict)
+    warnings: list[str] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
 
     def is_valid(self) -> bool:
         """Check if simulation result is valid"""
@@ -39,23 +39,23 @@ class SimulationResult:
 class SimulationModel(ABC, Loggable):
     """Base class for all simulation models"""
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: dict[str, Any] | None = None):
         super().__init__()
         self.config = config or {}
         self.model_name = self.__class__.__name__
         self.accuracy_estimate = config.get("accuracy_estimate", 0.8) if config else 0.8
 
     @abstractmethod
-    def simulate(self, input_data: Dict[str, Any], output_data: Any, context: Dict[str, Any]) -> SimulationResult:
+    def simulate(self, input_data: dict[str, Any], output_data: Any, context: dict[str, Any]) -> SimulationResult:
         """Run simulation and return results"""
         pass
 
     @abstractmethod
-    def get_supported_metrics(self) -> List[str]:
+    def get_supported_metrics(self) -> list[str]:
         """Get list of metrics this model can simulate"""
         pass
 
-    def validate_inputs(self, input_data: Dict[str, Any]) -> List[str]:
+    def validate_inputs(self, input_data: dict[str, Any]) -> list[str]:
         """Validate simulation inputs and return any errors"""
         errors = []
         required_inputs = self.get_required_inputs()
@@ -66,11 +66,11 @@ class SimulationModel(ABC, Loggable):
 
         return errors
 
-    def get_required_inputs(self) -> List[str]:
+    def get_required_inputs(self) -> list[str]:
         """Get list of required inputs for this model"""
         return []
 
-    def get_model_info(self) -> Dict[str, Any]:
+    def get_model_info(self) -> dict[str, Any]:
         """Get model information and capabilities"""
         return {
             "name": self.model_name,
@@ -84,7 +84,7 @@ class SimulationModel(ABC, Loggable):
 class DomainSimulationModel(SimulationModel):
     """Extended base class for domain-specific simulation models"""
 
-    def __init__(self, domain: str, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, domain: str, config: dict[str, Any] | None = None):
         super().__init__(config)
         self.domain = domain
         self.domain_knowledge = config.get("domain_knowledge", {}) if config else {}
@@ -95,11 +95,11 @@ class DomainSimulationModel(SimulationModel):
         """Get the domain this model simulates"""
         pass
 
-    def get_domain_metrics(self) -> List[str]:
+    def get_domain_metrics(self) -> list[str]:
         """Get domain-specific metrics"""
         return []
 
-    def simulate_with_domain_context(self, input_data: Dict[str, Any], output_data: Any, context: Dict[str, Any]) -> SimulationResult:
+    def simulate_with_domain_context(self, input_data: dict[str, Any], output_data: Any, context: dict[str, Any]) -> SimulationResult:
         """Simulate with domain-specific enhancements"""
 
         start_time = time.time()
@@ -132,7 +132,7 @@ class DomainSimulationModel(SimulationModel):
                 model_name=self.model_name, execution_time_ms=(time.time() - start_time) * 1000, confidence_score=0.0, errors=[str(e)]
             )
 
-    def validate_domain_inputs(self, input_data: Dict[str, Any], output_data: Any, context: Dict[str, Any]) -> List[str]:
+    def validate_domain_inputs(self, input_data: dict[str, Any], output_data: Any, context: dict[str, Any]) -> list[str]:
         """Validate domain-specific inputs"""
         errors = self.validate_inputs(input_data)
 
@@ -144,7 +144,7 @@ class DomainSimulationModel(SimulationModel):
 
         return errors
 
-    def get_model_info(self) -> Dict[str, Any]:
+    def get_model_info(self) -> dict[str, Any]:
         """Get enhanced model information including domain details"""
         base_info = super().get_model_info()
         base_info.update(
@@ -161,13 +161,13 @@ class DomainSimulationModel(SimulationModel):
 class CompositeSimulationModel(SimulationModel):
     """Simulation model that combines multiple sub-models"""
 
-    def __init__(self, sub_models: List[SimulationModel], config: Optional[Dict[str, Any]] = None):
+    def __init__(self, sub_models: list[SimulationModel], config: dict[str, Any] | None = None):
         super().__init__(config)
         self.sub_models = sub_models
         self.aggregation_strategy = config.get("aggregation_strategy", "weighted_average") if config else "weighted_average"
         self.model_weights = config.get("model_weights", {}) if config else {}
 
-    def simulate(self, input_data: Dict[str, Any], output_data: Any, context: Dict[str, Any]) -> SimulationResult:
+    def simulate(self, input_data: dict[str, Any], output_data: Any, context: dict[str, Any]) -> SimulationResult:
         """Run all sub-models and aggregate results"""
 
         sub_results = []
@@ -196,7 +196,7 @@ class CompositeSimulationModel(SimulationModel):
 
         return aggregated_result
 
-    def _aggregate_results(self, results: List[SimulationResult]) -> SimulationResult:
+    def _aggregate_results(self, results: list[SimulationResult]) -> SimulationResult:
         """Aggregate multiple simulation results"""
 
         if not results:
@@ -248,14 +248,14 @@ class CompositeSimulationModel(SimulationModel):
             scenario_context={"aggregated_from": [r.model_name for r in results]},
         )
 
-    def get_supported_metrics(self) -> List[str]:
+    def get_supported_metrics(self) -> list[str]:
         """Get union of all sub-model metrics"""
         all_metrics = set()
         for model in self.sub_models:
             all_metrics.update(model.get_supported_metrics())
         return list(all_metrics)
 
-    def get_required_inputs(self) -> List[str]:
+    def get_required_inputs(self) -> list[str]:
         """Get union of all required inputs"""
         all_inputs = set()
         for model in self.sub_models:
@@ -267,7 +267,7 @@ class CompositeSimulationModel(SimulationModel):
 
 
 def create_physics_based_model(
-    physics_equations: Dict[str, callable], parameter_bounds: Dict[str, tuple], config: Optional[Dict[str, Any]] = None
+    physics_equations: dict[str, callable], parameter_bounds: dict[str, tuple], config: dict[str, Any] | None = None
 ) -> SimulationModel:
     """Create a physics-based simulation model"""
 
@@ -277,7 +277,7 @@ def create_physics_based_model(
             self.equations = physics_equations
             self.bounds = parameter_bounds
 
-        def simulate(self, input_data: Dict[str, Any], output_data: Any, context: Dict[str, Any]) -> SimulationResult:
+        def simulate(self, input_data: dict[str, Any], output_data: Any, context: dict[str, Any]) -> SimulationResult:
             results = {}
 
             # Apply physics equations
@@ -301,14 +301,14 @@ def create_physics_based_model(
                 scenario_context={"model_type": "physics_based"},
             )
 
-        def get_supported_metrics(self) -> List[str]:
+        def get_supported_metrics(self) -> list[str]:
             return list(self.equations.keys())
 
     return PhysicsBasedModel()
 
 
 def create_statistical_model(
-    historical_data: Dict[str, List[float]], regression_params: Dict[str, Any], config: Optional[Dict[str, Any]] = None
+    historical_data: dict[str, list[float]], regression_params: dict[str, Any], config: dict[str, Any] | None = None
 ) -> SimulationModel:
     """Create a statistical simulation model"""
 
@@ -318,7 +318,7 @@ def create_statistical_model(
             self.historical_data = historical_data
             self.regression_params = regression_params
 
-        def simulate(self, input_data: Dict[str, Any], output_data: Any, context: Dict[str, Any]) -> SimulationResult:
+        def simulate(self, input_data: dict[str, Any], output_data: Any, context: dict[str, Any]) -> SimulationResult:
             results = {}
 
             # Apply statistical models
@@ -342,12 +342,12 @@ def create_statistical_model(
                 scenario_context={"model_type": "statistical", "data_points": len(historical_values)},
             )
 
-        def _calculate_context_adjustment(self, input_data: Dict[str, Any], context: Dict[str, Any]) -> float:
+        def _calculate_context_adjustment(self, input_data: dict[str, Any], context: dict[str, Any]) -> float:
             """Calculate adjustment factor based on context"""
             # Simple context-based adjustment
             return 1.0 + (hash(str(input_data)) % 100 - 50) / 1000  # Small random adjustment
 
-        def get_supported_metrics(self) -> List[str]:
+        def get_supported_metrics(self) -> list[str]:
             return list(self.historical_data.keys())
 
     return StatisticalModel()

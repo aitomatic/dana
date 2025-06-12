@@ -9,19 +9,11 @@ MIT License
 """
 
 import time
-import pytest
 
 from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
 from opendxa.dana.sandbox.interpreter.struct_system import (
     StructInstance,
     StructTypeRegistry,
-    create_struct_instance,
-    register_struct_from_ast,
-)
-from opendxa.dana.sandbox.parser.ast import (
-    StructDefinition,
-    StructField,
-    TypeHint,
 )
 
 

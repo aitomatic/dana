@@ -8,25 +8,19 @@ The T-stage (Train) supports both basic and advanced learning algorithms.
 
 import json
 import time
+from collections.abc import Callable
 from functools import wraps
 from pathlib import Path
-from typing import Any, Callable, Dict, Optional, List
+from typing import Any
 
 from opendxa.common.mixins.loggable import Loggable
+
 from .errors import (
     POETError,
-    PerceiveError,
-    OperateError,
-    EnforceError,
-    TrainError,
-    DomainPluginError,
-    RetryExhaustedError,
-    TimeoutError,
-    ConfigurationError,
     create_context,
     wrap_poe_error,
 )
-from .metrics import POETMetricsCollector, get_global_collector
+from .metrics import get_global_collector
 
 
 class POETConfig:
@@ -36,7 +30,7 @@ class POETConfig:
         self,
         retries: int = 3,
         timeout: float = 30.0,
-        domain: Optional[str] = None,
+        domain: str | None = None,
         enable_training: bool = False,
         collect_metrics: bool = True,
         # Advanced learning parameters (optional)
@@ -104,7 +98,7 @@ class POEMetrics:
         if attempts > 1:
             self.retry_count += attempts - 1
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """Get current metrics statistics."""
         return {
             "total_executions": self.total_executions,
@@ -261,7 +255,7 @@ class POETExecutor(Loggable):
 
         return poe_wrapper
 
-    def _perceive(self, args, kwargs) -> Dict[str, Any]:
+    def _perceive(self, args, kwargs) -> dict[str, Any]:
         """
         P: Perceive - Input processing with domain intelligence.
 
@@ -287,7 +281,7 @@ class POETExecutor(Loggable):
             self.warning(f"Perceive stage failed, using original inputs: {e}")
             return {"args": args, "kwargs": kwargs}
 
-    def _operate_with_retry(self, func: Callable, perceived_input: Dict[str, Any]) -> Dict[str, Any]:
+    def _operate_with_retry(self, func: Callable, perceived_input: dict[str, Any]) -> dict[str, Any]:
         """
         O: Operate - Execute function with reliability patterns.
 
@@ -327,7 +321,7 @@ class POETExecutor(Loggable):
         self.error(f"All {self.config.retries + 1} attempts failed")
         raise last_exception
 
-    def _enforce(self, operation_result: Dict[str, Any], perceived_input: Dict[str, Any]) -> Any:
+    def _enforce(self, operation_result: dict[str, Any], perceived_input: dict[str, Any]) -> Any:
         """
         E: Enforce - Output validation and quality assurance.
 
@@ -363,8 +357,8 @@ class POETExecutor(Loggable):
         """Initialize advanced learning components for statistical/adaptive algorithms."""
         try:
             # Import advanced learning components (lazy import to avoid circular dependencies)
-            from .learning.online_learner import OnlineLearner
             from .learning.metrics import PerformanceTracker
+            from .learning.online_learner import OnlineLearner
 
             # Initialize online learner with configuration
             self.online_learner = OnlineLearner(
@@ -388,7 +382,7 @@ class POETExecutor(Loggable):
             self.online_learner = None
             self.performance_tracker = None
 
-    def _train(self, perceived_input: Dict[str, Any], execution_result: Dict[str, Any]):
+    def _train(self, perceived_input: dict[str, Any], execution_result: dict[str, Any]):
         """
         T: Train - Unified learning and parameter optimization.
 
@@ -415,7 +409,7 @@ class POETExecutor(Loggable):
         except Exception as e:
             self.warning(f"T-stage learning failed: {e}")
 
-    def _train_basic(self, perceived_input: Dict[str, Any], execution_result: Dict[str, Any]):
+    def _train_basic(self, perceived_input: dict[str, Any], execution_result: dict[str, Any]):
         """Basic heuristic learning implementation."""
         if not self.parameters:
             return
@@ -443,7 +437,7 @@ class POETExecutor(Loggable):
         # Save updated parameters
         self._save_parameters()
 
-    def _train_statistical(self, perceived_input: Dict[str, Any], execution_result: Dict[str, Any]):
+    def _train_statistical(self, perceived_input: dict[str, Any], execution_result: dict[str, Any]):
         """Statistical learning implementation using online learning algorithms."""
         try:
             from .learning.online_learner import ExecutionFeedback
@@ -502,12 +496,12 @@ class POETExecutor(Loggable):
             self.warning(f"Statistical learning failed, falling back to basic: {e}")
             self._train_basic(perceived_input, execution_result)
 
-    def _train_adaptive(self, perceived_input: Dict[str, Any], execution_result: Dict[str, Any]):
+    def _train_adaptive(self, perceived_input: dict[str, Any], execution_result: dict[str, Any]):
         """Adaptive learning implementation (future implementation)."""
         self.debug("Adaptive learning not yet implemented, using statistical learning")
         self._train_statistical(perceived_input, execution_result)
 
-    def _calculate_output_quality(self, execution_result: Dict[str, Any]) -> float:
+    def _calculate_output_quality(self, execution_result: dict[str, Any]) -> float:
         """Calculate output quality score for learning feedback."""
         if not execution_result.get("success", False):
             return 0.0
@@ -561,7 +555,7 @@ class POETExecutor(Loggable):
         try:
             params_file = self._get_parameters_file()
             if params_file.exists():
-                with open(params_file, "r") as f:
+                with open(params_file) as f:
                     return json.load(f)
             else:
                 # Default parameters
@@ -602,13 +596,13 @@ class POETExecutor(Loggable):
 
         return poet_dir / filename
 
-    def get_metrics(self) -> Optional[Dict[str, Any]]:
+    def get_metrics(self) -> dict[str, Any] | None:
         """Get current POET execution metrics."""
         if self.metrics:
             return self.metrics.get_stats()
         return None
 
-    def get_learning_status(self) -> Dict[str, Any]:
+    def get_learning_status(self) -> dict[str, Any]:
         """Get comprehensive learning status and metrics."""
         status = {
             "learning_enabled": self.config.enable_training,
@@ -648,7 +642,7 @@ class POETExecutor(Loggable):
 
         return status
 
-    def get_learning_recommendations(self) -> List[str]:
+    def get_learning_recommendations(self) -> list[str]:
         """Get actionable learning recommendations."""
         recommendations = []
 
@@ -694,7 +688,7 @@ class POETExecutor(Loggable):
 def poet(
     retries: int = 3,
     timeout: float = 30.0,
-    domain: Optional[str] = None,
+    domain: str | None = None,
     enable_training: bool = False,
     collect_metrics: bool = True,
     # Advanced learning parameters (optional)

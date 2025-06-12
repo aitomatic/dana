@@ -5,13 +5,14 @@ Runtime evaluator that integrates with POET execution pipeline to evaluate
 objectives and guide learning decisions based on formal learning theory.
 """
 
-from typing import Dict, List, Any, Optional, Tuple
 import time
 from dataclasses import dataclass
+from typing import Any
 
-from .base import MultiObjective, ObjectiveEvaluationResult
-from .registry import get_global_registry
 from opendxa.common.utils.logging import DXA_LOGGER
+
+from .base import ObjectiveEvaluationResult
+from .registry import get_global_registry
 
 
 @dataclass
@@ -22,7 +23,7 @@ class EvaluationContext:
     function_name: str
     execution_id: str
     timestamp: float = 0.0
-    metadata: Dict[str, Any] = None
+    metadata: dict[str, Any] = None
 
     def __post_init__(self):
         if self.timestamp == 0.0:
@@ -41,11 +42,11 @@ class ObjectiveEvaluator:
 
     def __init__(self, registry=None):
         self.registry = registry or get_global_registry()
-        self._evaluation_history: List[Tuple[EvaluationContext, ObjectiveEvaluationResult]] = []
+        self._evaluation_history: list[tuple[EvaluationContext, ObjectiveEvaluationResult]] = []
         self._max_history_size = 1000  # Keep last 1000 evaluations
 
     def evaluate_execution(
-        self, domain: str, metrics: Dict[str, float], context: Optional[EvaluationContext] = None, **objective_config
+        self, domain: str, metrics: dict[str, float], context: EvaluationContext | None = None, **objective_config
     ) -> ObjectiveEvaluationResult:
         """
         Evaluate execution metrics against domain objectives.
@@ -96,7 +97,7 @@ class ObjectiveEvaluator:
                 optimization_method="error",
             )
 
-    def should_adjust_parameters(self, domain: str, current_metrics: Dict[str, float], **objective_config) -> Dict[str, Any]:
+    def should_adjust_parameters(self, domain: str, current_metrics: dict[str, float], **objective_config) -> dict[str, Any]:
         """
         Determine if parameter adjustment is needed based on objective evaluation.
 
@@ -158,7 +159,7 @@ class ObjectiveEvaluator:
 
         return recommendations
 
-    def get_learning_guidance(self, domain: str, execution_history: List[Dict[str, float]], **objective_config) -> Dict[str, Any]:
+    def get_learning_guidance(self, domain: str, execution_history: list[dict[str, float]], **objective_config) -> dict[str, Any]:
         """
         Provide learning guidance based on objective evaluation history.
 
@@ -190,7 +191,7 @@ class ObjectiveEvaluator:
 
         return guidance
 
-    def validate_metrics(self, domain: str, metrics: Dict[str, float]) -> Dict[str, Any]:
+    def validate_metrics(self, domain: str, metrics: dict[str, float]) -> dict[str, Any]:
         """
         Validate metrics against domain requirements.
 
@@ -203,7 +204,7 @@ class ObjectiveEvaluator:
         """
         return self.registry.validate_metrics_for_domain(domain, metrics)
 
-    def get_domain_summary(self, domain: str) -> Dict[str, Any]:
+    def get_domain_summary(self, domain: str) -> dict[str, Any]:
         """Get summary of domain objectives and evaluation history."""
         summary = self.registry.get_domain_summary(domain)
 
@@ -231,7 +232,7 @@ class ObjectiveEvaluator:
         if len(self._evaluation_history) > self._max_history_size:
             self._evaluation_history = self._evaluation_history[-self._max_history_size :]
 
-    def _log_evaluation_result(self, domain: str, result: ObjectiveEvaluationResult, metrics: Dict[str, float]):
+    def _log_evaluation_result(self, domain: str, result: ObjectiveEvaluationResult, metrics: dict[str, float]):
         """Log evaluation results for debugging."""
         if not result.feasible:
             DXA_LOGGER.warning(f"Domain {domain} objective evaluation failed: {result.constraint_violations}")
@@ -240,12 +241,12 @@ class ObjectiveEvaluator:
         else:
             DXA_LOGGER.debug(f"Domain {domain} objective evaluation: score={result.total_score:.3f}, feasible={result.feasible}")
 
-    def _identify_critical_violations(self, violations: List[str]) -> List[str]:
+    def _identify_critical_violations(self, violations: list[str]) -> list[str]:
         """Identify critical constraint violations."""
         critical_keywords = ["safety", "critical", "compliance", "equipment"]
         return [v for v in violations if any(keyword in v.lower() for keyword in critical_keywords)]
 
-    def _suggest_constraint_fixes(self, violations: List[str]) -> List[str]:
+    def _suggest_constraint_fixes(self, violations: list[str]) -> list[str]:
         """Suggest fixes for constraint violations."""
         suggestions = []
         for violation in violations:
@@ -259,7 +260,7 @@ class ObjectiveEvaluator:
                 suggestions.append(f"Review and adjust parameters related to: {violation}")
         return suggestions
 
-    def _suggest_performance_improvements(self, result: ObjectiveEvaluationResult) -> List[str]:
+    def _suggest_performance_improvements(self, result: ObjectiveEvaluationResult) -> list[str]:
         """Suggest improvements based on objective scores."""
         suggestions = []
 
@@ -276,7 +277,7 @@ class ObjectiveEvaluator:
 
         return suggestions
 
-    def _analyze_performance_trend(self, domain: str) -> Dict[str, Any]:
+    def _analyze_performance_trend(self, domain: str) -> dict[str, Any]:
         """Analyze performance trends for a domain."""
         domain_evaluations = [result for ctx, result in self._evaluation_history if ctx.domain == domain]
 
@@ -298,7 +299,7 @@ class ObjectiveEvaluator:
             "trend_description": f"Recent: {recent_avg:.3f}, Previous: {older_avg:.3f}",
         }
 
-    def _suggest_trend_corrections(self, trend_analysis: Dict[str, Any]) -> List[str]:
+    def _suggest_trend_corrections(self, trend_analysis: dict[str, Any]) -> list[str]:
         """Suggest corrections for declining trends."""
         return [
             "Reduce learning rate to stabilize performance",
@@ -307,7 +308,7 @@ class ObjectiveEvaluator:
             "Check for environmental changes affecting performance",
         ]
 
-    def _generate_learning_guidance(self, evaluations: List[Tuple[Dict[str, float], ObjectiveEvaluationResult]]) -> str:
+    def _generate_learning_guidance(self, evaluations: list[tuple[dict[str, float], ObjectiveEvaluationResult]]) -> str:
         """Generate high-level learning guidance."""
         if not evaluations:
             return "No evaluation data available"
@@ -324,7 +325,7 @@ class ObjectiveEvaluator:
         else:
             return f"Fine-tune for excellence (current performance good: {avg_score:.3f})"
 
-    def _suggest_parameter_adjustments(self, evaluations: List[Tuple[Dict[str, float], ObjectiveEvaluationResult]]) -> Dict[str, str]:
+    def _suggest_parameter_adjustments(self, evaluations: list[tuple[dict[str, float], ObjectiveEvaluationResult]]) -> dict[str, str]:
         """Suggest specific parameter adjustments."""
         # This would analyze the evaluations to suggest specific parameter changes
         # For now, return generic suggestions
@@ -334,7 +335,7 @@ class ObjectiveEvaluator:
             "constraint_margins": "Increase if frequent constraint violations",
         }
 
-    def _identify_learning_priorities(self, evaluations: List[Tuple[Dict[str, float], ObjectiveEvaluationResult]]) -> List[str]:
+    def _identify_learning_priorities(self, evaluations: list[tuple[dict[str, float], ObjectiveEvaluationResult]]) -> list[str]:
         """Identify learning priorities based on evaluations."""
         priorities = []
 
@@ -351,14 +352,14 @@ class ObjectiveEvaluator:
         return priorities or ["Continue current learning approach"]
 
     def _suggest_objective_weight_adjustments(
-        self, evaluations: List[Tuple[Dict[str, float], ObjectiveEvaluationResult]]
-    ) -> Dict[str, float]:
+        self, evaluations: list[tuple[dict[str, float], ObjectiveEvaluationResult]]
+    ) -> dict[str, float]:
         """Suggest adjustments to objective weights."""
         # For now, return default weights
         # In a full implementation, this would analyze which objectives are consistently underperforming
         return {"energy_efficiency": 0.4, "comfort_score": 0.3, "execution_time": 0.3}
 
-    def _analyze_constraint_patterns(self, evaluations: List[Tuple[Dict[str, float], ObjectiveEvaluationResult]]) -> Dict[str, Any]:
+    def _analyze_constraint_patterns(self, evaluations: list[tuple[dict[str, float], ObjectiveEvaluationResult]]) -> dict[str, Any]:
         """Analyze patterns in constraint violations."""
         all_violations = []
         for _, result in evaluations:

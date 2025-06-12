@@ -9,8 +9,6 @@ The key insight: Same logic, POET adds intelligent optimization.
 """
 
 from dataclasses import dataclass
-from typing import Dict, Any
-import math
 
 # Mock POET decorator for demo
 print("🌱 Running greenhouse demo with mock POET decorator")
@@ -246,7 +244,7 @@ class PlantGrowthController:
         self.stress_level = 0.0
         self.feedback_history = []
 
-    def process_growth_feedback(self, feedback: str, current_conditions: Dict) -> str:
+    def process_growth_feedback(self, feedback: str, current_conditions: dict) -> str:
         """
         Process user feedback about plant health and adjust expectations.
 
@@ -297,7 +295,7 @@ def calculate_plant_health(soil_moisture: float, light_hours: float, temperature
     return min(100, health_score)
 
 
-def calculate_resource_efficiency(water_used: float, energy_used: float, yield_estimate: float) -> Dict[str, float]:
+def calculate_resource_efficiency(water_used: float, energy_used: float, yield_estimate: float) -> dict[str, float]:
     """
     Calculate resource efficiency metrics.
     """
