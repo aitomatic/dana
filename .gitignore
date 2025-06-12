@@ -23,6 +23,7 @@ venv/
 pytest.ini
 
 # Logs and data
+.poet/
 logs/
 local_executor/
 memory-bank/
