@@ -1,8 +1,0 @@
-# Debug test for POET function
-log("Testing reason function first...")
-result = reason("What is 2 + 2?")
-log(f"Reason result: {result}")
-
-log("Testing poet function...")
-poet_result = poet("reason", ["What is 3 + 3?"])
-log(f"POET result: {poet_result}") 
