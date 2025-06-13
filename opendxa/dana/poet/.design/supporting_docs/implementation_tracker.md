@@ -4,15 +4,27 @@
 
 This tracker references the complete POET design documentation:
 
-### Core Design Documents
-- **[00_poet_master_design.md](00_poet_master_design.md)** - Complete 3D methodology design document
-- **[01_poet_architecture.md](01_poet_architecture.md)** - Detailed technical architecture and class designs
-- **[02_poet_learning_systems.md](02_poet_learning_systems.md)** - Learning algorithms and parameter management
-- **[03_poet_integration_patterns.md](03_poet_integration_patterns.md)** - Integration with existing opendxa systems
-- **[04_poet_plugin_architecture.md](04_poet_plugin_architecture.md)** - Domain plugin system and extensibility
-- **[05_poet_parameter_storage_and_sharing.md](05_poet_parameter_storage_and_sharing.md)** - Parameter persistence and sharing mechanisms
-- **[06_poet_mvp_implementation_plan.md](06_poet_mvp_implementation_plan.md)** - Practical 8-week implementation roadmap
-- **🆕 [09_poets_simulation_feedback_architecture.md](09_poets_simulation_feedback_architecture.md)** - Enhanced Training with simulation and multi-modal feedback
+### Core 3D Design Documents (New Structure)
+- **[POET_DESIGN_DOCUMENT.md](POET_DESIGN_DOCUMENT.md)** - Main 3D design document with complete architecture
+- **[FEEDBACK_ORCHESTRATION.md](FEEDBACK_ORCHESTRATION.md)** - Detailed feedback loop architecture and learning systems
+- **[ML_MONITORING_EXAMPLES.md](ML_MONITORING_EXAMPLES.md)** - Complete ML monitoring use cases and examples
+- **[DOMAIN_TEMPLATES.md](DOMAIN_TEMPLATES.md)** - Domain-specific template specifications and patterns
+
+### Archive Documents (Previous Versions)
+- **[archive/poet-llm-code-generation.md](archive/)** - Original design documents
+- **[archive/poet-feedback-orchestration.md](archive/)** - Original feedback system design
+- **[archive/poet-dana-model-monitoring.md](archive/)** - Original DANA integration examples
+- **[archive/poet-model-monitoring-challenge.md](archive/)** - Original ML monitoring challenge analysis
+
+### Legacy Documents (Previous Architecture)
+- **[old/00_poet_master_design.md](old/)** - Previous plugin-based architecture
+- **[old/01_poet_architecture.md](old/)** - Previous technical architecture
+- **[old/02_poet_learning_systems.md](old/)** - Previous learning algorithms
+- **[old/03_poet_integration_patterns.md](old/)** - Previous integration patterns
+- **[old/04_poet_plugin_architecture.md](old/)** - Previous plugin system
+- **[old/05_poet_parameter_storage_and_sharing.md](old/)** - Previous parameter management
+- **[old/06_poet_mvp_implementation_plan.md](old/)** - Previous implementation roadmap
+- **[old/09_poets_simulation_feedback_architecture.md](old/)** - Previous simulation feedback design
 
 ### Implementation Examples
 - **[examples/enhanced_reason_function_example.md](examples/enhanced_reason_function_example.md)** - Enhanced reason() function with domain intelligence

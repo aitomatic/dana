@@ -480,6 +480,66 @@ class StatementTransformer(BaseTransformer):
 
         return StructField(name=field_name, type_hint=type_hint, location=None)
 
+    def struct_def(self, items):
+        """Transform a struct definition rule into a StructDefinition node.
+        
+        Grammar: struct_def: "struct" NAME ":" [COMMENT] struct_block
+        """
+        relevant_items = self._filter_relevant_items(items)
+        
+        # First item should be the struct name
+        name_token = relevant_items[0]
+        if isinstance(name_token, Token):
+            struct_name = name_token.value
+        else:
+            struct_name = str(name_token)
+        
+        # Second item should be the struct_block containing fields
+        struct_block = relevant_items[1] if len(relevant_items) > 1 else []
+        
+        # struct_block should contain a list of StructField objects
+        fields = struct_block if isinstance(struct_block, list) else []
+        
+        return StructDefinition(name=struct_name, fields=fields, location=None)
+
+    def struct_block(self, items):
+        """Transform struct_block rule.
+        
+        Grammar: struct_block: _NL _INDENT struct_fields _DEDENT*
+        """
+        # Filter to get struct_fields
+        relevant_items = self._filter_relevant_items(items)
+        return relevant_items[0] if relevant_items else []
+
+    def struct_fields(self, items):
+        """Transform struct_fields rule.
+        
+        Grammar: struct_fields: struct_field+
+        """
+        return [item for item in items if item is not None]
+
+    def struct_field(self, items):
+        """Transform struct_field rule.
+        
+        Grammar: struct_field: NAME ":" basic_type [COMMENT] _NL
+        """
+        relevant_items = self._filter_relevant_items(items)
+        
+        if len(relevant_items) < 2:
+            raise ValueError(f"Invalid struct field: expected NAME and type, got {relevant_items}")
+        
+        # First item is field name
+        name_token = relevant_items[0]
+        if isinstance(name_token, Token):
+            field_name = name_token.value
+        else:
+            field_name = str(name_token)
+        
+        # Second item is type hint
+        type_hint = relevant_items[1]
+        
+        return StructField(name=field_name, type_hint=type_hint, location=None)
+
     def try_stmt(self, items):
         """Transform a try statement rule into a TryBlock node.
 

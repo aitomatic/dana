@@ -26,6 +26,7 @@ The Python-to-Dana integration has been successfully implemented with the follow
 - **✅ Performance**: Basic functionality works but needs benchmarking and optimization
 
 **Key Files:**
+- Design: `opendxa/contrib/python_to_dana/.design/python-to-dana.md`
 - Implementation: `opendxa/contrib/python_to_dana/`
 - Main API: `opendxa/contrib/python_to_dana/dana_module.py`
 - Tests: `opendxa/contrib/python_to_dana/tests/`
