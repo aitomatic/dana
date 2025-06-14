@@ -8,12 +8,26 @@ Status: Design Phase
 ```
 
 **Related Documents:**
-- [POET Framework Design](../../../dana/poet/.design/poet_design.md)
-- [POET Code Generation Service Design](../../../dxa-factory/poet/service/.design/poet_service_design.md)
+- [POET Framework Design](../../../dana/poet/.design/poet.md)
+- [POET Code Generation Service Design](../../../dxa-factory/poet/service/.design/poet_service.md)
 
 ## Overview
 
 The POET pub/sub subsystem enables event-driven communication between POET components, Aitomatic services, and external systems. This design focuses on supporting the ML monitoring use case while providing a scalable foundation for POET's feedback orchestration system.
+
+## Goals
+- Enable reliable event-driven communication between POET components
+- Support ML monitoring use case with scalable event handling
+- Integrate with existing Aitomatic event infrastructure
+- Provide consistent event schemas across the system
+- Enable feedback collection and processing
+
+## Non-Goals
+- ❌ Real-time event processing (batch processing is acceptable)
+- ❌ Complex event transformation (keep it simple)
+- ❌ Event persistence beyond 30 days
+- ❌ Complex event routing rules
+- ❌ Custom event processing logic
 
 ## Problem Statement
 

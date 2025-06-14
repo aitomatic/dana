@@ -19,6 +19,7 @@ Discord: https://discord.gg/6jGD4PYk
 
 from typing import Any
 
+from dana.translator.translator import Translator
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.common.utils import Misc
@@ -27,15 +28,12 @@ from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
 from opendxa.dana.sandbox.log_manager import LogLevel, SandboxLogger
 from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
-from opendxa.dana.transcoder.transcoder import Transcoder
 
 
 class REPL(Loggable):
     """Read-Eval-Print Loop for executing and managing Dana programs."""
 
-    def __init__(
-        self, llm_resource: LLMResource | None = None, log_level: LogLevel | None = None, context: SandboxContext | None = None
-    ):
+    def __init__(self, llm_resource: LLMResource | None = None, log_level: LogLevel | None = None, context: SandboxContext | None = None):
         """Initialize the REPL.
 
         Args:
@@ -53,7 +51,7 @@ class REPL(Loggable):
         self.transcoder = None
         if llm_resource is not None:
             try:
-                self.transcoder = Transcoder(llm_resource)
+                self.transcoder = Translator(llm_resource)
             except Exception as e:
                 self.warning(f"Could not initialize Transcoder: {e}")
         if log_level:

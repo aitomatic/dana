@@ -5,12 +5,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from dana.translator.translator import Translator
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.common.types import BaseResponse
 from opendxa.dana.common.exceptions import ParseError, TranscoderError
 from opendxa.dana.sandbox.parser.ast import Program
 from opendxa.dana.sandbox.parser.dana_parser import ParseResult
-from opendxa.dana.transcoder.transcoder import Transcoder
 
 
 @pytest.mark.asyncio
@@ -21,7 +21,7 @@ class TestTranscoder(IsolatedAsyncioTestCase):
         """Set up async test environment."""
         self.llm = AsyncMock(spec=LLMResource)
         self.llm.query = AsyncMock()
-        self.transcoder = Transcoder(self.llm)
+        self.transcoder = Translator(self.llm)
 
     async def test_to_dana_success(self):
         """Test successful translation from natural language to Dana code."""

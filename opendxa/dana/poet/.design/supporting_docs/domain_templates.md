@@ -2,7 +2,133 @@
 
 ## Overview
 
-Domain templates are the core mechanism by which POET encodes domain-specific intelligence. Instead of complex plugin architectures, POET uses simple text templates that the LLM understands to generate appropriate enhancements for different domains.
+Domain templates are managed by the POET Service and provide the core mechanism for encoding domain-specific intelligence. Instead of complex plugin architectures, POET uses simple text templates that the LLM understands to generate appropriate enhancements for different domains.
+
+## Service Integration
+
+### Template Loading Flow
+```
+┌─────────────────┐    ┌─────────────────┐     ┌─────────────────┐
+│   Dana Runtime  │    │  POET Service   │     │  Template Store │
+└────────┬────────┘    └────────┬────────┘     └────────┬────────┘
+         │                      │                       │
+         │ 1. @poet function    │                       │
+         │    encountered       │                       │
+         ├─────────────────────►│                       │
+         │                      │                       │
+         │                      │ 2. Load template      │
+         │                      │    for domain         │
+         │                      ├──────────────────────►│
+         │                      │                       │
+         │                      │ 3. Return template    │
+         │                      │    content            │
+         │                      │◄──────────────────────┤
+         │                      │                       │
+         │ 4. Use template to   │                       │
+         │    enhance function  │                       │
+         │                      │                       │
+```
+
+### Template Management
+Templates are managed through the POET Service API:
+- Templates are versioned and stored in the service
+- Templates can be updated without client changes
+- Template validation happens server-side
+- Template caching is handled by the service
+
+### Template Storage
+```
+poet_service/
+├── templates/
+│   ├── base/
+│   │   ├── v1/
+│   │   │   ├── template.txt    # Template content
+│   │   │   └── metadata.json   # Template metadata
+│   │   └── current -> v1       # Current version
+│   ├── ml_monitoring/
+│   │   ├── v1/
+│   │   │   ├── template.txt
+│   │   │   └── metadata.json
+│   │   └── current -> v1
+│   └── api_operations/
+│       ├── v1/
+│       │   ├── template.txt
+│       │   └── metadata.json
+│       └── current -> v1
+```
+
+## Design Review
+
+### Goals Achievement
+✅ **Achieved**:
+- Simple, text-based template system
+- Clear separation of concerns between domains
+- Reusable template components
+- Extensible template structure
+
+⚠️ **In Progress**:
+- Template versioning system
+- Template validation framework
+- Template performance optimization
+- Template documentation
+
+### Non-Goals Compliance
+✅ **Properly Excluded**:
+- No complex plugin architecture
+- No runtime template modification
+- No template inheritance complexity
+- No external dependencies
+
+### Template Quality Assessment
+1. **Base Reliability Template**:
+   - ✅ Comprehensive error handling
+   - ✅ Clear retry patterns
+   - ⚠️ Needs better timeout strategies
+   - ⚠️ Could use more logging options
+
+2. **ML Monitoring Template**:
+   - ✅ Strong statistical foundation
+   - ✅ Good parallel processing support
+   - ⚠️ Needs more data type handling
+   - ⚠️ Could use better windowing strategies
+
+3. **API Operations Template**:
+   - ✅ Strong security focus
+   - ✅ Good circuit breaker implementation
+   - ⚠️ Needs more rate limiting options
+   - ⚠️ Could use better connection pooling
+
+4. **Customer Service Template**:
+   - ✅ Good sentiment analysis
+   - ✅ Strong quality assurance
+   - ⚠️ Needs better context handling
+   - ⚠️ Could use more escalation options
+
+### Areas for Improvement
+1. **Template Structure**:
+   - Add version control
+   - Improve validation
+   - Enhance documentation
+   - Add more examples
+
+2. **Template Content**:
+   - Add more edge cases
+   - Improve error messages
+   - Add more configuration options
+   - Enhance monitoring capabilities
+
+3. **Template Management**:
+   - Add template testing
+   - Improve template sharing
+   - Add template metrics
+   - Enhance template discovery
+
+### Next Steps
+1. Implement template versioning
+2. Add template validation
+3. Improve documentation
+4. Add more examples
+5. Set up template testing
 
 ## Template Architecture
 

@@ -4,8 +4,8 @@ import os
 
 import pytest
 
+from dana.translator.translator import Translator
 from opendxa.common.resource.llm_resource import LLMResource
-from opendxa.dana.transcoder.transcoder import Transcoder
 
 
 # Register the live marker
@@ -30,7 +30,7 @@ async def test_transcoder():
     )
 
     # Create transcoder
-    transcoder = Transcoder(llm)
+    transcoder = Translator(llm)
 
     # Test cases for natural language to Dana
     nl_to_dana_tests = [

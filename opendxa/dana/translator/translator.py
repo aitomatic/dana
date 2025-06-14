@@ -32,7 +32,7 @@ except ImportError:
         return []
 
 
-class Transcoder:
+class Translator:
     """Handles translation between natural language and Dana code."""
 
     Dana_LANGUAGE_DESCRIPTION = [
