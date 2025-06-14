@@ -29,7 +29,7 @@ UV_CMD = $(shell command -v uv 2>/dev/null || echo ~/.local/bin/uv)
 	test test-fast test-live test-cov test-watch \
 	lint lint-fix format format-check typecheck \
 	check fix verify \
-	dana run \
+	dana run opendxa-server \
 	clean clean-all clean-cache \
 	dev update-deps sync \
 	onboard env-check env-setup examples demo-basic demo-reasoning jupyter \
@@ -208,6 +208,10 @@ dana: ## Start the Dana REPL
 	uv run dana
 
 run: dana ## Alias for 'dana' command
+
+opendxa-server: ## Start the OpenDXA API server (includes POET service)
+	@echo "🌐 Starting OpenDXA API server on http://localhost:8080"
+	uv run python -m opendxa.api.server --host localhost --port 8080
 
 # =============================================================================
 # Maintenance & Cleanup

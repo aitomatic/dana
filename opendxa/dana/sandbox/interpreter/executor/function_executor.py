@@ -24,7 +24,7 @@ from opendxa.common.utils.logging import DXA_LOGGER
 from opendxa.dana.common.exceptions import FunctionRegistryError, SandboxError
 
 # POET imports for decorator handling
-from opendxa.dana.poet import POETConfig, POETExecutor
+from opendxa.dana.poet import POETConfig
 from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
 from opendxa.dana.sandbox.interpreter.executor.function_error_handling import FunctionExecutionErrorHandler
 from opendxa.dana.sandbox.interpreter.executor.function_name_utils import FunctionNameInfo
@@ -123,16 +123,17 @@ class FunctionExecutor(BaseExecutor):
         # Extract POET configuration from decorator
         poet_config = self._extract_poet_config_from_decorator(poet_decorator, context)
 
-        # Create POET executor with the configuration
-        poe_executor = POETExecutor(poet_config)
+        # TODO: Create POET executor with the configuration (Alpha: deferred)
+        # poe_executor = POETExecutor(poet_config)
 
         # Create a wrapper function that can be enhanced by POET
         def wrapped_dana_function(*args, **kwargs):
             # Convert positional args to match DanaFunction execute signature
             return dana_func.execute(context, *args, **kwargs)
 
-        # Apply POET enhancement
-        enhanced_func = poe_executor(wrapped_dana_function)
+        # TODO: Apply POET enhancement (Alpha: deferred to Python @poet decorator)
+        # enhanced_func = poe_executor(wrapped_dana_function)
+        enhanced_func = wrapped_dana_function
 
         return enhanced_func
 

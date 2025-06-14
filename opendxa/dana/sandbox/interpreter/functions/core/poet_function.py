@@ -7,7 +7,7 @@ to any function call directly from Dana code.
 
 from typing import Any
 
-from opendxa.dana.poet import POETConfig, POETExecutor
+from opendxa.dana.poet import POETConfig
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
@@ -73,15 +73,16 @@ def poet_function(
     # Resolve the original function
     original_func, func_type, metadata = registry.resolve(func_name)
 
-    # Create POET executor and wrap the function
-    poe_executor = POETExecutor(config)
+    # TODO: Create POET executor and wrap the function (Alpha: deferred)
+    # poe_executor = POETExecutor(config)
 
     # Create a wrapper function that will be enhanced by POE
     def target_function(*call_args, **call_kwargs):
         return registry.call(func_name, context, None, *call_args, **call_kwargs)
 
-    # Apply POET enhancement to the wrapper
-    enhanced_function = poe_executor(target_function)
+    # TODO: Apply POET enhancement to the wrapper (Alpha: deferred)
+    # enhanced_function = poe_executor(target_function)
+    enhanced_function = target_function
 
     # Call the enhanced function with the provided arguments
     return enhanced_function(*args, **kwargs)
@@ -117,9 +118,10 @@ def apply_poet_function(
         enable_training=config.get("enable_training", True),
     )
 
-    # Create POET executor and apply enhancement
-    poe_executor = POETExecutor(poe_config)
-    enhanced_operation = poe_executor(operation)
+    # TODO: Create POET executor and apply enhancement (Alpha: deferred)
+    # poe_executor = POETExecutor(poe_config)
+    # enhanced_operation = poe_executor(operation)
+    enhanced_operation = operation
 
     # Call the enhanced operation
     return enhanced_operation()

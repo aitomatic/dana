@@ -27,7 +27,7 @@ from typing import Any
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.utils.logging import DXA_LOGGER
 from opendxa.dana.common.error_utils import ErrorUtils
-from opendxa.dana.poet import POETConfig, POETExecutor
+from opendxa.dana.poet import POETConfig
 from opendxa.dana.sandbox.interpreter.executor.dana_executor import DanaExecutor
 from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
 from opendxa.dana.sandbox.parser.ast import Decorator, FunctionDefinition, Program
@@ -319,14 +319,15 @@ class DanaInterpreter(Loggable):
         # Extract POET configuration from decorator
         poet_config = self._extract_poet_config_from_decorator(poet_decorator, context)
 
-        # Create POET executor with the configuration
-        poe_executor = POETExecutor(poet_config)
+        # TODO: Create POET executor with the configuration (Alpha: deferred)
+        # poe_executor = POETExecutor(poet_config)
 
         # Create the original function
         original_func = self._create_dana_function(func_def, context)
 
-        # Apply POET enhancement
-        enhanced_func = poe_executor(original_func)
+        # TODO: Apply POET enhancement (Alpha: deferred to Python @poet decorator)
+        # enhanced_func = poe_executor(original_func)
+        enhanced_func = original_func
 
         return enhanced_func
 

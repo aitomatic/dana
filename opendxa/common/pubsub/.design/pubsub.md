@@ -13,14 +13,14 @@ Status: Design Phase
 
 ## Overview
 
-The POET pub/sub subsystem enables event-driven communication between POET components, Aitomatic services, and external systems. This design focuses on supporting the ML monitoring use case while providing a scalable foundation for POET's feedback orchestration system.
+The POET pub/sub subsystem enables event-driven communication for DELAYED feedback collection from external systems. This is NOT used for immediate feedback (which uses `poet.feedback(result, data)` directly) but rather for batch processing and external system integration like PagerDuty, MLflow, and scheduled analytics pipelines.
 
 ## Goals
-- Enable reliable event-driven communication between POET components
-- Support ML monitoring use case with scalable event handling
+- Enable delayed feedback collection from external systems (PagerDuty, MLflow, etc.)
+- Support batch feedback processing and analytics pipelines  
 - Integrate with existing Aitomatic event infrastructure
-- Provide consistent event schemas across the system
-- Enable feedback collection and processing
+- Route external system events to POET train() methods
+- Handle asynchronous feedback that arrives after immediate user feedback
 
 ## Non-Goals
 - ❌ Real-time event processing (batch processing is acceptable)
