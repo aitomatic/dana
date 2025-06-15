@@ -1,4 +1,167 @@
-# POET Pub/Sub Subsystem Design
+# OpenDXA PubSub System Design
+
+## Overview
+
+The OpenDXA PubSub system provides a unified event-driven communication infrastructure for both Dana and Python code. While it is designed to be language-agnostic, it is primarily used by Dana code for feedback collection and learning in the POET system.
+
+## Architecture
+
+### Core Components
+
+1. **Event Bus**
+   - Message routing
+   - Topic management
+   - Subscription handling
+   - Message persistence
+
+2. **Client Libraries**
+   - Dana client (primary)
+   - Python client (secondary)
+
+3. **Storage Layer**
+   - Message persistence
+   - State management
+   - Recovery mechanisms
+
+### Event Types
+
+```dana
+# Dana language example (primary)
+struct FeedbackEvent {
+    function_id: string
+    execution_id: string
+    timestamp: datetime
+    feedback_type: string  # "success", "error", "performance", "quality"
+    metrics: dict<string, float>
+    context: dict<string, any>
+    suggestions: list<string>
+}
+
+struct LearningEvent {
+    function_id: string
+    version: string
+    timestamp: datetime
+    learning_type: string  # "improvement", "regression", "new_pattern"
+    changes: dict<string, any>
+    metrics: dict<string, float>
+}
+```
+
+```python
+# Python support (secondary, for development/testing)
+class FeedbackEvent:
+    function_id: str
+    execution_id: str
+    timestamp: datetime
+    feedback_type: str
+    metrics: Dict[str, float]
+    context: Dict[str, Any]
+    suggestions: List[str]
+```
+
+## API Design
+
+### Dana Client (Primary)
+
+```dana
+# Dana language example
+import pubsub_client
+
+# Subscribe to feedback events
+pubsub_client.subscribe("feedback", (event: FeedbackEvent) => {
+    # Process feedback
+})
+
+# Publish learning event
+pubsub_client.publish("learning", LearningEvent(
+    function_id="detect_drift",
+    version="1.0",
+    timestamp=now(),
+    learning_type="improvement",
+    changes={"accuracy": 0.95},
+    metrics={"latency": 100}
+))
+```
+
+### Python Client (Secondary)
+
+```python
+# Python support (for development/testing)
+from opendxa.common.pubsub import PubSubClient
+
+client = PubSubClient()
+client.subscribe("feedback", lambda event: process_feedback(event))
+client.publish("learning", learning_event)
+```
+
+## Message Flow
+
+1. **Publisher**
+   - Creates event
+   - Validates payload
+   - Publishes to topic
+
+2. **Event Bus**
+   - Routes message
+   - Manages delivery
+   - Handles persistence
+
+3. **Subscriber**
+   - Receives event
+   - Processes payload
+   - Acknowledges receipt
+
+## Storage
+
+1. **Message Store**
+   - Topic-based partitioning
+   - Time-based retention
+   - Indexed queries
+
+2. **State Management**
+   - Subscription state
+   - Delivery tracking
+   - Recovery points
+
+## Security
+
+1. **Authentication**
+   - Client credentials
+   - Token validation
+   - Access control
+
+2. **Authorization**
+   - Topic permissions
+   - Operation limits
+   - Audit logging
+
+## Monitoring
+
+1. **Metrics**
+   - Message rates
+   - Latency
+   - Error rates
+   - Queue sizes
+
+2. **Logging**
+   - Event flow
+   - Error tracking
+   - Performance data
+   - Security events
+
+## Future Enhancements
+
+1. **Advanced Features**
+   - Message filtering
+   - Pattern matching
+   - Batch operations
+   - Priority queues
+
+2. **Integration**
+   - External systems
+   - Cloud services
+   - Monitoring tools
+   - Analytics platforms
 
 ```text
 Author: Christopher Nguyen
@@ -10,10 +173,6 @@ Status: Design Phase
 **Related Documents:**
 - [POET Framework Design](../../../dana/poet/.design/poet.md)
 - [POET Code Generation Service Design](../../../dxa-factory/poet/service/.design/poet_service.md)
-
-## Overview
-
-The POET pub/sub subsystem enables event-driven communication for DELAYED feedback collection from external systems. This is NOT used for immediate feedback (which uses `poet.feedback(result, data)` directly) but rather for batch processing and external system integration like PagerDuty, MLflow, and scheduled analytics pipelines.
 
 ## Goals
 - Enable delayed feedback collection from external systems (PagerDuty, MLflow, etc.)

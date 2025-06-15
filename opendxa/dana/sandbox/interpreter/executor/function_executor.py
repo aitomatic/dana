@@ -202,13 +202,21 @@ class FunctionExecutor(BaseExecutor):
                 if evaluated_value < 0:
                     raise SandboxError("POET decorator error: Retries cannot be negative")
 
-            elif key == "enable_training":
+            elif key == "enable_monitoring":
                 if not isinstance(evaluated_value, bool):
-                    raise SandboxError(f"POET decorator error: Enable training must be a boolean, got {type(evaluated_value).__name__}")
+                    raise SandboxError(f"POET decorator error: Enable monitoring must be a boolean, got {type(evaluated_value).__name__}")
 
             elif key == "collect_metrics":
                 if not isinstance(evaluated_value, bool):
                     raise SandboxError(f"POET decorator error: Collect metrics must be a boolean, got {type(evaluated_value).__name__}")
+
+            elif key == "enable_training":
+                if not isinstance(evaluated_value, bool):
+                    raise SandboxError(f"POET decorator error: Enable training must be a boolean, got {type(evaluated_value).__name__}")
+                # Map enable_training to optimize_for parameter that POETConfig expects
+                if evaluated_value:
+                    config_kwargs["optimize_for"] = "accuracy"  # Default optimization target
+                continue  # Don't add enable_training to config_kwargs
 
             config_kwargs[key] = evaluated_value
 

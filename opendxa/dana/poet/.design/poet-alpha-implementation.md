@@ -1,67 +1,76 @@
-# Implementation Tracker: POET Alpha
+# POET Alpha - 3D Design Document
 
 ```text
 Author: Christopher Nguyen
-Version: 1.0
-Date: 2025-06-14
-Status: Implementation Phase - Day 1
-Design Document: poet-alpha.md
+Date: 2025-06-13
+Version: 0.5
+Status: Design Phase
 ```
 
+**Related Documents:**
+- [POET Design](../.design/poet_design.md)
+- [POET Code Generation Service Design](../../../dxa-factory/poet/service/.design/poet_service_design.md)
+
 ## Design Review Status
-- [✅] **Problem Alignment**: Does solution address all stated problems?
-  - ✅ Core transpilation with P→O→E phases addresses reliability needs
+
+### Architecture Alignment
+- [✅] **Problem Alignment**: Solution addresses all stated problems
+  - ✅ HTTP-based transpilation with P→O→E phases addresses reliability needs
   - ✅ LLM-powered feedback translation solves universal feedback acceptance
-  - ✅ Local/remote unified API addresses deployment flexibility
-  - ✅ .env configuration follows established patterns
+  - ✅ Service-based architecture addresses deployment flexibility
+  - ✅ `.dana/poet/` configuration follows established patterns
+
 - [✅] **Goal Achievement**: Will implementation meet all success criteria?
   - ✅ MVP by June 26 with aggressive but achievable 12-day timeline
   - ✅ Core flow working: @poet() → enhanced function → feedback → learning
   - ✅ Simple developer UX: only need poet.feedback(result, feedback)
-  - ✅ Local development experience complete
+  - ✅ Service-based development experience complete
+
 - [✅] **Non-Goal Compliance**: Are we staying within defined scope?
   - ✅ No production persistence (file-based sufficient)
   - ✅ No advanced domains (ML monitoring only)
   - ✅ No external integrations (deferred to Beta)
   - ✅ No complex auth (local development focus)
+
 - [✅] **KISS/YAGNI Compliance**: Is complexity justified by immediate needs?
   - ✅ In-memory feedback storage vs complex PubSub (justified for Alpha speed)
   - ✅ File-based storage vs database (justified for Alpha simplicity)
   - ✅ Single domain template vs complex system (justified for focused demo)
   - ✅ Basic error handling vs comprehensive (justified for happy path focus)
+
+### Technical Review
 - [✅] **Security review completed**
   - ✅ No authentication in Alpha (explicitly deferred)
-  - ✅ Local execution only (no remote code execution risks)
-  - ✅ Input validation in transpiler
+  - ✅ Service-based execution (no local code execution risks)
+  - ✅ Input validation in service
   - ✅ Generated code syntax validation
-- [✅] **Performance impact assessed**
-  - ✅ Function enhancement < 10 seconds target
-  - ✅ LLM calls managed through existing LLMResource
-  - ✅ Caching strategy for enhanced functions
-  - ✅ Fail-fast behavior for service calls
-- [✅] **Error handling comprehensive**
-  - ✅ Graceful fallback to original function on enhancement failure
-  - ✅ Specific exception types for different failure modes
-  - ✅ Comprehensive logging with execution IDs
-  - ✅ Fail-fast for service connectivity issues
-- [✅] **Testing strategy defined**
-  - ✅ Unit tests for local transpilation mode
-  - ✅ Unit tests for remote service mode
-  - ✅ Integration tests for end-to-end scenarios
-  - ✅ Example validation tests
-- [✅] **Documentation planned**
-  - ✅ API documentation for POETClient
-  - ✅ Usage examples in Phase 6
-  - ✅ Configuration guide for .env setup
-  - ✅ Troubleshooting guide
-- [✅] **Backwards compatibility checked**
-  - ✅ New API module doesn't affect existing code
-  - ✅ POET functions are additive enhancements
-  - ✅ Environment variables follow existing LLM patterns
-  - ✅ No breaking changes to existing interfaces
 
-## Implementation Progress
-**Overall Progress**: [ ] 0% | [✅] 20% | [ ] 40% | [ ] 60% | [ ] 80% | [ ] 100%
+- [✅] **Performance impact assessed**
+  - ✅ Caching strategy defined
+  - ✅ Storage structure optimized
+  - ✅ Version management efficient
+  - ✅ Fallback mechanism lightweight
+
+- [✅] **Error handling comprehensive**
+  - ✅ Clear error messages
+  - ✅ Proper validation
+  - ✅ Fallback mechanisms
+  - ✅ Recovery strategies
+
+- [✅] **Testing strategy defined**
+  - ✅ Unit tests for core components
+  - ✅ Integration tests for workflow
+  - ✅ Performance tests for caching
+  - ✅ Error case coverage
+
+- [✅] **Documentation planned**
+  - ✅ API documentation
+  - ✅ Usage examples
+  - ✅ Architecture diagrams
+  - ✅ Troubleshooting guide
+
+### Implementation Progress
+**Overall Progress**: [ ] 0% | [ ] 20% | [ ] 40% | [ ] 60% | [ ] 80% | [ ] 100%
 
 ### Phase 1: Foundation & Architecture (Days 1-3, ~25%)
 **Target**: Service infrastructure + core transpilation working
@@ -73,7 +82,7 @@ Design Document: poet-alpha.md
 - [✅] Basic P→O→E generation (no learning yet)
 - [✅] File storage in `.poet/` directory structure
 - [✅] Makefile target: `make opendxa-server` for local service
-- [🔄] Unit tests for both local/service modes
+- [🔄] Unit tests for service mode
 - [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
 - [🔄] **Phase Gate**: Update implementation progress checkboxes
 
@@ -87,106 +96,145 @@ Design Document: poet-alpha.md
 - [ ] **Phase Gate**: Update implementation progress checkboxes
 
 #### Day 3 (June 16): Basic Learning Loop
-- [ ] Pattern detection in learning state
-- [ ] Function regeneration triggers
-- [ ] Version management (v1, v2, etc.)
-- [ ] Regenerated functions replace previous versions
-- [ ] Basic ML monitoring domain template
+- [ ] Feedback collection and storage
+- [ ] Learning signal generation
+- [ ] Parameter updates
+- [ ] Version management
 - [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
 - [ ] **Phase Gate**: Update implementation progress checkboxes
 
-### Phase 2: ML Monitoring Domain (Days 4-6, ~25%)
-**Target**: Complete ML monitoring domain implementation
+### Phase 2: Enhancement Pipeline (Days 4-6, ~50%)
+**Target**: Complete enhancement pipeline with caching
 
-#### Day 4 (June 17): Domain Template
-- [ ] ML monitoring domain template
-- [ ] Domain-specific P→O→E→T generation
-- [ ] Context-aware feedback understanding
-- [ ] ML-specific learning patterns
+#### Day 4 (June 17): Service Endpoints
+- [ ] `/poet/transpile` endpoint implementation
+- [ ] `/poet/feedback` endpoint implementation
+- [ ] `/poet/functions` endpoint implementation
+- [ ] Request/response models
 - [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
 - [ ] **Phase Gate**: Update implementation progress checkboxes
 
-#### Day 5 (June 18): Example Integration
-- [ ] Complete drift detection example
-- [ ] Multiple feedback scenarios
-- [ ] Learning progression demonstration
+#### Day 5 (June 18): Code Generation
+- [ ] Service-side transpilation
+- [ ] Dana code generation
+- [ ] Python fallback
+- [ ] Version tracking
+- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
+- [ ] **Phase Gate**: Update implementation progress checkboxes
+
+#### Day 6 (June 19): Caching System
+- [ ] Source code hashing
+- [ ] Cache invalidation
+- [ ] Version tracking
+- [ ] Storage management
+- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
+- [ ] **Phase Gate**: Update implementation progress checkboxes
+
+### Phase 3: Learning System (Days 7-9, ~75%)
+**Target**: Basic learning capabilities working
+
+#### Day 7 (June 20): Feedback Collection
+- [ ] Execution tracking
+- [ ] Feedback storage
+- [ ] Version correlation
+- [ ] Metadata management
+- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
+- [ ] **Phase Gate**: Update implementation progress checkboxes
+
+#### Day 8 (June 21): Learning Pipeline
+- [ ] Feedback analysis
+- [ ] Model training
+- [ ] Version updates
+- [ ] Performance tracking
+- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
+- [ ] **Phase Gate**: Update implementation progress checkboxes
+
+#### Day 9 (June 22): Monitoring
+- [ ] Usage metrics
+- [ ] Performance tracking
+- [ ] Error monitoring
+- [ ] Health checks
+- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
+- [ ] **Phase Gate**: Update implementation progress checkboxes
+
+### Phase 4: Polish & Documentation (Days 10-12, ~100%)
+**Target**: Production-ready implementation
+
+#### Day 10 (June 23): Testing & Validation
+- [ ] Comprehensive test suite
 - [ ] Performance validation
-- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
-- [ ] **Phase Gate**: Update implementation progress checkboxes
-
-#### Day 6 (June 19): Polish & Testing
-- [ ] Comprehensive error handling
-- [ ] Input validation
+- [ ] Error case coverage
 - [ ] Edge case handling
-- [ ] Unit test coverage > 80%
-- [ ] Integration tests
 - [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
 - [ ] **Phase Gate**: Update implementation progress checkboxes
 
-### Phase 3: Documentation & Demo (Days 7-9, ~25%)
-**Target**: Documentation and demonstration materials
-
-#### Day 7 (June 20): Usage Documentation
-- [ ] Installation guide
-- [ ] Quick start tutorial
-- [ ] API reference
-- [ ] Example gallery
+#### Day 11 (June 24): Documentation
+- [ ] API documentation
+- [ ] Usage examples
+- [ ] Architecture diagrams
 - [ ] Troubleshooting guide
 - [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
 - [ ] **Phase Gate**: Update implementation progress checkboxes
 
-#### Day 8 (June 21): Demo Preparation & Examples (3D Phase 6)
-- [ ] **Example Creation (3D Phase 6 Requirements)**:
-  - [ ] `01_hello_world/` - Simplest working POET example
-  - [ ] `02_basic_usage/` - Common patterns and typical use cases
-  - [ ] `03_real_world/` - Production-like ML monitoring scenario
-  - [ ] `04_advanced/` - Complex feedback and learning scenarios
-- [ ] Live demo script referencing examples
-- [ ] Performance benchmarks
-- [ ] Learning progression demonstration
-- [ ] **Phase Gate**: All examples validated with automated tests
-- [ ] **Phase Gate**: Update implementation progress checkboxes
-
-#### Day 9 (June 22): Integration Testing
-- [ ] Complete user journey testing
-- [ ] Multi-function scenarios
-- [ ] Stress testing
-- [ ] Feedback loop validation
-- [ ] Documentation accuracy verification
+#### Day 12 (June 25): Final Review
+- [ ] Code review
+- [ ] Performance review
+- [ ] Security review
+- [ ] Documentation review
 - [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
 - [ ] **Phase Gate**: Update implementation progress checkboxes
-
-### Phase 4: Delivery & Buffer (Days 10-12, ~25%)
-**Target**: Production-ready alpha release
-
-#### Day 10-11 (June 23-24): Final Polish
-- [ ] Bug fixes from integration testing
-- [ ] Performance optimizations
-- [ ] Documentation updates
-- [ ] Example improvements
-- [ ] Release preparation
-- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
-- [ ] **Phase Gate**: Update implementation progress checkboxes
-
-#### Day 12 (June 25): Release Preparation
-- [ ] Final testing
-- [ ] Release notes
-- [ ] Demo rehearsal
-- [ ] Backup plans
-- [ ] Success validation
-- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
-- [ ] **Phase Gate**: Update implementation progress to 100%
 
 ## Quality Gates
-⚠️  DO NOT proceed to next phase until ALL criteria met:
-✅ 100% test pass rate (`uv run pytest tests/ -v`) - ZERO failures allowed
-✅ No regressions detected in existing functionality
-✅ Error handling complete and tested with failure scenarios
-✅ Examples created and validated (Phase 6 only)
-✅ Documentation updated and cites working examples (Phase 6 only)
-✅ Performance within defined bounds
-✅ Implementation progress checkboxes updated
-✅ Design review completed (if in Phase 1)
+
+### Phase 1: Foundation & Architecture
+- [ ] HTTP service operational
+- [ ] Client library functional
+- [ ] Storage system working
+- [ ] Basic error handling
+
+### Phase 2: Enhancement Pipeline
+- [ ] Transpilation working
+- [ ] Caching functional
+- [ ] Version tracking
+- [ ] Error recovery
+
+### Phase 3: Learning System
+- [ ] Feedback collection
+- [ ] Learning pipeline
+- [ ] Monitoring system
+- [ ] Performance metrics
+
+### Phase 4: Polish & Documentation
+- [ ] Test coverage > 80%
+- [ ] Documentation complete
+- [ ] Performance targets met
+- [ ] Security review passed
+
+## Success Criteria
+
+### Core Functionality
+- [ ] Can enhance any function with basic retries/timeouts
+- [ ] Generated code executes successfully
+- [ ] Fallback to original function on service failure
+- [ ] Feedback collection works end-to-end
+
+### Performance
+- [ ] Enhancement generation < 10 seconds
+- [ ] Execution overhead < 8ms
+- [ ] Memory footprint < 30MB
+- [ ] Cache hit rate > 80%
+
+### Reliability
+- [ ] 99.9% uptime
+- [ ] Zero data loss
+- [ ] Automatic recovery
+- [ ] Graceful degradation
+
+### Developer Experience
+- [ ] Simple decorator interface
+- [ ] Clear error messages
+- [ ] Comprehensive documentation
+- [ ] Working examples
 
 ## Technical Debt & Maintenance
 - [ ] **Code Analysis**: Run `uv run ruff check . && uv run ruff format .`
@@ -279,3 +327,128 @@ opendxa/
 - [ ] **Learning Evidence**: Function behavior changes based on feedback
 - [ ] **Simplicity**: Developer only needs `poet.feedback(result, feedback)`
 - [ ] **Robustness**: Handles various feedback formats naturally
+
+# POET Alpha Implementation Tracking
+
+## Phase 1: Core Infrastructure (Week 1)
+
+### Dana Integration
+- [ ] Implement `@poet` decorator in Dana
+- [ ] Create Dana function transformer
+- [ ] Set up Dana testing framework
+- [ ] Implement Dana-specific error handling
+- [ ] Add Dana type validation
+- [ ] Create Dana documentation examples
+
+### Basic Reliability
+- [ ] Error handling
+- [ ] Retry logic
+- [ ] Timeout management
+- [ ] Input validation
+
+### Python Support (Secondary)
+- [ ] Basic Python decorator
+- [ ] Development utilities
+- [ ] Testing tools
+- [ ] Documentation
+
+## Phase 2: Domain Intelligence (Week 2)
+
+### ML Monitoring
+- [ ] Statistical tests
+- [ ] Drift detection
+- [ ] Performance metrics
+- [ ] Quality checks
+
+### Optimization
+- [ ] Performance tuning
+- [ ] Resource management
+- [ ] Caching strategy
+- [ ] Load balancing
+
+### Testing
+- [ ] Unit tests
+- [ ] Integration tests
+- [ ] Performance tests
+- [ ] Reliability tests
+
+## Phase 3: Learning System (Week 3)
+
+### Feedback Collection
+- [ ] PubSub integration
+- [ ] Metrics collection
+- [ ] Error tracking
+- [ ] Performance monitoring
+
+### Learning Process
+- [ ] Feedback processing
+- [ ] Implementation updates
+- [ ] A/B testing
+- [ ] Rollback mechanism
+
+### Documentation
+- [ ] API documentation
+- [ ] Usage examples
+- [ ] Best practices
+- [ ] Troubleshooting guide
+
+## Quality Gates
+
+### Code Quality
+- [ ] Type hints complete
+- [ ] Docstrings added
+- [ ] Error handling implemented
+- [ ] Unit tests written
+- [ ] Linting passed
+
+### Documentation
+- [ ] API documentation
+- [ ] Usage examples
+- [ ] Best practices
+- [ ] Troubleshooting guide
+
+### Testing
+- [ ] Unit tests
+- [ ] Integration tests
+- [ ] Performance tests
+- [ ] Reliability tests
+
+## Risk Management
+
+### Technical Risks
+- [ ] Dana integration complexity
+- [ ] Performance overhead
+- [ ] Learning effectiveness
+- [ ] Error handling coverage
+
+### Mitigation Strategies
+- [ ] Early Dana testing
+- [ ] Performance profiling
+- [ ] Learning validation
+- [ ] Error simulation
+
+## Success Criteria
+
+### Functionality
+- [ ] All core features implemented
+- [ ] Dana integration complete
+- [ ] Python support working
+- [ ] Learning system operational
+
+### Performance
+- [ ] Response time < 100ms
+- [ ] Resource usage < 100MB
+- [ ] Throughput > 1000 req/s
+- [ ] Scalability tested
+
+### Reliability
+- [ ] Error rate < 0.1%
+- [ ] Recovery time < 1s
+- [ ] State consistency
+- [ ] Data integrity
+
+### Documentation
+- [ ] API documented
+- [ ] Examples provided
+- [ ] Best practices
+- [ ] Troubleshooting guide

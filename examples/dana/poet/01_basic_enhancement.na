@@ -1,0 +1,107 @@
+# POET Basic Enhancement - Dana Language Example
+# ==============================================
+# This example demonstrates basic POET functionality in Dana:
+# 1. Simple function enhancement with @poet decorator
+# 2. Automatic P→O→E phases added to functions
+# 3. Execution tracking and result wrapping
+# ==============================================
+
+log("🚀 POET Basic Enhancement - Dana Example")
+log("=" * 50)
+
+# Basic POET-enhanced function
+@poet()
+def calculate_sum(a: int, b: int) -> int:
+    """Simple addition function enhanced by POET"""
+    return a + b
+
+# Domain-specific POET function
+@poet(domain="healthcare")
+def detect_anomaly(value: float, threshold: float) -> dict:
+    """Anomaly detection with ML monitoring domain expertise"""
+    is_anomaly = value > threshold
+    
+    confidence = 0.9
+    if is_anomaly:
+        confidence = 0.8
+    
+    return {
+        "is_anomaly": is_anomaly,
+        "value": value,
+        "threshold": threshold,
+        "confidence": confidence
+    }
+
+# POET function with learning enabled
+@poet(enable_training=true)
+def classify_sentiment(text: str) -> str:
+    """Simple sentiment classification that can learn"""
+    text_lower = text.lower()
+    
+    if "good" in text_lower or "great" in text_lower or "excellent" in text_lower:
+        return "positive"
+    elif "bad" in text_lower or "terrible" in text_lower or "awful" in text_lower:
+        return "negative"
+    else:
+        return "neutral"
+
+# Usage examples
+log("\n=== Testing POET Enhanced Functions ===")
+
+log("\n1. Basic Enhancement:")
+log("   @poet() adds P→O→E phases automatically")
+
+# Test basic enhancement
+result1 = calculate_sum(5, 3)
+log(f"   calculate_sum(5, 3) = {result1}")
+log(f"   Enhanced: {result1._poet['enhanced']}")
+log(f"   Execution ID: {result1._poet['execution_id']}")
+
+log("\n2. Domain-Specific Enhancement:")
+log("   @poet(domain='healthcare') adds healthcare expertise")
+
+# Test ML monitoring enhancement
+result2 = detect_anomaly(5.0, 2.0)
+log(f"   detect_anomaly(5.0, 2.0) = {result2}")
+log(f"   Function: {result2._poet['function_name']}")
+log(f"   Version: {result2._poet['version']}")
+
+anomaly_data = result2.unwrap()
+log(f"   Anomaly detected: {anomaly_data['is_anomaly']}")
+log(f"   Confidence: {anomaly_data['confidence']}")
+
+log("\n3. Learning-Enabled Enhancement:")
+log("   @poet(enable_training=true) enables Train phase")
+
+# Test sentiment classification
+test_texts = [
+    "This is a great product!",
+    "The service was terrible.",
+    "It's okay, nothing special."
+]
+
+results = []
+for text in test_texts:
+    result = classify_sentiment(text)
+    results.append(result)
+    sentiment = result.unwrap()
+    log(f"   '{text[:25]}...' → {sentiment}")
+
+log("\n4. Providing Feedback:")
+log("   Dana built-in feedback() function accepts any format")
+
+# Test feedback with first result
+if len(results) > 0:
+    feedback(results[0], "Great classification!")
+    execution_id = results[0]._poet["execution_id"]
+    log(f"   ✅ Feedback processed for execution {execution_id}")
+
+log("\n5. Enhanced Function Features:")
+log("   - Input validation (Perceive phase)")
+log("   - Error handling and reliability (Operate phase)")  
+log("   - Output validation (Enforce phase)")
+log("   - Execution context tracking")
+log("   - Domain-specific intelligence")
+
+log("\n✅ Basic POET enhancement complete!")
+log("   Functions are now intelligent and trackable with just @poet()")

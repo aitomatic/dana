@@ -2,9 +2,9 @@
 
 import json
 import shutil
-from pathlib import Path
-from typing import Dict, Any, Optional, List
 from datetime import datetime
+from pathlib import Path
+from typing import Any
 
 from opendxa.common.utils.logging import DXA_LOGGER
 
@@ -12,28 +12,29 @@ from opendxa.common.utils.logging import DXA_LOGGER
 class POETStorage:
     """File-based storage system for POET functions and metadata"""
 
-    def __init__(self, base_path: str = ".poet"):
+    def __init__(self, base_path: str = ".dana/poet"):
         self.base_path = Path(base_path)
         self._ensure_directories()
         DXA_LOGGER.info(f"POET storage initialized at {self.base_path}")
 
     def _ensure_directories(self):
         """Ensure all required directories exist"""
-        self.base_path.mkdir(exist_ok=True)
+        self.base_path.mkdir(parents=True, exist_ok=True)
         (self.base_path / "executions").mkdir(exist_ok=True)
         (self.base_path / "feedback").mkdir(exist_ok=True)
         (self.base_path / "cache").mkdir(exist_ok=True)
+        (self.base_path / "magic").mkdir(exist_ok=True)  # For future magic function caching
 
     def store_enhanced_function(
-        self, function_name: str, version: str, enhanced_code: str, metadata: Dict[str, Any], train_code: Optional[str] = None
+        self, function_name: str, version: str, enhanced_code: str, metadata: dict[str, Any], train_code: str | None = None
     ) -> Path:
         """
         Store enhanced function code and metadata
 
         Creates directory structure:
-        .poet/{function_name}/v{version}/
-        ├── enhanced.py      # Enhanced function code
-        ├── train.py         # Train method (if optimize_for specified)
+        .dana/poet/{function_name}/v{version}/
+        ├── enhanced.na      # Enhanced function code (Dana)
+        ├── train.na         # Train method (if optimize_for specified)
         └── metadata.json    # Function metadata
         """
 
@@ -42,13 +43,13 @@ class POETStorage:
         version_dir.mkdir(parents=True, exist_ok=True)
 
         # Store enhanced function code
-        enhanced_file = version_dir / "enhanced.py"
+        enhanced_file = version_dir / "enhanced.na"  # Changed to .na for Dana
         with open(enhanced_file, "w") as f:
             f.write(enhanced_code)
 
         # Store train code if provided (when optimize_for is specified)
         if train_code:
-            train_file = version_dir / "train.py"
+            train_file = version_dir / "train.na"  # Changed to .na for Dana
             with open(train_file, "w") as f:
                 f.write(train_code)
 
@@ -60,7 +61,8 @@ class POETStorage:
                 "version": version,
                 "has_train_phase": train_code is not None,
                 "enhanced_file": str(enhanced_file),
-                "train_file": str(version_dir / "train.py") if train_code else None,
+                "train_file": str(version_dir / "train.na") if train_code else None,
+                "language": "dana",  # Track that this is Dana code
             },
         }
 
@@ -77,7 +79,7 @@ class POETStorage:
         DXA_LOGGER.info(f"Stored enhanced function {function_name} version {version}")
         return version_dir
 
-    def load_enhanced_function(self, function_name: str, version: Optional[str] = None) -> Dict[str, Any]:
+    def load_enhanced_function(self, function_name: str, version: str | None = None) -> dict[str, Any]:
         """Load enhanced function code and metadata"""
 
         function_dir = self.base_path / function_name
@@ -97,23 +99,23 @@ class POETStorage:
             raise FileNotFoundError(f"Version {version} not found for {function_name}")
 
         # Load components
-        enhanced_file = version_dir / "enhanced.py"
+        enhanced_file = version_dir / "enhanced.na"
         metadata_file = version_dir / "metadata.json"
-        train_file = version_dir / "train.py"
+        train_file = version_dir / "train.na"
 
         if not enhanced_file.exists() or not metadata_file.exists():
             raise FileNotFoundError(f"Incomplete function data for {function_name}")
 
         # Read files
-        with open(enhanced_file, "r") as f:
+        with open(enhanced_file) as f:
             enhanced_code = f.read()
 
-        with open(metadata_file, "r") as f:
+        with open(metadata_file) as f:
             metadata = json.load(f)
 
         train_code = None
         if train_file.exists():
-            with open(train_file, "r") as f:
+            with open(train_file) as f:
                 train_code = f.read()
 
         return {
@@ -125,7 +127,7 @@ class POETStorage:
             "version_dir": version_dir,
         }
 
-    def list_function_versions(self, function_name: str) -> List[str]:
+    def list_function_versions(self, function_name: str) -> list[str]:
         """List all versions for a function"""
         function_dir = self.base_path / function_name
         if not function_dir.exists():
@@ -140,7 +142,7 @@ class POETStorage:
         versions.sort(key=lambda x: int(x[1:]) if x.startswith("v") and x[1:].isdigit() else 0)
         return versions
 
-    def get_current_version(self, function_name: str) -> Optional[str]:
+    def get_current_version(self, function_name: str) -> str | None:
         """Get current version for a function"""
         function_dir = self.base_path / function_name
         current_link = function_dir / "current"
@@ -154,7 +156,7 @@ class POETStorage:
         function_dir = self.base_path / function_name
         return function_dir.exists() and (function_dir / "current").exists()
 
-    def store_execution_context(self, execution_id: str, context: Dict[str, Any]) -> Path:
+    def store_execution_context(self, execution_id: str, context: dict[str, Any]) -> Path:
         """Store execution context for feedback correlation"""
         executions_dir = self.base_path / "executions"
         execution_file = executions_dir / f"{execution_id}.json"
@@ -167,7 +169,7 @@ class POETStorage:
         DXA_LOGGER.debug(f"Stored execution context for {execution_id}")
         return execution_file
 
-    def load_execution_context(self, execution_id: str) -> Dict[str, Any]:
+    def load_execution_context(self, execution_id: str) -> dict[str, Any]:
         """Load execution context"""
         executions_dir = self.base_path / "executions"
         execution_file = executions_dir / f"{execution_id}.json"
@@ -175,17 +177,17 @@ class POETStorage:
         if not execution_file.exists():
             raise FileNotFoundError(f"Execution context {execution_id} not found")
 
-        with open(execution_file, "r") as f:
+        with open(execution_file) as f:
             return json.load(f)
 
-    def store_feedback(self, execution_id: str, feedback_data: Dict[str, Any]) -> Path:
+    def store_feedback(self, execution_id: str, feedback_data: dict[str, Any]) -> Path:
         """Store feedback data"""
         feedback_dir = self.base_path / "feedback"
         feedback_file = feedback_dir / f"{execution_id}_feedback.json"
 
         # Load existing feedback or create new
         if feedback_file.exists():
-            with open(feedback_file, "r") as f:
+            with open(feedback_file) as f:
                 existing_feedback = json.load(f)
             if not isinstance(existing_feedback, list):
                 existing_feedback = [existing_feedback]
@@ -203,7 +205,7 @@ class POETStorage:
         DXA_LOGGER.debug(f"Stored feedback for execution {execution_id}")
         return feedback_file
 
-    def load_feedback(self, execution_id: str) -> List[Dict[str, Any]]:
+    def load_feedback(self, execution_id: str) -> list[dict[str, Any]]:
         """Load feedback data for an execution"""
         feedback_dir = self.base_path / "feedback"
         feedback_file = feedback_dir / f"{execution_id}_feedback.json"
@@ -211,7 +213,7 @@ class POETStorage:
         if not feedback_file.exists():
             return []
 
-        with open(feedback_file, "r") as f:
+        with open(feedback_file) as f:
             feedback_data = json.load(f)
 
         # Ensure it's a list
@@ -220,7 +222,7 @@ class POETStorage:
 
         return feedback_data
 
-    def get_function_feedback_summary(self, function_name: str) -> Dict[str, Any]:
+    def get_function_feedback_summary(self, function_name: str) -> dict[str, Any]:
         """Get aggregated feedback summary for a function"""
         # Find all executions for this function
         executions_dir = self.base_path / "executions"
@@ -231,7 +233,7 @@ class POETStorage:
 
         for execution_file in executions_dir.glob("*.json"):
             try:
-                with open(execution_file, "r") as f:
+                with open(execution_file) as f:
                     context = json.load(f)
 
                 if context.get("function_name") == function_name:
@@ -283,7 +285,7 @@ class POETStorage:
                 shutil.rmtree(version_dir)
                 DXA_LOGGER.info(f"Cleaned up old version {function_name}/{version}")
 
-    def get_storage_stats(self) -> Dict[str, Any]:
+    def get_storage_stats(self) -> dict[str, Any]:
         """Get storage statistics"""
         stats = {
             "base_path": str(self.base_path),
@@ -321,9 +323,80 @@ class POETStorage:
 
         return stats
 
+    def get_cached_generated_code(self, function_name: str, source_hash: str) -> dict[str, Any] | None:
+        """
+        Check if we have cached generated code for this function and source code.
+
+        Args:
+            function_name: Name of the function
+            source_hash: Hash of the source code
+
+        Returns:
+            Dict containing cached code and metadata if found, None otherwise
+        """
+        cache_dir = self.base_path / "cache" / function_name
+        if not cache_dir.exists():
+            return None
+
+        cache_file = cache_dir / f"{source_hash}.json"
+        if not cache_file.exists():
+            return None
+
+        try:
+            with open(cache_file) as f:
+                cache_data = json.load(f)
+
+            # Verify the cache is still valid
+            if cache_data.get("source_hash") != source_hash:
+                return None
+
+            # Check if we need to regenerate due to POET version changes
+            if cache_data.get("poet_version") != self._get_current_poet_version():
+                return None
+
+            return cache_data
+        except Exception as e:
+            DXA_LOGGER.warning(f"Failed to read cache for {function_name}: {e}")
+            return None
+
+    def cache_generated_code(self, function_name: str, source_hash: str, generated_code: str, metadata: dict[str, Any]) -> None:
+        """
+        Cache generated code for a function.
+
+        Args:
+            function_name: Name of the function
+            source_hash: Hash of the source code
+            generated_code: The generated code to cache
+            metadata: Additional metadata about the generation
+        """
+        cache_dir = self.base_path / "cache" / function_name
+        cache_dir.mkdir(parents=True, exist_ok=True)
+
+        cache_data = {
+            "source_hash": source_hash,
+            "generated_code": generated_code,
+            "metadata": metadata,
+            "cached_at": datetime.now().isoformat(),
+            "poet_version": self._get_current_poet_version(),
+            "language": metadata.get("language", "dana"),  # Track language (dana or python)
+        }
+
+        cache_file = cache_dir / f"{source_hash}.json"
+        try:
+            with open(cache_file, "w") as f:
+                json.dump(cache_data, f, indent=2)
+            DXA_LOGGER.debug(f"Cached generated code for {function_name}")
+        except Exception as e:
+            DXA_LOGGER.warning(f"Failed to cache generated code for {function_name}: {e}")
+
+    def _get_current_poet_version(self) -> str:
+        """Get current POET version for cache invalidation"""
+        # TODO: Implement version tracking
+        return "0.1.0"
+
 
 # Global storage instance
-_default_storage: Optional[POETStorage] = None
+_default_storage: POETStorage | None = None
 
 
 def get_default_storage() -> POETStorage:

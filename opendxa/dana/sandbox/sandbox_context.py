@@ -651,3 +651,29 @@ class SandboxContext:
             del self._state[scope][var_name]
         elif self._parent is not None:
             self._parent.delete_from_scope(var_name, scope)
+
+    def startup(self) -> None:
+        """Initialize context - prepare for execution (no resource creation)"""
+        self.reset_execution_state()
+        # Don't create resources - SandboxContext only references them
+
+    def shutdown(self) -> None:
+        """Clean up context state - clear local state only (don't destroy shared resources)"""
+        # Clear local state only
+        self.clear("local")
+        
+        # Reset execution state
+        self._state["system"]["history"] = []
+        self.set_execution_status(ExecutionStatus.IDLE)
+        
+        # Don't call resource.shutdown() - DanaSandbox owns those resources
+        # Just clear references (they remain in system scope for potential reuse)
+
+    def __enter__(self) -> "SandboxContext":
+        """Context manager entry - initialize context state"""
+        self.startup()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        """Context manager exit - cleanup local state only"""
+        self.shutdown()

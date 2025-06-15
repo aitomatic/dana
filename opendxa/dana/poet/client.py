@@ -1,32 +1,25 @@
-"""POET Client - Unified local/remote API with .env configuration"""
+"""POET Client - Remote API client for POET service"""
 
 import os
-from typing import Any, Dict, Optional
-from pathlib import Path
+from typing import Any
 
-from opendxa.common.utils.logging import DXA_LOGGER
 from opendxa.api.client import APIClient, APIConnectionError, APIServiceError
-from .types import POETConfig, TranspiledFunction, POETResult, POETServiceError, POETTranspilationError
+from opendxa.common.utils.logging import DXA_LOGGER
+
+from .types import POETConfig, POETResult, POETServiceError, POETTranspilationError, TranspiledFunction
 
 
 class POETClient:
-    """POET client supporting both local and remote execution with unified API"""
+    """POET client for remote API service"""
 
-    def __init__(self, config_path: Optional[str] = None):
-        # Load configuration from .env file (generalized for all Aitomatic services)
+    def __init__(self, config_path: str | None = None):
+        # Load configuration from .env file
         self._load_config(config_path)
 
-        # Determine execution mode
-        self.local_mode = self.service_uri == "local"
+        # Setup API client
+        self._setup_api_client()
 
-        DXA_LOGGER.info(f"POET Client initialized in {'local' if self.local_mode else 'remote'} mode")
-
-        if self.local_mode:
-            self._setup_local_mode()
-        else:
-            self._setup_remote_mode()
-
-    def _load_config(self, config_path: Optional[str] = None):
+    def _load_config(self, config_path: str | None = None):
         """Load configuration from .env file"""
         if config_path:
             # Load from specific file if provided
@@ -34,54 +27,29 @@ class POETClient:
 
             load_dotenv(config_path)
 
-        # Generalized configuration for all Aitomatic services
-        self.service_uri = os.getenv("AITOMATIC_API_URL", "local")
+        # Get service configuration
+        service_uri = os.getenv("AITOMATIC_API_URL")
+        if not service_uri:
+            raise POETServiceError("AITOMATIC_API_URL must be set")
+        self.service_uri = service_uri
+
         self.api_key = os.getenv("AITOMATIC_API_KEY")
 
         DXA_LOGGER.debug(f"Configuration loaded: service_uri={self.service_uri}, api_key={'***' if self.api_key else None}")
 
-    def _setup_local_mode(self):
-        """Setup for local transpilation mode"""
-        try:
-            from .transpiler import LocalPOETTranspiler
-
-            self.transpiler = LocalPOETTranspiler()
-            DXA_LOGGER.info("Local POET transpiler initialized")
-        except ImportError as e:
-            raise POETServiceError(f"Local transpiler not available: {e}")
-
-    def _setup_remote_mode(self):
-        """Setup for remote API mode"""
-        if not self.service_uri or self.service_uri == "local":
-            raise POETServiceError("AITOMATIC_API_URL must be set for remote mode")
-
+    def _setup_api_client(self):
+        """Setup API client and verify connection"""
         self.api_client = APIClient(base_uri=self.service_uri, api_key=self.api_key)
 
         # Verify connection with fail-fast behavior
         if not self.api_client.health_check():
-            raise POETServiceError(f"POET service not available at {self.service_uri}. Check AITOMATIC_API_URL or use 'local' mode.")
+            raise POETServiceError(f"POET service not available at {self.service_uri}")
 
-        DXA_LOGGER.info(f"Connected to remote POET service at {self.service_uri}")
+        DXA_LOGGER.info(f"Connected to POET service at {self.service_uri}")
 
-    def transpile_function(self, function_code: str, config: POETConfig, context: Optional[Dict[str, Any]] = None) -> TranspiledFunction:
-        """Unified API - transpile function using local or remote execution with fail-fast behavior"""
-
-        if self.local_mode:
-            return self._transpile_local(function_code, config, context)
-        else:
-            return self._transpile_remote(function_code, config, context)
-
-    def _transpile_local(self, function_code: str, config: POETConfig, context: Optional[Dict[str, Any]] = None) -> TranspiledFunction:
-        """Local transpilation using embedded transpiler"""
-        try:
-            return self.transpiler.transpile_function(function_code, config, context)
-        except Exception as e:
-            DXA_LOGGER.error(f"Local transpilation failed: {e}")
-            raise POETTranspilationError(f"Local transpilation failed: {e}")
-
-    def _transpile_remote(self, function_code: str, config: POETConfig, context: Optional[Dict[str, Any]] = None) -> TranspiledFunction:
-        """Remote transpilation via API service"""
-        request_data = {"function_code": function_code, "language": "python", "config": config.dict()}
+    def transpile_function(self, function_code: str, config: POETConfig, context: dict[str, Any] | None = None) -> TranspiledFunction:
+        """Transpile function using remote POET service"""
+        request_data = {"function_code": function_code, "language": "python", "config": config.dict()}  # Default to Python for now
 
         if context:
             request_data["context"] = context
@@ -92,7 +60,6 @@ class POETClient:
             return TranspiledFunction.from_response(response_data)
 
         except (APIConnectionError, APIServiceError) as e:
-            # Re-raise API errors as POET errors with context
             raise POETTranspilationError(f"Remote transpilation failed: {e}")
 
     def feedback(self, result: POETResult, feedback_payload: Any) -> None:
@@ -105,64 +72,25 @@ class POETClient:
 
         DXA_LOGGER.info(f"Processing feedback for {function_name} execution {execution_id}")
 
-        if self.local_mode:
-            self._feedback_local(result, feedback_payload)
-        else:
-            self._feedback_remote(result, feedback_payload)
-
-    def _feedback_local(self, result: POETResult, feedback_payload: Any) -> None:
-        """Process feedback locally"""
-        try:
-            # Import feedback system
-            from .feedback import AlphaFeedbackSystem
-
-            feedback_system = AlphaFeedbackSystem()
-            feedback_system.feedback(result, feedback_payload)
-
-        except Exception as e:
-            DXA_LOGGER.error(f"Local feedback processing failed: {e}")
-            raise POETServiceError(f"Local feedback processing failed: {e}")
-
-    def _feedback_remote(self, result: POETResult, feedback_payload: Any) -> None:
-        """Process feedback via remote API"""
         request_data = {
-            "execution_id": result._poet["execution_id"],
-            "function_name": result._poet["function_name"],
+            "execution_id": execution_id,
+            "function_name": function_name,
             "feedback_payload": feedback_payload,
         }
 
         try:
             self.api_client.post("/poet/feedback", request_data)
-            DXA_LOGGER.info("Remote feedback submitted successfully")
+            DXA_LOGGER.info("Feedback submitted successfully")
 
         except (APIConnectionError, APIServiceError) as e:
-            raise POETServiceError(f"Remote feedback submission failed: {e}")
+            raise POETServiceError(f"Feedback submission failed: {e}")
 
-    def get_function_status(self, function_name: str) -> Dict[str, Any]:
+    def get_function_status(self, function_name: str) -> dict[str, Any]:
         """Get status information for a POET function"""
-        if self.local_mode:
-            # For local mode, check file system
-            poet_dir = Path(".poet") / function_name
-            if not poet_dir.exists():
-                return {"status": "not_found", "function_name": function_name}
-
-            current_link = poet_dir / "current"
-            if current_link.exists() and current_link.is_symlink():
-                current_version = current_link.readlink().name
-                return {
-                    "status": "available",
-                    "function_name": function_name,
-                    "current_version": current_version,
-                    "local_path": str(poet_dir),
-                }
-
-            return {"status": "invalid", "function_name": function_name}
-        else:
-            # For remote mode, query service
-            try:
-                return self.api_client.get(f"/poet/functions/{function_name}")
-            except (APIConnectionError, APIServiceError) as e:
-                raise POETServiceError(f"Failed to get function status: {e}")
+        try:
+            return self.api_client.get(f"/poet/functions/{function_name}")
+        except (APIConnectionError, APIServiceError) as e:
+            raise POETServiceError(f"Failed to get function status: {e}")
 
     def close(self):
         """Clean up resources"""
@@ -171,7 +99,7 @@ class POETClient:
 
 
 # Global client instance for convenience
-_default_client: Optional[POETClient] = None
+_default_client: POETClient | None = None
 
 
 def get_default_client() -> POETClient:

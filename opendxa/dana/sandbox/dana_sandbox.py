@@ -8,11 +8,16 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
+import atexit
+import weakref
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from opendxa.api.client import APIClient
+from opendxa.api.service_manager import APIServiceManager
 from opendxa.common.resource.llm_resource import LLMResource
+from opendxa.common.utils.logging import DXA_LOGGER
 from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
 from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
@@ -43,7 +48,14 @@ class DanaSandbox:
 
     This is the main public API that users should interact with.
     It provides a clean, safe interface for running Dana files and evaluating code.
+    
+    Features automatic lifecycle management - resources are initialized on first use
+    and cleaned up automatically at process exit.
     """
+
+    # Class-level tracking for automatic cleanup
+    _instances = weakref.WeakSet()
+    _cleanup_registered = False
 
     def __init__(self, debug: bool = False, context: SandboxContext | None = None):
         """
@@ -57,13 +69,106 @@ class DanaSandbox:
         self._context = context or self._create_default_context()
         self._interpreter = DanaInterpreter()
         self._parser = DanaParser()
+        
+        # Automatic lifecycle management
+        self._initialized = False
+        self._api_service: APIServiceManager | None = None
+        self._api_client: APIClient | None = None
+        self._llm_resource: LLMResource | None = None
+        
+        # Track instances for cleanup
+        DanaSandbox._instances.add(self)
+        self._register_cleanup()
+
+    def _register_cleanup(self):
+        """Register process exit cleanup handler"""
+        if not DanaSandbox._cleanup_registered:
+            atexit.register(DanaSandbox._cleanup_all_instances)
+            DanaSandbox._cleanup_registered = True
 
     def _create_default_context(self) -> SandboxContext:
-        """Create a default execution context with LLM resource."""
+        """Create a default execution context - resources added on first use."""
         context = SandboxContext()
-        llm_resource = LLMResource()
-        context.set("system.llm_resource", llm_resource)
+        # Don't initialize resources here - use lazy initialization
         return context
+
+    def _ensure_initialized(self):
+        """Lazy initialization - called on first use"""
+        if self._initialized:
+            return
+
+        try:
+            DXA_LOGGER.info("Initializing DanaSandbox resources")
+
+            # Initialize API service
+            self._api_service = APIServiceManager()
+            self._api_service.startup()
+
+            # Get API client
+            self._api_client = self._api_service.get_client()
+            self._api_client.startup()
+
+            # Initialize LLM resource
+            self._llm_resource = LLMResource()
+            self._llm_resource.startup()
+
+            # Store in context
+            self._context.set("system.api_client", self._api_client)
+            self._context.set("system.llm_resource", self._llm_resource)
+
+            self._initialized = True
+            DXA_LOGGER.info("DanaSandbox resources initialized successfully")
+
+        except Exception as e:
+            DXA_LOGGER.error(f"Failed to initialize DanaSandbox: {e}")
+            # Cleanup partial initialization
+            self._cleanup()
+            raise RuntimeError(f"DanaSandbox initialization failed: {e}")
+
+    def _cleanup(self):
+        """Clean up this instance's resources"""
+        if not self._initialized:
+            return
+
+        try:
+            DXA_LOGGER.info("Cleaning up DanaSandbox resources")
+
+            # Cleanup in reverse order
+            if self._llm_resource:
+                self._llm_resource.shutdown()
+                self._llm_resource = None
+
+            if self._api_client:
+                self._api_client.shutdown()
+                self._api_client = None
+
+            if self._api_service:
+                self._api_service.shutdown()
+                self._api_service = None
+
+            # Clear from context
+            if hasattr(self._context, 'delete'):
+                try:
+                    self._context.delete("system.api_client")
+                    self._context.delete("system.llm_resource")
+                except Exception:
+                    pass  # Ignore errors during cleanup
+
+            self._initialized = False
+            DXA_LOGGER.info("DanaSandbox resources cleaned up")
+
+        except Exception as e:
+            DXA_LOGGER.error(f"Error during DanaSandbox cleanup: {e}")
+
+    @classmethod
+    def _cleanup_all_instances(cls):
+        """Clean up all remaining instances - called by atexit"""
+        DXA_LOGGER.info("Cleaning up all DanaSandbox instances")
+        for instance in list(cls._instances):
+            try:
+                instance._cleanup()
+            except Exception as e:
+                DXA_LOGGER.error(f"Error cleaning up DanaSandbox instance: {e}")
 
     def run(self, file_path: str | Path) -> ExecutionResult:
         """
@@ -75,6 +180,8 @@ class DanaSandbox:
         Returns:
             ExecutionResult with success status and results
         """
+        self._ensure_initialized()  # Auto-initialize on first use
+        
         try:
             # Read file
             file_path = Path(file_path)
@@ -106,6 +213,8 @@ class DanaSandbox:
         Returns:
             ExecutionResult with success status and results
         """
+        self._ensure_initialized()  # Auto-initialize on first use
+        
         try:
             # Use internal _eval method for actual execution
             result = self._interpreter._eval(source_code, self._context, filename)
@@ -150,3 +259,13 @@ class DanaSandbox:
         """
         sandbox = cls(debug=debug, context=context)
         return sandbox.eval(source_code, filename)
+
+    # Context manager support (optional explicit lifecycle control)
+    def __enter__(self) -> "DanaSandbox":
+        """Context manager entry - explicit initialization"""
+        self._ensure_initialized()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        """Context manager exit - explicit cleanup"""
+        self._cleanup()

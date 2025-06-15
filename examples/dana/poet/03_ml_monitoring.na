@@ -1,0 +1,316 @@
+# POET ML Monitoring - Dana Language Example
+# ==========================================
+# This example demonstrates POET's ML monitoring domain in Dana:
+# 1. Statistical drift detection with domain expertise
+# 2. Model performance monitoring with learning
+# 3. Production-ready ML operations patterns
+# ==========================================
+
+log("📊 POET ML Monitoring - Dana Example")
+log("=" * 50)
+
+# Statistical drift detection with ML domain expertise
+@poet(domain="ml_monitoring", optimize_for="accuracy")
+def detect_feature_drift(current_mean: float, reference_mean: float, 
+                        current_std: float, reference_std: float,
+                        feature_name: str) -> dict:
+    """
+    Detect statistical drift in feature distributions
+    
+    POET enhances this with:
+    - Advanced statistical tests (P)
+    - Multiple drift detection methods (O)  
+    - Confidence intervals and significance testing (E)
+    - Learning from false positive/negative feedback (T)
+    """
+    
+    # Simple drift detection (POET will enhance with proper statistical tests)
+    mean_diff = current_mean - reference_mean
+    if reference_std > 0:
+        mean_shift = mean_diff / reference_std
+    else:
+        mean_shift = 0.0
+    
+    if mean_shift < 0:
+        mean_shift = -mean_shift  # absolute value
+    
+    std_diff = current_std - reference_std
+    if reference_std > 0:
+        variance_change = std_diff / reference_std  
+    else:
+        variance_change = 0.0
+    
+    if variance_change < 0:
+        variance_change = -variance_change  # absolute value
+    
+    # Basic drift score (POET will enhance with statistical significance)
+    drift_score = mean_shift
+    if variance_change > drift_score:
+        drift_score = variance_change
+    
+    drift_threshold = 2.0  # Will be learned/adjusted
+    drift_detected = drift_score > drift_threshold
+    
+    return {
+        "drift_detected": drift_detected,
+        "drift_score": drift_score,
+        "feature_name": feature_name,
+        "threshold": drift_threshold,
+        "statistics": {
+            "current_mean": current_mean,
+            "reference_mean": reference_mean,
+            "current_std": current_std,
+            "reference_std": reference_std,
+            "mean_shift": mean_shift,
+            "variance_change": variance_change
+        }
+    }
+
+# Model performance monitoring with learning
+@poet(domain="ml_monitoring", optimize_for="reliability") 
+def monitor_model_performance(predictions: list, actuals: list,
+                             model_name: str) -> dict:
+    """
+    Monitor ML model performance metrics
+    
+    POET enhances with:
+    - Statistical performance analysis (P)
+    - Multiple performance metrics (O)
+    - Performance degradation detection (E)
+    - Learning optimal performance thresholds (T)
+    """
+    
+    if len(predictions) == 0:
+        return {
+            "status": "no_data",
+            "model_name": model_name,
+            "error": "No predictions provided"
+        }
+    
+    if len(predictions) != len(actuals):
+        return {
+            "status": "data_mismatch", 
+            "model_name": model_name,
+            "error": "Predictions and actuals length mismatch"
+        }
+    
+    # Calculate basic performance metrics
+    total_error = 0.0
+    total_squared_error = 0.0
+    
+    for i in range(len(predictions)):
+        error = predictions[i] - actuals[i]
+        if error < 0:
+            error = -error  # absolute error
+        total_error = total_error + error
+        total_squared_error = total_squared_error + (error * error)
+    
+    mae = total_error / len(predictions)
+    mse = total_squared_error / len(predictions)
+    rmse = mse ** 0.5  # square root
+    
+    # Simple correlation approximation (POET will enhance with proper correlation)
+    correlation = 0.9 if mae < 5.0 else 0.6 if mae < 10.0 else 0.3
+    
+    # Performance status (POET will enhance with learned thresholds)
+    if correlation < 0.8:
+        status = "degraded"
+        alert_level = "high"
+    elif mae > 10.0:
+        status = "unstable"
+        alert_level = "medium"
+    else:
+        status = "healthy"
+        alert_level = "low"
+    
+    return {
+        "model_name": model_name,
+        "status": status,
+        "alert_level": alert_level,
+        "performance_metrics": {
+            "mae": mae,
+            "mse": mse,
+            "rmse": rmse,
+            "correlation": correlation,
+            "sample_count": len(predictions)
+        }
+    }
+
+# Data quality validation
+@poet(domain="ml_monitoring")
+def validate_data_quality(data_points: list, feature_name: str) -> dict:
+    """Validate data quality for ML pipelines"""
+    
+    if len(data_points) == 0:
+        return {
+            "is_valid": false,
+            "feature_name": feature_name,
+            "issues": ["No data points provided"]
+        }
+    
+    # Check for missing values (represented as negative infinity)
+    missing_count = 0
+    outlier_count = 0
+    total_sum = 0.0
+    
+    for value in data_points:
+        if value < -999999:  # Representing missing/null values
+            missing_count = missing_count + 1
+        else:
+            total_sum = total_sum + value
+    
+    valid_count = len(data_points) - missing_count
+    
+    if valid_count > 0:
+        mean_value = total_sum / valid_count
+        
+        # Simple outlier detection (POET will enhance with proper statistical methods)
+        for value in data_points:
+            if value > -999999:  # Not missing
+                diff = value - mean_value
+                if diff < 0:
+                    diff = -diff
+                if diff > (mean_value * 2):  # Simple 2x mean threshold
+                    outlier_count = outlier_count + 1
+    else:
+        mean_value = 0.0
+    
+    missing_rate = missing_count / len(data_points)
+    outlier_rate = outlier_count / len(data_points)
+    
+    issues = []
+    if missing_rate > 0.1:  # 10% threshold
+        issues.append(f"High missing rate: {missing_rate:.1%}")
+    if outlier_rate > 0.05:  # 5% threshold  
+        issues.append(f"High outlier rate: {outlier_rate:.1%}")
+    
+    is_valid = len(issues) == 0
+    
+    return {
+        "is_valid": is_valid,
+        "feature_name": feature_name,
+        "missing_rate": missing_rate,
+        "outlier_rate": outlier_rate,
+        "sample_count": len(data_points),
+        "issues": issues
+    }
+
+# Usage examples and demonstrations
+log("\n=== Testing POET ML Monitoring Functions ===")
+
+log("\n1. Feature Drift Detection:")
+log("   POET adds ML domain expertise to statistical testing")
+
+# Test drift detection with different scenarios
+drift_scenarios = [
+    {
+        "name": "no_drift",
+        "current_mean": 100.0, "reference_mean": 100.0,
+        "current_std": 15.0, "reference_std": 15.0
+    },
+    {
+        "name": "mean_shift", 
+        "current_mean": 120.0, "reference_mean": 100.0,
+        "current_std": 15.0, "reference_std": 15.0
+    },
+    {
+        "name": "variance_change",
+        "current_mean": 100.0, "reference_mean": 100.0, 
+        "current_std": 25.0, "reference_std": 15.0
+    }
+]
+
+drift_results = []
+for scenario in drift_scenarios:
+    result = detect_feature_drift(
+        scenario["current_mean"], scenario["reference_mean"],
+        scenario["current_std"], scenario["reference_std"],
+        f"feature_{scenario['name']}"
+    )
+    drift_results.append(result)
+    
+    drift_data = result.unwrap()
+    status = "🚨 DRIFT" if drift_data["drift_detected"] else "✅ STABLE"
+    score = drift_data["drift_score"]
+    log(f"   {scenario['name']:15} → {status} (score: {score:.3f})")
+
+log("\n2. Model Performance Monitoring:")
+log("   POET enhances with statistical performance analysis")
+
+# Test performance monitoring
+performance_scenarios = [
+    {
+        "name": "good_model",
+        "predictions": [5.0, 7.2, 3.1, 8.9, 6.5],
+        "actuals": [4.8, 7.0, 3.3, 8.7, 6.3],
+        "description": "Model performing well"
+    },
+    {
+        "name": "degraded_model", 
+        "predictions": [5.0, 12.0, 8.0, 15.0, 4.0],
+        "actuals": [4.8, 7.0, 3.3, 8.7, 6.3],
+        "description": "Model showing degradation"
+    }
+]
+
+performance_results = []
+for scenario in performance_scenarios:
+    result = monitor_model_performance(
+        scenario["predictions"],
+        scenario["actuals"], 
+        scenario["name"]
+    )
+    performance_results.append(result)
+    
+    perf_data = result.unwrap()
+    status_icon = "✅" if perf_data["status"] == "healthy" else "🚨" if perf_data["status"] == "degraded" else "⚠️"
+    status = perf_data["status"]
+    mae = perf_data["performance_metrics"]["mae"]
+    log(f"   {scenario['name']:15} → {status_icon} {status} (MAE: {mae:.2f})")
+
+log("\n3. Data Quality Validation:")
+log("   POET ensures reliable ML pipeline data")
+
+# Test data quality validation
+quality_scenarios = [
+    {
+        "name": "clean_data",
+        "data": [1.0, 2.0, 3.0, 4.0, 5.0]
+    },
+    {
+        "name": "missing_data",
+        "data": [1.0, -999999, 3.0, -999999, 5.0]  # Using -999999 for missing
+    },
+    {
+        "name": "outlier_data", 
+        "data": [1.0, 2.0, 100.0, 4.0, 5.0]  # 100.0 is outlier
+    }
+]
+
+for scenario in quality_scenarios:
+    result = validate_data_quality(scenario["data"], f"feature_{scenario['name']}")
+    quality_data = result.unwrap()
+    
+    status_icon = "✅" if quality_data["is_valid"] else "⚠️"
+    feature_name = quality_data["feature_name"]
+    issues = quality_data["issues"]
+    log(f"   {scenario['name']:15} → {status_icon} {feature_name}")
+    if len(issues) > 0:
+        for issue in issues:
+            log(f"      Issue: {issue}")
+
+log("\n4. POET ML Domain Enhancements:")
+log("   ✅ Advanced statistical tests (KS, KL divergence, Chi-square)")
+log("   ✅ Multiple drift detection methods with automatic selection")
+log("   ✅ Statistical significance testing and confidence intervals")
+log("   ✅ Adaptive thresholds based on data characteristics")
+log("   ✅ Performance metric calculation with uncertainty bounds")
+log("   ✅ Learning from MLOps feedback to reduce false positives")
+log("   ✅ Domain-specific error handling and edge case management")
+
+log("\n✅ ML Monitoring demo complete!")
+log("   This demonstrates POET's value for production ML systems:")
+log("   - Zero-config statistical intelligence")
+log("   - Domain expertise without manual implementation")
+log("   - Learning from operations to reduce false alerts")
+log("   - Production-ready reliability and error handling")

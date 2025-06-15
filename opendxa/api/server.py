@@ -1,18 +1,19 @@
 """OpenDXA Server - Generic API server infrastructure"""
 
-from typing import Optional
-import uvicorn
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from opendxa.common.utils.logging import DXA_LOGGER
+import uvicorn
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+
+from opendxa.common.mixins.loggable import Loggable
 
 
-class OpenDXAServer:
+class OpenDXAServer(Loggable):
     """Generic OpenDXA API server supporting multiple services"""
 
     def __init__(self, host: str = "localhost", port: int = 8080, title: str = "OpenDXA API Server"):
+        super().__init__()  # Initialize Loggable mixin
         self.host = host
         self.port = port
         self.title = title
@@ -20,9 +21,9 @@ class OpenDXAServer:
         # Create FastAPI app with lifespan management
         @asynccontextmanager
         async def lifespan(app: FastAPI):
-            DXA_LOGGER.info(f"Starting {self.title} on {self.host}:{self.port}")
+            self.info(f"Starting {self.title} on {self.host}:{self.port}")
             yield
-            DXA_LOGGER.info(f"Shutting down {self.title}")
+            self.info(f"Shutting down {self.title}")
 
         self.app = FastAPI(title=self.title, description="Generic API server for OpenDXA services", version="1.0.0", lifespan=lifespan)
 
@@ -58,24 +59,32 @@ class OpenDXAServer:
             from opendxa.dana.poet.routes import router as poet_router
 
             self.app.include_router(poet_router, prefix="/poet", tags=["POET"])
-            DXA_LOGGER.info("POET routes registered successfully")
+            self.info("POET routes registered successfully")
         except ImportError as e:
-            DXA_LOGGER.warning(f"POET routes not available: {e}")
+            self.warning(f"POET routes not available: {e}")
 
         # Future services can be added here:
         # try:
         #     from opendxa.magic_functions.routes import router as magic_router
         #     self.app.include_router(magic_router, prefix="/magic", tags=["MagicFunctions"])
         # except ImportError:
-        #     DXA_LOGGER.warning("MagicFunctions routes not available")
+        #     self.warning("MagicFunctions routes not available")
 
-    def start(self, reload: bool = False, log_level: str = "info", workers: Optional[int] = None):
+    def start(self, reload: bool = False, log_level: str = "info", workers: int | None = None):
         """Start the server with uvicorn"""
         try:
-            DXA_LOGGER.info(f"Starting OpenDXA server on http://{self.host}:{self.port}")
-            uvicorn.run(self.app, host=self.host, port=self.port, reload=reload, log_level=log_level, workers=workers)
+            self.info(f"Starting OpenDXA server on http://{self.host}:{self.port}")
+            uvicorn.run(
+                self.app,
+                host=self.host,
+                port=self.port,
+                reload=reload,
+                log_level=log_level,
+                workers=workers,
+                access_log=False,  # Reduce noise for local development
+            )
         except Exception as e:
-            DXA_LOGGER.error(f"Failed to start server: {e}")
+            self.error(f"Failed to start server: {e}")
             raise
 
     def run_dev(self):
@@ -86,6 +95,10 @@ class OpenDXAServer:
 def create_server(host: str = "localhost", port: int = 8080) -> OpenDXAServer:
     """Factory function to create OpenDXA server instance"""
     return OpenDXAServer(host=host, port=port)
+
+
+# Standalone FastAPI app instance for direct uvicorn usage
+app = create_server().app
 
 
 # CLI entry point for starting the server

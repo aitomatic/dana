@@ -32,6 +32,18 @@ class AlphaFeedbackSystem:
 
         DXA_LOGGER.info(f"Alpha feedback system initialized with storage at {self.storage_path}")
 
+    def _make_serializable(self, obj: Any) -> Any:
+        """Convert any object to JSON-serializable format"""
+        if isinstance(obj, dict):
+            return {k: self._make_serializable(v) for k, v in obj.items()}
+        elif isinstance(obj, (list, tuple)):
+            return [self._make_serializable(item) for item in obj]
+        elif isinstance(obj, (str, int, float, bool)) or obj is None:
+            return obj
+        else:
+            # Convert any non-serializable object to string
+            return str(obj)
+
     def feedback(self, result: POETResult, feedback_payload: Any) -> None:
         """
         Universal feedback method - accepts ANY format and uses LLM to understand it
@@ -176,13 +188,15 @@ Return only the JSON object.
             import json
 
             if isinstance(response, dict):
-                # Already parsed
-                return response
+                # Already parsed - ensure it's serializable
+                return self._make_serializable(response)
             elif isinstance(response, str):
-                return json.loads(response.strip())
+                parsed = json.loads(response.strip())
+                return self._make_serializable(parsed)
             else:
                 # Try to parse whatever we got
-                return json.loads(str(response).strip())
+                parsed = json.loads(str(response).strip())
+                return self._make_serializable(parsed)
 
         except Exception as e:
             DXA_LOGGER.warning(f"LLM JSON parsing failed: {e}")
@@ -232,10 +246,21 @@ Return only the JSON object.
 
         self.feedback_data[execution_id].append(feedback_entry)
 
-        # Persist to file
+        # Persist to file with JSON serialization safety
         feedback_file = self.storage_path / "feedback" / f"{execution_id}_feedback.json"
-        with open(feedback_file, "w") as f:
-            json.dump(self.feedback_data[execution_id], f, indent=2)
+        try:
+            with open(feedback_file, "w") as f:
+                json.dump(self.feedback_data[execution_id], f, indent=2, default=str)
+        except Exception as e:
+            DXA_LOGGER.error(f"Failed to persist feedback to file: {e}")
+            # Try with string conversion fallback
+            try:
+                serializable_data = self._make_serializable(self.feedback_data[execution_id])
+                with open(feedback_file, "w") as f:
+                    json.dump(serializable_data, f, indent=2)
+            except Exception as e2:
+                DXA_LOGGER.error(f"Failed to persist feedback even with fallback: {e2}")
+                # Continue without persisting to file
 
         DXA_LOGGER.debug(f"Stored feedback for execution {execution_id}")
 

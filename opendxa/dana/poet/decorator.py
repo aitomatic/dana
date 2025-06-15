@@ -1,17 +1,69 @@
 """POET Decorator - @poet() implementation for function enhancement"""
 
-import inspect
+import atexit
 import functools
-from typing import Any, Callable, Optional
+import inspect
+from collections.abc import Callable
+from typing import Any
 
+from opendxa.api.client import APIClient
+from opendxa.api.service_manager import APIServiceManager
 from opendxa.common.utils.logging import DXA_LOGGER
-from .client import get_default_client
-from .types import POETConfig, POETResult, POETServiceError
+
+from .types import POETConfig, POETResult, POETServiceError, TranspiledFunction
+
+# Global POET API service for standalone usage
+_global_poet_service: APIServiceManager | None = None
+_global_poet_client: APIClient | None = None
+_cleanup_registered = False
+
+
+def _cleanup_global_poet_service():
+    """Cleanup global POET service at process exit"""
+    global _global_poet_service, _global_poet_client
+    
+    try:
+        if _global_poet_client:
+            _global_poet_client.shutdown()
+            _global_poet_client = None
+        
+        if _global_poet_service:
+            _global_poet_service.shutdown()
+            _global_poet_service = None
+            
+        DXA_LOGGER.info("Global POET API service cleaned up")
+    except Exception as e:
+        DXA_LOGGER.error(f"Error cleaning up global POET service: {e}")
+
+
+def get_poet_api_client() -> APIClient:
+    """Get or create global POET API client for standalone usage"""
+    global _global_poet_service, _global_poet_client, _cleanup_registered
+    
+    if _global_poet_client is None:
+        DXA_LOGGER.info("Initializing global POET API service")
+        
+        # Create and start API service
+        _global_poet_service = APIServiceManager()
+        _global_poet_service.startup()
+        
+        # Get and start client
+        _global_poet_client = _global_poet_service.get_client()
+        _global_poet_client.startup()
+        
+        # Register cleanup on first use
+        if not _cleanup_registered:
+            atexit.register(_cleanup_global_poet_service)
+            _cleanup_registered = True
+        
+        DXA_LOGGER.info("Global POET API service ready")
+    
+    return _global_poet_client
 
 
 def poet(
-    domain: Optional[str] = None,
-    optimize_for: Optional[str] = None,
+    domain: str | None = None,
+    optimize_for: str | None = None,
     retries: int = 3,
     timeout: float = 30.0,
     enable_monitoring: bool = True,
@@ -42,6 +94,9 @@ def poet(
         # Get function source code
         try:
             source_code = inspect.getsource(func)
+            # Fix indentation issues - dedent to remove leading whitespace
+            import textwrap
+            source_code = textwrap.dedent(source_code)
         except Exception as e:
             DXA_LOGGER.warning(f"Could not get source for {func.__name__}: {e}")
             source_code = f"def {func.__name__}(): pass  # Source unavailable"
@@ -67,14 +122,14 @@ def _execute_enhanced_function(original_func: Callable, config: POETConfig, sour
     function_name = original_func.__name__
 
     try:
-        # Get POET client
-        client = get_default_client()
+        # Get POET API client
+        api_client = get_poet_api_client()
 
         # Prepare execution context
         context = {"function_name": function_name, "args": args, "kwargs": kwargs, "module": getattr(original_func, "__module__", None)}
 
         # Check if we have a cached enhanced version
-        enhanced_func = _get_or_create_enhanced_function(client, original_func, config, source_code, context)
+        enhanced_func = _get_or_create_enhanced_function(api_client, original_func, config, source_code, context)
 
         # Execute enhanced function
         DXA_LOGGER.debug(f"Executing enhanced {function_name}")
@@ -116,10 +171,24 @@ def _get_or_create_enhanced_function(client, original_func: Callable, config: PO
     DXA_LOGGER.info(f"Transpiling {function_name} with POET")
 
     try:
-        transpiled = client.transpile_function(source_code, config, context)
+        # Call API to transpile function
+        request_data = {
+            "function_code": source_code,
+            "language": "python", 
+            "config": config.dict()
+        }
+        
+        if context:
+            request_data["context"] = context
+        
+        # Use /poet prefix for POET-specific endpoints  
+        response_data = client.post("/poet/transpile", request_data)
+        transpiled = TranspiledFunction.from_response(response_data)
 
         # Execute the generated code to get the function
-        namespace = {}
+        namespace = {
+            f"_original_{function_name}": original_func  # Inject original function
+        }
         exec(transpiled.code, namespace)
 
         # Find the enhanced function (should be named {original_name}_enhanced)
@@ -158,5 +227,24 @@ def feedback(result: POETResult, feedback_payload: Any) -> None:
         result = my_poet_function(data)
         poet.feedback(result, "The drift detection was too sensitive")
     """
-    client = get_default_client()
-    client.feedback(result, feedback_payload)
+    api_client = get_poet_api_client()
+    
+    if not isinstance(result, POETResult):
+        raise POETServiceError("result must be a POETResult instance")
+
+    execution_id = result._poet["execution_id"]
+    function_name = result._poet["function_name"]
+
+    DXA_LOGGER.info(f"Processing feedback for {function_name} execution {execution_id}")
+
+    request_data = {
+        "execution_id": execution_id,
+        "function_name": function_name,
+        "feedback_payload": feedback_payload,
+    }
+
+    try:
+        api_client.post("/poet/feedback", request_data)
+        DXA_LOGGER.info("Feedback submitted successfully")
+    except Exception as e:
+        raise POETServiceError(f"Feedback submission failed: {e}")

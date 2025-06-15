@@ -215,7 +215,9 @@ class LLMResource(BaseResource):
         # Initialize the LLM client
         self._client = None
         self.provider_configs = {}
-        Misc.safe_asyncio_run(self.initialize)
+        self._started = False
+        # Don't auto-initialize - use lazy initialization
+        # Misc.safe_asyncio_run(self.initialize)
 
     @property
     def model(self) -> str | None:
@@ -268,6 +270,11 @@ class LLMResource(BaseResource):
                 - content: The assistant's message
                 - usage: Token usage statistics
         """
+        # Lazy initialization - ensure LLM is started before use
+        if not self._started:
+            await self.initialize()
+            self._started = True
+        
         # Check if we should use mock responses first, even if resource is not available
         should_mock = self._mock_llm_call is not None and (
             self._mock_llm_call is True or callable(self._mock_llm_call) or os.environ.get("OPENDXA_MOCK_LLM", "").lower() == "true"
@@ -312,6 +319,29 @@ class LLMResource(BaseResource):
         """Cleanup resources."""
         if self._client:
             self._client = None
+
+    def startup(self) -> None:
+        """Synchronous startup - initialize LLM client"""
+        if self._started:
+            return
+        
+        Misc.safe_asyncio_run(self.initialize)
+        self._started = True
+        self.log_info(f"LLMResource '{self.name}' started synchronously")
+
+    def shutdown(self) -> None:
+        """Synchronous shutdown - cleanup LLM client"""
+        if not self._started:
+            return
+        
+        Misc.safe_asyncio_run(self.cleanup)
+        self._started = False
+        self.log_info(f"LLMResource '{self.name}' shut down")
+
+    def _ensure_started(self) -> None:
+        """Ensure LLM resource is started before use"""
+        if not self._started:
+            self.startup()
 
     def can_handle(self, request: dict[str, Any]) -> bool:
         """Check if request contains prompt."""

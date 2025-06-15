@@ -1,0 +1,175 @@
+# POET Feedback Learning - Dana Language Example
+# ==============================================
+# This example demonstrates POET's learning capabilities in Dana:
+# 1. Universal feedback interface in any format
+# 2. LLM-powered feedback translation
+# 3. Function learning and improvement over time
+# ==============================================
+
+log("🧠 POET Feedback Learning - Dana Example")
+log("=" * 50)
+
+# Learning-enabled sentiment classifier
+@poet(optimize_for="accuracy")
+def classify_sentiment(text: str) -> dict:
+    """Sentiment classifier that learns from feedback"""
+    text_lower = text.lower()
+    
+    # Simple rule-based classification (will be enhanced by POET)
+    positive_words = ["good", "great", "excellent", "amazing", "wonderful"]
+    negative_words = ["bad", "terrible", "awful", "horrible", "disappointing"]
+    
+    positive_count = 0
+    negative_count = 0
+    
+    for word in positive_words:
+        if word in text_lower:
+            positive_count = positive_count + 1
+    
+    for word in negative_words:
+        if word in text_lower:
+            negative_count = negative_count + 1
+    
+    if positive_count > negative_count:
+        sentiment = "positive"
+        confidence = 0.7
+    elif negative_count > positive_count:
+        sentiment = "negative"
+        confidence = 0.7
+    else:
+        sentiment = "neutral"
+        confidence = 0.5
+    
+    return {
+        "sentiment": sentiment,
+        "confidence": confidence,
+        "text": text,
+        "positive_signals": positive_count,
+        "negative_signals": negative_count
+    }
+
+# Learning-enabled API health monitor
+@poet(domain="ml_monitoring", optimize_for="reliability")
+def monitor_api_health(response_time: float, error_rate: float) -> dict:
+    """API health monitor that learns optimal thresholds"""
+    # Simple thresholds (will be learned/adjusted by POET)
+    slow_threshold = 1000.0  # ms
+    error_threshold = 0.05   # 5%
+    
+    is_healthy = response_time < slow_threshold and error_rate < error_threshold
+    
+    health_score = 1.0
+    if response_time >= slow_threshold:
+        health_score = health_score - 0.3
+    if error_rate >= error_threshold:
+        health_score = health_score - 0.5
+    
+    # Ensure score doesn't go below 0
+    if health_score < 0.0:
+        health_score = 0.0
+    
+    status = "healthy" if is_healthy else "degraded"
+    
+    return {
+        "is_healthy": is_healthy,
+        "health_score": health_score,
+        "response_time": response_time,
+        "error_rate": error_rate,
+        "slow_threshold": slow_threshold,
+        "error_threshold": error_threshold,
+        "status": status
+    }
+
+# Usage examples with feedback
+log("\n=== Testing POET Learning Functions ===")
+
+log("\n1. Sentiment Classification with Learning:")
+log("   @poet(optimize_for='accuracy') enables Train phase")
+
+# Test sentiment classification
+test_texts = [
+    "This product is absolutely amazing!",
+    "The service was terrible and disappointing.",
+    "It's okay, nothing special."
+]
+
+sentiment_results = []
+for text in test_texts:
+    result = classify_sentiment(text)
+    sentiment_results.append(result)
+    sentiment_data = result.unwrap()
+    log(f"   '{text[:30]}...' → {sentiment_data['sentiment']} ({sentiment_data['confidence']})")
+
+log("\n2. Providing Universal Feedback:")
+log("   POET accepts feedback in ANY format")
+
+# Import feedback function for Dana
+import opendxa.dana.poet.decorator.py as poet_module
+
+# Provide various types of feedback
+feedback_examples = [
+    "The first prediction was perfect!",
+    {"rating": 4, "comment": "Good but could be more confident"},
+    0.8,  # Just a number
+    {"correct": false, "expected": "neutral", "reason": "Missing context"}
+]
+
+for i in range(len(feedback_examples)):
+    if i < len(sentiment_results):
+        feedback_text = feedback_examples[i]
+        log(f"   Feedback {i + 1}: {feedback_text}")
+        poet_module.feedback(sentiment_results[i], feedback_text)
+        execution_id = sentiment_results[i]._poet["execution_id"]
+        short_id = execution_id[:8]
+        log(f"   ✅ Processed feedback for execution {short_id}...")
+
+log("\n3. API Health Monitoring with Learning:")
+log("   @poet(domain='ml_monitoring', optimize_for='reliability')")
+
+# Test API health monitoring
+test_cases = [
+    {"response_time": 500.0, "error_rate": 0.02},   # Good performance
+    {"response_time": 1500.0, "error_rate": 0.01},  # Slow but reliable
+    {"response_time": 800.0, "error_rate": 0.08},   # Fast but unreliable
+    {"response_time": 2000.0, "error_rate": 0.12}   # Poor performance
+]
+
+health_results = []
+for test_case in test_cases:
+    result = monitor_api_health(test_case["response_time"], test_case["error_rate"])
+    health_results.append(result)
+    health_data = result.unwrap()
+    response_time = test_case["response_time"]
+    error_rate = test_case["error_rate"]
+    status = health_data["status"]
+    score = health_data["health_score"]
+    log(f"   API ({response_time}ms, {error_rate:.1%} errors) → {status} (score: {score:.2f})")
+
+log("\n4. Learning from Operations Feedback:")
+log("   Providing operational feedback to improve thresholds")
+
+# Operational feedback examples
+operational_feedback = [
+    "1000ms threshold too strict - users complain at 1500ms",
+    {"threshold_adjustment": "increase_response_time", "suggested_value": 1200},
+    "False alarm - 5% error rate is normal during peak hours",
+    "The health score calculation seems too harsh"
+]
+
+for i in range(len(operational_feedback)):
+    if i < len(health_results):
+        feedback_text = operational_feedback[i]
+        log(f"   Ops feedback {i + 1}: {feedback_text}")
+        poet_module.feedback(health_results[i], feedback_text)
+        log(f"   ✅ Learning from operations feedback")
+
+log("\n5. How POET Learning Works:")
+log("   - Train phase activated by optimize_for parameter")
+log("   - LLM translates ANY feedback format into learning signals")
+log("   - Functions learn patterns and improve over time")
+log("   - No manual feedback schema required")
+log("   - Learning state persisted in .poet/ directory")
+
+log("\n✅ Feedback and learning demo complete!")
+log("   Check .poet/ directory for stored function versions and feedback")
+log("   Functions are now learning from real-world usage patterns")

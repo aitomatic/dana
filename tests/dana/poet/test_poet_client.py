@@ -2,14 +2,14 @@
 Tests for POET Client functionality
 """
 
-import pytest
-import tempfile
 import os
+import tempfile
 from unittest.mock import Mock, patch
-from pathlib import Path
+
+import pytest
 
 from opendxa.dana.poet.client import POETClient
-from opendxa.dana.poet.types import POETConfig, POETResult, POETServiceError
+from opendxa.dana.poet.types import POETConfig, POETResult, TranspiledFunction
 
 
 class TestPOETClient:
@@ -34,189 +34,82 @@ class TestPOETClient:
             elif key in os.environ:
                 del os.environ[key]
 
-    def test_client_local_mode_default(self):
-        """Test client defaults to local mode"""
-        # Clear environment variables
-        os.environ.pop("AITOMATIC_API_URL", None)
-        os.environ.pop("AITOMATIC_API_KEY", None)
-
-        with patch("opendxa.dana.poet.transpiler.LocalPOETTranspiler") as mock_transpiler:
-            client = POETClient()
-            assert client.local_mode is True
-            assert client.service_uri == "local"
-
-    def test_client_local_mode_explicit(self):
-        """Test client with explicit local mode"""
-        os.environ["AITOMATIC_API_URL"] = "local"
-
-        with patch("opendxa.dana.poet.transpiler.LocalPOETTranspiler") as mock_transpiler:
-            client = POETClient()
-            assert client.local_mode is True
-            assert client.service_uri == "local"
+    def test_client_initialization(self):
+        client = POETClient()
+        assert client.api_client is not None
 
     def test_client_remote_mode(self):
-        """Test client with remote service URL"""
-        os.environ["AITOMATIC_API_URL"] = "http://localhost:8080"
-        os.environ["AITOMATIC_API_KEY"] = "test-key"
-
-        with patch("opendxa.dana.poet.client.APIClient") as mock_api_client:
-            mock_client = Mock()
-            mock_client.health_check.return_value = True
-            mock_api_client.return_value = mock_client
-
+        with patch.dict("os.environ", {"AITOMATIC_API_URL": "http://test-service:8080"}):
             client = POETClient()
-            assert client.local_mode is False
-            assert client.service_uri == "http://localhost:8080"
-            assert client.api_key == "test-key"
+            assert client.service_uri == "http://test-service:8080"
 
-    def test_client_remote_mode_health_check_fails(self):
-        """Test client with failed health check"""
-        os.environ["AITOMATIC_API_URL"] = "http://localhost:8080"
-
-        with patch("opendxa.dana.poet.client.APIClient") as mock_api_client:
-            mock_client = Mock()
-            mock_client.health_check.return_value = False
-            mock_api_client.return_value = mock_client
-
-            with pytest.raises(POETServiceError, match="POET service not available"):
-                POETClient()
-
-    def test_transpile_function_local(self):
-        """Test function transpilation in local mode"""
-        os.environ["AITOMATIC_API_URL"] = "local"
-
-        with patch("opendxa.dana.poet.transpiler.LocalPOETTranspiler") as mock_transpiler_class:
-            mock_transpiler = Mock()
-            mock_result = Mock()
-            mock_transpiler.transpile_function.return_value = mock_result
-            mock_transpiler_class.return_value = mock_transpiler
-
+    def test_transpile_function(self):
+        with patch.dict("os.environ", {"AITOMATIC_API_URL": "http://test-service:8080"}):
             client = POETClient()
-            config = POETConfig(domain="test")
+            mock_result = TranspiledFunction(code="def enhanced(): pass", language="python", metadata={"version": "1.0.0"})
 
-            result = client.transpile_function("def test(): pass", config)
+            with patch("opendxa.dana.poet.client.APIClient") as mock_api_client:
+                mock_api = Mock()
+                mock_api.post.return_value = mock_result
+                mock_api_client.return_value = mock_api
 
-            assert result == mock_result
-            mock_transpiler.transpile_function.assert_called_once_with("def test(): pass", config, None)
+                config = POETConfig(domain="test")
+                result = client.transpile_function("def test(): pass", config)
+                assert result == mock_result
+                mock_api.post.assert_called_once()
 
-    def test_transpile_function_remote(self):
-        """Test function transpilation in remote mode"""
-        os.environ["AITOMATIC_API_URL"] = "http://localhost:8080"
-
-        with patch("opendxa.dana.poet.client.APIClient") as mock_api_client_class:
-            mock_api_client = Mock()
-            mock_api_client.health_check.return_value = True
-            mock_api_client.post.return_value = {
-                "poet_implementation": {"code": "enhanced code", "language": "python"},
-                "metadata": {"test": "data"},
-            }
-            mock_api_client_class.return_value = mock_api_client
-
+    def test_submit_feedback(self):
+        with patch.dict("os.environ", {"AITOMATIC_API_URL": "http://test-service:8080"}):
             client = POETClient()
-            config = POETConfig(domain="test")
+            feedback = {"execution_id": "123", "rating": 5}
 
-            result = client.transpile_function("def test(): pass", config)
+            with patch("opendxa.dana.poet.client.APIClient") as mock_api_client:
+                mock_api = Mock()
+                mock_api.post.return_value = {"status": "success"}
+                mock_api_client.return_value = mock_api
 
-            assert result.code == "enhanced code"
-            assert result.language == "python"
-            assert result.metadata == {"test": "data"}
+                result = client.submit_feedback(feedback)
+                assert result["status"] == "success"
+                mock_api.post.assert_called_once()
 
-            mock_api_client.post.assert_called_once_with(
-                "/poet/transpile", {"function_code": "def test(): pass", "language": "python", "config": config.dict()}
-            )
-
-    def test_feedback_local(self):
-        """Test feedback submission in local mode"""
-        os.environ["AITOMATIC_API_URL"] = "local"
-
-        with patch("opendxa.dana.poet.transpiler.LocalPOETTranspiler") as mock_transpiler:
-            with patch("opendxa.dana.poet.feedback.AlphaFeedbackSystem") as mock_feedback_class:
-                mock_feedback_system = Mock()
-                mock_feedback_class.return_value = mock_feedback_system
-
-                client = POETClient()
-                result = POETResult({"test": "data"}, "test_func")
-
-                client.feedback(result, "test feedback")
-
-                mock_feedback_system.feedback.assert_called_once_with(result, "test feedback")
-
-    def test_feedback_remote(self):
-        """Test feedback submission in remote mode"""
-        os.environ["AITOMATIC_API_URL"] = "http://localhost:8080"
-
-        with patch("opendxa.dana.poet.client.APIClient") as mock_api_client_class:
-            mock_api_client = Mock()
-            mock_api_client.health_check.return_value = True
-            mock_api_client.post.return_value = {"status": "success"}
-            mock_api_client_class.return_value = mock_api_client
-
-            client = POETClient()
-            result = POETResult({"test": "data"}, "test_func")
-
-            client.feedback(result, "test feedback")
-
-            mock_api_client.post.assert_called_once_with(
-                "/poet/feedback",
-                {"execution_id": result._poet["execution_id"], "function_name": "test_func", "feedback_payload": "test feedback"},
-            )
-
-    def test_feedback_invalid_result(self):
-        """Test feedback with invalid result type"""
-        os.environ["AITOMATIC_API_URL"] = "local"
-
-        with patch("opendxa.dana.poet.transpiler.LocalPOETTranspiler") as mock_transpiler:
+    def test_get_function_status(self):
+        with patch.dict("os.environ", {"AITOMATIC_API_URL": "http://test-service:8080"}):
             client = POETClient()
 
-            with pytest.raises(POETServiceError, match="result must be a POETResult instance"):
-                client.feedback("invalid", "test feedback")
+            with patch("opendxa.dana.poet.client.APIClient") as mock_api_client:
+                mock_api = Mock()
+                mock_api.get.return_value = {"status": "active"}
+                mock_api_client.return_value = mock_api
 
-    def test_get_function_status_local(self):
-        """Test function status check in local mode"""
-        os.environ["AITOMATIC_API_URL"] = "local"
+                result = client.get_function_status("test_function")
+                assert result["status"] == "active"
+                mock_api.get.assert_called_once()
 
-        with patch("opendxa.dana.poet.transpiler.LocalPOETTranspiler") as mock_transpiler:
-            with patch("opendxa.dana.poet.client.Path") as mock_path:
-                # Mock directory structure
-                mock_poet_dir = Mock()
-                mock_current_link = Mock()
-                mock_current_link.exists.return_value = True
-                mock_current_link.is_symlink.return_value = True
-                mock_current_link.readlink.return_value = Path("v1")
+    def test_error_handling(self):
+        with patch.dict("os.environ", {"AITOMATIC_API_URL": "http://test-service:8080"}):
+            client = POETClient()
 
-                mock_poet_dir.exists.return_value = True
-                mock_poet_dir.__truediv__ = Mock(return_value=mock_current_link)
+            with patch("opendxa.dana.poet.client.APIClient") as mock_api_client:
+                mock_api = Mock()
+                mock_api.post.side_effect = Exception("API Error")
+                mock_api_client.return_value = mock_api
 
-                # Mock the entire path construction chain
-                mock_poet_base = Mock()
-                mock_poet_base.__truediv__ = Mock(return_value=mock_poet_dir)
-                mock_path.return_value = mock_poet_base
+                with pytest.raises(Exception):
+                    config = POETConfig(domain="test")
+                    client.transpile_function("def test(): pass", config)
 
-                client = POETClient()
-                status = client.get_function_status("test_func")
+    def test_health_check(self):
+        with patch.dict("os.environ", {"AITOMATIC_API_URL": "http://test-service:8080"}):
+            client = POETClient()
 
-                assert status["status"] == "available"
-                assert status["function_name"] == "test_func"
-                assert status["current_version"] == "v1"
+            with patch("opendxa.dana.poet.client.APIClient") as mock_api_client:
+                mock_api = Mock()
+                mock_api.get.return_value = {"status": "healthy"}
+                mock_api_client.return_value = mock_api
 
-    def test_get_function_status_not_found(self):
-        """Test function status check for non-existent function"""
-        os.environ["AITOMATIC_API_URL"] = "local"
-
-        with patch("opendxa.dana.poet.transpiler.LocalPOETTranspiler") as mock_transpiler:
-            with patch("opendxa.dana.poet.client.Path") as mock_path:
-                mock_poet_dir = Mock()
-                mock_poet_dir.exists.return_value = False
-
-                mock_poet_base = Mock()
-                mock_poet_base.__truediv__ = Mock(return_value=mock_poet_dir)
-                mock_path.return_value = mock_poet_base
-
-                client = POETClient()
-                status = client.get_function_status("nonexistent_func")
-
-                assert status["status"] == "not_found"
-                assert status["function_name"] == "nonexistent_func"
+                result = client.check_health()
+                assert result["status"] == "healthy"
+                mock_api.get.assert_called_once()
 
 
 class TestPOETConfig:

@@ -3,8 +3,7 @@
 Alpha implementation focusing on core transpilation and learning capabilities.
 """
 
-from .client import POETClient
-from .decorator import poet
+from .decorator import poet, feedback
 from .types import POETConfig, POETResult
 
-__all__ = ["POETClient", "poet", "POETConfig", "POETResult"]
+__all__ = ["poet", "feedback", "POETConfig", "POETResult"]
