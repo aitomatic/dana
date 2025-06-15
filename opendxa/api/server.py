@@ -3,10 +3,12 @@
 from contextlib import asynccontextmanager
 
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from opendxa.common.mixins.loggable import Loggable
+from opendxa.dana.poet.types import POETTranspilationError
 
 
 class OpenDXAServer(Loggable):
@@ -116,6 +118,11 @@ def main():
 
     server = OpenDXAServer(host=args.host, port=args.port)
     server.start(reload=args.reload, workers=args.workers)
+
+
+@app.exception_handler(POETTranspilationError)
+async def poet_transpilation_exception_handler(request: Request, exc: POETTranspilationError):
+    return JSONResponse(status_code=400, content={"detail": str(exc)})
 
 
 if __name__ == "__main__":

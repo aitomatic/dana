@@ -4,25 +4,26 @@ In-memory feedback processing with LLM-powered translation.
 No PubSub integration in Alpha - focuses on immediate feedback learning.
 """
 
-from typing import Any, Dict, Optional
-from pathlib import Path
 import json
-import uuid
 from datetime import datetime
+from pathlib import Path
+from typing import Any
 
-from opendxa.common.utils.logging import DXA_LOGGER
+from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.resource.llm_resource import LLMResource
-from .types import POETResult, POETFeedbackError
+
+from .types import POETFeedbackError, POETResult
 
 
-class AlphaFeedbackSystem:
+class AlphaFeedbackSystem(Loggable):
     """Alpha implementation of POET feedback system with in-memory storage"""
 
-    def __init__(self, storage_path: Optional[str] = None):
+    def __init__(self, storage_path: str | None = None):
+        super().__init__()
         self.storage_path = Path(storage_path or ".poet")
-        self.executions: Dict[str, Dict[str, Any]] = {}  # In-memory execution storage
-        self.feedback_data: Dict[str, list[Dict[str, Any]]] = {}  # execution_id -> feedback list
-        self.trainers: Dict[str, Any] = {}  # Cached train() methods
+        self.executions: dict[str, dict[str, Any]] = {}  # In-memory execution storage
+        self.feedback_data: dict[str, list[dict[str, Any]]] = {}  # execution_id -> feedback list
+        self.trainers: dict[str, Any] = {}  # Cached train() methods
         self.llm = LLMResource()
 
         # Ensure storage directory exists
@@ -30,7 +31,7 @@ class AlphaFeedbackSystem:
         (self.storage_path / "executions").mkdir(exist_ok=True)
         (self.storage_path / "feedback").mkdir(exist_ok=True)
 
-        DXA_LOGGER.info(f"Alpha feedback system initialized with storage at {self.storage_path}")
+        self.log_info(f"Alpha feedback system initialized with storage at {self.storage_path}")
 
     def _make_serializable(self, obj: Any) -> Any:
         """Convert any object to JSON-serializable format"""
@@ -59,7 +60,7 @@ class AlphaFeedbackSystem:
         function_name = result._poet["function_name"]
         version = result._poet["version"]
 
-        DXA_LOGGER.info(f"Processing feedback for {function_name} execution {execution_id}")
+        self.log_info(f"Processing feedback for {function_name} execution {execution_id}")
 
         try:
             # Store execution context if not already stored
@@ -74,12 +75,12 @@ class AlphaFeedbackSystem:
             if trainer:
                 # Let trainer handle the feedback
                 trainer.train(execution_id, processed_feedback)
-                DXA_LOGGER.info(f"Feedback processed by trainer for {function_name}")
+                self.log_info(f"Feedback processed by trainer for {function_name}")
             else:
-                DXA_LOGGER.info(f"No trainer available for {function_name} - feedback stored only")
+                self.log_info(f"No trainer available for {function_name} - feedback stored only")
 
         except Exception as e:
-            DXA_LOGGER.error(f"Feedback processing failed: {e}")
+            self.log_error(f"Feedback processing failed: {e}")
             raise POETFeedbackError(f"Feedback processing failed: {e}")
 
     def _store_execution_context(self, result: POETResult) -> None:
@@ -116,7 +117,7 @@ class AlphaFeedbackSystem:
         else:
             return f"{type(result).__name__}: {str(result)[:100]}"
 
-    def _process_feedback(self, feedback_payload: Any, result: POETResult) -> Dict[str, Any]:
+    def _process_feedback(self, feedback_payload: Any, result: POETResult) -> dict[str, Any]:
         """Process feedback using LLM to extract learning signals"""
 
         # Create context for LLM processing
@@ -132,7 +133,7 @@ class AlphaFeedbackSystem:
         try:
             processed = self._translate_feedback_with_llm(feedback_payload, context)
         except Exception as e:
-            DXA_LOGGER.warning(f"LLM feedback translation failed: {e}, using basic processing")
+            self.log_warning(f"LLM feedback translation failed: {e}, using basic processing")
             processed = self._basic_feedback_processing(feedback_payload)
 
         # Add metadata
@@ -146,7 +147,7 @@ class AlphaFeedbackSystem:
 
         return processed
 
-    def _translate_feedback_with_llm(self, feedback_payload: Any, context: Dict[str, Any]) -> Dict[str, Any]:
+    def _translate_feedback_with_llm(self, feedback_payload: Any, context: dict[str, Any]) -> dict[str, Any]:
         """Use LLM to translate any feedback format into learning signals"""
 
         prompt = f"""
@@ -173,13 +174,15 @@ Return only the JSON object.
             from opendxa.common.types import BaseRequest
 
             request = BaseRequest(
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "You are a feedback analysis expert. Extract structured learning signals from any feedback format. Return only valid JSON.",
-                    },
-                    {"role": "user", "content": prompt},
-                ]
+                arguments={
+                    "messages": [
+                        {
+                            "role": "system",
+                            "content": "You are a feedback analysis expert. Extract structured learning signals from any feedback format. Return only valid JSON.",
+                        },
+                        {"role": "user", "content": prompt},
+                    ]
+                }
             )
             response_obj = self.llm.query_sync(request)
             response = response_obj.content
@@ -199,180 +202,124 @@ Return only the JSON object.
                 return self._make_serializable(parsed)
 
         except Exception as e:
-            DXA_LOGGER.warning(f"LLM JSON parsing failed: {e}")
+            self.log_error(f"LLM feedback translation failed: {e}")
             raise
 
-    def _basic_feedback_processing(self, feedback_payload: Any) -> Dict[str, Any]:
-        """Fallback basic feedback processing when LLM fails"""
-
-        # Simple heuristic processing
-        feedback_str = str(feedback_payload).lower()
-
-        # Determine sentiment
-        positive_words = ["good", "great", "excellent", "works", "correct", "accurate", "fast"]
-        negative_words = ["bad", "wrong", "slow", "error", "failed", "broken", "inaccurate"]
-
-        positive_count = sum(1 for word in positive_words if word in feedback_str)
-        negative_count = sum(1 for word in negative_words if word in feedback_str)
-
-        if positive_count > negative_count:
-            sentiment = "positive"
-        elif negative_count > positive_count:
-            sentiment = "negative"
+    def _basic_feedback_processing(self, feedback_payload: Any) -> dict[str, Any]:
+        """Basic feedback processing when LLM translation fails"""
+        if isinstance(feedback_payload, dict):
+            return feedback_payload
+        elif isinstance(feedback_payload, (int, float)):
+            return {
+                "sentiment": "positive" if feedback_payload > 0 else "negative" if feedback_payload < 0 else "neutral",
+                "feedback_type": "performance",
+                "confidence": 0.5,
+                "key_issues": [],
+                "suggestions": [],
+                "learning_priority": "low",
+                "business_impact": "low",
+            }
         else:
-            sentiment = "neutral"
+            return {
+                "sentiment": "neutral",
+                "feedback_type": "suggestion",
+                "confidence": 0.3,
+                "key_issues": [str(feedback_payload)],
+                "suggestions": [],
+                "learning_priority": "low",
+                "business_impact": "low",
+            }
 
-        return {
-            "sentiment": sentiment,
-            "feedback_type": "general",
-            "confidence": 0.6,  # Lower confidence for basic processing
-            "key_issues": [feedback_str[:100]] if sentiment == "negative" else [],
-            "suggestions": [],
-            "learning_priority": "medium",
-            "business_impact": "medium",
-        }
-
-    def _store_feedback(self, execution_id: str, processed_feedback: Dict[str, Any]) -> None:
+    def _store_feedback(self, execution_id: str, processed_feedback: dict[str, Any]) -> None:
         """Store processed feedback"""
+        # Store in memory
         if execution_id not in self.feedback_data:
             self.feedback_data[execution_id] = []
+        self.feedback_data[execution_id].append(processed_feedback)
 
-        feedback_entry = {
-            "feedback_id": str(uuid.uuid4()),
-            "execution_id": execution_id,
-            "timestamp": datetime.now().isoformat(),
-            **processed_feedback,
-        }
-
-        self.feedback_data[execution_id].append(feedback_entry)
-
-        # Persist to file with JSON serialization safety
+        # Also persist to file for Alpha reliability
         feedback_file = self.storage_path / "feedback" / f"{execution_id}_feedback.json"
-        try:
-            with open(feedback_file, "w") as f:
-                json.dump(self.feedback_data[execution_id], f, indent=2, default=str)
-        except Exception as e:
-            DXA_LOGGER.error(f"Failed to persist feedback to file: {e}")
-            # Try with string conversion fallback
-            try:
-                serializable_data = self._make_serializable(self.feedback_data[execution_id])
-                with open(feedback_file, "w") as f:
-                    json.dump(serializable_data, f, indent=2)
-            except Exception as e2:
-                DXA_LOGGER.error(f"Failed to persist feedback even with fallback: {e2}")
-                # Continue without persisting to file
+        with open(feedback_file, "w") as f:
+            json.dump(self.feedback_data[execution_id], f, indent=2)
 
-        DXA_LOGGER.debug(f"Stored feedback for execution {execution_id}")
+        self.log_debug(f"Stored feedback for execution {execution_id}")
 
-    def _get_trainer(self, function_name: str, version: str) -> Optional[Any]:
-        """Get or create trainer for a function (if optimize_for was specified)"""
+    def _get_trainer(self, function_name: str, version: str) -> Any | None:
+        """Get or create trainer for a function"""
         trainer_key = f"{function_name}_{version}"
-
         if trainer_key in self.trainers:
             return self.trainers[trainer_key]
 
-        # Check if a train.py file exists for this function
-        train_file = self.storage_path / function_name / version / "train.py"
+        # Try to load trainer from file
+        train_file = self.storage_path / function_name / version / "train.na"
         if train_file.exists():
             try:
-                # Load the trainer class
                 trainer = self._load_trainer_from_file(train_file)
                 self.trainers[trainer_key] = trainer
                 return trainer
             except Exception as e:
-                DXA_LOGGER.warning(f"Failed to load trainer for {function_name}: {e}")
+                self.log_warning(f"Failed to load trainer for {function_name}: {e}")
 
-        # For Alpha: create basic trainer if optimize_for was used
-        # (In real implementation, this would be generated during transpilation)
-        basic_trainer = BasicAlphaTrainer(function_name, version)
-        self.trainers[trainer_key] = basic_trainer
-        return basic_trainer
+        return None
 
     def _load_trainer_from_file(self, train_file: Path) -> Any:
-        """Load trainer class from generated train.py file"""
-        # For Alpha: simplified loading
-        # In full implementation, this would properly load generated trainer classes
-        namespace = {}
-        with open(train_file, "r") as f:
-            code = f.read()
-        exec(code, namespace)
+        """Load trainer from file"""
+        # For Alpha: simple trainer that just logs feedback
+        return BasicAlphaTrainer(train_file.parent.name, train_file.parent.parent.name)
 
-        # Look for trainer class
-        for name, obj in namespace.items():
-            if hasattr(obj, "train") and callable(getattr(obj, "train")):
-                return obj()
-
-        raise ValueError("No trainer class found in train.py")
-
-    def get_feedback_summary(self, function_name: str) -> Dict[str, Any]:
-        """Get feedback summary for a function"""
-        all_feedback = []
-        for execution_id, feedback_list in self.feedback_data.items():
-            execution = self.executions.get(execution_id, {})
-            if execution.get("function_name") == function_name:
-                all_feedback.extend(feedback_list)
-
-        if not all_feedback:
-            return {"function_name": function_name, "total_feedback": 0}
-
-        # Aggregate statistics
-        sentiments = [f.get("sentiment", "unknown") for f in all_feedback]
-        feedback_types = [f.get("feedback_type", "unknown") for f in all_feedback]
-
-        return {
-            "function_name": function_name,
-            "total_feedback": len(all_feedback),
-            "sentiment_distribution": {sentiment: sentiments.count(sentiment) for sentiment in set(sentiments)},
-            "feedback_type_distribution": {ftype: feedback_types.count(ftype) for ftype in set(feedback_types)},
-            "recent_feedback": all_feedback[-5:] if len(all_feedback) >= 5 else all_feedback,
+    def get_feedback_summary(self, function_name: str) -> dict[str, Any]:
+        """Get summary of feedback for a function"""
+        summary = {
+            "total_feedback": 0,
+            "sentiment_distribution": {"positive": 0, "negative": 0, "neutral": 0},
+            "feedback_types": {},
+            "learning_priorities": {"high": 0, "medium": 0, "low": 0},
+            "business_impacts": {"high": 0, "medium": 0, "low": 0},
         }
+
+        # Collect feedback from all executions
+        for execution_id, feedback_list in self.feedback_data.items():
+            for feedback in feedback_list:
+                if feedback.get("function_name") == function_name:
+                    summary["total_feedback"] += 1
+                    summary["sentiment_distribution"][feedback.get("sentiment", "neutral")] += 1
+                    summary["feedback_types"][feedback.get("feedback_type", "unknown")] = (
+                        summary["feedback_types"].get(feedback.get("feedback_type", "unknown"), 0) + 1
+                    )
+                    summary["learning_priorities"][feedback.get("learning_priority", "low")] += 1
+                    summary["business_impacts"][feedback.get("business_impact", "low")] += 1
+
+        return summary
 
 
 class BasicAlphaTrainer:
-    """Basic trainer for Alpha implementation when optimize_for is specified"""
+    """Basic trainer for Alpha implementation"""
 
     def __init__(self, function_name: str, version: str):
         self.function_name = function_name
         self.version = version
-        self.learning_state: Dict[str, Any] = {"feedback_count": 0, "patterns": [], "improvement_suggestions": []}
+        self.logger = Loggable.get_class_logger()
 
-        DXA_LOGGER.info(f"BasicAlphaTrainer initialized for {function_name} {version}")
-
-    def train(self, execution_id: str, processed_feedback: Dict[str, Any]) -> None:
-        """Process feedback for learning (Alpha implementation)"""
-        self.learning_state["feedback_count"] += 1
-
-        # Simple pattern detection
-        if processed_feedback.get("sentiment") == "negative":
-            if processed_feedback.get("learning_priority") == "high":
-                pattern = {
-                    "type": "high_priority_negative_feedback",
-                    "execution_id": execution_id,
-                    "issues": processed_feedback.get("key_issues", []),
-                    "timestamp": processed_feedback.get("processed_timestamp"),
-                }
-                self.learning_state["patterns"].append(pattern)
-
-        # Generate improvement suggestions (basic for Alpha)
-        if processed_feedback.get("suggestions"):
-            self.learning_state["improvement_suggestions"].extend(processed_feedback["suggestions"])
-
-        DXA_LOGGER.info(
-            f"Training completed for {self.function_name}: {self.learning_state['feedback_count']} total feedback items processed"
+    def train(self, execution_id: str, processed_feedback: dict[str, Any]) -> None:
+        """Basic training implementation that just logs feedback"""
+        self.logger.info(
+            f"Training {self.function_name} v{self.version} with feedback: {processed_feedback.get('sentiment', 'unknown')} "
+            f"({processed_feedback.get('feedback_type', 'unknown')})"
         )
 
-        # For Alpha: just log the learning state
-        # In full implementation: trigger regeneration if needed
-        if self.learning_state["feedback_count"] % 5 == 0:
-            DXA_LOGGER.info(f"Learning milestone: {self.learning_state}")
+        # Log key issues and suggestions
+        if processed_feedback.get("key_issues"):
+            self.logger.info(f"Key issues: {processed_feedback['key_issues']}")
+        if processed_feedback.get("suggestions"):
+            self.logger.info(f"Suggestions: {processed_feedback['suggestions']}")
 
 
 # Global feedback system instance
-_default_feedback_system: Optional[AlphaFeedbackSystem] = None
+_default_feedback_system: AlphaFeedbackSystem | None = None
 
 
 def get_default_feedback_system() -> AlphaFeedbackSystem:
-    """Get or create the default feedback system"""
+    """Get default feedback system instance"""
     global _default_feedback_system
     if _default_feedback_system is None:
         _default_feedback_system = AlphaFeedbackSystem()

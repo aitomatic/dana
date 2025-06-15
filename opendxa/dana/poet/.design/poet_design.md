@@ -175,16 +175,38 @@ POET (Perceive-Operate-Enforce-Train) is a function enhancement framework that a
    - Monitoring tools
    - Analytics dashboard
 
-```text
-Author: Christopher Nguyen
-Date: 2025-06-13
-Version: 0.5
-Status: Design Phase
-```
+## Environment Variable Protocol: AITOMATIC_API_URL
 
-**Related Documents:**
-- [POET Code Generation Service Design](../../../dxa-factory/poet/service/.design/poet_service_design.md)
-- [POET Pub/Sub Design](../../../common/pubsub/.design/pubsub.md)
+### Automatic Embedded Server Launch
+
+If the environment variable `AITOMATIC_API_URL` is **not set** at runtime, the POET system will:
+
+1. **Launch an embedded OpenDXA API server instance** at a randomly selected available port on localhost.
+2. **Set the environment variable** `AITOMATIC_API_URL` to the endpoint of the newly launched server (e.g., `http://localhost:54321`).
+3. **Continue execution** as if the variable had been set by the user, with all client/server communication routed through this embedded instance.
+
+This protocol ensures:
+- Zero-config developer experience: no manual setup required for local development or testing.
+- Consistent behavior: the same client-server code path is used regardless of environment.
+- Automatic resource management: the embedded server is started and stopped as needed by the process lifecycle.
+
+### Developer and User Notes
+- If you want to use a specific server (local or remote), set `AITOMATIC_API_URL` before running your code.
+- If you want to use an API key, set `AITOMATIC_API_KEY` as well (optional for local development).
+- The embedded server is only launched if `AITOMATIC_API_URL` is unset; otherwise, the system connects to the specified endpoint.
+- This protocol applies to all OpenDXA-based services, not just POET.
+
+**Example:**
+```python
+# No environment variable set
+# => Embedded server auto-starts at random port
+# => AITOMATIC_API_URL is set automatically
+result = my_poet_function()
+
+# With environment variable set
+os.environ["AITOMATIC_API_URL"] = "http://localhost:8080"
+result = my_poet_function()  # Connects to specified server
+```
 
 ## Goals
 - Transform simple Dana functions into production-ready implementations
@@ -866,3 +888,33 @@ AITOMATIC_API_KEY=sk-ait-xxxxx
   2. Generate Python implementation
   3. Store in cache with fallback metadata
   4. Monitor performance for potential Dana migration 
+
+## Cache Directory Location: Collocating Compute and Data
+
+### .dana Cache Placement Protocol
+
+The `.dana` cache directory **must be created in the same directory as the Dana module** where the enhanced function resides. This ensures that all generated code, cache, and feedback data are physically collocated with the source Dana code, supporting:
+- Locality of reference for both compute and data
+- Portability and reproducibility of Dana projects
+- Simplified project structure and debugging
+
+**Rationale:**
+- When a Dana function is enhanced or executed, all POET-related artifacts (generated code, cache, feedback, etc.) are stored in a `.dana/` subdirectory next to the module file.
+- This design guarantees that moving or copying a Dana module also brings along its enhancement history and learning data.
+- It avoids global or user-level caches that can cause confusion or data leakage between projects.
+
+**Example Directory Structure:**
+```
+my_project/
+├── my_module.na
+├── .dana/
+│   └── poet/
+│       └── ... (cache, feedback, generated code)
+```
+
+- If `my_module.na` is in a subdirectory, `.dana/` is created in that subdirectory.
+- All POET cache and generated artifacts for functions in `my_module.na` are stored under that `.dana/`.
+
+**Developer Note:**
+- Always check for a `.dana/` directory next to your Dana module for cache and enhancement data.
+- This protocol applies to all POET and OpenDXA enhancements, ensuring strict collocation of compute and data.

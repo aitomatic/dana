@@ -6,16 +6,22 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from opendxa.common.utils.logging import DXA_LOGGER
+from opendxa.common.mixins.loggable import Loggable
 
 
-class POETStorage:
+class POETStorage(Loggable):
     """File-based storage system for POET functions and metadata"""
 
-    def __init__(self, base_path: str = ".dana/poet"):
-        self.base_path = Path(base_path)
+    def __init__(self, module_file: str | None = None):
+        super().__init__()
+        # If module_file is provided, collocate .dana/poet with the module
+        if module_file:
+            module_dir = Path(module_file).parent.resolve()
+            self.base_path = module_dir / ".dana/poet"
+        else:
+            self.base_path = Path(".dana/poet").resolve()
         self._ensure_directories()
-        DXA_LOGGER.info(f"POET storage initialized at {self.base_path}")
+        self.log_info(f"POET storage initialized at {self.base_path}")
 
     def _ensure_directories(self):
         """Ensure all required directories exist"""
@@ -76,7 +82,7 @@ class POETStorage:
             current_link.unlink()
         current_link.symlink_to(version)
 
-        DXA_LOGGER.info(f"Stored enhanced function {function_name} version {version}")
+        self.log_info(f"Stored enhanced function {function_name} version {version}")
         return version_dir
 
     def load_enhanced_function(self, function_name: str, version: str | None = None) -> dict[str, Any]:
@@ -166,7 +172,7 @@ class POETStorage:
         with open(execution_file, "w") as f:
             json.dump(context_with_metadata, f, indent=2)
 
-        DXA_LOGGER.debug(f"Stored execution context for {execution_id}")
+        self.log_debug(f"Stored execution context for {execution_id}")
         return execution_file
 
     def load_execution_context(self, execution_id: str) -> dict[str, Any]:
@@ -198,15 +204,15 @@ class POETStorage:
         feedback_entry = {**feedback_data, "stored_at": datetime.now().isoformat()}
         existing_feedback.append(feedback_entry)
 
-        # Save updated feedback
+        # Store updated feedback
         with open(feedback_file, "w") as f:
             json.dump(existing_feedback, f, indent=2)
 
-        DXA_LOGGER.debug(f"Stored feedback for execution {execution_id}")
+        self.log_debug(f"Stored feedback for execution {execution_id}")
         return feedback_file
 
     def load_feedback(self, execution_id: str) -> list[dict[str, Any]]:
-        """Load feedback data for an execution"""
+        """Load feedback data"""
         feedback_dir = self.base_path / "feedback"
         feedback_file = feedback_dir / f"{execution_id}_feedback.json"
 
@@ -214,68 +220,48 @@ class POETStorage:
             return []
 
         with open(feedback_file) as f:
-            feedback_data = json.load(f)
-
-        # Ensure it's a list
-        if not isinstance(feedback_data, list):
-            feedback_data = [feedback_data]
-
-        return feedback_data
+            feedback = json.load(f)
+            if not isinstance(feedback, list):
+                return [feedback]
+            return feedback
 
     def get_function_feedback_summary(self, function_name: str) -> dict[str, Any]:
-        """Get aggregated feedback summary for a function"""
-        # Find all executions for this function
-        executions_dir = self.base_path / "executions"
+        """Get summary of feedback for a function"""
         feedback_dir = self.base_path / "feedback"
+        if not feedback_dir.exists():
+            return {"total_feedback": 0, "feedback_by_version": {}}
 
-        all_feedback = []
-        execution_count = 0
+        # Collect all feedback files
+        feedback_files = list(feedback_dir.glob("*_feedback.json"))
+        total_feedback = 0
+        feedback_by_version = {}
 
-        for execution_file in executions_dir.glob("*.json"):
-            try:
-                with open(execution_file) as f:
-                    context = json.load(f)
+        for feedback_file in feedback_files:
+            with open(feedback_file) as f:
+                feedback_data = json.load(f)
+                if not isinstance(feedback_data, list):
+                    feedback_data = [feedback_data]
 
-                if context.get("function_name") == function_name:
-                    execution_count += 1
-                    execution_id = context["execution_id"]
-
-                    # Load feedback for this execution
-                    feedback = self.load_feedback(execution_id)
-                    all_feedback.extend(feedback)
-
-            except Exception as e:
-                DXA_LOGGER.warning(f"Failed to process execution file {execution_file}: {e}")
-
-        # Aggregate statistics
-        if not all_feedback:
-            return {
-                "function_name": function_name,
-                "execution_count": execution_count,
-                "feedback_count": 0,
-                "summary": "No feedback available",
-            }
-
-        sentiments = [f.get("sentiment", "unknown") for f in all_feedback]
-        feedback_types = [f.get("feedback_type", "unknown") for f in all_feedback]
+                for entry in feedback_data:
+                    if entry.get("function_name") == function_name:
+                        total_feedback += 1
+                        version = entry.get("version", "unknown")
+                        if version not in feedback_by_version:
+                            feedback_by_version[version] = 0
+                        feedback_by_version[version] += 1
 
         return {
-            "function_name": function_name,
-            "execution_count": execution_count,
-            "feedback_count": len(all_feedback),
-            "sentiment_distribution": {sentiment: sentiments.count(sentiment) for sentiment in set(sentiments)},
-            "feedback_type_distribution": {ftype: feedback_types.count(ftype) for ftype in set(feedback_types)},
-            "recent_feedback": all_feedback[-5:] if len(all_feedback) >= 5 else all_feedback,
+            "total_feedback": total_feedback,
+            "feedback_by_version": feedback_by_version,
         }
 
     def cleanup_old_versions(self, function_name: str, keep_versions: int = 5):
-        """Clean up old versions, keeping only the most recent ones"""
+        """Clean up old versions of a function"""
         versions = self.list_function_versions(function_name)
-
         if len(versions) <= keep_versions:
             return
 
-        # Remove oldest versions
+        # Keep the most recent versions
         versions_to_remove = versions[:-keep_versions]
         function_dir = self.base_path / function_name
 
@@ -283,131 +269,98 @@ class POETStorage:
             version_dir = function_dir / version
             if version_dir.exists():
                 shutil.rmtree(version_dir)
-                DXA_LOGGER.info(f"Cleaned up old version {function_name}/{version}")
+                self.log_debug(f"Removed old version {version} of {function_name}")
 
     def get_storage_stats(self) -> dict[str, Any]:
         """Get storage statistics"""
         stats = {
-            "base_path": str(self.base_path),
             "total_functions": 0,
             "total_versions": 0,
             "total_executions": 0,
-            "total_feedback_files": 0,
-            "disk_usage_mb": 0,
+            "total_feedback": 0,
+            "storage_size": 0,
         }
 
-        try:
-            # Count functions and versions
-            for function_dir in self.base_path.iterdir():
-                if function_dir.is_dir() and function_dir.name not in ["executions", "feedback", "cache"]:
-                    stats["total_functions"] += 1
-                    versions = self.list_function_versions(function_dir.name)
-                    stats["total_versions"] += len(versions)
+        # Count functions and versions
+        for function_dir in self.base_path.iterdir():
+            if function_dir.is_dir() and function_dir.name not in ["executions", "feedback", "cache", "magic"]:
+                stats["total_functions"] += 1
+                versions = self.list_function_versions(function_dir.name)
+                stats["total_versions"] += len(versions)
 
-            # Count executions
-            executions_dir = self.base_path / "executions"
-            if executions_dir.exists():
-                stats["total_executions"] = len(list(executions_dir.glob("*.json")))
+        # Count executions
+        executions_dir = self.base_path / "executions"
+        if executions_dir.exists():
+            stats["total_executions"] = len(list(executions_dir.glob("*.json")))
 
-            # Count feedback files
-            feedback_dir = self.base_path / "feedback"
-            if feedback_dir.exists():
-                stats["total_feedback_files"] = len(list(feedback_dir.glob("*.json")))
+        # Count feedback
+        feedback_dir = self.base_path / "feedback"
+        if feedback_dir.exists():
+            stats["total_feedback"] = len(list(feedback_dir.glob("*_feedback.json")))
 
-            # Calculate disk usage (rough estimate)
-            total_size = sum(f.stat().st_size for f in self.base_path.rglob("*") if f.is_file())
-            stats["disk_usage_mb"] = round(total_size / (1024 * 1024), 2)
-
-        except Exception as e:
-            DXA_LOGGER.warning(f"Failed to calculate storage stats: {e}")
+        # Calculate storage size
+        stats["storage_size"] = sum(f.stat().st_size for f in self.base_path.rglob("*") if f.is_file())
 
         return stats
 
     def get_cached_generated_code(self, function_name: str, source_hash: str) -> dict[str, Any] | None:
-        """
-        Check if we have cached generated code for this function and source code.
+        """Get cached generated code for a function"""
+        cache_dir = self.base_path / "cache"
+        cache_file = cache_dir / f"{function_name}_{source_hash}.json"
 
-        Args:
-            function_name: Name of the function
-            source_hash: Hash of the source code
-
-        Returns:
-            Dict containing cached code and metadata if found, None otherwise
-        """
-        cache_dir = self.base_path / "cache" / function_name
-        if not cache_dir.exists():
-            return None
-
-        cache_file = cache_dir / f"{source_hash}.json"
         if not cache_file.exists():
             return None
 
         try:
             with open(cache_file) as f:
                 cache_data = json.load(f)
-
-            # Verify the cache is still valid
-            if cache_data.get("source_hash") != source_hash:
-                return None
-
-            # Check if we need to regenerate due to POET version changes
-            if cache_data.get("poet_version") != self._get_current_poet_version():
-                return None
-
-            return cache_data
+                if cache_data.get("source_hash") != source_hash:
+                    return None
+                return cache_data
         except Exception as e:
-            DXA_LOGGER.warning(f"Failed to read cache for {function_name}: {e}")
+            self.log_error(f"Error reading cache for {function_name}: {e}")
             return None
 
     def cache_generated_code(self, function_name: str, source_hash: str, generated_code: str, metadata: dict[str, Any]) -> None:
-        """
-        Cache generated code for a function.
-
-        Args:
-            function_name: Name of the function
-            source_hash: Hash of the source code
-            generated_code: The generated code to cache
-            metadata: Additional metadata about the generation
-        """
-        cache_dir = self.base_path / "cache" / function_name
-        cache_dir.mkdir(parents=True, exist_ok=True)
+        """Cache generated code for a function"""
+        cache_dir = self.base_path / "cache"
+        cache_file = cache_dir / f"{function_name}_{source_hash}.json"
 
         cache_data = {
+            "function_name": function_name,
             "source_hash": source_hash,
             "generated_code": generated_code,
             "metadata": metadata,
             "cached_at": datetime.now().isoformat(),
-            "poet_version": self._get_current_poet_version(),
-            "language": metadata.get("language", "dana"),  # Track language (dana or python)
         }
 
-        cache_file = cache_dir / f"{source_hash}.json"
         try:
             with open(cache_file, "w") as f:
                 json.dump(cache_data, f, indent=2)
-            DXA_LOGGER.debug(f"Cached generated code for {function_name}")
+            self.log_debug(f"Cached generated code for {function_name}")
         except Exception as e:
-            DXA_LOGGER.warning(f"Failed to cache generated code for {function_name}: {e}")
+            self.log_error(f"Error caching generated code for {function_name}: {e}")
 
     def _get_current_poet_version(self) -> str:
-        """Get current POET version for cache invalidation"""
+        """Get current POET version"""
         # TODO: Implement version tracking
-        return "0.1.0"
+        return "1.0.0-alpha"
 
 
 # Global storage instance
-_default_storage: POETStorage | None = None
+_default_storage: dict[str, POETStorage] = {}
 
 
-def get_default_storage() -> POETStorage:
-    """Get or create the default storage instance"""
+def get_default_storage(module_file: str | None = None) -> POETStorage:
+    """Get default storage instance for a given module file"""
     global _default_storage
-    if _default_storage is None:
-        _default_storage = POETStorage()
-    return _default_storage
+    key = str(Path(module_file).parent.resolve()) if module_file else "__default__"
+    if key not in _default_storage:
+        _default_storage[key] = POETStorage(module_file)
+    return _default_storage[key]
 
 
 def set_storage_path(path: str):
-    """Set the storage path and reinitialize default storage"""
+    """Set storage path for default instance"""
     global _default_storage
     _default_storage = POETStorage(path)

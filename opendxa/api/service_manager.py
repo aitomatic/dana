@@ -1,11 +1,12 @@
 """API Service Manager - Manages local API server lifecycle"""
 
+import os
 import socket
 import subprocess
 import time
-from typing import cast
+from typing import Any, cast
 
-from opendxa.common.config import ConfigManager
+from opendxa.common.config import ConfigLoader
 from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.utils.logging import DXA_LOGGER
 
@@ -67,19 +68,35 @@ class APIServiceManager(Loggable):
 
         return APIClient(base_uri=cast(str, self.service_uri), api_key=self.api_key)
 
+    @property
+    def local_mode(self) -> bool:
+        """Check if running in local mode"""
+        if not self.service_uri:
+            return False
+        return self.service_uri == "local" or "localhost" in self.service_uri
+
     def _load_config(self) -> None:
         """Load configuration from environment"""
-        config = ConfigManager()
+        config = ConfigLoader()
+        config_data: dict[str, Any] = config.get_default_config() or {}
 
         # Get service URI
-        self.service_uri = config.get("AITOMATIC_API_URL")
+        self.service_uri = config_data.get("AITOMATIC_API_URL")
         if not self.service_uri:
-            raise ValueError("AITOMATIC_API_URL environment variable must be set")
+            # Launch embedded server at random port
+            port = self._find_free_port()
+            self.service_uri = f"http://localhost:{port}"
+            os.environ["AITOMATIC_API_URL"] = self.service_uri
 
         # Get API key
-        self.api_key = config.get("AITOMATIC_API_KEY")
+        self.api_key = config_data.get("AITOMATIC_API_KEY")
         if not self.api_key:
-            raise ValueError("AITOMATIC_API_KEY environment variable must be set")
+            if self.local_mode:
+                # In local mode, use a default API key
+                self.api_key = "local"
+                os.environ["AITOMATIC_API_KEY"] = self.api_key
+            else:
+                raise ValueError("AITOMATIC_API_KEY environment variable must be set")
 
         # Initialize API client
         self._init_api_client()
@@ -88,9 +105,11 @@ class APIServiceManager(Loggable):
 
     def _init_api_client(self) -> None:
         """Initialize API client with configuration."""
-        from opendxa.common.api import APIClient
+        from opendxa.api.client import APIClient
 
-        self.api_client = APIClient(base_uri=self.service_uri, api_key=self.api_key)
+        if not self.service_uri:
+            raise ValueError("Service URI must be set before initializing API client")
+        self.api_client = APIClient(base_uri=cast(str, self.service_uri), api_key=self.api_key)
 
     def _start_local_server(self) -> None:
         """Start local API server on available port"""
@@ -177,6 +196,8 @@ class APIServiceManager(Loggable):
             self._init_api_client()
 
         try:
+            if not self.api_client:
+                return False
             response = self.api_client.get("/health")
             return response.get("status") == "healthy"
         except Exception as e:

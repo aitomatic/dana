@@ -4,15 +4,16 @@ import os
 from typing import Any
 
 from opendxa.api.client import APIClient, APIConnectionError, APIServiceError
-from opendxa.common.utils.logging import DXA_LOGGER
+from opendxa.common.mixins.loggable import Loggable
 
 from .types import POETConfig, POETResult, POETServiceError, POETTranspilationError, TranspiledFunction
 
 
-class POETClient:
+class POETClient(Loggable):
     """POET client for remote API service"""
 
     def __init__(self, config_path: str | None = None):
+        super().__init__()  # Initialize Loggable mixin
         # Load configuration from .env file
         self._load_config(config_path)
 
@@ -35,7 +36,7 @@ class POETClient:
 
         self.api_key = os.getenv("AITOMATIC_API_KEY")
 
-        DXA_LOGGER.debug(f"Configuration loaded: service_uri={self.service_uri}, api_key={'***' if self.api_key else None}")
+        self.log_debug(f"Configuration loaded: service_uri={self.service_uri}, api_key={'***' if self.api_key else None}")
 
     def _setup_api_client(self):
         """Setup API client and verify connection"""
@@ -45,7 +46,7 @@ class POETClient:
         if not self.api_client.health_check():
             raise POETServiceError(f"POET service not available at {self.service_uri}")
 
-        DXA_LOGGER.info(f"Connected to POET service at {self.service_uri}")
+        self.log_info(f"Connected to POET service at {self.service_uri}")
 
     def transpile_function(self, function_code: str, config: POETConfig, context: dict[str, Any] | None = None) -> TranspiledFunction:
         """Transpile function using remote POET service"""
@@ -70,7 +71,7 @@ class POETClient:
         execution_id = result._poet["execution_id"]
         function_name = result._poet["function_name"]
 
-        DXA_LOGGER.info(f"Processing feedback for {function_name} execution {execution_id}")
+        self.log_info(f"Processing feedback for {function_name} execution {execution_id}")
 
         request_data = {
             "execution_id": execution_id,
@@ -80,7 +81,7 @@ class POETClient:
 
         try:
             self.api_client.post("/poet/feedback", request_data)
-            DXA_LOGGER.info("Feedback submitted successfully")
+            self.log_info("Feedback submitted successfully")
 
         except (APIConnectionError, APIServiceError) as e:
             raise POETServiceError(f"Feedback submission failed: {e}")
