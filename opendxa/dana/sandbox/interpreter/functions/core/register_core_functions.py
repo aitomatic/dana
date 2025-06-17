@@ -52,12 +52,12 @@ def register_core_functions(registry: FunctionRegistry) -> None:
                 if name.endswith("_function"):
                     # Remove '_function' suffix for the registry name
                     dana_func_name = name.replace("_function", "")
-                    
+
                     # Register in registry (trusted by default for core functions)
                     registry.register(
                         name=dana_func_name,
                         func=obj,
-                        func_type="python",
+                        func_type="dana",
                         overwrite=True,
                         trusted_for_context=True,  # Core functions are always trusted
                     )

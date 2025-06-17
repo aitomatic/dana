@@ -3,8 +3,9 @@
 ```text
 Author: Christopher Nguyen
 Date: 2025-06-13
-Version: 0.5
-Status: Design Phase
+Version: 0.6
+Status: Implementation Phase - MVP Gap Analysis
+Last Updated: 2025-06-17
 ```
 
 **Related Documents:**
@@ -69,39 +70,140 @@ Status: Design Phase
   - ✅ Architecture diagrams
   - ✅ Troubleshooting guide
 
+## Critical MVP Gap Analysis (June 17, 2025)
+
+### Current State vs MVP Requirements
+
+#### ✅ What's Working
+1. **Basic Infrastructure**: POETClient, decorator, storage system exist
+2. **API Routes**: `/poet/transpile` endpoint defined
+3. **Storage Structure**: POETStorage with `.dana/poet/` directory management
+
+#### ❌ Critical Gaps for MVP
+1. **No Actual Enhancement**: Transpiler generates placeholder code only
+2. **Storage Not Integrated**: POETStorage exists but decorator doesn't use it
+3. **No P→O→E Generation**: Missing actual phase implementation
+4. **No Function Loading**: Can't load/execute enhanced Dana functions
+5. **No Feedback System**: `feedback()` function not implemented
+6. **No Train Generation**: Train phase not created when `optimize_for` specified
+
 ### Implementation Progress
-**Overall Progress**: [ ] 0% | [ ] 20% | [ ] 40% | [ ] 60% | [ ] 80% | [ ] 100%
+**Overall Progress**: [ ] 0% | [✓] 20% | [ ] 40% | [ ] 60% | [ ] 80% | [ ] 100%
+
+## Immediate Next Steps for MVP (Priority Order)
+
+### Step 1: Fix Storage Integration in Decorator
+**File**: `opendxa/dana/poet/decorator.py`
+**Current Issue**: Decorator doesn't use POETStorage, falls back to original function
+**Required Changes**:
+```python
+# In POETDecorator.__call__() wrapper function:
+1. Import and use POETStorage with module_file path
+2. Check if enhanced version exists in storage
+3. Load enhanced function if exists
+4. Generate and store if not exists
+5. Execute enhanced function instead of falling back
+```
+
+### Step 2: Implement Real P→O→E Code Generation
+**File**: `opendxa/dana/poet/transpiler.py`
+**Current Issue**: Generates placeholder code
+**Required Changes**:
+```python
+# In _generate_enhanced_code():
+1. Generate actual perceive() function with input validation
+2. Generate operate() function that calls original logic
+3. Generate enforce() function with output validation
+4. Generate main orchestrator function
+5. Include proper imports and Dana syntax
+```
+
+### Step 3: Create Function Loader/Executor
+**New File**: `opendxa/dana/poet/executor.py`
+**Purpose**: Load and execute enhanced Dana functions
+**Required Implementation**:
+```python
+1. Load enhanced.na from storage
+2. Parse Dana code into executable format
+3. Create callable wrapper
+4. Handle execution context
+5. Return POETResult with metadata
+```
+
+### Step 4: Implement POETResult Wrapper
+**File**: `opendxa/dana/poet/types.py`
+**Current Issue**: No result wrapper exists
+**Required Changes**:
+```python
+1. Create POETResult dataclass
+2. Include value and metadata fields
+3. Add execution_id generation
+4. Support feedback correlation
+```
+
+### Step 5: Implement Feedback System
+**File**: `opendxa/dana/poet/feedback.py`
+**Current Issue**: Empty implementation
+**Required Changes**:
+```python
+1. Implement feedback() function
+2. Load execution context from storage
+3. Trigger train() function callback
+4. Store feedback data
+5. Handle various feedback formats
+```
+
+### Step 6: Generate Train Function
+**File**: `opendxa/dana/poet/transpiler.py`
+**Current Issue**: Train code generation is placeholder
+**Required Changes**:
+```python
+# When optimize_for is specified:
+1. Generate train() function in train.na
+2. Include feedback processing logic
+3. Add improvement generation
+4. Support version updates
+```
+
+## Updated Implementation Timeline
 
 ### Phase 1: Foundation & Architecture (Days 1-3, ~25%)
-**Target**: Service infrastructure + core transpilation working
 
-#### Day 1 (June 14): Service Infrastructure & Core Transpilation
+#### Day 1 (June 17): Fix Core Integration Issues ✅ COMPLETED
 - [✅] `opendxa.api.server` and `opendxa.api.client` modules
 - [✅] `POETClient` with .env-based configuration
-- [✅] `/poet/transpile` endpoint with fail-fast error handling
-- [✅] Basic P→O→E generation (no learning yet)
-- [✅] File storage in `.poet/` directory structure
-- [✅] Makefile target: `make opendxa-server` for local service
-- [🔄] Unit tests for service mode
-- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
-- [🔄] **Phase Gate**: Update implementation progress checkboxes
+- [✅] `/poet/transpile` endpoint defined
+- [✅] POETStorage implementation complete
+- [✅] Basic decorator structure exists
+- [❌] Storage integration in decorator - **CRITICAL GAP**
+- [❌] Real P→O→E code generation - **CRITICAL GAP**
+- [❌] Function loader/executor - **MISSING COMPONENT**
 
-#### Day 2 (June 15): LLM-Powered Feedback
-- [ ] `poet.feedback()` API accepting any format
-- [ ] POETResult wrapper with execution context
-- [ ] Basic train() method generation for `optimize_for` functions
-- [ ] LLM translation of feedback to learning signals
-- [ ] In-memory execution and feedback storage
-- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
-- [ ] **Phase Gate**: Update implementation progress checkboxes
+#### Day 2 (June 18): Implement Storage Integration & Real Enhancement
+**Morning (4 hours)**:
+- [ ] Fix decorator to use POETStorage (Step 1)
+- [ ] Implement real P→O→E code generation (Step 2)
+- [ ] Test with reason_function example
+- [ ] Verify enhanced.na files are created correctly
 
-#### Day 3 (June 16): Basic Learning Loop
-- [ ] Feedback collection and storage
-- [ ] Learning signal generation
-- [ ] Parameter updates
-- [ ] Version management
-- [ ] **Phase Gate**: Run `uv run pytest tests/ -v` - ALL tests pass
-- [ ] **Phase Gate**: Update implementation progress checkboxes
+**Afternoon (4 hours)**:
+- [ ] Create function executor (Step 3)
+- [ ] Implement POETResult wrapper (Step 4)
+- [ ] Test end-to-end flow: @poet → storage → execution
+- [ ] **Phase Gate**: Basic enhancement working for reason_function
+
+#### Day 3 (June 19): Complete Feedback & Learning System
+**Morning (4 hours)**:
+- [ ] Implement feedback() function (Step 5)
+- [ ] Generate train() functions (Step 6)
+- [ ] Test feedback flow with execution context
+- [ ] Verify train.na generation for optimize_for functions
+
+**Afternoon (4 hours)**:
+- [ ] Integration testing of complete flow
+- [ ] Fix any issues discovered
+- [ ] Create working example with feedback
+- [ ] **Phase Gate**: Complete P→O→E→T cycle working
 
 ### Phase 2: Enhancement Pipeline (Days 4-6, ~50%)
 **Target**: Complete enhancement pipeline with caching
@@ -279,7 +381,56 @@ opendxa/
         └── drift_detection.py # Complete example
 ```
 
+## Implementation Guide for MVP Completion
+
+### Storage Location Convention
+**IMPORTANT**: Storage must be module-relative with proper naming:
+```
+# For reason_function in /opendxa/dana/sandbox/interpreter/functions/core/reason_function.py
+Storage Path: /opendxa/dana/sandbox/interpreter/functions/core/.dana/poet/reason_function.reason_function/
+```
+
+### Enhanced Function Structure (enhanced.na)
+Every enhanced function MUST have these standard functions:
+```dana
+def perceive(inputs...) -> dict:
+    """Input validation and preprocessing"""
+    
+def operate(data: dict) -> Any:
+    """Core enhanced logic"""
+    
+def enforce(result: Any) -> Any:
+    """Output validation and post-processing"""
+    
+def reason_function(original_args...) -> POETResult:
+    """Main orchestrator - named after original function"""
+```
+
+### Testing the Implementation
+1. **Test Basic Enhancement**:
+   ```python
+   from opendxa.dana.sandbox.interpreter.functions.core.reason_function import reason_function
+   result = reason_function("What is 2+2?")
+   # Should create .dana/poet/reason_function.reason_function/v1/enhanced.na
+   ```
+
+2. **Test Feedback System**:
+   ```python
+   from opendxa.dana.poet import feedback
+   feedback(result.metadata["execution_id"], "Response too verbose")
+   # Should trigger train() function callback
+   ```
+
+3. **Verify Storage Structure**:
+   ```bash
+   ls -la opendxa/dana/sandbox/interpreter/functions/core/.dana/poet/
+   # Should show reason_function.reason_function directory
+   ```
+
 ## Recent Updates
+- 2025-06-17: 🔴 **CRITICAL**: Identified major implementation gaps for MVP
+- 2025-06-17: 📋 Created detailed step-by-step implementation guide
+- 2025-06-17: 🎯 Prioritized immediate fixes: storage integration → real enhancement → feedback
 - 2025-06-14: ✅ Completed Day 1 core infrastructure (API modules, client, routes, storage)
 - 2025-06-14: ✅ Generalized service design for unified OpenDXA API platform  
 - 2025-06-14: ✅ Implemented full local transpilation pipeline with LLM integration
@@ -296,12 +447,38 @@ opendxa/
 - 2025-06-14: **Testing Balance**: Focus on working demos with 80% unit test coverage for regression protection
 - 2025-06-14: **Service Architecture**: opendxa.api module provides foundation for all OpenDXA REST services
 
-## Upcoming Milestones
-- 2025-06-14: Begin Phase 1 implementation (API infrastructure)
-- 2025-06-16: Complete foundation with basic learning loop
-- 2025-06-19: ML monitoring domain fully implemented
-- 2025-06-22: Documentation and examples complete
+## Upcoming Milestones (REVISED)
+- 2025-06-17: ✅ Gap analysis complete, implementation guide created
+- 2025-06-18: Storage integration + real P→O→E generation
+- 2025-06-19: Feedback system + train generation complete
+- 2025-06-20: ML monitoring domain example working
+- 2025-06-22: Documentation and testing complete
 - 2025-06-26: **DELIVERY**: Alpha MVP ready for demonstration
+
+## MVP Definition & Success Criteria
+**Minimum Viable POET** must demonstrate:
+1. **Enhancement Works**: @poet decorator actually enhances functions (not placeholder)
+2. **Storage Works**: Enhanced functions stored in `.dana/poet/module.function/` 
+3. **Execution Works**: Enhanced functions execute with P→O→E phases
+4. **Feedback Works**: feedback() triggers train() callback
+5. **Learning Readiness**: Train functions generated for future learning
+
+**Demo Scenario**:
+```python
+# 1. Original function struggles
+result1 = reason("complex prompt")  # Poor response
+
+# 2. Apply POET enhancement
+@poet(domain="llm_optimization")
+def reason_function(...): ...
+
+# 3. Enhanced function performs better
+result2 = reason("complex prompt")  # Better response with P→O→E
+
+# 4. Feedback triggers learning
+feedback(result2.execution_id, "still too verbose")
+# Train function called, ready for v2 generation
+```
 
 ## Current Blockers & Risks
 **High Risk Items**:
