@@ -3628,52 +3628,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../design/01_dana_language_specification/modules_and_imports/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Modules and Imports
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../design/01_dana_language_specification/magic_functions/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Magic Functions
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../design/01_dana_language_specification/error_handling/" class="md-nav__link">
         
   
@@ -3956,27 +3910,9 @@
   
   
   
-    
-    
-    
-    
-      
-      
+    <li class="md-nav__item">
+      <a href="../design/02_dana_runtime_and_execution/python_integration/" class="md-nav__link">
         
-      
-    
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-        
-        
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7_4_10" >
-        
-          
-          <label class="md-nav__link" for="__nav_7_4_10" id="__nav_7_4_10_label" tabindex="0">
-            
   
   
   <span class="md-ellipsis">
@@ -3985,88 +3921,7 @@
   </span>
   
 
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_7_4_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_7_4_10">
-            <span class="md-nav__icon md-icon"></span>
-            Python Integration
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../design/02_dana_runtime_and_execution/python_integration/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Overview
-    
-  </span>
-  
-
       </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../design/02_dana_runtime_and_execution/dana-to-python/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Dana to Python
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../design/02_dana_runtime_and_execution/python-to-dana/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Python to Dana
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
     </li>
   
 
@@ -4276,29 +4131,6 @@
   
   <span class="md-ellipsis">
     User-defined Resources
-    
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../design/03_core_capabilities_resources/use_statement/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    Use Statement
     
   </span>
   
@@ -4993,6 +4825,7 @@
 <li><a href="setup/installation/">5-Minute Setup</a> - Install and verify OpenDXA</li>
 <li><a href="recipes/first-agent/">Build Your First Agent</a> - Working code in 10 minutes</li>
 <li><a href="reference/dana-syntax/">Dana Language Basics</a> - Essential syntax reference</li>
+<li><a href="reference/structs-and-methods/">Structs and Methods Guide</a> - Complete struct system guide</li>
 </ul>
 <h2 id="common-tasks">📋 Common Tasks<a class="headerlink" href="#common-tasks" title="Permanent link">&para;</a></h2>
 <p>Jump directly to solutions for typical engineering problems.</p>
@@ -5001,12 +4834,14 @@
 <li>📄 <a href="recipes/document-processor/">Process Documents</a> - Extract, analyze, transform content</li>
 <li><a href="recipes/workflow-agent/">Create Workflows</a> - Multi-step automated processes</li>
 <li><a href="recipes/api-integration/">Integrate APIs</a> - Connect external services</li>
+<li><a href="recipes/structs-cookbook/">Struct Patterns Cookbook</a> - Real-world struct patterns and examples</li>
 <li><a href="troubleshooting/">Debug Issues</a> - Common problems and solutions</li>
 </ul>
 <h2 id="reference">Reference<a class="headerlink" href="#reference" title="Permanent link">&para;</a></h2>
 <p>Quick lookup for syntax, functions, and commands.</p>
 <ul>
 <li><a href="reference/dana-syntax/">Dana Language Reference</a> - Complete syntax guide</li>
+<li><a href="reference/structs-and-methods/">Structs and Methods Guide</a> - Comprehensive struct system reference</li>
 <li><a href="reference/api/">API Reference</a> - All available functions with examples</li>
 <li><a href="reference/repl-guide/">REPL Commands</a> - Interactive development environment</li>
 <li><a href="troubleshooting/">Troubleshooting</a> - Common problems and solutions</li>
@@ -5028,10 +4863,22 @@
 <h2 id="core-concepts-for-engineers">Core Concepts for Engineers<a class="headerlink" href="#core-concepts-for-engineers" title="Permanent link">&para;</a></h2>
 <h3 id="dana-language">Dana Language<a class="headerlink" href="#dana-language" title="Permanent link">&para;</a></h3>
 <p>Dana is the heart of OpenDXA - a simple, powerful language for AI automation:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Load data and analyze</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="n">documents</span> <span class="o">=</span> <span class="n">load_documents</span><span class="p">(</span><span class="s2">&quot;contracts/*&quot;</span><span class="p">)</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="n">key_points</span> <span class="o">=</span> <span class="n">reason</span><span class="p">(</span><span class="s2">&quot;Extract key terms from </span><span class="si">{documents}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="n">summary</span> <span class="o">=</span> <span class="n">reason</span><span class="p">(</span><span class="s2">&quot;Summarize findings: </span><span class="si">{key_points}</span><span class="s2">&quot;</span><span class="p">)</span>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a># Load data and analyze
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>documents = load_documents(&quot;contracts/*&quot;)
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>key_points = reason(&quot;Extract key terms from {documents}&quot;)
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>summary = reason(&quot;Summarize findings: {key_points}&quot;)
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a># Structured data with AI integration
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>struct Customer:
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>    name: str
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    email: str
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>    risk_level: str
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>def assess_risk(customer: Customer) -&gt; str:
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    return reason(&quot;Assess customer risk level&quot;, context=customer)
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>customer = Customer(name=&quot;Alice&quot;, email=&quot;alice@example.com&quot;, risk_level=&quot;&quot;)
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>risk = customer.assess_risk()  # Method syntax sugar
 </span></code></pre></div>
 <h3 id="agent-architecture">Agent Architecture<a class="headerlink" href="#agent-architecture" title="Permanent link">&para;</a></h3>
 <p>Build structured agents with clear capabilities:</p>
@@ -5081,16 +4928,18 @@
 </span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>│ ├── document-processor/README.md # Process and analyze documents
 </span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>│ ├── workflow-agent/README.md # Multi-step automation
 </span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>│ ├── api-integration/README.md # Connect external services
-</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>│ └── README.md # Recipe guides
-</span><span id="__span-4-14"><a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>├── reference/
-</span><span id="__span-4-15"><a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>│ ├── dana-syntax.md # Complete Dana language reference
-</span><span id="__span-4-16"><a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>│ ├── functions.md # All available functions
-</span><span id="__span-4-17"><a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>│ ├── repl-guide.md # Interactive development
-</span><span id="__span-4-18"><a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>│ ├── agent-api.md # Agent configuration API
-</span><span id="__span-4-19"><a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a>│ └── state-management.md # State scopes and management
-</span><span id="__span-4-20"><a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>└── troubleshooting/README.md
-</span><span id="__span-4-21"><a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a> ├── common-issues.md # Frequent problems and solutions
-</span><span id="__span-4-22"><a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a> └── README.md # Troubleshooting guide
+</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>│ ├── structs-cookbook.md # Real-world struct patterns and examples
+</span><span id="__span-4-14"><a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>│ └── README.md # Recipe guides
+</span><span id="__span-4-15"><a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>├── reference/
+</span><span id="__span-4-16"><a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>│ ├── dana-syntax.md # Complete Dana language reference
+</span><span id="__span-4-17"><a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>│ ├── structs-and-methods.md # Comprehensive struct system guide
+</span><span id="__span-4-18"><a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>│ ├── functions.md # All available functions
+</span><span id="__span-4-19"><a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a>│ ├── repl-guide.md # Interactive development
+</span><span id="__span-4-20"><a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>│ ├── agent-api.md # Agent configuration API
+</span><span id="__span-4-21"><a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a>│ └── state-management.md # State scopes and management
+</span><span id="__span-4-22"><a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a>└── troubleshooting/README.md
+</span><span id="__span-4-23"><a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a> ├── common-issues.md # Frequent problems and solutions
+</span><span id="__span-4-24"><a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a> └── README.md # Troubleshooting guide
 </span></code></pre></div>
 <hr />
 <p><em>Ready to build? Start with <a href="#getting-started-paths">Getting Started</a> or jump to <a href="#common-tasks">Common Tasks</a></em> </p>
@@ -5166,7 +5015,7 @@ Copyright © 2025 Aitomatic, Inc. Licensed under the <a href="../../LICENSE.md">
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-datetime" title="June 9, 2025 14:10:43 UTC">June 9, 2025 14:10:43</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-datetime" title="June 11, 2025 00:48:06 UTC">June 11, 2025 00:48:06</span>
   </span>
 
     

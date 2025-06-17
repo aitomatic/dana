@@ -8,10 +8,10 @@
 <meta content="Comprehensive documentation for OpenDXA - Domain-Aware NeuroSymbolic Architecture" name="description"/>
 <link href="https://opendxa.readthedocs.io/design/02_dana_runtime_and_execution/python_integration/" rel="canonical"/>
 <link href="../external_interfaces/" rel="prev"/>
-<link href="../dana-to-python/" rel="next"/>
+<link href="../security_considerations/" rel="next"/>
 <link href="../../../images/aitomatic-favicon.png" rel="icon"/>
 <meta content="mkdocs-1.6.1, mkdocs-material-9.6.14" name="generator"/>
-<title>Overview - OpenDXA with Dana</title>
+<title>Python Integration - OpenDXA with Dana</title>
 <link href="../../../assets/stylesheets/main.342714a4.min.css" rel="stylesheet"/>
 <link href="../../../assets/stylesheets/palette.06af60db.min.css" rel="stylesheet"/>
 <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
@@ -50,7 +50,7 @@
 <div class="md-header__topic" data-md-component="header-topic">
 <span class="md-ellipsis">
             
-              Overview
+              Python Integration
             
           </span>
 </div>
@@ -1150,22 +1150,6 @@
 </a>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../../01_dana_language_specification/modules_and_imports/">
-<span class="md-ellipsis">
-    Modules and Imports
-    
-  </span>
-</a>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="../../01_dana_language_specification/magic_functions/">
-<span class="md-ellipsis">
-    Magic Functions
-    
-  </span>
-</a>
-</li>
-<li class="md-nav__item">
 <a class="md-nav__link" href="../../01_dana_language_specification/error_handling/">
 <span class="md-ellipsis">
     Error Handling
@@ -1263,33 +1247,18 @@
   </span>
 </a>
 </li>
-<li class="md-nav__item md-nav__item--active md-nav__item--nested">
-<input checked="" class="md-nav__toggle md-toggle" id="__nav_7_4_10" type="checkbox"/>
-<label class="md-nav__link" for="__nav_7_4_10" id="__nav_7_4_10_label" tabindex="0">
+<li class="md-nav__item md-nav__item--active">
+<input class="md-nav__toggle md-toggle" id="__toc" type="checkbox"/>
+<label class="md-nav__link md-nav__link--active" for="__toc">
 <span class="md-ellipsis">
     Python Integration
     
   </span>
 <span class="md-nav__icon md-icon"></span>
 </label>
-<nav aria-expanded="true" aria-labelledby="__nav_7_4_10_label" class="md-nav" data-md-level="3">
-<label class="md-nav__title" for="__nav_7_4_10">
-<span class="md-nav__icon md-icon"></span>
-            Python Integration
-          </label>
-<ul class="md-nav__list" data-md-scrollfix="">
-<li class="md-nav__item md-nav__item--active">
-<input class="md-nav__toggle md-toggle" id="__toc" type="checkbox"/>
-<label class="md-nav__link md-nav__link--active" for="__toc">
-<span class="md-ellipsis">
-    Overview
-    
-  </span>
-<span class="md-nav__icon md-icon"></span>
-</label>
 <a class="md-nav__link md-nav__link--active" href="./">
 <span class="md-ellipsis">
-    Overview
+    Python Integration
     
   </span>
 </a>
@@ -1444,25 +1413,6 @@
 </nav>
 </li>
 <li class="md-nav__item">
-<a class="md-nav__link" href="../dana-to-python/">
-<span class="md-ellipsis">
-    Dana to Python
-    
-  </span>
-</a>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="../python-to-dana/">
-<span class="md-ellipsis">
-    Python to Dana
-    
-  </span>
-</a>
-</li>
-</ul>
-</nav>
-</li>
-<li class="md-nav__item">
 <a class="md-nav__link" href="../security_considerations/">
 <span class="md-ellipsis">
     Security Considerations
@@ -1532,14 +1482,6 @@
 <a class="md-nav__link" href="../../03_core_capabilities_resources/user_defined_resources/">
 <span class="md-ellipsis">
     User-defined Resources
-    
-  </span>
-</a>
-</li>
-<li class="md-nav__item">
-<a class="md-nav__link" href="../../03_core_capabilities_resources/use_statement/">
-<span class="md-ellipsis">
-    Use Statement
     
   </span>
 </a>
@@ -1863,8 +1805,8 @@
 <table>
 <thead>
 <tr>
-<th><a href="../dana-to-python/">Dana-to-Python →</a></th>
-<th><a href="../python-to-dana/">Python-to-Dana →</a></th>
+<th><a href="../../../.implementation/dana-to-python/">Dana-to-Python →</a></th>
+<th><a href="../../../.implementation/python-to-dana/">Python-to-Dana →</a></th>
 </tr>
 </thead>
 <tbody>
@@ -1885,14 +1827,14 @@
 <h2 id="core-components">Core Components<a class="headerlink" href="#core-components" title="Permanent link">¶</a></h2>
 <p>The Python integration system consists of three main components:</p>
 <ol>
-<li><strong>Module System Integration</strong> (<a href="../../01_dana_language_specification/modules_and_imports/">modules_and_imports.md</a>)</li>
+<li><strong>Module System Integration</strong> (<a href="../../../.implementation/modules_and_imports/">modules_and_imports.md</a>)</li>
 <li>How Dana modules can import Python modules</li>
 <li>How Python modules are represented in Dana</li>
 <li>
 <p>Module resolution and caching</p>
 </li>
 <li>
-<p><strong>Dana → Python</strong> (<a href="../dana-to-python/">dana_to_python.md</a>)</p>
+<p><strong>Dana → Python</strong> (<a href="../../../.implementation/dana-to-python/">dana_to_python.md</a>)</p>
 </li>
 <li>Dana code calling Python functions</li>
 <li>Managing Python objects from Dana</li>
@@ -1900,7 +1842,7 @@
 <p>Future sandboxing of Python execution</p>
 </li>
 <li>
-<p><strong>Python → Dana</strong> (<a href="../python-to-dana/">python_to_dana.md</a>)</p>
+<p><strong>Python → Dana</strong> (<a href="../../../.implementation/python-to-dana/">python_to_dana.md</a>)</p>
 </li>
 <li>Python code calling Dana functions</li>
 <li>Dana runtime embedding in Python</li>
@@ -2054,17 +1996,17 @@
 <tr>
 <td>Module System</td>
 <td>In Progress</td>
-<td>See modules_and_imports.md</td>
+<td>See ../../.implementation/modules_and_imports.md</td>
 </tr>
 <tr>
 <td>Dana → Python</td>
 <td>In Progress</td>
-<td>See dana_to_python.md</td>
+<td>See ../../.implementation/dana-to-python.md</td>
 </tr>
 <tr>
 <td>Python → Dana</td>
 <td>In Progress</td>
-<td>See python_to_dana.md</td>
+<td>See ../../.implementation/python-to-dana.md</td>
 </tr>
 <tr>
 <td>PythonFunction</td>
@@ -2182,9 +2124,9 @@
 </ol>
 <h2 id="related-documents">Related Documents<a class="headerlink" href="#related-documents" title="Permanent link">¶</a></h2>
 <ul>
-<li><a href="../../01_dana_language_specification/modules_and_imports/">Module System Design</a></li>
-<li><a href="../dana-to-python/">Dana to Python Integration</a></li>
-<li><a href="../python-to-dana/">Python to Dana Integration</a></li>
+<li><a href="../../../.implementation/modules_and_imports/">Module System Design</a></li>
+<li><a href="../../../.implementation/dana-to-python/">Dana to Python Integration</a></li>
+<li><a href="../../../.implementation/python-to-dana/">Python to Dana Integration</a></li>
 <li><a href="../external_interfaces/">External Interfaces</a></li>
 </ul>
 <h2 id="open-questions">Open Questions<a class="headerlink" href="#open-questions" title="Permanent link">¶</a></h2>
@@ -2200,7 +2142,7 @@
 <span class="md-icon" title="Last update">
 <svg viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"></path></svg>
 </span>
-<span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-datetime" title="June 9, 2025 08:11:26 UTC">June 9, 2025 08:11:26</span>
+<span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-datetime" title="June 10, 2025 22:04:35 UTC">June 10, 2025 22:04:35</span>
 </span>
 <span class="md-source-file__fact">
 <span class="md-icon" title="Created">
