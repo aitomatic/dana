@@ -312,7 +312,7 @@ def test_enhanced_function_registry_operations():
     def foo(context, x):
         return x + 1
 
-    registry.register("foo", foo)
+    registry.register("foo", foo, trusted_for_context=True)
 
     # Check if exists
     assert registry.has("foo")
@@ -333,7 +333,7 @@ def test_enhanced_function_registry_operations():
     def bar(context, x, y):
         return x * y
 
-    registry.register("bar", bar)
+    registry.register("bar", bar, trusted_for_context=True)
     assert registry.has("bar")
 
     result = registry.call("bar", context, args=[6, 7])
@@ -343,7 +343,7 @@ def test_enhanced_function_registry_operations():
     def new_foo(context, x):
         return x + 10
 
-    registry.register("foo", new_foo, overwrite=True)
+    registry.register("foo", new_foo, overwrite=True, trusted_for_context=True)
     result = registry.call("foo", context, args=[32])
     assert result == 42
 

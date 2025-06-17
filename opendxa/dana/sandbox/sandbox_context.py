@@ -22,6 +22,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Optional
 
 from opendxa.common.resource.base_resource import BaseResource
+from opendxa.common.utils.logging import DXA_LOGGER
 from opendxa.dana.common.exceptions import StateError
 from opendxa.dana.common.runtime_scopes import RuntimeScopes
 
@@ -542,26 +543,35 @@ class SandboxContext:
         Raises:
             StateError: If the scope is unknown
         """
+        DXA_LOGGER.debug(f"DEBUG: get_from_scope called for var_name='{var_name}', scope='{scope}'")
+
         if scope not in RuntimeScopes.ALL:
+            DXA_LOGGER.debug(f"DEBUG: Unknown scope '{scope}'")
             raise StateError(f"Unknown scope: {scope}")
 
         # For global scopes, get from root context
         if scope in RuntimeScopes.GLOBAL:
+            DXA_LOGGER.debug(f"DEBUG: Global scope '{scope}', looking in root context")
             root = self
             while root._parent is not None:
                 root = root._parent
             if var_name in root._state[scope]:
+                DXA_LOGGER.debug(f"DEBUG: Found '{var_name}' in root context's {scope} scope")
                 return root._state[scope][var_name]
+            DXA_LOGGER.debug(f"DEBUG: '{var_name}' not found in root context's {scope} scope")
             return None
 
         # For local scope, check current context first
         if var_name in self._state[scope]:
+            DXA_LOGGER.debug(f"DEBUG: Found '{var_name}' in current context's {scope} scope")
             return self._state[scope][var_name]
 
         # Then check parent contexts
         if self._parent is not None:
+            DXA_LOGGER.debug(f"DEBUG: '{var_name}' not found in current context, checking parent")
             return self._parent.get_from_scope(var_name, scope)
 
+        DXA_LOGGER.debug(f"DEBUG: '{var_name}' not found in any context")
         return None
 
     def get_assignment_target_type(self) -> Any | None:
@@ -661,11 +671,11 @@ class SandboxContext:
         """Clean up context state - clear local state only (don't destroy shared resources)"""
         # Clear local state only
         self.clear("local")
-        
+
         # Reset execution state
         self._state["system"]["history"] = []
         self.set_execution_status(ExecutionStatus.IDLE)
-        
+
         # Don't call resource.shutdown() - DanaSandbox owns those resources
         # Just clear references (they remain in system scope for potential reuse)
 

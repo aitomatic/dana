@@ -83,6 +83,10 @@ class FunctionResolver:
     def resolve_function(self, name_info: FunctionNameInfo, context: SandboxContext, registry: Any) -> ResolvedFunction | None:
         """Resolve a function using the parsed name information.
 
+        Resolution order (per user requirements):
+        1. Function registry first (system functions)
+        2. Context scope hierarchy: local → private → system → public (user functions)
+
         Args:
             name_info: Parsed function name information
             context: The execution context
@@ -94,17 +98,87 @@ class FunctionResolver:
         Raises:
             FunctionRegistryError: If function cannot be resolved
         """
-        # Try fully-scoped context first (local, private, public, etc.)
-        func = self._resolve_from_context(name_info, context)
-        if func:
-            return func
-
-        # Try registry second
+        # 1. Try registry first (system functions have highest priority)
         registry_func = self._resolve_from_registry(name_info, registry)
         if registry_func:
             return registry_func
 
+        # 2. Try context scope hierarchy: local → private → system → public
+        context_func = self._resolve_from_context_hierarchy(name_info, context)
+        if context_func:
+            return context_func
+
         return None
+
+    def _resolve_from_context_hierarchy(self, name_info: FunctionNameInfo, context: SandboxContext) -> ResolvedFunction | None:
+        """Resolve function from context using proper scope hierarchy.
+        
+        Scope resolution order: local → private → system → public
+        
+        Args:
+            name_info: Parsed function name information
+            context: The execution context
+            
+        Returns:
+            Resolved function from context, or None if not found
+        """
+        # Define scope hierarchy (order matters!)
+        scope_hierarchy = ["local", "private", "system", "public"]
+        
+        # If the function name specifies a scope (e.g., "private.my_func"), only check that scope
+        if "." in name_info.original_name:
+            try:
+                func_data = context.get(name_info.full_key)
+                if func_data is not None:
+                    return self._create_resolved_function_from_context(func_data, name_info)
+            except Exception:
+                pass
+            return None
+        
+        # For unscoped function names, try each scope in hierarchy order
+        for scope in scope_hierarchy:
+            try:
+                scoped_key = f"{scope}.{name_info.func_name}"
+                func_data = context.get(scoped_key)
+                if func_data is not None:
+                    # Found function in this scope, create resolved function
+                    resolved_info = FunctionNameInfo(
+                        original_name=name_info.original_name,
+                        func_name=name_info.func_name,
+                        namespace=scope,
+                        full_key=scoped_key
+                    )
+                    return self._create_resolved_function_from_context(func_data, resolved_info)
+            except Exception:
+                # Continue to next scope if this one fails
+                continue
+                
+        return None
+
+    def _create_resolved_function_from_context(self, func_data: Any, name_info: FunctionNameInfo) -> ResolvedFunction:
+        """Create a ResolvedFunction from context data."""
+        from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
+        from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
+
+        if isinstance(func_data, DanaFunction):
+            func_type = "dana"
+        elif isinstance(func_data, SandboxFunction):
+            func_type = "sandbox"
+        elif callable(func_data):
+            func_type = "callable"
+        else:
+            func_type = "data"
+
+        return ResolvedFunction(
+            func=func_data,
+            func_type=func_type,
+            source="context",
+            metadata={
+                "resolved_name": name_info.full_key,
+                "original_name": name_info.original_name,
+                "scope": name_info.namespace
+            }
+        )
 
     def _resolve_from_context(self, name_info: FunctionNameInfo, context: SandboxContext) -> ResolvedFunction | None:
         """Resolve function from all scoped context.
@@ -158,7 +232,7 @@ class FunctionResolver:
 
         try:
             # Try original name first
-            if registry.has_function(name_info.original_name):
+            if registry.has(name_info.original_name):
                 return ResolvedFunction(
                     func=None,  # Registry functions don't expose the actual function object
                     func_type="registry",
@@ -167,7 +241,7 @@ class FunctionResolver:
                 )
 
             # Try base function name
-            if registry.has_function(name_info.func_name):
+            if registry.has(name_info.func_name):
                 return ResolvedFunction(
                     func=None,  # Registry functions don't expose the actual function object
                     func_type="registry",

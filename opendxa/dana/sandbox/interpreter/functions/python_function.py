@@ -13,17 +13,19 @@ from .sandbox_function import SandboxFunction
 class PythonFunction(SandboxFunction):
     """Wrapper for Python functions that makes them compatible with BaseFunction interface."""
 
-    def __init__(self, func: Callable, context: SandboxContext | None = None):
+    def __init__(self, func: Callable, context: SandboxContext | None = None, trusted_for_context: bool = False):
         """Initialize a Python function wrapper.
 
         Args:
             func: The Python function to wrap
             context: Optional sandbox context
+            trusted_for_context: Whether this function is trusted to receive SandboxContext
         """
         super().__init__(context)
         self.func = func
         self.wants_context = False
         self.context_param_name = None
+        self.trusted_for_context = trusted_for_context  # Explicit trust flag
 
         # Extract parameters from function signature
         self.parameters: list[str] = []  # All parameters
@@ -105,6 +107,17 @@ class PythonFunction(SandboxFunction):
 
         return False
 
+    def _is_trusted_for_context(self) -> bool:
+        """
+        Security check: Determine if this function is trusted to receive SandboxContext.
+        
+        This uses an explicit trust flag set during registration.
+        
+        Returns:
+            True if the function is trusted to receive SandboxContext
+        """
+        return self.trusted_for_context
+
     def prepare_context(self, context: SandboxContext, args: list[Any], kwargs: dict[str, Any]) -> SandboxContext:
         """
         Prepare context for a Python function.
@@ -175,9 +188,13 @@ class PythonFunction(SandboxFunction):
             The result of calling the Python function
         """
 
-        # Handle context injection properly
+        # Security check: only trusted functions can receive context
         if self.wants_context and self.context_param_name:
-            # Check if context parameter is the first parameter
+            if not self._is_trusted_for_context():
+                # Function wants context but is not trusted - call without context
+                return self.func(*args, **kwargs)
+            
+            # Function is trusted - proceed with context injection
             try:
                 sig = inspect.signature(self.func)
                 param_names = list(sig.parameters.keys())
@@ -187,12 +204,13 @@ class PythonFunction(SandboxFunction):
                     kwargs.pop(self.context_param_name, None)
                     return self.func(context, *args, **kwargs)
                 else:
-                    # Context is not first parameter - it should be in kwargs already
+                    # Context is not first parameter - inject it into kwargs
+                    kwargs = self.inject_context(context, kwargs)
                     return self.func(*args, **kwargs)
             except (AttributeError, OSError):
-                # Fallback to using kwargs if signature inspection fails
-                # Only catch exceptions related to signature inspection, not function execution
+                # Fallback to using kwargs with context injection
+                kwargs = self.inject_context(context, kwargs)
                 return self.func(*args, **kwargs)
         else:
-            # No context needed - just call the function
+            # Function doesn't want context - call normally
             return self.func(*args, **kwargs)

@@ -27,6 +27,7 @@ class POETDecorator:
             self.client = get_default_client()
         return self.client
 
+
     def __call__(self, func: Callable[..., Any]) -> Callable[..., Any]:
         POETDecorator._instances[func] = self
 

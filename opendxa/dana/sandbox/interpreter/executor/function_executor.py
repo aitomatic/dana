@@ -87,8 +87,16 @@ class FunctionExecutor(BaseExecutor):
             else:
                 param_names.append(str(param))
 
+        # Extract return type if present
+        return_type = None
+        if hasattr(node, "return_type") and node.return_type is not None:
+            if hasattr(node.return_type, "name"):
+                return_type = node.return_type.name
+            else:
+                return_type = str(node.return_type)
+
         # Create the base DanaFunction
-        dana_func = DanaFunction(body=node.body, parameters=param_names, context=context)
+        dana_func = DanaFunction(body=node.body, parameters=param_names, context=context, return_type=return_type)
 
         # Check for POET decorators and apply them
         poet_decorators = [d for d in node.decorators if d.name.lower() == "poet"]

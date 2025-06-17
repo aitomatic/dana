@@ -170,6 +170,7 @@ class FunctionRegistry:
         func_type: str = "dana",
         metadata: FunctionMetadata | None = None,
         overwrite: bool = False,
+        trusted_for_context: bool | None = None,
     ) -> None:
         """Register a function with optional namespace and metadata.
 
@@ -180,6 +181,8 @@ class FunctionRegistry:
             func_type: Type of function ("dana" or "python")
             metadata: Optional function metadata
             overwrite: Whether to allow overwriting existing functions
+            trusted_for_context: Whether this function is trusted to receive SandboxContext
+                                (None means auto-detect based on namespace)
 
         Raises:
             ValueError: If function already exists and overwrite=False
@@ -197,7 +200,10 @@ class FunctionRegistry:
 
         if not isinstance(func, SandboxFunction):
             # It's a raw callable, wrap it
-            func = PythonFunction(func)
+            # Use explicit trust setting (defaults to False if not specified)
+            if trusted_for_context is None:
+                trusted_for_context = False
+            func = PythonFunction(func, context=None, trusted_for_context=trusted_for_context)
             # When auto-wrapping, always use python func_type
             func_type = "python"
 
@@ -418,21 +424,11 @@ class FunctionRegistry:
             # In the test_function_call_chaining test, it expects the function to be called with just the input value
             func_name = name.split(".")[-1]  # Get the bare function name without namespace
 
-            # Special case for the reason function in test_unified_execution.py
+            # Special case for the reason function
             if func_name == "reason" and len(positional_args) >= 1:
-                # The reason_function expects (prompt, context, options=None, use_mock=None)
+                # The reason_function expects (context, prompt, options=None, use_mock=None)
                 # We need to package any keyword arguments into the options dictionary
                 prompt = positional_args[0]
-                if isinstance(prompt, SandboxContext):
-                    # If the first parameter is a context object, this is probably wrong
-                    # Since this is a test function, we'll assume the string is the second parameter
-                    if len(positional_args) > 1:
-                        prompt = positional_args[1]
-                        # Remove the prompt from args to avoid passing it twice
-                        positional_args = [positional_args[0]] + positional_args[2:]
-                    else:
-                        # We don't have enough arguments, so just use an empty string
-                        prompt = ""
 
                 # Package keyword arguments into options dictionary
                 options = {}
@@ -442,8 +438,6 @@ class FunctionRegistry:
                 if len(positional_args) >= 2 and isinstance(positional_args[1], dict):
                     # The second argument is a dictionary, treat it as options
                     options.update(positional_args[1])
-                    # Remove the options dict from positional args
-                    positional_args = [positional_args[0]] + positional_args[2:]
 
                 # Extract special parameters
                 if "use_mock" in func_kwargs:
@@ -453,25 +447,40 @@ class FunctionRegistry:
                 if func_kwargs:
                     options.update(func_kwargs)
 
-                # Call with proper signature: reason_function(prompt, context, options, use_mock)
+                # Security check for reason function: only trusted functions can receive context
+                if not func._is_trusted_for_context():
+                    # Call without context - this will likely fail but maintains security
+                    return wrapped_func(prompt)
+                
+                # Call with correct signature: reason_function(context, prompt, options, use_mock)
                 if options and use_mock is not None:
-                    return wrapped_func(prompt, context, options, use_mock)
+                    return wrapped_func(context, prompt, options, use_mock)
                 elif options:
-                    return wrapped_func(prompt, context, options)
+                    return wrapped_func(context, prompt, options)
                 elif use_mock is not None:
-                    return wrapped_func(prompt, context, None, use_mock)
+                    return wrapped_func(context, prompt, None, use_mock)
                 else:
-                    return wrapped_func(prompt, context)
+                    return wrapped_func(context, prompt)
             # Special case for the process function
             elif func_name == "process" and len(positional_args) == 1:
-                # Pass the single argument followed by context
-                return wrapped_func(positional_args[0], context)
+                # Security check: only trusted functions can receive context
+                if not func._is_trusted_for_context():
+                    # Call without context
+                    return wrapped_func(positional_args[0])
+                else:
+                    # Pass the single argument followed by context
+                    return wrapped_func(positional_args[0], context)
 
             # Call with context as first argument if expected, with error handling
             try:
                 if first_param_is_ctx:
-                    # First parameter is context
-                    return wrapped_func(context, *positional_args, **func_kwargs)
+                    # Security check: only trusted functions can receive context
+                    if not func._is_trusted_for_context():
+                        # Function wants context but is not trusted - call without context
+                        return wrapped_func(*positional_args, **func_kwargs)
+                    else:
+                        # First parameter is context and function is trusted
+                        return wrapped_func(context, *positional_args, **func_kwargs)
                 else:
                     # No context parameter
                     return wrapped_func(*positional_args, **func_kwargs)

@@ -262,89 +262,30 @@ class StructInstance:
         """Convert struct instance to dictionary."""
         return self._values.copy()
 
-    def call_method(self, method_name: str, args: list[Any], kwargs: dict[str, Any]) -> Any:
-        """Syntactic sugar: struct.method(*args, **kwargs) -> method(struct, *args, **kwargs).
+    def call_method(self, method_name: str, *args: Any, **kwargs: Any) -> Any:
+        """Call a method on a struct instance.
 
         Args:
-            method_name: Name of the method to call
-            args: List of positional arguments
-            kwargs: Dictionary of keyword arguments
+            method_name: The name of the method to call
+            *args: Positional arguments
+            **kwargs: Keyword arguments
 
         Returns:
-            Result of the method call
+            The result of the method call
 
         Raises:
-            NotImplementedError: If method not found or not callable
+            AttributeError: If the method doesn't exist
         """
-        # Get the function from the context
-        from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
-        from opendxa.dana.sandbox.interpreter.executor.expression_executor import ExpressionExecutor
-        from opendxa.dana.sandbox.interpreter.executor.function_executor import FunctionExecutor
-        from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
-        from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
-        from opendxa.dana.sandbox.interpreter.sandbox_context import SandboxContext
+        # Get the struct type
+        struct_type = self.__struct_type__
 
-        # Create a new context for the function call
-        context = SandboxContext()
+        # Get the method from the struct type
+        method = getattr(struct_type, method_name, None)
+        if method is None:
+            raise AttributeError(f"Struct {struct_type.__name__} has no method {method_name}")
 
-        # Try to get the function from the context
-        function = None
-        try:
-            # Try direct scope access first
-            function = context.get_from_scope(method_name, scope="local")
-        except Exception:
-            pass
-
-        if function is None:
-            # Try alternative context access methods
-            try:
-                function = context.get(f"local.{method_name}")
-            except Exception:
-                pass
-
-        if function is None:
-            # Try registry lookup
-            registry = FunctionRegistry()
-            try:
-                function = registry.get(method_name)
-            except Exception:
-                pass
-
-        if function is None:
-            raise NotImplementedError(f"Method '{method_name}' not found")
-
-        # Create a new function call with self as first argument
-        from opendxa.dana.sandbox.parser.ast import FunctionCall
-
-        # Add self as first positional argument
-        new_args = [self] + args
-
-        # Create the function call
-        call = FunctionCall(name=method_name, args={"__positional": new_args, **kwargs})
-
-        # Create executor chain with proper parent relationships
-        # Create a root executor that delegates to itself
-        class RootExecutor(BaseExecutor):
-            def __init__(self):
-                super().__init__(self)
-                self.register_handlers()
-                self._function_registry = FunctionRegistry()
-
-            def register_handlers(self):
-                self._handlers = {}
-
-            def execute(self, node: Any, context: SandboxContext) -> Any:
-                raise SandboxError(f"Unsupported node type: {type(node)}")
-
-        root_executor = RootExecutor()
-        expr_executor = ExpressionExecutor(parent_executor=root_executor)
-        func_executor = FunctionExecutor(parent_executor=expr_executor)
-
-        # Execute the function call
-        if isinstance(function, DanaFunction):
-            return function.execute(context, *new_args, **kwargs)
-        else:
-            return func_executor.execute_function_call(call, context)
+        # Call the method with self as the first argument
+        return method(self, *args, **kwargs)
 
 
 class StructTypeRegistry:

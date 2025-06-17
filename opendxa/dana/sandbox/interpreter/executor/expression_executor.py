@@ -17,7 +17,6 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-import inspect
 from typing import Any
 
 from opendxa.common.utils.misc import Misc
@@ -111,14 +110,15 @@ class ExpressionExecutor(BaseExecutor):
             The value of the identifier in the context
         """
         name = node.name
-        
+
         # DEBUG: Add logging to understand the issue
         from opendxa.common.utils.logging import DXA_LOGGER
+
         DXA_LOGGER.debug(f"DEBUG: Executing identifier '{name}'")
         DXA_LOGGER.debug(f"DEBUG: Context state keys: {list(context._state.keys())}")
         for scope, state in context._state.items():
             DXA_LOGGER.debug(f"DEBUG: Scope '{scope}' variables: {list(state.keys())}")
-        
+
         try:
             result = context.get(name)
             DXA_LOGGER.debug(f"DEBUG: Successfully found '{name}' via context.get(): {result}")
@@ -434,263 +434,118 @@ class ExpressionExecutor(BaseExecutor):
 
         raise AttributeError(f"'{type(target).__name__}' object has no attribute '{node.attribute}'")
 
-    def execute_object_function_call(self, node: ObjectFunctionCall, context: SandboxContext) -> Any:
-        """Execute an object method call expression.
-
-        This method handles the execution of object method calls (e.g., obj.method(args))
-        by evaluating the target object, retrieving the method, and calling it with the
-        provided arguments. It supports both synchronous and asynchronous methods.
-
-        The execution process:
-        1. Evaluate the target object expression to get the actual object
-        2. Get the method from the object using getattr() or dict access
-        3. Verify the method is callable
-        4. Process and convert arguments from AST format to Python format
-        5. Check if the method is async (coroutine function)
-        6. Call the method with proper async/sync handling and error handling
-        7. Return the method's result
-
-        Async Method Support:
-        --------------------
-        The method automatically detects async methods using inspect.iscoroutinefunction()
-        and executes them using Misc.safe_asyncio_run(), which handles:
-        - Running async methods in the appropriate event loop
-        - Proper exception propagation from async contexts
-        - Thread-safe execution in sync contexts
-
-        Argument Processing:
-        -------------------
-        Arguments are stored in the AST as a dictionary with special keys:
-        - "__positional": List of positional arguments (if any)
-        - Other keys: Keyword arguments with their names as keys
-
-        The method converts these to standard Python *args and **kwargs format
-        for the method call.
-
-        Object Support:
-        --------------
-        Supports method calls on:
-        - Regular Python objects (using getattr)
-        - Dictionary objects (using dict key access for callable values)
-        - Any object that implements the method as an attribute
-        - Both sync and async methods on any of the above
-
-        Error Handling:
-        --------------
-        - AttributeError: If the method doesn't exist on the object
-        - SandboxError: If method call fails or arguments are invalid
-        - TypeError: If the found attribute is not callable
-        - Async exceptions are properly propagated through Misc.safe_asyncio_run
-
-        Examples:
-        --------
-        - `websearch.list_tools()` -> calls list_tools() on websearch object (sync)
-        - `obj.add(10)` -> calls add(10) on obj (sync)
-        - `api.async_query("data")` -> calls async method using safe_asyncio_run (async)
-        - `dict_obj.method()` -> calls method stored in dict_obj["method"] (sync/async)
+    def execute_object_function_call(self, node: Any, context: SandboxContext) -> Any:
+        """Execute an object function call.
 
         Args:
-            node: The object function call expression to execute
+            node: The function call node (ObjectFunctionCall)
             context: The execution context
 
         Returns:
-            The result of calling the method on the object
-
-        Raises:
-            AttributeError: If the object doesn't have the specified method
-            SandboxError: If the method call fails or arguments are invalid
+            The result of the function call
         """
-        # Get the target object
-        target = self.parent.execute(node.object, context)
+        from opendxa.common.utils.logging import DXA_LOGGER
 
-        # Get the method from the object
-        if hasattr(target, node.method_name):
-            method = getattr(target, node.method_name)
+        # Get the object and method name
+        obj = self.execute(node.object, context)
+        method_name = node.method_name
 
-            # Check if the method is callable
-            if callable(method):
-                # Convert arguments to the format expected by the method
-                args = []
-                kwargs = {}
+        DXA_LOGGER.debug(f"DEBUG: Executing object function call: {method_name}")
+        DXA_LOGGER.debug(f"DEBUG: Object type: {type(obj)}")
+        DXA_LOGGER.debug(f"DEBUG: Object has __struct_type__: {hasattr(obj, '__struct_type__')}")
 
-                # Process the arguments from the node
-                for key, value in node.args.items():
-                    if key == "__positional":
-                        # Handle positional arguments
-                        if isinstance(value, list):
-                            for arg in value:
-                                args.append(self.parent.execute(arg, context))
-                        else:
-                            args.append(self.parent.execute(value, context))
-                    else:
-                        # Handle keyword arguments
-                        kwargs[key] = self.parent.execute(value, context)
+        # Get the arguments
+        args = []
+        kwargs = {}
+        if isinstance(node.args, dict):
+            # Handle positional arguments
+            if "__positional" in node.args:
+                for arg in node.args["__positional"]:
+                    args.append(self.execute(arg, context))
+            # Handle keyword arguments
+            for k, v in node.args.items():
+                if k != "__positional":
+                    kwargs[k] = self.execute(v, context)
 
-                # Call the method
+        DXA_LOGGER.debug(f"DEBUG: Arguments: args={args}, kwargs={kwargs}")
+
+        # If the object is a struct, try to find the method in this order:
+        # 1. Look for a function with the method name in the scopes
+        # 2. Look for a method on the struct type
+        # 3. Look for a method on the object itself
+        if hasattr(obj, "__struct_type__"):
+            struct_type = obj.__struct_type__
+            DXA_LOGGER.debug(f"DEBUG: Object is struct of type {struct_type}")
+
+            # First try to find a function with the method name in the scopes
+            func = None
+            for scope in ["local", "private", "public", "system"]:
                 try:
-                    # Check if the method is an async function (coroutine function)
-                    if inspect.iscoroutinefunction(method):
-                        # Use Misc.safe_asyncio_run for async methods
-                        return Misc.safe_asyncio_run(method, *args, **kwargs)
-                    else:
-                        # Regular synchronous method call
-                        return method(*args, **kwargs)
+                    DXA_LOGGER.debug(f"DEBUG: Looking for function '{method_name}' in scope '{scope}'")
+                    DXA_LOGGER.debug(f"DEBUG: Current context state for scope '{scope}': {context._state.get(scope, {})}")
+                    func = context.get_from_scope(method_name, scope=scope)
+                    if func is not None:
+                        DXA_LOGGER.debug(f"DEBUG: Found function in scope '{scope}'")
+                        break
                 except Exception as e:
-                    raise SandboxError(f"Error calling method '{node.method_name}' on {type(target).__name__}: {e}")
-            else:
-                # Method exists but is not callable - return it
-                return method
+                    DXA_LOGGER.debug(f"DEBUG: Error looking in scope '{scope}': {e}")
+                    continue
 
-        # Support dictionary access with method-like syntax
-        if isinstance(target, dict) and node.method_name in target:
-            method = target[node.method_name]
-            if callable(method):
-                # Convert arguments as above
-                args = []
-                kwargs = {}
-
-                for key, value in node.args.items():
-                    if key == "__positional":
-                        if isinstance(value, list):
-                            for arg in value:
-                                args.append(self.parent.execute(arg, context))
-                        else:
-                            args.append(self.parent.execute(value, context))
-                    else:
-                        kwargs[key] = self.parent.execute(value, context)
-
-                try:
-                    # Check if the method is an async function (coroutine function)
-                    if inspect.iscoroutinefunction(method):
-                        # Use Misc.safe_asyncio_run for async methods
-                        return Misc.safe_asyncio_run(method, *args, **kwargs)
-                    else:
-                        # Regular synchronous method call
-                        return method(*args, **kwargs)
-                except Exception as e:
-                    raise SandboxError(f"Error calling method '{node.method_name}' on dict: {e}")
-            else:
-                return method
-
-        # Try struct method transformation: obj.method(args) -> method(obj, args)
-        from opendxa.dana.sandbox.interpreter.struct_system import StructInstance
-        
-        if isinstance(target, StructInstance):
-            # For struct instances, always try the transformation
-            return self._transform_to_function_call(target, node, context)
-        else:
-            # For other objects, try transformation as fallback
-            try:
-                return self._transform_to_function_call(target, node, context)
-            except Exception:
-                # If transformation fails, raise the original AttributeError
-                raise AttributeError(f"'{type(target).__name__}' object has no method '{node.method_name}'")
-
-    def _transform_to_function_call(self, target: Any, node: ObjectFunctionCall, context: SandboxContext) -> Any:
-        """Transform obj.method(args) to method(obj, args) and execute via function dispatch.
-        
-        Args:
-            target: The object on which the method is being called
-            node: The ObjectFunctionCall node containing method name and arguments
-            context: The execution context
-            
-        Returns:
-            The result of the transformed function call
-            
-        Raises:
-            SandboxError: If function dispatch fails or function not found
-        """
-        from opendxa.dana.sandbox.parser.ast import FunctionCall
-        
-        # Create new arguments with target as first positional argument
-        new_args = {}
-        
-        # Process existing arguments
-        existing_positional = []
-        existing_kwargs = {}
-        
-        for key, value in node.args.items():
-            if key == "__positional":
-                # Handle existing positional arguments
-                if isinstance(value, list):
-                    existing_positional = value
+            if func is not None:
+                DXA_LOGGER.debug(f"DEBUG: Found function, type: {type(func)}")
+                # Use the function's own context as the base if available
+                base_context = getattr(func, "context", None) or context
+                if hasattr(func, "execute"):
+                    DXA_LOGGER.debug("DEBUG: Using function.execute() with base_context")
+                    # Create a new context that inherits from base_context
+                    func_context = SandboxContext(parent=base_context)
+                    # Set the object as the first argument
+                    return func.execute(func_context, obj, *args, **kwargs)
                 else:
-                    existing_positional = [value] if value is not None else []
-            else:
-                # Handle existing keyword arguments
-                existing_kwargs[key] = value
-        
-        # Create new positional arguments with target first
-        # Note: target is already evaluated, so we don't store it as an AST node
-        new_args["__positional"] = existing_positional  # We'll prepend target during execution
-        new_args.update(existing_kwargs)
-        
-        # Create a FunctionCall node for the method name
-        function_call = FunctionCall(name=node.method_name, args=new_args)
-        
-        # Get the function executor from parent
-        function_executor = self.parent._function_executor
-        
-        # Process arguments with target prepended
-        evaluated_args = [target]  # Start with target as first argument
-        evaluated_kwargs = {}
-        
-        # Process existing arguments
-        for key, value in node.args.items():
-            if key == "__positional":
-                # Handle positional arguments
-                if isinstance(value, list):
-                    for arg in value:
-                        evaluated_args.append(self.parent.execute(arg, context))
-                elif value is not None:
-                    evaluated_args.append(self.parent.execute(value, context))
-            else:
-                # Handle keyword arguments
-                evaluated_kwargs[key] = self.parent.execute(value, context)
-        
-        # Execute via function registry using the resolved arguments
-        registry = function_executor.function_registry
-        if not registry:
-            raise SandboxError(f"No function registry available for method '{node.method_name}'")
-        
-        # Try to find function in context first (for user-defined functions)
-        try:
-            # Check if function exists in local scope
-            func = context.get(f"local.{node.method_name}")
-            if func is not None:
-                from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
-                if isinstance(func, DanaFunction):
-                    # Execute the DanaFunction directly with the transformed arguments
-                    return func.execute(context, *evaluated_args, **evaluated_kwargs)
-        except Exception:
-            pass  # Continue to registry lookup
-        
-        # Also try alternative context access methods
-        try:
-            # Try direct scope access
-            func = context.get_from_scope(node.method_name, scope="local")
-            if func is not None:
-                from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
-                if isinstance(func, DanaFunction):
-                    # Execute the DanaFunction directly with the transformed arguments
-                    return func.execute(context, *evaluated_args, **evaluated_kwargs)
-        except Exception:
-            pass  # Continue to registry lookup
-        
-        # Debug: Check what's actually in the context
-        local_state = getattr(context, '_state', {}).get('local', {})
-        if node.method_name in local_state:
-            func = local_state[node.method_name]
-            from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
-            if isinstance(func, DanaFunction):
-                # Execute the DanaFunction directly with the transformed arguments
-                return func.execute(context, *evaluated_args, **evaluated_kwargs)
-        
-        # Fallback to registry (for built-in functions)
-        try:
-            return registry.call(node.method_name, context, None, *evaluated_args, **evaluated_kwargs)
-        except Exception as e:
-            raise SandboxError(f"Method call transformation failed for '{node.method_name}': {e}")
+                    DXA_LOGGER.debug("DEBUG: Using direct function call")
+                    return func(obj, *args, **kwargs)
+
+            # If no function found in scopes, try to find a method on the struct type
+            DXA_LOGGER.debug(f"DEBUG: No function found in scopes, trying struct_type.{method_name}")
+            method = getattr(struct_type, method_name, None)
+            if method is not None and callable(method):
+                DXA_LOGGER.debug("DEBUG: Found callable method on struct_type")
+                return method(obj, *args, **kwargs)
+
+            # If no method found on struct type, try to find a method on the object itself
+            DXA_LOGGER.debug(f"DEBUG: No method found on struct_type, trying object.{method_name}")
+            method = getattr(obj, method_name, None)
+            if method is not None and callable(method):
+                DXA_LOGGER.debug("DEBUG: Found callable method on object")
+                return method(*args, **kwargs)
+
+            # If we get here, no method was found
+            DXA_LOGGER.debug(f"DEBUG: No method found for {method_name}")
+            # Print all available functions in the local scope
+            local_scope = context._state.get("local", {})
+            DXA_LOGGER.debug(f"DEBUG: Local scope keys: {list(local_scope.keys())}")
+            for k, v in local_scope.items():
+                DXA_LOGGER.debug(f"DEBUG: Local scope item: {k} -> {type(v)}")
+            raise AttributeError(f"Object of type StructInstance has no method {method_name}")
+
+        # For non-struct objects, use getattr on the object itself
+        DXA_LOGGER.debug("DEBUG: Not a struct, trying getattr on object")
+        method = getattr(obj, method_name, None)
+        if callable(method):
+            DXA_LOGGER.debug("DEBUG: Found callable method on object")
+            return method(*args, **kwargs)
+
+        # If the object is a dict, try to get the method from the dict
+        if isinstance(obj, dict):
+            DXA_LOGGER.debug("DEBUG: Object is dict, trying dict lookup")
+            method = obj.get(method_name)
+            if callable(method):
+                DXA_LOGGER.debug("DEBUG: Found callable method in dict")
+                return method(*args, **kwargs)
+
+        # If we get here, the object doesn't have the method
+        DXA_LOGGER.debug(f"DEBUG: No method found for {method_name}")
+        raise AttributeError(f"Object of type {type(obj).__name__} has no method {method_name}")
 
     def execute_subscript_expression(self, node: SubscriptExpression, context: SandboxContext) -> Any:
         """Execute a subscript expression (indexing).

@@ -42,22 +42,12 @@ class REPL(Loggable):
         super().__init__()  # Initialize Loggable
         
         # Create DanaSandbox and let it manage the context
-        print("🔧 REPL: Creating DanaSandbox...")
         self.sandbox = DanaSandbox(debug=False, context=context)
-        print("🔧 REPL: DanaSandbox created, forcing initialization...")
         # Force initialization to start API service
         self.sandbox._ensure_initialized()
-        print("🔧 REPL: DanaSandbox initialization completed")
         
         # Get the context from DanaSandbox
         self.context = self.sandbox._context
-        
-        # Check if API client is available in context
-        api_client = self.context.get("system.api_client")
-        print(f"🔧 REPL: API client in context: {api_client is not None}")
-        if api_client:
-            print(f"🔧 REPL: API client type: {type(api_client)}")
-            print(f"🔧 REPL: API client started: {getattr(api_client, '_started', 'unknown')}")
         
         # Set LLM resource if provided and not already in context
         if llm_resource is not None and not self.context.get("system.llm_resource"):
@@ -217,11 +207,24 @@ class REPL(Loggable):
             if result.success:
                 return result.result
             else:
+                print(f"🚨 REPL: Sandbox execution failed: {result.error}")
+                if hasattr(result.error, '__traceback__'):
+                    import traceback
+                    print("🚨 REPL: Full traceback:")
+                    traceback.print_exception(type(result.error), result.error, result.error.__traceback__)
                 raise result.error
         except Exception as e:
+            print(f"🚨 REPL: Exception in execute: {e}")
+            import traceback
+            traceback.print_exc()
             formatted = self._format_error_message(str(e), program_source)
             raise DanaError(formatted)
 
     def get_context(self) -> SandboxContext:
         """Get the current runtime context."""
         return self.context
+
+    @property
+    def interpreter(self):
+        """Get the underlying interpreter for output management."""
+        return self.sandbox._interpreter

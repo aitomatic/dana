@@ -8,6 +8,7 @@ MIT License
 from typing import Any
 
 from opendxa.common.mixins.loggable import Loggable
+from opendxa.common.utils.logging import DXA_LOGGER
 from opendxa.dana.sandbox.interpreter.executor.control_flow_executor import ReturnException
 from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
@@ -16,17 +17,20 @@ from opendxa.dana.sandbox.sandbox_context import SandboxContext
 class DanaFunction(SandboxFunction, Loggable):
     """A Dana function that can be called with arguments."""
 
-    def __init__(self, body: list[Any], parameters: list[str], context: SandboxContext | None = None):
+    def __init__(self, body: list[Any], parameters: list[str], context: SandboxContext | None = None, return_type: str | None = None):
         """Initialize a Dana function.
 
         Args:
             body: The function body statements
             parameters: The parameter names
             context: The sandbox context
+            return_type: The function's return type annotation
         """
         super().__init__(context)
         self.body = body
-        self.parameters = parameters  # Properly set the parameters property
+        self.parameters = parameters
+        self.return_type = return_type
+        DXA_LOGGER.debug(f"Created DanaFunction with parameters={parameters}, return_type={return_type}")
 
     def prepare_context(self, context: SandboxContext | Any, args: list[Any], kwargs: dict[str, Any]) -> SandboxContext:
         """
@@ -98,6 +102,14 @@ class DanaFunction(SandboxFunction, Loggable):
         Returns:
             The result of the function execution
         """
+        DXA_LOGGER.debug("DanaFunction.execute called with:")
+        DXA_LOGGER.debug(f"  context: {type(context)}")
+        DXA_LOGGER.debug(f"  args: {args}")
+        DXA_LOGGER.debug(f"  kwargs: {kwargs}")
+        DXA_LOGGER.debug(f"  parameters: {self.parameters}")
+        DXA_LOGGER.debug(f"  body: {self.body}")
+        DXA_LOGGER.debug(f"  return_type: {self.return_type}")
+
         try:
             # Create a new context for function execution
             if not isinstance(context, SandboxContext):
@@ -117,7 +129,7 @@ class DanaFunction(SandboxFunction, Loggable):
                     # Parameter names are already scoped (e.g., "local.x"), so use set() directly
                     context.set(param_name, args[i])
 
-            # Set any keyword args
+            # Set any keyword arguments
             for kwarg_name, kwarg_value in kwargs.items():
                 if kwarg_name in self.parameters:
                     # Parameter names are already scoped, so use set() directly
@@ -134,22 +146,19 @@ class DanaFunction(SandboxFunction, Loggable):
                         # Update result with the statement's value if it's not None
                         if stmt_result is not None:
                             result = stmt_result
-                        self.debug(f"statement: {statement}, result: {stmt_result}")
+                        DXA_LOGGER.debug(f"statement: {statement}, result: {stmt_result}")
                     else:
                         raise RuntimeError("No interpreter available in context")
                 except ReturnException as e:
                     # Return statement was encountered - return its value
                     return e.value
                 except Exception as e:
-                    self.error(f"Error executing statement: {e}")
+                    DXA_LOGGER.error(f"Error executing statement: {e}")
                     raise
 
             # Return the last non-None result
             return result
 
-        except ReturnException as e:
-            # Return statement was encountered in outer scope
-            return e.value
         except Exception as e:
-            self.error(f"Error in function execution: {e}")
+            DXA_LOGGER.error(f"Error executing Dana function: {e}")
             raise

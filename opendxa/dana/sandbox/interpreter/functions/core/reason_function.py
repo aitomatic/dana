@@ -24,16 +24,16 @@ from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 @poet(domain="llm_optimization", timeout=30.0, retries=3, enable_monitoring=True)
 def reason_function(
-    prompt: str,
     context: SandboxContext,
+    prompt: str,
     options: dict[str, Any] | None = None,
     use_mock: bool | None = None,
 ) -> Any:
     """Execute the reason function to generate a response using an LLM.
 
     Args:
-        prompt: The prompt string to send to the LLM (can be a string or a list with LiteralExpression)
         context: The sandbox context
+        prompt: The prompt string to send to the LLM (can be a string or a list with LiteralExpression)
         options: Optional parameters for the LLM call, including:
             - system_message: Custom system message (default: helpful assistant)
             - temperature: Controls randomness (default: 0.7)
@@ -50,6 +50,7 @@ def reason_function(
     """
     logger = DXA_LOGGER.getLogger("opendxa.dana.reason")
     options = options or {}
+    
 
     if not prompt:
         raise SandboxError("reason function requires a non-empty prompt")

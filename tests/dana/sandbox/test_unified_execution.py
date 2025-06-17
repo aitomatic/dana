@@ -81,19 +81,15 @@ class TestUnifiedExecution(unittest.TestCase):
 
         # Create a mock function that records calls
         def mock_reason_function(*args, **kwargs):
-            # Extract arguments based on what we receive
-            prompt = args[0] if len(args) > 0 else kwargs.get("prompt", "")
-            context = args[1] if len(args) > 1 else kwargs.get("context", self.context)
+            # Extract arguments based on correct signature: (context, prompt, options=None, use_mock=None)
+            context = args[0] if len(args) > 0 else kwargs.get("context", self.context)
+            prompt = args[1] if len(args) > 1 else kwargs.get("prompt", "")
             options = args[2] if len(args) > 2 else kwargs.get("options", {})
-
-            # If context is a dict and we don't have explicit options, it might be the options
-            if isinstance(context, dict) and not options and context != self.context:
-                options = context
-                context = self.context
+            use_mock = args[3] if len(args) > 3 else kwargs.get("use_mock", None)
 
             # Merge any remaining kwargs into options
             if kwargs:
-                remaining_kwargs = {k: v for k, v in kwargs.items() if k not in ["prompt", "context", "options"]}
+                remaining_kwargs = {k: v for k, v in kwargs.items() if k not in ["prompt", "context", "options", "use_mock"]}
                 if remaining_kwargs:
                     if isinstance(options, dict):
                         options.update(remaining_kwargs)
@@ -109,6 +105,7 @@ class TestUnifiedExecution(unittest.TestCase):
             func=mock_reason_function,
             func_type="python",
             overwrite=True,  # Override the real reason function
+            trusted_for_context=True,  # Mock function needs context access
         )
 
     def tearDown(self):
@@ -210,6 +207,7 @@ if True:
             func=mock_process,
             func_type="python",
             overwrite=True,
+            trusted_for_context=True,
         )
 
         # Function call chaining
