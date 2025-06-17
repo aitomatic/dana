@@ -28,3 +28,9 @@ def set_api_url(api_service):
     # Set the AITOMATIC_API_URL environment variable for all tests
     os.environ["AITOMATIC_API_URL"] = "http://localhost:8080"
     print("🔧 AITOMATIC_API_URL set to http://localhost:8080")
+
+
+def pytest_sessionstart(session):
+    """Set environment variables at the start of the session."""
+    os.environ["AITOMATIC_API_URL"] = "http://localhost:8080"
+    print("🔧 AITOMATIC_API_URL set to http://localhost:8080")

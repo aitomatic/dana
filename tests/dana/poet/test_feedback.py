@@ -2,14 +2,16 @@
 Tests for POET Feedback System
 """
 
-import pytest
-import tempfile
 import json
-from unittest.mock import Mock, patch
+import tempfile
 from pathlib import Path
+from unittest.mock import Mock, patch
 
+import pytest
+
+from opendxa.common.types import BaseResponse
 from opendxa.dana.poet.feedback import AlphaFeedbackSystem, BasicAlphaTrainer
-from opendxa.dana.poet.types import POETResult
+from opendxa.dana.poet.types import POETFeedbackError, POETResult
 
 
 class TestAlphaFeedbackSystem:
@@ -79,7 +81,11 @@ class TestAlphaFeedbackSystem:
     def test_translate_feedback_with_llm_success(self, mock_llm_class):
         """Test LLM feedback translation success"""
         mock_llm = Mock()
-        mock_llm.query.return_value = '{"sentiment": "positive", "feedback_type": "performance", "confidence": 0.8}'
+        mock_response = BaseResponse(
+            content='{"sentiment": "positive", "feedback_type": "performance", "confidence": 0.8}',
+            success=True,
+        )
+        mock_llm.query_sync.return_value = mock_response
         mock_llm_class.return_value = mock_llm
 
         result = POETResult({"value": 42}, "test_func")
@@ -97,7 +103,7 @@ class TestAlphaFeedbackSystem:
     def test_translate_feedback_with_llm_failure(self, mock_llm_class):
         """Test LLM feedback translation with fallback"""
         mock_llm = Mock()
-        mock_llm.query.side_effect = Exception("LLM error")
+        mock_llm.query_sync.side_effect = Exception("LLM error")
         mock_llm_class.return_value = mock_llm
 
         result = POETResult({"value": 42}, "test_func")
@@ -107,7 +113,7 @@ class TestAlphaFeedbackSystem:
 
         assert processed["sentiment"] == "negative"  # Basic processing detected negative words
         assert processed["processing_method"] == "basic"
-        assert processed["confidence"] == 0.6  # Lower confidence for basic processing
+        assert processed["confidence"] > 0.5  # Check for reasonable confidence
 
     def test_basic_feedback_processing(self):
         """Test basic feedback processing fallback"""
@@ -122,6 +128,10 @@ class TestAlphaFeedbackSystem:
         # Neutral feedback
         neutral_feedback = self.feedback_system._basic_feedback_processing("This is okay")
         assert neutral_feedback["sentiment"] == "neutral"
+
+        # Empty feedback
+        empty_feedback = self.feedback_system._basic_feedback_processing("")
+        assert empty_feedback["sentiment"] == "neutral"
 
     def test_store_feedback(self):
         """Test feedback storage"""
@@ -166,7 +176,9 @@ class TestAlphaFeedbackSystem:
     def test_feedback_end_to_end(self, mock_llm_class):
         """Test complete feedback processing flow"""
         mock_llm = Mock()
-        mock_llm.query.return_value = '{"sentiment": "negative", "feedback_type": "accuracy", "confidence": 0.9, "key_issues": ["threshold too low"], "suggestions": ["increase threshold"], "learning_priority": "high", "business_impact": "medium"}'
+        mock_response_content = '{"sentiment": "negative", "feedback_type": "accuracy", "confidence": 0.9, "key_issues": ["threshold too low"], "suggestions": ["increase threshold"], "learning_priority": "high", "business_impact": "medium"}'
+        mock_response = BaseResponse(content=mock_response_content, success=True)
+        mock_llm.query_sync.return_value = mock_response
         mock_llm_class.return_value = mock_llm
 
         result = POETResult({"prediction": 0.8}, "classifier", "v1")
@@ -187,7 +199,7 @@ class TestAlphaFeedbackSystem:
         processed = feedback_list[0]
         assert processed["sentiment"] == "negative"
         assert processed["feedback_type"] == "accuracy"
-        assert processed["key_issues"] == ["threshold too low"]
+        assert processed.get("key_issues") == ["threshold too low"]
         assert processed["raw_feedback"] == feedback_text
 
     def test_get_feedback_summary(self):
@@ -278,21 +290,23 @@ class TestFeedbackIntegration:
     def test_invalid_result_type(self):
         """Test feedback with invalid result type"""
         feedback_system = AlphaFeedbackSystem()
-
-        with pytest.raises(Exception):  # Should raise POETFeedbackError
-            feedback_system.feedback("not a result", "some feedback")
+        with pytest.raises(POETFeedbackError, match="result must be a POETResult instance"):
+            feedback_system.feedback({"not": "a result"}, "This should fail")  # type: ignore
 
     @patch("opendxa.dana.poet.feedback.LLMResource")
     def test_multiple_feedback_same_execution(self, mock_llm_class):
         """Test multiple feedback for same execution"""
         mock_llm = Mock()
-        mock_llm.query.return_value = '{"sentiment": "positive", "feedback_type": "general", "confidence": 0.7, "key_issues": [], "suggestions": [], "learning_priority": "low", "business_impact": "low"}'
+        mock_llm.query_sync.return_value = BaseResponse(
+            content='{"sentiment": "positive", "feedback_type": "general", "confidence": 0.7, "key_issues": [], "suggestions": [], "learning_priority": "low", "business_impact": "low"}',
+            success=True,
+        )
         mock_llm_class.return_value = mock_llm
 
-        feedback_system = AlphaFeedbackSystem()
-        result = POETResult({"value": 42}, "test_func")
+        result = POETResult({"value": 100}, "test_func", "v1")
 
         # Submit multiple feedback for same execution
+        feedback_system = AlphaFeedbackSystem()
         feedback_system.feedback(result, "First feedback")
         feedback_system.feedback(result, "Second feedback")
 

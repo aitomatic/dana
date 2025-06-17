@@ -58,11 +58,11 @@ for_stmt: "for" NAME "in" expr ":" [COMMENT] block
 function_def: [decorators] "def" NAME "(" [parameters] ")" ["->" basic_type] ":" [COMMENT] block
 try_stmt: "try" ":" [COMMENT] block "except" ["(" expr ")"] ":" [COMMENT] block ["finally" ":" [COMMENT] block]
 with_stmt: "with" (with_context_manager | (NAME | USE) "(" [mixed_arguments] ")") AS NAME ":" [COMMENT] block
-struct_def: "struct" NAME ":" [COMMENT] struct_block
+struct_def: "struct" NAME ":" [COMMENT] struct_block -> struct_definition
 
 struct_block: _NL _INDENT struct_fields _DEDENT*
 struct_fields: struct_field+
-struct_field: NAME ":" basic_type [COMMENT] _NL
+struct_field: NAME ":" basic_type [COMMENT] _NL -> struct_field
 
 with_context_manager: expr
 mixed_arguments: with_arg ("," with_arg)*

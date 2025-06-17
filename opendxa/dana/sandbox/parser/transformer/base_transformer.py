@@ -2,10 +2,10 @@
 
 from typing import Any
 
-from lark import Token, Tree
+from lark import Token, Transformer, Tree
 
 from opendxa.common.mixins.loggable import Loggable
-from opendxa.dana.sandbox.parser.ast import ASTNode
+from opendxa.dana.sandbox.parser.ast import ASTNode, Location
 from opendxa.dana.sandbox.parser.utils.parsing_utils import create_literal, parse_literal
 from opendxa.dana.sandbox.parser.utils.scope_utils import insert_local_scope
 from opendxa.dana.sandbox.parser.utils.transformer_utils import flatten_items as utils_flatten_items
@@ -15,7 +15,7 @@ from opendxa.dana.sandbox.parser.utils.tree_utils import TreeTraverser
 from opendxa.dana.sandbox.parser.utils.tree_utils import unwrap_single_child_tree as utils_unwrap
 
 
-class BaseTransformer(Loggable):
+class BaseTransformer(Loggable, Transformer):
     """Base class for Dana AST transformers.
 
     Provides common utility methods for transforming Lark parse trees into Dana AST nodes.
@@ -64,3 +64,27 @@ class BaseTransformer(Loggable):
         else:
             # Use the tree_utils implementation when no stop_at is provided
             return utils_unwrap(item)
+
+    def get_location(self, item: Any) -> tuple[int, int] | None:
+        """Get line and column from a token or tree."""
+        if hasattr(item, "line") and hasattr(item, "column"):
+            return item.line, item.column
+        if isinstance(item, (list, tuple)):
+            for child in item:
+                loc = self.get_location(child)
+                if loc is not None:
+                    return loc
+        elif isinstance(item, Tree) and hasattr(item, "children"):
+            for child in item.children:
+                loc = self.get_location(child)
+                if loc is not None:
+                    return loc
+        return None
+
+    def create_location(self, item: Any) -> Location | None:
+        """Create a Location object from a token or tree."""
+        loc = self.get_location(item)
+        if loc:
+            line, column = loc
+            return Location(line=line, column=column, source="")
+        return None

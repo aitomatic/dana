@@ -1,7 +1,8 @@
 """POET Type Definitions"""
 
-from typing import Any, Dict, Optional, List, Union
+import builtins
 from dataclasses import dataclass, field
+from typing import Any
 from uuid import uuid4
 
 
@@ -9,24 +10,26 @@ from uuid import uuid4
 class POETConfig:
     """Configuration for POET function enhancement"""
 
-    domain: Optional[str] = None
-    optimize_for: Optional[str] = None  # When set, enables Train phase
+    domain: str | None = None
+    optimize_for: str | None = None  # When set, enables Train phase
+    enable_training: bool = False  # Explicitly enable training
     retries: int = 3
     timeout: float = 30.0
     enable_monitoring: bool = True
 
-    def dict(self) -> Dict[str, Any]:
+    def dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization"""
         return {
             "domain": self.domain,
             "optimize_for": self.optimize_for,
+            "enable_training": self.enable_training,
             "retries": self.retries,
             "timeout": self.timeout,
             "enable_monitoring": self.enable_monitoring,
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> "POETConfig":
+    def from_dict(cls, data: builtins.dict[str, Any]) -> "POETConfig":
         """Create from dictionary"""
         return cls(**data)
 
@@ -37,10 +40,10 @@ class TranspiledFunction:
 
     code: str
     language: str = "python"
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
     @classmethod
-    def from_response(cls, response_data: Dict[str, Any]) -> "TranspiledFunction":
+    def from_response(cls, response_data: dict[str, Any]) -> "TranspiledFunction":
         """Create from API response"""
         impl = response_data.get("poet_implementation", {})
         return cls(code=impl.get("code", ""), language=impl.get("language", "python"), metadata=response_data.get("metadata", {}))

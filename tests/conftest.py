@@ -1,5 +1,7 @@
 """Pytest configuration file."""
 
+import os
+
 import pytest
 
 
@@ -21,3 +23,29 @@ def pytest_collection_modifyitems(config, items):
         for item in items:
             if "llm" in item.keywords:
                 item.add_marker(skip_llm)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def configure_llm_mocking(request):
+    """
+    Configure LLM mocking based on the --run-llm flag.
+
+    If --run-llm is NOT provided, enable mock LLM mode for all tests.
+    This prevents tests that indirectly initialize LLM resources from
+    failing when no API keys are configured.
+
+    If --run-llm is provided, we assume live credentials are set up
+    and do not enable mock mode.
+    """
+    if not request.config.getoption("--run-llm"):
+        os.environ["OPENDXA_MOCK_LLM"] = "true"
+        yield
+        del os.environ["OPENDXA_MOCK_LLM"]
+    else:
+        # When running live tests, ensure mock mode is disabled
+        original_value = os.environ.get("OPENDXA_MOCK_LLM")
+        if original_value:
+            del os.environ["OPENDXA_MOCK_LLM"]
+        yield
+        if original_value:
+            os.environ["OPENDXA_MOCK_LLM"] = original_value

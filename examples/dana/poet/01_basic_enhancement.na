@@ -33,7 +33,7 @@ def detect_anomaly(value: float, threshold: float) -> dict:
     }
 
 # POET function with learning enabled
-@poet(enable_training=true)
+@poet(optimize_for="accuracy")
 def classify_sentiment(text: str) -> str:
     """Simple sentiment classification that can learn"""
     text_lower = text.lower()
@@ -71,7 +71,7 @@ log(f"   Anomaly detected: {anomaly_data['is_anomaly']}")
 log(f"   Confidence: {anomaly_data['confidence']}")
 
 log("\n3. Learning-Enabled Enhancement:")
-log("   @poet(enable_training=true) enables Train phase")
+log("   @poet(optimize_for=\"accuracy\") enables Train phase")
 
 # Test sentiment classification
 test_texts = [

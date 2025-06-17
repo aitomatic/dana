@@ -131,9 +131,21 @@ class FunctionExecutor(BaseExecutor):
             # Convert positional args to match DanaFunction execute signature
             return dana_func.execute(context, *args, **kwargs)
 
-        # TODO: Apply POET enhancement (Alpha: deferred to Python @poet decorator)
-        # enhanced_func = poe_executor(wrapped_dana_function)
-        enhanced_func = wrapped_dana_function
+        # Apply POET enhancement using the Python @poet decorator
+        from opendxa.dana.poet.decorator import poet
+
+        # Create POET decorator with extracted config
+        # Note: Map Dana POET config to Python decorator parameters
+        poet_decorator_func = poet(
+            domain=getattr(poet_config, "domain", None),
+            optimize_for=getattr(poet_config, "optimize_for", None),
+            retries=getattr(poet_config, "retries", 3),
+            timeout=getattr(poet_config, "timeout", 30.0),
+            enable_monitoring=getattr(poet_config, "enable_monitoring", True),
+        )
+
+        # Apply the decorator to the wrapped function
+        enhanced_func = poet_decorator_func(wrapped_dana_function)
 
         return enhanced_func
 
@@ -154,7 +166,7 @@ class FunctionExecutor(BaseExecutor):
         config_kwargs = {}
 
         # Define valid POET configuration parameters
-        valid_params = {"domain", "timeout", "retries", "enable_training", "collect_metrics"}
+        valid_params = {"domain", "timeout", "retries", "enable_training", "collect_metrics", "optimize_for"}
 
         # Define valid domain names (from POETConfig)
         valid_domains = {
@@ -206,10 +218,6 @@ class FunctionExecutor(BaseExecutor):
                 if not isinstance(evaluated_value, bool):
                     raise SandboxError(f"POET decorator error: Enable monitoring must be a boolean, got {type(evaluated_value).__name__}")
 
-            elif key == "collect_metrics":
-                if not isinstance(evaluated_value, bool):
-                    raise SandboxError(f"POET decorator error: Collect metrics must be a boolean, got {type(evaluated_value).__name__}")
-
             elif key == "enable_training":
                 if not isinstance(evaluated_value, bool):
                     raise SandboxError(f"POET decorator error: Enable training must be a boolean, got {type(evaluated_value).__name__}")
@@ -222,8 +230,10 @@ class FunctionExecutor(BaseExecutor):
 
         # Create POETConfig with validated values
         try:
-            return POETConfig(**config_kwargs)
-        except Exception as e:
+            # Filter out params not in POETConfig
+            poet_config_params = {k: v for k, v in config_kwargs.items() if k in POETConfig.__dataclass_fields__}
+            return POETConfig(**poet_config_params)
+        except TypeError as e:
             raise SandboxError(f"POET decorator error: Failed to create configuration: {e}")
 
     def _ensure_fully_evaluated(self, value: Any, context: SandboxContext) -> Any:
@@ -259,7 +269,7 @@ class FunctionExecutor(BaseExecutor):
             The result of the function call
         """
         self.debug(f"Executing function call: {node.name}")
-        
+
         # Phase 1: Setup and validation
         registry = self.__setup_and_validate(node)
 
@@ -651,18 +661,18 @@ class FunctionExecutor(BaseExecutor):
 
     def __check_struct_instantiation(self, node: FunctionCall, context: SandboxContext, evaluated_kwargs: dict[str, Any]) -> Any | None:
         """Check if this function call is actually a struct instantiation.
-        
+
         Args:
             node: The function call node
             context: The execution context
             evaluated_kwargs: Already evaluated keyword arguments
-            
+
         Returns:
             StructInstance if this is a struct instantiation, None otherwise
         """
         # Import here to avoid circular imports
         from opendxa.dana.sandbox.interpreter.struct_system import StructTypeRegistry, create_struct_instance
-        
+
         # Extract the base struct name (remove scope prefix if present)
         func_name = node.name
         if "." in func_name:
@@ -670,12 +680,12 @@ class FunctionExecutor(BaseExecutor):
             base_name = func_name.split(".")[-1]
         else:
             base_name = func_name
-        
+
         # Debug logging
         self.debug(f"Checking struct instantiation for func_name='{func_name}', base_name='{base_name}'")
         self.debug(f"Registered structs: {StructTypeRegistry.list_types()}")
         self.debug(f"Struct exists: {StructTypeRegistry.exists(base_name)}")
-        
+
         # Check if this is a registered struct type
         if StructTypeRegistry.exists(base_name):
             try:
@@ -688,10 +698,11 @@ class FunctionExecutor(BaseExecutor):
                 # Validation errors should be raised immediately, not fall through
                 self.debug(f"Struct validation failed for {base_name}: {e}")
                 from opendxa.dana.common.exceptions import SandboxError
+
                 raise SandboxError(f"Struct instantiation failed for '{base_name}': {e}")
             except Exception as e:
                 # Other errors (e.g. import issues) can fall through to function resolution
                 self.debug(f"Struct instantiation error for {base_name}: {e}")
                 return None
-        
+
         return None

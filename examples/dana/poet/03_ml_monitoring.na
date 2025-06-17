@@ -110,7 +110,12 @@ def monitor_model_performance(predictions: list, actuals: list,
     rmse = mse ** 0.5  # square root
     
     # Simple correlation approximation (POET will enhance with proper correlation)
-    correlation = 0.9 if mae < 5.0 else 0.6 if mae < 10.0 else 0.3
+    if mae < 5.0:
+        correlation = 0.9
+    elif mae < 10.0:
+        correlation = 0.6
+    else:
+        correlation = 0.3
     
     # Performance status (POET will enhance with learned thresholds)
     if correlation < 0.8:
@@ -230,7 +235,10 @@ for scenario in drift_scenarios:
     drift_results.append(result)
     
     drift_data = result.unwrap()
-    status = "🚨 DRIFT" if drift_data["drift_detected"] else "✅ STABLE"
+    if drift_data["drift_detected"]:
+        status = "🚨 DRIFT"
+    else:
+        status = "✅ STABLE"
     score = drift_data["drift_score"]
     log(f"   {scenario['name']:15} → {status} (score: {score:.3f})")
 

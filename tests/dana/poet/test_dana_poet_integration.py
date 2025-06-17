@@ -2,21 +2,18 @@
 Tests for POET integration with Dana language
 """
 
-import pytest
-import tempfile
 import os
-from pathlib import Path
-from unittest.mock import Mock, patch
+import tempfile
 
-from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
-from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from tests.dana.poet.helpers import PoetTestBase
 
 
-class TestDanaPOETIntegration:
+class TestDanaPOETIntegration(PoetTestBase):
     """Test POET decorator functionality within Dana language execution"""
 
     def setup_method(self):
         """Setup for each test"""
+        super().setup_method()
         # Use temporary directory for POET artifacts
         self.temp_dir = tempfile.mkdtemp()
         self.original_env = {}
@@ -24,12 +21,9 @@ class TestDanaPOETIntegration:
         # Save and set environment variables for local mode
         for key in ["AITOMATIC_API_URL", "AITOMATIC_API_KEY"]:
             self.original_env[key] = os.environ.get(key)
-        
+
         # Force local mode for testing
         os.environ["AITOMATIC_API_URL"] = "local"
-        
-        # Create sandbox for Dana execution
-        self.sandbox = DanaSandbox()
 
     def teardown_method(self):
         """Cleanup after each test"""
@@ -39,14 +33,13 @@ class TestDanaPOETIntegration:
                 os.environ[key] = value
             elif key in os.environ:
                 del os.environ[key]
-        
+
         # Clean up sandbox
-        if hasattr(self, 'sandbox'):
-            self.sandbox._cleanup()
+        super().teardown_method()
 
     def test_dana_poet_basic_decorator(self):
         """Test basic @poet decorator in Dana code"""
-        
+
         dana_code = """
 # Basic POET decorator test
 @poet()
@@ -57,23 +50,24 @@ def simple_add(a: int, b: int) -> int:
 result = simple_add(2, 3)
 log(f"Result: {result}")
 """
-        
+
         # Execute Dana code
-        execution_result = self.sandbox.eval(dana_code)
-        
+        execution_result = self._run_dana_code(dana_code)
+
         # Check execution completed successfully
         assert execution_result.success is True
         assert execution_result.error is None
-        
+
         # Check that POET-enhanced function was created
         context = execution_result.final_context
+        assert context is not None
         simple_add_func = context.get("local.simple_add")
         assert simple_add_func is not None
         assert hasattr(simple_add_func, "__name__")
 
     def test_dana_poet_domain_decorator(self):
         """Test @poet decorator with domain parameter"""
-        
+
         dana_code = """
 # POET decorator with domain
 @poet(domain="healthcare")
@@ -85,17 +79,17 @@ def analyze_vitals(heart_rate: int, temperature: float) -> dict:
 result = analyze_vitals(75, 98.6)
 log(f"Analysis result: {result}")
 """
-        
+
         # Execute Dana code
-        execution_result = self.sandbox.eval(dana_code)
-        
+        execution_result = self._run_dana_code(dana_code)
+
         # Check execution completed successfully
         assert execution_result.success is True
         assert execution_result.error is None
 
     def test_dana_poet_training_decorator(self):
         """Test @poet decorator with training enabled"""
-        
+
         dana_code = """
 # POET decorator with training
 @poet(enable_training=true)
@@ -112,17 +106,17 @@ def classify_text(text: str) -> str:
 result = classify_text("This is a great example")
 log(f"Classification: {result}")
 """
-        
+
         # Execute Dana code
-        execution_result = self.sandbox.eval(dana_code)
-        
+        execution_result = self._run_dana_code(dana_code)
+
         # Check execution completed successfully
         assert execution_result.success is True
         assert execution_result.error is None
 
     def test_dana_poet_with_feedback(self):
         """Test POET with feedback function in Dana"""
-        
+
         dana_code = """
 # POET function with feedback
 @poet(enable_training=true)
@@ -138,17 +132,17 @@ log(f"Prediction result: {result}")
 feedback(result, "The prediction was very accurate!")
 log("Feedback submitted successfully")
 """
-        
+
         # Execute Dana code
-        execution_result = self.sandbox.eval(dana_code)
-        
-        # Check execution completed successfully  
+        execution_result = self._run_dana_code(dana_code)
+
+        # Check execution completed successfully
         assert execution_result.success is True
         assert execution_result.error is None
 
     def test_dana_poet_multiple_functions(self):
         """Test multiple POET functions in same Dana execution"""
-        
+
         dana_code = """
 # Multiple POET functions
 @poet(domain="healthcare")
@@ -173,17 +167,17 @@ bmi_result = calculate_bmi(70.0, 175.0)
 log(f"Blood pressure: {bp_result}")
 log(f"BMI: {bmi_result}")
 """
-        
+
         # Execute Dana code
-        execution_result = self.sandbox.eval(dana_code)
-        
+        execution_result = self._run_dana_code(dana_code)
+
         # Check execution completed successfully
         assert execution_result.success is True
         assert execution_result.error is None
 
     def test_dana_poet_error_handling(self):
         """Test POET error handling in Dana"""
-        
+
         dana_code = """
 # Test invalid domain (should still work with fallback)
 @poet(domain="nonexistent_domain")  
@@ -194,10 +188,10 @@ def test_function(x: int) -> int:
 result = test_function(5)
 log(f"Result with invalid domain: {result}")
 """
-        
+
         # Execute Dana code
-        execution_result = self.sandbox.eval(dana_code)
-        
+        execution_result = self._run_dana_code(dana_code)
+
         # Should complete successfully even with invalid domain
         # (POET should fallback to original function)
         assert execution_result.success is True
@@ -205,24 +199,24 @@ log(f"Result with invalid domain: {result}")
 
     def test_dana_poet_parameter_validation(self):
         """Test POET parameter validation in Dana"""
-        
+
         # Test invalid parameter name
         dana_code_invalid = """
 @poet(invalid_param="test")
 def test_function(x: int) -> int:
     return x * 2
 """
-        
+
         # This should fail during execution
-        execution_result = self.sandbox.run(dana_code_invalid)
-        
+        execution_result = self._run_dana_code(dana_code_invalid)
+
         # Should fail due to invalid parameter
         assert execution_result.success is False
         assert "Unknown parameter" in str(execution_result.error)
 
     def test_dana_poet_with_complex_data_types(self):
         """Test POET with complex data types in Dana"""
-        
+
         dana_code = """
 # POET function with complex return type
 @poet(domain="financial_services")
@@ -233,13 +227,21 @@ def analyze_portfolio(portfolio: list) -> dict:
     for asset in portfolio:
         total_value = total_value + asset
     
-    avg_value = total_value / asset_count if asset_count > 0 else 0.0
+    if asset_count > 0:
+        avg_value = total_value / asset_count
+    else:
+        avg_value = 0.0
+
+    if avg_value > 1000:
+        risk_level = "moderate"
+    else:
+        risk_level = "low"
     
     return {
         "total_value": total_value,
         "asset_count": asset_count,
         "average_value": avg_value,
-        "risk_level": "moderate" if avg_value > 1000 else "low"
+        "risk_level": risk_level
     }
 
 # Test with sample portfolio
@@ -248,17 +250,17 @@ analysis = analyze_portfolio(sample_portfolio)
 
 log(f"Portfolio analysis: {analysis}")
 """
-        
+
         # Execute Dana code
-        execution_result = self.sandbox.eval(dana_code)
-        
+        execution_result = self._run_dana_code(dana_code)
+
         # Check execution completed successfully
         assert execution_result.success is True
         assert execution_result.error is None
 
     def test_dana_poet_configuration_parameters(self):
         """Test various POET configuration parameters in Dana"""
-        
+
         dana_code = """
 # Test different configuration parameters
 @poet(domain="manufacturing", timeout=45.0, retries=5)
@@ -282,32 +284,29 @@ def performance_metric(processing_time: float, error_rate: float) -> str:
 perf_result = performance_metric(0.5, 0.005)
 log(f"Performance: {perf_result}")
 """
-        
-        # Execute Dana code  
-        execution_result = self.sandbox.run(dana_code)
-        
+
+        # Execute Dana code
+        execution_result = self._run_dana_code(dana_code)
+
         # Check execution completed successfully
         assert execution_result.success is True
         assert execution_result.error is None
 
 
-class TestDanaPOETBuiltinFunctions:
+class TestDanaPOETBuiltinFunctions(PoetTestBase):
     """Test POET built-in functions in Dana language"""
 
     def setup_method(self):
         """Setup for each test"""
-        self.temp_dir = tempfile.mkdtemp()
-        os.environ["AITOMATIC_API_URL"] = "local"
-        self.sandbox = DanaSandbox()
+        super().setup_method()
 
     def teardown_method(self):
         """Cleanup after each test"""
-        if hasattr(self, 'sandbox'):
-            self.sandbox._cleanup()
+        super().teardown_method()
 
     def test_feedback_builtin_function(self):
         """Test feedback built-in function in Dana"""
-        
+
         dana_code = """
 # Create a POET function that returns a trackable result
 @poet(enable_training=true)
@@ -325,20 +324,20 @@ feedback(result, 0.95)
 
 log("All feedback submitted successfully")
 """
-        
+
         # Execute Dana code
-        execution_result = self.sandbox.eval(dana_code)
-        
+        execution_result = self._run_dana_code(dana_code)
+
         # Check execution completed successfully
         assert execution_result.success is True
         assert execution_result.error is None
 
     def test_poet_builtin_function(self):
         """Test poet built-in function (if available) in Dana"""
-        
+
         # Note: This tests the poet() function if it exists as a built-in
         # Currently, POET is primarily a decorator, but this tests extensibility
-        
+
         dana_code = """
 # Test if poet function exists as built-in
 log("Testing POET built-in function availability")
@@ -351,31 +350,29 @@ def basic_add(a: int, b: int) -> int:
 normal_result = basic_add(3, 4)
 log(f"Normal function result: {normal_result}")
 """
-        
+
         # Execute Dana code
-        execution_result = self.sandbox.eval(dana_code)
-        
+        execution_result = self._run_dana_code(dana_code)
+
         # Should complete successfully
         assert execution_result.success is True
         assert execution_result.error is None
 
 
-class TestDanaPOETErrorScenarios:
+class TestDanaPOETErrorScenarios(PoetTestBase):
     """Test POET error scenarios in Dana language"""
 
     def setup_method(self):
         """Setup for each test"""
-        os.environ["AITOMATIC_API_URL"] = "local"
-        self.sandbox = DanaSandbox()
+        super().setup_method()
 
     def teardown_method(self):
         """Cleanup after each test"""
-        if hasattr(self, 'sandbox'):
-            self.sandbox._cleanup()
+        super().teardown_method()
 
     def test_invalid_poet_parameters(self):
         """Test various invalid POET parameter scenarios"""
-        
+
         # Test cases for different invalid parameters
         invalid_test_cases = [
             # Invalid parameter name
@@ -404,64 +401,62 @@ def test_func(): pass
 def test_func(): pass
 """,
         ]
-        
+
         for i, invalid_code in enumerate(invalid_test_cases):
-            execution_result = self.sandbox.run(invalid_code)
-            
+            execution_result = self._run_dana_code(invalid_code)
+
             # All these should result in errors
             assert execution_result.success is False, f"Test case {i} should have failed"
             assert execution_result.error is not None, f"Test case {i} should have an error message"
 
     def test_feedback_with_invalid_result(self):
         """Test feedback function with invalid result parameter"""
-        
+
         dana_code = """
 # Try to provide feedback on non-POET result
 normal_value = 42
 feedback(normal_value, "This should fail")
 """
-        
+
         # Execute Dana code - this should fail
-        execution_result = self.sandbox.run(dana_code)
-        
+        execution_result = self._run_dana_code(dana_code)
+
         # Should fail because normal_value is not a POETResult
         assert execution_result.success is False
         assert execution_result.error is not None
 
     def test_poet_with_syntax_errors(self):
         """Test POET decorator with syntax errors in function"""
-        
+
         dana_code = """
 # POET decorator on function with syntax error
 @poet()
 def broken_function(x: int) -> int:
     return x +  # Incomplete expression
 """
-        
+
         # Execute Dana code - should fail due to syntax error
-        execution_result = self.sandbox.run(dana_code)
-        
+        execution_result = self._run_dana_code(dana_code)
+
         # Should fail due to syntax error
         assert execution_result.success is False
         assert execution_result.error is not None
 
 
-class TestDanaPOETLifecycle:
+class TestDanaPOETLifecycle(PoetTestBase):
     """Test POET lifecycle management in Dana"""
 
     def setup_method(self):
         """Setup for each test"""
-        os.environ["AITOMATIC_API_URL"] = "local"
-        self.sandbox = DanaSandbox()
+        super().setup_method()
 
     def teardown_method(self):
         """Cleanup after each test"""
-        if hasattr(self, 'sandbox'):
-            self.sandbox._cleanup()
+        super().teardown_method()
 
     def test_poet_automatic_lifecycle(self):
         """Test POET automatic lifecycle management"""
-        
+
         dana_code = """
 # Test that POET works without explicit setup
 @poet()
@@ -481,17 +476,17 @@ log(f"Execution ID: {execution_id}")
 log(f"Function name: {function_name}")
 log(f"Enhanced: {enhanced}")
 """
-        
+
         # Execute Dana code
-        execution_result = self.sandbox.eval(dana_code)
-        
+        execution_result = self._run_dana_code(dana_code)
+
         # Should complete successfully with automatic lifecycle
         assert execution_result.success is True
         assert execution_result.error is None
 
     def test_multiple_poet_executions(self):
         """Test multiple POET function executions in sequence"""
-        
+
         dana_code = """
 # Multiple POET functions called in sequence
 @poet(domain="llm_optimization")
@@ -518,10 +513,10 @@ log(f"More processing: {result3}")
 feedback(result1, "Text processing worked well")
 feedback(result2, {"sentiment_accuracy": 0.9})
 """
-        
+
         # Execute Dana code
-        execution_result = self.sandbox.eval(dana_code)
-        
+        execution_result = self._run_dana_code(dana_code)
+
         # Should handle multiple executions successfully
         assert execution_result.success is True
         assert execution_result.error is None

@@ -48,7 +48,7 @@ class DanaSandbox:
 
     This is the main public API that users should interact with.
     It provides a clean, safe interface for running Dana files and evaluating code.
-    
+
     Features automatic lifecycle management - resources are initialized on first use
     and cleaned up automatically at process exit.
     """
@@ -69,13 +69,13 @@ class DanaSandbox:
         self._context = context or self._create_default_context()
         self._interpreter = DanaInterpreter()
         self._parser = DanaParser()
-        
+
         # Automatic lifecycle management
         self._initialized = False
         self._api_service: APIServiceManager | None = None
         self._api_client: APIClient | None = None
         self._llm_resource: LLMResource | None = None
-        
+
         # Track instances for cleanup
         DanaSandbox._instances.add(self)
         self._register_cleanup()
@@ -90,6 +90,14 @@ class DanaSandbox:
         """Create a default execution context - resources added on first use."""
         context = SandboxContext()
         # Don't initialize resources here - use lazy initialization
+
+        # Placeholder for feedback function
+        def feedback_placeholder(result: Any, feedback_data: Any):
+            DXA_LOGGER.info(f"Feedback received for result: {result} -> {feedback_data}")
+            return True  # Simulate success
+
+        context.set("local.feedback", feedback_placeholder)
+
         return context
 
     def _ensure_initialized(self):
@@ -147,7 +155,7 @@ class DanaSandbox:
                 self._api_service = None
 
             # Clear from context
-            if hasattr(self._context, 'delete'):
+            if hasattr(self._context, "delete"):
                 try:
                     self._context.delete("system.api_client")
                     self._context.delete("system.llm_resource")
@@ -181,7 +189,7 @@ class DanaSandbox:
             ExecutionResult with success status and results
         """
         self._ensure_initialized()  # Auto-initialize on first use
-        
+
         try:
             # Read file
             file_path = Path(file_path)
@@ -214,7 +222,7 @@ class DanaSandbox:
             ExecutionResult with success status and results
         """
         self._ensure_initialized()  # Auto-initialize on first use
-        
+
         try:
             # Use internal _eval method for actual execution
             result = self._interpreter._eval(source_code, self._context, filename)

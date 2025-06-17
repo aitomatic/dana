@@ -3,12 +3,10 @@
 from contextlib import asynccontextmanager
 
 import uvicorn
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 
 from opendxa.common.mixins.loggable import Loggable
-from opendxa.dana.poet.types import POETTranspilationError
 
 
 class OpenDXAServer(Loggable):
@@ -58,7 +56,7 @@ class OpenDXAServer(Loggable):
         """Setup routes for specific OpenDXA services"""
         try:
             # Try to import and register POET routes
-            from opendxa.dana.poet.routes import router as poet_router
+            from opendxa.api.poet_routes import router as poet_router
 
             self.app.include_router(poet_router, prefix="/poet", tags=["POET"])
             self.info("POET routes registered successfully")
@@ -118,11 +116,6 @@ def main():
 
     server = OpenDXAServer(host=args.host, port=args.port)
     server.start(reload=args.reload, workers=args.workers)
-
-
-@app.exception_handler(POETTranspilationError)
-async def poet_transpilation_exception_handler(request: Request, exc: POETTranspilationError):
-    return JSONResponse(status_code=400, content={"detail": str(exc)})
 
 
 if __name__ == "__main__":

@@ -68,7 +68,10 @@ def monitor_api_health(response_time: float, error_rate: float) -> dict:
     if health_score < 0.0:
         health_score = 0.0
     
-    status = "healthy" if is_healthy else "degraded"
+    if is_healthy:
+        status = "healthy"
+    else:
+        status = "degraded"
     
     return {
         "is_healthy": is_healthy,
@@ -104,7 +107,7 @@ log("\n2. Providing Universal Feedback:")
 log("   POET accepts feedback in ANY format")
 
 # Import feedback function for Dana
-import opendxa.dana.poet.decorator.py as poet_module
+import opendxa.dana.poet.decorator as poet_module
 
 # Provide various types of feedback
 feedback_examples = [

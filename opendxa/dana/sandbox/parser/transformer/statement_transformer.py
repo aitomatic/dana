@@ -19,7 +19,7 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from typing import Union, cast
+from typing import Any, Union, cast
 
 from lark import Token, Tree
 
@@ -41,9 +41,11 @@ from opendxa.dana.sandbox.parser.ast import (
     ImportStatement,
     ListLiteral,
     LiteralExpression,
+    Location,
     Parameter,
     Program,
     SetLiteral,
+    StructDefinition,
     StructField,
     SubscriptExpression,
     TryBlock,
@@ -234,85 +236,68 @@ class StatementTransformer(BaseTransformer):
         if not relevant_items:
             raise ValueError("function_def rule received empty relevant items list")
 
-        # Parse items based on the actual structure we receive
         current_index = 0
         decorators = []
 
-        # Check if first item is already a list of decorators (already transformed)
-        if (
-            current_index < len(relevant_items)
-            and isinstance(relevant_items[current_index], list)
-            and len(relevant_items[current_index]) > 0
-            and hasattr(relevant_items[current_index][0], "name")  # Decorator objects have 'name' attribute
-        ):
-            decorators = relevant_items[current_index]
+        # Defensively check for decorators
+        if relevant_items and isinstance(relevant_items[0], list):
+            # Case 1: Decorators are in a nested list
+            decorators = relevant_items[0]
             current_index += 1
-        # Or check if it's a decorators tree (not yet transformed)
-        elif (
-            current_index < len(relevant_items)
-            and hasattr(relevant_items[current_index], "data")
-            and relevant_items[current_index].data == "decorators"
-        ):
-            decorators = self._transform_decorators(relevant_items[current_index])
-            current_index += 1
+        else:
+            # Case 2: Decorators are a flat list of nodes
+            while current_index < len(relevant_items) and isinstance(relevant_items[current_index], Decorator):
+                decorators.append(relevant_items[current_index])
+                current_index += 1
 
-        # Next item should be the function name (Token)
+        # The function name must follow the decorators
         if current_index >= len(relevant_items):
-            raise ValueError("function_def missing function name")
+            raise ValueError(f"Function name not found after decorators in items: {relevant_items}")
 
         func_name_token = relevant_items[current_index]
-        if hasattr(func_name_token, "value"):
-            func_name = func_name_token.value
-        elif hasattr(func_name_token, "type") and func_name_token.type == "NAME":
-            func_name = str(func_name_token)
-        else:
-            func_name = str(func_name_token)
         current_index += 1
 
-        # Skip None items for optional parameters
-        while current_index < len(relevant_items) and relevant_items[current_index] is None:
-            current_index += 1
-
-        # Parameters (optional) - could be a list of Parameter objects or a parameters tree
         parameters = []
-        if current_index < len(relevant_items):
-            params_item = relevant_items[current_index]
-            if isinstance(params_item, list):
-                # Already transformed parameters
-                parameters = params_item
-                current_index += 1
-            elif hasattr(params_item, "data") and params_item.data == "parameters":
-                # Parameters tree - transform it
-                parameters = self._transform_parameters(params_item)
-                current_index += 1
-
-        # Skip None items
-        while current_index < len(relevant_items) and relevant_items[current_index] is None:
+        if current_index < len(relevant_items) and isinstance(relevant_items[current_index], list):
+            parameters = self._transform_parameters(relevant_items[current_index])
             current_index += 1
+        elif current_index < len(relevant_items) and isinstance(relevant_items[current_index], Tree):
+            if relevant_items[current_index].data == "parameters":
+                parameters = self.parameters(relevant_items[current_index].children)
+                current_index += 1
 
-        # Return type (optional)
         return_type = None
-        if current_index < len(relevant_items) and hasattr(relevant_items[current_index], "name"):
-            return_type = relevant_items[current_index]  # Already transformed TypeHint
-            current_index += 1
+        # Check for return type, which comes before the block
+        if current_index < len(relevant_items) and not isinstance(relevant_items[current_index], list):
+            item = relevant_items[current_index]
+            if isinstance(item, Tree) and item.data == "basic_type":
+                return_type = self.basic_type(item.children)
+                current_index += 1
 
-        # Skip None items
-        while current_index < len(relevant_items) and relevant_items[current_index] is None:
-            current_index += 1
+        # Find the block, which is typically the last item
+        block_items = []
+        if current_index < len(relevant_items):
+            block_tree = relevant_items[current_index]
+            if isinstance(block_tree, Tree) and block_tree.data == "block":
+                block_items = self._transform_block(block_tree.children)
+            elif isinstance(block_tree, list):
+                block_items = self._transform_block(block_tree)
 
-        # Block (required)
-        if current_index >= len(relevant_items):
-            raise ValueError("function_def missing body block")
+        # Handle function name extraction
+        if isinstance(func_name_token, Token) and func_name_token.type == "NAME":
+            func_name = func_name_token.value
+        else:
+            raise ValueError(f"Expected function name token, got {func_name_token}")
 
-        block = relevant_items[current_index]
-        body = self._transform_block(block)
+        location = self.create_location(func_name_token)
 
         return FunctionDefinition(
-            name=Identifier(func_name),
+            name=Identifier(name=func_name, location=location),
             parameters=parameters,
-            body=body,
+            body=block_items,
             return_type=return_type,
             decorators=decorators,
+            location=location,
         )
 
     def decorators(self, items):
@@ -324,136 +309,114 @@ class StatementTransformer(BaseTransformer):
         return self._transform_decorator_from_items(items)
 
     def _transform_decorators(self, decorators_tree):
-        """Transform decorators tree into list of Decorator nodes."""
+        """Helper to transform a 'decorators' Tree into a list of Decorator nodes."""
+        if not decorators_tree:
+            return []
         if hasattr(decorators_tree, "children"):
-            return [self._transform_decorator(child) for child in decorators_tree.children if child is not None]
-        return []
+            return [self._transform_decorator(d) for d in decorators_tree.children]
+        return [self._transform_decorator(decorators_tree)]
 
     def _transform_decorator(self, decorator_tree):
-        """Transform a single decorator tree into a Decorator node."""
-        # If it's already a Decorator object, return it as-is
-        if hasattr(decorator_tree, "name") and hasattr(decorator_tree, "args") and hasattr(decorator_tree, "kwargs"):
+        """Transforms a 'decorator' Tree into a Decorator node."""
+        if isinstance(decorator_tree, Decorator):
             return decorator_tree
-
-        # Otherwise, transform it
-        if hasattr(decorator_tree, "children"):
-            return self._transform_decorator_from_items(decorator_tree.children)
-        elif hasattr(decorator_tree, "data") and decorator_tree.data == "decorator":
-            return self._transform_decorator_from_items(decorator_tree.children)
-        else:
-            # Handle direct items
-            return self._transform_decorator_from_items([decorator_tree])
+        return self._transform_decorator_from_items(decorator_tree.children)
 
     def _transform_decorator_from_items(self, items):
-        """Transform decorator items into a Decorator node."""
-        relevant_items = self._filter_relevant_items(items)
-        if not relevant_items:
-            raise ValueError("decorator rule received empty relevant items list")
-
-        # Based on raw parse tree: decorator -> @ NAME [arguments]
-        # items[0] should be AT token (@)
-        # items[1] should be NAME token (decorator name)
-        # items[2] should be arguments (optional)
-
-        # Skip the AT token and get the NAME token
-        decorator_name = None
-        arguments_tree = None
-
-        for i, item in enumerate(relevant_items):
-            if hasattr(item, "value") and item.value != "@":
-                # This should be the decorator name
-                decorator_name = item.value
-            elif hasattr(item, "type") and item.type == "NAME":
-                # This should be the decorator name
-                decorator_name = str(item)
-            elif hasattr(item, "data") and item.data == "arguments":
-                # This should be the arguments
-                arguments_tree = item
-
-        if not decorator_name:
-            raise ValueError("Could not find decorator name in items")
-
-        # Check for arguments (optional)
-        args = []
-        kwargs = {}
-
-        if arguments_tree:
-            args, kwargs = self._parse_decorator_arguments(arguments_tree)
-
-        return Decorator(name=decorator_name, args=args, kwargs=kwargs)
+        """Creates a Decorator from a list of items (name, args, kwargs)."""
+        name_token = items[0]
+        decorator_name = name_token.value
+        args, kwargs = self._parse_decorator_arguments(items[1]) if len(items) > 1 else ([], {})
+        return Decorator(
+            name=decorator_name,
+            args=args,
+            kwargs=kwargs,
+            location=self.create_location(name_token),
+        )
 
     def _parse_decorator_arguments(self, arguments_tree):
-        """Parse decorator arguments into args and kwargs lists."""
+        """Parses arguments from a decorator's argument list tree."""
         args = []
         kwargs = {}
 
-        if hasattr(arguments_tree, "children"):
-            for child in arguments_tree.children:
-                if hasattr(child, "data") and child.data == "kw_arg":
-                    # Keyword argument: name = value
-                    if len(child.children) >= 2:
-                        key_name = child.children[0].value if hasattr(child.children[0], "value") else str(child.children[0])
-                        value_expr = self.expression_transformer.expression([child.children[1]])
-                        kwargs[key_name] = value_expr
-                else:
-                    # Positional argument
-                    arg_expr = self.expression_transformer.expression([child])
-                    args.append(arg_expr)
+        if not arguments_tree:
+            return args, kwargs
 
+        # If it's not a tree, just return empty
+        if not hasattr(arguments_tree, "children"):
+            return args, kwargs
+
+        for arg in arguments_tree.children:
+            if hasattr(arg, "data") and arg.data == "kw_arg":
+                key = arg.children[0].value
+                value = self.expression_transformer.expression([arg.children[1]])
+                kwargs[key] = value
+            else:
+                args.append(self.expression_transformer.expression([arg]))
         return args, kwargs
 
     def _transform_parameters(self, parameters_tree):
-        """Transform parameters tree into list of Parameter objects."""
+        """Transform parameters tree into list of Parameter nodes."""
         if hasattr(parameters_tree, "children"):
-            return [self._transform_parameter(child) for child in parameters_tree.children if child is not None]
+            return [self._transform_parameter(child) for child in parameters_tree.children]
         return []
 
     def _transform_parameter(self, param_tree):
-        """Transform a single parameter tree into a Parameter object."""
-        if isinstance(param_tree, Parameter):
-            return param_tree
-        elif hasattr(param_tree, "data") and param_tree.data == "typed_parameter":
-            return self.typed_parameter(param_tree.children)
-        else:
-            # Simple parameter name
-            param_name = param_tree.value if hasattr(param_tree, "value") else str(param_tree)
-            return Parameter(name=param_name)
+        """Transform a parameter tree into a Parameter node."""
+        # This is a simplification; a real implementation would handle types, defaults, etc.
+        if hasattr(param_tree, "children") and param_tree.children:
+            # For now, assuming a simple structure
+            name_token = param_tree.children[0]
+            return Parameter(name=name_token.value, location=self.create_location(name_token))
+        return Parameter(name=str(param_tree), location=None)
+
+    def struct_definition(self, items):
+        """Transform a struct definition rule into a StructDefinition node."""
+        name_token = items[0]
+        # items are [NAME, optional COMMENT, struct_block]
+        struct_block = items[2] if len(items) > 2 else items[1]
+
+        fields = []
+        if hasattr(struct_block, "data") and struct_block.data == "struct_block":
+            # The children of struct_block are NL, INDENT, struct_fields, DEDENT...
+            # The struct_fields tree is what we want
+            struct_fields_tree = None
+            for child in struct_block.children:
+                if hasattr(child, "data") and child.data == "struct_fields":
+                    struct_fields_tree = child
+                    break
+
+            if struct_fields_tree:
+                fields = [child for child in struct_fields_tree.children if isinstance(child, StructField)]
+
+        return StructDefinition(name=name_token.value, fields=fields)
 
     def struct_field(self, items):
-        """Transform struct_field rule.
+        """Transform a struct field rule into a StructField node."""
+        from opendxa.dana.sandbox.parser.ast import TypeHint
 
-        Grammar: struct_field: NAME ":" basic_type [COMMENT] _NL
-        """
-        relevant_items = self._filter_relevant_items(items)
+        name_token = items[0]
+        type_hint_node = items[1]
 
-        if len(relevant_items) < 2:
-            raise ValueError(f"Invalid struct field: expected NAME and type, got {relevant_items}")
+        field_name = name_token.value
 
-        # First item is field name
-        name_token = relevant_items[0]
-        if isinstance(name_token, Token):
-            field_name = name_token.value
+        # The type_hint_node should already be a TypeHint object
+        # from the 'basic_type' rule transformation.
+        if not isinstance(type_hint_node, TypeHint):
+            # Fallback if it's a token
+            if isinstance(type_hint_node, Token):
+                type_hint = TypeHint(name=type_hint_node.value)
+            else:
+                # This would be an unexpected state
+                raise TypeError(f"Unexpected type for type_hint_node: {type(type_hint_node)}")
         else:
-            field_name = str(name_token)
+            type_hint = type_hint_node
 
-        # Second item is type hint
-        type_hint = relevant_items[1]
-
-        return StructField(name=field_name, type_hint=type_hint, location=None)
+        return StructField(name=field_name, type_hint=type_hint)
 
     def try_stmt(self, items):
-        """Transform a try statement rule into a TryBlock node.
-
-        Grammar: try_stmt: "try" ":" [COMMENT] block "except" ["(" expr ")"] ":" [COMMENT] block ["finally" ":" [COMMENT] block]
-        Items structure:
-        - items[0]: try block
-        - items[1]: optional exception type expression (if present)
-        - items[2]: except block (or items[1] if no exception type)
-        - items[3]: optional finally block (or items[2] if no exception type)
-        """
-
-        # Filter out None items and comments
-        relevant_items = [item for item in items if item is not None]
+        """Transform a try-except-finally statement into a TryBlock node."""
+        relevant_items = self._filter_relevant_items(items)
 
         # First item is always the try body
         try_body = self._transform_block(relevant_items[0])
@@ -1208,3 +1171,12 @@ class StatementTransformer(BaseTransformer):
             # Direct context manager pattern: with_context_manager as var block
             context_manager_expr = cast(Expression, self.expression_transformer.expression([context_manager_part]))
             return WithStatement(context_manager=context_manager_expr, args=[], kwargs={}, as_var=as_var, body=block)
+
+    def create_location(self, item: Any) -> Location | None:
+        """Create a Location object from a token or tree node."""
+        if isinstance(item, Token):
+            if item.line is not None and item.column is not None:
+                return Location(line=item.line, column=item.column, source="")
+        if hasattr(item, "line") and hasattr(item, "column") and item.line is not None and item.column is not None:
+            return Location(line=item.line, column=item.column, source="")
+        return None
