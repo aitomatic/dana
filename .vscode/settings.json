@@ -2,6 +2,8 @@
     // === Explorer Settings ===
     // Show hidden files and folders
     "files.exclude": {
+	"**/.dana": true,
+	"**/.poet": true,
         "**/tmp": true,
         "**/bin": true,
         "**/docs/.ai-only": true,
@@ -18,7 +20,7 @@
         "**/mkdocs.yml": true,
         "**/pytest.ini": true,
         "**/.env.example": true,
-        "**/.-cursorrules": true,
+        "**/.cursorrules": true,
         "**/.markdownlint.yaml": true,
         "**/.pre-commit-config.yaml": true,
         "**/.python-version": true,

@@ -18,6 +18,7 @@ from opendxa.api.client import APIClient
 from opendxa.api.server import APIServiceManager
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.common.utils.logging import DXA_LOGGER
+from opendxa.dana.poet.client import POETClient, set_default_client
 from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
 from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
@@ -107,25 +108,42 @@ class DanaSandbox:
 
         try:
             DXA_LOGGER.info("Initializing DanaSandbox resources")
+            print("🚀 DanaSandbox: Starting API service initialization...")
 
             # Initialize API service
             self._api_service = APIServiceManager()
+            print("🚀 DanaSandbox: APIServiceManager created, calling startup()...")
             self._api_service.startup()
+            print("🚀 DanaSandbox: APIServiceManager startup() completed")
 
             # Get API client
+            print("🚀 DanaSandbox: Getting API client...")
             self._api_client = self._api_service.get_client()
+            print(f"🚀 DanaSandbox: API client obtained: {type(self._api_client)}")
             self._api_client.startup()
+            print("🚀 DanaSandbox: API client startup() completed")
 
             # Initialize LLM resource
+            print("🚀 DanaSandbox: Initializing LLM resource...")
             self._llm_resource = LLMResource()
             self._llm_resource.startup()
+            print("🚀 DanaSandbox: LLM resource startup() completed")
 
             # Store in context
             self._context.set("system.api_client", self._api_client)
             self._context.set("system.llm_resource", self._llm_resource)
+            print("🚀 DanaSandbox: Resources stored in context")
+
+            # Register started APIClient as default POET client
+            print("🚀 DanaSandbox: Creating POET client with started APIClient...")
+            poet_client = POETClient.__new__(POETClient)  # Create without calling __init__
+            poet_client.api = self._api_client  # Use our started APIClient
+            set_default_client(poet_client)
+            print("🚀 DanaSandbox: POET client registered as default")
 
             self._initialized = True
             DXA_LOGGER.info("DanaSandbox resources initialized successfully")
+            print("🚀 DanaSandbox: All initialization completed successfully")
 
         except Exception as e:
             DXA_LOGGER.error(f"Failed to initialize DanaSandbox: {e}")

@@ -248,7 +248,7 @@ class StatementExecutor(BaseExecutor):
         import importlib
 
         # Strip .py extension for Python import
-        import_name = module_name[:-3]
+        import_name = module_name[:-3] if module_name.endswith(".py") else module_name
 
         try:
             module = importlib.import_module(import_name)
@@ -617,22 +617,22 @@ class StatementExecutor(BaseExecutor):
 
     def execute_struct_definition(self, node: StructDefinition, context: SandboxContext) -> None:
         """Execute a struct definition statement.
-        
+
         Args:
             node: The struct definition node
             context: The execution context
-            
+
         Returns:
             None (struct definitions don't produce a value, they register a type)
         """
         # Import here to avoid circular imports
         from opendxa.dana.sandbox.interpreter.struct_system import register_struct_from_ast
-        
+
         # Register the struct type in the global registry
         try:
             struct_type = register_struct_from_ast(node)
             self.debug(f"Registered struct type: {struct_type.name}")
         except Exception as e:
             raise SandboxError(f"Failed to register struct {node.name}: {e}")
-        
+
         return None

@@ -23,9 +23,8 @@ from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.common.utils import Misc
 from opendxa.dana.common.error_utils import DanaError
-from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
+from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
 from opendxa.dana.sandbox.log_manager import LogLevel, SandboxLogger
-from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 from opendxa.dana.translator.translator import Translator
 
@@ -41,12 +40,29 @@ class REPL(Loggable):
             context: Optional runtime context to use
         """
         super().__init__()  # Initialize Loggable
-        self.context = context or SandboxContext()
-        if llm_resource is not None:
+        
+        # Create DanaSandbox and let it manage the context
+        print("🔧 REPL: Creating DanaSandbox...")
+        self.sandbox = DanaSandbox(debug=False, context=context)
+        print("🔧 REPL: DanaSandbox created, forcing initialization...")
+        # Force initialization to start API service
+        self.sandbox._ensure_initialized()
+        print("🔧 REPL: DanaSandbox initialization completed")
+        
+        # Get the context from DanaSandbox
+        self.context = self.sandbox._context
+        
+        # Check if API client is available in context
+        api_client = self.context.get("system.api_client")
+        print(f"🔧 REPL: API client in context: {api_client is not None}")
+        if api_client:
+            print(f"🔧 REPL: API client type: {type(api_client)}")
+            print(f"🔧 REPL: API client started: {getattr(api_client, '_started', 'unknown')}")
+        
+        # Set LLM resource if provided and not already in context
+        if llm_resource is not None and not self.context.get("system.llm_resource"):
             self.context.set("system.llm_resource", llm_resource)
-        self.interpreter = DanaInterpreter()
 
-        self.parser = DanaParser()
         self.last_result = None
         self.transcoder = None
         if llm_resource is not None:
@@ -116,10 +132,7 @@ class REPL(Loggable):
             else:
                 main_msg = "Unexpected character or symbol in your input."
             return (
-                "Syntax Error:\n"
-                f"  Input: {user_input}\n"
-                f"  {main_msg}\n"
-                "  Please check for typos, missing operators, or unsupported syntax."
+                f"Syntax Error:\n  Input: {user_input}\n  {main_msg}\n  Please check for typos, missing operators, or unsupported syntax."
             )
         # Determine error type
         error_type = "Error"
@@ -198,18 +211,13 @@ class REPL(Loggable):
             program_source = translated_code
             print(f"Translated to: {program_source}")
 
-        # Parse and execute the program
+        # Execute using DanaSandbox
         try:
-            # Parse the program (synchronous operation)
-            parse_result = self.parser.parse(program_source)
-            if hasattr(parse_result, "errors") and parse_result.errors:
-                formatted = self._format_error_message(str(parse_result.errors[0]), program_source)
-                raise DanaError(formatted)
-            program = parse_result.program if hasattr(parse_result, "program") else parse_result
-
-            # Execute the program (synchronous operation)
-            result = self.interpreter.execute_program(program, self.context)
-            return result
+            result = self.sandbox.eval(program_source)
+            if result.success:
+                return result.result
+            else:
+                raise result.error
         except Exception as e:
             formatted = self._format_error_message(str(e), program_source)
             raise DanaError(formatted)

@@ -280,13 +280,36 @@ class StructInstance:
         from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
         from opendxa.dana.sandbox.interpreter.executor.expression_executor import ExpressionExecutor
         from opendxa.dana.sandbox.interpreter.executor.function_executor import FunctionExecutor
+        from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
+        from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
         from opendxa.dana.sandbox.interpreter.sandbox_context import SandboxContext
 
         # Create a new context for the function call
         context = SandboxContext()
 
-        # Get the function from the context
-        function = context.get(f"local.{method_name}")
+        # Try to get the function from the context
+        function = None
+        try:
+            # Try direct scope access first
+            function = context.get_from_scope(method_name, scope="local")
+        except Exception:
+            pass
+
+        if function is None:
+            # Try alternative context access methods
+            try:
+                function = context.get(f"local.{method_name}")
+            except Exception:
+                pass
+
+        if function is None:
+            # Try registry lookup
+            registry = FunctionRegistry()
+            try:
+                function = registry.get(method_name)
+            except Exception:
+                pass
+
         if function is None:
             raise NotImplementedError(f"Method '{method_name}' not found")
 
@@ -300,12 +323,28 @@ class StructInstance:
         call = FunctionCall(name=method_name, args={"__positional": new_args, **kwargs})
 
         # Create executor chain with proper parent relationships
-        base_executor = BaseExecutor(parent=None)  # Root executor
-        expr_executor = ExpressionExecutor(parent=base_executor)
-        func_executor = FunctionExecutor(parent=expr_executor)
+        # Create a root executor that delegates to itself
+        class RootExecutor(BaseExecutor):
+            def __init__(self):
+                super().__init__(self)
+                self.register_handlers()
+                self._function_registry = FunctionRegistry()
+
+            def register_handlers(self):
+                self._handlers = {}
+
+            def execute(self, node: Any, context: SandboxContext) -> Any:
+                raise SandboxError(f"Unsupported node type: {type(node)}")
+
+        root_executor = RootExecutor()
+        expr_executor = ExpressionExecutor(parent_executor=root_executor)
+        func_executor = FunctionExecutor(parent_executor=expr_executor)
 
         # Execute the function call
-        return func_executor.execute_function_call(call, context)
+        if isinstance(function, DanaFunction):
+            return function.execute(context, *new_args, **kwargs)
+        else:
+            return func_executor.execute_function_call(call, context)
 
 
 class StructTypeRegistry:

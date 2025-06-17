@@ -777,47 +777,36 @@ class StatementTransformer(BaseTransformer):
         result = []
         if block is None:
             return result
-        if isinstance(block, list):
-            for item in block:
-                result.extend(self._transform_block(item))
-        elif isinstance(block, Tree):
-            # If this is a block or statements node, flatten children
-            if getattr(block, "data", None) in {"block", "statements"}:
+
+        # If it's a Tree, process its children
+        if isinstance(block, Tree):
+            # For block nodes, we need to handle the special structure:
+            # block: _NL _INDENT statements _DEDENT*
+            if block.data == "block":
+                # Find the statements node
                 for child in block.children:
-                    result.extend(self._transform_block(child))
+                    if isinstance(child, Tree) and child.data == "statements":
+                        # Process the statements
+                        for stmt in child.children:
+                            if stmt is not None:
+                                result.append(stmt)
+                    elif isinstance(child, list):
+                        # Direct list of statements
+                        result.extend(child)
             else:
-                # Try to dispatch to a transformer method if available
-                method = getattr(self, block.data, None)
-                if method:
-                    transformed = method(block.children)
-                    # If the result is a list, flatten it
-                    if isinstance(transformed, list):
-                        result.extend(transformed)
-                    else:
-                        result.append(transformed)
-                else:
-                    # Fallback: try with tree traverser
-                    try:
-
-                        def custom_transform(node):
-                            if isinstance(node, Tree):
-                                rule = getattr(node, "data", None)
-                                if isinstance(rule, str) and hasattr(self, rule):
-                                    method = getattr(self, rule)
-                                    return method(node.children)
-                            return node
-
-                        transformed = self.tree_traverser.transform_tree(block, custom_transform)
-                        if transformed is not block:
-                            result.append(transformed)
-                        else:
-                            # Last resort: treat as leaf
-                            result.append(block)
-                    except Exception:
-                        # Fallback: treat as leaf
-                        result.append(block)
-        else:
+                # For other trees, process children
+                for child in block.children:
+                    if child is not None:
+                        result.extend(self._transform_block(child))
+        elif isinstance(block, list):
+            # For lists, process each item
+            for item in block:
+                if item is not None:
+                    result.extend(self._transform_block(item))
+        elif not isinstance(block, (Token, str)):  # Skip tokens and strings
+            # For other nodes, add directly
             result.append(block)
+
         return result
 
     # === Parameter Handling ===

@@ -88,44 +88,23 @@ class DanaFunction(SandboxFunction, Loggable):
             delattr(context, "_original_locals")
 
     def execute(self, context: Any, *args: Any, **kwargs: Any) -> Any:
-        """Execute the function body with the provided context and arguments.
+        """Execute the function with the given arguments.
 
         Args:
-            context: The context to use for execution or a arguments dict
+            context: The execution context
             *args: Positional arguments
             **kwargs: Keyword arguments
+
+        Returns:
+            The result of the function execution
         """
         try:
-            # Check if context is actually a dict of arguments rather than a SandboxContext
-            if isinstance(context, dict) and not isinstance(context, SandboxContext):
-                # In this case, the first parameter is actually a dict of args
-                arg_dict = context
-                context = None
-
-                # Try to get the context from args or use self.context
-                if args and isinstance(args[0], SandboxContext):
-                    context = args[0].copy()  # Make a copy to avoid affecting the original
-                    args = args[1:]
-                else:
-                    context = self.context.copy() if self.context else SandboxContext()
-
-                # Process arguments from the arg_dict
-                positional_args = arg_dict.get("__positional", [])
-                kwargs.update({k: v for k, v in arg_dict.items() if k != "__positional"})
-                args = positional_args + list(args)
-            elif not isinstance(context, SandboxContext):
-                # If context is not a SandboxContext, assume it's a positional argument
-                args = (context,) + args
-                context = self.context.copy() if self.context else SandboxContext()
+            # Create a new context for function execution
+            if not isinstance(context, SandboxContext):
+                context = SandboxContext(parent=self.context)
             else:
-                # We have a SandboxContext - merge with our stored context for variable access
-                if self.context is not None:
-                    # Create execution context that inherits from our stored module context
-                    execution_context = self.context.copy()
-                    # Set the interpreter from the current context
-                    if hasattr(context, "_interpreter") and context._interpreter is not None:
-                        execution_context._interpreter = context._interpreter
-                    context = execution_context
+                # Create a new context that inherits from the provided context
+                context = SandboxContext(parent=context)
 
             # If the context doesn't have an interpreter, assign the one from self.context
             if not hasattr(context, "_interpreter") or context._interpreter is None:
@@ -144,13 +123,33 @@ class DanaFunction(SandboxFunction, Loggable):
                     # Parameter names are already scoped, so use set() directly
                     context.set(kwarg_name, kwarg_value)
 
+            # Execute each statement in the function body
             result = None
             for statement in self.body:
                 try:
-                    result = context.interpreter.execute_statement(statement, context)
-                    self.debug(f"statement: {statement}, result: {result}")
+                    # Use _interpreter attribute (with underscore)
+                    if hasattr(context, "_interpreter") and context._interpreter is not None:
+                        # Execute the statement and capture its result
+                        stmt_result = context._interpreter.execute_statement(statement, context)
+                        # Update result with the statement's value if it's not None
+                        if stmt_result is not None:
+                            result = stmt_result
+                        self.debug(f"statement: {statement}, result: {stmt_result}")
+                    else:
+                        raise RuntimeError("No interpreter available in context")
                 except ReturnException as e:
+                    # Return statement was encountered - return its value
                     return e.value
+                except Exception as e:
+                    self.error(f"Error executing statement: {e}")
+                    raise
+
+            # Return the last non-None result
             return result
+
         except ReturnException as e:
+            # Return statement was encountered in outer scope
             return e.value
+        except Exception as e:
+            self.error(f"Error in function execution: {e}")
+            raise

@@ -97,12 +97,12 @@ class FunctionExecutor(BaseExecutor):
             # Apply POET enhancement to the function
             enhanced_func = self._apply_poet_decorators(dana_func, poet_decorators, context)
             # Store the enhanced function in context
-            context.set(node.name.name, enhanced_func)
+            context.set(f"local.{node.name.name}", enhanced_func)
             DXA_LOGGER.info(f"Created POET-enhanced Dana function: {node.name.name}")
             return enhanced_func
         else:
             # Store the regular function in context
-            context.set(node.name.name, dana_func)
+            context.set(f"local.{node.name.name}", dana_func)
             return dana_func
 
     def _apply_poet_decorators(self, dana_func, poet_decorators, context: SandboxContext):
