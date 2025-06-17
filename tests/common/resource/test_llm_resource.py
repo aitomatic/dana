@@ -104,6 +104,7 @@ class TestLLMResource(unittest.TestCase):
         # Set up LLMResource with a mock for _query_once
         llm_resource = LLMResource(name="test_llm", model="openai:gpt-4")
         llm_resource._is_available = True
+        llm_resource._query_executor.client = AsyncMock()  # Mock the client
         llm_resource._query_once = AsyncMock(return_value={"choices": [{"message": {"role": "assistant", "content": "Yes, I can!"}}]})
 
         async def test_context_window():
