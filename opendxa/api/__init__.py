@@ -5,6 +5,6 @@ Provides unified server and client abstractions with environment-based configura
 """
 
 from .client import APIClient
-from .server import OpenDXAServer
+from .server import APIServiceManager, create_app
 
-__all__ = ["OpenDXAServer", "APIClient"]
+__all__ = ["APIServiceManager", "APIClient", "create_app"]

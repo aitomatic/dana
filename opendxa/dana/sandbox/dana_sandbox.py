@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from opendxa.api.client import APIClient
-from opendxa.api.service_manager import APIServiceManager
+from opendxa.api.server import APIServiceManager
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.common.utils.logging import DXA_LOGGER
 from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter

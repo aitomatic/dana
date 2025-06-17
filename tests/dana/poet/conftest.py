@@ -1,36 +1,31 @@
 import os
-import subprocess
-import time
 
 import pytest
 
 
 @pytest.fixture(scope="session")
 def api_service():
+    """Configure API service for POET tests using APIServiceManager"""
     print("\n🔧 Setting up API service for POET tests...")
-    print(f"PATH: {os.environ.get('PATH')}")
-    # Launch the API service
-    service_process = subprocess.Popen(
-        [".venv/bin/python", "-m", "opendxa.api.service_manager"], env={"AITOMATIC_API_URL": "http://localhost:8080"}
-    )
-    time.sleep(5)  # Wait for the service to start
-    print("✅ API service started at http://localhost:8080")
+
+    # Set environment for APIServiceManager to use port 12345
+    os.environ["AITOMATIC_API_URL"] = "http://localhost:12345"
+    print("✅ API service configured for http://localhost:12345")
+
+    # APIServiceManager will handle the actual server startup when DanaSandbox is used
     yield
-    print("\n🧹 Cleaning up API service...")
-    # Cleanup: terminate the service
-    service_process.terminate()
-    service_process.wait()
-    print("✅ API service terminated")
+
+    print("\n🧹 API service configuration cleaned up")
 
 
 @pytest.fixture(autouse=True)
 def set_api_url(api_service):
-    # Set the AITOMATIC_API_URL environment variable for all tests
-    os.environ["AITOMATIC_API_URL"] = "http://localhost:8080"
-    print("🔧 AITOMATIC_API_URL set to http://localhost:8080")
+    """Set the AITOMATIC_API_URL environment variable for all tests"""
+    os.environ["AITOMATIC_API_URL"] = "http://localhost:12345"
+    print("🔧 AITOMATIC_API_URL set to http://localhost:12345")
 
 
 def pytest_sessionstart(session):
     """Set environment variables at the start of the session."""
-    os.environ["AITOMATIC_API_URL"] = "http://localhost:8080"
-    print("🔧 AITOMATIC_API_URL set to http://localhost:8080")
+    os.environ["AITOMATIC_API_URL"] = "http://localhost:12345"
+    print("🔧 AITOMATIC_API_URL set to http://localhost:12345")

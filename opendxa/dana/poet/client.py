@@ -11,7 +11,7 @@ class POETClient:
 
     def __init__(self, base_url: str | None = None):
         # Default to local service if URL not provided
-        self.api = APIClient(base_url or os.getenv("POET_API_URL", "http://localhost:8000"))
+        self.api = APIClient(base_url or os.getenv("POET_API_URL", "http://localhost:12345"))
 
     def transpile(self, code: str, config: POETConfig) -> dict:
         """Transpile function using remote POET service"""

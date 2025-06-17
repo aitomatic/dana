@@ -106,6 +106,8 @@ def reason_function(
         result = response.content
         logger.debug(f"Raw LLM response type: {type(result)}")
 
+
+
         # Extract just the text content from the response
         if isinstance(result, dict):
             logger.debug(f"Raw response keys: {result.keys()}")

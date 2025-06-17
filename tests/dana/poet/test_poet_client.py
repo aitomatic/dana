@@ -28,7 +28,7 @@ class TestPOETClient:
             del os.environ["POET_API_URL"]
 
         POETClient()
-        mock_api_client.assert_called_once_with("http://localhost:8000")
+        mock_api_client.assert_called_once_with("http://localhost:12345")
 
     @patch("opendxa.dana.poet.client.APIClient")
     def test_client_initialization_env_url(self, mock_api_client):
