@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, patch
 
 from opendxa import LLMResource
 from opendxa.common.exceptions import LLMAuthenticationError, LLMContextLengthError, LLMError, LLMProviderError, LLMRateLimitError
+from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.common.types import BaseRequest, BaseResponse
 
 

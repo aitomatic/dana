@@ -25,7 +25,7 @@ from opendxa.common.utils import Misc
 from opendxa.dana.common.error_utils import DanaError
 from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
 from opendxa.dana.sandbox.log_manager import LogLevel, SandboxLogger
-from opendxa.dana.sandbox.parser.dana_parser import DanaParser
+from opendxa.dana.sandbox.parser.parser import DanaParser
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 from opendxa.dana.translator.translator import Translator
 

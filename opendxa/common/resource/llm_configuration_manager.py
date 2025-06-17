@@ -64,23 +64,11 @@ class LLMConfigurationManager:
         if auto_model:
             return auto_model
 
-        # Fallback to default
-        default = self._get_default_model()
-        if self._validate_model(default):
-            return default
-
         # If no models are available and we're in mock mode, return a mock model silently
         if is_mock_mode:
             return "mock:test-model"
 
         raise LLMError("No available LLM models found. Please check your API keys and configuration.")
-
-    def _get_default_model(self) -> str:
-        """Get the default model from configuration."""
-        try:
-            return self.config_loader.get_default_config().get("llm", {}).get("default_model", "openai:gpt-4o-mini")
-        except Exception:
-            return "openai:gpt-4o-mini"
 
     def _validate_model(self, model_name: str) -> bool:
         """Validate that a model is available and properly configured."""

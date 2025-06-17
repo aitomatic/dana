@@ -175,21 +175,17 @@ class LLMResource(BaseResource):
             # Automatically find the first available model from the list
             self._model = self._find_first_available_model()
             if not self._model:
-                # Fallback to default model from config if auto-selection fails
-                config_default_model = base_config.get("llm", {}).get("default_model") or base_config.get("default_model")
-                if config_default_model:
-                    self._model = config_default_model
-                    self.log_debug(f"Using default_model from config: {self._model}")
-                    if not self._validate_model(self._model):
-                        self.log_warning(f"Default model '{self._model}' from config seems unavailable (missing API keys?).")
+                # If auto-selection fails, log an error (unless in mock mode).
+                # We no longer fall back to `default_model`.
+                is_mock_mode = os.environ.get("OPENDXA_MOCK_LLM", "").lower() == "true"
+                if not is_mock_mode:
+                    self.log_error(
+                        "Could not find an available model from the preferred_models list. "
+                        "No explicit model was provided, and the fallback to 'default_model' is no longer used."
+                    )
                 else:
-                    # Only log error if not in mock mode
-                    is_mock_mode = os.environ.get("OPENDXA_MOCK_LLM", "").lower() == "true"
-                    if not is_mock_mode:
-                        self.log_error("Could not find an available model and no default_model specified in config.")
-                    else:
-                        self.log_debug("No model found, but mock mode is enabled - this is expected in test environments.")
-                    # self._model remains None, potentially causing issues later
+                    self.log_debug("No available model found, but mock mode is enabled. This is expected in test environments.")
+                # self._model remains None.
 
         # Initialize query executor (Phase 5A integration)
         self._query_executor = LLMQueryExecutor(
@@ -274,7 +270,7 @@ class LLMResource(BaseResource):
         if not self._started:
             await self.initialize()
             self._started = True
-        
+
         # Check if we should use mock responses first, even if resource is not available
         should_mock = self._mock_llm_call is not None and (
             self._mock_llm_call is True or callable(self._mock_llm_call) or os.environ.get("OPENDXA_MOCK_LLM", "").lower() == "true"
@@ -324,7 +320,7 @@ class LLMResource(BaseResource):
         """Synchronous startup - initialize LLM client"""
         if self._started:
             return
-        
+
         Misc.safe_asyncio_run(self.initialize)
         self._started = True
         self.log_info(f"LLMResource '{self.name}' started synchronously")
@@ -333,7 +329,7 @@ class LLMResource(BaseResource):
         """Synchronous shutdown - cleanup LLM client"""
         if not self._started:
             return
-        
+
         Misc.safe_asyncio_run(self.cleanup)
         self._started = False
         self.log_info(f"LLMResource '{self.name}' shut down")
@@ -483,15 +479,6 @@ class LLMResource(BaseResource):
         """
         self.debug("LLM response: %s", str(response))
 
-    # TODO: deprecate this
-    def _get_default_model(self) -> str:
-        """Get default model identifier.
-
-        Returns:
-            str: Default model identifier
-        """
-        return "openai:gpt-4o-mini"
-
     async def _call_tools(self, tool_calls: list[dict[str, Any]], available_resources: list[BaseResource]) -> list[BaseResponse]:
         """Call tools based on LLM's tool calls.
 
@@ -520,14 +507,7 @@ class LLMResource(BaseResource):
         return responses
 
     def _validate_model(self, model_name: str) -> bool:
-        """Checks if the required API keys for a given model are available.
-
-        Args:
-            model_name: The name of the model (e.g., "openai:gpt-4").
-
-        Returns:
-            True if all required keys are found in environment variables, False otherwise.
-        """
+        """Checks if the necessary API keys for a given model are available."""
         return self._config_manager._validate_model(model_name)
 
     def _find_first_available_model(self) -> str | None:

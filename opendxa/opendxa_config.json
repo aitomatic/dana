@@ -38,12 +38,17 @@
                 "required_api_keys": ["DEEPSEEK_API_KEY"]
             },
             {
-                "name": "azure:gpt-4",
+                "name": "azure:gpt-4o",
                 "required_api_keys": ["AZURE_OPENAI_API_KEY", "AZURE_OPENAI_ENDPOINT"]
             }
-        ],
-        "default_model": "openai:gpt-4o-mini"
+        ]
     },
-    "temperature": 0.7,
-    "max_tokens": 2000
+    "model_configs": {
+        "default": {
+            "temperature": 0.7,
+            "max_tokens": 2048,
+            "timeout": 120,
+            "request_timeout": 120
+        }
+    }
 }

@@ -87,7 +87,7 @@ class TestLLMConfigurationManager(unittest.TestCase):
                 ]
             }
         }
-        mock_config_loader.return_value.get_config.return_value = mock_config
+        mock_config_loader.return_value.get_default_config.return_value = mock_config
 
         # Set up OpenAI API key only
         os.environ["OPENAI_API_KEY"] = "test-key"
@@ -103,7 +103,7 @@ class TestLLMConfigurationManager(unittest.TestCase):
         """Test when no models are available."""
         # Mock configuration with models that need API keys
         mock_config = {"llm": {"preferred_models": ["anthropic:claude-3", "google:gemini-1.5-pro"]}}
-        mock_config_loader.return_value.get_config.return_value = mock_config
+        mock_config_loader.return_value.get_default_config.return_value = mock_config
 
         config_manager = LLMConfigurationManager()
 
@@ -116,7 +116,7 @@ class TestLLMConfigurationManager(unittest.TestCase):
         """Test getting list of available models."""
         # Mock configuration
         mock_config = {"llm": {"all_models": ["openai:gpt-4o", "openai:gpt-4o-mini", "anthropic:claude-3", "google:gemini-1.5-pro"]}}
-        mock_config_loader.return_value.get_config.return_value = mock_config
+        mock_config_loader.return_value.get_default_config.return_value = mock_config
 
         # Set up only OpenAI API key
         os.environ["OPENAI_API_KEY"] = "test-key"
@@ -136,7 +136,7 @@ class TestLLMConfigurationManager(unittest.TestCase):
         """Test getting model-specific configuration."""
         # Mock configuration
         mock_config = {"llm": {"model_configs": {"openai:gpt-4": {"max_tokens": 8192, "temperature": 0.7, "timeout": 60}}}}
-        mock_config_loader.return_value.get_config.return_value = mock_config
+        mock_config_loader.return_value.get_default_config.return_value = mock_config
 
         config_manager = LLMConfigurationManager()
 
@@ -178,7 +178,7 @@ class TestLLMConfigurationManager(unittest.TestCase):
         """Test model determination with auto-selection."""
         # Mock configuration
         mock_config = {"llm": {"preferred_models": ["openai:gpt-4"], "default_model": "openai:gpt-4o-mini"}}
-        mock_config_loader.return_value.get_config.return_value = mock_config
+        mock_config_loader.return_value.get_default_config.return_value = mock_config
 
         os.environ["OPENAI_API_KEY"] = "test-key"
 
@@ -188,27 +188,12 @@ class TestLLMConfigurationManager(unittest.TestCase):
         model = config_manager._determine_model()
         self.assertEqual(model, "openai:gpt-4")
 
-    @patch("opendxa.common.resource.llm_configuration_manager.ConfigLoader")
-    def test_determine_model_fallback_to_default(self, mock_config_loader):
-        """Test model determination falling back to default."""
-        # Mock configuration with no preferred models available
-        mock_config = {"llm": {"preferred_models": ["anthropic:claude-3"], "default_model": "openai:gpt-4o-mini"}}  # No API key
-        mock_config_loader.return_value.get_config.return_value = mock_config
-
-        os.environ["OPENAI_API_KEY"] = "test-key"
-
-        config_manager = LLMConfigurationManager()
-
-        # Should fallback to default
-        model = config_manager._determine_model()
-        self.assertEqual(model, "openai:gpt-4o-mini")
-
     @patch.dict(os.environ, {"OPENDXA_MOCK_LLM": "false"})
     def test_error_handling_with_config_errors(self):
-        """Test error handling when configuration loading fails."""
+        """Test graceful error handling when config files are corrupt or missing."""
         with patch("opendxa.common.resource.llm_configuration_manager.ConfigLoader") as mock_config_loader:
             # Make config loader raise an exception
-            mock_config_loader.return_value.get_config.side_effect = Exception("Config error")
+            mock_config_loader.return_value.get_default_config.side_effect = FileNotFoundError("Config not found")
 
             config_manager = LLMConfigurationManager()
 

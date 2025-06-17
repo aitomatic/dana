@@ -117,7 +117,7 @@ class AssignmentHelper:
             type_name = item.value
         else:
             type_name = str(item)
-            
+
         return TypeHint(name=type_name)
 
 
@@ -220,7 +220,7 @@ class ImportHelper:
         """Create an ImportStatement node."""
         # Extract module path
         module = ImportHelper._extract_module_path(module_path_tree)
-        alias = alias_name.value if hasattr(alias_name, "value") else alias_name if alias_name else None
+        alias = alias_name.value if alias_name and hasattr(alias_name, "value") else alias_name if alias_name else None
         return ImportStatement(module=module, alias=alias)
 
     @staticmethod
@@ -296,7 +296,7 @@ class ContextHelper:
         return UseStatement(args=args, kwargs=kwargs)
 
     @staticmethod
-    def create_with_statement(context_manager, as_var, body_tree, statement_transformer=None):
+    def create_with_statement(context_manager, as_var, body_tree, statement_transformer):
         """Create a WithStatement node."""
         body = statement_transformer._transform_block(body_tree)
 

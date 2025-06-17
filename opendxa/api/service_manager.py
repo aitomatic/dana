@@ -12,6 +12,9 @@ from opendxa.common.utils.logging import DXA_LOGGER
 
 from .client import APIClient
 
+# Default port for local API server
+DEFAULT_LOCAL_PORT = 12345
+
 
 class APIServiceManager(Loggable):
     """Manages API server lifecycle for DanaSandbox sessions"""
@@ -30,15 +33,15 @@ class APIServiceManager(Loggable):
         if self._started:
             return
 
-        # Check service health
-        if not self.check_health():
-            raise RuntimeError("Service is not healthy")
-
         if self.local_mode:
             self._start_local_server()
         else:
             # Remote mode - just validate connection
             self._validate_remote_connection()
+
+        # Check service health after starting
+        if not self.check_health():
+            raise RuntimeError("Service is not healthy")
 
         self._started = True
         self.info(f"API Service Manager started - {self.service_uri}")
@@ -80,13 +83,17 @@ class APIServiceManager(Loggable):
         config = ConfigLoader()
         config_data: dict[str, Any] = config.get_default_config() or {}
 
-        # Get service URI
-        self.service_uri = config_data.get("AITOMATIC_API_URL")
-        if not self.service_uri:
-            # Launch embedded server at random port
-            port = self._find_free_port()
-            self.service_uri = f"http://localhost:{port}"
-            os.environ["AITOMATIC_API_URL"] = self.service_uri
+        # Get service URI and determine port
+        raw_uri = config_data.get("AITOMATIC_API_URL") or os.environ.get("AITOMATIC_API_URL")
+        
+        if not raw_uri:
+            # Default to localhost with default port
+            self.service_uri = "localhost:DEFAULT_LOCAL_PORT"
+        else:
+            self.service_uri = raw_uri
+
+        # Parse and normalize the URI
+        self._normalize_service_uri()
 
         # Get API key
         self.api_key = config_data.get("AITOMATIC_API_KEY")
@@ -98,10 +105,30 @@ class APIServiceManager(Loggable):
             else:
                 raise ValueError("AITOMATIC_API_KEY environment variable must be set")
 
-        # Initialize API client
-        self._init_api_client()
-
         DXA_LOGGER.info(f"Service config loaded: uri={self.service_uri}")
+
+    def _normalize_service_uri(self) -> None:
+        """Normalize service URI and determine port"""
+        if not self.service_uri:
+            self.service_uri = "localhost:DEFAULT_LOCAL_PORT"
+            return
+
+        # Handle different URI formats
+        if self.service_uri == "localhost":
+            # localhost without port -> use default port DEFAULT_LOCAL_PORT
+            self.service_uri = "localhost:DEFAULT_LOCAL_PORT"
+        elif self.service_uri.startswith("localhost:"):
+            # localhost with port -> use as-is
+            pass
+        elif "localhost" in self.service_uri and ":" in self.service_uri:
+            # http://localhost:port format -> extract localhost:port
+            if "://" in self.service_uri:
+                self.service_uri = self.service_uri.split("://")[1]
+        elif not (":" in self.service_uri or self.service_uri.startswith("http")):
+            # Just a hostname/IP without port -> assume remote with default port
+            pass
+        
+        DXA_LOGGER.debug(f"Normalized service URI: {self.service_uri}")
 
     def _init_api_client(self) -> None:
         """Initialize API client with configuration."""
@@ -112,21 +139,30 @@ class APIServiceManager(Loggable):
         self.api_client = APIClient(base_uri=cast(str, self.service_uri), api_key=self.api_key)
 
     def _start_local_server(self) -> None:
-        """Start local API server on available port"""
-        # Determine port
-        if self.service_uri and ":" in self.service_uri:
-            # Extract port from localhost:port
-            try:
+        """Start local API server or use existing one"""
+        # Extract port from normalized URI (localhost:port)
+        try:
+            if ":" in self.service_uri:
                 port = int(self.service_uri.split(":")[-1])
-            except ValueError:
-                port = self._find_free_port()
-        else:
-            port = self._find_free_port()
+            else:
+                port = DEFAULT_LOCAL_PORT  # Default port
+        except ValueError:
+            port = DEFAULT_LOCAL_PORT  # Fallback to default
 
-        # Update service URI to actual port
-        self.service_uri = f"http://localhost:{port}"
+        # Convert to full HTTP URL
+        full_uri = f"http://localhost:{port}"
+        
+        # Check if server is already running on this port
+        if self._is_server_running(port):
+            self.info(f"Found existing server on port {port}, using it")
+            self.service_uri = full_uri
+            os.environ["AITOMATIC_API_URL"] = full_uri
+            self._init_api_client()
+            return
 
-        # Start server process
+        # No server running, start a new one
+        self.info(f"Starting new API server on port {port}")
+        
         try:
             # Use uvicorn to start the FastAPI server
             cmd = [
@@ -140,15 +176,29 @@ class APIServiceManager(Loggable):
                 "warning",  # Reduce noise
             ]
 
-            self.info(f"Starting local API server on port {port}")
             self.server_process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
             # Wait for server to be ready
             self._wait_for_server_ready(port)
+            
+            # Update service URI and environment to reflect reality
+            self.service_uri = full_uri
+            os.environ["AITOMATIC_API_URL"] = full_uri
+            self._init_api_client()
 
         except Exception as e:
             self.error(f"Failed to start local API server: {e}")
             raise RuntimeError(f"Could not start local API server: {e}")
+
+    def _is_server_running(self, port: int) -> bool:
+        """Check if a server is already running on the specified port"""
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(1)
+                result = s.connect_ex(("127.0.0.1", port))
+                return result == 0
+        except Exception:
+            return False
 
     def _find_free_port(self) -> int:
         """Find an available port for the local server"""
@@ -180,7 +230,16 @@ class APIServiceManager(Loggable):
         if not self.service_uri:
             raise RuntimeError("AITOMATIC_API_URL must be set for remote mode")
 
-        # Basic validation - actual connection test will be done by APIClient
+        # Ensure full HTTP URL format for remote connections
+        if not self.service_uri.startswith("http"):
+            self.service_uri = f"https://{self.service_uri}"
+        
+        # Update environment to reflect the actual URL
+        os.environ["AITOMATIC_API_URL"] = self.service_uri
+        
+        # Initialize API client for remote connection
+        self._init_api_client()
+        
         self.info(f"Using remote API service: {self.service_uri}")
 
     def __enter__(self) -> "APIServiceManager":
@@ -198,6 +257,11 @@ class APIServiceManager(Loggable):
         try:
             if not self.api_client:
                 return False
+            
+            # Ensure API client is started before making requests
+            if not self.api_client._started:
+                self.api_client.startup()
+                
             response = self.api_client.get("/health")
             return response.get("status") == "healthy"
         except Exception as e:
