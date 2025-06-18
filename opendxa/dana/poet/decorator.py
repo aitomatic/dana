@@ -148,7 +148,16 @@ class POETDecorator(Loggable):
                         result = self.func.execute(context, *args, **kwargs)
                     elif not is_dana_function and expects_context:
                         # Regular Python function that expects context parameter
-                        result = self.func(*args, context=context, **kwargs)
+                        # Check if context is already provided as a positional argument
+                        sig = inspect.signature(self.func)
+                        param_names = list(sig.parameters.keys())
+
+                        if len(args) > 0 and len(param_names) > 0 and param_names[0] == "context":
+                            # Context is likely already the first positional argument
+                            result = self.func(*args, **kwargs)
+                        else:
+                            # Context needs to be passed as keyword argument
+                            result = self.func(*args, context=context, **kwargs)
                     else:
                         # Regular Python function that doesn't expect context
                         result = self.func(*args, **kwargs)
