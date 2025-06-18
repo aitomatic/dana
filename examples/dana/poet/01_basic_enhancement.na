@@ -10,7 +10,7 @@ log("🚀 POET Basic Enhancement - Dana Example")
 log("=" * 50)
 
 # Basic POET-enhanced function
-@poet()
+@poet(domain="basic")
 def calculate_sum(a: int, b: int) -> int:
     """Simple addition function enhanced by POET"""
     return a + b
@@ -33,7 +33,7 @@ def detect_anomaly(value: float, threshold: float) -> dict:
     }
 
 # POET function with learning enabled
-@poet(optimize_for="accuracy")
+@poet(domain="ml", optimize_for="accuracy")
 def classify_sentiment(text: str) -> str:
     """Simple sentiment classification that can learn"""
     text_lower = text.lower()

@@ -30,7 +30,7 @@ class POETDecorator(Loggable):
         timeout: int | None = None,
         namespace: str = "local",
         overwrite: bool = False,
-        enable_training: bool = False,
+        optimize_for: str | None = None,
     ):
         """Initialize the POET decorator.
 
@@ -41,7 +41,7 @@ class POETDecorator(Loggable):
             timeout: Optional timeout in seconds
             namespace: Namespace to register the function in
             overwrite: Whether to allow overwriting existing functions
-            enable_training: Whether to enable training for this function
+            optimize_for: Optional optimization target for learning (enables training when specified)
         """
         super().__init__()
         self.func = func
@@ -50,7 +50,7 @@ class POETDecorator(Loggable):
         self.timeout = timeout
         self.namespace = namespace
         self.overwrite = overwrite
-        self.enable_training = enable_training
+        self.optimize_for = optimize_for
 
         # Store metadata on the function
         if not hasattr(func, "_poet_metadata"):
@@ -62,7 +62,7 @@ class POETDecorator(Loggable):
                 "timeout": timeout,
                 "namespace": namespace,
                 "overwrite": overwrite,
-                "enable_training": enable_training,
+                "optimize_for": optimize_for,
             }
         )
 
@@ -87,7 +87,6 @@ class POETDecorator(Loggable):
 
             # Get context from kwargs or create new one
             context = kwargs.pop("context", None)
-            original_context = context  # Keep reference to original
 
             DXA_LOGGER.debug(f"POET wrapper context from kwargs: {context}")
             DXA_LOGGER.debug(f"Context type: {type(context)}")
@@ -171,7 +170,7 @@ def poet(
     timeout: int | None = None,
     namespace: str = "local",
     overwrite: bool = False,
-    enable_training: bool = False,
+    optimize_for: str | None = None,
 ) -> Callable:
     """Decorator factory for POET functions.
 
@@ -181,7 +180,7 @@ def poet(
         timeout: Optional timeout in seconds
         namespace: Namespace to register the function in
         overwrite: Whether to allow overwriting existing functions
-        enable_training: Whether to enable training for this function
+        optimize_for: Optional optimization target for learning (enables training when specified)
 
     Returns:
         A decorator function that enhances the target function with POET capabilities
@@ -196,7 +195,7 @@ def poet(
             timeout=timeout,
             namespace=namespace,
             overwrite=overwrite,
-            enable_training=enable_training,
+            optimize_for=optimize_for,
         ).wrapper
 
     return decorator

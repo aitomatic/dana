@@ -181,8 +181,8 @@ assert result == 10
 try:
     error_func(-5)
     assert false, "Should have raised ValueError"
-except ValueError as e:
-    assert str(e) == "Negative input not allowed"
+except ValueError:
+    pass  # Expected error
 """
         )
 

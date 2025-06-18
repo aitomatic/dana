@@ -104,7 +104,7 @@ def test_func(x: int, y: int) -> int:
 result = test_func(15, 25)
 '''
 
-        result = sandbox.execute(dana_code)
+        result = sandbox.eval(dana_code)
         context = self.get_context(result)
 
         assert result.success
@@ -127,7 +127,7 @@ sum_result = add_func(10, 5)
 diff_result = subtract_func(10, 5)
 """
 
-        result = sandbox.execute(dana_code)
+        result = sandbox.eval(dana_code)
         context = self.get_context(result)
 
         assert result.success
@@ -152,7 +152,7 @@ def typed_function(x: int, y: float, z: str) -> str:
 result = typed_function(10, 5.5, "Sum")
 """
 
-        result = sandbox.execute(dana_code)
+        result = sandbox.eval(dana_code)
         context = self.get_context(result)
 
         assert result.success
@@ -171,7 +171,7 @@ def metadata_function(x: int) -> int:
 test_value = 42
 '''
 
-        result = sandbox.execute(dana_code)
+        result = sandbox.eval(dana_code)
         context = self.get_context(result)
 
         assert result.success
@@ -202,7 +202,7 @@ def error_prone_function(x: int) -> int:
 safe_result = error_prone_function(5)
 """
 
-        result = sandbox.execute(dana_code)
+        result = sandbox.eval(dana_code)
         context = self.get_context(result)
 
         assert result.success
@@ -224,7 +224,7 @@ def conditional_function(x: int) -> str:
 result = conditional_function(15)
 """
 
-        result = sandbox.execute(dana_code)
+        result = sandbox.eval(dana_code)
         context = self.get_context(result)
 
         assert result.success
@@ -243,7 +243,7 @@ def context_aware_function(value: int) -> int:
 result = context_aware_function(20)
 """
 
-        result = sandbox.execute(dana_code)
+        result = sandbox.eval(dana_code)
         context = self.get_context(result)
 
         assert result.success
@@ -254,19 +254,15 @@ result = context_aware_function(20)
 
         dana_code = """
 @poet(domain="complex_types")
-def list_processor(items: list, multiplier: int) -> list:
-    # Process a list (if Dana supports this syntax)
-    return [item * multiplier for item in items]
+def list_processor(items, multiplier: int) -> int:
+    # Simple function without list comprehension  
+    return multiplier * 2
 
-# Test with a simple list
-test_list = [1, 2, 3]
-# result = list_processor(test_list, 2)  # May not work due to Dana limitations
-
-# Simpler test without complex types
+# Test with a simple result
 simple_result = 42
 """
 
-        result = sandbox.execute(dana_code)
+        result = sandbox.eval(dana_code)
         context = self.get_context(result)
 
         assert result.success

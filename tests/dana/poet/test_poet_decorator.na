@@ -37,7 +37,7 @@ def test_overwrite(x):
 @poet(domain="test_domain")
 def test_error(x):
     """Test POET decorator error handling."""
-    raise ValueError("Test error")
+    raise "Test error"
 
 @poet(domain="test_domain", namespace="custom")
 def test_namespace(x):
