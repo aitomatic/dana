@@ -40,15 +40,15 @@ class REPL(Loggable):
             context: Optional runtime context to use
         """
         super().__init__()  # Initialize Loggable
-        
+
         # Create DanaSandbox and let it manage the context
         self.sandbox = DanaSandbox(debug=False, context=context)
         # Force initialization to start API service
         self.sandbox._ensure_initialized()
-        
+
         # Get the context from DanaSandbox
         self.context = self.sandbox._context
-        
+
         # Set LLM resource if provided and not already in context
         if llm_resource is not None and not self.context.get("system.llm_resource"):
             self.context.set("system.llm_resource", llm_resource)
@@ -205,17 +205,22 @@ class REPL(Loggable):
         try:
             result = self.sandbox.eval(program_source)
             if result.success:
+                # Restore any print output to the interpreter buffer so tests can access it
+                if result.output:
+                    self.sandbox._interpreter._executor._output_buffer.append(result.output)
                 return result.result
             else:
                 print(f"🚨 REPL: Sandbox execution failed: {result.error}")
-                if hasattr(result.error, '__traceback__'):
+                if hasattr(result.error, "__traceback__"):
                     import traceback
+
                     print("🚨 REPL: Full traceback:")
                     traceback.print_exception(type(result.error), result.error, result.error.__traceback__)
                 raise result.error
         except Exception as e:
             print(f"🚨 REPL: Exception in execute: {e}")
             import traceback
+
             traceback.print_exc()
             formatted = self._format_error_message(str(e), program_source)
             raise DanaError(formatted)
