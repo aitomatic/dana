@@ -1,0 +1,22 @@
+# Basic POET decorator test fixture
+# Tests fundamental decorator functionality without control flow
+
+@poet(domain="test_math")
+def simple_add(x: int, y: int) -> int:
+    """Simple addition function with POET enhancement."""
+    return x + y
+
+@poet(domain="test_math", retries=2, timeout=30)
+def simple_multiply(x: int, y: int) -> int:
+    """Simple multiplication with POET configuration."""
+    return x * y
+
+@poet(domain="test_string")  
+def concat_strings(a: str, b: str) -> str:
+    """String concatenation with POET enhancement."""
+    return a + b
+
+# Test function calls
+result_add = simple_add(10, 20)
+result_multiply = simple_multiply(5, 6)
+result_concat = concat_strings("Hello", "World") 

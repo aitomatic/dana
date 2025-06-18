@@ -1,0 +1,17 @@
+# POET decorator error handling test fixture
+# Note: Avoiding if statements due to Dana control flow issue
+
+@poet(domain="test_errors", retries=2)
+def division_function(x: int, y: int) -> float:
+    """Function that may cause division errors."""
+    return x / y
+
+@poet(domain="test_validation")
+def type_sensitive_function(x: int) -> int:
+    """Function that expects specific types."""
+    return x + 100
+
+# Test error cases
+# These will be called from Python tests to verify error handling
+# result_error = division_function(10, 0)  # Division by zero
+# result_type = type_sensitive_function("not_an_int")  # Type error 

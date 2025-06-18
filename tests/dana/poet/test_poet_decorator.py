@@ -1,14 +1,12 @@
 """
-Tests for the POET decorator functionality.
+DEPRECATED: This test file contains obsolete POET decorator tests.
 
-This module tests the POET decorator's ability to:
-1. Register functions with the POET registry
-2. Execute functions with proper context
-3. Handle function metadata
-4. Support function overwriting
-5. Handle errors appropriately
-6. Handle namespace
-7. Handle decorator chaining
+Please use the new organized test suite:
+- tests/dana/poet/test_poet_decorator_unit.py - Unit tests for Python decorator functionality
+- tests/dana/poet/test_poet_decorator_dana.py - Dana language integration tests
+- tests/dana/poet/test_poet_decorator_python.py - Python-specific functionality tests
+
+This file is kept for reference but tests may be outdated.
 """
 
 import pytest
@@ -30,6 +28,7 @@ def sandbox():
     return sandbox
 
 
+@pytest.mark.skip(reason="DEPRECATED: Use new organized test suite instead")
 def test_basic_poet_decorator(sandbox):
     """Test basic POET decorator functionality."""
     result = sandbox.run("tests/dana/poet/test_poet_decorator.na")
@@ -38,6 +37,7 @@ def test_basic_poet_decorator(sandbox):
     assert context.get("test_basic")(5) == 10
 
 
+@pytest.mark.skip(reason="DEPRECATED: Use new organized test suite instead")
 def test_poet_decorator_with_context(sandbox):
     """Test POET decorator with context handling."""
     result = sandbox.run("tests/dana/poet/test_poet_decorator.na")
@@ -48,6 +48,7 @@ def test_poet_decorator_with_context(sandbox):
     assert context.get("test_value") == 5
 
 
+@pytest.mark.skip(reason="DEPRECATED: Use new organized test suite instead")
 def test_poet_decorator_metadata(sandbox):
     """Test POET decorator metadata preservation."""
     result = sandbox.run("tests/dana/poet/test_poet_decorator.na")
@@ -60,6 +61,7 @@ def test_poet_decorator_metadata(sandbox):
     assert func._poet_metadata["timeout"] == 5
 
 
+@pytest.mark.skip(reason="DEPRECATED: Use new organized test suite instead")
 def test_poet_decorator_overwrite(sandbox):
     """Test POET decorator function overwriting."""
     result = sandbox.run("tests/dana/poet/test_poet_decorator.na")
@@ -68,6 +70,7 @@ def test_poet_decorator_overwrite(sandbox):
     assert context.get("test_overwrite")(5) == 15
 
 
+@pytest.mark.skip(reason="DEPRECATED: Use new organized test suite instead")
 def test_poet_decorator_error_handling(sandbox):
     """Test POET decorator error handling."""
     result = sandbox.run("tests/dana/poet/test_poet_decorator.na")
@@ -78,6 +81,7 @@ def test_poet_decorator_error_handling(sandbox):
     assert str(exc_info.value) == "Test error"
 
 
+@pytest.mark.skip(reason="DEPRECATED: Use new organized test suite instead")
 def test_poet_decorator_namespace(sandbox):
     """Test POET decorator namespace handling."""
     result = sandbox.run("tests/dana/poet/test_poet_decorator.na")
@@ -86,6 +90,7 @@ def test_poet_decorator_namespace(sandbox):
     assert context.get("custom.test_namespace")(5) == 10
 
 
+@pytest.mark.skip(reason="DEPRECATED: Use new organized test suite instead")
 def test_poet_decorator_chain(sandbox):
     """Test chaining multiple POET decorators."""
     result = sandbox.run("tests/dana/poet/test_poet_decorator.na")
