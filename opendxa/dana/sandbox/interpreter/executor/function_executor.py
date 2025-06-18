@@ -117,42 +117,35 @@ class FunctionExecutor(BaseExecutor):
 
     def _resolve_decorator(self, decorator, context):
         """Resolve a decorator to a callable function."""
-        from opendxa.dana.sandbox.interpreter.executor.function_resolver import FunctionNameInfo
+        decorator_name = decorator.name
 
-        # Try multiple resolution strategies
-        resolution_attempts = [
-            # Try as core.decorator_name
-            ("core", f"core.{decorator.name}"),
-            # Try as just decorator_name in local scope
-            ("local", decorator.name),
-            # Try as just decorator_name in core scope (without prefix)
-            ("core", decorator.name),
-        ]
+        # Try function registry first (most common case)
+        if self.function_registry and self.function_registry.has(decorator_name, "core"):
+            func, _, _ = self.function_registry.resolve(decorator_name, "core")
+            return func
 
-        for namespace, lookup_name in resolution_attempts:
-            if namespace == "core" and "." not in lookup_name:
-                # For core namespace without prefix, try direct registry lookup
-                if self.function_registry and self.function_registry.has(lookup_name, namespace):
-                    func, _, _ = self.function_registry.resolve(lookup_name, namespace)
-                    return func
-            else:
-                # Use function resolver
-                original_name = lookup_name
-                func_name = lookup_name.split(".")[-1]
-                full_key = lookup_name if "." in lookup_name else f"{namespace}.{lookup_name}"
+        # Try local context
+        try:
+            local_func = context.get(f"local.{decorator_name}")
+            if callable(local_func):
+                return local_func
+        except Exception:
+            pass
 
-                name_info = FunctionNameInfo(original_name, func_name, namespace, full_key)
-                resolved_func = self.function_resolver.resolve_function(name_info, context, self.function_registry)
+        # Try global context
+        try:
+            global_func = context.get(decorator_name)
+            if callable(global_func):
+                return global_func
+        except Exception:
+            pass
 
-                if resolved_func and resolved_func.func:
-                    return resolved_func.func
-
-        # If all attempts failed, list available functions for debugging
+        # If all attempts failed, provide helpful error
         available_functions = []
         if self.function_registry:
             available_functions = self.function_registry.list()
 
-        raise NameError(f"Decorator '{decorator.name}' not found. Available functions: {available_functions}")
+        raise NameError(f"Decorator '{decorator_name}' not found. Available functions: {available_functions}")
 
     def _ensure_fully_evaluated(self, value: Any, context: SandboxContext) -> Any:
         """Ensure that the value is fully evaluated, particularly f-strings.

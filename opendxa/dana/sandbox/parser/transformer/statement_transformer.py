@@ -227,73 +227,23 @@ class StatementTransformer(BaseTransformer):
             return self.expression_transformer.expression([item])
 
     def function_def(self, items):
-        """
-        Transform a function definition rule into a FunctionDefinition node.
-
-        Grammar: function_def: [decorators] "def" NAME "(" [parameters] ")" ["->" basic_type] ":" [COMMENT] block
-        """
+        """Transform a function definition rule into a FunctionDefinition node."""
         relevant_items = self._filter_relevant_items(items)
-        if not relevant_items:
-            raise ValueError("function_def rule received empty relevant items list")
 
-        current_index = 0
-        decorators = []
+        if len(relevant_items) < 2:
+            raise ValueError(f"Function definition must have at least a name and body, got {len(relevant_items)} items")
 
-        # Defensively check for decorators
-        if relevant_items and isinstance(relevant_items[0], list):
-            # Case 1: Decorators are in a nested list
-            decorators = relevant_items[0]
-            current_index += 1
-        else:
-            # Case 2: Decorators are a flat list of nodes
-            while current_index < len(relevant_items) and isinstance(relevant_items[current_index], Decorator):
-                decorators.append(relevant_items[current_index])
-                current_index += 1
+        # Extract decorators (if present) and function name
+        decorators, func_name_token, current_index = self._extract_decorators_and_name(relevant_items)
 
-        # The function name must follow the decorators
-        if current_index >= len(relevant_items):
-            raise ValueError(f"Function name not found after decorators in items: {relevant_items}")
+        # Resolve parameters using simplified logic
+        parameters, current_index = self._resolve_function_parameters(relevant_items, current_index)
 
-        func_name_token = relevant_items[current_index]
-        current_index += 1
+        # Extract return type
+        return_type, current_index = self._extract_return_type(relevant_items, current_index)
 
-        parameters = []
-        if current_index < len(relevant_items) and isinstance(relevant_items[current_index], list):
-            param_list = relevant_items[current_index]
-            # Check if parameters are already Parameter objects (already transformed)
-            if param_list and hasattr(param_list[0], "name") and hasattr(param_list[0], "type_hint"):
-                # Already transformed Parameter objects
-                parameters = param_list
-            else:
-                # Need transformation
-                parameters = self._transform_parameters(param_list)
-            current_index += 1
-        elif current_index < len(relevant_items) and isinstance(relevant_items[current_index], Tree):
-            if relevant_items[current_index].data == "parameters":
-                parameters = self.parameters(relevant_items[current_index].children)
-                current_index += 1
-
-        return_type = None
-        # Check for return type, which comes before the block
-        if current_index < len(relevant_items) and not isinstance(relevant_items[current_index], list):
-            from opendxa.dana.sandbox.parser.ast import TypeHint
-
-            item = relevant_items[current_index]
-            if isinstance(item, Tree) and item.data == "basic_type":
-                return_type = self.basic_type(item.children)
-                current_index += 1
-            elif isinstance(item, TypeHint):  # TypeHint object
-                return_type = item
-                current_index += 1
-
-        # Find the block, which is typically the last item
-        block_items = []
-        if current_index < len(relevant_items):
-            block_tree = relevant_items[current_index]
-            if isinstance(block_tree, Tree) and block_tree.data == "block":
-                block_items = self._transform_block(block_tree.children)
-            elif isinstance(block_tree, list):
-                block_items = self._transform_block(block_tree)
+        # Extract function body
+        block_items = self._extract_function_body(relevant_items, current_index)
 
         # Handle function name extraction
         if isinstance(func_name_token, Token) and func_name_token.type == "NAME":
@@ -311,6 +261,79 @@ class StatementTransformer(BaseTransformer):
             decorators=decorators,
             location=location,
         )
+
+    def _extract_decorators_and_name(self, relevant_items):
+        """Extract decorators and function name from relevant items."""
+        current_index = 0
+        decorators = []
+
+        # Check if the first item is decorators
+        if current_index < len(relevant_items) and isinstance(relevant_items[current_index], list):
+            first_item = relevant_items[current_index]
+            if first_item and hasattr(first_item[0], "name"):  # Check if it's a list of Decorator objects
+                decorators = first_item
+                current_index += 1
+
+        # The next item should be the function name
+        if current_index >= len(relevant_items):
+            raise ValueError("Expected function name after decorators")
+
+        func_name_token = relevant_items[current_index]
+        current_index += 1
+
+        return decorators, func_name_token, current_index
+
+    def _resolve_function_parameters(self, relevant_items, current_index):
+        """Resolve function parameters from relevant items."""
+        parameters = []
+
+        if current_index < len(relevant_items):
+            item = relevant_items[current_index]
+
+            if isinstance(item, list):
+                # Check if already transformed Parameter objects
+                if item and hasattr(item[0], "name") and hasattr(item[0], "type_hint"):
+                    parameters = item
+                else:
+                    parameters = self._transform_parameters(item)
+                current_index += 1
+            elif isinstance(item, Tree) and item.data == "parameters":
+                parameters = self.parameters(item.children)
+                current_index += 1
+
+        return parameters, current_index
+
+    def _extract_return_type(self, relevant_items, current_index):
+        """Extract return type from relevant items."""
+        return_type = None
+
+        if current_index < len(relevant_items):
+            item = relevant_items[current_index]
+
+            if not isinstance(item, list):
+                from opendxa.dana.sandbox.parser.ast import TypeHint
+
+                if isinstance(item, Tree) and item.data == "basic_type":
+                    return_type = self.basic_type(item.children)
+                    current_index += 1
+                elif isinstance(item, TypeHint):
+                    return_type = item
+                    current_index += 1
+
+        return return_type, current_index
+
+    def _extract_function_body(self, relevant_items, current_index):
+        """Extract function body from relevant items."""
+        block_items = []
+
+        if current_index < len(relevant_items):
+            block_tree = relevant_items[current_index]
+            if isinstance(block_tree, Tree) and block_tree.data == "block":
+                block_items = self._transform_block(block_tree.children)
+            elif isinstance(block_tree, list):
+                block_items = self._transform_block(block_tree)
+
+        return block_items
 
     def decorators(self, items):
         """Transform decorators rule into a list of Decorator nodes."""
@@ -1122,7 +1145,6 @@ class StatementTransformer(BaseTransformer):
             and isinstance(context_manager_part.value, str)
             and not hasattr(context_manager_part, "data")
         ):  # Simple token, not a tree
-
             # Function call pattern: NAME [mixed_arguments] as var block
             context_manager_name = context_manager_part.value
 
@@ -1133,7 +1155,6 @@ class StatementTransformer(BaseTransformer):
 
             # Look for mixed_arguments (second item if it exists and is not 'as')
             if len(filtered_items) >= 2 and isinstance(filtered_items[1], list):
-
                 # mixed_arguments has already been transformed into a list of expressions/trees
                 args_list = filtered_items[1]
 
@@ -1151,7 +1172,6 @@ class StatementTransformer(BaseTransformer):
                             raise SyntaxError("Positional argument follows keyword argument in with statement")
                         args.append(cast(Expression, item))
             elif len(filtered_items) >= 2 and hasattr(filtered_items[1], "data") and filtered_items[1].data == "mixed_arguments":
-
                 mixed_args_tree = filtered_items[1]
 
                 # mixed_arguments contains with_arg children

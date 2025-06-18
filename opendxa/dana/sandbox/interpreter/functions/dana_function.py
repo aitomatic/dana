@@ -111,38 +111,17 @@ class DanaFunction(SandboxFunction, Loggable):
         DXA_LOGGER.debug(f"  return_type: {self.return_type}")
 
         try:
-            # Create a new context for function execution
-            if not isinstance(context, SandboxContext):
-                context = SandboxContext(parent=self.context)
-            else:
-                # Create a new context that inherits from the provided context
-                context = SandboxContext(parent=context)
-
-            # If the context doesn't have an interpreter, assign the one from self.context
-            if not hasattr(context, "_interpreter") or context._interpreter is None:
-                if self.context is not None and hasattr(self.context, "_interpreter") and self.context._interpreter is not None:
-                    context._interpreter = self.context._interpreter
-
-            # Create a new scope for the function
-            for i, param_name in enumerate(self.parameters):
-                if i < len(args):
-                    # Parameter names need to be scoped for context.set()
-                    context.set(f"local.{param_name}", args[i])
-
-            # Set any keyword arguments
-            for kwarg_name, kwarg_value in kwargs.items():
-                if kwarg_name in self.parameters:
-                    # Parameter names need to be scoped for context.set()
-                    context.set(f"local.{kwarg_name}", kwarg_value)
+            # Prepare the execution context using the existing method
+            prepared_context = self.prepare_context(context, list(args), kwargs)
 
             # Execute each statement in the function body
             result = None
             for statement in self.body:
                 try:
                     # Use _interpreter attribute (with underscore)
-                    if hasattr(context, "_interpreter") and context._interpreter is not None:
+                    if hasattr(prepared_context, "_interpreter") and prepared_context._interpreter is not None:
                         # Execute the statement and capture its result
-                        stmt_result = context._interpreter.execute_statement(statement, context)
+                        stmt_result = prepared_context._interpreter.execute_statement(statement, prepared_context)
                         # Update result with the statement's value if it's not None
                         if stmt_result is not None:
                             result = stmt_result
@@ -155,6 +134,10 @@ class DanaFunction(SandboxFunction, Loggable):
                 except Exception as e:
                     DXA_LOGGER.error(f"Error executing statement: {e}")
                     raise
+
+            # Restore the original context if needed
+            if isinstance(context, SandboxContext):
+                self.restore_context(prepared_context, context)
 
             # Return the last non-None result
             return result
