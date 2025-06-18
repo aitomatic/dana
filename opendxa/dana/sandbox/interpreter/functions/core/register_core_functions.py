@@ -82,3 +82,12 @@ def register_core_functions(registry: FunctionRegistry) -> None:
     registry.register("log_with_prefix", log_with_prefix, namespace="core", func_type="python", trusted_for_context=True)
     registry.register("repeat", repeat, namespace="core", func_type="python", trusted_for_context=True)
     registry.register("validate_args", validate_args, namespace="core", func_type="python", trusted_for_context=True)
+
+    # Register POET decorator
+    try:
+        from opendxa.dana.poet.decorator import poet
+
+        registry.register("poet", poet, namespace="core", func_type="python", trusted_for_context=True)
+    except ImportError:
+        # POET module not available, continue without it
+        pass
