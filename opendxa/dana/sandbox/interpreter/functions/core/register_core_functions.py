@@ -12,6 +12,7 @@ import importlib
 import inspect
 from pathlib import Path
 
+from opendxa.dana.sandbox.interpreter.functions.core.decorators import log_calls
 from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
 
 
@@ -75,3 +76,6 @@ def register_core_functions(registry: FunctionRegistry) -> None:
     except ImportError:
         # Pythonic built-ins not available, continue without them
         pass
+
+    # Register decorators
+    registry.register("log_calls", log_calls, namespace="core", func_type="python", trusted_for_context=True)

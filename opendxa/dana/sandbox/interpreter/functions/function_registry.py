@@ -167,7 +167,7 @@ class FunctionRegistry:
         name: str,
         func: Callable,
         namespace: str | None = None,
-        func_type: str = "dana",
+        func_type: str = "sandbox",
         metadata: FunctionMetadata | None = None,
         overwrite: bool = False,
         trusted_for_context: bool | None = None,
@@ -178,7 +178,7 @@ class FunctionRegistry:
             name: Function name
             func: The callable function
             namespace: Optional namespace (defaults to local)
-            func_type: Type of function ("dana" or "python")
+            func_type: Type of function ("sandbox" or "python")
             metadata: Optional function metadata
             overwrite: Whether to allow overwriting existing functions
             trusted_for_context: Whether this function is trusted to receive SandboxContext
@@ -451,7 +451,7 @@ class FunctionRegistry:
                 if not func._is_trusted_for_context():
                     # Call without context - this will likely fail but maintains security
                     return wrapped_func(prompt)
-                
+
                 # Call with correct signature: reason_function(context, prompt, options, use_mock)
                 if options and use_mock is not None:
                     return wrapped_func(context, prompt, options, use_mock)
@@ -503,7 +503,7 @@ class FunctionRegistry:
         else:
             # Check if it's a DanaFunction and call via execute method
             from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
-            
+
             if isinstance(func, DanaFunction):
                 # DanaFunction objects have an execute method that needs context
                 if context is None:

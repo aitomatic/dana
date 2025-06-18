@@ -20,15 +20,17 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
+import logging
 import re
 from pathlib import Path
 from typing import Any
 
 from opendxa.common.mixins.loggable import Loggable
+from opendxa.common.utils.logging import DXA_LOGGER
 from opendxa.dana.common.error_utils import ErrorUtils
 from opendxa.dana.sandbox.interpreter.executor.dana_executor import DanaExecutor
 from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
-from opendxa.dana.sandbox.parser.ast import Decorator, FunctionDefinition, Program
+from opendxa.dana.sandbox.parser.ast import FunctionDefinition, Program
 from opendxa.dana.sandbox.sandbox_context import ExecutionStatus, SandboxContext
 
 # Map Dana LogLevel to Python logging levels
@@ -73,6 +75,9 @@ class DanaInterpreter(Loggable):
     def __init__(self):
         """Initialize the interpreter."""
         super().__init__()
+
+        # Set logger level to DEBUG
+        DXA_LOGGER.setLevel(logging.DEBUG)
 
         # Initialize the function registry first
         self._init_function_registry()
@@ -283,43 +288,34 @@ class DanaInterpreter(Loggable):
 
     def _process_function_definition(self, func_def: FunctionDefinition, context: SandboxContext) -> None:
         """
-        Process a function definition and apply POET decorators if present.
+        Process a function definition, handling decorators and registration.
 
         Args:
-            func_def: The function definition AST node
+            func_def: The function definition to process
             context: The sandbox context
         """
-        # Check if function has POET decorators
-        poet_decorator = next((d for d in func_def.decorators if d.name == "poet"), None)
+        # Create the base Dana function
+        base_func = self._create_dana_function(func_def, context, register=False)
 
-        if not poet_decorator:
-            # No POET decorators, register function normally
-            self._register_function_normally(func_def, context)
+        # Check for decorators
+        if func_def.decorators:
+            # Apply decorators in bottom-up order (last decorator wraps first)
+            wrapped_func = base_func
+            for decorator_node in reversed(func_def.decorators):
+                decorator_func = self.evaluate_expression(decorator_node, context)
+                if not callable(decorator_func):
+                    raise TypeError(f"Decorator {decorator_func} is not callable")
+                try:
+                    wrapped_func = decorator_func(wrapped_func)
+                except Exception as e:
+                    raise RuntimeError(f"Error applying decorator {decorator_func}: {e}")
+
+            # Store the decorated function (Python wrapper) in the context
+            context.set(f"local.{func_def.name.name}", wrapped_func)
+        else:
+            # No decorators, store the DanaFunction directly
+            context.set(f"local.{func_def.name.name}", base_func)
             return
-
-        # Process POET decorators (typically should be only one)
-        enhanced_func = self._create_poet_enhanced_function(func_def, poet_decorator, context)
-        self._register_enhanced_function(func_def.name.name, enhanced_func, context)
-
-    def _create_poet_enhanced_function(self, func_def: FunctionDefinition, poet_decorator: Decorator, context: SandboxContext):
-        """
-        Create a POET-enhanced version of a Dana function.
-        (Placeholder implementation)
-        """
-        func_name = func_def.name.name
-        self.debug(f"Creating POET placeholder for {func_name}")
-
-        original_func = self._create_dana_function(func_def, context, register=False)
-
-        def poet_placeholder_function(*args, **kwargs):
-            original_result = original_func(*args, **kwargs)
-            # Wrap the result in a dictionary to simulate the POET structure
-            return {
-                "result": original_result,
-                "_poet": {"execution_id": "mock_exec_id", "function_name": func_name, "enhanced": False, "version": "v1.0"},
-            }
-
-        return poet_placeholder_function
 
     def _create_dana_function(self, func_def: FunctionDefinition, context: SandboxContext, register: bool = True):
         """
@@ -347,6 +343,12 @@ class DanaInterpreter(Loggable):
             function_context.set_execution_status(ExecutionStatus.COMPLETED)
             return result
 
+        # Set function metadata
+        dana_function.__name__ = func_name
+        dana_function.__qualname__ = func_name
+        if hasattr(func_def, "docstring") and func_def.docstring:
+            dana_function.__doc__ = func_def.docstring
+
         if register:
             self._register_function_normally(func_def, context)
 
@@ -365,10 +367,6 @@ class DanaInterpreter(Loggable):
                 context.set(f"local.{param.name}", default_val)
             else:
                 raise TypeError(f"Missing required argument: {param.name}")
-
-    def _register_enhanced_function(self, func_name: str, enhanced_func, context: SandboxContext) -> None:
-        """Register an enhanced function in the context."""
-        context.set(f"local.{func_name}", enhanced_func)
 
     def _register_function_normally(self, func_def: FunctionDefinition, context: SandboxContext) -> None:
         """Create and register a normal Dana function."""

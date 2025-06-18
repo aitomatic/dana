@@ -419,8 +419,8 @@ class StatementExecutor(BaseExecutor):
         from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionMetadata
 
         if isinstance(func, DanaFunction):
-            # Dana functions need context and should be registered as Dana type
-            func_type = "dana"
+            # Dana functions need context and should be registered as sandbox type
+            func_type = "sandbox"
             context_aware = True
         else:
             # Python functions (including wrapped ones) don't need Dana context

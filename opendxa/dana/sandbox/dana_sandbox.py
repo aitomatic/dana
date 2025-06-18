@@ -71,6 +71,9 @@ class DanaSandbox:
         self._interpreter = DanaInterpreter()
         self._parser = DanaParser()
 
+        # Set interpreter in context
+        self._context.interpreter = self._interpreter
+
         # Automatic lifecycle management
         self._initialized = False
         self._api_service: APIServiceManager | None = None
@@ -198,23 +201,26 @@ class DanaSandbox:
 
         try:
             # Read file
-            file_path = Path(file_path)
-            if not file_path.exists():
-                raise FileNotFoundError(f"File not found: {file_path}")
+            with open(file_path) as f:
+                source_code = f.read()
 
-            if not file_path.suffix == ".na":
-                raise ValueError(f"File must have .na extension: {file_path}")
+            # Execute through _eval (convergent path)
+            result = self._interpreter._eval(source_code, context=self._context, filename=str(file_path))
 
-            source_code = file_path.read_text()
-
-            # Use internal _run method for actual execution
-            result = self._interpreter._run(file_path, source_code, self._context)
-            output = self._interpreter.get_and_clear_output()
-
-            return ExecutionResult(success=True, result=result, final_context=self._context, output=output)
+            # Create execution result
+            return ExecutionResult(
+                success=True,
+                result=result,
+                final_context=self._context,
+            )
 
         except Exception as e:
-            return ExecutionResult(success=False, error=e, final_context=self._context)
+            DXA_LOGGER.error(f"Error executing Dana file: {e}")
+            return ExecutionResult(
+                success=False,
+                error=e,
+                final_context=self._context,
+            )
 
     def eval(self, source_code: str, filename: str | None = None) -> ExecutionResult:
         """
@@ -230,19 +236,28 @@ class DanaSandbox:
         self._ensure_initialized()  # Auto-initialize on first use
 
         try:
-            # Use internal _eval method for actual execution
-            result = self._interpreter._eval(source_code, self._context, filename)
-            output = self._interpreter.get_and_clear_output()
+            # Execute through _eval (convergent path)
+            result = self._interpreter._eval(source_code, context=self._context, filename=filename)
 
-            return ExecutionResult(success=True, result=result, final_context=self._context, output=output)
+            # Create execution result
+            return ExecutionResult(
+                success=True,
+                result=result,
+                final_context=self._context,
+            )
 
         except Exception as e:
-            return ExecutionResult(success=False, error=e, final_context=self._context)
+            DXA_LOGGER.error(f"Error evaluating Dana code: {e}")
+            return ExecutionResult(
+                success=False,
+                error=e,
+                final_context=self._context,
+            )
 
     @classmethod
     def quick_run(cls, file_path: str | Path, debug: bool = False, context: SandboxContext | None = None) -> ExecutionResult:
         """
-        Quick file execution (class method).
+        Quick run a Dana file without managing lifecycle.
 
         Args:
             file_path: Path to the .na file to execute
@@ -252,15 +267,15 @@ class DanaSandbox:
         Returns:
             ExecutionResult with success status and results
         """
-        sandbox = cls(debug=debug, context=context)
-        return sandbox.run(file_path)
+        with cls(debug=debug, context=context) as sandbox:
+            return sandbox.run(file_path)
 
     @classmethod
     def quick_eval(
         cls, source_code: str, filename: str | None = None, debug: bool = False, context: SandboxContext | None = None
     ) -> ExecutionResult:
         """
-        Quick code evaluation (class method).
+        Quick evaluate Dana code without managing lifecycle.
 
         Args:
             source_code: Dana code to execute
@@ -271,15 +286,13 @@ class DanaSandbox:
         Returns:
             ExecutionResult with success status and results
         """
-        sandbox = cls(debug=debug, context=context)
-        return sandbox.eval(source_code, filename)
+        with cls(debug=debug, context=context) as sandbox:
+            return sandbox.eval(source_code, filename)
 
-    # Context manager support (optional explicit lifecycle control)
     def __enter__(self) -> "DanaSandbox":
-        """Context manager entry - explicit initialization"""
-        self._ensure_initialized()
+        """Context manager entry."""
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        """Context manager exit - explicit cleanup"""
+        """Context manager exit."""
         self._cleanup()

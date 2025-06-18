@@ -22,7 +22,7 @@ from opendxa.dana.poet import poet
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
-@poet(domain="llm_optimization", timeout=30.0, retries=3, enable_monitoring=True)
+@poet(domain="llm_optimization", timeout=30.0, retries=3)
 def reason_function(
     context: SandboxContext,
     prompt: str,
@@ -50,7 +50,6 @@ def reason_function(
     """
     logger = DXA_LOGGER.getLogger("opendxa.dana.reason")
     options = options or {}
-    
 
     if not prompt:
         raise SandboxError("reason function requires a non-empty prompt")
@@ -106,8 +105,6 @@ def reason_function(
         # Process the response
         result = response.content
         logger.debug(f"Raw LLM response type: {type(result)}")
-
-
 
         # Extract just the text content from the response
         if isinstance(result, dict):

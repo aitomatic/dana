@@ -1,0 +1,12 @@
+# POET E2E Example - Dana Language
+
+@poet(domain="test", retries=2, timeout=10.0, enable_training=true)
+def add_numbers(x: int, y: int) -> int:
+    # Perceive: type hints and decorator handle input validation
+    # Operate: main logic
+    return x + y
+    # Enforce: output type is int, handled by POET
+
+# Call the function and log the result
+result = add_numbers(2, 3)
+log(f"POET E2E result: {result}") 

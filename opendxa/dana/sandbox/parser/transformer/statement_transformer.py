@@ -259,7 +259,14 @@ class StatementTransformer(BaseTransformer):
 
         parameters = []
         if current_index < len(relevant_items) and isinstance(relevant_items[current_index], list):
-            parameters = self._transform_parameters(relevant_items[current_index])
+            param_list = relevant_items[current_index]
+            # Check if parameters are already Parameter objects (already transformed)
+            if param_list and hasattr(param_list[0], "name") and hasattr(param_list[0], "type_hint"):
+                # Already transformed Parameter objects
+                parameters = param_list
+            else:
+                # Need transformation
+                parameters = self._transform_parameters(param_list)
             current_index += 1
         elif current_index < len(relevant_items) and isinstance(relevant_items[current_index], Tree):
             if relevant_items[current_index].data == "parameters":
@@ -269,9 +276,14 @@ class StatementTransformer(BaseTransformer):
         return_type = None
         # Check for return type, which comes before the block
         if current_index < len(relevant_items) and not isinstance(relevant_items[current_index], list):
+            from opendxa.dana.sandbox.parser.ast import TypeHint
+
             item = relevant_items[current_index]
             if isinstance(item, Tree) and item.data == "basic_type":
                 return_type = self.basic_type(item.children)
+                current_index += 1
+            elif isinstance(item, TypeHint):  # TypeHint object
+                return_type = item
                 current_index += 1
 
         # Find the block, which is typically the last item
@@ -324,9 +336,14 @@ class StatementTransformer(BaseTransformer):
 
     def _transform_decorator_from_items(self, items):
         """Creates a Decorator from a list of items (name, args, kwargs)."""
-        name_token = items[0]
+        if len(items) < 2:
+            raise ValueError(f"Expected at least 2 items for decorator (AT and NAME), got {len(items)}: {items}")
+
+        # Skip the AT token and get the NAME token
+        name_token = items[1]  # Changed from items[0] to items[1]
         decorator_name = name_token.value
-        args, kwargs = self._parse_decorator_arguments(items[1]) if len(items) > 1 else ([], {})
+        args, kwargs = self._parse_decorator_arguments(items[2]) if len(items) > 2 else ([], {})
+
         return Decorator(
             name=decorator_name,
             args=args,

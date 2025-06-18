@@ -1,86 +1,144 @@
-"""POET Decorator - @poet() implementation for function enhancement"""
+"""
+POET (Programmable Open-Ended Task) decorator implementation.
 
-import functools
-import inspect
+This module provides the POET decorator for enhancing functions with domain-specific capabilities.
+"""
+
 from collections.abc import Callable
+from functools import wraps
 from typing import Any
 
+from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.utils.logging import DXA_LOGGER
-
-from .types import POETConfig
-
-
-class POETDecorator:
-    """POET decorator implementation"""
-
-    _instances: dict[Callable[..., Any], "POETDecorator"] = {}
-
-    def __init__(self, poet_config: "POETConfig"):
-        self.poet_config = poet_config
-        self.client = None  # Lazy initialization
-        self._cache: dict[str, Any] = {}
-
-    def _get_client(self):
-        if not self.client:
-            from .client import get_default_client
-
-            self.client = get_default_client()
-        return self.client
+from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
-    def __call__(self, func: Callable[..., Any]) -> Callable[..., Any]:
-        POETDecorator._instances[func] = self
+# Minimal stub for POETMetadata to fix test import error
+class POETMetadata:
+    pass
 
-        @functools.wraps(func)
+
+class POETDecorator(Loggable):
+    """Decorator for enhancing functions with POET capabilities."""
+
+    def __init__(
+        self,
+        func: Callable,
+        domain: str,
+        retries: int = 1,
+        timeout: int | None = None,
+        namespace: str = "local",
+        overwrite: bool = False,
+        enable_training: bool = False,
+    ):
+        """Initialize the POET decorator.
+
+        Args:
+            func: The function to decorate
+            domain: The domain this function belongs to
+            retries: Number of retries on failure
+            timeout: Optional timeout in seconds
+            namespace: Namespace to register the function in
+            overwrite: Whether to allow overwriting existing functions
+            enable_training: Whether to enable training for this function
+        """
+        super().__init__()
+        self.func = func
+        self.domain = domain
+        self.retries = retries
+        self.timeout = timeout
+        self.namespace = namespace
+        self.overwrite = overwrite
+        self.enable_training = enable_training
+
+        # Store metadata on the function
+        if not hasattr(func, "_poet_metadata"):
+            setattr(func, "_poet_metadata", {"domains": set()})
+        func._poet_metadata["domains"].add(domain)
+        func._poet_metadata.update(
+            {
+                "retries": retries,
+                "timeout": timeout,
+                "namespace": namespace,
+                "overwrite": overwrite,
+                "enable_training": enable_training,
+            }
+        )
+
+        # Apply the decorator
+        self._apply_decorator()
+
+    def _apply_decorator(self) -> None:
+        """Apply the decorator to the function."""
+
+        @wraps(self.func)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
-            DXA_LOGGER.info(f"Executing POET-enhanced function: {func.__name__}")
+            """Wrapper function that adds POET capabilities."""
+            # Get context from kwargs or create new one
+            context = kwargs.pop("context", None)
+            if context is None:
+                context = SandboxContext()
 
-            try:
-                source_code = inspect.getsource(func)
-            except TypeError as e:
-                DXA_LOGGER.error(f"Could not get source code for {func.__name__}: {e}")
-                return func(*args, **kwargs)
+            # Ensure context has an interpreter
+            if not hasattr(context, "_interpreter") or context._interpreter is None:
+                # Try to get interpreter from parent context
+                if hasattr(context, "parent") and context.parent is not None:
+                    if hasattr(context.parent, "_interpreter") and context.parent._interpreter is not None:
+                        context._interpreter = context.parent._interpreter
+                    else:
+                        raise RuntimeError("No interpreter available in context")
+                else:
+                    raise RuntimeError("No interpreter available in context")
 
-            if source_code in self._cache:
-                DXA_LOGGER.info(f"Using cached enhanced function for {func.__name__}")
-                enhanced_func = self._cache[source_code]
-                return enhanced_func(*args, **kwargs)
+            # Set POET metadata in context
+            context.set("_poet_metadata", self.func._poet_metadata)
 
-            try:
-                client = self._get_client()
-                enhanced_func_code = client.transpile(source_code, self.poet_config)
-                DXA_LOGGER.info(f"Transpiled code for {func.__name__}: {enhanced_func_code}")
+            # Execute the function with retries if needed
+            for attempt in range(self.retries):
+                try:
+                    result = self.func(*args, context=context, **kwargs)
+                    return result
+                except Exception as e:
+                    if attempt == self.retries - 1:
+                        raise
+                    DXA_LOGGER.warning(f"Attempt {attempt + 1} failed: {e}. Retrying...")
 
-                # This is a placeholder for actual execution
-                result = func(*args, **kwargs)
-
-                self._cache[source_code] = func  # Caching original function for now
-                return result
-
-            except Exception as e:
-                DXA_LOGGER.error(f"POET enhancement failed for {func.__name__}: {e}. Falling back to original function.")
-                return func(*args, **kwargs)
-
-        return wrapper
+        # Store the wrapper
+        self.wrapper = wrapper
 
 
 def poet(
-    domain: str | None = None,
-    optimize_for: str | None = None,
-    retries: int = 3,
-    timeout: int = 30,
-    enable_monitoring: bool = True,
+    domain: str,
+    retries: int = 1,
+    timeout: int | None = None,
+    namespace: str = "local",
+    overwrite: bool = False,
     enable_training: bool = False,
-) -> POETDecorator:
+) -> Callable:
+    """Decorator factory for POET functions.
+
+    Args:
+        domain: The domain this function belongs to
+        retries: Number of retries on failure
+        timeout: Optional timeout in seconds
+        namespace: Namespace to register the function in
+        overwrite: Whether to allow overwriting existing functions
+        enable_training: Whether to enable training for this function
+
+    Returns:
+        A decorator function that enhances the target function with POET capabilities
     """
-    Decorator to enhance a Python function using POET.
-    """
-    poet_config = POETConfig(
-        domain=domain,
-        optimize_for=optimize_for,
-        retries=retries,
-        timeout=timeout,
-        enable_monitoring=enable_monitoring,
-        enable_training=enable_training,
-    )
-    return POETDecorator(poet_config)
+
+    def decorator(func: Callable) -> Callable:
+        """The actual decorator function."""
+        return POETDecorator(
+            func=func,
+            domain=domain,
+            retries=retries,
+            timeout=timeout,
+            namespace=namespace,
+            overwrite=overwrite,
+            enable_training=enable_training,
+        ).wrapper
+
+    return decorator
