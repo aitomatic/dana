@@ -213,7 +213,6 @@ class LLMResource(BaseResource):
         self.provider_configs = {}
         self._started = False
         # Don't auto-initialize - use lazy initialization
-        # Misc.safe_asyncio_run(self.initialize)
 
     @property
     def model(self) -> str | None:
