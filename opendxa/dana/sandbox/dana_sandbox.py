@@ -207,11 +207,15 @@ class DanaSandbox:
             # Execute through _eval (convergent path)
             result = self._interpreter._eval(source_code, context=self._context, filename=str(file_path))
 
+            # Capture print output from interpreter buffer
+            output = self._interpreter.get_and_clear_output()
+
             # Create execution result
             return ExecutionResult(
                 success=True,
                 result=result,
                 final_context=self._context,
+                output=output,
             )
 
         except Exception as e:
@@ -239,11 +243,15 @@ class DanaSandbox:
             # Execute through _eval (convergent path)
             result = self._interpreter._eval(source_code, context=self._context, filename=filename)
 
+            # Capture print output from interpreter buffer
+            output = self._interpreter.get_and_clear_output()
+
             # Create execution result
             return ExecutionResult(
                 success=True,
                 result=result,
                 final_context=self._context,
+                output=output,
             )
 
         except Exception as e:
