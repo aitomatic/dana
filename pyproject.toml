@@ -25,7 +25,8 @@ authors = [
 # Production dependencies - keep minimal and well-organized
 dependencies = [
     # AI/LLM Integration - Core functionality for agent reasoning
-    "aisuite[openai,anthropic,azure,google,groq,huggingface,ollama]",
+    "google-cloud-aiplatform",
+    "aisuite[openai,anthropic,azure,google,groq,huggingface,ollama]>=0.1.11",
     "openai",
     "mcp",
     "fastmcp>=2.6.1",
@@ -223,6 +224,9 @@ reportAssignmentType = false
 
 [tool.uv]
 package = true
+override-dependencies = [
+    "httpx>=0.28.1",  # Force newer httpx to resolve aisuite/fastmcp conflict
+]
 
 # Enable preview features for scripts support
 preview = true
