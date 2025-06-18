@@ -63,14 +63,14 @@ class FunctionExecutor(BaseExecutor):
         }
 
     def execute_function_definition(self, node: FunctionDefinition, context: SandboxContext) -> Any:
-        """Execute a function definition.
+        """Execute a function definition and store it in the context.
 
         Args:
             node: The function definition to execute
             context: The execution context
 
         Returns:
-            The defined function object
+            The defined function
         """
         # Create a DanaFunction object instead of a raw dict
         from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
@@ -91,22 +91,12 @@ class FunctionExecutor(BaseExecutor):
             else:
                 return_type = str(node.return_type)
 
-                # Create the base DanaFunction
+        # Create the base DanaFunction
         dana_func = DanaFunction(body=node.body, parameters=param_names, context=context, return_type=return_type)
 
         # Apply decorators if present
-        if hasattr(node, "decorators") and node.decorators:
-            wrapped_func = dana_func
-            for decorator in reversed(node.decorators):  # Apply decorators in bottom-up order
-                # Resolve the decorator function
-                decorator_func = self._resolve_decorator(decorator, context)
-                if not callable(decorator_func):
-                    raise TypeError(f"Decorator {decorator.name} is not callable")
-                try:
-                    wrapped_func = decorator_func(wrapped_func)
-                except Exception as e:
-                    raise RuntimeError(f"Error applying decorator {decorator.name}: {e}")
-
+        if node.decorators:
+            wrapped_func = self._apply_decorators(dana_func, node.decorators, context)
             # Store the decorated function in context
             context.set(f"local.{node.name.name}", wrapped_func)
             return wrapped_func
@@ -114,6 +104,59 @@ class FunctionExecutor(BaseExecutor):
             # No decorators, store the DanaFunction as usual
             context.set(f"local.{node.name.name}", dana_func)
             return dana_func
+
+    def _apply_decorators(self, func, decorators, context):
+        """Apply decorators to a function, handling both simple and parameterized decorators."""
+        result = func
+        # Apply decorators in reverse order (innermost first)
+        for decorator in reversed(decorators):
+            decorator_func = self._resolve_decorator(decorator, context)
+
+            # Check if decorator has arguments (factory pattern)
+            if decorator.args or decorator.kwargs:
+                # Evaluate arguments to Python values
+                evaluated_args = []
+                evaluated_kwargs = {}
+
+                for arg_expr in decorator.args:
+                    evaluated_args.append(self._evaluate_expression(arg_expr, context))
+
+                for key, value_expr in decorator.kwargs.items():
+                    evaluated_kwargs[key] = self._evaluate_expression(value_expr, context)
+
+                # Call the decorator factory with arguments
+                actual_decorator = decorator_func(*evaluated_args, **evaluated_kwargs)
+                result = actual_decorator(result)
+            else:
+                # Simple decorator (no arguments)
+                result = decorator_func(result)
+
+        return result
+
+    def _evaluate_expression(self, expr, context):
+        """Evaluate an expression to a Python value."""
+        try:
+            # Use the parent executor's expression evaluator
+            if hasattr(self.parent, "_expression_executor"):
+                result = self.parent._expression_executor.execute_expression(expr, context)
+                return result
+            else:
+                # Fallback for simple expressions
+                from opendxa.dana.sandbox.parser.ast import LiteralExpression
+
+                if isinstance(expr, LiteralExpression):
+                    return expr.value
+                else:
+                    # Try to get the value attribute if it exists
+                    if hasattr(expr, "value"):
+                        return expr.value
+                    # Convert to string representation as last resort
+                    return str(expr)
+        except Exception:
+            # If evaluation fails, try to extract value or use string representation
+            if hasattr(expr, "value"):
+                return expr.value
+            return str(expr)
 
     def _resolve_decorator(self, decorator, context):
         """Resolve a decorator to a callable function."""
