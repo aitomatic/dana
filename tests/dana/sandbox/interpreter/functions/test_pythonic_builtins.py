@@ -154,22 +154,24 @@ def test_register_pythonic_builtins():
 
 
 def test_function_lookup_order():
-    """Test that function lookup order is respected."""
+    """Test that built-in functions take precedence over custom functions."""
     registry = FunctionRegistry()
 
-    # Register a core function first
+    # Register a custom function first
     def custom_len(context, obj):
         return 999  # Custom implementation
 
-    registry.register("len", custom_len, func_type="python", overwrite=True)
+    from opendxa.dana.sandbox.interpreter.functions.python_function import PythonFunction
 
-    # Now register built-ins (should not overwrite existing)
+    registry.register("len", PythonFunction(custom_len, trusted_for_context=True), func_type="python", overwrite=True)
+
+    # Now register built-ins (should overwrite custom function for safety)
     register_pythonic_builtins(registry)
 
-    # The custom function should still be there
+    # The built-in function should now take precedence
     context = SandboxContext()
     result = registry.call("len", context, args=[[1, 2, 3]])
-    assert result == 999  # Custom function, not built-in
+    assert result == 3  # Built-in function, not custom
 
 
 def test_integration_with_interpreter():

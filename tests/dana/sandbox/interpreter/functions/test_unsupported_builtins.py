@@ -282,22 +282,28 @@ class TestUnsupportedFunctionRegistry:
         assert "not supported" in error_msg
 
     def test_unsupported_function_precedence(self):
-        """Test that higher-priority functions override unsupported handlers."""
+        """Test that built-in handlers override user-defined functions."""
         registry = FunctionRegistry()
 
         # Register a custom eval function first
         def safe_eval(context, expr):
             return f"Safe evaluation of: {expr}"
 
-        registry.register("eval", safe_eval, func_type="python", overwrite=True)
+        from opendxa.dana.sandbox.interpreter.functions.python_function import PythonFunction
 
-        # Now register built-ins (should not overwrite the custom eval)
+        registry.register("eval", PythonFunction(safe_eval, trusted_for_context=True), func_type="python", overwrite=True)
+
+        # Now register built-ins (should overwrite the custom eval with error handler)
         register_pythonic_builtins(registry)
 
-        # The custom function should still be there, not the error handler
+        # The built-in error handler should now be active, not the custom function
         context = SandboxContext()
-        result = registry.call("eval", context, args=["test"])
-        assert result == "Safe evaluation of: test"
+        with pytest.raises(SandboxError) as exc_info:
+            registry.call("eval", context, args=["test"])
+
+        error_msg = str(exc_info.value)
+        assert "eval" in error_msg
+        assert "not supported" in error_msg
 
 
 @pytest.mark.deep

@@ -262,19 +262,19 @@ class TestBuiltinErrorHandling:
         with pytest.raises(SandboxError) as exc_info:
             interpreter._eval('eval("1 + 1")', context=context)
         assert "eval" in str(exc_info.value)
-        assert ("not found" in str(exc_info.value) or "not supported" in str(exc_info.value))
+        assert "not found" in str(exc_info.value) or "not supported" in str(exc_info.value)
 
         # Test open is blocked
         with pytest.raises(SandboxError) as exc_info:
             interpreter._eval('open("test.txt")', context=context)
         assert "open" in str(exc_info.value)
-        assert ("not found" in str(exc_info.value) or "not supported" in str(exc_info.value))
+        assert "not found" in str(exc_info.value) or "not supported" in str(exc_info.value)
 
         # Test exec is blocked
         with pytest.raises(SandboxError) as exc_info:
             interpreter._eval('exec("x = 1")', context=context)
         assert "exec" in str(exc_info.value)
-        assert ("not found" in str(exc_info.value) or "not supported" in str(exc_info.value))
+        assert "not found" in str(exc_info.value) or "not supported" in str(exc_info.value)
 
     def test_runtime_errors(self):
         """Test runtime errors in built-in functions."""
@@ -285,13 +285,13 @@ class TestBuiltinErrorHandling:
         with pytest.raises(SandboxError) as exc_info:
             interpreter._eval('sum(["hello", "world"])', context=context)
         assert "sum" in str(exc_info.value)
-        assert ("failed" in str(exc_info.value) or "not found" in str(exc_info.value))
+        assert "failed" in str(exc_info.value) or "not found" in str(exc_info.value)
 
         # Test int conversion with invalid string
         with pytest.raises(SandboxError) as exc_info:
             interpreter._eval('int("hello")', context=context)
         assert "int" in str(exc_info.value)
-        assert ("failed" in str(exc_info.value) or "not found" in str(exc_info.value))
+        assert "failed" in str(exc_info.value) or "not found" in str(exc_info.value)
 
 
 class TestBuiltinFunctionPrecedence:
@@ -314,7 +314,7 @@ class TestBuiltinFunctionPrecedence:
         assert result == 6
 
     def test_user_function_precedence(self):
-        """Test that user-defined functions take precedence over built-ins."""
+        """Test that built-in functions take precedence over user-defined functions."""
         interpreter = DanaInterpreter()
         context = SandboxContext()
 
@@ -323,9 +323,9 @@ class TestBuiltinFunctionPrecedence:
     return 999"""
         interpreter._eval(code, context=context)
 
-        # The custom function should be called, not the built-in
+        # The built-in function should be called, not the custom function
         result = interpreter._eval("len([1, 2, 3])", context=context)
-        assert result == 999
+        assert result == 3  # Built-in len() returns actual length
 
     def test_function_lookup_order(self):
         """Test the complete function lookup order."""
@@ -341,9 +341,9 @@ class TestBuiltinFunctionPrecedence:
     return 888"""
         interpreter._eval(code, context=context)
 
-        # Now the user function should be called
+        # Built-in still takes precedence, user function is ignored
         result = interpreter._eval("len([1, 2, 3, 4])", context=context)
-        assert result == 888
+        assert result == 4  # Built-in len() still returns actual length
 
 
 @pytest.mark.deep

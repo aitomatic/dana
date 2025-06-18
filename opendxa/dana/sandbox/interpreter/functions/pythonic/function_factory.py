@@ -569,11 +569,14 @@ If this is a custom function, make sure it's:
 def register_pythonic_builtins(registry: FunctionRegistry) -> None:
     """Register all Pythonic built-in functions using the factory.
 
-    This function registers built-in functions with LOWEST priority,
-    ensuring the correct lookup order:
-    1. User-defined functions (highest priority)
+    This function registers built-in functions with HIGHEST priority,
+    ensuring the correct lookup order for safety and predictability:
+    1. Built-in functions (highest priority - registered here)
     2. Core functions (medium priority)
-    3. Built-in functions (lowest priority - registered here)
+    3. User-defined functions (lowest priority)
+
+    Built-ins take precedence to prevent accidental shadowing of critical
+    functions and maintain consistent behavior across Dana programs.
 
     Args:
         registry: The function registry to register functions with
@@ -587,20 +590,16 @@ def register_pythonic_builtins(registry: FunctionRegistry) -> None:
         metadata.is_public = True
         metadata.doc = factory.FUNCTION_CONFIGS[function_name]["doc"]
 
-        # Register with overwrite=False to respect lookup order
-        # If a core function or user function already exists, don't overwrite it
-        try:
-            registry.register(
-                name=function_name,
-                func=wrapper,
-                func_type="python",
-                metadata=metadata,
-                overwrite=False,  # Respect existing functions (higher priority)
-            )
-        except ValueError:
-            # Function already exists (core or user-defined), skip registration
-            # This maintains the correct lookup order
-            pass
+        # Register with overwrite=True to enforce built-in precedence
+        # Built-in functions take precedence over user-defined functions for safety
+        registry.register(
+            name=function_name,
+            func=wrapper,
+            func_type="python",
+            metadata=metadata,
+            overwrite=True,  # Built-ins take precedence for safety
+            trusted_for_context=True,  # Built-in functions are trusted to receive context
+        )
 
     # Register handlers for explicitly unsupported functions
     # This provides better error messages than "function not found"
@@ -619,15 +618,13 @@ def register_pythonic_builtins(registry: FunctionRegistry) -> None:
         metadata.is_public = True  # Must be public to be callable (will raise error when called)
         metadata.doc = f"Unsupported function: {factory.UNSUPPORTED_FUNCTIONS[function_name]['message']}"
 
-        # Register with overwrite=False to respect higher priority functions
-        try:
-            registry.register(
-                name=function_name,
-                func=handler,
-                func_type="python",
-                metadata=metadata,
-                overwrite=False,  # Don't overwrite if already exists
-            )
-        except ValueError:
-            # Function already exists (higher priority), skip registration
-            pass
+        # Register with overwrite=True to enforce built-in error handling precedence
+        # Built-in error handlers take precedence for security
+        registry.register(
+            name=function_name,
+            func=handler,
+            func_type="python",
+            metadata=metadata,
+            overwrite=True,  # Built-in error handlers take precedence for security
+            trusted_for_context=True,  # Error handlers are trusted to receive context
+        )
