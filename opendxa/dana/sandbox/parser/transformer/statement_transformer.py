@@ -294,6 +294,10 @@ class StatementTransformer(BaseTransformer):
                 # Check if already transformed Parameter objects
                 if item and hasattr(item[0], "name") and hasattr(item[0], "type_hint"):
                     parameters = item
+                # Check if it's a list of Identifier objects (for test compatibility)
+                elif item and isinstance(item[0], Identifier):
+                    # Convert Identifier objects to Parameter objects
+                    parameters = [Parameter(name=identifier.name) for identifier in item]
                 else:
                     parameters = self._transform_parameters(item)
                 current_index += 1

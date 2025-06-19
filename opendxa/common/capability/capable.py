@@ -36,7 +36,6 @@ class Capable:
         Args:
             capabilities: A list of BaseCapability objects.
         """
-        super().__init__()  # Initialize ToolCallable first
         self._capabilities: list[BaseCapability] = capabilities or []
 
     def __contains__(self, capability: BaseCapability) -> bool:
