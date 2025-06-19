@@ -28,9 +28,10 @@ from pathlib import Path
 from typing import Any
 
 from opendxa.common.exceptions import ConfigurationError
+from opendxa.common.mixins.loggable import Loggable
 
 
-class ConfigLoader:
+class ConfigLoader(Loggable):
     """Centralized configuration loader with environment variable support and search order.
 
     Implements the singleton pattern for consistent access. Loads configuration
@@ -61,6 +62,8 @@ class ConfigLoader:
         """Ensure only one instance exists (singleton pattern)."""
         if cls._instance is None:
             cls._instance = super().__new__(cls)
+            # Initialize Loggable mixin for singleton instance
+            super(ConfigLoader, cls._instance).__init__()
         return cls._instance
 
     @property
@@ -178,11 +181,6 @@ class ConfigLoader:
         config_path = self.config_dir / config_name
         return self._load_config_from_path(config_path)
 
-    # Optional: Add logging if needed, requires Loggable mixin or similar
-    def log_debug(self, message: str):
-        # Simple placeholder, replace with actual logging if required
-        # print(f"DEBUG: {message}")
-        pass
 
 
 # Note: Removed get_config_path as its role is diminished and handled internally.

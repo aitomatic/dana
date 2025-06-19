@@ -8,7 +8,6 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-
 from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
 from opendxa.dana.sandbox.interpreter.struct_system import (
     StructInstance,
@@ -18,12 +17,12 @@ from opendxa.dana.sandbox.interpreter.struct_system import (
 
 class TestMethodSyntaxTransformation:
     """Test obj.method() → method(obj) transformation."""
-    
+
     def setup_method(self):
         """Clear struct registry before each test."""
         StructTypeRegistry.clear()
         self.sandbox = DanaSandbox()
-    
+
     def test_basic_method_syntax_transformation(self):
         """Test basic transformation of obj.method() to method(obj)."""
         code = """
@@ -39,17 +38,17 @@ local:point = Point(x=3, y=4)
 local:distance = distance_from_origin(point)
 local:distance_method = point.distance_from_origin()
 """
-        
+
         result = self.sandbox.eval(code)
         assert result.success, f"Execution failed: {result.error}"
-        
+
         # Both calls should produce the same result
         distance_direct = result.final_context.get("local.distance")
         distance_method = result.final_context.get("local.distance_method")
-        
+
         assert distance_direct == distance_method
         assert distance_direct == 5.0  # 3-4-5 triangle
-    
+
     def test_method_with_arguments(self):
         """Test method transformation with additional arguments."""
         code = """
@@ -64,19 +63,19 @@ local:point = Point(x=10, y=20)
 local:result_direct = add_offset(point, 5, 3)
 local:result_method = point.add_offset(5, 3)
 """
-        
+
         result = self.sandbox.eval(code)
         assert result.success, f"Execution failed: {result.error}"
-        
+
         # Both results should be equivalent
         result_direct = result.final_context.get("local.result_direct")
         result_method = result.final_context.get("local.result_method")
-        
+
         assert isinstance(result_direct, StructInstance)
         assert isinstance(result_method, StructInstance)
         assert result_direct.x == result_method.x == 15
         assert result_direct.y == result_method.y == 23
-    
+
     def test_method_with_keyword_arguments(self):
         """Test method transformation with keyword arguments."""
         code = """
@@ -91,18 +90,18 @@ local:rect = Rectangle(width=10, height=20)
 local:result_direct = scale(rect, x_factor=2.0, y_factor=1.5)
 local:result_method = rect.scale(x_factor=2.0, y_factor=1.5)
 """
-        
+
         result = self.sandbox.eval(code)
         assert result.success, f"Execution failed: {result.error}"
-        
+
         result_direct = result.final_context.get("local.result_direct")
         result_method = result.final_context.get("local.result_method")
-        
+
         assert isinstance(result_direct, StructInstance)
         assert isinstance(result_method, StructInstance)
         assert result_direct.width == result_method.width == 20  # 10 * 2.0
         assert result_direct.height == result_method.height == 30  # 20 * 1.5
-    
+
     def test_polymorphic_method_dispatch(self):
         """Test that method transformation works with user-defined functions."""
         code = """
@@ -119,15 +118,15 @@ local:point = Point(x=1, y=2)
 local:type_direct = get_type(point)
 local:type_method = point.get_type()
 """
-        
+
         result = self.sandbox.eval(code)
         assert result.success, f"Execution failed: {result.error}"
-        
+
         # Both calls should produce the same result
         type_direct = result.final_context.get("local.type_direct")
         type_method = result.final_context.get("local.type_method")
         assert type_direct == type_method == "Point"
-    
+
     def test_method_not_found_error(self):
         """Test error handling when method doesn't exist."""
         code = """
@@ -138,20 +137,21 @@ struct Point:
 local:point = Point(x=1, y=2)
 local:result = point.nonexistent_method()
 """
-        
+
         result = self.sandbox.eval(code)
         assert not result.success
-        assert "Method call transformation failed" in str(result.error) or "not found" in str(result.error)
+        # Check for the improved error message format
+        assert "has no method" in str(result.error) or "not found" in str(result.error)
 
 
 class TestStructMethodIntegration:
     """Test integration of struct methods with Dana features."""
-    
+
     def setup_method(self):
         """Clear struct registry before each test."""
         StructTypeRegistry.clear()
         self.sandbox = DanaSandbox()
-    
+
     def test_struct_methods_in_loops(self):
         """Test using struct methods in loop constructs."""
         code = """
@@ -171,13 +171,13 @@ local:final_values = []
 for doubled_num in doubled:
     local:final_values.append(doubled_num.value)
 """
-        
+
         result = self.sandbox.eval(code)
         assert result.success, f"Execution failed: {result.error}"
-        
+
         final_values = result.final_context.get("local.final_values")
         assert final_values == [2, 4, 6]
-    
+
     def test_struct_methods_in_conditionals(self):
         """Test using struct methods in conditional statements."""
         code = """
@@ -200,16 +200,16 @@ else:
 
 local:final_count = counter.count
 """
-        
+
         result = self.sandbox.eval(code)
         assert result.success, f"Execution failed: {result.error}"
-        
+
         result_type = result.final_context.get("local.result")
         final_count = result.final_context.get("local.final_count")
-        
+
         assert result_type == "odd_incremented"
         assert final_count == 6
-    
+
     def test_chained_method_calls(self):
         """Test chained method calls using transformation."""
         code = """
@@ -227,13 +227,13 @@ local:step1 = builder.add_text(" ")
 local:step2 = step1.add_text("World")
 local:final = step2.finalize()
 """
-        
+
         result = self.sandbox.eval(code)
         assert result.success, f"Execution failed: {result.error}"
-        
+
         final_result = result.final_context.get("local.final")
         assert final_result == "Hello World!"
-    
+
     def test_struct_methods_with_nested_structs(self):
         """Test methods on structs that contain other structs."""
         code = """
@@ -263,13 +263,13 @@ local:line = Line(start=start, end=end)
 local:line_length = line.length()
 local:line_midpoint = line.midpoint()
 """
-        
+
         result = self.sandbox.eval(code)
         assert result.success, f"Execution failed: {result.error}"
-        
+
         line_length = result.final_context.get("local.line_length")
         line_midpoint = result.final_context.get("local.line_midpoint")
-        
+
         assert line_length == 10.0  # 6-8-10 triangle
         assert isinstance(line_midpoint, StructInstance)
         assert line_midpoint.x == 3
@@ -278,12 +278,12 @@ local:line_midpoint = line.midpoint()
 
 class TestAdvancedStructFeatures:
     """Test advanced struct features and edge cases."""
-    
+
     def setup_method(self):
         """Clear struct registry before each test."""
         StructTypeRegistry.clear()
         self.sandbox = DanaSandbox()
-    
+
     def test_struct_methods_with_multiple_signatures(self):
         """Test struct methods with multiple function signatures."""
         code = """
@@ -302,21 +302,21 @@ local:vector = Vector(x=2.0, y=3.0)
 local:uniform_scale = vector.scale_uniform(2.0)
 local:non_uniform_scale = vector.scale_non_uniform(2.0, 3.0)
 """
-        
+
         result = self.sandbox.eval(code)
         assert result.success, f"Execution failed: {result.error}"
-        
+
         uniform_scale = result.final_context.get("local.uniform_scale")
         non_uniform_scale = result.final_context.get("local.non_uniform_scale")
-        
+
         assert isinstance(uniform_scale, StructInstance)
         assert uniform_scale.x == 4.0  # 2.0 * 2.0
         assert uniform_scale.y == 6.0  # 3.0 * 2.0
-        
+
         assert isinstance(non_uniform_scale, StructInstance)
         assert non_uniform_scale.x == 4.0  # 2.0 * 2.0
         assert non_uniform_scale.y == 9.0  # 3.0 * 3.0
-    
+
     def test_struct_method_returning_different_types(self):
         """Test struct methods that return different types."""
         code = """
@@ -342,14 +342,14 @@ local:sum_result = data.sum_values()
 local:first_result = data.get_first()
 local:string_result = data.to_string()
 """
-        
+
         result = self.sandbox.eval(code)
         assert result.success, f"Execution failed: {result.error}"
-        
+
         sum_result = result.final_context.get("local.sum_result")
         first_result = result.final_context.get("local.first_result")
         string_result = result.final_context.get("local.string_result")
-        
+
         assert sum_result == 15
         assert first_result == 1
         assert "Data([1, 2, 3, 4, 5])" in string_result

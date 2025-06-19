@@ -61,19 +61,21 @@ class TestConfigurable:
         assert path == abs_path
 
     @patch("builtins.open", new_callable=mock_open, read_data="setting1: test_value\nsetting2: 123")
+    @patch("opendxa.common.utils.misc.Misc.load_yaml_config")
     # pylint: disable=unused-argument
-    def test_load_config_from_file(self, mock_file):
+    def test_load_config_from_file(self, mock_load_yaml, mock_file):
         """Test loading configuration from file."""
 
         class TestConfig(Configurable):
             default_config = {"setting1": "default_value", "setting2": 42}
 
-        # Mock the path resolution and file existence
-        with patch.object(TestConfig, 'get_config_path', return_value=Path("test_configurable.yaml")):
-            obj = TestConfig(config_path="test_configurable.yaml")
-            # File values should override defaults (this fixes the original bug)
-            assert obj.config["setting1"] == "test_value"  # From file
-            assert obj.config["setting2"] == 123  # From file
+        # Mock the YAML loading to return the expected config
+        mock_load_yaml.return_value = {"setting1": "test_value", "setting2": 123}
+        
+        obj = TestConfig(config_path="test_configurable.yaml")
+        # File values should override defaults (this fixes the original bug)
+        assert obj.config["setting1"] == "test_value"  # From file
+        assert obj.config["setting2"] == 123  # From file
 
     def test_validation_required(self):
         """Test required field validation."""

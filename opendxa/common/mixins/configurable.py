@@ -202,12 +202,12 @@ class Configurable(Loggable):
             # Get the actual config path
             actual_path = self.get_config_path(config_path)
 
-            # Load the config
-            config = Misc.load_yaml_config(actual_path)
+            # Load the config from file
+            file_config = Misc.load_yaml_config(actual_path)
 
-            # Merge with defaults
+            # Merge with defaults (file overrides defaults)
             config = self.default_config.copy()
-            config.update(config)
+            config.update(file_config)
             return config
 
         except FileNotFoundError as e:
