@@ -127,25 +127,11 @@ class ExpressionTransformer(BaseTransformer):
         # If it's already an AST node, return as is
         if isinstance(
             item,
-            (
-                LiteralExpression,
-                Identifier,
-                BinaryExpression,
-                FunctionCall,
-                ObjectFunctionCall,
-                TupleLiteral,
-                DictLiteral,
-                ListLiteral,
-                SetLiteral,
-                SubscriptExpression,
-                AttributeAccess,
-                FStringExpression,
-                UnaryExpression,
-            ),
+            LiteralExpression | Identifier | BinaryExpression | FunctionCall | ObjectFunctionCall | TupleLiteral | DictLiteral | ListLiteral | SetLiteral | SubscriptExpression | AttributeAccess | FStringExpression | UnaryExpression,
         ):
             return item
         # If it's a primitive or FStringExpression, wrap as LiteralExpression
-        if isinstance(item, (int, float, str, bool, type(None), FStringExpression)):
+        if isinstance(item, int | float | str | bool | type(None) | FStringExpression):
             return LiteralExpression(value=item)
         # If it's a Token, unwrap to primitive for LiteralExpression
         if isinstance(item, Token):
@@ -399,7 +385,7 @@ class ExpressionTransformer(BaseTransformer):
                 child = item.children[0]
                 from opendxa.dana.sandbox.parser.ast import DictLiteral, SetLiteral, TupleLiteral
 
-                if isinstance(child, (DictLiteral, TupleLiteral, SetLiteral)):
+                if isinstance(child, DictLiteral | TupleLiteral | SetLiteral):
                     return child
             # Otherwise, flatten all children and recurse
             for child in item.children:
@@ -408,7 +394,7 @@ class ExpressionTransformer(BaseTransformer):
                     return result
             raise TypeError(f"Unhandled tree in atom: {item.data} with children {item.children}")
         # If it's already a primitive, wrap as LiteralExpression
-        if isinstance(item, (int, float, str, bool, type(None))):
+        if isinstance(item, int | float | str | bool | type(None)):
             result = LiteralExpression(value=item)
             return result
         return item

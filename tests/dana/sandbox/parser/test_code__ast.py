@@ -52,7 +52,7 @@ from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 def get_first_statement(program):
     stmt = program.statements[0]
     # Recursively unwrap Tree or list wrappers
-    while isinstance(stmt, (Tree, list)):
+    while isinstance(stmt, Tree | list):
         if isinstance(stmt, list):
             stmt = stmt[0]
         elif isinstance(stmt, Tree) and stmt.children:
@@ -79,7 +79,7 @@ def get_conditional(program):
     for stmt in program.statements:
         # Recursively unwrap Tree or list wrappers
         s = stmt
-        while isinstance(s, (list, Tree)):
+        while isinstance(s, list | Tree):
             if isinstance(s, list):
                 s = s[0]
             elif isinstance(s, Tree) and s.children:
@@ -95,7 +95,7 @@ def get_while_loop(program):
     for stmt in program.statements:
         # Recursively unwrap Tree or list wrappers
         s = stmt
-        while isinstance(s, (list, Tree)):
+        while isinstance(s, list | Tree):
             if isinstance(s, list):
                 s = s[0]
             elif isinstance(s, Tree) and s.children:

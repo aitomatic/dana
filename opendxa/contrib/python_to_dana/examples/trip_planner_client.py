@@ -115,7 +115,7 @@ async def main():
     try:
         # Quick connectivity check
         async with httpx.AsyncClient() as client:
-            response = await client.get("http://localhost:8000/", timeout=5.0)
+            await client.get("http://localhost:8000/", timeout=5.0)
 
         print("🚀 API is running! Executing live tests...\n")
         await test_trip_planner_api()

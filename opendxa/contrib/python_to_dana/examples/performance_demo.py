@@ -14,9 +14,9 @@ def benchmark_function(func, iterations: int = 10) -> dict:
     """Benchmark a function over multiple iterations."""
     times = []
 
-    for i in range(iterations):
+    for _i in range(iterations):
         start_time = time.perf_counter()
-        result = func()
+        func()
         end_time = time.perf_counter()
         elapsed_ms = (end_time - start_time) * 1000
         times.append(elapsed_ms)

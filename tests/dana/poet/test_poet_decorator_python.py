@@ -98,7 +98,7 @@ class TestPOETDecoratorPython:
         assert result1 == 10
 
         # Should also work if context is available
-        context = create_test_context()
+        create_test_context()
         result2 = context_func(7)
         assert result2 == 14
 

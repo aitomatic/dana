@@ -319,7 +319,7 @@ class PythonicFunctionFactory:
 
         config = cls.FUNCTION_CONFIGS[name]
         python_func = config["func"]
-        allowed_types = config["types"]
+        config["types"]
         signatures = config["signatures"]
 
         def dana_wrapper(context: SandboxContext, *args, **kwargs):

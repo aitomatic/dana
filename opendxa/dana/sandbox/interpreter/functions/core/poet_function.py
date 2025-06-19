@@ -56,7 +56,7 @@ def poet_function(
         kwargs = {}
 
     # Create POET configuration
-    config = POETConfig(
+    POETConfig(
         domain=domain,
         timeout=timeout or 30.0,
         retries=retries or 2,
@@ -111,7 +111,7 @@ def apply_poet_function(
         config = {}
 
     # Create POET configuration from provided options
-    poe_config = POETConfig(
+    POETConfig(
         domain=config.get("domain"),
         timeout=config.get("timeout", 30.0),
         retries=config.get("retries", 2),

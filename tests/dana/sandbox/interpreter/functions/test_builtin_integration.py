@@ -95,16 +95,16 @@ class TestBuiltinIntegrationBasic:
 
         # Test bool conversion
         result = interpreter._eval('bool("hello")', context=context)
-        assert result == True
+        assert result
 
         result = interpreter._eval('bool("")', context=context)
-        assert result == False
+        assert not result
 
         result = interpreter._eval("bool(0)", context=context)
-        assert result == False
+        assert not result
 
         result = interpreter._eval("bool(1)", context=context)
-        assert result == True
+        assert result
 
     def test_abs_round_integration(self):
         """Test abs() and round() functions through Dana interpreter."""
@@ -194,26 +194,26 @@ average = total / count"""
 
         # Test all
         result = interpreter._eval("all([True, True, True])", context=context)
-        assert result == True
+        assert result
 
         result = interpreter._eval("all([True, False, True])", context=context)
-        assert result == False
+        assert not result
 
         result = interpreter._eval("all([1, 2, 3])", context=context)
-        assert result == True
+        assert result
 
         result = interpreter._eval("all([1, 0, 3])", context=context)
-        assert result == False
+        assert not result
 
         # Test any
         result = interpreter._eval("any([False, True, False])", context=context)
-        assert result == True
+        assert result
 
         result = interpreter._eval("any([False, False, False])", context=context)
-        assert result == False
+        assert not result
 
         result = interpreter._eval("any([0, 1, 0])", context=context)
-        assert result == True
+        assert result
 
     def test_range_function_integration(self):
         """Test range() function through interpreter."""
@@ -381,8 +381,8 @@ any_large = any([True, False, True])"""
         assert context.get("maximum") == 40
         assert context.get("minimum") == 10
         assert context.get("sorted_data") == [10, 15, 20, 25, 30, 35, 40]
-        assert context.get("all_positive") == True
-        assert context.get("any_large") == True
+        assert context.get("all_positive")
+        assert context.get("any_large")
 
     def test_mathematical_operations_scenario(self):
         """Test built-ins in mathematical operations."""
@@ -495,7 +495,7 @@ class TestFStringFunctionArguments:
 
             # The result could be a string or dict depending on the mock implementation
             # What matters is that it executed successfully, proving f-string was evaluated
-            assert isinstance(result, (str, dict)), f"Result should be a string or dict, got {type(result)}"
+            assert isinstance(result, str | dict), f"Result should be a string or dict, got {type(result)}"
 
         finally:
             # Restore original environment
@@ -534,7 +534,7 @@ class TestFStringFunctionArguments:
 
             # Reason should execute successfully (proving f-string was evaluated)
             assert reason_result is not None, "Reason should return a result"
-            assert isinstance(reason_result, (str, dict)), "Reason should return a string or dict result"
+            assert isinstance(reason_result, str | dict), "Reason should return a string or dict result"
 
             # The key test: both functions should work with the same f-string syntax
             # If f-string evaluation is inconsistent, one would fail

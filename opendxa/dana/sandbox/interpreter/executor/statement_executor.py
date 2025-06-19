@@ -602,7 +602,7 @@ class StatementExecutor(BaseExecutor):
 
         # Get the value from the local scope
         try:
-            value = context.get_from_scope(name, scope="local")
+            context.get_from_scope(name, scope="local")
         except Exception:
             # If the value doesn't exist yet, that's okay - it might be defined later
             pass

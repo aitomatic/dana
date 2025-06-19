@@ -283,7 +283,7 @@ class GreenhouseDemoManager:
                 # Future: provide feedback to POET for learning
                 try:
                     if hasattr(smart_greenhouse_control, "_poet_executor"):
-                        feedback_score = {"wilting": 0.2, "stressed": 0.4, "healthy": 0.8, "thriving": 1.0}.get(user_input.value, 0.5)
+                        {"wilting": 0.2, "stressed": 0.4, "healthy": 0.8, "thriving": 1.0}.get(user_input.value, 0.5)
 
                         # Future: implement feedback mechanism
                         pass

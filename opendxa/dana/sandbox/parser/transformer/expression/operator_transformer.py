@@ -178,7 +178,7 @@ class OperatorTransformer(BaseTransformer):
         elif len(items) == 3:
             # Right-associative: a ** b ** c = a ** (b ** c)
             left = items[0]
-            op_token = items[1]  # Should be "**"
+            items[1]  # Should be "**"
             right = items[2]
 
             return BinaryExpression(left=left, operator=BinaryOperator.POWER, right=right)

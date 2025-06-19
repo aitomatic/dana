@@ -43,7 +43,7 @@ class TypeCoercion:
             return True
 
         # Safe string conversions for display/concatenation
-        if target_type is str and isinstance(value, (int, float, bool)):
+        if target_type is str and isinstance(value, int | float | bool):
             return True
 
         # Comparison context conversions
@@ -79,7 +79,7 @@ class TypeCoercion:
         if target_type is float and isinstance(value, int):
             return float(value)
 
-        if target_type is str and isinstance(value, (int, float, bool)):
+        if target_type is str and isinstance(value, int | float | bool):
             if isinstance(value, bool):
                 return "true" if value else "false"
             return str(value)
@@ -115,17 +115,17 @@ class TypeCoercion:
             return left, float(right)
 
         # String concatenation: allow number + string → string + string
-        if operator == "+" and isinstance(left, (int, float, bool)) and isinstance(right, str):
+        if operator == "+" and isinstance(left, int | float | bool) and isinstance(right, str):
             return TypeCoercion.coerce_value(left, str), right
-        if operator == "+" and isinstance(left, str) and isinstance(right, (int, float, bool)):
+        if operator == "+" and isinstance(left, str) and isinstance(right, int | float | bool):
             return left, TypeCoercion.coerce_value(right, str)
 
         # Comparison operations: allow cross-type comparisons with conversion
         if operator in ["==", "!=", "<", ">", "<=", ">="]:
-            if isinstance(left, str) and isinstance(right, (int, float)):
+            if isinstance(left, str) and isinstance(right, int | float):
                 if TypeCoercion.can_coerce(left, type(right)):
                     return TypeCoercion.coerce_value(left, type(right)), right
-            if isinstance(right, str) and isinstance(left, (int, float)):
+            if isinstance(right, str) and isinstance(left, int | float):
                 if TypeCoercion.can_coerce(right, type(left)):
                     return left, TypeCoercion.coerce_value(right, type(left))
 
@@ -143,11 +143,11 @@ class TypeCoercion:
         """
         if isinstance(value, bool):
             return value
-        if isinstance(value, (int, float)):
+        if isinstance(value, int | float):
             return value != 0
         if isinstance(value, str):
             return len(value) > 0
-        if isinstance(value, (list, dict, set, tuple)):
+        if isinstance(value, list | dict | set | tuple):
             return len(value) > 0
         if value is None:
             return False

@@ -100,7 +100,7 @@ def test_keyword_and_positional_args():
         return template.format(name=name, age=age, location=location)
 
     # Setup
-    context = SandboxContext()
+    SandboxContext()
     interpreter = DanaInterpreter()
 
     # Register the function
@@ -133,7 +133,7 @@ def test_error_handling():
         return a / b
 
     # Setup
-    context = SandboxContext()
+    SandboxContext()
     interpreter = DanaInterpreter()
 
     # Register the function
@@ -146,7 +146,7 @@ def test_error_handling():
     # Test error case
     try:
         divide(10, 0)
-        assert False, "Expected ValueError"
+        raise AssertionError("Expected ValueError")
     except ValueError as e:
         assert str(e) == "Cannot divide by zero"
 
@@ -341,7 +341,7 @@ def test_reason_function_integration():
         # Test 1: Basic reason function call
         result = interpreter.call_function("reason", ["What is 2 + 2?"])
         assert result is not None
-        assert isinstance(result, (str, dict))
+        assert isinstance(result, str | dict)
 
         # Test 2: Reason function with context variables
         context.set("topic", "mathematics")

@@ -46,7 +46,7 @@ class GraphSerializer:
     def to_yaml(self, graph: DirectedGraph, stream: str | TextIO | Path) -> None:
         """Save graph to YAML."""
         data = self.to_dict(graph)
-        if isinstance(stream, (str, Path)):
+        if isinstance(stream, str | Path):
             with open(stream, "w", encoding="utf-8") as f:
                 yaml.dump(data, f)
         else:
@@ -54,7 +54,7 @@ class GraphSerializer:
 
     def from_yaml(self, stream: str | TextIO | Path, graph_cls: type[DirectedGraph]) -> DirectedGraph:
         """Load graph from YAML."""
-        if isinstance(stream, (str, Path)):
+        if isinstance(stream, str | Path):
             data = Misc.load_yaml_config(stream)
         else:
             data = yaml.safe_load(stream)

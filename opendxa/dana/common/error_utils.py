@@ -226,13 +226,13 @@ class ErrorUtils:
             wrapped error and is_passthrough indicates if it should be re-raised as is
         """
         # If it's already a RuntimeError or StateError, just pass it through
-        if isinstance(e, (SandboxError, StateError)):
+        if isinstance(e, SandboxError | StateError):
             return e, True
 
         # Create an appropriate error based on the exception type
         error_msg = f"Error {operation}: {type(e).__name__}: {e}"
 
-        if isinstance(e, (ValueError, TypeError, KeyError, IndexError, AttributeError)):
+        if isinstance(e, ValueError | TypeError | KeyError | IndexError | AttributeError):
             return ErrorUtils.create_state_error(error_msg, node, e), False
         else:
             return ErrorUtils.create_runtime_error(error_msg, node, e), False

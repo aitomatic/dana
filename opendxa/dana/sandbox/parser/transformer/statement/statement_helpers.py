@@ -43,7 +43,7 @@ class AssignmentHelper:
         target = variable_transformer.variable([target_tree])
         from opendxa.dana.sandbox.parser.ast import AttributeAccess
 
-        if not isinstance(target, (Identifier, AttributeAccess)):
+        if not isinstance(target, Identifier | AttributeAccess):
             raise TypeError(f"Assignment target must be Identifier or AttributeAccess, got {type(target)}")
 
         # Transform value
@@ -67,22 +67,6 @@ class AssignmentHelper:
             UnaryExpression,
         )
 
-        AllowedAssignmentValue = (
-            LiteralExpression,
-            Identifier,
-            BinaryExpression,
-            UnaryExpression,
-            FunctionCall,
-            ObjectFunctionCall,
-            TupleLiteral,
-            DictLiteral,
-            ListLiteral,
-            SetLiteral,
-            SubscriptExpression,
-            AttributeAccess,
-            FStringExpression,
-            UseStatement,
-        )
 
         value_expr = cast(
             LiteralExpression

@@ -33,7 +33,7 @@ class MockSandboxFunction(SandboxFunction):
             if isinstance(arg, SandboxContext):
                 return arg.sanitize()
 
-        for key, value in kwargs.items():
+        for _key, value in kwargs.items():
             if isinstance(value, SandboxContext):
                 return value.sanitize()
 

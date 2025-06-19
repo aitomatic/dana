@@ -34,7 +34,7 @@ class TestLLMResource(unittest.TestCase):
     def test_error_classification(self):
         """Test LLM error classification using direct function call."""
         # Create a resource instance for testing
-        llm_resource = LLMResource(name="test_llm", model="openai:gpt-4")
+        LLMResource(name="test_llm", model="openai:gpt-4")
 
         # Define some error messages
         rate_limit_error = "rate limit exceeded"

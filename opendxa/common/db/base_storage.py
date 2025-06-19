@@ -153,7 +153,7 @@ class VectorDBStorage(BaseDBStorage[M], ABC):
             raise RuntimeError("Storage not initialized")
 
         # Generate embedding for the content
-        embedding = self._generate_embedding(content)
+        self._generate_embedding(content)
 
         # Add importance and decay rate to metadata if not present
         if metadata is None:
@@ -182,7 +182,7 @@ class VectorDBStorage(BaseDBStorage[M], ABC):
             return self._retrieve_by_importance()
 
         # Generate embedding for query
-        query_embedding = self._generate_embedding(query)
+        self._generate_embedding(query)
 
         # TODO: Search vector DB for similar memories
         # For now, we're just doing a simple content search

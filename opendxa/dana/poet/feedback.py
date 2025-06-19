@@ -39,9 +39,9 @@ class AlphaFeedbackSystem(Loggable):
         """Convert any object to JSON-serializable format"""
         if isinstance(obj, dict):
             return {k: self._make_serializable(v) for k, v in obj.items()}
-        elif isinstance(obj, (list, tuple)):
+        elif isinstance(obj, list | tuple):
             return [self._make_serializable(item) for item in obj]
-        elif isinstance(obj, (str, int, float, bool)) or obj is None:
+        elif isinstance(obj, str | int | float | bool) or obj is None:
             return obj
         else:
             # Convert any non-serializable object to string
@@ -110,9 +110,9 @@ class AlphaFeedbackSystem(Loggable):
         """Create a summary of the result for context"""
         if isinstance(result, dict):
             return f"dict with keys: {list(result.keys())}"
-        elif isinstance(result, (list, tuple)):
+        elif isinstance(result, list | tuple):
             return f"{type(result).__name__} with {len(result)} items"
-        elif isinstance(result, (int, float, bool)):
+        elif isinstance(result, int | float | bool):
             return f"{type(result).__name__}: {result}"
         elif isinstance(result, str):
             return f"string: {result[:100]}..." if len(result) > 100 else f"string: {result}"
@@ -225,7 +225,7 @@ Return only the JSON object.
                 processed["sentiment"] = "neutral"
             return processed
 
-        if isinstance(feedback_payload, (int, float)):
+        if isinstance(feedback_payload, int | float):
             processed["feedback_type"] = "rating"
             if feedback_payload > 0:
                 processed["sentiment"] = "positive"

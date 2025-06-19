@@ -105,19 +105,19 @@ result = f"Question : {question_2}. Answer : {answer}"
 def test_common_identifier_utility():
     """Test the common is_valid_identifier utility function."""
     # Valid identifiers
-    assert is_valid_identifier("x") == True
-    assert is_valid_identifier("question_2") == True
-    assert is_valid_identifier("_private") == True
-    assert is_valid_identifier("obj.attr") == True
-    assert is_valid_identifier("local.var") == True
-    assert is_valid_identifier("item_123") == True
+    assert is_valid_identifier("x")
+    assert is_valid_identifier("question_2")
+    assert is_valid_identifier("_private")
+    assert is_valid_identifier("obj.attr")
+    assert is_valid_identifier("local.var")
+    assert is_valid_identifier("item_123")
 
     # Invalid identifiers
-    assert is_valid_identifier("123invalid") == False
-    assert is_valid_identifier("with-dash") == False
-    assert is_valid_identifier("") == False
-    assert is_valid_identifier("obj..attr") == False  # consecutive dots
-    assert is_valid_identifier(".attr") == False  # leading dot
+    assert not is_valid_identifier("123invalid")
+    assert not is_valid_identifier("with-dash")
+    assert not is_valid_identifier("")
+    assert not is_valid_identifier("obj..attr")  # consecutive dots
+    assert not is_valid_identifier(".attr")  # leading dot
 
 
 if __name__ == "__main__":

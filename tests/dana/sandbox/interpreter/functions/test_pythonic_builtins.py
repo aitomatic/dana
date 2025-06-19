@@ -108,10 +108,10 @@ def test_type_conversion_functions():
     assert float_func(context, False) == 0.0
 
     # Test bool conversion
-    assert bool_func(context, "hello") == True
-    assert bool_func(context, "") == False
-    assert bool_func(context, 0) == False
-    assert bool_func(context, 1) == True
+    assert bool_func(context, "hello")
+    assert not bool_func(context, "")
+    assert not bool_func(context, 0)
+    assert bool_func(context, 1)
 
 
 def test_type_validation():

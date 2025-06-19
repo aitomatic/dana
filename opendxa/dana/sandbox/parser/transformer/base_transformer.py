@@ -69,7 +69,7 @@ class BaseTransformer(Loggable, Transformer):
         """Get line and column from a token or tree."""
         if hasattr(item, "line") and hasattr(item, "column"):
             return item.line, item.column
-        if isinstance(item, (list, tuple)):
+        if isinstance(item, list | tuple):
             for child in item:
                 loc = self.get_location(child)
                 if loc is not None:

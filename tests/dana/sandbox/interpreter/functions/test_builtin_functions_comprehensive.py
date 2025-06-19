@@ -416,28 +416,28 @@ class TestTypeConversionFunctions:
         context = SandboxContext()
 
         # String to bool
-        assert bool_func(context, "hello") == True
-        assert bool_func(context, "false") == True  # Non-empty string is True
-        assert bool_func(context, "") == False
+        assert bool_func(context, "hello")
+        assert bool_func(context, "false")  # Non-empty string is True
+        assert not bool_func(context, "")
 
         # Int to bool
-        assert bool_func(context, 1) == True
-        assert bool_func(context, 42) == True
-        assert bool_func(context, -1) == True
-        assert bool_func(context, 0) == False
+        assert bool_func(context, 1)
+        assert bool_func(context, 42)
+        assert bool_func(context, -1)
+        assert not bool_func(context, 0)
 
         # Float to bool
-        assert bool_func(context, 3.14) == True
-        assert bool_func(context, -2.5) == True
-        assert bool_func(context, 0.0) == False
+        assert bool_func(context, 3.14)
+        assert bool_func(context, -2.5)
+        assert not bool_func(context, 0.0)
 
         # List to bool
-        assert bool_func(context, [1, 2, 3]) == True
-        assert bool_func(context, []) == False
+        assert bool_func(context, [1, 2, 3])
+        assert not bool_func(context, [])
 
         # Dict to bool
-        assert bool_func(context, {"a": 1}) == True
-        assert bool_func(context, {}) == False
+        assert bool_func(context, {"a": 1})
+        assert not bool_func(context, {})
 
 
 class TestCollectionFunctions:
@@ -524,22 +524,22 @@ class TestLogicFunctions:
         context = SandboxContext()
 
         # All True values
-        assert all_func(context, [True, True, True]) == True
-        assert all_func(context, [1, 2, 3]) == True
-        assert all_func(context, ["a", "b", "c"]) == True
+        assert all_func(context, [True, True, True])
+        assert all_func(context, [1, 2, 3])
+        assert all_func(context, ["a", "b", "c"])
 
         # Some False values
-        assert all_func(context, [True, False, True]) == False
-        assert all_func(context, [1, 0, 3]) == False
-        assert all_func(context, ["a", "", "c"]) == False
+        assert not all_func(context, [True, False, True])
+        assert not all_func(context, [1, 0, 3])
+        assert not all_func(context, ["a", "", "c"])
 
         # All False values
-        assert all_func(context, [False, False, False]) == False
-        assert all_func(context, [0, 0, 0]) == False
+        assert not all_func(context, [False, False, False])
+        assert not all_func(context, [0, 0, 0])
 
         # Empty container (vacuous truth)
-        assert all_func(context, []) == True
-        assert all_func(context, ()) == True
+        assert all_func(context, [])
+        assert all_func(context, ())
 
     def test_any_function(self):
         """Test any() function."""
@@ -548,22 +548,22 @@ class TestLogicFunctions:
         context = SandboxContext()
 
         # Some True values
-        assert any_func(context, [True, False, False]) == True
-        assert any_func(context, [0, 1, 0]) == True
-        assert any_func(context, ["", "a", ""]) == True
+        assert any_func(context, [True, False, False])
+        assert any_func(context, [0, 1, 0])
+        assert any_func(context, ["", "a", ""])
 
         # All True values
-        assert any_func(context, [True, True, True]) == True
-        assert any_func(context, [1, 2, 3]) == True
+        assert any_func(context, [True, True, True])
+        assert any_func(context, [1, 2, 3])
 
         # All False values
-        assert any_func(context, [False, False, False]) == False
-        assert any_func(context, [0, 0, 0]) == False
-        assert any_func(context, ["", "", ""]) == False
+        assert not any_func(context, [False, False, False])
+        assert not any_func(context, [0, 0, 0])
+        assert not any_func(context, ["", "", ""])
 
         # Empty container
-        assert any_func(context, []) == False
-        assert any_func(context, ()) == False
+        assert not any_func(context, [])
+        assert not any_func(context, ())
 
 
 class TestRangeFunction:

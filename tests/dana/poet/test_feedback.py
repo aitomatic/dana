@@ -330,7 +330,7 @@ class TestFeedbackIntegration:
         execution_id = result._poet["execution_id"]
 
         # Second instance (simulating restart)
-        system2 = AlphaFeedbackSystem(storage_path=temp_dir)
+        AlphaFeedbackSystem(storage_path=temp_dir)
 
         # Should be able to load execution context
         execution_file = Path(temp_dir) / "executions" / f"{execution_id}.json"

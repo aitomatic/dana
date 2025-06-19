@@ -123,7 +123,7 @@ class POETDecoratorProcessor:
             # Map to config fields
             if keyword.arg == "domain" and isinstance(value, str):
                 config.domain = value
-            elif keyword.arg == "timeout" and isinstance(value, (int, float)):
+            elif keyword.arg == "timeout" and isinstance(value, int | float):
                 config.timeout = float(value)
             elif keyword.arg == "retries" and isinstance(value, int):
                 config.retries = value
@@ -160,7 +160,7 @@ class POETDecoratorProcessor:
             return node.s
         elif isinstance(node, ast.Num):  # Python < 3.8 compatibility
             return node.n
-        elif isinstance(node, (ast.NameConstant, ast.Name)):
+        elif isinstance(node, ast.NameConstant | ast.Name):
             if hasattr(node, "value"):
                 return node.value
             elif hasattr(node, "id"):

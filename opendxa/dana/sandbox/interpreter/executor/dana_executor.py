@@ -104,7 +104,7 @@ class DanaExecutor(BaseExecutor):
             The result of execution (all nodes produce a value)
         """
         # Handle simple Python types directly
-        if isinstance(node, (int, float, str, bool, dict, tuple)) or node is None:
+        if isinstance(node, int | float | str | bool | dict | tuple) or node is None:
             return node
 
         # If it's a list (common in REPL)

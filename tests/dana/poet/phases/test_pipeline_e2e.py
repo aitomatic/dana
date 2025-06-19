@@ -43,8 +43,8 @@ def test_poet_pipeline_e2e_perceive_error():
     """Test the pipeline with invalid input (None in args)."""
     config = POETConfig(domain="test")
     perceive = PerceivePhase(config)
-    operate = OperatePhase(config)
-    enforce = EnforcePhase(config)
+    OperatePhase(config)
+    EnforcePhase(config)
 
     # Step 1: Perceive (invalid input)
     perceive_result = perceive.perceive((1, None), {})
@@ -57,7 +57,7 @@ def test_poet_pipeline_e2e_operate_error():
     config = POETConfig(domain="test")
     perceive = PerceivePhase(config)
     operate = OperatePhase(config)
-    enforce = EnforcePhase(config)
+    EnforcePhase(config)
 
     def error_func(x, y):
         raise ValueError("Test error in operate phase")

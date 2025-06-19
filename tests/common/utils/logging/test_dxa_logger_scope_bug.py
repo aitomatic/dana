@@ -55,7 +55,7 @@ class TestDXALoggerScopeIsolation(unittest.TestCase):
     def test_root_logger_not_modified(self):
         """Test that root logger is not modified by DXA configuration."""
         original_root_level = logging.getLogger().level
-        original_handlers_count = len(logging.getLogger().handlers)
+        len(logging.getLogger().handlers)
 
         # Configure DXA logger
         dxa_logger = DXALogger()

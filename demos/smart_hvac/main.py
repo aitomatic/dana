@@ -284,7 +284,7 @@ class HVACDemoManager:
                 # Provide feedback to POET for learning
                 try:
                     if hasattr(smart_hvac_control, "_poet_executor"):
-                        feedback_score = {"too_hot": 0.3, "too_cold": 0.3, "comfortable": 1.0}.get(user_input.action, 0.5)
+                        {"too_hot": 0.3, "too_cold": 0.3, "comfortable": 1.0}.get(user_input.action, 0.5)
 
                         # Future: implement feedback mechanism
                         pass

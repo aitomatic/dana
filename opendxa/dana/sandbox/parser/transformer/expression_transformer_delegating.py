@@ -203,7 +203,6 @@ class ExpressionTransformer(BaseTransformer):
     def tuple(self, items):
         """Delegate to collection transformer with expression resolution."""
         # Patch the collection transformer to use the main expression transformer
-        original_method = self._collection_transformer.tuple
 
         def patched_tuple(items):
             flat_items = self._collection_transformer.flatten_items(items)

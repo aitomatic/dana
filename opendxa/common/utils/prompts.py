@@ -12,7 +12,7 @@ class Prompts:
     def load_from_yaml(cls, yaml_data: str | dict | Path) -> dict[str, str]:
         """Load prompts from YAML configuration."""
         # Handle different input types
-        if isinstance(yaml_data, (str, Path)):
+        if isinstance(yaml_data, str | Path):
             data = Misc.load_yaml_config(yaml_data)
         else:
             data = yaml_data

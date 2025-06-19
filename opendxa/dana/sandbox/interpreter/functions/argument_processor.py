@@ -82,7 +82,7 @@ class ArgumentProcessor:
     def _safe_evaluate(self, value: Any, context: SandboxContext | None) -> Any:
         """Safely evaluate a value, handling Python primitives directly."""
         # If it's already a Python primitive, return it directly
-        if isinstance(value, (int, float, str, bool, list, dict, tuple, set)) or value is None:
+        if isinstance(value, int | float | str | bool | list | dict | tuple | set) or value is None:
             return value
 
         # Otherwise, use the evaluator

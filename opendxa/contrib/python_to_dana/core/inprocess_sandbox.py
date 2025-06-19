@@ -95,7 +95,7 @@ class InProcessSandboxInterface:
             # Validate option values
             if "temperature" in options:
                 temp = options["temperature"]
-                if not isinstance(temp, (int, float)) or not (0.0 <= temp <= 2.0):
+                if not isinstance(temp, int | float) or not (0.0 <= temp <= 2.0):
                     raise DanaCallError("temperature must be a number between 0.0 and 2.0")
 
             if "max_tokens" in options:
@@ -169,7 +169,7 @@ class InProcessSandboxInterface:
                 formatted_value = f'"{escaped_value}"'
             elif isinstance(value, bool):
                 formatted_value = "true" if value else "false"
-            elif isinstance(value, (int, float)):
+            elif isinstance(value, int | float):
                 formatted_value = str(value)
             else:
                 # For other types, convert to string and quote

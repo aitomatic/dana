@@ -329,7 +329,7 @@ class TestLLMQueryExecutor(unittest.IsolatedAsyncioTestCase):
             resource.add_to_registry = MagicMock()
             resource.remove_from_registry = MagicMock()
 
-        response = await self.query_executor.query_iterative(request, mock_tool_handler, mock_build_params)
+        await self.query_executor.query_iterative(request, mock_tool_handler, mock_build_params)
 
         # Should have called query_once exactly max_iterations times
         self.assertEqual(self.query_executor.query_once.call_count, 2)

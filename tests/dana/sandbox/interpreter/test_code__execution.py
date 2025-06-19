@@ -306,12 +306,12 @@ def test_variable_not_found():
         interpreter.execute_program(program, context)
         # If no exception is raised, check what values are in the context
         x_value = context.get("local.x", "NOT_FOUND")
-        y_value = context.get("local.y", "NOT_FOUND")
+        context.get("local.y", "NOT_FOUND")
 
         # If x got assigned successfully, check if it got a reasonable value
         if x_value != "NOT_FOUND":
             # If x was assigned None or some default value, that might be acceptable
-            assert x_value is None or isinstance(x_value, (int, str, bool))
+            assert x_value is None or isinstance(x_value, int | str | bool)
         else:
             pytest.fail("Should have raised an exception for undefined variable or provided a default value")
     except Exception as e:

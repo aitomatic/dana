@@ -21,12 +21,6 @@ from opendxa.dana.sandbox.sandbox_context import SandboxContext
 def test_dana_to_dana_function_call():
     """Test Dana function calling another Dana function."""
     # Given a program with a Dana function definition and a call to that function
-    program_text = """
-    func add(a, b):
-        return a + b
-
-    result = add(5, 3)
-    """
 
     # When the program is executed
     context = SandboxContext()
@@ -50,14 +44,6 @@ def test_dana_to_dana_function_call():
 def test_dana_to_dana_function_call_with_args():
     """Test Dana function with more complex argument patterns."""
     # Given a program with a Dana function that takes a mix of positional and keyword args
-    program_text = """
-    func process(name, age=25, city="Unknown"):
-        return f"{name} is {age} years old from {city}"
-
-    result1 = process("Alice")
-    result2 = process("Bob", 30)
-    result3 = process("Charlie", city="New York")
-    """
 
     # When the program is executed
     context = SandboxContext()
@@ -99,9 +85,6 @@ def test_dana_to_python_function():
     interpreter.function_registry.register("multiply", multiply, func_type=FunctionType.PYTHON)
 
     # And a Dana program that calls it
-    program_text = """
-    result = multiply(6, 7)
-    """
 
     # Manually call the function
     result = multiply(6, 7)
@@ -114,12 +97,8 @@ def test_dana_to_python_function():
 def test_python_to_dana_function():
     """Test Python code calling a Dana function."""
     # Given a Dana function
-    program_text = """
-    func square(x):
-        return x * x
-    """
 
-    context = SandboxContext()
+    SandboxContext()
     interpreter = DanaInterpreter()
 
     # Manually create a function
@@ -268,7 +247,7 @@ def test_function_registry_with_arg_processor():
 
     with patch.object(registry, "_get_arg_processor", return_value=mock_processor):
         # Call a function using the registry
-        result = registry.call("add", args=[1, 2])
+        registry.call("add", args=[1, 2])
         assert registry.has("add")
 
 
@@ -406,7 +385,7 @@ def test_expression_evaluation_comprehensive():
     assert executor.execute(LiteralExpression(42), context) == 42
     assert executor.execute(LiteralExpression("hello"), context) == "hello"
     assert executor.execute(LiteralExpression(3.14), context) == 3.14
-    assert executor.execute(LiteralExpression(True), context) == True
+    assert executor.execute(LiteralExpression(True), context)
 
     # Test binary expressions
     expr = BinaryExpression(

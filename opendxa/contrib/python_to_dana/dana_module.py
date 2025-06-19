@@ -106,7 +106,7 @@ class Dana:
             if self._debug:
                 print(f"DEBUG: Call #{self._call_count} failed: {type(e).__name__}: {e}")
 
-            if isinstance(e, (TypeError, DanaCallError)):
+            if isinstance(e, TypeError | DanaCallError):
                 raise
             raise DanaCallError(f"Unexpected error in reasoning: {e}", original_error=e)
 

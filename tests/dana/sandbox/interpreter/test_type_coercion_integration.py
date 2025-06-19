@@ -153,7 +153,7 @@ class TestTypeCoercionIntegration(unittest.TestCase):
             # Mixed arithmetic without coercion might still work if Dana has built-in support
             # Let's test string concatenation with numbers which should definitely fail
             try:
-                result = self.repl.execute('result = "Count: " + 42')
+                self.repl.execute('result = "Count: " + 42')
                 # If this passes, Dana might have built-in support, so adjust the test
                 # or skip it as the integration is working
                 pass  # Comment out the assertion for now

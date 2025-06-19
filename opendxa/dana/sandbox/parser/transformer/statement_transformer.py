@@ -112,7 +112,7 @@ class StatementTransformer(BaseTransformer):
         """Transform a statement rule (returns the first non-None AST node)."""
         for item in items:
             # Unwrap Tree or list wrappers
-            while isinstance(item, (list, Tree)):
+            while isinstance(item, list | Tree):
                 if isinstance(item, list):
                     item = item[0] if item else None
                 elif isinstance(item, Tree) and item.children:
@@ -847,7 +847,7 @@ class StatementTransformer(BaseTransformer):
             for item in block:
                 if item is not None:
                     result.extend(self._transform_block(item))
-        elif not isinstance(block, (Token, str)):  # Skip tokens and strings
+        elif not isinstance(block, Token | str):  # Skip tokens and strings
             # For other nodes, add directly
             result.append(block)
 
@@ -1118,7 +1118,6 @@ class StatementTransformer(BaseTransformer):
         context_manager_part = filtered_items[0]
         as_var = None
         block = None
-        with_args = None
 
         # Look for 'as' token to find variable name and block
         for i, item in enumerate(filtered_items):

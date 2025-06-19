@@ -101,7 +101,7 @@ def demo_cache_management():
     time.sleep(1.2)
 
     # Try to access - should miss due to TTL
-    result = sandbox.reason("What is 1+1?")  # This was cached before
+    sandbox.reason("What is 1+1?")  # This was cached before
     stats = sandbox.get_cache_stats()
     print(f"Cache after TTL expiration: {stats}")
 
@@ -147,7 +147,7 @@ def performance_comparison():
     sandbox_no_cache = InProcessSandboxInterface(enable_cache=False)
 
     start_time = time.perf_counter()
-    for i in range(5):
+    for _i in range(5):
         sandbox_no_cache.reason("What is 2+2?")
     end_time = time.perf_counter()
     no_cache_time = end_time - start_time
@@ -160,7 +160,7 @@ def performance_comparison():
     sandbox_with_cache = InProcessSandboxInterface(enable_cache=True)
 
     start_time = time.perf_counter()
-    for i in range(5):
+    for _i in range(5):
         sandbox_with_cache.reason("What is 2+2?")
     end_time = time.perf_counter()
     with_cache_time = end_time - start_time

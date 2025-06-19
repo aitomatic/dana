@@ -12,13 +12,15 @@ class RAGResource(BaseResource):
 
     def __init__(
         self,
-        doc_paths: list[str] = ['proposal/data/data_for_usecases/semiconductor/mock-docs'],
+        doc_paths: list[str] = None,
         output_folder: str = 'proposal/data/dana/storage',
         use_chunking: bool = True,
         enable_print: bool = False,
         force_reload: bool = False,
         **kwargs
     ):
+        if doc_paths is None:
+            doc_paths = ['proposal/data/data_for_usecases/semiconductor/mock-docs']
         self.COUNT += 1
         if kwargs.get("name") is None:
             kwargs["name"] = f"rag{self.COUNT}"

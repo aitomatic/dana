@@ -156,7 +156,7 @@ def reason_function(
                 logger.debug(f"Extracted content directly from content field: {result[:100]}...")
 
         # If result is still a complex object, try to get its string representation
-        if not isinstance(result, (str, int, float, bool, list, dict)) and hasattr(result, "__str__"):
+        if not isinstance(result, str | int | float | bool | list | dict) and hasattr(result, "__str__"):
             result = str(result)
             logger.debug(f"Converted complex object to string: {result[:100]}...")
 
