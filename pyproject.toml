@@ -31,6 +31,8 @@ dependencies = [
     "mcp",
     "fastmcp>=2.6.1",
     "llm-code-executor",
+    "llama-index",
+    
     # Data Processing - Required for agent data handling
     "pandas",
     "matplotlib",
@@ -51,6 +53,10 @@ dependencies = [
     # Interactive Features - REPL and user interface
     "prompt-toolkit",
     "pygments",
+
+    # Webcrawler
+    "playwright",
+    
     # Testing - Core testing framework (needed for Dana runtime)
     "pytest",
     "pytest-asyncio",

@@ -20,6 +20,7 @@ from opendxa.dana.common.exceptions import SandboxError
 # Import POET decorator
 from opendxa.dana.poet import poet
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
+from opendxa.common.mixins.queryable import QueryStrategy
 
 
 @poet(domain="llm_optimization", timeout=30, retries=3)
@@ -95,9 +96,28 @@ def reason_function(
             "temperature": options.get("temperature", 0.7),
             "max_tokens": options.get("max_tokens", None),
         }
+        # Get resources from context and filter by included_resources
+        try:
+            resources = context.get_resources(options.get("resources", None)) if context is not None else {}
+        except Exception as e:
+            self.warning(f"Error getting resources from context: {e}")
+            resources = {}
+
+        # Set query strategy and max iterations to iterative and 5 respectively to ultilize tools calls
+        previous_query_strategy = llm_resource._query_strategy
+        previous_query_max_iterations = llm_resource._query_max_iterations
+        if resources:
+            request_params["available_resources"] = resources
+            llm_resource._query_strategy = QueryStrategy.ITERATIVE
+            llm_resource._query_max_iterations = options.get("max_iterations", 5)
 
         request = BaseRequest(arguments=request_params)
+
         response = llm_resource.query_sync(request)
+
+        # Reset query strategy and max iterations
+        llm_resource._query_strategy = previous_query_strategy
+        llm_resource._query_max_iterations = previous_query_max_iterations
 
         if not response.success:
             raise SandboxError(f"LLM reasoning failed: {response.error}")

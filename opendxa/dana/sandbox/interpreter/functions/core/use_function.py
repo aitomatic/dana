@@ -23,5 +23,10 @@ def use_function(context: SandboxContext, function_name: str, *args, _name: str 
         resource = MCPResource(name=_name, *args, **kwargs)
         context.set_resource(_name, resource)
         return resource
+    elif function_name.lower() == "rag":
+        from opendxa.contrib.dana_rag.common.resource.rag_resource import RAGResource
+        resource = RAGResource(name=_name, *args, **kwargs)
+        context.set_resource(_name, resource)
+        return resource
     else:
         raise NotImplementedError(f"Function {function_name} not implemented")
