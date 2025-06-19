@@ -1,7 +1,14 @@
-# OpenDXA - Domain-Expert Agent Framework
+# OpenDXA — Domain-Expert Agent Framework
+A comprehensive framework for easily coding and deploying domain-expert multi-agent systems.
 
-> OpenDXA is a comprehensive framework for easily coding and deploying domain-expert multi-agent systems.
-> Powered by Dana, a Pythonic agentic programming language and secure sandboxed runtime.
+<div style="display: flex; align-items: center; gap: 10px;">
+  <img src="docs/images/dana-logo.jpg" alt="Dana Logo" width="60">
+  <span>
+    <div style="font-size: 18px; font-style: italic; font-weight: 600; color: #666;">Powered by Dana</div>
+    <div style="font-size: 14px; font-style: italic; color: #666;">an AI-enabled programming language and runtime.</div>
+  </span>
+</div>
+
 ---
 ## TL;DR - Get Running in 30 Seconds! 🚀
 ### One-Command Setup

@@ -82,6 +82,10 @@ first-line-h1: false
 MD047: false
 single-trailing-newline: false
 
+# MD051: Link fragment should be valid
+MD051: false
+link-title-style: false
+
 # MD058: Blank lines around tables (enforces blank lines before/after tables)
 MD058: false
 blanks-around-tables: false
