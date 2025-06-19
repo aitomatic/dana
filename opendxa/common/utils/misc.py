@@ -5,7 +5,6 @@ import base64
 import inspect
 import uuid
 from collections.abc import Callable
-from functools import lru_cache
 from importlib import import_module
 from pathlib import Path
 from typing import Any
@@ -28,9 +27,8 @@ class Misc:
     """A collection of miscellaneous utility methods."""
 
     @staticmethod
-    @lru_cache(maxsize=128)
     def load_yaml_config(path: str | Path) -> dict[str, Any]:
-        """Load YAML file with caching.
+        """Load YAML file.
 
         Args:
             path: Path to YAML file
@@ -203,8 +201,6 @@ class Misc:
 
     @staticmethod
     def parse_args_kwargs(func, *args, **kwargs) -> ParsedArgKwargsResults:
-        import inspect
-
         """
         Bind (args, kwargs) to `func`’s signature, returning a dict with:
         - matched_args:      positional args that were bound to named parameters
