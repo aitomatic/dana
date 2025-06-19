@@ -42,7 +42,7 @@ class TestDanaPOETIntegration(PoetTestBase):
 
         dana_code = """
 # Basic POET decorator test
-@poet()
+@poet(domain="test")
 def simple_add(a: int, b: int) -> int:
     return a + b
 
@@ -91,8 +91,8 @@ log(f"Analysis result: {result}")
         """Test @poet decorator with training enabled"""
 
         dana_code = """
-# POET decorator with training
-@poet(enable_training=true)
+# POET decorator with domain
+@poet(domain="text_classification")
 def classify_text(text: str) -> str:
     text_lower = text.lower()
     if "good" in text_lower or "great" in text_lower:
@@ -118,8 +118,8 @@ log(f"Classification: {result}")
         """Test POET with feedback function in Dana"""
 
         dana_code = """
-# POET function with feedback
-@poet(enable_training=true)
+# POET function with domain
+@poet(domain="prediction")
 def predict_value(input_data: float) -> float:
     # Simple prediction logic
     return input_data * 1.5
@@ -154,7 +154,7 @@ def check_blood_pressure(systolic: int, diastolic: int) -> str:
     else:
         return "normal"
 
-@poet(enable_training=true)
+@poet(domain="healthcare")
 def calculate_bmi(weight: float, height: float) -> float:
     # BMI = weight(kg) / height(m)^2
     height_m = height / 100  # Convert cm to m
@@ -271,7 +271,7 @@ def quality_check(measurement: float, tolerance: float) -> bool:
 result = quality_check(98.5, 2.0)
 log(f"Quality check result: {result}")
 
-@poet(enable_training=true, collect_metrics=true)
+@poet(domain="performance")
 def performance_metric(processing_time: float, error_rate: float) -> str:
     if processing_time < 1.0 and error_rate < 0.01:
         return "excellent"
@@ -309,7 +309,7 @@ class TestDanaPOETBuiltinFunctions(PoetTestBase):
 
         dana_code = """
 # Create a POET function that returns a trackable result
-@poet(enable_training=true)
+@poet(domain="prediction")
 def sample_prediction(value: float) -> float:
     return value * 2.0
 
@@ -459,7 +459,7 @@ class TestDanaPOETLifecycle(PoetTestBase):
 
         dana_code = """
 # Test that POET works without explicit setup
-@poet()
+@poet(domain="test")
 def lifecycle_test(value: int) -> int:
     return value * 3
 

@@ -64,13 +64,13 @@ def run_and_capture_output(input_code):
     "input_code,expected_output",
     [
         ("if x > 0 print('missing colon')", "Syntax Error"),
-        ("if private:x > 0:\n    print('ok')\nelse:\n    print('fail')", "Error accessing variable"),  # Runtime error, not syntax
-        ("print('hello') print('world')", "Syntax Error"),
-        ("print(does_not_exist)", "Error accessing variable"),
+        ("if private:x > 0:\n    log('ok')\nelse:\n    log('fail')", "Error accessing variable"),  # Runtime error, not syntax
+        ("log('hello') log('world')", "Syntax Error"),
+        ("log(does_not_exist)", "Error accessing variable"),
         ("private:x = 'foo' + 5", "foo5"),  # This actually works - string concatenation
         ("private:x = 1 / 0", "division by zero"),
         ("private:x = 42", "42"),  # Success
-        ("print('hello world')", "hello world"),  # This works perfectly
+        ("log('hello world')", "hello world"),  # This works perfectly
     ],
 )
 def test_user_output(input_code, expected_output, request):
