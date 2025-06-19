@@ -54,7 +54,7 @@ class TestOpenDXAError:
             DXAMemoryError,
             DXAContextError,
         ]
-        
+
         for exc_class in exception_classes:
             assert issubclass(exc_class, OpenDXAError)
 
@@ -83,11 +83,11 @@ class TestLLMProviderError:
         rate_limit_error = LLMRateLimitError("openai", 429, "Too many requests")
         auth_error = LLMAuthenticationError("openai", 401, "Invalid API key")
         context_error = LLMContextLengthError("openai", 400, "Context too long")
-        
+
         assert isinstance(rate_limit_error, LLMProviderError)
         assert isinstance(auth_error, LLMProviderError)
         assert isinstance(context_error, LLMProviderError)
-        
+
         assert isinstance(rate_limit_error, LLMError)
         assert isinstance(auth_error, LLMError)
         assert isinstance(context_error, LLMError)
@@ -100,14 +100,14 @@ class TestLLMResponseError:
         """Test LLMResponseError with response data."""
         response_data = {"error": "Invalid format", "code": 400}
         error = LLMResponseError("Response parsing failed", response_data)
-        
+
         assert str(error) == "Response parsing failed"
         assert error.response == response_data
 
     def test_initialization_without_response(self):
         """Test LLMResponseError without response data."""
         error = LLMResponseError("Response parsing failed")
-        
+
         assert str(error) == "Response parsing failed"
         assert error.response is None
 

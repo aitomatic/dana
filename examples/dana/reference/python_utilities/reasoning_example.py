@@ -32,12 +32,12 @@ async def run_dana_reasoning_example(model: str | None = None, provider: str | N
     with open(example_path) as f:
         dana_code = f.read()
 
-    print(f"\n{'='*80}\nRunning DANA Reasoning Example\n{'='*80}\n")
+    print(f"\n{'=' * 80}\nRunning DANA Reasoning Example\n{'=' * 80}\n")
     print(f"Using model: {model or 'default'}")
     print(f"Using provider: {provider or 'default'}")
-    print(f"\nDANA Code:\n{'-'*80}")
+    print(f"\nDANA Code:\n{'-' * 80}")
     print(dana_code)
-    print(f"{'-'*80}\n")
+    print(f"{'-' * 80}\n")
 
     # Parse the DANA code
     parser = DanaParser()
@@ -59,12 +59,12 @@ async def run_dana_reasoning_example(model: str | None = None, provider: str | N
     # Create an interpreter
     interpreter = DanaInterpreter.new(context)
 
-    print(f"Executing DANA code...\n{'-'*80}")
+    print(f"Executing DANA code...\n{'-' * 80}")
 
     # Execute the DANA program
     interpreter.execute_program(parse_result)
 
-    print(f"{'-'*80}\nExecution completed!\n")
+    print(f"{'-' * 80}\nExecution completed!\n")
 
 
 if __name__ == "__main__":

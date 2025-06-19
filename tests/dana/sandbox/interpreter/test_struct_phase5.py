@@ -19,12 +19,12 @@ from opendxa.dana.sandbox.interpreter.struct_system import (
 
 class TestRealWorldScenarios:
     """Test real-world scenarios with complex struct hierarchies."""
-    
+
     def setup_method(self):
         """Clear struct registry before each test."""
         StructTypeRegistry.clear()
         self.sandbox = DanaSandbox()
-    
+
     def test_complex_data_processing_pipeline(self):
         """Test a complex data processing pipeline using structs."""
         code = """
@@ -69,16 +69,16 @@ local:processed_order2 = order2.process_order()
 # Simple analytics
 local:total_revenue = processed_order1.amount + processed_order2.amount
 """
-        
+
         result = self.sandbox.eval(code)
         assert result.success, f"Execution failed: {result.error}"
-        
+
         # Verify customer creation
         customer1 = result.final_context.get("local.customer1")
         assert isinstance(customer1, StructInstance)
         assert customer1.name == "Alice Smith"
         assert customer1.age == 30
-        
+
         # Verify order processing with method syntax
         processed_order1 = result.final_context.get("local.processed_order1")
         assert isinstance(processed_order1, StructInstance)
@@ -86,11 +86,11 @@ local:total_revenue = processed_order1.amount + processed_order2.amount
         assert processed_order1.amount == 150.50
         assert isinstance(processed_order1.customer, StructInstance)
         assert processed_order1.customer.name == "Alice Smith"
-        
+
         # Verify simple calculation
         total_revenue = result.final_context.get("local.total_revenue")
         assert total_revenue == 225.75  # 150.50 + 75.25
-    
+
     def test_hierarchical_organization_structure(self):
         """Test complex hierarchical structures with nested relationships."""
         code = """
@@ -121,21 +121,21 @@ local:eng_dept = Department(
 # Test operations using method syntax
 local:eng_cost = eng_dept.calculate_department_cost()
 """
-        
+
         result = self.sandbox.eval(code)
         assert result.success, f"Execution failed: {result.error}"
-        
+
         # Verify department structure
         eng_dept = result.final_context.get("local.eng_dept")
         assert isinstance(eng_dept, StructInstance)
         assert eng_dept.name == "Engineering"
         assert isinstance(eng_dept.manager, StructInstance)
         assert eng_dept.manager.name == "Sarah Manager"
-        
+
         # Verify department calculation using method syntax
         eng_cost = result.final_context.get("local.eng_cost")
         assert eng_cost == 120000.0
-    
+
     def test_game_system_with_complex_interactions(self):
         """Test a game system with complex struct interactions."""
         code = """
@@ -167,10 +167,10 @@ local:player = Player(
 # Test game operations using method syntax
 local:moved_player = player.move_player(3.0, 2.0)
 """
-        
+
         result = self.sandbox.eval(code)
         assert result.success, f"Execution failed: {result.error}"
-        
+
         # Verify player movement using method syntax
         moved_player = result.final_context.get("local.moved_player")
         assert isinstance(moved_player, StructInstance)
@@ -181,12 +181,12 @@ local:moved_player = player.move_player(3.0, 2.0)
 
 class TestPerformanceBenchmarks:
     """Test performance benchmarks comparing structs vs dictionaries."""
-    
+
     def setup_method(self):
         """Clear struct registry before each test."""
         StructTypeRegistry.clear()
         self.sandbox = DanaSandbox()
-    
+
     def test_struct_vs_dict_creation_performance(self):
         """Compare struct vs dictionary creation performance."""
         # Struct creation test
@@ -202,8 +202,8 @@ while count < 100:
     local:points.append(point)
     local:count = count + 1
 """
-        
-        # Dictionary creation test  
+
+        # Dictionary creation test
         dict_code = """
 local:points = []
 local:count = 0
@@ -212,35 +212,35 @@ while count < 100:
     local:points.append(point)
     local:count = count + 1
 """
-        
+
         # Measure struct performance
         start_time = time.time()
         struct_result = self.sandbox.eval(struct_code)
         struct_time = time.time() - start_time
-        
+
         # Measure dictionary performance
         start_time = time.time()
         dict_result = self.sandbox.eval(dict_code)
         dict_time = time.time() - start_time
-        
+
         # Both should succeed
         assert struct_result.success, f"Struct test failed: {struct_result.error}"
         assert dict_result.success, f"Dict test failed: {dict_result.error}"
-        
+
         # Verify results
         struct_points = struct_result.final_context.get("local.points")
         dict_points = dict_result.final_context.get("local.points")
-        
+
         assert len(struct_points) == 100
         assert len(dict_points) == 100
-        
+
         # Struct should be within reasonable performance range of dict
         # Allow up to 5x overhead for struct creation (very conservative)
         performance_ratio = struct_time / dict_time if dict_time > 0 else 1.0
         assert performance_ratio < 5.0, f"Struct creation too slow: {performance_ratio:.2f}x dict time"
-        
+
         print(f"Performance comparison - Struct: {struct_time:.4f}s, Dict: {dict_time:.4f}s, Ratio: {performance_ratio:.2f}x")
-    
+
     def test_struct_vs_dict_access_performance(self):
         """Compare struct vs dictionary field access performance."""
         # Setup struct data
@@ -251,7 +251,7 @@ struct Point:
 
 local:point = Point(x=42, y=84)
 """
-        
+
         struct_access = """
 local:sum = 0
 local:count = 0
@@ -259,34 +259,34 @@ while count < 10:
     local:sum = local:sum + point.x + point.y
     local:count = count + 1
 """
-        
+
         # Simple struct test (skip dict comparison due to parsing issues)
         self.sandbox.eval(struct_setup)
         start_time = time.time()
         struct_result = self.sandbox.eval(struct_access)
         struct_time = time.time() - start_time
-        
+
         # Verify struct access works
         assert struct_result.success, f"Struct access failed: {struct_result.error}"
-        
+
         # Verify result
         struct_sum = struct_result.final_context.get("local.sum")
         assert struct_sum == 1260  # (42 + 84) * 10
-        
+
         # Performance should be reasonable (under 1 second for 10 iterations)
         assert struct_time < 1.0, f"Struct access too slow: {struct_time:.4f}s"
-        
+
         print(f"Struct access performance: {struct_time:.4f}s for 10 iterations")
 
 
 class TestComprehensiveIntegration:
     """Comprehensive integration tests with all Dana features."""
-    
+
     def setup_method(self):
         """Clear struct registry before each test."""
         StructTypeRegistry.clear()
         self.sandbox = DanaSandbox()
-    
+
     def test_structs_with_control_flow_comprehensive(self):
         """Test structs integrated with all Dana control flow constructs."""
         code = """
@@ -311,19 +311,19 @@ if task1.priority >= 3:
 else:
     local:processed_task = task1
 """
-        
+
         result = self.sandbox.eval(code)
         assert result.success, f"Execution failed: {result.error}"
-        
+
         # Verify task processing
         processed_task = result.final_context.get("local.processed_task")
-        
+
         assert isinstance(processed_task, StructInstance)
         assert processed_task.id == "T001"
         assert processed_task.priority == 5
         # High priority task should be completed
         assert processed_task.completed == True
-    
+
     def test_structs_with_error_handling_integration(self):
         """Test struct integration with Dana's error handling."""
         code = """
@@ -423,22 +423,22 @@ local:transaction3 = Transaction(
 )
 local:result3 = transaction3.transfer_funds()
 """
-        
+
         result = self.sandbox.eval(code)
         assert result.success, f"Execution failed: {result.error}"
-        
+
         # Verify successful transfer
         result1 = result.final_context.get("local.result1")
         assert isinstance(result1, StructInstance)
         assert result1.status == "completed"
         assert result1.from_account.balance == 800.0  # 1000 - 200
-        assert result1.to_account.balance == 700.0   # 500 + 200
-        
+        assert result1.to_account.balance == 700.0  # 500 + 200
+
         # Verify insufficient funds error
         result2 = result.final_context.get("local.result2")
         assert isinstance(result2, StructInstance)
         assert result2.status == "failed_insufficient_funds"
-        
+
         # Verify inactive account error
         result3 = result.final_context.get("local.result3")
         assert isinstance(result3, StructInstance)

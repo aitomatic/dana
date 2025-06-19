@@ -70,9 +70,14 @@ class Capable:
             return CapabilityApplicationResult(
                 success=False,
                 content=request.arguments if request else {},
-                error=CapabilityNotFoundError(f"Capability {capability.name} not found"),
+                error=f"Capability {capability.name} not found",
             )
-        return capability.apply(request.arguments if request else {})
+
+        # Create a BaseRequest if we don't have one
+        if request is None:
+            request = BaseRequest(arguments={})
+
+        return capability.apply(request)
 
     def has_capability(self, capability: BaseCapability) -> bool:
         """Check if capability exists.

@@ -179,7 +179,7 @@ class DanaParser(Lark, Loggable):
         lark_logger = logging.getLogger("lark")
         original_lark_level = lark_logger.level
         lark_logger.setLevel(logging.ERROR)  # Only show errors, not warnings
-        
+
         try:
             # Initialize the Lark parser with the grammar
             super().__init__(

@@ -96,7 +96,6 @@ class TestLLMToolCallManager(unittest.IsolatedAsyncioTestCase):
             patch("opendxa.common.resource.llm_tool_call_manager.ToolFormat") as mock_tool_format,
             patch("opendxa.common.resource.llm_tool_call_manager.Registerable") as mock_registerable,
         ):
-
             # Setup mocks
             mock_tool_format.parse_tool_name.return_value = ("test_resource", "test_id", "test_tool")
             mock_resource = MockResource("test_resource")
@@ -122,7 +121,6 @@ class TestLLMToolCallManager(unittest.IsolatedAsyncioTestCase):
             patch("opendxa.common.resource.llm_tool_call_manager.ToolFormat") as mock_tool_format,
             patch("opendxa.common.resource.llm_tool_call_manager.Registerable") as mock_registerable,
         ):
-
             # Setup mocks
             mock_tool_format.parse_tool_name.return_value = ("test_resource", "test_id", "test_tool")
             mock_registerable.get_from_registry.return_value = None
@@ -142,7 +140,6 @@ class TestLLMToolCallManager(unittest.IsolatedAsyncioTestCase):
             patch("opendxa.common.resource.llm_tool_call_manager.ToolFormat") as mock_tool_format,
             patch("opendxa.common.resource.llm_tool_call_manager.Registerable") as mock_registerable,
         ):
-
             # Setup mocks
             mock_tool_format.parse_tool_name.return_value = ("test_resource", "test_id", "test_tool")
             mock_resource = MockResource("test_resource")
@@ -167,7 +164,6 @@ class TestLLMToolCallManager(unittest.IsolatedAsyncioTestCase):
             patch("opendxa.common.resource.llm_tool_call_manager.ToolFormat") as mock_tool_format,
             patch("opendxa.common.resource.llm_tool_call_manager.Registerable") as mock_registerable,
         ):
-
             # Setup mocks
             mock_tool_format.parse_tool_name.return_value = ("test_resource", "test_id", "test_tool")
             mock_resource = MockResource("test_resource")
@@ -197,7 +193,6 @@ class TestLLMToolCallManager(unittest.IsolatedAsyncioTestCase):
             patch("opendxa.common.resource.llm_tool_call_manager.ToolFormat") as mock_tool_format,
             patch("opendxa.common.resource.llm_tool_call_manager.Registerable") as mock_registerable,
         ):
-
             # Setup mocks
             mock_tool_format.parse_tool_name.return_value = ("test_resource", "test_id", "test_tool")
             mock_resource = MockResource("test_resource")

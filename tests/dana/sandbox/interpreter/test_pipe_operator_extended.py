@@ -66,8 +66,8 @@ def test_pipe_with_exception_handling():
     with pytest.raises(Exception) as exc_info:
         interpreter.execute_program(program, context)
 
-    # Accept either the expected error message or function not found error  
-    assert ("Cannot process 5" in str(exc_info.value) or "not found" in str(exc_info.value))
+    # Accept either the expected error message or function not found error
+    assert "Cannot process 5" in str(exc_info.value) or "not found" in str(exc_info.value)
 
 
 def test_pipe_with_different_data_types():

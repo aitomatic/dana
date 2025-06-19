@@ -20,12 +20,12 @@ from opendxa.dana.sandbox.sandbox_context import SandboxContext
 def test_underscore_variables_in_fstring_parsing():
     """Test the core regression: underscore variables should be parsed as identifiers."""
     transformer = FStringTransformer()
-    
+
     # This was the bug - question_2 was treated as literal instead of identifier
     result = transformer._parse_expression_term("question_2")
     assert isinstance(result, Identifier)
     assert result.name == "local.question_2"
-    
+
     # Test a few more underscore cases
     result = transformer._parse_expression_term("_private")
     assert isinstance(result, Identifier)
@@ -37,18 +37,18 @@ def test_underscore_variables_in_fstring_execution():
     parser = DanaParser()
     interpreter = DanaInterpreter()
     context = SandboxContext()
-    
-    code = '''
+
+    code = """
 question_2 = "What is DANA"
 result = f"Question: {question_2}"
-'''
-    
+"""
+
     program = parser.parse(code, do_transform=True)
     interpreter.execute_program(program, context)
-    
+
     result = context.get("local.result")
-    
-    # The bug: this would output "Question: question_2" 
+
+    # The bug: this would output "Question: question_2"
     # The fix: this should output "Question: What is DANA"
     assert result == "Question: What is DANA"
     assert "question_2" not in result  # Ensure it's not treating variable name as literal
@@ -59,15 +59,15 @@ def test_basic_fstring_still_works():
     parser = DanaParser()
     interpreter = DanaInterpreter()
     context = SandboxContext()
-    
-    code = '''
+
+    code = """
 name = "Alice"
 result = f"Hello {name}"
-'''
-    
+"""
+
     program = parser.parse(code, do_transform=True)
     interpreter.execute_program(program, context)
-    
+
     result = context.get("local.result")
     assert result == "Hello Alice"
 
@@ -77,29 +77,24 @@ def test_original_failing_case():
     parser = DanaParser()
     interpreter = DanaInterpreter()
     context = SandboxContext()
-    
+
     # Mock the reason function to avoid LLM calls
     def mock_reason(*args, **kwargs):
         return "DANA is a digital wallet"
-    
-    interpreter.function_registry.register(
-        name="reason",
-        func=mock_reason,
-        func_type="python",
-        overwrite=True
-    )
-    
-    code = '''
+
+    interpreter.function_registry.register(name="reason", func=mock_reason, func_type="python", overwrite=True)
+
+    code = """
 question_2 = "What is DANA"
 answer = reason(question_2)
 result = f"Question : {question_2}. Answer : {answer}"
-'''
-    
+"""
+
     program = parser.parse(code, do_transform=True)
     interpreter.execute_program(program, context)
-    
+
     result = context.get("local.result")
-    
+
     # Verify the fix works
     assert "What is DANA" in result
     assert "question_2" not in result
@@ -115,14 +110,14 @@ def test_common_identifier_utility():
     assert is_valid_identifier("obj.attr") == True
     assert is_valid_identifier("local.var") == True
     assert is_valid_identifier("item_123") == True
-    
+
     # Invalid identifiers
     assert is_valid_identifier("123invalid") == False
     assert is_valid_identifier("with-dash") == False
     assert is_valid_identifier("") == False
     assert is_valid_identifier("obj..attr") == False  # consecutive dots
-    assert is_valid_identifier(".attr") == False      # leading dot
+    assert is_valid_identifier(".attr") == False  # leading dot
 
 
 if __name__ == "__main__":
-    pytest.main([__file__]) 
+    pytest.main([__file__])

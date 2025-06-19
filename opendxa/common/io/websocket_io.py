@@ -51,7 +51,11 @@ class WebSocketIO(BaseIO):
     async def initialize(self) -> None:
         """Initialize WebSocket server."""
         await super().initialize()
-        self._server = await serve(self._handle_connection, self.host, self.port)
+        # Use typing.cast to handle the type mismatch between websockets and the expected handler signature
+        from typing import Any, cast
+
+        handler = cast(Any, self._handle_connection)
+        self._server = await serve(handler, self.host, self.port)
         self.logger.info(f"WebSocket server started on ws://{self.host}:{self.port}")
 
     async def cleanup(self) -> None:

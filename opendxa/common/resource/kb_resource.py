@@ -83,7 +83,11 @@ class KBResource(BaseResource):
             config: Optional additional configuration
         """
         super().__init__(name, description, config)
-        self._storage = KnowledgeDBStorage(connection_string=config.get("connection_string"))
+        config = config or {}
+        connection_string = config.get("connection_string")
+        if connection_string is None:
+            connection_string = "sqlite:///knowledge.db"  # Default connection string
+        self._storage = KnowledgeDBStorage(connection_string=connection_string)
         self._knowledge_base: dict[str, dict[str, Any]] = {}
 
     async def initialize(self) -> None:

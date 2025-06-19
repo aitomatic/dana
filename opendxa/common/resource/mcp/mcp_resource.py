@@ -201,7 +201,7 @@ class McpResource(BaseResource):
 
     @with_retries(retries=3, delay=1.0)
     @ToolCallable.tool
-    async def query(self, request: BaseRequest = None) -> BaseResponse:
+    async def query(self, request: BaseRequest | None = None) -> BaseResponse:
         """Execute a tool on the MCP server.
 
         This method sends a request to the MCP server to execute a specific tool with the provided arguments.
@@ -299,17 +299,26 @@ class McpResource(BaseResource):
             ```
         """
         self.debug("Starting MCP query: %s", request)
+
+        # Convert BaseRequest to dict if needed, or handle None
+        if request is None:
+            request_dict = {}
+        elif isinstance(request, BaseRequest):
+            request_dict = request.arguments
+        else:
+            request_dict = request
+
         try:
             if self.transport_type == "stdio":
                 assert isinstance(self.server_params, StdioServerParameters)
                 async with stdio_client(self.server_params) as (read, write):
                     async with ClientSession(read, write) as session:
-                        return await self._execute_query(session, request)
+                        return await self._execute_query(session, request_dict)
             else:  # http
                 assert isinstance(self.server_params, dict)
                 async with sse_client(**self.server_params) as streams:
                     async with ClientSession(*streams) as session:
-                        return await self._execute_query(session, request)
+                        return await self._execute_query(session, request_dict)
         except Exception as e:
             self.error("Tool execution failed", exc_info=True)
             return BaseResponse.error_response(str(e))

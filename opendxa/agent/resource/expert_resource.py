@@ -51,10 +51,8 @@ from opendxa.common.types import BaseRequest, BaseResponse
 class ExpertResponse(BaseResponse):
     """Expert-specific response extending base response."""
 
-    def __init__(self, content: Any = None, usage: dict[str, int] | None = None, model: str | None = None):
-        super().__init__(content)
-        self.usage = usage
-        self.model = model
+    usage: dict[str, int] | None = None
+    model: str | None = None
 
 
 class ExpertResource(BaseResource):
@@ -122,7 +120,7 @@ class ExpertResource(BaseResource):
         await self._io.initialize()  # Async init
 
     @ToolCallable.tool
-    async def query(self, request: BaseRequest = None) -> BaseResponse:
+    async def query(self, request: BaseRequest | None = None) -> BaseResponse:
         """Get expert input."""
         if not self._io:
             await self.initialize()

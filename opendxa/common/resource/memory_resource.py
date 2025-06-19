@@ -267,6 +267,10 @@ class MemoryResource(BaseResource, Generic[ModelType, StorageType]):
         Args:
             intervals_passed: Number of decay intervals that have passed since last decay
         """
+        if self._storage is None:
+            self.warning("Storage is not initialized, skipping decay")
+            return
+
         async with self._decay_lock:
             try:
                 # Get all memories that need decay
@@ -293,14 +297,16 @@ class MemoryResource(BaseResource, Generic[ModelType, StorageType]):
     async def initialize(self) -> None:
         """Initialize the memory resource."""
         await super().initialize()
-        self._storage.initialize()
+        if self._storage is not None:
+            self._storage.initialize()
         self.info(f"Memory resource [{self.name}] initialized with decay interval of {self._decay_interval} seconds")
 
     async def cleanup(self) -> None:
         """Clean up the memory resource."""
         self._executor.shutdown(wait=True)
         await super().cleanup()
-        self._storage.cleanup()
+        if self._storage is not None:
+            self._storage.cleanup()
         self.info(f"Memory resource [{self.name}] cleaned up")
 
     async def store(
@@ -317,10 +323,15 @@ class MemoryResource(BaseResource, Generic[ModelType, StorageType]):
         Returns:
             BaseResponse indicating success or failure
         """
+        if self._storage is None:
+            return BaseResponse.error_response("Storage is not initialized")
+
         try:
             await self._maybe_decay()  # Check for decay before storing
             self.info(f"self._model_class: {self._model_class}")
             # Create a new instance of the model class
+            if self._model_class is None:
+                return BaseResponse.error_response("Model class is not initialized")
             memory = self._model_class(
                 content=content,
                 context=context,
@@ -328,7 +339,16 @@ class MemoryResource(BaseResource, Generic[ModelType, StorageType]):
                 decay_rate=decay_rate or self._default_decay_rate,
             )
             self.info(f"Storing memory: {memory}")
-            self._storage.store(memory)
+            # Call storage with the proper parameters
+            self._storage.store(
+                key=str(id(memory)),  # Use object id as key
+                content=content,
+                metadata={
+                    "context": context,
+                    "importance": importance or self._default_importance,
+                    "decay_rate": decay_rate or self._default_decay_rate,
+                },
+            )
             return BaseResponse(success=True, content={"content": content})
         except Exception as e:
             return BaseResponse.error_response(f"Failed to store memory: {str(e)}")
@@ -343,9 +363,17 @@ class MemoryResource(BaseResource, Generic[ModelType, StorageType]):
         Returns:
             BaseResponse containing the retrieved memories
         """
+        if self._storage is None:
+            return BaseResponse.error_response("Storage is not initialized")
+
         try:
             await self._maybe_decay()  # Check for decay before retrieving
-            memories = self._storage.retrieve(query=query, limit=limit or self._default_retrieve_limit)
+            memories = self._storage.retrieve(query=query)
+            # Apply limit manually if needed
+            if limit is not None:
+                memories = memories[:limit]
+            elif self._default_retrieve_limit is not None:
+                memories = memories[: self._default_retrieve_limit]
             return BaseResponse(success=True, content=memories)
         except Exception as e:
             return BaseResponse.error_response(f"Failed to retrieve memories: {str(e)}")
@@ -360,6 +388,9 @@ class MemoryResource(BaseResource, Generic[ModelType, StorageType]):
         Returns:
             BaseResponse indicating success or failure
         """
+        if self._storage is None:
+            return BaseResponse.error_response("Storage is not initialized")
+
         try:
             await self._maybe_decay()  # Check for decay before updating
             self._storage.update_importance(memory_id, importance)
@@ -415,13 +446,14 @@ class LTMemoryResource(MemoryResource[LTMemoryDBModel, MemoryDBStorage[LTMemoryD
             description: Optional resource description
             config: Optional additional configuration
         """
+        config = config or {}
         super().__init__(
             name=name,
             description=description,
             config=config,
             storage=MemoryDBStorage[LTMemoryDBModel](
-                vector_db_url=config.get("vector_db_url"),
-                embedding_model=config.get("embedding_model"),
+                vector_db_url=config.get("vector_db_url", ""),
+                embedding_model=config.get("embedding_model", ""),
                 db_model_class=LTMemoryDBModel,
             ),
             model_class=LTMemoryDBModel,
@@ -460,13 +492,14 @@ class STMemoryResource(MemoryResource[STMemoryDBModel, MemoryDBStorage[STMemoryD
             description: Optional resource description
             config: Optional additional configuration
         """
+        config = config or {}
         super().__init__(
             name=name,
             description=description,
             config=config,
             storage=MemoryDBStorage[STMemoryDBModel](
-                vector_db_url=config.get("vector_db_url"),
-                embedding_model=config.get("embedding_model"),
+                vector_db_url=config.get("vector_db_url", ""),
+                embedding_model=config.get("embedding_model", ""),
                 db_model_class=STMemoryDBModel,
             ),
             model_class=STMemoryDBModel,
@@ -505,13 +538,14 @@ class PermMemoryResource(MemoryResource[PermanentMemoryDBModel, MemoryDBStorage[
             description: Optional resource description
             config: Optional additional configuration
         """
+        config = config or {}
         super().__init__(
             name=name,
             description=description,
             config=config,
             storage=MemoryDBStorage[PermanentMemoryDBModel](
-                vector_db_url=config.get("vector_db_url"),
-                embedding_model=config.get("embedding_model"),
+                vector_db_url=config.get("vector_db_url", ""),
+                embedding_model=config.get("embedding_model", ""),
                 db_model_class=PermanentMemoryDBModel,
             ),
             model_class=PermanentMemoryDBModel,

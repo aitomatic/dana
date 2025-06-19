@@ -290,7 +290,7 @@ class HVACDemoManager:
                         pass
                 except:
                     pass
-    
+
     async def _handle_smart_feedback(self, feedback: str, current_temp: float):
         """Handle intelligent feedback processing with LLM."""
         try:
@@ -301,9 +301,9 @@ class HVACDemoManager:
                     current_temp=current_temp,
                     target_temp=self.smart_target,
                     user_feedback=feedback,
-                    comfort_history=self.comfort_controller.comfort_history
+                    comfort_history=self.comfort_controller.comfort_history,
                 )
-                
+
                 # Apply LLM suggestions if confidence is high enough
                 if comfort_analysis.get("confidence", 0) > 0.7:
                     suggested_adjustment = comfort_analysis.get("suggested_adjustment", 0)
@@ -312,7 +312,7 @@ class HVACDemoManager:
                         self.smart_target = max(65, min(80, new_target))
                         print(f"🤖 LLM suggested target adjustment: {suggested_adjustment:.1f}°F -> {self.smart_target:.1f}°F")
                         print(f"   Reasoning: {comfort_analysis.get('reasoning', 'No reasoning provided')}")
-                    
+
         except Exception as e:
             print(f"Error in smart feedback handling: {e}")
 
@@ -335,6 +335,7 @@ async def get_index():
             return HTMLResponse(f.read())
     except FileNotFoundError:
         return HTMLResponse("<h1>Demo files not found</h1><p>Please run from the demos/smart_hvac directory</p>")
+
 
 @app.get("/simple", response_class=HTMLResponse)
 async def get_simple():

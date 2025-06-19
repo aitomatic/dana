@@ -16,6 +16,7 @@ while private:x < 3:
     result = parser.parse(code)
     assert result is not None
 
+
 def test_nested_indentation():
     """Test nested indentation handling."""
     parser = DanaParser()
@@ -30,6 +31,7 @@ def test():
     result = parser.parse(code)
     assert result is not None
 
+
 def test_mixed_indentation():
     """Test mixed indentation handling."""
     parser = DanaParser()
@@ -42,4 +44,4 @@ if True:
         print("x is not positive")
 """
     result = parser.parse(code)
-    assert result is not None 
+    assert result is not None

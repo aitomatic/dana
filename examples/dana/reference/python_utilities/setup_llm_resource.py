@@ -92,8 +92,8 @@ async def main():
     # Parse and execute the program
     parser = DanaParser()
     parse_result = parser.parse(program)
-    interpreter = DanaInterpreter(context)
-    interpreter.execute_program(parse_result)
+    interpreter = DanaInterpreter()
+    interpreter.execute_program(parse_result, context)
 
     print("\nExample complete!")
 

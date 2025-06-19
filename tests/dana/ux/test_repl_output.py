@@ -29,13 +29,10 @@ def format_user_error(e, user_input):
         )
     if "division by zero" in msg or "ZeroDivisionError" in msg:
         return (
-            f"Math Error:\n"
-            f"  Input: {user_input}\n"
-            f"  Division by zero is not allowed.\n"
-            f"  Tip: Check your divisor to avoid dividing by zero."
+            f"Math Error:\n  Input: {user_input}\n  Division by zero is not allowed.\n  Tip: Check your divisor to avoid dividing by zero."
         )
     if "TypeError" in msg or "type mismatch" in msg:
-        return f"Type Error:\n" f"  Input: {user_input}\n" f"  {msg}\n" f"  Tip: Ensure both operands are of compatible types."
+        return f"Type Error:\n  Input: {user_input}\n  {msg}\n  Tip: Ensure both operands are of compatible types."
     # Fallback
     return f"Error:\n  Input: {user_input}\n  {msg}"
 

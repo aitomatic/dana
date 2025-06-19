@@ -10,7 +10,7 @@ Usage:
 
 The server will start on http://localhost:8080/sse and provide:
 - echo: Echo messages back
-- ping: Test connectivity  
+- ping: Test connectivity
 - get_current_time: Get current timestamp
 """
 
@@ -26,10 +26,10 @@ mcp = FastMCP("DANA Test Server")
 @mcp.tool()
 def echo(message: str) -> str:
     """Echo a message back to test basic connectivity.
-    
+
     Args:
         message: The message to echo back
-        
+
     Returns:
         The same message that was sent
     """
@@ -39,7 +39,7 @@ def echo(message: str) -> str:
 @mcp.tool()
 def ping() -> str:
     """Simple ping tool to test server connectivity.
-    
+
     Returns:
         A pong response with timestamp
     """
@@ -49,7 +49,7 @@ def ping() -> str:
 @mcp.tool()
 def get_current_time() -> str:
     """Get the current system time.
-    
+
     Returns:
         Current timestamp in ISO format
     """
@@ -70,7 +70,7 @@ def main():
     print()
     print("Press Ctrl+C to stop the server")
     print("-" * 60)
-    
+
     try:
         # Run the server with SSE transport
         mcp.run(transport="sse", port=8080)

@@ -71,7 +71,7 @@ class TestConfigurable:
 
         # Mock the YAML loading to return the expected config
         mock_load_yaml.return_value = {"setting1": "test_value", "setting2": 123}
-        
+
         obj = TestConfig(config_path="test_configurable.yaml")
         # File values should override defaults (this fixes the original bug)
         assert obj.config["setting1"] == "test_value"  # From file

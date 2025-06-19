@@ -27,6 +27,7 @@ from opendxa.agent.dummy import (
     ExecutionSignal,
     ExecutionSignalType,
     Plan,
+    PlanFactory,
     Planner,
     PlanStrategy,
     Reasoner,
@@ -34,7 +35,6 @@ from opendxa.agent.dummy import (
     RuntimeContext,
 )
 from opendxa.common.capability import BaseCapability
-from opendxa.common.capability.capable import Capable
 from opendxa.common.io import BaseIO, IOFactory
 from opendxa.common.mixins.tool_callable import ToolCallable
 from opendxa.common.resource import BaseResource, LLMResource
@@ -71,13 +71,16 @@ class AgentResponse(BaseResponse):
 
 
 # pylint: disable=too-many-public-methods
-class Agent(BaseResource, Capable):
+class Agent(BaseResource):
     """Main agent interface with built-in execution management."""
 
     # pylint: disable=too-many-instance-attributes
     def __init__(self, name: str | None = None, description: str | None = None):
         """Initialize agent with optional name and description."""
-        super().__init__(name=name, description=description)
+        # BaseResource requires a non-None name, so provide default
+        actual_name = name or "Agent"
+        BaseResource.__init__(self, name=actual_name, description=description)
+        # Don't call Capable.__init__ as we use a different capabilities structure
         self._llm = None
         self._resources = {}
         self._capabilities = {}
@@ -277,3 +280,39 @@ class Agent(BaseResource, Capable):
     async def query(self, request: BaseRequest) -> BaseResponse:
         """Query the agent."""
         return self.runtime.runtime_context.query(request)
+
+    def has_capability(self, capability: BaseCapability | str) -> bool:
+        """Check if capability exists by capability object or name.
+
+        Args:
+            capability: The capability object or name to check for.
+
+        Returns:
+            True if the capability exists, False otherwise.
+        """
+        if isinstance(capability, str):
+            return capability in self._capabilities
+        else:
+            return capability.name in self._capabilities and self._capabilities[capability.name] == capability
+
+    def add_capability(self, name: str, capability: BaseCapability) -> None:
+        """Add a capability to the Agent.
+
+        Args:
+            name: The name/key for the capability
+            capability: The capability to add.
+        """
+        self._capabilities[name] = capability
+
+    def remove_capability(self, name: str) -> None:
+        """Remove a capability from the Agent.
+
+        Args:
+            name: The name/key of the capability to remove.
+
+        Raises:
+            KeyError: If the capability does not exist.
+        """
+        if name not in self._capabilities:
+            raise KeyError(f"Capability {name} not found")
+        del self._capabilities[name]

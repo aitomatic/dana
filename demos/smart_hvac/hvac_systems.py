@@ -15,17 +15,17 @@ try:
     from opendxa.common.resource.llm_resource import LLMResource
     from opendxa.dana.poet.plugins import PLUGIN_REGISTRY
     from opendxa.dana.poet.poet import poet
-    
+
     # Initialize the plugin registry to discover building management plugin
     PLUGIN_REGISTRY.discover_plugins()
-    
+
     print("✅ Running demo with REAL POET framework and LLM integration")
     POET_AVAILABLE = "real"
-    
+
 except ImportError as e:
     print(f"⚠️ Could not import POET framework: {e}")
     print("🎭 Falling back to mock POET decorator")
-    
+
     def poet(*args, **kwargs):
         """Mock POET decorator that simulates POET enhancements for demo purposes."""
 
@@ -42,7 +42,7 @@ except ImportError as e:
             def get_learning_status(*args, **kwargs):
                 nonlocal execution_count
                 execution_count += 1
-                
+
                 # Progressive learning status based on execution count
                 if execution_count < 5:
                     status = "Learning system initializing..."
@@ -52,13 +52,13 @@ except ImportError as e:
                     status = "Learning patterns..."
                 else:
                     status = "Optimization active"
-                    
+
                 return {
-                    "learning_enabled": True, 
-                    "learning_algorithm": "statistical", 
-                    "executions": execution_count, 
+                    "learning_enabled": True,
+                    "learning_algorithm": "statistical",
+                    "executions": execution_count,
                     "success_rate": min(0.95, 0.5 + (execution_count * 0.01)),
-                    "status": status
+                    "status": status,
                 }
 
             def get_learning_recommendations(*args, **kwargs):
@@ -73,7 +73,12 @@ except ImportError as e:
 
             def get_metrics(*args, **kwargs):
                 nonlocal execution_count
-                return {"total_executions": execution_count, "success_rate": 0.95, "avg_execution_time": 0.001, "learning_progress": "active"}
+                return {
+                    "total_executions": execution_count,
+                    "success_rate": 0.95,
+                    "avg_execution_time": 0.001,
+                    "learning_progress": "active",
+                }
 
             wrapper.get_learning_status = get_learning_status
             wrapper._poet_executor = type(
@@ -256,7 +261,7 @@ def calculate_energy_usage(command: HVACCommand, duration: float = 1.0) -> float
     return total_kw * (duration / 60.0)  # Convert minutes to hours
 
 
-def calculate_comfort_score(current_temp: float, target_temp: float, temp_history: list, feedback_history: list = None) -> float:
+def calculate_comfort_score(current_temp: float, target_temp: float, temp_history: list, feedback_history: list | None = None) -> float:
     """
     Calculate comfort score (0-100).
 

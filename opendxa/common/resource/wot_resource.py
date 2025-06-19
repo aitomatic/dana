@@ -27,15 +27,15 @@ class WoTResource(BaseResource):
                 self.things = await resp.json()
 
     @ToolCallable.tool
-    async def query(self, request: BaseRequest = None) -> BaseResponse:
+    async def query(self, request: BaseRequest | None = None) -> BaseResponse:
         """Get WOT input."""
         if not self.session:
             await self.initialize()
 
         # Handle WoT-specific queries
-        if request and "thing_id" in request:
-            thing_id = request.get("thing_id")
-            if thing_id in self.things:
+        if request and "thing_id" in request.arguments:
+            thing_id = request.arguments.get("thing_id")
+            if thing_id is not None and thing_id in self.things:
                 return await self._handle_interaction(self.things[thing_id], request)
             else:
                 return BaseResponse.error_response(f"Thing not found: {thing_id}")
@@ -45,7 +45,7 @@ class WoTResource(BaseResource):
 
     async def _handle_interaction(self, thing: dict[str, Any], request: BaseRequest) -> BaseResponse:
         """Handle WoT interaction based on type."""
-        interaction_type = request.get("interaction_type")
+        interaction_type = request.arguments.get("interaction_type")
         if interaction_type == "read_property":
             return await self._read_property(thing, request)
         elif interaction_type == "write_property":
@@ -57,7 +57,7 @@ class WoTResource(BaseResource):
 
     async def _read_property(self, thing: dict[str, Any], request: BaseRequest) -> BaseResponse:
         """Read a property from a WoT thing."""
-        property_name = request.get("property_name")
+        property_name = request.arguments.get("property_name")
         if not property_name:
             return BaseResponse.error_response("Missing property name")
 
@@ -69,8 +69,8 @@ class WoTResource(BaseResource):
 
     async def _write_property(self, thing: dict[str, Any], request: BaseRequest) -> BaseResponse:
         """Write a property to a WoT thing."""
-        property_name = request.get("property_name")
-        value = request.get("value")
+        property_name = request.arguments.get("property_name")
+        value = request.arguments.get("value")
         if not property_name or value is None:
             return BaseResponse.error_response("Missing property name or value")
 
@@ -82,13 +82,13 @@ class WoTResource(BaseResource):
 
     async def _invoke_action(self, thing: dict[str, Any], request: BaseRequest) -> BaseResponse:
         """Invoke an action on a WoT thing."""
-        action_name = request.get("action_name")
+        action_name = request.arguments.get("action_name")
         if not action_name:
             return BaseResponse.error_response("Missing action name")
 
         try:
             action = thing["actions"][action_name]
-            result = await action(request.get("parameters", {}))
+            result = await action(request.arguments.get("parameters", {}))
             return BaseResponse.success_response({"result": result})
         except KeyError:
             return BaseResponse.error_response(f"Action not found: {action_name}")

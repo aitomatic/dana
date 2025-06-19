@@ -63,7 +63,7 @@ def run_example(example_path: str):
         # 3. Setup Runtime
         print(f"{YELLOW}Initializing context and interpreter...{RESET}")
         context = SandboxContext()
-        interpreter = DanaInterpreter(context=context)
+        interpreter = DanaInterpreter()
 
         # Set log level to DEBUG for log_levels.dana example
         if os.path.basename(abs_example_path) == "log_levels.na":
@@ -71,7 +71,7 @@ def run_example(example_path: str):
 
         # 4. Interpret/Execute
         print(f"{YELLOW}Executing...{RESET}")
-        interpreter.execute_program(parse_result)
+        interpreter.execute_program(parse_result, context)
 
         # 5. Show Result
         print(f"{GREEN}--- Final Context State ---{RESET}")

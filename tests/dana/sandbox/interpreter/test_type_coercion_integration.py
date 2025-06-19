@@ -28,7 +28,6 @@ from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
 @pytest.mark.deep
-
 @pytest.mark.unit
 class TestTypeCoercionIntegration(unittest.TestCase):
     """Test that type coercion is properly integrated into Dana execution."""
@@ -122,7 +121,7 @@ class TestTypeCoercionIntegration(unittest.TestCase):
         with patch.dict("os.environ", {"DANA_AUTO_COERCION": "1", "DANA_LLM_AUTO_COERCION": "1"}):
             # Create a mock reason function
             def mock_reason_function(prompt, context, options=None, use_mock=None):
-                if not hasattr(mock_reason_function, 'return_value'):
+                if not hasattr(mock_reason_function, "return_value"):
                     mock_reason_function.return_value = "29.99"
                 return mock_reason_function.return_value
 

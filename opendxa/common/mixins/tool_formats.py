@@ -50,7 +50,7 @@ class ToolFormat(ABC):
         parts = name.split("__")
         if len(parts) != 3:
             raise ValueError(f"Function name must be in format 'resource_name__resource_id__tool_name', got: {name}")
-        return tuple(parts)
+        return (parts[0], parts[1], parts[2])
 
     @classmethod
     def build_tool_name(cls, resource_name: str, resource_id: str, tool_name: str) -> str:
@@ -92,7 +92,7 @@ class ToolFormat(ABC):
 class McpToolFormat(ToolFormat):
     """Converter for MCP tool format."""
 
-    def __init__(self, fields_to_strip: set[str] = None):
+    def __init__(self, fields_to_strip: set[str] | None = None):
         """Initialize the MCP format converter.
 
         Args:
@@ -130,7 +130,7 @@ class McpToolFormat(ToolFormat):
         # Extract the parameters part of the schema provided by _list_tools
         parameters_schema = schema.get("parameters", {})
         # Strip unwanted fields
-        stripped_parameters_schema = _strip_fields(parameters_schema, self.fields_to_strip)
+        stripped_parameters_schema = _strip_fields(parameters_schema, self.fields_to_strip or set())
 
         return McpTool(
             name=name,
@@ -142,7 +142,7 @@ class McpToolFormat(ToolFormat):
 class OpenAIToolFormat(ToolFormat):
     """Converter for OpenAI function format."""
 
-    def __init__(self, resource_name: str, resource_id: str, fields_to_strip: set[str] = None):
+    def __init__(self, resource_name: str, resource_id: str, fields_to_strip: set[str] | None = None):
         """Initialize the OpenAI format converter.
 
         Args:
@@ -191,7 +191,7 @@ class OpenAIToolFormat(ToolFormat):
             }
         """
         parameters_schema = schema.get("parameters", {})
-        stripped_parameters_schema = _strip_fields(parameters_schema, self.fields_to_strip)
+        stripped_parameters_schema = _strip_fields(parameters_schema, self.fields_to_strip or set())
         return {
             "type": "function",
             "function": {

@@ -56,10 +56,21 @@ class Planner:
 class Plan:
     """Plan for executing plans."""
 
-    def __init__(self, strategy: PlanStrategy, llm: LLMResource):
+    def __init__(self, strategy: PlanStrategy = None, llm: LLMResource = None, question: str = None, steps: list[str] = None):
         """Initialize plan."""
-        self.strategy = strategy
+        self.strategy = strategy or PlanStrategy.DEFAULT
         self.llm = llm
+        self.question = question
+        self.steps = steps or []
+
+
+class PlanFactory:
+    """Factory for creating plans."""
+
+    @classmethod
+    def create_basic_plan(cls, question: str, steps: list[str]) -> Plan:
+        """Create a basic plan with a question and steps."""
+        return Plan(question=question, steps=steps)
 
 
 class Reasoner:

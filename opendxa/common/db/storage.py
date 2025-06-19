@@ -25,7 +25,7 @@ class KnowledgeDBStorage(SqlDBStorage[KnowledgeDBModel]):
         # KnowledgeDBModel defines the schema for knowledge base entries,
         # which are stored in SQL databases. This ensures that the storage
         # mechanism is correctly configured for handling knowledge data.
-        super().__init__(KnowledgeDBModel, connection_string)
+        super().__init__(connection_string, KnowledgeDBModel)
 
 
 class MemoryDBStorage(VectorDBStorage[M]):

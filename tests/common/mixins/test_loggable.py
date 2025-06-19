@@ -44,10 +44,10 @@ class TestLoggable:
         # With DXA_LOGGER already configured, Loggable should not call configure()
         # Instead, it should rely on the global configuration
         loggable = Loggable(level=logging.DEBUG)
-        
+
         # configure() should not be called since DXA_LOGGER is already configured
         mock_logger.configure.assert_not_called()
-        
+
         # But if level is explicitly provided, setLevel should be called
         mock_logger.setLevel.assert_called_once_with(logging.DEBUG)
 
@@ -55,10 +55,10 @@ class TestLoggable:
         """Test initialization with log_data enabled."""
         # Note: log_data parameter is now deprecated and ignored
         loggable = Loggable(log_data=True)
-        
+
         # configure() should not be called since DXA_LOGGER is already configured
         mock_logger.configure.assert_not_called()
-        
+
         # No special handling for log_data in new implementation
         # It's accepted for backward compatibility but ignored
 

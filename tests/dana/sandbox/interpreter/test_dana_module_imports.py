@@ -31,6 +31,7 @@ class TestDanaModuleImports:
 
         # Reset and reinitialize the module system to pick up the updated DANAPATH
         from opendxa.dana.module.core import initialize_module_system, reset_module_system
+
         reset_module_system()
         initialize_module_system()
 

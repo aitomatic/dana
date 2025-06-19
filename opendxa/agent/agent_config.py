@@ -128,9 +128,9 @@ class AgentConfig(BaseModel, Loggable):
 
         # Try relative to config directory
         config_dir = Path(__file__).parent
-        config_path = config_dir / path
-        if config_path.exists():
-            return self._load_json_file(config_path)
+        config_file_path = config_dir / path
+        if config_file_path.exists():
+            return self._load_json_file(config_file_path)
 
         # Try current working directory
         cwd_path = Path.cwd() / path

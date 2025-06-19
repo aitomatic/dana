@@ -70,7 +70,7 @@ class AgentResource(BaseResource):
         return resource
 
     @ToolCallable.tool
-    async def query(self, request: BaseRequest = None) -> BaseResponse:
+    async def query(self, request: BaseRequest | None = None) -> BaseResponse:
         """Query an agent from the registry.
 
         Args:

@@ -4,8 +4,6 @@ import pytest
 
 
 @pytest.mark.deep
-
-
 class TestPipeline(unittest.TestCase):
     def test_placeholder(self):
         self.assertTrue(True)
