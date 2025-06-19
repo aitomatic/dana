@@ -39,7 +39,7 @@ class WoTResource(BaseResource):
                 return await self._handle_interaction(self.things[thing_id], request)
             else:
                 return BaseResponse.error_response(f"Thing not found: {thing_id}")
-        
+
         # For general queries, return available things
         return BaseResponse.success_response({"available_things": list(self.things.keys())})
 

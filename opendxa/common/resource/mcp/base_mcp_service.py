@@ -1,7 +1,6 @@
 """Base MCP Service class"""
 
 import functools
-from abc import ABC
 from typing import Literal, Optional
 
 from mcp.server.fastmcp import FastMCP
@@ -14,7 +13,7 @@ _SELF: Optional["BaseMcpService"] = None
 _TOOL_NAMES = []
 
 
-class BaseMcpService(ABC):
+class BaseMcpService:
     """Baes MCP Service class"""
 
     def __init__(self, transport: Literal["stdio", "sse"] = "stdio") -> None:

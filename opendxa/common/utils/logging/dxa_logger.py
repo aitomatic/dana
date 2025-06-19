@@ -73,7 +73,7 @@ class DXALogger:
         **kwargs: Any,  # Accept but ignore extra args for backward compatibility
     ) -> None:
         """Configure the logger with basic settings.
-        
+
         Only affects OpenDXA loggers to avoid interfering with third-party libraries.
         """
         if self._configured:
@@ -88,7 +88,7 @@ class DXALogger:
             # Remove any existing handlers on the OpenDXA logger
             for handler in opendxa_root.handlers[:]:
                 opendxa_root.removeHandler(handler)
-                
+
             handler = logging.StreamHandler()
             formatter = ColoredFormatter(fmt=fmt, datefmt=datefmt)
             handler.setFormatter(formatter)

@@ -154,7 +154,7 @@ class McpResource(BaseResource):
         self.server_id = Misc.generate_base64_uuid(8)
 
         # Parse transport params
-        if isinstance(transport_params, (StdioTransportParams, HttpTransportParams)):
+        if isinstance(transport_params, StdioTransportParams | HttpTransportParams):
             self.transport_params = transport_params
         else:
             # Default to stdio transport with required server_script
@@ -353,7 +353,7 @@ class McpResource(BaseResource):
                 self.info(f"Progress: {progress}/{total} ({percentage:.1f}%)")
 
             # Handle streaming responses
-            if isinstance(result, (list, tuple)) and len(result) > 0:
+            if isinstance(result, list | tuple) and len(result) > 0:
                 if isinstance(result[0], tuple) and result[0][0] == "stream":
                     # Process streaming response
                     stream_data = []
@@ -415,7 +415,7 @@ class McpResource(BaseResource):
                         if hasattr(result, "tools"):
                             # Direct tools attribute
                             tools.extend(result.tools)
-                        elif isinstance(result, (list, tuple)):
+                        elif isinstance(result, list | tuple):
                             # Tuple format response
                             for item in result:
                                 if isinstance(item, tuple) and item[0] == "tools":

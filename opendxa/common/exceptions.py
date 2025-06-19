@@ -125,7 +125,7 @@ class CommunicationError(OpenDXAError):
 
 class DXAValidationError(OpenDXAError):
     """OpenDXA validation related errors.
-    
+
     Note: Renamed from ValidationError to avoid conflicts with pydantic.ValidationError.
     """
 

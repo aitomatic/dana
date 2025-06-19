@@ -70,11 +70,11 @@ class ConfigLoader(Loggable):
 
     def __init__(self):
         """Initialize the ConfigLoader instance.
-        
+
         Only initializes once due to singleton pattern.
         """
         # Check if already initialized to avoid double initialization
-        if not hasattr(self, '_initialized'):
+        if not hasattr(self, "_initialized"):
             super().__init__()  # Initialize Loggable mixin
             self._initialized = True
 
