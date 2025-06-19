@@ -440,9 +440,7 @@ class Configurable(Loggable):
         return yml_path
 
     @classmethod
-    def get_prompt(
-        cls, config_path: str | None = None, prompt_ref: str | None = None, custom_prompts: dict[str, str] | None = None
-    ) -> str:
+    def get_prompt(cls, config_path: str | None = None, prompt_ref: str | None = None, custom_prompts: dict[str, str] | None = None) -> str:
         """Get prompt by reference.
 
         Args:

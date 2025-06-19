@@ -3,8 +3,13 @@ Simplified DXALogger with core logging functionality.
 """
 
 import logging
+from collections.abc import Generator
+from contextlib import contextmanager
 from functools import lru_cache
-from typing import Any, cast
+from typing import Any, Literal, TypeVar, overload
+
+T = TypeVar("T")
+LogLevel = Literal["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 
 
 class ColoredFormatter(logging.Formatter):
@@ -16,10 +21,11 @@ class ColoredFormatter(logging.Formatter):
         "INFO": "\033[32m",  # Green
         "WARNING": "\033[33m",  # Yellow
         "ERROR": "\033[31m",  # Red
+        "CRITICAL": "\033[35m",  # Magenta
         "RESET": "\033[0m",  # Reset
     }
 
-    def format(self, record):
+    def format(self, record: logging.LogRecord) -> str:
         # Get the original format
         formatted = super().format(record)
 
@@ -36,15 +42,16 @@ class ColoredFormatter(logging.Formatter):
 
 
 class DXALogger:
-    """Simple logger with prefix support."""
+    """Simple logger with prefix support and enhanced functionality."""
 
     # Logging level constants
     DEBUG = logging.DEBUG
     INFO = logging.INFO
     WARNING = logging.WARNING
     ERROR = logging.ERROR
+    CRITICAL = logging.CRITICAL
 
-    def __init__(self, name: str = "opendxa", prefix: str | None = None):
+    def __init__(self, name: str = "opendxa", prefix: str | None = None) -> None:
         """Initialize the logger.
 
         Args:
@@ -54,7 +61,6 @@ class DXALogger:
         self.logger = logging.getLogger(name)
         self.prefix = prefix
         self._configured = False
-        self.log_data = False
         # Allow propagation to parent loggers
         self.logger.propagate = True
 
@@ -64,8 +70,8 @@ class DXALogger:
         fmt: str = "%(asctime)s - [%(name)s] %(levelname)s - %(message)s",
         datefmt: str = "%H:%M:%S",
         console: bool = True,
-        log_data: bool = False,
-    ):
+        **kwargs: Any,  # Accept but ignore extra args for backward compatibility
+    ) -> None:
         """Configure the logger with basic settings."""
         if self._configured:
             return
@@ -92,29 +98,27 @@ class DXALogger:
             if isinstance(logger, logging.Logger):
                 logger.setLevel(level)
 
-        self.log_data = log_data
         self._configured = True
 
-    def setBasicConfig(self, *args, **kwargs):
-        """Configure the logging system with basic settings."""
-        logging.basicConfig(*args, **kwargs)
-
-    def setLevel(self, level: int, scope: str | None = "*"):
+    def setLevel(self, level: int, scope: str | None = "opendxa") -> None:
         """Set the logging level with configurable scope.
+
+        By default, sets level for all OpenDXA components. This ensures that
+        DXA_LOGGER.setLevel(DEBUG) affects the entire OpenDXA system.
 
         Args:
             level: The logging level to set (e.g., logging.DEBUG, logging.INFO)
             scope: Optional scope parameter:
-                  - "*" (default): Set level for all loggers
+                  - "opendxa" (default): Set level for all OpenDXA components
+                  - "*": Set level for all loggers system-wide
                   - None: Set level only for this logger instance
-                  - "opendxa": Set level for all loggers starting with "opendxa"
-                  - "opendxa.agent": Set level for all loggers starting with "opendxa.agent"
+                  - "opendxa.agent": Set level for specific OpenDXA subsystem
         """
         if scope is None:
             # Set level only for this logger instance
             self.logger.setLevel(level)
         elif scope == "*":
-            # Set level for all loggers
+            # Set level for all loggers system-wide
             logging.getLogger().setLevel(level)
             for logger_name in logging.Logger.manager.loggerDict:
                 logger = logging.getLogger(logger_name)
@@ -124,12 +128,21 @@ class DXALogger:
             # Set level for all loggers starting with the given scope
             scope_logger = logging.getLogger(scope)
             scope_logger.setLevel(level)
-            # Also set all child loggers
-            for logger_name in logging.Logger.manager.loggerDict:
-                if logger_name.startswith(scope + "."):
-                    logger = logging.getLogger(logger_name)
-                    if isinstance(logger, logging.Logger):
-                        logger.setLevel(level)
+
+            # Update existing loggers in the scope (for future inheritance)
+            self._update_scope_loggers(level, scope)
+
+    def _update_scope_loggers(self, level: int, scope: str) -> None:
+        """Update all existing loggers within the specified scope.
+
+        This ensures that existing loggers that may have been configured
+        independently still respect the new level setting.
+        """
+        for logger_name in logging.Logger.manager.loggerDict:
+            if logger_name.startswith(f"{scope}.") or logger_name == scope:
+                logger = logging.getLogger(logger_name)
+                if isinstance(logger, logging.Logger):
+                    logger.setLevel(level)
 
     def _format_message(self, message: str) -> str:
         """Add prefix to message if configured."""
@@ -137,49 +150,52 @@ class DXALogger:
             return f"[{self.prefix}] {message}"
         return message
 
-    def log(self, level: int | str, message: str, *args, **context):
+    def _log(self, level: int, message: str, *args: Any, **kwargs: Any) -> None:
+        """Internal method to handle all logging."""
+        # Skip expensive formatting if logging is disabled
+        if not self.logger.isEnabledFor(level):
+            return
+
+        formatted = self._format_message(message)
+        self.logger.log(level, formatted, *args, **kwargs)
+
+    @overload
+    def log(self, level: int, message: str, *args: Any, **kwargs: Any) -> None: ...
+
+    @overload
+    def log(self, level: LogLevel, message: str, *args: Any, **kwargs: Any) -> None: ...
+
+    def log(self, level: int | LogLevel, message: str, *args: Any, **kwargs: Any) -> None:
         """Log message with specified level."""
-        formatted = self._format_message(message)
-
         if isinstance(level, str):
-            level = cast(int, getattr(logging, level))
+            level = getattr(logging, level)
+        self._log(level, message, *args, **kwargs)
 
-        if self.log_data:
-            self.logger.log(level, formatted, *args, extra=context)
-        else:
-            self.logger.log(level, formatted, *args)
-
-    def info(self, message: str, *args, **context):
-        """Log informational message."""
-        formatted = self._format_message(message)
-        if self.log_data:
-            self.logger.info(formatted, *args, extra=context)
-        else:
-            self.logger.info(formatted, *args)
-
-    def debug(self, message: str, *args, **context):
+    def debug(self, message: str, *args: Any, **kwargs: Any) -> None:
         """Log debug message."""
-        formatted = self._format_message(message)
-        if self.log_data:
-            self.logger.debug(formatted, *args, extra=context)
-        else:
-            self.logger.debug(formatted, *args)
+        self._log(logging.DEBUG, message, *args, **kwargs)
 
-    def warning(self, message: str, *args, **context):
+    def info(self, message: str, *args: Any, **kwargs: Any) -> None:
+        """Log informational message."""
+        self._log(logging.INFO, message, *args, **kwargs)
+
+    def warning(self, message: str, *args: Any, **kwargs: Any) -> None:
         """Log warning message."""
-        formatted = self._format_message(message)
-        if self.log_data:
-            self.logger.warning(formatted, *args, extra=context)
-        else:
-            self.logger.warning(formatted, *args)
+        self._log(logging.WARNING, message, *args, **kwargs)
 
-    def error(self, message: str, *args, **context):
+    def error(self, message: str, *args: Any, **kwargs: Any) -> None:
         """Log error message."""
-        formatted = self._format_message(message)
-        if self.log_data:
-            self.logger.error(formatted, *args, extra=context)
-        else:
-            self.logger.error(formatted, *args)
+        self._log(logging.ERROR, message, *args, **kwargs)
+
+    def critical(self, message: str, *args: Any, **kwargs: Any) -> None:
+        """Log critical message."""
+        self._log(logging.CRITICAL, message, *args, **kwargs)
+
+    @overload
+    def getLogger(self, name: str, prefix: str | None = None) -> "DXALogger": ...
+
+    @overload
+    def getLogger(self, obj: T, prefix: str | None = None) -> "DXALogger": ...
 
     def getLogger(self, name_or_obj: str | Any, prefix: str | None = None) -> "DXALogger":
         """Create a new logger instance.
@@ -188,6 +204,7 @@ class DXALogger:
             name_or_obj: Either a string name for the logger, or an object to create a logger for.
                         If an object is provided, the logger name will be based on the object's
                         class module and name.
+            prefix: Optional prefix for log messages
 
         Returns:
             DXALogger instance
@@ -198,17 +215,68 @@ class DXALogger:
             return DXALogger.getLoggerForClass(name_or_obj.__class__, prefix or self.prefix)
 
     @classmethod
-    @lru_cache(maxsize=32)
-    def getLoggerForClass(cls, for_class: Any, prefix: str | None = None) -> "DXALogger":
+    @lru_cache(maxsize=128)  # Increased cache size for better performance
+    def getLoggerForClass(cls, for_class: type[Any], prefix: str | None = None) -> "DXALogger":
         """Get a logger for a class.
 
         Args:
             for_class: The class to get the logger for.
+            prefix: Optional prefix for log messages
 
         Returns:
             DXALogger instance
         """
         return DXALogger(f"{for_class.__module__}.{for_class.__name__}", prefix)
+
+    @contextmanager
+    def with_level(self, level: int) -> Generator[None, None, None]:
+        """Context manager to temporarily change log level.
+
+        Example:
+            >>> with DXA_LOGGER.with_level(logging.DEBUG):
+            ...     DXA_LOGGER.debug("This will be logged")
+            >>> DXA_LOGGER.debug("This might not be logged")
+        """
+        original_level = self.logger.level
+        self.logger.setLevel(level)
+        try:
+            yield
+        finally:
+            self.logger.setLevel(original_level)
+
+    @contextmanager
+    def with_prefix(self, prefix: str) -> Generator["DXALogger", None, None]:
+        """Context manager to temporarily use a different prefix.
+
+        Example:
+            >>> with DXA_LOGGER.with_prefix("PROCESSING") as logger:
+            ...     logger.info("Starting processing")
+        """
+        temp_logger = DXALogger(self.logger.name, prefix)
+        temp_logger.logger = self.logger  # Share the same underlying logger
+        temp_logger._configured = self._configured
+        yield temp_logger
+
+    def lazy(self, level: int, message_func: Any, *args: Any, **kwargs: Any) -> None:
+        """Log with lazy evaluation of expensive message generation.
+
+        Example:
+            >>> DXA_LOGGER.lazy(
+            ...     logging.DEBUG,
+            ...     lambda: f"Expensive computation: {expensive_function()}"
+            ... )
+        """
+        if self.logger.isEnabledFor(level):
+            message = message_func() if callable(message_func) else str(message_func)
+            self._log(level, message, *args, **kwargs)
+
+    # Backward compatibility - remove eventually
+    def setBasicConfig(self, *args: Any, **kwargs: Any) -> None:
+        """Configure the logging system with basic settings.
+
+        Deprecated: Use configure() instead.
+        """
+        logging.basicConfig(*args, **kwargs)
 
 
 # Create global logger instance

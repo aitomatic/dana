@@ -247,7 +247,7 @@ class Translator:
         if examples:
             examples_text = "\n\nHere are some examples of correct translations:\n"
             for i, (nl, dana) in enumerate(examples[:5]):  # Limit to 5 examples
-                examples_text += f"\nExample {i+1}:\nInput: {nl}\nOutput: {dana}\n"
+                examples_text += f"\nExample {i + 1}:\nInput: {nl}\nOutput: {dana}\n"
 
         system_messages = [
             "You are an expert Dana programmer. Your task is to translate natural language into valid Dana code.",

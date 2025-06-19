@@ -67,13 +67,7 @@ class FunctionExecutionErrorHandler:
             True if this is a positional argument error
         """
         error_msg = str(error).lower()
-        positional_indicators = [
-            "takes",
-            "positional argument",
-            "too many positional arguments",
-            "missing",
-            "required positional argument"
-        ]
+        positional_indicators = ["takes", "positional argument", "too many positional arguments", "missing", "required positional argument"]
         return any(indicator in error_msg for indicator in positional_indicators)
 
     def _handle_registry_error(self, error: FunctionRegistryError, node: FunctionCall) -> Any:
@@ -86,10 +80,7 @@ class FunctionExecutionErrorHandler:
         Returns:
             Error response
         """
-        return self.executor._create_error_response(
-            f"Function '{node.name}' not found in registry",
-            original_error=error
-        )
+        return self.executor._create_error_response(f"Function '{node.name}' not found in registry", original_error=error)
 
     def format_error_message(self, error: Exception, function_name: str, context: str = "") -> str:
         """Format a comprehensive error message.
@@ -226,7 +217,7 @@ class PositionalErrorRecoveryStrategy:
         # This is a simplified implementation
         # In practice, you'd need function signature inspection
         converted_kwargs = {}
-        
+
         # Convert numeric keys to common parameter names
         for key, value in node.args.items():
             if key.isdigit():
@@ -239,11 +230,7 @@ class PositionalErrorRecoveryStrategy:
                 converted_kwargs[key] = value
 
         # Create a new node with converted arguments
-        converted_node = FunctionCall(
-            name=node.name,
-            args=converted_kwargs,
-            location=node.location
-        )
+        converted_node = FunctionCall(name=node.name, args=converted_kwargs, location=node.location)
 
         return self.executor.execute_function_call(converted_node, context)
 
@@ -262,7 +249,7 @@ class PositionalErrorRecoveryStrategy:
 
         # Try removing the last argument
         reduced_args = dict(node.args)
-        
+
         # Find the highest numeric key and remove it
         numeric_keys = [k for k in reduced_args.keys() if k.isdigit()]
         if numeric_keys:
@@ -270,11 +257,7 @@ class PositionalErrorRecoveryStrategy:
             del reduced_args[highest_key]
 
             # Create a new node with reduced arguments
-            reduced_node = FunctionCall(
-                name=node.name,
-                args=reduced_args,
-                location=node.location
-            )
+            reduced_node = FunctionCall(name=node.name, args=reduced_args, location=node.location)
 
             return self.executor.execute_function_call(reduced_node, context)
 
@@ -332,17 +315,20 @@ class PositionalErrorRecoveryStrategy:
             True if this is a positional argument error
         """
         error_msg = str(error).lower()
-        positional_indicators = [
-            "takes",
-            "positional argument",
-            "too many positional arguments",
-            "missing",
-            "required positional argument"
-        ]
+        positional_indicators = ["takes", "positional argument", "too many positional arguments", "missing", "required positional argument"]
         return any(indicator in error_msg for indicator in positional_indicators)
 
-    def recover(self, error: Exception, node: FunctionCall, registry: Any, context: Any,
-                evaluated_args: list[Any], evaluated_kwargs: dict[str, Any], func_name: str, executor: Any) -> Any:
+    def recover(
+        self,
+        error: Exception,
+        node: FunctionCall,
+        registry: Any,
+        context: Any,
+        evaluated_args: list[Any],
+        evaluated_kwargs: dict[str, Any],
+        func_name: str,
+        executor: Any,
+    ) -> Any:
         """Recover from the error by trying different execution strategies.
 
         Args:

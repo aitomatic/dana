@@ -352,7 +352,7 @@ class PythonicFunctionFactory:
         error_msg = f"""
 Built-in function '{name}' is not supported in Dana sandbox.
 
-Reason: {reason.value.replace('_', ' ').title()}
+Reason: {reason.value.replace("_", " ").title()}
 Details: {message}
 
 Alternative: {alternative}
@@ -448,7 +448,7 @@ This function may be:
 2. Not yet implemented in Dana's built-in function set
 3. Available through a different Dana function or syntax
 
-Supported built-ins: {', '.join(sorted(cls.FUNCTION_CONFIGS.keys()))}
+Supported built-ins: {", ".join(sorted(cls.FUNCTION_CONFIGS.keys()))}
 
 If you need this functionality, consider:
 - Using an alternative from the supported built-ins list
@@ -459,7 +459,7 @@ If you need this functionality, consider:
             error_msg = f"""
 Function '{name}' is not a recognized built-in function.
 
-Available built-ins: {', '.join(sorted(cls.FUNCTION_CONFIGS.keys()))}
+Available built-ins: {", ".join(sorted(cls.FUNCTION_CONFIGS.keys()))}
 
 If this is a custom function, make sure it's:
 - Defined in your Dana code
@@ -483,9 +483,7 @@ If this is a custom function, make sure it's:
         if not valid_signature:
             arg_types = [type(arg).__name__ for arg in args]
             expected_sigs = [f"({', '.join(t.__name__ for t in sig)})" for sig in expected_signatures]
-            raise TypeError(
-                f"Invalid arguments for '{name}': got ({', '.join(arg_types)}), " f"expected one of: {', '.join(expected_sigs)}"
-            )
+            raise TypeError(f"Invalid arguments for '{name}': got ({', '.join(arg_types)}), expected one of: {', '.join(expected_sigs)}")
 
     @classmethod
     def _execute_with_guards(cls, func: callable, args: tuple):

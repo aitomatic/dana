@@ -68,9 +68,12 @@ class TestConfigurable:
         class TestConfig(Configurable):
             default_config = {"setting1": "default_value", "setting2": 42}
 
-        obj = TestConfig(config_path="test_configurable.yaml")
-        assert obj.config["setting1"] == "default_value"
-        assert obj.config["setting2"] == 42
+        # Mock the path resolution and file existence
+        with patch.object(TestConfig, 'get_config_path', return_value=Path("test_configurable.yaml")):
+            obj = TestConfig(config_path="test_configurable.yaml")
+            # File values should override defaults (this fixes the original bug)
+            assert obj.config["setting1"] == "test_value"  # From file
+            assert obj.config["setting2"] == 123  # From file
 
     def test_validation_required(self):
         """Test required field validation."""

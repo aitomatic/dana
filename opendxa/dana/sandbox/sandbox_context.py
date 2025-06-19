@@ -178,27 +178,33 @@ class SandboxContext:
         """Get a value from the context using a scoped key.
 
         Args:
-            key: The scoped key (e.g., 'local.variable')
+            key: The scoped key (e.g., 'local.variable' or 'private:test')
             default: Default value if key not found
 
         Returns:
             The value associated with the key, or default if not found
         """
-        if "." not in key:
-            # Treat unscoped keys as local
-            key = f"local.{key}"
-
         try:
-            scope, var_name = key.split(".", 1)
+            scope, var_name = self._validate_key(key)
+
+            # For global scopes, search in root context
+            if scope in RuntimeScopes.GLOBAL:
+                root = self
+                while root._parent is not None:
+                    root = root._parent
+                if scope in root._state and var_name in root._state[scope]:
+                    return root._state[scope][var_name]
+                return default
+
+            # For local scope, search current context first
             if scope in self._state and var_name in self._state[scope]:
-                result = self._state[scope][var_name]
-                return result
+                return self._state[scope][var_name]
             elif self._parent:
                 return self._parent.get(key, default)
             else:
                 return default
-        except ValueError:
-            # Invalid key format
+        except StateError:
+            # Invalid key format or unknown scope
             return default
 
     def get_execution_status(self) -> ExecutionStatus:

@@ -27,6 +27,7 @@ from opendxa.dana.sandbox.interpreter.executor.function_name_utils import Functi
 from opendxa.dana.sandbox.interpreter.executor.function_resolver import FunctionResolver
 from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
 from opendxa.dana.sandbox.parser.ast import (
+    AttributeAccess,
     FStringExpression,
     FunctionCall,
     FunctionDefinition,
@@ -233,6 +234,12 @@ class FunctionExecutor(BaseExecutor):
 
         # Phase 2.5: Check for struct instantiation
         self.debug("Checking for struct instantiation...")
+        # Phase 2.5: Handle method calls (AttributeAccess) before other processing
+        from opendxa.dana.sandbox.parser.ast import AttributeAccess
+
+        if isinstance(node.name, AttributeAccess):
+            return self.__execute_method_call(node, context, evaluated_args, evaluated_kwargs)
+
         struct_result = self.__check_struct_instantiation(node, context, evaluated_kwargs)
         if struct_result is not None:
             self.debug(f"Found struct instantiation, returning: {struct_result}")
@@ -242,6 +249,7 @@ class FunctionExecutor(BaseExecutor):
 
         # Phase 3: Parse function name and resolve function
         name_info = FunctionNameInfo.from_node(node)
+
         resolved_func = self.function_resolver.resolve_function(name_info, context, registry)
 
         if resolved_func:
@@ -447,9 +455,15 @@ class FunctionExecutor(BaseExecutor):
         """
         # Try to resolve and execute the function directly for better control
         # Try multiple name variations like the resolver does
-        names_to_try = [node.name]
-        if "." in node.name:
-            names_to_try.append(func_name)  # Try just the base function name
+        # Handle both string names and AttributeAccess names
+        if isinstance(node.name, str):
+            names_to_try = [node.name]
+            if "." in node.name:
+                names_to_try.append(func_name)  # Try just the base function name
+        else:
+            # For AttributeAccess, we shouldn't reach this code path since method calls
+            # are handled separately, but provide fallback for safety
+            names_to_try = [str(node.name)]
 
         for name_to_try in names_to_try:
             try:
@@ -628,6 +642,11 @@ class FunctionExecutor(BaseExecutor):
         from opendxa.dana.sandbox.interpreter.struct_system import StructTypeRegistry, create_struct_instance
 
         # Extract the base struct name (remove scope prefix if present)
+        # Only check for struct instantiation with string function names
+        if not isinstance(node.name, str):
+            # AttributeAccess names are method calls, not struct instantiation
+            return None
+
         func_name = node.name
         if "." in func_name:
             # Handle scoped names like "local.Point" -> "Point"
@@ -660,3 +679,123 @@ class FunctionExecutor(BaseExecutor):
                 return None
 
         return None
+
+    def __execute_method_call(
+        self,
+        node: FunctionCall,
+        context: SandboxContext,
+        evaluated_args: list[Any],
+        evaluated_kwargs: dict[str, Any],
+    ) -> Any:
+        """INTERNAL: Execute method calls (obj.method()) with AttributeAccess function names.
+
+        Dana method call semantics: obj.method(args) transforms to method(obj, args)
+
+        Args:
+            node: The function call node with AttributeAccess name
+            context: The execution context
+            evaluated_args: Evaluated positional arguments
+            evaluated_kwargs: Evaluated keyword arguments
+
+        Returns:
+            The method call result
+
+        Raises:
+            SandboxError: If method call fails
+        """
+
+        # Extract AttributeAccess information
+        if not isinstance(node.name, AttributeAccess):
+            raise SandboxError(f"Expected AttributeAccess for method call, got {type(node.name)}")
+
+        attr_access = node.name
+        method_name = attr_access.attribute
+
+        try:
+            # Step 1: Evaluate the target object
+            target_object = self.parent.execute(attr_access.object, context)
+            self.debug(f"Method call target object: {target_object} (type: {type(target_object)})")
+
+            # Step 2: Try Dana struct method transformation first (obj.method() -> method(obj))
+            # Try both function registry and context-based functions
+            try:
+                # Prepend the target object as the first argument
+                transformed_args = [target_object] + evaluated_args
+
+                # Try function registry first
+                if self.function_registry is not None:
+                    try:
+                        result = self.function_registry.call(method_name, context, None, *transformed_args, **evaluated_kwargs)
+                        self.debug(f"Dana method transformation successful (registry): {method_name}({target_object}, ...) = {result}")
+                        return result
+                    except Exception as registry_error:
+                        self.debug(f"Function registry lookup failed: {registry_error}")
+
+                        # Try context-based function lookup for user-defined functions
+                func_obj = context.get(f"local.{method_name}")
+                if func_obj is not None:
+                    self.debug(f"Found user-defined function in context: {method_name} (type: {type(func_obj)})")
+
+                    # Check if it's a DanaFunction object
+                    from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
+
+                    if isinstance(func_obj, DanaFunction):
+                        result = func_obj.execute(context, *transformed_args, **evaluated_kwargs)
+                        self.debug(f"Dana method transformation successful (context): {method_name}({target_object}, ...) = {result}")
+                        return result
+                    else:
+                        # Fallback to old method for other function types
+                        result = self._execute_user_defined_function(func_obj, transformed_args, context)
+                        self.debug(
+                            f"Dana method transformation successful (context fallback): {method_name}({target_object}, ...) = {result}"
+                        )
+                        return result
+
+                # Try other scope lookups
+                for scope in ["private", "public", "system"]:
+                    func_obj = context.get(f"{scope}.{method_name}")
+                    if func_obj is not None:
+                        self.debug(f"Found user-defined function in {scope} scope: {method_name} (type: {type(func_obj)})")
+
+                        # Check if it's a DanaFunction object
+                        from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
+
+                        if isinstance(func_obj, DanaFunction):
+                            result = func_obj.execute(context, *transformed_args, **evaluated_kwargs)
+                            self.debug(f"Dana method transformation successful ({scope}): {method_name}({target_object}, ...) = {result}")
+                            return result
+                        else:
+                            # Fallback to old method for other function types
+                            result = self._execute_user_defined_function(func_obj, transformed_args, context)
+                            self.debug(
+                                f"Dana method transformation successful ({scope} fallback): {method_name}({target_object}, ...) = {result}"
+                            )
+                            return result
+
+            except Exception as dana_method_error:
+                self.debug(f"Dana method transformation failed: {dana_method_error}")
+
+            # Step 3: Fallback to Python object method calls
+            if hasattr(target_object, method_name):
+                method = getattr(target_object, method_name)
+                self.debug(f"Found Python method: {method}")
+
+                # Check if it's callable
+                if not callable(method):
+                    raise SandboxError(f"Attribute '{method_name}' of {target_object} is not callable")
+
+                # Call the Python method with original arguments
+                self.debug(f"Calling Python method {method_name} with args={evaluated_args}, kwargs={evaluated_kwargs}")
+                result = method(*evaluated_args, **evaluated_kwargs)
+                self.debug(f"Python method call result: {result}")
+                return result
+            else:
+                # Neither Dana method nor Python method found
+                raise SandboxError(f"Object {target_object} has no method '{method_name}'")
+
+        except SandboxError:
+            # Re-raise SandboxErrors as-is
+            raise
+        except Exception as e:
+            # Convert other exceptions to SandboxError with context
+            raise SandboxError(f"Method call '{attr_access}' failed: {e}")

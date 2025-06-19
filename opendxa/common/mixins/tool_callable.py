@@ -279,7 +279,7 @@ class ToolCallable(Registerable, Loggable):
             formatted_tools.append(formatted_tool)
 
         return formatted_tools
-    
+
     def list_tools(self) -> list[Any]:
         """List all tools available to the agent in raw format."""
         if self.__openai_function_list_cache is not None:

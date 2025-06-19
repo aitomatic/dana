@@ -16,24 +16,17 @@ from opendxa.contrib.dana_mcp_a2a.common.resource.mcp.client.mcp_client import M
 
 class MCPResource(BaseResource):
     """MCP Resource for OpenDXA integration.
-    
+
     Example:
-        mcp_resource = MCPResource("filesystem", "http://localhost:3000/sse")    
+        mcp_resource = MCPResource("filesystem", "http://localhost:3000/sse")
         response = await mcp_resource.query(BaseRequest(
             arguments={"tool": "read_file", "path": "/tmp/test.txt"}
         ))
     """
-    
-    def __init__(
-        self,
-        name: str,
-        description: str | None = None,
-        config: dict[str, Any] | None = None,
-        *client_args,
-        **client_kwargs
-    ):
+
+    def __init__(self, name: str, description: str | None = None, config: dict[str, Any] | None = None, *client_args, **client_kwargs):
         """Initialize MCP resource.
-        
+
         Args:
             name: Resource name
             description: Optional resource description
@@ -42,18 +35,20 @@ class MCPResource(BaseResource):
             **client_kwargs: Additional MCP client parameters
         """
         super().__init__(name, description, config)
-        
+
         self.client = MCPClient(*client_args, **client_kwargs)
         self._mcp_tools_cache: list[McpTool] | None = None
-        self.list_tools() # Pre-fetch the MCP tools first
+        self.list_tools()  # Pre-fetch the MCP tools first
 
-    def mcp_tool_decorator(self, func_name:str) -> Any:
+    def mcp_tool_decorator(self, func_name: str) -> Any:
         """Decorator to wrap a function as an MCP tool."""
+
         def wrapper(**kwargs) -> Any:
             if inspect.iscoroutinefunction(self.call_tool):
                 return Misc.safe_asyncio_run(self.call_tool, func_name, kwargs)
             else:
                 return self.call_tool(func_name, kwargs)
+
         return wrapper
 
     def __getattr__(self, name: str) -> Any:
@@ -65,12 +60,12 @@ class MCPResource(BaseResource):
                 if tool.name == name:
                     return self.mcp_tool_decorator(tool.name)
             raise
-        
+
     async def initialize(self) -> None:
         """Initialize the MCP resource."""
         await super().initialize()
         await self._discover_tools()
-            
+
     async def _discover_tools(self) -> None:
         """Discover and cache tools from MCP server."""
         try:
@@ -79,7 +74,7 @@ class MCPResource(BaseResource):
         except Exception:
             self._is_available = False
             raise
-            
+
     def _list_tools(self, format_converter: OpenAIToolFormat) -> list[Any]:
         """Return cached tools in OpenAI format."""
         if not self._mcp_tools_cache:
@@ -90,61 +85,64 @@ class MCPResource(BaseResource):
         for tool in self._mcp_tools_cache:
             tools.append(format_converter.from_mcp_tool_format(tool))
         return tools
-    
-        
+
     async def call_tool(self, tool_name: str, arguments: dict[str, Any]) -> Any:
         """Execute MCP tool."""
         self.debug(f"Calling tool {tool_name} with arguments {arguments}")
         print(f"Calling tool {tool_name} with arguments {arguments}")
         async with self.client as _client:
-            results = await _client.call_tool(tool_name, arguments) # This will raise ToolError if the tool call fails.
+            results = await _client.call_tool(tool_name, arguments)  # This will raise ToolError if the tool call fails.
 
-        assert len(results) == 1, f"Tool {tool_name} with arguments {arguments} returned {len(results)} results, expected 1. \nresults: {results}"
-        
+        assert len(results) == 1, (
+            f"Tool {tool_name} with arguments {arguments} returned {len(results)} results, expected 1. \nresults: {results}"
+        )
+
         if Misc.get_field(results[0], "type") == "text":
             return Misc.get_field(results[0], "text")
         else:
             return results[0]
-            
+
     async def query(self, request: BaseRequest) -> BaseResponse:
         """Handle resource queries by calling MCP tools."""
         if not self._is_available:
             return BaseResponse(success=False, error=f"Resource {self.name} not available")
-            
+
         arguments = request.arguments
         tool_name = arguments.get("tool") or arguments.get("tool_name")
-        
+
         if not tool_name:
             return BaseResponse(success=False, error="No tool specified")
-            
+
         tool_args = arguments.get("arguments", {})
         if not tool_args:
             # Use all arguments except tool identifier
             tool_args = {k: v for k, v in arguments.items() if k not in ["tool", "tool_name"]}
-            
+
         try:
             result = await self.call_tool(tool_name, tool_args)
             return BaseResponse(success=True, content=result)
         except Exception as e:
             return BaseResponse(success=False, error=str(e))
-            
+
     def can_handle(self, request: BaseRequest) -> bool:
         """Check if this resource can handle the request."""
         if not isinstance(request, BaseRequest) or not request.arguments:
             return False
-            
+
         arguments = request.arguments
         has_tool = "tool" in arguments or "tool_name" in arguments
-        
+
         return has_tool and self._is_available
+
 
 if __name__ == "__main__":
     import asyncio
+
     async def main():
         mcp_resource = MCPResource("sensors", "http://localhost:8880/sensors")
         response = mcp_resource._list_tools(OpenAIToolFormat(mcp_resource.name, mcp_resource.id))
         print(response)
         response = await mcp_resource.call_tool("list_all_sensors", {})
         print(response)
-        
+
     asyncio.run(main())

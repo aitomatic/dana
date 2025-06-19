@@ -11,7 +11,6 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-
 from lark import Token, Tree
 
 from opendxa.dana.sandbox.parser.ast import (
@@ -31,7 +30,7 @@ class OperatorTransformer(BaseTransformer):
             return op_token.value
         elif isinstance(op_token, Tree):
             return self._op_tree_to_str(op_token)
-        elif hasattr(op_token, 'value'):  # BinaryOperator enum
+        elif hasattr(op_token, "value"):  # BinaryOperator enum
             return op_token.value
         else:
             return str(op_token)
@@ -46,7 +45,7 @@ class OperatorTransformer(BaseTransformer):
     def _left_associative_binop(self, items, operator_getter):
         """
         Handle left-associative binary operations.
-        
+
         Args:
             items: List of alternating expressions and operators
             operator_getter: Function to convert operator token/string to BinaryOperator enum
@@ -59,15 +58,11 @@ class OperatorTransformer(BaseTransformer):
         for i in range(1, len(items), 2):
             op_token = items[i]
             right_expr = items[i + 1]
-            
+
             op_str = self._extract_operator_string(op_token)
             operator = operator_getter(op_str)
-            
-            result = BinaryExpression(
-                left=result,
-                operator=operator,
-                right=right_expr
-            )
+
+            result = BinaryExpression(left=result, operator=operator, right=right_expr)
 
         return result
 
@@ -92,10 +87,10 @@ class OperatorTransformer(BaseTransformer):
             "in": BinaryOperator.IN,
             "|": BinaryOperator.PIPE,
         }
-        
+
         if op_str not in operator_map:
             raise ValueError(f"Unknown binary operator: {op_str}")
-        
+
         return operator_map[op_str]
 
     def or_expr(self, items):
@@ -113,7 +108,7 @@ class OperatorTransformer(BaseTransformer):
     def not_expr(self, items):
         """
         Handle NOT expressions and comparisons.
-        
+
         Grammar: not_expr: NOT_OP not_expr | comparison
         """
         if len(items) == 1:
@@ -123,17 +118,14 @@ class OperatorTransformer(BaseTransformer):
             # NOT operation
             op_token = items[0]
             operand = items[1]
-            
+
             # Extract operator (should be "not")
             if isinstance(op_token, Token):
                 op_str = op_token.value
             else:
                 op_str = str(op_token)
-            
-            return UnaryExpression(
-                operator=op_str,
-                operand=operand
-            )
+
+            return UnaryExpression(operator=op_str, operand=operand)
         else:
             self.error(f"Unexpected not_expr structure: {len(items)} items")
             return items[0] if items else None
@@ -153,7 +145,7 @@ class OperatorTransformer(BaseTransformer):
     def factor(self, items):
         """
         Handle unary operators and atoms.
-        
+
         Grammar: factor: (ADD | SUB) factor | atom trailer*
         """
         if len(items) == 1:
@@ -163,17 +155,14 @@ class OperatorTransformer(BaseTransformer):
             # Unary operation
             op_token = items[0]
             operand = items[1]
-            
+
             # Extract operator
             if isinstance(op_token, Token):
                 op_str = op_token.value
             else:
                 op_str = str(op_token)
-            
-            return UnaryExpression(
-                operator=op_str,
-                operand=operand
-            )
+
+            return UnaryExpression(operator=op_str, operand=operand)
         else:
             self.error(f"Unexpected factor structure: {len(items)} items")
             return items[0] if items else None
@@ -181,7 +170,7 @@ class OperatorTransformer(BaseTransformer):
     def power(self, items):
         """
         Handle power expressions with right associativity.
-        
+
         Grammar: power: factor (POW power)?
         """
         if len(items) == 1:
@@ -191,12 +180,8 @@ class OperatorTransformer(BaseTransformer):
             left = items[0]
             op_token = items[1]  # Should be "**"
             right = items[2]
-            
-            return BinaryExpression(
-                left=left,
-                operator=BinaryOperator.POWER,
-                right=right
-            )
+
+            return BinaryExpression(left=left, operator=BinaryOperator.POWER, right=right)
         else:
             self.error(f"Unexpected power structure: {len(items)} items")
             return items[0] if items else None

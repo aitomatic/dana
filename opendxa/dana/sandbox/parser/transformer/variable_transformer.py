@@ -80,14 +80,39 @@ class VariableTransformer(BaseTransformer):
 
     def dotted_access(self, items):
         """
-        Transform a dotted access chain (e.g., 'foo.bar.baz') into an Identifier node, inserting local scope if missing.
+        Transform a dotted access chain (e.g., 'foo.bar.baz') into an AttributeAccess node for true attribute access.
         Grammar: dotted_access: simple_name ("." NAME)+
-        Example: foo.bar -> Identifier(name='local.foo.bar')
+
+        Important: Scope keywords (local, private, public, system) are NOT allowed with dot notation.
+        They must use colon notation (e.g., public:variable, not public.variable).
+
+        Example:
+            foo.bar -> AttributeAccess(object=Identifier(name='local.foo'), attribute='bar')
+            public.var -> SyntaxError (should be public:var)
         """
-        parts = [self._extract_name(items[0])] + [self._extract_name(item) for item in items[1:]]
-        name = self._join_dotted(parts)
-        name = self._insert_scope_if_missing(name)
-        return Identifier(name=name)
+        from opendxa.dana.sandbox.parser.ast import AttributeAccess
+
+        # Extract all parts
+        base_name = self._extract_name(items[0])
+        attribute_names = [self._extract_name(item) for item in items[1:]]
+
+        # Check if the base name is a scope keyword - this is forbidden with dot notation
+        if base_name in RuntimeScopes.ALL:
+            raise SyntaxError(
+                f"Scope keyword '{base_name}' cannot be used with dot notation. "
+                f"Use colon notation instead: '{base_name}:{attribute_names[0]}'"
+            )
+
+        # Create the base object identifier with proper scoping
+        base_name = self._insert_scope_if_missing(base_name)
+        base_obj = Identifier(name=base_name)
+
+        # Chain the attribute accesses
+        current_obj = base_obj
+        for attr_name in attribute_names:
+            current_obj = AttributeAccess(object=current_obj, attribute=attr_name)
+
+        return current_obj
 
     # === Utility/Compatibility Method ===
     def identifier(self, items):

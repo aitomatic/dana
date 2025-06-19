@@ -27,9 +27,7 @@ class Loggable:
                 self.logger.setLevel(logging.DEBUG)  # Configure through logger
     """
 
-    def __init__(
-        self, logger_name: str | None = None, prefix: str | None = None, log_data: bool = False, level: int | None = None
-    ):
+    def __init__(self, logger_name: str | None = None, prefix: str | None = None, log_data: bool = False, level: int | None = None):
         """Initialize with a standardized logger.
 
         Args:
@@ -50,20 +48,27 @@ class Loggable:
         Args:
             logger_name: Optional custom logger name
             prefix: Optional prefix for log messages
-            log_data: Whether to log data payloads
-            level: Optional logging level (defaults to WARNING)
+            log_data: Whether to log data payloads (deprecated, ignored)
+            level: Optional logging level. If not provided, inherits from hierarchy.
 
         Returns:
             The configured logger instance
         """
         self._logger = DXA_LOGGER.getLogger(logger_name or self, prefix)
-        self._logger.configure(
-            console=True,
-            level=level if level is not None else logging.WARNING,
-            log_data=log_data,
-            fmt="%(asctime)s - [%(name)s] %(levelname)s - %(message)s",
-            datefmt="%H:%M:%S",
-        )
+
+        # Only configure if the global DXA_LOGGER system hasn't been configured yet
+        # This prevents individual Loggable instances from overriding global settings
+        if not DXA_LOGGER._configured:
+            self._logger.configure(
+                console=True,
+                level=level if level is not None else logging.WARNING,
+                fmt="%(asctime)s - [%(name)s] %(levelname)s - %(message)s",
+                datefmt="%H:%M:%S",
+            )
+        elif level is not None:
+            # If explicitly provided level, set it even if already configured
+            self._logger.setLevel(level)
+
         return self._logger
 
     @property

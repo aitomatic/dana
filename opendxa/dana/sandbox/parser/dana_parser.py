@@ -230,7 +230,7 @@ class DanaParser(Lark, Loggable):
             self.warning(f"Found {len(tree_nodes)} Lark Tree nodes in the AST after transformation:")
             for i, (path, tree) in enumerate(tree_nodes[:5]):  # Only show first 5
                 path_str = "".join(path)
-                self.warning(f"  {i+1}. Tree node at 'ast{path_str}' with data='{tree.data}'")
+                self.warning(f"  {i + 1}. Tree node at 'ast{path_str}' with data='{tree.data}'")
             if len(tree_nodes) > 5:
                 self.warning(f"  ... and {len(tree_nodes) - 5} more Tree nodes")
 
@@ -242,22 +242,22 @@ class DanaParser(Lark, Loggable):
 
     def parse_expression(self, expr_text: str):
         """Parse a single expression and return its AST representation.
-        
+
         Args:
             expr_text: The expression text to parse
-            
+
         Returns:
             The parsed expression AST node
         """
         # Wrap the expression in a simple statement to make it parseable
         program_text = f"{expr_text}\n"
-        
+
         # Parse as a complete program
         parse_tree = super().parse(program_text)
-        
+
         # Transform to AST and extract the first statement which should be an expression
         ast = cast(Program, self.transformer.transform(parse_tree))
-        
+
         # The first statement should be our expression
         if ast.statements and len(ast.statements) > 0:
             return ast.statements[0]

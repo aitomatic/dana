@@ -38,7 +38,7 @@ class LogLevel(Enum):
 class SandboxLogger:
     """Log level management for Dana runtime."""
 
-    LOG_SCOPE = "opendxa.dana"
+    LOG_SCOPE = "opendxa"  # Changed from "opendxa.dana" to include all OpenDXA components
 
     @staticmethod
     def log(message: str, level: int | str, context: SandboxContext | None = None) -> None:
@@ -69,10 +69,11 @@ class SandboxLogger:
 
     @staticmethod
     def set_system_log_level(level: LogLevel | str, context: SandboxContext | None = None) -> None:
-        """Set the log level for Dana runtime.
+        """Set the log level for all OpenDXA components.
 
-        This is the single source of truth for setting log levels in Dana.
-        All components should use this function to change log levels.
+        This sets the log level for the entire OpenDXA system, not just Dana.
+        This ensures that when users call log_level(DEBUG) in Dana REPL,
+        it affects all OpenDXA components including agents, resources, etc.
 
         Args:
             level: The log level to set, can be a LogLevel enum or a string
@@ -80,6 +81,8 @@ class SandboxLogger:
         if isinstance(level, str):
             level = LogLevel[level]
 
-        DXA_LOGGER.setLevel(level.value, scope=SandboxLogger.LOG_SCOPE)
+        # Set level for all OpenDXA components (DXA_LOGGER now defaults to "opendxa" scope)
+        DXA_LOGGER.setLevel(level.value)
+
         if context:
             context.set("system.__log_level", level)

@@ -51,11 +51,11 @@ class MCPClient(Client, Loggable, metaclass=MCPMetaclass):
         for transport_cls in [MCPSSETransport, MCPHTTPTransport]:
             parse_result = transport_cls.parse_init_params(*args, **kwargs)
             transport = transport_cls(*parse_result.matched_args, **parse_result.matched_kwargs)
-            result = Misc.safe_asyncio_run (cls._try_client_with_valid_transport, transport)
+            result = Misc.safe_asyncio_run(cls._try_client_with_valid_transport, transport)
             if result:
                 return transport, parse_result.unmatched_args, parse_result.unmatched_kwargs
         raise ValueError(f"No valid transport found kwargs : {kwargs}")
-    
+
     @classmethod
     async def _try_client_with_valid_transport(cls, transport: BaseTransport) -> bool:
         try:

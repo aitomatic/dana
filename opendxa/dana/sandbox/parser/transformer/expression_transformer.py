@@ -603,7 +603,6 @@ class ExpressionTransformer(BaseTransformer):
         # Special case: if we have a dotted identifier followed by function call arguments,
         # this might be an object method call that was parsed as a dotted variable
         if len(trailers) == 1 and isinstance(base, Identifier) and "." in base.name:
-
             # Check if the trailer is either arguments or None (empty arguments)
             trailer = trailers[0]
             is_function_call = (
@@ -659,9 +658,14 @@ class ExpressionTransformer(BaseTransformer):
                         )
 
                 # Regular function call on base
-                name = getattr(base, "name", None)
-                if not isinstance(name, str):
-                    name = str(base)
+                # For AttributeAccess nodes, keep them as-is for method call handling
+                # For Identifier nodes, use the name string
+                if isinstance(base, AttributeAccess):
+                    name = base  # Keep AttributeAccess object for method calls
+                else:
+                    name = getattr(base, "name", None)
+                    if not isinstance(name, str):
+                        name = str(base)
 
                 if t is not None and hasattr(t, "children"):
                     args = self._process_function_arguments(t.children)
@@ -671,14 +675,9 @@ class ExpressionTransformer(BaseTransformer):
                 return FunctionCall(name=name, args=args, location=getattr(base, "location", None))
             # Attribute access: .NAME
             elif hasattr(t, "type") and t.type == "NAME":
-                # For simple identifiers, continue with dotted name approach
-                if isinstance(base, Identifier):
-                    name = base.name
-                    name = f"{name}.{t.value}"
-                    base = Identifier(name=name, location=getattr(base, "location", None))
-                else:
-                    # For complex expressions (like SubscriptExpression), create AttributeAccess
-                    base = AttributeAccess(object=base, attribute=t.value, location=getattr(base, "location", None))
+                # Always create AttributeAccess nodes for proper attribute access execution
+                # This ensures that obj.attr is treated as attribute access, not a dotted variable name
+                base = AttributeAccess(object=base, attribute=t.value, location=getattr(base, "location", None))
             # Indexing: [ ... ] - trailer is the index expression itself
             else:
                 # If it's not a function call or attribute access, it must be indexing

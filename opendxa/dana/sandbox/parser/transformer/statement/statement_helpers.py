@@ -39,10 +39,12 @@ class AssignmentHelper:
     @staticmethod
     def create_assignment(target_tree, value_tree, expression_transformer, variable_transformer, type_hint=None):
         """Create an Assignment node with proper validation."""
-        # Get target identifier
+        # Get target (can be Identifier or AttributeAccess)
         target = variable_transformer.variable([target_tree])
-        if not isinstance(target, Identifier):
-            raise TypeError(f"Assignment target must be Identifier, got {type(target)}")
+        from opendxa.dana.sandbox.parser.ast import AttributeAccess
+
+        if not isinstance(target, (Identifier, AttributeAccess)):
+            raise TypeError(f"Assignment target must be Identifier or AttributeAccess, got {type(target)}")
 
         # Transform value
         value = expression_transformer.expression([value_tree])

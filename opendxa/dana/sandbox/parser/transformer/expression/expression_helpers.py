@@ -8,7 +8,6 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-
 from lark import Token, Tree
 
 from opendxa.dana.sandbox.parser.ast import (
@@ -29,7 +28,7 @@ class OperatorHelper:
         Also handles BinaryOperator enum values.
         """
         from opendxa.dana.sandbox.parser.ast import BinaryOperator
-        
+
         if isinstance(op_token, Token):
             return op_token.value
         if isinstance(op_token, str):
@@ -98,10 +97,10 @@ class OperatorHelper:
             "in": BinaryOperator.IN,
             "|": BinaryOperator.PIPE,
         }
-        
+
         if op_str not in operator_map:
             raise ValueError(f"Unknown binary operator: {op_str}")
-        
+
         return operator_map[op_str]
 
 
@@ -121,7 +120,7 @@ class LiteralHelper:
             else:
                 return LiteralExpression(value=int(value))
 
-        # Boolean and None literals  
+        # Boolean and None literals
         elif token_type in ["TRUE", "FALSE", "NONE"]:
             if value in ["True", "true", "TRUE"]:
                 value = True
@@ -129,7 +128,7 @@ class LiteralHelper:
                 value = False
             elif value in ["None", "none", "NONE", "null", "NULL"]:
                 value = None
-        
+
         return LiteralExpression(value=value)
 
     @staticmethod
@@ -140,12 +139,12 @@ class LiteralHelper:
             if item.type == "REGULAR_STRING":
                 value = item.value[1:-1]  # Strip quotes
                 return LiteralExpression(value)
-            
+
             # Single-quoted string
             elif item.type == "SINGLE_QUOTED_STRING":
                 value = item.value[1:-1]  # Strip single quotes
                 return LiteralExpression(value)
-            
+
             # Raw string
             elif item.type == "RAW_STRING":
                 # Extract the raw string content (removing r" prefix and " suffix)
@@ -156,7 +155,7 @@ class LiteralHelper:
                 else:
                     value = item.value
                 return LiteralExpression(value)
-            
+
             # Multiline string
             elif item.type == "MULTILINE_STRING":
                 if item.value.startswith('"""') and item.value.endswith('"""'):
@@ -177,7 +176,7 @@ class CallHelper:
     def get_full_attribute_name(attr):
         """Recursively extract full dotted name from AttributeAccess chain."""
         from opendxa.dana.sandbox.parser.ast import AttributeAccess, Identifier
-        
+
         parts = []
         while isinstance(attr, AttributeAccess):
             parts.append(attr.attribute)

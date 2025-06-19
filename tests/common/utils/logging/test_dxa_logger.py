@@ -6,9 +6,9 @@ from opendxa.common.utils.logging.dxa_logger import DXALogger
 
 
 def test_set_level_no_scope():
-    """Test setting level for a specific logger instance."""
+    """Test setting level for a specific logger instance only."""
     logger = DXALogger("test.logger")
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.DEBUG, scope=None)  # Use None to affect only this logger
     assert logger.logger.level == logging.DEBUG
 
 

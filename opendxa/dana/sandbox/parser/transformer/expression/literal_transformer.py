@@ -12,7 +12,6 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-
 from lark import Token
 
 from opendxa.dana.sandbox.parser.ast import Identifier, LiteralExpression
@@ -33,7 +32,7 @@ class LiteralTransformer(BaseTransformer):
             return None
 
         item = items[0]
-        
+
         # Use TreeTraverser to unwrap single-child trees
         item = self.tree_traverser.unwrap_single_child_tree(item)
 
@@ -56,7 +55,7 @@ class LiteralTransformer(BaseTransformer):
             else:
                 return LiteralExpression(value=int(value))
 
-        # Boolean and None literals  
+        # Boolean and None literals
         elif token_type in ["TRUE", "FALSE", "NONE"]:
             if value in ["True", "true", "TRUE"]:
                 value = True
@@ -64,39 +63,39 @@ class LiteralTransformer(BaseTransformer):
                 value = False
             elif value in ["None", "none", "NONE", "null", "NULL"]:
                 value = None
-        
+
         return LiteralExpression(value=value)
 
     def string_literal(self, items):
         """
         Handle string_literal rule from the grammar.
-        
+
         Supports REGULAR_STRING, F_STRING_TOKEN, RAW_STRING, SINGLE_QUOTED_STRING, MULTILINE_STRING.
         """
         if not items:
             return LiteralExpression("")
 
         item = items[0]
-        
+
         if isinstance(item, Token):
             # F-string handling
             if item.type == "F_STRING_TOKEN":
                 # Pass to the FStringTransformer
                 from opendxa.dana.sandbox.parser.transformer.fstring_transformer import FStringTransformer
-                
+
                 fstring_transformer = FStringTransformer()
                 return fstring_transformer.fstring([item])
-            
+
             # Regular string
             elif item.type == "REGULAR_STRING":
                 value = item.value[1:-1]  # Strip quotes
                 return LiteralExpression(value)
-            
+
             # Single-quoted string
             elif item.type == "SINGLE_QUOTED_STRING":
                 value = item.value[1:-1]  # Strip single quotes
                 return LiteralExpression(value)
-            
+
             # Raw string
             elif item.type == "RAW_STRING":
                 # Extract the raw string content (removing r" prefix and " suffix)
@@ -107,7 +106,7 @@ class LiteralTransformer(BaseTransformer):
                 else:
                     value = item.value
                 return LiteralExpression(value)
-            
+
             # Multiline string
             elif item.type == "MULTILINE_STRING":
                 if item.value.startswith('"""') and item.value.endswith('"""'):

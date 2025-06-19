@@ -147,11 +147,11 @@ class FStringTransformer(BaseTransformer):
         # Handle complex expressions with parentheses by using the shared parser utility
         if "(" in expr_text or ")" in expr_text:
             from opendxa.dana.sandbox.parser.utils.parsing_utils import parse_expression_in_fstring
-            
+
             result = parse_expression_in_fstring(expr_text)
             if result is not None:
                 return result
-            
+
             # If parsing failed, continue to other parsing methods
             self.debug("Failed to parse complex expression using shared parser utility")
 
@@ -325,5 +325,3 @@ class FStringTransformer(BaseTransformer):
             return Identifier(name=".".join(parts))
         else:
             return self._parse_literal(term)
-
-

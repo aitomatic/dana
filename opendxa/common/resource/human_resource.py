@@ -8,7 +8,6 @@ Classes:
     HumanResponse: Response type for human resource
 """
 
-
 from opendxa.common.resource.base_resource import BaseResource
 from opendxa.common.types import BaseRequest, BaseResponse
 

@@ -24,7 +24,6 @@ Example:
     ... )
 """
 
-
 from pydantic import BaseModel, Field
 
 

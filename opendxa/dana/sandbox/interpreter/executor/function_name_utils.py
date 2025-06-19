@@ -56,12 +56,22 @@ class FunctionNameInfo:
             node: The function call node
 
         Returns:
-            Parsed function name information. If node.name is "a.b.c", then:
-            - original_name = "a.b.c"
-            - func_name = "c"
-            - namespace = "a.b"
-            - full_key = "a.b.c"
+            Parsed function name information. For method calls (AttributeAccess), returns special
+            method call info. For regular function calls, handles namespace parsing.
         """
+        from opendxa.dana.sandbox.parser.ast import AttributeAccess
+
+        # Handle AttributeAccess method calls (obj.method())
+        if isinstance(node.name, AttributeAccess):
+            # This is a method call - return special marker for method call handling
+            original_name = str(node.name)  # String representation for debugging
+            func_name = "METHOD_CALL"  # Special marker
+            namespace = "method"
+            full_key = "method.METHOD_CALL"
+
+            return cls(original_name, func_name, namespace, full_key)
+
+        # Handle regular string function names
         original_name = node.name
 
         # Extract base function name (removing namespace if present)

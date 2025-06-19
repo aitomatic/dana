@@ -37,7 +37,7 @@ def test_dana_error_creation(test_case):
     """Test DanaError exception creation and message handling."""
     # Act
     error = DanaError(test_case["message"])
-    
+
     # Assert
     assert str(error) == test_case["expected_message"]
     assert isinstance(error, Exception)
@@ -75,12 +75,12 @@ def test_dana_call_error_creation(test_case):
     """Test DanaCallError exception creation with optional original error."""
     # Act
     error = DanaCallError(test_case["message"], test_case["original_error"])
-    
+
     # Assert
     assert str(error) == test_case["expected_message"]
     assert isinstance(error, DanaError)
     assert isinstance(error, DanaCallError)
-    
+
     if test_case["expected_original"] is None:
         assert error.original_error is None
     else:
@@ -132,12 +132,8 @@ type_conversion_error_params = [
 def test_type_conversion_error_creation(test_case):
     """Test TypeConversionError exception creation with type information."""
     # Act
-    error = TypeConversionError(
-        test_case["message"],
-        test_case["python_type"],
-        test_case["dana_type"]
-    )
-    
+    error = TypeConversionError(test_case["message"], test_case["python_type"], test_case["dana_type"])
+
     # Assert
     assert str(error) == test_case["expected_message"]
     assert isinstance(error, DanaError)
@@ -171,7 +167,7 @@ def test_resource_error_creation(test_case):
     """Test ResourceError exception creation."""
     # Act
     error = ResourceError(test_case["message"])
-    
+
     # Assert
     assert str(error) == test_case["expected_message"]
     assert isinstance(error, DanaError)
@@ -203,7 +199,7 @@ def test_security_error_creation(test_case):
     """Test SecurityError exception creation."""
     # Act
     error = SecurityError(test_case["message"])
-    
+
     # Assert
     assert str(error) == test_case["expected_message"]
     assert isinstance(error, DanaError)
@@ -219,7 +215,7 @@ def test_exception_inheritance_hierarchy():
         ResourceError("test"),
         SecurityError("test"),
     ]
-    
+
     for error in exceptions_to_test:
         assert isinstance(error, DanaError)
         assert isinstance(error, Exception)
@@ -229,10 +225,10 @@ def test_dana_call_error_with_chained_exceptions():
     """Test DanaCallError properly handles exception chaining."""
     # Arrange
     original_error = ValueError("Original problem")
-    
+
     # Act
     dana_error = DanaCallError("Wrapper error", original_error)
-    
+
     # Assert
     assert dana_error.original_error is original_error
     assert isinstance(dana_error.original_error, ValueError)
@@ -244,15 +240,15 @@ def test_type_conversion_error_type_tracking():
     # Arrange
     python_type = dict
     dana_type = "list"
-    
+
     # Act
     error = TypeConversionError("Type mismatch", python_type, dana_type)
-    
+
     # Assert
     assert error.python_type is python_type
     assert error.dana_type == dana_type
-    
+
     # Test with None values
     error_no_types = TypeConversionError("Generic error")
     assert error_no_types.python_type is None
-    assert error_no_types.dana_type is None 
+    assert error_no_types.dana_type is None

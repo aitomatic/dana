@@ -10,6 +10,7 @@ from typing import Any, Protocol
 
 class DanaType(Enum):
     """Dana's built-in types."""
+
     INT = "int"
     FLOAT = "float"
     STRING = "string"  # Note: Python's str maps to Dana's string
@@ -24,11 +25,11 @@ class DanaType(Enum):
 
 class TypeConverter(Protocol):
     """Protocol for type conversion between Python and Dana."""
-    
+
     def to_dana(self, value: Any) -> tuple[DanaType, Any]:
         """Convert Python value to Dana type."""
         ...
-    
+
     def from_dana(self, dana_type: DanaType, value: Any) -> Any:
         """Convert Dana value to Python type."""
         ...
@@ -66,8 +67,8 @@ def format_type_error(value: Any, expected_type: type, context: str = "") -> str
     """Format a clear type error message."""
     actual_type = type(value).__name__
     expected_name = expected_type.__name__
-    
+
     if context:
         return f"Expected {expected_name}, got {actual_type} at {context}"
     else:
-        return f"Expected {expected_name}, got {actual_type}" 
+        return f"Expected {expected_name}, got {actual_type}"

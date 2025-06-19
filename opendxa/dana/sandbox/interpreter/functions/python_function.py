@@ -110,9 +110,9 @@ class PythonFunction(SandboxFunction):
     def _is_trusted_for_context(self) -> bool:
         """
         Security check: Determine if this function is trusted to receive SandboxContext.
-        
+
         This uses an explicit trust flag set during registration.
-        
+
         Returns:
             True if the function is trusted to receive SandboxContext
         """
@@ -169,7 +169,7 @@ class PythonFunction(SandboxFunction):
             if param_name in kwargs:
                 # Don't override existing value, but log a warning
                 logger = logging.getLogger(__name__)
-                logger.warning(f"Context parameter '{param_name}' already exists in kwargs. " f"Not injecting context automatically.")
+                logger.warning(f"Context parameter '{param_name}' already exists in kwargs. Not injecting context automatically.")
             else:
                 # Inject the context parameter
                 kwargs[param_name] = context
@@ -193,7 +193,7 @@ class PythonFunction(SandboxFunction):
             if not self._is_trusted_for_context():
                 # Function wants context but is not trusted - call without context
                 return self.func(*args, **kwargs)
-            
+
             # Function is trusted - proceed with context injection
             try:
                 sig = inspect.signature(self.func)

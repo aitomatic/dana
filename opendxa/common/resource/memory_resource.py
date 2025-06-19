@@ -284,7 +284,7 @@ class MemoryResource(BaseResource, Generic[ModelType, StorageType]):
                     else:
                         await self._storage.update_memory_importance(memory.id, new_importance)
 
-                self.info(f"Decayed memories for {intervals_passed:.1f} intervals " f"(decay factor: {decay_factor:.3f})")
+                self.info(f"Decayed memories for {intervals_passed:.1f} intervals (decay factor: {decay_factor:.3f})")
 
             except Exception as e:
                 self.error(f"Error decaying memories: {str(e)}")

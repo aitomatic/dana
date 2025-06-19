@@ -31,6 +31,7 @@ from opendxa.dana.sandbox.parser.transformer.variable_transformer import Variabl
 
 def make_token(type_, value):
     from lark import Token
+
     return Token(type_, value)
 
 
@@ -47,8 +48,10 @@ def test_dotted_access():
     token1 = make_token("NAME", "foo")
     token2 = make_token("NAME", "bar")
     result = vt.dotted_access([token1, token2])
-    assert isinstance(result, Identifier)
-    assert result.name == "local.foo.bar"
+    assert isinstance(result, AttributeAccess)
+    assert isinstance(result.object, Identifier)
+    assert result.object.name == "local.foo"
+    assert result.attribute == "bar"
 
 
 def test_scoped_var():
@@ -76,7 +79,10 @@ def test_variable_scoped_and_dotted():
     result_scoped = vt.scoped_var([token_scope, token_name])
     result_dotted = vt.dotted_access([token_name, token_name])
     assert result_scoped.name == "private.foo"
-    assert result_dotted.name == "local.foo.foo"
+    assert isinstance(result_dotted, AttributeAccess)
+    assert isinstance(result_dotted.object, Identifier)
+    assert result_dotted.object.name == "local.foo"
+    assert result_dotted.attribute == "foo"
 
 
 # 2. FStringTransformer tests

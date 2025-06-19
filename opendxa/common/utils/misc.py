@@ -204,6 +204,7 @@ class Misc:
     @staticmethod
     def parse_args_kwargs(func, *args, **kwargs) -> ParsedArgKwargsResults:
         import inspect
+
         """
         Bind (args, kwargs) to `func`’s signature, returning a dict with:
         - matched_args:      positional args that were bound to named parameters
@@ -224,16 +225,13 @@ class Misc:
         unmatched_kwargs = {}
 
         # Separate out which parameters are “named positional” (POSITIONAL_ONLY, POSITIONAL_OR_KEYWORD)
-        pos_params = [
-            p for p in params
-            if p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD)
-        ]
+        pos_params = [p for p in params if p.kind in (p.POSITIONAL_ONLY, p.POSITIONAL_OR_KEYWORD)]
         # Which are keyword-only
         kwonly_params = [p for p in params if p.kind == p.KEYWORD_ONLY]
 
         # Check if func has *args or **kwargs
         has_var_pos = any(p.kind == p.VAR_POSITIONAL for p in params)
-        has_var_kw  = any(p.kind == p.VAR_KEYWORD    for p in params)
+        has_var_kw = any(p.kind == p.VAR_KEYWORD for p in params)
 
         # 1) Assign positional arguments
         for index, value in enumerate(args):
@@ -267,4 +265,3 @@ class Misc:
             unmatched_args=unmatched_args,
             unmatched_kwargs=unmatched_kwargs,
         )
-

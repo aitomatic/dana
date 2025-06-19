@@ -49,16 +49,13 @@ class StructType:
         missing_fields = set(self.fields.keys()) - set(args.keys())
         if missing_fields:
             raise ValueError(
-                f"Missing required fields for struct '{self.name}': {sorted(missing_fields)}. "
-                f"Required fields: {sorted(self.fields.keys())}"
+                f"Missing required fields for struct '{self.name}': {sorted(missing_fields)}. Required fields: {sorted(self.fields.keys())}"
             )
 
         # Check no extra fields are provided
         extra_fields = set(args.keys()) - set(self.fields.keys())
         if extra_fields:
-            raise ValueError(
-                f"Unknown fields for struct '{self.name}': {sorted(extra_fields)}. " f"Valid fields: {sorted(self.fields.keys())}"
-            )
+            raise ValueError(f"Unknown fields for struct '{self.name}': {sorted(extra_fields)}. Valid fields: {sorted(self.fields.keys())}")
 
         # Validate field types
         type_errors = []
@@ -70,7 +67,7 @@ class StructType:
 
         if type_errors:
             raise ValueError(
-                f"Type validation failed for struct '{self.name}': {'; '.join(type_errors)}. " f"Check field types match declaration."
+                f"Type validation failed for struct '{self.name}': {'; '.join(type_errors)}. Check field types match declaration."
             )
 
         return True
@@ -153,7 +150,7 @@ class StructInstance:
         suggestion = self._find_similar_field(name, available_fields)
         suggestion_text = f" Did you mean '{suggestion}'?" if suggestion else ""
 
-        raise AttributeError(f"Struct '{self._type.name}' has no field '{name}'.{suggestion_text} " f"Available fields: {available_fields}")
+        raise AttributeError(f"Struct '{self._type.name}' has no field '{name}'.{suggestion_text} Available fields: {available_fields}")
 
     def __setattr__(self, name: str, value: Any) -> None:
         """Set field value using dot notation."""
@@ -181,9 +178,7 @@ class StructInstance:
             suggestion = self._find_similar_field(name, available_fields)
             suggestion_text = f" Did you mean '{suggestion}'?" if suggestion else ""
 
-            raise AttributeError(
-                f"Struct '{self._type.name}' has no field '{name}'.{suggestion_text} " f"Available fields: {available_fields}"
-            )
+            raise AttributeError(f"Struct '{self._type.name}' has no field '{name}'.{suggestion_text} Available fields: {available_fields}")
         else:
             # Struct type not yet initialized (during __init__)
             super().__setattr__(name, value)
@@ -304,7 +299,7 @@ class StructTypeRegistry:
     def register(cls, struct_type: StructType) -> None:
         """Register a new struct type."""
         if struct_type.name in cls._types:
-            raise ValueError(f"Struct type '{struct_type.name}' is already registered. " f"Struct names must be unique.")
+            raise ValueError(f"Struct type '{struct_type.name}' is already registered. Struct names must be unique.")
 
         cls._types[struct_type.name] = struct_type
 
@@ -334,7 +329,7 @@ class StructTypeRegistry:
         struct_type = cls.get(struct_name)
         if struct_type is None:
             available_types = cls.list_types()
-            raise ValueError(f"Unknown struct type '{struct_name}'. " f"Available types: {available_types}")
+            raise ValueError(f"Unknown struct type '{struct_name}'. Available types: {available_types}")
 
         return StructInstance(struct_type, values)
 

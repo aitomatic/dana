@@ -197,7 +197,7 @@ class BinaryExpression:
 class FunctionCall:
     """A function call (e.g., foo(1, 2)), can be used as either expression or statement."""
 
-    name: str
+    name: Union[str, "AttributeAccess"]  # Function name or AttributeAccess for method calls
     args: dict[str, Any]
     location: Location | None = None
 
@@ -295,9 +295,9 @@ class ListLiteral:
 # === Statements ===
 @dataclass
 class Assignment:
-    """Assignment statement (e.g., x = 42). Returns the assigned value."""
+    """Assignment statement (e.g., x = 42, obj.attr = 42). Returns the assigned value."""
 
-    target: Identifier
+    target: Union[Identifier, "AttributeAccess"]  # Support both variable and attribute assignment
     value: Union[
         LiteralExpression,
         Identifier,
@@ -390,42 +390,6 @@ class FunctionDefinition:
     body: list[Statement]
     return_type: TypeHint | None = None
     decorators: list["Decorator"] = field(default_factory=list)  # Decorators applied to function
-    location: Location | None = None
-
-
-@dataclass
-class StructDefinition:
-    """Struct definition statement (e.g., struct Point: x: int, y: int)."""
-
-    name: str
-    fields: list["StructField"]
-    location: Location | None = None
-
-
-@dataclass
-class StructField:
-    """A field in a struct definition."""
-
-    name: str
-    type_hint: TypeHint
-    location: Location | None = None
-
-
-@dataclass
-class StructLiteral:
-    """Struct instantiation expression (e.g., Point(x=10, y=20))."""
-
-    struct_name: str
-    arguments: list["StructArgument"]
-    location: Location | None = None
-
-
-@dataclass
-class StructArgument:
-    """A named argument in struct instantiation."""
-
-    name: str
-    value: Expression
     location: Location | None = None
 
 

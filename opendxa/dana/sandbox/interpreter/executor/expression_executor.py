@@ -206,7 +206,7 @@ class ExpressionExecutor(BaseExecutor):
                                     if result is not None:
                                         DXA_LOGGER.debug(f"DEBUG: Found '{part}' in scope '{scope}': {result}")
                                         break
-                                except:
+                                except Exception:
                                     continue
                             if result is None:
                                 DXA_LOGGER.debug(f"DEBUG: Could not find base variable '{part}' anywhere")

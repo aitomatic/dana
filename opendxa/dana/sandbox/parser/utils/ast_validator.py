@@ -58,7 +58,7 @@ class AstValidator(Loggable):
             self.warning(f"Found {len(tree_nodes)} Lark Tree nodes in the AST after transformation:")
             for i, (path, tree) in enumerate(tree_nodes[:max_nodes]):
                 path_str = "".join(path)
-                self.warning(f"  {i+1}. Tree node at 'ast{path_str}' with data='{tree.data}'")
+                self.warning(f"  {i + 1}. Tree node at 'ast{path_str}' with data='{tree.data}'")
 
             if len(tree_nodes) > max_nodes:
                 self.warning(f"  ... and {len(tree_nodes) - max_nodes} more Tree nodes")

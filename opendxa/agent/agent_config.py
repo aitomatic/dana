@@ -139,11 +139,7 @@ class AgentConfig(BaseModel, Loggable):
 
         # If we get here, file wasn't found in any location
         raise FileNotFoundError(
-            f"Config file not found in any location: {config_path}\n"
-            f"Tried:\n"
-            f"1. {path}\n"
-            f"2. {config_dir / path}\n"
-            f"3. {Path.cwd() / path}"
+            f"Config file not found in any location: {config_path}\nTried:\n1. {path}\n2. {config_dir / path}\n3. {Path.cwd() / path}"
         )
 
     def _load_json_file(self, path: Path) -> None:

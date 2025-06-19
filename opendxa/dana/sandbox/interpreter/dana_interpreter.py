@@ -20,13 +20,11 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-import logging
 import re
 from pathlib import Path
 from typing import Any
 
 from opendxa.common.mixins.loggable import Loggable
-from opendxa.common.utils.logging import DXA_LOGGER
 from opendxa.dana.common.error_utils import ErrorUtils
 from opendxa.dana.sandbox.interpreter.executor.dana_executor import DanaExecutor
 from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
@@ -62,7 +60,7 @@ def _patched_format_user_error(e, user_input=None):
         else:
             main_msg = "An invalid symbol is not allowed in this context."
             suggestion = "Please check for typos, missing operators, or unsupported syntax."
-        return "Syntax Error:\n" f"  Input: {user_input}\n" f"  {main_msg}\n" f"  {suggestion}"
+        return f"Syntax Error:\n  Input: {user_input}\n  {main_msg}\n  {suggestion}"
     return _original_format_user_error(e, user_input)
 
 
@@ -77,7 +75,7 @@ class DanaInterpreter(Loggable):
         super().__init__()
 
         # Set logger level to DEBUG
-        DXA_LOGGER.setLevel(logging.DEBUG)
+        # DXA_LOGGER.setLevel(logging.DEBUG)
 
         # Initialize the function registry first
         self._init_function_registry()

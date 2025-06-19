@@ -2,7 +2,6 @@
 Tests for utils.converter module - Type Conversion Utilities for Python-to-Dana Integration
 """
 
-
 import pytest
 
 from opendxa.contrib.python_to_dana.core.exceptions import TypeConversionError
@@ -100,13 +99,13 @@ def test_basic_type_converter_to_dana(test_case):
     """Test BasicTypeConverter.to_dana with various Python types."""
     # Arrange
     converter = BasicTypeConverter()
-    
+
     # Act
     result_type, result_value = converter.to_dana(test_case["input_value"])
-    
+
     # Assert
     assert result_type == test_case["expected_type"]
-    
+
     # Special handling for sets since order isn't guaranteed
     if test_case["name"] == "set_to_list":
         assert set(result_value) == set(test_case["expected_value"])
@@ -148,10 +147,10 @@ def test_basic_type_converter_to_dana_nested(test_case):
     """Test BasicTypeConverter.to_dana with nested data structures."""
     # Arrange
     converter = BasicTypeConverter()
-    
+
     # Act
     result_type, result_value = converter.to_dana(test_case["input_value"])
-    
+
     # Assert
     assert result_type == test_case["expected_type"]
     assert result_value == test_case["expected_value"]
@@ -209,10 +208,10 @@ def test_basic_type_converter_from_dana(test_case):
     """Test BasicTypeConverter.from_dana with various Dana types."""
     # Arrange
     converter = BasicTypeConverter()
-    
+
     # Act
     result = converter.from_dana(test_case["dana_type"], test_case["input_value"])
-    
+
     # Assert
     assert result == test_case["expected_value"]
 
@@ -233,11 +232,11 @@ def test_basic_type_converter_to_dana_errors(test_case):
     """Test BasicTypeConverter.to_dana error handling."""
     # Arrange
     converter = BasicTypeConverter()
-    
+
     # Act & Assert
     with pytest.raises(test_case["expected_error"]) as exc_info:
         converter.to_dana(test_case["input_value"])
-    
+
     assert test_case["expected_message_contains"] in str(exc_info.value)
 
 
@@ -265,11 +264,11 @@ def test_basic_type_converter_from_dana_errors(test_case):
     """Test BasicTypeConverter.from_dana error handling."""
     # Arrange
     converter = BasicTypeConverter()
-    
+
     # Act & Assert
     with pytest.raises(test_case["expected_error"]) as exc_info:
         converter.from_dana(test_case["dana_type"], test_case["input_value"])
-    
+
     assert test_case["expected_message_contains"] in str(exc_info.value)
 
 
@@ -289,10 +288,10 @@ def test_basic_type_converter_complex_types(test_case):
     """Test BasicTypeConverter handling of complex Python objects."""
     # Arrange
     converter = BasicTypeConverter()
-    
+
     # Act
     result_type, result_value = converter.to_dana(test_case["input_value"])
-    
+
     # Assert
     assert result_type == test_case["expected_type"]
     if "expected_contains_keys" in test_case:
@@ -342,22 +341,14 @@ def test_validate_and_convert(test_case):
     """Test validate_and_convert function with various inputs."""
     if test_case["should_pass"]:
         # Act
-        result = validate_and_convert(
-            test_case["value"],
-            test_case["expected_type"],
-            test_case["context"]
-        )
-        
+        result = validate_and_convert(test_case["value"], test_case["expected_type"], test_case["context"])
+
         # Assert
         assert result == test_case["expected_result"]
     else:
         # Act & Assert
         with pytest.raises(test_case["expected_error"]):
-            validate_and_convert(
-                test_case["value"],
-                test_case["expected_type"],
-                test_case["context"]
-            )
+            validate_and_convert(test_case["value"], test_case["expected_type"], test_case["context"])
 
 
 def test_basic_type_converter_round_trip():
@@ -374,12 +365,12 @@ def test_basic_type_converter_round_trip():
         [1, 2, 3],
         {"key": "value", "nested": {"inner": [1, 2]}},
     ]
-    
+
     for original_value in test_data:
         # Act
         dana_type, dana_value = converter.to_dana(original_value)
         result_value = converter.from_dana(dana_type, dana_value)
-        
+
         # Assert
         assert result_value == original_value
 
@@ -389,10 +380,10 @@ def test_basic_type_converter_set_conversion():
     # Arrange
     converter = BasicTypeConverter()
     original_set = {1, 2, 3, 4, 5}
-    
+
     # Act
     dana_type, dana_value = converter.to_dana(original_set)
-    
+
     # Assert
     assert dana_type == DanaType.LIST
     assert isinstance(dana_value, list)
@@ -404,11 +395,11 @@ def test_basic_type_converter_tuple_conversion():
     # Arrange
     converter = BasicTypeConverter()
     original_tuple = (1, "hello", True)
-    
+
     # Act
     dana_type, dana_value = converter.to_dana(original_tuple)
-    
+
     # Assert
     assert dana_type == DanaType.LIST
     assert isinstance(dana_value, list)
-    assert dana_value == list(original_tuple) 
+    assert dana_value == list(original_tuple)

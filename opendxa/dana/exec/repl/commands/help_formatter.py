@@ -42,7 +42,7 @@ class HelpFormatter(Loggable):
         print(f"\n{self.colors.bold('Dana Syntax Basics:')}")
         print(f"  {self.colors.bold('Variables:')}      {self.colors.accent('private:x = 5')}, {self.colors.accent('public:data = hello')}")
         print(f"  {self.colors.bold('Conditionals:')}   {self.colors.accent('if private:x > 10:')}")
-        print(f"                  {self.colors.accent('    log(\"Value is high\", \"info\")')}")
+        print(f"                  {self.colors.accent('    log("Value is high", "info")')}")
         print(f"  {self.colors.bold('Loops:')}          {self.colors.accent('while private:x < 10:')}")
         print(f"                  {self.colors.accent('    private:x = private:x + 1')}")
         print(f"  {self.colors.bold('Functions:')}      {self.colors.accent('func add(a, b): return a + b')}")
@@ -114,13 +114,13 @@ class HelpFormatter(Loggable):
             # Show function examples
             print(f"\n  {self.colors.bold('Function Examples:')}")
             if "print" in core_functions:
-                print(f"    {self.colors.accent('print(\"Hello\", \"World\", 123)')}    - Print multiple values")
+                print(f"    {self.colors.accent('print("Hello", "World", 123)')}    - Print multiple values")
             if "log" in core_functions:
-                print(f"    {self.colors.accent('log(\"Debug info\", \"debug\")')}      - Log with level")
+                print(f"    {self.colors.accent('log("Debug info", "debug")')}      - Log with level")
             if "log_level" in core_functions:
-                print(f"    {self.colors.accent('log_level(\"info\")')}               - Set logging level")
+                print(f"    {self.colors.accent('log_level("info")')}               - Set logging level")
             if "reason" in core_functions:
-                print(f"    {self.colors.accent('reason(\"What is 2+2?\")')}           - AI reasoning")
+                print(f"    {self.colors.accent('reason("What is 2+2?")')}           - AI reasoning")
 
         except Exception as e:
             print(f"  {self.colors.error(f'Error listing core functions: {e}')}")

@@ -1,6 +1,5 @@
 """Mixin for identifiable objects."""
 
-
 from opendxa.common.utils.misc import Misc
 
 

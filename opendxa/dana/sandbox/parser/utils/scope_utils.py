@@ -15,13 +15,13 @@ from opendxa.dana.common.exceptions import ParseError
 
 def insert_local_scope(parts: list[str] | str) -> Any:
     """Insert local scope prefix to parts if not already present.
-    
+
     Args:
         parts: Either a string variable name or list of name parts
-        
+
     Returns:
         Modified parts with local scope prefix if needed
-        
+
     Raises:
         ParseError: If parts is invalid or contains dots for simple names
     """
@@ -44,10 +44,10 @@ def insert_local_scope(parts: list[str] | str) -> Any:
 
 def has_scope_prefix(name: str) -> bool:
     """Check if a variable name already has a scope prefix.
-    
+
     Args:
         name: Variable name to check
-        
+
     Returns:
         True if name has a scope prefix (local., private., public., system.)
     """
@@ -57,28 +57,28 @@ def has_scope_prefix(name: str) -> bool:
 
 def extract_scope_and_name(name: str) -> tuple[str | None, str]:
     """Extract scope prefix and variable name from a scoped variable.
-    
+
     Args:
         name: Variable name potentially with scope prefix
-        
+
     Returns:
         Tuple of (scope_prefix, variable_name). If no scope, returns (None, name)
     """
     scope_prefixes = ["local", "private", "public", "system"]
-    
+
     for prefix in scope_prefixes:
         if name.startswith(f"{prefix}."):
-            return prefix, name[len(prefix) + 1:]
-    
+            return prefix, name[len(prefix) + 1 :]
+
     return None, name
 
 
 def validate_scope_name(scope: str) -> bool:
     """Validate that a scope name is valid.
-    
+
     Args:
         scope: Scope name to validate
-        
+
     Returns:
         True if scope is valid
     """

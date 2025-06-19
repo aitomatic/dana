@@ -2,7 +2,6 @@
 Tests for core.types module - Type System for Python-to-Dana Integration
 """
 
-
 import pytest
 
 from opendxa.contrib.python_to_dana.core.types import (
@@ -74,7 +73,7 @@ def test_dana_type_values(test_case):
     """Test that DanaType enum values are correct."""
     # Act
     result = test_case["type_value"].value
-    
+
     # Assert
     assert result == test_case["expected_value"]
 
@@ -144,7 +143,7 @@ def test_get_dana_type(test_case):
     """Test get_dana_type function with various Python values."""
     # Act
     result = get_dana_type(test_case["python_value"])
-    
+
     # Assert
     assert result == test_case["expected_type"]
 
@@ -213,7 +212,7 @@ def test_validate_python_type(test_case):
     """Test validate_python_type function with various values and types."""
     # Act
     result = validate_python_type(test_case["value"], test_case["expected_type"])
-    
+
     # Assert
     assert result == test_case["expected_result"]
 
@@ -256,7 +255,7 @@ def test_format_type_error(test_case):
     """Test format_type_error function with various values and contexts."""
     # Act
     result = format_type_error(test_case["value"], test_case["expected_type"], test_case["context"])
-    
+
     # Assert
     assert result == test_case["expected_message"]
 
@@ -274,7 +273,7 @@ def test_python_to_dana_types_mapping():
         set: DanaType.SET,
         type(None): DanaType.NULL,
     }
-    
+
     assert PYTHON_TO_DANA_TYPES == expected_mappings
 
 
@@ -283,6 +282,6 @@ def test_dana_to_python_types_mapping():
     # Check that it's the reverse mapping
     for python_type, dana_type in PYTHON_TO_DANA_TYPES.items():
         assert DANA_TO_PYTHON_TYPES[dana_type] == python_type
-        
+
     # Check that all Dana types are represented
-    assert len(DANA_TO_PYTHON_TYPES) == len(PYTHON_TO_DANA_TYPES) 
+    assert len(DANA_TO_PYTHON_TYPES) == len(PYTHON_TO_DANA_TYPES)

@@ -117,17 +117,17 @@ class InputCompleteChecker(Loggable):
         for i, line in enumerate(lines):
             stripped = line.strip()
             if not stripped:  # Skip empty lines
-                self.debug(f"Line {i+1}: Skipping empty line")
+                self.debug(f"Line {i + 1}: Skipping empty line")
                 continue
 
             # Count leading spaces to determine indentation level
             indent = len(line) - len(line.lstrip())
-            self.debug(f"Line {i+1}: '{line}' (indent={indent}, expected={indent_stack[-1]})")
+            self.debug(f"Line {i + 1}: '{line}' (indent={indent}, expected={indent_stack[-1]})")
 
             # Check block start
             if stripped.endswith(":"):
                 if i == len(lines) - 1:  # Block header with no body
-                    self.debug(f"Line {i+1}: Block header with no body")
+                    self.debug(f"Line {i + 1}: Block header with no body")
                     return False
                 # Next line must be indented
                 if i + 1 < len(lines):
@@ -135,38 +135,38 @@ class InputCompleteChecker(Loggable):
                     if next_line:  # If next line is not empty
                         next_indent = len(lines[i + 1]) - len(lines[i + 1].lstrip())
                         if next_indent <= indent:  # Must be more indented
-                            self.debug(f"Line {i+1}: Next line not properly indented (next_indent={next_indent})")
+                            self.debug(f"Line {i + 1}: Next line not properly indented (next_indent={next_indent})")
                             return False
                 indent_stack.append(indent + 4)  # Expect 4 spaces indentation
-                self.debug(f"Line {i+1}: Added indent level {indent + 4}, stack is now {indent_stack}")
+                self.debug(f"Line {i + 1}: Added indent level {indent + 4}, stack is now {indent_stack}")
                 continue
 
             # Check indentation against current expected level
             if indent < indent_stack[-1]:
                 # Dedent must match a previous indentation level
-                self.debug(f"Line {i+1}: Dedent detected, checking against stack {indent_stack}")
+                self.debug(f"Line {i + 1}: Dedent detected, checking against stack {indent_stack}")
                 while indent_stack and indent < indent_stack[-1]:
                     popped = indent_stack.pop()
-                    self.debug(f"Line {i+1}: Popped {popped}, stack is now {indent_stack}")
+                    self.debug(f"Line {i + 1}: Popped {popped}, stack is now {indent_stack}")
                 if not indent_stack or indent != indent_stack[-1]:
-                    self.debug(f"Line {i+1}: Invalid dedent level {indent}")
+                    self.debug(f"Line {i + 1}: Invalid dedent level {indent}")
                     return False
             elif indent > indent_stack[-1]:
                 # Unexpected indentation
-                self.debug(f"Line {i+1}: Unexpected indent level {indent}")
+                self.debug(f"Line {i + 1}: Unexpected indent level {indent}")
                 return False
 
             # Special handling for else blocks
             if stripped.startswith("else:"):
                 if indent != indent_stack[-1]:
-                    self.debug(f"Line {i+1}: 'else' at wrong indentation level")
+                    self.debug(f"Line {i + 1}: 'else' at wrong indentation level")
                     return False
                 if i + 1 < len(lines):
                     next_line = lines[i + 1].strip()
                     if next_line:  # If next line is not empty
                         next_indent = len(lines[i + 1]) - len(lines[i + 1].lstrip())
                         if next_indent <= indent:  # Must be more indented
-                            self.debug(f"Line {i+1}: 'else' block not properly indented")
+                            self.debug(f"Line {i + 1}: 'else' block not properly indented")
                             return False
 
         # If we have a non-empty indent stack with more than just the base level,

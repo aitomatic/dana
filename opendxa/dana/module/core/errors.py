@@ -68,7 +68,7 @@ class VersionError(ModuleError):
         self.required_version = required_version
         self.current_version = current_version
         super().__init__(
-            f"Version mismatch for module '{module_name}': " f"requires {required_version}, but current version is {current_version}",
+            f"Version mismatch for module '{module_name}': requires {required_version}, but current version is {current_version}",
             module_name=module_name,
         )
 

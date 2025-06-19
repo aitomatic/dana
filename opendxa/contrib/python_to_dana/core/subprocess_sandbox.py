@@ -16,21 +16,20 @@ from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 class SubprocessSandboxInterface:
     """Subprocess-isolated implementation placeholder for SandboxInterface.
-    
+
     TODO: Future Implementation Plan
     - Implement subprocess communication via JSON-RPC over stdin/stdout
     - Add subprocess lifecycle management (start, restart, shutdown)
     - Implement timeout handling and error recovery
     - Add subprocess health monitoring
     - Support configuration serialization to subprocess
-    
+
     CURRENT: Delegates to InProcessSandboxInterface while maintaining future API
     """
-    
-    def __init__(self, debug: bool = False, context: SandboxContext | None = None, 
-                 timeout: float = 30.0, restart_on_failure: bool = True):
+
+    def __init__(self, debug: bool = False, context: SandboxContext | None = None, timeout: float = 30.0, restart_on_failure: bool = True):
         """Initialize the subprocess-isolated sandbox.
-        
+
         Args:
             debug: Enable debug mode
             context: Sandbox context (will be serialized to subprocess in future)
@@ -42,29 +41,29 @@ class SubprocessSandboxInterface:
         self._context = context
         self._timeout = timeout
         self._restart_on_failure = restart_on_failure
-        
+
         # TODO: Replace with actual subprocess management
         # For now, delegate to in-process implementation
         self._delegate = InProcessSandboxInterface(debug=debug, context=context)
-        
+
         if debug:
             print("DEBUG: SubprocessSandboxInterface using in-process delegate (subprocess isolation not yet implemented)")
-    
+
     def reason(self, prompt: str, options: dict | None = None) -> Any:
         """Execute Dana reasoning function.
-        
+
         TODO: Future Implementation
         - Serialize request to JSON-RPC format
         - Send via IPC to Dana subprocess
         - Handle timeout and retries
         - Deserialize response from subprocess
-        
+
         CURRENT: Delegates to in-process implementation
-        
+
         Args:
             prompt: The question or prompt to send to the LLM
             options: Optional parameters for LLM configuration
-        
+
         Returns:
             The LLM's response to the prompt
         """
@@ -73,38 +72,38 @@ class SubprocessSandboxInterface:
         # request = {"method": "reason", "params": {"prompt": prompt, "options": options}}
         # response = self._send_ipc_request(request)
         # return response["result"]
-        
+
         return self._delegate.reason(prompt, options)
-    
+
     @property
     def is_subprocess_isolated(self) -> bool:
         """Check if running in subprocess-isolated mode."""
         # TODO: Return True when actual subprocess isolation is implemented
         return False
-    
+
     @property
     def subprocess_pid(self) -> int | None:
         """Get the Dana subprocess PID."""
         # TODO: Return actual subprocess PID when implemented
         return None
-    
+
     def restart_subprocess(self):
         """Restart the Dana subprocess (placeholder)."""
         # TODO: Implement subprocess restart logic
         if self._debug:
             print("DEBUG: Subprocess restart requested (not implemented, restarting delegate)")
-        
+
         # For now, recreate the delegate
         self._delegate = InProcessSandboxInterface(debug=self._debug, context=self._context)
-    
+
     def close(self):
         """Close the subprocess sandbox."""
         # TODO: Implement graceful subprocess shutdown
         if self._debug:
             print("DEBUG: SubprocessSandboxInterface closing")
-        
+
         # Cleanup delegate
-        if hasattr(self._delegate, 'close'):
+        if hasattr(self._delegate, "close"):
             self._delegate.close()
 
 
@@ -112,27 +111,27 @@ class SubprocessSandboxInterface:
 # This will be a separate script that runs as a subprocess
 class DanaSubprocessWorker:
     """Placeholder for Dana subprocess worker.
-    
+
     TODO: Future Implementation
     - JSON-RPC message handling over stdin/stdout
     - Dana sandbox initialization in subprocess
     - Request processing and response serialization
     - Error handling and graceful shutdown
     """
-    
+
     def __init__(self, debug: bool = False):
         """Initialize worker (placeholder).
-        
+
         Args:
             debug: Enable debug mode for the subprocess worker
         """
         self.debug = debug
         # TODO: Initialize DanaSandbox in subprocess
         pass
-    
+
     def run(self):
         """Main worker loop (placeholder).
-        
+
         TODO: Implement main message processing loop
         - Read JSON-RPC requests from stdin
         - Process requests using DanaSandbox
@@ -150,4 +149,4 @@ SUBPROCESS_ISOLATION_CONFIG = {
     "subprocess_startup_timeout": 10.0,
     "communication_protocol": "json-rpc",  # Future: support different protocols
     "max_memory_mb": 512,  # Future: memory limits for subprocess
-} 
+}

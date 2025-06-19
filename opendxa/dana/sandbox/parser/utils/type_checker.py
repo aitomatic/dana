@@ -176,24 +176,43 @@ class TypeChecker:
 
     def check_assignment(self, node: Assignment) -> None:
         """Check an assignment for type errors."""
+        from opendxa.dana.sandbox.parser.ast import AttributeAccess, Identifier
+
         value_type = self.check_expression(node.value)
 
-        # If there's a type hint, validate it matches the value type
-        if node.type_hint is not None:
-            expected_type = DanaType.from_type_hint(node.type_hint)
+        # Handle different target types
+        if isinstance(node.target, Identifier):
+            # Regular variable assignment (x = value)
+            target_name = node.target.name
 
-            # Allow 'any' type to match anything
-            if expected_type != DanaType("any") and value_type != DanaType("any"):
-                if value_type != expected_type:
-                    raise TypeError(
-                        f"Type hint mismatch: expected {expected_type}, got {value_type} for variable '{node.target.name}'", node
-                    )
+            # If there's a type hint, validate it matches the value type
+            if node.type_hint is not None:
+                expected_type = DanaType.from_type_hint(node.type_hint)
 
-            # Use the type hint as the variable's type
-            self.environment.set(node.target.name, expected_type)
+                # Allow 'any' type to match anything
+                if expected_type != DanaType("any") and value_type != DanaType("any"):
+                    if value_type != expected_type:
+                        raise TypeError(
+                            f"Type hint mismatch: expected {expected_type}, got {value_type} for variable '{target_name}'", node
+                        )
+
+                # Use the type hint as the variable's type
+                self.environment.set(target_name, expected_type)
+            else:
+                # No type hint, use inferred type
+                self.environment.set(target_name, value_type)
+
+        elif isinstance(node.target, AttributeAccess):
+            # Attribute assignment (obj.attr = value)
+            # For attribute assignments, we don't enforce that the object exists beforehand
+            # since the assignment might be creating or modifying the object dynamically
+            # We also don't track attribute types in the type environment for now
+
+            # If there's a type hint on attribute assignment, that's an error for now
+            if node.type_hint is not None:
+                raise TypeError("Type hints are not supported for attribute assignments", node)
         else:
-            # No type hint, use inferred type
-            self.environment.set(node.target.name, value_type)
+            raise TypeError(f"Unsupported assignment target type: {type(node.target)}", node)
 
     def check_conditional(self, node: Conditional) -> None:
         """Check a conditional for type errors."""

@@ -29,25 +29,26 @@ def feedback_function(
     Example (in Dana):
         # Basic text feedback
         feedback(result, "The prediction was excellent!")
-        
+
         # Structured feedback
         feedback(result, {"rating": 4, "comment": "Good but could be faster"})
-        
+
         # Numeric feedback
         feedback(result, 0.85)
-        
+
         # Complex feedback
         feedback(result, {"correct": false, "expected": "positive", "reason": "Context missing"})
     """
     # Import the actual feedback implementation
     from opendxa.dana.poet.decorator import feedback as poet_feedback
-    
+
     try:
         # Call the POET feedback system
         poet_feedback(result, feedback_payload)
     except Exception as e:
         # Log error but don't fail Dana execution
         from opendxa.common.utils.logging import DXA_LOGGER
+
         DXA_LOGGER.error(f"Feedback processing failed: {e}")
         # Re-raise to inform user
         raise RuntimeError(f"Feedback processing failed: {e}")

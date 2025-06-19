@@ -628,7 +628,6 @@ class ExpressionTransformer(BaseTransformer):
         # Special case: if we have a dotted identifier followed by function call arguments,
         # this might be an object method call that was parsed as a dotted variable
         if len(trailers) == 1 and isinstance(base, Identifier) and "." in base.name:
-
             # Check if the trailer is either arguments or None (empty arguments)
             trailer = trailers[0]
             is_function_call = (

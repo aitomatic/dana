@@ -124,14 +124,17 @@ from opendxa.common.resource.wot_resource import WoTResource
 # Exception for when a resource is unavailable
 class ResourceUnavailableError(Exception):
     """Raised when a resource is not available."""
+
     pass
+
+
 from opendxa.common.types import (
     BaseRequest,
     BaseResponse,
     JsonPrimitive,
     JsonType,
 )
-from opendxa.common.utils import DXA_LOGGER, DXALogger, LLMInteractionAnalyzer, LLMInteractionVisualizer, Misc
+from opendxa.common.utils import DXA_LOGGER, DXALogger, Misc
 
 __all__ = [
     # Exceptions (from exceptions.py)
@@ -208,8 +211,6 @@ __all__ = [
     "PermMemoryResource",
     # Utils (from utils/)
     "Misc",
-    "LLMInteractionAnalyzer",
-    "LLMInteractionVisualizer",
     "DXALogger",
     "DXA_LOGGER",
 ]

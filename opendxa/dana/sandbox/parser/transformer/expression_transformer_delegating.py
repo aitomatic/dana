@@ -40,7 +40,7 @@ class ExpressionTransformer(BaseTransformer):
     def __init__(self):
         """Initialize the expression transformer with specialized delegates."""
         super().__init__()
-        
+
         # Create specialized transformers
         self._literal_transformer = LiteralTransformer()
         self._operator_transformer = OperatorTransformer()
@@ -60,8 +60,12 @@ class ExpressionTransformer(BaseTransformer):
             rule_name = getattr(item, "data", None)
             if isinstance(rule_name, str):
                 # Try specialized transformers first
-                for transformer in [self._literal_transformer, self._operator_transformer, 
-                                  self._call_transformer, self._collection_transformer]:
+                for transformer in [
+                    self._literal_transformer,
+                    self._operator_transformer,
+                    self._call_transformer,
+                    self._collection_transformer,
+                ]:
                     if hasattr(transformer, rule_name):
                         method = getattr(transformer, rule_name)
                         return method(item.children)
@@ -78,12 +82,16 @@ class ExpressionTransformer(BaseTransformer):
                     rule = getattr(node, "data", None)
                     if isinstance(rule, str):
                         # Try specialized transformers
-                        for transformer in [self._literal_transformer, self._operator_transformer,
-                                          self._call_transformer, self._collection_transformer]:
+                        for transformer in [
+                            self._literal_transformer,
+                            self._operator_transformer,
+                            self._call_transformer,
+                            self._collection_transformer,
+                        ]:
                             if hasattr(transformer, rule):
                                 method = getattr(transformer, rule)
                                 return method(node.children)
-                        
+
                         # Try main transformer
                         transformer_method = getattr(self, rule, None)
                         if callable(transformer_method):
@@ -155,7 +163,7 @@ class ExpressionTransformer(BaseTransformer):
         # The call transformer needs access to the main expression transformer
         # for processing arguments, so we need to patch it
         original_process_function_arguments = self._call_transformer._process_function_arguments
-        
+
         def patched_process_function_arguments(arg_children):
             """Process function arguments using the main expression transformer."""
             args = []  # List of positional arguments
@@ -180,7 +188,7 @@ class ExpressionTransformer(BaseTransformer):
 
         # Temporarily patch the method
         self._call_transformer._process_function_arguments = patched_process_function_arguments
-        
+
         try:
             return self._call_transformer.trailer(items)
         finally:
@@ -196,17 +204,18 @@ class ExpressionTransformer(BaseTransformer):
         """Delegate to collection transformer with expression resolution."""
         # Patch the collection transformer to use the main expression transformer
         original_method = self._collection_transformer.tuple
-        
+
         def patched_tuple(items):
             flat_items = self._collection_transformer.flatten_items(items)
             tuple_items = []
             for item in flat_items:
                 expr = self.expression([item])
                 tuple_items.append(expr)
-            
+
             from opendxa.dana.sandbox.parser.ast import TupleLiteral
+
             return TupleLiteral(items=tuple_items)
-        
+
         return patched_tuple(items)
 
     def list(self, items):
@@ -216,8 +225,9 @@ class ExpressionTransformer(BaseTransformer):
         for item in flat_items:
             expr = self.expression([item])
             list_items.append(expr)
-        
+
         from opendxa.dana.sandbox.parser.ast import ListLiteral
+
         return ListLiteral(items=list_items)
 
     def dict(self, items):
@@ -233,8 +243,9 @@ class ExpressionTransformer(BaseTransformer):
             elif hasattr(item, "data") and item.data == "key_value_pair":
                 pair = self.key_value_pair(item.children)
                 pairs.append(pair)
-        
+
         from opendxa.dana.sandbox.parser.ast import DictLiteral
+
         return DictLiteral(items=pairs)
 
     def set(self, items):
@@ -244,8 +255,9 @@ class ExpressionTransformer(BaseTransformer):
         for item in flat_items:
             expr = self.expression([item])
             set_items.append(expr)
-        
+
         from opendxa.dana.sandbox.parser.ast import SetLiteral
+
         return SetLiteral(items=set_items)
 
     def key_value_pair(self, items):

@@ -23,4 +23,4 @@ from opendxa.contrib.python_to_dana.dana_module import Dana
 # Create the main dana instance that will be imported
 dana = Dana()
 
-__all__ = ["dana"] 
+__all__ = ["dana"]

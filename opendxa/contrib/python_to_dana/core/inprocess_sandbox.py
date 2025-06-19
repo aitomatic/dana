@@ -15,21 +15,23 @@ from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 class InProcessSandboxInterface:
     """In-process implementation of SandboxInterface using existing DanaSandbox.
-    
+
     This implementation runs Dana code in the same Python process as the caller,
     providing the best performance while maintaining sandbox security boundaries.
-    
+
     Features intelligent caching of reasoning results for improved performance.
     """
-    
-    def __init__(self, 
-                 debug: bool = False, 
-                 context: SandboxContext | None = None,
-                 enable_cache: bool = True,
-                 cache_max_size: int = 1000,
-                 cache_ttl_seconds: float = 300.0):
+
+    def __init__(
+        self,
+        debug: bool = False,
+        context: SandboxContext | None = None,
+        enable_cache: bool = True,
+        cache_max_size: int = 1000,
+        cache_ttl_seconds: float = 300.0,
+    ):
         """Initialize the in-process sandbox interface.
-        
+
         Args:
             debug: Enable debug mode for detailed logging
             context: Sandbox context for configuration and state
@@ -40,7 +42,7 @@ class InProcessSandboxInterface:
         self._debug = debug
         self._context = context
         self._sandbox = DanaSandbox(debug=debug, context=context)
-        
+
         # Initialize caching
         self._enable_cache = enable_cache
         if enable_cache:
@@ -49,10 +51,10 @@ class InProcessSandboxInterface:
                 print(f"DEBUG: InProcessSandboxInterface initialized with cache: max_size={cache_max_size}, ttl={cache_ttl_seconds}s")
         else:
             self._cache = None
-    
+
     def reason(self, prompt: str, options: dict | None = None) -> Any:
         """Execute Dana reasoning function in-process with caching.
-        
+
         Args:
             prompt: The question or prompt to send to the LLM
             options: Optional parameters for LLM configuration:
@@ -62,10 +64,10 @@ class InProcessSandboxInterface:
                 - format: Output format ("text" or "json")
                 - enable_ipv: Enable IPV optimization (default: True)
                 - use_original: Force use of original implementation (default: False)
-        
+
         Returns:
             The LLM's response to the prompt
-            
+
         Raises:
             DanaCallError: If the Dana reasoning call fails or invalid options provided
         """
@@ -78,42 +80,42 @@ class InProcessSandboxInterface:
                 return cached_result
             elif self._debug:
                 print(f"DEBUG: Cache MISS for prompt: {prompt[:50]}{'...' if len(prompt) > 50 else ''}")
-        
+
         # Validate options parameter
         if options is not None:
             if not isinstance(options, dict):
                 raise DanaCallError("Options parameter must be a dictionary")
-            
+
             # Validate option keys
             valid_keys = {"system_message", "temperature", "max_tokens", "format", "enable_ipv", "use_original"}
             invalid_keys = set(options.keys()) - valid_keys
             if invalid_keys:
                 raise DanaCallError(f"Invalid option keys: {invalid_keys}. Valid keys: {valid_keys}")
-            
+
             # Validate option values
             if "temperature" in options:
                 temp = options["temperature"]
                 if not isinstance(temp, (int, float)) or not (0.0 <= temp <= 2.0):
                     raise DanaCallError("temperature must be a number between 0.0 and 2.0")
-            
+
             if "max_tokens" in options:
                 max_tokens = options["max_tokens"]
                 if not isinstance(max_tokens, int) or max_tokens <= 0:
                     raise DanaCallError("max_tokens must be a positive integer")
-            
+
             if "format" in options:
                 fmt = options["format"]
                 if fmt not in ["text", "json"]:
                     raise DanaCallError("format must be 'text' or 'json'")
-            
+
             if "enable_ipv" in options:
                 if not isinstance(options["enable_ipv"], bool):
                     raise DanaCallError("enable_ipv must be a boolean")
-            
+
             if "use_original" in options:
                 if not isinstance(options["use_original"], bool):
                     raise DanaCallError("use_original must be a boolean")
-        
+
         # Build Dana code to call the reason function
         # We need to format the options properly for Dana
         try:
@@ -123,50 +125,47 @@ class InProcessSandboxInterface:
                 dana_code = f'reason("""{prompt}""", {options_str})'
             else:
                 dana_code = f'reason("""{prompt}""")'
-            
+
             if self._debug:
                 print(f"DEBUG: InProcessSandboxInterface executing Dana code: {dana_code[:100]}{'...' if len(dana_code) > 100 else ''}")
-            
+
             result = self._sandbox.eval(dana_code, filename="<python-to-dana>")
-            
+
             if not result.success:
-                raise DanaCallError(
-                    f"Dana reasoning failed: {result.error}",
-                    original_error=result.error
-                )
-            
+                raise DanaCallError(f"Dana reasoning failed: {result.error}", original_error=result.error)
+
             # Cache successful result if caching is enabled
             if self._enable_cache and self._cache is not None and result.result is not None:
                 cached_successfully = self._cache.put(prompt, options, result.result)
                 if self._debug and cached_successfully:
                     print(f"DEBUG: Cached result for prompt: {prompt[:50]}{'...' if len(prompt) > 50 else ''}")
-            
+
             return result.result
-            
+
         except Exception as e:
             if isinstance(e, DanaCallError):
                 raise
             raise DanaCallError(f"Failed to execute Dana reasoning: {e}", original_error=e)
-    
+
     def _format_options_for_dana(self, options: dict) -> str:
         """Format Python options dict as Dana dict syntax.
-        
+
         Args:
             options: Python dictionary of options
-            
+
         Returns:
             String representation in Dana dict format
         """
         if not options:
             return "{}"
-        
+
         # Convert Python dict to Dana dict format
         items = []
         for key, value in options.items():
             # Format value based on type
             if isinstance(value, str):
                 # Escape special characters for Dana string format
-                escaped_value = value.replace('"', '\\"').replace('\n', '\\n').replace('\t', '\\t').replace('\r', '\\r')
+                escaped_value = value.replace('"', '\\"').replace("\n", "\\n").replace("\t", "\\t").replace("\r", "\\r")
                 formatted_value = f'"{escaped_value}"'
             elif isinstance(value, bool):
                 formatted_value = "true" if value else "false"
@@ -174,56 +173,56 @@ class InProcessSandboxInterface:
                 formatted_value = str(value)
             else:
                 # For other types, convert to string and quote
-                str_value = str(value).replace('"', '\\"').replace('\n', '\\n').replace('\t', '\\t').replace('\r', '\\r')
+                str_value = str(value).replace('"', '\\"').replace("\n", "\\n").replace("\t", "\\t").replace("\r", "\\r")
                 formatted_value = f'"{str_value}"'
-            
+
             items.append(f'"{key}": {formatted_value}')
-        
+
         return "{" + ", ".join(items) + "}"
-    
+
     def get_cache_stats(self) -> dict[str, Any] | None:
         """Get cache statistics if caching is enabled.
-        
+
         Returns:
             Cache statistics dictionary or None if caching is disabled
         """
         if self._enable_cache and self._cache is not None:
             return self._cache.get_stats()
         return None
-    
+
     def clear_cache(self):
         """Clear the reasoning cache if enabled."""
         if self._enable_cache and self._cache is not None:
             self._cache.clear()
             if self._debug:
                 print("DEBUG: Reasoning cache cleared")
-    
+
     def get_cache_info(self) -> str:
         """Get formatted cache information for debugging."""
         if self._enable_cache and self._cache is not None:
             return self._cache.get_cache_info()
         return "Caching disabled"
-    
-    @property 
+
+    @property
     def sandbox(self) -> DanaSandbox:
         """Access to underlying sandbox (for advanced usage)."""
         return self._sandbox
-    
+
     @property
     def cache_enabled(self) -> bool:
         """Check if caching is enabled."""
         return self._enable_cache
-    
+
     def close(self):
         """Close the sandbox interface.
-        
+
         For in-process implementation, this clears the cache and performs cleanup.
         """
         if self._debug:
             print("DEBUG: InProcessSandboxInterface closing")
-        
+
         # Clear cache on close
         if self._enable_cache and self._cache is not None:
             self._cache.clear()
-        
-        # No specific cleanup needed for in-process sandbox 
+
+        # No specific cleanup needed for in-process sandbox

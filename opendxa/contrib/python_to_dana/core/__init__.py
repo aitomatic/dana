@@ -20,12 +20,12 @@ from opendxa.contrib.python_to_dana.core.types import DanaType, TypeConverter
 
 __all__ = [
     "SandboxInterface",
-    "InProcessSandboxInterface", 
+    "InProcessSandboxInterface",
     "SubprocessSandboxInterface",
-    "DanaType", 
+    "DanaType",
     "TypeConverter",
     "DanaCallError",
-    "TypeConversionError", 
+    "TypeConversionError",
     "ResourceError",
     "SUBPROCESS_ISOLATION_CONFIG",
-] 
+]

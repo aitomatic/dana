@@ -109,7 +109,21 @@ def get_while_loop(program):
 
 def assert_assignment(node, target_name, value_type=None):
     assert isinstance(node, Assignment)
-    assert node.target.name == target_name
+
+    # Handle different target types
+    if hasattr(node.target, "name"):
+        # Identifier target
+        actual_target_name = node.target.name
+    elif hasattr(node.target, "object") and hasattr(node.target, "attribute"):
+        # AttributeAccess target - construct expected name format
+        if hasattr(node.target.object, "name"):
+            actual_target_name = f"{node.target.object.name}.{node.target.attribute}"
+        else:
+            actual_target_name = f"{node.target.object}.{node.target.attribute}"
+    else:
+        raise AssertionError(f"Unknown assignment target type: {type(node.target)}")
+
+    assert actual_target_name == target_name
     valid_types = (
         LiteralExpression,
         Identifier,
@@ -482,6 +496,7 @@ def test_syntax_error_malformed_block(parser):
 # TODO: Cover for-loop, function def/call, import, try/except/finally, pass/return/break/continue, property access, trailers, more error cases, only comments, blank lines, minimal/nested blocks, etc.
 # See test_parse.py for more ideas.
 
+
 @pytest.mark.parametrize(
     "code, expected_args, expected_kwargs, should_raise",
     [
@@ -497,11 +512,11 @@ def test_syntax_error_malformed_block(parser):
         ("with foo(1, b=2) as bar:\n    pass", [1], {"b": 2}, False),
         ("with foo() as bar:\n    pass", [], {}, False),
         ("with foo(a, b=1, c, d) as bar:\n    pass", None, None, True),  # Positional args after keyword args
-    ]
+    ],
 )
 def test_with_stmt_ast(code, expected_args, expected_kwargs, should_raise):
     parser = DanaParser()
-    
+
     if should_raise:
         with pytest.raises(Exception):  # noqa: B017
             parser.parse(code, do_transform=True)
@@ -521,45 +536,42 @@ def test_with_stmt_ast(code, expected_args, expected_kwargs, should_raise):
     [
         # Empty use statement
         ("use()", [], {}, False),
-        
         # Single positional argument
         ('use("mcp")', ["mcp"], {}, False),
-        
         # Multiple positional arguments
         ('use("mcp", "server")', ["mcp", "server"], {}, False),
-        
         # Single keyword argument
         ('use(url="http://localhost:8880")', [], {"url": "http://localhost:8880"}, False),
-        
         # Multiple keyword arguments
         ('use(url="http://localhost", port=8080)', [], {"url": "http://localhost", "port": 8080}, False),
-        
         # Mixed positional and keyword arguments
         ('use("mcp", url="http://localhost:8880")', ["mcp"], {"url": "http://localhost:8880"}, False),
-        ('use("mcp", "websearch", url="http://localhost", port=8080)', ["mcp", "websearch"], {"url": "http://localhost", "port": 8080}, False),
-        
+        (
+            'use("mcp", "websearch", url="http://localhost", port=8080)',
+            ["mcp", "websearch"],
+            {"url": "http://localhost", "port": 8080},
+            False,
+        ),
         # Boolean and numeric arguments
         ("use(True, count=42)", [True], {"count": 42}, False),
         ("use(enabled=False, timeout=30.5)", [], {"enabled": False, "timeout": 30.5}, False),
-        
         # Variable arguments
         ('x = "mcp"\nuse(x)', None, None, False),  # Special case - will check separately
         ('url = "http://localhost"\nuse(service=url)', None, None, False),  # Special case - will check separately
-        
         # Error cases - positional after keyword
         ('use(url="http://localhost", "mcp")', None, None, True),
         ('use(a=1, b=2, "positional")', None, None, True),
-    ]
+    ],
 )
 def test_use_stmt_ast(code, expected_args, expected_kwargs, should_raise):
     parser = DanaParser()
-    
+
     if should_raise:
         with pytest.raises(Exception):  # noqa: B017
             parser.parse(code, do_transform=True)
     else:
         program = parser.parse(code, do_transform=True)
-        
+
         # Handle multi-statement cases for variable tests
         if "\n" in code:
             # Find the use statement (should be the last statement)
@@ -572,9 +584,9 @@ def test_use_stmt_ast(code, expected_args, expected_kwargs, should_raise):
             stmt = use_stmt
         else:
             stmt = program.statements[0]
-        
+
         assert isinstance(stmt, UseStatement)
-        
+
         # For variable test cases, check structure but not exact values
         if expected_args is None and expected_kwargs is None:
             # Variable test cases - just check that we have the right structure
@@ -585,7 +597,7 @@ def test_use_stmt_ast(code, expected_args, expected_kwargs, should_raise):
                 assert "service" in stmt.kwargs
                 assert isinstance(stmt.kwargs["service"], Identifier)
             elif "use(x)" in code:
-                # use(x) case  
+                # use(x) case
                 assert len(stmt.args) == 1
                 assert len(stmt.kwargs) == 0
                 assert isinstance(stmt.args[0], Identifier)
@@ -596,7 +608,7 @@ def test_use_stmt_ast(code, expected_args, expected_kwargs, should_raise):
                 for actual, expected in zip(stmt.args, expected_args, strict=False):
                     assert isinstance(actual, LiteralExpression)
                     assert actual.value == expected
-            
+
             if isinstance(expected_kwargs, dict):
                 assert len(stmt.kwargs) == len(expected_kwargs)
                 for key, expected_value in expected_kwargs.items():
@@ -608,18 +620,18 @@ def test_use_stmt_ast(code, expected_args, expected_kwargs, should_raise):
 def test_use_stmt_complex_expressions():
     """Test use statements with complex expressions as arguments."""
     parser = DanaParser()
-    
+
     # Test with binary expression
     code = 'base = "http://localhost:"\nport = 8080\nuse(url=base + str(port))'
     program = parser.parse(code, do_transform=True)
-    
+
     # Find the use statement
     use_stmt = None
     for stmt in program.statements:
         if isinstance(stmt, UseStatement):
             use_stmt = stmt
             break
-    
+
     assert use_stmt is not None
     assert isinstance(use_stmt, UseStatement)
     assert len(use_stmt.args) == 0
@@ -633,16 +645,18 @@ def test_use_stmt_complex_expressions():
 def test_use_stmt_in_context():
     """Test use statement in a realistic context similar to the examples."""
     parser = DanaParser()
-    
-    code = textwrap.dedent('''
+
+    code = textwrap.dedent(
+        """
         log_level("DEBUG")
         use("mcp", url="http://localhost:8880/websearch")
         x = 42
-    ''').strip()
-    
+    """
+    ).strip()
+
     program = parser.parse(code, do_transform=True)
     assert len(program.statements) == 3
-    
+
     # Find the use statement (should be second)
     use_stmt = program.statements[1]
     assert isinstance(use_stmt, UseStatement)
@@ -656,16 +670,18 @@ def test_use_stmt_in_context():
 def test_with_use_stmt():
     """Test with use(...) syntax for context manager usage."""
     parser = DanaParser()
-    
-    code = textwrap.dedent('''
+
+    code = textwrap.dedent(
+        """
         with use("mcp", url="http://localhost:8880/websearch") as mcp:
             answer = reason("Who is the CEO of Aitomatic")
         print(answer)
-    ''').strip()
-    
+    """
+    ).strip()
+
     program = parser.parse(code, do_transform=True)
     assert len(program.statements) == 2
-    
+
     # First statement should be a WithStatement using "use" as context manager
     with_stmt = program.statements[0]
     assert isinstance(with_stmt, WithStatement)
@@ -682,17 +698,19 @@ def test_with_use_stmt():
 def test_with_direct_object():
     """Test with mcp_object syntax for direct context manager usage."""
     parser = DanaParser()
-    
-    code = textwrap.dedent('''
+
+    code = textwrap.dedent(
+        """
         mcp_resource = use("mcp", url="http://localhost:8880/websearch")
         with mcp_resource as mcp:
             answer = reason("Who is the CEO of Aitomatic")
         print(answer)
-    ''').strip()
-    
+    """
+    ).strip()
+
     program = parser.parse(code, do_transform=True)
     assert len(program.statements) == 3
-    
+
     # Second statement should be a WithStatement using direct object as context manager
     with_stmt = program.statements[1]
     assert isinstance(with_stmt, WithStatement)

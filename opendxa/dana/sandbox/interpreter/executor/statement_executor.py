@@ -392,7 +392,7 @@ class StatementExecutor(BaseExecutor):
                         available_names = list(exports) if exports else list(module.__dict__.keys())
                         available_names = [n for n in available_names if not n.startswith("__")]
                         raise ImportError(
-                            f"cannot import name '{name}' from '{absolute_module_name}' " f"(available: {', '.join(available_names)})"
+                            f"cannot import name '{name}' from '{absolute_module_name}' (available: {', '.join(available_names)})"
                         )
                     else:
                         raise ImportError(f"cannot import name '{name}' from '{absolute_module_name}'")

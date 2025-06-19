@@ -41,35 +41,37 @@ class TestLoggable:
 
     def test_custom_level(self, mock_logger):  # Inject the fixture
         """Test initialization with custom logging level."""
-        Loggable(level=logging.DEBUG)  # This should call mock_logger.configure via __instantiate_logger
-        mock_logger.configure.assert_called_once_with(
-            console=True,
-            level=logging.DEBUG,
-            log_data=False,
-            fmt="%(asctime)s - [%(name)s] %(levelname)s - %(message)s",
-            datefmt="%H:%M:%S",
-        )
+        # With DXA_LOGGER already configured, Loggable should not call configure()
+        # Instead, it should rely on the global configuration
+        loggable = Loggable(level=logging.DEBUG)
+        
+        # configure() should not be called since DXA_LOGGER is already configured
+        mock_logger.configure.assert_not_called()
+        
+        # But if level is explicitly provided, setLevel should be called
+        mock_logger.setLevel.assert_called_once_with(logging.DEBUG)
 
     def test_log_data_enabled(self, mock_logger):  # Inject the fixture
         """Test initialization with log_data enabled."""
-        Loggable(log_data=True)  # This should call mock_logger.configure
-        mock_logger.configure.assert_called_once_with(
-            console=True,
-            level=logging.WARNING,  # Default level
-            log_data=True,
-            fmt="%(asctime)s - [%(name)s] %(levelname)s - %(message)s",
-            datefmt="%H:%M:%S",
-        )
+        # Note: log_data parameter is now deprecated and ignored
+        loggable = Loggable(log_data=True)
+        
+        # configure() should not be called since DXA_LOGGER is already configured
+        mock_logger.configure.assert_not_called()
+        
+        # No special handling for log_data in new implementation
+        # It's accepted for backward compatibility but ignored
 
     def test_logging_methods(self, mock_logger):  # Inject the fixture
         """Test all logging methods."""
-        obj = Loggable()  # This should call mock_logger.configure
+        obj = Loggable()  # With DXA_LOGGER configured, this won't call configure()
         message = "test message"
         context = {"key": "value"}
 
-        # Check configure was called during init
-        mock_logger.configure.assert_called_once()
+        # configure() should not be called since DXA_LOGGER is already configured
+        mock_logger.configure.assert_not_called()
 
+        # But the logging methods should still work
         obj.debug(message, **context)
         mock_logger.debug.assert_called_once_with(message, **context)
 

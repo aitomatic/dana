@@ -13,6 +13,7 @@ from utils import search_vector_db
 load_dotenv()
 openai_api_key = os.getenv("OPENAI_API_KEY")
 
+
 # Define the state
 class State(TypedDict):
     product_id: str
@@ -24,43 +25,39 @@ class State(TypedDict):
 # Define ranking function using LLM
 def rank_products(state: State) -> State:
     llm = ChatOpenAI(temperature=0, api_key=openai_api_key)
-    
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", (
-            """
+
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                (
+                    """
             You are a product ranking expert. Rank the following products 
             based on their use cases.
             Choose the top 3 products that most closely match the product ID: \
             {product_id}.
             Return the description of the top 3 in a numbered list format.
             """
-        )),
-        ("user", "{similar_products}")
-    ])
-    
-    chain = prompt | llm
-    
-    response = chain.invoke({
-        "similar_products": state["similar_products"],
-        "product_id": state["product_id"]
-    })
-    state["ranked_products"] = [response.content]
-    state["messages"].append(
-        AIMessage(
-            content=f"Top ranked products: {response.content}"
-        )
+                ),
+            ),
+            ("user", "{similar_products}"),
+        ]
     )
-    
+
+    chain = prompt | llm
+
+    response = chain.invoke({"similar_products": state["similar_products"], "product_id": state["product_id"]})
+    state["ranked_products"] = [response.content]
+    state["messages"].append(AIMessage(content=f"Top ranked products: {response.content}"))
+
     return state
+
 
 # Process the initial input
 def process_input(state: State) -> State:
-    state["messages"].append(
-        AIMessage(
-            content=f"Processing request for product ID: {state['product_id']}"
-        )
-    )
+    state["messages"].append(AIMessage(content=f"Processing request for product ID: {state['product_id']}"))
     return state
+
 
 def call_and_process_vector_db(state: State) -> State:
     """Node that calls the vector DB tool and processes the result"""
@@ -69,13 +66,10 @@ def call_and_process_vector_db(state: State) -> State:
     state["similar_products"] = tool_output
 
     print("Vector search completed. Matches found: ", tool_output)
-    
-    state["messages"].append(
-        AIMessage(
-            content="Vector search completed. Processing results..."
-        )
-    )
+
+    state["messages"].append(AIMessage(content="Vector search completed. Processing results..."))
     return state
+
 
 # Define the nodes in our graph
 def build_graph():
@@ -93,23 +87,20 @@ def build_graph():
 
     return workflow.compile()
 
+
 # Main function to run the product ranker
 def rank_similar_products(product_id: str) -> list[str]:
     graph = build_graph()
-    
+
     # Initialize the state
-    state = {
-        "product_id": product_id,
-        "similar_products": "",
-        "ranked_products": [],
-        "messages": []
-    }
-    
+    state = {"product_id": product_id, "similar_products": "", "ranked_products": [], "messages": []}
+
     # Run the graph
     result = graph.invoke(state)
-    
+
     # Return the ranked products
     return result["ranked_products"]
+
 
 # Example usage
 if __name__ == "__main__":

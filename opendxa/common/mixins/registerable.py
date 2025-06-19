@@ -1,6 +1,5 @@
 """Objects that have a registry for other objects"""
 
-
 from opendxa.common.mixins.identifiable import Identifiable
 
 

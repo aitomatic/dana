@@ -25,9 +25,7 @@ class ComposedFunction(SandboxFunction):
     enabling complex function pipelines like: a | b | c | d
     """
 
-    def __init__(
-        self, left_func: SandboxFunction | str, right_func: SandboxFunction | str, context: SandboxContext | None = None
-    ):
+    def __init__(self, left_func: SandboxFunction | str, right_func: SandboxFunction | str, context: SandboxContext | None = None):
         """Initialize a composed function.
 
         Args:
