@@ -95,7 +95,7 @@ class TestLoggingIntegrationSimple:
         assert existing_logger.logger.getEffectiveLevel() == logging.WARNING
 
         # Change global level
-        # DXA_LOGGER.setLevel(logging.INFO)
+        DXA_LOGGER.setLevel(logging.INFO)
 
         # Existing logger should be updated
         assert existing_logger.logger.getEffectiveLevel() == logging.INFO
