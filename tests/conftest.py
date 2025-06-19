@@ -1,5 +1,6 @@
 """Pytest configuration file."""
 
+import logging
 import os
 
 import pytest
@@ -23,6 +24,24 @@ def pytest_collection_modifyitems(config, items):
         for item in items:
             if "llm" in item.keywords:
                 item.add_marker(skip_llm)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def configure_test_logging():
+    """Configure logging levels for tests to reduce verbose output."""
+    # Suppress verbose HTTP logs from httpx and similar libraries
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("httpcore").setLevel(logging.WARNING)
+    logging.getLogger("h11").setLevel(logging.WARNING)
+    
+    # Suppress OpenDXA logs during tests to reduce noise
+    logging.getLogger("opendxa").setLevel(logging.WARNING)
+    
+    # Suppress DXA_LOGGER error messages during tests (often expected errors)
+    logging.getLogger("opendxa.dana").setLevel(logging.WARNING)
+    logging.getLogger("opendxa.common").setLevel(logging.WARNING)
+    
+    yield
 
 
 @pytest.fixture(scope="session", autouse=True)
