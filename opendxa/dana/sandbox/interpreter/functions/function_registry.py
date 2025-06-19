@@ -205,8 +205,8 @@ class FunctionRegistry:
             if trusted_for_context is None:
                 trusted_for_context = True
             func = PythonFunction(func, context=None, trusted_for_context=trusted_for_context)
-            # When auto-wrapping, always use python func_type
-            func_type = "python"
+            # When auto-wrapping, always use python func_type (keep as enum)
+            func_type = FunctionType.PYTHON
 
         if not metadata:
             metadata = FunctionMetadata()
