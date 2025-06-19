@@ -118,11 +118,6 @@ class PythonicFunctionFactory:
             "message": "Interactive input is not supported in Dana sandbox environments",
             "alternative": "Pass data through function parameters or context variables",
         },
-        "print": {
-            "reason": UnsupportedReason.SYSTEM_MODIFICATION,
-            "message": "Direct output is controlled by Dana's logging system",
-            "alternative": "Use log() function for output or return values from functions",
-        },
         # Code execution
         "eval": {
             "reason": UnsupportedReason.ARBITRARY_CODE_EXECUTION,

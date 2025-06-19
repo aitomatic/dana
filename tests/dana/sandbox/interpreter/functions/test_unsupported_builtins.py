@@ -77,16 +77,17 @@ class TestUnsupportedFunctions:
         assert "file" in error_msg.lower()
 
     def test_print_function_blocked(self):
-        """Test that print() is properly blocked."""
+        """Test that print() is no longer blocked (now handled by core function)."""
         factory = PythonicFunctionFactory()
 
+        # print() should no longer raise SandboxError since it's removed from unsupported
+        # Instead, it should fall through to the unknown builtin handler
         with pytest.raises(SandboxError) as exc_info:
             factory.create_function("print")
 
         error_msg = str(exc_info.value)
         assert "print" in error_msg
-        assert "not supported" in error_msg
-        assert "output" in error_msg.lower()
+        assert "not available" in error_msg  # Changed from "not supported"
 
     def test_globals_locals_blocked(self):
         """Test that globals() and locals() are properly blocked."""

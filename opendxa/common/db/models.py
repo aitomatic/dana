@@ -35,7 +35,7 @@ class MemoryDBModel(BaseDBModel):
     context = Column(JSON, nullable=True)
     importance = Column(Float, default=1.0)
     decay_rate = Column(Float, default=0.1)
-    last_accessed = Column(DateTime, default=datetime.now(UTC))
+    last_accessed = Column(DateTime, default=lambda: datetime.now(UTC))
 
 
 class STMemoryDBModel(MemoryDBModel):

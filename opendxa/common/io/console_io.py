@@ -33,9 +33,9 @@ class ConsoleIO(BaseIO):
     async def initialize(self) -> None:
         """Initialize console I/O."""
         await super().initialize()
-        self.logger.info("Console I/O resource initialized")
+        self.info("Console I/O resource initialized")
 
     async def cleanup(self) -> None:
         """Clean up console I/O."""
         await super().cleanup()
-        self.logger.info("Console I/O resource cleaned up")
+        self.info("Console I/O resource cleaned up")

@@ -57,7 +57,7 @@ class ResourceAccessError(ResourceError):
     pass
 
 
-class BaseResource(Configurable, Queryable, ToolCallable):
+class BaseResource(Configurable, Queryable, ToolCallable, Loggable):
     """Abstract base resource."""
 
     def __init__(self, name: str, description: str | None = None, config: dict[str, Any] | None = None):
@@ -71,6 +71,7 @@ class BaseResource(Configurable, Queryable, ToolCallable):
         Configurable.__init__(self)
         Queryable.__init__(self)
         ToolCallable.__init__(self)
+        Loggable.__init__(self)
 
         self.name = name
         self.description = description or "No description provided"

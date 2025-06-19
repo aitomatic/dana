@@ -84,7 +84,7 @@ class SqlDBStorage(BaseDBStorage[M], ABC):
         if not self._session:
             raise RuntimeError("Storage not initialized")
 
-        entry = self.db_model_class(key=key, value=content, metadata=metadata)
+        entry = self.db_model_class(key=key, value=content, knowledge_metadata=metadata)
         self._session.add(entry)
         self._session.commit()
 
@@ -97,7 +97,9 @@ class SqlDBStorage(BaseDBStorage[M], ABC):
             entry = self._session.query(self.db_model_class).filter_by(key=query).first()
         else:
             entry = self._session.query(self.db_model_class).first()
-        return [entry.__dict__] if entry else []
+        if entry:
+            return [{"id": entry.id, "key": entry.key, "value": entry.value, "knowledge_metadata": entry.knowledge_metadata}]
+        return []
 
     def delete(self, content_id: str) -> None:
         """Delete a knowledge entry from the database."""
@@ -191,7 +193,8 @@ class VectorDBStorage(BaseDBStorage[M], ABC):
             .all()
         )
 
-        return [entry.__dict__ for entry in entries]
+        return [{"id": entry.id, "content": entry.content, "context": entry.context, 
+                "importance": entry.importance, "decay_rate": entry.decay_rate} for entry in entries]
 
     def _retrieve_by_importance(self) -> list[dict]:
         """Retrieve memories ordered by importance."""
@@ -199,7 +202,8 @@ class VectorDBStorage(BaseDBStorage[M], ABC):
             raise RuntimeError("Storage not initialized")
 
         entries = self._session.query(self.db_model_class).order_by(self.db_model_class.importance.desc()).all()
-        return [entry.__dict__ for entry in entries]
+        return [{"id": entry.id, "content": entry.content, "context": entry.context, 
+                "importance": entry.importance, "decay_rate": entry.decay_rate} for entry in entries]
 
     def delete(self, content_id: str) -> None:
         """Delete a memory from the database."""

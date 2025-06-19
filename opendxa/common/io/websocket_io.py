@@ -57,7 +57,7 @@ class WebSocketIO(BaseIO):
 
         handler = cast(Any, self._handle_connection)
         self._server = await serve(handler, self.host, self.port)
-        self.logger.info(f"WebSocket server started on ws://{self.host}:{self.port}")
+        self.info(f"WebSocket server started on ws://{self.host}:{self.port}")
 
     async def cleanup(self) -> None:
         """Cleanup WebSocket connections."""
@@ -65,14 +65,14 @@ class WebSocketIO(BaseIO):
             self._server.close()
             await self._server.wait_closed()
         await super().cleanup()
-        self.logger.info("WebSocket server shut down")
+        self.info("WebSocket server shut down")
 
     async def send(self, message: Any) -> None:
         """Send message through WebSocket."""
         if self._current_connection and not self._current_connection.closed:
             await self._current_connection.send(str(message))
         else:
-            self.logger.warning("No active WebSocket connection for sending message")
+            self.warning("No active WebSocket connection for sending message")
 
     async def receive(self) -> Any:
         """Receive message from WebSocket."""

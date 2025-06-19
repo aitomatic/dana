@@ -40,4 +40,5 @@ def log_function(
     message = message or options.get("message", "")
     level = level or options.get("level", "INFO")
 
-    SandboxLogger.log(message, level=level)  # type: ignore
+    # Use "dana" namespace for user log calls - clean output
+    SandboxLogger.log(message, level=str(level), context=context, namespace="dana")

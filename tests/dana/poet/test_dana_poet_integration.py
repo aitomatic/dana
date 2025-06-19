@@ -430,7 +430,7 @@ feedback(normal_value, "This should fail")
 
         dana_code = """
 # POET decorator on function with syntax error
-@poet()
+@poet(domain="test")
 def broken_function(x: int) -> int:
     return x +  # Incomplete expression
 """
@@ -493,7 +493,7 @@ log(f"Enhanced: {enhanced}")
 def process_text(text: str) -> str:
     return text.upper()
 
-@poet(enable_training=true)
+@poet(domain="sentiment")
 def analyze_sentiment(text: str) -> str:
     if "good" in text.lower():
         return "positive"

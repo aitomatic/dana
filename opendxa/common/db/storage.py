@@ -30,3 +30,13 @@ class KnowledgeDBStorage(SqlDBStorage[KnowledgeDBModel]):
 
 class MemoryDBStorage(VectorDBStorage[M]):
     """Storage for memory entries."""
+    
+    def __init__(self, vector_db_url: str, embedding_model, memory_model_class: type[M]):
+        """Initialize memory storage.
+        
+        Args:
+            vector_db_url: Vector database connection URL
+            embedding_model: Model to generate embeddings
+            memory_model_class: The memory model class to use
+        """
+        super().__init__(vector_db_url, embedding_model, memory_model_class)

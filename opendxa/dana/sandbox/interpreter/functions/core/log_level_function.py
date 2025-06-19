@@ -17,13 +17,15 @@ from opendxa.dana.sandbox.sandbox_context import SandboxContext
 def log_level_function(
     context: SandboxContext,
     level: str,
+    namespace: str = "dana",
     options: dict[str, Any] | None = None,
 ) -> None:
-    """Execute the log_level function to set the logging level.
+    """Execute the log_level function to set the logging level for a namespace.
 
     Args:
         context: The runtime context for variable resolution.
         level: The log level to set (debug, info, warn, error).
+        namespace: The namespace to set the level for (default: "dana").
         options: Optional parameters for the function.
 
     Returns:
@@ -36,17 +38,18 @@ def log_level_function(
     if options is None:
         options = {}
 
-    # Allow level override from options for backward compatibility
+    # Allow level and namespace override from options for backward compatibility
     level = level or options.get("level", "info")
+    namespace = namespace or options.get("namespace", "dana")
 
     # Validate the log level
     valid_levels = {"debug", "info", "warn", "error"}
     if level.lower() not in valid_levels:
         raise ValueError(f"Invalid log level '{level}'. Must be one of: {', '.join(valid_levels)}")
 
-    # Convert to LogLevel enum and set the system log level
+    # Convert to LogLevel enum and set the namespace log level
     try:
         log_level_enum = LogLevel[level.upper()]
-        SandboxLogger.set_system_log_level(log_level_enum, context)
+        SandboxLogger.set_log_level(log_level_enum, namespace, context)
     except KeyError:
         raise ValueError(f"Invalid log level '{level}'. Must be one of: {', '.join(valid_levels)}")

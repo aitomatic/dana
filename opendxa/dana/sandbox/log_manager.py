@@ -36,53 +36,100 @@ class LogLevel(Enum):
 
 
 class SandboxLogger:
-    """Log level management for Dana runtime."""
+    """Namespace-aware log level management for Dana runtime using DXA_LOGGER backend."""
 
-    LOG_SCOPE = "opendxa"  # Changed from "opendxa.dana" to include all OpenDXA components
+    # Default namespaces
+    DANA_NAMESPACE = "dana"  # User code logs
+    OPENDXA_NAMESPACE = "opendxa"  # Framework logs
 
-    @staticmethod
-    def log(message: str, level: int | str, context: SandboxContext | None = None) -> None:
-        """Log a message to the sandbox logger."""
-        if isinstance(level, str):
-            level = LogLevel[level.upper()].value
-        DXA_LOGGER.log(level, message)
+    # Initialization state
+    _initialized = False
 
-    @staticmethod
-    def debug(message: str, context: SandboxContext | None = None) -> None:
-        """Log a debug message to the sandbox logger."""
-        SandboxLogger.log(message, LogLevel.DEBUG.value, context)
+    @classmethod
+    def _ensure_dxa_configured(cls) -> None:
+        """Ensure DXA_LOGGER is properly configured."""
+        if not cls._initialized:
+            DXA_LOGGER.configure(console=True, level=logging.WARNING)
+            cls._initialized = True
 
-    @staticmethod
-    def info(message: str, context: SandboxContext | None = None) -> None:
-        """Log an info message to the sandbox logger."""
-        SandboxLogger.log(message, LogLevel.INFO.value, context)
+    @classmethod
+    def _normalize_level(cls, level: int | str) -> int:
+        """Convert string level to integer."""
+        return LogLevel[level.upper()].value if isinstance(level, str) else level
 
-    @staticmethod
-    def warn(message: str, context: SandboxContext | None = None) -> None:
-        """Log a warning message to the sandbox logger."""
-        SandboxLogger.log(message, LogLevel.WARN.value, context)
-
-    @staticmethod
-    def error(message: str, context: SandboxContext | None = None) -> None:
-        """Log an error message to the sandbox logger."""
-        SandboxLogger.log(message, LogLevel.ERROR.value, context)
+    @classmethod
+    def _store_level_in_context(cls, context: SandboxContext | None, namespace: str, level_name: str) -> None:
+        """Store log level in sandbox context if provided."""
+        if context:
+            key = f"private:log_level_{namespace.replace('.', '_')}"
+            context.set(key, level_name)
 
     @staticmethod
-    def set_system_log_level(level: LogLevel | str, context: SandboxContext | None = None) -> None:
-        """Set the log level for all OpenDXA components.
+    def log(message: str, level: int | str, context: SandboxContext | None = None, namespace: str = "dana") -> None:
+        """Log a message to the specified namespace using DXA_LOGGER backend."""
+        SandboxLogger._ensure_dxa_configured()
+        level_int = SandboxLogger._normalize_level(level)
 
-        This sets the log level for the entire OpenDXA system, not just Dana.
-        This ensures that when users call log_level(DEBUG) in Dana REPL,
-        it affects all OpenDXA components including agents, resources, etc.
+        # Use DXA_LOGGER for all namespaces - much simpler!
+        dxa_logger = DXA_LOGGER.getLogger(namespace)
+        if hasattr(dxa_logger, "log"):
+            dxa_logger.log(level_int, message)
+        else:
+            # Fallback to underlying logger if needed
+            logger = dxa_logger._logger if hasattr(dxa_logger, "_logger") else logging.getLogger(namespace)
+            logger.log(level_int, message)
+
+    @staticmethod
+    def debug(message: str, context: SandboxContext | None = None, namespace: str = "dana") -> None:
+        """Log a debug message to the specified namespace."""
+        SandboxLogger.log(message, LogLevel.DEBUG.value, context, namespace)
+
+    @staticmethod
+    def info(message: str, context: SandboxContext | None = None, namespace: str = "dana") -> None:
+        """Log an info message to the specified namespace."""
+        SandboxLogger.log(message, LogLevel.INFO.value, context, namespace)
+
+    @staticmethod
+    def warn(message: str, context: SandboxContext | None = None, namespace: str = "dana") -> None:
+        """Log a warning message to the specified namespace."""
+        SandboxLogger.log(message, LogLevel.WARN.value, context, namespace)
+
+    @staticmethod
+    def error(message: str, context: SandboxContext | None = None, namespace: str = "dana") -> None:
+        """Log an error message to the specified namespace."""
+        SandboxLogger.log(message, LogLevel.ERROR.value, context, namespace)
+
+    @staticmethod
+    def set_log_level(level: LogLevel | str, namespace: str = "dana", context: SandboxContext | None = None) -> None:
+        """Set the log level for a specific namespace using DXA_LOGGER.
 
         Args:
             level: The log level to set, can be a LogLevel enum or a string
+            namespace: The namespace to set the level for (default: "dana")
+            context: Optional sandbox context
         """
-        if isinstance(level, str):
-            level = LogLevel[level]
+        SandboxLogger._ensure_dxa_configured()
+        level_enum = LogLevel[level.upper()] if isinstance(level, str) else level
 
-        # Set level for all OpenDXA components (DXA_LOGGER now defaults to "opendxa" scope)
-        DXA_LOGGER.setLevel(level.value)
+        # Use DXA_LOGGER's scope mechanism for all namespaces
+        DXA_LOGGER.setLevel(level_enum.value, scope=namespace)
+        SandboxLogger._store_level_in_context(context, namespace, level_enum.name)
 
-        if context:
-            context.set("system.__log_level", level)
+    @staticmethod
+    def set_system_log_level(level: LogLevel | str, context: SandboxContext | None = None) -> None:
+        """Set the log level for all OpenDXA components (backward compatibility).
+
+        This method is kept for backward compatibility. It uses DXA_LOGGER's
+        default behavior to set the level for the entire opendxa scope.
+
+        Args:
+            level: The log level to set, can be a LogLevel enum or a string
+            context: Optional sandbox context
+        """
+        SandboxLogger._ensure_dxa_configured()
+        level_enum = LogLevel[level.upper()] if isinstance(level, str) else level
+
+        # Use DXA_LOGGER's default behavior (opendxa scope)
+        DXA_LOGGER.setLevel(level_enum.value)
+
+        SandboxLogger._store_level_in_context(context, "system", level_enum.name)
