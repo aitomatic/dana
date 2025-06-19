@@ -3,13 +3,9 @@ import hashlib
 import json
 import os
 import re
-import subprocess
-import sys
-import time
 from multiprocessing import cpu_count
 from pathlib import Path
 
-import requests
 from llama_index.core import (
     Document,
     SimpleDirectoryReader,
@@ -19,6 +15,7 @@ from llama_index.core import (
 )
 from llama_index.core.query_engine import SubQuestionQueryEngine
 from llama_index.core.tools import QueryEngineTool, ToolMetadata
+
 from opendxa.common.utils.misc import Misc
 from opendxa.contrib.dana_rag.common.utility.web_fetch import fetch_web_content
 
@@ -495,7 +492,7 @@ class RAGStore:
         
         if self.force_reload:
             if self.enable_print:
-                print(f"Creating new combined index by merging individual indices (reusing embeddings)")
+                print("Creating new combined index by merging individual indices (reusing embeddings)")
             combined_index = self._create_combined_index_from_existing(indices)
             if self.enable_print:
                 print(f"Persisting combined index to: {combined_storage_path_str}")
@@ -508,7 +505,7 @@ class RAGStore:
                 combined_index = load_index_from_storage(storage_context)
             except Exception:
                 if self.enable_print:
-                    print(f"Combined index not found. Creating new one by merging individual indices (reusing embeddings)")
+                    print("Combined index not found. Creating new one by merging individual indices (reusing embeddings)")
                 combined_index = self._create_combined_index_from_existing(indices)
                 if self.enable_print:
                     print(f"Persisting combined index to: {combined_storage_path_str}")

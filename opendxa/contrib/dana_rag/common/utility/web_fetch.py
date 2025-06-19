@@ -1,6 +1,8 @@
 import subprocess
 import sys
+
 import requests
+
 
 def _ensure_playwright_installed():
     """Ensure Playwright and its dependencies are installed."""

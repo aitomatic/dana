@@ -1,9 +1,10 @@
+from pathlib import Path
+from typing import Any
+
+from opendxa.common.mixins.tool_callable import ToolCallable
+from opendxa.common.resource import BaseResource
 from opendxa.contrib.dana_rag.common.resource.storage.rag_store import RAGStore
 
-from opendxa.common.resource import BaseResource
-from opendxa.common.mixins.tool_callable import ToolCallable
-from typing import Dict, Any, Union, List
-from pathlib import Path
 
 class RAGResource(BaseResource):
     """Resource for RAG-based retrieval using both BM25 and VectorStore retrievers."""
@@ -11,7 +12,7 @@ class RAGResource(BaseResource):
 
     def __init__(
         self,
-        doc_paths: List[str] = ['proposal/data/data_for_usecases/semiconductor/mock-docs'],
+        doc_paths: list[str] = ['proposal/data/data_for_usecases/semiconductor/mock-docs'],
         output_folder: str = 'proposal/data/dana/storage',
         use_chunking: bool = True,
         enable_print: bool = False,
@@ -36,7 +37,7 @@ class RAGResource(BaseResource):
         results = await self.doc_store._manual_retrieve(query, num_results=num_results)
         return "\n".join([result for result in results])
     
-    async def call_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Any:
+    async def call_tool(self, tool_name: str, arguments: dict[str, Any]) -> Any:
         """Call a tool with the given name and arguments, validating arguments first."""
         if not hasattr(self, tool_name):
             raise ValueError(f"Tool {tool_name} not found in {self.__class__.__name__}")
