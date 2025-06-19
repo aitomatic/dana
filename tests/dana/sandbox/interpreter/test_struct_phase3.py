@@ -10,7 +10,7 @@ MIT License
 
 import pytest
 
-from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
+from opendxa.dana.sandbox.dana_sandbox import DanaSandbox, ExecutionResult
 from opendxa.dana.sandbox.interpreter.struct_system import (
     StructInstance,
     StructTypeRegistry,
@@ -291,7 +291,7 @@ struct Point:
 local:point = Point(x="not_a_number", y=20)
 """
 
-        result = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.eval(code)
         assert not result.success
         assert "Type validation failed" in str(result.error)
         assert "expected int" in str(result.error)
@@ -308,10 +308,11 @@ local:point = Point(x=10, y=20)
 """
 
         # Execute the struct creation first
-        result = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.eval(code)
         assert result.success
 
         # Now test direct field assignment validation through Python
+        assert result.final_context is not None
         point = result.final_context.get("local.point")
         assert isinstance(point, StructInstance)
 
@@ -341,7 +342,7 @@ local:circle = Circle(center=point, radius=5.0)
 local:bad_circle = Circle(center="not_a_point", radius=3.0)
 """
 
-        result = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.eval(code)
         assert not result.success
         assert "Type validation failed" in str(result.error)
         assert "expected Point" in str(result.error)

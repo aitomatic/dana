@@ -9,7 +9,9 @@ import unittest
 from unittest.mock import patch
 
 from opendxa.common.resource.llm_resource import LLMResource
+from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
 from opendxa.dana.sandbox.interpreter.functions.core.reason_function import reason_function
+from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
@@ -24,7 +26,7 @@ def test_reason_function_direct_call():
     context.set("system.llm_resource", llm_resource)
 
     # Test basic call
-    result = reason_function("test prompt", context)
+    result = reason_function(context, "test prompt")
     assert result is not None
 
 
@@ -39,7 +41,7 @@ def test_reason_function_parameter_order():
     context.set("system.llm_resource", llm_resource)
 
     # Test with explicit mocking parameter
-    result1 = reason_function("test prompt", context, use_mock=True)
+    result1 = reason_function(context, "test prompt", use_mock=True)
     assert result1 is not None
 
     # Here we would test swapped parameters, but it would fail
@@ -48,7 +50,7 @@ def test_reason_function_parameter_order():
         """Wrapper that fixes parameter order."""
         # In real code we'd detect and swap parameter types
         # But here we'll just show the concept
-        return reason_function(prompt_second, context_first, use_mock=True)
+        return reason_function(context_first, prompt_second, use_mock=True)
 
     # This would be our fix when detecting reversed parameters
     result2 = wrapper(context, "test prompt 2")
@@ -61,9 +63,6 @@ Tests for the unified execution behavior in Dana.
 These tests verify that statements and expressions are executed consistently,
 particularly focusing on function calls in different contexts.
 """
-
-from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
-from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 
 
 class TestUnifiedExecution(unittest.TestCase):
@@ -85,7 +84,6 @@ class TestUnifiedExecution(unittest.TestCase):
             context = args[0] if len(args) > 0 else kwargs.get("context", self.context)
             prompt = args[1] if len(args) > 1 else kwargs.get("prompt", "")
             options = args[2] if len(args) > 2 else kwargs.get("options", {})
-            use_mock = args[3] if len(args) > 3 else kwargs.get("use_mock", None)
 
             # Merge any remaining kwargs into options
             if kwargs:

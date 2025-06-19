@@ -21,7 +21,7 @@
         "**/pytest.ini": true,
         "**/.env.example": true,
         "**/.cursorrules": true,
-        "**/.markdownlint.yaml": true,
+        "**/.-markdownlint.yaml": true,
         "**/.pre-commit-config.yaml": true,
         "**/.python-version": true,
         "**/.gitignore": true,

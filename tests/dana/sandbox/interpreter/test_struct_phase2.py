@@ -4,7 +4,7 @@ Tests for Phase 2: Struct execution functionality.
 This module tests struct instantiation and field access execution in the Dana interpreter.
 """
 
-from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
+from opendxa.dana.sandbox.dana_sandbox import DanaSandbox, ExecutionResult
 from opendxa.dana.sandbox.interpreter.struct_system import (
     StructInstance,
     StructTypeRegistry,
@@ -27,7 +27,7 @@ struct Point:
     y: int
 """
 
-        execution_result = self.sandbox.eval(code)
+        execution_result: ExecutionResult = self.sandbox.eval(code)
 
         # Execution should succeed
         assert execution_result.success is True
@@ -40,6 +40,7 @@ struct Point:
 
         # Check the registered struct type
         struct_type = StructTypeRegistry.get("Point")
+        assert struct_type is not None
         assert struct_type.name == "Point"
         assert len(struct_type.fields) == 2
         assert "x" in struct_type.fields
@@ -57,7 +58,7 @@ struct Point:
 local:point = Point(x=10, y=20)
 """
 
-        execution_result = self.sandbox.eval(code)
+        execution_result: ExecutionResult = self.sandbox.eval(code)
 
         # Check if execution succeeded
         if not execution_result.success:
@@ -65,7 +66,9 @@ local:point = Point(x=10, y=20)
             raise AssertionError(f"Execution failed: {execution_result.error}")
 
         # Get the point variable from context
+        assert execution_result.final_context is not None
         point = execution_result.final_context.get("local.point")
+        assert point is not None
 
         # Should be a StructInstance
         assert isinstance(point, StructInstance)
@@ -85,9 +88,10 @@ local:x_value = point.x
 local:y_value = point.y
 """
 
-        execution_result = self.sandbox.eval(code)
+        execution_result: ExecutionResult = self.sandbox.eval(code)
 
         # Check field access results
+        assert execution_result.final_context is not None
         x_value = execution_result.final_context.get("local.x_value")
         y_value = execution_result.final_context.get("local.y_value")
 
@@ -105,11 +109,14 @@ local:user1 = User(name="Alice", active=true)
 local:user2 = User(name="Bob", active=false)
 """
 
-        result = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.eval(code)
 
+        assert result.final_context is not None
         user1 = result.final_context.get("local.user1")
         user2 = result.final_context.get("local.user2")
 
+        assert user1 is not None
+        assert user2 is not None
         assert isinstance(user1, StructInstance)
         assert user1.get_field("name") == "Alice"
         assert user1.get_field("active") is True
@@ -132,11 +139,13 @@ local:original_x = point.x
 # For now, just test that we can access the field
 """
 
-        result = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.eval(code)
 
+        assert result.final_context is not None
         point = result.final_context.get("local.point")
         original_x = result.final_context.get("local.original_x")
 
+        assert point is not None
         assert isinstance(point, StructInstance)
         assert original_x == 10
 
@@ -157,9 +166,11 @@ local:profile = UserProfile(
 )
 """
 
-        result = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.eval(code)
 
+        assert result.final_context is not None
         profile = result.final_context.get("local.profile")
+        assert profile is not None
 
         assert isinstance(profile, StructInstance)
         assert profile.get_field("user_id") == "usr_123"
@@ -178,7 +189,7 @@ struct Point:
 local:point = Point(x=10)
 """
 
-        result = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.eval(code)
         assert not result.success, "Expected struct instantiation to fail"
         assert "Missing required fields" in str(result.error), f"Expected missing fields error, got: {result.error}"
 
@@ -193,7 +204,7 @@ struct Point:
 local:point = Point(x=10, y=20, z=30)
 """
 
-        result = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.eval(code)
         assert not result.success, "Expected struct instantiation to fail"
         assert "Unknown fields" in str(result.error), f"Expected unknown fields error, got: {result.error}"
 
@@ -212,11 +223,14 @@ local:center_point = Point(x=0, y=0)
 local:circle = Circle(center=center_point, radius=5.0)
 """
 
-        result = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.eval(code)
 
+        assert result.final_context is not None
         center_point = result.final_context.get("local.center_point")
         circle = result.final_context.get("local.circle")
 
+        assert center_point is not None
+        assert circle is not None
         assert isinstance(center_point, StructInstance)
         assert center_point.struct_type.name == "Point"
 
@@ -254,9 +268,11 @@ def create_origin() -> Point:
 local:origin = create_origin()
 """
 
-        result = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.eval(code)
 
+        assert result.final_context is not None
         origin = result.final_context.get("local.origin")
+        assert origin is not None
 
         assert isinstance(origin, StructInstance)
         assert origin.struct_type.name == "Point"
@@ -273,15 +289,16 @@ struct User:
 local:user = User(name="Alice", active=true)
 
 if user.active:
-    local:status = "online"
+    local:status = "active"
 else:
-    local:status = "offline"
+    local:status = "inactive"
 """
 
-        result = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.eval(code)
 
+        assert result.final_context is not None
         status = result.final_context.get("local.status")
-        assert status == "online"
+        assert status == "active"
 
     def test_struct_in_loops(self):
         """Test using structs in loop constructs."""
@@ -290,14 +307,15 @@ struct Point:
     x: int
     y: int
 
-local:points = [Point(x=1, y=2), Point(x=3, y=4)]
-local:x_sum = 0
+local:points = [Point(x=1, y=2), Point(x=3, y=4), Point(x=5, y=6)]
+local:sum_x = 0
 
 for point in points:
-    local:x_sum = local:x_sum + point.x
+    local:sum_x = sum_x + point.x
 """
 
-        result = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.eval(code)
 
-        x_sum = result.final_context.get("local.x_sum")
-        assert x_sum == 4  # 1 + 3
+        assert result.final_context is not None
+        sum_x = result.final_context.get("local.sum_x")
+        assert sum_x == 9  # 1 + 3 + 5

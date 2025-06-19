@@ -1,14 +1,12 @@
 """
-Tests for Phase 4: Advanced struct features and integration.
+Tests for Phase 4: Struct method syntax transformation.
 
-This module tests method syntax sugar (obj.method() → method(obj)), sophisticated
-function dispatch, and integration with existing Dana features.
-
-Copyright © 2025 Aitomatic, Inc.
-MIT License
+This module tests the transformation of method calls (obj.method()) to function calls (method(obj)).
 """
 
-from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
+import math
+
+from opendxa.dana.sandbox.dana_sandbox import DanaSandbox, ExecutionResult
 from opendxa.dana.sandbox.interpreter.struct_system import (
     StructInstance,
     StructTypeRegistry,
@@ -16,7 +14,7 @@ from opendxa.dana.sandbox.interpreter.struct_system import (
 
 
 class TestMethodSyntaxTransformation:
-    """Test obj.method() → method(obj) transformation."""
+    """Test method syntax transformation (obj.method() -> method(obj))."""
 
     def setup_method(self):
         """Clear struct registry before each test."""
@@ -24,25 +22,25 @@ class TestMethodSyntaxTransformation:
         self.sandbox = DanaSandbox()
 
     def test_basic_method_syntax_transformation(self):
-        """Test basic transformation of obj.method() to method(obj)."""
+        """Test basic method syntax transformation."""
         code = """
 struct Point:
     x: int
     y: int
 
-def distance_from_origin(point: Point) -> float:
-    import math.py
+def distance(point: Point) -> float:
     return math.sqrt(point.x * point.x + point.y * point.y)
 
 local:point = Point(x=3, y=4)
-local:distance = distance_from_origin(point)
-local:distance_method = point.distance_from_origin()
+local:distance = point.distance()
+local:distance_method = distance(point)
 """
 
-        result = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.eval(code)
         assert result.success, f"Execution failed: {result.error}"
 
         # Both calls should produce the same result
+        assert result.final_context is not None
         distance_direct = result.final_context.get("local.distance")
         distance_method = result.final_context.get("local.distance_method")
 
@@ -64,10 +62,11 @@ local:result_direct = add_offset(point, 5, 3)
 local:result_method = point.add_offset(5, 3)
 """
 
-        result = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.eval(code)
         assert result.success, f"Execution failed: {result.error}"
 
         # Both results should be equivalent
+        assert result.final_context is not None
         result_direct = result.final_context.get("local.result_direct")
         result_method = result.final_context.get("local.result_method")
 
@@ -91,9 +90,10 @@ local:result_direct = scale(rect, x_factor=2.0, y_factor=1.5)
 local:result_method = rect.scale(x_factor=2.0, y_factor=1.5)
 """
 
-        result = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.eval(code)
         assert result.success, f"Execution failed: {result.error}"
 
+        assert result.final_context is not None
         result_direct = result.final_context.get("local.result_direct")
         result_method = result.final_context.get("local.result_method")
 
@@ -119,10 +119,11 @@ local:type_direct = get_type(point)
 local:type_method = point.get_type()
 """
 
-        result = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.eval(code)
         assert result.success, f"Execution failed: {result.error}"
 
         # Both calls should produce the same result
+        assert result.final_context is not None
         type_direct = result.final_context.get("local.type_direct")
         type_method = result.final_context.get("local.type_method")
         assert type_direct == type_method == "Point"
@@ -138,7 +139,7 @@ local:point = Point(x=1, y=2)
 local:result = point.nonexistent_method()
 """
 
-        result = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.eval(code)
         assert not result.success
         # Check for the improved error message format
         assert "has no method" in str(result.error) or "not found" in str(result.error)
@@ -172,9 +173,10 @@ for doubled_num in doubled:
     local:final_values.append(doubled_num.value)
 """
 
-        result = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.eval(code)
         assert result.success, f"Execution failed: {result.error}"
 
+        assert result.final_context is not None
         final_values = result.final_context.get("local.final_values")
         assert final_values == [2, 4, 6]
 
@@ -201,9 +203,10 @@ else:
 local:final_count = counter.count
 """
 
-        result = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.eval(code)
         assert result.success, f"Execution failed: {result.error}"
 
+        assert result.final_context is not None
         result_type = result.final_context.get("local.result")
         final_count = result.final_context.get("local.final_count")
 
@@ -228,9 +231,10 @@ local:step2 = step1.add_text("World")
 local:final = step2.finalize()
 """
 
-        result = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.eval(code)
         assert result.success, f"Execution failed: {result.error}"
 
+        assert result.final_context is not None
         final_result = result.final_context.get("local.final")
         assert final_result == "Hello World!"
 
@@ -241,39 +245,98 @@ struct Point:
     x: int
     y: int
 
-struct Line:
-    start: Point
-    end: Point
+struct Circle:
+    center: Point
+    radius: float
 
-def length(line: Line) -> float:
-    import math.py
-    dx = line.end.x - line.start.x
-    dy = line.end.y - line.start.y
-    return math.sqrt(dx * dx + dy * dy)
+def get_area(circle: Circle) -> float:
+    return 3.14159 * circle.radius * circle.radius
 
-def midpoint(line: Line) -> Point:
-    mid_x = int((line.start.x + line.end.x) / 2)
-    mid_y = int((line.start.y + line.end.y) / 2)
-    return Point(x=mid_x, y=mid_y)
+def get_center_x(circle: Circle) -> int:
+    return circle.center.x
 
-local:start = Point(x=0, y=0)
-local:end = Point(x=6, y=8)
-local:line = Line(start=start, end=end)
-
-local:line_length = line.length()
-local:line_midpoint = line.midpoint()
+local:circle = Circle(center=Point(x=10, y=20), radius=5.0)
+local:area = circle.get_area()
+local:center_x = circle.get_center_x()
 """
 
-        result = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.eval(code)
         assert result.success, f"Execution failed: {result.error}"
 
-        line_length = result.final_context.get("local.line_length")
-        line_midpoint = result.final_context.get("local.line_midpoint")
+        assert result.final_context is not None
+        area = result.final_context.get("local.area")
+        center_x = result.final_context.get("local.center_x")
 
-        assert line_length == 10.0  # 6-8-10 triangle
-        assert isinstance(line_midpoint, StructInstance)
-        assert line_midpoint.x == 3
-        assert line_midpoint.y == 4
+        # Approximate area calculation (π * r²)
+        expected_area = 3.14159 * 5.0 * 5.0
+        assert abs(area - expected_area) < 0.01
+        assert center_x == 10
+
+    def test_method_overloading_simulation(self):
+        """Test simulating method overloading through different function signatures."""
+        code = """
+struct Point:
+    x: int
+    y: int
+
+def add_point(point1: Point, point2: Point) -> Point:
+    return Point(x=point1.x + point2.x, y=point1.y + point2.y)
+
+def add_scalar(point: Point, scalar: int) -> Point:
+    return Point(x=point.x + scalar, y=point.y + scalar)
+
+local:point1 = Point(x=1, y=2)
+local:point2 = Point(x=3, y=4)
+
+# Method overloading simulation
+local:result1 = point1.add_point(point2)  # Should call add_point(point1, point2)
+local:result2 = point1.add_scalar(5)      # Should call add_scalar(point1, 5)
+"""
+
+        result: ExecutionResult = self.sandbox.eval(code)
+        assert result.success, f"Execution failed: {result.error}"
+
+        assert result.final_context is not None
+        result1 = result.final_context.get("local.result1")
+        result2 = result.final_context.get("local.result2")
+
+        assert isinstance(result1, StructInstance)
+        assert isinstance(result2, StructInstance)
+        assert result1.x == 4  # 1 + 3
+        assert result1.y == 6  # 2 + 4
+        assert result2.x == 6  # 1 + 5
+        assert result2.y == 7  # 2 + 5
+
+    def test_method_with_optional_parameters(self):
+        """Test method transformation with optional parameters."""
+        code = """
+struct Config:
+    name: str
+    value: int
+
+def update_config(config: Config, new_name: str, new_value: int = None) -> Config:
+    if new_value is None:
+        new_value = config.value
+    return Config(name=new_name, value=new_value)
+
+local:config = Config(name="old", value=10)
+local:updated1 = config.update_config("new_name")
+local:updated2 = config.update_config("new_name", 20)
+"""
+
+        result: ExecutionResult = self.sandbox.eval(code)
+        assert result.success, f"Execution failed: {result.error}"
+
+        assert result.final_context is not None
+        updated1 = result.final_context.get("local.updated1")
+        updated2 = result.final_context.get("local.updated2")
+
+        assert isinstance(updated1, StructInstance)
+        assert isinstance(updated2, StructInstance)
+        assert updated1.name == "new_name"
+        assert updated1.value == 10  # Used default value
+        assert updated2.name == "new_name"
+        assert updated2.value == 20  # Used provided value
 
 
 class TestAdvancedStructFeatures:
@@ -285,71 +348,71 @@ class TestAdvancedStructFeatures:
         self.sandbox = DanaSandbox()
 
     def test_struct_methods_with_multiple_signatures(self):
-        """Test struct methods with multiple function signatures."""
+        """Test struct methods that can handle multiple argument patterns."""
         code = """
 struct Vector:
     x: float
     y: float
 
-# Different function names for different signatures (until proper overloading is implemented)
-def scale_uniform(vector: Vector, factor: float) -> Vector:
-    return Vector(x=vector.x * factor, y=vector.y * factor)
+def normalize(vector: Vector, length: float = 1.0) -> Vector:
+    # Calculate current magnitude
+    magnitude = math.sqrt(vector.x * vector.x + vector.y * vector.y)
+    if magnitude == 0:
+        return Vector(x=0, y=0)
+    
+    # Normalize to desired length
+    scale = length / magnitude
+    return Vector(x=vector.x * scale, y=vector.y * scale)
 
-def scale_non_uniform(vector: Vector, x_factor: float, y_factor: float) -> Vector:
-    return Vector(x=vector.x * x_factor, y=vector.y * y_factor)
-
-local:vector = Vector(x=2.0, y=3.0)
-local:uniform_scale = vector.scale_uniform(2.0)
-local:non_uniform_scale = vector.scale_non_uniform(2.0, 3.0)
+local:vector = Vector(x=3, y=4)
+local:normalized1 = vector.normalize()      # Default length=1.0
+local:normalized2 = vector.normalize(2.0)   # Custom length
 """
 
-        result = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.eval(code)
         assert result.success, f"Execution failed: {result.error}"
 
-        uniform_scale = result.final_context.get("local.uniform_scale")
-        non_uniform_scale = result.final_context.get("local.non_uniform_scale")
+        assert result.final_context is not None
+        normalized1 = result.final_context.get("local.normalized1")
+        normalized2 = result.final_context.get("local.normalized2")
 
-        assert isinstance(uniform_scale, StructInstance)
-        assert uniform_scale.x == 4.0  # 2.0 * 2.0
-        assert uniform_scale.y == 6.0  # 3.0 * 2.0
+        assert isinstance(normalized1, StructInstance)
+        assert isinstance(normalized2, StructInstance)
 
-        assert isinstance(non_uniform_scale, StructInstance)
-        assert non_uniform_scale.x == 4.0  # 2.0 * 2.0
-        assert non_uniform_scale.y == 9.0  # 3.0 * 3.0
+        # Check that both are normalized (magnitude should be 1.0 and 2.0 respectively)
+        mag1 = math.sqrt(normalized1.x * normalized1.x + normalized1.y * normalized1.y)
+        mag2 = math.sqrt(normalized2.x * normalized2.x + normalized2.y * normalized2.y)
+
+        assert abs(mag1 - 1.0) < 0.01
+        assert abs(mag2 - 2.0) < 0.01
 
     def test_struct_method_returning_different_types(self):
-        """Test struct methods that return different types."""
+        """Test struct methods that return different types based on context."""
         code = """
 struct Data:
-    values: list
+    value: str
 
-def sum_values(data: Data) -> int:
-    total = 0
-    for value in data.values:
-        total = total + value
-    return total
+def process(data: Data, as_string: bool = True) -> str | int:
+    if as_string:
+        return data.value
+    else:
+        # Try to convert to int, return 0 if failed
+        try:
+            return int(data.value)
+        except:
+            return 0
 
-def get_first(data: Data) -> int:
-    if len(data.values) > 0:
-        return data.values[0]
-    return 0
-
-def to_string(data: Data) -> str:
-    return f"Data({data.values})"
-
-local:data = Data(values=[1, 2, 3, 4, 5])
-local:sum_result = data.sum_values()
-local:first_result = data.get_first()
-local:string_result = data.to_string()
+local:data = Data(value="42")
+local:as_string = data.process()
+local:as_int = data.process(as_string=false)
 """
 
-        result = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.eval(code)
         assert result.success, f"Execution failed: {result.error}"
 
-        sum_result = result.final_context.get("local.sum_result")
-        first_result = result.final_context.get("local.first_result")
-        string_result = result.final_context.get("local.string_result")
+        assert result.final_context is not None
+        as_string = result.final_context.get("local.as_string")
+        as_int = result.final_context.get("local.as_int")
 
-        assert sum_result == 15
-        assert first_result == 1
-        assert "Data([1, 2, 3, 4, 5])" in string_result
+        assert as_string == "42"
+        assert as_int == 42

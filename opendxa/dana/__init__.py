@@ -44,5 +44,5 @@ __all__ = [
     "ExecutionResult",
     "run",
     "eval",
-    "dana",  # Available via lazy loading
+    "dana",  # type: ignore ; Available via lazy loading
 ]

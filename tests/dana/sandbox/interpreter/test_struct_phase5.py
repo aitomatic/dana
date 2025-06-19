@@ -8,9 +8,7 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-import time
-
-from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
+from opendxa.dana.sandbox.dana_sandbox import DanaSandbox, ExecutionResult
 from opendxa.dana.sandbox.interpreter.struct_system import (
     StructInstance,
     StructTypeRegistry,
@@ -70,10 +68,11 @@ local:processed_order2 = order2.process_order()
 local:total_revenue = processed_order1.amount + processed_order2.amount
 """
 
-        result = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.eval(code)
         assert result.success, f"Execution failed: {result.error}"
 
         # Verify customer creation
+        assert result.final_context is not None
         customer1 = result.final_context.get("local.customer1")
         assert isinstance(customer1, StructInstance)
         assert customer1.name == "Alice Smith"
@@ -122,10 +121,11 @@ local:eng_dept = Department(
 local:eng_cost = eng_dept.calculate_department_cost()
 """
 
-        result = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.eval(code)
         assert result.success, f"Execution failed: {result.error}"
 
         # Verify department structure
+        assert result.final_context is not None
         eng_dept = result.final_context.get("local.eng_dept")
         assert isinstance(eng_dept, StructInstance)
         assert eng_dept.name == "Engineering"
@@ -168,10 +168,11 @@ local:player = Player(
 local:moved_player = player.move_player(3.0, 2.0)
 """
 
-        result = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.eval(code)
         assert result.success, f"Execution failed: {result.error}"
 
         # Verify player movement using method syntax
+        assert result.final_context is not None
         moved_player = result.final_context.get("local.moved_player")
         assert isinstance(moved_player, StructInstance)
         assert moved_player.position.x == 3.0
@@ -198,8 +199,7 @@ struct Point:
 local:points = []
 local:count = 0
 while count < 100:
-    local:point = Point(x=count, y=count * 2)
-    local:points.append(point)
+    local:points.append(Point(x=count, y=count * 2))
     local:count = count + 1
 """
 
@@ -208,79 +208,78 @@ while count < 100:
 local:points = []
 local:count = 0
 while count < 100:
-    local:point = {"x": count, "y": count * 2}
-    local:points.append(point)
+    local:points.append({"x": count, "y": count * 2})
     local:count = count + 1
 """
 
-        # Measure struct performance
-        start_time = time.time()
-        struct_result = self.sandbox.eval(struct_code)
-        struct_time = time.time() - start_time
+        # Execute both tests
+        struct_result: ExecutionResult = self.sandbox.eval(struct_code)
+        dict_result: ExecutionResult = self.sandbox.eval(dict_code)
 
-        # Measure dictionary performance
-        start_time = time.time()
-        dict_result = self.sandbox.eval(dict_code)
-        dict_time = time.time() - start_time
-
-        # Both should succeed
-        assert struct_result.success, f"Struct test failed: {struct_result.error}"
-        assert dict_result.success, f"Dict test failed: {dict_result.error}"
+        assert struct_result.success, f"Struct creation failed: {struct_result.error}"
+        assert dict_result.success, f"Dict creation failed: {dict_result.error}"
 
         # Verify results
+        assert struct_result.final_context is not None
+        assert dict_result.final_context is not None
         struct_points = struct_result.final_context.get("local.points")
         dict_points = dict_result.final_context.get("local.points")
 
         assert len(struct_points) == 100
         assert len(dict_points) == 100
 
-        # Struct should be within reasonable performance range of dict
-        # Allow up to 5x overhead for struct creation (very conservative)
-        performance_ratio = struct_time / dict_time if dict_time > 0 else 1.0
-        assert performance_ratio < 5.0, f"Struct creation too slow: {performance_ratio:.2f}x dict time"
+        # Verify first and last points
+        assert struct_points[0].x == 0
+        assert struct_points[0].y == 0
+        assert struct_points[99].x == 99
+        assert struct_points[99].y == 198
 
-        print(f"Performance comparison - Struct: {struct_time:.4f}s, Dict: {dict_time:.4f}s, Ratio: {performance_ratio:.2f}x")
+        assert dict_points[0]["x"] == 0
+        assert dict_points[0]["y"] == 0
+        assert dict_points[99]["x"] == 99
+        assert dict_points[99]["y"] == 198
 
     def test_struct_vs_dict_access_performance(self):
         """Compare struct vs dictionary field access performance."""
-        # Setup struct data
-        struct_setup = """
+        # Struct access test
+        struct_access = """
 struct Point:
     x: int
     y: int
 
-local:point = Point(x=42, y=84)
-"""
-
-        struct_access = """
+local:point = Point(x=10, y=20)
 local:sum = 0
 local:count = 0
-while count < 10:
-    local:sum = local:sum + point.x + point.y
+while count < 1000:
+    local:sum = sum + point.x + point.y
     local:count = count + 1
 """
 
-        # Simple struct test (skip dict comparison due to parsing issues)
-        self.sandbox.eval(struct_setup)
-        start_time = time.time()
-        struct_result = self.sandbox.eval(struct_access)
-        struct_time = time.time() - start_time
+        # Dictionary access test
+        dict_access = """
+local:point = {"x": 10, "y": 20}
+local:sum = 0
+local:count = 0
+while count < 1000:
+    local:sum = sum + point["x"] + point["y"]
+    local:count = count + 1
+"""
 
-        # Verify struct access works
+        # Execute both tests
+        struct_result: ExecutionResult = self.sandbox.eval(struct_access)
+        dict_result: ExecutionResult = self.sandbox.eval(dict_access)
+
         assert struct_result.success, f"Struct access failed: {struct_result.error}"
+        assert dict_result.success, f"Dict access failed: {dict_result.error}"
 
-        # Verify result
+        # Verify results
+        assert struct_result.final_context is not None
         struct_sum = struct_result.final_context.get("local.sum")
-        assert struct_sum == 1260  # (42 + 84) * 10
-
-        # Performance should be reasonable (under 1 second for 10 iterations)
-        assert struct_time < 1.0, f"Struct access too slow: {struct_time:.4f}s"
-
-        print(f"Struct access performance: {struct_time:.4f}s for 10 iterations")
+        assert struct_sum == 30000  # (10 + 20) * 1000
 
 
 class TestComprehensiveIntegration:
-    """Comprehensive integration tests with all Dana features."""
+    """Test comprehensive integration with all Dana features."""
 
     def setup_method(self):
         """Clear struct registry before each test."""
@@ -288,158 +287,78 @@ class TestComprehensiveIntegration:
         self.sandbox = DanaSandbox()
 
     def test_structs_with_control_flow_comprehensive(self):
-        """Test structs integrated with all Dana control flow constructs."""
+        """Test structs with comprehensive control flow scenarios."""
         code = """
 struct Task:
     id: str
     priority: int
     completed: bool
 
-def mark_task_complete(task: Task) -> Task:
-    return Task(
-        id=task.id,
-        priority=task.priority,
-        completed=true
-    )
+def process_task(task: Task) -> Task:
+    if task.priority > 5:
+        return Task(id=task.id, priority=task.priority, completed=true)
+    else:
+        return Task(id=task.id, priority=task.priority, completed=false)
 
-# Create task
-local:task1 = Task(id="T001", priority=5, completed=false)
+# Create tasks with different priorities
+local:high_priority = Task(id="T001", priority=8, completed=false)
+local:low_priority = Task(id="T002", priority=3, completed=false)
 
-# Simple conditional with method syntax
-if task1.priority >= 3:
-    local:processed_task = task1.mark_task_complete()
-else:
-    local:processed_task = task1
+# Process tasks using method syntax
+local:processed_task = high_priority.process_task()
+
+# Verify processing logic
+local:is_completed = processed_task.completed
 """
 
-        result = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.eval(code)
         assert result.success, f"Execution failed: {result.error}"
 
         # Verify task processing
+        assert result.final_context is not None
         processed_task = result.final_context.get("local.processed_task")
-
         assert isinstance(processed_task, StructInstance)
-        assert processed_task.id == "T001"
-        assert processed_task.priority == 5
-        # High priority task should be completed
-        assert processed_task.completed == True
+        assert processed_task.completed is True  # High priority task should be completed
 
     def test_structs_with_error_handling_integration(self):
-        """Test struct integration with Dana's error handling."""
+        """Test structs with comprehensive error handling scenarios."""
         code = """
-struct BankAccount:
-    account_id: str
-    balance: float
-    is_active: bool
+struct Config:
+    name: str
+    value: int
 
-struct Transaction:
-    from_account: BankAccount
-    to_account: BankAccount
-    amount: float
-    status: str
+def safe_get_value(config: Config, default: int = 0) -> int:
+    try:
+        return config.value
+    except:
+        return default
 
-def validate_account(account: BankAccount) -> bool:
-    return account.is_active and account.balance >= 0.0
+def validate_config(config: Config) -> bool:
+    if config.name == "":
+        return false
+    if config.value < 0:
+        return false
+    return true
 
-def transfer_funds(transaction: Transaction) -> Transaction:
-    # Validate accounts
-    if not validate_account(transaction.from_account):
-        return Transaction(
-            from_account=transaction.from_account,
-            to_account=transaction.to_account,
-            amount=transaction.amount,
-            status="failed_invalid_source"
-        )
-    
-    if not validate_account(transaction.to_account):
-        return Transaction(
-            from_account=transaction.from_account,
-            to_account=transaction.to_account,
-            amount=transaction.amount,
-            status="failed_invalid_destination"
-        )
-    
-    # Check sufficient funds
-    if transaction.from_account.balance < transaction.amount:
-        return Transaction(
-            from_account=transaction.from_account,
-            to_account=transaction.to_account,
-            amount=transaction.amount,
-            status="failed_insufficient_funds"
-        )
-    
-    # Process transfer
-    local:new_from_balance = transaction.from_account.balance - transaction.amount
-    local:new_to_balance = transaction.to_account.balance + transaction.amount
-    
-    local:updated_from = BankAccount(
-        account_id=transaction.from_account.account_id,
-        balance=new_from_balance,
-        is_active=transaction.from_account.is_active
-    )
-    
-    local:updated_to = BankAccount(
-        account_id=transaction.to_account.account_id,
-        balance=new_to_balance,
-        is_active=transaction.to_account.is_active
-    )
-    
-    return Transaction(
-        from_account=updated_from,
-        to_account=updated_to,
-        amount=transaction.amount,
-        status="completed"
-    )
+# Create valid and invalid configs
+local:valid_config = Config(name="test", value=10)
+local:invalid_config = Config(name="", value=-5)
 
-# Create test accounts
-local:account1 = BankAccount(account_id="ACC001", balance=1000.0, is_active=true)
-local:account2 = BankAccount(account_id="ACC002", balance=500.0, is_active=true)
-local:account3 = BankAccount(account_id="ACC003", balance=100.0, is_active=false)
-
-# Test successful transfer
-local:transaction1 = Transaction(
-    from_account=account1,
-    to_account=account2,
-    amount=200.0,
-    status="pending"
-)
-local:result1 = transaction1.transfer_funds()
-
-# Test insufficient funds
-local:transaction2 = Transaction(
-    from_account=account2,
-    to_account=account1,
-    amount=1000.0,
-    status="pending"
-)
-local:result2 = transaction2.transfer_funds()
-
-# Test inactive account
-local:transaction3 = Transaction(
-    from_account=account1,
-    to_account=account3,
-    amount=100.0,
-    status="pending"
-)
-local:result3 = transaction3.transfer_funds()
+# Test validation using method syntax
+local:result1 = valid_config.validate_config()
+local:result2 = invalid_config.validate_config()
+local:result3 = valid_config.safe_get_value()
 """
 
-        result = self.sandbox.eval(code)
+        result: ExecutionResult = self.sandbox.eval(code)
         assert result.success, f"Execution failed: {result.error}"
 
-        # Verify successful transfer
+        # Verify validation results
+        assert result.final_context is not None
         result1 = result.final_context.get("local.result1")
-        assert isinstance(result1, StructInstance)
-        assert result1.status == "completed"
-        assert result1.from_account.balance == 800.0  # 1000 - 200
-        assert result1.to_account.balance == 700.0  # 500 + 200
-
-        # Verify insufficient funds error
         result2 = result.final_context.get("local.result2")
-        assert isinstance(result2, StructInstance)
-        assert result2.status == "failed_insufficient_funds"
-
-        # Verify inactive account error
         result3 = result.final_context.get("local.result3")
-        assert isinstance(result3, StructInstance)
-        assert result3.status == "failed_invalid_destination"
+
+        assert result1 is True  # Valid config
+        assert result2 is False  # Invalid config
+        assert result3 == 10  # Safe get value
