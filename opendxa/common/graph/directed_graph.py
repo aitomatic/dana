@@ -158,6 +158,11 @@ class DirectedGraph(Configurable):
         if edge.source not in self.nodes or edge.target not in self.nodes:
             raise ValueError("Edge nodes must exist in graph")
         self.edges.append(edge)
+        # Ensure adjacency lists exist
+        if edge.source not in self._outgoing:
+            self._outgoing[edge.source] = []
+        if edge.target not in self._incoming:
+            self._incoming[edge.target] = []
         self._outgoing[edge.source].append(edge)
         self._incoming[edge.target].append(edge)
 
@@ -169,8 +174,10 @@ class DirectedGraph(Configurable):
     def remove_edge_between(self, source_id: str, target_id: str) -> None:
         """Remove edge between two nodes."""
         self.edges = [edge for edge in self.edges if edge.source != source_id or edge.target != target_id]
-        self._outgoing[source_id] = [edge for edge in self._outgoing[source_id] if edge.target != target_id]
-        self._incoming[target_id] = [edge for edge in self._incoming[target_id] if edge.source != source_id]
+        if source_id in self._outgoing:
+            self._outgoing[source_id] = [edge for edge in self._outgoing[source_id] if edge.target != target_id]
+        if target_id in self._incoming:
+            self._incoming[target_id] = [edge for edge in self._incoming[target_id] if edge.source != source_id]
 
     def get_node_by_id(self, node_id: str) -> Node | None:
         """Get node by ID."""
@@ -182,11 +189,11 @@ class DirectedGraph(Configurable):
 
     def get_next_nodes(self, node_id: str) -> list[Node]:
         """Get nodes that can be reached directly from given node."""
-        return [self.nodes[edge.target] for edge in self._outgoing[node_id]]
+        return [self.nodes[edge.target] for edge in self._outgoing.get(node_id, [])]
 
     def get_prev_nodes(self, node_id: str) -> list[Node]:
         """Get nodes that can reach given node directly."""
-        return [self.nodes[edge.source] for edge in self._incoming[node_id]]
+        return [self.nodes[edge.source] for edge in self._incoming.get(node_id, [])]
 
     def remove_node(self, node_id: str) -> None:
         """Remove node and its edges from graph."""
