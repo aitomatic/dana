@@ -33,24 +33,13 @@ from lark import Lark, Tree
 from lark.indenter import PythonIndenter
 
 from opendxa.common.mixins.loggable import Loggable
-from opendxa.dana.sandbox.parser.transformer.dana_transformer import DanaTransformer
-from opendxa.dana.sandbox.parser.utils.type_checker import TypeEnvironment
-
-try:
-    from lark import Lark, Tree
-
-    LARK_AVAILABLE = True
-except ImportError:
-    raise ImportError("The lark-parser package is required. Install it with 'pip install lark-parser'")
-
-# Create a shared logger for the parser module
-from opendxa.common.utils.logging import DXA_LOGGER
 from opendxa.dana.common.exceptions import ParseError
 from opendxa.dana.sandbox.parser.ast import Identifier, Program
-from opendxa.dana.sandbox.parser.utils.type_checker import TypeChecker
+from opendxa.dana.sandbox.parser.transformer.dana_transformer import DanaTransformer
+from opendxa.dana.sandbox.parser.utils.type_checker import TypeChecker, TypeEnvironment
 
-parser_logger = DXA_LOGGER.getLogger("opendxa.dana.language.parser")
-
+# Lark is already imported at line 32, this block is redundant
+LARK_AVAILABLE = True
 
 class ParseResult(NamedTuple):
     """Result of parsing a Dana program."""
@@ -65,7 +54,7 @@ class ParseResult(NamedTuple):
 
 
 # Environment variable for controlling type checking
-ENV_TYPE_CHECK = "Dana_TYPE_CHECK"
+ENV_TYPE_CHECK = "DANA_TYPE_CHECK"
 ENABLE_TYPE_CHECK = os.environ.get(ENV_TYPE_CHECK, "1").lower() in ["1", "true", "yes", "y"]
 
 
@@ -282,9 +271,12 @@ class DanaParser(Lark, Loggable):
 
         Returns:
             The transformed identifier
+
+        Note: This method is deprecated and should not be used.
         """
         name = str(node.children[0])
-        return Identifier(name=name, location=self._get_location(node))
+        # Removed location parameter since _get_location method doesn't exist
+        return Identifier(name=name)
 
 
 def parse_program(program_text: str, do_type_check: bool = ENABLE_TYPE_CHECK) -> Program:
