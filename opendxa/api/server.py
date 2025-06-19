@@ -186,7 +186,7 @@ class APIServiceManager(Loggable):
         """Start local API server or use existing one"""
         # Extract port from normalized URI (localhost:port)
         try:
-            if ":" in self.service_uri:
+            if self.service_uri and ":" in self.service_uri:
                 port = int(self.service_uri.split(":")[-1])
             else:
                 port = DEFAULT_LOCAL_PORT  # Default port

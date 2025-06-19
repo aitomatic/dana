@@ -245,7 +245,7 @@ class ControlFlowExecutor(BaseExecutor):
         else:
             # Direct context manager pattern: with mcp_object as var:
             # Get the context manager from the context using the full scoped name
-            if hasattr(node.context_manager, "name"):
+            if hasattr(node.context_manager, "name") and isinstance(node.context_manager.name, str):
                 # Handle scoped variables (e.g., private:mcp_client)
                 if ":" in node.context_manager.name:
                     scope, var_name = node.context_manager.name.split(":", 1)
@@ -271,7 +271,7 @@ class ControlFlowExecutor(BaseExecutor):
             # Bind the context value to the 'as' variable in the appropriate scope
             # If the context manager was accessed with a scope (e.g., private:mcp_client),
             # use the same scope for the 'as' variable
-            if hasattr(node.context_manager, "name"):
+            if hasattr(node.context_manager, "name") and isinstance(node.context_manager.name, str):
                 if ":" in node.context_manager.name:
                     scope, _ = node.context_manager.name.split(":", 1)
                     context.set_in_scope(node.as_var, context_value, scope=scope)
@@ -297,7 +297,7 @@ class ControlFlowExecutor(BaseExecutor):
         else:
             # Exit without exception
             # Delete the variable from the appropriate scope
-            if hasattr(node.context_manager, "name"):
+            if hasattr(node.context_manager, "name") and isinstance(node.context_manager.name, str):
                 if ":" in node.context_manager.name:
                     scope, _ = node.context_manager.name.split(":", 1)
                     context.delete_from_scope(node.as_var, scope=scope)

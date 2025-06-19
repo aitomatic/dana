@@ -1061,7 +1061,7 @@ class StatementTransformer(BaseTransformer):
         elif isinstance(first_item, Identifier):
             context_manager = cast(Expression, first_item)
             # Don't add local prefix if the identifier is already scoped (contains ":" or starts with a scope)
-            if not (
+            if isinstance(context_manager.name, str) and not (
                 context_manager.name.startswith("local.")
                 or ":" in context_manager.name
                 or context_manager.name.startswith("private.")

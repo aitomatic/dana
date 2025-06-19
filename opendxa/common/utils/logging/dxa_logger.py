@@ -175,6 +175,13 @@ class DXALogger:
         """Log message with specified level."""
         if isinstance(level, str):
             level = getattr(logging, level)
+        elif hasattr(level, "value"):  # Handle LogLevel enum
+            level = level.value
+
+        # Ensure level is an int
+        if not isinstance(level, int):
+            raise ValueError(f"Invalid log level: {level}")
+
         self._log(level, message, *args, **kwargs)
 
     def debug(self, message: str, *args: Any, **kwargs: Any) -> None:
@@ -196,12 +203,6 @@ class DXALogger:
     def critical(self, message: str, *args: Any, **kwargs: Any) -> None:
         """Log critical message."""
         self._log(logging.CRITICAL, message, *args, **kwargs)
-
-    @overload
-    def getLogger(self, name: str, prefix: str | None = None) -> "DXALogger": ...
-
-    @overload
-    def getLogger(self, obj: T, prefix: str | None = None) -> "DXALogger": ...
 
     def getLogger(self, name_or_obj: str | Any, prefix: str | None = None) -> "DXALogger":
         """Create a new logger instance.

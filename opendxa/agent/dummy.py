@@ -56,7 +56,13 @@ class Planner:
 class Plan:
     """Plan for executing plans."""
 
-    def __init__(self, strategy: PlanStrategy = None, llm: LLMResource = None, question: str = None, steps: list[str] = None):
+    def __init__(
+        self,
+        strategy: PlanStrategy | None = None,
+        llm: LLMResource | None = None,
+        question: str | None = None,
+        steps: list[str] | None = None,
+    ):
         """Initialize plan."""
         self.strategy = strategy or PlanStrategy.DEFAULT
         self.llm = llm

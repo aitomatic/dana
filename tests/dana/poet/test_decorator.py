@@ -121,7 +121,7 @@ def test_fallback_to_original(tmp_path, monkeypatch):
 def test_decorator_with_arguments():
     """Test decorator with additional arguments."""
 
-    @poet(domain="test", retries=5, timeout=60.0, enable_training=True)
+    @poet(domain="test", retries=5, timeout=60)
     def test_func(x: int) -> int:
         return x * 2
 
@@ -130,8 +130,7 @@ def test_decorator_with_arguments():
     assert test_func.metadata.config is not None
     assert test_func.metadata.config.domain == "test"
     assert test_func.metadata.config.retries == 5
-    assert test_func.metadata.config.timeout == 60.0
-    assert test_func.metadata.config.enable_training is True
+    assert test_func.metadata.config.timeout == 60
     assert test_func.metadata.config.optimize_for is None
     assert test_func.metadata.config.enable_monitoring is True
 

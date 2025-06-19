@@ -256,11 +256,15 @@ class Agent(BaseResource):
         """Execute an objective."""
         self._initialize()
         async with self:  # For cleanup
-            return AgentResponse.new_instance(await self.runtime.execute(plan, context))
+            return AgentResponse.new_instance(await self.runtime.execute(plan))
 
     def run(self, plan: Plan) -> AgentResponse:
         """Run an plan."""
-        return Misc.safe_asyncio_run(self.async_run, plan)
+
+        async def _run_async():
+            return await self.async_run(plan, None)
+
+        return Misc.safe_asyncio_run(_run_async)
 
     def ask(self, question: str) -> AgentResponse:
         """Ask a question to the agent."""
@@ -272,10 +276,10 @@ class Agent(BaseResource):
         return self.runtime.runtime_context
 
     @ToolCallable.tool
-    def set_variable(self, name: str, value: Any) -> BaseResponse:
+    async def set_variable(self, name: str, value: Any) -> BaseResponse:
         """Set a variable in the RuntimeContext."""
         self.runtime.runtime_context.set_variable(name, value)
-        return BaseResponse(success=True, content=f"Variable {name} set to {value}")
+        return BaseResponse(success=True, content=f"Variable {name} set to {value}", error=None)
 
     async def query(self, request: BaseRequest) -> BaseResponse:
         """Query the agent."""

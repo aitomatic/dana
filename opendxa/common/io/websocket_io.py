@@ -9,6 +9,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 from websockets import serve
+from websockets.asyncio.server import Server
 from websockets.legacy.server import WebSocketServerProtocol
 
 from .base_io import BaseIO
@@ -32,7 +33,7 @@ class WebSocketIO(BaseIO):
         self.port = parsed.port or 8765
         self.max_retries = max_retries
         self.retry_delay = retry_delay
-        self._server: WebSocketServerProtocol | None = None
+        self._server: Server | None = None
         self._current_connection: WebSocketServerProtocol | None = None
         self._message_queue: asyncio.Queue[str] = asyncio.Queue()
 

@@ -40,7 +40,6 @@ class TestPOETDecoratorPython:
         assert meta["timeout"] == 10
         assert meta["namespace"] == "local"
         assert meta["overwrite"] is False
-        assert meta["enable_training"] is False
 
         # Test function execution
         result = my_func(3)
@@ -65,7 +64,7 @@ class TestPOETDecoratorPython:
     def test_poet_decorator_metadata_fields(self):
         """Test that all metadata fields are properly set."""
 
-        @poet(domain="my_domain", retries=4, timeout=7, namespace="custom", overwrite=True, enable_training=True)
+        @poet(domain="my_domain", retries=4, timeout=7, namespace="custom", overwrite=True)
         def f(x):
             return x
 
@@ -75,7 +74,6 @@ class TestPOETDecoratorPython:
         assert meta["timeout"] == 7
         assert meta["namespace"] == "custom"
         assert meta["overwrite"] is True
-        assert meta["enable_training"] is True
 
     def test_poet_decorator_preserves_doc_and_name(self):
         """Test that function name and docstring are preserved."""
@@ -176,7 +174,6 @@ class TestPOETDecoratorPython:
         assert meta["timeout"] is None
         assert meta["namespace"] == "local"
         assert meta["overwrite"] is False
-        assert meta["enable_training"] is False
 
     def test_poet_decorator_function_signature_preservation(self):
         """Test that function signatures are preserved for introspection."""

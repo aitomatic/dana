@@ -300,7 +300,7 @@ class FunctionResolver:
         else:
             raise SandboxError(f"Unknown function type '{resolved_func.func_type}' for function '{func_name}'")
 
-    def list_available_functions(self, namespace: str = None) -> list[str]:
+    def list_available_functions(self, namespace: str | None = None) -> list[str]:
         """List available functions in the given namespace.
 
         Args:

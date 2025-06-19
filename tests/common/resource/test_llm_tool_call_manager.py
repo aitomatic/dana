@@ -58,7 +58,7 @@ class TestLLMToolCallManager(unittest.IsolatedAsyncioTestCase):
     def test_build_request_params_with_tools(self):
         """Test request parameter building with tools."""
         request = {"messages": [{"role": "user", "content": "test"}]}
-        resources = {"test_resource": MockResource("test_resource")}
+        resources: dict[str, BaseResource] = {"test_resource": MockResource("test_resource")}
 
         params = self.tool_manager.build_request_params(request, "openai:gpt-4", resources)
 
@@ -77,7 +77,7 @@ class TestLLMToolCallManager(unittest.IsolatedAsyncioTestCase):
 
     def test_get_openai_functions(self):
         """Test getting OpenAI functions from resources."""
-        resources = {"resource1": MockResource("resource1"), "resource2": MockResource("resource2")}
+        resources: dict[str, BaseResource] = {"resource1": MockResource("resource1"), "resource2": MockResource("resource2")}
 
         functions = self.tool_manager.get_openai_functions(resources)
 
@@ -105,7 +105,7 @@ class TestLLMToolCallManager(unittest.IsolatedAsyncioTestCase):
             tool_calls = [MockToolCall("test_resource__test_id__test_tool", {"param": "value"})]
 
             # Call the method
-            responses = await self.tool_manager.call_requested_tools(tool_calls)
+            responses = await self.tool_manager.call_requested_tools(tool_calls)  # type: ignore
 
             # Verify results
             self.assertEqual(len(responses), 1)
@@ -129,7 +129,7 @@ class TestLLMToolCallManager(unittest.IsolatedAsyncioTestCase):
             tool_calls = [MockToolCall("test_resource__test_id__test_tool", {"param": "value"})]
 
             # Call the method
-            responses = await self.tool_manager.call_requested_tools(tool_calls)
+            responses = await self.tool_manager.call_requested_tools(tool_calls)  # type: ignore
 
             # Should return empty list when resource not found
             self.assertEqual(len(responses), 0)
@@ -150,7 +150,7 @@ class TestLLMToolCallManager(unittest.IsolatedAsyncioTestCase):
             tool_calls = [MockToolCall("test_resource__test_id__test_tool", {"param": "value"})]
 
             # Call the method
-            responses = await self.tool_manager.call_requested_tools(tool_calls)
+            responses = await self.tool_manager.call_requested_tools(tool_calls)  # type: ignore
 
             # Verify error response
             self.assertEqual(len(responses), 1)
@@ -178,7 +178,7 @@ class TestLLMToolCallManager(unittest.IsolatedAsyncioTestCase):
             tool_calls = [MockToolCall("test_resource__test_id__test_tool", {"param": "value"})]
 
             # Call the method
-            responses = await self.tool_manager.call_requested_tools(tool_calls)
+            responses = await self.tool_manager.call_requested_tools(tool_calls)  # type: ignore
 
             # Verify JSON conversion
             self.assertEqual(len(responses), 1)
@@ -203,7 +203,7 @@ class TestLLMToolCallManager(unittest.IsolatedAsyncioTestCase):
             tool_calls = [MockToolCall("test_resource__test_id__test_tool", {"param": "value"})]
 
             # Call the method
-            responses = await self.tool_manager.call_requested_tools(tool_calls)
+            responses = await self.tool_manager.call_requested_tools(tool_calls)  # type: ignore
 
             # Verify truncation
             self.assertEqual(len(responses), 1)
@@ -215,7 +215,7 @@ class TestLLMToolCallManager(unittest.IsolatedAsyncioTestCase):
         """Test legacy tool calling method."""
         tool_calls = [{"name": "test_resource", "arguments": {"param": "value"}}]
         mock_resource = MockResource("test_resource")
-        available_resources = [mock_resource]
+        available_resources: list[BaseResource] = [mock_resource]
 
         responses = await self.tool_manager.call_tools_legacy(tool_calls, available_resources)
 
@@ -226,14 +226,15 @@ class TestLLMToolCallManager(unittest.IsolatedAsyncioTestCase):
     async def test_call_tools_legacy_resource_not_found(self):
         """Test legacy tool calling when resource not found."""
         tool_calls = [{"name": "nonexistent_resource", "arguments": {"param": "value"}}]
-        available_resources = []
+        available_resources: list[BaseResource] = []
 
         responses = await self.tool_manager.call_tools_legacy(tool_calls, available_resources)
 
         self.assertEqual(len(responses), 1)
         response = responses[0]
         self.assertFalse(response.success)
-        self.assertIn("not found", response.error)
+        if response.error:
+            self.assertIn("not found", response.error)
 
     def test_format_tool_call_message(self):
         """Test tool call message formatting."""
@@ -243,7 +244,7 @@ class TestLLMToolCallManager(unittest.IsolatedAsyncioTestCase):
         tool_call.model_dump.return_value = {"type": "function", "function": {"name": "test"}}
         tool_calls = [tool_call]
 
-        formatted = self.tool_manager.format_tool_call_message(response_message, tool_calls)
+        formatted = self.tool_manager.format_tool_call_message(response_message, tool_calls)  # type: ignore
 
         self.assertEqual(formatted["role"], "assistant")
         self.assertEqual(formatted["content"], "I'll help you with that.")

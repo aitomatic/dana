@@ -37,7 +37,7 @@ class TestPOETDecoratorUnit:
     def test_decorator_with_parameters(self):
         """Test POET decorator with various parameters."""
 
-        @poet(domain="custom", retries=3, timeout=60, enable_training=True)
+        @poet(domain="custom", retries=3, timeout=60)
         def test_func(x: int) -> int:
             return x + 1
 
@@ -45,7 +45,6 @@ class TestPOETDecoratorUnit:
         assert "custom" in meta["domains"]
         assert meta["retries"] == 3
         assert meta["timeout"] == 60
-        assert meta["enable_training"] is True
 
     def test_decorator_preserves_function_attributes(self):
         """Test that decorator preserves original function attributes."""

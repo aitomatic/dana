@@ -11,7 +11,6 @@ from mcp.client.sse import sse_client
 from mcp.client.stdio import get_default_environment, stdio_client
 
 from opendxa.common.mixins.loggable import Loggable
-from opendxa.common.mixins.tool_callable import ToolCallable
 from opendxa.common.resource.base_resource import BaseResource, ResourceError
 from opendxa.common.resource.mcp.mcp_config import HttpTransportParams, McpConfig, McpConfigError, StdioTransportParams
 from opendxa.common.types import BaseRequest, BaseResponse
@@ -48,7 +47,7 @@ def with_retries(retries: int = 3, delay: float = 1.0):
 
             raise last_error
 
-        return wrapper
+        return wrapper  # type: ignore
 
     return decorator
 
@@ -200,7 +199,6 @@ class McpResource(BaseResource):
         return "stdio" if isinstance(self.transport_params, StdioTransportParams) else "http"
 
     @with_retries(retries=3, delay=1.0)
-    @ToolCallable.tool
     async def query(self, request: BaseRequest | None = None) -> BaseResponse:
         """Execute a tool on the MCP server.
 

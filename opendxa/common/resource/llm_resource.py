@@ -457,7 +457,15 @@ class LLMResource(BaseResource):
             self._tool_call_manager.max_response_length = max_response_length
 
         try:
-            return await self._tool_call_manager.call_requested_tools(tool_calls)
+            dict_responses = await self._tool_call_manager.call_requested_tools(tool_calls)
+            # Convert dict responses to BaseResponse objects
+            responses: list[BaseResponse] = []
+            for response_dict in dict_responses:
+                content = response_dict.get("content", "")
+                success = not content.startswith("Tool call failed:")
+                error = None if success else content
+                responses.append(BaseResponse(success=success, content=content, error=error))
+            return responses
         finally:
             # Restore original max length if we changed it
             if max_response_length is not None:

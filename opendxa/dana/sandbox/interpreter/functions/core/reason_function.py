@@ -22,7 +22,7 @@ from opendxa.dana.poet import poet
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
-@poet(domain="llm_optimization", timeout=30.0, retries=3)
+@poet(domain="llm_optimization", timeout=30, retries=3)
 def reason_function(
     context: SandboxContext,
     prompt: str,

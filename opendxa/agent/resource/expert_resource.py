@@ -125,9 +125,19 @@ class ExpertResource(BaseResource):
         if not self._io:
             await self.initialize()
 
-        # Ensure we pass a proper dictionary with prompt
-        prompt = request.get("prompt") or ""
-        response = await self._io.query({"prompt": prompt})
+        # Ensure we pass a proper BaseRequest with prompt
+        if request is None:
+            from opendxa.common.types import BaseRequest
+
+            request = BaseRequest(arguments={"prompt": ""})
+        else:
+            # Ensure the request has a prompt argument
+            if not hasattr(request, "arguments") or "prompt" not in request.arguments:
+                from opendxa.common.types import BaseRequest
+
+                request = BaseRequest(arguments={"prompt": str(request)})
+
+        response = await self._io.query(request)
         return response
 
     async def cleanup(self) -> None:

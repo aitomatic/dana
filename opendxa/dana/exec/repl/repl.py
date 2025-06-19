@@ -211,7 +211,7 @@ class REPL(Loggable):
                 return result.result
             else:
                 print(f"🚨 REPL: Sandbox execution failed: {result.error}")
-                if hasattr(result.error, "__traceback__"):
+                if result.error is not None and hasattr(result.error, "__traceback__"):
                     import traceback
 
                     print("🚨 REPL: Full traceback:")

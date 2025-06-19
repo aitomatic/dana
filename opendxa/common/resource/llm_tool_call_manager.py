@@ -82,7 +82,7 @@ class LLMToolCallManager(Loggable):
             functions.extend(resource.list_openai_functions())
         return functions
 
-    async def call_requested_tools(self, tool_calls: list[OpenAIFunctionCall]) -> list[BaseResponse]:
+    async def call_requested_tools(self, tool_calls: list[OpenAIFunctionCall]) -> list[dict[str, Any]]:
         """Call requested resources and get responses.
 
         This method handles tool calls from the LLM, executing each requested tool
@@ -127,9 +127,9 @@ class LLMToolCallManager(Loggable):
             tool_calls: List of tool calls from the LLM
 
         Returns:
-            List[BaseResponse]: List of tool responses in OpenAI format
+            List[dict[str, Any]]: List of tool responses in OpenAI format
         """
-        responses: list[BaseResponse] = []
+        responses: list[dict[str, Any]] = []
         for tool_call in tool_calls:
             try:
                 # Get the function name and arguments
@@ -160,7 +160,7 @@ class LLMToolCallManager(Loggable):
                 response = f"Tool call failed: {str(e)}"
                 self.error(response)
 
-            responses.append(cast(BaseResponse, {"role": "tool", "name": function_name, "content": response, "tool_call_id": tool_call.id}))
+            responses.append({"role": "tool", "name": function_name, "content": response, "tool_call_id": tool_call.id})
 
         return responses
 

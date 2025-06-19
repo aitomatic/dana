@@ -84,8 +84,12 @@ class AgentResource(BaseResource):
             AgentError: If agent execution fails
         """
         try:
+            if request is None:
+                return BaseResponse.error_response("No request provided")
+
+            request_text = request.arguments.get("request", "") if hasattr(request, "arguments") else str(request)
             loop = asyncio.get_event_loop()
-            response = await loop.run_in_executor(None, self.agent.ask, request.get("request", ""))
+            response = await loop.run_in_executor(None, self.agent.ask, request_text)
             return BaseResponse(success=True, content={"response": response})
         except AgentError as e:
             raise ResourceError("Agent execution failed") from e
