@@ -40,7 +40,6 @@ class TestRepl(unittest.TestCase):
         repl = REPL()
         self.assertIsNotNone(repl.context)
         self.assertIsNotNone(repl.interpreter)
-        self.assertIsNotNone(repl.parser)
         self.assertIsNone(repl.transcoder)
 
         # Test with log level
@@ -128,21 +127,31 @@ private:result
 
         # Mock all needed methods to isolate the test
         with patch.object(repl, "_format_error_message"):  # Prevent error formatting
-            with patch.object(repl.parser, "parse") as mock_parse:
-                # Set up parse result with no errors
-                mock_program = MagicMock()
-                mock_parse_result = MagicMock(errors=[], program=mock_program)
-                mock_parse.return_value = mock_parse_result
+            with patch.object(repl.sandbox, "eval") as mock_eval:
+                # Set up sandbox eval to return success
+                mock_result = MagicMock()
+                mock_result.success = True
+                mock_result.result = 5
+                mock_eval.return_value = mock_result
 
-                # Mock interpreter to return a value
-                with patch.object(repl.interpreter, "execute_program", return_value=5):
-                    # Execute with NLP input - this should use the mocked safe_asyncio_run
-                    with patch("opendxa.dana.exec.repl.repl.Misc.safe_asyncio_run", mock_safe_asyncio_run):
-                        result = repl.execute("set x to 5")
+                # Execute with NLP input - this should use the mocked safe_asyncio_run
+                with patch("opendxa.dana.exec.repl.repl.Misc.safe_asyncio_run", mock_safe_asyncio_run):
+                    result = repl.execute("set x to 5")
 
-                        # Verify expected behavior - now expects to_dana_with_context with context parameter
-                        mock_safe_asyncio_run.assert_called_once_with(mock_transcoder.to_dana_with_context, "set x to 5", repl.context)
-                        self.assertEqual(result, 5)
+                    # Verify expected behavior - safe_asyncio_run may be called multiple times
+                    # (once for LLM initialization, once for transcoding)
+                    # Just check that it was called with the transcoder at least once
+                    transcoder_calls = [
+                        call
+                        for call in mock_safe_asyncio_run.call_args_list
+                        if len(call[0]) >= 2 and call[0][0] == mock_transcoder.to_dana_with_context
+                    ]
+                    assert len(transcoder_calls) >= 1, "Expected at least one call to transcoder"
+                    # Verify the transcoder was called with the right arguments
+                    transcoder_call = transcoder_calls[0]
+                    assert transcoder_call[0][1] == "set x to 5"
+                    assert transcoder_call[0][2] == repl.context
+                    self.assertEqual(result, 5)
 
     def test_get_context(self):
         """Test getting the context."""

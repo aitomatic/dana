@@ -77,6 +77,7 @@ dev = [
     "black",       # Code formatting
     "ruff",        # Fast Python linter (replaces flake8, isort, etc.)
     "pylint",      # Additional code analysis
+    "mypy",        # Static type checking
     "pre-commit",  # Git hooks for code quality
     "pytest-cov", # Test coverage reporting
     "fastapi",
@@ -223,6 +224,26 @@ exclude = [
 reportAttributeAccessIssue = false
 reportGeneralTypeIssues = false  
 reportAssignmentType = false
+
+# MyPy Configuration
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+disallow_any_generics = true
+check_untyped_defs = true
+no_implicit_reexport = true
+
+# Per-module options for gradual adoption
+[[tool.mypy.overrides]]
+module = "tests.*"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "opendxa.dana.sandbox.interpreter.*"
+disallow_untyped_defs = true  # Strict checking for core interpreter
 
 # =============================================================================
 # Package Manager Configuration (uv)

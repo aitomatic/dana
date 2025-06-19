@@ -30,7 +30,6 @@ class TestUnsupportedFunctions:
         assert factory.is_unsupported("eval")
         assert factory.is_unsupported("exec")
         assert factory.is_unsupported("open")
-        assert factory.is_unsupported("print")
         assert factory.is_unsupported("globals")
         assert factory.is_unsupported("locals")
 
@@ -38,6 +37,7 @@ class TestUnsupportedFunctions:
         assert not factory.is_unsupported("len")
         assert not factory.is_unsupported("sum")
         assert not factory.is_unsupported("max")
+        assert not factory.is_unsupported("print")
 
     def test_eval_function_blocked(self):
         """Test that eval() is properly blocked."""
@@ -75,19 +75,6 @@ class TestUnsupportedFunctions:
         assert "open" in error_msg
         assert "not supported" in error_msg
         assert "file" in error_msg.lower()
-
-    def test_print_function_blocked(self):
-        """Test that print() is no longer blocked (now handled by core function)."""
-        factory = PythonicFunctionFactory()
-
-        # print() should no longer raise SandboxError since it's removed from unsupported
-        # Instead, it should fall through to the unknown builtin handler
-        with pytest.raises(SandboxError) as exc_info:
-            factory.create_function("print")
-
-        error_msg = str(exc_info.value)
-        assert "print" in error_msg
-        assert "not available" in error_msg  # Changed from "not supported"
 
     def test_globals_locals_blocked(self):
         """Test that globals() and locals() are properly blocked."""

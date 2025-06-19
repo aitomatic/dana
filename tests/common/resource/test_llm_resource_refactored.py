@@ -75,7 +75,7 @@ class TestLLMResourceRefactored(unittest.TestCase):
         llm = LLMResource(name="test_llm", model="openai:gpt-4o-mini")
 
         # Try to set unavailable model (no ANTHROPIC_API_KEY)
-        with patch.object(llm, "log_warning") as mock_warning:
+        with patch.object(llm, "warning") as mock_warning:
             llm.model = "anthropic:claude-3"
 
             # Should log warning but still set for backward compatibility
@@ -119,11 +119,11 @@ class TestLLMResourceRefactored(unittest.TestCase):
 
         # Test method delegation with logging
         with patch.object(llm._config_manager, "get_available_models", return_value=["openai:gpt-4"]) as mock_get:
-            with patch.object(llm, "log_debug") as mock_log:
+            with patch.object(llm, "debug") as mock_debug:
                 result = llm.get_available_models()
 
                 mock_get.assert_called_once()
-                mock_log.assert_called_once()
+                mock_debug.assert_called_once()
                 self.assertEqual(result, ["openai:gpt-4"])
 
     def test_backward_compatibility(self):

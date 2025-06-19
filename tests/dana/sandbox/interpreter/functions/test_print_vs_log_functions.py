@@ -9,6 +9,7 @@ from unittest.mock import patch
 
 import pytest
 
+from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
 from opendxa.dana.sandbox.interpreter.functions.core.log_function import log_function
 from opendxa.dana.sandbox.interpreter.functions.core.print_function import print_function
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
@@ -178,7 +179,7 @@ class TestLogFunctionFix:
 
     def test_proposed_log_function_fix(self):
         """Test a proposed fix for the log function."""
-        context = SandboxContext()
+        _ = SandboxContext()
 
         # Proposed fix: change SandboxLogger.log to call DXA_LOGGER.log correctly
         with patch("opendxa.dana.sandbox.log_manager.DXA_LOGGER.log") as mock_dxa_log:
@@ -252,7 +253,7 @@ class TestLogLevelFunction:
 
         with patch("opendxa.dana.sandbox.log_manager.SandboxLogger.set_system_log_level") as mock_set_level:
             # Test with options override
-            log_level_function(context, "", {"level": "error"})
+            log_level_function(context, "", "dana", {"level": "error"})
             mock_set_level.assert_called_once()
 
     def test_log_level_function_registration(self):

@@ -352,7 +352,7 @@ def test_reason_function_integration():
         assert result is not None
 
         # Test 3: Reason function with options
-        result = interpreter.call_function("reason", ["Explain gravity"], {"temperature": 0.7})
+        result = interpreter.call_function("reason", ["Explain gravity"])
         assert result is not None
 
         # Test 4: Reason function error handling

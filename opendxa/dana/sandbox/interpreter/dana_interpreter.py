@@ -361,7 +361,7 @@ class DanaInterpreter(Loggable):
                 context.set(f"local.{param.name}", kwargs[param.name])
             elif param.default_value is not None:
                 # Evaluate default value
-                default_val = self._executor.execute_expression(param.default_value, context)
+                default_val = self._executor.execute(param.default_value, context)
                 context.set(f"local.{param.name}", default_val)
             else:
                 raise TypeError(f"Missing required argument: {param.name}")

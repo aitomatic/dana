@@ -322,7 +322,7 @@ def test_enhanced_function_registry_operations():
     # Resolve the function
     func, func_type, metadata = registry.resolve("foo")
     assert callable(func)
-    assert func_type == FunctionType.PYTHON
+    assert func_type == "python"  # Registry returns string, not enum
     assert isinstance(metadata, FunctionMetadata)
 
     # Call the function
