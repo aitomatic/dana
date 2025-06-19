@@ -299,11 +299,9 @@ class FunctionResolver:
             return self.executor._assign_and_coerce_result(raw_result, func_name)
 
         elif resolved_func.func_type == FunctionType.DANA:
-            # If it's a DanaFunction, wrap it in a Python function that calls its __call__ method
-            def call_dana_func(*args, **kwargs):
-                return resolved_func.func(*args, **kwargs)
-
-            return call_dana_func(*evaluated_args, **evaluated_kwargs)
+            # DanaFunction - use execute method with context
+            raw_result = resolved_func.func.execute(context, *evaluated_args, **evaluated_kwargs)
+            return self.executor._assign_and_coerce_result(raw_result, func_name)
 
         elif resolved_func.func_type == FunctionType.PYTHON:
             # PythonFunction or other Python-backed SandboxFunction - use execute method

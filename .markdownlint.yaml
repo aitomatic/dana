@@ -5,6 +5,10 @@
 MD004: false
 ul-style: false
 
+# MD005: Inconsistent indentation for list items at the same level (disallows inconsistent indentation for list items at the same level)
+MD005: false
+list-indent: false
+
 # MD007: Unordered list indentation (enforces consistent indentation for nested lists)
 MD007: false
 ul-indent: false
@@ -85,6 +89,10 @@ single-trailing-newline: false
 # MD051: Link fragment should be valid
 MD051: false
 link-title-style: false
+
+# MD055: Table pipe style (enforces consistent table pipe style)
+MD055: false
+table-pipe-style: false
 
 # MD058: Blank lines around tables (enforces blank lines before/after tables)
 MD058: false

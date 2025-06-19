@@ -174,7 +174,7 @@ simple_name: NAME
 dotted_access: simple_name ("." NAME)+
 
 // Scoped variable
-scoped_var: scope_prefix ":" (simple_name | dotted_access)
+scoped_var: scope_prefix ":" simple_name
 
 // Scope prefixes
 scope_prefix: PRIVATE | PUBLIC | LOCAL | SYSTEM
