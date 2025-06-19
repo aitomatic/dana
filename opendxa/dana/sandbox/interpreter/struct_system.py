@@ -135,6 +135,11 @@ class StructInstance:
         """Get the struct type definition."""
         return self._type
 
+    @property
+    def __struct_type__(self) -> StructType:
+        """Get the struct type definition (for compatibility with method calls)."""
+        return self._type
+
     def __getattr__(self, name: str) -> Any:
         """Get field value using dot notation."""
         if name.startswith("_"):

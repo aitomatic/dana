@@ -12,6 +12,7 @@ import importlib
 import inspect
 from pathlib import Path
 
+from opendxa.dana.sandbox.interpreter.executor.function_resolver import FunctionType
 from opendxa.dana.sandbox.interpreter.functions.core.decorators import log_calls, log_with_prefix, repeat, validate_args
 from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
 
@@ -58,7 +59,7 @@ def register_core_functions(registry: FunctionRegistry) -> None:
                     registry.register(
                         name=dana_func_name,
                         func=obj,
-                        func_type="dana",
+                        func_type=FunctionType.REGISTRY,
                         overwrite=True,
                         trusted_for_context=True,  # Core functions are always trusted
                     )
@@ -78,16 +79,16 @@ def register_core_functions(registry: FunctionRegistry) -> None:
         pass
 
     # Register decorators (both simple and parameterized)
-    registry.register("log_calls", log_calls, namespace="core", func_type="python", trusted_for_context=True)
-    registry.register("log_with_prefix", log_with_prefix, namespace="core", func_type="python", trusted_for_context=True)
-    registry.register("repeat", repeat, namespace="core", func_type="python", trusted_for_context=True)
-    registry.register("validate_args", validate_args, namespace="core", func_type="python", trusted_for_context=True)
+    registry.register("log_calls", log_calls, namespace="core", func_type=FunctionType.PYTHON, trusted_for_context=True)
+    registry.register("log_with_prefix", log_with_prefix, namespace="core", func_type=FunctionType.PYTHON, trusted_for_context=True)
+    registry.register("repeat", repeat, namespace="core", func_type=FunctionType.PYTHON, trusted_for_context=True)
+    registry.register("validate_args", validate_args, namespace="core", func_type=FunctionType.PYTHON, trusted_for_context=True)
 
     # Register POET decorator
     try:
         from opendxa.dana.poet.decorator import poet
 
-        registry.register("poet", poet, namespace="core", func_type="python", trusted_for_context=True)
+        registry.register("poet", poet, namespace="core", func_type=FunctionType.PYTHON, trusted_for_context=True)
     except ImportError:
         # POET module not available, continue without it
         pass

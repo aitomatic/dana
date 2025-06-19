@@ -11,6 +11,7 @@ together correctly, including:
 """
 
 from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
+from opendxa.dana.sandbox.interpreter.executor.function_resolver import FunctionType
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
@@ -46,8 +47,8 @@ def test_mixed_dana_and_python_functions():
     interpreter = DanaInterpreter()
 
     # Register the Python functions
-    interpreter.function_registry.register("python_logger", python_logger, func_type="python")
-    interpreter.function_registry.register("create_formatter", create_formatter, func_type="python")
+    interpreter.function_registry.register("python_logger", python_logger, func_type=FunctionType.PYTHON)
+    interpreter.function_registry.register("create_formatter", create_formatter, func_type=FunctionType.PYTHON)
 
     # Test 1: Call Python function that modifies context
     result1 = python_logger("Test message 1", context)
@@ -79,7 +80,7 @@ def test_context_injection_with_type_annotations():
     interpreter = DanaInterpreter()
 
     # Register the function
-    interpreter.function_registry.register("analyze_data", analyze_data, func_type="python")
+    interpreter.function_registry.register("analyze_data", analyze_data, func_type=FunctionType.PYTHON)
 
     # Test direct call
     test_data = [1, 2, 3, 4, 5]
@@ -103,7 +104,7 @@ def test_keyword_and_positional_args():
     interpreter = DanaInterpreter()
 
     # Register the function
-    interpreter.function_registry.register("format_message", format_message, func_type="python")
+    interpreter.function_registry.register("format_message", format_message, func_type=FunctionType.PYTHON)
 
     # Test various calling patterns
     template = "Hello {name}, you are {age} years old from {location}"
@@ -136,7 +137,7 @@ def test_error_handling():
     interpreter = DanaInterpreter()
 
     # Register the function
-    interpreter.function_registry.register("divide", divide, func_type="python")
+    interpreter.function_registry.register("divide", divide, func_type=FunctionType.PYTHON)
 
     # Test successful call
     result = divide(10, 2)
@@ -294,8 +295,8 @@ def test_end_to_end_function_integration():
     interpreter = DanaInterpreter()
 
     # Register functions
-    interpreter.function_registry.register("calculate_stats", calculate_stats, func_type="python")
-    interpreter.function_registry.register("format_stats", format_stats, func_type="python")
+    interpreter.function_registry.register("calculate_stats", calculate_stats, func_type=FunctionType.PYTHON)
+    interpreter.function_registry.register("format_stats", format_stats, func_type=FunctionType.PYTHON)
 
     # Test data
     test_data = [10, 20, 30, 40, 50]
@@ -398,9 +399,9 @@ def test_comprehensive_function_scenarios():
     interpreter = DanaInterpreter()
 
     # Register functions
-    interpreter.function_registry.register("string_processor", string_processor, func_type="python")
-    interpreter.function_registry.register("math_calculator", math_calculator, func_type="python")
-    interpreter.function_registry.register("context_aware_function", context_aware_function, func_type="python")
+    interpreter.function_registry.register("string_processor", string_processor, func_type=FunctionType.PYTHON)
+    interpreter.function_registry.register("math_calculator", math_calculator, func_type=FunctionType.PYTHON)
+    interpreter.function_registry.register("context_aware_function", context_aware_function, func_type=FunctionType.PYTHON)
 
     # Test 1: String processing
     assert string_processor("hello", "upper") == "HELLO"

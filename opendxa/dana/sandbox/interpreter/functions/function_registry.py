@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from opendxa.dana.common.exceptions import FunctionRegistryError, SandboxError
 from opendxa.dana.common.runtime_scopes import RuntimeScopes
+from opendxa.dana.sandbox.interpreter.executor.function_resolver import FunctionType
 
 if TYPE_CHECKING:
     from opendxa.dana.sandbox.sandbox_context import SandboxContext
@@ -86,7 +87,7 @@ class FunctionRegistry:
     def __init__(self):
         """Initialize a function registry."""
         # {namespace: {name: (func, type, metadata)}}
-        self._functions: dict[str, dict[str, tuple[Callable, str, FunctionMetadata]]] = {}
+        self._functions: dict[str, dict[str, tuple[Callable, FunctionType, FunctionMetadata]]] = {}
         self._arg_processor = None  # Will be initialized on first use
 
     def _get_arg_processor(self):
@@ -167,7 +168,7 @@ class FunctionRegistry:
         name: str,
         func: Callable,
         namespace: str | None = None,
-        func_type: str = "sandbox",
+        func_type: FunctionType = FunctionType.DANA,
         metadata: FunctionMetadata | None = None,
         overwrite: bool = False,
         trusted_for_context: bool | None = None,
@@ -318,7 +319,7 @@ class FunctionRegistry:
         # Reverse to show the call order (deepest first)
         return list(reversed(unique_stack))
 
-    def resolve(self, name: str, namespace: str | None = None) -> tuple[Callable, str, FunctionMetadata]:
+    def resolve(self, name: str, namespace: str | None = None) -> tuple[Callable, FunctionType, FunctionMetadata]:
         """Resolve a function by name and namespace.
 
         Args:
@@ -407,7 +408,7 @@ class FunctionRegistry:
         from opendxa.dana.sandbox.interpreter.functions.python_function import PythonFunction
         from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
-        if isinstance(func, PythonFunction) and func_type == "python" and hasattr(func, "func"):
+        if isinstance(func, PythonFunction) and func_type == FunctionType.PYTHON and hasattr(func, "func"):
             # Get the wrapped function
             wrapped_func = func.func
 

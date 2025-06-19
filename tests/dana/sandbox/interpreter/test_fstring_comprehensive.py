@@ -10,6 +10,7 @@ NOTE: These tests are fully independent of OPENAI_API_KEY.
 import pytest
 
 from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
+from opendxa.dana.sandbox.interpreter.executor.function_resolver import FunctionType
 from opendxa.dana.sandbox.parser.ast import Identifier
 from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 from opendxa.dana.sandbox.parser.transformer.fstring_transformer import FStringTransformer
@@ -82,7 +83,7 @@ def test_original_failing_case():
     def mock_reason(*args, **kwargs):
         return "DANA is a digital wallet"
 
-    interpreter.function_registry.register(name="reason", func=mock_reason, func_type="python", overwrite=True)
+    interpreter.function_registry.register(name="reason", func=mock_reason, func_type=FunctionType.PYTHON, overwrite=True)
 
     code = """
 question_2 = "What is DANA"

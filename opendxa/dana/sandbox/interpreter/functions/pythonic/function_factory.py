@@ -12,6 +12,7 @@ from enum import Enum
 from typing import Any
 
 from opendxa.dana.common.exceptions import SandboxError
+from opendxa.dana.sandbox.interpreter.executor.function_resolver import FunctionType
 from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionMetadata, FunctionRegistry
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
@@ -593,7 +594,7 @@ def register_pythonic_builtins(registry: FunctionRegistry) -> None:
         registry.register(
             name=function_name,
             func=wrapper,
-            func_type="python",
+            func_type=FunctionType.PYTHON,
             metadata=metadata,
             overwrite=True,  # Built-ins take precedence for safety
             trusted_for_context=True,  # Built-in functions are trusted to receive context
@@ -621,7 +622,7 @@ def register_pythonic_builtins(registry: FunctionRegistry) -> None:
         registry.register(
             name=function_name,
             func=handler,
-            func_type="python",
+            func_type=FunctionType.PYTHON,
             metadata=metadata,
             overwrite=True,  # Built-in error handlers take precedence for security
             trusted_for_context=True,  # Error handlers are trusted to receive context

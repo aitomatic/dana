@@ -24,6 +24,7 @@ from unittest.mock import patch
 import pytest
 
 from opendxa.dana.exec.repl.repl import REPL
+from opendxa.dana.sandbox.interpreter.executor.function_resolver import FunctionType
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
@@ -65,7 +66,7 @@ class TestTypeCoercionIntegration(unittest.TestCase):
             self.repl.interpreter.function_registry.register(
                 name="reason",
                 func=mock_reason_function,
-                func_type="python",
+                func_type=FunctionType.PYTHON,
                 overwrite=True,
             )
 
@@ -98,7 +99,7 @@ class TestTypeCoercionIntegration(unittest.TestCase):
             self.repl.interpreter.function_registry.register(
                 name="reason",
                 func=mock_reason_function,
-                func_type="python",
+                func_type=FunctionType.PYTHON,
                 overwrite=True,  # Override the real reason function
             )
 
@@ -129,7 +130,7 @@ class TestTypeCoercionIntegration(unittest.TestCase):
             self.repl.interpreter.function_registry.register(
                 name="reason",
                 func=mock_reason_function,
-                func_type="python",
+                func_type=FunctionType.PYTHON,
                 overwrite=True,
             )
 
@@ -170,7 +171,7 @@ class TestTypeCoercionIntegration(unittest.TestCase):
             self.repl.interpreter.function_registry.register(
                 name="reason",
                 func=mock_reason_function,
-                func_type="python",
+                func_type=FunctionType.PYTHON,
                 overwrite=True,
             )
 
@@ -194,7 +195,7 @@ class TestTypeCoercionIntegration(unittest.TestCase):
             self.repl.interpreter.function_registry.register(
                 name="reason",
                 func=mock_reason_function,
-                func_type="python",
+                func_type=FunctionType.PYTHON,
                 overwrite=True,
             )
 

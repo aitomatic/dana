@@ -11,6 +11,7 @@ These tests focus on:
 from unittest.mock import MagicMock, patch
 
 from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
+from opendxa.dana.sandbox.interpreter.executor.function_resolver import FunctionType
 from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
 from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionMetadata, FunctionRegistry
 from opendxa.dana.sandbox.interpreter.functions.python_function import PythonFunction
@@ -95,7 +96,7 @@ def test_dana_to_python_function():
     interpreter = DanaInterpreter()
 
     # Register the Python function
-    interpreter.function_registry.register("multiply", multiply, func_type="python")
+    interpreter.function_registry.register("multiply", multiply, func_type=FunctionType.PYTHON)
 
     # And a Dana program that calls it
     program_text = """
@@ -126,7 +127,7 @@ def test_python_to_dana_function():
         return x * x
 
     # Register the function directly
-    interpreter.function_registry.register("square", square_function, func_type="python")
+    interpreter.function_registry.register("square", square_function, func_type=FunctionType.PYTHON)
 
     # When we call it directly from our test
     result = square_function(5)
@@ -321,7 +322,7 @@ def test_enhanced_function_registry_operations():
     # Resolve the function
     func, func_type, metadata = registry.resolve("foo")
     assert callable(func)
-    assert func_type == "python"
+    assert func_type == FunctionType.PYTHON
     assert isinstance(metadata, FunctionMetadata)
 
     # Call the function

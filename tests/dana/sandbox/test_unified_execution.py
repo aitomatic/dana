@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 from opendxa.common.resource.llm_resource import LLMResource
 from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
+from opendxa.dana.sandbox.interpreter.executor.function_resolver import FunctionType
 from opendxa.dana.sandbox.interpreter.functions.core.reason_function import reason_function
 from opendxa.dana.sandbox.parser.dana_parser import DanaParser
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
@@ -101,7 +102,7 @@ class TestUnifiedExecution(unittest.TestCase):
         self.interpreter.function_registry.register(
             name="reason",
             func=mock_reason_function,
-            func_type="python",
+            func_type=FunctionType.PYTHON,
             overwrite=True,  # Override the real reason function
             trusted_for_context=True,  # Mock function needs context access
         )
@@ -203,7 +204,7 @@ if True:
         self.interpreter.function_registry.register(
             name="process",
             func=mock_process,
-            func_type="python",
+            func_type=FunctionType.PYTHON,
             overwrite=True,
             trusted_for_context=True,
         )

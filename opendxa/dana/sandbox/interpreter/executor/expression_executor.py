@@ -499,6 +499,9 @@ class ExpressionExecutor(BaseExecutor):
                     DXA_LOGGER.debug("DEBUG: Using function.execute() with base_context")
                     # Create a new context that inherits from base_context
                     func_context = SandboxContext(parent=base_context)
+                    # Ensure the interpreter is available in the new context
+                    if hasattr(context, "_interpreter") and context._interpreter is not None:
+                        func_context._interpreter = context._interpreter
                     # Set the object as the first argument
                     return func.execute(func_context, obj, *args, **kwargs)
                 else:

@@ -9,6 +9,7 @@ import pytest
 
 from opendxa.dana.common.exceptions import SandboxError
 from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
+from opendxa.dana.sandbox.interpreter.executor.function_resolver import FunctionType
 from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
 from opendxa.dana.sandbox.interpreter.functions.pythonic.function_factory import (
     PythonicFunctionFactory,
@@ -291,7 +292,7 @@ class TestUnsupportedFunctionRegistry:
 
         from opendxa.dana.sandbox.interpreter.functions.python_function import PythonFunction
 
-        registry.register("eval", PythonFunction(safe_eval, trusted_for_context=True), func_type="python", overwrite=True)
+        registry.register("eval", PythonFunction(safe_eval, trusted_for_context=True), func_type=FunctionType.PYTHON, overwrite=True)
 
         # Now register built-ins (should overwrite the custom eval with error handler)
         register_pythonic_builtins(registry)

@@ -21,6 +21,7 @@ from typing import Any
 
 from opendxa.dana.common.exceptions import SandboxError
 from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
+from opendxa.dana.sandbox.interpreter.executor.function_resolver import FunctionType
 from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
 from opendxa.dana.sandbox.parser.ast import (
     AssertStatement,
@@ -418,14 +419,13 @@ class StatementExecutor(BaseExecutor):
         from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
         from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionMetadata
 
+        func_type = FunctionType.PYTHON
+        context_aware = False
+
         if isinstance(func, DanaFunction):
             # Dana functions need context and should be registered as sandbox type
-            func_type = "sandbox"
+            func_type = FunctionType.DANA
             context_aware = True
-        else:
-            # Python functions (including wrapped ones) don't need Dana context
-            func_type = "python"
-            context_aware = False
 
         metadata = FunctionMetadata(source_file=f"<import from {module_name}>")
         metadata.context_aware = context_aware

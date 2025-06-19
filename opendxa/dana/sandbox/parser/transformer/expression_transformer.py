@@ -658,21 +658,32 @@ class ExpressionTransformer(BaseTransformer):
                         )
 
                 # Regular function call on base
-                # For AttributeAccess nodes, keep them as-is for method call handling
+                # For AttributeAccess nodes, create ObjectFunctionCall for method calls
                 # For Identifier nodes, use the name string
                 if isinstance(base, AttributeAccess):
-                    name = base  # Keep AttributeAccess object for method calls
+                    # This is a method call: obj.method() -> ObjectFunctionCall
+                    object_expr = base.object
+                    method_name = base.attribute
+
+                    if t is not None and hasattr(t, "children"):
+                        args = self._process_function_arguments(t.children)
+                    else:
+                        args = {"__positional": []}  # Empty arguments
+
+                    return ObjectFunctionCall(
+                        object=object_expr, method_name=method_name, args=args, location=getattr(base, "location", None)
+                    )
                 else:
                     name = getattr(base, "name", None)
                     if not isinstance(name, str):
                         name = str(base)
 
-                if t is not None and hasattr(t, "children"):
-                    args = self._process_function_arguments(t.children)
-                else:
-                    args = {"__positional": []}  # Empty arguments
+                    if t is not None and hasattr(t, "children"):
+                        args = self._process_function_arguments(t.children)
+                    else:
+                        args = {"__positional": []}  # Empty arguments
 
-                return FunctionCall(name=name, args=args, location=getattr(base, "location", None))
+                    return FunctionCall(name=name, args=args, location=getattr(base, "location", None))
             # Attribute access: .NAME
             elif hasattr(t, "type") and t.type == "NAME":
                 # Always create AttributeAccess nodes for proper attribute access execution
