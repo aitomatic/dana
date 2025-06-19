@@ -11,7 +11,10 @@ MIT License
 from dataclasses import dataclass, field
 from importlib.machinery import ModuleSpec as PyModuleSpec
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from opendxa.dana.module.core.loader import ModuleLoader
 
 
 @dataclass
@@ -49,9 +52,12 @@ class ModuleSpec:
         Returns:
             Dana module specification
         """
+        # Note: This method would need proper loader conversion in a real implementation
+        from typing import cast
+
         return cls(
             name=py_spec.name,
-            loader=py_spec.loader,
+            loader=cast("ModuleLoader", py_spec.loader),  # Type: ignore - loader conversion needed
             origin=py_spec.origin,
             has_location=py_spec.has_location,
             submodule_search_locations=py_spec.submodule_search_locations,

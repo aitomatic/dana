@@ -38,7 +38,7 @@ from opendxa.contrib.dana_mcp_a2a.common.resource.mcp.client.transport import Ba
 class MCPMetaclass(type):
     def __call__(cls, *args: Any, **kwds: Any) -> Any:
         transport, unmatched_args, unmatched_kwargs = cls._validate_transport(*args, **kwds)
-        return super().__call__(transport=transport, *unmatched_args, **unmatched_kwargs)
+        return super().__call__(*unmatched_args, transport=transport, **unmatched_kwargs)
 
 
 class MCPClient(Client, Loggable, metaclass=MCPMetaclass):

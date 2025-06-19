@@ -27,7 +27,7 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from typing import Any, Union, cast
+from typing import Any, cast
 
 from lark import Token, Tree
 
@@ -51,7 +51,7 @@ from opendxa.dana.sandbox.parser.ast import (
 from opendxa.dana.sandbox.parser.transformer.base_transformer import BaseTransformer
 from opendxa.dana.sandbox.parser.transformer.expression.expression_helpers import OperatorHelper
 
-ValidExprType = Union[LiteralExpression, Identifier, BinaryExpression, FunctionCall]
+ValidExprType = LiteralExpression | Identifier | BinaryExpression | FunctionCall
 
 
 class ExpressionTransformer(BaseTransformer):
@@ -127,7 +127,19 @@ class ExpressionTransformer(BaseTransformer):
         # If it's already an AST node, return as is
         if isinstance(
             item,
-            LiteralExpression | Identifier | BinaryExpression | FunctionCall | ObjectFunctionCall | TupleLiteral | DictLiteral | ListLiteral | SetLiteral | SubscriptExpression | AttributeAccess | FStringExpression | UnaryExpression,
+            LiteralExpression
+            | Identifier
+            | BinaryExpression
+            | FunctionCall
+            | ObjectFunctionCall
+            | TupleLiteral
+            | DictLiteral
+            | ListLiteral
+            | SetLiteral
+            | SubscriptExpression
+            | AttributeAccess
+            | FStringExpression
+            | UnaryExpression,
         ):
             return item
         # If it's a primitive or FStringExpression, wrap as LiteralExpression

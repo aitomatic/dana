@@ -9,7 +9,7 @@ Copyright © 2025 Aitomatic, Inc.
 MIT License
 """
 
-from typing import Any, Union
+from typing import Any
 
 from lark import Tree
 
@@ -25,7 +25,7 @@ from opendxa.dana.sandbox.parser.transformer.expression.collection_transformer i
 from opendxa.dana.sandbox.parser.transformer.expression.literal_transformer import LiteralTransformer
 from opendxa.dana.sandbox.parser.transformer.expression.operator_transformer import OperatorTransformer
 
-ValidExprType = Union[LiteralExpression, Identifier, BinaryExpression, FunctionCall]
+ValidExprType = LiteralExpression | Identifier | BinaryExpression | FunctionCall
 
 
 class ExpressionTransformer(BaseTransformer):

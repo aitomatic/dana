@@ -19,7 +19,7 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from typing import Any, Union, cast
+from typing import Any, cast
 
 from lark import Token, Tree
 
@@ -64,20 +64,20 @@ from opendxa.dana.sandbox.parser.transformer.variable_transformer import Variabl
 from opendxa.dana.sandbox.parser.utils.tree_utils import TreeTraverser
 
 # Allowed types for Assignment.value
-AllowedAssignmentValue = Union[
-    LiteralExpression,
-    Identifier,
-    BinaryExpression,
-    FunctionCall,
-    TupleLiteral,
-    DictLiteral,
-    ListLiteral,
-    SetLiteral,
-    SubscriptExpression,
-    AttributeAccess,
-    FStringExpression,
-    UseStatement,
-]
+AllowedAssignmentValue = (
+    LiteralExpression
+    | Identifier
+    | BinaryExpression
+    | FunctionCall
+    | TupleLiteral
+    | DictLiteral
+    | ListLiteral
+    | SetLiteral
+    | SubscriptExpression
+    | AttributeAccess
+    | FStringExpression
+    | UseStatement
+)
 
 
 class StatementTransformer(BaseTransformer):

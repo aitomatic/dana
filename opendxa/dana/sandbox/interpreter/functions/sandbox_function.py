@@ -111,6 +111,7 @@ class SandboxFunction(ABC):
         """
         return context.copy()
 
+    @abstractmethod
     def restore_context(self, context: SandboxContext, original_context: SandboxContext) -> None:
         """
         Restore the context after function execution.

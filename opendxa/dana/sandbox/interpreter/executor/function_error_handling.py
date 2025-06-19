@@ -9,10 +9,13 @@ MIT License
 """
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from opendxa.dana.common.exceptions import FunctionRegistryError, SandboxError
 from opendxa.dana.sandbox.parser.ast import FunctionCall
+
+if TYPE_CHECKING:
+    from opendxa.dana.sandbox.interpreter.executor.function_executor import FunctionExecutor
 
 
 class FunctionExecutionErrorHandler:

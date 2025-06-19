@@ -18,7 +18,7 @@ Discord: https://discord.gg/6jGD4PYk
 """
 
 from collections.abc import Callable
-from typing import Any, TypeVar, Union
+from typing import Any, TypeVar
 
 from lark import Token, Tree
 
@@ -26,7 +26,7 @@ from opendxa.common.mixins.loggable import Loggable
 
 # Type variable for generic AST node
 T = TypeVar("T")
-NodeType = Union[Tree, Token, list[Any], dict[str, Any], Any]
+NodeType = Tree | Token | list[Any] | dict[str, Any] | Any
 
 
 class TreeTraverser(Loggable):

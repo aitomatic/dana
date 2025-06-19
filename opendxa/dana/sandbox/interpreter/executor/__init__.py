@@ -31,4 +31,20 @@ from opendxa.dana.sandbox.interpreter.executor.function_executor import Function
 from opendxa.dana.sandbox.interpreter.executor.program_executor import ProgramExecutor
 from opendxa.dana.sandbox.interpreter.executor.statement_executor import StatementExecutor
 
+# Explicit exports
+__all__ = [
+    "BaseExecutor",
+    "CollectionExecutor",
+    "BreakException",
+    "ContinueException",
+    "ControlFlowExecutor",
+    "ReturnException",
+    "DanaExecutor",
+    "ExpressionExecutor",
+    "FunctionExecutor",
+    "ProgramExecutor",
+    "StatementExecutor",
+]
+
 # For backward compatibility
+Executor = DanaExecutor

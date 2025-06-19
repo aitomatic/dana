@@ -20,12 +20,13 @@ def use_function(context: SandboxContext, function_name: str, *args, _name: str 
     if function_name.lower() == "mcp":
         from opendxa.contrib.dana_mcp_a2a.common.resource.mcp.client.mcp_resource import MCPResource
 
-        resource = MCPResource(name=_name, *args, **kwargs)
+        resource = MCPResource(*args, name=_name, **kwargs)
         context.set_resource(_name, resource)
         return resource
     elif function_name.lower() == "rag":
         from opendxa.contrib.dana_rag.common.resource.rag_resource import RAGResource
-        resource = RAGResource(name=_name, *args, **kwargs)
+
+        resource = RAGResource(*args, name=_name, **kwargs)
         context.set_resource(_name, resource)
         return resource
     else:
