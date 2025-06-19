@@ -100,7 +100,7 @@ def reason_function(
         try:
             resources = context.get_resources(options.get("resources", None)) if context is not None else {}
         except Exception as e:
-            self.warning(f"Error getting resources from context: {e}")
+            logger.warning(f"Error getting resources from context: {e}")
             resources = {}
 
         # Set query strategy and max iterations to iterative and 5 respectively to ultilize tools calls

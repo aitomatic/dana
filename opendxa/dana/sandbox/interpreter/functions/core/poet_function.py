@@ -19,6 +19,7 @@ def poet_function(
     domain: str | None = None,
     timeout: float | None = None,
     retries: int | None = None,
+    enable_training: bool = True,
     enable_monitoring: bool = True,
 ) -> Any:
     """

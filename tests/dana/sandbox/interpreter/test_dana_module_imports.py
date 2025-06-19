@@ -5,7 +5,6 @@ from pathlib import Path
 
 import pytest
 
-from opendxa.dana import DanaSandbox
 from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
 from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
 from opendxa.dana.sandbox.parser.dana_parser import DanaParser

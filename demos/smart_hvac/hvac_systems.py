@@ -12,7 +12,6 @@ from dataclasses import dataclass
 
 # Import the real POET framework
 try:
-    from opendxa.common.resource.llm_resource import LLMResource
     from opendxa.dana.poet.plugins import PLUGIN_REGISTRY
     from opendxa.dana.poet.poet import poet
 

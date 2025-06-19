@@ -17,13 +17,13 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from typing import Any, Union
+from typing import Any
 
 from pydantic import BaseModel
 
 # Basic JSON-compatible types
-JsonPrimitive = Union[str, int, float, bool, None]
-JsonType = Union[JsonPrimitive, list["JsonType"], dict[str, "JsonType"]]
+JsonPrimitive = str | int | float | bool | None
+JsonType = JsonPrimitive | list["JsonType"] | dict[str, "JsonType"]
 
 # Add any other common type definitions here as needed
 

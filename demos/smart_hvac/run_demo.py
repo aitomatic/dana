@@ -53,7 +53,8 @@ def check_dependencies():
 def check_poet_availability():
     """Check if POET framework is available."""
     try:
-        from opendxa.dana.poet import poet
+        # Just import the module to check availability
+        import opendxa.dana.poet
 
         print("✅ POET framework is available")
         return True
