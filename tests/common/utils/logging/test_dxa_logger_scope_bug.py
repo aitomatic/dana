@@ -2,7 +2,6 @@
 
 import logging
 import unittest
-from unittest.mock import patch
 
 from opendxa.common.utils.logging.dxa_logger import DXALogger
 

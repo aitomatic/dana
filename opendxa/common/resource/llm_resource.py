@@ -218,7 +218,7 @@ class LLMResource(BaseResource):
     @property
     def model(self) -> str | None:
         """The currently selected LLM model name."""
-        return self._config_manager.selected_model
+        return self._model
 
     @model.setter
     def model(self, value: str) -> None:

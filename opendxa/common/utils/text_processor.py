@@ -1,6 +1,5 @@
 """Text processing utilities for parsing responses and extracting content."""
 
-from typing import Any
 
 
 class TextProcessor:

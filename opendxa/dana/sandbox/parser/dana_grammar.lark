@@ -62,7 +62,7 @@ struct_def: "struct" NAME ":" [COMMENT] struct_block -> struct_definition
 
 struct_block: _NL _INDENT struct_fields _DEDENT*
 struct_fields: struct_field+
-struct_field: NAME ":" basic_type [COMMENT] _NL -> struct_field
+struct_field: NAME ":" basic_type ["=" expr] [COMMENT] _NL -> struct_field
 
 with_context_manager: expr
 mixed_arguments: with_arg ("," with_arg)*

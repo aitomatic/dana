@@ -104,7 +104,7 @@ class LLMConfigurationManager:
             }
 
             if provider in required_keys:
-                return any(os.getenv(key) for key in required_keys[provider])
+                return all(os.getenv(key) for key in required_keys[provider])
 
             return True  # Unknown providers assumed valid
 
