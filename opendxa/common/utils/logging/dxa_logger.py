@@ -72,31 +72,37 @@ class DXALogger:
         console: bool = True,
         **kwargs: Any,  # Accept but ignore extra args for backward compatibility
     ) -> None:
-        """Configure the logger with basic settings."""
+        """Configure the logger with basic settings.
+        
+        Only affects OpenDXA loggers to avoid interfering with third-party libraries.
+        """
         if self._configured:
             return
 
-        # Configure the root logger
-        root = logging.getLogger()
-        root.setLevel(level)
+        # Configure only the OpenDXA root logger, not the system root logger
+        opendxa_root = logging.getLogger("opendxa")
+        opendxa_root.setLevel(level)
 
-        # Remove any existing handlers
-        for handler in root.handlers[:]:
-            root.removeHandler(handler)
-
-        # Add our handler to the root logger
+        # Add our handler to the OpenDXA root logger only if console logging is enabled
         if console:
+            # Remove any existing handlers on the OpenDXA logger
+            for handler in opendxa_root.handlers[:]:
+                opendxa_root.removeHandler(handler)
+                
             handler = logging.StreamHandler()
             formatter = ColoredFormatter(fmt=fmt, datefmt=datefmt)
             handler.setFormatter(formatter)
-            root.addHandler(handler)
+            opendxa_root.addHandler(handler)
+            # Prevent propagation to avoid duplicate messages
+            opendxa_root.propagate = False
 
-        # Configure this logger and all existing loggers
+        # Configure this logger and only existing OpenDXA loggers
         self.logger.setLevel(level)
         for logger_name in logging.Logger.manager.loggerDict:
-            logger = logging.getLogger(logger_name)
-            if isinstance(logger, logging.Logger):
-                logger.setLevel(level)
+            if logger_name.startswith("opendxa"):
+                logger = logging.getLogger(logger_name)
+                if isinstance(logger, logging.Logger):
+                    logger.setLevel(level)
 
         self._configured = True
 

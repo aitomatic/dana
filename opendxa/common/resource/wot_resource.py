@@ -29,13 +29,19 @@ class WoTResource(BaseResource):
     @ToolCallable.tool
     async def query(self, request: BaseRequest = None) -> BaseResponse:
         """Get WOT input."""
-        if not self._io:
+        if not self.session:
             await self.initialize()
 
-        # Ensure we pass a proper dictionary with prompt
-        prompt = request.get("prompt") or ""
-        response = await self._io.query({"prompt": prompt})
-        return response
+        # Handle WoT-specific queries
+        if request and "thing_id" in request:
+            thing_id = request.get("thing_id")
+            if thing_id in self.things:
+                return await self._handle_interaction(self.things[thing_id], request)
+            else:
+                return BaseResponse.error_response(f"Thing not found: {thing_id}")
+        
+        # For general queries, return available things
+        return BaseResponse.success_response({"available_things": list(self.things.keys())})
 
     async def _handle_interaction(self, thing: dict[str, Any], request: BaseRequest) -> BaseResponse:
         """Handle WoT interaction based on type."""

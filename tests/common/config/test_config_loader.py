@@ -31,13 +31,16 @@ class TestConfigLoader(unittest.TestCase):
         assert loader1 is loader2, "ConfigLoader should be a singleton"
 
     def test_config_dir_property(self):
-        """Test that config_dir returns correct project root."""
+        """Test that config_dir returns correct opendxa library directory."""
         loader = ConfigLoader()
         config_dir = loader.config_dir
         
-        # Should point to project root (3 levels up from this file)
-        expected_path = Path(__file__).parent.parent.parent.parent / "opendxa"
-        assert config_dir.name == "opendxa", f"Expected opendxa directory, got {config_dir}"
+        # Should point to opendxa library directory (where default config is stored)
+        assert config_dir.name == "opendxa", f"Expected opendxa library directory, got {config_dir}"
+        
+        # Verify it contains the expected library files
+        assert (config_dir / "__init__.py").exists(), "Library directory should contain __init__.py"
+        assert (config_dir / "opendxa_config.json").exists(), "Library directory should contain default opendxa_config.json"
 
     def test_load_config_from_path_valid_json(self):
         """Test loading valid JSON config from specific path."""
@@ -127,43 +130,36 @@ class TestConfigLoader(unittest.TestCase):
                     result = loader.get_default_config()
                     assert result == test_config, "Should load from CWD"
 
-    def test_get_default_config_project_root_fallback(self):
-        """Test that project root is checked as final fallback."""
-        loader = ConfigLoader()
-        test_config = {"root_config": "final_fallback"}
-        
-        # Create config in project root
-        config_path = loader.config_dir / loader.DEFAULT_CONFIG_FILENAME
-        
-        try:
-            with open(config_path, 'w') as f:
-                json.dump(test_config, f)
-            
-            # Mock CWD to not have config file
-            with tempfile.TemporaryDirectory() as temp_dir:
-                with patch('pathlib.Path.cwd', return_value=Path(temp_dir)):
-                    with patch.dict(os.environ, {}, clear=True):
-                        result = loader.get_default_config()
-                        assert result == test_config, "Should load from project root"
-        finally:
-            if config_path.exists():
-                config_path.unlink()
-
-    def test_get_default_config_no_file_found(self):
-        """Test error when no config file found anywhere."""
+    def test_get_default_config_library_fallback(self):
+        """Test that library directory is checked as final fallback."""
         loader = ConfigLoader()
         
-        # Mock CWD to empty directory
+        # The library should have a default config file
+        lib_config_path = loader.config_dir / loader.DEFAULT_CONFIG_FILENAME
+        assert lib_config_path.exists(), "Library should have default config"
+        
+        # Mock CWD to not have config file
         with tempfile.TemporaryDirectory() as temp_dir:
             with patch('pathlib.Path.cwd', return_value=Path(temp_dir)):
                 with patch.dict(os.environ, {}, clear=True):
-                    # Ensure project root doesn't have config
-                    config_path = loader.config_dir / loader.DEFAULT_CONFIG_FILENAME
-                    if config_path.exists():
-                        config_path.unlink()
-                    
-                    with pytest.raises(ConfigurationError, match="Default config .* not found"):
-                        loader.get_default_config()
+                    result = loader.get_default_config()
+                    assert isinstance(result, dict), "Should load from library default"
+                    # Verify it has expected structure (based on current config)
+                    assert "preferred_models" in result, "Default config should have preferred_models"
+
+    def test_get_default_config_no_file_found(self):
+        """Test error when no config file found anywhere (corrupted installation)."""
+        loader = ConfigLoader()
+        
+        # Mock CWD to empty directory and simulate missing library config by mocking Path(__file__)
+        with tempfile.TemporaryDirectory() as temp_dir:
+            with patch('pathlib.Path.cwd', return_value=Path(temp_dir)):
+                with patch.dict(os.environ, {}, clear=True):
+                    # Mock __file__ to point to a fake location where no config exists
+                    fake_config_file = Path(temp_dir) / "fake" / "common" / "config" / "config_loader.py"
+                    with patch('opendxa.common.config.config_loader.__file__', str(fake_config_file)):
+                        with pytest.raises(ConfigurationError, match="Default config .* not found"):
+                            loader.get_default_config()
 
     def test_get_default_config_env_var_invalid_path(self):
         """Test error handling for invalid OPENDXA_CONFIG path."""
@@ -172,6 +168,27 @@ class TestConfigLoader(unittest.TestCase):
         with patch.dict(os.environ, {'OPENDXA_CONFIG': '/invalid/path/config.json'}):
             with pytest.raises(ConfigurationError, match="Failed to load config from OPENDXA_CONFIG"):
                 loader.get_default_config()
+
+    def test_user_override_behavior(self):
+        """Test that user config in CWD overrides library default."""
+        loader = ConfigLoader()
+        
+        # Create user override config
+        user_config = {"user_override": True, "preferred_models": [{"name": "user:model"}]}
+        
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            user_config_file = temp_path / loader.DEFAULT_CONFIG_FILENAME
+            
+            with open(user_config_file, 'w') as f:
+                json.dump(user_config, f)
+            
+            # User config should take precedence over library default
+            with patch('pathlib.Path.cwd', return_value=temp_path):
+                with patch.dict(os.environ, {}, clear=True):
+                    result = loader.get_default_config()
+                    assert result == user_config, "User config should override library default"
+                    assert result["user_override"] is True, "Should contain user-specific config"
 
 
 if __name__ == "__main__":

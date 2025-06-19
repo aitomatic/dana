@@ -123,10 +123,17 @@ class CommunicationError(OpenDXAError):
     pass
 
 
-class ValidationError(OpenDXAError):
-    """Validation related errors."""
+class DXAValidationError(OpenDXAError):
+    """OpenDXA validation related errors.
+    
+    Note: Renamed from ValidationError to avoid conflicts with pydantic.ValidationError.
+    """
 
     pass
+
+
+# Backward compatibility alias - will be deprecated
+ValidationError = DXAValidationError
 
 
 class StateError(OpenDXAError):

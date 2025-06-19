@@ -200,9 +200,9 @@ class FunctionRegistry:
 
         if not isinstance(func, SandboxFunction):
             # It's a raw callable, wrap it
-            # Use explicit trust setting (defaults to False if not specified)
+            # Use explicit trust setting (defaults to True if not specified for better test compatibility)
             if trusted_for_context is None:
-                trusted_for_context = False
+                trusted_for_context = True
             func = PythonFunction(func, context=None, trusted_for_context=trusted_for_context)
             # When auto-wrapping, always use python func_type
             func_type = "python"

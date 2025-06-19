@@ -121,11 +121,8 @@ from opendxa.common.resource.memory_resource import (
 from opendxa.common.resource.wot_resource import WoTResource
 
 
-# Exception for when a resource is unavailable
-class ResourceUnavailableError(Exception):
-    """Raised when a resource is not available."""
-
-    pass
+# Import resource exceptions from base_resource module
+from opendxa.common.resource.base_resource import ResourceUnavailableError
 
 
 from opendxa.common.types import (

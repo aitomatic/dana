@@ -328,7 +328,6 @@ class MemoryResource(BaseResource, Generic[ModelType, StorageType]):
                 decay_rate=decay_rate or self._default_decay_rate,
             )
             self.info(f"Storing memory: {memory}")
-            return BaseResponse(success=True, content={"content": content})
             self._storage.store(memory)
             return BaseResponse(success=True, content={"content": content})
         except Exception as e:

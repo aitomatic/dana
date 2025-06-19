@@ -142,35 +142,35 @@ class LLMResource(BaseResource):
         # Load base configuration from ConfigLoader
         try:
             base_config = ConfigLoader().get_default_config()
-            self.log_debug(f"Loaded base config: {list(base_config.keys())}")
+            self.debug(f"Loaded base config: {list(base_config.keys())}")
         except ConfigurationError as e:
-            self.log_warning(f"Could not load default config: {e}. Proceeding with minimal defaults.")
+            self.warning(f"Could not load default config: {e}. Proceeding with minimal defaults.")
             base_config = {}
 
         # Determine the preferred models list
         # Priority: constructor arg -> config file -> empty list
         if preferred_models is not None:
             self.preferred_models = preferred_models
-            self.log_debug("Using preferred_models from constructor argument.")
+            self.debug("Using preferred_models from constructor argument.")
         elif "llm" in base_config and "preferred_models" in base_config["llm"]:
             self.preferred_models = base_config["llm"]["preferred_models"]
-            self.log_debug("Using preferred_models from config file (llm section).")
+            self.debug("Using preferred_models from config file (llm section).")
         elif "preferred_models" in base_config:
             # Fallback for backward compatibility
             self.preferred_models = base_config["preferred_models"]
-            self.log_debug("Using preferred_models from config file (root level - legacy).")
+            self.debug("Using preferred_models from config file (root level - legacy).")
         else:
             self.preferred_models = []
-            self.log_warning("No preferred_models list found in config or arguments.")
+            self.warning("No preferred_models list found in config or arguments.")
 
         # --- Determine the model ---
         # Priority: constructor arg -> find available -> default from config -> None
         if model:
             # Validate the explicitly provided model
             if not self._validate_model(model):
-                self.log_warning(f"Explicitly provided model '{model}' seems unavailable (missing API keys?). Continuing anyway.")
+                self.warning(f"Explicitly provided model '{model}' seems unavailable (missing API keys?). Continuing anyway.")
             self._model = model  # Use underscore to avoid setter validation initially
-            self.log_debug(f"Using explicitly set model: {self._model}")
+            self.debug(f"Using explicitly set model: {self._model}")
         else:
             # Automatically find the first available model from the list
             self._model = self._find_first_available_model()
@@ -179,12 +179,12 @@ class LLMResource(BaseResource):
                 # We no longer fall back to `default_model`.
                 is_mock_mode = os.environ.get("OPENDXA_MOCK_LLM", "").lower() == "true"
                 if not is_mock_mode:
-                    self.log_error(
+                    self.error(
                         "Could not find an available model from the preferred_models list. "
                         "No explicit model was provided, and the fallback to 'default_model' is no longer used."
                     )
                 else:
-                    self.log_debug("No available model found, but mock mode is enabled. This is expected in test environments.")
+                    self.debug("No available model found, but mock mode is enabled. This is expected in test environments.")
                 # self._model remains None.
 
         # Initialize query executor (Phase 5A integration)
@@ -202,8 +202,8 @@ class LLMResource(BaseResource):
         if self._model:
             self.config["model"] = self._model
 
-        self.log_info(f"Initialized LLMResource '{name}' with model '{self.model}'")
-        self.log_debug(f"Final LLM config keys: {list(self.config.keys())}")
+        self.info(f"Initialized LLMResource '{name}' with model '{self.model}'")
+        self.debug(f"Final LLM config keys: {list(self.config.keys())}")
 
         # Mocking setup
         self._mock_llm_call: bool | Callable[[dict[str, Any]], dict[str, Any]] | None = None
@@ -227,9 +227,9 @@ class LLMResource(BaseResource):
             self._config_manager.selected_model = value
             self._model = value  # Keep backward compatibility
             self.config["model"] = value  # Keep config in sync
-            self.log_info(f"LLM model set to: {self._model}")
+            self.info(f"LLM model set to: {self._model}")
         except Exception as e:
-            self.log_warning(f"Setting model to '{value}', but validation failed: {e}")
+            self.warning(f"Setting model to '{value}', but validation failed: {e}")
             # Still set it for backward compatibility
             self._model = value
             self.config["model"] = value
@@ -323,7 +323,7 @@ class LLMResource(BaseResource):
 
         Misc.safe_asyncio_run(self.initialize)
         self._started = True
-        self.log_info(f"LLMResource '{self.name}' started synchronously")
+        self.info(f"LLMResource '{self.name}' started synchronously")
 
     def shutdown(self) -> None:
         """Synchronous shutdown - cleanup LLM client"""
@@ -332,7 +332,7 @@ class LLMResource(BaseResource):
 
         Misc.safe_asyncio_run(self.cleanup)
         self._started = False
-        self.log_info(f"LLMResource '{self.name}' shut down")
+        self.info(f"LLMResource '{self.name}' shut down")
 
     def _ensure_started(self) -> None:
         """Ensure LLM resource is started before use"""
@@ -530,5 +530,5 @@ class LLMResource(BaseResource):
             A list of available model names.
         """
         available = self._config_manager.get_available_models()
-        self.log_debug(f"Available models based on API keys: {available}")
+        self.debug(f"Available models based on API keys: {available}")
         return available

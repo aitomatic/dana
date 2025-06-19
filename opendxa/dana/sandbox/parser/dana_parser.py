@@ -23,6 +23,7 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
+import logging
 import os
 from collections.abc import Sequence
 from pathlib import Path
@@ -174,16 +175,25 @@ class DanaParser(Lark, Loggable):
                 DanaParser._grammar_text = f.read()
             self.debug(f"Loaded grammar from {grammar_path}")
 
-        # Initialize the Lark parser with the grammar
-        super().__init__(
-            grammar=DanaParser._grammar_text,
-            parser="lalr",
-            postlex=DanaIndenter(),
-            start="program",
-            lexer="contextual",
-            debug=False,
-            cache=False if reload_grammar else False,  # Disable caching always
-        )
+        # Temporarily suppress Lark's chatty warnings during grammar parsing
+        lark_logger = logging.getLogger("lark")
+        original_lark_level = lark_logger.level
+        lark_logger.setLevel(logging.ERROR)  # Only show errors, not warnings
+        
+        try:
+            # Initialize the Lark parser with the grammar
+            super().__init__(
+                grammar=DanaParser._grammar_text,
+                parser="lalr",
+                postlex=DanaIndenter(),
+                start="program",
+                lexer="contextual",
+                debug=False,
+                cache=not reload_grammar,  # Enable caching unless forced reload
+            )
+        finally:
+            # Restore original Lark logger level
+            lark_logger.setLevel(original_lark_level)
 
         self.transformer = DanaTransformer()
         self.program_text = ""
