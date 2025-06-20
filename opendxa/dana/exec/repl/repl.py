@@ -210,18 +210,22 @@ class REPL(Loggable):
                     self.sandbox._interpreter._executor._output_buffer.append(result.output)
                 return result.result
             else:
-                print(f"🚨 REPL: Sandbox execution failed: {result.error}")
+                # Log debug information but don't print to user
+                self.debug(f"Sandbox execution failed: {result.error}")
                 if result.error is not None and hasattr(result.error, "__traceback__"):
                     import traceback
 
-                    print("🚨 REPL: Full traceback:")
-                    traceback.print_exception(type(result.error), result.error, result.error.__traceback__)
+                    self.debug(
+                        "Full traceback: "
+                        + "".join(traceback.format_exception(type(result.error), result.error, result.error.__traceback__))
+                    )
                 raise result.error
         except Exception as e:
-            print(f"🚨 REPL: Exception in execute: {e}")
+            # Log debug information but don't print to user
+            self.debug(f"Exception in execute: {e}")
             import traceback
 
-            traceback.print_exc()
+            self.debug("Full traceback: " + traceback.format_exc())
             formatted = self._format_error_message(str(e), program_source)
             raise DanaError(formatted)
 

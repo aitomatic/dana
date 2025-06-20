@@ -219,6 +219,7 @@ class DanaSandbox:
             )
 
         except Exception as e:
+            # File execution always logs as error since these are unexpected
             DXA_LOGGER.error(f"Error executing Dana file: {e}")
             return ExecutionResult(
                 success=False,
@@ -255,7 +256,20 @@ class DanaSandbox:
             )
 
         except Exception as e:
-            DXA_LOGGER.error(f"Error evaluating Dana code: {e}")
+            # Check if we're in REPL mode - either by REPL markers or by filename being None (interactive)
+            is_repl_mode = (
+                filename is None  # Interactive evaluation (REPL)
+                or self._context.get("system.__repl_input_context") is not None
+                or any("__repl" in str(key) for key in self._context._state.get("system", {}).keys())
+            )
+
+            if is_repl_mode:
+                # In REPL mode, syntax errors are expected user input - log as debug
+                DXA_LOGGER.debug(f"Error evaluating Dana code: {e}")
+            else:
+                # In non-REPL mode (file execution), log as error for debugging
+                DXA_LOGGER.error(f"Error evaluating Dana code: {e}")
+
             return ExecutionResult(
                 success=False,
                 error=e,
