@@ -183,14 +183,10 @@ class FunctionResolver:
 
         # Check if this is a decorated function (has __wrapped__ attribute)
         if hasattr(func_data, "__wrapped__"):
-            # Use the wrapped function's type
-            wrapped_func = func_data.__wrapped__
-            if isinstance(wrapped_func, (DanaFunction | SandboxFunction)):
-                func_type = FunctionType.DANA
-            elif isinstance(wrapped_func, PythonFunction):
-                func_type = FunctionType.PYTHON
-            else:
-                func_type = FunctionType.CALLABLE
+            # Decorated functions should be treated as CALLABLE since the decorator
+            # has transformed them into regular Python callables, regardless of the
+            # original wrapped function type
+            func_type = FunctionType.CALLABLE
         else:
             # Not decorated, check type directly
             if isinstance(func_data, (DanaFunction | SandboxFunction)):
