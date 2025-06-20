@@ -229,8 +229,26 @@ power: factor (POW power)?
 factor: (ADD | SUB) factor | atom trailer*
 
 trailer: "(" [arguments] ")"    // Function call
-       | "[" expr "]"           // Indexing
+       | "[" slice_list "]"     // Indexing or slicing (single or multi-dimensional)
        | "." NAME               // Property access
+
+slice_list: slice_or_index ("," slice_or_index)*
+
+slice_or_index: slice_expr | expr
+
+slice_expr: slice_start_only 
+          | slice_stop_only
+          | slice_start_stop
+          | slice_start_stop_step
+          | slice_all
+          | slice_step_only
+
+slice_start_only: expr ":"                    // [start:]
+slice_stop_only: ":" expr                     // [:stop]  
+slice_start_stop: expr ":" expr               // [start:stop]
+slice_start_stop_step: expr ":" expr ":" expr // [start:stop:step]
+slice_all: ":"                               // [:]
+slice_step_only: "::" expr                   // [::step]
 
 arguments: argument ("," argument)* [","]
 

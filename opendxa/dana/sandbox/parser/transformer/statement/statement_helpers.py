@@ -39,12 +39,41 @@ class AssignmentHelper:
     @staticmethod
     def create_assignment(target_tree, value_tree, expression_transformer, variable_transformer, type_hint=None):
         """Create an Assignment node with proper validation."""
-        # Get target (can be Identifier or AttributeAccess)
-        target = variable_transformer.variable([target_tree])
-        from opendxa.dana.sandbox.parser.ast import AttributeAccess
+        from lark import Tree
 
-        if not isinstance(target, Identifier | AttributeAccess):
-            raise TypeError(f"Assignment target must be Identifier or AttributeAccess, got {type(target)}")
+        # Handle different types of assignment targets
+        if isinstance(target_tree, Tree) and hasattr(target_tree, "data"):
+            # Check if this is a complex target (atom with trailers)
+            if target_tree.data == "target":
+                # target -> atom
+                atom_tree = target_tree.children[0]
+                if isinstance(atom_tree, Tree) and atom_tree.data == "atom":
+                    # Check if atom has trailers (indicating subscript or attribute access)
+                    if len(atom_tree.children) > 1:
+                        # Complex target: use expression transformer to handle subscript/attribute access
+                        target = expression_transformer.expression([target_tree])
+                    else:
+                        # Simple target: use variable transformer
+                        target = variable_transformer.variable([target_tree])
+                else:
+                    # Fallback to variable transformer
+                    target = variable_transformer.variable([target_tree])
+            else:
+                # Not a target rule, try expression transformer first
+                try:
+                    target = expression_transformer.expression([target_tree])
+                except Exception:
+                    # Fallback to variable transformer
+                    target = variable_transformer.variable([target_tree])
+        else:
+            # Simple case: use variable transformer
+            target = variable_transformer.variable([target_tree])
+
+        # Validate target type
+        from opendxa.dana.sandbox.parser.ast import AttributeAccess, Identifier, SubscriptExpression
+
+        if not isinstance(target, (Identifier, SubscriptExpression, AttributeAccess)):
+            raise TypeError(f"Assignment target must be Identifier, SubscriptExpression, or AttributeAccess, got {type(target)}")
 
         # Transform value
         value = expression_transformer.expression([value_tree])
@@ -53,7 +82,6 @@ class AssignmentHelper:
 
         # Type imports to match the original
         from opendxa.dana.sandbox.parser.ast import (
-            AttributeAccess,
             BinaryExpression,
             DictLiteral,
             FStringExpression,
@@ -62,7 +90,6 @@ class AssignmentHelper:
             LiteralExpression,
             ObjectFunctionCall,
             SetLiteral,
-            SubscriptExpression,
             TupleLiteral,
             UnaryExpression,
         )

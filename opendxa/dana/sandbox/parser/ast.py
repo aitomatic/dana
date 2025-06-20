@@ -45,6 +45,8 @@ Expression = Union[
     "UnaryExpression",
     "AttributeAccess",
     "SubscriptExpression",
+    "SliceExpression",
+    "SliceTuple",
     "DictLiteral",
     "ListLiteral",
     "SetLiteral",
@@ -252,11 +254,29 @@ class AttributeAccess:
 
 
 @dataclass
+class SliceExpression:
+    """A slice expression (e.g., start:end:step)."""
+
+    start: Expression | None = None
+    stop: Expression | None = None
+    step: Expression | None = None
+    location: Location | None = None
+
+
+@dataclass
+class SliceTuple:
+    """A tuple of slice expressions for multi-dimensional slicing (e.g., obj[0:2, 1:4])."""
+
+    slices: list[Expression | SliceExpression]  # List of slice expressions or regular expressions
+    location: Location | None = None
+
+
+@dataclass
 class SubscriptExpression:
-    """Indexing/subscription (e.g., a[0], a["key"])."""
+    """Indexing/subscription (e.g., a[0], a["key"]) or slicing (e.g., a[0:2]) or multi-dimensional slicing (e.g., a[0:2, 1:4])."""
 
     object: Expression
-    index: Expression
+    index: Expression | SliceExpression | SliceTuple  # Can be index, single slice, or multi-dimensional slice
     location: Location | None = None
 
 
@@ -295,9 +315,9 @@ class ListLiteral:
 # === Statements ===
 @dataclass
 class Assignment:
-    """Assignment statement (e.g., x = 42, obj.attr = 42). Returns the assigned value."""
+    """Assignment statement (e.g., x = 42, obj[key] = value, obj.attr = value). Returns the assigned value."""
 
-    target: Union[Identifier, "AttributeAccess"]  # Support both variable and attribute assignment
+    target: Identifier | SubscriptExpression | AttributeAccess  # Allow complex assignment targets
     value: Union[
         LiteralExpression,
         Identifier,

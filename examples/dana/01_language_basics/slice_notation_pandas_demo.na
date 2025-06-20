@@ -1,0 +1,421 @@
+# Dana Slice Notation with Pandas Integration Demo
+# Demonstrates all slice patterns with DataFrame operations
+
+import pandas.py as pd
+import numpy.py as np
+
+log("=== Dana Slice Notation with Pandas Demo ===")
+
+# Create sample dataset
+def create_sample_data():
+    data = {
+        "employee_id": [101, 102, 103, 104, 105, 106, 107, 108, 109, 110],
+        "name": ["Alice", "Bob", "Charlie", "Diana", "Eve", "Frank", "Grace", "Henry", "Iris", "Jack"],
+        "department": ["Engineering", "Sales", "Marketing", "Engineering", "Sales", "HR", "Engineering", "Marketing", "Sales", "HR"],
+        "salary": [75000, 65000, 58000, 82000, 61000, 55000, 78000, 62000, 59000, 57000],
+        "years_experience": [3, 5, 2, 7, 4, 6, 4, 3, 2, 8],
+        "performance_score": [8.5, 7.2, 6.8, 9.1, 7.5, 6.9, 8.8, 7.0, 6.5, 8.2]
+    }
+    return pd.DataFrame(data)
+
+df = create_sample_data()
+log("Original DataFrame:")
+log(df)
+
+log("\n=== 1. Start-Only Slice [start:] ===")
+# Get employees from row 3 onwards
+recent_hires = df[3:]
+log("Employees from row 3 onwards:")
+log(recent_hires)
+
+log("\n=== 2. Stop-Only Slice [:stop] ===")
+# Get first 5 employees
+first_five = df[:5]
+log("First 5 employees:")
+log(first_five)
+
+log("\n=== 3. Start-Stop Slice [start:stop] ===")
+# Get middle employees (rows 2-6)
+middle_employees = df[2:7]
+log("Middle employees (rows 2-6):")
+log(middle_employees)
+
+log("\n=== 4. Start-Stop-Step Slice [start:stop:step] ===")
+# Get every other employee from rows 1-8
+every_other = df[1:9:2]
+log("Every other employee (rows 1-8, step 2):")
+log(every_other)
+
+log("\n=== 5. Full Slice [:] ===")
+# Create a copy of the DataFrame
+df_copy = df[:]
+log("Full DataFrame copy:")
+log(f"Original shape: {df.shape}, Copy shape: {df_copy.shape}")
+log("Are they the same object?", df is df_copy)
+
+log("\n=== 6. Step-Only Slice [::step] ===")
+# Get every 3rd employee
+every_third = df[::3]
+log("Every 3rd employee:")
+log(every_third)
+
+log("\n=== PANDAS-SPECIFIC: .iloc (Integer Location) with Slices ===")
+
+# iloc allows integer-position based selection with slices
+log("\n--- iloc Row Slicing ---")
+
+# Select rows using iloc with different slice patterns
+log("First 3 rows using iloc[0:3]:")
+first_three_iloc = df.iloc[0:3]
+log(first_three_iloc)
+
+log("\nLast 3 rows using iloc[-3:]:")
+last_three_iloc = df.iloc[-3:]
+log(last_three_iloc)
+
+log("\nEvery other row using iloc[::2]:")
+every_other_iloc = df.iloc[::2]
+log(every_other_iloc)
+
+log("\nRows 2-7 with step 2 using iloc[2:8:2]:")
+stepped_rows_iloc = df.iloc[2:8:2]
+log(stepped_rows_iloc)
+
+log("\n--- iloc Column Slicing ---")
+
+log("First 3 columns using iloc[:, 0:3]:")
+first_cols_iloc = df.iloc[:, 0:3]
+log(first_cols_iloc)
+
+log("\nLast 2 columns using iloc[:, -2:]:")
+last_cols_iloc = df.iloc[:, -2:]
+log(last_cols_iloc)
+
+log("\nEvery other column using iloc[:, ::2]:")
+every_other_col_iloc = df.iloc[:, ::2]
+log(every_other_col_iloc)
+
+log("\n--- iloc Combined Row and Column Slicing ---")
+
+log("First 5 rows, first 3 columns using iloc[0:5, 0:3]:")
+subset_iloc = df.iloc[0:5, 0:3]
+log(subset_iloc)
+
+log("Every other row, columns 1-4 using iloc[::2, 1:5]:")
+complex_slice_iloc = df.iloc[::2, 1:5]
+log(complex_slice_iloc)
+
+log("\nLast 3 rows, every other column using iloc[-3:, ::2]:")
+advanced_slice_iloc = df.iloc[-3:, ::2]
+log(advanced_slice_iloc)
+
+log("\n=== PANDAS-SPECIFIC: .loc (Label Location) with Slices ===")
+
+# Create a DataFrame with meaningful index for .loc demonstration
+indexed_df = df.set_index('name')
+log("DataFrame with 'name' as index for .loc examples:")
+log(indexed_df)
+
+log("\n--- loc Row Slicing by Label ---")
+
+log("From 'Charlie' to 'Grace' using loc['Charlie':'Grace']:")
+name_range_loc = indexed_df.loc['Charlie':'Grace']
+log(name_range_loc)
+
+log("\nFrom 'Alice' to 'Eve' using loc['Alice':'Eve']:")
+alpha_range_loc = indexed_df.loc['Alice':'Eve']
+log(alpha_range_loc)
+
+log("\n--- loc Column Slicing by Label ---")
+
+log("Columns from 'department' to 'years_experience' using loc[:, 'department':'years_experience']:")
+col_range_loc = indexed_df.loc[:, 'department':'years_experience']
+log(col_range_loc)
+
+log("\nSpecific rows and column range using loc['Bob':'Frank', 'salary':'performance_score']:")
+row_col_range_loc = indexed_df.loc['Bob':'Frank', 'salary':'performance_score']
+log(row_col_range_loc)
+
+log("\n=== ASSIGNMENT OPERATIONS with iloc and Slices ===")
+
+# Create a working copy for assignments
+work_df = df.copy()
+log("Working DataFrame for assignment operations:")
+log(work_df)
+
+log("\n--- Scalar Assignment with iloc ---")
+
+# Assign single value to slice
+log("Setting salary to 80000 for first 3 employees using iloc[0:3, 3] = 80000:")
+work_df.iloc[0:3, 3] = 80000  # salary column is index 3
+log(work_df[['name', 'salary']])
+
+log("\n--- Array Assignment with iloc ---")
+
+# Assign array of values to slice
+log("Setting performance scores for rows 5-7 using iloc[5:8, -1] = [9.0, 9.2, 8.9]:")
+work_df.iloc[5:8, -1] = [9.0, 9.2, 8.9]  # performance_score is last column
+log(work_df[['name', 'performance_score']])
+
+log("\n--- Multiple Column Assignment with iloc ---")
+
+# Assign to multiple columns using slice
+log("Updating salary and years_experience for last 2 employees:")
+log("Using iloc[-2:, [3, 4]] = [[85000, 10], [90000, 12]]")
+work_df.iloc[-2:, [3, 4]] = [[85000, 10], [90000, 12]]
+log(work_df[['name', 'salary', 'years_experience']])
+
+log("\n=== ASSIGNMENT OPERATIONS with loc and Slices ===")
+
+# Create indexed working copy for loc assignments
+indexed_work_df = work_df.set_index('name')
+log("Indexed working DataFrame for loc assignment operations:")
+log(indexed_work_df)
+
+log("\n--- Scalar Assignment with loc ---")
+
+log("Setting department to 'Management' for Alice to Charlie using loc['Alice':'Charlie', 'department']:")
+indexed_work_df.loc['Alice':'Charlie', 'department'] = 'Management'
+log(indexed_work_df[['department', 'salary']])
+
+log("\n--- Conditional Assignment with loc ---")
+
+# Conditional assignment using boolean indexing combined with loc
+log("Giving 10% raise to Engineering employees using loc:")
+engineering_mask = indexed_work_df['department'] == 'Engineering'
+log(f"Engineering employees before raise:")
+log(indexed_work_df.loc[engineering_mask, ['department', 'salary']])
+
+indexed_work_df.loc[engineering_mask, 'salary'] = indexed_work_df.loc[engineering_mask, 'salary'] * 1.1
+log("After 10% raise:")
+log(indexed_work_df.loc[engineering_mask, ['department', 'salary']])
+
+log("\n--- Multiple Column Assignment with loc ---")
+
+log("Updating multiple fields for Frank to Henry:")
+log("Setting department='Leadership' and performance_score=9.5")
+indexed_work_df.loc['Frank':'Henry', ['department', 'performance_score']] = ['Leadership', 9.5]
+log(indexed_work_df.loc['Frank':'Henry', ['department', 'performance_score']])
+
+log("\n=== ADVANCED PANDAS SLICE OPERATIONS ===")
+
+log("\n--- Time Series with DateTime Index ---")
+
+# Create time series data with datetime index
+dates = pd.date_range('2024-01-01', periods=30, freq='D')
+ts_data = pd.DataFrame({
+    'sales': [1000 + i*50 + (i%7)*100 for i in range(30)],
+    'customers': [50 + i*2 + (i%5)*10 for i in range(30)],
+    'region': ['North' if i%3==0 else 'South' if i%3==1 else 'East' for i in range(30)]
+}, index=dates)
+
+log("Time series DataFrame with datetime index:")
+log(ts_data.head(10))
+
+log("\n--- Date Range Slicing with loc ---")
+
+log("January 5-10 data using loc['2024-01-05':'2024-01-10']:")
+date_range = ts_data.loc['2024-01-05':'2024-01-10']
+log(date_range)
+
+log("\nFirst week using iloc[0:7]:")
+first_week_ts = ts_data.iloc[0:7]
+log(first_week_ts)
+
+log("\nLast 5 days using iloc[-5:]:")
+last_days_ts = ts_data.iloc[-5:]
+log(last_days_ts)
+
+log("\n--- Time Series Assignment Operations ---")
+
+ts_work = ts_data.copy()
+log("Updating sales for January 15-20 using date slice:")
+ts_work.loc['2024-01-15':'2024-01-20', 'sales'] = ts_work.loc['2024-01-15':'2024-01-20', 'sales'] * 1.2
+log("Sales updated (20% increase):")
+log(ts_work.loc['2024-01-15':'2024-01-20'])
+
+log("\n=== REAL-WORLD DATA ANALYSIS WITH iloc/loc ===")
+
+# Create sales performance data
+regions = ['North', 'South', 'East', 'West']
+months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
+sales_matrix = pd.DataFrame(
+    np.random.randint(10000, 50000, size=(len(regions), len(months))),
+    index=regions,
+    columns=months
+)
+
+log("Regional Sales Matrix:")
+log(sales_matrix)
+
+log("\n--- Quarter Analysis using Slices ---")
+
+log("Q1 performance (Jan-Mar) using loc[:, 'Jan':'Mar']:")
+q1_sales = sales_matrix.loc[:, 'Jan':'Mar']
+q1_total = q1_sales.sum(axis=1)
+log(q1_sales)
+log("Q1 Totals by region:")
+log(q1_total)
+
+log("\nQ2 performance (Apr-Jun) using iloc[:, 3:6]:")
+q2_sales = sales_matrix.iloc[:, 3:6]
+q2_total = q2_sales.sum(axis=1)
+log(q2_sales)
+log("Q2 Totals by region:")
+log(q2_total)
+
+log("\n--- Performance Updates using Assignment ---")
+
+sales_work = sales_matrix.copy()
+log("Applying seasonal adjustment (+15%) to North and South regions for winter months:")
+sales_work.loc['North':'South', 'Jan':'Mar'] = sales_work.loc['North':'South', 'Jan':'Mar'] * 1.15
+log("Updated sales matrix:")
+log(sales_work)
+
+log("\n--- Moving Averages using Rolling Slices ---")
+
+def calculate_regional_trends():
+    log("3-month moving averages by region:")
+    for region in sales_matrix.index:
+        region_data = sales_matrix.loc[region, :]
+        log(f"\n{region} region sales progression:")
+        for i in range(len(region_data) - 2):
+            window = region_data.iloc[i:i+3]
+            avg = window.mean()
+            months_str = f"{window.index[0]}-{window.index[-1]}"
+            log(f"  {months_str}: {avg:,.0f} avg")
+
+calculate_regional_trends()
+
+log("\n=== PANDAS SLICE PATTERNS SUMMARY ===")
+
+summary_df = pd.DataFrame({
+    'Pattern': ['df[start:stop]', 'df.iloc[start:stop]', 'df.loc[label1:label2]', 
+                'df.iloc[start:stop, col_start:col_stop]', 'df.loc[row_slice, col_slice]'],
+    'Use_Case': ['Basic row slicing', 'Integer position row slicing', 'Label-based row slicing',
+                'Integer position row+column slicing', 'Label-based row+column slicing'],
+    'Assignment': ['df[start:stop] = values', 'df.iloc[start:stop, col] = values', 
+                  'df.loc[label1:label2, col] = values', 'df.iloc[rows, cols] = array',
+                  'df.loc[row_slice, col_slice] = values']
+})
+
+log("Pandas slice pattern reference:")
+log(summary_df)
+
+log("\n=== Advanced Pandas + Slice Combinations ===")
+
+# Combine slicing with pandas operations
+log("\n--- High Performers Analysis ---")
+# Sort by performance score and get top 4
+top_performers = df.sort_values('performance_score', ascending=False)[:4]
+log("Top 4 performers:")
+log(top_performers[['name', 'performance_score', 'salary']])
+
+# Engineering department analysis
+log("\n--- Engineering Department Analysis ---")
+engineering_df = df[df['department'] == 'Engineering']
+log("All Engineering employees:")
+log(engineering_df)
+
+# Get first 2 engineering employees using slice
+eng_sample = engineering_df[:2]
+log("First 2 Engineering employees:")
+log(eng_sample[['name', 'salary', 'years_experience']])
+
+log("\n=== Data Processing Pipeline with Slices ===")
+
+# Complex pipeline: filter, sort, slice, aggregate
+def analyze_department_performance(department: str) -> dict:
+    # Filter by department
+    dept_df = df[df['department'] == department]
+    
+    # Sort by performance score
+    sorted_df = dept_df.sort_values('performance_score', ascending=False)
+    
+    # Get top half using slice
+    top_half = sorted_df[:len(sorted_df)//2 + 1]
+    
+    # Calculate metrics
+    metrics = {
+        "department": department,
+        "total_employees": len(dept_df),
+        "top_half_count": len(top_half),
+        "avg_salary_all": dept_df['salary'].mean(),
+        "avg_salary_top_half": top_half['salary'].mean(),
+        "avg_performance_all": dept_df['performance_score'].mean(),
+        "avg_performance_top_half": top_half['performance_score'].mean()
+    }
+    
+    return metrics
+
+# Analyze each department
+departments = df['department'].unique()
+log("Department Performance Analysis:")
+for dept in departments:
+    metrics = analyze_department_performance(dept)
+    log(f"\n{dept}:")
+    log(f"  Total employees: {metrics['total_employees']}")
+    log(f"  Top half count: {metrics['top_half_count']}")
+    log(f"  Avg salary (all): ${metrics['avg_salary_all']:,.0f}")
+    log(f"  Avg salary (top half): ${metrics['avg_salary_top_half']:,.0f}")
+    log(f"  Avg performance (all): {metrics['avg_performance_all']:.2f}")
+    log(f"  Avg performance (top half): {metrics['avg_performance_top_half']:.2f}")
+
+log("\n=== Error Handling Examples ===")
+
+# Demonstrate safe slicing
+def safe_slice_demo():
+    small_df = df[:3]  # Only 3 rows
+    log("Small DataFrame (3 rows):")
+    log(small_df)
+    
+    # This works - returns empty DataFrame
+    log("\nTrying to slice beyond bounds [10:15]:")
+    try:
+        result = small_df[10:15]
+        log(f"Result: {len(result)} rows")
+        log(result)
+    except Exception as e:
+        log(f"Error: {e}")
+    
+    # This also works - returns empty DataFrame  
+    log("\nTrying large slice [5:]:")
+    try:
+        result = small_df[5:]
+        log(f"Result: {len(result)} rows")
+        log(result)
+    except Exception as e:
+        log(f"Error: {e}")
+
+safe_slice_demo()
+
+log("\n=== Performance Comparison ===")
+
+# Create larger dataset for performance testing
+large_data = {
+    "id": list(range(1000)),
+    "value": [i * 1.5 for i in range(1000)],
+    "category": [f"Cat_{i%10}" for i in range(1000)]
+}
+large_df = pd.DataFrame(large_data)
+
+log(f"Large DataFrame shape: {large_df.shape}")
+
+# Test different slice operations
+log("\nSlice operations on large DataFrame:")
+log(f"First 100 rows: {len(large_df[:100])} rows")
+log(f"Last 50 rows: {len(large_df[-50:])} rows") 
+log(f"Every 10th row: {len(large_df[::10])} rows")
+log(f"Middle 200 rows: {len(large_df[400:600])} rows")
+
+log("\n=== Summary ===")
+log("Dana slice notation with pandas provides:")
+log("✅ All 6 slice patterns working seamlessly")
+log("✅ Full integration with DataFrame operations")
+log("✅ Complete .iloc and .loc support with assignments")
+log("✅ Time series and datetime index slicing")
+log("✅ Efficient data analysis workflows")
+log("✅ Robust error handling")
+log("✅ Performance optimization through native slice objects")
+
+log("\nSlice notation demo completed successfully!") 

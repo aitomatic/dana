@@ -17,6 +17,7 @@ from opendxa.dana.sandbox.parser.ast import (
     FunctionCall,
     Identifier,
     ObjectFunctionCall,
+    SliceExpression,
     SubscriptExpression,
 )
 from opendxa.dana.sandbox.parser.transformer.base_transformer import BaseTransformer
@@ -148,11 +149,11 @@ class CallTransformer(BaseTransformer):
                 # This ensures that obj.attr is treated as attribute access, not a dotted variable name
                 base = AttributeAccess(object=base, attribute=t.value, location=getattr(base, "location", None))
 
-            # Indexing: [ ... ]
-            elif hasattr(t, "data") and t.data == "expr":
-                base = SubscriptExpression(
-                    object=base, index=t.children[0] if hasattr(t, "children") else t, location=getattr(base, "location", None)
-                )
+            # Indexing or Slicing: [ ... ]
+            elif hasattr(t, "data") and t.data == "slice_list":
+                # The slice_list contains either a single slice/index or multiple slice/index expressions
+                slice_list_content = t.children[0] if hasattr(t, "children") and len(t.children) == 1 else t
+                base = SubscriptExpression(object=base, index=slice_list_content, location=getattr(base, "location", None))
 
         return base
 
@@ -194,6 +195,50 @@ class CallTransformer(BaseTransformer):
         result = {"__positional": args}
         result.update(kwargs)
         return result
+
+    def slice_or_index(self, items):
+        """Handle slice_or_index rule - returns either a slice_expr or expr."""
+        return items[0]  # Return the slice_expr or expr directly
+
+    def slice_start_only(self, items):
+        """Transform [start:] slice pattern."""
+        return SliceExpression(start=items[0], stop=None, step=None)
+
+    def slice_stop_only(self, items):
+        """Transform [:stop] slice pattern."""
+        return SliceExpression(start=None, stop=items[0], step=None)
+
+    def slice_start_stop(self, items):
+        """Transform [start:stop] slice pattern."""
+        return SliceExpression(start=items[0], stop=items[1], step=None)
+
+    def slice_start_stop_step(self, items):
+        """Transform [start:stop:step] slice pattern."""
+        return SliceExpression(start=items[0], stop=items[1], step=items[2])
+
+    def slice_all(self, items):
+        """Transform [:] slice pattern."""
+        return SliceExpression(start=None, stop=None, step=None)
+
+    def slice_step_only(self, items):
+        """Transform [::step] slice pattern."""
+        return SliceExpression(start=None, stop=None, step=items[0])
+
+    def slice_expr(self, items):
+        """Handle slice_expr containing one of the specific slice patterns."""
+        # This method receives the result from one of the specific slice pattern methods
+        return items[0]
+
+    def slice_list(self, items):
+        """Handle slice_list - returns either a single slice/index or a SliceTuple for multi-dimensional slicing."""
+        if len(items) == 1:
+            # Single dimension - return the slice/index directly
+            return items[0]
+        else:
+            # Multi-dimensional - return a SliceTuple
+            from opendxa.dana.sandbox.parser.ast import SliceTuple
+
+            return SliceTuple(slices=items)
 
     def _get_full_attribute_name(self, attr):
         """Recursively extract full dotted name from AttributeAccess chain."""

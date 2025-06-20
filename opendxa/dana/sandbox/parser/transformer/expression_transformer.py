@@ -44,6 +44,7 @@ from opendxa.dana.sandbox.parser.ast import (
     LiteralExpression,
     ObjectFunctionCall,
     SetLiteral,
+    SliceExpression,
     SubscriptExpression,
     TupleLiteral,
     UnaryExpression,
@@ -877,6 +878,49 @@ class ExpressionTransformer(BaseTransformer):
         # If we reach here, it's an unexpected string type
         self.error(f"Unexpected string literal type: {type(item)}")
         return LiteralExpression("")
+
+    def slice_or_index(self, items):
+        """Handle slice_or_index rule - returns either a slice_expr or expr."""
+        return items[0]  # Return the slice_expr or expr directly
+
+    def slice_start_only(self, items):
+        """Transform [start:] slice pattern."""
+        return SliceExpression(start=items[0], stop=None, step=None)
+
+    def slice_stop_only(self, items):
+        """Transform [:stop] slice pattern."""
+        return SliceExpression(start=None, stop=items[0], step=None)
+
+    def slice_start_stop(self, items):
+        """Transform [start:stop] slice pattern."""
+        return SliceExpression(start=items[0], stop=items[1], step=None)
+
+    def slice_start_stop_step(self, items):
+        """Transform [start:stop:step] slice pattern."""
+        return SliceExpression(start=items[0], stop=items[1], step=items[2])
+
+    def slice_all(self, items):
+        """Transform [:] slice pattern."""
+        return SliceExpression(start=None, stop=None, step=None)
+
+    def slice_step_only(self, items):
+        """Transform [::step] slice pattern."""
+        return SliceExpression(start=None, stop=None, step=items[0])
+
+    def slice_expr(self, items):
+        """Handle slice_expr containing one of the specific slice patterns."""
+        # This method receives the result from one of the specific slice pattern methods
+        return items[0]
+
+    def slice_list(self, items):
+        """Handle slice_list - returns either a single slice/index or a SliceTuple for multi-dimensional slicing."""
+        if len(items) == 1:
+            # Single dimension - return the slice/index directly
+            return items[0]
+        else:
+            # Multi-dimensional - return a SliceTuple
+            from opendxa.dana.sandbox.parser.ast import SliceTuple
+            return SliceTuple(slices=items)
 
 
 # File updated to resolve GitHub CI syntax error - 2025-06-09

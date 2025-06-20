@@ -24,6 +24,7 @@ pytest.ini
 
 # Logs and data
 .dana/
+tmp/
 .poet/
 logs/
 local_executor/
@@ -56,3 +57,5 @@ uv.lock
 flake8_issues.txt
 node_modules/
 .refactoring_*/
+.cache/
+.ipynb_checkpoints/

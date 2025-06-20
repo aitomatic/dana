@@ -199,6 +199,42 @@ class ExpressionTransformer(BaseTransformer):
         """Delegate to call transformer."""
         return self._call_transformer.argument(items)
 
+    def slice_or_index(self, items):
+        """Delegate to call transformer for slice handling."""
+        return self._call_transformer.slice_or_index(items)
+
+    def slice_start_only(self, items):
+        """Delegate to call transformer for slice_start_only handling."""
+        return self._call_transformer.slice_start_only(items)
+
+    def slice_stop_only(self, items):
+        """Delegate to call transformer for slice_stop_only handling."""
+        return self._call_transformer.slice_stop_only(items)
+
+    def slice_start_stop(self, items):
+        """Delegate to call transformer for slice_start_stop handling."""
+        return self._call_transformer.slice_start_stop(items)
+
+    def slice_start_stop_step(self, items):
+        """Delegate to call transformer for slice_start_stop_step handling."""
+        return self._call_transformer.slice_start_stop_step(items)
+
+    def slice_all(self, items):
+        """Delegate to call transformer for slice_all handling."""
+        return self._call_transformer.slice_all(items)
+
+    def slice_step_only(self, items):
+        """Delegate to call transformer for slice_step_only handling."""
+        return self._call_transformer.slice_step_only(items)
+
+    def slice_expr(self, items):
+        """Delegate to call transformer for slice_expr handling."""
+        return self._call_transformer.slice_expr(items)
+
+    def slice_list(self, items):
+        """Delegate to call transformer for slice_list handling."""
+        return self._call_transformer.slice_list(items)
+
     # Delegation methods for collections
     def tuple(self, items):
         """Delegate to collection transformer with expression resolution."""
