@@ -19,7 +19,8 @@ class TestPOETDecoratorDana:
         """Create a DanaSandbox instance for testing."""
         sandbox = DanaSandbox()
         sandbox._ensure_initialized()
-        return sandbox
+        yield sandbox
+        sandbox._cleanup()
 
     @pytest.fixture
     def fixtures_dir(self):

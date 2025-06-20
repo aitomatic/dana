@@ -21,6 +21,10 @@ class TestPOETRegistry:
 
     def teardown_method(self):
         """Clean up test environment."""
+        # Clean up sandbox
+        if hasattr(self, "sandbox"):
+            self.sandbox._cleanup()
+
         # Clean up temporary files
         for file in self.tmp_dir.glob("test_poet_*.na"):
             file.unlink()

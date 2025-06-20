@@ -175,17 +175,20 @@ assert result == 6
 
     # Run the file using DanaSandbox
     sandbox = DanaSandbox()
-    result = sandbox.run(test_file)
+    try:
+        result = sandbox.run(test_file)
 
-    # Check execution completed successfully
-    assert result.success is True
-    assert result.error is None
+        # Check execution completed successfully
+        assert result.success is True
+        assert result.error is None
 
-    # Check that the wrapped function is registered in the context
-    context = result.final_context
-    assert context is not None
-    foo_func = context.get("local.foo")
-    assert foo_func is not None
-    assert hasattr(foo_func, "__name__")
-    assert foo_func.__name__ == "foo"
-    assert hasattr(foo_func, "execute")  # Verify it's a SandboxFunction
+        # Check that the wrapped function is registered in the context
+        context = result.final_context
+        assert context is not None
+        foo_func = context.get("local.foo")
+        assert foo_func is not None
+        assert hasattr(foo_func, "__name__")
+        assert foo_func.__name__ == "foo"
+        assert hasattr(foo_func, "execute")  # Verify it's a SandboxFunction
+    finally:
+        sandbox._cleanup()

@@ -20,7 +20,7 @@ import textwrap
 import pytest
 
 from opendxa.dana.sandbox.parser.ast import Conditional, FunctionCall, FunctionDefinition, Program, TryBlock, WhileLoop
-from opendxa.dana.sandbox.parser.dana_parser import DanaParser
+from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
 
 CODE_SAMPLES = {
     "nested_if_elif_else": """
@@ -93,7 +93,7 @@ CODE_SAMPLES = {
 
 
 def parse_and_get_program(code, do_transform=True, do_type_check=False):
-    parser = DanaParser()
+    parser = ParserCache.get_parser("dana")
     return parser.parse(textwrap.dedent(code), do_type_check=do_type_check, do_transform=do_transform)
 
 
