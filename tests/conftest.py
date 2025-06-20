@@ -35,11 +35,21 @@ def configure_test_logging():
     logging.getLogger("h11").setLevel(logging.WARNING)
 
     # Suppress OpenDXA logs during tests to reduce noise
-    logging.getLogger("opendxa").setLevel(logging.WARNING)
+    # Set to ERROR to suppress the repetitive INFO-level cleanup messages
+    logging.getLogger("opendxa").setLevel(logging.ERROR)
 
-    # Suppress DXA_LOGGER error messages during tests (often expected errors)
-    logging.getLogger("opendxa.dana").setLevel(logging.WARNING)
-    logging.getLogger("opendxa.common").setLevel(logging.WARNING)
+    # Suppress specific noisy loggers during tests
+    logging.getLogger("opendxa.dana").setLevel(logging.ERROR)
+    logging.getLogger("opendxa.common").setLevel(logging.ERROR)
+    logging.getLogger("opendxa.api").setLevel(logging.ERROR)
+    logging.getLogger("opendxa.common.resource.llm_resource").setLevel(logging.ERROR)
+    logging.getLogger("opendxa.api.client").setLevel(logging.ERROR)
+    logging.getLogger("opendxa.api.server").setLevel(logging.ERROR)
+
+    # Allow critical errors to still show through
+    # If you need to see specific warnings/info during debugging,
+    # you can temporarily lower these levels or use:
+    # pytest -s --log-cli-level=INFO tests/your_test.py
 
     yield
 
