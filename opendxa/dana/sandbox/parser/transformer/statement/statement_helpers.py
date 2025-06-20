@@ -67,7 +67,6 @@ class AssignmentHelper:
             UnaryExpression,
         )
 
-
         value_expr = cast(
             LiteralExpression
             | Identifier

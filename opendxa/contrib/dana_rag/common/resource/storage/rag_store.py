@@ -203,7 +203,7 @@ class RAGStore:
         for i, raw_document_path in enumerate(raw_document_paths):
             try:
                 if self.enable_print:
-                    print(f"Processing document source {i+1}/{len(raw_document_paths)}: {raw_document_path}")
+                    print(f"Processing document source {i + 1}/{len(raw_document_paths)}: {raw_document_path}")
 
                 if raw_document_path.startswith("http"):
                     if raw_document_path in url_to_path:
@@ -249,7 +249,7 @@ class RAGStore:
 
         for source_idx, index in individual_indices.items():
             if self.enable_print:
-                print(f"  Extracting nodes from source {source_idx+1}")
+                print(f"  Extracting nodes from source {source_idx + 1}")
 
             # Get all nodes from the docstore
             # Use the correct method to get all nodes
@@ -261,11 +261,11 @@ class RAGStore:
                 total_nodes += len(source_nodes)
 
                 if self.enable_print:
-                    print(f"    Retrieved {len(source_nodes)} nodes from source {source_idx+1}")
+                    print(f"    Retrieved {len(source_nodes)} nodes from source {source_idx + 1}")
 
             except Exception as e:
                 if self.enable_print:
-                    print(f"    Error extracting nodes from source {source_idx+1}: {str(e)}")
+                    print(f"    Error extracting nodes from source {source_idx + 1}: {str(e)}")
                 continue
 
         if self.enable_print:
@@ -360,7 +360,7 @@ class RAGStore:
 
         for i, (document_path, is_dir) in enumerate(self.document_paths_info):
             if self.enable_print:
-                print(f"Processing source {i+1}/{len(self.document_paths_info)}: {document_path}")
+                print(f"Processing source {i + 1}/{len(self.document_paths_info)}: {document_path}")
 
             try:
                 if self.enable_print:
@@ -423,7 +423,7 @@ class RAGStore:
                     cache_data[str(i)] = [{"text": doc.text, "metadata": doc.metadata} for doc in documents]
 
                 if self.enable_print:
-                    print(f"  Successfully loaded {len(source_documents[i])} documents from source {i+1}")
+                    print(f"  Successfully loaded {len(source_documents[i])} documents from source {i + 1}")
 
             except Exception as e:
                 if self.enable_print:
@@ -459,27 +459,27 @@ class RAGStore:
 
             if self.force_reload:
                 if self.enable_print:
-                    print(f"Force reload enabled. Creating new index for source {source_idx+1}: {source_path}")
+                    print(f"Force reload enabled. Creating new index for source {source_idx + 1}: {source_path}")
                     print(f"  Storage path: {source_storage_path_str}")
                 index = VectorStoreIndex.from_documents(documents)
                 if self.enable_print:
-                    print(f"Persisting index for source {source_idx+1} to: {source_storage_path_str}")
+                    print(f"Persisting index for source {source_idx + 1} to: {source_storage_path_str}")
                 index.storage_context.persist(persist_dir=source_storage_path_str)
                 indices[source_idx] = index
             else:
                 try:
                     if self.enable_print:
-                        print(f"Loading index for source {source_idx+1} from storage: {source_storage_path_str}")
+                        print(f"Loading index for source {source_idx + 1} from storage: {source_storage_path_str}")
                     storage_context = StorageContext.from_defaults(persist_dir=source_storage_path_str)
                     index = load_index_from_storage(storage_context)
                     indices[source_idx] = index
                 except Exception:
                     if self.enable_print:
-                        print(f"Index not found for source {source_idx+1}. Creating new index: {source_path}")
+                        print(f"Index not found for source {source_idx + 1}. Creating new index: {source_path}")
                         print(f"  Storage path: {source_storage_path_str}")
                     index = VectorStoreIndex.from_documents(documents)
                     if self.enable_print:
-                        print(f"Persisting index for source {source_idx+1} to: {source_storage_path_str}")
+                        print(f"Persisting index for source {source_idx + 1} to: {source_storage_path_str}")
                     index.storage_context.persist(persist_dir=source_storage_path_str)
                     indices[source_idx] = index
 
@@ -516,7 +516,7 @@ class RAGStore:
         indices["combined"] = combined_index
 
         if self.enable_print:
-            print(f"Created indices: {len(indices)-1} individual + 1 combined")
+            print(f"Created indices: {len(indices) - 1} individual + 1 combined")
 
         return indices
 
@@ -536,7 +536,7 @@ class RAGStore:
 
             source_path = self.document_paths_info[source_idx][0]
             # Create a more descriptive name for the tool
-            tool_name = f"source_{source_idx+1}"
+            tool_name = f"source_{source_idx + 1}"
             tool_description = f"Useful for queries about content from {source_path}"
 
             # Create query engine for this index
@@ -670,7 +670,6 @@ class RAGStore:
 
 
 if __name__ == "__main__":
-
     base_url = "https://simulationresearch.lbl.gov/modelica/releases/latest/help/{}"
 
     paths = []

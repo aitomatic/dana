@@ -33,14 +33,14 @@ def configure_test_logging():
     logging.getLogger("httpx").setLevel(logging.WARNING)
     logging.getLogger("httpcore").setLevel(logging.WARNING)
     logging.getLogger("h11").setLevel(logging.WARNING)
-    
+
     # Suppress OpenDXA logs during tests to reduce noise
     logging.getLogger("opendxa").setLevel(logging.WARNING)
-    
+
     # Suppress DXA_LOGGER error messages during tests (often expected errors)
     logging.getLogger("opendxa.dana").setLevel(logging.WARNING)
     logging.getLogger("opendxa.common").setLevel(logging.WARNING)
-    
+
     yield
 
 

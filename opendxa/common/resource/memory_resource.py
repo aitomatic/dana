@@ -454,7 +454,7 @@ class LTMemoryResource(MemoryResource[LTMemoryDBModel, MemoryDBStorage[LTMemoryD
             storage=MemoryDBStorage[LTMemoryDBModel](
                 vector_db_url=config.get("vector_db_url", ""),
                 embedding_model=config.get("embedding_model", ""),
-                db_model_class=LTMemoryDBModel,
+                memory_model_class=LTMemoryDBModel,
             ),
             model_class=LTMemoryDBModel,
             default_importance=2.0,
@@ -500,7 +500,7 @@ class STMemoryResource(MemoryResource[STMemoryDBModel, MemoryDBStorage[STMemoryD
             storage=MemoryDBStorage[STMemoryDBModel](
                 vector_db_url=config.get("vector_db_url", ""),
                 embedding_model=config.get("embedding_model", ""),
-                db_model_class=STMemoryDBModel,
+                memory_model_class=STMemoryDBModel,
             ),
             model_class=STMemoryDBModel,
             default_importance=0.5,
@@ -546,7 +546,7 @@ class PermMemoryResource(MemoryResource[PermanentMemoryDBModel, MemoryDBStorage[
             storage=MemoryDBStorage[PermanentMemoryDBModel](
                 vector_db_url=config.get("vector_db_url", ""),
                 embedding_model=config.get("embedding_model", ""),
-                db_model_class=PermanentMemoryDBModel,
+                memory_model_class=PermanentMemoryDBModel,
             ),
             model_class=PermanentMemoryDBModel,
             default_importance=3.0,

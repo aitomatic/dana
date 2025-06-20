@@ -25,7 +25,7 @@ def fresh_sandbox():
     """Function-scoped fixture providing a fresh DanaSandbox instance when needed."""
     logger.debug("Creating fresh DanaSandbox for test")
     sandbox = DanaSandbox()
-    sandbox._ensure_initialized() 
+    sandbox._ensure_initialized()
     yield sandbox
 
 

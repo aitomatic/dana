@@ -1,6 +1,28 @@
 #!/usr/bin/env python3
 """
-DANA Command Line Interface
+DANA Command Line Interface - Main Entry Point
+
+ARCHITECTURE ROLE:
+    This is the PRIMARY ENTRY POINT for all Dana operations, analogous to the 'python' command.
+    It acts as a ROUTER that decides whether to:
+    - Execute a .na file directly (file mode)
+    - Launch the interactive REPL (interactive mode)
+
+USAGE PATTERNS:
+    dana                 # Start interactive REPL → delegates to dana_repl_app.py
+    dana script.na       # Execute file → uses DanaSandbox directly
+    dana --help         # Show help and usage information
+
+DESIGN DECISIONS:
+    - Single entry point for all Dana operations (consistency)
+    - File execution bypasses REPL overhead (performance)
+    - REPL delegation to specialized interactive application (separation of concerns)
+    - Console script integration via pyproject.toml (standard Python packaging)
+
+INTEGRATION:
+    - Console script: 'dana' command → this file's main() function
+    - File execution: Uses DanaSandbox.quick_run() for direct .na file processing
+    - REPL mode: Imports and delegates to dana_repl_app.main() for interactive experience
 
 This script serves as the main entry point for the DANA language, similar to the python command.
 It either starts the REPL when no arguments are provided, or executes a .na file when given.
@@ -75,7 +97,12 @@ def execute_file(file_path, debug=False):
 
 
 async def start_repl(debug=False):
-    """Start the DANA REPL."""
+    """Start the DANA REPL.
+
+    ARCHITECTURAL NOTE: This function delegates to the full-featured interactive REPL application.
+    It does NOT implement REPL logic itself - it imports and launches dana_repl_app.py which
+    provides the complete interactive experience with commands, colors, multiline support, etc.
+    """
     # Import the REPL application module
     try:
         from opendxa.dana.exec.repl.dana_repl_app import main as repl_main
@@ -91,7 +118,15 @@ async def start_repl(debug=False):
 
 
 def main():
-    """Main entry point for the DANA CLI."""
+    """Main entry point for the DANA CLI.
+
+    ARCHITECTURAL DECISION POINT: This function acts as a router that decides between:
+    - File execution mode: Direct .na file processing via DanaSandbox
+    - Interactive mode: Delegate to dana_repl_app.py for full REPL experience
+
+    This separation allows file execution to be fast/lightweight while keeping
+    the interactive experience rich with features.
+    """
     parser = argparse.ArgumentParser(description="DANA Command Line Interface", add_help=False)  # We'll handle --help ourselves
     parser.add_argument("file", nargs="?", help="DANA file to execute (.na)")
     parser.add_argument("-h", "--help", action="store_true", help="Show help message")

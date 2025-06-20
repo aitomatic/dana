@@ -1,10 +1,49 @@
 """
-OpenDXA Dana REPL Application
+OpenDXA Dana REPL Application - Interactive User Interface
+
+ARCHITECTURE ROLE:
+    This is the INTERACTIVE UI LAYER that provides the full command-line REPL experience.
+    It handles all user interaction but delegates actual Dana execution to repl.py.
+
+RESPONSIBILITIES:
+    - Interactive input loop (async prompt handling)
+    - Command processing (/help, /debug, /exit, multiline support)
+    - UI components (colors, prompts, welcome messages, error formatting)
+    - Input processing (multiline detection, command parsing)
+    - Session management (history, context, state persistence)
+
+FEATURES PROVIDED:
+    - Rich prompts with syntax highlighting
+    - Multiline input support for complex Dana programs
+    - Command system (/help, /debug, /exit, etc.)
+    - Colored output and error formatting
+    - Welcome messages and help text
+    - Orphaned statement detection and guidance
+    - Context sharing between REPL sessions
+
+INTEGRATION PATTERN:
+    dana.py (CLI Router) → dana_repl_app.py (Interactive UI) → repl.py (Execution Engine)
+
+TYPICAL FLOW:
+    1. dana.py detects no file argument → calls dana_repl_app.main()
+    2. DanaREPLApp initializes UI components and REPL engine
+    3. Interactive loop: get input → process commands → execute via repl.py → format output
+    4. Repeat until user exits
+
+COMPONENTS:
+    - DanaREPLApp: Main application orchestrator
+    - REPL: Execution engine (from repl.py)
+    - InputProcessor: Handles multiline and command detection
+    - CommandHandler: Processes /help, /debug, etc.
+    - PromptSessionManager: Async input with rich prompts
+    - OutputFormatter: Colors and formatting for results/errors
+    - WelcomeDisplay: Startup messages and branding
+
+This module provides the main application logic for the Dana REPL in OpenDXA.
+It focuses on user interaction and experience, delegating execution to the repl.py engine.
 
 Copyright © 2025 Aitomatic, Inc.
 MIT License
-
-This module provides the main application logic for the Dana REPL in OpenDXA.
 
 Community Values:
     1. Attribution: Please maintain attribution to Aitomatic and OpenDXA/Dana in derivative works.

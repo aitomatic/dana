@@ -193,8 +193,16 @@ class VectorDBStorage(BaseDBStorage[M], ABC):
             .all()
         )
 
-        return [{"id": entry.id, "content": entry.content, "context": entry.context, 
-                "importance": entry.importance, "decay_rate": entry.decay_rate} for entry in entries]
+        return [
+            {
+                "id": entry.id,
+                "content": entry.content,
+                "context": entry.context,
+                "importance": entry.importance,
+                "decay_rate": entry.decay_rate,
+            }
+            for entry in entries
+        ]
 
     def _retrieve_by_importance(self) -> list[dict]:
         """Retrieve memories ordered by importance."""
@@ -202,8 +210,16 @@ class VectorDBStorage(BaseDBStorage[M], ABC):
             raise RuntimeError("Storage not initialized")
 
         entries = self._session.query(self.db_model_class).order_by(self.db_model_class.importance.desc()).all()
-        return [{"id": entry.id, "content": entry.content, "context": entry.context, 
-                "importance": entry.importance, "decay_rate": entry.decay_rate} for entry in entries]
+        return [
+            {
+                "id": entry.id,
+                "content": entry.content,
+                "context": entry.context,
+                "importance": entry.importance,
+                "decay_rate": entry.decay_rate,
+            }
+            for entry in entries
+        ]
 
     def delete(self, content_id: str) -> None:
         """Delete a memory from the database."""

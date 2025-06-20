@@ -41,6 +41,7 @@ from opendxa.dana.sandbox.parser.utils.type_checker import TypeChecker, TypeEnvi
 # Lark is already imported at line 32, this block is redundant
 LARK_AVAILABLE = True
 
+
 class ParseResult(NamedTuple):
     """Result of parsing a Dana program."""
 

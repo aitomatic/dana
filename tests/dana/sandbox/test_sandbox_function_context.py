@@ -39,6 +39,10 @@ class MockSandboxFunction(SandboxFunction):
 
         return None
 
+    def restore_context(self, context: SandboxContext, original_context: SandboxContext) -> SandboxContext:
+        """Restore context after function execution."""
+        return original_context
+
 
 def test_sandbox_function_context_sanitization():
     """Test that SandboxFunction.__call__ sanitizes SandboxContext arguments."""

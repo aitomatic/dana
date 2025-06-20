@@ -1,10 +1,40 @@
 """
-OpenDXA Dana REPL
+OpenDXA Dana REPL - Execution Engine
+
+ARCHITECTURE ROLE:
+    This is the CORE EXECUTION ENGINE for Dana code evaluation in interactive contexts.
+    It provides the "brain" that processes Dana programs but does NOT handle user interaction.
+
+RESPONSIBILITIES:
+    - Execute Dana programs and return results (execute() method)
+    - Format error messages for user consumption (_format_error_message())
+    - Manage execution context and state (SandboxContext integration)
+    - Handle NLP mode for natural language → Dana translation
+    - Provide sandbox and interpreter access for output management
+
+WHAT THIS FILE DOES NOT DO:
+    - User input handling (no input() calls or prompt management)
+    - Interactive loops (no while True loops)
+    - Command processing (/help, /exit, etc.)
+    - UI formatting (colors, welcome messages, etc.)
+
+INTEGRATION PATTERN:
+    dana_repl_app.py (Interactive UI) → repl.py (Execution Engine) → DanaSandbox (Language Runtime)
+
+USAGE:
+    # Programmatic usage (not for end users):
+    repl = REPL(llm_resource=LLMResource())
+    result = repl.execute("5 + 3")  # Returns: 8
+
+    # Typical integration (from dana_repl_app.py):
+    self.repl = REPL(llm_resource=LLMResource(), log_level=log_level)
+    result = self.repl.execute(user_input_line)
+
+This module provides the REPL (Read-Eval-Print Loop) execution engine for the Dana language in OpenDXA.
+It focuses on program execution and does not handle interactive user interface concerns.
 
 Copyright © 2025 Aitomatic, Inc.
 MIT License
-
-This module provides the REPL (Read-Eval-Print Loop) for the Dana language in OpenDXA.
 
 Community Values:
     1. Attribution: Please maintain attribution to Aitomatic and OpenDXA/Dana in derivative works.
