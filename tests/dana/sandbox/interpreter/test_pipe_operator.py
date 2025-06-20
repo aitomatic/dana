@@ -140,7 +140,7 @@ def test_pipe_with_non_callable():
     with pytest.raises(Exception) as exc_info:
         interpreter.execute_program(program, context)
 
-    assert "Unknown function type 'data'" in str(exc_info.value)
+    assert "Function 'not_a_function' not found in registry" in str(exc_info.value)
 
 
 def test_pipe_operator_precedence():
