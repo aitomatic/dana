@@ -26,7 +26,7 @@ authors = [
 dependencies = [
     # AI/LLM Integration - Core functionality for agent reasoning
     "google-cloud-aiplatform",
-    "aisuite[openai,anthropic,azure,google,groq,huggingface,ollama]>=0.1.11",
+    "aisuite[openai,anthropic,azure,groq,huggingface,ollama]>=0.1.11",
     "openai",
     "mcp",
     "fastmcp>=2.6.1",
