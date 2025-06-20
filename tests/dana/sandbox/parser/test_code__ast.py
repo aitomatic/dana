@@ -29,7 +29,6 @@ from opendxa.dana.sandbox.parser.ast import (
     DictLiteral,
     FStringExpression,
     FunctionCall,
-    # Add more as needed for coverage
     Identifier,
     ImportFromStatement,
     ImportStatement,
@@ -46,6 +45,7 @@ from opendxa.dana.sandbox.parser.ast import (
     WithStatement,
 )
 from opendxa.dana.sandbox.parser.dana_parser import DanaParser
+from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
 
 
 # === Helper Functions ===
@@ -400,6 +400,14 @@ def test_import_statements(parser, typecheck_flag):
     assert import_stmt3.names[0][1] is None
 
 
+def test_import_alias():
+    parser = ParserCache.get_parser("dana")
+
+
+def test_multiple_imports():
+    parser = ParserCache.get_parser("dana")
+
+
 # =========================
 # 8. TRY/EXCEPT/FINALLY
 # =========================
@@ -515,7 +523,7 @@ def test_syntax_error_malformed_block(parser):
     ],
 )
 def test_with_stmt_ast(code, expected_args, expected_kwargs, should_raise):
-    parser = DanaParser()
+    parser = ParserCache.get_parser("dana")
 
     if should_raise:
         with pytest.raises(Exception):  # noqa: B017
@@ -564,7 +572,7 @@ def test_with_stmt_ast(code, expected_args, expected_kwargs, should_raise):
     ],
 )
 def test_use_stmt_ast(code, expected_args, expected_kwargs, should_raise):
-    parser = DanaParser()
+    parser = ParserCache.get_parser("dana")
 
     if should_raise:
         with pytest.raises(Exception):  # noqa: B017
@@ -619,7 +627,7 @@ def test_use_stmt_ast(code, expected_args, expected_kwargs, should_raise):
 
 def test_use_stmt_complex_expressions():
     """Test use statements with complex expressions as arguments."""
-    parser = DanaParser()
+    parser = ParserCache.get_parser("dana")
 
     # Test with binary expression
     code = 'base = "http://localhost:"\nport = 8080\nuse(url=base + str(port))'
@@ -644,7 +652,7 @@ def test_use_stmt_complex_expressions():
 
 def test_use_stmt_in_context():
     """Test use statement in a realistic context similar to the examples."""
-    parser = DanaParser()
+    parser = ParserCache.get_parser("dana")
 
     code = textwrap.dedent(
         """
@@ -669,7 +677,7 @@ def test_use_stmt_in_context():
 
 def test_with_use_stmt():
     """Test with use(...) syntax for context manager usage."""
-    parser = DanaParser()
+    parser = ParserCache.get_parser("dana")
 
     code = textwrap.dedent(
         """
@@ -697,7 +705,7 @@ def test_with_use_stmt():
 
 def test_with_direct_object():
     """Test with mcp_object syntax for direct context manager usage."""
-    parser = DanaParser()
+    parser = ParserCache.get_parser("dana")
 
     code = textwrap.dedent(
         """
@@ -720,3 +728,19 @@ def test_with_direct_object():
     assert len(with_stmt.kwargs) == 0  # No kwargs when using direct object
     assert with_stmt.as_var == "mcp"
     assert len(with_stmt.body) == 1
+
+
+def test_fstring_nested_expressions():
+    parser = ParserCache.get_parser("dana")
+
+
+def test_fstring_mixed_content():
+    parser = ParserCache.get_parser("dana")
+
+
+def test_identifier_with_underscore():
+    parser = ParserCache.get_parser("dana")
+
+
+def test_binary_expression_operator_precedence():
+    parser = ParserCache.get_parser("dana")

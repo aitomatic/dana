@@ -38,6 +38,7 @@ import pytest
 
 from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
 from opendxa.dana.sandbox.parser.dana_parser import DanaParser
+from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
@@ -53,7 +54,7 @@ def run_dana_code(code, parser=None, do_type_check=True):
         The runtime context after execution
     """
     if parser is None:
-        parser = DanaParser()
+        parser = ParserCache.get_parser("dana")
     program = parser.parse(code, do_type_check=do_type_check, do_transform=True)
     context = SandboxContext()
     interpreter = DanaInterpreter()
@@ -85,8 +86,8 @@ def test_literals():
 
 # --- Arithmetic & Operator Precedence ---
 def test_arithmetic_operators():
-    # Force DanaParser to reload the grammar
-    parser = DanaParser()
+    # Use cached parser for better performance
+    parser = ParserCache.get_parser("dana")
     context = run_dana_code("x = 2 + 3\ny = 5 - 1\nz = 2 * 3\nw = 8 / 2\nv = 7 % 4\nu = 2 ** 3", parser=parser)
     assert context.get("local.x") == 5
     assert context.get("local.y") == 4
@@ -97,8 +98,8 @@ def test_arithmetic_operators():
 
 
 def test_operator_precedence():
-    # Force DanaParser to reload the grammar
-    parser = DanaParser()
+    # Use cached parser for better performance
+    parser = ParserCache.get_parser("dana")
     context = run_dana_code("x = 2 + 3 * 4\ny = (2 + 3) * 4\nz = 2 ** 3 * 2\nw = 2 * 3 ** 2", parser=parser)
     assert context.get("local.x") == 14
     assert context.get("local.y") == 20
@@ -221,7 +222,7 @@ assert x == 1
     assert context.get("local.x") == 1
     # Test raise
     code = 'raise "error message"'
-    parser = DanaParser()
+    parser = ParserCache.get_parser("dana")
     program = parser.parse(code, do_type_check=True, do_transform=True)
     interpreter = DanaInterpreter()
     try:
