@@ -197,7 +197,7 @@ def poet(
 
     def decorator(func: Callable) -> Callable:
         """The actual decorator function."""
-        return POETDecorator(
+        poet_decorator = POETDecorator(
             func=func,
             domain=domain,
             retries=retries,
@@ -205,6 +205,7 @@ def poet(
             namespace=namespace,
             overwrite=overwrite,
             optimize_for=optimize_for,
-        ).wrapper
+        )
+        return poet_decorator.wrapper
 
     return decorator
