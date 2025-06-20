@@ -4,8 +4,6 @@ Tests for Phase 2.1: Enhanced Slice Error Handling
 Tests comprehensive error handling and validation for slice operations in Dana.
 """
 
-import pytest
-from opendxa.dana.common.exceptions import SandboxError
 from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
 
 

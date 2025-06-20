@@ -26,16 +26,16 @@ from opendxa.dana.sandbox.interpreter.functions.function_registry import Functio
 from opendxa.dana.sandbox.parser.ast import (
     AssertStatement,
     Assignment,
+    AttributeAccess,
     ExportStatement,
+    Identifier,
     ImportFromStatement,
     ImportStatement,
     PassStatement,
     RaiseStatement,
     StructDefinition,
-    UseStatement,
-    AttributeAccess,
-    Identifier,
     SubscriptExpression,
+    UseStatement,
 )
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
@@ -85,8 +85,6 @@ class StatementExecutor(BaseExecutor):
         Returns:
             The assigned value
         """
-        from opendxa.dana.sandbox.parser.ast import AttributeAccess, Identifier, SubscriptExpression
-
         # Set type information in context if this is a typed assignment
         target_type = None
         if hasattr(node, "type_hint") and node.type_hint:
@@ -127,15 +125,15 @@ class StatementExecutor(BaseExecutor):
                 # Simple variable assignment: x = value
                 var_name = node.target.name
                 context.set(var_name, value)
-                
+
             elif isinstance(node.target, SubscriptExpression):
                 # Subscript assignment: obj[key] = value or obj[slice] = value
                 self._execute_subscript_assignment(node.target, value, context)
-                
+
             elif isinstance(node.target, AttributeAccess):
                 # Attribute assignment: obj.attr = value
                 self._execute_attribute_assignment(node.target, value, context)
-                
+
             else:
                 target_type_name = type(node.target).__name__
                 raise SandboxError(f"Unsupported assignment target type: {target_type_name}")
@@ -153,15 +151,13 @@ class StatementExecutor(BaseExecutor):
 
     def _get_assignment_target_name(self, target) -> str:
         """Get a string representation of the assignment target for error messages.
-        
+
         Args:
             target: The assignment target (Identifier, SubscriptExpression, or AttributeAccess)
-            
+
         Returns:
             String representation of the target
         """
-        from opendxa.dana.sandbox.parser.ast import AttributeAccess, Identifier, SubscriptExpression
-        
         if isinstance(target, Identifier):
             return target.name
         elif isinstance(target, SubscriptExpression):
@@ -175,29 +171,29 @@ class StatementExecutor(BaseExecutor):
 
     def _execute_subscript_assignment(self, target: "SubscriptExpression", value: Any, context: SandboxContext) -> None:
         """Execute a subscript assignment (obj[key] = value or obj[slice] = value).
-        
+
         Args:
             target: The subscript expression target
             value: The value to assign
             context: The execution context
-            
+
         Raises:
             SandboxError: If the subscript assignment fails
         """
         from opendxa.dana.sandbox.parser.ast import SliceExpression, SliceTuple
-        
+
         # Get the target object
         target_obj = self.parent.execute(target.object, context)
-        
+
         # Handle different types of subscript assignments
         if isinstance(target.index, SliceExpression):
             # Single slice assignment: obj[start:stop] = value
             self._execute_slice_assignment(target_obj, target.index, value, context)
-            
+
         elif isinstance(target.index, SliceTuple):
             # Multi-dimensional slice assignment: obj[slice1, slice2] = value
             self._execute_multidim_slice_assignment(target_obj, target.index, value, context)
-            
+
         else:
             # Regular index assignment: obj[key] = value
             index = self.parent.execute(target.index, context)
@@ -207,15 +203,15 @@ class StatementExecutor(BaseExecutor):
                 obj_name = self._get_assignment_target_name(target.object)
                 raise SandboxError(f"Index assignment to {obj_name}[{index}] failed: {e}")
 
-    def _execute_slice_assignment(self, target_obj: Any, slice_expr: "SliceExpression", value: Any, context: SandboxContext) -> None:
+    def _execute_slice_assignment(self, target_obj: Any, slice_expr: Any, value: Any, context: SandboxContext) -> None:
         """Execute a single-dimensional slice assignment.
-        
+
         Args:
             target_obj: The object to assign to
             slice_expr: The slice expression
             value: The value to assign
             context: The execution context
-            
+
         Raises:
             SandboxError: If the slice assignment fails
         """
@@ -223,30 +219,30 @@ class StatementExecutor(BaseExecutor):
         start = self.parent.execute(slice_expr.start, context) if slice_expr.start else None
         stop = self.parent.execute(slice_expr.stop, context) if slice_expr.stop else None
         step = self.parent.execute(slice_expr.step, context) if slice_expr.step else None
-        
+
         # Create Python slice object
         slice_obj = slice(start, stop, step)
-        
+
         try:
             target_obj[slice_obj] = value
         except Exception as e:
             slice_repr = f"{start}:{stop}:{step}" if step else f"{start}:{stop}"
             raise SandboxError(f"Slice assignment [{slice_repr}] failed: {e}")
 
-    def _execute_multidim_slice_assignment(self, target_obj: Any, slice_tuple: "SliceTuple", value: Any, context: SandboxContext) -> None:
+    def _execute_multidim_slice_assignment(self, target_obj: Any, slice_tuple: Any, value: Any, context: SandboxContext) -> None:
         """Execute a multi-dimensional slice assignment.
-        
+
         Args:
             target_obj: The object to assign to
             slice_tuple: The SliceTuple containing multiple slice expressions
             value: The value to assign
             context: The execution context
-            
+
         Raises:
             SandboxError: If the multi-dimensional slice assignment fails
         """
         from opendxa.dana.sandbox.parser.ast import SliceExpression
-        
+
         # Evaluate each slice in the tuple
         evaluated_slices = []
         for slice_item in slice_tuple.slices:
@@ -269,18 +265,23 @@ class StatementExecutor(BaseExecutor):
             target_obj[slice_tuple_obj] = value
         except Exception as e:
             # Create readable representation of the slice tuple
-            slice_repr = ", ".join([
-                f"{s.start}:{s.stop}:{s.step}" if isinstance(s, slice) and s.step else 
-                f"{s.start}:{s.stop}" if isinstance(s, slice) else str(s)
-                for s in evaluated_slices
-            ])
-            
+            slice_repr = ", ".join(
+                [
+                    (
+                        f"{s.start}:{s.stop}:{s.step}"
+                        if isinstance(s, slice) and s.step
+                        else f"{s.start}:{s.stop}" if isinstance(s, slice) else str(s)
+                    )
+                    for s in evaluated_slices
+                ]
+            )
+
             # Check if this is a pandas-specific operation and provide helpful error message
-            if hasattr(target_obj, 'iloc') or hasattr(target_obj, 'loc'):
-                suggested_fix = f"For pandas DataFrames, ensure the assignment is compatible with the target shape and data types"
+            if hasattr(target_obj, "iloc") or hasattr(target_obj, "loc"):
+                suggested_fix = "For pandas DataFrames, ensure the assignment is compatible with the target shape and data types"
             else:
                 suggested_fix = f"Ensure {type(target_obj).__name__} supports multi-dimensional assignment"
-            
+
             raise SandboxError(
                 f"Multi-dimensional slice assignment [{slice_repr}] failed: {str(e)}. "
                 f"Target: {type(target_obj).__name__}. "
@@ -289,18 +290,18 @@ class StatementExecutor(BaseExecutor):
 
     def _execute_attribute_assignment(self, target: "AttributeAccess", value: Any, context: SandboxContext) -> None:
         """Execute an attribute assignment (obj.attr = value).
-        
+
         Args:
             target: The attribute access target
             value: The value to assign
             context: The execution context
-            
+
         Raises:
             SandboxError: If the attribute assignment fails
         """
         # Get the target object
         target_obj = self.parent.execute(target.object, context)
-        
+
         try:
             setattr(target_obj, target.attribute, value)
         except Exception as e:
