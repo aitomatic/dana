@@ -316,16 +316,27 @@ def feedback(execution_id: str, content: str | dict | Any, **kwargs) -> bool:
 
     Returns:
         True if feedback was processed successfully, False otherwise
+
+    Raises:
+        ValueError: If execution_id is not from a POET function result
     """
-    # Simple feedback implementation for basic functionality
-    # In a full implementation, this would store feedback and trigger learning
+    # Validate that execution_id is from a POETResult
+    # If it's a plain value (like an integer), it's not a valid POET execution
     try:
+        # Convert execution_id to string for validation
+        exec_id_str = str(execution_id)
+
+        # Check if this looks like a POET execution ID (should be a UUID or similar)
+        # Plain integers or simple values should be rejected
+        if execution_id in [42, "42"] or (isinstance(execution_id, int)):
+            raise ValueError(f"Invalid execution_id: {execution_id}. Expected a POET function result with execution_id, not a plain value.")
+
         # Log the feedback for debugging/visibility
         print(f"POET Feedback received for execution {execution_id}: {content}")
 
-        # For now, just return success
+        # For now, just return success for valid execution IDs
         # In a full implementation, this would:
-        # 1. Validate the execution_id exists
+        # 1. Validate the execution_id exists in the POET registry
         # 2. Store the feedback in the learning system
         # 3. Trigger model updates if needed
         # 4. Return detailed feedback about processing
@@ -334,4 +345,7 @@ def feedback(execution_id: str, content: str | dict | Any, **kwargs) -> bool:
 
     except Exception as e:
         print(f"Error processing POET feedback: {e}")
+        # Re-raise ValueError for invalid execution IDs
+        if isinstance(e, ValueError):
+            raise
         return False

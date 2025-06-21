@@ -5,7 +5,7 @@ Tests for POET Feedback System
 import json
 import tempfile
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
 import pytest
 
@@ -78,16 +78,16 @@ class TestAlphaFeedbackSystem:
         num_summary = self.feedback_system._summarize_result(42.5)
         assert "float: 42.5" in num_summary
 
-    @patch("opendxa.dana.poet.feedback.LLMResource")
-    def test_translate_feedback_with_llm_success(self, mock_llm_class):
+    def test_translate_feedback_with_llm_success(self):
         """Test LLM feedback translation success"""
+        # Mock the LLM directly on the feedback system instance
         mock_llm = Mock()
         mock_response = BaseResponse(
             content='{"sentiment": "positive", "feedback_type": "performance", "confidence": 0.8}',
             success=True,
         )
         mock_llm.query_sync.return_value = mock_response
-        mock_llm_class.return_value = mock_llm
+        self.feedback_system.llm = mock_llm
 
         result = POETResult({"value": 42}, "test_func")
         feedback_payload = "Great job!"
@@ -100,12 +100,12 @@ class TestAlphaFeedbackSystem:
         assert processed["raw_feedback"] == "Great job!"
         assert processed["processing_method"] == "llm"
 
-    @patch("opendxa.dana.poet.feedback.LLMResource")
-    def test_translate_feedback_with_llm_failure(self, mock_llm_class):
+    def test_translate_feedback_with_llm_failure(self):
         """Test LLM feedback translation with fallback"""
+        # Mock the LLM directly on the feedback system instance
         mock_llm = Mock()
         mock_llm.query_sync.side_effect = Exception("LLM error")
-        mock_llm_class.return_value = mock_llm
+        self.feedback_system.llm = mock_llm
 
         result = POETResult({"value": 42}, "test_func")
         feedback_payload = "This is bad and wrong"
@@ -173,14 +173,14 @@ class TestAlphaFeedbackSystem:
         trainer2 = self.feedback_system._get_trainer("test_func", "v1")
         assert trainer is trainer2
 
-    @patch("opendxa.dana.poet.feedback.LLMResource")
-    def test_feedback_end_to_end(self, mock_llm_class):
+    def test_feedback_end_to_end(self):
         """Test complete feedback processing flow"""
+        # Mock the LLM directly on the feedback system instance
         mock_llm = Mock()
         mock_response_content = '{"sentiment": "negative", "feedback_type": "accuracy", "confidence": 0.9, "key_issues": ["threshold too low"], "suggestions": ["increase threshold"], "learning_priority": "high", "business_impact": "medium"}'
         mock_response = BaseResponse(content=mock_response_content, success=True)
         mock_llm.query_sync.return_value = mock_response
-        mock_llm_class.return_value = mock_llm
+        self.feedback_system.llm = mock_llm
 
         result = POETResult({"prediction": 0.8}, "classifier", "v1")
         feedback_text = "The prediction was wrong, threshold seems too low"
@@ -296,20 +296,20 @@ class TestFeedbackIntegration:
         with pytest.raises(POETFeedbackError, match="result must be a POETResult instance"):
             feedback_system.feedback({"not": "a result"}, "This should fail")  # type: ignore
 
-    @patch("opendxa.dana.poet.feedback.LLMResource")
-    def test_multiple_feedback_same_execution(self, mock_llm_class):
+    def test_multiple_feedback_same_execution(self):
         """Test multiple feedback for same execution"""
+        # Create a fresh feedback system and mock its LLM
+        feedback_system = AlphaFeedbackSystem()
         mock_llm = Mock()
         mock_llm.query_sync.return_value = BaseResponse(
             content='{"sentiment": "positive", "feedback_type": "general", "confidence": 0.7, "key_issues": [], "suggestions": [], "learning_priority": "low", "business_impact": "low"}',
             success=True,
         )
-        mock_llm_class.return_value = mock_llm
+        feedback_system.llm = mock_llm
 
         result = POETResult({"value": 100}, "test_func", "v1")
 
         # Submit multiple feedback for same execution
-        feedback_system = AlphaFeedbackSystem()
         feedback_system.feedback(result, "First feedback")
         feedback_system.feedback(result, "Second feedback")
 
