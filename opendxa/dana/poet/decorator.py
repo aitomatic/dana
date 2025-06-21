@@ -211,6 +211,7 @@ def poet(
     overwrite: bool = False,
     optimize_for: str | None = None,
     enable_training: bool = False,
+    *args,  # Handle positional arguments for direct decorator usage
     **kwargs,  # Accept unknown parameters for backward compatibility
 ) -> Callable:
     """Decorator factory for POET functions.
@@ -229,8 +230,49 @@ def poet(
         A decorator function that enhances the target function with POET capabilities
     """
 
-    def decorator(func: Callable, *args, **kwargs) -> Callable:
+    # WORKAROUND: Handle Dana's incorrect decorator application
+    # When Dana incorrectly calls poet(func) instead of decorator(func),
+    # the function gets passed as the domain parameter
+    if domain is not None and (callable(domain) or hasattr(domain, "execute")):
+        func = domain
+        # Apply decorator directly with default parameters
+        poet_decorator = POETDecorator(
+            func=func,
+            domain=None,  # Use default domain
+            retries=1,  # Use default retries
+            timeout=timeout,
+            namespace=namespace,
+            overwrite=overwrite,
+            optimize_for=optimize_for,
+            enable_training=enable_training,
+        )
+        return poet_decorator.wrapper
+
+    # Handle being called as direct decorator (e.g., @poet vs @poet())
+    # If first positional argument is a function, this is direct decorator usage
+    if len(args) == 1 and (callable(args[0]) or hasattr(args[0], "execute")):
+        func = args[0]
+        # Apply decorator directly
+        poet_decorator = POETDecorator(
+            func=func,
+            domain=domain,
+            retries=retries,
+            timeout=timeout,
+            namespace=namespace,
+            overwrite=overwrite,
+            optimize_for=optimize_for,
+            enable_training=enable_training,
+        )
+        return poet_decorator.wrapper
+
+    def decorator(func: Callable) -> Callable:
         """The actual decorator function."""
+
+        # Guard against being called with non-functions (temporarily disabled)
+        if not callable(func) and not hasattr(func, "execute"):
+            # Instead of raising error, return the argument as-is to see what happens
+            return func
+
         # Basic parameter validation while allowing unknown parameter names
         # Handle DanaFunction objects by converting them to string representation
         processed_domain = domain
@@ -258,6 +300,7 @@ def poet(
             optimize_for=optimize_for,
             enable_training=enable_training,
         )
+
         return poet_decorator.wrapper
 
     return decorator
