@@ -325,7 +325,7 @@ class ControlFlowExecutor(BaseExecutor):
         as_var = node.as_var
 
         # Check if the 'as' variable already exists in the current scope
-        if context.has(f"local.{as_var}"):
+        if context.has(f"local:{as_var}"):
             # For direct context manager pattern, check if it's the same variable being shadowed
             if not isinstance(node.context_manager, str):
                 # Get the variable name being used as context manager

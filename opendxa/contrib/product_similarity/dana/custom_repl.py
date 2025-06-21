@@ -69,8 +69,8 @@ class ProductSimilarityREPL(DanaREPLApp):
     def __init__(self, log_level: LogLevel = LogLevel.DEBUG):
         """Initialize the REPL with product similarity functions."""
         # Register functions before initializing parent
-        PythonRegistry.register("private.get_product_details", get_product_details)
-        PythonRegistry.register("private.vector_search_descriptions", vector_search_descriptions)
+        PythonRegistry.register("private:get_product_details", get_product_details)
+        PythonRegistry.register("private:vector_search_descriptions", vector_search_descriptions)
 
         # Initialize parent class
         super().__init__(log_level=log_level)
@@ -83,8 +83,8 @@ class ProductSimilarityREPL(DanaREPLApp):
             "  - [private] get_product_details(product_id)\n"
             "  - [private] vector_search_descriptions(description)\n\n"
             "Example usage:\n"
-            "  private.product = get_product_details('CM-2501')\n"
-            "  private.results = vector_search_descriptions(private.product.description)\n"
+            "  private:product = get_product_details('CM-2501')\n"
+            "  private:results = vector_search_descriptions(private:product.description)\n"
         )
 
 

@@ -13,17 +13,17 @@ def test_sandbox_context_dot_notation():
     context = SandboxContext()
 
     # Set values with dot notation
-    context.set("private.test", 42)
-    context.set("public.weather", "sunny")
-    context.set("system.config", {"debug": True})
-    context.set("local.temp", 98.6)
+    context.set("private:test", 42)
+    context.set("public:weather", "sunny")
+    context.set("system:config", {"debug": True})
+    context.set("local:temp", 98.6)
     context.set("unscoped", "value")
 
     # Get values with dot notation
-    assert context.get("private.test") == 42
-    assert context.get("public.weather") == "sunny"
-    assert context.get("system.config") == {"debug": True}
-    assert context.get("local.temp") == 98.6
+    assert context.get("private:test") == 42
+    assert context.get("public:weather") == "sunny"
+    assert context.get("system:config") == {"debug": True}
+    assert context.get("local:temp") == 98.6
     assert context.get("unscoped") == "value"
 
     # Test default values
@@ -55,12 +55,12 @@ def test_mixed_notation_access():
     context = SandboxContext()
 
     # Set with dot notation, get with colon notation
-    context.set("private.test", 42)
+    context.set("private:test", 42)
     assert context.get("private:test") == 42
 
     # Set with colon notation, get with dot notation
     context.set("public:weather", "sunny")
-    assert context.get("public.weather") == "sunny"
+    assert context.get("public:weather") == "sunny"
 
 
 def test_local_variable_with_dots():
@@ -69,8 +69,8 @@ def test_local_variable_with_dots():
 
     # For variables with dots that don't start with valid scopes,
     # use explicit local scope prefix to avoid validation errors
-    context.set("local.not.a.valid.scope", "value")
-    assert context.get("local.not.a.valid.scope") == "value"
+    context.set("local:not.a.valid.scope", "value")
+    assert context.get("local:not.a.valid.scope") == "value"
 
     # When working with colon notation, put the variable name without dots
     # or use dot notation for variables with dots
@@ -78,23 +78,23 @@ def test_local_variable_with_dots():
     assert context.get("local:variable_without_dots") == "value"
 
     # Test with dot notation for local scope
-    context.set("local.variable.with.dots", "value2")
-    assert context.get("local.variable.with.dots") == "value2"
+    context.set("local:variable.with.dots", "value2")
+    assert context.get("local:variable.with.dots") == "value2"
 
 
 def test_from_dict_with_mixed_notation():
     """Test creating a context from a dictionary with mixed notation."""
-    data = {"private.x": 1, "public:y": 2, "system.z": 3, "local:w": 4, "unscoped": 5}
+    data = {"private:x": 1, "public:y": 2, "system:z": 3, "local:w": 4, "unscoped": 5}
 
     context = SandboxContext.from_dict(data)
 
     # Test accessing with the same notation
-    assert context.get("private.x") == 1
+    assert context.get("private:x") == 1
     assert context.get("public:y") == 2
-    assert context.get("system.z") == 3
+    assert context.get("system:z") == 3
     assert context.get("local:w") == 4
     assert context.get("unscoped") == 5
 
     # Test accessing with alternate notation
     assert context.get("private:x") == 1
-    assert context.get("public.y") == 2
+    assert context.get("public:y") == 2

@@ -113,7 +113,7 @@ class DanaSandbox(Loggable):
             self.info(f"Feedback received for result: {result} -> {feedback_data}")
             return True  # Simulate success
 
-        context.set("local.feedback", feedback_placeholder)
+        context.set("local:feedback", feedback_placeholder)
 
         return context
 
@@ -132,8 +132,8 @@ class DanaSandbox(Loggable):
                 self._initialize_new_resources()
 
             # Store in context
-            self._context.set("system.api_client", self._api_client)
-            self._context.set("system.llm_resource", self._llm_resource)
+            self._context.set("system:api_client", self._api_client)
+            self._context.set("system:llm_resource", self._llm_resource)
 
             # Register started APIClient as default POET client
             poet_client = POETClient.__new__(POETClient)  # Create without calling __init__
@@ -220,8 +220,8 @@ class DanaSandbox(Loggable):
             # Clear from context
             if hasattr(self._context, "delete"):
                 try:
-                    self._context.delete("system.api_client")
-                    self._context.delete("system.llm_resource")
+                    self._context.delete("system:api_client")
+                    self._context.delete("system:llm_resource")
                 except Exception as e:
                     self.debug(f"Error clearing context during cleanup: {e}")
 
@@ -417,7 +417,7 @@ class DanaSandbox(Loggable):
             # Check if we're in REPL mode - either by REPL markers or by filename being None (interactive)
             is_repl_mode = (
                 filename is None  # Interactive evaluation (REPL)
-                or self._context.get("system.__repl_input_context") is not None
+                or self._context.get("system:__repl_input_context") is not None
                 or any("__repl" in str(key) for key in self._context._state.get("system", {}).keys())
             )
 

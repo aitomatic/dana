@@ -135,15 +135,53 @@ class ExpressionExecutor(BaseExecutor):
                     except StateError:
                         continue
 
-            # For variables with scope prefix (e.g., 'local.var_name'), extract the variable name
+            # For variables with scope prefix (e.g., 'local:var_name'), extract the variable name
             # and search for it in other scopes if not found in the specified scope
+            elif ":" in name:
+                parts = name.split(":", 1)
+                if len(parts) == 2 and parts[0] in ["local", "private", "public", "system"]:
+                    specified_scope = parts[0]
+                    var_name = parts[1]
+
+                    # If the variable contains more dots (e.g., 'local:client.attribute'),
+                    # we might need to search for the base variable across scopes
+                    if "." in var_name:
+                        base_var = var_name.split(".", 1)[0]
+                        for scope in ["local", "private", "public", "system"]:
+                            if scope != specified_scope:  # Don't re-search the same scope
+                                try:
+                                    base_value = context.get_from_scope(base_var, scope=scope)
+                                    if base_value is not None:
+                                        # Found the base variable in a different scope
+                                        # Now try to access the attribute(s) on it
+                                        try:
+                                            result = base_value
+                                            for attr in var_name.split(".")[1:]:
+                                                result = getattr(result, attr)
+                                            return result
+                                        except AttributeError:
+                                            continue
+                                except StateError:
+                                    continue
+                    else:
+                        # Simple scoped variable, search for it in other scopes
+                        for scope in ["local", "private", "public", "system"]:
+                            if scope != specified_scope:  # Don't re-search the same scope
+                                try:
+                                    value = context.get_from_scope(var_name, scope=scope)
+                                    if value is not None:
+                                        return value
+                                except StateError:
+                                    continue
+
+            # Handle backward compatibility with dot notation
             elif "." in name:
                 parts = name.split(".", 1)
                 if len(parts) == 2 and parts[0] in ["local", "private", "public", "system"]:
                     specified_scope = parts[0]
                     var_name = parts[1]
 
-                    # If the variable contains more dots (e.g., 'local.client.attribute'),
+                    # If the variable contains more dots (e.g., 'local:client.attribute'),
                     # we might need to search for the base variable across scopes
                     if "." in var_name:
                         base_var = var_name.split(".", 1)[0]

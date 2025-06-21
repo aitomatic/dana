@@ -139,7 +139,7 @@ result = test_list[undefined_var:3]
         # Undefined variables now gracefully resolve to None (becomes 0 in slice context)
         assert result.success
         assert result.final_context is not None
-        assert result.final_context.get("local.result") == [1, 2, 3]
+        assert result.final_context.get("local:result") == [1, 2, 3]
 
     def test_successful_slice_operations(self):
         """Test that valid slice operations still work correctly."""
@@ -151,7 +151,7 @@ result = test_list[1:4]
         result = self.sandbox.eval(code)
         assert result.success
         assert result.final_context is not None
-        assert result.final_context.get("local.result") == [2, 3, 4]
+        assert result.final_context.get("local:result") == [2, 3, 4]
 
         # Test slice with step
         code = """
@@ -161,7 +161,7 @@ result = test_list[0:6:2]
         result = self.sandbox.eval(code)
         assert result.success
         assert result.final_context is not None
-        assert result.final_context.get("local.result") == [1, 3, 5]
+        assert result.final_context.get("local:result") == [1, 3, 5]
 
         # Test reverse slice (correct syntax)
         code = """
@@ -171,7 +171,7 @@ result = test_list[4:1:-1]
         result = self.sandbox.eval(code)
         assert result.success
         assert result.final_context is not None
-        assert result.final_context.get("local.result") == [5, 4, 3]
+        assert result.final_context.get("local:result") == [5, 4, 3]
 
         # Test negative indices
         code = """
@@ -181,7 +181,7 @@ result = test_list[-3:-1]
         result = self.sandbox.eval(code)
         assert result.success
         assert result.final_context is not None
-        assert result.final_context.get("local.result") == [3, 4]
+        assert result.final_context.get("local:result") == [3, 4]
 
 
 class TestSliceContextualErrors:
@@ -248,7 +248,7 @@ result = test_list[:]
         result = self.sandbox.eval(code)
         assert result.success
         assert result.final_context is not None
-        assert result.final_context.get("local.result") == [1, 2, 3, 4, 5]
+        assert result.final_context.get("local:result") == [1, 2, 3, 4, 5]
 
         # Test slice with some None components
         code = """
@@ -258,7 +258,7 @@ result = test_list[2:]
         result = self.sandbox.eval(code)
         assert result.success
         assert result.final_context is not None
-        assert result.final_context.get("local.result") == [3, 4, 5]
+        assert result.final_context.get("local:result") == [3, 4, 5]
 
     def test_slice_on_strings(self):
         """Test slice operations on strings."""
@@ -269,7 +269,7 @@ result = test_string[0:5]
         result = self.sandbox.eval(code)
         assert result.success
         assert result.final_context is not None
-        assert result.final_context.get("local.result") == "hello"
+        assert result.final_context.get("local:result") == "hello"
 
         # Test string slice bounds validation
         code = """
@@ -290,4 +290,4 @@ result = test_tuple[1:4]
         result = self.sandbox.eval(code)
         assert result.success
         assert result.final_context is not None
-        assert result.final_context.get("local.result") == (2, 3, 4)
+        assert result.final_context.get("local:result") == (2, 3, 4)

@@ -276,7 +276,7 @@ class DanaInterpreter(Loggable):
                 result = self._executor.execute_statement(statement, context)
                 if result is not None:
                     last_value = result
-                    context.set("system.__last_value", result)
+                    context.set("system:__last_value", result)
             except Exception as e:
                 self.log_error(f"Error executing statement: {e}")
                 # Pass through the exception for higher-level handling
@@ -309,10 +309,10 @@ class DanaInterpreter(Loggable):
                     raise RuntimeError(f"Error applying decorator {decorator_func}: {e}")
 
             # Store the decorated function (Python wrapper) in the context
-            context.set(f"local.{func_def.name.name}", wrapped_func)
+            context.set(f"local:{func_def.name.name}", wrapped_func)
         else:
             # No decorators, store the DanaFunction directly
-            context.set(f"local.{func_def.name.name}", base_func)
+            context.set(f"local:{func_def.name.name}", base_func)
             return
 
     def _create_dana_function(self, func_def: FunctionDefinition, context: SandboxContext, register: bool = True):
@@ -356,20 +356,20 @@ class DanaInterpreter(Loggable):
         """Bind function parameters to arguments in the context."""
         for i, param in enumerate(parameters):
             if i < len(args):
-                context.set(f"local.{param.name}", args[i])
+                context.set(f"local:{param.name}", args[i])
             elif param.name in kwargs:
-                context.set(f"local.{param.name}", kwargs[param.name])
+                context.set(f"local:{param.name}", kwargs[param.name])
             elif param.default_value is not None:
                 # Evaluate default value
                 default_val = self._executor.execute(param.default_value, context)
-                context.set(f"local.{param.name}", default_val)
+                context.set(f"local:{param.name}", default_val)
             else:
                 raise TypeError(f"Missing required argument: {param.name}")
 
     def _register_function_normally(self, func_def: FunctionDefinition, context: SandboxContext) -> None:
         """Create and register a normal Dana function."""
         dana_func = self._create_dana_function(func_def, context, register=False)
-        context.set(f"local.{func_def.name.name}", dana_func)
+        context.set(f"local:{func_def.name.name}", dana_func)
 
     def is_repl_mode(self) -> bool:
         """Check if running in REPL mode."""

@@ -27,7 +27,7 @@ def test_division_from_source():
     context = SandboxContext()
     interpreter = DanaInterpreter()
     interpreter.execute_program(ast, context)
-    assert context.get("private.x") == 3.0
+    assert context.get("private:x") == 3.0
 
 
 def test_parse_simple_division_expression():

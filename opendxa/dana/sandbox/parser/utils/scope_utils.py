@@ -28,7 +28,7 @@ def insert_local_scope(parts: list[str] | str) -> Any:
     if isinstance(parts, str):
         if "." in parts:
             raise ParseError(f"Local variable must be a simple name: {parts}")
-        return f"local.{parts}"
+        return f"local:{parts}"
     elif isinstance(parts, list):
         if len(parts) == 0:
             raise ParseError("No local variable name provided")
@@ -49,9 +49,9 @@ def has_scope_prefix(name: str) -> bool:
         name: Variable name to check
 
     Returns:
-        True if name has a scope prefix (local., private., public., system.)
+        True if name has a scope prefix (local:, private:, public:, system:)
     """
-    scope_prefixes = ["local.", "private.", "public.", "system."]
+    scope_prefixes = ["local:", "private:", "public:", "system:"]
     return any(name.startswith(prefix) for prefix in scope_prefixes)
 
 
@@ -67,7 +67,7 @@ def extract_scope_and_name(name: str) -> tuple[str | None, str]:
     scope_prefixes = ["local", "private", "public", "system"]
 
     for prefix in scope_prefixes:
-        if name.startswith(f"{prefix}."):
+        if name.startswith(f"{prefix}:"):
             return prefix, name[len(prefix) + 1 :]
 
     return None, name

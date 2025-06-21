@@ -185,7 +185,7 @@ assert result == 6
         # Check that the wrapped function is registered in the context
         context = result.final_context
         assert context is not None
-        foo_func = context.get("local.foo")
+        foo_func = context.get("local:foo")
         assert foo_func is not None
         assert hasattr(foo_func, "__name__")
         assert foo_func.__name__ == "foo"

@@ -66,22 +66,22 @@ def run_dana_code(code, parser=None, do_type_check=True):
 # --- Assignment & Scoping ---
 def test_assignment_and_scopes():
     context = run_dana_code("private:x = 1\npublic:y = 2\nz = 3")
-    assert context.get("private.x") == 1
-    assert context.get("public.y") == 2
-    assert context.get("local.z") == 3  # default scope
+    assert context.get("private:x") == 1
+    assert context.get("public:y") == 2
+    assert context.get("local:z") == 3  # default scope
 
 
 # --- Literals ---
 def test_literals():
     context = run_dana_code('a = 42\nb = 3.14\nc = "hello"\nd = True\ne = None\nf = [1,2,3]\ng = {"a":1}\nh = (1,2)')
-    assert context.get("local.a") == 42
-    assert context.get("local.b") == 3.14
-    assert context.get("local.c") == "hello"
-    assert context.get("local.d") is True
-    assert context.get("local.e") is None
-    assert context.get("local.f") == [1, 2, 3]
-    assert context.get("local.g") == {"a": 1}
-    assert context.get("local.h") == (1, 2)
+    assert context.get("local:a") == 42
+    assert context.get("local:b") == 3.14
+    assert context.get("local:c") == "hello"
+    assert context.get("local:d") is True
+    assert context.get("local:e") is None
+    assert context.get("local:f") == [1, 2, 3]
+    assert context.get("local:g") == {"a": 1}
+    assert context.get("local:h") == (1, 2)
 
 
 # --- Arithmetic & Operator Precedence ---
@@ -89,22 +89,22 @@ def test_arithmetic_operators():
     # Use cached parser for better performance
     parser = ParserCache.get_parser("dana")
     context = run_dana_code("x = 2 + 3\ny = 5 - 1\nz = 2 * 3\nw = 8 / 2\nv = 7 % 4\nu = 2 ** 3", parser=parser)
-    assert context.get("local.x") == 5
-    assert context.get("local.y") == 4
-    assert context.get("local.z") == 6
-    assert context.get("local.w") == 4
-    assert context.get("local.v") == 3
-    assert context.get("local.u") == 8
+    assert context.get("local:x") == 5
+    assert context.get("local:y") == 4
+    assert context.get("local:z") == 6
+    assert context.get("local:w") == 4
+    assert context.get("local:v") == 3
+    assert context.get("local:u") == 8
 
 
 def test_operator_precedence():
     # Use cached parser for better performance
     parser = ParserCache.get_parser("dana")
     context = run_dana_code("x = 2 + 3 * 4\ny = (2 + 3) * 4\nz = 2 ** 3 * 2\nw = 2 * 3 ** 2", parser=parser)
-    assert context.get("local.x") == 14
-    assert context.get("local.y") == 20
-    assert context.get("local.z") == 16
-    assert context.get("local.w") == 18
+    assert context.get("local:x") == 14
+    assert context.get("local:y") == 20
+    assert context.get("local:z") == 16
+    assert context.get("local:w") == 18
 
 
 # --- Comparisons & Logical Ops ---
@@ -112,15 +112,15 @@ def test_comparisons_and_logical():
     context = run_dana_code(
         "a = 2 < 3\nb = 2 == 2\nc = 2 != 3\nd = 2 >= 2\ne = 2 <= 3\nf = 2 > 1\ng = True and False\nh = True or False\ni = not False"
     )
-    assert context.get("local.a") is True
-    assert context.get("local.b") is True
-    assert context.get("local.c") is True
-    assert context.get("local.d") is True
-    assert context.get("local.e") is True
-    assert context.get("local.f") is True
-    assert context.get("local.g") is False
-    assert context.get("local.h") is True
-    assert context.get("local.i") is True
+    assert context.get("local:a") is True
+    assert context.get("local:b") is True
+    assert context.get("local:c") is True
+    assert context.get("local:d") is True
+    assert context.get("local:e") is True
+    assert context.get("local:f") is True
+    assert context.get("local:g") is False
+    assert context.get("local:h") is True
+    assert context.get("local:i") is True
 
 
 # --- Control Flow ---
@@ -135,7 +135,7 @@ else:
     y = 30
 """
     context = run_dana_code(code)
-    assert context.get("local.y") == 10
+    assert context.get("local:y") == 10
 
 
 def test_while_loop_integration():
@@ -145,7 +145,7 @@ while x < 3:
     x = x + 1
 """
     context = run_dana_code(code)
-    assert context.get("local.x") == 3
+    assert context.get("local:x") == 3
 
 
 def test_for_loop():
@@ -155,7 +155,7 @@ for i in [1,2,3]:
     sum = sum + i
 """
     context = run_dana_code(code)
-    assert context.get("local.sum") == 6
+    assert context.get("local:sum") == 6
 
 
 # --- Functions ---
@@ -167,7 +167,7 @@ def add(a, b):
 x = add(2, 3)
 """
     context = run_dana_code(code)
-    assert context.get("local.x") == 5
+    assert context.get("local:x") == 5
 
 
 # --- Strings & Collections ---
@@ -175,7 +175,7 @@ def test_fstring_and_multiline_string():
     # First test a simple multiline string
     multiline_code = 'y = """multi\\nline"""'
     context = run_dana_code(multiline_code)
-    multiline_result = context.get("local.y")
+    multiline_result = context.get("local:y")
     assert "multi" in multiline_result
 
     # For the f-string test, we'll use variables and literal values
@@ -187,10 +187,10 @@ x3 = f"float {3.14}"
 x4 = f"bool {True}"
 """
     context = run_dana_code(code)
-    x1 = context.get("local.x1")
-    x2 = context.get("local.x2")
-    x3 = context.get("local.x3")
-    x4 = context.get("local.x4")
+    x1 = context.get("local:x1")
+    x2 = context.get("local:x2")
+    x3 = context.get("local:x3")
+    x4 = context.get("local:x4")
 
     assert "hello" in x1
     assert "42" in x1
@@ -209,7 +209,7 @@ def test_comments_and_whitespace():
 x = 1  # inline comment
 """
     context = run_dana_code(code)
-    assert context.get("local.x") == 1
+    assert context.get("local:x") == 1
 
 
 # --- Error Handling ---
@@ -219,7 +219,7 @@ x = 1
 assert x == 1
 """
     context = run_dana_code(code)
-    assert context.get("local.x") == 1
+    assert context.get("local:x") == 1
     # Test raise
     code = 'raise "error message"'
     parser = ParserCache.get_parser("dana")
@@ -238,10 +238,10 @@ assert x == 1
 def test_scope_keywords():
     code = "private:x = 1\npublic:y = 2\nsystem:z = 3\nlocal:w = 4"
     context = run_dana_code(code)
-    assert context.get("private.x") == 1
-    assert context.get("public.y") == 2
-    assert context.get("system.z") == 3
-    assert context.get("local.w") == 4
+    assert context.get("private:x") == 1
+    assert context.get("public:y") == 2
+    assert context.get("system:z") == 3
+    assert context.get("local:w") == 4
 
 
 # --- Control Flow with Break and Continue ---
@@ -254,7 +254,7 @@ while x < 10:
         break
 """
     context = run_dana_code(code)
-    assert context.get("local.x") == 5
+    assert context.get("local:x") == 5
 
 
 def test_continue_in_while_loop():
@@ -268,7 +268,7 @@ while x < 5:
     sum = sum + x
 """
     context = run_dana_code(code)
-    assert context.get("local.sum") == 9  # 1 + 3 + 5 = 9
+    assert context.get("local:sum") == 9  # 1 + 3 + 5 = 9
 
 
 def test_break_in_for_loop():
@@ -280,7 +280,7 @@ for i in [1, 2, 3, 4, 5]:
     sum = sum + i
 """
     context = run_dana_code(code, do_type_check=False)
-    assert context.get("local.sum") == 6
+    assert context.get("local:sum") == 6
 
 
 def test_continue_in_for_loop():
@@ -292,7 +292,7 @@ for i in [1, 2, 3, 4, 5]:
     sum = sum + i
 """
     context = run_dana_code(code)
-    assert context.get("local.sum") == 9  # 1 + 3 + 5 = 9
+    assert context.get("local:sum") == 9  # 1 + 3 + 5 = 9
 
 
 # --- Additional Error Handling ---
@@ -306,8 +306,8 @@ def test_variable_not_found():
     try:
         interpreter.execute_program(program, context)
         # If no exception is raised, check what values are in the context
-        x_value = context.get("local.x", "NOT_FOUND")
-        context.get("local.y", "NOT_FOUND")
+        x_value = context.get("local:x", "NOT_FOUND")
+        context.get("local:y", "NOT_FOUND")
 
         # If x got assigned successfully, check if it got a reasonable value
         if x_value != "NOT_FOUND":
@@ -358,7 +358,7 @@ c = 3
 result = a + b * c - (a + b) / c
 """
     context = run_dana_code(code)
-    assert context.get("local.result") == 1 + 2 * 3 - (1 + 2) / 3  # Should be 6.0
+    assert context.get("local:result") == 1 + 2 * 3 - (1 + 2) / 3  # Should be 6.0
 
 
 def test_nested_expressions():
@@ -369,7 +369,7 @@ c = ((a + b) * (a - b)) / (a * b)
 """
     context = run_dana_code(code)
     # ((2 + 3) * (2 - 3)) / (2 * 3) = (5 * -1) / 6 = -5/6 ≈ -0.8333...
-    assert abs(context.get("local.c") - (-5 / 6)) < 0.0001
+    assert abs(context.get("local:c") - (-5 / 6)) < 0.0001
 
 
 # --- Lists and Collection Operations ---
@@ -385,7 +385,7 @@ a = [1, 2, 3]
     interpreter.execute_program(program, context)
 
     # Check that the list was created correctly
-    list_value = context.get("local.a")
+    list_value = context.get("local:a")
     assert list_value == [1, 2, 3]
 
 
@@ -403,7 +403,7 @@ has_key = "foo" in empty_dict
     ctx = context
 
     # Verify the result
-    assert ctx.get("local.has_key") is False
+    assert ctx.get("local:has_key") is False
 
 
 # --- Context Management Testing ---
@@ -419,7 +419,7 @@ system:z = 3
 
     # Create a parent context
     parent_context = SandboxContext()
-    parent_context.set("private.parent_var", "parent_value")
+    parent_context.set("private:parent_var", "parent_value")
 
     # Create a child context that inherits from the parent
     child_context = SandboxContext(parent=parent_context)
@@ -429,12 +429,12 @@ system:z = 3
     interpreter.execute_program(program, child_context)
 
     # Verify that the child can see parent's values
-    assert child_context.get("private.parent_var") == "parent_value"
+    assert child_context.get("private:parent_var") == "parent_value"
 
     # Verify that parent can see values set in child (for global scopes)
-    assert parent_context.get("private.x") == 1
-    assert parent_context.get("public.y") == 2
-    assert parent_context.get("system.z") == 3
+    assert parent_context.get("private:x") == 1
+    assert parent_context.get("public:y") == 2
+    assert parent_context.get("system:z") == 3
 
 
 # --- Advanced Expression Evaluation ---
@@ -454,11 +454,11 @@ e = not True
     interpreter.execute_program(program, context)
     ctx = context
 
-    assert ctx.get("local.a") == 5
-    assert ctx.get("local.b") == -5
-    assert ctx.get("local.c") == 5
-    assert ctx.get("local.d") is True
-    assert ctx.get("local.e") is False
+    assert ctx.get("local:a") == 5
+    assert ctx.get("local:b") == -5
+    assert ctx.get("local:c") == 5
+    assert ctx.get("local:d") is True
+    assert ctx.get("local:e") is False
 
 
 def test_dict_access():
@@ -475,9 +475,9 @@ has_k3 = "k3" in d
     interpreter.execute_program(program, context)
     ctx = context
 
-    assert ctx.get("local.d") == {"k1": 10, "k2": 20}
-    assert ctx.get("local.has_k1") is True
-    assert ctx.get("local.has_k3") is False
+    assert ctx.get("local:d") == {"k1": 10, "k2": 20}
+    assert ctx.get("local:has_k1") is True
+    assert ctx.get("local:has_k3") is False
 
 
 def test_string_concatenation():
@@ -493,7 +493,7 @@ greeting = str1 + str2
     interpreter.execute_program(program, context)
     ctx = context
 
-    assert ctx.get("local.greeting") == "Hello, World!"
+    assert ctx.get("local:greeting") == "Hello, World!"
 
 
 def test_power_operator():
@@ -509,8 +509,8 @@ cubed = 2 ** 3
     interpreter.execute_program(program, context)
     ctx = context
 
-    assert ctx.get("local.squared") == 4
-    assert ctx.get("local.cubed") == 8
+    assert ctx.get("local:squared") == 4
+    assert ctx.get("local:cubed") == 8
 
 
 def test_more_binary_operations():

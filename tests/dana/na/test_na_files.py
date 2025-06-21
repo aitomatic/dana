@@ -34,9 +34,9 @@ def test_na_file(na_file):
     # Check if we should skip tests that need real LLM
     skip_llm_tests = os.environ.get("OPENDXA_SKIP_NA_LLM_TESTS", "").lower() == "true"
 
-    # Skip test_simple.na due to known parsing issues with "private.result" syntax
+    # Skip test_simple.na due to known parsing issues with "private:result" syntax
     if "test_simple.na" in na_file:
-        pytest.skip(f"Skipping {na_file} due to known parsing issues with 'private.result' syntax")
+        pytest.skip(f"Skipping {na_file} due to known parsing issues with 'private:result' syntax")
 
     # Read the .na file
     with open(na_file) as f:
@@ -55,7 +55,7 @@ def test_na_file(na_file):
         llm_resource = LLMResource()
         # Use mock for all LLM calls
         llm_resource = llm_resource.with_mock_llm_call(True)
-        context.set("system.llm_resource", llm_resource)
+        context.set("system:llm_resource", llm_resource)
 
     # Parse the program
     program = parse_program(program_text)

@@ -163,10 +163,10 @@ def test_unified_interpreter_execution_comprehensive():
     interpreter = DanaInterpreter()
 
     # Test 1: Program execution with assignments
-    program = Program([Assignment(target=Identifier("private.y"), value=LiteralExpression(123))])
+    program = Program([Assignment(target=Identifier("private:y"), value=LiteralExpression(123))])
     result = interpreter.execute_program(program, context)
     assert result == 123
-    assert context.get("private.y") == 123
+    assert context.get("private:y") == 123
 
     # Test 2: Expression evaluation
     expr = BinaryExpression(
@@ -178,33 +178,33 @@ def test_unified_interpreter_execution_comprehensive():
     assert result == 42
 
     # Test 3: Statement execution
-    stmt = Assignment(target=Identifier("private.z"), value=LiteralExpression(456))
+    stmt = Assignment(target=Identifier("private:z"), value=LiteralExpression(456))
     result = interpreter.execute_statement(stmt, context)
     assert result == 456
-    assert context.get("private.z") == 456
+    assert context.get("private:z") == 456
 
     # Test 4: Multiple statements in program
     program = Program(
         [
-            Assignment(target=Identifier("local.a"), value=LiteralExpression(10)),
-            Assignment(target=Identifier("local.b"), value=LiteralExpression(20)),
+            Assignment(target=Identifier("local:a"), value=LiteralExpression(10)),
+            Assignment(target=Identifier("local:b"), value=LiteralExpression(20)),
             Assignment(
-                target=Identifier("local.sum"),
-                value=BinaryExpression(left=Identifier("local.a"), operator=BinaryOperator.ADD, right=Identifier("local.b")),
+                target=Identifier("local:sum"),
+                value=BinaryExpression(left=Identifier("local:a"), operator=BinaryOperator.ADD, right=Identifier("local:b")),
             ),
         ]
     )
     result = interpreter.execute_program(program, context)
     assert result == 30  # Result of last statement
-    assert context.get("local.a") == 10
-    assert context.get("local.b") == 20
-    assert context.get("local.sum") == 30
+    assert context.get("local:a") == 10
+    assert context.get("local:b") == 20
+    assert context.get("local:sum") == 30
 
     # Test 5: Complex expression evaluation
     complex_expr = BinaryExpression(
-        left=BinaryExpression(left=Identifier("local.a"), operator=BinaryOperator.MULTIPLY, right=LiteralExpression(2)),
+        left=BinaryExpression(left=Identifier("local:a"), operator=BinaryOperator.MULTIPLY, right=LiteralExpression(2)),
         operator=BinaryOperator.ADD,
-        right=BinaryExpression(left=Identifier("local.b"), operator=BinaryOperator.DIVIDE, right=LiteralExpression(4)),
+        right=BinaryExpression(left=Identifier("local:b"), operator=BinaryOperator.DIVIDE, right=LiteralExpression(4)),
     )
     result = interpreter.evaluate_expression(complex_expr, context)
     assert result == 25.0  # (10 * 2) + (20 / 4) = 20 + 5 = 25

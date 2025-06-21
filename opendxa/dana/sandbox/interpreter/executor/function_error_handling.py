@@ -90,7 +90,7 @@ class FunctionExecutionErrorHandler:
         """Convert internal dot notation to user-friendly colon notation for display.
 
         Args:
-            function_name: Internal function name (e.g., 'local.fact')
+            function_name: Internal function name (e.g., 'local:fact')
 
         Returns:
             User-friendly function name (e.g., 'local:fact')

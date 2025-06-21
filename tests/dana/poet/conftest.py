@@ -68,17 +68,17 @@ def fresh_sandbox(shared_sandbox):
     fresh_context.interpreter = shared_sandbox._interpreter
 
     # Copy system resources from shared context to fresh context
-    if original_context.get("system.api_client"):
-        fresh_context.set("system.api_client", original_context.get("system.api_client"))
-    if original_context.get("system.llm_resource"):
-        fresh_context.set("system.llm_resource", original_context.get("system.llm_resource"))
+    if original_context.get("system:api_client"):
+        fresh_context.set("system:api_client", original_context.get("system:api_client"))
+    if original_context.get("system:llm_resource"):
+        fresh_context.set("system:llm_resource", original_context.get("system:llm_resource"))
 
     # Add feedback placeholder
     def feedback_placeholder(result, feedback_data):
         logger.info(f"Feedback received for result: {result} -> {feedback_data}")
         return True
 
-    fresh_context.set("local.feedback", feedback_placeholder)
+    fresh_context.set("local:feedback", feedback_placeholder)
 
     # Temporarily swap the context
     shared_sandbox._context = fresh_context

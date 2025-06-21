@@ -106,9 +106,9 @@ else:
     def test_obviously_incomplete_detection(self):
         """Test the obviously incomplete detection logic."""
         # Test the obviously incomplete detection
-        self.assertTrue(self.checker.is_obviously_incomplete("if local.a == 365:"))
+        self.assertTrue(self.checker.is_obviously_incomplete("if local:a == 365:"))
         self.assertFalse(self.checker.is_obviously_incomplete("print(hello)"))
-        self.assertFalse(self.checker.is_obviously_incomplete("local.x = 42"))
+        self.assertFalse(self.checker.is_obviously_incomplete("local:x = 42"))
 
     def test_orphaned_else_detection(self):
         """Test orphaned else statement detection."""

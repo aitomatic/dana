@@ -40,10 +40,10 @@ def test_pipe_with_none_values():
 
     pipe2 = BinaryExpression(left=pipe1, operator=BinaryOperator.PIPE, right=Identifier("handle_none"))
 
-    program = Program([Assignment(target=Identifier("local.result"), value=pipe2)])
+    program = Program([Assignment(target=Identifier("local:result"), value=pipe2)])
 
     interpreter.execute_program(program, context)
-    assert context.get("local.result") == "got_none"
+    assert context.get("local:result") == "got_none"
 
 
 def test_pipe_with_exception_handling():
@@ -60,7 +60,7 @@ def test_pipe_with_exception_handling():
     # Test: 5 | raise_error
     pipe_expr = BinaryExpression(left=LiteralExpression(5), operator=BinaryOperator.PIPE, right=Identifier("raise_error"))
 
-    program = Program([Assignment(target=Identifier("local.result"), value=pipe_expr)])
+    program = Program([Assignment(target=Identifier("local:result"), value=pipe_expr)])
 
     # Should propagate the exception
     with pytest.raises(Exception) as exc_info:
@@ -102,11 +102,11 @@ def test_pipe_with_different_data_types():
 
     pipe3 = BinaryExpression(left=pipe2, operator=BinaryOperator.PIPE, right=Identifier("string_upper"))
 
-    program = Program([Assignment(target=Identifier("local.result"), value=pipe3)])
+    program = Program([Assignment(target=Identifier("local:result"), value=pipe3)])
 
     interpreter.execute_program(program, context)
     # [1,2,3] -> 3 -> 13 -> "13"
-    assert context.get("local.result") == "13"
+    assert context.get("local:result") == "13"
 
 
 def test_pipe_with_nested_expressions():
@@ -133,10 +133,10 @@ def test_pipe_with_nested_expressions():
 
     pipe2 = BinaryExpression(left=pipe1, operator=BinaryOperator.PIPE, right=Identifier("add_five"))
 
-    program = Program([Assignment(target=Identifier("local.result"), value=pipe2)])
+    program = Program([Assignment(target=Identifier("local:result"), value=pipe2)])
 
     interpreter.execute_program(program, context)
-    assert context.get("local.result") == 45  # (2+3)*4=20 -> 40 -> 45
+    assert context.get("local:result") == 45  # (2+3)*4=20 -> 40 -> 45
 
 
 def test_pipe_with_callable_objects():
@@ -159,10 +159,10 @@ def test_pipe_with_callable_objects():
     # Test: 7 | triple
     pipe_expr = BinaryExpression(left=LiteralExpression(7), operator=BinaryOperator.PIPE, right=Identifier("triple"))
 
-    program = Program([Assignment(target=Identifier("local.result"), value=pipe_expr)])
+    program = Program([Assignment(target=Identifier("local:result"), value=pipe_expr)])
 
     interpreter.execute_program(program, context)
-    assert context.get("local.result") == 21
+    assert context.get("local:result") == 21
 
 
 def test_pipe_operator_mixed_with_other_operators():
@@ -186,10 +186,10 @@ def test_pipe_operator_mixed_with_other_operators():
 
     comparison = BinaryExpression(left=pipe_expr, operator=BinaryOperator.EQUALS, right=LiteralExpression(25))
 
-    program = Program([Assignment(target=Identifier("local.result"), value=comparison)])
+    program = Program([Assignment(target=Identifier("local:result"), value=comparison)])
 
     interpreter.execute_program(program, context)
-    assert context.get("local.result") is True  # (2+3)^2 = 25
+    assert context.get("local:result") is True  # (2+3)^2 = 25
 
 
 def test_pipe_with_functions_returning_complex_objects():
@@ -227,7 +227,7 @@ def test_pipe_with_functions_returning_complex_objects():
 
     pipe4 = BinaryExpression(left=pipe3, operator=BinaryOperator.PIPE, right=Identifier("get_summary"))
 
-    program = Program([Assignment(target=Identifier("local.result"), value=pipe4)])
+    program = Program([Assignment(target=Identifier("local:result"), value=pipe4)])
 
     interpreter.execute_program(program, context)
-    assert context.get("local.result") == "Alice is 25 and likes coding"
+    assert context.get("local:result") == "Alice is 25 and likes coding"

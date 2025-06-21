@@ -100,7 +100,7 @@ struct UserProfile:
         # Struct instantiation is parsed as a FunctionCall at parse time
         # Runtime will determine if it's a struct constructor or function
         assert isinstance(ast, FunctionCall)
-        assert ast.name == "local.Point"  # With local scope added
+        assert ast.name == "local:Point"  # With local scope added
 
         # Check keyword arguments
         assert "x" in ast.args
@@ -122,7 +122,7 @@ struct UserProfile:
 
         # Struct instantiation is parsed as a FunctionCall at parse time
         assert isinstance(ast, FunctionCall)
-        assert ast.name == "local.UserProfile"
+        assert ast.name == "local:UserProfile"
 
         # Check that all expected arguments are present
         assert "user_id" in ast.args

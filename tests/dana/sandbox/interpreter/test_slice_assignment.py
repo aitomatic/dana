@@ -32,7 +32,7 @@ result = numbers
         assert result.success
         assert result.final_context is not None
         expected = [1, 2, 99, 88, 77, 6, 7, 8, 9, 10]
-        assert result.final_context.get("local.result") == expected
+        assert result.final_context.get("local:result") == expected
 
     def test_multi_dimensional_slice_assignment_pandas(self):
         """Test multi-dimensional slice assignment with pandas DataFrames."""
@@ -45,7 +45,7 @@ result = df.iloc[1, 0]  # Should be 999
         result = self.sandbox.eval(code)
         assert result.success
         assert result.final_context is not None
-        assert result.final_context.get("local.result") == 999
+        assert result.final_context.get("local:result") == 999
 
     def test_full_column_slice_assignment(self):
         """Test full column slice assignment."""
@@ -58,7 +58,7 @@ result = df.iloc[0, 1]  # Check first row, second column
         result = self.sandbox.eval(code)
         assert result.success
         assert result.final_context is not None
-        assert result.final_context.get("local.result") == 777
+        assert result.final_context.get("local:result") == 777
 
     def test_full_row_slice_assignment(self):
         """Test full row slice assignment."""
@@ -71,7 +71,7 @@ result = df.iloc[1, 0]  # Check second row, first column
         result = self.sandbox.eval(code)
         assert result.success
         assert result.final_context is not None
-        assert result.final_context.get("local.result") == 555
+        assert result.final_context.get("local:result") == 555
 
     def test_dictionary_index_assignment(self):
         """Test dictionary index assignment."""
@@ -83,7 +83,7 @@ result = data["y"]
         result = self.sandbox.eval(code)
         assert result.success
         assert result.final_context is not None
-        assert result.final_context.get("local.result") == 999
+        assert result.final_context.get("local:result") == 999
 
     def test_string_slice_assignment(self):
         """Test slice assignment on strings (should fail as strings are immutable)."""
@@ -106,7 +106,7 @@ result = numbers
         assert result.success
         assert result.final_context is not None
         expected = [1, 99, 3, 88, 5, 77, 7, 66, 9, 10]
-        assert result.final_context.get("local.result") == expected
+        assert result.final_context.get("local:result") == expected
 
     def test_nested_slice_assignment(self):
         """Test slice assignment on nested structures."""
@@ -118,7 +118,7 @@ result = matrix[1]
         result = self.sandbox.eval(code)
         assert result.success
         assert result.final_context is not None
-        assert result.final_context.get("local.result") == [99, 88, 6]
+        assert result.final_context.get("local:result") == [99, 88, 6]
 
 
 class TestSliceAssignmentErrors:
@@ -139,7 +139,7 @@ result = numbers
         assert result.success
         assert result.final_context is not None
         # Python extends the list when slice is out of bounds
-        assert result.final_context.get("local.result") == [1, 2, 3, 99, 88]
+        assert result.final_context.get("local:result") == [1, 2, 3, 99, 88]
 
     def test_slice_assignment_type_error(self):
         """Test error handling for invalid assignment target types."""
@@ -162,7 +162,7 @@ result = df.iloc[0, 0]
         result = self.sandbox.eval(code)
         assert result.success
         assert result.final_context is not None
-        assert result.final_context.get("local.result") == 999
+        assert result.final_context.get("local:result") == 999
 
     def test_slice_assignment_undefined_variable_error(self):
         """Test behavior when slice components reference undefined variables (gracefully handles as None/0)."""
@@ -174,7 +174,7 @@ numbers[undefined_start:3] = [99, 88]
         # Undefined variables now gracefully resolve to None (becomes 0 in slice context)
         assert result.success
         assert result.final_context is not None
-        assert result.final_context.get("local.numbers") == [99, 88, 4, 5]
+        assert result.final_context.get("local:numbers") == [99, 88, 4, 5]
 
 
 class TestSliceAssignmentEdgeCases:
@@ -194,7 +194,7 @@ result = numbers
         result = self.sandbox.eval(code)
         assert result.success
         assert result.final_context is not None
-        assert result.final_context.get("local.result") == [1, 2, 3, 4, 5]
+        assert result.final_context.get("local:result") == [1, 2, 3, 4, 5]
 
     def test_negative_index_slice_assignment(self):
         """Test slice assignment with negative indices."""
@@ -206,7 +206,7 @@ result = numbers
         result = self.sandbox.eval(code)
         assert result.success
         assert result.final_context is not None
-        assert result.final_context.get("local.result") == [1, 2, 99, 88, 5]
+        assert result.final_context.get("local:result") == [1, 2, 99, 88, 5]
 
     def test_slice_assignment_different_lengths(self):
         """Test slice assignment where replacement has different length."""
@@ -218,7 +218,7 @@ result = numbers
         result = self.sandbox.eval(code)
         assert result.success
         assert result.final_context is not None
-        assert result.final_context.get("local.result") == [1, 99, 88, 77, 66, 4, 5]
+        assert result.final_context.get("local:result") == [1, 99, 88, 77, 66, 4, 5]
 
     def test_slice_assignment_single_value_to_multiple_positions(self):
         """Test assigning single value to multiple positions via slice."""
@@ -231,7 +231,7 @@ result = df.iloc[0, 0]  # Check first position
         result = self.sandbox.eval(code)
         assert result.success
         assert result.final_context is not None
-        assert result.final_context.get("local.result") == 999
+        assert result.final_context.get("local:result") == 999
 
 
 class TestSliceAssignmentIntegration:
@@ -255,7 +255,7 @@ result = numbers
         assert result.success
         assert result.final_context is not None
         expected = [1, 2, 99, 88, 77, 6, 7, 8, 9, 10]
-        assert result.final_context.get("local.result") == expected
+        assert result.final_context.get("local:result") == expected
 
     def test_slice_assignment_in_function(self):
         """Test slice assignment within function definitions."""
@@ -270,7 +270,7 @@ result = modify_list(numbers)
         result = self.sandbox.eval(code)
         assert result.success
         assert result.final_context is not None
-        assert result.final_context.get("local.result") == [1, 99, 88, 4, 5]
+        assert result.final_context.get("local:result") == [1, 99, 88, 4, 5]
 
     def test_chained_slice_assignments(self):
         """Test multiple slice assignments in sequence."""
@@ -284,7 +284,7 @@ result = numbers
         assert result.success
         assert result.final_context is not None
         expected = [99, 88, 3, 77, 66, 6, 7, 8, 9, 10]
-        assert result.final_context.get("local.result") == expected
+        assert result.final_context.get("local:result") == expected
 
     def test_slice_assignment_with_computed_values(self):
         """Test slice assignment with computed replacement values."""
@@ -298,4 +298,4 @@ result = numbers
         result = self.sandbox.eval(code)
         assert result.success
         assert result.final_context is not None
-        assert result.final_context.get("local.result") == [1, 20, 30, 40, 5]
+        assert result.final_context.get("local:result") == [1, 20, 30, 40, 5]

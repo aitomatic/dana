@@ -37,10 +37,10 @@ class VariableTransformer(BaseTransformer):
     # === Grammar Rule Methods ===
     def scoped_var(self, items):
         """
-        Transform a scoped variable (e.g., 'private.x' or 'system.foo.bar') into an Identifier node.
-        Grammar: scoped_var: scope_prefix "." (simple_name | dotted_access)
-        Example: private.x -> Identifier(name='private.x')
-                 system.foo.bar -> Identifier(name='system.foo.bar')
+        Transform a scoped variable (e.g., 'private:x' or 'system:foo.bar') into an Identifier node.
+        Grammar: scoped_var: scope_prefix ":" (simple_name | dotted_access)
+        Example: private:x -> Identifier(name='private:x')
+                 system:foo.bar -> Identifier(name='system:foo.bar')
         """
         scope_item = items[0]
         var = items[1]
@@ -53,8 +53,8 @@ class VariableTransformer(BaseTransformer):
         # Extract the raw variable name, bypassing _insert_scope_if_missing
         def raw_name(item):
             if isinstance(item, Identifier):
-                # Remove any leading 'local.'
-                return item.name[6:] if item.name.startswith("local.") else item.name
+                # Remove any leading 'local:'
+                return item.name[6:] if item.name.startswith("local:") else item.name
             if isinstance(item, Token):
                 return item.value
             if isinstance(item, Tree):
@@ -65,17 +65,18 @@ class VariableTransformer(BaseTransformer):
             return str(item)
 
         var_name = raw_name(var)
-        name = f"{scope}.{var_name}"
+        name = f"{scope}:{var_name}"
         return Identifier(name=name)
 
     def simple_name(self, items):
         """
-        Transform a simple variable name (NAME) into an Identifier node, inserting local scope if missing.
+        Transform a simple variable name (NAME) into an Identifier node.
         Grammar: simple_name: NAME
-        Example: x -> Identifier(name='local.x')
+
+        Note: Does not automatically add scope - this allows function calls to be resolved
+        via registry first, and variable access to be handled by the context resolver.
         """
         name = self._extract_name(items[0])
-        name = self._insert_scope_if_missing(name)
         return Identifier(name=name)
 
     def dotted_access(self, items):
@@ -87,7 +88,7 @@ class VariableTransformer(BaseTransformer):
         They must use colon notation (e.g., public:variable, not public.variable).
 
         Example:
-            foo.bar -> AttributeAccess(object=Identifier(name='local.foo'), attribute='bar')
+            foo.bar -> AttributeAccess(object=Identifier(name='local:foo'), attribute='bar')
             public.var -> SyntaxError (should be public:var)
         """
         from opendxa.dana.sandbox.parser.ast import AttributeAccess
@@ -119,13 +120,12 @@ class VariableTransformer(BaseTransformer):
         """
         Transform an identifier (simple or dotted, with optional scope) into an Identifier node.
         This is a utility for compatibility with other transformers.
-        If no scope prefix is present, inserts local scope.
-        Example: foo -> Identifier(name='local.foo')
-                 private:foo.bar -> Identifier(name='private.foo.bar')
+
+        Note: Does not automatically add scope - allows both function calls and variable access
+        to be handled by their respective resolvers.
         """
         parts = [self._extract_name(item) for item in items]
         name = self._join_dotted(parts)
-        name = self._insert_scope_if_missing(name)
         return Identifier(name=name)
 
     # === Helper Methods ===
@@ -158,8 +158,8 @@ class VariableTransformer(BaseTransformer):
 
     def _insert_scope_if_missing(self, name):
         """
-        Insert 'local.' scope prefix if name does not already start with a known scope.
+        Insert 'local:' scope prefix if name does not already start with a known scope.
         """
-        if not any(name.startswith(prefix + ".") for prefix in RuntimeScopes.ALL):
-            return f"local.{name}"
+        if not any(name.startswith(prefix + ":") for prefix in RuntimeScopes.ALL):
+            return f"local:{name}"
         return name

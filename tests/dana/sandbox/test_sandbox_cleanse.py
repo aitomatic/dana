@@ -45,25 +45,25 @@ def test_sandbox_context_cleanse():
     print_scopes(sanitized)
 
     # Verify that normal data is preserved
-    assert sanitized.get("local.normal_string") == "This is a normal string"
-    assert sanitized.get("public.normal_number") == 42
+    assert sanitized.get("local:normal_string") == "This is a normal string"
+    assert sanitized.get("public:normal_number") == 42
 
     # Verify that sensitive scopes (private/system) are completely removed
     assert "private" not in sanitized._state
     assert "system" not in sanitized._state
 
     # Verify that sensitive data in local/public is masked
-    api_key_value = sanitized.get("local.api_key")
+    api_key_value = sanitized.get("local:api_key")
     assert api_key_value.startswith("sk_l")
     assert api_key_value.endswith("cdef")
     assert "****" in api_key_value
 
     # Verify JWT token in public is masked
-    token_value = sanitized.get("public.secret_token")
+    token_value = sanitized.get("public:secret_token")
     assert "****" in token_value
 
     # Verify that user_id is masked
-    user_id_value = sanitized.get("local.user_id")
+    user_id_value = sanitized.get("local:user_id")
     assert "****" in user_id_value
 
     print("\nAll tests passed!")

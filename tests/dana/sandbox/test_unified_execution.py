@@ -24,7 +24,7 @@ def test_reason_function_direct_call():
     llm_resource = LLMResource()
 
     # Set up context with LLM resource
-    context.set("system.llm_resource", llm_resource)
+    context.set("system:llm_resource", llm_resource)
 
     # Test basic call
     result = reason_function(context, "test prompt")
@@ -39,7 +39,7 @@ def test_reason_function_parameter_order():
     llm_resource = LLMResource()
 
     # Set up context with LLM resource
-    context.set("system.llm_resource", llm_resource)
+    context.set("system:llm_resource", llm_resource)
 
     # Test with explicit mocking parameter
     result1 = reason_function(context, "test prompt", use_mock=True)
@@ -230,7 +230,7 @@ if True:
         self.interpreter.execute_program(program, self.context)
 
         # Check execution path - this test may need updating since we removed the execution path tracking
-        # self.assertEqual(self.context.get("system.__last_execution_path"), "unified")
+        # self.assertEqual(self.context.get("system:__last_execution_path"), "unified")
 
         # Reset calls
         self.reason_calls = []
@@ -241,7 +241,7 @@ if True:
         self.interpreter.execute_program(program, self.context)
 
         # Check execution path - this test may need updating since we removed the execution path tracking
-        # self.assertEqual(self.context.get("system.__last_execution_path"), "unified")
+        # self.assertEqual(self.context.get("system:__last_execution_path"), "unified")
 
 
 if __name__ == "__main__":

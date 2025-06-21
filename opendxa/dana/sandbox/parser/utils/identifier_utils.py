@@ -13,7 +13,7 @@ def is_valid_identifier(term: str) -> bool:
     A valid identifier must:
     - Start with a letter (a-z, A-Z) or underscore (_)
     - Contain only letters, digits, and underscores
-    - Support dotted notation (e.g., "obj.attr", "local.var")
+    - Support dotted notation (e.g., "obj.attr", "local:var")
 
     Args:
         term: The term to check
@@ -40,8 +40,8 @@ def is_valid_identifier(term: str) -> bool:
     if not term:
         return False
 
-    # Handle dotted identifiers (e.g., "local.var", "obj.attr")
-    parts = term.split(".")
+    # Handle dotted identifiers (e.g., "local:var", "obj.attr")
+    parts = term.split(":")
     for part in parts:
         if not part:  # Empty part (consecutive dots)
             return False
