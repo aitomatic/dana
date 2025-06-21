@@ -243,7 +243,7 @@ class LLMQueryExecutor(Loggable):
 
                     # Get responses for all tool calls at once
                     tool_responses = await tool_call_handler(tool_calls)
-                    tool_responses_messages = [i.content for i in tool_responses]
+                    tool_responses_messages = [Misc.get_field(i, "content", "") for i in tool_responses if Misc.has_field(i, "content")]
                     message_history.extend(cast(list[dict[str, Any]], tool_responses_messages))
                 else:
                     # If LLM is not requesting tools, we're done

@@ -168,6 +168,13 @@ class Misc:
         if isinstance(obj, dict):
             return obj.get(field_name, default)
         return getattr(obj, field_name, default)
+    
+    @staticmethod
+    def has_field(obj: dict | object, field_name: str) -> bool:
+        """Check if an object has a field."""
+        if isinstance(obj, dict):
+            return field_name in obj
+        return hasattr(obj, field_name)
 
     @staticmethod
     def generate_base64_uuid(length: int | None = None) -> str:
