@@ -12,6 +12,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from opendxa.dana.common.exceptions import FunctionRegistryError, SandboxError
+from opendxa.dana.common.runtime_scopes import RuntimeScopes
 from opendxa.dana.sandbox.parser.ast import FunctionCall
 
 if TYPE_CHECKING:
@@ -85,6 +86,25 @@ class FunctionExecutionErrorHandler:
         """
         return self.executor._create_error_response(f"Function '{node.name}' not found in registry", original_error=error)
 
+    def _convert_to_user_friendly_name(self, function_name: str) -> str:
+        """Convert internal dot notation to user-friendly colon notation for display.
+
+        Args:
+            function_name: Internal function name (e.g., 'local.fact')
+
+        Returns:
+            User-friendly function name (e.g., 'local:fact')
+        """
+        # Check if this looks like a scoped function name
+        if "." in function_name:
+            parts = function_name.split(".", 1)
+            if len(parts) == 2 and parts[0] in RuntimeScopes.ALL:
+                scope, func_name = parts
+                return f"{scope}:{func_name}"
+
+        # Return as-is if not a scoped function
+        return function_name
+
     def format_error_message(self, error: Exception, function_name: str, context: str = "") -> str:
         """Format a comprehensive error message.
 
@@ -96,7 +116,10 @@ class FunctionExecutionErrorHandler:
         Returns:
             Formatted error message
         """
-        base_msg = f"Error executing function '{function_name}': {str(error)}"
+        # Convert internal dot notation to user-friendly colon notation
+        user_friendly_name = self._convert_to_user_friendly_name(function_name)
+
+        base_msg = f"Error executing function '{user_friendly_name}': {str(error)}"
         if context:
             base_msg += f" (Context: {context})"
         return base_msg
