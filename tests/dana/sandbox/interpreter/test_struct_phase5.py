@@ -327,18 +327,18 @@ struct Config:
     name: str
     value: int
 
-def safe_get_value(config: Config, default: int = 0) -> int:
-    try:
-        return config.value
-    except:
-        return default
-
 def validate_config(config: Config) -> bool:
     if config.name == "":
         return false
     if config.value < 0:
         return false
     return true
+
+def safe_get_value(config: Config, default: int = 0) -> int:
+    try:
+        return config.value
+    except:
+        return default
 
 # Create valid and invalid configs
 local:valid_config = Config(name="test", value=10)

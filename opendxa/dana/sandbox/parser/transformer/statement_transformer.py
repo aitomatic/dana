@@ -116,24 +116,19 @@ class StatementTransformer(BaseTransformer):
         """Fix the function boundary parsing bug by moving misplaced assignments to program level.
 
         This detects when assignments to local: variables have been incorrectly included
-        in function bodies due to indentation parsing bugs, and moves them to program level.
+        in function bodies or nested control structures due to indentation parsing bugs,
+        and moves them to program level.
         """
-        from opendxa.dana.sandbox.parser.ast import Assignment, FunctionDefinition
+        from opendxa.dana.sandbox.parser.ast import FunctionDefinition
 
         fixed_statements = []
         extracted_assignments = []
 
         for stmt in statements:
             if isinstance(stmt, FunctionDefinition):
-                # Check function body for misplaced assignments
-                fixed_body = []
-                for body_stmt in stmt.body:
-                    if isinstance(body_stmt, Assignment) and self._is_local_scoped_assignment(body_stmt):
-                        # This assignment should be at program level
-                        self.debug(f"🔧 Moving local assignment '{body_stmt.target.name}' from function body to program level")
-                        extracted_assignments.append(body_stmt)
-                    else:
-                        fixed_body.append(body_stmt)
+                # Recursively fix function body and nested structures
+                fixed_body, extracted = self._fix_nested_statements(stmt.body)
+                extracted_assignments.extend(extracted)
 
                 # Update function with fixed body
                 stmt.body = fixed_body
@@ -145,9 +140,73 @@ class StatementTransformer(BaseTransformer):
         fixed_statements.extend(extracted_assignments)
 
         if extracted_assignments:
-            self.debug(f"✅ Function boundary bug fix: moved {len(extracted_assignments)} assignments to program level")
+            self.debug(f"✅ PARSER BOUNDARY FIX: moved {len(extracted_assignments)} assignments to program level")
 
         return fixed_statements
+
+    def _fix_nested_statements(self, statements):
+        """Recursively fix nested statements, extracting misplaced local: assignments and function definitions."""
+        from opendxa.dana.sandbox.parser.ast import Assignment, Conditional, ForLoop, FunctionDefinition, TryBlock, WhileLoop
+
+        fixed_statements = []
+        extracted_assignments = []
+        extracted_functions = []
+
+        for stmt in statements:
+            if isinstance(stmt, Assignment) and self._is_local_scoped_assignment(stmt):
+                # This assignment should be at program level
+                self.debug(f"🔧 PARSER BOUNDARY FIX: Moving local assignment '{stmt.target.name}' from nested context to program level")
+                extracted_assignments.append(stmt)
+            elif isinstance(stmt, FunctionDefinition):
+                # Function definitions should not be nested inside other functions (except for closures)
+                # For now, treat all nested function definitions as misplaced due to parser boundary bug
+                self.debug(f"🔧 PARSER BOUNDARY FIX: Moving function definition '{stmt.name.name}' from nested context to program level")
+                extracted_functions.append(stmt)
+            elif isinstance(stmt, Conditional):
+                # Fix conditional body and else_body
+                fixed_if_body, extracted_if = self._fix_nested_statements(stmt.body)
+                fixed_else_body, extracted_else = self._fix_nested_statements(stmt.else_body)
+
+                extracted_assignments.extend(extracted_if)
+                extracted_assignments.extend(extracted_else)
+
+                # Update conditional with fixed bodies
+                stmt.body = fixed_if_body
+                stmt.else_body = fixed_else_body
+                fixed_statements.append(stmt)
+            elif isinstance(stmt, TryBlock):
+                # Fix try body and except blocks
+                fixed_try_body, extracted_try = self._fix_nested_statements(stmt.body)
+                extracted_assignments.extend(extracted_try)
+
+                fixed_except_blocks = []
+                for except_block in stmt.except_blocks:
+                    fixed_except_body, extracted_except = self._fix_nested_statements(except_block.body)
+                    extracted_assignments.extend(extracted_except)
+                    except_block.body = fixed_except_body
+                    fixed_except_blocks.append(except_block)
+
+                # Update try block with fixed bodies
+                stmt.body = fixed_try_body
+                stmt.except_blocks = fixed_except_blocks
+                fixed_statements.append(stmt)
+            elif isinstance(stmt, WhileLoop):
+                # Fix while body
+                fixed_while_body, extracted_while = self._fix_nested_statements(stmt.body)
+                extracted_assignments.extend(extracted_while)
+                stmt.body = fixed_while_body
+                fixed_statements.append(stmt)
+            elif isinstance(stmt, ForLoop):
+                # Fix for body
+                fixed_for_body, extracted_for = self._fix_nested_statements(stmt.body)
+                extracted_assignments.extend(extracted_for)
+                stmt.body = fixed_for_body
+                fixed_statements.append(stmt)
+            else:
+                # Keep other statements as-is
+                fixed_statements.append(stmt)
+
+        return fixed_statements, extracted_assignments + extracted_functions
 
     def _is_local_scoped_assignment(self, assignment):
         """Check if an assignment targets a local: scoped variable."""
