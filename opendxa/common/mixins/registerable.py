@@ -13,7 +13,7 @@ class Registerable(Identifiable):
     def get_from_registry(cls, object_id: str) -> "Registerable":
         """Get a resource from the registry."""
         if object_id not in cls._registry:
-            raise ValueError(f"Object {object_id} not found in registry")
+            raise ValueError(f"Object {object_id} not found in registry {cls._registry.keys()}")
         return cls._registry[object_id]
 
     @classmethod
@@ -33,7 +33,7 @@ class Registerable(Identifiable):
             object_id: ID of the object to remove
         """
         if object_id not in cls._registry:
-            raise ValueError(f"Object {object_id} not found in registry")
+            raise ValueError(f"Object {object_id} not found in registry {cls._registry.keys()}")
         del cls._registry[object_id]
 
     def add_to_registry(self) -> None:
