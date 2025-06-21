@@ -18,7 +18,7 @@ def use_function(context: SandboxContext, function_name: str, *args, _name: str 
     if _name is None:
         _name = Misc.generate_base64_uuid(length=6)
     if function_name.lower() == "mcp":
-        from opendxa.contrib.dana_mcp_a2a.common.resource.mcp.client.mcp_resource import MCPResource
+        from opendxa.contrib.mcp_a2a.resource.mcp import MCPResource
 
         resource = MCPResource(*args, name=_name, **kwargs)
         context.set_resource(_name, resource)

@@ -536,7 +536,17 @@ class ExpressionExecutor(BaseExecutor):
         method = getattr(obj, method_name, None)
         if callable(method):
             DXA_LOGGER.debug("DEBUG: Found callable method on object")
-            return method(*args, **kwargs)
+            import asyncio
+            import inspect
+            from opendxa.common.utils.misc import Misc
+            
+            # Check if method is async and handle accordingly
+            if inspect.iscoroutinefunction(method):
+                DXA_LOGGER.debug("DEBUG: Method is async, using safe_asyncio_run")
+                return Misc.safe_asyncio_run(method, *args, **kwargs)
+            else:
+                DXA_LOGGER.debug("DEBUG: Method is sync, calling directly")
+                return method(*args, **kwargs)
 
         # If the object is a dict, try to get the method from the dict
         if isinstance(obj, dict):
@@ -544,7 +554,17 @@ class ExpressionExecutor(BaseExecutor):
             method = obj.get(method_name)
             if callable(method):
                 DXA_LOGGER.debug("DEBUG: Found callable method in dict")
-                return method(*args, **kwargs)
+                import asyncio
+                import inspect
+                from opendxa.common.utils.misc import Misc
+                
+                # Check if method is async and handle accordingly
+                if inspect.iscoroutinefunction(method):
+                    DXA_LOGGER.debug("DEBUG: Dict method is async, using safe_asyncio_run")
+                    return Misc.safe_asyncio_run(method, *args, **kwargs)
+                else:
+                    DXA_LOGGER.debug("DEBUG: Dict method is sync, calling directly")
+                    return method(*args, **kwargs)
 
         # If we get here, the object doesn't have the method
         DXA_LOGGER.debug(f"DEBUG: No method found for {method_name}")

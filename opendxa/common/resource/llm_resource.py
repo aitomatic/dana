@@ -463,7 +463,8 @@ class LLMResource(BaseResource):
                 content = response_dict.get("content", "")
                 success = not content.startswith("Tool call failed:")
                 error = None if success else content
-                responses.append(BaseResponse(success=success, content=content, error=error))
+                # NOTE : response_dict include `tool_call_id` and need to be kept untouched
+                responses.append(BaseResponse(success=success, content=response_dict, error=error))
             return responses
         finally:
             # Restore original max length if we changed it

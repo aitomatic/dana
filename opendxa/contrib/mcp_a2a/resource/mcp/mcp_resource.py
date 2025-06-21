@@ -11,7 +11,7 @@ from opendxa.common.mixins.tool_formats import OpenAIToolFormat
 from opendxa.common.resource.base_resource import BaseResource
 from opendxa.common.types import BaseRequest, BaseResponse
 from opendxa.common.utils.misc import Misc
-from opendxa.contrib.dana_mcp_a2a.common.resource.mcp.client.mcp_client import MCPClient
+from opendxa.contrib.mcp_a2a.resource.mcp.client.mcp_client import MCPClient
 
 
 class MCPResource(BaseResource):
@@ -88,7 +88,7 @@ class MCPResource(BaseResource):
 
     async def call_tool(self, tool_name: str, arguments: dict[str, Any]) -> Any:
         """Execute MCP tool."""
-        self.debug(f"Calling tool {tool_name} with arguments {arguments}")
+        self.log_debug(f"Calling tool {tool_name} with arguments {arguments}")
         print(f"Calling tool {tool_name} with arguments {arguments}")
         async with self.client as _client:
             results = await _client.call_tool(tool_name, arguments)  # This will raise ToolError if the tool call fails.
@@ -139,7 +139,7 @@ if __name__ == "__main__":
     import asyncio
 
     async def main():
-        mcp_resource = MCPResource("sensors", "http://localhost:8880/sensors")
+        mcp_resource = MCPResource("sensors", url="http://localhost:8880/sensors")
         response = mcp_resource._list_tools(OpenAIToolFormat(mcp_resource.name, mcp_resource.id))
         print(response)
         response = await mcp_resource.call_tool("list_all_sensors", {})

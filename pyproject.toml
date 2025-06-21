@@ -69,6 +69,10 @@ dependencies = [
     "mkdocstrings-python>=1.16.12",
     "mkdocs-git-revision-date-localized-plugin>=1.4.7",
     "pymdown-extensions[extra]>=10.15",
+    "python-a2a>=0.5.9",
+    
+    # API Server - Required for Dana sandbox operations
+    "fastapi",
 ]
 
 # Development-only dependencies
@@ -80,7 +84,6 @@ dev = [
     "mypy",        # Static type checking
     "pre-commit",  # Git hooks for code quality
     "pytest-cov", # Test coverage reporting
-    "fastapi",
 ]
 
 # Documentation tooling - focused on auto-sync and validation
@@ -121,7 +124,14 @@ dana = "opendxa.dana.exec.dana:main"
 # =============================================================================
 
 [tool.setuptools]
-packages = ["opendxa"]
+# Use find_packages to automatically discover all subpackages
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["opendxa*"]
+exclude = ["tests*", "examples*", "docs*", "tmp*"]
+
+[tool.setuptools.package-data]
+opendxa = ["**/*.py", "**/*.lark"]
 
 # =============================================================================
 # Development Tools & Scripts (uv-specific)
