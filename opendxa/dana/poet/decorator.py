@@ -204,7 +204,7 @@ class POETDecorator(Loggable):
 
 
 def poet(
-    domain: str | None = None,
+    domain: str | None | Callable = None,
     retries: int = 1,
     timeout: int | None = None,
     namespace: str = "local",
@@ -304,3 +304,34 @@ def poet(
         return poet_decorator.wrapper
 
     return decorator
+
+
+def feedback(execution_id: str, content: str | dict | Any, **kwargs) -> bool:
+    """Provide feedback for a POET function execution.
+
+    Args:
+        execution_id: The execution ID of the POET function call to provide feedback for
+        content: The feedback content (can be any format - string, dict, etc.)
+        **kwargs: Additional feedback parameters
+
+    Returns:
+        True if feedback was processed successfully, False otherwise
+    """
+    # Simple feedback implementation for basic functionality
+    # In a full implementation, this would store feedback and trigger learning
+    try:
+        # Log the feedback for debugging/visibility
+        print(f"POET Feedback received for execution {execution_id}: {content}")
+
+        # For now, just return success
+        # In a full implementation, this would:
+        # 1. Validate the execution_id exists
+        # 2. Store the feedback in the learning system
+        # 3. Trigger model updates if needed
+        # 4. Return detailed feedback about processing
+
+        return True
+
+    except Exception as e:
+        print(f"Error processing POET feedback: {e}")
+        return False
