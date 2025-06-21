@@ -343,9 +343,55 @@ class ModuleLoader(MetaPathFinder, Loader):
             # Remove internal variables from exports
             module.__exports__ = {name for name in module.__exports__ if not name.startswith("__")}
 
+            # Post-process: Ensure DanaFunction objects can access each other for recursive calls
+            self._setup_module_function_context(module, interpreter, context)
+
         finally:
             # Finish loading
             self.registry.finish_loading(module.__name__)
+
+    def _setup_module_function_context(self, module: Module, interpreter: "DanaInterpreter", context: "SandboxContext") -> None:
+        """Set up function contexts to enable recursive calls within the module.
+
+        Args:
+            module: The executed module
+            interpreter: The interpreter used for execution
+            context: The execution context
+        """
+        from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
+        from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionMetadata, FunctionType
+
+        # Find all DanaFunction objects in the module
+        dana_functions = {}
+        for name, obj in module.__dict__.items():
+            if isinstance(obj, DanaFunction):
+                dana_functions[name] = obj
+
+        # If we have DanaFunction objects, set up their contexts properly
+        if dana_functions and interpreter.function_registry:
+            # Register all module functions in a temporary registry context
+            # This allows recursive calls within the module
+            for func_name, func_obj in dana_functions.items():
+                try:
+                    # Create metadata for the function
+                    metadata = FunctionMetadata(source_file=module.__file__ or f"<module {module.__name__}>")
+                    metadata.context_aware = True
+                    metadata.is_public = True
+                    metadata.doc = f"Module function from {module.__name__}.{func_name}"
+
+                    # Register the function in the interpreter's registry
+                    interpreter.function_registry.register(
+                        name=func_name, func=func_obj, namespace="local", func_type=FunctionType.DANA, metadata=metadata, overwrite=True
+                    )
+
+                    # Ensure the function's execution context has access to the interpreter
+                    if func_obj.context is not None:
+                        if not hasattr(func_obj.context, "_interpreter") or func_obj.context._interpreter is None:
+                            func_obj.context._interpreter = interpreter
+
+                except Exception as e:
+                    # Non-fatal - log and continue
+                    print(f"Warning: Could not register module function {func_name}: {e}")
 
     def _find_module_file(self, module_name: str) -> Path | None:
         """Find a module file in the search paths.

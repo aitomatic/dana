@@ -689,6 +689,25 @@ class StatementExecutor(BaseExecutor):
                     # Non-fatal - the function can still work for non-recursive cases
                     pass
 
+            # For DanaFunction objects, ensure their execution context has access to the function registry
+            # This enables recursive calls to work properly
+            if isinstance(func, DanaFunction) and func.context is not None:
+                # Set the function registry in the function's execution context
+                if not hasattr(func.context, "_interpreter") or func.context._interpreter is None:
+                    func.context._interpreter = self.parent
+
+                # Ensure the function can find itself for recursive calls
+                # Register in the function's own context as well
+                if hasattr(self.parent, "function_registry") and self.parent.function_registry:
+                    try:
+                        # Register under original name in the function's context
+                        self.parent.function_registry.register(
+                            name=original_name, func=func, namespace="local", func_type=func_type, metadata=metadata, overwrite=True
+                        )
+                    except Exception:
+                        # Non-fatal fallback
+                        pass
+
         except Exception as reg_err:
             # Registration failed, but import to context succeeded
             # This is not fatal - function can still be accessed as module attribute
