@@ -406,8 +406,15 @@ class ControlFlowExecutor(BaseExecutor):
 
         Returns:
             The result of the last statement executed
+
+        Raises:
+            ReturnException: If a return statement is encountered
         """
         result = None
         for statement in statements:
-            result = self.parent.execute(statement, context)
+            try:
+                result = self.parent.execute(statement, context)
+            except ReturnException:
+                # Re-raise ReturnException to propagate it up to the function level
+                raise
         return result

@@ -317,6 +317,10 @@ class ExpressionExecutor(BaseExecutor):
                 return bool(left or right)
             elif node.operator == BinaryOperator.IN:
                 return left in right
+            elif node.operator == BinaryOperator.IS:
+                return left is right
+            elif node.operator == BinaryOperator.IS_NOT:
+                return left is not right
             else:
                 raise SandboxError(f"Unsupported binary operator: {node.operator}")
         except (TypeError, ValueError) as e:

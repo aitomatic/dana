@@ -16,7 +16,14 @@ from opendxa.dana.sandbox.sandbox_context import SandboxContext
 class DanaFunction(SandboxFunction, Loggable):
     """A Dana function that can be called with arguments."""
 
-    def __init__(self, body: list[Any], parameters: list[str], context: SandboxContext | None = None, return_type: str | None = None):
+    def __init__(
+        self,
+        body: list[Any],
+        parameters: list[str],
+        context: SandboxContext | None = None,
+        return_type: str | None = None,
+        defaults: dict[str, Any] | None = None,
+    ):
         """Initialize a Dana function.
 
         Args:
@@ -24,12 +31,14 @@ class DanaFunction(SandboxFunction, Loggable):
             parameters: The parameter names
             context: The sandbox context
             return_type: The function's return type annotation
+            defaults: Default values for parameters
         """
         super().__init__(context)
         self.body = body
         self.parameters = parameters
         self.return_type = return_type
-        self.debug(f"Created DanaFunction with parameters={parameters}, return_type={return_type}")
+        self.defaults = defaults or {}
+        self.debug(f"Created DanaFunction with parameters={parameters}, return_type={return_type}, defaults={self.defaults}")
 
     def prepare_context(self, context: SandboxContext | Any, args: list[Any], kwargs: dict[str, Any]) -> SandboxContext:
         """
@@ -39,6 +48,7 @@ class DanaFunction(SandboxFunction, Loggable):
         - Starts with the function's original module context (for access to module variables)
         - Creates a clean local scope for the function
         - Sets up interpreter if needed
+        - Applies default values for parameters
         - Maps arguments to the local scope
 
         Args:
@@ -72,12 +82,17 @@ class DanaFunction(SandboxFunction, Loggable):
         # Clear the local scope for this function execution (function parameters only)
         prepared_context.set_scope("local", {})
 
-        # Map positional arguments to parameters in the local scope
+        # First, apply default values for all parameters that have them
+        for param_name in self.parameters:
+            if param_name in self.defaults:
+                prepared_context.set(param_name, self.defaults[param_name])
+
+        # Map positional arguments to parameters in the local scope (can override defaults)
         for i, param_name in enumerate(self.parameters):
             if i < len(args):
                 prepared_context.set(param_name, args[i])
 
-        # Map keyword arguments to the local scope
+        # Map keyword arguments to the local scope (can override defaults and positional args)
         for kwarg_name, kwarg_value in kwargs.items():
             if kwarg_name in self.parameters:
                 prepared_context.set(kwarg_name, kwarg_value)

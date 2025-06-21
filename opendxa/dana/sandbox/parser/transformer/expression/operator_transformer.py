@@ -85,6 +85,8 @@ class OperatorTransformer(BaseTransformer):
             "and": BinaryOperator.AND,
             "or": BinaryOperator.OR,
             "in": BinaryOperator.IN,
+            "is": BinaryOperator.IS,
+            "is not": BinaryOperator.IS_NOT,
             "|": BinaryOperator.PIPE,
         }
 
@@ -254,11 +256,11 @@ class OperatorTransformer(BaseTransformer):
 
     def IS_OP(self, token):
         """Handle the 'is' operator token."""
-        return "is"
+        return BinaryOperator.IS
 
     def IS_NOT_OP(self, token):
         """Handle the 'is not' operator token."""
-        return "is not"
+        return BinaryOperator.IS_NOT
 
     def NOT_OP(self, token):
         """Handle the 'not' operator token."""
