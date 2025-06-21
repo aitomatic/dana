@@ -76,11 +76,25 @@ class FunctionExecutor(BaseExecutor):
         # Create a DanaFunction object instead of a raw dict
         from opendxa.dana.sandbox.interpreter.functions.dana_function import DanaFunction
 
-        # Extract parameter names from Identifier objects
+        # Extract parameter names and defaults
         param_names = []
+        param_defaults = {}
         for param in node.parameters:
             if hasattr(param, "name"):
-                param_names.append(param.name)
+                param_name = param.name
+                param_names.append(param_name)
+
+                # Extract default value if present
+                if hasattr(param, "default_value") and param.default_value is not None:
+                    # Evaluate the default value expression in the current context
+                    try:
+                        default_value = self._evaluate_expression(param.default_value, context)
+                        param_defaults[param_name] = default_value
+                    except Exception as e:
+                        self.debug(f"Failed to evaluate default value for parameter {param_name}: {e}")
+                        # Could set a fallback default or raise an error
+                        # For now, we'll skip this default
+                        pass
             else:
                 param_names.append(str(param))
 
@@ -92,8 +106,8 @@ class FunctionExecutor(BaseExecutor):
             else:
                 return_type = str(node.return_type)
 
-        # Create the base DanaFunction
-        dana_func = DanaFunction(body=node.body, parameters=param_names, context=context, return_type=return_type)
+        # Create the base DanaFunction with defaults
+        dana_func = DanaFunction(body=node.body, parameters=param_names, context=context, return_type=return_type, defaults=param_defaults)
 
         # Apply decorators if present
         if node.decorators:

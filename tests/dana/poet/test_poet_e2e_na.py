@@ -7,9 +7,12 @@ MIT License
 
 from pathlib import Path
 
+import pytest
+
 from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
 
 
+@pytest.mark.poet
 def test_poet_e2e_na_file(tmp_path):
     """Run the POET E2E Dana example and check the output."""
     na_path = Path("tests/dana/poet/poet_e2e_example.na")

@@ -114,7 +114,7 @@ def test_chained_function_composition():
 
     comp2 = BinaryExpression(left=comp1, operator=BinaryOperator.PIPE, right=Identifier("subtract_five"))
 
-    program = Program([Assignment(target=Identifier("local:f"), value=composition)])
+    program = Program([Assignment(target=Identifier("local:f"), value=comp2)])
 
     interpreter.execute_program(program, context)
 
@@ -217,7 +217,7 @@ def test_composed_function_with_complex_data():
 
     comp2 = BinaryExpression(left=comp1, operator=BinaryOperator.PIPE, right=Identifier("add_coding_skill"))
 
-    program = Program([Assignment(target=Identifier("local:person_builder"), value=composition)])
+    program = Program([Assignment(target=Identifier("local:person_builder"), value=comp2)])
 
     interpreter.execute_program(program, context)
 

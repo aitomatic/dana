@@ -11,6 +11,7 @@ import pytest
 from opendxa.dana.poet.decorator import poet
 
 
+@pytest.mark.poet
 class TestPOETDecoratorUnit:
     """Unit tests for POET decorator core functionality."""
 

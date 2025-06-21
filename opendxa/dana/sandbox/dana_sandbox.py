@@ -368,11 +368,11 @@ class DanaSandbox(Loggable):
             # Capture print output from interpreter buffer
             output = self._interpreter.get_and_clear_output()
 
-            # Create execution result
+            # Create execution result with context snapshot
             return ExecutionResult(
                 success=True,
                 result=result,
-                final_context=self._context,
+                final_context=self._context.copy(),
                 output=output,
             )
 
@@ -382,7 +382,7 @@ class DanaSandbox(Loggable):
             return ExecutionResult(
                 success=False,
                 error=e,
-                final_context=self._context,
+                final_context=self._context.copy(),
             )
 
     def eval(self, source_code: str, filename: str | None = None) -> ExecutionResult:
@@ -405,11 +405,11 @@ class DanaSandbox(Loggable):
             # Capture print output from interpreter buffer
             output = self._interpreter.get_and_clear_output()
 
-            # Create execution result
+            # Create execution result with context snapshot
             return ExecutionResult(
                 success=True,
                 result=result,
-                final_context=self._context,
+                final_context=self._context.copy(),
                 output=output,
             )
 
@@ -431,7 +431,7 @@ class DanaSandbox(Loggable):
             return ExecutionResult(
                 success=False,
                 error=e,
-                final_context=self._context,
+                final_context=self._context.copy(),
             )
 
     @classmethod

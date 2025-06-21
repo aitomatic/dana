@@ -120,7 +120,11 @@ class ExpressionExecutor(BaseExecutor):
         try:
             result = context.get(name)
             self.debug(f"DEBUG: Successfully found '{name}' via context.get(): {result}")
-            return result
+            # Only return if the result is not None
+            if result is not None:
+                return result
+            else:
+                self.debug(f"DEBUG: Got None from context for '{name}', checking function registry")
         except StateError:
             # If not found in context with the default scoping, try searching across all scopes
             # This is needed for cases like with statements where variables may be in non-local scopes
@@ -317,6 +321,10 @@ class ExpressionExecutor(BaseExecutor):
                 return bool(left or right)
             elif node.operator == BinaryOperator.IN:
                 return left in right
+            elif node.operator == BinaryOperator.IS:
+                return left is right
+            elif node.operator == BinaryOperator.IS_NOT:
+                return left is not right
             else:
                 raise SandboxError(f"Unsupported binary operator: {node.operator}")
         except (TypeError, ValueError) as e:
@@ -679,7 +687,7 @@ class ExpressionExecutor(BaseExecutor):
                     target_length = self._get_safe_length(target)
                     raise IndexError(
                         f"Index {index} is out of bounds for {type(target).__name__} of length {target_length}. "
-                        f"Valid indices: 0 to {int(target_length)-1 if target_length.isdigit() else 'N-1'}"
+                        f"Valid indices: 0 to {int(target_length) - 1 if target_length.isdigit() else 'N-1'}"
                     )
                 elif isinstance(e, KeyError):
                     if isinstance(target, dict):
@@ -778,9 +786,7 @@ class ExpressionExecutor(BaseExecutor):
         # Check if target supports slicing
         if not hasattr(target, "__getitem__"):
             supported_types = "lists, tuples, strings, dictionaries, or objects with __getitem__ method"
-            raise TypeError(
-                f"Slice operation not supported on {type(target).__name__}. " f"Slicing is only supported on {supported_types}."
-            )
+            raise TypeError(f"Slice operation not supported on {type(target).__name__}. Slicing is only supported on {supported_types}.")
 
         # Validate step is not zero
         if components["step"] == 0:
@@ -817,7 +823,7 @@ class ExpressionExecutor(BaseExecutor):
         # Check for obviously out-of-bounds positive indices
         if start is not None and start >= length:
             raise ValueError(
-                f"Slice start index {start} is out of bounds for sequence of length {length}. " f"Valid range: -{length} to {length-1}"
+                f"Slice start index {start} is out of bounds for sequence of length {length}. Valid range: -{length} to {length - 1}"
             )
 
         if stop is not None and stop > length:
@@ -961,8 +967,35 @@ class ExpressionExecutor(BaseExecutor):
             SandboxError: If the right operand is not callable or function call fails
         """
         from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
+        from opendxa.dana.sandbox.parser.ast import Identifier
 
-        # Evaluate the left operand to see what we're working with
+        # Check if this might be function composition (both sides are identifiers that reference functions)
+        if isinstance(left, Identifier) and isinstance(right, Identifier):
+            # Try to resolve both as functions first
+            try:
+                if self.function_registry:
+                    left_func, _, _ = self.function_registry.resolve(left.name, None)
+                    right_func, _, _ = self.function_registry.resolve(right.name, None)
+
+                    # If both resolve to SandboxFunctions, create composition
+                    if isinstance(left_func, SandboxFunction) and isinstance(right_func, SandboxFunction):
+                        return self._create_composed_function_unified(left_func, right, context)
+            except Exception:
+                # If function resolution fails, fall back to data pipeline
+                pass
+
+        # Check if left is an identifier that resolves to a function
+        if isinstance(left, Identifier):
+            try:
+                if self.function_registry:
+                    left_func, _, _ = self.function_registry.resolve(left.name, None)
+                    if isinstance(left_func, SandboxFunction):
+                        return self._create_composed_function_unified(left_func, right, context)
+            except Exception:
+                # If function resolution fails, fall back to data pipeline
+                pass
+
+        # Evaluate the left operand for data pipeline
         left_value = self.parent.execute(left, context)
 
         # If left_value is a SandboxFunction, create a composed function

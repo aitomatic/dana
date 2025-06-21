@@ -7,9 +7,8 @@ def to_lower(text: str) -> str:
     return text.lower()
 
 def reverse_string(text: str) -> str:
-    # Try a simpler approach for now - just return the input
-    # TODO: Implement proper string reversal when Dana supports it better
-    return text
+    # Use Python string slicing to reverse the string
+    return text[::-1]
 
 def word_count(text: str) -> int:
     if not text:

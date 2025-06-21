@@ -198,6 +198,8 @@ class ExpressionTransformer(BaseTransformer):
             "and": BinaryOperator.AND,
             "or": BinaryOperator.OR,
             "in": BinaryOperator.IN,
+            "is": BinaryOperator.IS,
+            "is not": BinaryOperator.IS_NOT,
             "^": BinaryOperator.POWER,
             "|": BinaryOperator.PIPE,
         }
@@ -670,7 +672,6 @@ class ExpressionTransformer(BaseTransformer):
 
             # Function call: ( ... ) or empty arguments (None)
             if (hasattr(t, "data") and t.data == "arguments") or t is None:
-
                 # Regular function call on base
                 # For AttributeAccess nodes, create ObjectFunctionCall for method calls
                 # For Identifier nodes, use the name string

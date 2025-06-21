@@ -8,9 +8,12 @@ MIT License
 import json
 from datetime import datetime
 
+import pytest
+
 from opendxa.dana.poet.decorator import POETDecorator, POETMetadata, poet
 
 
+@pytest.mark.poet
 def test_poet_decorator_initialization():
     """Test basic decorator initialization."""
 
@@ -23,6 +26,7 @@ def test_poet_decorator_initialization():
     assert test_func.metadata.config.domain == "test_domain"
 
 
+@pytest.mark.poet
 def test_metadata_initialization(tmp_path):
     """Test metadata initialization for decorated function."""
 
@@ -40,6 +44,7 @@ def test_metadata_initialization(tmp_path):
     assert metadata.config.domain == "test_domain"
 
 
+@pytest.mark.poet
 def test_enhanced_version_generation(tmp_path, monkeypatch):
     """Test enhanced version generation."""
 
@@ -73,6 +78,7 @@ def test_enhanced_version_generation(tmp_path, monkeypatch):
     assert metadata["version"] == 1
 
 
+@pytest.mark.poet
 def test_enhanced_version_regeneration(tmp_path, monkeypatch):
     """Test enhanced version regeneration when original function changes."""
 
@@ -100,6 +106,7 @@ def test_enhanced_version_regeneration(tmp_path, monkeypatch):
     assert result == 15
 
 
+@pytest.mark.poet
 def test_fallback_to_original(tmp_path, monkeypatch):
     """Test fallback to original function when enhancement fails."""
 
@@ -118,6 +125,7 @@ def test_fallback_to_original(tmp_path, monkeypatch):
     assert result == 10
 
 
+@pytest.mark.poet
 def test_decorator_with_arguments():
     """Test decorator with additional arguments."""
 
@@ -139,6 +147,7 @@ def test_decorator_with_arguments():
     assert result == 10
 
 
+@pytest.mark.poet
 def test_decorator_preserves_function_metadata():
     """Test that decorator preserves function metadata."""
 
@@ -152,6 +161,7 @@ def test_decorator_preserves_function_metadata():
     assert test_func.func.__annotations__ == {"x": int, "return": int}
 
 
+@pytest.mark.poet
 def test_general_decorator_support():
     """Test that general decorators are applied in bottom-up order."""
     from pathlib import Path

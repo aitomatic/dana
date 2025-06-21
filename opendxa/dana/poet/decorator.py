@@ -24,37 +24,40 @@ class POETDecorator(Loggable):
     def __init__(
         self,
         func: Callable,
-        domain: str,
+        domain: str | None = None,
         retries: int = 1,
         timeout: int | None = None,
         namespace: str = "local",
         overwrite: bool = False,
         optimize_for: str | None = None,
+        enable_training: bool = False,
     ):
         """Initialize the POET decorator.
 
         Args:
             func: The function to decorate
-            domain: The domain this function belongs to
+            domain: The domain this function belongs to (optional, defaults to "general")
             retries: Number of retries on failure
             timeout: Optional timeout in seconds
             namespace: Namespace to register the function in
             overwrite: Whether to allow overwriting existing functions
             optimize_for: Optional optimization target for learning (enables training when specified)
+            enable_training: Whether to enable training mode (legacy parameter, equivalent to optimize_for)
         """
         super().__init__()
         self.func = func
-        self.domain = domain
+        self.domain = domain or "general"
         self.retries = retries
         self.timeout = timeout
         self.namespace = namespace
         self.overwrite = overwrite
         self.optimize_for = optimize_for
+        self.enable_training = enable_training or (optimize_for is not None)
 
         # Store metadata on the function
         if not hasattr(func, "_poet_metadata"):
             setattr(func, "_poet_metadata", {"domains": set()})
-        func._poet_metadata["domains"].add(domain)
+        func._poet_metadata["domains"].add(self.domain)
         func._poet_metadata.update(
             {
                 "retries": retries,
@@ -62,6 +65,7 @@ class POETDecorator(Loggable):
                 "namespace": namespace,
                 "overwrite": overwrite,
                 "optimize_for": optimize_for,
+                "enable_training": self.enable_training,
             }
         )
 
@@ -173,22 +177,24 @@ class POETDecorator(Loggable):
 
 
 def poet(
-    domain: str,
+    domain: str | None = None,
     retries: int = 1,
     timeout: int | None = None,
     namespace: str = "local",
     overwrite: bool = False,
     optimize_for: str | None = None,
+    enable_training: bool = False,
 ) -> Callable:
     """Decorator factory for POET functions.
 
     Args:
-        domain: The domain this function belongs to
+        domain: The domain this function belongs to (optional, defaults to "general")
         retries: Number of retries on failure
         timeout: Optional timeout in seconds
         namespace: Namespace to register the function in
         overwrite: Whether to allow overwriting existing functions
         optimize_for: Optional optimization target for learning (enables training when specified)
+        enable_training: Whether to enable training mode (legacy parameter, equivalent to optimize_for)
 
     Returns:
         A decorator function that enhances the target function with POET capabilities
@@ -204,6 +210,7 @@ def poet(
             namespace=namespace,
             overwrite=overwrite,
             optimize_for=optimize_for,
+            enable_training=enable_training,
         )
         return poet_decorator.wrapper
 
