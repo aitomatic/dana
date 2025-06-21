@@ -247,7 +247,7 @@ Return only the JSON object.
         import re
 
         text = str(feedback_payload).lower()
-        positive_words = ["good", "great", "excellent", "awesome", "love", "like", "okay", "accurate"]
+        positive_words = ["good", "great", "excellent", "awesome", "love", "like", "accurate"]
         negative_words = ["bad", "wrong", "terrible", "hate", "dislike", "error", "inaccurate"]
 
         is_positive = any(re.search(r"\b" + word + r"\b", text) for word in positive_words)
