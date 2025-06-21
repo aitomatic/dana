@@ -124,24 +124,26 @@ def assert_function_calls_in_ast(ast, sample_name):
     if sample_name == "nested_if_elif_else":
         stmt = ast.statements[0]
         assert isinstance(stmt, Conditional)
-        assert find_function_call_recursive(stmt.body, "local:log_level")
+        assert find_function_call_recursive(stmt.body, "log_level")  # No automatic local: prefix
     elif sample_name == "while_for_function":
         while_stmt = ast.statements[0]
         assert isinstance(while_stmt, WhileLoop)
-        assert find_function_call_recursive(while_stmt.body, "local:log_level")
+        assert find_function_call_recursive(while_stmt.body, "log_level")  # No automatic local: prefix
     elif sample_name == "try_except_finally":
         try_stmt = ast.statements[0]
         assert isinstance(try_stmt, TryBlock)
-        assert find_function_call_recursive(try_stmt.body, "local:log_level")
+        assert find_function_call_recursive(try_stmt.body, "log_level")  # No automatic local: prefix
     elif sample_name == "combined_program":
         func = ast.statements[0]
         assert isinstance(func, FunctionDefinition)
-        assert find_function_call_recursive(func.body, "local:log_level")
+        assert find_function_call_recursive(func.body, "log_level")  # No automatic local: prefix
     elif sample_name == "agentic_workflow":
-        # Check for assignment to 'abc' and a FunctionCall to 'local:reason'
-        assignments = [s for s in ast.statements if hasattr(s, "target") and getattr(s.target, "name", None) == "local:abc"]
+        # Check for assignment to 'abc' and a FunctionCall to 'reason'
+        assignments = [
+            s for s in ast.statements if hasattr(s, "target") and getattr(s.target, "name", None) == "abc"
+        ]  # No automatic local: prefix
         assert assignments, "No assignment to abc found"
-        assert find_function_call_recursive(ast.statements, "local:reason"), "No call to local:reason() found"
+        assert find_function_call_recursive(ast.statements, "reason"), "No call to reason() found"  # No automatic local: prefix
 
 
 # Add a fixture for the typecheck flag

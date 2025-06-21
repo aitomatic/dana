@@ -167,7 +167,7 @@ def typecheck_flag(request):
 def test_assignment_simple(parser, typecheck_flag):
     program = parser.parse("x = 42", do_type_check=typecheck_flag, do_transform=True)
     stmt = get_assignment(program)
-    assert_assignment(stmt, "local:x")
+    assert_assignment(stmt, "x")  # No automatic local: prefix
     assert isinstance(stmt.value, LiteralExpression)
     assert stmt.value.value == 42
 
@@ -175,7 +175,7 @@ def test_assignment_simple(parser, typecheck_flag):
 def test_assignment_float(parser, typecheck_flag):
     program = parser.parse("x = 3.14", do_type_check=typecheck_flag, do_transform=True)
     stmt = get_assignment(program)
-    assert_assignment(stmt, "local:x")
+    assert_assignment(stmt, "x")  # No automatic local: prefix
     assert stmt.value.value == 3.14
 
 
@@ -189,7 +189,7 @@ def test_assignment_scoped(parser, typecheck_flag):
 def test_assignment_dotted(parser, typecheck_flag):
     program = parser.parse("foo.bar = 2", do_type_check=typecheck_flag, do_transform=True)
     stmt = get_assignment(program)
-    assert_assignment(stmt, "local:foo.bar")
+    assert_assignment(stmt, "foo.bar")  # No automatic local: prefix
     assert stmt.value.value == 2
 
 
@@ -202,14 +202,14 @@ def test_assignment_dotted(parser, typecheck_flag):
 def test_literal_string(parser, typecheck_flag):
     program = parser.parse('msg = "Alice"', do_type_check=typecheck_flag, do_transform=True)
     stmt = get_assignment(program)
-    assert_assignment(stmt, "local:msg")
+    assert_assignment(stmt, "msg")  # No automatic local: prefix
     assert stmt.value.value == "Alice"
 
 
 def test_literal_multiline_string(parser, typecheck_flag):
     program = parser.parse('msg = """Hello\nWorld"""', do_type_check=typecheck_flag, do_transform=True)
     stmt = get_assignment(program)
-    assert_assignment(stmt, "local:msg")
+    assert_assignment(stmt, "msg")  # No automatic local: prefix
     assert isinstance(stmt.value, LiteralExpression)
     assert isinstance(stmt.value.value, str)
     assert "Hello" in stmt.value.value
@@ -218,7 +218,7 @@ def test_literal_multiline_string(parser, typecheck_flag):
 def test_literal_fstring(parser, typecheck_flag):
     program = parser.parse('msg = f"Hello, {name}"', do_type_check=typecheck_flag, do_transform=True)
     stmt = get_assignment(program)
-    assert_assignment(stmt, "local:msg")
+    assert_assignment(stmt, "msg")  # No automatic local: prefix
     assert isinstance(stmt.value, LiteralExpression)
     assert isinstance(stmt.value.value, FStringExpression)
 
@@ -226,7 +226,7 @@ def test_literal_fstring(parser, typecheck_flag):
 def test_literal_raw_string(parser, typecheck_flag):
     program = parser.parse('msg = r"raw\\nstring"', do_type_check=typecheck_flag, do_transform=True)
     stmt = get_assignment(program)
-    assert_assignment(stmt, "local:msg")
+    assert_assignment(stmt, "msg")  # No automatic local: prefix
     assert isinstance(stmt.value, LiteralExpression)
     assert isinstance(stmt.value.value, str)
     assert "raw" in stmt.value.value
@@ -254,7 +254,7 @@ def test_literal_bool_and_none(parser, typecheck_flag):
 def test_collection_list(parser, typecheck_flag):
     program = parser.parse("l = [1, 2]", do_type_check=typecheck_flag, do_transform=True)
     stmt = get_assignment(program)
-    assert_assignment(stmt, "local:l")
+    assert_assignment(stmt, "l")  # No automatic local: prefix
     assert isinstance(stmt.value, ListLiteral)
     assert len(stmt.value.items) == 2
     assert all(isinstance(e, LiteralExpression) for e in stmt.value.items)
@@ -264,7 +264,7 @@ def test_collection_list(parser, typecheck_flag):
 def test_collection_dict(parser, typecheck_flag):
     program = parser.parse('d = {"a": 1, "b": 2}', do_type_check=typecheck_flag, do_transform=True)
     stmt = get_assignment(program)
-    assert_assignment(stmt, "local:d")
+    assert_assignment(stmt, "d")  # No automatic local: prefix
     assert hasattr(stmt.value, "items")
     assert len(stmt.value.items) == 2
     for (k, v), (ek, ev) in zip(
@@ -721,7 +721,7 @@ def test_with_direct_object():
     with_stmt = program.statements[1]
     assert isinstance(with_stmt, WithStatement)
     assert isinstance(with_stmt.context_manager, Identifier)  # Should be an Identifier (expression)
-    assert with_stmt.context_manager.name == "local:mcp_resource"
+    assert with_stmt.context_manager.name == "mcp_resource"  # No automatic local: prefix
     assert len(with_stmt.args) == 0  # No args when using direct object
     assert len(with_stmt.kwargs) == 0  # No kwargs when using direct object
     assert with_stmt.as_var == "mcp"

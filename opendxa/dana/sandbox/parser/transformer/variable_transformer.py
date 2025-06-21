@@ -104,8 +104,7 @@ class VariableTransformer(BaseTransformer):
                 f"Use colon notation instead: '{base_name}:{attribute_names[0]}'"
             )
 
-        # Create the base object identifier with proper scoping
-        base_name = self._insert_scope_if_missing(base_name)
+        # Create the base object identifier without automatic scoping
         base_obj = Identifier(name=base_name)
 
         # Chain the attribute accesses

@@ -319,9 +319,7 @@ class FStringTransformer(BaseTransformer):
         # Handle regular variables and literals
         # Check if it's a valid identifier (alphanumeric + underscores, not starting with digit)
         if is_valid_identifier(term):
-            parts = term.split(".")
-            if parts[0] not in RuntimeScopes.ALL:
-                parts = self._insert_local_scope(parts)
-            return Identifier(name=":".join(parts))
+            # Don't automatically add local scope - let the resolver handle it
+            return Identifier(name=term)
         else:
             return self._parse_literal(term)
