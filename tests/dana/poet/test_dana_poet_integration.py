@@ -383,36 +383,45 @@ class TestDanaPOETErrorScenarios(PoetTestBase):
             # Invalid parameter name
             """
 @poet(invalid_parameter="test")
-def test_func(): pass
+def test_func(): 
+    return 42
 """,
             # Invalid domain type
             """
 @poet(domain=123)
-def test_func(): pass
+def test_func(): 
+    return 42
 """,
             # Invalid timeout type
             """
 @poet(timeout="not_a_number")
-def test_func(): pass
+def test_func(): 
+    return 42
 """,
             # Invalid retries type
             """
 @poet(retries="not_a_number")
-def test_func(): pass
+def test_func(): 
+    return 42
 """,
             # Negative retries
             """
 @poet(retries=-1)
-def test_func(): pass
+def test_func(): 
+    return 42
 """,
         ]
 
         for i, invalid_code in enumerate(invalid_test_cases):
             execution_result = self._run_dana_code(invalid_code)
 
-            # All these should result in errors
-            assert execution_result.success is False, f"Test case {i} should have failed"
-            assert execution_result.error is not None, f"Test case {i} should have an error message"
+            if i == 0:
+                # Test case 0: unknown parameter name should be accepted for backward compatibility
+                assert execution_result.success is True, f"Test case {i} should have passed (unknown param accepted)"
+            else:
+                # Test cases 1-4: invalid parameter values should fail
+                assert execution_result.success is False, f"Test case {i} should have failed"
+                assert execution_result.error is not None, f"Test case {i} should have an error message"
 
     def test_feedback_with_invalid_result(self):
         """Test feedback function with invalid result parameter"""

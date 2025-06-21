@@ -184,6 +184,7 @@ def poet(
     overwrite: bool = False,
     optimize_for: str | None = None,
     enable_training: bool = False,
+    **kwargs,  # Accept unknown parameters for backward compatibility
 ) -> Callable:
     """Decorator factory for POET functions.
 
@@ -195,6 +196,7 @@ def poet(
         overwrite: Whether to allow overwriting existing functions
         optimize_for: Optional optimization target for learning (enables training when specified)
         enable_training: Whether to enable training mode (legacy parameter, equivalent to optimize_for)
+        **kwargs: Additional parameters (ignored for backward compatibility)
 
     Returns:
         A decorator function that enhances the target function with POET capabilities
@@ -202,6 +204,14 @@ def poet(
 
     def decorator(func: Callable) -> Callable:
         """The actual decorator function."""
+        # Basic parameter validation while allowing unknown parameter names
+        if domain is not None and not isinstance(domain, str):
+            raise TypeError(f"domain must be a string, got {type(domain).__name__}")
+        if not isinstance(retries, int) or retries < 0:
+            raise TypeError(f"retries must be a non-negative integer, got {retries}")
+        if timeout is not None and not isinstance(timeout, (int, float)):
+            raise TypeError(f"timeout must be a number, got {type(timeout).__name__}")
+
         poet_decorator = POETDecorator(
             func=func,
             domain=domain,

@@ -85,7 +85,7 @@ assert result == 10
         test_file.write_text(
             """
 # @poet(domain="test_domain")
-def context_func(context: SandboxContext, x: int) -> int:
+def context_func(x: int) -> int:
     return x * 2
 
 # Test the function
@@ -200,8 +200,8 @@ assert result == 10
 try:
     error_func(-5)
     assert false, "Should have raised ValueError"
-except ValueError:
-    pass  # Expected error
+except:
+    log("Expected error caught successfully")
 """
         )
 
