@@ -1,0 +1,75 @@
+# Test: Reason Function with Resources and Agent Integration
+# This demonstrates the new resources parameter working with agents
+
+system:agent_name = "GMA"
+system:agent_description = "General purpose agent with selective resource access"
+
+# Set up resources
+websearch = use("mcp", url="http://localhost:8880/websearch")
+weather_service = use("mcp", url="http://localhost:8881/weather")
+
+# Create agents
+weather_agent = agent(url="http://localhost:5001", timeout=30)
+trip_agent = agent(url="http://localhost:5002")
+
+log_level("DEBUG")
+
+print("=== Testing Reason Function with Resources and Agents ===")
+
+# Test 1: Standard reason with specific resources only
+print("\n--- Test 1: Standard reason with websearch resource only ---")
+task1 = "Find information about Paris tourism"
+result1 = reason(task1, resources=["websearch"])
+print(f"Task: {task1}")
+print(f"Result with websearch only: {result1}")
+
+# Test 2: Agent selection with limited resources
+# The self agent card will only include websearch capabilities
+print("\n--- Test 2: Agent selection with websearch resource only ---")
+task2 = "What's the weather like in Paris?"
+result2 = reason(task2, agents=[weather_agent, trip_agent], resources=["websearch"])
+print(f"Task: {task2}")
+print(f"Result with limited resources: {result2}")
+
+# Test 3: Agent selection with weather resource
+# The self agent card will include weather service capabilities
+print("\n--- Test 3: Agent selection with weather resource only ---")
+task3 = "Check current weather conditions"
+result3 = reason(task3, agents=[weather_agent, trip_agent], resources=["weather_service"])
+print(f"Task: {task3}")
+print(f"Result with weather resource: {result3}")
+
+# Test 4: Agent selection with all resources
+print("\n--- Test 4: Agent selection with all resources ---")
+task4 = "Plan a trip to Tokyo with weather information"
+result4 = reason(task4, agents=[weather_agent, trip_agent], resources=["websearch", "weather_service"])
+print(f"Task: {task4}")
+print(f"Result with all resources: {result4}")
+
+# Test 5: Agent selection with no resources (self agent has no tools)
+print("\n--- Test 5: Agent selection with no resources ---")
+task5 = "What's the weather in London?"
+result5 = reason(task5, agents=[weather_agent, trip_agent], resources=[])
+print(f"Task: {task5}")
+print(f"Result with no resources: {result5}")
+
+# Test 6: Compare resource filtering effects
+print("\n--- Test 6: Resource filtering comparison ---")
+task6 = "I need weather information for my travel plans"
+
+print("With weather resource:")
+result6a = reason(task6, agents=[weather_agent, trip_agent], resources=["weather_service"])
+print(f"Result: {result6a}")
+
+print("With websearch resource:")
+result6b = reason(task6, agents=[weather_agent, trip_agent], resources=["websearch"])
+print(f"Result: {result6b}")
+
+print("With both resources:")
+result6c = reason(task6, agents=[weather_agent, trip_agent], resources=["websearch", "weather_service"])
+print(f"Result: {result6c}")
+
+print("\n=== All tests completed ===")
+print("Note: The resources parameter filters which tools are available to the self agent")
+print("This affects agent selection as the self agent's capabilities change based on resources")
+print("Agent selection considers whether the self agent (with filtered resources) can handle the task") 

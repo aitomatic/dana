@@ -75,6 +75,8 @@ Statement = Union[
     "RaiseStatement",
     "AssertStatement",
     "UseStatement",
+    "AgentStatement",
+    "AgentPoolStatement",
     Expression,  # Any expression can be used as a statement
 ]
 
@@ -333,6 +335,8 @@ class Assignment:
         AttributeAccess,
         FStringExpression,
         "UseStatement",  # Added to support function_call_assignment: target = use_stmt
+        "AgentStatement",  # Added to support agent statement assignments
+        "AgentPoolStatement",  # Added to support agent pool statement assignments
     ]
     type_hint: TypeHint | None = None  # For typed assignments like x: int = 42
     location: Location | None = None
@@ -542,6 +546,27 @@ class ExportStatement:
 
     def __str__(self) -> str:
         return f"export {self.name}"
+
+
+# === Agent Statements ===
+@dataclass
+class AgentStatement:
+    """Agent statement for creating A2A agents (e.g., agent(url="..."))."""
+
+    args: list[Expression]  # Positional arguments
+    kwargs: dict[str, Expression]  # Keyword arguments
+    target: Identifier | None = None  # Optional target for assignment
+    location: Location | None = None
+
+
+@dataclass
+class AgentPoolStatement:
+    """Agent pool statement for creating A2A agent pools (e.g., agent_pool(agents=[...]))."""
+
+    args: list[Expression]  # Positional arguments
+    kwargs: dict[str, Expression]  # Keyword arguments
+    target: Identifier | None = None  # Optional target for assignment
+    location: Location | None = None
 
 
 # === Program Root ===

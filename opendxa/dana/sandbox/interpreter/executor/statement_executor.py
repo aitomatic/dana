@@ -24,6 +24,8 @@ from opendxa.dana.sandbox.interpreter.executor.base_executor import BaseExecutor
 from opendxa.dana.sandbox.interpreter.executor.function_resolver import FunctionType
 from opendxa.dana.sandbox.interpreter.functions.function_registry import FunctionRegistry
 from opendxa.dana.sandbox.parser.ast import (
+    AgentPoolStatement,
+    AgentStatement,
     AssertStatement,
     Assignment,
     AttributeAccess,
@@ -64,6 +66,8 @@ class StatementExecutor(BaseExecutor):
     def register_handlers(self):
         """Register handlers for statement node types."""
         self._handlers = {
+            AgentStatement: self.execute_agent_statement,
+            AgentPoolStatement: self.execute_agent_pool_statement,
             Assignment: self.execute_assignment,
             AssertStatement: self.execute_assert_statement,
             ImportFromStatement: self.execute_import_from_statement,
@@ -808,3 +812,61 @@ class StatementExecutor(BaseExecutor):
             raise SandboxError(f"Failed to register struct {node.name}: {e}")
 
         return None
+
+    def execute_agent_statement(self, node: AgentStatement, context: SandboxContext) -> Any:
+        """Execute an agent statement.
+
+        Args:
+            node: The agent statement to execute
+            context: The execution context
+
+        Returns:
+            An A2A agent resource object that can be used to call methods
+        """
+        # Evaluate the arguments
+        args = [self.parent.execute(arg, context) for arg in node.args]
+        kwargs = {k: self.parent.execute(v, context) for k, v in node.kwargs.items()}
+        
+        target = node.target
+        if target is not None:
+            target = target.name
+            target_name = target.split(".")[-1]
+            kwargs["_name"] = target_name
+
+        # Call the agent function through the registry
+        if self.function_registry is not None:
+            result = self.function_registry.call("agent", context, None, *args, **kwargs)
+        else:
+            self.warning(f"No function registry available for {self.__class__.__name__}.execute_agent_statement")
+            result = None
+
+        return result
+
+    def execute_agent_pool_statement(self, node: AgentPoolStatement, context: SandboxContext) -> Any:
+        """Execute an agent pool statement.
+
+        Args:
+            node: The agent pool statement to execute
+            context: The execution context
+
+        Returns:
+            An agent pool resource object that can be used to call methods
+        """
+        # Evaluate the arguments
+        args = [self.parent.execute(arg, context) for arg in node.args]
+        kwargs = {k: self.parent.execute(v, context) for k, v in node.kwargs.items()}
+        
+        target = node.target
+        if target is not None:
+            target = target.name
+            target_name = target.split(".")[-1]
+            kwargs["_name"] = target_name
+
+        # Call the agent_pool function through the registry
+        if self.function_registry is not None:
+            result = self.function_registry.call("agent_pool", context, None, *args, **kwargs)
+        else:
+            self.warning(f"No function registry available for {self.__class__.__name__}.execute_agent_pool_statement")
+            result = None
+
+        return result

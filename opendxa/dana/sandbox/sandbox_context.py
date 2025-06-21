@@ -19,11 +19,12 @@ Discord: https://discord.gg/6jGD4PYk
 
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any, Optional, List, Dict
 
 from opendxa.common.resource.base_resource import BaseResource
 from opendxa.dana.common.exceptions import StateError
 from opendxa.dana.common.runtime_scopes import RuntimeScopes
+from opendxa.dana.sandbox.parser.utils.scope_utils import extract_scope_and_name
 
 if TYPE_CHECKING:
     from opendxa.dana.sandbox.context_manager import ContextManager
@@ -61,7 +62,18 @@ class SandboxContext:
                 "history": [],
             },
         }
-        self.__resources: dict[str, BaseResource] = {}
+        self.__resources: dict[str, dict[str, BaseResource]] = {
+            "local": {},
+            "private": {},
+            "public": {},
+            "system": {},
+        }
+        self.__agents: dict[str, dict[str, BaseResource]] = {
+            "local": {},
+            "private": {},
+            "public": {},
+            "system": {},
+        }
         # If parent exists, share global scopes instead of copying
         if parent:
             for scope in RuntimeScopes.GLOBAL:
@@ -589,11 +601,17 @@ class SandboxContext:
             resource: The resource to set
         """
         # Store the resource in the private scope
-        self.set_in_scope(name, resource, scope="private")
-        self.__resources[name] = resource
+        scope, var_name = extract_scope_and_name(name)
+        if scope is None:
+            scope = "private"
+        self.set_in_scope(var_name, resource, scope=scope)
+        self.__resources[scope][var_name] = resource
 
     def get_resource(self, name: str) -> BaseResource:
-        return self._state["local"][name]
+        scope, var_name = extract_scope_and_name(name)
+        if scope is None:
+            scope = "private"
+        return self.__resources[scope][var_name]
 
     def get_resources(self, included: list[str | BaseResource] | None = None) -> dict[str, BaseResource]:
         """Get a dictionary of resources from the context.
@@ -613,11 +631,19 @@ class SandboxContext:
 
     def soft_delete_resource(self, name: str) -> None:
         # resource will remain in private variable self.__resources but will be removed from the local scope
-        self.delete(name)
+        scope, var_name = extract_scope_and_name(name)
+        if scope is None:
+            scope = "private"
+        self.delete_from_scope(var_name, scope=scope)
 
     def list_resources(self) -> list[str]:
-        # list all resources that are in the local scope (not soft deleted)
-        return [name for name in self.__resources.keys() if name in self._state["local"]]
+        # list all resources that are in the local scope (that is not soft deleted)
+        all_resources = []
+        for scope, resources in self.__resources.items():
+            for var_name, resource in resources.items():
+                if var_name in self._state[scope]:
+                    all_resources.append(resource.name)
+        return all_resources
 
     def delete_from_scope(self, var_name: str, scope: str = "local") -> None:
         """Delete a variable from a specific scope.
@@ -647,6 +673,104 @@ class SandboxContext:
         elif self._parent is not None:
             self._parent.delete_from_scope(var_name, scope)
 
+    def set_agent(self, name: str, agent: BaseResource) -> None:
+        """Set an agent in the context.
+
+        Args:
+            name: The name of the agent
+            agent: The agent to set
+        """
+        # Store the agent in the private scope
+        scope, var_name = extract_scope_and_name(name)
+        if scope is None:
+            scope = "private"
+        self.set_in_scope(var_name, agent, scope=scope)
+        self.__agents[scope][var_name] = agent
+
+    def get_agent(self, name: str) -> BaseResource:
+        scope, var_name = extract_scope_and_name(name)
+        if scope is None:
+            scope = "private"
+        return self.__agents[scope][var_name]
+
+    def get_agents(self, included: list[str | BaseResource] | None = None) -> dict[str, BaseResource]:
+        """Get a dictionary of agents from the context.
+
+        Args:
+            included: Optional list of agent names or agents to include
+
+        Returns:
+            A dictionary of agents
+        """
+        agent_names = self.list_agents()
+        if included is not None:
+            # Convert to list of strings
+            included = [agent.name if isinstance(agent, BaseResource) else agent for agent in included]
+        agent_names = filter(lambda name: (included is None or name in included), agent_names)
+        return {name: self.get_agent(name) for name in agent_names}
+
+    def soft_delete_agent(self, name: str) -> None:
+        # agent will remain in private variable self.__agents but will be removed from the local scope
+        scope, var_name = extract_scope_and_name(name)
+        if scope is None:
+            scope = "private"
+        self.delete_from_scope(var_name, scope=scope)
+
+    def list_agents(self) -> list[str]:
+        # list all agents that are in the local scope (that is not soft deleted)
+        all_agents = []
+        for scope, agents in self.__agents.items():
+            for var_name, agent in agents.items():
+                if var_name in self._state[scope]:
+                    all_agents.append(agent.name)
+        return all_agents
+
+    def get_self_agent_card(self, included_resources: Optional[List[str|BaseResource]] = None) -> Dict[str, Dict[str, Any]]:
+        """
+        Get the agent card for the current agent.
+        Args:
+            included_resources: Optional list of resource names to include in the agent card. If None, all resources will be included.
+            If provided, only the resources in the list will be included.
+        
+        Returns:
+            Agent card format :
+            {
+                "description": agent_card.description,
+                "skills": [{"name": skill.name, "description": skill.description} 
+                        for skill in agent_card.skills[:3]],  # Limit to top 3 skills
+                "tags": list(set(tag for skill in agent_card.skills 
+                            for tag in skill.tags[:5]))  # Limit tags, remove duplicates
+            }
+        """
+
+        if included_resources is not None:
+            included_resources = [resource.name if isinstance(resource, BaseResource) else resource for resource in included_resources]
+
+        tools = []
+        for name, resource in self.get_resources().items():
+            if included_resources is None or name in included_resources:
+                tools.extend(resource.list_tools())
+
+        agent_card = {"name" : "GMA", "description": "General purpose agent", "skills": [], "tags": []}
+        if "agent_name" in self._state["system"]:
+            agent_card["name"] = self._state["system"]["agent_name"]
+        if "agent_description" in self._state["system"]:
+            agent_card["description"] = self._state["system"]["agent_description"]
+        for tool in tools:
+            if 'function' in tool:
+                function = tool['function']
+                agent_card["skills"].append({
+                    "name": function.get("name", ""),
+                    "description": function.get("description", "")
+                })
+        return {"__self__": agent_card}
+
+    def get_other_agent_cards(self, included_agents: Optional[List[str|BaseResource]] = None) -> Dict[str, Dict[str, Any]]:
+        all_agent_cards = {}
+        for name, agent in self.get_agents(included=included_agents).items():
+            all_agent_cards[name] = agent.agent_card
+        return all_agent_cards
+    
     def startup(self) -> None:
         """Initialize context - prepare for execution (no resource creation)"""
         self.reset_execution_state()

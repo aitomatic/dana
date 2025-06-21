@@ -105,14 +105,20 @@ simple_stmt: assignment
            | comment_stmt
            | use_stmt
            | export_stmt
+           | agent_stmt
+           | agent_pool_stmt
 
 // ===== STATEMENTS THAT RETURN OBJECT =====
-return_object_stmt: use_stmt
+return_object_stmt: use_stmt | agent_stmt | agent_pool_stmt
+                | agent_stmt
+                | agent_pool_stmt
 
 comment_stmt: COMMENT
 
 // Use statement for external resources (e.g., MCP servers)
 use_stmt: USE "(" [mixed_arguments] ")"
+agent_stmt: AGENT "(" [mixed_arguments] ")"
+agent_pool_stmt: AGENT_POOL "(" [mixed_arguments] ")"
 
 // Keywords
 EXPORT.2: "export"
@@ -127,6 +133,8 @@ CONTINUE.2: "continue"
 RAISE.2: "raise"
 ASSERT.2: "assert"
 USE.0: "use"
+AGENT.2: "agent"
+AGENT_POOL.2: "agent_pool"
 AS.2: "as"
 PRIVATE.2: "private"
 PUBLIC.2: "public"
@@ -279,7 +287,7 @@ MULTILINE_STRING: /""".*?"""/s | /'''.*?'''/s
 
 // Define the NAME token with higher priority than keywords to handle identifiers containing keywords
 // Priority 3 is higher than NOT_OP (priority 2), ensuring names like 'not_var' are tokenized as NAME
-NAME.3: /(?!(True|true|TRUE|False|false|FALSE|None|none|NONE|null|NULL|private|public|local|system|break|continue|pass|return|if|else|elif|while|for|def|struct|try|except|finally|raise|assert|import|from|with|use|lambda|yield|global|nonlocal|del|and|or|not|in|is|export|as)\b)([a-zA-Z_][a-zA-Z0-9_]*)/
+NAME.3: /(?!(True|true|TRUE|False|false|FALSE|None|none|NONE|null|NULL|private|public|local|system|break|continue|pass|return|if|else|elif|while|for|def|struct|try|except|finally|raise|assert|import|from|with|use|agent|agent_pool|lambda|yield|global|nonlocal|del|and|or|not|in|is|export|as)\b)([a-zA-Z_][a-zA-Z0-9_]*)/
 
 // Basic string literals with f-strings
 string_literal: REGULAR_STRING

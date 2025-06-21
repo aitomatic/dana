@@ -2,13 +2,14 @@
 
 import asyncio
 import base64
+import hashlib
 import inspect
 import uuid
 from collections.abc import Callable
+from functools import lru_cache
 from importlib import import_module
 from pathlib import Path
-from typing import Any
-
+from typing import Any, Optional, Dict
 import nest_asyncio
 import yaml
 from pydantic import BaseModel
@@ -27,8 +28,9 @@ class Misc:
     """A collection of miscellaneous utility methods."""
 
     @staticmethod
+    @lru_cache(maxsize=128)
     def load_yaml_config(path: str | Path) -> dict[str, Any]:
-        """Load YAML file.
+        """Load YAML file with caching.
 
         Args:
             path: Path to YAML file
@@ -208,6 +210,8 @@ class Misc:
 
     @staticmethod
     def parse_args_kwargs(func, *args, **kwargs) -> ParsedArgKwargsResults:
+        import inspect
+
         """
         Bind (args, kwargs) to `func`’s signature, returning a dict with:
         - matched_args:      positional args that were bound to named parameters
@@ -268,3 +272,37 @@ class Misc:
             unmatched_args=unmatched_args,
             unmatched_kwargs=unmatched_kwargs,
         )
+
+    @staticmethod
+    def get_hash(key: str, length: int | None = None) -> str:
+        hash_key = hashlib.sha256(key.encode()).hexdigest()
+        if length is not None:
+            return hash_key[:length]
+        return hash_key
+    
+    @staticmethod
+    def generate_uuid(length: Optional[int] = None) -> str:
+        """Generate a UUID with optional length truncation."""
+        uuid_str = str(uuid.uuid4())
+        if length is not None:
+            return uuid_str[:length]
+        return uuid_str
+    
+    @staticmethod
+    def text_to_dict(text: str) -> Dict[str, Any]:
+        """Parse JSON content from LLM text response."""
+        import re
+        import json
+        # Check if content is wrapped in ```json``` tags
+        json_match = re.search(r'```json\s*(.*?)\s*```', text, re.DOTALL)
+        if json_match:
+            # Extract and parse the JSON content
+            json_content = json_match.group(1)
+            parsed_json = json.loads(json_content)
+            return parsed_json
+        else:
+            try:
+                parsed_json = json.loads(text)
+                return parsed_json
+            except Exception as e:
+                raise ValueError(f"Failed to parse JSON: {str(e)}")
