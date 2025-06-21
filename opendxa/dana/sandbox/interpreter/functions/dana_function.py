@@ -36,12 +36,13 @@ class DanaFunction(SandboxFunction, Loggable):
         Prepare context for a Dana function.
 
         For Dana functions:
-        - Creates a clean local scope
+        - Starts with the function's original module context (for access to module variables)
+        - Creates a clean local scope for the function
         - Sets up interpreter if needed
         - Maps arguments to the local scope
 
         Args:
-            context: The original context or a positional argument
+            context: The current execution context or a positional argument
             args: Positional arguments
             kwargs: Keyword arguments
 
@@ -53,17 +54,23 @@ class DanaFunction(SandboxFunction, Loggable):
             args = [context] + args
             context = self.context.copy() if self.context else SandboxContext()
 
-        # Create a copy of the context to work with
-        prepared_context = context.copy()
-
-        # If the context doesn't have an interpreter, try to get it from the original
-        if not hasattr(prepared_context, "_interpreter") or prepared_context._interpreter is None:
-            if hasattr(context, "_interpreter") and context._interpreter is not None:
-                prepared_context._interpreter = context._interpreter
+        # Start with the function's original module context (for access to module's public/private variables)
+        if self.context is not None:
+            prepared_context = self.context.copy()
+            # Copy interpreter from current execution context if the module context doesn't have one
+            if not hasattr(prepared_context, "_interpreter") or prepared_context._interpreter is None:
+                if hasattr(context, "_interpreter") and context._interpreter is not None:
+                    prepared_context._interpreter = context._interpreter
+        else:
+            # Fallback to current context if no module context available
+            prepared_context = context.copy()
 
         # Store original local scope so we can restore it later
         original_locals = prepared_context.get_scope("local").copy()
         prepared_context._original_locals = original_locals
+
+        # Clear the local scope for this function execution (function parameters only)
+        prepared_context.set_scope("local", {})
 
         # Map positional arguments to parameters in the local scope
         for i, param_name in enumerate(self.parameters):

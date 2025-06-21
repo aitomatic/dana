@@ -765,16 +765,17 @@ class StatementTransformer(BaseTransformer):
                 module = str(module_path_item)
 
         # Get the imported name (second item)
-        # Structure: [module_path_or_relative, name_token, alias_token_or_none, ...]
+        # Structure: [module_path_or_relative, name_token, AS_token_or_None, alias_token_or_None]
         name = ""
         alias = None
 
         if len(items) >= 2 and isinstance(items[1], Token) and items[1].type == "NAME":
             name = items[1].value
 
-        # Check for alias (third element)
-        if len(items) >= 3 and items[2] is not None and isinstance(items[2], Token) and items[2].type == "NAME":
-            alias = items[2].value
+        # Check for alias (fourth element, after AS token)
+        if len(items) >= 4 and items[2] is not None and isinstance(items[2], Token) and items[2].type == "AS":
+            if isinstance(items[3], Token) and items[3].type == "NAME":
+                alias = items[3].value
 
         return ImportFromStatement(module=module, names=[(name, alias)])
 
