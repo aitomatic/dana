@@ -99,6 +99,9 @@ class ControlFlowExecutor(BaseExecutor):
 
         Returns:
             The result of the last executed statement in the chosen branch
+
+        Raises:
+            ReturnException: If a return statement is encountered in any branch
         """
         # Evaluate the condition
         condition_value = self.parent.execute(node.condition, context)
@@ -107,12 +110,16 @@ class ControlFlowExecutor(BaseExecutor):
         condition = self._coerce_to_bool(condition_value)
 
         # Execute the appropriate branch
-        if condition:
-            result = self._execute_statement_list(node.body, context)
-        elif node.else_body:
-            result = self._execute_statement_list(node.else_body, context)
-        else:
-            result = None
+        try:
+            if condition:
+                result = self._execute_statement_list(node.body, context)
+            elif node.else_body:
+                result = self._execute_statement_list(node.else_body, context)
+            else:
+                result = None
+        except ReturnException:
+            # Re-raise ReturnException to propagate it up to the function level
+            raise
 
         return result
 
@@ -155,6 +162,7 @@ class ControlFlowExecutor(BaseExecutor):
         Raises:
             BreakException: If a break statement is encountered
             ContinueException: If a continue statement is encountered
+            ReturnException: If a return statement is encountered
         """
         result = None
         while True:
@@ -171,6 +179,9 @@ class ControlFlowExecutor(BaseExecutor):
                 break
             except ContinueException:
                 continue
+            except ReturnException:
+                # Re-raise ReturnException to propagate it up to the function level
+                raise
         return result
 
     def execute_for_loop(self, node: ForLoop, context: SandboxContext) -> None:
@@ -186,6 +197,7 @@ class ControlFlowExecutor(BaseExecutor):
         Raises:
             BreakException: If a break statement is encountered
             ContinueException: If a continue statement is encountered
+            ReturnException: If a return statement is encountered
         """
         # Evaluate the iterable
         iterable = self.parent.execute(node.iterable, context)
@@ -202,6 +214,9 @@ class ControlFlowExecutor(BaseExecutor):
                 break
             except ContinueException:
                 continue
+            except ReturnException:
+                # Re-raise ReturnException to propagate it up to the function level
+                raise
 
         return result
 
