@@ -8,7 +8,6 @@ MIT License
 from typing import Any
 
 from opendxa.common.mixins.loggable import Loggable
-from opendxa.common.utils.logging import DXA_LOGGER
 from opendxa.dana.sandbox.interpreter.executor.control_flow_executor import ReturnException
 from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
@@ -30,7 +29,7 @@ class DanaFunction(SandboxFunction, Loggable):
         self.body = body
         self.parameters = parameters
         self.return_type = return_type
-        DXA_LOGGER.debug(f"Created DanaFunction with parameters={parameters}, return_type={return_type}")
+        self.debug(f"Created DanaFunction with parameters={parameters}, return_type={return_type}")
 
     def prepare_context(self, context: SandboxContext | Any, args: list[Any], kwargs: dict[str, Any]) -> SandboxContext:
         """
@@ -102,13 +101,13 @@ class DanaFunction(SandboxFunction, Loggable):
         Returns:
             The result of the function execution
         """
-        DXA_LOGGER.debug("DanaFunction.execute called with:")
-        DXA_LOGGER.debug(f"  context: {type(context)}")
-        DXA_LOGGER.debug(f"  args: {args}")
-        DXA_LOGGER.debug(f"  kwargs: {kwargs}")
-        DXA_LOGGER.debug(f"  parameters: {self.parameters}")
-        DXA_LOGGER.debug(f"  body: {self.body}")
-        DXA_LOGGER.debug(f"  return_type: {self.return_type}")
+        self.debug("DanaFunction.execute called with:")
+        self.debug(f"  context: {type(context)}")
+        self.debug(f"  args: {args}")
+        self.debug(f"  kwargs: {kwargs}")
+        self.debug(f"  parameters: {self.parameters}")
+        self.debug(f"  body: {self.body}")
+        self.debug(f"  return_type: {self.return_type}")
 
         try:
             # Prepare the execution context using the existing method
@@ -125,14 +124,14 @@ class DanaFunction(SandboxFunction, Loggable):
                         # Update result with the statement's value if it's not None
                         if stmt_result is not None:
                             result = stmt_result
-                        DXA_LOGGER.debug(f"statement: {statement}, result: {stmt_result}")
+                        self.debug(f"statement: {statement}, result: {stmt_result}")
                     else:
                         raise RuntimeError("No interpreter available in context")
                 except ReturnException as e:
                     # Return statement was encountered - return its value
                     return e.value
                 except Exception as e:
-                    DXA_LOGGER.error(f"Error executing statement: {e}")
+                    self.error(f"Error executing statement: {e}")
                     raise
 
             # Restore the original context if needed
@@ -143,5 +142,5 @@ class DanaFunction(SandboxFunction, Loggable):
             return result
 
         except Exception as e:
-            DXA_LOGGER.error(f"Error executing Dana function: {e}")
+            self.error(f"Error executing Dana function: {e}")
             raise

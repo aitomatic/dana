@@ -68,7 +68,7 @@ def execute_file(file_path, debug=False):
     print_header(f"DANA Execution: {os.path.basename(file_path)}", colors=colors)
 
     # Use the new DanaSandbox API
-    result = DanaSandbox.quick_run(file_path, debug=debug)
+    result = DanaSandbox.quick_run(file_path, debug_mode=debug)
 
     if result.success:
         print(f"{colors.accent('Program executed successfully')}")

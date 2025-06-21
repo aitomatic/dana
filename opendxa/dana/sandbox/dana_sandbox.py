@@ -16,8 +16,8 @@ from typing import Any
 
 from opendxa.api.client import APIClient
 from opendxa.api.server import APIServiceManager
+from opendxa.common.mixins.loggable import Loggable
 from opendxa.common.resource.llm_resource import LLMResource
-from opendxa.common.utils.logging import DXA_LOGGER
 from opendxa.dana.poet.client import POETClient, set_default_client
 from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
 from opendxa.dana.sandbox.parser.dana_parser import DanaParser
@@ -43,7 +43,7 @@ class ExecutionResult:
             return f"Error: {self.error}"
 
 
-class DanaSandbox:
+class DanaSandbox(Loggable):
     """
     Dana Sandbox - The official way to execute Dana code.
 
@@ -65,15 +65,16 @@ class DanaSandbox:
     _resource_users = 0  # Count of instances using shared resources
     _pool_lock = None  # Will be initialized as threading.Lock() when needed
 
-    def __init__(self, debug: bool = False, context: SandboxContext | None = None):
+    def __init__(self, debug_mode: bool = False, context: SandboxContext | None = None):
         """
         Initialize a Dana sandbox.
 
         Args:
-            debug: Enable debug logging
+            debug_mode: Enable debug logging
             context: Optional custom context (creates default if None)
         """
-        self.debug = debug
+        super().__init__()  # Initialize Loggable
+        self.debug_mode = debug_mode
         self._context = context or self._create_default_context()
         self._interpreter = DanaInterpreter()
         self._parser = DanaParser()
@@ -109,7 +110,7 @@ class DanaSandbox:
 
         # Placeholder for feedback function
         def feedback_placeholder(result: Any, feedback_data: Any):
-            DXA_LOGGER.info(f"Feedback received for result: {result} -> {feedback_data}")
+            self.info(f"Feedback received for result: {result} -> {feedback_data}")
             return True  # Simulate success
 
         context.set("local.feedback", feedback_placeholder)
@@ -124,10 +125,10 @@ class DanaSandbox:
         try:
             # Check if we can reuse shared resources (for testing efficiency)
             if self._can_reuse_shared_resources():
-                DXA_LOGGER.debug("Reusing shared DanaSandbox resources")
+                self.debug("Reusing shared DanaSandbox resources")
                 self._use_shared_resources()
             else:
-                DXA_LOGGER.info("Initializing new DanaSandbox resources")
+                self.info("Initializing new DanaSandbox resources")
                 self._initialize_new_resources()
 
             # Store in context
@@ -140,10 +141,10 @@ class DanaSandbox:
             set_default_client(poet_client)
 
             self._initialized = True
-            DXA_LOGGER.debug("DanaSandbox resources ready")
+            self.debug("DanaSandbox resources ready")
 
         except Exception as e:
-            DXA_LOGGER.error(f"Failed to initialize DanaSandbox: {e}")
+            self.error(f"Failed to initialize DanaSandbox: {e}")
             # Cleanup partial initialization
             self._cleanup()
             raise RuntimeError(f"DanaSandbox initialization failed: {e}")
@@ -182,7 +183,7 @@ class DanaSandbox:
 
         # Make these resources available for sharing if none exist
         if DanaSandbox._shared_api_service is None:
-            DXA_LOGGER.debug("Making resources available for sharing")
+            self.debug("Making resources available for sharing")
             DanaSandbox._shared_api_service = self._api_service
             DanaSandbox._shared_api_client = self._api_client
             DanaSandbox._shared_llm_resource = self._llm_resource
@@ -196,16 +197,16 @@ class DanaSandbox:
         self._cleanup_called = True
 
         try:
-            DXA_LOGGER.debug("Cleaning up DanaSandbox resources")
+            self.debug("Cleaning up DanaSandbox resources")
 
             # If using shared resources, just decrement user count
             if self._using_shared:
                 DanaSandbox._resource_users = max(0, DanaSandbox._resource_users - 1)
-                DXA_LOGGER.debug(f"Released shared resources, {DanaSandbox._resource_users} users remaining")
+                self.debug(f"Released shared resources, {DanaSandbox._resource_users} users remaining")
 
                 # Only clean up shared resources if this is the last user
                 if DanaSandbox._resource_users == 0:
-                    DXA_LOGGER.debug("Last user - cleaning up shared resources")
+                    self.debug("Last user - cleaning up shared resources")
                     self._cleanup_shared_resources()
 
                 # Clear local references but don't shutdown
@@ -222,13 +223,13 @@ class DanaSandbox:
                     self._context.delete("system.api_client")
                     self._context.delete("system.llm_resource")
                 except Exception as e:
-                    DXA_LOGGER.debug(f"Error clearing context during cleanup: {e}")
+                    self.debug(f"Error clearing context during cleanup: {e}")
 
             self._initialized = False
-            DXA_LOGGER.debug("DanaSandbox cleanup completed")
+            self.debug("DanaSandbox cleanup completed")
 
         except Exception as e:
-            DXA_LOGGER.error(f"Error during DanaSandbox cleanup: {e}")
+            self.error(f"Error during DanaSandbox cleanup: {e}")
             # Even if cleanup fails, mark as not initialized to prevent resource leaks
             self._initialized = False
 
@@ -238,7 +239,7 @@ class DanaSandbox:
             try:
                 self._llm_resource.shutdown()
             except Exception as e:
-                DXA_LOGGER.warning(f"Error shutting down LLM resource: {e}")
+                self.warning(f"Error shutting down LLM resource: {e}")
             finally:
                 self._llm_resource = None
 
@@ -246,7 +247,7 @@ class DanaSandbox:
             try:
                 self._api_client.shutdown()
             except Exception as e:
-                DXA_LOGGER.warning(f"Error shutting down API client: {e}")
+                self.warning(f"Error shutting down API client: {e}")
             finally:
                 self._api_client = None
 
@@ -254,7 +255,7 @@ class DanaSandbox:
             try:
                 self._api_service.shutdown()
             except Exception as e:
-                DXA_LOGGER.warning(f"Error shutting down API service: {e}")
+                self.warning(f"Error shutting down API service: {e}")
             finally:
                 self._api_service = None
 
@@ -265,7 +266,7 @@ class DanaSandbox:
             try:
                 cls._shared_llm_resource.shutdown()
             except Exception as e:
-                DXA_LOGGER.warning(f"Error shutting down shared LLM resource: {e}")
+                cls.log_warning(f"Error shutting down shared LLM resource: {e}")
             finally:
                 cls._shared_llm_resource = None
 
@@ -273,7 +274,7 @@ class DanaSandbox:
             try:
                 cls._shared_api_client.shutdown()
             except Exception as e:
-                DXA_LOGGER.warning(f"Error shutting down shared API client: {e}")
+                cls.log_warning(f"Error shutting down shared API client: {e}")
             finally:
                 cls._shared_api_client = None
 
@@ -281,7 +282,7 @@ class DanaSandbox:
             try:
                 cls._shared_api_service.shutdown()
             except Exception as e:
-                DXA_LOGGER.warning(f"Error shutting down shared API service: {e}")
+                cls.log_warning(f"Error shutting down shared API service: {e}")
             finally:
                 cls._shared_api_service = None
 
@@ -291,25 +292,25 @@ class DanaSandbox:
         # This is called when the weakref is about to be deleted
         # The actual instance is already gone, so we can't call _cleanup()
         # But we can log that cleanup happened via garbage collection
-        DXA_LOGGER.debug("DanaSandbox instance garbage collected - automatic cleanup triggered")
+        DanaSandbox.log_debug("DanaSandbox instance garbage collected - automatic cleanup triggered")
 
     def __del__(self):
         """Destructor - automatic cleanup on garbage collection"""
         try:
             if hasattr(self, "_initialized") and self._initialized and not getattr(self, "_cleanup_called", False):
-                DXA_LOGGER.debug("DanaSandbox garbage collected - performing automatic cleanup")
+                self.debug("DanaSandbox garbage collected - performing automatic cleanup")
                 self._cleanup()
         except Exception as e:
             # Avoid exceptions in __del__ as they can cause issues
             try:
-                DXA_LOGGER.warning(f"Error in DanaSandbox.__del__: {e}")
-            except:
+                self.warning(f"Error in DanaSandbox.__del__: {e}")
+            except Exception:
                 pass  # Ignore logging errors in destructor
 
     @classmethod
     def _cleanup_all_instances(cls):
         """Clean up all remaining instances - called by atexit"""
-        DXA_LOGGER.debug("Process exit: cleaning up all DanaSandbox instances")
+        cls.log_debug("Process exit: cleaning up all DanaSandbox instances")
         instance_count = 0
         for instance in list(cls._instances):
             try:
@@ -317,10 +318,10 @@ class DanaSandbox:
                     instance._cleanup()
                     instance_count += 1
             except Exception as e:
-                DXA_LOGGER.error(f"Error cleaning up DanaSandbox instance: {e}")
+                cls.log_error(f"Error cleaning up DanaSandbox instance: {e}")
 
         if instance_count > 0:
-            DXA_LOGGER.info(f"Cleaned up {instance_count} DanaSandbox instances at process exit")
+            cls.log_info(f"Cleaned up {instance_count} DanaSandbox instances at process exit")
 
     @classmethod
     def cleanup_all(cls):
@@ -328,7 +329,7 @@ class DanaSandbox:
         Manually clean up all instances - useful for testing or explicit resource management.
         This is safer than relying only on garbage collection or process exit.
         """
-        DXA_LOGGER.info("Manual cleanup of all DanaSandbox instances requested")
+        cls.log_info("Manual cleanup of all DanaSandbox instances requested")
         cls._cleanup_all_instances()
 
     def is_healthy(self) -> bool:
@@ -377,7 +378,7 @@ class DanaSandbox:
 
         except Exception as e:
             # File execution always logs as error since these are unexpected
-            DXA_LOGGER.error(f"Error executing Dana file: {e}")
+            self.error(f"Error executing Dana file: {e}")
             return ExecutionResult(
                 success=False,
                 error=e,
@@ -422,10 +423,10 @@ class DanaSandbox:
 
             if is_repl_mode:
                 # In REPL mode, syntax errors are expected user input - log as debug
-                DXA_LOGGER.debug(f"Error evaluating Dana code: {e}")
+                self.debug(f"Error evaluating Dana code: {e}")
             else:
                 # In non-REPL mode (file execution), log as error for debugging
-                DXA_LOGGER.error(f"Error evaluating Dana code: {e}")
+                self.error(f"Error evaluating Dana code: {e}")
 
             return ExecutionResult(
                 success=False,
@@ -434,24 +435,24 @@ class DanaSandbox:
             )
 
     @classmethod
-    def quick_run(cls, file_path: str | Path, debug: bool = False, context: SandboxContext | None = None) -> ExecutionResult:
+    def quick_run(cls, file_path: str | Path, debug_mode: bool = False, context: SandboxContext | None = None) -> ExecutionResult:
         """
         Quick run a Dana file without managing lifecycle.
 
         Args:
             file_path: Path to the .na file to execute
-            debug: Enable debug logging
+            debug_mode: Enable debug logging
             context: Optional custom context
 
         Returns:
             ExecutionResult with success status and results
         """
-        with cls(debug=debug, context=context) as sandbox:
+        with cls(debug_mode=debug_mode, context=context) as sandbox:
             return sandbox.run(file_path)
 
     @classmethod
     def quick_eval(
-        cls, source_code: str, filename: str | None = None, debug: bool = False, context: SandboxContext | None = None
+        cls, source_code: str, filename: str | None = None, debug_mode: bool = False, context: SandboxContext | None = None
     ) -> ExecutionResult:
         """
         Quick evaluate Dana code without managing lifecycle.
@@ -459,13 +460,13 @@ class DanaSandbox:
         Args:
             source_code: Dana code to execute
             filename: Optional filename for error reporting
-            debug: Enable debug logging
+            debug_mode: Enable debug logging
             context: Optional custom context
 
         Returns:
             ExecutionResult with success status and results
         """
-        with cls(debug=debug, context=context) as sandbox:
+        with cls(debug_mode=debug_mode, context=context) as sandbox:
             return sandbox.eval(source_code, filename)
 
     def __enter__(self) -> "DanaSandbox":
@@ -482,5 +483,5 @@ class DanaSandbox:
             if exc_type is None:
                 raise cleanup_error
             else:
-                DXA_LOGGER.error(f"Cleanup error during exception handling: {cleanup_error}")
+                self.error(f"Cleanup error during exception handling: {cleanup_error}")
         # Don't suppress exceptions by returning None (implicit)

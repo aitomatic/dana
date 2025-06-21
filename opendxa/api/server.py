@@ -8,7 +8,6 @@ from typing import Any, cast
 
 from opendxa.common.config import ConfigLoader
 from opendxa.common.mixins.loggable import Loggable
-from opendxa.common.utils.logging import DXA_LOGGER
 
 from .client import APIClient
 
@@ -149,7 +148,7 @@ class APIServiceManager(Loggable):
             else:
                 raise ValueError("AITOMATIC_API_KEY environment variable must be set")
 
-        DXA_LOGGER.info(f"Service config loaded: uri={self.service_uri}")
+        self.info(f"Service config loaded: uri={self.service_uri}")
 
     def _normalize_service_uri(self) -> None:
         """Normalize service URI and determine port"""
@@ -172,7 +171,7 @@ class APIServiceManager(Loggable):
             # Just a hostname/IP without port -> assume remote with default port
             pass
 
-        DXA_LOGGER.debug(f"Normalized service URI: {self.service_uri}")
+        self.debug(f"Normalized service URI: {self.service_uri}")
 
     def _init_api_client(self) -> None:
         """Initialize API client with configuration."""
@@ -310,7 +309,7 @@ class APIServiceManager(Loggable):
             response = self.api_client.get("/health")
             return response.get("status") == "healthy"
         except Exception as e:
-            DXA_LOGGER.error(f"Health check failed: {str(e)}")
+            self.error(f"Health check failed: {str(e)}")
             return False
 
     def get_service_uri(self) -> str:

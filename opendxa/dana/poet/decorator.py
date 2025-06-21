@@ -10,7 +10,6 @@ from functools import wraps
 from typing import Any
 
 from opendxa.common.mixins.loggable import Loggable
-from opendxa.common.utils.logging import DXA_LOGGER
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
@@ -83,34 +82,34 @@ class POETDecorator(Loggable):
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             """Wrapper function that adds POET capabilities."""
             # DEBUG: Log all inputs to understand what's being passed
-            DXA_LOGGER.debug(f"POET wrapper called with args={args}, kwargs={kwargs}")
+            self.debug(f"POET wrapper called with args={args}, kwargs={kwargs}")
 
             # Get context from kwargs or create new one
             context = kwargs.pop("context", None)
 
-            DXA_LOGGER.debug(f"POET wrapper context from kwargs: {context}")
-            DXA_LOGGER.debug(f"Context type: {type(context)}")
+            self.debug(f"POET wrapper context from kwargs: {context}")
+            self.debug(f"Context type: {type(context)}")
             if context is not None:
-                DXA_LOGGER.debug(f"Context has _interpreter: {hasattr(context, '_interpreter')}")
+                self.debug(f"Context has _interpreter: {hasattr(context, '_interpreter')}")
                 if hasattr(context, "_interpreter"):
-                    DXA_LOGGER.debug(f"Context _interpreter value: {context._interpreter}")
+                    self.debug(f"Context _interpreter value: {context._interpreter}")
 
             if context is None:
                 context = SandboxContext()
-                DXA_LOGGER.debug("Created new SandboxContext")
+                self.debug("Created new SandboxContext")
 
             # CRITICAL: Ensure context has an interpreter reference
             # This is essential for Dana function execution
             if not hasattr(context, "_interpreter") or context._interpreter is None:
-                DXA_LOGGER.debug("Context missing interpreter - attempting to find one")
+                self.debug("Context missing interpreter - attempting to find one")
                 # Try to get interpreter from:
                 # 1. Parent context if available
                 if hasattr(context, "parent") and context.parent is not None:
                     if hasattr(context.parent, "_interpreter") and context.parent._interpreter is not None:
                         context._interpreter = context.parent._interpreter
-                        DXA_LOGGER.debug("Inherited interpreter from parent context")
+                        self.debug("Inherited interpreter from parent context")
                     else:
-                        DXA_LOGGER.warning("Parent context found but no interpreter available")
+                        self.warning("Parent context found but no interpreter available")
                 else:
                     # 2. Try to get from the current execution stack
                     # When Dana functions are called through the function registry,
@@ -122,18 +121,18 @@ class POETDecorator(Loggable):
                             frame_locals = frame_info.frame.f_locals
                             if "_interpreter" in frame_locals:
                                 context._interpreter = frame_locals["_interpreter"]
-                                DXA_LOGGER.debug("Found interpreter in call stack")
+                                self.debug("Found interpreter in call stack")
                                 break
                             elif "self" in frame_locals and hasattr(frame_locals["self"], "_interpreter"):
                                 context._interpreter = frame_locals["self"]._interpreter
-                                DXA_LOGGER.debug("Found interpreter via self in call stack")
+                                self.debug("Found interpreter via self in call stack")
                                 break
                         else:
-                            DXA_LOGGER.warning("No interpreter found in call stack for POET function")
+                            self.warning("No interpreter found in call stack for POET function")
                     except Exception as e:
-                        DXA_LOGGER.debug(f"Error searching for interpreter in call stack: {e}")
+                        self.debug(f"Error searching for interpreter in call stack: {e}")
             else:
-                DXA_LOGGER.debug("Context already has interpreter")
+                self.debug("Context already has interpreter")
 
             # Set POET metadata in context
             context.set("_poet_metadata", self.func._poet_metadata)
@@ -141,10 +140,10 @@ class POETDecorator(Loggable):
             # Execute the function with retries if needed
             for attempt in range(self.retries):
                 try:
-                    DXA_LOGGER.debug(f"POET executing function (attempt {attempt + 1})")
+                    self.debug(f"POET executing function (attempt {attempt + 1})")
                     if is_dana_function:
                         # Dana function - call execute method with context as first argument
-                        DXA_LOGGER.debug(f"Calling Dana function.execute with context={context}")
+                        self.debug(f"Calling Dana function.execute with context={context}")
                         result = self.func.execute(context, *args, **kwargs)
                     elif not is_dana_function and expects_context:
                         # Regular Python function that expects context parameter
@@ -161,13 +160,13 @@ class POETDecorator(Loggable):
                     else:
                         # Regular Python function that doesn't expect context
                         result = self.func(*args, **kwargs)
-                    DXA_LOGGER.debug(f"POET function completed with result: {result}")
+                    self.debug(f"POET function completed with result: {result}")
                     return result
                 except Exception as e:
-                    DXA_LOGGER.error(f"POET function failed on attempt {attempt + 1}: {e}")
+                    self.error(f"POET function failed on attempt {attempt + 1}: {e}")
                     if attempt == self.retries - 1:
                         raise
-                    DXA_LOGGER.warning(f"Attempt {attempt + 1} failed: {e}. Retrying...")
+                    self.warning(f"Attempt {attempt + 1} failed: {e}. Retrying...")
 
         # Store the wrapper
         self.wrapper = wrapper
