@@ -506,21 +506,54 @@ class ExpressionExecutor(BaseExecutor):
                     return func.execute(func_context, obj, *args, **kwargs)
                 else:
                     DXA_LOGGER.debug("DEBUG: Using direct function call")
-                    return func(obj, *args, **kwargs)
+                    result = func(obj, *args, **kwargs)
+                    # If the result is a coroutine, await it
+                    import asyncio
+
+                    if asyncio.iscoroutine(result):
+                        DXA_LOGGER.debug("DEBUG: Struct function returned coroutine, awaiting it")
+                        try:
+                            return asyncio.run(result)
+                        except RuntimeError as e:
+                            DXA_LOGGER.warning(f"Cannot await coroutine in current context: {e}")
+                            return result
+                    return result
 
             # If no function found in scopes, try to find a method on the struct type
             DXA_LOGGER.debug(f"DEBUG: No function found in scopes, trying struct_type.{method_name}")
             method = getattr(struct_type, method_name, None)
             if method is not None and callable(method):
                 DXA_LOGGER.debug("DEBUG: Found callable method on struct_type")
-                return method(obj, *args, **kwargs)
+                result = method(obj, *args, **kwargs)
+                # If the result is a coroutine, await it
+                import asyncio
+
+                if asyncio.iscoroutine(result):
+                    DXA_LOGGER.debug("DEBUG: Struct type method returned coroutine, awaiting it")
+                    try:
+                        return asyncio.run(result)
+                    except RuntimeError as e:
+                        DXA_LOGGER.warning(f"Cannot await coroutine in current context: {e}")
+                        return result
+                return result
 
             # If no method found on struct type, try to find a method on the object itself
             DXA_LOGGER.debug(f"DEBUG: No method found on struct_type, trying object.{method_name}")
             method = getattr(obj, method_name, None)
             if method is not None and callable(method):
                 DXA_LOGGER.debug("DEBUG: Found callable method on object")
-                return method(*args, **kwargs)
+                result = method(*args, **kwargs)
+                # If the result is a coroutine, await it
+                import asyncio
+
+                if asyncio.iscoroutine(result):
+                    DXA_LOGGER.debug("DEBUG: Struct object method returned coroutine, awaiting it")
+                    try:
+                        return asyncio.run(result)
+                    except RuntimeError as e:
+                        DXA_LOGGER.warning(f"Cannot await coroutine in current context: {e}")
+                        return result
+                return result
 
             # If we get here, no method was found
             DXA_LOGGER.debug(f"DEBUG: No method found for {method_name}")
@@ -536,7 +569,22 @@ class ExpressionExecutor(BaseExecutor):
         method = getattr(obj, method_name, None)
         if callable(method):
             DXA_LOGGER.debug("DEBUG: Found callable method on object")
-            return method(*args, **kwargs)
+            result = method(*args, **kwargs)
+            # If the result is a coroutine, await it
+            import asyncio
+
+            if asyncio.iscoroutine(result):
+                DXA_LOGGER.debug("DEBUG: Method returned coroutine, awaiting it")
+                try:
+                    # Try to run the coroutine in a new event loop
+                    return asyncio.run(result)
+                except RuntimeError as e:
+                    # If we're already in an event loop, we can't use asyncio.run()
+                    # This is a limitation - we need a more sophisticated async handling
+                    DXA_LOGGER.warning(f"Cannot await coroutine in current context: {e}")
+                    DXA_LOGGER.warning("Returning coroutine object - caller must handle async execution")
+                    return result
+            return result
 
         # If the object is a dict, try to get the method from the dict
         if isinstance(obj, dict):
@@ -544,7 +592,19 @@ class ExpressionExecutor(BaseExecutor):
             method = obj.get(method_name)
             if callable(method):
                 DXA_LOGGER.debug("DEBUG: Found callable method in dict")
-                return method(*args, **kwargs)
+                result = method(*args, **kwargs)
+                # If the result is a coroutine, await it
+                import asyncio
+
+                if asyncio.iscoroutine(result):
+                    DXA_LOGGER.debug("DEBUG: Dict method returned coroutine, awaiting it")
+                    try:
+                        return asyncio.run(result)
+                    except RuntimeError as e:
+                        DXA_LOGGER.warning(f"Cannot await coroutine in current context: {e}")
+                        DXA_LOGGER.warning("Returning coroutine object - caller must handle async execution")
+                        return result
+                return result
 
         # If we get here, the object doesn't have the method
         DXA_LOGGER.debug(f"DEBUG: No method found for {method_name}")
