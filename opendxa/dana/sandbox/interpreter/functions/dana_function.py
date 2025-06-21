@@ -23,6 +23,7 @@ class DanaFunction(SandboxFunction, Loggable):
         context: SandboxContext | None = None,
         return_type: str | None = None,
         defaults: dict[str, Any] | None = None,
+        name: str | None = None,
     ):
         """Initialize a Dana function.
 
@@ -32,13 +33,17 @@ class DanaFunction(SandboxFunction, Loggable):
             context: The sandbox context
             return_type: The function's return type annotation
             defaults: Default values for parameters
+            name: The function name
         """
         super().__init__(context)
         self.body = body
         self.parameters = parameters
         self.return_type = return_type
         self.defaults = defaults or {}
-        self.debug(f"Created DanaFunction with parameters={parameters}, return_type={return_type}, defaults={self.defaults}")
+        self.__name__ = name or "unknown"  # Add __name__ attribute for compatibility
+        self.debug(
+            f"Created DanaFunction with name={self.__name__}, parameters={parameters}, return_type={return_type}, defaults={self.defaults}"
+        )
 
     def prepare_context(self, context: SandboxContext | Any, args: list[Any], kwargs: dict[str, Any]) -> SandboxContext:
         """

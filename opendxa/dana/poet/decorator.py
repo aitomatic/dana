@@ -10,6 +10,7 @@ from functools import wraps
 from typing import Any
 
 from opendxa.common.mixins.loggable import Loggable
+from opendxa.dana.poet.types import POETResult
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
@@ -54,12 +55,26 @@ class POETDecorator(Loggable):
         self.optimize_for = optimize_for
         self.enable_training = enable_training or (optimize_for is not None)
 
-        # Store metadata on the function
-        if not hasattr(func, "_poet_metadata"):
-            setattr(func, "_poet_metadata", {"domains": set()})
-        func._poet_metadata["domains"].add(self.domain)
-        func._poet_metadata.update(
-            {
+        # Store metadata on the function (if possible)
+        try:
+            if not hasattr(func, "_poet_metadata"):
+                setattr(func, "_poet_metadata", {"domains": set()})
+            func._poet_metadata["domains"].add(self.domain)
+            func._poet_metadata.update(
+                {
+                    "retries": retries,
+                    "timeout": timeout,
+                    "namespace": namespace,
+                    "overwrite": overwrite,
+                    "optimize_for": optimize_for,
+                    "enable_training": self.enable_training,
+                }
+            )
+        except (AttributeError, TypeError):
+            # Some objects (like built-in types) don't support attribute setting
+            # Store metadata in decorator instead
+            self.metadata = {
+                "domains": {self.domain},
                 "retries": retries,
                 "timeout": timeout,
                 "namespace": namespace,
@@ -67,7 +82,6 @@ class POETDecorator(Loggable):
                 "optimize_for": optimize_for,
                 "enable_training": self.enable_training,
             }
-        )
 
         # Apply the decorator
         self._apply_decorator()
@@ -139,7 +153,13 @@ class POETDecorator(Loggable):
                 self.debug("Context already has interpreter")
 
             # Set POET metadata in context
-            context.set("_poet_metadata", self.func._poet_metadata)
+            if hasattr(self.func, "_poet_metadata"):
+                context.set("_poet_metadata", self.func._poet_metadata)
+            elif hasattr(self, "metadata"):
+                context.set("_poet_metadata", self.metadata)
+            else:
+                # Fallback metadata
+                context.set("_poet_metadata", {"domains": {self.domain}, "enhanced": True})
 
             # Execute the function with retries if needed
             for attempt in range(self.retries):
@@ -165,7 +185,14 @@ class POETDecorator(Loggable):
                         # Regular Python function that doesn't expect context
                         result = self.func(*args, **kwargs)
                     self.debug(f"POET function completed with result: {result}")
-                    return result
+
+                    # Wrap result in POETResult to provide _poet metadata
+                    if not isinstance(result, POETResult):
+                        func_name = getattr(self.func, "__name__", "unknown")
+                        poet_result = POETResult(result, func_name)
+                        return poet_result
+                    else:
+                        return result
                 except Exception as e:
                     self.error(f"POET function failed on attempt {attempt + 1}: {e}")
                     if attempt == self.retries - 1:
@@ -202,11 +229,20 @@ def poet(
         A decorator function that enhances the target function with POET capabilities
     """
 
-    def decorator(func: Callable) -> Callable:
+    def decorator(func: Callable, *args, **kwargs) -> Callable:
         """The actual decorator function."""
         # Basic parameter validation while allowing unknown parameter names
-        if domain is not None and not isinstance(domain, str):
-            raise TypeError(f"domain must be a string, got {type(domain).__name__}")
+        # Handle DanaFunction objects by converting them to string representation
+        processed_domain = domain
+        if domain is not None:
+            if isinstance(domain, str):
+                processed_domain = domain
+            elif hasattr(domain, "__class__") and "DanaFunction" in domain.__class__.__name__:
+                # Convert DanaFunction to a reasonable string representation
+                processed_domain = f"dana_function_{id(domain)}"
+            else:
+                raise TypeError(f"domain must be a string, got {type(domain).__name__}")
+
         if not isinstance(retries, int) or retries < 0:
             raise TypeError(f"retries must be a non-negative integer, got {retries}")
         if timeout is not None and not isinstance(timeout, (int, float)):
@@ -214,7 +250,7 @@ def poet(
 
         poet_decorator = POETDecorator(
             func=func,
-            domain=domain,
+            domain=processed_domain,
             retries=retries,
             timeout=timeout,
             namespace=namespace,

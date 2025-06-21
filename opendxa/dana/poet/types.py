@@ -68,11 +68,35 @@ class POETResult:
         """Delegate item assignment to wrapped result"""
         self._result[key] = value
 
-    def __repr__(self) -> str:
-        return f"POETResult({self._result!r})"
+    def __eq__(self, other: Any) -> bool:
+        """Compare POETResult with wrapped value"""
+        return self._result == other
+
+    def __ne__(self, other: Any) -> bool:
+        """Not equal comparison"""
+        return not self.__eq__(other)
+
+    def __hash__(self) -> int:
+        """Make POETResult hashable based on wrapped result"""
+        return hash(self._result)
+
+    def __bool__(self) -> bool:
+        """Boolean evaluation based on wrapped result"""
+        return bool(self._result)
+
+    def __int__(self) -> int:
+        """Integer conversion"""
+        return int(self._result)
+
+    def __float__(self) -> float:
+        """Float conversion"""
+        return float(self._result)
 
     def __str__(self) -> str:
         return str(self._result)
+
+    def __repr__(self) -> str:
+        return f"POETResult({self._result!r})"
 
     def unwrap(self) -> Any:
         """Get the original result without POET wrapper"""
