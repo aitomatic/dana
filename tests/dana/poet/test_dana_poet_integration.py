@@ -61,7 +61,7 @@ log(f"Result: {result}")
         # Check that POET-enhanced function was created
         context = execution_result.final_context
         assert context is not None
-        simple_add_func = context.get("local.simple_add")
+        simple_add_func = context.get("local:simple_add")
         assert simple_add_func is not None
         assert hasattr(simple_add_func, "__name__")
 

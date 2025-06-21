@@ -67,7 +67,7 @@ local:point = Point(x=10, y=20)
 
         # Get the point variable from context
         assert execution_result.final_context is not None
-        point = execution_result.final_context.get("local.point")
+        point = execution_result.final_context.get("local:point")
         assert point is not None
 
         # Should be a StructInstance
@@ -92,8 +92,8 @@ local:y_value = point.y
 
         # Check field access results
         assert execution_result.final_context is not None
-        x_value = execution_result.final_context.get("local.x_value")
-        y_value = execution_result.final_context.get("local.y_value")
+        x_value = execution_result.final_context.get("local:x_value")
+        y_value = execution_result.final_context.get("local:y_value")
 
         assert x_value == 10
         assert y_value == 20
@@ -112,8 +112,8 @@ local:user2 = User(name="Bob", active=false)
         result: ExecutionResult = self.sandbox.eval(code)
 
         assert result.final_context is not None
-        user1 = result.final_context.get("local.user1")
-        user2 = result.final_context.get("local.user2")
+        user1 = result.final_context.get("local:user1")
+        user2 = result.final_context.get("local:user2")
 
         assert user1 is not None
         assert user2 is not None
@@ -142,8 +142,8 @@ local:original_x = point.x
         result: ExecutionResult = self.sandbox.eval(code)
 
         assert result.final_context is not None
-        point = result.final_context.get("local.point")
-        original_x = result.final_context.get("local.original_x")
+        point = result.final_context.get("local:point")
+        original_x = result.final_context.get("local:original_x")
 
         assert point is not None
         assert isinstance(point, StructInstance)
@@ -169,7 +169,7 @@ local:profile = UserProfile(
         result: ExecutionResult = self.sandbox.eval(code)
 
         assert result.final_context is not None
-        profile = result.final_context.get("local.profile")
+        profile = result.final_context.get("local:profile")
         assert profile is not None
 
         assert isinstance(profile, StructInstance)
@@ -226,8 +226,8 @@ local:circle = Circle(center=center_point, radius=5.0)
         result: ExecutionResult = self.sandbox.eval(code)
 
         assert result.final_context is not None
-        center_point = result.final_context.get("local.center_point")
-        circle = result.final_context.get("local.circle")
+        center_point = result.final_context.get("local:center_point")
+        circle = result.final_context.get("local:circle")
 
         assert center_point is not None
         assert circle is not None
@@ -271,7 +271,7 @@ local:origin = create_origin()
         result: ExecutionResult = self.sandbox.eval(code)
 
         assert result.final_context is not None
-        origin = result.final_context.get("local.origin")
+        origin = result.final_context.get("local:origin")
         assert origin is not None
 
         assert isinstance(origin, StructInstance)
@@ -297,7 +297,7 @@ else:
         result: ExecutionResult = self.sandbox.eval(code)
 
         assert result.final_context is not None
-        status = result.final_context.get("local.status")
+        status = result.final_context.get("local:status")
         assert status == "active"
 
     def test_struct_in_loops(self):
@@ -317,5 +317,5 @@ for point in points:
         result: ExecutionResult = self.sandbox.eval(code)
 
         assert result.final_context is not None
-        sum_x = result.final_context.get("local.sum_x")
+        sum_x = result.final_context.get("local:sum_x")
         assert sum_x == 9  # 1 + 3 + 5

@@ -27,12 +27,12 @@ async def main():
     print("\nExample 1: Direct DANA code execution")
     dana_code = """
     # Set initial values
-    private.temperature = 25
-    private.humidity = 60
+    private:temperature = 25
+    private:humidity = 60
 
     # Log the values
-    log("Current temperature: {private.temperature}°C")
-    log("Current humidity: {private.humidity}%")
+    log("Current temperature: {private:temperature}°C")
+    log("Current humidity: {private:humidity}%")
     """
     await repl.execute(dana_code)
 
@@ -57,8 +57,8 @@ async def main():
 
     # Example 4: Using initial context
     print("\nExample 4: Using initial context")
-    initial_context = {"private.location": "San Francisco", "private.units": "metric"}
-    await repl.execute('log("Weather report for {private.location} ({private.units})")', initial_context)
+    initial_context = {"private:location": "San Francisco", "private:units": "metric"}
+    await repl.execute('log("Weather report for {private:location} ({private:units})")', initial_context)
 
 
 if __name__ == "__main__":

@@ -571,7 +571,7 @@ class ExpressionTransformer(BaseTransformer):
         The method uses two strategies to detect object method calls:
 
         Strategy 1: Dotted identifier analysis
-        - If base is an Identifier with dots (e.g., "local.obj.method")
+        - If base is an Identifier with dots (e.g., "local:obj.method")
         - And trailer is function call arguments
         - Split the dotted name into object parts and method name
         - Create ObjectFunctionCall with proper object and method separation
@@ -583,10 +583,10 @@ class ExpressionTransformer(BaseTransformer):
 
         Examples:
         ---------
-        - `websearch.list_tools()` -> ObjectFunctionCall(object=Identifier("local.websearch"), method_name="list_tools")
-        - `obj.add(10)` -> ObjectFunctionCall(object=Identifier("local.obj"), method_name="add", args={"__positional": [10]})
+        - `websearch.list_tools()` -> ObjectFunctionCall(object=Identifier("local:websearch"), method_name="list_tools")
+        - `obj.add(10)` -> ObjectFunctionCall(object=Identifier("local:obj"), method_name="add", args={"__positional": [10]})
         - `func()` -> FunctionCall(name="func")
-        - `obj.attr` -> Identifier(name="local.obj.attr")
+        - `obj.attr` -> Identifier(name="local:obj.attr")
 
         Args:
             items: List containing base expression and trailer elements from parse tree
@@ -612,7 +612,7 @@ class ExpressionTransformer(BaseTransformer):
                 # Check if this looks like an object method call
                 # Split the dotted name to see if we can separate object from method
                 name_parts = base.name.split(".")
-                if len(name_parts) >= 3:  # e.g., "local.obj.method"
+                if len(name_parts) >= 3:  # e.g., "local:obj.method"
                     # Extract scope, object parts, and method name
                     scope = name_parts[0]  # "local"
                     method_name = name_parts[-1]  # "method"
@@ -632,29 +632,44 @@ class ExpressionTransformer(BaseTransformer):
                         object=object_expr, method_name=method_name, args=args, location=getattr(base, "location", None)
                     )
 
-        # Original logic for other cases
+        # Look ahead for method call patterns: .NAME followed by arguments
         for i, t in enumerate(trailers):
+            # Check if current trailer is attribute access followed by function call
+            if (
+                hasattr(t, "type")
+                and t.type == "NAME"
+                and i + 1 < len(trailers)
+                and ((hasattr(trailers[i + 1], "data") and trailers[i + 1].data == "arguments") or trailers[i + 1] is None)
+            ):
+                # We have obj.method() pattern - create ObjectFunctionCall directly
+                object_expr = base
+                method_name = t.value
+
+                call_args = trailers[i + 1]
+                if call_args is not None and hasattr(call_args, "children"):
+                    args = self._process_function_arguments(call_args.children)
+                else:
+                    args = {"__positional": []}  # Empty arguments
+
+                return ObjectFunctionCall(object=object_expr, method_name=method_name, args=args, location=getattr(base, "location", None))
+
+        # Original logic for other cases (but we need to skip already processed patterns)
+        i = 0
+        while i < len(trailers):
+            t = trailers[i]
+
+            # Skip method call patterns that we already handled above
+            if (
+                hasattr(t, "type")
+                and t.type == "NAME"
+                and i + 1 < len(trailers)
+                and ((hasattr(trailers[i + 1], "data") and trailers[i + 1].data == "arguments") or trailers[i + 1] is None)
+            ):
+                i += 2  # Skip both the .NAME and the arguments
+                continue
+
             # Function call: ( ... ) or empty arguments (None)
             if (hasattr(t, "data") and t.data == "arguments") or t is None:
-                # Check if this function call follows an attribute access
-                if i > 0:
-                    # Look at the previous trailer to see if it was attribute access
-                    prev_trailer = trailers[i - 1]
-                    if hasattr(prev_trailer, "type") and prev_trailer.type == "NAME":
-                        # We have obj.method() - create ObjectFunctionCall
-
-                        # The base object is everything except the last attribute
-                        object_expr = base
-                        method_name = prev_trailer.value
-
-                        if t is not None and hasattr(t, "children"):
-                            args = self._process_function_arguments(t.children)
-                        else:
-                            args = {"__positional": []}  # Empty arguments
-
-                        return ObjectFunctionCall(
-                            object=object_expr, method_name=method_name, args=args, location=getattr(base, "location", None)
-                        )
 
                 # Regular function call on base
                 # For AttributeAccess nodes, create ObjectFunctionCall for method calls
@@ -693,6 +708,7 @@ class ExpressionTransformer(BaseTransformer):
                 # If it's not a function call or attribute access, it must be indexing
                 # The trailer is the index expression (already transformed to AST)
                 base = SubscriptExpression(object=base, index=t, location=getattr(base, "location", None))
+            i += 1  # Move to next trailer
         return base
 
     def _get_full_attribute_name(self, attr):
@@ -920,6 +936,7 @@ class ExpressionTransformer(BaseTransformer):
         else:
             # Multi-dimensional - return a SliceTuple
             from opendxa.dana.sandbox.parser.ast import SliceTuple
+
             return SliceTuple(slices=items)
 
 

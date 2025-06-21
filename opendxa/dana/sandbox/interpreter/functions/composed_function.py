@@ -112,7 +112,7 @@ class ComposedFunction(SandboxFunction):
             # Need to resolve the function name
             # Try to get from context first
             try:
-                func_obj = context.get(f"local.{func}")
+                func_obj = context.get(f"local:{func}")
                 if isinstance(func_obj, SandboxFunction):
                     return func_obj
             except Exception:

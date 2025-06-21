@@ -41,8 +41,8 @@ local:distance_method_result = distance(point)
 
         # Both calls should produce the same result
         assert result.final_context is not None
-        distance_direct = result.final_context.get("local.distance_result")
-        distance_method = result.final_context.get("local.distance_method_result")
+        distance_direct = result.final_context.get("local:distance_result")
+        distance_method = result.final_context.get("local:distance_method_result")
 
         assert distance_direct == distance_method
         assert distance_direct == 25.0  # 3-4-5 triangle
@@ -67,8 +67,8 @@ local:result_method = point.add_offset(5, 3)
 
         # Both results should be equivalent
         assert result.final_context is not None
-        result_direct = result.final_context.get("local.result_direct")
-        result_method = result.final_context.get("local.result_method")
+        result_direct = result.final_context.get("local:result_direct")
+        result_method = result.final_context.get("local:result_method")
 
         assert isinstance(result_direct, StructInstance)
         assert isinstance(result_method, StructInstance)
@@ -94,8 +94,8 @@ local:result_method = rect.scale(x_factor=2.0, y_factor=1.5)
         assert result.success, f"Execution failed: {result.error}"
 
         assert result.final_context is not None
-        result_direct = result.final_context.get("local.result_direct")
-        result_method = result.final_context.get("local.result_method")
+        result_direct = result.final_context.get("local:result_direct")
+        result_method = result.final_context.get("local:result_method")
 
         assert isinstance(result_direct, StructInstance)
         assert isinstance(result_method, StructInstance)
@@ -124,8 +124,8 @@ local:type_method = point.get_type()
 
         # Both calls should produce the same result
         assert result.final_context is not None
-        type_direct = result.final_context.get("local.type_direct")
-        type_method = result.final_context.get("local.type_method")
+        type_direct = result.final_context.get("local:type_direct")
+        type_method = result.final_context.get("local:type_method")
         assert type_direct == type_method == "Point"
 
     def test_method_not_found_error(self):
@@ -177,7 +177,7 @@ for doubled_num in doubled:
         assert result.success, f"Execution failed: {result.error}"
 
         assert result.final_context is not None
-        final_values = result.final_context.get("local.final_values")
+        final_values = result.final_context.get("local:final_values")
         assert final_values == [2, 4, 6]
 
     def test_struct_methods_in_conditionals(self):
@@ -207,8 +207,8 @@ local:final_count = counter.count
         assert result.success, f"Execution failed: {result.error}"
 
         assert result.final_context is not None
-        result_type = result.final_context.get("local.result")
-        final_count = result.final_context.get("local.final_count")
+        result_type = result.final_context.get("local:result")
+        final_count = result.final_context.get("local:final_count")
 
         assert result_type == "odd_incremented"
         assert final_count == 6
@@ -235,7 +235,7 @@ local:final = step2.finalize()
         assert result.success, f"Execution failed: {result.error}"
 
         assert result.final_context is not None
-        final_result = result.final_context.get("local.final")
+        final_result = result.final_context.get("local:final")
         assert final_result == "Hello World!"
 
     def test_struct_methods_with_nested_structs(self):
@@ -264,8 +264,8 @@ local:center_x = circle.get_center_x()
         assert result.success, f"Execution failed: {result.error}"
 
         assert result.final_context is not None
-        area = result.final_context.get("local.area")
-        center_x = result.final_context.get("local.center_x")
+        area = result.final_context.get("local:area")
+        center_x = result.final_context.get("local:center_x")
 
         # Approximate area calculation (π * r²)
         expected_area = 3.14159 * 5.0 * 5.0
@@ -297,8 +297,8 @@ local:result2 = point1.add_scalar(5)      # Should call add_scalar(point1, 5)
         assert result.success, f"Execution failed: {result.error}"
 
         assert result.final_context is not None
-        result1 = result.final_context.get("local.result1")
-        result2 = result.final_context.get("local.result2")
+        result1 = result.final_context.get("local:result1")
+        result2 = result.final_context.get("local:result2")
 
         assert isinstance(result1, StructInstance)
         assert isinstance(result2, StructInstance)
@@ -328,8 +328,8 @@ local:updated2 = config.update_config("new_name", 20)
         assert result.success, f"Execution failed: {result.error}"
 
         assert result.final_context is not None
-        updated1 = result.final_context.get("local.updated1")
-        updated2 = result.final_context.get("local.updated2")
+        updated1 = result.final_context.get("local:updated1")
+        updated2 = result.final_context.get("local:updated2")
 
         assert isinstance(updated1, StructInstance)
         assert isinstance(updated2, StructInstance)
@@ -380,8 +380,8 @@ local:normalized2 = vector.normalize(2.0)   # Custom length
         assert result.success, f"Execution failed: {result.error}"
 
         assert result.final_context is not None
-        normalized1 = result.final_context.get("local.normalized1")
-        normalized2 = result.final_context.get("local.normalized2")
+        normalized1 = result.final_context.get("local:normalized1")
+        normalized2 = result.final_context.get("local:normalized2")
 
         assert isinstance(normalized1, StructInstance)
         assert isinstance(normalized2, StructInstance)
@@ -418,8 +418,8 @@ local:as_int = data.process(as_string=false)
         assert result.success, f"Execution failed: {result.error}"
 
         assert result.final_context is not None
-        as_string = result.final_context.get("local.as_string")
-        as_int = result.final_context.get("local.as_int")
+        as_string = result.final_context.get("local:as_string")
+        as_int = result.final_context.get("local:as_int")
 
         assert as_string == "42"
         assert as_int == 42

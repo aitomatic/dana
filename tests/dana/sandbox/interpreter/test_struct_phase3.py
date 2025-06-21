@@ -313,7 +313,7 @@ local:point = Point(x=10, y=20)
 
         # Now test direct field assignment validation through Python
         assert result.final_context is not None
-        point = result.final_context.get("local.point")
+        point = result.final_context.get("local:point")
         assert isinstance(point, StructInstance)
 
         # Valid assignment should work

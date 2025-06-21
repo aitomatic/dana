@@ -866,7 +866,7 @@ class StatementTransformer(BaseTransformer):
                 result.append(item)
             elif isinstance(item, Identifier):
                 # Convert Identifier to Parameter
-                param_name = item.name if "." in item.name else f"local.{item.name}"
+                param_name = item.name if "." in item.name else f"local:{item.name}"
                 result.append(Parameter(name=param_name))
             elif hasattr(item, "data") and item.data == "typed_parameter":
                 # Handle typed_parameter via the typed_parameter method
@@ -900,10 +900,10 @@ class StatementTransformer(BaseTransformer):
                 param_name = str(name_item)
 
             # Create an Identifier with the proper local scope
-            return Identifier(name=f"local.{param_name}")
+            return Identifier(name=f"local:{param_name}")
 
         # Fallback
-        return Identifier(name="local.param")
+        return Identifier(name="local:param")
 
     def binary_expr(self, items):
         """Transform a binary expression rule into a BinaryExpression node."""
@@ -912,10 +912,10 @@ class StatementTransformer(BaseTransformer):
         right = items[2]
 
         # Handle unscoped variables in binary expressions
-        if isinstance(left, Identifier) and "." not in left.name:
-            left.name = f"local.{left.name}"
-        if isinstance(right, Identifier) and "." not in right.name:
-            right.name = f"local.{right.name}"
+        if isinstance(left, Identifier) and ":" not in left.name:
+            left.name = f"local:{left.name}"
+        if isinstance(right, Identifier) and ":" not in right.name:
+            right.name = f"local:{right.name}"
 
         return BinaryExpression(left=left, operator=operator, right=right)
 
@@ -1066,13 +1066,13 @@ class StatementTransformer(BaseTransformer):
             context_manager = cast(Expression, first_item)
             # Don't add local prefix if the identifier is already scoped (contains ":" or starts with a scope)
             if isinstance(context_manager.name, str) and not (
-                context_manager.name.startswith("local.")
+                context_manager.name.startswith("local:")
                 or ":" in context_manager.name
-                or context_manager.name.startswith("private.")
-                or context_manager.name.startswith("public.")
-                or context_manager.name.startswith("system.")
+                or context_manager.name.startswith("private:")
+                or context_manager.name.startswith("public:")
+                or context_manager.name.startswith("system:")
             ):
-                context_manager = cast(Expression, Identifier(name=f"local.{context_manager.name}"))
+                context_manager = cast(Expression, Identifier(name=f"local:{context_manager.name}"))
         # Handle function call case
         elif isinstance(first_item, Token):
             # Keep the name as a string for function calls

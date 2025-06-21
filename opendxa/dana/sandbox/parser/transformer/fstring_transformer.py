@@ -53,7 +53,7 @@ class FStringTransformer(BaseTransformer):
         """
         Transform an f-string rule into a LiteralExpression node with FStringExpression.
         Grammar: fstring: F_STRING
-        Example: f"Hello {name}!" -> LiteralExpression(value=FStringExpression(parts=["Hello ", Identifier(name="local.name"), "!"]))
+        Example: f"Hello {name}!" -> LiteralExpression(value=FStringExpression(parts=["Hello ", Identifier(name="local:name"), "!"]))
         """
         # Get the string value from F_STRING (items[0])
         s = items[0].value
@@ -79,7 +79,7 @@ class FStringTransformer(BaseTransformer):
         """
         Parse an f-string into its component parts (literals and expressions).
         Returns a list of strings and AST nodes.
-        Example: 'Hello {name}!' -> ["Hello ", Identifier(name="local.name"), "!"]
+        Example: 'Hello {name}!' -> ["Hello ", Identifier(name="local:name"), "!"]
         """
         parts = []
         current_text = ""
@@ -301,8 +301,8 @@ class FStringTransformer(BaseTransformer):
         """
         Parse a single term in an f-string expression.
         Returns an Identifier if the term is a valid variable, else a LiteralExpression.
-        Example: 'foo' -> Identifier(name='local.foo')
-                 'private:foo' -> Identifier(name='private.foo')
+        Example: 'foo' -> Identifier(name='local:foo')
+                 'private:foo' -> Identifier(name='private:foo')
                  '42' -> LiteralExpression(value=42)
         """
         term = term.strip()
@@ -313,15 +313,13 @@ class FStringTransformer(BaseTransformer):
             if len(parts) == 2:
                 scope, var_name = parts
                 if scope in RuntimeScopes.ALL:
-                    # Convert colon notation to dot notation for internal use
-                    return Identifier(name=f"{scope}.{var_name}")
+                    # Use colon notation for internal use
+                    return Identifier(name=f"{scope}:{var_name}")
 
         # Handle regular variables and literals
         # Check if it's a valid identifier (alphanumeric + underscores, not starting with digit)
         if is_valid_identifier(term):
-            parts = term.split(".")
-            if parts[0] not in RuntimeScopes.ALL:
-                parts = self._insert_local_scope(parts)
-            return Identifier(name=".".join(parts))
+            # Don't automatically add local scope - let the resolver handle it
+            return Identifier(name=term)
         else:
             return self._parse_literal(term)

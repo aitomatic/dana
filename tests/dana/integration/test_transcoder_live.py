@@ -52,11 +52,11 @@ async def test_transcoder():
 
     # Test cases for Dana to natural language
     dana_to_nl_tests = [
-        "private.result = 5 + 10",
-        "if private.temp > 30:\n    print('too hot')",
-        "private.user_name = 'Alice'",
+        "private:result = 5 + 10",
+        "if private:temp > 30:\n    print('too hot')",
+        "private:user_name = 'Alice'",
         "log.error('connection failed')",
-        "private.sqrt_result = system.math.sqrt(16)",
+        "private:sqrt_result = system:math.sqrt(16)",
     ]
 
     print("\n=== Testing Dana to Natural Language ===")

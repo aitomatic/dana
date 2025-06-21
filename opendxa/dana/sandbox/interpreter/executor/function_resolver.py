@@ -74,23 +74,29 @@ class FunctionResolver:
         """Parse a function name and determine its namespace.
 
         Args:
-            func_name: Function name to parse (e.g., 'func', 'core.print', 'local.my_func')
+            func_name: Function name to parse (e.g., 'func', 'core.print', 'local:my_func')
 
         Returns:
             FunctionNameInfo with parsed components
         """
         original_name = func_name
 
-        if "." in func_name:
-            # Handle namespaced function calls
+        if ":" in func_name:
+            # Handle scoped function calls (preferred format)
+            parts = func_name.split(":", 1)
+            namespace = parts[0]
+            func_name = parts[1]
+            full_key = f"{namespace}:{func_name}"
+        elif "." in func_name:
+            # Handle backward compatibility with dot notation
             parts = func_name.split(".", 1)
             namespace = parts[0]
             func_name = parts[1]
-            full_key = f"{namespace}.{func_name}"
+            full_key = f"{namespace}:{func_name}"  # Store internally as colon notation
         else:
             # Default to local namespace for unqualified names
             namespace = "local"
-            full_key = f"local.{func_name}"
+            full_key = f"local:{func_name}"
 
         return FunctionNameInfo(original_name=original_name, func_name=func_name, namespace=namespace, full_key=full_key)
 
@@ -139,8 +145,8 @@ class FunctionResolver:
         # Define scope hierarchy (order matters!)
         scope_hierarchy = ["local", "private", "system", "public"]
 
-        # If the function name specifies a scope (e.g., "private.my_func"), only check that scope
-        if "." in name_info.original_name:
+        # If the function name specifies a scope (e.g., "private:my_func"), only check that scope
+        if name_info.namespace is not None:
             try:
                 func_data = context.get(name_info.full_key)
                 if func_data is not None:
@@ -152,7 +158,7 @@ class FunctionResolver:
         # For unscoped function names, try each scope in hierarchy order
         for scope in scope_hierarchy:
             try:
-                scoped_key = f"{scope}.{name_info.func_name}"
+                scoped_key = f"{scope}:{name_info.func_name}"
                 func_data = context.get(scoped_key)
                 if func_data is not None:
                     # Found function in this scope, create resolved function
@@ -183,14 +189,10 @@ class FunctionResolver:
 
         # Check if this is a decorated function (has __wrapped__ attribute)
         if hasattr(func_data, "__wrapped__"):
-            # Use the wrapped function's type
-            wrapped_func = func_data.__wrapped__
-            if isinstance(wrapped_func, (DanaFunction | SandboxFunction)):
-                func_type = FunctionType.DANA
-            elif isinstance(wrapped_func, PythonFunction):
-                func_type = FunctionType.PYTHON
-            else:
-                func_type = FunctionType.CALLABLE
+            # Decorated functions should be treated as CALLABLE since the decorator
+            # has transformed them into regular Python callables, regardless of the
+            # original wrapped function type
+            func_type = FunctionType.CALLABLE
         else:
             # Not decorated, check type directly
             if isinstance(func_data, (DanaFunction | SandboxFunction)):

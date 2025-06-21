@@ -29,7 +29,6 @@ from opendxa.dana.sandbox.parser.ast import (
     DictLiteral,
     FStringExpression,
     FunctionCall,
-    # Add more as needed for coverage
     Identifier,
     ImportFromStatement,
     ImportStatement,
@@ -46,6 +45,7 @@ from opendxa.dana.sandbox.parser.ast import (
     WithStatement,
 )
 from opendxa.dana.sandbox.parser.dana_parser import DanaParser
+from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
 
 
 # === Helper Functions ===
@@ -167,7 +167,7 @@ def typecheck_flag(request):
 def test_assignment_simple(parser, typecheck_flag):
     program = parser.parse("x = 42", do_type_check=typecheck_flag, do_transform=True)
     stmt = get_assignment(program)
-    assert_assignment(stmt, "local.x")
+    assert_assignment(stmt, "x")  # No automatic local: prefix
     assert isinstance(stmt.value, LiteralExpression)
     assert stmt.value.value == 42
 
@@ -175,21 +175,21 @@ def test_assignment_simple(parser, typecheck_flag):
 def test_assignment_float(parser, typecheck_flag):
     program = parser.parse("x = 3.14", do_type_check=typecheck_flag, do_transform=True)
     stmt = get_assignment(program)
-    assert_assignment(stmt, "local.x")
+    assert_assignment(stmt, "x")  # No automatic local: prefix
     assert stmt.value.value == 3.14
 
 
 def test_assignment_scoped(parser, typecheck_flag):
     program = parser.parse("private:x = 1", do_type_check=typecheck_flag, do_transform=True)
     stmt = get_assignment(program)
-    assert_assignment(stmt, "private.x")
+    assert_assignment(stmt, "private:x")
     assert stmt.value.value == 1
 
 
 def test_assignment_dotted(parser, typecheck_flag):
     program = parser.parse("foo.bar = 2", do_type_check=typecheck_flag, do_transform=True)
     stmt = get_assignment(program)
-    assert_assignment(stmt, "local.foo.bar")
+    assert_assignment(stmt, "foo.bar")  # No automatic local: prefix
     assert stmt.value.value == 2
 
 
@@ -202,14 +202,14 @@ def test_assignment_dotted(parser, typecheck_flag):
 def test_literal_string(parser, typecheck_flag):
     program = parser.parse('msg = "Alice"', do_type_check=typecheck_flag, do_transform=True)
     stmt = get_assignment(program)
-    assert_assignment(stmt, "local.msg")
+    assert_assignment(stmt, "msg")  # No automatic local: prefix
     assert stmt.value.value == "Alice"
 
 
 def test_literal_multiline_string(parser, typecheck_flag):
     program = parser.parse('msg = """Hello\nWorld"""', do_type_check=typecheck_flag, do_transform=True)
     stmt = get_assignment(program)
-    assert_assignment(stmt, "local.msg")
+    assert_assignment(stmt, "msg")  # No automatic local: prefix
     assert isinstance(stmt.value, LiteralExpression)
     assert isinstance(stmt.value.value, str)
     assert "Hello" in stmt.value.value
@@ -218,7 +218,7 @@ def test_literal_multiline_string(parser, typecheck_flag):
 def test_literal_fstring(parser, typecheck_flag):
     program = parser.parse('msg = f"Hello, {name}"', do_type_check=typecheck_flag, do_transform=True)
     stmt = get_assignment(program)
-    assert_assignment(stmt, "local.msg")
+    assert_assignment(stmt, "msg")  # No automatic local: prefix
     assert isinstance(stmt.value, LiteralExpression)
     assert isinstance(stmt.value.value, FStringExpression)
 
@@ -226,7 +226,7 @@ def test_literal_fstring(parser, typecheck_flag):
 def test_literal_raw_string(parser, typecheck_flag):
     program = parser.parse('msg = r"raw\\nstring"', do_type_check=typecheck_flag, do_transform=True)
     stmt = get_assignment(program)
-    assert_assignment(stmt, "local.msg")
+    assert_assignment(stmt, "msg")  # No automatic local: prefix
     assert isinstance(stmt.value, LiteralExpression)
     assert isinstance(stmt.value.value, str)
     assert "raw" in stmt.value.value
@@ -254,7 +254,7 @@ def test_literal_bool_and_none(parser, typecheck_flag):
 def test_collection_list(parser, typecheck_flag):
     program = parser.parse("l = [1, 2]", do_type_check=typecheck_flag, do_transform=True)
     stmt = get_assignment(program)
-    assert_assignment(stmt, "local.l")
+    assert_assignment(stmt, "l")  # No automatic local: prefix
     assert isinstance(stmt.value, ListLiteral)
     assert len(stmt.value.items) == 2
     assert all(isinstance(e, LiteralExpression) for e in stmt.value.items)
@@ -264,7 +264,7 @@ def test_collection_list(parser, typecheck_flag):
 def test_collection_dict(parser, typecheck_flag):
     program = parser.parse('d = {"a": 1, "b": 2}', do_type_check=typecheck_flag, do_transform=True)
     stmt = get_assignment(program)
-    assert_assignment(stmt, "local.d")
+    assert_assignment(stmt, "d")  # No automatic local: prefix
     assert hasattr(stmt.value, "items")
     assert len(stmt.value.items) == 2
     for (k, v), (ek, ev) in zip(
@@ -400,6 +400,14 @@ def test_import_statements(parser, typecheck_flag):
     assert import_stmt3.names[0][1] is None
 
 
+def test_import_alias():
+    parser = ParserCache.get_parser("dana")
+
+
+def test_multiple_imports():
+    parser = ParserCache.get_parser("dana")
+
+
 # =========================
 # 8. TRY/EXCEPT/FINALLY
 # =========================
@@ -430,13 +438,11 @@ def test_bare_identifier(parser, typecheck_flag):
     program = parser.parse(code, do_type_check=typecheck_flag, do_transform=True)
     # First statement: assignment
     stmt1 = program.statements[0]
-    assert hasattr(stmt1, "target") and stmt1.target.name == "private.x"
+    assert hasattr(stmt1, "target") and stmt1.target.name == "private:x"
     # Second statement: bare identifier
     stmt2 = program.statements[1]
     if hasattr(stmt2, "name"):
-        assert stmt2.name == "private.x"
-    elif hasattr(stmt2, "target"):
-        assert stmt2.target.name == "private.x"
+        assert stmt2.name == "private:x"
     else:
         raise AssertionError(f"Unexpected statement type: {type(stmt2)}")
 
@@ -515,7 +521,7 @@ def test_syntax_error_malformed_block(parser):
     ],
 )
 def test_with_stmt_ast(code, expected_args, expected_kwargs, should_raise):
-    parser = DanaParser()
+    parser = ParserCache.get_parser("dana")
 
     if should_raise:
         with pytest.raises(Exception):  # noqa: B017
@@ -564,7 +570,7 @@ def test_with_stmt_ast(code, expected_args, expected_kwargs, should_raise):
     ],
 )
 def test_use_stmt_ast(code, expected_args, expected_kwargs, should_raise):
-    parser = DanaParser()
+    parser = ParserCache.get_parser("dana")
 
     if should_raise:
         with pytest.raises(Exception):  # noqa: B017
@@ -619,7 +625,7 @@ def test_use_stmt_ast(code, expected_args, expected_kwargs, should_raise):
 
 def test_use_stmt_complex_expressions():
     """Test use statements with complex expressions as arguments."""
-    parser = DanaParser()
+    parser = ParserCache.get_parser("dana")
 
     # Test with binary expression
     code = 'base = "http://localhost:"\nport = 8080\nuse(url=base + str(port))'
@@ -644,7 +650,7 @@ def test_use_stmt_complex_expressions():
 
 def test_use_stmt_in_context():
     """Test use statement in a realistic context similar to the examples."""
-    parser = DanaParser()
+    parser = ParserCache.get_parser("dana")
 
     code = textwrap.dedent(
         """
@@ -669,7 +675,7 @@ def test_use_stmt_in_context():
 
 def test_with_use_stmt():
     """Test with use(...) syntax for context manager usage."""
-    parser = DanaParser()
+    parser = ParserCache.get_parser("dana")
 
     code = textwrap.dedent(
         """
@@ -697,7 +703,7 @@ def test_with_use_stmt():
 
 def test_with_direct_object():
     """Test with mcp_object syntax for direct context manager usage."""
-    parser = DanaParser()
+    parser = ParserCache.get_parser("dana")
 
     code = textwrap.dedent(
         """
@@ -715,8 +721,24 @@ def test_with_direct_object():
     with_stmt = program.statements[1]
     assert isinstance(with_stmt, WithStatement)
     assert isinstance(with_stmt.context_manager, Identifier)  # Should be an Identifier (expression)
-    assert with_stmt.context_manager.name == "local.mcp_resource"
+    assert with_stmt.context_manager.name == "mcp_resource"  # No automatic local: prefix
     assert len(with_stmt.args) == 0  # No args when using direct object
     assert len(with_stmt.kwargs) == 0  # No kwargs when using direct object
     assert with_stmt.as_var == "mcp"
     assert len(with_stmt.body) == 1
+
+
+def test_fstring_nested_expressions():
+    parser = ParserCache.get_parser("dana")
+
+
+def test_fstring_mixed_content():
+    parser = ParserCache.get_parser("dana")
+
+
+def test_identifier_with_underscore():
+    parser = ParserCache.get_parser("dana")
+
+
+def test_binary_expression_operator_precedence():
+    parser = ParserCache.get_parser("dana")

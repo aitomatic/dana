@@ -15,8 +15,11 @@ def test_poet_e2e_na_file(tmp_path):
     na_path = Path("tests/dana/poet/poet_e2e_example.na")
     assert na_path.exists(), f"Dana file not found: {na_path}"
 
-    sandbox = DanaSandbox(debug=True)
-    result = sandbox.run(na_path)
+    sandbox = DanaSandbox(debug_mode=True)
+    try:
+        result = sandbox.run(na_path)
 
-    assert result.success, f"DanaSandbox run failed: {result.error}"
-    assert "POET E2E result: 5" in result.output
+        assert result.success, f"DanaSandbox run failed: {result.error}"
+        assert "POET E2E result: 5" in result.output
+    finally:
+        sandbox._cleanup()

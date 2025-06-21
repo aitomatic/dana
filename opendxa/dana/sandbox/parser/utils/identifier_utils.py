@@ -13,7 +13,7 @@ def is_valid_identifier(term: str) -> bool:
     A valid identifier must:
     - Start with a letter (a-z, A-Z) or underscore (_)
     - Contain only letters, digits, and underscores
-    - Support dotted notation (e.g., "obj.attr", "local.var")
+    - Support dotted notation (e.g., "obj.attr", "local:var")
 
     Args:
         term: The term to check
@@ -40,13 +40,20 @@ def is_valid_identifier(term: str) -> bool:
     if not term:
         return False
 
-    # Handle dotted identifiers (e.g., "local.var", "obj.attr")
-    parts = term.split(".")
-    for part in parts:
-        if not part:  # Empty part (consecutive dots)
+    # Handle scoped identifiers (e.g., "local:var") and dotted identifiers (e.g., "obj.attr")
+    # First split on colon for scope handling
+    colon_parts = term.split(":")
+    for colon_part in colon_parts:
+        if not colon_part:  # Empty part (consecutive colons)
             return False
-        # Check if each part is a valid identifier
-        if not (part.replace("_", "").isalnum() and (part[0].isalpha() or part[0] == "_")):
-            return False
+
+        # Then split each colon part on dots for dotted access
+        dot_parts = colon_part.split(".")
+        for dot_part in dot_parts:
+            if not dot_part:  # Empty part (consecutive dots)
+                return False
+            # Check if each part is a valid identifier
+            if not (dot_part.replace("_", "").isalnum() and (dot_part[0].isalpha() or dot_part[0] == "_")):
+                return False
 
     return True

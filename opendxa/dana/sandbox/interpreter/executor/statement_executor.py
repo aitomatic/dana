@@ -104,7 +104,7 @@ class StatementExecutor(BaseExecutor):
                 target_type = type_mapping.get(type_name)
 
                 # Set the type information for IPV to access
-                context.set("system.__current_assignment_type", target_type)
+                context.set("system:__current_assignment_type", target_type)
 
         try:
             # Evaluate the right side expression
@@ -139,7 +139,7 @@ class StatementExecutor(BaseExecutor):
                 raise SandboxError(f"Unsupported assignment target type: {target_type_name}")
 
             # Store the last value for implicit return
-            context.set("system.__last_value", value)
+            context.set("system:__last_value", value)
 
             # Return the value for expressions
             return value
@@ -147,7 +147,7 @@ class StatementExecutor(BaseExecutor):
         finally:
             # Clean up the type information after assignment
             if target_type:
-                context.set("system.__current_assignment_type", None)
+                context.set("system:__current_assignment_type", None)
 
     def _get_assignment_target_name(self, target) -> str:
         """Get a string representation of the assignment target for error messages.
@@ -426,7 +426,7 @@ class StatementExecutor(BaseExecutor):
         try:
             module = importlib.import_module(import_name)
             # Set the module in the local context
-            context.set(f"local.{context_name}", module)
+            context.set(f"local:{context_name}", module)
             return None
         except ImportError as e:
             raise SandboxError(f"Python module '{import_name}' not found: {e}") from e
@@ -506,7 +506,7 @@ class StatementExecutor(BaseExecutor):
             context_name = alias if alias else name
 
             # Set the object in the local context
-            context.set(f"local.{context_name}", obj)
+            context.set(f"local:{context_name}", obj)
 
             # If it's a function, also register it in the function registry for calls
             if callable(obj) and self.function_registry:

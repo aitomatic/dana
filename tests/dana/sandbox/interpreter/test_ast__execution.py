@@ -51,11 +51,11 @@ def test_simple_assignment():
     context = SandboxContext()
     program = Program(
         [
-            Assignment(target=Identifier("private.result"), value=LiteralExpression("foo")),
+            Assignment(target=Identifier("private:result"), value=LiteralExpression("foo")),
         ]
     )
     interpreter.execute_program(program, context)
-    assert context.get("private.result") == "foo"
+    assert context.get("private:result") == "foo"
 
 
 # --- Arithmetic ---
@@ -65,7 +65,7 @@ def test_addition():
     program = Program(
         [
             Assignment(
-                target=Identifier("private.result"),
+                target=Identifier("private:result"),
                 value=BinaryExpression(
                     left=LiteralExpression(2),
                     operator=BinaryOperator.ADD,
@@ -75,7 +75,7 @@ def test_addition():
         ]
     )
     interpreter.execute_program(program, context)
-    assert context.get("private.result") == 5
+    assert context.get("private:result") == 5
 
 
 # --- Comparison ---
@@ -85,7 +85,7 @@ def test_comparison():
     program = Program(
         [
             Assignment(
-                target=Identifier("private.result"),
+                target=Identifier("private:result"),
                 value=BinaryExpression(
                     left=LiteralExpression(2),
                     operator=BinaryOperator.LESS_THAN,
@@ -95,7 +95,7 @@ def test_comparison():
         ]
     )
     interpreter.execute_program(program, context)
-    assert context.get("private.result") is True
+    assert context.get("private:result") is True
 
 
 # --- Control Flow ---
@@ -110,14 +110,14 @@ def test_if_statement():
                     operator=BinaryOperator.EQUALS,
                     right=LiteralExpression(1),
                 ),
-                body=[Assignment(target=Identifier("private.result"), value=LiteralExpression("yes"))],
-                else_body=[Assignment(target=Identifier("private.result"), value=LiteralExpression("no"))],
+                body=[Assignment(target=Identifier("private:result"), value=LiteralExpression("yes"))],
+                else_body=[Assignment(target=Identifier("private:result"), value=LiteralExpression("no"))],
                 line_num=1,
             )
         ]
     )
     interpreter.execute_program(program, context)
-    assert context.get("private.result") == "yes"
+    assert context.get("private:result") == "yes"
 
 
 def test_while_loop():
@@ -125,18 +125,18 @@ def test_while_loop():
     context = SandboxContext()
     program = Program(
         [
-            Assignment(target=Identifier("private.result"), value=LiteralExpression(0)),
+            Assignment(target=Identifier("private:result"), value=LiteralExpression(0)),
             WhileLoop(
                 condition=BinaryExpression(
-                    left=Identifier("private.result"),
+                    left=Identifier("private:result"),
                     operator=BinaryOperator.LESS_THAN,
                     right=LiteralExpression(3),
                 ),
                 body=[
                     Assignment(
-                        target=Identifier("private.result"),
+                        target=Identifier("private:result"),
                         value=BinaryExpression(
-                            left=Identifier("private.result"),
+                            left=Identifier("private:result"),
                             operator=BinaryOperator.ADD,
                             right=LiteralExpression(1),
                         ),
@@ -147,7 +147,7 @@ def test_while_loop():
         ]
     )
     interpreter.execute_program(program, context)
-    assert context.get("private.result") == 3
+    assert context.get("private:result") == 3
 
 
 # --- More Literals ---
@@ -156,11 +156,11 @@ def test_float_literal():
     context = SandboxContext()
     program = Program(
         [
-            Assignment(target=Identifier("private.result"), value=LiteralExpression(3.14)),
+            Assignment(target=Identifier("private:result"), value=LiteralExpression(3.14)),
         ]
     )
     interpreter.execute_program(program, context)
-    assert context.get("private.result") == 3.14
+    assert context.get("private:result") == 3.14
 
 
 def test_bool_literal():
@@ -168,11 +168,11 @@ def test_bool_literal():
     context = SandboxContext()
     program = Program(
         [
-            Assignment(target=Identifier("private.result"), value=LiteralExpression(True)),
+            Assignment(target=Identifier("private:result"), value=LiteralExpression(True)),
         ]
     )
     interpreter.execute_program(program, context)
-    assert context.get("private.result") is True
+    assert context.get("private:result") is True
 
 
 def test_none_literal():
@@ -180,11 +180,11 @@ def test_none_literal():
     context = SandboxContext()
     program = Program(
         [
-            Assignment(target=Identifier("private.result"), value=LiteralExpression(None)),
+            Assignment(target=Identifier("private:result"), value=LiteralExpression(None)),
         ]
     )
     interpreter.execute_program(program, context)
-    assert context.get("private.result") is None
+    assert context.get("private:result") is None
 
 
 def test_list_literal():
@@ -192,11 +192,11 @@ def test_list_literal():
     context = SandboxContext()
     program = Program(
         [
-            Assignment(target=Identifier("private.result"), value=LiteralExpression([1, 2, 3])),
+            Assignment(target=Identifier("private:result"), value=LiteralExpression([1, 2, 3])),
         ]
     )
     interpreter.execute_program(program, context)
-    assert context.get("private.result") == [1, 2, 3]
+    assert context.get("private:result") == [1, 2, 3]
 
 
 def test_fstring_literal():
@@ -207,13 +207,13 @@ def test_fstring_literal():
     program = Program(
         [
             Assignment(
-                target=Identifier("private.result"), value=LiteralExpression(FStringExpression(parts=["foo", LiteralExpression(42)]))
+                target=Identifier("private:result"), value=LiteralExpression(FStringExpression(parts=["foo", LiteralExpression(42)]))
             ),
         ]
     )
     interpreter.execute_program(program, context)
     # Get the value and ensure it's evaluated
-    result = interpreter.get_evaluated("private.result", context)
+    result = interpreter.get_evaluated("private:result", context)
     assert result == "foo42"
 
 
@@ -224,7 +224,7 @@ def test_subtraction():
     program = Program(
         [
             Assignment(
-                target=Identifier("private.result"),
+                target=Identifier("private:result"),
                 value=BinaryExpression(
                     left=LiteralExpression(5),
                     operator=BinaryOperator.SUBTRACT,
@@ -234,7 +234,7 @@ def test_subtraction():
         ]
     )
     interpreter.execute_program(program, context)
-    assert context.get("private.result") == 3
+    assert context.get("private:result") == 3
 
 
 def test_multiplication():
@@ -243,7 +243,7 @@ def test_multiplication():
     program = Program(
         [
             Assignment(
-                target=Identifier("private.result"),
+                target=Identifier("private:result"),
                 value=BinaryExpression(
                     left=LiteralExpression(2),
                     operator=BinaryOperator.MULTIPLY,
@@ -253,7 +253,7 @@ def test_multiplication():
         ]
     )
     interpreter.execute_program(program, context)
-    assert context.get("private.result") == 6
+    assert context.get("private:result") == 6
 
 
 def test_division():
@@ -262,7 +262,7 @@ def test_division():
     program = Program(
         [
             Assignment(
-                target=Identifier("private.result"),
+                target=Identifier("private:result"),
                 value=BinaryExpression(
                     left=LiteralExpression(6),
                     operator=BinaryOperator.DIVIDE,
@@ -272,7 +272,7 @@ def test_division():
         ]
     )
     interpreter.execute_program(program, context)
-    assert context.get("private.result") == 3
+    assert context.get("private:result") == 3
 
 
 def test_modulo():
@@ -281,7 +281,7 @@ def test_modulo():
     program = Program(
         [
             Assignment(
-                target=Identifier("private.result"),
+                target=Identifier("private:result"),
                 value=BinaryExpression(
                     left=LiteralExpression(7),
                     operator=BinaryOperator.MODULO,
@@ -291,7 +291,7 @@ def test_modulo():
         ]
     )
     interpreter.execute_program(program, context)
-    assert context.get("private.result") == 3
+    assert context.get("private:result") == 3
 
 
 def test_power():
@@ -300,7 +300,7 @@ def test_power():
     program = Program(
         [
             Assignment(
-                target=Identifier("private.result"),
+                target=Identifier("private:result"),
                 value=BinaryExpression(
                     left=LiteralExpression(2),
                     operator=BinaryOperator.POWER,
@@ -310,7 +310,7 @@ def test_power():
         ]
     )
     interpreter.execute_program(program, context)
-    assert context.get("private.result") == 8
+    assert context.get("private:result") == 8
 
 
 # --- More Comparison Operators ---
@@ -320,7 +320,7 @@ def test_equals():
     program = Program(
         [
             Assignment(
-                target=Identifier("private.result"),
+                target=Identifier("private:result"),
                 value=BinaryExpression(
                     left=LiteralExpression(2),
                     operator=BinaryOperator.EQUALS,
@@ -330,7 +330,7 @@ def test_equals():
         ]
     )
     interpreter.execute_program(program, context)
-    assert context.get("private.result") is True
+    assert context.get("private:result") is True
 
 
 def test_not_equals():
@@ -339,7 +339,7 @@ def test_not_equals():
     program = Program(
         [
             Assignment(
-                target=Identifier("private.result"),
+                target=Identifier("private:result"),
                 value=BinaryExpression(
                     left=LiteralExpression(2),
                     operator=BinaryOperator.NOT_EQUALS,
@@ -349,7 +349,7 @@ def test_not_equals():
         ]
     )
     interpreter.execute_program(program, context)
-    assert context.get("private.result") is True
+    assert context.get("private:result") is True
 
 
 def test_greater_than():
@@ -358,7 +358,7 @@ def test_greater_than():
     program = Program(
         [
             Assignment(
-                target=Identifier("private.result"),
+                target=Identifier("private:result"),
                 value=BinaryExpression(
                     left=LiteralExpression(3),
                     operator=BinaryOperator.GREATER_THAN,
@@ -368,7 +368,7 @@ def test_greater_than():
         ]
     )
     interpreter.execute_program(program, context)
-    assert context.get("private.result") is True
+    assert context.get("private:result") is True
 
 
 def test_less_equals():
@@ -377,7 +377,7 @@ def test_less_equals():
     program = Program(
         [
             Assignment(
-                target=Identifier("private.result"),
+                target=Identifier("private:result"),
                 value=BinaryExpression(
                     left=LiteralExpression(2),
                     operator=BinaryOperator.LESS_EQUALS,
@@ -387,7 +387,7 @@ def test_less_equals():
         ]
     )
     interpreter.execute_program(program, context)
-    assert context.get("private.result") is True
+    assert context.get("private:result") is True
 
 
 def test_greater_equals():
@@ -396,7 +396,7 @@ def test_greater_equals():
     program = Program(
         [
             Assignment(
-                target=Identifier("private.result"),
+                target=Identifier("private:result"),
                 value=BinaryExpression(
                     left=LiteralExpression(3),
                     operator=BinaryOperator.GREATER_EQUALS,
@@ -406,7 +406,7 @@ def test_greater_equals():
         ]
     )
     interpreter.execute_program(program, context)
-    assert context.get("private.result") is True
+    assert context.get("private:result") is True
 
 
 # --- Unary Expressions ---
@@ -418,13 +418,13 @@ def test_unary_expression():
     program = Program(
         [
             Assignment(
-                target=Identifier("private.result"),
+                target=Identifier("private:result"),
                 value=UnaryExpression(operator="-", operand=LiteralExpression(5)),
             )
         ]
     )
     interpreter.execute_program(program, context)
-    assert context.get("private.result") == -5
+    assert context.get("private:result") == -5
 
 
 # --- Function Call ---
@@ -445,13 +445,13 @@ def test_function_call():
     program = Program(
         [
             Assignment(
-                target=Identifier("private.result"),
+                target=Identifier("private:result"),
                 value=FunctionCall(name="foo", args={}),
             )
         ]
     )
     interpreter.execute_program(program, context)
-    assert context.get("private.result") == 42
+    assert context.get("private:result") == 42
 
 
 # --- Attribute Access ---
@@ -463,13 +463,13 @@ def test_attribute_access():
     program = Program(
         [
             Assignment(
-                target=Identifier("private.result"),
+                target=Identifier("private:result"),
                 value=AttributeAccess(object=DictLiteral(items=[(LiteralExpression("x"), LiteralExpression(1))]), attribute="x"),
             )
         ]
     )
     interpreter.execute_program(program, context)
-    assert context.get("private.result") == 1
+    assert context.get("private:result") == 1
 
 
 # --- Subscript Expression ---
@@ -481,13 +481,13 @@ def test_subscript_expression():
     program = Program(
         [
             Assignment(
-                target=Identifier("private.result"),
+                target=Identifier("private:result"),
                 value=SubscriptExpression(object=LiteralExpression([10, 20]), index=LiteralExpression(1)),
             )
         ]
     )
     interpreter.execute_program(program, context)
-    assert context.get("private.result") == 20
+    assert context.get("private:result") == 20
 
 
 # --- Tuple/Dict/Set Literals ---
@@ -498,11 +498,11 @@ def test_tuple_literal():
     context = SandboxContext()
     program = Program(
         [
-            Assignment(target=Identifier("private.result"), value=TupleLiteral(items=[LiteralExpression(1), LiteralExpression(2)])),
+            Assignment(target=Identifier("private:result"), value=TupleLiteral(items=[LiteralExpression(1), LiteralExpression(2)])),
         ]
     )
     interpreter.execute_program(program, context)
-    assert context.get("private.result") == (1, 2)
+    assert context.get("private:result") == (1, 2)
 
 
 def test_dict_literal():
@@ -512,11 +512,11 @@ def test_dict_literal():
     context = SandboxContext()
     program = Program(
         [
-            Assignment(target=Identifier("private.result"), value=DictLiteral(items=[(LiteralExpression("a"), LiteralExpression(1))])),
+            Assignment(target=Identifier("private:result"), value=DictLiteral(items=[(LiteralExpression("a"), LiteralExpression(1))])),
         ]
     )
     interpreter.execute_program(program, context)
-    assert context.get("private.result") == {"a": 1}
+    assert context.get("private:result") == {"a": 1}
 
 
 def test_set_literal():
@@ -526,11 +526,11 @@ def test_set_literal():
     context = SandboxContext()
     program = Program(
         [
-            Assignment(target=Identifier("private.result"), value=SetLiteral(items=[LiteralExpression(1), LiteralExpression(2)])),
+            Assignment(target=Identifier("private:result"), value=SetLiteral(items=[LiteralExpression(1), LiteralExpression(2)])),
         ]
     )
     interpreter.execute_program(program, context)
-    assert context.get("private.result") == {1, 2}
+    assert context.get("private:result") == {1, 2}
 
 
 # --- Other Statements ---
@@ -674,7 +674,7 @@ def test_division_by_zero():
     program = Program(
         [
             Assignment(
-                target=Identifier("private.result"),
+                target=Identifier("private:result"),
                 value=BinaryExpression(
                     left=LiteralExpression(1),
                     operator=BinaryOperator.DIVIDE,

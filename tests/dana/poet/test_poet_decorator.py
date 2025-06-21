@@ -25,7 +25,8 @@ def sandbox():
     """Create a DanaSandbox instance with proper initialization."""
     sandbox = DanaSandbox()
     sandbox._ensure_initialized()  # Force initialization
-    return sandbox
+    yield sandbox
+    sandbox._cleanup()
 
 
 @pytest.mark.skip(reason="DEPRECATED: Use new organized test suite instead")
