@@ -268,7 +268,7 @@ def test_collection_dict(parser, typecheck_flag):
     assert hasattr(stmt.value, "items")
     assert len(stmt.value.items) == 2
     for (k, v), (ek, ev) in zip(
-        stmt.value.items, [(LiteralExpression("a"), LiteralExpression(1)), (LiteralExpression("b"), LiteralExpression(2))], strict=False
+        stmt.value.items, [(LiteralExpression("a"), LiteralExpression(1)), (LiteralExpression("b"), LiteralExpression(2))]
     ):
         assert isinstance(k, LiteralExpression)
         assert isinstance(v, LiteralExpression)
@@ -611,7 +611,7 @@ def test_use_stmt_ast(code, expected_args, expected_kwargs, should_raise):
             # Regular test cases - check exact values
             if isinstance(expected_args, list):
                 assert len(stmt.args) == len(expected_args)
-                for actual, expected in zip(stmt.args, expected_args, strict=False):
+                for actual, expected in zip(stmt.args, expected_args):
                     assert isinstance(actual, LiteralExpression)
                     assert actual.value == expected
 

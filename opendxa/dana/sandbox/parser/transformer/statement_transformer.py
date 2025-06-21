@@ -223,7 +223,7 @@ class StatementTransformer(BaseTransformer):
             while isinstance(item, list | Tree):
                 if isinstance(item, list):
                     item = item[0] if item else None
-                elif isinstance(item, Tree) and item.children:
+                elif isinstance(item, Tree) and item is not None and item.children:
                     item = item.children[0]
                 else:
                     break

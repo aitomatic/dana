@@ -154,6 +154,7 @@ class DomainTemplate(ABC):
             return CodeBlock(code=f"# No {phase} logic defined", dependencies=[], imports=[], metadata={"phase": phase, "source": "empty"})
 
         if parent is None:
+            assert child is not None  # child cannot be None here since both None case was handled above
             return child
 
         if child is None:

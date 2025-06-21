@@ -34,9 +34,7 @@ def test_na_file(na_file):
     # Check if we should skip tests that need real LLM
     skip_llm_tests = os.environ.get("OPENDXA_SKIP_NA_LLM_TESTS", "").lower() == "true"
 
-    # Skip test_simple.na due to known parsing issues with "private:result" syntax
-    if "test_simple.na" in na_file:
-        pytest.skip(f"Skipping {na_file} due to known parsing issues with 'private:result' syntax")
+    # Note: test_simple.na now uses correct private.result syntax
 
     # Read the .na file
     with open(na_file) as f:
@@ -71,9 +69,15 @@ def test_na_file(na_file):
         os.environ["OPENDXA_MOCK_LLM"] = "true"
 
     result = None
+    exception_info = None
     try:
         # Execute the program
         result = interpreter.execute_program(program, context)
+    except Exception as e:
+        exception_info = str(e)
+        import traceback
+
+        exception_info += "\n" + traceback.format_exc()
     finally:
         # Restore original environment
         if "reason(" in program_text:
@@ -82,17 +86,14 @@ def test_na_file(na_file):
             else:
                 os.environ["OPENDXA_MOCK_LLM"] = original_mock_env
 
-    # Check the execution status (only if we have a result)
-    if result is not None:
-        if hasattr(result, "status"):
-            # Handle object with status attribute
-            assert result.status.is_success, f"Failed to execute {na_file}: {result.status.message}"
-        else:
-            # Handle other return types (like dict from mocked calls)
-            assert result is not None, f"Failed to execute {na_file}: null result"
+    # Check if execution failed with an exception
+    if exception_info:
+        pytest.fail(f"Failed to execute {na_file}: {exception_info}")
 
-        # Log the result
-        print(f"Successfully executed {na_file}")
-    else:
-        # If result is None, the execution failed
-        pytest.fail(f"Failed to execute {na_file}: execution returned None or threw an exception")
+    # Check the execution status
+    if result is not None and hasattr(result, "status"):
+        # Handle object with status attribute
+        assert result.status.is_success, f"Failed to execute {na_file}: {result.status.message}"
+
+    # Log the result (None is acceptable for programs that just execute statements)
+    print(f"Successfully executed {na_file}")

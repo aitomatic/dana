@@ -22,6 +22,7 @@ class WoTResource(BaseResource):
     async def initialize(self) -> None:
         """Discover and register Things."""
         self.session = aiohttp.ClientSession()
+        assert self.session is not None  # Just assigned above
         async with self.session.get(f"{self.directory_endpoint}/things") as resp:
             if resp.status == 200:
                 self.things = await resp.json()

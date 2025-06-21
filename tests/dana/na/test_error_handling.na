@@ -1,0 +1,33 @@
+# Error handling test - covers try/catch/finally
+log("Starting error handling test")
+
+# Basic try/catch
+private:result = "initial"
+try:
+    private:result = "success"
+    log("Try block executed successfully")
+except:
+    private:result = "error"
+    log("Except block executed")
+
+print(f"Result after try/catch: {private:result}")
+
+# Try/catch with specific error
+private:division_result = 0
+try:
+    private:division_result = 10 / 2
+    print(f"Division successful: {private:division_result}")
+except:
+    private:division_result = -1
+    print("Division failed")
+
+# Simple assignment after try/except
+private:cleanup_done = false
+private:test_value = 42
+print(f"Test value: {private:test_value}")
+private:cleanup_done = true
+print("Cleanup completed")
+
+print(f"Cleanup done: {private:cleanup_done}")
+
+log("Error handling test completed") 
