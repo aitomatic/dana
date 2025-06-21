@@ -70,6 +70,7 @@ def test_na_file(na_file):
         original_mock_env = os.environ.get("OPENDXA_MOCK_LLM")
         os.environ["OPENDXA_MOCK_LLM"] = "true"
 
+    result = None
     try:
         # Execute the program
         result = interpreter.execute_program(program, context)
@@ -81,7 +82,8 @@ def test_na_file(na_file):
             else:
                 os.environ["OPENDXA_MOCK_LLM"] = original_mock_env
 
-        # Check the execution status
+    # Check the execution status (only if we have a result)
+    if result is not None:
         if hasattr(result, "status"):
             # Handle object with status attribute
             assert result.status.is_success, f"Failed to execute {na_file}: {result.status.message}"
@@ -91,3 +93,6 @@ def test_na_file(na_file):
 
         # Log the result
         print(f"Successfully executed {na_file}")
+    else:
+        # If result is None, the execution failed
+        pytest.fail(f"Failed to execute {na_file}: execution returned None or threw an exception")

@@ -9,7 +9,6 @@ from collections.abc import Callable
 from functools import wraps
 from typing import Any
 
-from opendxa.common.mixins.loggable import Loggable
 from opendxa.dana.poet.types import POETResult
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
@@ -52,7 +51,7 @@ class POETMetadata:
         self.enhanced_path = Path("tmp") / "enhanced.na"
 
 
-class POETDecorator(Loggable):
+class POETDecorator:
     """
     Enhanced POET decorator that provides both callable interface and metadata access.
 
@@ -86,7 +85,7 @@ class POETDecorator(Loggable):
             fallback_strategy: Error handling ("original", "raise")
             **kwargs: Additional parameters for backward compatibility
         """
-        super().__init__()
+        # Initialize without Loggable to avoid DXA_LOGGER dependency in Dana
         self.func = func
         self.domain = domain
         self.retries = retries
@@ -111,11 +110,24 @@ class POETDecorator(Loggable):
         self.metadata = POETMetadata(func, config)
 
         # Backward compatibility: store _poet_metadata attribute
+        # Check if function already has POET metadata (for decorator chaining)
+        existing_domains = set()
+        if hasattr(func, "_poet_metadata") and isinstance(func._poet_metadata, dict):
+            existing_domains = func._poet_metadata.get("domains", set())
+            if isinstance(existing_domains, (list, tuple)):
+                existing_domains = set(existing_domains)
+            elif not isinstance(existing_domains, set):
+                existing_domains = {existing_domains} if existing_domains else set()
+
+        # Merge domains for decorator chaining
+        all_domains = existing_domains | {domain}
+
         self._poet_metadata = {
-            "domains": {domain},
+            "domains": all_domains,
             "retries": retries,
             "timeout": timeout,
             "namespace": kwargs.get("namespace", "local"),  # Backward compatibility
+            "overwrite": kwargs.get("overwrite", False),  # Backward compatibility
             "optimize_for": optimize_for,
             "enable_monitoring": enable_monitoring,
             "cache_strategy": cache_strategy,
@@ -129,7 +141,7 @@ class POETDecorator(Loggable):
         self.__name__ = func.__name__
         self.__doc__ = func.__doc__
         self.__module__ = getattr(func, "__module__", None)
-        self.__qualname__ = getattr(func, "__qualname__", None)
+        self.__qualname__ = getattr(func, "__qualname__", func.__name__)  # Fallback to __name__ if None
 
         # Create enhanced wrapper using domain system
         self._enhanced_wrapper = None
@@ -137,6 +149,37 @@ class POETDecorator(Loggable):
 
         # Apply the decorator (for backward compatibility)
         self._apply_decorator()
+
+    def debug(self, message: str) -> None:
+        """Simple debug logging that works in Dana context"""
+        # Only log if we're not in Dana context
+        try:
+            from opendxa.common.utils.logging import DXA_LOGGER
+
+            DXA_LOGGER.debug(message)
+        except ImportError:
+            # In Dana context, ignore debug messages
+            pass
+
+    def warning(self, message: str) -> None:
+        """Simple warning logging that works in Dana context"""
+        try:
+            from opendxa.common.utils.logging import DXA_LOGGER
+
+            DXA_LOGGER.warning(message)
+        except ImportError:
+            # In Dana context, use print
+            print(f"WARNING: {message}")
+
+    def error(self, message: str) -> None:
+        """Simple error logging that works in Dana context"""
+        try:
+            from opendxa.common.utils.logging import DXA_LOGGER
+
+            DXA_LOGGER.error(message)
+        except ImportError:
+            # In Dana context, use print
+            print(f"ERROR: {message}")
 
     def _apply_decorator(self) -> None:
         """Apply the decorator to the function."""
@@ -392,6 +435,14 @@ def poet(
             # Use default domain if not specified
             effective_domain = domain or "computation"  # Default domain for backward compatibility
 
+            # Always validate parameter types
+            if effective_domain is not None and not isinstance(effective_domain, str):
+                raise TypeError(f"domain must be a string, got {type(effective_domain).__name__}")
+            if not isinstance(retries, int) or retries < 0:
+                raise TypeError(f"retries must be a non-negative integer, got {retries}")
+            if timeout is not None and not isinstance(timeout, (int, float)):
+                raise TypeError(f"timeout must be a number or None, got {type(timeout).__name__}")
+
             # Create POETDecorator instance with enhanced interface
             poet_decorator = POETDecorator(
                 func=func,
@@ -409,7 +460,14 @@ def poet(
             return poet_decorator
 
         except Exception as e:
-            DXA_LOGGER.error(f"POET decorator failed for {func.__name__}: {e}")
+            # Try to log the error if DXA_LOGGER is available
+            try:
+                from opendxa.common.utils.logging import DXA_LOGGER
+
+                DXA_LOGGER.error(f"POET decorator failed for {func.__name__}: {e}")
+            except ImportError:
+                # DXA_LOGGER not available, use print or ignore
+                print(f"POET decorator failed for {func.__name__}: {e}")
             # Fallback: return original function
             return func
 
