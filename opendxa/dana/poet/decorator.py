@@ -24,7 +24,7 @@ class POETDecorator(Loggable):
     def __init__(
         self,
         func: Callable,
-        domain: str,
+        domain: str | None = None,
         retries: int = 1,
         timeout: int | None = None,
         namespace: str = "local",
@@ -35,7 +35,7 @@ class POETDecorator(Loggable):
 
         Args:
             func: The function to decorate
-            domain: The domain this function belongs to
+            domain: The domain this function belongs to (optional, defaults to "general")
             retries: Number of retries on failure
             timeout: Optional timeout in seconds
             namespace: Namespace to register the function in
@@ -44,7 +44,7 @@ class POETDecorator(Loggable):
         """
         super().__init__()
         self.func = func
-        self.domain = domain
+        self.domain = domain or "general"
         self.retries = retries
         self.timeout = timeout
         self.namespace = namespace
@@ -54,7 +54,7 @@ class POETDecorator(Loggable):
         # Store metadata on the function
         if not hasattr(func, "_poet_metadata"):
             setattr(func, "_poet_metadata", {"domains": set()})
-        func._poet_metadata["domains"].add(domain)
+        func._poet_metadata["domains"].add(self.domain)
         func._poet_metadata.update(
             {
                 "retries": retries,
@@ -173,7 +173,7 @@ class POETDecorator(Loggable):
 
 
 def poet(
-    domain: str,
+    domain: str | None = None,
     retries: int = 1,
     timeout: int | None = None,
     namespace: str = "local",
@@ -183,7 +183,7 @@ def poet(
     """Decorator factory for POET functions.
 
     Args:
-        domain: The domain this function belongs to
+        domain: The domain this function belongs to (optional, defaults to "general")
         retries: Number of retries on failure
         timeout: Optional timeout in seconds
         namespace: Namespace to register the function in

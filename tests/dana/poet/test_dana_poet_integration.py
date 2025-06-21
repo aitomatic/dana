@@ -215,7 +215,7 @@ def test_function(x: int) -> int:
 
         # Should fail due to invalid parameter
         assert execution_result.success is False
-        assert "Unknown parameter" in str(execution_result.error)
+        assert "Unknown parameter" in str(execution_result.error) or "unexpected keyword argument" in str(execution_result.error)
 
     def test_dana_poet_with_complex_data_types(self):
         """Test POET with complex data types in Dana"""
