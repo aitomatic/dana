@@ -270,7 +270,9 @@ class StatementExecutor(BaseExecutor):
                     (
                         f"{s.start}:{s.stop}:{s.step}"
                         if isinstance(s, slice) and s.step
-                        else f"{s.start}:{s.stop}" if isinstance(s, slice) else str(s)
+                        else f"{s.start}:{s.stop}"
+                        if isinstance(s, slice)
+                        else str(s)
                     )
                     for s in evaluated_slices
                 ]

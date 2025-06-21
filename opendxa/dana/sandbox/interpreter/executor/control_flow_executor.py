@@ -27,6 +27,7 @@ from opendxa.dana.sandbox.parser.ast import (
     ContinueStatement,
     ForLoop,
     ReturnStatement,
+    TryBlock,
     WhileLoop,
     WithStatement,
 )
@@ -87,6 +88,7 @@ class ControlFlowExecutor(BaseExecutor):
             BreakStatement: self.execute_break_statement,
             ContinueStatement: self.execute_continue_statement,
             ReturnStatement: self.execute_return_statement,
+            TryBlock: self.execute_try_block,
             WithStatement: self.execute_with_stmt,
         }
 
@@ -404,13 +406,87 @@ class ControlFlowExecutor(BaseExecutor):
             node: The return statement to execute
             context: The execution context
 
+        Returns:
+            Never returns normally, raises a ReturnException
+
         Raises:
             ReturnException: With the return value
         """
-        value = None
         if node.value is not None:
             value = self.parent.execute(node.value, context)
+        else:
+            value = None
         raise ReturnException(value)
+
+    def execute_try_block(self, node: TryBlock, context: SandboxContext) -> Any:
+        """Execute a try/except/finally block.
+
+        Args:
+            node: The try block to execute
+            context: The execution context
+
+        Returns:
+            The result of the last executed statement
+
+        Raises:
+            ReturnException: If a return statement is encountered and not caught
+        """
+        self.debug("DEBUG: execute_try_block called")
+        result = None
+        exception_occurred = None
+
+        try:
+            # Execute the try block
+            self.debug("DEBUG: About to execute try block body")
+            result = self._execute_statement_list(node.body, context)
+            self.debug(f"DEBUG: Try block executed, result: {result}")
+        except ReturnException:
+            # ReturnException should propagate through try/catch, not be caught
+            self.debug("DEBUG: ReturnException caught in try block, re-raising")
+            raise
+        except Exception as e:
+            # Store the exception for except block handling
+            self.debug(f"DEBUG: Exception caught in try block: {e}")
+            exception_occurred = e
+
+            # Try to handle the exception with except blocks
+            handled = False
+            for except_block in node.except_blocks:
+                # For now, catch all exceptions (exception_type filtering not implemented yet)
+                # TODO: Add proper exception type matching
+                try:
+                    self.debug("DEBUG: Executing except block")
+                    result = self._execute_statement_list(except_block.body, context)
+                    handled = True
+                    break
+                except ReturnException:
+                    # ReturnException from except block should propagate
+                    self.debug("DEBUG: ReturnException caught in except block, re-raising")
+                    raise
+                except Exception:
+                    # If except block raises another exception, continue to next except block
+                    continue
+
+            # If no except block handled the exception, re-raise it
+            if not handled:
+                self.debug("DEBUG: No except block handled exception, re-raising")
+                raise exception_occurred
+        finally:
+            # Execute finally block if present
+            if node.finally_block:
+                try:
+                    self.debug("DEBUG: Executing finally block")
+                    self._execute_statement_list(node.finally_block, context)
+                except ReturnException:
+                    # ReturnException from finally block should propagate
+                    self.debug("DEBUG: ReturnException caught in finally block, re-raising")
+                    raise
+                except Exception as e:
+                    # Exceptions in finally block are logged but don't override the result
+                    self.warning(f"Exception in finally block: {e}")
+
+        self.debug(f"DEBUG: execute_try_block returning: {result}")
+        return result
 
     def _execute_statement_list(self, statements: list[Any], context: SandboxContext) -> Any:
         """Execute a list of statements.

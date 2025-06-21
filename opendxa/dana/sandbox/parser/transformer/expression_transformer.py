@@ -672,7 +672,6 @@ class ExpressionTransformer(BaseTransformer):
 
             # Function call: ( ... ) or empty arguments (None)
             if (hasattr(t, "data") and t.data == "arguments") or t is None:
-
                 # Regular function call on base
                 # For AttributeAccess nodes, create ObjectFunctionCall for method calls
                 # For Identifier nodes, use the name string

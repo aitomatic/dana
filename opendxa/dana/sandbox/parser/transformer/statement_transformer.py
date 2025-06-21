@@ -106,7 +106,56 @@ class StatementTransformer(BaseTransformer):
                 statements.extend(item.children)
             elif item is not None:
                 statements.append(item)
+
+        # Apply post-processing fix for function boundary parsing bug
+        statements = self._fix_function_boundary_bug(statements)
+
         return Program(statements=statements)
+
+    def _fix_function_boundary_bug(self, statements):
+        """Fix the function boundary parsing bug by moving misplaced assignments to program level.
+
+        This detects when assignments to local: variables have been incorrectly included
+        in function bodies due to indentation parsing bugs, and moves them to program level.
+        """
+        from opendxa.dana.sandbox.parser.ast import Assignment, FunctionDefinition
+
+        fixed_statements = []
+        extracted_assignments = []
+
+        for stmt in statements:
+            if isinstance(stmt, FunctionDefinition):
+                # Check function body for misplaced assignments
+                fixed_body = []
+                for body_stmt in stmt.body:
+                    if isinstance(body_stmt, Assignment) and self._is_local_scoped_assignment(body_stmt):
+                        # This assignment should be at program level
+                        self.debug(f"🔧 Moving local assignment '{body_stmt.target.name}' from function body to program level")
+                        extracted_assignments.append(body_stmt)
+                    else:
+                        fixed_body.append(body_stmt)
+
+                # Update function with fixed body
+                stmt.body = fixed_body
+                fixed_statements.append(stmt)
+            else:
+                fixed_statements.append(stmt)
+
+        # Add extracted assignments to the end of the program
+        fixed_statements.extend(extracted_assignments)
+
+        if extracted_assignments:
+            self.debug(f"✅ Function boundary bug fix: moved {len(extracted_assignments)} assignments to program level")
+
+        return fixed_statements
+
+    def _is_local_scoped_assignment(self, assignment):
+        """Check if an assignment targets a local: scoped variable."""
+        from opendxa.dana.sandbox.parser.ast import Assignment, Identifier
+
+        if isinstance(assignment, Assignment) and isinstance(assignment.target, Identifier):
+            return assignment.target.name.startswith("local:")
+        return False
 
     def statement(self, items):
         """Transform a statement rule (returns the first non-None AST node)."""
@@ -831,13 +880,11 @@ class StatementTransformer(BaseTransformer):
                 # Find the statements node
                 for child in block.children:
                     if isinstance(child, Tree) and child.data == "statements":
-                        # Process the statements
-                        for stmt in child.children:
-                            if stmt is not None:
-                                result.append(stmt)
+                        # Process the statements with boundary detection
+                        result.extend(self._process_statements_with_boundary_detection(child.children))
                     elif isinstance(child, list):
                         # Direct list of statements
-                        result.extend(child)
+                        result.extend(self._process_statements_with_boundary_detection(child))
             else:
                 # For other trees, process children
                 for child in block.children:
@@ -853,6 +900,87 @@ class StatementTransformer(BaseTransformer):
             result.append(block)
 
         return result
+
+    def _process_statements_with_boundary_detection(self, statements):
+        """Process statements but stop at function boundary violations.
+
+        This method detects when statements that should be at program level
+        are incorrectly included in a function body due to indentation parsing bugs.
+        """
+
+        result = []
+        self.debug(f"🔍 Processing {len(statements)} statements for boundary detection")
+
+        for i, stmt in enumerate(statements):
+            if stmt is None:
+                continue
+
+            self.debug(f"🔍 Statement {i}: {type(stmt).__name__} (Tree data: {getattr(stmt, 'data', 'N/A')})")
+
+            # Check if this statement looks like it should be at program level
+            if self._is_program_level_statement(stmt):
+                # Stop processing here - this statement belongs outside the current scope
+                self.debug(f"🛑 Detected program-level statement in block: {type(stmt).__name__}")
+                break
+
+            result.append(stmt)
+
+        self.debug(f"✅ Boundary detection complete: kept {len(result)} statements")
+        return result
+
+    def _is_program_level_statement(self, stmt):
+        """Detect if a statement should be at program level rather than in a block.
+
+        This detects assignments to local: variables that follow function definitions,
+        which are commonly affected by the indentation parsing bug.
+        """
+        from lark import Tree
+
+        # Check for assignment patterns that suggest program-level scope
+        if isinstance(stmt, Tree) and stmt.data == "statement":
+            # Look for simple_stmt -> assignment -> simple_assignment pattern
+            for child in stmt.children:
+                if isinstance(child, Tree) and child.data == "simple_stmt":
+                    for grandchild in child.children:
+                        if isinstance(grandchild, Tree) and grandchild.data == "assignment":
+                            is_local = self._is_assignment_to_local_scope(grandchild)
+                            if is_local:
+                                # Add debug logging to confirm detection
+                                self.debug("🎯 Detected local assignment that should be program-level")
+                            return is_local
+
+        return False
+
+    def _is_assignment_to_local_scope(self, assignment_tree):
+        """Check if an assignment tree assigns to a local: scoped variable."""
+        from lark import Tree
+
+        # Navigate through assignment -> simple_assignment -> target -> atom -> variable -> scoped_var
+        for child in assignment_tree.children:
+            if isinstance(child, Tree) and child.data == "simple_assignment":
+                for grandchild in child.children:
+                    if isinstance(grandchild, Tree) and grandchild.data == "target":
+                        return self._target_uses_local_scope(grandchild)
+
+        return False
+
+    def _target_uses_local_scope(self, target_tree):
+        """Check if a target tree references a local: scoped variable."""
+        from lark import Tree
+
+        # Navigate through target -> atom -> variable -> scoped_var
+        for child in target_tree.children:
+            if isinstance(child, Tree) and child.data == "atom":
+                for grandchild in child.children:
+                    if isinstance(grandchild, Tree) and grandchild.data == "variable":
+                        for ggchild in grandchild.children:
+                            if isinstance(ggchild, Tree) and ggchild.data == "scoped_var":
+                                # Check if scope_prefix is "local"
+                                for gggchild in ggchild.children:
+                                    if hasattr(gggchild, "type") and gggchild.type == "LOCAL":
+                                        return True
+
+        return False
 
     # === Parameter Handling ===
     def parameters(self, items):

@@ -683,7 +683,7 @@ class ExpressionExecutor(BaseExecutor):
                     target_length = self._get_safe_length(target)
                     raise IndexError(
                         f"Index {index} is out of bounds for {type(target).__name__} of length {target_length}. "
-                        f"Valid indices: 0 to {int(target_length)-1 if target_length.isdigit() else 'N-1'}"
+                        f"Valid indices: 0 to {int(target_length) - 1 if target_length.isdigit() else 'N-1'}"
                     )
                 elif isinstance(e, KeyError):
                     if isinstance(target, dict):
@@ -782,9 +782,7 @@ class ExpressionExecutor(BaseExecutor):
         # Check if target supports slicing
         if not hasattr(target, "__getitem__"):
             supported_types = "lists, tuples, strings, dictionaries, or objects with __getitem__ method"
-            raise TypeError(
-                f"Slice operation not supported on {type(target).__name__}. " f"Slicing is only supported on {supported_types}."
-            )
+            raise TypeError(f"Slice operation not supported on {type(target).__name__}. Slicing is only supported on {supported_types}.")
 
         # Validate step is not zero
         if components["step"] == 0:
@@ -821,7 +819,7 @@ class ExpressionExecutor(BaseExecutor):
         # Check for obviously out-of-bounds positive indices
         if start is not None and start >= length:
             raise ValueError(
-                f"Slice start index {start} is out of bounds for sequence of length {length}. " f"Valid range: -{length} to {length-1}"
+                f"Slice start index {start} is out of bounds for sequence of length {length}. Valid range: -{length} to {length - 1}"
             )
 
         if stop is not None and stop > length:
