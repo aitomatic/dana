@@ -11,6 +11,7 @@ import pytest
 from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
 
 
+@pytest.mark.poet
 class TestPOETDecoratorDana:
     """Test POET decorator functionality within Dana language execution."""
 

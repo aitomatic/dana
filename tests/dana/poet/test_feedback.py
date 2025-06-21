@@ -14,6 +14,7 @@ from opendxa.dana.poet.feedback import AlphaFeedbackSystem, BasicAlphaTrainer
 from opendxa.dana.poet.types import POETFeedbackError, POETResult
 
 
+@pytest.mark.poet
 class TestAlphaFeedbackSystem:
     """Test Alpha Feedback System functionality"""
 
@@ -230,6 +231,7 @@ class TestAlphaFeedbackSystem:
         assert len(summary["recent_feedback"]) == 3
 
 
+@pytest.mark.poet
 class TestBasicAlphaTrainer:
     """Test Basic Alpha Trainer functionality"""
 
@@ -284,6 +286,7 @@ class TestBasicAlphaTrainer:
         # Milestone logging would be captured in logs (not easily tested without log capture)
 
 
+@pytest.mark.poet
 class TestFeedbackIntegration:
     """Test feedback system integration scenarios"""
 

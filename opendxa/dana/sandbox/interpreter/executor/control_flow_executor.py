@@ -285,21 +285,10 @@ class ControlFlowExecutor(BaseExecutor):
             # Enter the context
             context_value = context_manager.__enter__()
 
-            # Bind the context value to the 'as' variable in the appropriate scope
-            # If the context manager was accessed with a scope (e.g., private:mcp_client),
-            # use the same scope for the 'as' variable
-            if hasattr(node.context_manager, "name") and isinstance(node.context_manager.name, str):
-                if ":" in node.context_manager.name:
-                    scope, _ = node.context_manager.name.split(":", 1)
-                    context.set_in_scope(node.as_var, context_value, scope=scope)
-                elif "." in node.context_manager.name:
-                    scope, _ = node.context_manager.name.split(".", 1)
-                    context.set_in_scope(node.as_var, context_value, scope=scope)
-                else:
-                    context.set_in_scope(node.as_var, context_value, scope="local")
-            else:
-                # Default to local scope if no scope specified
-                context.set_in_scope(node.as_var, context_value, scope="local")
+            # Bind the context value to the 'as' variable in the local scope
+            # The 'as' variable should always be in the local scope regardless of
+            # where the context manager came from
+            context.set_in_scope(node.as_var, context_value, scope="local")
 
             # Execute the body
             result = self._execute_statement_list(node.body, context)
@@ -313,18 +302,8 @@ class ControlFlowExecutor(BaseExecutor):
             result = None
         else:
             # Exit without exception
-            # Delete the variable from the appropriate scope
-            if hasattr(node.context_manager, "name") and isinstance(node.context_manager.name, str):
-                if ":" in node.context_manager.name:
-                    scope, _ = node.context_manager.name.split(":", 1)
-                    context.delete_from_scope(node.as_var, scope=scope)
-                elif "." in node.context_manager.name:
-                    scope, _ = node.context_manager.name.split(".", 1)
-                    context.delete_from_scope(node.as_var, scope=scope)
-                else:
-                    context.delete_from_scope(node.as_var, scope="local")
-            else:
-                context.delete_from_scope(node.as_var, scope="local")
+            # Delete the variable from the local scope
+            context.delete_from_scope(node.as_var, scope="local")
             context_manager.__exit__(None, None, None)
 
         return result

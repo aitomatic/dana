@@ -79,8 +79,8 @@ class DanaFunction(SandboxFunction, Loggable):
         original_locals = prepared_context.get_scope("local").copy()
         prepared_context._original_locals = original_locals
 
-        # Clear the local scope for this function execution (function parameters only)
-        prepared_context.set_scope("local", {})
+        # Keep existing variables but prepare to add function parameters
+        # Don't clear the local scope - preserve existing variables
 
         # First, apply default values for all parameters that have them
         for param_name in self.parameters:

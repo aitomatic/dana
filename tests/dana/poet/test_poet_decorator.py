@@ -30,6 +30,7 @@ def sandbox():
 
 
 @pytest.mark.skip(reason="DEPRECATED: Use new organized test suite instead")
+@pytest.mark.poet
 def test_basic_poet_decorator(sandbox):
     """Test basic POET decorator functionality."""
     result = sandbox.run("tests/dana/poet/test_poet_decorator.na")
@@ -39,6 +40,7 @@ def test_basic_poet_decorator(sandbox):
 
 
 @pytest.mark.skip(reason="DEPRECATED: Use new organized test suite instead")
+@pytest.mark.poet
 def test_poet_decorator_with_context(sandbox):
     """Test POET decorator with context handling."""
     result = sandbox.run("tests/dana/poet/test_poet_decorator.na")
@@ -50,6 +52,7 @@ def test_poet_decorator_with_context(sandbox):
 
 
 @pytest.mark.skip(reason="DEPRECATED: Use new organized test suite instead")
+@pytest.mark.poet
 def test_poet_decorator_metadata(sandbox):
     """Test POET decorator metadata preservation."""
     result = sandbox.run("tests/dana/poet/test_poet_decorator.na")
@@ -63,6 +66,7 @@ def test_poet_decorator_metadata(sandbox):
 
 
 @pytest.mark.skip(reason="DEPRECATED: Use new organized test suite instead")
+@pytest.mark.poet
 def test_poet_decorator_overwrite(sandbox):
     """Test POET decorator function overwriting."""
     result = sandbox.run("tests/dana/poet/test_poet_decorator.na")
@@ -72,6 +76,7 @@ def test_poet_decorator_overwrite(sandbox):
 
 
 @pytest.mark.skip(reason="DEPRECATED: Use new organized test suite instead")
+@pytest.mark.poet
 def test_poet_decorator_error_handling(sandbox):
     """Test POET decorator error handling."""
     result = sandbox.run("tests/dana/poet/test_poet_decorator.na")
@@ -83,6 +88,7 @@ def test_poet_decorator_error_handling(sandbox):
 
 
 @pytest.mark.skip(reason="DEPRECATED: Use new organized test suite instead")
+@pytest.mark.poet
 def test_poet_decorator_namespace(sandbox):
     """Test POET decorator namespace handling."""
     result = sandbox.run("tests/dana/poet/test_poet_decorator.na")
@@ -92,6 +98,7 @@ def test_poet_decorator_namespace(sandbox):
 
 
 @pytest.mark.skip(reason="DEPRECATED: Use new organized test suite instead")
+@pytest.mark.poet
 def test_poet_decorator_chain(sandbox):
     """Test chaining multiple POET decorators."""
     result = sandbox.run("tests/dana/poet/test_poet_decorator.na")

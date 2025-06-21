@@ -7,9 +7,12 @@ MIT License
 
 from pathlib import Path
 
+import pytest
+
 from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
 
 
+@pytest.mark.poet
 class TestPOETRegistry:
     """Test POET function registry and decorator functionality."""
 

@@ -319,7 +319,7 @@ class FStringTransformer(BaseTransformer):
         # Handle regular variables and literals
         # Check if it's a valid identifier (alphanumeric + underscores, not starting with digit)
         if is_valid_identifier(term):
-            # Don't automatically add local scope - let the resolver handle it
-            return Identifier(name=term)
+            # Automatically add local scope for unscoped identifiers in f-strings
+            return Identifier(name=f"local:{term}")
         else:
             return self._parse_literal(term)

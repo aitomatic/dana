@@ -10,6 +10,7 @@ import pytest
 from tests.dana.poet.helpers import PoetTestBase
 
 
+@pytest.mark.poet
 class TestDanaPOETExamples(PoetTestBase):
     """Test that Dana POET examples execute successfully"""
 
@@ -333,6 +334,7 @@ feedback(perf_result, {"response_accuracy": 1.0})
         assert execution_result.error is None
 
 
+@pytest.mark.poet
 class TestDanaPOETExampleValidation:
     """Validate that Dana POET examples follow correct patterns"""
 

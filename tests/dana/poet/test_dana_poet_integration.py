@@ -5,9 +5,12 @@ Tests for POET integration with Dana language
 import os
 import tempfile
 
+import pytest
+
 from tests.dana.poet.helpers import PoetTestBase
 
 
+@pytest.mark.poet
 class TestDanaPOETIntegration(PoetTestBase):
     """Test POET decorator functionality within Dana language execution"""
 
@@ -293,6 +296,7 @@ log(f"Performance: {perf_result}")
         assert execution_result.error is None
 
 
+@pytest.mark.poet
 class TestDanaPOETBuiltinFunctions(PoetTestBase):
     """Test POET built-in functions in Dana language"""
 
@@ -359,6 +363,7 @@ log(f"Normal function result: {normal_result}")
         assert execution_result.error is None
 
 
+@pytest.mark.poet
 class TestDanaPOETErrorScenarios(PoetTestBase):
     """Test POET error scenarios in Dana language"""
 
@@ -443,6 +448,7 @@ def broken_function(x: int) -> int:
         assert execution_result.error is not None
 
 
+@pytest.mark.poet
 class TestDanaPOETLifecycle(PoetTestBase):
     """Test POET lifecycle management in Dana"""
 
