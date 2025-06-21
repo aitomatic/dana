@@ -30,6 +30,7 @@ class POETDecorator(Loggable):
         namespace: str = "local",
         overwrite: bool = False,
         optimize_for: str | None = None,
+        enable_training: bool = False,
     ):
         """Initialize the POET decorator.
 
@@ -41,6 +42,7 @@ class POETDecorator(Loggable):
             namespace: Namespace to register the function in
             overwrite: Whether to allow overwriting existing functions
             optimize_for: Optional optimization target for learning (enables training when specified)
+            enable_training: Whether to enable training mode (legacy parameter, equivalent to optimize_for)
         """
         super().__init__()
         self.func = func
@@ -50,6 +52,7 @@ class POETDecorator(Loggable):
         self.namespace = namespace
         self.overwrite = overwrite
         self.optimize_for = optimize_for
+        self.enable_training = enable_training or (optimize_for is not None)
 
         # Store metadata on the function
         if not hasattr(func, "_poet_metadata"):
@@ -62,6 +65,7 @@ class POETDecorator(Loggable):
                 "namespace": namespace,
                 "overwrite": overwrite,
                 "optimize_for": optimize_for,
+                "enable_training": self.enable_training,
             }
         )
 
@@ -179,6 +183,7 @@ def poet(
     namespace: str = "local",
     overwrite: bool = False,
     optimize_for: str | None = None,
+    enable_training: bool = False,
 ) -> Callable:
     """Decorator factory for POET functions.
 
@@ -189,6 +194,7 @@ def poet(
         namespace: Namespace to register the function in
         overwrite: Whether to allow overwriting existing functions
         optimize_for: Optional optimization target for learning (enables training when specified)
+        enable_training: Whether to enable training mode (legacy parameter, equivalent to optimize_for)
 
     Returns:
         A decorator function that enhances the target function with POET capabilities
@@ -204,6 +210,7 @@ def poet(
             namespace=namespace,
             overwrite=overwrite,
             optimize_for=optimize_for,
+            enable_training=enable_training,
         )
         return poet_decorator.wrapper
 

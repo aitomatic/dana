@@ -120,7 +120,11 @@ class ExpressionExecutor(BaseExecutor):
         try:
             result = context.get(name)
             self.debug(f"DEBUG: Successfully found '{name}' via context.get(): {result}")
-            return result
+            # Only return if the result is not None
+            if result is not None:
+                return result
+            else:
+                self.debug(f"DEBUG: Got None from context for '{name}', checking function registry")
         except StateError:
             # If not found in context with the default scoping, try searching across all scopes
             # This is needed for cases like with statements where variables may be in non-local scopes
@@ -963,8 +967,35 @@ class ExpressionExecutor(BaseExecutor):
             SandboxError: If the right operand is not callable or function call fails
         """
         from opendxa.dana.sandbox.interpreter.functions.sandbox_function import SandboxFunction
+        from opendxa.dana.sandbox.parser.ast import Identifier
 
-        # Evaluate the left operand to see what we're working with
+        # Check if this might be function composition (both sides are identifiers that reference functions)
+        if isinstance(left, Identifier) and isinstance(right, Identifier):
+            # Try to resolve both as functions first
+            try:
+                if self.function_registry:
+                    left_func, _, _ = self.function_registry.resolve(left.name, None)
+                    right_func, _, _ = self.function_registry.resolve(right.name, None)
+
+                    # If both resolve to SandboxFunctions, create composition
+                    if isinstance(left_func, SandboxFunction) and isinstance(right_func, SandboxFunction):
+                        return self._create_composed_function_unified(left_func, right, context)
+            except Exception:
+                # If function resolution fails, fall back to data pipeline
+                pass
+
+        # Check if left is an identifier that resolves to a function
+        if isinstance(left, Identifier):
+            try:
+                if self.function_registry:
+                    left_func, _, _ = self.function_registry.resolve(left.name, None)
+                    if isinstance(left_func, SandboxFunction):
+                        return self._create_composed_function_unified(left_func, right, context)
+            except Exception:
+                # If function resolution fails, fall back to data pipeline
+                pass
+
+        # Evaluate the left operand for data pipeline
         left_value = self.parent.execute(left, context)
 
         # If left_value is a SandboxFunction, create a composed function

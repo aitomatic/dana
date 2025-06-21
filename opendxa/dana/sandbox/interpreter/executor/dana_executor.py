@@ -64,8 +64,8 @@ class DanaExecutor(BaseExecutor):
         super().__init__(parent=None, function_registry=function_registry)  # type: ignore
         self._output_buffer = []  # Buffer for capturing print output
 
-        # Initialize specialized executors
-        self._expression_executor = ExpressionExecutor(parent_executor=self)
+        # Initialize specialized executors - pass function_registry to ExpressionExecutor
+        self._expression_executor = ExpressionExecutor(parent_executor=self, function_registry=function_registry)
         self._statement_executor = StatementExecutor(parent_executor=self)
         self._control_flow_executor = ControlFlowExecutor(parent_executor=self)
         self._collection_executor = CollectionExecutor(parent_executor=self)

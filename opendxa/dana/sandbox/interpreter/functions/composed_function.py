@@ -37,6 +37,13 @@ class ComposedFunction(SandboxFunction):
         self.left_func = left_func
         self.right_func = right_func
 
+        # Store function registry reference for lazy resolution
+        self._function_registry = None
+        if context:
+            interpreter = getattr(context, "_interpreter", None)
+            if interpreter and hasattr(interpreter, "function_registry"):
+                self._function_registry = interpreter.function_registry
+
         # Mark this as a Dana composed function for identification
         self._is_dana_composed_function = True
 
@@ -117,6 +124,25 @@ class ComposedFunction(SandboxFunction):
                     return func_obj
             except Exception:
                 pass
+
+            # Try to use the stored function registry
+            if self._function_registry:
+                try:
+                    resolved_func, func_type, metadata = self._function_registry.resolve(func, None)
+                    if isinstance(resolved_func, SandboxFunction):
+                        return resolved_func
+                except Exception:
+                    pass
+
+            # Try to get the interpreter's function registry from context as fallback
+            interpreter = getattr(context, "_interpreter", None)
+            if interpreter and hasattr(interpreter, "function_registry"):
+                try:
+                    resolved_func, func_type, metadata = interpreter.function_registry.resolve(func, None)
+                    if isinstance(resolved_func, SandboxFunction):
+                        return resolved_func
+                except Exception:
+                    pass
 
             # Function not found - raise a clear error
             raise SandboxError(f"Function '{func}' not found in context or function registry")
