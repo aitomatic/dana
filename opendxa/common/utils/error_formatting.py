@@ -334,11 +334,9 @@ class ErrorFormattingUtilities:
             ...     extra_context={"resource_type": "database", "operation": "connect"}
             ... )
         """
-        # Check if the logger method is valid, fallback to error if not
-        valid_logger_methods = {"debug", "info", "warning", "error", "critical"}
-        if logger_method in valid_logger_methods:
-            logger_func = getattr(DXA_LOGGER, logger_method)
-        else:
+        # Use getattr with default None, fallback to error if not callable
+        logger_func = getattr(DXA_LOGGER, logger_method, None)
+        if not callable(logger_func):
             logger_func = DXA_LOGGER.error
 
         if extra_context:

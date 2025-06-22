@@ -197,6 +197,7 @@ class TestErrorFormattingUtilities:
     def test_log_formatted_error_invalid_method(self):
         """Test logging with invalid logger method falls back to error."""
         with patch("opendxa.common.utils.error_formatting.DXA_LOGGER") as mock_logger:
+            mock_logger.invalid_method = None  # Ensure getattr returns None for invalid_method
             ErrorFormattingUtilities.log_formatted_error(error_message="Test message", logger_method="invalid_method")
 
             # Should fall back to error method
