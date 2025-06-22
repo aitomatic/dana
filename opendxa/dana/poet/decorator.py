@@ -2,8 +2,8 @@
 POET (Perceive-Operate-Enforce-Train) decorator implementation.
 
 This module provides the POET decorator for enhancing functions with domain-specific capabilities.
-Functions are enhanced by generating Dana code that implements the P→O→E→T phases and storing
-it locally in .dana/poet/ directories.
+Functions are enhanced by LLM-powered code generation that understands intent and context,
+storing generated Dana code locally in .dana/poet/ directories.
 """
 
 import inspect
@@ -29,6 +29,7 @@ class POETConfig:
         enable_monitoring: bool = True,
         cache_strategy: str = "auto",
         fallback_strategy: str = "raise",
+        use_llm: bool = True,  # Enable LLM by default
         **kwargs,
     ):
         self.domain = domain
@@ -38,6 +39,7 @@ class POETConfig:
         self.enable_monitoring = enable_monitoring
         self.cache_strategy = cache_strategy
         self.fallback_strategy = fallback_strategy
+        self.use_llm = use_llm
         for key, value in kwargs.items():
             setattr(self, key, value)
 
@@ -61,7 +63,7 @@ class POETDecorator:
     
     The decorator works by:
     1. Checking for enhanced Dana code in .dana/poet/{function_name}.na
-    2. Generating the enhanced code if it doesn't exist
+    2. Using LLM to generate intelligent enhancements if missing
     3. Executing the enhanced code in the Dana sandbox
     """
 
@@ -75,6 +77,7 @@ class POETDecorator:
         enable_monitoring: bool = True,
         cache_strategy: str = "auto",
         fallback_strategy: str = "raise",
+        use_llm: bool = True,
         **kwargs,
     ):
         """Initialize the enhanced POET decorator."""
@@ -87,6 +90,7 @@ class POETDecorator:
             enable_monitoring=enable_monitoring,
             cache_strategy=cache_strategy,
             fallback_strategy=fallback_strategy,
+            use_llm=use_llm,
             **kwargs,
         )
         
@@ -118,15 +122,32 @@ class POETDecorator:
     def _ensure_enhanced_code_exists(self) -> None:
         """Ensure enhanced Dana code exists, generating if necessary."""
         if not self.enhanced_path.exists():
-            # Import transpiler and generate code
-            from opendxa.dana.poet.transpiler import POETTranspiler
-            
-            transpiler = POETTranspiler()
-            dana_code = transpiler.transpile(self.func, self.config)
-            
-            # Create directory and write code
-            self.enhanced_path.parent.mkdir(parents=True, exist_ok=True)
-            self.enhanced_path.write_text(dana_code)
+            try:
+                if self.config.use_llm:
+                    # Use LLM-powered transpiler for intelligent generation
+                    from opendxa.dana.poet.transpiler_llm import POETTranspilerLLM
+                    transpiler = POETTranspilerLLM()
+                else:
+                    # Fall back to template-based transpiler
+                    from opendxa.dana.poet.transpiler import POETTranspiler
+                    transpiler = POETTranspiler()
+                
+                dana_code = transpiler.transpile(self.func, self.config)
+                
+                # Create directory and write code
+                self.enhanced_path.parent.mkdir(parents=True, exist_ok=True)
+                self.enhanced_path.write_text(dana_code)
+                
+                # Log generation for visibility
+                print(f"POET: Generated enhancement for {self.func.__name__} at {self.enhanced_path}")
+                
+            except Exception as e:
+                # Log error and decide on fallback
+                print(f"POET: Failed to generate enhancement for {self.func.__name__}: {e}")
+                if self.config.fallback_strategy == "original":
+                    print(f"POET: Falling back to original function")
+                else:
+                    raise RuntimeError(f"POET generation failed: {e}") from e
 
     def _create_wrapper(self) -> None:
         """Create the wrapper function that executes enhanced Dana code."""
@@ -135,6 +156,11 @@ class POETDecorator:
             """Execute the POET-enhanced function."""
             # Ensure enhanced code exists
             self._ensure_enhanced_code_exists()
+            
+            # Check if we have enhanced code or need to fall back
+            if not self.enhanced_path.exists() and self.config.fallback_strategy == "original":
+                # Fall back to original function
+                return self.func(*args, **kwargs)
             
             # Get or create sandbox context
             context = kwargs.pop("context", None)
@@ -173,6 +199,7 @@ class POETDecorator:
             except Exception as e:
                 if self.config.fallback_strategy == "original":
                     # Fallback to original function
+                    print(f"POET: Execution failed, falling back to original: {e}")
                     return self.func(*args, **kwargs)
                 else:
                     raise RuntimeError(f"POET execution failed: {e}") from e
@@ -184,7 +211,7 @@ class POETDecorator:
         return self.wrapper(*args, **kwargs)
 
     def __repr__(self) -> str:
-        return f"POETDecorator(func={self.func.__name__}, domain={self.config.domain})"
+        return f"POETDecorator(func={self.func.__name__}, domain={self.config.domain}, llm={self.config.use_llm})"
 
 
 def poet(
@@ -195,14 +222,15 @@ def poet(
     enable_monitoring: bool = True,
     cache_strategy: str = "auto",
     fallback_strategy: str = "raise",
+    use_llm: bool = True,
     **kwargs,
 ) -> Any:
     """
     POET decorator that enhances functions with Perceive→Operate→Enforce→Train phases.
     
-    The decorator generates Dana code implementing the four phases and stores it locally
-    in .dana/poet/{function_name}.na. When the function is called, the enhanced version
-    is executed in the Dana sandbox.
+    Uses LLM-powered code generation to understand function intent and create intelligent
+    enhancements. Generated Dana code is stored locally in .dana/poet/{function_name}.na
+    and executed in the Dana sandbox.
     
     Args:
         domain: Domain template (e.g., "mathematical_operations", "llm_optimization")
@@ -212,23 +240,28 @@ def poet(
         enable_monitoring: Enable execution monitoring
         cache_strategy: Caching behavior for enhanced code
         fallback_strategy: What to do on error ("raise" or "original")
+        use_llm: Use LLM for generation (True) or templates (False)
         
     Returns:
         Enhanced function with P→O→E(→T) capabilities
         
     Example:
-        @poet(domain="mathematical_operations")
-        def safe_divide(a: float, b: float) -> float:
-            return a / b
+        @poet(domain="financial")
+        def calculate_payment(principal: float, rate: float) -> float:
+            '''Calculate loan payment.'''
+            return principal * rate / 12
             
-        # Enhanced function validates inputs, handles errors, and retries
-        result = safe_divide(10, 0)  # Graceful error instead of crash
+        # POET understands this is a financial calculation and adds:
+        # - Validation for positive principal
+        # - Rate reasonableness checks  
+        # - Financial rounding rules
+        # - Audit logging
     """
     # Handle Dana's decorator application quirk
     if domain is not None and callable(domain):
         # Dana passed function as first parameter
         func = domain
-        return POETDecorator(func)
+        return POETDecorator(func, use_llm=use_llm)
     
     def decorator(func: Callable) -> POETDecorator:
         """Apply POET enhancement to function."""
@@ -241,6 +274,7 @@ def poet(
             enable_monitoring=enable_monitoring,
             cache_strategy=cache_strategy,
             fallback_strategy=fallback_strategy,
+            use_llm=use_llm,
             **kwargs,
         )
     
@@ -251,7 +285,8 @@ def feedback(execution_id: str, content: str | dict | Any, **kwargs) -> bool:
     """Provide feedback for a POET function execution.
     
     When a function has optimize_for set, this feedback is used by the Train phase
-    to improve future executions.
+    to improve future executions. The LLM learns from this feedback to generate
+    better enhancements.
     
     Args:
         execution_id: The execution ID from POETResult._poet.execution_id
@@ -271,5 +306,6 @@ def feedback(execution_id: str, content: str | dict | Any, **kwargs) -> bool:
             "metadata": kwargs,
             "timestamp": storage._get_timestamp(),
         })
-    except Exception:
+    except Exception as e:
+        print(f"POET: Failed to save feedback: {e}")
         return False

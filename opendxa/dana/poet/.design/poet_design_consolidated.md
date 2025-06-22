@@ -1,404 +1,351 @@
 # POET Design Document (Consolidated)
 
-**Version**: 3.0  
+**Version**: 4.0  
 **Date**: 2025-01-22  
-**Status**: Active Design Document - Local Storage Implementation
+**Status**: Active Design Document - LLM-Powered Implementation
 
 ## Table of Contents
 1. [Overview](#overview)
-2. [User Experience](#user-experience)
-3. [Architecture](#architecture)
-4. [Storage Design](#storage-design)
+2. [Core Innovation: LLM-Powered Code Generation](#core-innovation)
+3. [User Experience](#user-experience)
+4. [Architecture](#architecture)
 5. [Implementation Details](#implementation-details)
 6. [Use Cases](#use-cases)
 7. [Future Considerations](#future-considerations)
 
 ## Overview
 
-POET (Perceive-Operate-Enforce-Train) is a function enhancement framework that transforms simple functions into production-ready implementations through a four-phase pipeline. The framework generates Dana code that runs in a secure sandbox, providing enterprise-grade reliability with zero configuration.
+POET (Perceive-Operate-Enforce-Train) is an LLM-powered code generation framework that transforms simple functions into production-ready implementations. Using advanced language models to understand code intent and context, POET generates intelligent enhancements that go far beyond pattern matching.
 
 ### Vision
-Enable developers to write simple functions and get enterprise-grade reliability, monitoring, and continuous improvement automatically through a single decorator.
+Enable developers to write simple functions and get enterprise-grade reliability, monitoring, and continuous improvement automatically through AI-powered code generation.
 
 ### Core Promise
-"From prototype to production in one decorator."
+"Your AI pair programmer that makes every function production-ready."
+
+## Core Innovation: LLM-Powered Code Generation
+
+### The Problem with Templates
+Traditional code enhancement tools use templates and pattern matching:
+- Can only detect surface patterns (like "/" for division)
+- Generate generic, one-size-fits-all enhancements
+- Miss the semantic meaning and intent of code
+- Cannot adapt to specific contexts or requirements
+
+### The POET Solution: AI Understanding
+POET uses LLMs to deeply understand your code:
+- **Semantic Analysis**: Understands what your function actually does
+- **Context Awareness**: Uses docstrings, variable names, and patterns
+- **Domain Intelligence**: Applies specialized knowledge per domain
+- **Custom Generation**: Creates enhancements specific to each function
+- **Continuous Learning**: Improves from feedback over time
+
+### Example: The Power of Understanding
+
+```python
+# Your simple function
+@poet(domain="mathematical_operations")
+def calculate_compound_interest(principal: float, rate: float, years: int) -> float:
+    """Calculate compound interest for investment."""
+    return principal * (1 + rate) ** years
+```
+
+**Template-based approach would generate**:
+- Generic numeric validation
+- Basic division by zero check (not even relevant)
+
+**LLM-powered POET generates**:
+- Validates rate is a reasonable percentage (0-1 or 0-100)
+- Checks principal is positive (negative investment doesn't make sense)
+- Ensures years is positive integer
+- Warns if result suggests unrealistic returns
+- Adds financial rounding appropriate for currency
+- Handles edge cases like very long time periods
 
 ## User Experience
 
 ### The POET Journey
 
-#### 1. **Starting Simple**
-Developer writes a basic function:
+#### 1. **Write Natural Code**
 ```python
-# my_project/calculations.py
-def safe_divide(a: float, b: float) -> float:
-    """Divide two numbers."""
-    return a / b
+def process_payment(amount: float, card_number: str) -> dict:
+    """Process credit card payment."""
+    return {"status": "success", "amount": amount}
 ```
 
-#### 2. **Adding POET**
-Add one decorator:
+#### 2. **Add POET Decorator**
 ```python
-from opendxa.dana.poet import poet
-
-@poet(domain="mathematical_operations")
-def safe_divide(a: float, b: float) -> float:
-    """Divide two numbers."""
-    return a / b
+@poet(domain="financial", optimize_for="security")
+def process_payment(amount: float, card_number: str) -> dict:
+    """Process credit card payment."""
+    return {"status": "success", "amount": amount}
 ```
 
-#### 3. **What Happens Behind the Scenes**
-On first call:
-1. POET generates enhanced Dana code
-2. Stores it locally in `.dana/poet/safe_divide.na`
-3. Executes the enhanced version in Dana sandbox
+#### 3. **AI Analyzes and Enhances**
+POET's LLM understands this is a payment function and generates:
+- PCI compliance validation
+- Card number format checking (Luhn algorithm)
+- Amount validation (positive, reasonable limits)
+- Retry logic for payment gateway failures
+- Audit logging for compliance
+- Fraud detection signals
 
-The generated file structure:
+#### 4. **Transparent Enhancement**
+Generated code is saved locally in `.dana/poet/process_payment.na`:
+```dana
+def perceive(amount: float, card_number: string, state: POETState) -> POETState {
+    # LLM understands this is payment processing
+    
+    # Validate amount
+    if amount <= 0 {
+        state.errors.append("Payment amount must be positive")
+    }
+    if amount > 10000 {  # Business rule for fraud prevention
+        state.warnings.append("Large transaction requires additional verification")
+    }
+    
+    # Validate card number format and checksum
+    if not is_valid_card_format(card_number) {
+        state.errors.append("Invalid card number format")
+    }
+    if not luhn_check(card_number) {
+        state.errors.append("Card number failed validation")
+    }
+    
+    # Security: mask card number in logs
+    state.metadata["masked_card"] = mask_card_number(card_number)
+    
+    return state
+}
 ```
-my_project/
-├── calculations.py
-└── .dana/
-    └── poet/
-        └── safe_divide.na  # Auto-generated enhancement
-```
-
-#### 4. **Using the Enhanced Function**
-Works exactly like before, but now bulletproof:
-```python
-# Normal usage - no changes needed
-result = safe_divide(10, 2)  # Returns 5.0
-
-# Previously crashed, now handles gracefully
-result = safe_divide(10, 0)  
-# Raises: ValueError: POET validation failed: Division by zero: parameter 'b' cannot be zero
-
-# Get detailed execution info
-result = safe_divide(10, 2)
-print(result._poet.execution_id)  # For feedback tracking
-```
-
-#### 5. **Enabling Learning (POET)**
-Add `optimize_for` to enable the Train phase:
-```python
-@poet(domain="prompt_optimization", optimize_for="clarity")
-def generate_prompt(topic: str, audience: str) -> str:
-    return f"Explain {topic} to {audience}"
-
-# Use the function
-prompt = generate_prompt("quantum computing", "5-year-old")
-
-# Provide feedback to improve it
-from opendxa.dana.poet import feedback
-feedback(prompt._poet.execution_id, "too complex for audience")
-```
-
-### Key User Benefits
-
-1. **Zero Learning Curve**: Functions work exactly as before
-2. **Progressive Enhancement**: Start simple, add features as needed
-3. **Transparent Operation**: See generated code in `.dana/poet/`
-4. **Local Development**: No external services required
-5. **Production Ready**: Enterprise features from day one
 
 ## Architecture
 
-### Core Principles
-
-1. **Local-First Storage**
-   - Enhanced code lives next to original
-   - No global registry or database
-   - Easy to version control
-   - Simple to understand
-
-2. **Dana-Native Execution**
-   - All enhancements run in Dana sandbox
-   - Secure by default
-   - Full language features available
-   - Consistent execution model
-
-3. **Transparent Generation**
-   - Generated code is readable
-   - Easy to debug and inspect
-   - No magic, just code
-   - Can be manually edited if needed
-
-### Four-Phase Pipeline
+### System Components
 
 ```
-Original Function → POET Decorator → Dana Code Generation → Sandbox Execution
-                                           ↓
-                                    .dana/poet/{function}.na
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│   Python Code   │────▶│  POET Decorator │────▶│ LLM Transpiler  │
+│  (Your Function)│     │ (Orchestrator)  │     │ (Code Generator)│
+└─────────────────┘     └─────────────────┘     └─────────────────┘
+                                │                         │
+                                ▼                         ▼
+                        ┌─────────────────┐     ┌─────────────────┐
+                        │ Dana Sandbox    │     │ Local Storage   │
+                        │ (Execution)     │     │ .dana/poet/*.na │
+                        └─────────────────┘     └─────────────────┘
 ```
 
-Each generated file contains four phase functions:
+### LLM Code Generation Pipeline
 
-1. **perceive()** - Input validation and preparation
-2. **operate()** - Core logic with reliability features  
-3. **enforce()** - Output validation and quality checks
-4. **train()** - Learning from feedback (if enabled)
-
-## Storage Design
-
-### File Organization
-
-```
-project_root/
-├── module_a/
-│   ├── calculations.py      # Contains @poet decorated functions
-│   └── .dana/
-│       └── poet/
-│           ├── safe_divide.na
-│           └── calculate_risk.na
-├── module_b/
-│   ├── api_calls.py
-│   └── .dana/
-│       └── poet/
-│           └── fetch_data.na
-```
-
-### Generated Dana Code Structure
-
-```dana
-# .dana/poet/safe_divide.na
-
-import math
-import time
-
-# State management
-struct POETState {
-    inputs: dict
-    perceive_result: dict
-    operate_result: dict
-    enforce_result: dict
-    metadata: dict
-    errors: list[string]
-    warnings: list[string]
-}
-
-# Phase 1: Input validation
-def perceive(a: float, b: float, state: POETState) -> POETState {
-    # Validation logic
-    if b == 0 {
-        state.errors.append("Division by zero: parameter 'b' cannot be zero")
-    }
-    state.perceive_result = {"valid": len(state.errors) == 0}
-    return state
-}
-
-# Phase 2: Core execution
-def operate(a: float, b: float, state: POETState) -> POETState {
-    # Original logic with enhancements
-    for attempt in range(3) {
-        try {
-            result = a / b  # Original logic embedded
-            state.operate_result = {"success": true, "value": result}
-            break
-        } except Exception as e {
-            # Retry logic
-        }
-    }
-    return state
-}
-
-# Phase 3: Output validation
-def enforce(state: POETState) -> POETState {
-    # Business rules
-    return state
-}
-
-# Phase 4: Learning (if enabled)
-def train(state: POETState, feedback: dict) -> void {
-    # Update parameters based on feedback
-}
-
-# Main orchestrator
-def enhanced_safe_divide(a: float, b: float) -> float {
-    state = POETState(...)
-    state = perceive(a, b, state)
-    state = operate(a, b, state)  
-    state = enforce(state)
-    
-    if not state.enforce_result["valid"] {
-        raise ValueError(f"POET validation failed: {state.errors}")
-    }
-    
-    return state.enforce_result["final_value"]
-}
+```mermaid
+graph TD
+    A[Function + Context] --> B[LLM Analysis]
+    B --> C[Understand Intent]
+    C --> D[Apply Domain Knowledge]
+    D --> E[Generate P Phase]
+    D --> F[Generate O Phase]
+    D --> G[Generate E Phase]
+    D --> H[Generate T Phase]
+    E --> I[Dana Code]
+    F --> I
+    G --> I
+    H --> I
+    I --> J[Local Storage]
+    J --> K[Sandbox Execution]
 ```
 
 ## Implementation Details
 
-### Decorator Flow
+### LLM Transpiler Architecture
 
 ```python
-@poet(domain="...", **options)
-def my_function(...):
-    ...
-
-# When called:
-1. Decorator checks for .dana/poet/my_function.na
-2. If missing, calls transpiler to generate it
-3. Loads file into Dana sandbox
-4. Executes enhanced_my_function()
-5. Returns POETResult with value and metadata
+class POETTranspilerLLM:
+    def transpile(self, func: Callable, config: POETConfig) -> str:
+        # 1. Extract comprehensive context
+        context = {
+            "source_code": inspect.getsource(func),
+            "signature": inspect.signature(func),
+            "docstring": inspect.getdoc(func),
+            "module_context": self._get_module_context(func),
+            "domain": config.domain,
+            "optimization_goal": config.optimize_for
+        }
+        
+        # 2. Build intelligent prompt
+        prompt = self._build_generation_prompt(context)
+        
+        # 3. Generate with LLM
+        dana_code = self.llm.generate(prompt, 
+            temperature=0.3,  # Consistent code generation
+            examples=self._get_domain_examples(config.domain)
+        )
+        
+        # 4. Validate and refine
+        return self._validate_and_refine(dana_code)
 ```
 
-### Transpiler Process
+### Prompt Engineering
 
-1. **Extract Function Info**
-   - Parse Python AST
-   - Get signature, annotations, body
-   - Extract docstring
+The LLM receives rich context to generate intelligent code:
 
-2. **Apply Domain Template**
-   - Get domain-specific enhancements
-   - Generate phase implementations
-   - Add domain intelligence
+```
+You are enhancing this function for production use:
 
-3. **Generate Dana Code**
-   - Convert Python → Dana syntax
-   - Build POETState struct
-   - Create phase functions
-   - Generate orchestrator
+Function: calculate_risk_score
+Purpose: Calculate risk score for loan application
+Domain: financial
+Context: Used in real-time loan approval system
 
-4. **Write Local File**
-   - Create .dana/poet/ directory
-   - Write {function_name}.na
-   - Make it readable/debuggable
+Analyze deeply:
+1. What are the business rules implicit in this calculation?
+2. What edge cases could cause failures?
+3. What validation would a senior engineer add?
+4. What monitoring would help in production?
 
-### Execution Model
+Generate Dana code that implements P→O→E→T phases with deep understanding.
+```
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant Decorator
-    participant Storage
-    participant Transpiler
-    participant Sandbox
-    
-    User->>Decorator: Call function
-    Decorator->>Storage: Check .dana/poet/
-    
-    alt File exists
-        Storage->>Decorator: Return path
-    else File missing
-        Decorator->>Transpiler: Generate Dana code
-        Transpiler->>Storage: Write .na file
-    end
-    
-    Decorator->>Sandbox: Load .na file
-    Sandbox->>Sandbox: Execute enhanced function
-    Sandbox->>User: Return POETResult
+### Domain-Specific Intelligence
+
+Each domain provides specialized prompts and examples:
+
+```python
+DOMAIN_CONTEXTS = {
+    "financial": {
+        "concerns": ["security", "accuracy", "compliance", "fraud"],
+        "patterns": ["transaction", "payment", "calculation"],
+        "regulations": ["PCI", "SOX", "GDPR"],
+        "examples": [financial_examples...]
+    },
+    "ml_monitoring": {
+        "concerns": ["drift", "accuracy", "latency", "fairness"],
+        "patterns": ["prediction", "scoring", "classification"],
+        "metrics": ["precision", "recall", "AUC", "calibration"],
+        "examples": [ml_examples...]
+    }
+}
 ```
 
 ## Use Cases
 
-### Use Case A: Mathematical Operations
-```python
-@poet(domain="mathematical_operations")
-def safe_divide(a: float, b: float) -> float:
-    return a / b
+### Use Case 1: Context-Aware Enhancement
 
-# Generated enhancements:
-# - Division by zero validation
-# - NaN/Infinity checking
-# - Numerical stability
-# - Retry on transient errors
+```python
+@poet(domain="api")
+def get_user_profile(user_id: str) -> dict:
+    """Fetch user profile from database."""
+    return db.fetch_user(user_id)
 ```
 
-### Use Case B: LLM Interactions
-```python
-@poet(domain="llm_optimization", retries=3)
-def query_ai(prompt: str) -> str:
-    return llm.complete(prompt)
+**LLM Understanding**: This is a data fetching function
+**Generated Enhancements**:
+- Validates user_id format (UUID, no SQL injection)
+- Adds caching with intelligent TTL
+- Implements retry with exponential backoff
+- Adds privacy filtering (remove PII based on caller permissions)
+- Monitors query performance
 
-# Generated enhancements:
-# - Prompt validation
-# - Token monitoring
-# - Response quality checks
-# - Retry with backoff
+### Use Case 2: Business Logic Understanding
+
+```python
+@poet(domain="financial")
+def calculate_tax(income: float, deductions: float) -> float:
+    """Calculate federal tax owed."""
+    taxable = income - deductions
+    return taxable * 0.22  # Simplified
 ```
 
-### Use Case C: Prompt Engineering (with Learning)
-```python
-@poet(domain="prompt_optimization", optimize_for="clarity")
-def explain_concept(concept: str, level: str) -> str:
-    return f"Explain {concept} at {level} level"
+**LLM Understanding**: Tax calculation with business rules
+**Generated Enhancements**:
+- Validates income/deductions are positive
+- Checks for reasonable ranges (not $1 trillion income)
+- Rounds to cents for currency
+- Adds audit trail for compliance
+- Warns if result seems incorrect
 
-# Generated enhancements:
-# - A/B testing variants
-# - Performance tracking
-# - Learning from feedback
-# - Automatic optimization
-```
+### Use Case 3: Learning from Feedback
 
-### Use Case D: ML Monitoring (with Learning)
 ```python
 @poet(domain="ml_monitoring", optimize_for="accuracy")
-def detect_anomaly(data: list[float]) -> bool:
-    return statistical_test(data)
-
-# Generated enhancements:
-# - Adaptive thresholds
-# - Drift detection
-# - Learning baselines
-# - Alert optimization
+def detect_anomaly(metrics: dict) -> bool:
+    """Detect if system metrics are anomalous."""
+    return metrics["cpu"] > 90 or metrics["memory"] > 85
 ```
+
+**LLM Understanding**: Simple threshold-based detection
+**Generated Enhancements**:
+- Adds statistical anomaly detection
+- Implements adaptive thresholds
+- Learns from false positive feedback
+- Adds contextual awareness (time of day, day of week)
+- Reduces alert fatigue
+
+## Implementation Status
+
+### Current State
+- ✅ LLM Transpiler designed and implemented
+- ✅ Integration with existing POET framework
+- ✅ Domain-specific prompt engineering
+- ✅ Local storage of generated code
+- ✅ Dana sandbox execution
+
+### Code Generation Quality
+The LLM generates production-quality Dana code that includes:
+- Comprehensive input validation
+- Intelligent error handling
+- Domain-specific business rules
+- Performance monitoring
+- Security considerations
+- Learning capabilities (when enabled)
 
 ## Future Considerations
 
-### Advanced Features
-1. **Hot Reloading**: Detect changes to .na files
-2. **Version Control**: Track enhancement evolution
-3. **Debugging Tools**: Step through phases
-4. **Performance Profiling**: Phase-level metrics
+### Advanced Capabilities
+1. **Multi-Function Understanding**: Analyze related functions together
+2. **Codebase Context**: Use entire module/project context
+3. **Custom Training**: Fine-tune on organization's patterns
+4. **Interactive Refinement**: Allow developers to guide generation
 
-### Ecosystem Integration
-1. **IDE Support**: Syntax highlighting for .na files
-2. **Testing Framework**: Phase-specific tests
-3. **CI/CD Pipeline**: Enhancement validation
-4. **Documentation**: Auto-generate from phases
+### Optimization Opportunities
+1. **Caching Strategy**: Cache generated code with invalidation
+2. **Prompt Optimization**: A/B test different prompt strategies
+3. **Model Selection**: Use different models for different domains
+4. **Streaming Generation**: Generate phases in parallel
 
-### Scalability Options
-1. **Shared Enhancements**: Reuse across projects
-2. **Template Library**: Common patterns
-3. **Cloud Sync**: Share learnings
-4. **Enterprise Features**: Governance, audit
+### Integration Possibilities
+1. **IDE Integration**: Real-time enhancement preview
+2. **CI/CD Pipeline**: Automatic enhancement validation
+3. **Code Review**: AI-powered enhancement suggestions
+4. **Documentation**: Auto-generate from enhancements
 
-## Design Philosophy
+## Why LLM-Powered?
 
-### Why Local Storage?
-- **Simplicity**: No complex infrastructure
-- **Transparency**: See what's generated
-- **Control**: Edit if needed
-- **Versioning**: Git-friendly
-- **Debugging**: Easy to inspect
+### Beyond Pattern Matching
+- **Understands Intent**: Knows what your code is trying to do
+- **Applies Context**: Uses function names, docs, and patterns
+- **Domain Expertise**: Brings specialized knowledge
+- **Adaptive**: Generates unique enhancements per function
+- **Learns**: Improves from feedback over time
 
-### Why Dana?
-- **Security**: Sandboxed execution
-- **Features**: Rich language capabilities
-- **Consistency**: One runtime for all
-- **Integration**: Native to OpenDXA
+### The AI Advantage
+Traditional tools see syntax. POET sees meaning.
 
-### Why Four Phases?
-- **Separation**: Clear responsibilities
-- **Testability**: Isolate concerns
-- **Extensibility**: Add phases later
-- **Clarity**: Easy to understand
+Your code isn't just enhanced - it's understood, protected, and continuously improved by AI that acts as a senior engineer looking over your shoulder.
 
 ## Success Metrics
 
-1. **Developer Experience**
-   - Time to first enhancement: < 30 seconds
-   - Learning curve: Immediate productivity
-   - Debugging time: 50% reduction
+1. **Code Understanding**
+   - Intent recognition accuracy: 95%+
+   - Context utilization: Full function + module
+   - Domain knowledge application: Comprehensive
 
-2. **System Quality**
-   - Error reduction: 90%+
-   - Performance impact: < 5ms
-   - Code reuse: 80%+
+2. **Generation Quality**
+   - First-time success rate: 90%+
+   - Developer acceptance: 85%+
+   - Bug prevention: 80%+ reduction
 
-3. **Business Value**
-   - Time to production: 10x faster
-   - Maintenance cost: 70% reduction
-   - Reliability: 99.9%+
+3. **Developer Experience**
+   - Time to enhancement: < 2 seconds
+   - Transparency: Full visibility
+   - Control: Easy customization
