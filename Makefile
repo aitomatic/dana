@@ -26,7 +26,7 @@ UV_CMD = $(shell command -v uv 2>/dev/null || echo ~/.local/bin/uv)
 .PHONY: help \
 	quickstart check-uv \
 	install install-dev setup-dev \
-	test test-fast test-live test-cov test-watch test-poet \
+	test test-fast test-live test-cov test-watch \
 	lint lint-fix format format-check typecheck \
 	check fix verify \
 	dana run opendxa-server \
@@ -166,10 +166,6 @@ test-cov: ## Run tests with coverage report
 test-watch: ## Run tests in watch mode (reruns on file changes)
 	@echo "👀 Running tests in watch mode..."
 	uv run pytest-watch tests/
-
-test-poet: ## Run POET tests only
-	@echo "🎭 Running POET tests..."
-	OPENDXA_MOCK_LLM=true uv run pytest -m "poet" tests/ -v --tb=short
 
 # =============================================================================
 # Code Quality
