@@ -132,7 +132,9 @@ class TestObjectFunctionCallAST:
 
     def test_parser_creates_object_function_call(self):
         """Test that the parser creates ObjectFunctionCall nodes correctly."""
-        parser = DanaParser()
+        from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
+
+        parser = ParserCache.get_parser("dana")
 
         # Test simple method call
         ast = parser.parse("test_obj.add(10)")
@@ -153,7 +155,9 @@ class TestObjectFunctionCallAST:
 
     def test_parser_handles_empty_arguments(self):
         """Test that the parser handles empty argument lists correctly."""
-        parser = DanaParser()
+        from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
+
+        parser = ParserCache.get_parser("dana")
 
         ast = parser.parse("test_obj.get_value()")
         stmt = ast.statements[0]

@@ -77,7 +77,11 @@ class ErrorFormattingUtilities:
         if alternatives:
             alternatives_text = f" Available alternatives: {', '.join(alternatives)}"
 
-        return f"{what_failed}: {why_failed}{context_suffix}. {user_action.capitalize()}.{alternatives_text}"
+        # Capitalize only the first letter if it's lowercase, preserve the rest
+        if user_action and user_action[0].islower():
+            user_action = user_action[0].upper() + user_action[1:]
+
+        return f"{what_failed}: {why_failed}{context_suffix}. {user_action}.{alternatives_text}"
 
     @staticmethod
     def format_validation_error(field_name: str, value: Any, reason: str, expected: str | None = None, context: str = "") -> str:
@@ -116,10 +120,14 @@ class ErrorFormattingUtilities:
         else:
             user_action = "check field requirements and provide valid value"
 
-        # Available alternatives
+            # Available alternatives
         alternatives_text = " Check field requirements and valid ranges"
 
-        return f"{what_failed}: {why_failed}{context_suffix}. {user_action.capitalize()}.{alternatives_text}"
+        # Capitalize only the first letter if it's lowercase, preserve the rest
+        if user_action and user_action[0].islower():
+            user_action = user_action[0].upper() + user_action[1:]
+
+        return f"{what_failed}: {why_failed}{context_suffix}. {user_action}.{alternatives_text}"
 
     @staticmethod
     def format_configuration_error(config_key: str, issue: str, solution: str | None = None, config_file: str | None = None) -> str:
@@ -157,10 +165,14 @@ class ErrorFormattingUtilities:
         else:
             user_action = "check configuration format and provide valid value"
 
-        # Available alternatives
+            # Available alternatives
         alternatives_text = " Check configuration file format and required keys"
 
-        return f"{what_failed}: {why_failed}. {user_action.capitalize()}.{alternatives_text}"
+        # Capitalize only the first letter if it's lowercase, preserve the rest
+        if user_action and user_action[0].islower():
+            user_action = user_action[0].upper() + user_action[1:]
+
+        return f"{what_failed}: {why_failed}. {user_action}.{alternatives_text}"
 
     @staticmethod
     def format_llm_error(
@@ -202,12 +214,16 @@ class ErrorFormattingUtilities:
         else:
             user_action = "check API keys and model configuration"
 
-        # Available alternatives
+            # Available alternatives
         alternatives_text = ""
         if available_models:
             alternatives_text = f" Available models: {', '.join(available_models)}"
 
-        return f"{what_failed}: {why_failed}. {user_action.capitalize()}.{alternatives_text}"
+        # Capitalize only the first letter if it's lowercase, preserve the rest
+        if user_action and user_action[0].islower():
+            user_action = user_action[0].upper() + user_action[1:]
+
+        return f"{what_failed}: {why_failed}. {user_action}.{alternatives_text}"
 
     @staticmethod
     def format_file_error(operation: str, file_path: str, reason: str, solution: str | None = None) -> str:
@@ -243,10 +259,14 @@ class ErrorFormattingUtilities:
         else:
             user_action = "check file path and try again"
 
-        # Available alternatives
+            # Available alternatives
         alternatives_text = " Check file path and permissions"
 
-        return f"{what_failed}: {why_failed}. {user_action.capitalize()}.{alternatives_text}"
+        # Capitalize only the first letter if it's lowercase, preserve the rest
+        if user_action and user_action[0].islower():
+            user_action = user_action[0].upper() + user_action[1:]
+
+        return f"{what_failed}: {why_failed}. {user_action}.{alternatives_text}"
 
     @staticmethod
     def format_generic_error(
@@ -287,12 +307,16 @@ class ErrorFormattingUtilities:
         else:
             user_action = "check parameters and try again"
 
-        # Available alternatives
+            # Available alternatives
         alternatives_text = ""
         if alternatives:
             alternatives_text = f" Available alternatives: {', '.join(alternatives)}"
 
-        return f"{what_failed}: {why_failed}. {user_action.capitalize()}.{alternatives_text}"
+        # Capitalize only the first letter if it's lowercase, preserve the rest
+        if user_action and user_action[0].islower():
+            user_action = user_action[0].upper() + user_action[1:]
+
+        return f"{what_failed}: {why_failed}. {user_action}.{alternatives_text}"
 
     @staticmethod
     def log_formatted_error(error_message: str, logger_method: str = "error", extra_context: dict[str, Any] | None = None) -> None:
@@ -310,7 +334,12 @@ class ErrorFormattingUtilities:
             ...     extra_context={"resource_type": "database", "operation": "connect"}
             ... )
         """
-        logger_func = getattr(DXA_LOGGER, logger_method, DXA_LOGGER.error)
+        # Check if the logger method is valid, fallback to error if not
+        valid_logger_methods = {"debug", "info", "warning", "error", "critical"}
+        if logger_method in valid_logger_methods:
+            logger_func = getattr(DXA_LOGGER, logger_method)
+        else:
+            logger_func = DXA_LOGGER.error
 
         if extra_context:
             logger_func(error_message, extra=extra_context)

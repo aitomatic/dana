@@ -12,7 +12,7 @@ import pytest
 from opendxa.dana.sandbox.interpreter.dana_interpreter import DanaInterpreter
 from opendxa.dana.sandbox.interpreter.executor.function_resolver import FunctionType
 from opendxa.dana.sandbox.parser.ast import Identifier
-from opendxa.dana.sandbox.parser.dana_parser import DanaParser
+from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
 from opendxa.dana.sandbox.parser.transformer.fstring_transformer import FStringTransformer
 from opendxa.dana.sandbox.parser.utils.identifier_utils import is_valid_identifier
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
@@ -35,7 +35,7 @@ def test_underscore_variables_in_fstring_parsing():
 
 def test_underscore_variables_in_fstring_execution():
     """Test the core regression: underscore variables should work in f-string execution."""
-    parser = DanaParser()
+    parser = ParserCache.get_parser("dana")
     interpreter = DanaInterpreter()
     context = SandboxContext()
 
@@ -57,7 +57,7 @@ result = f"Question: {question_2}"
 
 def test_basic_fstring_still_works():
     """Test that basic f-string functionality wasn't broken by the fix."""
-    parser = DanaParser()
+    parser = ParserCache.get_parser("dana")
     interpreter = DanaInterpreter()
     context = SandboxContext()
 
@@ -75,7 +75,7 @@ result = f"Hello {name}"
 
 def test_original_failing_case():
     """Test the exact case from the original bug report."""
-    parser = DanaParser()
+    parser = ParserCache.get_parser("dana")
     interpreter = DanaInterpreter()
     context = SandboxContext()
 
