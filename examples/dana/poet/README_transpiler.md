@@ -1,8 +1,10 @@
 # POET Transpiler Examples
 
-This directory contains examples demonstrating the enhanced POET transpiler implementation that generates real P→O→E (Perceive, Operate, Enforce) phases.
+This directory contains examples demonstrating the enhanced POET transpiler implementation that generates real P→O→E (Perceive, Operate, Enforce) phases, with optional Train phase for learning use cases.
 
-## New Examples (Phase 1 Implementation)
+## Examples Overview
+
+### Phase 1 Implementation (POE - No Learning)
 
 ### 05_mathematical_operations.na
 Demonstrates Use Case A with comprehensive mathematical function enhancement:
@@ -26,6 +28,16 @@ Shows the before/after transformation of POET transpilation:
 - Real test cases showing validation in action
 - Benefits of automatic enhancement
 
+### 07_user_interaction_guide.na
+Comprehensive guide showing how users interact with all four POET use cases:
+- **Use Case A**: Mathematical Operations (POE) - Automatic validation
+- **Use Case B**: LLM Optimization (POE) - Reliable LLM interactions
+- **Use Case C**: Prompt Optimization (POET) - Self-improving prompts
+- **Use Case D**: ML Monitoring (POET) - Adaptive drift detection
+
+### POET_Quick_Reference.md
+Quick reference card summarizing all four use cases with examples
+
 ## Running the Examples
 
 ```bash
@@ -34,6 +46,9 @@ uv run python -m opendxa.dana.exec.dana examples/dana/poet/05_mathematical_opera
 
 # Run transpiler demonstration
 uv run python -m opendxa.dana.exec.dana examples/dana/poet/06_poet_transpiler_demo.na
+
+# Run user interaction guide
+uv run python -m opendxa.dana.exec.dana examples/dana/poet/07_user_interaction_guide.na
 ```
 
 ## What POET Transpiler Adds

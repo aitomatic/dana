@@ -19,6 +19,12 @@ class PoetTranspiler:
         # Register default domains
         self.domain_registry.register("mathematical_operations", ComputationDomain())
         self.domain_registry.register("computation", ComputationDomain())
+        
+        # Register POET domains with learning
+        from .domains.prompt_optimization import PromptOptimizationDomain
+        from .domains.ml_monitoring import MLMonitoringDomain
+        self.domain_registry.register("prompt_optimization", PromptOptimizationDomain())
+        self.domain_registry.register("ml_monitoring", MLMonitoringDomain())
     
     def transpile(self, function_code: str, config: POETConfig, context: dict | None = None) -> dict:
         """Transpile a Python function to a POET-enhanced Dana function."""
