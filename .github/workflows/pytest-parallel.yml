@@ -233,6 +233,30 @@ jobs:
       run: |
         uv run pytest tests/agent/ -m "not live and not deep" --tb=short -v
 
+  # POET Framework - Domain-driven function enhancement
+  test-poet-framework:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install uv
+      uses: astral-sh/setup-uv@v6
+    - name: Install dependencies
+      run: uv sync --extra dev
+    - name: Test POET Framework
+      env:
+        OPENDXA_MOCK_LLM: "true"
+        OPENDXA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: |
+        uv run pytest tests/dana/poet/ -m "poet and not live and not deep" --tb=short -v
+
   # Execution Engine - Pipeline and reasoning
   test-execution-engine:
     runs-on: ubuntu-latest
@@ -302,7 +326,7 @@ jobs:
 
   # Summary job that depends on all test jobs
   test-summary:
-    needs: [test-dana-parser, test-dana-structs, test-dana-functions, test-dana-imports, test-dana-execution, test-dana-sandbox, test-dana-integration, test-common-utilities, test-agent-framework, test-execution-engine, test-miscellaneous]
+    needs: [test-dana-parser, test-dana-structs, test-dana-functions, test-dana-imports, test-dana-execution, test-dana-sandbox, test-dana-integration, test-common-utilities, test-agent-framework, test-poet-framework, test-execution-engine, test-miscellaneous]
     runs-on: ubuntu-latest
     if: always()
     steps:
@@ -317,6 +341,7 @@ jobs:
               "${{ needs.test-dana-integration.result }}" == "failure" || 
               "${{ needs.test-common-utilities.result }}" == "failure" || 
               "${{ needs.test-agent-framework.result }}" == "failure" || 
+              "${{ needs.test-poet-framework.result }}" == "failure" || 
               "${{ needs.test-execution-engine.result }}" == "failure" || 
               "${{ needs.test-miscellaneous.result }}" == "failure" ]]; then
           echo "One or more test jobs failed"

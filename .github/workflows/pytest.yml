@@ -35,6 +35,12 @@ jobs:
         OPENDXA_USE_REAL_LLM: "false"
         PYTHONPATH: ${{ github.workspace }}
       run: uv run pytest tests/dana/sandbox/interpreter/test_struct_* -v --tb=short
+    - name: Test POET framework (comprehensive)
+      env:
+        OPENDXA_MOCK_LLM: "true"
+        OPENDXA_USE_REAL_LLM: "false"
+        PYTHONPATH: ${{ github.workspace }}
+      run: uv run pytest tests/dana/poet/ -m "poet" -v --tb=short
     - name: Test with pytest (fast tests only)
       env:
         OPENDXA_MOCK_LLM: "true"

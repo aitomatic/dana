@@ -13,6 +13,7 @@ from typing import Any
 
 from opendxa.common.config.config_loader import ConfigLoader
 from opendxa.common.exceptions import LLMError
+from opendxa.common.utils.validation import ValidationUtilities
 
 
 class LLMConfigurationManager:
@@ -71,7 +72,11 @@ class LLMConfigurationManager:
         raise LLMError("No available LLM models found. Please check your API keys and configuration.")
 
     def _validate_model(self, model_name: str) -> bool:
-        """Validate that a model is available and properly configured."""
+        """Validate that a model is available and properly configured.
+
+        Uses ValidationUtilities for centralized validation logic while maintaining
+        backward compatibility with existing behavior.
+        """
         if not model_name:
             return False
 
@@ -80,21 +85,60 @@ class LLMConfigurationManager:
             return True
 
         try:
+            # Get available models list and required API keys
+            available_models = self._get_available_models_list()
+            required_env_vars = self._get_required_env_vars_for_model(model_name)
+
+            # Use ValidationUtilities for the actual validation
+            return ValidationUtilities.validate_model_availability(
+                model_name=model_name, available_models=available_models, required_env_vars=required_env_vars, context="LLM configuration"
+            )
+
+        except Exception:
+            # Maintain original behavior: return False on any exception
+            return False
+
+    def _get_available_models_list(self) -> list[str] | None:
+        """Get the list of available models from configuration.
+
+        Returns None to indicate that any model name should be accepted
+        (ValidationUtilities will only check environment variables).
+        """
+        try:
+            config = self.config_loader.get_default_config()
+            preferred_models = config.get("llm", {}).get("preferred_models", [])
+
+            # Extract model names from both string and dict formats
+            model_names = []
+            for model in preferred_models:
+                if isinstance(model, str):
+                    model_names.append(model)
+                elif isinstance(model, dict) and model.get("name"):
+                    model_names.append(model["name"])
+
+            # Return None if no models found - this means "accept any model name"
+            return model_names if model_names else None
+
+        except Exception:
+            return None
+
+    def _get_required_env_vars_for_model(self, model_name: str) -> list[str]:
+        """Get required environment variables for a specific model."""
+        try:
             # First try to find model in preferred_models config for required_api_keys
             config = self.config_loader.get_default_config()
             preferred_models = config.get("llm", {}).get("preferred_models", [])
 
-            # Check if preferred_models is the new format with required_api_keys
+            # Check if preferred_models has the model with required_api_keys
             for model_config in preferred_models:
                 if isinstance(model_config, dict) and model_config.get("name") == model_name:
-                    required_keys = model_config.get("required_api_keys", [])
-                    return all(os.getenv(key) for key in required_keys)
+                    return model_config.get("required_api_keys", [])
 
             # Fallback to legacy hardcoded validation for models not in config
             provider = model_name.split(":")[0] if ":" in model_name else "openai"
 
-            # Check for required API keys/configuration (legacy fallback)
-            required_keys = {
+            # Legacy hardcoded API key requirements
+            required_keys_map = {
                 "openai": ["OPENAI_API_KEY"],
                 "anthropic": ["ANTHROPIC_API_KEY"],
                 "google": ["GOOGLE_API_KEY"],
@@ -103,13 +147,10 @@ class LLMConfigurationManager:
                 "groq": ["GROQ_API_KEY"],
             }
 
-            if provider in required_keys:
-                return all(os.getenv(key) for key in required_keys[provider])
-
-            return True  # Unknown providers assumed valid
+            return required_keys_map.get(provider, [])
 
         except Exception:
-            return False
+            return []
 
     def _find_first_available_model(self) -> str | None:
         """Find the first available model from preferred list."""
