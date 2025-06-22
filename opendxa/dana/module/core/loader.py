@@ -15,6 +15,7 @@ from pathlib import Path
 from .errors import ImportError, ModuleNotFoundError, SyntaxError
 from .registry import ModuleRegistry
 from .types import Module, ModuleSpec
+from opendxa.dana.sandbox.parser.utils.parsing_utils import ParserCache
 
 
 class ModuleLoader(MetaPathFinder, Loader):
@@ -294,9 +295,7 @@ class ModuleLoader(MetaPathFinder, Loader):
             # Parse and compile
             from lark.exceptions import UnexpectedCharacters, UnexpectedToken
 
-            from opendxa.dana.sandbox.parser.dana_parser import DanaParser
-
-            parser = DanaParser()
+            parser = ParserCache.get_parser("dana")
             try:
                 ast = parser.parse(source)
             except (UnexpectedToken, UnexpectedCharacters) as e:

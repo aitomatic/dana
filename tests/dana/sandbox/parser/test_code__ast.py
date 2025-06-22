@@ -152,7 +152,7 @@ def assert_assignment(node, target_name, value_type=None):
 @pytest.fixture
 def parser():
     """Create a fresh parser instance for each test."""
-    return DanaParser()
+    return ParserCache.get_parser("dana")
 
 
 # Add a fixture for the typecheck flag
