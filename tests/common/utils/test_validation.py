@@ -268,7 +268,7 @@ class TestValidationUtilities:
             ValidationUtilities.validate_decay_parameters(0.1, -100)
         assert "decay_interval" in str(exc_info.value)
 
-    @patch("opendxa.common.utils.logging.DXA_LOGGER")
+    @patch("opendxa.common.utils.validation.DXA_LOGGER")
     def test_validate_decay_parameters_warnings(self, mock_logger):
         """Test decay parameters validation warnings."""
         # High decay rate with long interval should warn
