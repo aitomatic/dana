@@ -10,18 +10,16 @@ from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
 class TestSliceErrorHandling:
     """Test enhanced error handling for slice operations."""
 
-    def setup_method(self):
-        """Setup test environment before each test."""
-        self.sandbox = DanaSandbox()
+    # Using fresh_sandbox fixture from conftest.py instead of setup_method
 
-    def test_slice_component_type_validation(self):
+    def test_slice_component_type_validation(self, fresh_sandbox):
         """Test that slice components must be integers."""
         # Test non-integer start
         code = """
 test_list = [1, 2, 3, 4, 5]
 result = test_list["start":2]
 """
-        result = self.sandbox.eval(code)
+        result = fresh_sandbox.eval(code)
         assert not result.success
         assert "Slice start must be integer" in str(result.error)
         assert "got str" in str(result.error)

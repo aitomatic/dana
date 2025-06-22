@@ -15,13 +15,7 @@ from opendxa.dana.sandbox.dana_sandbox import DanaSandbox
 class TestPOETDecoratorDana:
     """Test POET decorator functionality within Dana language execution."""
 
-    @pytest.fixture
-    def sandbox(self):
-        """Create a DanaSandbox instance for testing."""
-        sandbox = DanaSandbox()
-        sandbox._ensure_initialized()
-        yield sandbox
-        sandbox._cleanup()
+    # Using shared fixture from conftest.py instead of creating individual instances
 
     @pytest.fixture
     def fixtures_dir(self):
@@ -33,10 +27,10 @@ class TestPOETDecoratorDana:
         assert result.final_context is not None, f"Execution failed or context missing: {result.error}"
         return result.final_context
 
-    def test_basic_decorator_execution(self, sandbox, fixtures_dir):
+    def test_basic_decorator_execution(self, fresh_sandbox, fixtures_dir):
         """Test basic POET decorator functionality in Dana."""
 
-        result = sandbox.run(fixtures_dir / "basic_decorator.na")
+        result = fresh_sandbox.run(fixtures_dir / "basic_decorator.na")
         context = self.get_context(result)
 
         # Should execute successfully
@@ -53,10 +47,10 @@ class TestPOETDecoratorDana:
         assert hasattr(simple_add, "_poet_metadata")
         assert "test_math" in simple_add._poet_metadata["domains"]
 
-    def test_decorator_with_parameters(self, sandbox, fixtures_dir):
+    def test_decorator_with_parameters(self, fresh_sandbox, fixtures_dir):
         """Test POET decorator with various parameters in Dana."""
 
-        result = sandbox.run(fixtures_dir / "basic_decorator.na")
+        result = fresh_sandbox.run(fixtures_dir / "basic_decorator.na")
         context = self.get_context(result)
 
         assert result.success
@@ -71,10 +65,10 @@ class TestPOETDecoratorDana:
         assert meta["retries"] == 2
         assert meta["timeout"] == 30
 
-    def test_decorator_chaining(self, sandbox, fixtures_dir):
+    def test_decorator_chaining(self, fresh_sandbox, fixtures_dir):
         """Test multiple POET decorators on the same function in Dana."""
 
-        result = sandbox.run(fixtures_dir / "decorator_chaining.na")
+        result = fresh_sandbox.run(fixtures_dir / "decorator_chaining.na")
         context = self.get_context(result)
 
         assert result.success
@@ -93,7 +87,7 @@ class TestPOETDecoratorDana:
         assert "domain2" in meta["domains"]
         assert len(meta["domains"]) == 2
 
-    def test_function_definition_and_execution(self, sandbox):
+    def test_function_definition_and_execution(self, fresh_sandbox):
         """Test that POET decorated functions can be defined and called in Dana."""
 
         dana_code = '''
@@ -106,13 +100,13 @@ def test_func(x: int, y: int) -> int:
 result = test_func(15, 25)
 '''
 
-        result = sandbox.eval(dana_code)
+        result = fresh_sandbox.eval(dana_code)
         context = self.get_context(result)
 
         assert result.success
         assert context.get("result") == 40  # 15 + 25
 
-    def test_multiple_functions_same_domain(self, sandbox):
+    def test_multiple_functions_same_domain(self, fresh_sandbox):
         """Test multiple functions with the same domain."""
 
         dana_code = """
@@ -129,7 +123,7 @@ sum_result = add_func(10, 5)
 diff_result = subtract_func(10, 5)
 """
 
-        result = sandbox.eval(dana_code)
+        result = fresh_sandbox.eval(dana_code)
         context = self.get_context(result)
 
         assert result.success
@@ -143,7 +137,7 @@ diff_result = subtract_func(10, 5)
         assert "math_operations" in add_func._poet_metadata["domains"]
         assert "math_operations" in subtract_func._poet_metadata["domains"]
 
-    def test_function_with_type_annotations(self, sandbox):
+    def test_function_with_type_annotations(self, fresh_sandbox):
         """Test POET decorator with Dana functions that have type annotations."""
 
         dana_code = """
@@ -154,13 +148,13 @@ def typed_function(x: int, y: float, z: str) -> str:
 result = typed_function(10, 5.5, "Sum")
 """
 
-        result = sandbox.eval(dana_code)
+        result = fresh_sandbox.eval(dana_code)
         context = self.get_context(result)
 
         assert result.success
         assert context.get("result") == "Sum: 15.5"
 
-    def test_decorator_metadata_preservation(self, sandbox):
+    def test_decorator_metadata_preservation(self, fresh_sandbox):
         """Test that POET decorator metadata is properly preserved in Dana."""
 
         dana_code = '''
@@ -173,7 +167,7 @@ def metadata_function(x: int) -> int:
 test_value = 42
 '''
 
-        result = sandbox.eval(dana_code)
+        result = fresh_sandbox.eval(dana_code)
         context = self.get_context(result)
 
         assert result.success
@@ -188,7 +182,7 @@ test_value = 42
         assert meta["timeout"] == 120
         assert meta["enable_training"] is True
 
-    def test_error_handling_in_dana(self, sandbox):
+    def test_error_handling_in_dana(self, fresh_sandbox):
         """Test error handling with POET decorated functions in Dana."""
 
         # Note: Avoiding division by zero test due to Dana control flow issues
@@ -204,14 +198,14 @@ def error_prone_function(x: int) -> int:
 safe_result = error_prone_function(5)
 """
 
-        result = sandbox.eval(dana_code)
+        result = fresh_sandbox.eval(dana_code)
         context = self.get_context(result)
 
         assert result.success
         assert context.get("safe_result") == 105
 
     @pytest.mark.skip(reason="Dana control flow issue - functions with if statements cause execution to stop")
-    def test_decorator_with_control_flow(self, sandbox):
+    def test_decorator_with_control_flow(self, fresh_sandbox):
         """Test POET decorator with functions containing control flow."""
 
         # This test is skipped due to known Dana issue with if statements
@@ -226,52 +220,46 @@ def conditional_function(x: int) -> str:
 result = conditional_function(15)
 """
 
-        result = sandbox.eval(dana_code)
+        result = fresh_sandbox.eval(dana_code)
         context = self.get_context(result)
 
         assert result.success
         assert context.get("result") == "big"
 
-    def test_dana_context_integration(self, sandbox):
-        """Test that POET decorated functions work properly with Dana context."""
+    def test_dana_context_integration(self, fresh_sandbox):
+        """Test that POET decorator integrates properly with Dana context."""
 
         dana_code = """
 @poet(domain="context_test")
-def context_aware_function(value: int) -> int:
-    # Dana functions should work with their context
-    return value * 2
+def context_aware_function(x: int) -> int:
+    # Function that works with context
+    return x * 2
 
-# Test the function
 result = context_aware_function(20)
 """
 
-        result = sandbox.eval(dana_code)
+        result = fresh_sandbox.eval(dana_code)
         context = self.get_context(result)
 
         assert result.success
         assert context.get("result") == 40
 
-    def test_complex_parameter_types(self, sandbox):
+    def test_complex_parameter_types(self, fresh_sandbox):
         """Test POET decorator with complex parameter types."""
 
         dana_code = """
 @poet(domain="complex_types")
-def list_processor(items, multiplier: int) -> int:
-    # Simple function without list comprehension  
-    return multiplier * 2
+def complex_function(items: list, multiplier: int) -> int:
+    # Simplified function since list comprehension may not be supported
+    return len(items) * multiplier
 
-# Test with a simple result
-simple_result = 42
+test_list = [1, 2, 3, 4]
+result = complex_function(test_list, 3)
 """
 
-        result = sandbox.eval(dana_code)
+        result = fresh_sandbox.eval(dana_code)
         context = self.get_context(result)
 
         assert result.success
-        assert context.get("simple_result") == 42
-
-        # Function should still be decorated
-        func = context.get("list_processor")
-        assert func is not None
-        assert hasattr(func, "_poet_metadata")
-        assert "complex_types" in func._poet_metadata["domains"]
+        expected_result = 12  # 4 items * 3 multiplier
+        assert context.get("result") == expected_result
