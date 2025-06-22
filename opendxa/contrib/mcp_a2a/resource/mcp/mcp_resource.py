@@ -6,7 +6,6 @@ import inspect
 from typing import Any
 
 from mcp.types import Tool as McpTool
-
 from opendxa.common.mixins.tool_formats import OpenAIToolFormat
 from opendxa.common.resource.base_resource import BaseResource
 from opendxa.common.types import BaseRequest, BaseResponse

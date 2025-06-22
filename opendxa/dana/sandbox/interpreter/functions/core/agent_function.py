@@ -15,7 +15,7 @@ def agent_function(context: SandboxContext, *args, _name: str | None = None, **k
     name: str = _name if _name is not None else Misc.generate_uuid(length=6)
     from opendxa.contrib.mcp_a2a.resource.a2a import A2AAgent
     resource = A2AAgent(name=name, *args, **kwargs)
-    context.set(name, resource)
+    context.set_agent(name, resource)
     return resource
 
 

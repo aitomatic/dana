@@ -110,8 +110,6 @@ simple_stmt: assignment
 
 // ===== STATEMENTS THAT RETURN OBJECT =====
 return_object_stmt: use_stmt | agent_stmt | agent_pool_stmt
-                | agent_stmt
-                | agent_pool_stmt
 
 comment_stmt: COMMENT
 

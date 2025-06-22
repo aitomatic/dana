@@ -19,7 +19,7 @@ Discord: https://discord.gg/6jGD4PYk
 
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Optional, List, Dict
+from typing import TYPE_CHECKING, Any, Optional
 
 from opendxa.common.resource.base_resource import BaseResource
 from opendxa.dana.common.exceptions import StateError
@@ -725,7 +725,7 @@ class SandboxContext:
                     all_agents.append(agent.name)
         return all_agents
 
-    def get_self_agent_card(self, included_resources: Optional[List[str|BaseResource]] = None) -> Dict[str, Dict[str, Any]]:
+    def get_self_agent_card(self, included_resources: list[str | BaseResource] | None = None) -> dict[str, dict[str, Any]]:
         """
         Get the agent card for the current agent.
         Args:
@@ -765,7 +765,7 @@ class SandboxContext:
                 })
         return {"__self__": agent_card}
 
-    def get_other_agent_cards(self, included_agents: Optional[List[str|BaseResource]] = None) -> Dict[str, Dict[str, Any]]:
+    def get_other_agent_cards(self, included_agents: list[str | BaseResource] | None = None) -> dict[str, dict[str, Any]]:
         all_agent_cards = {}
         for name, agent in self.get_agents(included=included_agents).items():
             all_agent_cards[name] = agent.agent_card

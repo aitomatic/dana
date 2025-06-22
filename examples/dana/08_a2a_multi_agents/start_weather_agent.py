@@ -22,10 +22,10 @@ import argparse
 import logging
 import random
 from datetime import datetime, timedelta
-from typing import Dict, List, Any
+from typing import Any
 
 try:
-    from python_a2a import A2AServer, skill, agent, run_server, TaskStatus, TaskState
+    from python_a2a import A2AServer, TaskState, TaskStatus, agent, run_server, skill
 except ImportError:
     print("Error: python-a2a library not found. Please install it with:")
     print("pip install python-a2a")
@@ -33,7 +33,7 @@ except ImportError:
 
 
 # Mock weather data for demonstration
-WEATHER_DATA: Dict[str, Dict[str, Any]] = {
+WEATHER_DATA: dict[str, dict[str, Any]] = {
     "paris": {
         "temperature": 18,
         "condition": "Partly Cloudy",
@@ -364,7 +364,7 @@ def main():
     logger.info("Starting Weather Agent...")
     try:
         agent = WeatherAgent()
-        logger.info(f"Weather Agent created successfully")
+        logger.info("Weather Agent created successfully")
         logger.info(f"Server will start on {args.host}:{args.port}")
         logger.info(f"Agent endpoint: http://{args.host}:{args.port}/a2a")
         run_server(agent, host=args.host, port=args.port)

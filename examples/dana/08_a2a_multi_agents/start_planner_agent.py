@@ -4,10 +4,12 @@ Trip Planner Agent - A2A Protocol Example
 
 Provides itineraries and travel tips for destinations worldwide.
 """
-import logging
 import argparse
-from python_a2a import A2AServer, skill, agent, run_server
-from python_a2a.models import TaskStatus, TaskState
+import logging
+
+from python_a2a import A2AServer, agent, run_server, skill
+from python_a2a.models import TaskState, TaskStatus
+
 
 @agent(
     name="Trip Planner Agent",
@@ -202,7 +204,7 @@ def main():
     logger.info("Starting Trip Planner Agent...")
     try:
         agent = TripPlannerAgent()
-        logger.info(f"Trip Planner Agent created successfully")
+        logger.info("Trip Planner Agent created successfully")
         logger.info(f"Server will start on {args.host}:{args.port}")
         logger.info(f"Agent endpoint: http://{args.host}:{args.port}/a2a")
         run_server(agent, host=args.host, port=args.port)

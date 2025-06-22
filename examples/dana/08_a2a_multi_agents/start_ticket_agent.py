@@ -4,10 +4,12 @@ Ticket Agent - A2A Protocol Example
 
 Finds and books tickets for events and transportation.
 """
-import logging
 import argparse
-from python_a2a import A2AServer, skill, agent, run_server
-from python_a2a.models import TaskStatus, TaskState
+import logging
+
+from python_a2a import A2AServer, agent, run_server, skill
+from python_a2a.models import TaskState, TaskStatus
+
 
 @agent(
     name="Ticket Agent",
@@ -205,7 +207,7 @@ def main():
     logger.info("Starting Ticket Agent...")
     try:
         agent = TicketAgent()
-        logger.info(f"Ticket Agent created successfully")
+        logger.info("Ticket Agent created successfully")
         logger.info(f"Server will start on {args.host}:{args.port}")
         logger.info(f"Agent endpoint: http://{args.host}:{args.port}/a2a")
         run_server(agent, host=args.host, port=args.port)

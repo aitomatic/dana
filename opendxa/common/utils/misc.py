@@ -9,7 +9,8 @@ from collections.abc import Callable
 from functools import lru_cache
 from importlib import import_module
 from pathlib import Path
-from typing import Any, Optional, Dict
+from typing import Any
+
 import nest_asyncio
 import yaml
 from pydantic import BaseModel
@@ -281,7 +282,7 @@ class Misc:
         return hash_key
     
     @staticmethod
-    def generate_uuid(length: Optional[int] = None) -> str:
+    def generate_uuid(length: int | None = None) -> str:
         """Generate a UUID with optional length truncation."""
         uuid_str = str(uuid.uuid4())
         if length is not None:
@@ -289,10 +290,10 @@ class Misc:
         return uuid_str
     
     @staticmethod
-    def text_to_dict(text: str) -> Dict[str, Any]:
+    def text_to_dict(text: str) -> dict[str, Any]:
         """Parse JSON content from LLM text response."""
-        import re
         import json
+        import re
         # Check if content is wrapped in ```json``` tags
         json_match = re.search(r'```json\s*(.*?)\s*```', text, re.DOTALL)
         if json_match:

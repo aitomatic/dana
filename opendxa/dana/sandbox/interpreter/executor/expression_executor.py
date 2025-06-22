@@ -536,8 +536,8 @@ class ExpressionExecutor(BaseExecutor):
         method = getattr(obj, method_name, None)
         if callable(method):
             DXA_LOGGER.debug("DEBUG: Found callable method on object")
-            import asyncio
             import inspect
+
             from opendxa.common.utils.misc import Misc
             
             # Check if method is async and handle accordingly
@@ -554,8 +554,8 @@ class ExpressionExecutor(BaseExecutor):
             method = obj.get(method_name)
             if callable(method):
                 DXA_LOGGER.debug("DEBUG: Found callable method in dict")
-                import asyncio
                 import inspect
+
                 from opendxa.common.utils.misc import Misc
                 
                 # Check if method is async and handle accordingly

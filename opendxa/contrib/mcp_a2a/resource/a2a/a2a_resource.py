@@ -1,14 +1,14 @@
-from opendxa.common.resource.base_resource import BaseResource
+
 from opendxa.common.mixins import ToolCallable
-from opendxa.contrib.mcp_a2a.resource.a2a.client.a2a_client import BaseA2AClient
-from typing import Optional, Dict, List, Any
+from opendxa.common.resource.base_resource import BaseResource
 from opendxa.common.utils import Misc
+from opendxa.contrib.mcp_a2a.resource.a2a.client.a2a_client import BaseA2AClient
 
 
 class A2AAgent(BaseResource):
     """A2A Resource"""
     def __init__(self, name: str , description: str | None = None, config: dict[str, any] | None = None, 
-                 url: str | None = None, headers: Optional[Dict[str, str]] = None, 
+                 url: str | None = None, headers: dict[str, str] | None = None, 
                  timeout: int = 30*60, google_a2a_compatible: bool = False):
         if url is None:
             raise ValueError("url is required")
@@ -52,24 +52,36 @@ class A2AAgent(BaseResource):
         self.client.refresh_agent_card()
     
     def __getattribute__(self, name):
+        # For specific internal attributes, use the parent method directly to avoid recursion
+        if name in ['_name', '_description', '_config', 'client', '_agent_card', '_json_agent_card']:
+            return super().__getattribute__(name)
+            
         method = super().__getattribute__(name)
-        if name == "solve":
-            # NOTE: Dynamically update docstring for solve tool using agent card
-            agent_card = self.agent_card
-            if agent_card and isinstance(agent_card, dict):
-                skills = Misc.get_field(agent_card, "skills", [])
-                skills_str = "\n".join(
-                    [f"- {Misc.get_field(skill, 'name')}: {Misc.get_field(skill, 'description')}" for skill in skills[:5]]
-                )
-                if len(skills) > 5:
-                    skills_str += f"\n... and {len(skills) - 5} more"
-                method.__func__.__doc__ = (
-                    "@description: " +
-                    method.__func__.__doc__ + "\n\n" +
-                    f"Agent: {Misc.get_field(agent_card, 'name')}\n"    
-                    f"Description: {Misc.get_field(agent_card, 'description')}\n"
-                    f"Available skills:\n{skills_str}"
-                )
+        
+        # Only modify the solve method's docstring
+        if name == "solve" and callable(method):
+            try:
+                # Use direct attribute access to avoid recursion
+                client = super().__getattribute__('client')
+                agent_card = client.json_agent_card
+                if agent_card and isinstance(agent_card, dict):
+                    skills = Misc.get_field(agent_card, "skills", [])
+                    skills_str = "\n".join(
+                        [f"- {Misc.get_field(skill, 'name')}: {Misc.get_field(skill, 'description')}" for skill in skills[:5]]
+                    )
+                    if len(skills) > 5:
+                        skills_str += f"\n... and {len(skills) - 5} more"
+                    method.__func__.__doc__ = (
+                        "@description: " +
+                        method.__func__.__doc__ + "\n\n" +
+                        f"Agent: {Misc.get_field(agent_card, 'name')}\n"    
+                        f"Description: {Misc.get_field(agent_card, 'description')}\n"
+                        f"Available skills:\n{skills_str}"
+                    )
+            except (AttributeError, Exception):
+                # If we can't access agent card safely, just return the method without modification
+                pass
+                
         return method
     
 if __name__ == "__main__":

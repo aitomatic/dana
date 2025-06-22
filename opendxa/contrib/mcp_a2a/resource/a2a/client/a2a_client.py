@@ -1,12 +1,14 @@
-from python_a2a import A2AClient
-from python_a2a.models import Message, MessageRole, Metadata, TextContent, AgentCard
-from opendxa.contrib.mcp_a2a.resource.a2a.common.message_utils import extract_text_from_response
-from typing import Optional, Dict
 from datetime import datetime, timedelta, timezone
+
+from python_a2a import A2AClient
+from python_a2a.models import AgentCard, Message, MessageRole, Metadata, TextContent
+
+from opendxa.contrib.mcp_a2a.resource.a2a.common.message_utils import extract_text_from_response
+
 
 class BaseA2AClient(A2AClient):
     """Base A2A client."""
-    def __init__(self, endpoint_url: str, headers: Optional[Dict[str, str]] = None, 
+    def __init__(self, endpoint_url: str, headers: dict[str, str] | None = None, 
                  timeout: int = 30*60, google_a2a_compatible: bool = False,
                  refresh_interval: int = 3600):
         self._refresh_interval = timedelta(seconds=refresh_interval)

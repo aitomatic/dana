@@ -5,12 +5,11 @@ This module provides the AgentPool class for managing multiple A2A agents and se
 the most appropriate agent for a given task based on skills.
 """
 
-from typing import Dict, List, Any, Optional, Union
 from opendxa.common.resource.base_resource import BaseResource
-from opendxa.common.utils import Misc
 from opendxa.contrib.mcp_a2a.resource.a2a.a2a_resource import A2AAgent
-from .agent_selector import AgentSelector
 from opendxa.dana.sandbox.sandbox_context import SandboxContext
+
+from .agent_selector import AgentSelector
 
 
 class AgentPool(BaseResource):
@@ -19,8 +18,8 @@ class AgentPool(BaseResource):
     def __init__(
         self,
         name: str,
-        description: Optional[str] = None,
-        agents: Optional[List[A2AAgent]] = None,
+        description: str | None = None,
+        agents: list[A2AAgent] | None = None,
         exclude_self: bool = False,
         context: SandboxContext | None = None,
     ):
@@ -36,7 +35,7 @@ class AgentPool(BaseResource):
             ValueError: If neither agent_configs nor agents is provided
         """
         super().__init__(name, description)
-        self.agents: Dict[str, A2AAgent] = {}
+        self.agents: dict[str, A2AAgent] = {}
         self._selector = None
         self.context = context
         self.exclude_self = exclude_self
@@ -56,7 +55,7 @@ class AgentPool(BaseResource):
             self._selector = AgentSelector(self)
         return self._selector
 
-    def list_agents(self) -> List[str]:
+    def list_agents(self) -> list[str]:
         """List all agents in the pool.
 
         Returns:
@@ -80,7 +79,7 @@ class AgentPool(BaseResource):
             raise KeyError(f"Agent not found: {name}")
         return self.agents[name]
 
-    def select_agent(self, task: any, strategy: str = "llm", included_resources: Optional[List[str | BaseResource]] = None) -> A2AAgent | None:
+    def select_agent(self, task: any, strategy: str = "llm", included_resources: list[str | BaseResource] | None = None) -> A2AAgent | None:
         """Select an agent based on task requirements.
 
         Args:
@@ -96,7 +95,7 @@ class AgentPool(BaseResource):
         """
         return self.selector.select_agent(task, strategy, included_resources=included_resources)
 
-    def get_agent_cards(self, included_resources: Optional[List[str | BaseResource]] = None) -> Dict[str, dict]:
+    def get_agent_cards(self, included_resources: list[str | BaseResource] | None = None) -> dict[str, dict]:
         """Get agent cards for all agents in the pool.
 
         Args:
