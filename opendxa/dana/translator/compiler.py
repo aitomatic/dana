@@ -17,23 +17,21 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Protocol
 
 if TYPE_CHECKING:
     from opendxa.dana.sandbox.parser.ast import Program
     from opendxa.dana.sandbox.sandbox_context import SandboxContext
 
 
-class CompilerInterface(ABC):
-    """Interface for the Compiler responsible for generating Dana programs from NL objectives."""
+class CompilerInterface(Protocol):
+    """Protocol for the Compiler responsible for generating Dana programs from NL objectives."""
 
     # This corresponds to the GMA concept
 
-    @abstractmethod
     async def compile(self, objective: str, context: "SandboxContext") -> "Program":
         """Compiles a natural language objective into a Dana program AST, using the provided context."""
-        pass
+        ...
 
 
 # Example Placeholder Implementation (e.g., using an LLM)

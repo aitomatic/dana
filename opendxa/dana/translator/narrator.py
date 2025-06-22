@@ -17,15 +17,14 @@ GitHub: https://github.com/aitomatic/opendxa
 Discord: https://discord.gg/6jGD4PYk
 """
 
-from abc import ABC, abstractmethod
+from typing import Protocol
 
 from opendxa.dana.sandbox.parser.ast import Program
 
 
-class NarratorInterface(ABC):
-    """Interface for the Narrator responsible for generating natural language from Dana programs."""
+class NarratorInterface(Protocol):
+    """Protocol for the Narrator responsible for generating natural language from Dana programs."""
 
-    @abstractmethod
     async def narrate(self, program: Program) -> str:
         """Generate a natural language description of the given Dana program."""
-        pass
+        ...
